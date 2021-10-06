@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import contextvars
 import inspect
 import logging
 import os
@@ -135,6 +136,16 @@ class SubiquityClient(TuiApplication):
             self.our_tty = "not a tty"
 
         self.conn = aiohttp.UnixConnector(self.opts.socket)
+
+        self.in_make_view_cvar = contextvars.ContextVar(
+            'in_make_view', default=False)
+
+        def header_func():
+            if self.in_make_view_cvar.get():
+                return {'x-make-view-request': 'yes'}
+            else:
+                return None
+
         self.client = make_client_for_conn(API, self.conn, self.resp_hook)
 
         self.error_reporter = ErrorReporter(
@@ -482,7 +493,11 @@ class SubiquityClient(TuiApplication):
             await coro
 
     async def make_view_for_controller(self, new):
-        view = await super().make_view_for_controller(new)
+        tok = self.in_make_view_cvar.set(True)
+        try:
+            view = await super().make_view_for_controller(new)
+        finally:
+            self.in_make_view_cvar.reset(tok)
         if new.answers:
             self.aio_loop.create_task(self._start_answers_for_view(new, view))
         with open(self.state_path('last-screen'), 'w') as fp:
