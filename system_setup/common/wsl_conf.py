@@ -110,16 +110,13 @@ def default_loader(is_advanced=False):
     return data
 
 
-# TODO: remove dryrun and add root param once we write the option to .subiquity
-def wsl_config_update(config_class, is_dry_run):
+def wsl_config_update(config_class, root_dir):
     """
     This update the configuration file for the given class.zzd
 
     :param config_class: WSLConfigurationBase or WSLConfigurationAdvanced
     :param is_dry_run: boolean, True if it is a dry run
     """
-    if is_dry_run:
-        log.debug("mimicking setting config %s", config_class)
     temp_conf_default = {}
     temp_confname = config_class.__str__()
     if temp_confname.startswith("WSLConfigurationBase"):
@@ -128,8 +125,6 @@ def wsl_config_update(config_class, is_dry_run):
         temp_conf_default = config_adv_default
     else:
         raise TypeError("Invalid type name.")
-    if is_dry_run:
-        return
 
     # update the config file
     for config_type in temp_conf_default:
@@ -138,7 +133,8 @@ def wsl_config_update(config_class, is_dry_run):
         config = ConfigParser()
         config.BasicInterpolcation = None
 
-        conf_file = conf_type_to_file[config_type]
+        os.makedirs(os.path.join(root_dir, "etc"), exist_ok=True)
+        conf_file = os.path.join(root_dir, conf_type_to_file[config_type][1:])
 
         config.read(conf_file)
 
@@ -149,7 +145,7 @@ def wsl_config_update(config_class, is_dry_run):
                 config_api_name = \
                     config_section.lower() + "_" + config_setting.lower()
                 config_value = config_class.__dict__[config_api_name]
-                # if the value for the setting is defualt value, drop it
+                # if the value for the setting is default value, drop it
                 if config_default_value == config_value:
                     if config_setting in config[config_section]:
                         config.remove_option(config_section, config_setting)
