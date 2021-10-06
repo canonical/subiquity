@@ -248,7 +248,7 @@ class Partition:
     number: Optional[int] = None
     preserve: Optional[bool] = None
     wipe: Optional[str] = None
-    annotations: Optional[List[str]] = []
+    annotations: List[str] = attr.ib(default=attr.Factory(list))
     mount: Optional[str] = None
     format: Optional[str] = None
     grub_device: Optional[bool] = None
@@ -257,16 +257,16 @@ class Partition:
 @attr.s(auto_attribs=True)
 class Disk:
     id: str
-    partitions: List[Partition]
-    label: Optional[str]
-    type: Optional[str]
+    label: str
+    type: str
     size: int
-    ok_for_guided: Optional[bool]
+    usage_labels: List[str]
+    partitions: List[Partition]
+    ok_for_guided: bool
     ptable: Optional[str]
-    preserve: Optional[bool] = None
-    path: Optional[str] = None
-    free_for_partitions: Optional[int] = 0
-    usage_labels: Optional[List[str]] = []
+    preserve: bool
+    path: Optional[str]
+    free_for_partitions: int
 
 
 @attr.s(auto_attribs=True)
