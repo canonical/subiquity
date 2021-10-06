@@ -9,7 +9,6 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - ubuntu-daily:bionic
           - ubuntu-daily:focal
           - ubuntu-daily:hirsute
           - ubuntu-daily:impish
