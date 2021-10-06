@@ -4,23 +4,17 @@ import aiohttp
 from aiohttp.client_exceptions import ClientResponseError
 import async_timeout
 import asyncio
+import contextlib
 from functools import wraps
 import json
-import logging
 import os
-import sys
 import unittest
+from urllib.parse import unquote
 
 from subiquitycore.utils import astart_command
 
 
-logging.basicConfig(level=logging.DEBUG)
 socket_path = '.subiquity/socket'
-
-
-ver = sys.version_info
-if ver.major < 3 or ver.minor < 8:
-    raise Exception('skip asyncio testing')
 
 
 def find(items, key, value):
@@ -47,27 +41,24 @@ def json_print(json_data):
     print(json.dumps(json_data, indent=4))
 
 
-def loads(data):
-    return json.loads(data) if data else None
+class Server:
+    def __init__(self, session):
+        self.session = session
 
+    def loads(self, data):
+        if data == '' or data is None:  # json.loads likes neither of these
+            return None
+        return json.loads(data)
 
-def dumps(data):
-    # if the data we're dumping is literally False, we want that to be 'false'
-    if data or type(data) is bool:
-        return json.dumps(data, separators=(',', ':'))
-    elif data is not None:
-        return '""'
-    else:
-        return data
-
-
-class ClientException(Exception):
-    pass
-
-
-class TestAPI(unittest.IsolatedAsyncioTestCase):
-    machine_config = 'examples/simple.json'
-    need_spawn_server = True
+    def dumps(self, data):
+        # if the data we're dumping is literally False,
+        # we want that to be 'false'
+        if data or type(data) is bool:
+            return json.dumps(data, separators=(',', ':'))
+        elif data is not None:
+            return '""'
+        else:
+            return data
 
     async def get(self, query, **kwargs):
         return await self.request('GET', query, **kwargs)
@@ -76,23 +67,16 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
         return await self.request('POST', query, data, **kwargs)
 
     async def request(self, method, query, data=None, **kwargs):
-        params = {}
-        for key in kwargs:
-            params[key] = dumps(kwargs[key])
-        data = dumps(data)
-        info = f'{method} {query}'
-        if params:
-            for i, key in enumerate(params):
-                joiner = '?' if i == 0 else '&'
-                info += f'{joiner}{key}={params[key]}'
-        print(info)
+        params = {k: self.dumps(v) for k, v in kwargs.items()}
+        data = self.dumps(data)
         async with self.session.request(method, f'http://a{query}',
                                         data=data, params=params) as resp:
+            print(unquote(str(resp.url)))
             resp.raise_for_status()
             content = await resp.content.read()
-            return loads(content.decode())
+            return self.loads(content.decode())
 
-    async def server_startup(self):
+    async def poll_startup(self):
         for _ in range(20):
             try:
                 await self.get('/meta/status')
@@ -104,418 +88,503 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
     async def server_shutdown(self, immediate=True):
         try:
             await self.post('/shutdown', mode='POWEROFF', immediate=immediate)
-            raise Exception('expected ServerDisconnectedError')
         except aiohttp.client_exceptions.ServerDisconnectedError:
             return
 
-    async def spawn_server(self):
+    async def spawn(self, machine_config):
         env = os.environ.copy()
         env['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
         cmd = 'python3 -m subiquity.cmd.server --dry-run --bootloader uefi' \
-              + ' --machine-config ' + self.machine_config
+              + ' --machine-config ' + machine_config
         cmd = cmd.split(' ')
         self.proc = await astart_command(cmd, env=env)
-        self.server = asyncio.create_task(self.proc.communicate())
+        self.server_task = asyncio.create_task(self.proc.communicate())
 
-    async def asyncSetUp(self):
-        if self.need_spawn_server:
-            await self.spawn_server()
-
-        # setup client
-        conn = aiohttp.UnixConnector(path=socket_path)
-        self.session = aiohttp.ClientSession(connector=conn)
-        await self.server_startup()
-
-    async def asyncTearDown(self):
-        if self.need_spawn_server:
-            await self.server_shutdown()
-            await self.session.close()
-            await self.server
-            try:
-                self.proc.kill()
-            except ProcessLookupError:
-                pass
+    async def close(self):
+        await self.server_shutdown()
+        await self.server_task
+        try:
+            self.proc.kill()
+        except ProcessLookupError:
+            pass
 
 
-# class TestDebug(TestAPI):
-#     need_spawn_server = False
-
-#     @unittest.skip("useful for interactive debug only")
-#     async def test_v2_delete_debug(self):
-#         await self.get('/storage/v2')
+class TestAPI(unittest.IsolatedAsyncioTestCase):
+    pass
 
 
-class TestSimple(TestAPI):
+@contextlib.asynccontextmanager
+async def start_server(machine_config):
+    conn = aiohttp.UnixConnector(path=socket_path)
+    async with aiohttp.ClientSession(connector=conn) as session:
+        server = Server(session)
+        try:
+            await server.spawn(machine_config)
+            await server.poll_startup()
+            yield server
+        finally:
+            await server.close()
+
+
+class TestBitlocker(TestAPI):
+    @timeout(5)
+    async def test_has_bitlocker(self):
+        async with start_server('examples/win10.json') as inst:
+            resp = await inst.get('/storage/has_bitlocker')
+            self.assertEqual(1, len(resp))
+
     @timeout(5)
     async def test_not_bitlocker(self):
-        resp = await self.get('/storage/has_bitlocker')
-        self.assertEqual(0, len(resp))
+        async with start_server('examples/simple.json') as inst:
+            resp = await inst.get('/storage/has_bitlocker')
+            self.assertEqual(0, len(resp))
 
+
+class TestFlow(TestAPI):
     @timeout(10)
     async def test_server_flow(self):
-        await self.post('/locale', 'en_US.UTF-8')
-        keyboard = {
-            'layout': 'us',
-            'variant': '',
-            'toggle': None
-        }
-        await self.post('/keyboard', keyboard)
-        await self.post('/source', source_id='ubuntu-server')
-        await self.post('/network')
-        await self.post('/proxy', '')
-        await self.post('/mirror', 'http://us.archive.ubuntu.com/ubuntu')
-        resp = await self.get('/storage/guided')
-        disk_id = resp['disks'][0]['id']
-        choice = {"disk_id": disk_id}
-        await self.post('/storage/v2/guided', choice=choice)
-        await self.post('/storage/v2')
-        await self.get('/meta/status', cur='WAITING')
-        await self.post('/meta/confirm', tty='/dev/tty1')
-        await self.get('/meta/status', cur='NEEDS_CONFIRMATION')
-        identity = {
-            'realname': 'ubuntu',
-            'username': 'ubuntu',
-            'hostname': 'ubuntu-server',
-            'crypted_password': '$6$exDY1mhS4KUYCE/2$zmn9ToZwTKLhCw.b4/'
-                                + 'b.ZRTIZM30JZ4QrOQ2aOXJ8yk96xpcCof0kx'
-                                + 'KwuX1kqLG/ygbJ1f8wxED22bTL4F46P0'
-        }
-        await self.post('/identity', identity)
-        ssh = {
-            'install_server': False,
-            'allow_pw': False,
-            'authorized_keys': []
-        }
-        await self.post('/ssh', ssh)
-        await self.post('/snaplist', [])
-        for state in 'RUNNING', 'POST_WAIT', 'POST_RUNNING', 'UU_RUNNING':
-            await self.get('/meta/status', cur=state)
-
-    @timeout(5)
-    async def test_default(self):
-        choice = {'disk_id': 'disk-sda'}
-        resp = await self.post('/storage/guided', choice=choice)
-        self.assertEqual(7, len(resp['config']))
-        self.assertEqual('/dev/sda', resp['config'][0]['path'])
-
-    @timeout(5)
-    async def test_guided_v2(self):
-        choice = {'disk_id': 'disk-sda'}
-        resp = await self.post('/storage/v2/guided', choice=choice)
-        self.assertEqual(1, len(resp['disks']))
-        self.assertEqual('disk-sda', resp['disks'][0]['id'])
-
-    @timeout(5)
-    async def test_v2_add_boot_partition(self):
-        self.maxDiff = None
-        disk_id = 'disk-sda'
-
-        data = {
-            'disk_id': disk_id,
-            'partition': {
-                'format': 'ext4',
-                'mount': '/',
+        async with start_server('examples/simple.json') as inst:
+            await inst.post('/locale', 'en_US.UTF-8')
+            keyboard = {
+                'layout': 'us',
+                'variant': '',
+                'toggle': None
             }
-        }
-        simple_add = await self.post('/storage/v2/add_partition', data)
-        self.assertEqual(2, len(simple_add['disks'][0]['partitions']))
-
-        await self.post('/storage/v2/reset')
-
-        await self.post('/storage/v2/add_boot_partition', disk_id=disk_id)
-        manual_add = await self.post('/storage/v2/add_partition', data)
-        self.assertEqual(simple_add, manual_add)
-
-
-class TestWin10(TestAPI):
-    machine_config = 'examples/win10.json'
-
-    @timeout(5)
-    async def test_bitlocker(self):
-        resp = await self.get('/storage/has_bitlocker')
-        self.assertEqual('BitLocker', resp[0]['partitions'][2]['format'])
-
-    @timeout(5)
-    async def test_delete_bad(self):
-        data = {
-            'disk_id': 'disk-sda',
-            'partition': {
-                'size': -1,
-                'number': 5,
+            await inst.post('/keyboard', keyboard)
+            await inst.post('/source', source_id='ubuntu-server')
+            await inst.post('/network')
+            await inst.post('/proxy', '')
+            await inst.post('/mirror', 'http://us.archive.ubuntu.com/ubuntu')
+            resp = await inst.get('/storage/guided')
+            disk_id = resp['disks'][0]['id']
+            choice = {"disk_id": disk_id}
+            await inst.post('/storage/v2/guided', choice=choice)
+            await inst.post('/storage/v2')
+            await inst.get('/meta/status', cur='WAITING')
+            await inst.post('/meta/confirm', tty='/dev/tty1')
+            await inst.get('/meta/status', cur='NEEDS_CONFIRMATION')
+            identity = {
+                'realname': 'ubuntu',
+                'username': 'ubuntu',
+                'hostname': 'ubuntu-server',
+                'crypted_password': '$6$exDY1mhS4KUYCE/2$zmn9ToZwTKLhCw.b4/'
+                                    + 'b.ZRTIZM30JZ4QrOQ2aOXJ8yk96xpcCof0kx'
+                                    + 'KwuX1kqLG/ygbJ1f8wxED22bTL4F46P0'
             }
-        }
-        with self.assertRaises(ClientResponseError):
-            await self.post('/storage/v2/delete_partition', data)
+            await inst.post('/identity', identity)
+            ssh = {
+                'install_server': False,
+                'allow_pw': False,
+                'authorized_keys': []
+            }
+            await inst.post('/ssh', ssh)
+            await inst.post('/snaplist', [])
+            for state in 'RUNNING', 'POST_WAIT', 'POST_RUNNING', 'UU_RUNNING':
+                await inst.get('/meta/status', cur=state)
 
     @timeout(5)
     async def test_v2_flow(self):
-        disk_id = 'disk-sda'
-        orig_resp = await self.get('/storage/v2')
-        self.assertEqual(1, len(orig_resp['disks']))
-        self.assertEqual('disk-sda', orig_resp['disks'][0]['id'])
-        self.assertEqual(4, len(orig_resp['disks'][0]['partitions']))
+        async with start_server('examples/win10.json') as inst:
+            disk_id = 'disk-sda'
+            orig_resp = await inst.get('/storage/v2')
+            sda = first(orig_resp['disks'], 'id', disk_id)
+            self.assertTrue(len(sda['partitions']) > 0)
 
-        resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
-        self.assertEqual(0, len(resp['disks'][0]['partitions']))
+            resp = await inst.post('/storage/v2/reformat_disk',
+                                   disk_id=disk_id)
+            sda = first(resp['disks'], 'id', disk_id)
+            self.assertEqual(0, len(sda['partitions']))
 
-        data = {
-            'disk_id': disk_id,
-            'partition': {
-                'number': 1,
-                'format': 'ext3',
-                'mount': '/',
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'format': 'ext3',
+                    'mount': '/',
+                }
             }
-        }
-        add_resp = await self.post('/storage/v2/add_partition', data)
-        self.assertEqual(2, len(add_resp['disks'][0]['partitions']))
-        self.assertEqual('ext3',
-                         add_resp['disks'][0]['partitions'][1]['format'])
+            add_resp = await inst.post('/storage/v2/add_partition', data)
+            sda = first(add_resp['disks'], 'id', disk_id)
+            sda2 = first(sda['partitions'], 'number', 2)
+            self.assertEqual('ext3', sda2['format'])
 
-        data['partition']['number'] = 2
-        data['partition']['format'] = 'ext4'
-        resp = await self.post('/storage/v2/edit_partition', data)
-        expected = add_resp['disks'][0]['partitions'][1]
-        actual = resp['disks'][0]['partitions'][1]
-        for key in 'size', 'number', 'mount', 'grub_device':
-            self.assertEqual(expected[key], actual[key])
-        self.assertEqual('ext4', resp['disks'][0]['partitions'][1]['format'])
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'number': 2,
+                    'format': 'ext4',
+                }
+            }
+            resp = await inst.post('/storage/v2/edit_partition', data)
+            expected = add_resp['disks'][0]['partitions'][1]
+            actual = resp['disks'][0]['partitions'][1]
+            for key in 'size', 'number', 'mount', 'grub_device':
+                self.assertEqual(expected[key], actual[key])
+            self.assertEqual('ext4',
+                             resp['disks'][0]['partitions'][1]['format'])
 
-        resp = await self.post('/storage/v2/delete_partition', data)
-        self.assertEqual(1, len(resp['disks'][0]['partitions']))
+            resp = await inst.post('/storage/v2/delete_partition', data)
+            self.assertEqual(1, len(resp['disks'][0]['partitions']))
 
-        resp = await self.post('/storage/v2/reset')
-        self.assertEqual(orig_resp, resp)
+            resp = await inst.post('/storage/v2/reset')
+            self.assertEqual(orig_resp, resp)
 
-        choice = {'disk_id': disk_id}
-        orig_resp = await self.post('/storage/v2/guided', choice=choice)
-        await self.post('/storage/v2')
-        resp = await self.get('/storage/v2')
-        # posting to the endpoint shouldn't change the answer
-        self.assertEqual(orig_resp, resp)
+            choice = {'disk_id': disk_id}
+            guided_resp = await inst.post('/storage/v2/guided', choice=choice)
+            post_resp = await inst.post('/storage/v2')
+            # posting to the endpoint shouldn't change the answer
+            self.assertEqual(guided_resp, post_resp)
+
+
+class TestGuided(TestAPI):
+    @timeout(5)
+    async def test_guided_v2(self):
+        async with start_server('examples/simple.json') as inst:
+            choice = {'disk_id': 'disk-sda'}
+            resp = await inst.post('/storage/v2/guided', choice=choice)
+            self.assertEqual(1, len(resp['disks']))
+            self.assertEqual('disk-sda', resp['disks'][0]['id'])
+
+
+class TestAdd(TestAPI):
+    @timeout(5)
+    async def test_v2_add_boot_partition(self):
+        async with start_server('examples/simple.json') as inst:
+            disk_id = 'disk-sda'
+
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/',
+                }
+            }
+            single_add = await inst.post('/storage/v2/add_partition', data)
+            self.assertEqual(2, len(single_add['disks'][0]['partitions']))
+
+            await inst.post('/storage/v2/reset')
+
+            # these manual steps are expected to be equivalent to just adding
+            # the single partition and getting the automatic boot partition
+            await inst.post('/storage/v2/add_boot_partition', disk_id=disk_id)
+            manual_add = await inst.post('/storage/v2/add_partition', data)
+            self.assertEqual(single_add, manual_add)
 
     @timeout(5)
     async def test_v2_free_for_partitions(self):
-        disk_id = 'disk-sda'
-        resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
+        async with start_server('examples/simple.json') as inst:
+            disk_id = 'disk-sda'
+            resp = await inst.post('/storage/v2/add_boot_partition',
+                                   disk_id=disk_id)
+            sda = first(resp['disks'], 'id', disk_id)
+            orig_free = sda['free_for_partitions']
 
-        data = {
-            'disk_id': disk_id,
-            'partition': {
-                'size': resp['disks'][0]['size'] // 2,
-                'number': 1,
-                'format': 'ext4',
-                'mount': '/',
+            size_requested = 6 << 30
+            expected_free = orig_free - size_requested
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'size': size_requested,
+                    'format': 'ext4',
+                    'mount': '/',
+                }
             }
-        }
-        resp = await self.post('/storage/v2/add_partition', data)
-        self.assertEqual(2, len(resp['disks'][0]['partitions']))
-        self.assertEqual('ext4', resp['disks'][0]['partitions'][1]['format'])
-        self.assertEqual(42410704896, resp['disks'][0]['free_for_partitions'])
+            resp = await inst.post('/storage/v2/add_partition', data)
+            sda = first(resp['disks'], 'id', disk_id)
+            self.assertEqual(expected_free, sda['free_for_partitions'])
 
     @timeout(5)
-    async def test_v2_delete_requires_reformat(self):
+    async def test_add_format_required(self):
         disk_id = 'disk-sda'
-        data = {
-            'disk_id': disk_id,
-            'partition': {
-                'number': 4,
-                'mount': '/',
-                'format': 'ext4',
+        async with start_server('examples/simple.json') as inst:
+            bad_partitions = [
+                {},
+                {'mount': '/'},
+            ]
+            for partition in bad_partitions:
+                data = {'disk_id': disk_id, 'partition': partition}
+                with self.assertRaises(ClientResponseError,
+                                       msg=f'data {data}'):
+                    await inst.post('/storage/v2/add_partition', data)
+
+    @timeout(5)
+    async def test_add_default_size_handling(self):
+        async with start_server('examples/simple.json') as inst:
+            disk_id = 'disk-sda'
+            resp = await inst.get('/storage/v2')
+            sda = first(resp['disks'], 'id', disk_id)
+            expected_total = sda['free_for_partitions']
+
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/',
+                }
             }
-        }
-        await self.post('/storage/v2/edit_partition', data)
-        with self.assertRaises(ClientResponseError):
-            await self.post('/storage/v2/delete_partition', data)
+            resp = await inst.post('/storage/v2/add_partition', data)
+            sda = first(resp['disks'], 'id', disk_id)
+            sda1 = first(sda['partitions'], 'number', 1)
+            sda2 = first(sda['partitions'], 'number', 2)
+            self.assertEqual(expected_total, sda1['size'] + sda2['size'])
+
+
+class TestDelete(TestAPI):
+    @timeout(5)
+    async def test_v2_delete_without_reformat(self):
+        async with start_server('examples/win10.json') as inst:
+            disk_id = 'disk-sda'
+            data = {
+                'disk_id': disk_id,
+                'partition': {'number': 1}
+            }
+            with self.assertRaises(ClientResponseError):
+                await inst.post('/storage/v2/delete_partition', data)
+
+    @timeout(5)
+    async def test_v2_delete_with_reformat(self):
+        async with start_server('examples/win10.json') as inst:
+            disk_id = 'disk-sda'
+            await inst.post('/storage/v2/reformat_disk', disk_id=disk_id)
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'mount': '/',
+                    'format': 'ext4',
+                }
+            }
+            await inst.post('/storage/v2/add_partition', data)
+            data = {
+                'disk_id': disk_id,
+                'partition': {'number': 1}
+            }
+            await inst.post('/storage/v2/delete_partition', data)
+
+    @timeout(5)
+    async def test_delete_nonexistant(self):
+        async with start_server('examples/win10.json') as inst:
+            disk_id = 'disk-sda'
+            await inst.post('/storage/v2/reformat_disk', disk_id=disk_id)
+            data = {
+                'disk_id': disk_id,
+                'partition': {'number': 1}
+            }
+            with self.assertRaises(ClientResponseError):
+                await inst.post('/storage/v2/delete_partition', data)
+
+
+class TestEdit(TestAPI):
+    @timeout(5)
+    async def test_edit_no_change_size(self):
+        async with start_server('examples/win10.json') as inst:
+            disk_id = 'disk-sda'
+            resp = await inst.get('/storage/v2')
+
+            sda = first(resp['disks'], 'id', disk_id)
+            sda3 = first(sda['partitions'], 'number', 3)
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'number': 3,
+                    'size': sda3['size'] - 1 << 30
+                }
+            }
+            with self.assertRaises(ClientResponseError):
+                await inst.post('/storage/v2/edit_partition', data)
+
+    @timeout(5)
+    async def test_edit_no_change_grub(self):
+        async with start_server('examples/win10.json') as inst:
+            disk_id = 'disk-sda'
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'number': 3,
+                    'grub_device': True,
+                }
+            }
+            with self.assertRaises(ClientResponseError):
+                await inst.post('/storage/v2/edit_partition', data)
+
+    @timeout(5)
+    async def test_edit_format(self):
+        async with start_server('examples/win10.json') as inst:
+            disk_id = 'disk-sda'
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'number': 3,
+                    'format': 'btrfs',
+                }
+            }
+            resp = await inst.post('/storage/v2/edit_partition', data)
+
+            sda = first(resp['disks'], 'id', disk_id)
+            sda3 = first(sda['partitions'], 'number', 3)
+            self.assertEqual('btrfs', sda3['format'])
+
+    @timeout(5)
+    async def test_edit_mount(self):
+        async with start_server('examples/win10.json') as inst:
+            disk_id = 'disk-sda'
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'number': 3,
+                    'mount': '/',
+                }
+            }
+            resp = await inst.post('/storage/v2/edit_partition', data)
+
+            sda = first(resp['disks'], 'id', disk_id)
+            sda3 = first(sda['partitions'], 'number', 3)
+            self.assertEqual('/', sda3['mount'])
+
+    @timeout(5)
+    async def test_edit_format_and_mount(self):
+        async with start_server('examples/win10.json') as inst:
+            disk_id = 'disk-sda'
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'number': 3,
+                    'format': 'btrfs',
+                    'mount': '/',
+                }
+            }
+            resp = await inst.post('/storage/v2/edit_partition', data)
+
+            sda = first(resp['disks'], 'id', disk_id)
+            sda3 = first(sda['partitions'], 'number', 3)
+            self.assertEqual('btrfs', sda3['format'])
+            self.assertEqual('/', sda3['mount'])
 
     @timeout(5)
     async def test_v2_reuse(self):
-        orig_resp = await self.get('/storage/v2')
+        async with start_server('examples/win10.json') as inst:
+            disk_id = 'disk-sda'
+            resp = await inst.get('/storage/v2')
+            orig_sda = first(resp['disks'], 'id', disk_id)
 
-        disk_id = 'disk-sda'
-        data = {
-            'disk_id': disk_id,
-            'partition': {
-                'number': 3,
-                'format': 'ext4',
-                'mount': '/',
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'number': 3,
+                    'format': 'ext4',
+                    'mount': '/',
+                }
             }
-        }
-        resp = await self.post('/storage/v2/edit_partition', data)
-        orig_disk = orig_resp['disks'][0]
-        disk = resp['disks'][0]
-        self.assertEqual('/dev/sda', disk['path'])
-
-        esp = disk['partitions'][0]
-        self.assertIsNone(esp['wipe'])
-        self.assertEqual('/boot/efi', esp['mount'])
-        self.assertEqual('vfat', esp['format'])
-        self.assertTrue(esp['grub_device'])
-
-        part = disk['partitions'][1]
-        expected = orig_disk['partitions'][1]
-        self.assertEqual(expected, part)
-
-        root = disk['partitions'][2]
-        self.assertEqual('superblock', root['wipe'])
-        self.assertEqual('/', root['mount'])
-        self.assertEqual('ext4', root['format'])
-        self.assertFalse(root['grub_device'])
-
-        part = disk['partitions'][3]
-        expected = orig_disk['partitions'][3]
-        self.assertEqual(expected, part)
-
-    @timeout(5)
-    async def test_v2_gpt(self):
-        resp = await self.get('/storage/v2')
-        sda = first(resp['disks'], 'id', 'disk-sda')
-        self.assertEqual('gpt', sda['ptable'])
-
-    @timeout(5)
-    async def test_add_rules(self):
-        disk_id = 'disk-sda'
-        await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
-
-        bad_partitions = [
-            {'partition': {}},
-            {'partition': {'format': 'ext4'}},
-            {'partition': {'mount': '/'}},
-        ]
-        for partition in bad_partitions:
-            with self.assertRaises(ClientResponseError):
-                data = {'disk_id': disk_id, 'partition': partition}
-                await self.post('/storage/v2/add_partition', data)
-
-        for size, expected in ((None, 85360377856), (20 << 30, 20 << 30)):
-            partition = {'format': 'ext4', 'mount': '/', 'size': size}
-            data = {'disk_id': disk_id, 'partition': partition}
-            resp = await self.post('/storage/v2/add_partition', data)
+            resp = await inst.post('/storage/v2/edit_partition', data)
             sda = first(resp['disks'], 'id', disk_id)
+            sda1 = first(sda['partitions'], 'number', 1)
+            self.assertIsNone(sda1['wipe'])
+            self.assertEqual('/boot/efi', sda1['mount'])
+            self.assertEqual('vfat', sda1['format'])
+            self.assertTrue(sda1['grub_device'])
+
             sda2 = first(sda['partitions'], 'number', 2)
-            self.assertEqual(expected, sda2['size'])
-            await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
+            orig_sda2 = first(orig_sda['partitions'], 'number', 2)
+            self.assertEqual(orig_sda2, sda2)
+
+            sda3 = first(sda['partitions'], 'number', 3)
+            self.assertEqual('superblock', sda3['wipe'])
+            self.assertEqual('/', sda3['mount'])
+            self.assertEqual('ext4', sda3['format'])
+            self.assertFalse(sda3['grub_device'])
+
+            sda4 = first(sda['partitions'], 'number', 4)
+            orig_sda4 = first(orig_sda['partitions'], 'number', 4)
+            self.assertEqual(orig_sda4, sda4)
+
+
+class TestPartitionTableTypes(TestAPI):
+    @timeout(5)
+    async def test_ptable_gpt(self):
+        async with start_server('examples/win10.json') as inst:
+            resp = await inst.get('/storage/v2')
+            sda = first(resp['disks'], 'id', 'disk-sda')
+            self.assertEqual('gpt', sda['ptable'])
 
     @timeout(5)
-    async def test_edit_rules(self):
-        disk_id = 'disk-sda'
-        data = {
-            'disk_id': disk_id,
-            'partition': {
-                'number': 3,
-                'format': 'ext4',
-                'mount': '/',
-                'wipe': None,
-            }
-        }
-        await self.post('/storage/v2/edit_partition', data)
+    async def test_ptable_msdos(self):
+        async with start_server('examples/many-nics-and-disks.json') as inst:
+            resp = await inst.get('/storage/v2')
+            sda = first(resp['disks'], 'id', 'disk-sda')
+            self.assertEqual('msdos', sda['ptable'])
 
-        data['partition']['size'] = 85240896512 // 2
-        with self.assertRaises(ClientResponseError):
-            await self.post('/storage/v2/edit_partition', data)
+    @timeout(5)
+    async def test_ptable_none(self):
+        async with start_server('examples/simple.json') as inst:
+            resp = await inst.get('/storage/v2')
+            sda = first(resp['disks'], 'id', 'disk-sda')
+            self.assertEqual(None, sda['ptable'])
 
-        data['partition']['size'] = None
-        data['partition']['grub_device'] = True
-        with self.assertRaises(ClientResponseError):
-            await self.post('/storage/v2/edit_partition', data)
 
-        data['partition']['grub_device'] = None
-        data['partition']['format'] = 'btrfs'
-        await self.post('/storage/v2/edit_partition', data)
-
+class TestTodos(TestAPI):  # server indicators of required client actions
     @timeout(5)
     async def test_todos_simple(self):
-        disk_id = 'disk-sda'
-        resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
-        self.assertTrue(resp['need_root'])
-        self.assertTrue(resp['need_boot'])
+        async with start_server('examples/simple.json') as inst:
+            disk_id = 'disk-sda'
+            resp = await inst.post('/storage/v2/reformat_disk',
+                                   disk_id=disk_id)
+            self.assertTrue(resp['need_root'])
+            self.assertTrue(resp['need_boot'])
 
-        data = {
-            'disk_id': disk_id,
-            'partition': {
-                'format': 'ext4',
-                'mount': '/',
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/',
+                }
             }
-        }
-        resp = await self.post('/storage/v2/add_partition', data)
-        self.assertFalse(resp['need_root'])
-        self.assertFalse(resp['need_boot'])
+            resp = await inst.post('/storage/v2/add_partition', data)
+            self.assertFalse(resp['need_root'])
+            self.assertFalse(resp['need_boot'])
 
     @timeout(5)
     async def test_todos_manual(self):
-        disk_id = 'disk-sda'
-        resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
-        self.assertTrue(resp['need_root'])
-        self.assertTrue(resp['need_boot'])
+        async with start_server('examples/simple.json') as inst:
+            disk_id = 'disk-sda'
+            resp = await inst.post('/storage/v2/reformat_disk',
+                                   disk_id=disk_id)
+            self.assertTrue(resp['need_root'])
+            self.assertTrue(resp['need_boot'])
 
-        resp = await self.post('/storage/v2/add_boot_partition',
-                               disk_id=disk_id)
-        self.assertTrue(resp['need_root'])
-        self.assertFalse(resp['need_boot'])
+            resp = await inst.post('/storage/v2/add_boot_partition',
+                                   disk_id=disk_id)
+            self.assertTrue(resp['need_root'])
+            self.assertFalse(resp['need_boot'])
 
-        data = {
-            'disk_id': disk_id,
-            'partition': {
-                'format': 'ext4',
-                'mount': '/',
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/',
+                }
             }
-        }
-        resp = await self.post('/storage/v2/add_partition', data)
-        self.assertFalse(resp['need_root'])
-        self.assertFalse(resp['need_boot'])
+            resp = await inst.post('/storage/v2/add_partition', data)
+            self.assertFalse(resp['need_root'])
+            self.assertFalse(resp['need_boot'])
 
     @timeout(5)
     async def test_todos_guided(self):
-        disk_id = 'disk-sda'
-        resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
-        self.assertTrue(resp['need_root'])
-        self.assertTrue(resp['need_boot'])
+        async with start_server('examples/simple.json') as inst:
+            disk_id = 'disk-sda'
+            resp = await inst.post('/storage/v2/reformat_disk',
+                                   disk_id=disk_id)
+            self.assertTrue(resp['need_root'])
+            self.assertTrue(resp['need_boot'])
 
-        choice = {'disk_id': disk_id}
-        resp = await self.post('/storage/v2/guided', choice=choice)
-        self.assertFalse(resp['need_root'])
-        self.assertFalse(resp['need_boot'])
+            choice = {'disk_id': disk_id}
+            resp = await inst.post('/storage/v2/guided', choice=choice)
+            self.assertFalse(resp['need_root'])
+            self.assertFalse(resp['need_boot'])
 
+
+class TestInfo(TestAPI):
     @timeout(5)
-    async def test_edit_partial(self):
-        disk_id = 'disk-sda'
-        await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
-
-        data = {
-            'disk_id': disk_id,
-            'partition': {
-                'format': 'ext4',
-                'mount': '/',
-            }
-        }
-        await self.post('/storage/v2/add_partition', data)
-
-        data['partition'].update({
-            'number': 2,
-            'format': None,
-            'mount': '/home'
-        })
-        resp = await self.post('/storage/v2/edit_partition', data)
-
-        sda = first(resp['disks'], 'id', disk_id)
-        sda2 = first(sda['partitions'], 'number', 2)
-        self.assertEqual('ext4', sda2['format'])
-        self.assertEqual('/home', sda2['mount'])
-
-
-class TestManyDisks(TestAPI):
-    machine_config = 'examples/many-nics-and-disks.json'
-
-    @timeout(5)
-    async def test_v2_msdos(self):
-        disk_id = 'disk-sda'
-        resp = await self.get('/storage/v2')
-        sda = first(resp['disks'], 'id', disk_id)
-        self.assertEqual('msdos', sda['ptable'])
-
-        sda5 = first(sda['partitions'], 'number', 5)
-        sda5.update({'format': 'ext4', 'mount': '/'})
-        data = {
-            'disk_id': disk_id,
-            'partition': sda5
-        }
-        await self.post('/storage/v2/edit_partition', data)
+    async def test_path(self):
+        async with start_server('examples/simple.json') as inst:
+            disk_id = 'disk-sda'
+            resp = await inst.get('/storage/v2')
+            sda = first(resp['disks'], 'id', disk_id)
+            self.assertEqual('/dev/sda', sda['path'])
