@@ -181,7 +181,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 mount="/",
                 ))
 
-    async def guided(self, choice):
+    def guided(self, choice):
         disk = self.model._one(id=choice.disk_id)
         if choice.use_lvm:
             lvm_options = None
@@ -267,7 +267,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def guided_POST(self, choice: Optional[GuidedChoice]) \
             -> StorageResponse:
         if choice is not None:
-            await self.guided(choice)
+            self.guided(choice)
         return await self.GET()
 
     async def reset_POST(self, context, request) -> StorageResponse:
@@ -323,7 +323,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return await self.v2_GET()
 
     async def v2_guided_POST(self, choice: GuidedChoice) -> StorageResponseV2:
-        await self.guided(choice)
+        self.guided(choice)
         return await self.v2_GET()
 
     async def v2_reformat_disk_POST(self, disk_id: str) -> StorageResponseV2:
