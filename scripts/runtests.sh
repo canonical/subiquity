@@ -22,8 +22,15 @@ validate () {
         fi
         netplan generate --root .subiquity
     elif [ "${mode}" = "system_setup" ]; then
-        # TODO WSL: Compare generated wsl.conf to oracle
-        echo "system setup validation"
+        setup_mode="$2"
+        echo "system setup validation for $setup_mode"
+        [ -d ".subiquity/etc/" ] || (echo "etc/ dir not created for config"; exit 1)
+        [ -d "system_setup/tests/golden/${setup_mode}" ] || (echo "tests/golden not found in system_setup"; exit 1)
+        for file in system_setup/tests/golden/${setup_mode}/*.conf; do
+            filename=$(basename ${file})
+            conf_filepath=".subiquity/etc/${filename}"
+            diff -Nup "${file}" "${conf_filepath}" || exit 1
+        done
     else
         echo "W: Unknown validation mode: ${mode}"
     fi
@@ -34,6 +41,7 @@ clean () {
     rm -f .subiquity/subiquity-*.log
     rm -f "$testschema"
     rm -rf .subiquity/run/
+    rm -rf .subiquity/etc/*.conf
     rm -rf .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg
 }
 
@@ -66,8 +74,15 @@ for answers in examples/answers*.yaml; do
     else
         # The OOBE doesn't exist in WSL < 20.04
         if [ "${RELEASE%.*}" -ge 20 ]; then
-            timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m system_setup.cmd.tui --answers $answers --dry-run " < $tty
-            validate "system_setup"
+            # check if it is reconf
+            reconf_settings="false"
+            validate_subtype="answers"
+            if echo $answers|grep -q reconf; then
+                reconf_settings="true"
+                validate_subtype="answers-reconf"
+            fi
+            timeout --foreground 60 sh -c "DRYRUN_RECONFIG=$reconf_settings LANG=C.UTF-8 python3 -m system_setup.cmd.tui --answers $answers --dry-run " < $tty
+            validate "system_setup" "$validate_subtype"
         fi
     fi
 done
@@ -105,6 +120,7 @@ if [ "${RELEASE%.*}" -ge 20 ]; then
     # Like generating a wsl.conf file and comparing it to the oracle.
     clean
     timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m system_setup.cmd.tui --autoinstall examples/autoinstall-system-setup.yaml --dry-run"
+    validate "system_setup" "autoinstall"
 
     python3 -m system_setup.cmd.schema > "$testschema"
     scripts/schema-cmp.py "autoinstall-system-setup-schema.json" "$testschema" --ignore-tz
