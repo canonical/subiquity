@@ -424,8 +424,8 @@ class TestWin10(TestAPI):
     async def test_todos_simple(self):
         disk_id = 'disk-sda'
         resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
-        self.assertTrue(resp['todos_needs_root_mounted'])
-        self.assertTrue(resp['todos_needs_bootloader_partition'])
+        self.assertTrue(resp['need_root'])
+        self.assertTrue(resp['need_boot'])
 
         data = {
             'disk_id': disk_id,
@@ -435,20 +435,20 @@ class TestWin10(TestAPI):
             }
         }
         resp = await self.post('/storage/v2/add_partition', data)
-        self.assertFalse(resp['todos_needs_root_mounted'])
-        self.assertFalse(resp['todos_needs_bootloader_partition'])
+        self.assertFalse(resp['need_root'])
+        self.assertFalse(resp['need_boot'])
 
     @timeout(5)
     async def test_todos_manual(self):
         disk_id = 'disk-sda'
         resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
-        self.assertTrue(resp['todos_needs_root_mounted'])
-        self.assertTrue(resp['todos_needs_bootloader_partition'])
+        self.assertTrue(resp['need_root'])
+        self.assertTrue(resp['need_boot'])
 
         resp = await self.post('/storage/v2/add_boot_partition',
                                disk_id=disk_id)
-        self.assertTrue(resp['todos_needs_root_mounted'])
-        self.assertFalse(resp['todos_needs_bootloader_partition'])
+        self.assertTrue(resp['need_root'])
+        self.assertFalse(resp['need_boot'])
 
         data = {
             'disk_id': disk_id,
@@ -458,20 +458,20 @@ class TestWin10(TestAPI):
             }
         }
         resp = await self.post('/storage/v2/add_partition', data)
-        self.assertFalse(resp['todos_needs_root_mounted'])
-        self.assertFalse(resp['todos_needs_bootloader_partition'])
+        self.assertFalse(resp['need_root'])
+        self.assertFalse(resp['need_boot'])
 
     @timeout(5)
     async def test_todos_guided(self):
         disk_id = 'disk-sda'
         resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
-        self.assertTrue(resp['todos_needs_root_mounted'])
-        self.assertTrue(resp['todos_needs_bootloader_partition'])
+        self.assertTrue(resp['need_root'])
+        self.assertTrue(resp['need_boot'])
 
         choice = {'disk_id': disk_id}
         resp = await self.post('/storage/v2/guided', choice=choice)
-        self.assertFalse(resp['todos_needs_root_mounted'])
-        self.assertFalse(resp['todos_needs_bootloader_partition'])
+        self.assertFalse(resp['need_root'])
+        self.assertFalse(resp['need_boot'])
 
     @timeout(5)
     async def test_edit_partial(self):

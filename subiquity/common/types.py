@@ -297,8 +297,8 @@ class StorageResponse:
 @attr.s(auto_attribs=True)
 class StorageResponseV2:
     disks: List[Disk]
-    todos_needs_root_mounted: bool
-    todos_needs_bootloader_partition: bool
+    need_root: bool  # if True, there is not yet a partition mounted at "/"
+    need_boot: bool  # if True, there is not yet a boot partition
     error_report: Optional[ErrorReportRef] = None
 
 
