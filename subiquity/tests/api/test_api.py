@@ -49,7 +49,9 @@ def json_print(json_data):
 
 
 def loads(data):
-    return json.loads(data) if data else None
+    if data == '' or data is None:  # json.loads likes neither of these
+        return None
+    return json.loads(data)
 
 
 def dumps(data):
