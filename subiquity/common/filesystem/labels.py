@@ -259,6 +259,7 @@ def for_client(device, *, min_size=0):
 @for_client.register(Raid)
 def _for_client_disk(disk, *, min_size=0):
     path = getattr(disk, 'path', None)
+    grub_device = getattr(disk, 'grub_device', False)
     return types.Disk(
         id=disk.id,
         label=label(disk),
@@ -270,6 +271,7 @@ def _for_client_disk(disk, *, min_size=0):
         usage_labels=usage_labels(disk),
         partitions=[for_client(p) for p in disk._partitions],
         free_for_partitions=disk.free_for_partitions,
+        grub_device=grub_device,
         ok_for_guided=disk.size >= min_size)
 
 
