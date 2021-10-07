@@ -31,7 +31,9 @@ class SourceController(SubiquityTuiController):
 
     def run_answers(self):
         if 'source' in self.answers:
-            self.app.ui.body.form.source.value = self.answers['source']
+            wanted_id = self.answers['source']
+            for bf in self.app.ui.body.form._fields:
+                bf.value = bf.field.name == wanted_id
             self.app.ui.body.form._click_done(None)
 
     def cancel(self):
