@@ -287,6 +287,15 @@ class TestAdd(TestAPI):
             self.assertEqual(single_add, manual_add)
 
     @timeout(5)
+    async def test_v2_deny_multiple_add_boot_partition(self):
+        async with start_server('examples/simple.json') as inst:
+            disk_id = 'disk-sda'
+            await inst.post('/storage/v2/add_boot_partition', disk_id=disk_id)
+            with self.assertRaises(ClientResponseError):
+                await inst.post('/storage/v2/add_boot_partition',
+                                disk_id=disk_id)
+
+    @timeout(5)
     async def test_v2_free_for_partitions(self):
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'

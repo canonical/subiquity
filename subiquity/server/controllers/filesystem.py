@@ -330,6 +330,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_add_boot_partition_POST(self, disk_id: str) \
             -> StorageResponseV2:
+        if not self.model.needs_bootloader_partition():
+            raise ValueError('device already has bootloader partition')
         disk = self.model._one(id=disk_id)
         if DeviceAction.TOGGLE_BOOT not in DeviceAction.supported(disk):
             raise ValueError("disk does not support boot partiton")
