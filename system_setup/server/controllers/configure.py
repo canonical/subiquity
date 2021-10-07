@@ -68,6 +68,7 @@ class ConfigureController(SubiquityController):
 
             dryrun = self.app.opts.dry_run
             variant = self.app.variant
+            root_dir = self.model.root
             if variant == "wsl_setup":
                 wsl_id = self.model.identity.user
                 if dryrun:
@@ -96,9 +97,9 @@ class ConfigureController(SubiquityController):
                                            assign_grp_act.stderr))
             else:
                 wsl_config_update(self.model.wslconfadvanced.wslconfadvanced,
-                                  dryrun)
+                                  root_dir)
 
-            wsl_config_update(self.model.wslconfbase.wslconfbase, dryrun)
+            wsl_config_update(self.model.wslconfbase.wslconfbase, root_dir)
 
             self.app.update_state(ApplicationState.DONE)
         except Exception:
