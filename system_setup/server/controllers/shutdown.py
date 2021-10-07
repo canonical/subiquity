@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import logging
 
 from subiquitycore.context import with_context
@@ -28,6 +29,7 @@ class SetupShutdownController(ShutdownController):
         # This isn't the most beautiful way, but the shutdown controller
         # depends on Install, override with our configure one.
         super().__init__(app)
+        self.root_dir = app.base_model.root
         self.app.controllers.Install = self.app.controllers.Configure
 
     def start(self):
@@ -42,13 +44,18 @@ class SetupShutdownController(ShutdownController):
     @with_context(description='mode={self.mode.name}')
     def shutdown(self, context):
         self.shuttingdown_event.set()
-        if not self.opts.dry_run:
-            if self.mode == ShutdownMode.REBOOT:
-                # TODO WSL:
-                # Implement a reboot that doesn't depend on systemd
-                log.Warning("reboot command not implemented")
-            elif self.mode == ShutdownMode.POWEROFF:
-                # TODO WSL:
-                # Implement a poweroff that doesn't depend on systemd
-                log.Warning("poweroff command not implemented")
+        launcher_status = "complete"
+
+        if self.mode == ShutdownMode.REBOOT:
+            log.debug("rebooting")
+            launcher_status = "reboot"
+        elif self.mode == ShutdownMode.POWEROFF:
+            log.debug("Shutting down")
+            launcher_status = "shutdown"
+
+        subiquity_rundir = os.path.join(self.root_dir, "run", "subiquity")
+        os.makedirs(subiquity_rundir, exist_ok=True)
+        lau_status_file = os.path.join(subiquity_rundir, "launcher-status")
+        with open(lau_status_file, "w+") as f:
+            f.write(launcher_status)
         self.app.exit()
