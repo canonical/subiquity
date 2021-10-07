@@ -72,9 +72,12 @@ class Client:
         async with self.session.request(method, f'http://a{query}',
                                         data=data, params=params) as resp:
             print(unquote(str(resp.url)))
-            resp.raise_for_status()
             content = await resp.content.read()
-            return self.loads(content.decode())
+            content = content.decode()
+            if 400 <= resp.status:
+                print(content)
+                resp.raise_for_status()
+            return self.loads(content)
 
     async def poll_startup(self):
         for _ in range(20):
