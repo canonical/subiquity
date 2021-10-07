@@ -112,6 +112,7 @@ setup(name='subiquity',
           'bin/subiquity-loadkeys',
           'bin/subiquity-service',
           'bin/subiquity-server',
+          'bin/subiquity-cmd',
       ],
       entry_points={
           'console_scripts': [
