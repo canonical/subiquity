@@ -440,7 +440,7 @@ class TestEdit(TestAPI):
                 'disk_id': disk_id,
                 'partition': {
                     'number': 3,
-                    'size': sda3['size'] - 1 << 30
+                    'size': sda3['size'] - (1 << 30)
                 }
             }
             with self.assertRaises(ClientResponseError):
