@@ -260,6 +260,12 @@ def for_client(device, *, min_size=0):
 def _for_client_disk(disk, *, min_size=0):
     path = getattr(disk, 'path', None)
     grub_device = getattr(disk, 'grub_device', False)
+    if not grub_device:
+        for part in disk._partitions:
+            if part.flag in ['bios_grub', 'prep'] or part.grub_device:
+                grub_device = True
+                break
+
     return types.Disk(
         id=disk.id,
         label=label(disk),

@@ -277,7 +277,7 @@ class TestAdd(TestAPI):
             }
             single_add = await inst.post('/storage/v2/add_partition', data)
             self.assertEqual(2, len(single_add['disks'][0]['partitions']))
-            # self.assertTrue(single_add['disks'][0]['grub_device'])
+            self.assertTrue(single_add['disks'][0]['grub_device'])
 
             await inst.post('/storage/v2/reset')
 
