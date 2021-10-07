@@ -107,12 +107,14 @@ class Server(Client):
         self.server_task = asyncio.create_task(self.proc.communicate())
 
     async def close(self):
-        await self.server_shutdown()
-        await self.server_task
         try:
-            self.proc.kill()
-        except ProcessLookupError:
-            pass
+            await asyncio.wait_for(self.server_shutdown(), timeout=2.0)
+            await asyncio.wait_for(self.server_task, timeout=1.0)
+        finally:
+            try:
+                self.proc.kill()
+            except ProcessLookupError:
+                pass
 
 
 class TestAPI(unittest.IsolatedAsyncioTestCase):
