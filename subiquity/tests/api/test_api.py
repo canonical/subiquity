@@ -8,13 +8,11 @@ import contextlib
 from functools import wraps
 import json
 import os
+import tempfile
 import unittest
 from urllib.parse import unquote
 
 from subiquitycore.utils import astart_command
-
-
-socket_path = '.subiquity/socket'
 
 
 def find(items, key, value):
@@ -96,11 +94,12 @@ class Server(Client):
         except aiohttp.client_exceptions.ServerDisconnectedError:
             return
 
-    async def spawn(self, machine_config, bootloader='uefi'):
+    async def spawn(self, socket_path, machine_config, bootloader='uefi'):
         env = os.environ.copy()
         env['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
         cmd = 'python3 -m subiquity.cmd.server --dry-run' \
               + ' --bootloader ' + bootloader \
+              + ' --socket ' + socket_path \
               + ' --machine-config ' + machine_config
         cmd = cmd.split(' ')
         self.proc = await astart_command(cmd, env=env)
@@ -123,19 +122,22 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
 
 @contextlib.asynccontextmanager
 async def start_server(*args, **kwargs):
-    conn = aiohttp.UnixConnector(path=socket_path)
-    async with aiohttp.ClientSession(connector=conn) as session:
-        server = Server(session)
-        try:
-            await server.spawn(*args, **kwargs)
-            await server.poll_startup()
-            yield server
-        finally:
-            await server.close()
+    with tempfile.TemporaryDirectory() as tempdir:
+        socket_path = f'{tempdir}/socket'
+        conn = aiohttp.UnixConnector(path=socket_path)
+        async with aiohttp.ClientSession(connector=conn) as session:
+            server = Server(session)
+            try:
+                await server.spawn(socket_path, *args, **kwargs)
+                await server.poll_startup()
+                yield server
+            finally:
+                await server.close()
 
 
 @contextlib.asynccontextmanager
 async def connect_server(*args, **kwargs):
+    socket_path = '.subiquity/socket'
     conn = aiohttp.UnixConnector(path=socket_path)
     async with aiohttp.ClientSession(connector=conn) as session:
         yield Client(session)
