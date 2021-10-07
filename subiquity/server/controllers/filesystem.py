@@ -372,7 +372,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         partition = self.get_partition(disk, data.partition.number)
         if data.partition.size not in (None, partition.size):
             raise ValueError('edit_partition does not support changing size')
-        if data.partition.grub_device not in (None, partition.grub_device):
+        if data.partition.grub_device is not None \
+                and partition.grub_device is not None \
+                and data.partition.grub_device != partition.grub_device:
             raise ValueError('edit_partition does not support changing '
                              + 'grub_device')
         existing_format = ''

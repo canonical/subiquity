@@ -633,3 +633,25 @@ class TestInfo(TestAPI):
             resp = await inst.get('/storage/v2')
             sda = first(resp['disks'], 'id', disk_id)
             self.assertEqual('/dev/sda', sda['path'])
+
+
+class TestRegression(TestAPI):
+    @timeout(5)
+    async def test_edit_not_trigger_grub_device(self):
+        async with start_server('examples/simple.json') as inst:
+            disk_id = 'disk-sda'
+
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/foo',
+                }
+            }
+            resp = await inst.post('/storage/v2/add_partition', data)
+            sda = first(resp['disks'], 'id', disk_id)
+            sda2 = first(sda['partitions'], 'number', 2)
+            sda2.update({'format': 'ext3', 'mount': '/bar'})
+            data['partition'] = sda2
+            await inst.post('/storage/v2/edit_partition', data)
+            # should not throw an exception complaining about grub_device
