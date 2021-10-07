@@ -41,7 +41,7 @@ def json_print(json_data):
     print(json.dumps(json_data, indent=4))
 
 
-class Server:
+class Client:
     def __init__(self, session):
         self.session = session
 
@@ -85,6 +85,8 @@ class Server:
                 await asyncio.sleep(.5)
         raise Exception('timeout on server startup')
 
+
+class Server(Client):
     async def server_shutdown(self, immediate=True):
         try:
             await self.post('/shutdown', mode='POWEROFF', immediate=immediate)
@@ -125,6 +127,13 @@ async def start_server(*args, **kwargs):
             yield server
         finally:
             await server.close()
+
+
+@contextlib.asynccontextmanager
+async def connect_server(*args, **kwargs):
+    conn = aiohttp.UnixConnector(path=socket_path)
+    async with aiohttp.ClientSession(connector=conn) as session:
+        yield Client(session)
 
 
 class TestBitlocker(TestAPI):
