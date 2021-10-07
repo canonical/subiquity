@@ -70,16 +70,16 @@
         "wslconfbase": {
             "type": "object",
             "properties": {
-                "custom_path": {
+                "automount_root": {
                     "type": "string"
                 },
-                "custom_mount_opt": {
+                "automount_options": {
                     "type": "string"
                 },
-                "gen_host": {
+                "network_generatehosts": {
                     "type": "boolean"
                 },
-                "gen_resolvconf": {
+                "network_generateresolvconf": {
                     "type": "boolean"
                 }
             },
@@ -100,22 +100,22 @@
                 "gui_followwintheme": {
                     "type": "boolean"
                 },
-                "legacy_gui": {
+                "interop_guiintegration": {
                     "type": "boolean"
                 },
-                "legacy_audio": {
+                "interop_audiointegration": {
                     "type": "boolean"
                 },
-                "adv_ip_detect": {
+                "interop_advancedipdetection": {
                     "type": "boolean"
                 },
-                "wsl_motd_news": {
+                "motd_wslnewsenabled": {
                     "type": "boolean"
                 },
-                "automount": {
+                "automount_enabled": {
                     "type": "boolean"
                 },
-                "mountfstab": {
+                "automount_mountfstab": {
                     "type": "boolean"
                 }
             },

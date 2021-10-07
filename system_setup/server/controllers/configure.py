@@ -15,16 +15,13 @@
 
 import logging
 
-from subiquitycore.context import with_context
-
 from subiquity.common.errorreport import ErrorReportKind
-from subiquity.server.controller import (
-    SubiquityController,
-    )
-
-from subiquity.common.types import (
-    ApplicationState,
-    )
+from subiquity.common.types import ApplicationState
+from subiquity.server.controller import SubiquityController
+from subiquitycore.context import with_context
+from subiquitycore.utils import run_command
+from system_setup.common.wsl_conf import wsl_config_update
+from system_setup.common.wsl_utils import get_userandgroups
 
 log = logging.getLogger("system_setup.server.controllers.configure")
 
@@ -68,6 +65,40 @@ class ConfigureController(SubiquityController):
             # If dry-run: write in .subiquity
 
             self.app.update_state(ApplicationState.POST_RUNNING)
+
+            dryrun = self.app.opts.dry_run
+            variant = self.app.variant
+            if variant == "wsl_setup":
+                wsl_id = self.model.identity.user
+                if dryrun:
+                    log.debug("mimicking creating user %s",
+                              wsl_id.username)
+                else:
+                    create_user_act = \
+                        run_command(["/usr/sbin/useradd", "-m", "-s",
+                                     "/bin/bash", "-p",
+                                     wsl_id.password,
+                                     wsl_id.username])
+                    if create_user_act.returncode != 0:
+                        raise Exception("Failed to create user %s: %s"
+                                        % (wsl_id.username,
+                                           create_user_act.stderr))
+                    log.debug("created user %s", wsl_id.username)
+                    assign_grp_act = \
+                        run_command(["/usr/sbin/usermod", "-a",
+                                     "-c", wsl_id.realname,
+                                     "-G", get_userandgroups(),
+                                     wsl_id.username])
+                    if assign_grp_act.returncode != 0:
+                        raise Exception(("Failed to assign group"
+                                         " to user %s: %s")
+                                        % (wsl_id.username,
+                                           assign_grp_act.stderr))
+            else:
+                wsl_config_update(self.model.wslconfadvanced.wslconfadvanced,
+                                  dryrun)
+
+            wsl_config_update(self.model.wslconfbase.wslconfbase, dryrun)
 
             self.app.update_state(ApplicationState.DONE)
         except Exception:

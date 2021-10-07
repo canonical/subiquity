@@ -41,24 +41,28 @@ class WSLConfBaseForm(Form):
     def __init__(self, initial):
         super().__init__(initial=initial)
 
-    custom_path = MountField(_("Mount Location"),
-                             help=_("Location for the automount"))
-    custom_mount_opt = StringField(_("Mount Option"),
-                                   help=_("Mount option passed "
-                                          "for the automount"))
-    gen_host = BooleanField(_("Enable Host Generation"), help=_(
-        "Selecting enables /etc/host re-generation at every start"))
-    gen_resolvconf = BooleanField(_("Enable resolv.conf Generation"), help=_(
-        "Selecting enables /etc/resolv.conf re-generation at every start"))
+    automount_root = MountField(_("Mount Location"),
+                                help=_("Location for the automount"))
+    automount_options = StringField(_("Mount Option"),
+                                    help=_("Mount option passed "
+                                           "for the automount"))
+    network_generatehosts = \
+        BooleanField(_("Enable Host Generation"),
+                     help=_("Selecting enables /etc/host re-generation at"
+                            " every start"))
+    network_generateresolvconf = \
+        BooleanField(_("Enable resolv.conf Generation"),
+                     help=_("Selecting enables /etc/resolv.conf re-generation"
+                            " at every start"))
 
-    def validate_custom_path(self):
-        p = self.custom_path.value
+    def validate_automount_root(self):
+        p = self.automount_root.value
         if p != "" and (re.fullmatch(r"(/[^/ ]*)+/?", p) is None):
             return _("Mount location must be a absolute UNIX path"
                      " without space.")
 
-    def validate_custom_mount_opt(self):
-        o = self.custom_mount_opt.value
+    def validate_automount_options(self):
+        o = self.automount_options.value
         # filesystem independent mount option
         fsimo = [r"async", r"(no)?atime", r"(no)?auto",
                  r"(fs|def|root)?context=\w+", r"(no)?dev", r"(no)?diratime",
@@ -99,10 +103,14 @@ class WSLConfigurationBaseView(BaseView):
         self.controller = controller
 
         initial = {
-            'custom_path': configuration_data.custom_path,
-            'custom_mount_opt': configuration_data.custom_mount_opt,
-            'gen_host': configuration_data.gen_host,
-            'gen_resolvconf': configuration_data.gen_resolvconf,
+            'automount_root':
+                configuration_data.automount_root,
+            'automount_options':
+                configuration_data.automount_options,
+            'network_generatehosts':
+                configuration_data.network_generatehosts,
+            'network_generateresolvconf':
+                configuration_data.network_generateresolvconf,
         }
         self.form = WSLConfBaseForm(initial=initial)
 
@@ -118,8 +126,12 @@ class WSLConfigurationBaseView(BaseView):
 
     def done(self, result):
         self.controller.done(WSLConfigurationBase(
-            custom_path=self.form.custom_path.value,
-            custom_mount_opt=self.form.custom_mount_opt.value,
-            gen_host=self.form.gen_host.value,
-            gen_resolvconf=self.form.gen_resolvconf.value
+            automount_root=self.form
+            .automount_root.value,
+            automount_options=self.form
+            .automount_options.value,
+            network_generatehosts=self.form
+            .network_generatehosts.value,
+            network_generateresolvconf=self.form
+            .network_generateresolvconf.value
             ))

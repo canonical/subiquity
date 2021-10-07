@@ -33,22 +33,12 @@ class WSLConfigurationAdvancedController(SubiquityTuiController):
     def run_answers(self):
         if all(elem in self.answers for elem in
                ['interop_enabled', 'interop_appendwindowspath',
-                'gui_theme', 'gui_followwintheme', 'legacy_gui',
-                'legacy_audio', 'adv_ip_detect',
-                'wsl_motd_news', 'automount', 'mountfstab']):
-            reconfiguration = WSLConfigurationAdvanced(
-                interop_enabled=self.answers['interop_enabled'],
-                interop_appendwindowspath=self
-                .answers['interop_appendwindowspath'],
-                gui_theme=self.answers['gui_theme'],
-                gui_followwintheme=self.answers['gui_followwintheme'],
-                legacy_gui=self.answers['legacy_gui'],
-                legacy_audio=self.answers['legacy_audio'],
-                adv_ip_detect=self.answers['adv_ip_detect'],
-                wsl_motd_news=self.answers['wsl_motd_news'],
-                automount=self.answers['automount'],
-                mountfstab=self.answers['mountfstab']
-            )
+                'gui_theme', 'gui_followwintheme', 'interop_guiintegration',
+                'interop_audiointegration', 'interop_advancedipdetection',
+                'motd_wslnewsenabled', 'automount_enabled',
+                'automount_mountfstab']):
+
+            reconfiguration = WSLConfigurationAdvanced(**self.answers)
             self.done(reconfiguration)
 
     def done(self, reconf_data):

@@ -20,39 +20,6 @@ import subprocess
 
 log = logging.getLogger("subiquity.system_setup.common.wsl_utils")
 
-config_ref = {
-    "wsl": {
-        "automount": {
-            "enabled": "automount",
-            "mountfstab": "mountfstab",
-            "root": "custom_path",
-            "options": "custom_mount_opt",
-        },
-        "network": {
-            "generatehosts": "gen_host",
-            "generateresolvconf": "gen_resolvconf",
-        },
-        "interop": {
-            "enabled": "interop_enabled",
-            "appendwindowspath": "interop_appendwindowspath",
-        }
-    },
-    "ubuntu": {
-        "GUI": {
-            "theme": "gui_theme",
-            "followwintheme": "gui_followwintheme",
-        },
-        "Interop": {
-            "guiintegration": "legacy_gui",
-            "audiointegration": "legacy_audio",
-            "advancedipdetection": "adv_ip_detect",
-        },
-        "Motd": {
-            "wslnewsenabled": "wsl_motd_news",
-        }
-    }
-}
-
 
 def is_reconfigure(is_dryrun):
     if is_dryrun and \
@@ -92,3 +59,31 @@ def get_windows_locale():
     except OSError as e:
         log.info(windows_locale_failed_msg + e.strerror)
         return None
+
+
+def get_userandgroups():
+    from subiquity.common.resources import resource_path
+    from subiquitycore.utils import run_command
+
+    users_and_groups_path = resource_path('users-and-groups')
+    if os.path.exists(users_and_groups_path):
+        groups = open(users_and_groups_path).read().split()
+    else:
+        groups = ['admin']
+    groups.append('sudo')
+
+    command = ['getent', 'group']
+    cp = run_command(command, check=True)
+    target_groups = set()
+    for line in cp.stdout.splitlines():
+        target_groups.add(line.split(':')[0])
+
+    groups = [group for group in groups if group in target_groups]
+    oneline_usergroups = ",".join(groups)
+    return oneline_usergroups
+
+
+def convert_if_bool(value):
+    if value.lower() in ('true', 'false'):
+        return value.lower() == 'true'
+    return value

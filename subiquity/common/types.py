@@ -379,21 +379,21 @@ class ShutdownMode(enum.Enum):
 
 @attr.s(auto_attribs=True)
 class WSLConfigurationBase:
-    custom_path: str = attr.ib(default='/mnt/')
-    custom_mount_opt: str = ''
-    gen_host: bool = attr.ib(default=True)
-    gen_resolvconf: bool = attr.ib(default=True)
+    automount_root: str = attr.ib(default='/mnt/')
+    automount_options: str = ''
+    network_generatehosts: bool = attr.ib(default=True)
+    network_generateresolvconf: bool = attr.ib(default=True)
 
 
 @attr.s(auto_attribs=True)
 class WSLConfigurationAdvanced:
     gui_theme: str = attr.ib(default='default')
     gui_followwintheme: bool = attr.ib(default=True)
-    legacy_gui: bool = attr.ib(default=False)
-    legacy_audio: bool = attr.ib(default=False)
-    adv_ip_detect: bool = attr.ib(default=False)
-    wsl_motd_news: bool = attr.ib(default=True)
-    automount:  bool = attr.ib(default=True)
-    mountfstab:  bool = attr.ib(default=True)
+    interop_guiintegration: bool = attr.ib(default=False)
+    interop_audiointegration: bool = attr.ib(default=False)
+    interop_advancedipdetection: bool = attr.ib(default=False)
+    motd_wslnewsenabled: bool = attr.ib(default=True)
+    automount_enabled:  bool = attr.ib(default=True)
+    automount_mountfstab:  bool = attr.ib(default=True)
     interop_enabled:  bool = attr.ib(default=True)
     interop_appendwindowspath: bool = attr.ib(default=True)

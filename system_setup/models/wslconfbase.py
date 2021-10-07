@@ -14,20 +14,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import subprocess
 import attr
 
-from subiquitycore.utils import run_command
-
-log = logging.getLogger('subiquity.models.wsl_configuration_base')
+log = logging.getLogger('system_setup.models.wsl_configuration_base')
 
 
 @attr.s
 class WSLConfigurationBase(object):
-    custom_path = attr.ib()
-    custom_mount_opt = attr.ib()
-    gen_host = attr.ib()
-    gen_resolvconf = attr.ib()
+    automount_root = attr.ib()
+    automount_options = attr.ib()
+    network_generatehosts = attr.ib()
+    network_generateresolvconf = attr.ib()
 
 
 class WSLConfigurationBaseModel(object):
@@ -38,33 +35,9 @@ class WSLConfigurationBaseModel(object):
         self._wslconfbase = None
         # TODO WSL: Load settings from system
 
-    def apply_settings(self, result, is_dry_run=False):
-        d = {}
-        d['custom_path'] = result.custom_path
-        d['custom_mount_opt'] = result.custom_mount_opt
-        d['gen_host'] = result.gen_host
-        d['gen_resolvconf'] = result.gen_resolvconf
+    def apply_settings(self, result):
+        d = result.__dict__
         self._wslconfbase = WSLConfigurationBase(**d)
-        # TODO WSL: Drop all calls of ubuntuwsl here and ensure the data
-        # are passed to the app model
-        if not is_dry_run:
-            # reset to keep everything as refreshed as new
-            run_command(["/usr/bin/ubuntuwsl", "reset", "-y"],
-                        stdout=subprocess.DEVNULL)
-            # set the settings
-            run_command(["/usr/bin/ubuntuwsl", "update",
-                         "WSL.automount.root", result.custom_path],
-                        stdout=subprocess.DEVNULL)
-            run_command(["/usr/bin/ubuntuwsl", "update",
-                         "WSL.automount.options", result.custom_mount_opt],
-                        stdout=subprocess.DEVNULL)
-            run_command(["/usr/bin/ubuntuwsl", "update",
-                         "WSL.network.generatehosts", result.gen_host],
-                        stdout=subprocess.DEVNULL)
-            run_command(["/usr/bin/ubuntuwsl", "update",
-                         "WSL.network.generateresolvconf",
-                        result.gen_resolvconf],
-                        stdout=subprocess.DEVNULL)
 
     @property
     def wslconfbase(self):
