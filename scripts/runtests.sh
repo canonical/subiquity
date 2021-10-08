@@ -75,7 +75,8 @@ done
 clean
 timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoinstall examples/autoinstall.yaml \
                                --dry-run --machine-config examples/existing-partitions.json --bootloader bios \
-                               --kernel-cmdline 'autoinstall'"
+                               --kernel-cmdline 'autoinstall' \
+                               --source-catalog=examples/install-sources.yaml"
 validate
 python3 scripts/check-yaml-fields.py .subiquity/subiquity-curtin-install.conf \
         debconf_selections.subiquity='"eek"' \
