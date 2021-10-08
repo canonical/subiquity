@@ -145,18 +145,20 @@ def wsl_config_update(config_class, root_dir):
                 config_api_name = \
                     config_section.lower() + "_" + config_setting.lower()
                 config_value = config_class.__dict__[config_api_name]
+                if isinstance(config_value, bool):
+                    config_value = str(config_value).lower()
                 # if the value for the setting is default value, drop it
                 if config_default_value == config_value:
-                    if config_setting in config[config_section]:
-                        config.remove_option(config_section, config_setting)
-                    # drop the section if it become empty
-                    if config[config_section] == {}:
-                        config.remove_section(config_section)
+                    if config_section in config:
+                        if config_setting in config[config_section]:
+                            config.remove_option(config_section,
+                                                 config_setting)
+                        # drop the section if it become empty
+                        if config[config_section] == {}:
+                            config.remove_section(config_section)
                 else:
                     if config_section not in config:
                         config.add_section(config_section)
-                    if isinstance(config_value, bool):
-                        config_value = str(config_value).lower()
                     config[config_section][config_setting] = config_value
 
         with open(conf_file + ".new", 'w+') as configfile:
