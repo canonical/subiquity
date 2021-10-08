@@ -17,6 +17,7 @@
 #    original code from ubuntuwslctl.core.loader
 #    Copyright (C) 2021 Canonical Ltd.
 
+import collections
 import os
 import logging
 from configparser import ConfigParser
@@ -160,6 +161,16 @@ def wsl_config_update(config_class, root_dir):
                     if config_section not in config:
                         config.add_section(config_section)
                     config[config_section][config_setting] = config_value
+
+        # sort config in ascii order
+        for section in config._sections:
+            config._sections[section] = \
+                collections.OrderedDict(
+                    sorted(config._sections[section].items(),
+                           key=lambda t: t[0]))
+        config._sections = \
+            collections.OrderedDict(sorted(config._sections.items(),
+                                           key=lambda t: t[0]))
 
         with open(conf_file + ".new", 'w+') as configfile:
             config.write(configfile)
