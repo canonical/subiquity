@@ -99,6 +99,12 @@ class ConfigureController(SubiquityController):
                 wsl_config_update(self.model.wslconfadvanced.wslconfadvanced,
                                   root_dir)
 
+            # update advanced config when it is in autoinstall mode
+            if self.app.opts.autoinstall is not None and \
+               self.model.wslconfadvanced.wslconfadvanced is not None:
+                wsl_config_update(self.model.wslconfadvanced.wslconfadvanced,
+                                  root_dir)
+
             wsl_config_update(self.model.wslconfbase.wslconfbase, root_dir)
 
             self.app.update_state(ApplicationState.DONE)
