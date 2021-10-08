@@ -388,7 +388,7 @@ class WSLConfigurationBase:
 @attr.s(auto_attribs=True)
 class WSLConfigurationAdvanced:
     gui_theme: str = attr.ib(default='default')
-    gui_followwintheme: bool = attr.ib(default=True)
+    gui_followwintheme: bool = attr.ib(default=False)
     interop_guiintegration: bool = attr.ib(default=False)
     interop_audiointegration: bool = attr.ib(default=False)
     interop_advancedipdetection: bool = attr.ib(default=False)
