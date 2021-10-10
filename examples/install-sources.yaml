@@ -1,0 +1,23 @@
+- description:
+    en: This version has been customized to have a small runtime footprint in environments
+      where humans are not expected to log in.
+  id: ubuntu-server-minimal
+  locale_support: none
+  name:
+    en: Ubuntu Server (minimized)
+  path: ubuntu-server-minimal.squashfs
+  size: 530485248
+  type: fsimage
+  variant: server
+- default: true
+  description:
+    en: The default install contains a curated set of packages that provide a comfortable
+      experience for operating your server.
+  id: ubuntu-server
+  locale_support: locale-only
+  name:
+    en: Ubuntu Server
+  path: ubuntu-server-minimal.ubuntu-server.squashfs
+  size: 1066115072
+  type: fsimage-layered
+  variant: server
