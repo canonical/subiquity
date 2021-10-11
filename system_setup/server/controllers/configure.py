@@ -69,8 +69,10 @@ class ConfigureController(SubiquityController):
             dryrun = self.app.opts.dry_run
             variant = self.app.variant
             root_dir = self.model.root
+            username = None
             if variant == "wsl_setup":
                 wsl_id = self.model.identity.user
+                username = wsl_id.username
                 if dryrun:
                     log.debug("mimicking creating user %s",
                               wsl_id.username)
@@ -105,7 +107,8 @@ class ConfigureController(SubiquityController):
                 wsl_config_update(self.model.wslconfadvanced.wslconfadvanced,
                                   root_dir)
 
-            wsl_config_update(self.model.wslconfbase.wslconfbase, root_dir)
+            wsl_config_update(self.model.wslconfbase.wslconfbase, root_dir,
+                              default_user=username)
 
             self.app.update_state(ApplicationState.DONE)
         except Exception:

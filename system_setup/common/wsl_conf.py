@@ -111,12 +111,13 @@ def default_loader(is_advanced=False):
     return data
 
 
-def wsl_config_update(config_class, root_dir):
+def wsl_config_update(config_class, root_dir, default_user=None):
     """
-    This update the configuration file for the given class.zzd
+    This update the configuration file for the given class.
 
     :param config_class: WSLConfigurationBase or WSLConfigurationAdvanced
-    :param is_dry_run: boolean, True if it is a dry run
+    :param root_dir: string, the root directory of the WSL
+    :param create_user: string, the user to create
     """
     temp_conf_default = {}
     temp_confname = config_class.__str__()
@@ -161,6 +162,11 @@ def wsl_config_update(config_class, root_dir):
                     if config_section not in config:
                         config.add_section(config_section)
                     config[config_section][config_setting] = config_value
+
+        if config_type == "wsl" and default_user is not None:
+            if "user" not in config:
+                config.add_section("user")
+            config["user"]["default"] = default_user
 
         # sort config in ascii order
         for section in config._sections:
