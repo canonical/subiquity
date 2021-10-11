@@ -91,10 +91,11 @@ class Server:
         except aiohttp.client_exceptions.ServerDisconnectedError:
             return
 
-    async def spawn(self, machine_config):
+    async def spawn(self, machine_config, bootloader='uefi'):
         env = os.environ.copy()
         env['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
-        cmd = 'python3 -m subiquity.cmd.server --dry-run --bootloader uefi' \
+        cmd = 'python3 -m subiquity.cmd.server --dry-run' \
+              + ' --bootloader ' + bootloader \
               + ' --machine-config ' + machine_config
         cmd = cmd.split(' ')
         self.proc = await astart_command(cmd, env=env)
@@ -114,12 +115,12 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
 
 
 @contextlib.asynccontextmanager
-async def start_server(machine_config):
+async def start_server(*args, **kwargs):
     conn = aiohttp.UnixConnector(path=socket_path)
     async with aiohttp.ClientSession(connector=conn) as session:
         server = Server(session)
         try:
-            await server.spawn(machine_config)
+            await server.spawn(*args, **kwargs)
             await server.poll_startup()
             yield server
         finally:
