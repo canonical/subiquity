@@ -382,6 +382,18 @@ class TestAdd(TestAPI):
             sda = first(resp['disks'], 'id', disk_id)
             self.assertFalse(sda['boot_device'])
 
+    @timeout(5)
+    async def test_v2_multi_disk_multi_boot(self):
+        async with start_server('examples/many-nics-and-disks.json') as inst:
+            resp = await inst.get('/storage/v2')
+            vda = first(resp['disks'], 'id', 'disk-vda')
+            vdb = first(resp['disks'], 'id', 'disk-vdb')
+            await inst.post('/storage/v2/add_boot_partition',
+                            disk_id=vda['id'])
+            await inst.post('/storage/v2/add_boot_partition',
+                            disk_id=vdb['id'])
+            # should allow both disks to get a boot partition with no Exception
+
 
 class TestDelete(TestAPI):
     @timeout(5)
