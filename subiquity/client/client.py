@@ -146,7 +146,8 @@ class SubiquityClient(TuiApplication):
             else:
                 return None
 
-        self.client = make_client_for_conn(API, self.conn, self.resp_hook)
+        self.client = make_client_for_conn(API, self.conn, self.resp_hook,
+                                           header_func=header_func)
 
         self.error_reporter = ErrorReporter(
             self.context.child("ErrorReporter"), self.opts.dry_run, self.root,
