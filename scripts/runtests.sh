@@ -116,12 +116,13 @@ grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: 
 
 # The OOBE doesn't exist in WSL < 20.04
 if [ "${RELEASE%.*}" -ge 20 ]; then
-    # NOTE:
-    # This test doesnt do much ATM but it will be useful when we have more complex scenarios to test with the server and client code.
-    # Like generating a wsl.conf file and comparing it to the oracle.
     clean
     timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m system_setup.cmd.tui --autoinstall examples/autoinstall-system-setup.yaml --dry-run"
     validate "system_setup" "autoinstall"
+
+    clean
+    timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m system_setup.cmd.tui --autoinstall examples/autoinstall-system-setup-full.yaml --dry-run"
+    validate "system_setup" "autoinstall-full"
 
     python3 -m system_setup.cmd.schema > "$testschema"
     scripts/schema-cmp.py "autoinstall-system-setup-schema.json" "$testschema" --ignore-tz
