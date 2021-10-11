@@ -277,7 +277,7 @@ class TestAdd(TestAPI):
             }
             single_add = await inst.post('/storage/v2/add_partition', data)
             self.assertEqual(2, len(single_add['disks'][0]['partitions']))
-            self.assertTrue(single_add['disks'][0]['grub_device'])
+            self.assertTrue(single_add['disks'][0]['boot_device'])
 
             await inst.post('/storage/v2/reset')
 
@@ -371,8 +371,16 @@ class TestAdd(TestAPI):
                                    disk_id=disk_id)
             sda = first(resp['disks'], 'id', disk_id)
             sda1 = first(sda['partitions'], 'number', 1)
-            self.assertTrue(sda['grub_device'])
+            self.assertTrue(sda['boot_device'])
             self.assertTrue(sda1['grub_device'])
+
+    @timeout(5)
+    async def test_v2_blank_is_not_boot(self):
+        async with start_server('examples/simple.json', 'bios') as inst:
+            disk_id = 'disk-sda'
+            resp = await inst.get('/storage/v2')
+            sda = first(resp['disks'], 'id', disk_id)
+            self.assertFalse(sda['boot_device'])
 
 
 class TestDelete(TestAPI):

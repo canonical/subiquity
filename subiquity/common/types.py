@@ -267,7 +267,7 @@ class Disk:
     preserve: bool
     path: Optional[str]
     free_for_partitions: int
-    grub_device: bool
+    boot_device: bool
 
 
 @attr.s(auto_attribs=True)
