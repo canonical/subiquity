@@ -10,6 +10,11 @@ validate () {
     mode="install"
     [ $# -gt 0 ] && mode="$1"
 
+    if [ -d .subiquity/var/crash -a -n "$(ls -A .subiquity/var/crash)" ] ; then
+        echo "subiquity crashed"
+        exit 1
+    fi
+
     if [ "${mode}" = "install" ]; then
         python3 scripts/validate-yaml.py .subiquity/subiquity-curtin-install.conf
         if [ ! -e .subiquity/subiquity-client-debug.log ] || [ ! -e .subiquity/subiquity-server-debug.log ]; then
@@ -43,6 +48,7 @@ clean () {
     rm -rf .subiquity/run/
     rm -rf .subiquity/etc/*.conf
     rm -rf .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg
+    rm -rf .subiquity/var/crash
 }
 
 error () {
@@ -51,7 +57,6 @@ error () {
 }
 
 trap error ERR
-trap clean EXIT
 tty=$(tty) || tty=/dev/console
 
 export SUBIQUITY_REPLAY_TIMESCALE=100
