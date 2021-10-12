@@ -40,19 +40,20 @@ class SnapdConnection:
     def __init__(self, root, sock):
         self.root = root
         self.url_base = "http+unix://{}/".format(quote_plus(sock))
-        self.session = requests_unixsocket.Session()
 
     def get(self, path, **args):
         if args:
             path += '?' + urlencode(args)
-        return self.session.get(self.url_base + path, timeout=60)
+        with requests_unixsocket.Session() as session:
+            return session.get(self.url_base + path, timeout=60)
 
     def post(self, path, body, **args):
         if args:
             path += '?' + urlencode(args)
-        return self.session.post(
-            self.url_base + path, data=json.dumps(body),
-            timeout=60)
+        with requests_unixsocket.Session() as session:
+            return session.post(
+                self.url_base + path, data=json.dumps(body),
+                timeout=60)
 
     def configure_proxy(self, proxy):
         log.debug("restarting snapd to pick up proxy config")
