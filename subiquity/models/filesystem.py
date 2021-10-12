@@ -667,9 +667,13 @@ class Partition(_Formattable):
         return partition_kname(self.device.path, self._number)
 
     @property
-    def ok_for_raid(self):
+    def boot(self):
         from subiquity.common.filesystem import boot
-        if boot.is_bootloader_partition(self):
+        return boot.is_bootloader_partition(self)
+
+    @property
+    def ok_for_raid(self):
+        if self.boot:
             return False
         if self._fs is not None:
             if self._fs.preserve:

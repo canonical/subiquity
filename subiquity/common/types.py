@@ -251,7 +251,11 @@ class Partition:
     annotations: List[str] = attr.ib(default=attr.Factory(list))
     mount: Optional[str] = None
     format: Optional[str] = None
+    # curtin's definition of partition.grub_device - in a UEFI environment,
+    # this is expected to be the ESP partition mounted at /boot/efi.
     grub_device: Optional[bool] = None
+    # does this partition represent the actual boot partition for this device?
+    boot: Optional[bool] = None
 
 
 @attr.s(auto_attribs=True)

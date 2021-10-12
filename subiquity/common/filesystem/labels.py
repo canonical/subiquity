@@ -281,15 +281,14 @@ def _for_client_partition(partition, *, min_size=0):
         format = partition._fs.fstype
         if partition._fs._mount:
             mount = partition._fs._mount.path
-    grub_device = partition.grub_device or \
-        partition.flag in ('bios_grub', 'prep')
 
     return types.Partition(
         size=partition.size,
         number=partition._number,
         wipe=partition.wipe,
         preserve=partition.preserve,
-        grub_device=grub_device,
+        grub_device=partition.grub_device,
+        boot=partition.boot,
         annotations=annotations(partition) + usage_labels(partition),
         mount=mount,
         format=format)

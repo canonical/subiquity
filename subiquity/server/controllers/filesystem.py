@@ -342,9 +342,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             -> StorageResponseV2:
         if data.partition.format is None:
             raise ValueError('add_partition must supply format')
-        if data.partition.grub_device is not None:
-            raise ValueError('add_partition does not support changing '
-                             + 'grub_device')
+        if data.partition.boot is not None:
+            raise ValueError('add_partition does not support changing boot')
 
         disk = self.model._one(id=data.disk_id)
         size = data.partition.size
@@ -372,11 +371,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         partition = self.get_partition(disk, data.partition.number)
         if data.partition.size not in (None, partition.size):
             raise ValueError('edit_partition does not support changing size')
-        if data.partition.grub_device is not None \
-                and partition.grub_device is not None \
-                and data.partition.grub_device != partition.grub_device:
-            raise ValueError('edit_partition does not support changing '
-                             + 'grub_device')
+        if data.partition.boot is not None \
+                and data.partition.boot != partition.boot:
+            raise ValueError('edit_partition does not support changing boot')
         existing_format = ''
         existing_mount = ''
         if partition._fs:
