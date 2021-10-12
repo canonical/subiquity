@@ -27,9 +27,8 @@ from curtin.commands.install import CONFIG_BUILTIN
 from curtin.config import merge_config
 
 from subiquitycore.file_util import write_file
-from subiquitycore.utils import run_command
 
-from subiquity.common.resources import resource_path
+from subiquity.common.resources import resource_path, get_users_and_groups
 from subiquity.server.types import InstallerChannels
 
 from .filesystem import FilesystemModel
@@ -218,14 +217,6 @@ class SubiquityModel:
     def confirm(self):
         self._confirmation.set()
 
-    def get_target_groups(self):
-        command = self.chroot_prefix + ['getent', 'group']
-        cp = run_command(command, check=True)
-        groups = set()
-        for line in cp.stdout.splitlines():
-            groups.add(line.split(':')[0])
-        return groups
-
     def _cloud_init_config(self):
         config = {
             'growpart': {
@@ -237,14 +228,7 @@ class SubiquityModel:
             config['preserve_hostname'] = True
         user = self.identity.user
         if user:
-            users_and_groups_path = resource_path('users-and-groups')
-            if os.path.exists(users_and_groups_path):
-                groups = open(users_and_groups_path).read().split()
-            else:
-                groups = ['admin']
-            groups.append('sudo')
-            groups = [group for group in groups
-                      if group in self.get_target_groups()]
+            groups = get_users_and_groups(self.chroot_prefix)
             user_info = {
                 'name': user.username,
                 'gecos': user.realname,

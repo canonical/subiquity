@@ -17,11 +17,11 @@ import logging
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.types import ApplicationState
+from subiquity.common.resources import get_users_and_groups
 from subiquity.server.controller import SubiquityController
 from subiquitycore.context import with_context
 from subiquitycore.utils import run_command
 from system_setup.common.wsl_conf import wsl_config_update
-from system_setup.common.wsl_utils import get_userandgroups
 
 log = logging.getLogger("system_setup.server.controllers.configure")
 
@@ -87,10 +87,12 @@ class ConfigureController(SubiquityController):
                                         % (wsl_id.username,
                                            create_user_act.stderr))
                     log.debug("created user %s", wsl_id.username)
+
+                    oneline_usergroups = ",".join(get_users_and_groups())
                     assign_grp_act = \
                         run_command(["/usr/sbin/usermod", "-a",
                                      "-c", wsl_id.realname,
-                                     "-G", get_userandgroups(),
+                                     "-G", oneline_usergroups,
                                      wsl_id.username])
                     if assign_grp_act.returncode != 0:
                         raise Exception(("Failed to assign group"
