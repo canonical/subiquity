@@ -374,15 +374,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if data.partition.boot is not None \
                 and data.partition.boot != partition.boot:
             raise ValueError('edit_partition does not support changing boot')
-        existing_format = ''
-        existing_mount = ''
-        if partition._fs:
-            existing_format = partition._fs.fstype
-            if partition._fs._mount:
-                existing_mount = partition._fs._mount.path
         spec = {
-            'fstype': data.partition.format or existing_format,
-            'mount': data.partition.mount or existing_mount,
+            'fstype': data.partition.format or partition.format,
+            'mount': data.partition.mount or partition.mount,
         }
         self.partition_disk_handler(disk, partition, spec)
         return await self.v2_GET()

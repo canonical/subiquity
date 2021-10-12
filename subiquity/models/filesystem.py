@@ -455,6 +455,18 @@ class _Formattable(ABC):
             return cd
 
     @property
+    def format(self):
+        if not self._fs:
+            return None
+        return self._fs.fstype
+
+    @property
+    def mount(self):
+        if not self._fs or not self._fs._mount:
+            return None
+        return self._fs._mount.path
+
+    @property
     @abstractmethod
     def ok_for_raid(self):
         pass

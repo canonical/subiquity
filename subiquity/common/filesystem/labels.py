@@ -275,13 +275,6 @@ def _for_client_disk(disk, *, min_size=0):
 
 @for_client.register(Partition)
 def _for_client_partition(partition, *, min_size=0):
-    format = ''
-    mount = ''
-    if partition._fs:
-        format = partition._fs.fstype
-        if partition._fs._mount:
-            mount = partition._fs._mount.path
-
     return types.Partition(
         size=partition.size,
         number=partition._number,
@@ -290,5 +283,5 @@ def _for_client_partition(partition, *, min_size=0):
         grub_device=partition.grub_device,
         boot=partition.boot,
         annotations=annotations(partition) + usage_labels(partition),
-        mount=mount,
-        format=format)
+        mount=partition.mount,
+        format=partition.format)
