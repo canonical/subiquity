@@ -455,6 +455,18 @@ class _Formattable(ABC):
             return cd
 
     @property
+    def format(self):
+        if not self._fs:
+            return None
+        return self._fs.fstype
+
+    @property
+    def mount(self):
+        if not self._fs or not self._fs._mount:
+            return None
+        return self._fs._mount.path
+
+    @property
     @abstractmethod
     def ok_for_raid(self):
         pass
@@ -667,9 +679,13 @@ class Partition(_Formattable):
         return partition_kname(self.device.path, self._number)
 
     @property
-    def ok_for_raid(self):
+    def boot(self):
         from subiquity.common.filesystem import boot
-        if boot.is_bootloader_partition(self):
+        return boot.is_bootloader_partition(self)
+
+    @property
+    def ok_for_raid(self):
+        if self.boot:
             return False
         if self._fs is not None:
             if self._fs.preserve:

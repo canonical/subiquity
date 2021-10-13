@@ -331,6 +331,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_add_boot_partition_POST(self, disk_id: str) \
             -> StorageResponseV2:
         disk = self.model._one(id=disk_id)
+        if boot.is_boot_device(disk):
+            raise ValueError('device already has bootloader partition')
         if DeviceAction.TOGGLE_BOOT not in DeviceAction.supported(disk):
             raise ValueError("disk does not support boot partiton")
         self.add_boot_disk(disk)
@@ -340,9 +342,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             -> StorageResponseV2:
         if data.partition.format is None:
             raise ValueError('add_partition must supply format')
-        if data.partition.grub_device is not None:
-            raise ValueError('add_partition does not support changing '
-                             + 'grub_device')
+        if data.partition.boot is not None:
+            raise ValueError('add_partition does not support changing boot')
 
         disk = self.model._one(id=data.disk_id)
         size = data.partition.size
@@ -370,18 +371,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         partition = self.get_partition(disk, data.partition.number)
         if data.partition.size not in (None, partition.size):
             raise ValueError('edit_partition does not support changing size')
-        if data.partition.grub_device not in (None, partition.grub_device):
-            raise ValueError('edit_partition does not support changing '
-                             + 'grub_device')
-        existing_format = ''
-        existing_mount = ''
-        if partition._fs:
-            existing_format = partition._fs.fstype
-            if partition._fs._mount:
-                existing_mount = partition._fs._mount.path
+        if data.partition.boot is not None \
+                and data.partition.boot != partition.boot:
+            raise ValueError('edit_partition does not support changing boot')
         spec = {
-            'fstype': data.partition.format or existing_format,
-            'mount': data.partition.mount or existing_mount,
+            'fstype': data.partition.format or partition.format,
+            'mount': data.partition.mount or partition.mount,
         }
         self.partition_disk_handler(disk, partition, spec)
         return await self.v2_GET()

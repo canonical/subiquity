@@ -258,11 +258,10 @@ def for_client(device, *, min_size=0):
 @for_client.register(Disk)
 @for_client.register(Raid)
 def _for_client_disk(disk, *, min_size=0):
-    path = getattr(disk, 'path', None)
     return types.Disk(
         id=disk.id,
         label=label(disk),
-        path=path,
+        path=getattr(disk, 'path', None),
         type=desc(disk),
         size=disk.size,
         ptable=disk.ptable,
@@ -270,24 +269,19 @@ def _for_client_disk(disk, *, min_size=0):
         usage_labels=usage_labels(disk),
         partitions=[for_client(p) for p in disk._partitions],
         free_for_partitions=disk.free_for_partitions,
+        boot_device=boot.is_boot_device(disk),
         ok_for_guided=disk.size >= min_size)
 
 
 @for_client.register(Partition)
 def _for_client_partition(partition, *, min_size=0):
-    format = ""
-    mount = ""
-    if partition._fs:
-        format = partition._fs.fstype
-        if partition._fs._mount:
-            mount = partition._fs._mount.path
-
     return types.Partition(
         size=partition.size,
         number=partition._number,
         wipe=partition.wipe,
         preserve=partition.preserve,
         grub_device=partition.grub_device,
+        boot=partition.boot,
         annotations=annotations(partition) + usage_labels(partition),
-        mount=mount,
-        format=format)
+        mount=partition.mount,
+        format=partition.format)

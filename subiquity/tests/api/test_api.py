@@ -234,7 +234,7 @@ class TestFlow(TestAPI):
             resp = await inst.post('/storage/v2/edit_partition', data)
             expected = add_resp['disks'][0]['partitions'][1]
             actual = resp['disks'][0]['partitions'][1]
-            for key in 'size', 'number', 'mount', 'grub_device':
+            for key in 'size', 'number', 'mount', 'boot':
                 self.assertEqual(expected[key], actual[key])
             self.assertEqual('ext4',
                              resp['disks'][0]['partitions'][1]['format'])
@@ -277,6 +277,7 @@ class TestAdd(TestAPI):
             }
             single_add = await inst.post('/storage/v2/add_partition', data)
             self.assertEqual(2, len(single_add['disks'][0]['partitions']))
+            self.assertTrue(single_add['disks'][0]['boot_device'])
 
             await inst.post('/storage/v2/reset')
 
@@ -285,6 +286,24 @@ class TestAdd(TestAPI):
             await inst.post('/storage/v2/add_boot_partition', disk_id=disk_id)
             manual_add = await inst.post('/storage/v2/add_partition', data)
             self.assertEqual(single_add, manual_add)
+
+    @timeout(5)
+    async def test_v2_deny_multiple_add_boot_partition(self):
+        async with start_server('examples/simple.json') as inst:
+            disk_id = 'disk-sda'
+            await inst.post('/storage/v2/add_boot_partition', disk_id=disk_id)
+            with self.assertRaises(ClientResponseError):
+                await inst.post('/storage/v2/add_boot_partition',
+                                disk_id=disk_id)
+
+    @timeout(5)
+    async def test_v2_deny_multiple_add_boot_partition_BIOS(self):
+        async with start_server('examples/simple.json', 'bios') as inst:
+            disk_id = 'disk-sda'
+            await inst.post('/storage/v2/add_boot_partition', disk_id=disk_id)
+            with self.assertRaises(ClientResponseError):
+                await inst.post('/storage/v2/add_boot_partition',
+                                disk_id=disk_id)
 
     @timeout(5)
     async def test_v2_free_for_partitions(self):
@@ -344,6 +363,37 @@ class TestAdd(TestAPI):
             sda2 = first(sda['partitions'], 'number', 2)
             self.assertEqual(expected_total, sda1['size'] + sda2['size'])
 
+    @timeout(5)
+    async def test_v2_add_boot_BIOS(self):
+        async with start_server('examples/simple.json', 'bios') as inst:
+            disk_id = 'disk-sda'
+            resp = await inst.post('/storage/v2/add_boot_partition',
+                                   disk_id=disk_id)
+            sda = first(resp['disks'], 'id', disk_id)
+            sda1 = first(sda['partitions'], 'number', 1)
+            self.assertTrue(sda['boot_device'])
+            self.assertTrue(sda1['boot'])
+
+    @timeout(5)
+    async def test_v2_blank_is_not_boot(self):
+        async with start_server('examples/simple.json', 'bios') as inst:
+            disk_id = 'disk-sda'
+            resp = await inst.get('/storage/v2')
+            sda = first(resp['disks'], 'id', disk_id)
+            self.assertFalse(sda['boot_device'])
+
+    @timeout(5)
+    async def test_v2_multi_disk_multi_boot(self):
+        async with start_server('examples/many-nics-and-disks.json') as inst:
+            resp = await inst.get('/storage/v2')
+            vda = first(resp['disks'], 'id', 'disk-vda')
+            vdb = first(resp['disks'], 'id', 'disk-vdb')
+            await inst.post('/storage/v2/add_boot_partition',
+                            disk_id=vda['id'])
+            await inst.post('/storage/v2/add_boot_partition',
+                            disk_id=vdb['id'])
+            # should allow both disks to get a boot partition with no Exception
+
 
 class TestDelete(TestAPI):
     @timeout(5)
@@ -402,7 +452,7 @@ class TestEdit(TestAPI):
                 'disk_id': disk_id,
                 'partition': {
                     'number': 3,
-                    'size': sda3['size'] - 1 << 30
+                    'size': sda3['size'] - (1 << 30)
                 }
             }
             with self.assertRaises(ClientResponseError):
@@ -416,7 +466,7 @@ class TestEdit(TestAPI):
                 'disk_id': disk_id,
                 'partition': {
                     'number': 3,
-                    'grub_device': True,
+                    'boot': True,
                 }
             }
             with self.assertRaises(ClientResponseError):
@@ -496,7 +546,7 @@ class TestEdit(TestAPI):
             self.assertIsNone(sda1['wipe'])
             self.assertEqual('/boot/efi', sda1['mount'])
             self.assertEqual('vfat', sda1['format'])
-            self.assertTrue(sda1['grub_device'])
+            self.assertTrue(sda1['boot'])
 
             sda2 = first(sda['partitions'], 'number', 2)
             orig_sda2 = first(orig_sda['partitions'], 'number', 2)
@@ -506,7 +556,7 @@ class TestEdit(TestAPI):
             self.assertEqual('superblock', sda3['wipe'])
             self.assertEqual('/', sda3['mount'])
             self.assertEqual('ext4', sda3['format'])
-            self.assertFalse(sda3['grub_device'])
+            self.assertFalse(sda3['boot'])
 
             sda4 = first(sda['partitions'], 'number', 4)
             orig_sda4 = first(orig_sda['partitions'], 'number', 4)
@@ -605,3 +655,25 @@ class TestInfo(TestAPI):
             resp = await inst.get('/storage/v2')
             sda = first(resp['disks'], 'id', disk_id)
             self.assertEqual('/dev/sda', sda['path'])
+
+
+class TestRegression(TestAPI):
+    @timeout(5)
+    async def test_edit_not_trigger_boot_device(self):
+        async with start_server('examples/simple.json') as inst:
+            disk_id = 'disk-sda'
+
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/foo',
+                }
+            }
+            resp = await inst.post('/storage/v2/add_partition', data)
+            sda = first(resp['disks'], 'id', disk_id)
+            sda2 = first(sda['partitions'], 'number', 2)
+            sda2.update({'format': 'ext3', 'mount': '/bar'})
+            data['partition'] = sda2
+            await inst.post('/storage/v2/edit_partition', data)
+            # should not throw an exception complaining about boot
