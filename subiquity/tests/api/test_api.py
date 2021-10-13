@@ -8,13 +8,11 @@ import contextlib
 from functools import wraps
 import json
 import os
+import tempfile
 import unittest
 from urllib.parse import unquote
 
 from subiquitycore.utils import astart_command
-
-
-socket_path = '.subiquity/socket'
 
 
 def find(items, key, value):
@@ -41,7 +39,7 @@ def json_print(json_data):
     print(json.dumps(json_data, indent=4))
 
 
-class Server:
+class Client:
     def __init__(self, session):
         self.session = session
 
@@ -72,9 +70,12 @@ class Server:
         async with self.session.request(method, f'http://a{query}',
                                         data=data, params=params) as resp:
             print(unquote(str(resp.url)))
-            resp.raise_for_status()
             content = await resp.content.read()
-            return self.loads(content.decode())
+            content = content.decode()
+            if 400 <= resp.status:
+                print(content)
+                resp.raise_for_status()
+            return self.loads(content)
 
     async def poll_startup(self):
         for _ in range(20):
@@ -85,28 +86,34 @@ class Server:
                 await asyncio.sleep(.5)
         raise Exception('timeout on server startup')
 
+
+class Server(Client):
     async def server_shutdown(self, immediate=True):
         try:
             await self.post('/shutdown', mode='POWEROFF', immediate=immediate)
         except aiohttp.client_exceptions.ServerDisconnectedError:
             return
 
-    async def spawn(self, machine_config):
+    async def spawn(self, socket_path, machine_config, bootloader='uefi'):
         env = os.environ.copy()
         env['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
-        cmd = 'python3 -m subiquity.cmd.server --dry-run --bootloader uefi' \
+        cmd = 'python3 -m subiquity.cmd.server --dry-run' \
+              + ' --bootloader ' + bootloader \
+              + ' --socket ' + socket_path \
               + ' --machine-config ' + machine_config
         cmd = cmd.split(' ')
         self.proc = await astart_command(cmd, env=env)
         self.server_task = asyncio.create_task(self.proc.communicate())
 
     async def close(self):
-        await self.server_shutdown()
-        await self.server_task
         try:
-            self.proc.kill()
-        except ProcessLookupError:
-            pass
+            await asyncio.wait_for(self.server_shutdown(), timeout=2.0)
+            await asyncio.wait_for(self.server_task, timeout=1.0)
+        finally:
+            try:
+                self.proc.kill()
+            except ProcessLookupError:
+                pass
 
 
 class TestAPI(unittest.IsolatedAsyncioTestCase):
@@ -114,16 +121,26 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
 
 
 @contextlib.asynccontextmanager
-async def start_server(machine_config):
+async def start_server(*args, **kwargs):
+    with tempfile.TemporaryDirectory() as tempdir:
+        socket_path = f'{tempdir}/socket'
+        conn = aiohttp.UnixConnector(path=socket_path)
+        async with aiohttp.ClientSession(connector=conn) as session:
+            server = Server(session)
+            try:
+                await server.spawn(socket_path, *args, **kwargs)
+                await server.poll_startup()
+                yield server
+            finally:
+                await server.close()
+
+
+@contextlib.asynccontextmanager
+async def connect_server(*args, **kwargs):
+    socket_path = '.subiquity/socket'
     conn = aiohttp.UnixConnector(path=socket_path)
     async with aiohttp.ClientSession(connector=conn) as session:
-        server = Server(session)
-        try:
-            await server.spawn(machine_config)
-            await server.poll_startup()
-            yield server
-        finally:
-            await server.close()
+        yield Client(session)
 
 
 class TestBitlocker(TestAPI):
