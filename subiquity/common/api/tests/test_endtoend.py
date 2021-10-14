@@ -14,13 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import attr
+import contextlib
 import functools
 import unittest
 
 import aiohttp
 from aiohttp import web
 
-from subiquitycore import contextlib38
 from subiquitycore.tests.util import run_coro
 
 from subiquity.common.api.client import make_client
@@ -37,7 +37,7 @@ def make_request(client, method, path, *, params, json):
         method, path, params=params, json=json)
 
 
-@contextlib38.asynccontextmanager
+@contextlib.asynccontextmanager
 async def makeE2EClient(api, impl,
                         *, middlewares=(), make_request=make_request):
     async with makeTestClient(
@@ -174,7 +174,7 @@ class TestEndToEnd(unittest.TestCase):
         class Skip(Exception):
             pass
 
-        @contextlib38.asynccontextmanager
+        @contextlib.asynccontextmanager
         async def custom_make_request(client, method, path, *, params, json):
             async with make_request(
                     client, method, path, params=params, json=json) as resp:
@@ -243,7 +243,7 @@ class TestEndToEnd(unittest.TestCase):
         class Abort(Exception):
             pass
 
-        @contextlib38.asynccontextmanager
+        @contextlib.asynccontextmanager
         async def custom_make_request(client, method, path, *, params, json):
             async with make_request(
                     client, method, path, params=params, json=json) as resp:

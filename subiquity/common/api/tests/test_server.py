@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import unittest
 
 from aiohttp.test_utils import TestClient, TestServer
@@ -20,7 +21,6 @@ from aiohttp import web
 
 from subiquitycore.context import Context
 from subiquitycore.tests.util import run_coro
-from subiquitycore import contextlib38
 
 from subiquity.common.api.defs import api, Payload
 from subiquity.common.api.server import (
@@ -48,7 +48,7 @@ class TestControllerBase:
         self.context = Context.new(TestApp())
 
 
-@contextlib38.asynccontextmanager
+@contextlib.asynccontextmanager
 async def makeTestClient(api, impl, middlewares=()):
     app = web.Application(middlewares=middlewares)
     bind(app.router, api, impl)
