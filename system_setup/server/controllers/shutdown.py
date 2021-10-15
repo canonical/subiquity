@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import enum
 import os
 import logging
 
@@ -23,6 +24,10 @@ from subiquity.server.controllers import ShutdownController
 log = logging.getLogger("system_setup.server.controllers.restart")
 
 
+class WSLShutdownMode(enum.Enum):
+    COMPLETE = -1
+
+
 class SetupShutdownController(ShutdownController):
 
     def __init__(self, app):
@@ -31,6 +36,7 @@ class SetupShutdownController(ShutdownController):
         super().__init__(app)
         self.root_dir = app.base_model.root
         self.app.controllers.Install = self.app.controllers.Configure
+        self.mode = WSLShutdownMode.COMPLETE  # allow the complete mode
 
     def start(self):
         self.app.aio_loop.create_task(self._wait_install())
