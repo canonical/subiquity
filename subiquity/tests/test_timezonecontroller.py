@@ -99,6 +99,7 @@ class TestTimeZoneController(SubiTestCase):
     def test_set_tz_escape_dryrun(self, tdc_gettz, subprocess_run):
         tdc_gettz.return_value = tz_utc
         self.tzc.app.dry_run = True
+        self.tzc.possible = ['geoip']
         self.tzc.deserialize('geoip')
         self.assertEqual('sleep', subprocess_run.call_args.args[0][0])
 
