@@ -21,7 +21,7 @@ from subiquitycore.ui.stretchy import Stretchy, StretchyOverlay
 from subiquitycore.ui.utils import undisabled
 
 
-class TestStretchy(Stretchy):
+class InstrumentedStretchy(Stretchy):
     was_opened = was_closed = False
 
     def __init__(self):
@@ -46,7 +46,7 @@ class TestBaseView(SubiTestCase):
 
     def test_basic(self):
         bv = BaseView(urwid.Text(""))
-        s = TestStretchy()
+        s = InstrumentedStretchy()
         self.assertEqual(self.get_stretchy_chain(bv), [])
         bv.show_stretchy_overlay(s)
         self.assertTrue(s.was_opened)
@@ -62,9 +62,9 @@ class TestBaseView(SubiTestCase):
 
     def make_view_with_overlays(self):
         bv = BaseView(urwid.Text(""))
-        a = TestStretchy()
-        b = TestStretchy()
-        c = TestStretchy()
+        a = InstrumentedStretchy()
+        b = InstrumentedStretchy()
+        c = InstrumentedStretchy()
         bv.show_stretchy_overlay(a)
         bv.show_stretchy_overlay(b)
         bv.show_stretchy_overlay(c)
