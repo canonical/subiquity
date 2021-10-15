@@ -28,7 +28,7 @@ from subiquity.common.api.defs import api, Payload
 
 from .test_server import (
     makeTestClient,
-    TestControllerBase,
+    ControllerBase,
     )
 
 
@@ -53,7 +53,7 @@ class TestEndToEnd(unittest.TestCase):
         class API:
             def GET() -> str: ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def GET(self) -> str:
                 return 'value'
 
@@ -70,7 +70,7 @@ class TestEndToEnd(unittest.TestCase):
                 class nested:
                     def GET() -> str: ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def endpoint_nested_GET(self) -> str:
                 return 'value'
 
@@ -85,7 +85,7 @@ class TestEndToEnd(unittest.TestCase):
         class API:
             def GET(arg1: str, arg2: str) -> str: ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def GET(self, arg1: str, arg2: str) -> str:
                 return '{}+{}'.format(arg1, arg2)
 
@@ -101,7 +101,7 @@ class TestEndToEnd(unittest.TestCase):
         class API:
             def GET(arg1: str, arg2: str = "arg2") -> str: ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def GET(self, arg1: str, arg2: str = "arg2") -> str:
                 return '{}+{}'.format(arg1, arg2)
 
@@ -119,7 +119,7 @@ class TestEndToEnd(unittest.TestCase):
         class API:
             def POST(data: Payload[dict]) -> str: ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def POST(self, data: dict) -> str:
                 return data['key']
 
@@ -145,7 +145,7 @@ class TestEndToEnd(unittest.TestCase):
             class doubler:
                 def POST(data: In) -> Out: ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def doubler_POST(self, data: In) -> Out:
                 return Out(doubled=data.val*2)
 
@@ -161,7 +161,7 @@ class TestEndToEnd(unittest.TestCase):
         class API:
             def GET() -> int: ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def GET(self) -> int:
                 return 1/0
 
@@ -201,7 +201,7 @@ class TestEndToEnd(unittest.TestCase):
             class bad:
                 def GET(x: int) -> int: ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def good_GET(self, x: int) -> int:
                 return x + 1
 
@@ -226,7 +226,7 @@ class TestEndToEnd(unittest.TestCase):
             class bad:
                 def GET(x: int) -> int: ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def good_GET(self, x: int) -> int:
                 return x + 1
 

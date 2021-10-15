@@ -42,7 +42,7 @@ class TestApp:
     project = 'test'
 
 
-class TestControllerBase:
+class ControllerBase:
 
     def __init__(self):
         self.context = Context.new(TestApp())
@@ -72,7 +72,7 @@ class TestBind(unittest.TestCase):
         class API:
             def GET() -> str: ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def GET(self) -> str:
                 return 'value'
 
@@ -90,7 +90,7 @@ class TestBind(unittest.TestCase):
                 class nested:
                     def get(): ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def nested_get(self, request, context):
                 return 'nested'
 
@@ -106,7 +106,7 @@ class TestBind(unittest.TestCase):
         class API:
             def GET(arg: str): ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def GET(self, arg: str):
                 return arg
 
@@ -122,7 +122,7 @@ class TestBind(unittest.TestCase):
         class API:
             def GET(arg: str): ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def GET(self, arg: str):
                 return arg
 
@@ -143,7 +143,7 @@ class TestBind(unittest.TestCase):
         class API:
             def GET(): ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def GET(self):
                 return 1/0
 
@@ -162,7 +162,7 @@ class TestBind(unittest.TestCase):
         class API:
             def POST(data: Payload[str]) -> str: ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def POST(self, data: str) -> str:
                 return data
 
@@ -179,7 +179,7 @@ class TestBind(unittest.TestCase):
         class API:
             def GET(arg: str): ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             pass
 
         app = web.Application()
@@ -192,7 +192,7 @@ class TestBind(unittest.TestCase):
         class API:
             def GET(arg: str): ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def GET(self, arg: int):
                 return arg
 
@@ -215,7 +215,7 @@ class TestBind(unittest.TestCase):
         class API:
             def GET() -> str: ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def GET(self) -> str:
                 return 1/0
 
@@ -243,7 +243,7 @@ class TestBind(unittest.TestCase):
             class meth:
                 def GET() -> str: ...
 
-        class Impl(TestControllerBase):
+        class Impl(ControllerBase):
             async def GET(self) -> str:
                 return ''
 
