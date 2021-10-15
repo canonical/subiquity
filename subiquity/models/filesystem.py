@@ -120,7 +120,7 @@ def fsobj(typ):
         c.type = attributes.const(typ)
         c.id = attr.ib(default=None)
         c._m = attr.ib(repr=None, default=None)
-        c = attr.s(cmp=False, repr=False)(c)
+        c = attr.s(eq=False, repr=False)(c)
         c.__repr__ = fsobj__repr
         _type_to_cls[typ] = c
         return c
@@ -157,7 +157,7 @@ def reverse_dependencies(obj):
             yield v
 
 
-@attr.s(cmp=False)
+@attr.s(eq=False)
 class RaidLevel:
     name = attr.ib()
     value = attr.ib()
@@ -420,7 +420,7 @@ def asdict(inst):
 # in the FilesystemModel or FilesystemController classes.
 
 
-@attr.s(cmp=False)
+@attr.s(eq=False)
 class _Formattable(ABC):
     # Base class for anything that can be formatted and mounted,
     # e.g. a disk or a RAID or a partition.
@@ -482,7 +482,7 @@ class _Formattable(ABC):
 GPT_OVERHEAD = 2 * (1 << 20)
 
 
-@attr.s(cmp=False)
+@attr.s(eq=False)
 class _Device(_Formattable, ABC):
     # Anything that can have partitions, e.g. a disk or a RAID.
 
