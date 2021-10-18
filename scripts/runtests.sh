@@ -29,7 +29,23 @@ validate () {
     elif [ "${mode}" = "system_setup" ]; then
         setup_mode="$2"
         echo "system setup validation for $setup_mode"
+        [ -d ".subiquity/run/subiquity/" ] || (echo "run/subiquity/ dir not created for status"; exit 1)
+        [ -e ".subiquity/run/subiquity/launcher-status" ] || (echo "run/subiquity/launcher-status not created"; exit 1)
+        expected_status="reboot"
+        if [ "${setup_mode}" = "autoinstall-full" ]; then
+            expected_status="shutdown"
+        elif [ "${setup_mode}" = "autoinstall-no-shutdown" ]; then
+            expected_status="complete"
+        fi
+        result_status="$(cat .subiquity/run/subiquity/launcher-status)"
+        if [ "${result_status}" != "${expected_status}" ]; then
+            echo "incorrect run/subiquity/launcher-status: expect ${expected_status}, got ${result_status}"
+            exit 1
+        fi
         [ -d ".subiquity/etc/" ] || (echo "etc/ dir not created for config"; exit 1)
+        if [ "${setup_mode}" = "autoinstall-no-shutdown" ]; then
+            setup_mode="autoinstall"
+        fi
         [ -d "system_setup/tests/golden/${setup_mode}" ] || (echo "tests/golden not found in system_setup"; exit 1)
         for file in system_setup/tests/golden/${setup_mode}/*.conf; do
             filename=$(basename ${file})
@@ -121,13 +137,11 @@ grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: 
 
 # The OOBE doesn't exist in WSL < 20.04
 if [ "${RELEASE%.*}" -ge 20 ]; then
-    clean
-    timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m system_setup.cmd.tui --autoinstall examples/autoinstall-system-setup.yaml --dry-run"
-    validate "system_setup" "autoinstall"
-
-    clean
-    timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m system_setup.cmd.tui --autoinstall examples/autoinstall-system-setup-full.yaml --dry-run"
-    validate "system_setup" "autoinstall-full"
+    for mode in "" "-full" "-no-shutdown"; do
+        clean
+        timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m system_setup.cmd.tui --autoinstall examples/autoinstall-system-setup${mode}.yaml --dry-run"
+        validate "system_setup" "autoinstall${mode}"
+    done
 
     python3 -m system_setup.cmd.schema > "$testschema"
     scripts/schema-cmp.py "autoinstall-system-setup-schema.json" "$testschema" --ignore-tz

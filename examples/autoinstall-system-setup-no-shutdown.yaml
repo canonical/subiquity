@@ -14,15 +14,3 @@ wslconfbase:
   automount_options: 'metadata'
   network_generatehosts: false
   network_generateresolvconf: false
-wslconfadvanced:
-  interop_enabled: false
-  interop_appendwindowspath: false
-  gui_theme: 'light'
-  gui_followwintheme: true
-  interop_guiintegration: true
-  interop_audiointegration: true
-  interop_advancedipdetection: true
-  motd_wslnewsenabled: false
-  automount_enabled: false
-  automount_mountfstab: false
-shutdown: 'poweroff'
