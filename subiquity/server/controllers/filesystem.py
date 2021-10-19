@@ -160,18 +160,18 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # VG with a single LV, but we should use more of a smaller
         # disk to avoid the user running into out of space errors
         # earlier than they probably expect to.
-        if vg.size < 10 * (2 << 30):
+        if vg.size < 10 * (1 << 30):
             # Use all of a small (<10G) disk.
             lv_size = vg.size
-        elif vg.size < 20 * (2 << 30):
+        elif vg.size < 20 * (1 << 30):
             # Use 10G of a smallish (<20G) disk.
-            lv_size = 10 * (2 << 30)
-        elif vg.size < 200 * (2 << 30):
+            lv_size = 10 * (1 << 30)
+        elif vg.size < 200 * (1 << 30):
             # Use half of a larger (<200G) disk.
             lv_size = vg.size // 2
         else:
             # Use at most 100G of a large disk.
-            lv_size = 100 * (2 << 30)
+            lv_size = 100 * (1 << 30)
         lv_size = align_down(lv_size, LVM_CHUNK_SIZE)
         self.create_logical_volume(
             vg=vg, spec=dict(
