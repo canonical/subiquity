@@ -144,12 +144,11 @@ if [ "${RELEASE%.*}" -ge 20 ]; then
     done
 
     python3 -m system_setup.cmd.schema > "$testschema"
-    scripts/schema-cmp.py "autoinstall-system-setup-schema.json" "$testschema" --ignore-tz
+    diff -u "autoinstall-system-setup-schema.json" "$testschema"
 fi
 
 python3 -m subiquity.cmd.schema > "$testschema"
-scripts/schema-cmp.py "autoinstall-schema.json" "$testschema"
-
+diff -u "autoinstall-schema.json" "$testschema"
 
 set +x  # show PASS/FAIL as the last line of output
 echo 'Runtests all PASSED'

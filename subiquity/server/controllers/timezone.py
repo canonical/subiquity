@@ -78,15 +78,21 @@ class TimeZoneController(SubiquityController):
 
     endpoint = API.timezone
 
-    possible = generate_possible_tzs()
-
     autoinstall_key = model_name = 'timezone'
     autoinstall_schema = {
         'type': 'string',
-        'enum': possible
         }
 
     autoinstall_default = ''
+
+    def __init__(self, *args, **kwargs):
+        self.possible = None
+        super().__init__(*args, **kwargs)
+
+    def get_possible_tzs(self):
+        if self.possible is None:
+            self.possible = generate_possible_tzs()
+        return self.possible
 
     def load_autoinstall_data(self, data):
         self.deserialize(data)
@@ -100,7 +106,7 @@ class TimeZoneController(SubiquityController):
     def deserialize(self, data):
         if data is None:
             return
-        if data not in self.possible:
+        if data not in self.get_possible_tzs():
             raise ValueError(f'Unrecognized time zone request "{data}"')
         self.model.set(data)
         if self.model.detect_with_geoip and self.app.geoip.timezone:
