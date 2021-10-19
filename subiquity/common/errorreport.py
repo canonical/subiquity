@@ -49,7 +49,7 @@ from subiquity.common.types import (
 log = logging.getLogger('subiquitycore.common.errorreport')
 
 
-@attr.s(cmp=False)
+@attr.s(eq=False)
 class Upload(metaclass=urwid.MetaSignals):
     signals = ['progress']
 
@@ -80,7 +80,7 @@ class Upload(metaclass=urwid.MetaSignals):
         os.close(self.pipe_r)
 
 
-@attr.s(cmp=False)
+@attr.s(eq=False)
 class ErrorReport(metaclass=urwid.MetaSignals):
 
     signals = ["changed"]

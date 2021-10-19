@@ -345,7 +345,7 @@ class ChannelSnapInfo:
         metadata={'time_fmt': '%Y-%m-%dT%H:%M:%S.%fZ'})
 
 
-@attr.s(auto_attribs=True, cmp=False)
+@attr.s(auto_attribs=True, eq=False)
 class SnapInfo:
     name: str
     summary: str = ''
