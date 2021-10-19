@@ -57,3 +57,9 @@ class WSLIdentityController(IdentityController):
             data.username = self.model.user.username
             data.realname = self.model.user.realname
         return data
+
+    async def configure_wslconfbase_POST(self):
+        wslconfb = getattr(self.app.controllers, "WSLConfigurationBase")
+        if wslconfb is not None:
+            init_data = await wslconfb.GET()
+            await wslconfb.POST(init_data)

@@ -78,3 +78,7 @@ class IdentityController(SubiquityController):
     async def POST(self, data: IdentityData):
         self.model.add_user(data)
         await self.configured()
+
+    async def configure_wslconfbase_POST(self):
+        # WSL Only API
+        pass

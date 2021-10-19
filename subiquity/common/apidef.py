@@ -58,7 +58,6 @@ from subiquity.common.types import (
 @api
 class API:
     """The API offered by the subiquity installer process."""
-    identity = simple_endpoint(IdentityData)
     locale = simple_endpoint(str)
     mirror = simple_endpoint(str)
     proxy = simple_endpoint(str)
@@ -66,6 +65,13 @@ class API:
     updates = simple_endpoint(str)
     wslconfbase = simple_endpoint(WSLConfigurationBase)
     wslconfadvanced = simple_endpoint(WSLConfigurationAdvanced)
+
+    class identity:
+        def GET() -> IdentityData: ...
+        def POST(data: Payload[IdentityData]): ...
+
+        class configure_wslconfbase:
+            def POST(): ...
 
     class meta:
         class status:
