@@ -435,6 +435,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             disk = self.model.disk_for_match(
                 self.model.all_disks(),
                 layout.get("match", {'size': 'largest'}))
+            if not disk:
+                raise Exception("autoinstall cannot configure storage "
+                                "- no disk found large enough for install")
             meth(disk)
         elif 'config' in self.ai_data:
             self.model.apply_autoinstall_config(self.ai_data['config'])
