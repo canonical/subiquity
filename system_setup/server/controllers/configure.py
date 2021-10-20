@@ -12,7 +12,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+import os
+import shutil
 import logging
 
 from subiquity.common.errorreport import ErrorReportKind
@@ -73,32 +74,58 @@ class ConfigureController(SubiquityController):
             if variant == "wsl_setup":
                 wsl_id = self.model.identity.user
                 username = wsl_id.username
+                create_user_base = []
+                assign_grp_base = []
+                usergroups_list = get_users_and_groups()
                 if dryrun:
-                    log.debug("mimicking creating user %s",
-                              wsl_id.username)
-                else:
-                    create_user_act = \
-                        run_command(["/usr/sbin/useradd", "-m", "-s",
-                                     "/bin/bash", "-p",
-                                     wsl_id.password,
-                                     wsl_id.username])
-                    if create_user_act.returncode != 0:
-                        raise Exception("Failed to create user %s: %s"
-                                        % (wsl_id.username,
-                                           create_user_act.stderr))
-                    log.debug("created user %s", wsl_id.username)
+                    log.debug("creating a mock-up env for user %s", username)
+                    # creating folders and files for dryrun
+                    etc_dir = os.path.join(root_dir, "etc")
+                    os.makedirs(etc_dir, exist_ok=True)
+                    home_dir = os.path.join(root_dir, "home")
+                    os.makedirs(home_dir, exist_ok=True)
+                    pseudo_files = ["passwd", "shadow", "gshadow", "group",
+                                    "subgid", "subuid"]
+                    for file in pseudo_files:
+                        filepath = os.path.join(etc_dir, file)
+                        open(filepath, "a").close()
+                    # mimic groupadd
+                    group_id = 1000
+                    for group in usergroups_list:
+                        group_filepath = os.path.join(etc_dir, "group")
+                        gshadow_filepath = os.path.join(etc_dir, "gshadow")
+                        shutil.copy(group_filepath,
+                                    "{}-".format(group_filepath))
+                        with open(group_filepath, "a") as group_file:
+                            group_file.write("{}:x:{}:\n".
+                                             format(group, group_id))
+                        group_id += 1
+                        shutil.copy(gshadow_filepath,
+                                    "{}-".format(gshadow_filepath))
+                        with open(gshadow_filepath, "a") as gshadow_file:
+                            gshadow_file.write("{}:!::\n".format(group))
 
-                    oneline_usergroups = ",".join(get_users_and_groups())
-                    assign_grp_act = \
-                        run_command(["/usr/sbin/usermod", "-a",
-                                     "-c", wsl_id.realname,
-                                     "-G", oneline_usergroups,
-                                     wsl_id.username])
-                    if assign_grp_act.returncode != 0:
-                        raise Exception(("Failed to assign group"
-                                         " to user %s: %s")
-                                        % (wsl_id.username,
-                                           assign_grp_act.stderr))
+                    create_user_base = ["-R", root_dir]
+                    assign_grp_base = ["-P", root_dir]
+
+                create_user_cmd = ["useradd"] + create_user_base + \
+                                  ["-m", "-s", "/bin/bash",
+                                   "-c", wsl_id.realname,
+                                   "-p", wsl_id.password, username]
+                assign_grp_cmd = ["usermod"] + assign_grp_base + \
+                                 ["-a", "-G", ",".join(usergroups_list),
+                                  username]
+
+                create_user_proc = run_command(create_user_cmd)
+                if create_user_proc.returncode != 0:
+                    raise Exception("Failed to create user %s: %s"
+                                    % (username, create_user_proc.stderr))
+                log.debug("created user %s", username)
+
+                assign_grp_proc = run_command(assign_grp_cmd)
+                if assign_grp_proc.returncode != 0:
+                    raise Exception(("Failed to assign group to user %s: %s")
+                                    % (username, assign_grp_proc.stderr))
             else:
                 wsl_config_update(self.model.wslconfadvanced.wslconfadvanced,
                                   root_dir)

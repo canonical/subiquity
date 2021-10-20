@@ -29,6 +29,7 @@ validate () {
     elif [ "${mode}" = "system_setup" ]; then
         setup_mode="$2"
         echo "system setup validation for $setup_mode"
+        echo "checking launcher-status"
         [ -d ".subiquity/run/subiquity/" ] || (echo "run/subiquity/ dir not created for status"; exit 1)
         [ -e ".subiquity/run/subiquity/launcher-status" ] || (echo "run/subiquity/launcher-status not created"; exit 1)
         expected_status="reboot"
@@ -42,6 +43,7 @@ validate () {
             echo "incorrect run/subiquity/launcher-status: expect ${expected_status}, got ${result_status}"
             exit 1
         fi
+        echo "checking generated config"
         [ -d ".subiquity/etc/" ] || (echo "etc/ dir not created for config"; exit 1)
         if [ "${setup_mode}" = "autoinstall-no-shutdown" ]; then
             setup_mode="autoinstall"
@@ -52,6 +54,31 @@ validate () {
             conf_filepath=".subiquity/etc/${filename}"
             diff -Nup "${file}" "${conf_filepath}" || exit 1
         done
+        if [ "${setup_mode}" != "answers-reconf" ]; then
+            echo "checking user created"
+            [ -d ".subiquity/home/" ] || (echo "home/ dir not created for the environment"; exit 1)
+            [ -d ".subiquity/home/ubuntu" ] || (echo "home folder not created for the user"; exit 1)
+            if grep -v ubuntu .subiquity/etc/passwd ; then
+                echo "user definition not included in etc/passwd"
+                exit 1
+            fi
+            if grep -v Ubuntu .subiquity/etc/passwd ; then
+                echo "username not added in etc/passwd"
+                exit 1
+            fi
+            if grep -v ubuntu .subiquity/etc/shadow ; then
+                echo "user definition not included in etc/shadow"
+                exit 1
+            fi
+            if ! grep -q sudo .subiquity/etc/group ; then
+                echo "expected group sudo not included in etc/group"
+                exit 1
+            fi
+            if ! (grep sudo .subiquity/etc/group | grep -q ubuntu) ; then
+                echo "user not assigned with the expected group sudo"
+                exit 1
+            fi
+        fi
     else
         echo "W: Unknown validation mode: ${mode}"
     fi
@@ -62,6 +89,9 @@ clean () {
     rm -f .subiquity/subiquity-*.log
     rm -f "$testschema"
     rm -rf .subiquity/run/
+    rm -rf .subiquity/home/
+    rm -rf .subiquity/etc/.pwd.lock
+    rm -rf .subiquity/etc/{passwd*,shadow*,group*,gshadow*,subgid*,subuid*}
     rm -rf .subiquity/etc/*.conf
     rm -rf .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg
     rm -rf .subiquity/var/crash
