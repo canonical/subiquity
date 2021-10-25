@@ -94,8 +94,6 @@ parts:
       - cloud-init
       - libsystemd0
       - iso-codes
-      - lsb-release
-      - ssh-import-id
       - libpython3.8-minimal
       - libpython3.8-stdlib
       - libpython3-stdlib
@@ -121,6 +119,9 @@ parts:
       'bin/subiquity-service': usr/bin/subiquity-service
       'bin/subiquity-server': usr/bin/subiquity-server
       'bin/subiquity-cmd': usr/bin/subiquity-cmd
+    stage:
+      - '*'
+      - '-usr/bin/lsb_release'
   users-and-groups:
     plugin: nil
     build-packages:
