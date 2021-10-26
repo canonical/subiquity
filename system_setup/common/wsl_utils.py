@@ -36,31 +36,6 @@ def is_reconfigure(is_dryrun):
     return not is_dryrun and if_normaluser
 
 
-def get_windows_locale():
-    windows_locale_failed_msg = (
-        "Cannot determine Windows locale, fallback to default."
-        " Reason of failure: "
-    )
-
-    try:
-        process = subprocess.run(["powershell.exe", "-NonInteractive",
-                                  "-NoProfile", "-Command",
-                                  "(Get-Culture).Name"],
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-        if process.returncode:
-            log.info(windows_locale_failed_msg +
-                     process.stderr.decode("utf-8"))
-            return None
-
-        tmp_code = process.stdout.rstrip().decode("utf-8")
-        tmp_code = tmp_code.replace("-", "_")
-        return tmp_code
-    except OSError as e:
-        log.info(windows_locale_failed_msg + e.strerror)
-        return None
-
-
 def convert_if_bool(value):
     if value.lower() in ('true', 'false'):
         return value.lower() == 'true'

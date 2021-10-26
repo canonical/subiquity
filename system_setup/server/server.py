@@ -45,7 +45,7 @@ class SystemSetupServer(SubiquityServer):
         "Early",
         "Reporting",
         "Error",
-        "WSLLocale",
+        "Locale",
         "WSLIdentity",
         "WSLConfigurationBase",
         "WSLConfigurationAdvanced",
