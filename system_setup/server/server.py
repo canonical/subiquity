@@ -18,8 +18,11 @@ from subiquity.server.server import SubiquityServer
 from system_setup.models.system_setup import SystemSetupModel
 from subiquity.models.subiquity import ModelNames
 
+import logging
+import yaml
 import os
 
+log = logging.getLogger('system_setup.server.server')
 
 INSTALL_MODEL_NAMES = ModelNames({
         "locale",
@@ -63,10 +66,19 @@ class SystemSetupServer(SubiquityServer):
 
     def make_model(self):
         root = '/'
+        prefillInfo = None
         if self.opts.dry_run:
             root = os.path.abspath('.subiquity')
+        if self.opts.prefill:
+            with open(self.opts.prefill, 'r') as stream:
+                try:
+                    prefillInfo = yaml.safe_load(stream)
+                except yaml.YAMLError as exc:
+                    log.error('Exception while parsing prefill file: {}.'
+                              ' Ignoring file.'.format(exc))
+                    prefillInfo = None
         return SystemSetupModel(root, self.hub, INSTALL_MODEL_NAMES,
-                                POSTINSTALL_MODEL_NAMES)
+                                POSTINSTALL_MODEL_NAMES, prefillInfo)
 
     # We don’t have cloudinit in system_setup.
     async def wait_for_cloudinit(self):
