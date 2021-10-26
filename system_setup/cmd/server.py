@@ -15,6 +15,7 @@
 
 import argparse
 import logging
+import stat
 import os
 import sys
 
@@ -35,6 +36,10 @@ def make_server_args_parser():
                         help='menu-only, do not call installer function')
     parser.add_argument('--socket')
     parser.add_argument('--autoinstall', action='store')
+    parser.add_argument('--prefill',
+                        dest='prefill',
+                        help='Prefills UI models with data provided in a prefill.yaml' \
+                             ' file yet allowing overrides.')
     return parser
 
 
@@ -73,6 +78,19 @@ def main():
     version = "unknown"
     logger.info("Starting System Setup server revision {}".format(version))
     logger.info("Arguments passed: {}".format(sys.argv))
+
+    prefillFile = opts.prefill
+    if opts.prefill:
+        if os.path.exists(prefillFile):
+            statInfo = os.stat(prefillFile)
+            mode = statInfo.st_mode
+            isRegularFile = (stat.S_ISREG(mode)!=0)
+            if not isRegularFile:
+                logger.error('"{}" is not a regular file. Option will be ignored.'.format(prefillFile))
+                opts.prefill = None
+        else:
+            logger.error('Prefill file "{}" does not exist. Option will be ignored.'.format(prefillFile))
+            opts.prefill = None
 
     server = SystemSetupServer(opts, block_log_dir)
 
