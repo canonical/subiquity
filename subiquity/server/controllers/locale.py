@@ -36,8 +36,10 @@ class LocaleController(SubiquityController):
         os.environ["LANG"] = data
 
     def start(self):
-        self.model.selected_language = os.environ.get("LANG") \
-                or self.autoinstall_default
+        # Language may have been initialized before start() is called.
+        if self.model.selected_language == None:
+            self.model.selected_language = os.environ.get("LANG") \
+                    or self.autoinstall_default
         self.app.aio_loop.create_task(self.configured())
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, 'source'), self._set_source)
