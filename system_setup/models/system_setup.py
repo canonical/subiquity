@@ -63,9 +63,8 @@ class SystemSetupModel(SubiquityModel):
         self.wslconfadvanced = WSLConfigurationAdvancedModel()
 
         if prefillInfo:
-            welcome = prefillInfo.get('Welcome',{'lang': None})
-
-            if welcome != None and welcome.get('lang') is not None:
+            welcome = prefillInfo.get('Welcome', {'lang': None})
+            if welcome is not None and welcome.get('lang') is not None:
                 self.locale.selected_language = welcome['lang']
                 log.debug('Prefill Language: {}'
                           .format(self.locale.selected_language))

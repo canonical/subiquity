@@ -38,8 +38,8 @@ def make_server_args_parser():
     parser.add_argument('--autoinstall', action='store')
     parser.add_argument('--prefill',
                         dest='prefill',
-                        help='Prefills UI models with data provided in a prefill.yaml' \
-                             ' file yet allowing overrides.')
+                        help='Prefills UI models with data provided in'
+                        ' a prefill.yaml file yet allowing overrides.')
     return parser
 
 
@@ -84,13 +84,15 @@ def main():
         if os.path.exists(prefillFile):
             statInfo = os.stat(prefillFile)
             mode = statInfo.st_mode
-            isRegularFile = (stat.S_ISREG(mode)!=0)
+            isRegularFile = (stat.S_ISREG(mode) != 0)
             if not isRegularFile:
-                logger.error('"{}" is not a regular file. Option will be ignored.'.format(prefillFile))
+                logger.error('"{}" is not a regular file.'
+                             ' Option will be ignored.'.format(prefillFile))
                 opts.prefill = None
         else:
-            logger.error('Prefill file "{}" does not exist. Option will be ignored.'.format(prefillFile))
             opts.prefill = None
+            logger.error('Prefill file "{}" does not exist.'
+                         ' Option will be ignored.'.format(prefillFile))
 
     server = SystemSetupServer(opts, block_log_dir)
 
