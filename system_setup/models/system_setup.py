@@ -18,7 +18,6 @@ import functools
 import logging
 
 from subiquity.models.subiquity import SubiquityModel
-from subiquity.common.types import IdentityData
 from subiquity.models.locale import LocaleModel
 from subiquity.models.identity import IdentityModel
 from subiquity.server.types import InstallerChannels
@@ -48,7 +47,7 @@ class SystemSetupModel(SubiquityModel):
     target = '/'
 
     def __init__(self, root, hub, install_model_names,
-                 postinstall_model_names, prefillInfo):
+                 postinstall_model_names):
         # Parent class init is not called to not load models we don't need.
         self.root = root
         if root != '/':
@@ -61,23 +60,6 @@ class SystemSetupModel(SubiquityModel):
         self.identity = IdentityModel()
         self.wslconfbase = WSLConfigurationBaseModel()
         self.wslconfadvanced = WSLConfigurationAdvancedModel()
-
-        if prefillInfo:
-            welcome = prefillInfo.get('Welcome', {'lang': None})
-            if welcome is not None and welcome.get('lang') is not None:
-                self.locale.selected_language = welcome['lang']
-                log.debug('Prefill Language: {}'
-                          .format(self.locale.selected_language))
-
-            identity = prefillInfo.get('WSLIdentity', None)
-            if identity:
-                idata = IdentityData()
-                idata.realname = identity.get('realname', '')
-                idata.username = identity.get('username', '')
-                idata.hostname = ''
-                idata.crypted_password = ''
-                self.identity.add_user(idata)
-                log.debug('Prefill Identity: {}'.format(self.identity.user))
 
         self._confirmation = asyncio.Event()
         self._confirmation_task = None

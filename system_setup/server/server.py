@@ -77,19 +77,10 @@ class SystemSetupServer(SubiquityServer):
 
     def make_model(self):
         root = '/'
-        prefillInfo = None
         if self.opts.dry_run:
             root = os.path.abspath('.subiquity')
-        if self.opts.prefill:
-            with open(self.opts.prefill, 'r') as stream:
-                try:
-                    prefillInfo = yaml.safe_load(stream)
-                except yaml.YAMLError as exc:
-                    log.error('Exception while parsing prefill file: {}.'
-                              ' Ignoring file.'.format(exc))
-                    prefillInfo = None
         return SystemSetupModel(root, self.hub, INSTALL_MODEL_NAMES,
-                                POSTINSTALL_MODEL_NAMES, prefillInfo)
+                                POSTINSTALL_MODEL_NAMES)
 
     # We don’t have cloudinit in system_setup.
     async def wait_for_cloudinit(self):
