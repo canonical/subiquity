@@ -36,6 +36,28 @@ class WSLIdentityController(IdentityController):
         'additionalProperties': False,
         }
 
+    def __init__(self, app):
+        super().__init__(app)
+        if app.prefillInfo is None or self.interactive() is False:
+            return
+
+        # Only applies when interactive and prefill Info is set.
+        idata = app.prefillInfo.get('WSLIdentity', None)
+        if idata is None:
+            return
+
+        # Cannot call load_autoinstall_data because password is
+        # required in that context, but not here.
+        identity_data = IdentityData(
+            realname=idata.get('realname', ''),
+            username=idata.get('username', ''),
+            hostname='',
+            crypted_password='',
+            )
+
+        self.model.add_user(identity_data)
+        log.debug('Prefilled Identity: {}'.format(self.model.user))
+
     def load_autoinstall_data(self, data):
         if data is not None:
             identity_data = IdentityData(

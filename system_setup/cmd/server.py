@@ -80,7 +80,7 @@ def main():
     logger.info("Arguments passed: {}".format(sys.argv))
 
     prefillFile = opts.prefill
-    if opts.prefill:
+    if prefillFile:
         if os.path.exists(prefillFile):
             statInfo = os.stat(prefillFile)
             mode = statInfo.st_mode
