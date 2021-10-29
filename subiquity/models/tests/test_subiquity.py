@@ -20,6 +20,7 @@ import yaml
 from subiquitycore.pubsub import MessageHub
 from subiquitycore.tests.util import run_coro
 
+from subiquity.common.types import IdentityData
 from subiquity.models.subiquity import ModelNames, SubiquityModel
 from subiquity.server.server import (
     INSTALL_MODEL_NAMES,
@@ -189,3 +190,26 @@ class TestSubiquityModel(unittest.TestCase):
         self.assertEqual(
             get_mirror(config["apt"], "primary", get_architecture()),
             mirror_val)
+
+    def test_cloud_init_user_list_merge(self):
+        main_user = IdentityData(
+            username='mainuser',
+            crypted_password='dummy_value',
+            hostname='somehost')
+        secondary_user = {'name': 'user2'}
+
+        with self.subTest('Main user + secondary user'):
+            model = self.make_model()
+            model.identity.add_user(main_user)
+            model.userdata = {'users': [secondary_user]}
+            cloud_init_config = model._cloud_init_config()
+            self.assertEqual(len(cloud_init_config['users']), 2)
+            self.assertEqual(cloud_init_config['users'][0]['name'], 'mainuser')
+            self.assertEqual(cloud_init_config['users'][1]['name'], 'user2')
+
+        with self.subTest('Secondary user only'):
+            model = self.make_model()
+            model.userdata = {'users': [secondary_user]}
+            cloud_init_config = model._cloud_init_config()
+            self.assertEqual(len(cloud_init_config['users']), 1)
+            self.assertEqual(cloud_init_config['users'][0]['name'], 'user2')
