@@ -33,7 +33,8 @@ def get_users_and_groups(chroot_prefix=[]):
     users_and_groups_path = resource_path('users-and-groups')
     groups = ['admin']
     if os.path.exists(users_and_groups_path):
-        groups = open(users_and_groups_path).read().split()
+        with open(users_and_groups_path) as f:
+            groups = f.read().split()
     groups.append('sudo')
 
     command = chroot_prefix + ['getent', 'group']
