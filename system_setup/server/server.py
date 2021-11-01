@@ -18,8 +18,11 @@ from subiquity.server.server import SubiquityServer
 from system_setup.models.system_setup import SystemSetupModel
 from subiquity.models.subiquity import ModelNames
 
+import logging
+import yaml
 import os
 
+log = logging.getLogger('system_setup.server.server')
 
 INSTALL_MODEL_NAMES = ModelNames({
         "locale",
@@ -36,6 +39,7 @@ POSTINSTALL_MODEL_NAMES = ModelNames(set())
 
 
 class SystemSetupServer(SubiquityServer):
+    prefillInfo = None
 
     from system_setup.server import controllers as controllers_mod
     controllers = [
@@ -60,6 +64,16 @@ class SystemSetupServer(SubiquityServer):
         self.log_syslog_id = ""
         if is_reconfigure(opts.dry_run):
             self.set_source_variant("wsl_configuration")
+        if self.opts.prefill:
+            with open(self.opts.prefill, 'r') as stream:
+                try:
+                    # Shared with controllers thru self.app.
+                    self.prefillInfo = yaml.safe_load(stream)
+                except yaml.YAMLError as exc:
+                    log.error('Exception while parsing prefill file: {}.'
+                              ' Ignoring file.'.format(self.opts.prefill))
+                    log.error(exc)
+                    self.prefillInfo = None
 
     def make_model(self):
         root = '/'

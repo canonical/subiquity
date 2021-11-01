@@ -35,6 +35,10 @@ def make_server_args_parser():
                         help='menu-only, do not call installer function')
     parser.add_argument('--socket')
     parser.add_argument('--autoinstall', action='store')
+    parser.add_argument('--prefill',
+                        dest='prefill',
+                        help='Prefills UI models with data provided in'
+                        ' a prefill.yaml file yet allowing overrides.')
     return parser
 
 
@@ -73,6 +77,13 @@ def main():
     version = "unknown"
     logger.info("Starting System Setup server revision {}".format(version))
     logger.info("Arguments passed: {}".format(sys.argv))
+
+    prefillFile = opts.prefill
+    if prefillFile:
+        if not os.path.isfile(prefillFile):
+            logger.error('"File {}" is invalid. Option will be ignored.'
+                         .format(prefillFile))
+            opts.prefill = None
 
     server = SystemSetupServer(opts, block_log_dir)
 

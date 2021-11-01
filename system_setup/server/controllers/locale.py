@@ -13,17 +13,20 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-from system_setup.common.wsl_utils import get_windows_locale
+import logging
 from subiquity.server.controllers.locale import LocaleController
+
+log = logging.getLogger('system_setup.server.controllers.locale')
 
 
 class WSLLocaleController(LocaleController):
-
     def start(self):
-        win_lang = get_windows_locale()
-        self.model.selected_language = os.environ.get("LANG") \
-            or self.autoinstall_default
-        if win_lang:
-            self.model.selected_language = win_lang + ".UTF-8"
-        self.app.aio_loop.create_task(self.configured())
+        if self.app.prefillInfo:
+            welcome = self.app.prefillInfo.get('Welcome', {'lang': None})
+            win_lang = welcome.get('lang')
+            if win_lang:
+                self.model.selected_language = win_lang
+                log.debug('Prefilled Language: {}'
+                          .format(self.model.selected_language))
+
+        super().start()

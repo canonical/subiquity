@@ -97,7 +97,8 @@ def main():
         server_proc = subprocess.Popen(
             server_cmd, stdout=server_output, stderr=subprocess.STDOUT)
         opts.server_pid = str(server_proc.pid)
-        print("running server pid {}".format(server_proc.pid))
+        print("running server pid {} with args: {}"
+              .format(server_proc.pid, server_cmd))
     elif opts.server_pid is not None:
         print("reconnecting to server pid {}".format(opts.server_pid))
 
