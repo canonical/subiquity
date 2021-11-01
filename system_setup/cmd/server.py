@@ -15,7 +15,6 @@
 
 import argparse
 import logging
-import stat
 import os
 import sys
 
@@ -81,18 +80,10 @@ def main():
 
     prefillFile = opts.prefill
     if prefillFile:
-        if os.path.exists(prefillFile):
-            statInfo = os.stat(prefillFile)
-            mode = statInfo.st_mode
-            isRegularFile = (stat.S_ISREG(mode) != 0)
-            if not isRegularFile:
-                logger.error('"{}" is not a regular file.'
-                             ' Option will be ignored.'.format(prefillFile))
-                opts.prefill = None
-        else:
+        if not os.path.isfile(prefillFile):
+            logger.error('"File {}" is invalid. Option will be ignored.'
+                         .format(prefillFile))
             opts.prefill = None
-            logger.error('Prefill file "{}" does not exist.'
-                         ' Option will be ignored.'.format(prefillFile))
 
     server = SystemSetupServer(opts, block_log_dir)
 
