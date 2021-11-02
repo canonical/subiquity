@@ -38,10 +38,10 @@ def journald_listen(loop, identifiers, callback, seek=False):
 
 
 @contextlib.contextmanager
-def journald_subscriptions(loop, ids_callbacks):
+def journald_subscriptions(loop, ids_callbacks, seek=False):
     fds = set()
     for id, callback in ids_callbacks:
-        fds.add(journald_listen(loop, [id], callback))
+        fds.add(journald_listen(loop, [id], callback, seek=seek))
     try:
         yield
     finally:
