@@ -68,14 +68,14 @@ def main():
     need_start_server = False
     server_args = []
     server_output_dir = "/var/log/installer"
+    server_state_file = "/run/subiquity/server-state"
     if '--dry-run' in args:
         opts, unknown = parser.parse_known_args(args)
+        server_state_file = ".subiquity/run/subiquity/server-state"
         if opts.socket is None:
             need_start_server = True
             server_output_dir = '.subiquity'
             sock_path = os.path.join(server_output_dir, 'socket')
-            if os.path.exists('.subiquity/run/subiquity/server-state'):
-                os.unlink('.subiquity/run/subiquity/server-state')
             opts.socket = sock_path
             server_args = ['--dry-run', '--socket=' + sock_path] + unknown
         else:
@@ -90,6 +90,8 @@ def main():
     server_output = open(os.path.join(server_output_dir, 'server-output'), 'w')
 
     if need_start_server:
+        if os.path.exists(server_state_file):
+            os.unlink(server_state_file)
         server_parser = make_server_args_parser()
         server_parser.parse_args(server_args)  # just to check
         server_cmd = [sys.executable, '-m', 'system_setup.cmd.server'] + \
