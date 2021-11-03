@@ -72,7 +72,7 @@ def main():
         opts, unknown = parser.parse_known_args(args)
         if opts.socket is None:
             need_start_server = True
-            server_output_dir = '/tmp/.subiquity'
+            server_output_dir = '.subiquity'
             sock_path = os.path.join(server_output_dir, 'socket')
             if os.path.exists('.subiquity/run/subiquity/server-state'):
                 os.unlink('.subiquity/run/subiquity/server-state')
