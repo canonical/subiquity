@@ -59,7 +59,6 @@ class SystemSetupServer(SubiquityServer):
 
     def __init__(self, opts, block_log_dir):
         super().__init__(opts, block_log_dir)
-        self.echo_syslog_id = ""
         self.event_syslog_id = ""
         self.log_syslog_id = ""
         if is_reconfigure(opts.dry_run):
