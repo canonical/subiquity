@@ -40,7 +40,7 @@ from subiquity.common.types import (
 from subiquity.journald import (
     journald_listen,
     )
-from subiquity.server.apt import configure_apt
+from subiquity.server.apt import AptConfigurer
 from subiquity.server.controller import (
     SubiquityController,
     )
@@ -82,6 +82,7 @@ class InstallController(SubiquityController):
         self.unattended_upgrades_cmd = None
         self.unattended_upgrades_ctx = None
         self.tb_extractor = TracebackExtractor()
+        self.apt_configurer = AptConfigurer(self.app, self.tpath())
 
     def interactive(self):
         return True
@@ -213,14 +214,7 @@ class InstallController(SubiquityController):
 
     @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):
-        await self.app.command_runner.run(["umount", self.tpath('etc/apt')])
-        if self.model.network.has_network:
-            await run_curtin_command(
-                self.app, context, "in-target", "-t", self.tpath(),
-                "--", "apt-get", "update")
-        else:
-            await self.app.command_runner.run(
-                ["umount", self.tpath('var/lib/apt/lists')])
+        await self.apt_configurer.deconfigure(context)
 
     @with_context(description="downloading and installing {policy} updates")
     async def run_unattended_upgrades(self, context, policy):
@@ -261,7 +255,7 @@ class InstallController(SubiquityController):
                 self.unattended_upgrades_cmd.proc.terminate()
 
     async def configure_apt_POST(self, context):
-        await configure_apt(self.app, context)
+        await self.apt_configurer.configure(context)
 
 
 uu_apt_conf = b"""\
