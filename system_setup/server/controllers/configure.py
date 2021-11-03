@@ -21,7 +21,7 @@ from subiquity.common.types import ApplicationState
 from subiquity.common.resources import get_users_and_groups
 from subiquity.server.controller import SubiquityController
 from subiquitycore.context import with_context
-from subiquitycore.utils import run_command
+from subiquitycore.utils import arun_command
 from system_setup.common.wsl_conf import wsl_config_update
 
 log = logging.getLogger("system_setup.server.controllers.configure")
@@ -116,13 +116,13 @@ class ConfigureController(SubiquityController):
                                  ["-a", "-G", ",".join(usergroups_list),
                                   username]
 
-                create_user_proc = run_command(create_user_cmd)
+                create_user_proc = await arun_command(create_user_cmd)
                 if create_user_proc.returncode != 0:
                     raise Exception("Failed to create user %s: %s"
                                     % (username, create_user_proc.stderr))
                 log.debug("created user %s", username)
 
-                assign_grp_proc = run_command(assign_grp_cmd)
+                assign_grp_proc = await arun_command(assign_grp_cmd)
                 if assign_grp_proc.returncode != 0:
                     raise Exception(("Failed to assign group to user %s: %s")
                                     % (username, assign_grp_proc.stderr))
