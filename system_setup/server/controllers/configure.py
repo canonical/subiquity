@@ -105,7 +105,7 @@ class ConfigureController(SubiquityController):
                         with open(gshadow_filepath, "a") as gshadow_file:
                             gshadow_file.write("{}:!::\n".format(group))
 
-                    create_user_base = ["-R", root_dir]
+                    create_user_base = ["-P", root_dir]
                     assign_grp_base = ["-P", root_dir]
 
                 create_user_cmd = ["useradd"] + create_user_base + \
