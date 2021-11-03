@@ -18,7 +18,6 @@ from collections import OrderedDict
 import functools
 import logging
 import os
-import sys
 import uuid
 import yaml
 
@@ -338,7 +337,6 @@ class SubiquityModel:
             'curthooks_commands': {
                 '001-configure-apt': [
                     resource_path('bin/subiquity-configure-apt'),
-                    sys.executable, str(self.network.has_network).lower(),
                     ],
                 },
 
