@@ -506,7 +506,8 @@ class SubiquityClient(TuiApplication):
         return view
 
     def show_progress(self):
-        self.ui.set_body(self.controllers.Progress.progress_view)
+        if hasattr(self.controllers, 'Progress'):
+            self.ui.set_body(self.controllers.Progress.progress_view)
 
     def unhandled_input(self, key):
         if key == 'f1':
