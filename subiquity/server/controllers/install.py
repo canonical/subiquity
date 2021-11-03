@@ -33,7 +33,6 @@ from subiquitycore.async_helpers import (
     )
 from subiquitycore.context import with_context
 
-from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.types import (
     ApplicationState,
@@ -41,7 +40,7 @@ from subiquity.common.types import (
 from subiquity.journald import (
     journald_listen,
     )
-from subiquity.server.apt import AptConfigurer
+from subiquity.server.apt import get_apt_configurer
 from subiquity.server.controller import (
     SubiquityController,
     )
@@ -74,8 +73,6 @@ class TracebackExtractor:
 
 class InstallController(SubiquityController):
 
-    endpoint = API.install
-
     def __init__(self, app):
         super().__init__(app)
         self.model = app.base_model
@@ -83,7 +80,7 @@ class InstallController(SubiquityController):
         self.unattended_upgrades_cmd = None
         self.unattended_upgrades_ctx = None
         self.tb_extractor = TracebackExtractor()
-        self.apt_configurer = AptConfigurer(self.app, self.tpath())
+        self.apt_configurer = None
 
     def interactive(self):
         return True
@@ -130,6 +127,11 @@ class InstallController(SubiquityController):
             shutil.rmtree(target)
 
     @with_context(
+        description="configuring apt", level="INFO", childlevel="DEBUG")
+    async def configure_apt(self, *, context):
+        return await self.apt_configurer.configure(context)
+
+    @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
     async def curtin_install(self, *, context, source):
         await run_curtin_command(
@@ -157,17 +159,22 @@ class InstallController(SubiquityController):
 
             handler = get_handler_for_source(
                 sanitize_source(self.model.source.get_source()))
+
             if self.app.opts.dry_run:
                 path = '/'
             else:
                 path = handler.setup()
+
+            self.apt_configurer = get_apt_configurer(self.app, path)
+
+            for_install_path = await self.configure_apt()
 
             if os.path.exists(self.model.target):
                 await self.unmount_target(
                     context=context, target=self.model.target)
 
             await self.curtin_install(
-                context=context, source='cp://' + path)
+                context=context, source='cp://' + for_install_path)
 
             self.app.update_state(ApplicationState.POST_WAIT)
 
@@ -223,7 +230,7 @@ class InstallController(SubiquityController):
 
     @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):
-        await self.apt_configurer.deconfigure(context)
+        await self.apt_configurer.deconfigure(context, self.tpath())
 
     @with_context(description="downloading and installing {policy} updates")
     async def run_unattended_upgrades(self, context, policy):
@@ -262,9 +269,6 @@ class InstallController(SubiquityController):
             if self.app.opts.dry_run and \
                self.unattended_upgrades_cmd is not None:
                 self.unattended_upgrades_cmd.proc.terminate()
-
-    async def configure_apt_POST(self, context):
-        await self.apt_configurer.configure(context)
 
 
 uu_apt_conf = b"""\
