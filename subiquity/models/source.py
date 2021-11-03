@@ -87,7 +87,7 @@ class SourceModel:
         if self.current is None:
             self.current = self.sources[0]
 
-    def render(self):
+    def get_source(self):
         path = os.path.join(self._dir, self.current.path)
         if self.current.preinstalled_langs:
             base, ext = os.path.splitext(path)
@@ -97,8 +97,7 @@ class SourceModel:
                 suffix = 'no-languages'
             path = base + '.' + suffix + ext
         scheme = self.current.type
-        return {
-            'sources': {
-                'ubuntu00': f'{scheme}://{path}'
-                },
-            }
+        return f'{scheme}://{path}'
+
+    def render(self):
+        return {}

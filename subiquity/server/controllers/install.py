@@ -19,11 +19,12 @@ import os
 import re
 import shutil
 
+from curtin.commands.extract import get_handler_for_source
 from curtin.commands.install import (
     ERROR_TARFILE,
     INSTALL_LOG,
     )
-from curtin.util import write_file
+from curtin.util import sanitize_source, write_file
 
 import yaml
 
@@ -130,9 +131,9 @@ class InstallController(SubiquityController):
 
     @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
-    async def curtin_install(self, *, context):
+    async def curtin_install(self, *, context, source):
         await run_curtin_command(
-            self.app, context, 'install', config=self.write_config())
+            self.app, context, 'install', source, config=self.write_config())
 
     @with_context()
     async def install(self, *, context):
@@ -154,11 +155,19 @@ class InstallController(SubiquityController):
 
             self.app.update_state(ApplicationState.RUNNING)
 
+            handler = get_handler_for_source(
+                sanitize_source(self.model.source.get_source()))
+            if self.app.opts.dry_run:
+                path = '/'
+            else:
+                path = handler.setup()
+
             if os.path.exists(self.model.target):
                 await self.unmount_target(
                     context=context, target=self.model.target)
 
-            await self.curtin_install(context=context)
+            await self.curtin_install(
+                context=context, source='cp://' + path)
 
             self.app.update_state(ApplicationState.POST_WAIT)
 

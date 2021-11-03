@@ -172,10 +172,10 @@ class TestSubiquityModel(unittest.TestCase):
         netplan = yaml.safe_load(netplan_content)
         self.assertConfigHasVal(netplan, 'network.version', 2)
 
-    def test_has_sources(self):
+    def test_sources(self):
         model = self.make_model()
         config = model.render()
-        self.assertIn('sources', config)
+        self.assertNotIn('sources', config)
 
     def test_mirror(self):
         model = self.make_model()

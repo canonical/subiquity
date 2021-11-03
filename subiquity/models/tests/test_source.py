@@ -46,7 +46,7 @@ def make_entry(**fields):
     return raw
 
 
-class TestMirrorModel(unittest.TestCase):
+class TestSourceModel(unittest.TestCase):
 
     def tdir(self):
         tdir = tempfile.mkdtemp()
@@ -88,7 +88,7 @@ class TestMirrorModel(unittest.TestCase):
         self.write_and_load_entries(model, entries)
         self.assertEqual(model.current.id, 'id2')
 
-    def test_render_absolute(self):
+    def test_get_source_absolute(self):
         entry = make_entry(
             type='scheme',
             path='/foo/bar/baz',
@@ -96,9 +96,9 @@ class TestMirrorModel(unittest.TestCase):
         model = SourceModel()
         self.write_and_load_entries(model, [entry])
         self.assertEqual(
-            model.render(), {'sources': {'ubuntu00': 'scheme:///foo/bar/baz'}})
+            model.get_source(), 'scheme:///foo/bar/baz')
 
-    def test_render_relative(self):
+    def test_get_source_relative(self):
         dir = self.tdir()
         entry = make_entry(
             type='scheme',
@@ -107,11 +107,15 @@ class TestMirrorModel(unittest.TestCase):
         model = SourceModel()
         self.write_and_load_entries(model, [entry], dir)
         self.assertEqual(
-            model.render(),
-            {'sources': {'ubuntu00': f'scheme://{dir}/foo/bar/baz'}})
+            model.get_source(),
+            f'scheme://{dir}/foo/bar/baz')
 
-    def test_render_initial(self):
+    def test_get_source_initial(self):
         model = SourceModel()
         self.assertEqual(
-            model.render(),
-            {'sources': {'ubuntu00': 'cp:///media/filesystem'}})
+            model.get_source(),
+            'cp:///media/filesystem')
+
+    def test_render(self):
+        model = SourceModel()
+        self.assertEqual(model.render(), {})
