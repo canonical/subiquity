@@ -46,4 +46,5 @@ class WSLIdentityController(SubiquityTuiController):
         log.debug(
             "IdentityController.done next_screen user_spec=%s",
             identity_data)
+        self.app.identity = identity_data
         self.app.next_screen(self.endpoint.POST(identity_data))

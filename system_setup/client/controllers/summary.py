@@ -83,10 +83,8 @@ class SummaryController(SubiquityTuiController):
 
     async def make_ui(self):
         real_name = ""
-        identity = getattr(self.app.client, "identity")
-        if identity is not None:
-            data = await identity.GET()
-            real_name = data.realname
+        if hasattr(self.app, "identity"):
+            real_name = self.app.identity.realname
         self.summary_view = SummaryView(self, real_name)
         # We may reach the DONE or ERROR state even before we had a chance
         # to show the UI.

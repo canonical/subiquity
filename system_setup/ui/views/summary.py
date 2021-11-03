@@ -16,6 +16,8 @@ from subiquitycore.ui.buttons import (
 from subiquitycore.ui.width import widget_width
 from subiquity.common.types import ApplicationState
 
+from subiquitycore.ui.container import ListBox
+from urwid import Text
 
 log = logging.getLogger("ubuntu_wsl_oobe.ui.views.summary")
 
@@ -25,18 +27,19 @@ class SummaryView(BaseView):
 
     def __init__(self, controller, real_name):
         self.controller = controller
-        complete_text = _("You have completed the setup!\n\n"
-                          "All settings will take effect after next "
-                          "restart of Ubuntu.")
+        completed = _("You have completed the setup!\n\n"
+                      "All settings will take effect after next "
+                      "restart of Ubuntu.")
         if real_name != '':
-            complete_text = _("Hi {real_name},\n\n"
-                              "You have completed the setup!\n\n"
-                              "It is suggested to run the following commands"
-                              " to update your Ubuntu to the latest version:"
-                              "\n\n\n"
-                              "  $ sudo apt update\n  $ sudo apt upgrade\n\n\n"
-                              "All settings will take effect after next "
-                              "restart of Ubuntu.").format(real_name=real_name)
+            completed = _("Hi {real_name},\n\n"
+                          "You have completed the setup!\n\n"
+                          "It is suggested to run the following commands"
+                          " to update your Ubuntu to the latest version:"
+                          "\n\n\n"
+                          "  $ sudo apt update\n  $ sudo apt upgrade\n\n\n"
+                          "All settings will take effect after next "
+                          "restart of Ubuntu.").format(real_name=real_name)
+        self.completed = completed
 
         self.reboot_btn = Toggleable(ok_btn(
             _("Reboot Now"), on_press=self.reboot))
@@ -44,12 +47,13 @@ class SummaryView(BaseView):
             _("View error report"), on_press=self.view_error)
 
         self.event_buttons = button_pile([])
+        self.body = ListBox([Text(_("Applying changes…"))])
         super().__init__(
             screen(
-                rows=[],
+                rows=self.body,
                 buttons=self.event_buttons,
                 focus_buttons=True,
-                excerpt=complete_text,
+                excerpt=None,
             )
         )
 
@@ -57,6 +61,7 @@ class SummaryView(BaseView):
         btns = []
         if state == ApplicationState.DONE:
             btns = [self.reboot_btn]
+            self.body.base_widget.body = [Text(self.completed)]
         elif state == ApplicationState.ERROR:
             self.title = _('An error occurred during installation')
             self.reboot_btn.base_widget.set_label(_("Reboot Now"))
