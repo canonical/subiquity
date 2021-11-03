@@ -65,8 +65,6 @@ class SummaryView(BaseView):
                 self.view_error_btn,
                 self.reboot_btn,
                 ]
-        else:
-            raise Exception(state)
         if self.controller.showing:
             self.controller.app.ui.set_header(self.title)
         self._set_buttons(btns)
