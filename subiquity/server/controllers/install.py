@@ -45,9 +45,7 @@ from subiquity.journald import (
 from subiquity.server.controller import (
     SubiquityController,
     )
-from subiquity.server.runner import (
-    get_command_runner,
-    )
+
 
 log = logging.getLogger("subiquity.server.controllers.install")
 
@@ -166,7 +164,6 @@ class InstallController(SubiquityController):
         self.unattended_upgrades_ctx = None
         self._event_syslog_id = 'curtin_event.%s' % (os.getpid(),)
         self.tb_extractor = TracebackExtractor()
-        self.command_runner = get_command_runner(app)
         self.curtin_runner = None
 
     def stop_uu(self):
@@ -210,7 +207,7 @@ class InstallController(SubiquityController):
         else:
             cls = CurtinCommandRunner
         self.curtin_runner = cls(
-            self.command_runner, self._event_syslog_id, config_location)
+            self.app.command_runner, self._event_syslog_id, config_location)
 
     @with_context(description="umounting /target dir")
     async def unmount_target(self, *, context, target):
@@ -304,13 +301,13 @@ class InstallController(SubiquityController):
 
     @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):
-        await self.command_runner.run(["umount", self.tpath('etc/apt')])
+        await self.app.command_runner.run(["umount", self.tpath('etc/apt')])
         if self.model.network.has_network:
             await self.curtin_runner.run(
                 context, "in-target", "-t", self.tpath(),
                 "--", "apt-get", "update")
         else:
-            await self.command_runner.run(
+            await self.app.command_runner.run(
                 ["umount", self.tpath('var/lib/apt/lists')])
 
     @with_context(description="downloading and installing {policy} updates")
@@ -330,10 +327,11 @@ class InstallController(SubiquityController):
             apt_conf.write(apt_conf_contents)
             apt_conf.close()
             self.unattended_upgrades_ctx = context
-            self.unattended_upgrades_proc = await self.command_runner.start(
-                self.curtin_runner.make_command(
-                    "in-target", "-t", self.tpath(),
-                    "--", "unattended-upgrades", "-v"))
+            self.unattended_upgrades_proc = \
+                await self.app.command_runner.start(
+                    self.curtin_runner.make_command(
+                        "in-target", "-t", self.tpath(),
+                        "--", "unattended-upgrades", "-v"))
             await self.unattended_upgrades_proc.communicate()
             self.unattended_upgrades_proc = None
             self.unattended_upgrades_ctx = None
@@ -342,7 +340,7 @@ class InstallController(SubiquityController):
         with self.unattended_upgrades_ctx.parent.child(
                 "stop_unattended_upgrades",
                 "cancelling update"):
-            await self.command_runner.run([
+            await self.app.command_runner.run([
                 'chroot', self.tpath(),
                 '/usr/share/unattended-upgrades/'
                 'unattended-upgrade-shutdown',
