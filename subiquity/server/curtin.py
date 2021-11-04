@@ -33,19 +33,19 @@ from subiquity.journald import (
 log = logging.getLogger('subiquity.server.curtin')
 
 
-class CurtinCommandRunner:
+class _CurtinCommand:
 
     _count = 0
 
-    def __init__(self, runner, config_location=None):
+    def __init__(self, runner, command, *args, config=None):
         self.runner = runner
-        self._event_syslog_id = 'curtin_event.%s.%s' % (
-            os.getpid(), CurtinCommandRunner._count)
-        CurtinCommandRunner._count += 1
-        self.config_location = config_location
         self._event_contexts = {}
-        journald_listen(
-            asyncio.get_event_loop(), [self._event_syslog_id], self._event)
+        _CurtinCommand._count += 1
+        self._event_syslog_id = 'curtin_event.%s.%s' % (
+            os.getpid(), _CurtinCommand._count)
+        self._fd = None
+        self.proc = None
+        self._cmd = self.make_command(command, *args, config=config)
 
     def _event(self, event):
         e = {
@@ -80,62 +80,85 @@ class CurtinCommandRunner:
             if curtin_ctx is not None:
                 curtin_ctx.exit(result=status)
 
-    def make_command(self, command, *args, **conf):
-        cmd = [
-            sys.executable, '-m', 'curtin', '--showtrace',
-            ]
-        if self.config_location is not None:
-            cmd.extend([
-                '-c', self.config_location,
-                ])
-        conf.setdefault('reporting', {})['subiquity'] = {
-            'type': 'journald',
-            'identifier': self._event_syslog_id,
+    def make_command(self, command, *args, config=None):
+        reporting_conf = {
+            'subiquity': {
+                'type': 'journald',
+                'identifier': self._event_syslog_id,
+                },
             }
-        conf['verbosity'] = 3
-        for k, v in conf.items():
-            cmd.extend(['--set', 'json:' + k + '=' + json.dumps(v)])
+        cmd = [
+            sys.executable, '-m', 'curtin', '--showtrace', '-vvv',
+            '--set', 'json:reporting=' + json.dumps(reporting_conf),
+            ]
+        if config is not None:
+            cmd.extend([
+                '-c', config,
+                ])
         cmd.append(command)
         cmd.extend(args)
         return cmd
 
-    async def run(self, context, command, *args, **conf):
+    async def start(self, context):
+        self._fd = journald_listen(
+            asyncio.get_event_loop(), [self._event_syslog_id], self._event)
+        # Yield to the event loop before starting curtin to avoid missing the
+        # first couple of events.
+        await asyncio.sleep(0)
         self._event_contexts[''] = context
-        await self.runner.run(self.make_command(command, *args, **conf))
+        self.proc = await self.runner.start(self._cmd)
+
+    async def wait(self):
+        await self.runner.wait(self.proc)
         waited = 0.0
         while len(self._event_contexts) > 1 and waited < 5.0:
             await asyncio.sleep(0.1)
             waited += 0.1
             log.debug("waited %s seconds for events to drain", waited)
         self._event_contexts.pop('', None)
+        asyncio.get_event_loop().remove_reader(self._fd)
+
+    async def run(self, context):
+        await self.start(context)
+        await self.wait()
 
 
-class DryRunCurtinCommandRunner(CurtinCommandRunner):
+class _DryRunCurtinCommand(_CurtinCommand):
 
     event_file = 'examples/curtin-events.json'
 
-    def make_command(self, command, *args, **conf):
+    def make_command(self, command, *args, config=None):
         if command == 'install':
             return [
-                sys.executable, "scripts/replay-curtin-log.py",
-                self.event_file, self._event_syslog_id,
+                sys.executable,
+                "scripts/replay-curtin-log.py",
+                self.event_file,
+                self._event_syslog_id,
                 '.subiquity' + INSTALL_LOG,
                 ]
         else:
-            return super().make_command(command, *args, **conf)
+            return super().make_command(command, *args, config=config)
 
 
-class FailingDryRunCurtinCommandRunner(DryRunCurtinCommandRunner):
+class _FailingDryRunCurtinCommand(_DryRunCurtinCommand):
 
     event_file = 'examples/curtin-events-fail.json'
 
 
-def get_curtin_command_runner(app, config_location=None):
+async def start_curtin_command(app, context, command, *args, config=None):
     if app.opts.dry_run:
         if 'install-fail' in app.debug_flags:
-            cls = FailingDryRunCurtinCommandRunner
+            cls = _FailingDryRunCurtinCommand
         else:
-            cls = DryRunCurtinCommandRunner
+            cls = _DryRunCurtinCommand
     else:
-        cls = CurtinCommandRunner
-    return cls(app.command_runner, config_location)
+        cls = _CurtinCommand
+    curtin_cmd = cls(app.command_runner, command, *args, config=config)
+    await curtin_cmd.start(context)
+    return curtin_cmd
+
+
+async def run_curtin_command(app, context, command, *args, config=None):
+    cmd = await start_curtin_command(
+        app, context, command, *args, config=config)
+    await cmd.wait()

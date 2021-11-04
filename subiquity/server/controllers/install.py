@@ -40,7 +40,8 @@ from subiquity.journald import (
     journald_listen,
     )
 from subiquity.server.curtin import (
-    get_curtin_command_runner,
+    run_curtin_command,
+    start_curtin_command,
     )
 from subiquity.server.controller import (
     SubiquityController,
@@ -75,11 +76,9 @@ class InstallController(SubiquityController):
         super().__init__(app)
         self.model = app.base_model
 
-        self.unattended_upgrades_proc = None
+        self.unattended_upgrades_cmd = None
         self.unattended_upgrades_ctx = None
-        self._event_syslog_id = 'curtin_event.%s' % (os.getpid(),)
         self.tb_extractor = TracebackExtractor()
-        self.curtin_runner = None
 
     def stop_uu(self):
         if self.app.state == ApplicationState.UU_RUNNING:
@@ -97,7 +96,7 @@ class InstallController(SubiquityController):
     def log_event(self, event):
         self.tb_extractor.feed(event['MESSAGE'])
 
-    def make_curtin_command_runner(self):
+    def write_config(self):
         config = self.model.render()
         config_location = '/var/log/installer/subiquity-curtin-install.conf'
         log_location = INSTALL_LOG
@@ -114,19 +113,19 @@ class InstallController(SubiquityController):
         self.app.note_file_for_apport("CurtinConfig", config_location)
         self.app.note_file_for_apport("CurtinErrors", ERROR_TARFILE)
         self.app.note_file_for_apport("CurtinLog", log_location)
-        self.curtin_runner = get_curtin_command_runner(
-            self.app, config_location)
+        return config_location
 
     @with_context(description="umounting /target dir")
     async def unmount_target(self, *, context, target):
-        await self.curtin_runner.run(context, 'unmount', '-t', target)
+        await run_curtin_command(self.app, context, 'unmount', '-t', target)
         if not self.app.opts.dry_run:
             shutil.rmtree(target)
 
     @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
-    async def curtin_install(self, *, context):
-        await self.curtin_runner.run(context, 'install')
+    async def curtin_install(self, *, context, config_location):
+        await run_curtin_command(
+            self.app, context, 'install', config=config_location)
 
     @with_context()
     async def install(self, *, context):
@@ -148,13 +147,14 @@ class InstallController(SubiquityController):
 
             self.app.update_state(ApplicationState.RUNNING)
 
-            self.make_curtin_command_runner()
+            config_location = self.write_config()
 
             if os.path.exists(self.model.target):
                 await self.unmount_target(
                     context=context, target=self.model.target)
 
-            await self.curtin_install(context=context)
+            await self.curtin_install(
+                context=context, config_location=config_location)
 
             self.app.update_state(ApplicationState.POST_WAIT)
 
@@ -205,14 +205,15 @@ class InstallController(SubiquityController):
         name="install_{package}",
         description="installing {package}")
     async def install_package(self, *, context, package):
-        await self.curtin_runner.run(context, 'system-install', '--', package)
+        await run_curtin_command(
+            self.app, context, 'system-install', '--', package)
 
     @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):
         await self.app.command_runner.run(["umount", self.tpath('etc/apt')])
         if self.model.network.has_network:
-            await self.curtin_runner.run(
-                context, "in-target", "-t", self.tpath(),
+            await run_curtin_command(
+                self.app, context, "in-target", "-t", self.tpath(),
                 "--", "apt-get", "update")
         else:
             await self.app.command_runner.run(
@@ -235,13 +236,11 @@ class InstallController(SubiquityController):
             apt_conf.write(apt_conf_contents)
             apt_conf.close()
             self.unattended_upgrades_ctx = context
-            self.unattended_upgrades_proc = \
-                await self.app.command_runner.start(
-                    self.curtin_runner.make_command(
-                        "in-target", "-t", self.tpath(),
-                        "--", "unattended-upgrades", "-v"))
-            await self.unattended_upgrades_proc.communicate()
-            self.unattended_upgrades_proc = None
+            self.unattended_upgrades_cmd = await start_curtin_command(
+                self.app, context, "in-target", "-t", self.tpath(),
+                "--", "unattended-upgrades", "-v")
+            await self.unattended_upgrades_cmd.wait()
+            self.unattended_upgrades_cmd = None
             self.unattended_upgrades_ctx = None
 
     async def stop_unattended_upgrades(self):
@@ -255,8 +254,8 @@ class InstallController(SubiquityController):
                 '--stop-only',
                 ])
             if self.app.opts.dry_run and \
-               self.unattended_upgrades_proc is not None:
-                self.unattended_upgrades_proc.terminate()
+               self.unattended_upgrades_cmd is not None:
+                self.unattended_upgrades_cmd.proc.terminate()
 
 
 uu_apt_conf = b"""\

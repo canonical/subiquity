@@ -25,17 +25,22 @@ class LoggedCommandRunner:
         self.ident = ident
 
     async def start(self, cmd):
-        return await astart_command([
+        proc = await astart_command([
             'systemd-cat', '--level-prefix=false', '--identifier='+self.ident,
             ] + cmd)
+        proc.args = cmd
+        return proc
+
+    async def wait(self, proc):
+        await proc.communicate()
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(proc.returncode, proc.args)
+        else:
+            return subprocess.CompletedProcess(proc.args, proc.returncode)
 
     async def run(self, cmd):
         proc = await self.start(cmd)
-        await proc.communicate()
-        if proc.returncode != 0:
-            raise subprocess.CalledProcessError(proc.returncode, cmd)
-        else:
-            return subprocess.CompletedProcess(cmd, proc.returncode)
+        return await self.wait(proc)
 
 
 class DryRunCommandRunner(LoggedCommandRunner):
