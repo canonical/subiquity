@@ -18,7 +18,6 @@ import logging
 import os
 import re
 import shutil
-import tempfile
 
 from curtin.commands.install import (
     ERROR_TARFILE,
@@ -32,7 +31,6 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     )
 from subiquitycore.context import with_context
-from subiquitycore.lsb_release import lsb_release
 
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReportKind
@@ -42,12 +40,13 @@ from subiquity.common.types import (
 from subiquity.journald import (
     journald_listen,
     )
+from subiquity.server.apt import configure_apt
+from subiquity.server.controller import (
+    SubiquityController,
+    )
 from subiquity.server.curtin import (
     run_curtin_command,
     start_curtin_command,
-    )
-from subiquity.server.controller import (
-    SubiquityController,
     )
 
 log = logging.getLogger("subiquity.server.controllers.install")
@@ -265,86 +264,7 @@ class InstallController(SubiquityController):
                 self.unattended_upgrades_cmd.proc.terminate()
 
     async def configure_apt_POST(self, context):
-        # Configure apt so that installs from the pool on the cdrom are
-        # preferred during installation but not in the installed system.
-        #
-        # This has a few steps.
-        #
-        # 1. As the remaining steps mean that any changes to apt configuration
-        #    are do not persist into the installed system, we get curtin to
-        #    configure apt a bit earlier than it would by default.
-        #
-        # 2. Bind-mount the cdrom into the installed system as /cdrom.
-        #
-        # 3. Set up an overlay over /target/etc/apt. This means that any
-        #    changes we make will not persist into the installed system and we
-        #    do not have to worry about cleaning up after ourselves.
-        #
-        # 4. Configure apt in /target to look at the pool on the cdrom.  This
-        #    has two subcases:
-        #
-        #     a. if we expect the network to be working, this basically means
-        #        prepending
-        #        "deb file:///run/cdrom $(lsb_release -sc) main restricted"
-        #        to the sources.list file.
-        #
-        #     b. if the network is not expected to be working, we replace the
-        #        sources.list with a file just referencing the cdrom.
-        #
-        # 5. If the network is not expected to be working, we also set up an
-        #    overlay over /target/var/lib/apt/lists (if the network is working,
-        #    we'll run "apt update" after the /target/etc/apt overlay has been
-        #    cleared).
-
-        async def mount(device, mountpoint, options=None, type=None):
-            opts = []
-            if options is not None:
-                opts.extend(['-o', options])
-            if type is not None:
-                opts.extend(['-t', type])
-            await self.app.command_runner.run(
-                ['mount'] + opts + [device, mountpoint])
-
-        async def unmount(mountpoint):
-            await self.app.command_runner.run(['umount', mountpoint])
-
-        async def setup_overlay(dir):
-            tdir = tempfile.mkdtemp()
-            w = f'{tdir}/work'
-            u = f'{tdir}/upper'
-            for d in w, u:
-                os.mkdir(d)
-            await mount(
-                'overlay', dir, type='overlay',
-                options=f'lowerdir={dir},upperdir={u},workdir={w}')
-
-        await run_curtin_command(
-            self.app, context, 'apt-config', '-t', self.tpath(),
-            config=self.config_location)
-
-        await setup_overlay(self.tpath('etc/apt'))
-
-        os.mkdir(self.tpath('cdrom'))
-        await mount('/cdrom', self.tpath('cdrom'), options='bind')
-
-        if self.model.network.has_network:
-            os.rename(
-                self.tpath('etc/apt/sources.list'),
-                self.tpath('etc/apt/sources.list.d/original.list'))
-        else:
-            os.unlink(self.tpath('etc/apt/apt.conf.d/90curtin-aptproxy'))
-            await setup_overlay(self.tpath('var/lib/apt/lists'))
-
-        codename = lsb_release()['codename']
-
-        write_file(
-            self.tpath('etc/apt/sources.list'),
-            f'deb [check-date=no] file:///cdrom {codename} main restricted\n',
-            )
-
-        await run_curtin_command(
-            self.app, context, "in-target", "-t", self.tpath(),
-            "--", "apt-get", "update")
+        await configure_apt(self.app, context, self.config_location)
 
 
 uu_apt_conf = b"""\
