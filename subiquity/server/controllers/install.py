@@ -98,7 +98,7 @@ class InstallController(SubiquityController):
         self.tb_extractor.feed(event['MESSAGE'])
 
     def make_curtin_command_runner(self):
-        config = self.model.render(syslog_identifier=self._event_syslog_id)
+        config = self.model.render()
         config_location = '/var/log/installer/subiquity-curtin-install.conf'
         log_location = INSTALL_LOG
         if self.app.opts.dry_run:
@@ -115,7 +115,7 @@ class InstallController(SubiquityController):
         self.app.note_file_for_apport("CurtinErrors", ERROR_TARFILE)
         self.app.note_file_for_apport("CurtinLog", log_location)
         self.curtin_runner = get_curtin_command_runner(
-            self.app, self._event_syslog_id, config_location)
+            self.app, config_location)
 
     @with_context(description="umounting /target dir")
     async def unmount_target(self, *, context, target):

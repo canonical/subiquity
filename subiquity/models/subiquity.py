@@ -325,7 +325,7 @@ class SubiquityModel:
         with open('/etc/machine-id') as fp:
             return fp.read()
 
-    def render(self, syslog_identifier):
+    def render(self):
         # Until https://bugs.launchpad.net/curtin/+bug/1876984 gets
         # fixed, the only way to get curtin to leave the network
         # config entirely alone is to omit the 'network' stage.
@@ -356,21 +356,12 @@ class SubiquityModel:
                     '/var/log/installer/curtin-install.log',
                 },
 
-            'verbosity': 3,
-
             'pollinate': {
                 'user_agent': {
                     'subiquity': "%s_%s" % (os.environ.get("SNAP_VERSION",
                                                            'dry-run'),
                                             os.environ.get("SNAP_REVISION",
                                                            'dry-run')),
-                    },
-                },
-
-            'reporting': {
-                'subiquity': {
-                    'type': 'journald',
-                    'identifier': syslog_identifier,
                     },
                 },
 
