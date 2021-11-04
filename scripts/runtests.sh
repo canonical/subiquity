@@ -16,7 +16,7 @@ validate () {
     fi
 
     if [ "${mode}" = "install" ]; then
-        python3 scripts/validate-yaml.py .subiquity/subiquity-curtin-install.conf
+        python3 scripts/validate-yaml.py .subiquity/var/log/installer/subiquity-curtin-install.conf
         if [ ! -e .subiquity/subiquity-client-debug.log ] || [ ! -e .subiquity/subiquity-server-debug.log ]; then
             echo "log file not created"
             exit 1
@@ -85,7 +85,7 @@ validate () {
 }
 
 clean () {
-    rm -f .subiquity/subiquity-curtin-install.conf
+    rm -rf .subiquity/var/log/
     rm -f .subiquity/subiquity-*.log
     rm -f "$testschema"
     rm -rf .subiquity/run/
@@ -144,7 +144,7 @@ timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoi
                                --kernel-cmdline 'autoinstall' \
                                --source-catalog=examples/install-sources.yaml"
 validate
-python3 scripts/check-yaml-fields.py .subiquity/subiquity-curtin-install.conf \
+python3 scripts/check-yaml-fields.py .subiquity/var/log/installer/subiquity-curtin-install.conf \
         debconf_selections.subiquity='"eek"' \
         storage.config[-1].options='"errors=remount-ro"'
 python3 scripts/check-yaml-fields.py <(python3 scripts/check-yaml-fields.py .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg datasource.None.userdata_raw) \
