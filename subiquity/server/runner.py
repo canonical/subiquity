@@ -1,0 +1,66 @@
+# Copyright 2021 Canonical, Ltd.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import asyncio
+import subprocess
+
+from subiquitycore.utils import astart_command
+
+
+class LoggedCommandRunner:
+
+    def __init__(self, ident):
+        self.ident = ident
+
+    async def start(self, cmd):
+        return await astart_command([
+            'systemd-cat', '--level-prefix=false', '--identifier='+self.ident,
+            ] + cmd)
+
+    async def run(self, cmd):
+        proc = await self.start(cmd)
+        await proc.communicate()
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(proc.returncode, cmd)
+        else:
+            return subprocess.CompletedProcess(cmd, proc.returncode)
+
+
+class DryRunCommandRunner(LoggedCommandRunner):
+
+    def __init__(self, ident, delay):
+        super().__init__(ident)
+        self.delay = delay
+
+    async def start(self, cmd):
+        if 'scripts/replay-curtin-log.py' in cmd:
+            delay = 0
+        else:
+            cmd = ['echo', 'not running:'] + cmd
+            if 'unattended-upgrades' in cmd:
+                delay = 3*self.delay
+            else:
+                delay = self.delay
+        proc = await super().start(cmd)
+        await asyncio.sleep(delay)
+        return proc
+
+
+def get_command_runner(app):
+    if app.opts.dry_run:
+        return DryRunCommandRunner(
+            app.log_syslog_id, 2/app.scale_factor)
+    else:
+        return LoggedCommandRunner(app.log_syslog_id)

@@ -20,7 +20,6 @@ import logging
 import os
 import re
 import shutil
-import subprocess
 import sys
 
 from curtin.commands.install import (
@@ -35,19 +34,19 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     )
 from subiquitycore.context import Status, with_context
-from subiquitycore.utils import (
-    astart_command,
-    )
 
 from subiquity.common.errorreport import ErrorReportKind
-from subiquity.server.controller import (
-    SubiquityController,
-    )
 from subiquity.common.types import (
     ApplicationState,
     )
 from subiquity.journald import (
     journald_listen,
+    )
+from subiquity.server.controller import (
+    SubiquityController,
+    )
+from subiquity.server.runner import (
+    get_command_runner,
     )
 
 log = logging.getLogger("subiquity.server.controllers.install")
@@ -70,45 +69,6 @@ class TracebackExtractor:
             self.in_traceback = False
         if self.in_traceback:
             self.traceback.append(line)
-
-
-class LoggedCommandRunner:
-
-    def __init__(self, ident):
-        self.ident = ident
-
-    async def start(self, cmd):
-        return await astart_command([
-            'systemd-cat', '--level-prefix=false', '--identifier='+self.ident,
-            ] + cmd)
-
-    async def run(self, cmd):
-        proc = await self.start(cmd)
-        await proc.communicate()
-        if proc.returncode != 0:
-            raise subprocess.CalledProcessError(proc.returncode, cmd)
-        else:
-            return subprocess.CompletedProcess(cmd, proc.returncode)
-
-
-class DryRunCommandRunner(LoggedCommandRunner):
-
-    def __init__(self, ident, delay):
-        super().__init__(ident)
-        self.delay = delay
-
-    async def start(self, cmd):
-        if 'scripts/replay-curtin-log.py' in cmd:
-            delay = 0
-        else:
-            cmd = ['echo', 'not running:'] + cmd
-            if 'unattended-upgrades' in cmd:
-                delay = 3*self.delay
-            else:
-                delay = self.delay
-        proc = await super().start(cmd)
-        await asyncio.sleep(delay)
-        return proc
 
 
 class CurtinCommandRunner:
@@ -206,11 +166,7 @@ class InstallController(SubiquityController):
         self.unattended_upgrades_ctx = None
         self._event_syslog_id = 'curtin_event.%s' % (os.getpid(),)
         self.tb_extractor = TracebackExtractor()
-        if self.app.opts.dry_run:
-            self.command_runner = DryRunCommandRunner(
-                self.app.log_syslog_id, 2/self.app.scale_factor)
-        else:
-            self.command_runner = LoggedCommandRunner(self.app.log_syslog_id)
+        self.command_runner = get_command_runner(app)
         self.curtin_runner = None
 
     def stop_uu(self):
