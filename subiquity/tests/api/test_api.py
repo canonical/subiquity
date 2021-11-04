@@ -107,8 +107,8 @@ class Server(Client):
 
     async def close(self):
         try:
-            await asyncio.wait_for(self.server_shutdown(), timeout=2.0)
-            await asyncio.wait_for(self.server_task, timeout=1.0)
+            await asyncio.wait_for(self.server_shutdown(), timeout=5.0)
+            await asyncio.wait_for(self.server_task, timeout=5.0)
         finally:
             try:
                 self.proc.kill()
@@ -120,6 +120,15 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
     pass
 
 
+async def poll_for_socket_exist(socket_path):
+    for _ in range(100):
+        # test level timeout will trigger first, this loop is just a fallback
+        if os.path.exists(socket_path):
+            return
+        await asyncio.sleep(.1)
+    raise Exception('timeout looking for socket to exist')
+
+
 @contextlib.asynccontextmanager
 async def start_server(*args, **kwargs):
     with tempfile.TemporaryDirectory() as tempdir:
@@ -129,6 +138,7 @@ async def start_server(*args, **kwargs):
             server = Server(session)
             try:
                 await server.spawn(socket_path, *args, **kwargs)
+                await poll_for_socket_exist(socket_path)
                 await server.poll_startup()
                 yield server
             finally:
