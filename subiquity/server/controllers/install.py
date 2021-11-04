@@ -129,9 +129,9 @@ class InstallController(SubiquityController):
 
     @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
-    async def curtin_install(self, *, context, config_location):
+    async def curtin_install(self, *, context):
         await run_curtin_command(
-            self.app, context, 'install', config=config_location)
+            self.app, context, 'install', config=self.write_config())
 
     @with_context()
     async def install(self, *, context):
@@ -153,14 +153,11 @@ class InstallController(SubiquityController):
 
             self.app.update_state(ApplicationState.RUNNING)
 
-            self.config_location = self.write_config()
-
             if os.path.exists(self.model.target):
                 await self.unmount_target(
                     context=context, target=self.model.target)
 
-            await self.curtin_install(
-                context=context, config_location=self.config_location)
+            await self.curtin_install(context=context)
 
             self.app.update_state(ApplicationState.POST_WAIT)
 
@@ -264,7 +261,7 @@ class InstallController(SubiquityController):
                 self.unattended_upgrades_cmd.proc.terminate()
 
     async def configure_apt_POST(self, context):
-        await configure_apt(self.app, context, self.config_location)
+        await configure_apt(self.app, context)
 
 
 uu_apt_conf = b"""\

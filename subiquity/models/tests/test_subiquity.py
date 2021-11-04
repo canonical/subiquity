@@ -182,14 +182,7 @@ class TestSubiquityModel(unittest.TestCase):
         mirror_val = 'http://my-mirror'
         model.mirror.set_mirror(mirror_val)
         config = model.render()
-        from curtin.commands.apt_config import get_mirror
-        try:
-            from curtin.distro import get_architecture
-        except ImportError:
-            from curtin.util import get_architecture
-        self.assertEqual(
-            get_mirror(config["apt"], "primary", get_architecture()),
-            mirror_val)
+        self.assertNotIn('apt', config)
 
     def test_cloud_init_user_list_merge(self):
         main_user = IdentityData(

@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import copy
 import logging
 
 from curtin.config import merge_config
@@ -78,7 +79,7 @@ class MirrorController(SubiquityController):
         self.model.set_mirror(data)
 
     def make_autoinstall(self):
-        r = self.model.render()['apt']
+        r = copy.deepcopy(self.model.config)
         r['geoip'] = self.geoip_enabled
         return r
 
