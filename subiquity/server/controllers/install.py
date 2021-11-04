@@ -13,14 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import datetime
-import json
 import logging
 import os
 import re
 import shutil
-import sys
 
 from curtin.commands.install import (
     ERROR_TARFILE,
@@ -33,7 +30,7 @@ import yaml
 from subiquitycore.async_helpers import (
     run_in_thread,
     )
-from subiquitycore.context import Status, with_context
+from subiquitycore.context import with_context
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.types import (
@@ -41,6 +38,9 @@ from subiquity.common.types import (
     )
 from subiquity.journald import (
     journald_listen,
+    )
+from subiquity.server.curtin import (
+    get_curtin_command_runner,
     )
 from subiquity.server.controller import (
     SubiquityController,
@@ -67,91 +67,6 @@ class TracebackExtractor:
             self.in_traceback = False
         if self.in_traceback:
             self.traceback.append(line)
-
-
-class CurtinCommandRunner:
-
-    def __init__(self, runner, event_syslog_id, config_location):
-        self.runner = runner
-        self.event_syslog_id = event_syslog_id
-        self.config_location = config_location
-        self._event_contexts = {}
-        journald_listen(
-            asyncio.get_event_loop(), [event_syslog_id], self._event)
-
-    def _event(self, event):
-        e = {
-            "EVENT_TYPE": "???",
-            "MESSAGE": "???",
-            "NAME": "???",
-            "RESULT": "???",
-            }
-        prefix = "CURTIN_"
-        for k, v in event.items():
-            if k.startswith(prefix):
-                e[k[len(prefix):]] = v
-        event_type = e["EVENT_TYPE"]
-        if event_type == 'start':
-            def p(name):
-                parts = name.split('/')
-                for i in range(len(parts), -1, -1):
-                    yield '/'.join(parts[:i]), '/'.join(parts[i:])
-
-            curtin_ctx = None
-            for pre, post in p(e["NAME"]):
-                if pre in self._event_contexts:
-                    parent = self._event_contexts[pre]
-                    curtin_ctx = parent.child(post, e["MESSAGE"])
-                    self._event_contexts[e["NAME"]] = curtin_ctx
-                    break
-            if curtin_ctx:
-                curtin_ctx.enter()
-        if event_type == 'finish':
-            status = getattr(Status, e["RESULT"], Status.WARN)
-            curtin_ctx = self._event_contexts.pop(e["NAME"], None)
-            if curtin_ctx is not None:
-                curtin_ctx.exit(result=status)
-
-    def make_command(self, command, *args, **conf):
-        cmd = [
-            sys.executable, '-m', 'curtin', '--showtrace',
-            '-c', self.config_location,
-            ]
-        for k, v in conf.items():
-            cmd.extend(['--set', 'json:' + k + '=' + json.dumps(v)])
-        cmd.append(command)
-        cmd.extend(args)
-        return cmd
-
-    async def run(self, context, command, *args, **conf):
-        self._event_contexts[''] = context
-        await self.runner.run(self.make_command(command, *args, **conf))
-        waited = 0.0
-        while len(self._event_contexts) > 1 and waited < 5.0:
-            await asyncio.sleep(0.1)
-            waited += 0.1
-            log.debug("waited %s seconds for events to drain", waited)
-        self._event_contexts.pop('', None)
-
-
-class DryRunCurtinCommandRunner(CurtinCommandRunner):
-
-    event_file = 'examples/curtin-events.json'
-
-    def make_command(self, command, *args, **conf):
-        if command == 'install':
-            return [
-                sys.executable, "scripts/replay-curtin-log.py",
-                self.event_file, self.event_syslog_id,
-                '.subiquity' + INSTALL_LOG,
-                ]
-        else:
-            return super().make_command(command, *args, **conf)
-
-
-class FailingDryRunCurtinCommandRunner(DryRunCurtinCommandRunner):
-
-    event_file = 'examples/curtin-events-fail.json'
 
 
 class InstallController(SubiquityController):
@@ -199,15 +114,8 @@ class InstallController(SubiquityController):
         self.app.note_file_for_apport("CurtinConfig", config_location)
         self.app.note_file_for_apport("CurtinErrors", ERROR_TARFILE)
         self.app.note_file_for_apport("CurtinLog", log_location)
-        if self.app.opts.dry_run:
-            if 'install-fail' in self.app.debug_flags:
-                cls = FailingDryRunCurtinCommandRunner
-            else:
-                cls = DryRunCurtinCommandRunner
-        else:
-            cls = CurtinCommandRunner
-        self.curtin_runner = cls(
-            self.app.command_runner, self._event_syslog_id, config_location)
+        self.curtin_runner = get_curtin_command_runner(
+            self.app, self._event_syslog_id, config_location)
 
     @with_context(description="umounting /target dir")
     async def unmount_target(self, *, context, target):
