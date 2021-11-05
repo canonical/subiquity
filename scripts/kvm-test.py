@@ -134,6 +134,8 @@ parser.add_argument('-b', '--base', default=False, action='store_true',
                     help='use base iso')
 parser.add_argument('--basesnap', default=None, action='store',
                     help='use slimy-update-snap on this snap')
+parser.add_argument('--snap', default=None, action='store',
+                    help='inject this snap into the ISO')
 parser.add_argument('-B', '--bios', action='store_true', default=False,
                     help='boot in BIOS mode')
 parser.add_argument('-c', '--channel', default=False, action='store',
@@ -254,6 +256,9 @@ def build(ctx):
                     {snap}')
                 run(f'sudo ./scripts/inject-subiquity-snap.sh {ctx.baseiso} \
                     {snap} {ctx.iso}')
+        elif ctx.args.snap:
+            run(f'sudo ./scripts/inject-subiquity-snap.sh {ctx.baseiso} \
+                {ctx.args.snap} {ctx.iso}')
         elif ctx.args.channel:
             run(f'sudo PYTHONPATH=$LIVEFS_EDITOR python3 -m livefs_edit \
                     {ctx.baseiso} {ctx.iso} \
