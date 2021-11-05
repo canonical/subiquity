@@ -464,9 +464,8 @@ def install(ctx):
         # appends += ['subiquity-channel=edge']
 
         with mounter(iso, mntdir):
-            appends += grub_get_extra_args(mntdir)
-
             if len(appends) > 0:
+                appends += grub_get_extra_args(mntdir)
                 # if we're passing kernel args, we need to manually specify
                 # kernel / initrd
                 kvm += ['-kernel', f'{mntdir}/casper/vmlinuz']
