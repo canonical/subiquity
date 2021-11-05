@@ -95,6 +95,7 @@ clean () {
     rm -rf .subiquity/etc/*.conf
     rm -rf .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg
     rm -rf .subiquity/var/crash
+    rm -rf .subiquity/var/cache
 }
 
 error () {

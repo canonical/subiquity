@@ -53,8 +53,8 @@ class ConfigureController(SubiquityController):
             lineFound = fileContents.find(lang)
             if lineFound == -1:
                 # An unsupported locale coming from our UI is a bug
-                raise AssertionError("Selected language {} not supported."
-                                     .format(lang))
+                log.error("Selected language %s not supported.", lang)
+                return
 
             pattern = r'#+\s*({}.*)'.format(lang)
             commented = re.compile(pattern)
@@ -62,8 +62,11 @@ class ConfigureController(SubiquityController):
             locGenNeedsWrite = n == 1
 
         if locGenNeedsWrite:
-            with open(localeGenPath, "wt") as f:
-                f.write(fileContents)
+            try:
+                with open(localeGenPath, "wt") as f:
+                    f.write(fileContents)
+            except IOError as err:
+                log.error("Failed to modify %s file. %s", localeGenPath, err)
 
     async def _install_check_lang_support_packages(self, lang, env):
         """ Installs any packages recommended by
@@ -90,7 +93,8 @@ class ConfigureController(SubiquityController):
                 packs_dir = os.path.join(self.model.root,
                                          apt_pkg.config
                                          .find_dir("Dir::Cache::Archives")[1:])
-                cmd = ["wget", cache[package].candidate.uri, "-O", packs_dir]
+                archive = os.path.join(packs_dir, cache[package].fullname)
+                cmd = ["wget", "-O", archive, cache[package].candidate.uri]
                 os.makedirs(packs_dir, exist_ok=True)
                 await arun_command(cmd, env=env)
         else:
