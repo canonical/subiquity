@@ -289,7 +289,7 @@ def build(ctx):
                     {ctx.iso} {snap}
                 ''')
     else:
-        raise Exception(f'do not know how to build {projct}')
+        raise Exception(f'do not know how to build {project}')
 
     run(f'test -f {ctx.iso}')
 
