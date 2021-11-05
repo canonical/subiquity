@@ -91,7 +91,7 @@ clean () {
     rm -rf .subiquity/run/
     rm -rf .subiquity/home/
     rm -rf .subiquity/etc/.pwd.lock
-    rm -rf .subiquity/etc/{passwd*,shadow*,group*,gshadow*,subgid*,subuid*}
+    rm -rf .subiquity/etc/{locale*,passwd*,shadow*,group*,gshadow*,subgid*,subuid*}
     rm -rf .subiquity/etc/*.conf
     rm -rf .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg
     rm -rf .subiquity/var/crash

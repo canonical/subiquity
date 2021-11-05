@@ -15,6 +15,9 @@
 import os
 import shutil
 import logging
+import re
+import apt
+import apt_pkg
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.types import ApplicationState
@@ -36,6 +39,86 @@ class ConfigureController(SubiquityController):
 
     def start(self):
         self.install_task = self.app.aio_loop.create_task(self.configure())
+
+    def _update_locale_gen(self, localeGenPath, lang):
+        """ Uncomments the line in locale.gen file where lang is found,
+            if found commented. A fully qualified language is expected,
+            since that would have passed thru the Locale
+            controller validation. e.g. en_UK.UTF-8. """
+
+        fileContents: str
+        locGenNeedsWrite = False
+        with open(localeGenPath, "r") as f:
+            fileContents = f.read()
+            lineFound = fileContents.find(lang)
+            if lineFound == -1:
+                # An unsupported locale coming from our UI is a bug
+                raise AssertionError("Selected language {} not supported."
+                                     .format(lang))
+
+            pattern = r'#+\s*({}.*)'.format(lang)
+            commented = re.compile(pattern)
+            (fileContents, n) = commented.subn(r'\1', fileContents, count=1)
+            locGenNeedsWrite = n == 1
+
+        if locGenNeedsWrite:
+            with open(localeGenPath, "wt") as f:
+                f.write(fileContents)
+
+    async def _install_check_lang_support_packages(self, lang, env):
+        """ Installs any packages recommended by
+            check-language-support command. """
+
+        clsCommand = "check-language-support"
+
+        cp = await arun_command([clsCommand, "-l", lang[0:5]], env=env)
+        if cp.returncode != 0:
+            log.error('Command \"%s\" failed with return code %d',
+                      cp.args, cp.returncode)
+            return
+
+        packages = cp.stdout.strip('\n').split(' ')
+        if len(packages) == 0:
+            log.debug("%s didn't recommend any packages. Nothing to do.",
+                      clsCommand)
+            return
+
+        cache = apt.Cache()
+        if self.app.opts.dry_run:
+            for package in packages:
+                # Downloading instead of installing. Doesn't require root.
+                packs_dir = os.path.join(self.model.root,
+                                         apt_pkg.config
+                                         .find_dir("Dir::Cache::Archives")[1:])
+                cmd = ["wget", cache[package].candidate.uri, "-O", packs_dir]
+                os.makedirs(packs_dir, exist_ok=True)
+                await arun_command(cmd, env=env)
+        else:
+            cache.update()
+            cache.open(None)
+            with cache.actiongroup():
+                for package in packages:
+                    cache[package].mark_install()
+                    cache.commit()
+
+    async def _activate_locale(self, lang, env):
+        """ Final commands to run for locale support """
+
+        cmds = [["locale-gen"],
+                ["update-locale", "LANG={}".format(lang)]]
+        if self.app.opts.dry_run:
+            for cmd in cmds:
+                # TODO Figure out about mocks.
+                # It would be good if they offered a -P prefix option,
+                # but they don't.
+                # Chroot'ing is not an option.
+                log.debug('Would run: %s', ' '.join(cmd))
+        else:
+            for cmd in cmds:
+                cp = await arun_command(cmd, env=env)
+                if cp.returncode != 0:
+                    raise SystemError('Command {} failed with return code {}'
+                                      .format(cp.args, cp.returncode))
 
     @with_context(
         description="final system configuration", level="INFO",
@@ -67,6 +150,7 @@ class ConfigureController(SubiquityController):
 
             self.app.update_state(ApplicationState.POST_RUNNING)
 
+            localeGenPath = "/etc/locale.gen"
             dryrun = self.app.opts.dry_run
             variant = self.app.variant
             root_dir = self.model.root
@@ -77,6 +161,7 @@ class ConfigureController(SubiquityController):
                 create_user_base = []
                 assign_grp_base = []
                 usergroups_list = get_users_and_groups()
+                lang = self.model.locale.selected_language
                 if dryrun:
                     log.debug("creating a mock-up env for user %s", username)
                     # creating folders and files for dryrun
@@ -86,6 +171,19 @@ class ConfigureController(SubiquityController):
                     os.makedirs(home_dir, exist_ok=True)
                     pseudo_files = ["passwd", "shadow", "gshadow", "group",
                                     "subgid", "subuid"]
+
+                    # locale
+                    testLocGenPath = os.path.join(etc_dir,
+                                                  os.path
+                                                  .basename(localeGenPath))
+                    shutil.copy(localeGenPath, testLocGenPath)
+                    shutil.copy(localeGenPath,
+                                "{}-".format(testLocGenPath))
+                    # After copies are done, overwrite the original path
+                    # because there is code outside of this 'if'
+                    # depending on 'localeGenPath' being initialized.
+                    localeGenPath = testLocGenPath
+
                     for file in pseudo_files:
                         filepath = os.path.join(etc_dir, file)
                         open(filepath, "a").close()
@@ -107,6 +205,11 @@ class ConfigureController(SubiquityController):
 
                     create_user_base = ["-P", root_dir]
                     assign_grp_base = ["-P", root_dir]
+
+                env = os.environ.copy()
+                self._update_locale_gen(localeGenPath, lang)
+                await self._install_check_lang_support_packages(lang, env)
+                await self._activate_locale(lang, env)
 
                 create_user_cmd = ["useradd"] + create_user_base + \
                                   ["-m", "-s", "/bin/bash",
