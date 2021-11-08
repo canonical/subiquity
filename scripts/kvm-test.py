@@ -132,6 +132,10 @@ parser.add_argument('-a', '--autoinstall', default=False,
                     action='store_true', help='use autoinstall')
 parser.add_argument('-b', '--base', default=False, action='store_true',
                     help='use base iso')
+parser.add_argument('--basesnap', default=None, action='store',
+                    help='use slimy-update-snap on this snap')
+parser.add_argument('--snap', default=None, action='store',
+                    help='inject this snap into the ISO')
 parser.add_argument('-B', '--bios', action='store_true', default=False,
                     help='boot in BIOS mode')
 parser.add_argument('-c', '--channel', default=False, action='store',
@@ -243,9 +247,17 @@ def build(ctx):
     # --inject-snap $SUBIQUITY_SNAP_PATH
     if project.startswith('subiquity'):
         if ctx.args.quick:
+            run(f'sudo ./scripts/quick-test-this-branch.sh {ctx.baseiso} \
+                {ctx.iso}')
+        elif ctx.args.basesnap:
             with snap_manager('subiquity_test.snap') as snap:
-                run(f'sudo ./scripts/quick-test-this-branch.sh {ctx.baseiso} \
-                    {ctx.iso}')
+                run(f'sudo ./scripts/slimy-update-snap.sh {ctx.args.basesnap} \
+                    {snap}')
+                run(f'sudo ./scripts/inject-subiquity-snap.sh {ctx.baseiso} \
+                    {snap} {ctx.iso}')
+        elif ctx.args.snap:
+            run(f'sudo ./scripts/inject-subiquity-snap.sh {ctx.baseiso} \
+                {ctx.args.snap} {ctx.iso}')
         elif ctx.args.channel:
             run(f'sudo PYTHONPATH=$LIVEFS_EDITOR python3 -m livefs_edit \
                     {ctx.baseiso} {ctx.iso} \
@@ -276,7 +288,7 @@ def build(ctx):
                     {ctx.iso} {snap}
                 ''')
     else:
-        raise Exception(f'do not know how to build {projct}')
+        raise Exception(f'do not know how to build {project}')
 
     run(f'test -f {ctx.iso}')
 
@@ -451,9 +463,8 @@ def install(ctx):
         # appends += ['subiquity-channel=edge']
 
         with mounter(iso, mntdir):
-            appends += grub_get_extra_args(mntdir)
-
             if len(appends) > 0:
+                appends += grub_get_extra_args(mntdir)
                 # if we're passing kernel args, we need to manually specify
                 # kernel / initrd
                 kvm += ['-kernel', f'{mntdir}/casper/vmlinuz']
