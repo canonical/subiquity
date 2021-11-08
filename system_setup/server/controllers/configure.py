@@ -16,7 +16,7 @@ import os
 import shutil
 import logging
 import re
-from typing import Tuple
+from typing import Tuple, List
 import apt
 import apt_pkg
 
@@ -85,7 +85,7 @@ class ConfigureController(SubiquityController):
             log.error("Failed to modify %s file. %s", cmdFile, err)
             return ("", False)
 
-    def __update_locale_cmd(self, lang) -> list[str]:
+    def __update_locale_cmd(self, lang) -> List[str]:
         """ Adds mocking cli to update-locale if in dry-run. """
         updateLocCmd = ["update-locale", "LANG={}".format(lang)]
         if self.app.opts.dry_run:
