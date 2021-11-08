@@ -247,9 +247,8 @@ def build(ctx):
     # --inject-snap $SUBIQUITY_SNAP_PATH
     if project.startswith('subiquity'):
         if ctx.args.quick:
-            with snap_manager('subiquity_new.snap') as snap:
-                run(f'sudo ./scripts/quick-test-this-branch.sh {ctx.baseiso} \
-                    {ctx.iso}')
+            run(f'sudo ./scripts/quick-test-this-branch.sh {ctx.baseiso} \
+                {ctx.iso}')
         elif ctx.args.basesnap:
             with snap_manager('subiquity_test.snap') as snap:
                 run(f'sudo ./scripts/slimy-update-snap.sh {ctx.args.basesnap} \
