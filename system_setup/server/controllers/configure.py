@@ -145,11 +145,15 @@ class ConfigureController(SubiquityController):
                                      apt_pkg.config
                                      .find_dir("Dir::Cache::Archives")[1:])
             os.makedirs(packs_dir, exist_ok=True)
+            try:
             for package in packages:
-                # Downloading instead of installing. Doesn't require root.
+                    # Just write the package uri to a file instead of installing.
                 archive = os.path.join(packs_dir, cache[package].fullname)
-                cmd = ["wget", "-O", archive, cache[package].candidate.uri]
-                await arun_command(cmd, env=env)
+                    with open(archive, "wt") as f:
+                        f.write(cache[package].candidate.uri)
+            except IOError:
+                log.error("Failed to write %s file.", archive)
+                return False        
 
             return True
 
