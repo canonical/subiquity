@@ -88,13 +88,15 @@ class ConfigureController(SubiquityController):
     def __update_locale_cmd(self, lang) -> List[str]:
         """ Adds mocking cli to update-locale if in dry-run. """
         updateLocCmd = ["update-locale", "LANG={}".format(lang)]
-        if self.app.opts.dry_run:
-            defaultLocDir = os.path.join(self.model.root,
-                                         "etc/default/")
-            os.makedirs(defaultLocDir, exist_ok=True)
-            updateLocCmd += ["--locale-file",
-                             os.path.join(defaultLocDir, "locale"),
-                             "--no-checks"]
+        if not self.app.opts.dry_run:
+            return updateLocCmd
+
+        defaultLocDir = os.path.join(self.model.root,
+                                     "etc/default/")
+        os.makedirs(defaultLocDir, exist_ok=True)
+        updateLocCmd += ["--locale-file",
+                         os.path.join(defaultLocDir, "locale"),
+                         "--no-checks"]
 
         return updateLocCmd
 
@@ -102,7 +104,7 @@ class ConfigureController(SubiquityController):
         """ Last commands to run for locale support. Returns True on success"""
 
         (locGenCmd, ok) = self.__locale_gen_cmd()
-        if ok is False:
+        if not ok:
             log.error("Locale generation failed.")
             return False
 
@@ -216,12 +218,12 @@ class ConfigureController(SubiquityController):
 
         ok = await self._install_check_lang_support_packages(lang, env)
 
-        if ok is False:
+        if not ok:
             log.error("Failed to install recommended language packs.")
             return
 
         ok = await self._activate_locale(lang, env)
-        if ok is False:
+        if not ok:
             log.error("Failed to run locale activation commands.")
             return
 
