@@ -119,12 +119,24 @@ class ConfigureController(SubiquityController):
         return True
 
     async def _install_check_lang_support_packages(self, lang, env) -> bool:
-        """ Installs any packages recommended by
-            check-language-support command. """
+        """ Installs packages recommended by check-language-support command.
+            lang is expected to be one single language/locale. """
 
         clsCommand = "check-language-support"
-        # lang may have more than 5 chars and be separated by dot or space.
-        clsLang = lang.split('@')[0].split('.')[0].split(' ')[0]
+        # lang code may be separated by @, dot or spaces.
+        # clsLang = lang.split('@')[0].split('.')[0].split(' ')[0]
+        pattern = re.compile(r'([^.@\s]+)', re.IGNORECASE)
+        matches = pattern.match(lang)
+        if matches is None:
+            log.error("Failed to match expected language format: %s", lang)
+            return False
+
+        langCodes = matches.groups()
+        if len(langCodes) != 1:
+            log.error("Only one match was expected for: %s", lang)
+            return False
+
+        clsLang = langCodes[0]
 
         # Running that command doesn't require root.
         cp = await arun_command([clsCommand, "-l", clsLang], env=env)
@@ -146,15 +158,15 @@ class ConfigureController(SubiquityController):
                                      .find_dir("Dir::Cache::Archives")[1:])
             os.makedirs(packs_dir, exist_ok=True)
             try:
-            for package in packages:
+                for package in packages:
                     # Just write the package uri to a file instead of installing.
-                archive = os.path.join(packs_dir, cache[package].fullname)
+                    archive = os.path.join(packs_dir, cache[package].fullname)
                     with open(archive, "wt") as f:
                         f.write(cache[package].candidate.uri)
             except IOError:
                 log.error("Failed to write %s file.", archive)
                 return False        
-
+            
             return True
 
         cache.update()
