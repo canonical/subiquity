@@ -159,14 +159,14 @@ class ConfigureController(SubiquityController):
             os.makedirs(packs_dir, exist_ok=True)
             try:
                 for package in packages:
-                    # Just write the package uri to a file instead of installing.
+                    # Just write the package uri to a file.
                     archive = os.path.join(packs_dir, cache[package].fullname)
                     with open(archive, "wt") as f:
                         f.write(cache[package].candidate.uri)
             except IOError:
                 log.error("Failed to write %s file.", archive)
-                return False        
-            
+                return False
+
             return True
 
         cache.update()
