@@ -78,6 +78,14 @@ validate () {
                 echo "user not assigned with the expected group sudo"
                 exit 1
             fi
+            if [ -z "$( ls .subiquity/var/cache/apt/archives/)" ] ; then
+                echo "expected not empty directory var/cache/apt/archives/"
+                exit 1
+            fi
+            if [ -z "$( diff -Nup .subiquity/etc/locale.gen .subiquity/etc/locale.gen-)" ] ; then
+                echo "expected changes in etc/locale.gen"
+                exit 1
+            fi
         fi
     else
         echo "W: Unknown validation mode: ${mode}"
