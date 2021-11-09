@@ -2,7 +2,7 @@
 set -eux
 IMAGE=$1
 SCRIPT=$2
-TESTER=${IMAGE##*:}
+TESTER=subiquity-${IMAGE##*:}
 
 lxd init --auto
 
