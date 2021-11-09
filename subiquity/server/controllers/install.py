@@ -13,15 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import datetime
-import json
 import logging
 import os
 import re
 import shutil
-import subprocess
-import sys
 
 from curtin.commands.install import (
     ERROR_TARFILE,
@@ -34,21 +30,23 @@ import yaml
 from subiquitycore.async_helpers import (
     run_in_thread,
     )
-from subiquitycore.context import Status, with_context
-from subiquitycore.utils import (
-    astart_command,
-    )
+from subiquitycore.context import with_context
 
 from subiquity.common.errorreport import ErrorReportKind
-from subiquity.server.controller import (
-    SubiquityController,
-    )
 from subiquity.common.types import (
     ApplicationState,
     )
 from subiquity.journald import (
     journald_listen,
     )
+from subiquity.server.curtin import (
+    run_curtin_command,
+    start_curtin_command,
+    )
+from subiquity.server.controller import (
+    SubiquityController,
+    )
+
 
 log = logging.getLogger("subiquity.server.controllers.install")
 
@@ -72,146 +70,15 @@ class TracebackExtractor:
             self.traceback.append(line)
 
 
-class LoggedCommandRunner:
-
-    def __init__(self, ident):
-        self.ident = ident
-
-    async def start(self, cmd):
-        return await astart_command([
-            'systemd-cat', '--level-prefix=false', '--identifier='+self.ident,
-            ] + cmd)
-
-    async def run(self, cmd):
-        proc = await self.start(cmd)
-        await proc.communicate()
-        if proc.returncode != 0:
-            raise subprocess.CalledProcessError(proc.returncode, cmd)
-        else:
-            return subprocess.CompletedProcess(cmd, proc.returncode)
-
-
-class DryRunCommandRunner(LoggedCommandRunner):
-
-    def __init__(self, ident, delay):
-        super().__init__(ident)
-        self.delay = delay
-
-    async def start(self, cmd):
-        if 'scripts/replay-curtin-log.py' in cmd:
-            delay = 0
-        else:
-            cmd = ['echo', 'not running:'] + cmd
-            if 'unattended-upgrades' in cmd:
-                delay = 3*self.delay
-            else:
-                delay = self.delay
-        proc = await super().start(cmd)
-        await asyncio.sleep(delay)
-        return proc
-
-
-class CurtinCommandRunner:
-
-    def __init__(self, runner, event_syslog_id, config_location):
-        self.runner = runner
-        self.event_syslog_id = event_syslog_id
-        self.config_location = config_location
-        self._event_contexts = {}
-        journald_listen(
-            asyncio.get_event_loop(), [event_syslog_id], self._event)
-
-    def _event(self, event):
-        e = {
-            "EVENT_TYPE": "???",
-            "MESSAGE": "???",
-            "NAME": "???",
-            "RESULT": "???",
-            }
-        prefix = "CURTIN_"
-        for k, v in event.items():
-            if k.startswith(prefix):
-                e[k[len(prefix):]] = v
-        event_type = e["EVENT_TYPE"]
-        if event_type == 'start':
-            def p(name):
-                parts = name.split('/')
-                for i in range(len(parts), -1, -1):
-                    yield '/'.join(parts[:i]), '/'.join(parts[i:])
-
-            curtin_ctx = None
-            for pre, post in p(e["NAME"]):
-                if pre in self._event_contexts:
-                    parent = self._event_contexts[pre]
-                    curtin_ctx = parent.child(post, e["MESSAGE"])
-                    self._event_contexts[e["NAME"]] = curtin_ctx
-                    break
-            if curtin_ctx:
-                curtin_ctx.enter()
-        if event_type == 'finish':
-            status = getattr(Status, e["RESULT"], Status.WARN)
-            curtin_ctx = self._event_contexts.pop(e["NAME"], None)
-            if curtin_ctx is not None:
-                curtin_ctx.exit(result=status)
-
-    def make_command(self, command, *args, **conf):
-        cmd = [
-            sys.executable, '-m', 'curtin', '--showtrace',
-            '-c', self.config_location,
-            ]
-        for k, v in conf.items():
-            cmd.extend(['--set', 'json:' + k + '=' + json.dumps(v)])
-        cmd.append(command)
-        cmd.extend(args)
-        return cmd
-
-    async def run(self, context, command, *args, **conf):
-        self._event_contexts[''] = context
-        await self.runner.run(self.make_command(command, *args, **conf))
-        waited = 0.0
-        while len(self._event_contexts) > 1 and waited < 5.0:
-            await asyncio.sleep(0.1)
-            waited += 0.1
-            log.debug("waited %s seconds for events to drain", waited)
-        self._event_contexts.pop('', None)
-
-
-class DryRunCurtinCommandRunner(CurtinCommandRunner):
-
-    event_file = 'examples/curtin-events.json'
-
-    def make_command(self, command, *args, **conf):
-        if command == 'install':
-            return [
-                sys.executable, "scripts/replay-curtin-log.py",
-                self.event_file, self.event_syslog_id,
-                '.subiquity' + INSTALL_LOG,
-                ]
-        else:
-            return super().make_command(command, *args, **conf)
-
-
-class FailingDryRunCurtinCommandRunner(DryRunCurtinCommandRunner):
-
-    event_file = 'examples/curtin-events-fail.json'
-
-
 class InstallController(SubiquityController):
 
     def __init__(self, app):
         super().__init__(app)
         self.model = app.base_model
 
-        self.unattended_upgrades_proc = None
+        self.unattended_upgrades_cmd = None
         self.unattended_upgrades_ctx = None
-        self._event_syslog_id = 'curtin_event.%s' % (os.getpid(),)
         self.tb_extractor = TracebackExtractor()
-        if self.app.opts.dry_run:
-            self.command_runner = DryRunCommandRunner(
-                self.app.log_syslog_id, 2/self.app.scale_factor)
-        else:
-            self.command_runner = LoggedCommandRunner(self.app.log_syslog_id)
-        self.curtin_runner = None
 
     def stop_uu(self):
         if self.app.state == ApplicationState.UU_RUNNING:
@@ -229,8 +96,8 @@ class InstallController(SubiquityController):
     def log_event(self, event):
         self.tb_extractor.feed(event['MESSAGE'])
 
-    def make_curtin_command_runner(self):
-        config = self.model.render(syslog_identifier=self._event_syslog_id)
+    def write_config(self):
+        config = self.model.render()
         config_location = '/var/log/installer/subiquity-curtin-install.conf'
         log_location = INSTALL_LOG
         if self.app.opts.dry_run:
@@ -246,26 +113,19 @@ class InstallController(SubiquityController):
         self.app.note_file_for_apport("CurtinConfig", config_location)
         self.app.note_file_for_apport("CurtinErrors", ERROR_TARFILE)
         self.app.note_file_for_apport("CurtinLog", log_location)
-        if self.app.opts.dry_run:
-            if 'install-fail' in self.app.debug_flags:
-                cls = FailingDryRunCurtinCommandRunner
-            else:
-                cls = DryRunCurtinCommandRunner
-        else:
-            cls = CurtinCommandRunner
-        self.curtin_runner = cls(
-            self.command_runner, self._event_syslog_id, config_location)
+        return config_location
 
     @with_context(description="umounting /target dir")
     async def unmount_target(self, *, context, target):
-        await self.curtin_runner.run(context, 'unmount', '-t', target)
+        await run_curtin_command(self.app, context, 'unmount', '-t', target)
         if not self.app.opts.dry_run:
             shutil.rmtree(target)
 
     @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
-    async def curtin_install(self, *, context):
-        await self.curtin_runner.run(context, 'install')
+    async def curtin_install(self, *, context, config_location):
+        await run_curtin_command(
+            self.app, context, 'install', config=config_location)
 
     @with_context()
     async def install(self, *, context):
@@ -287,13 +147,14 @@ class InstallController(SubiquityController):
 
             self.app.update_state(ApplicationState.RUNNING)
 
-            self.make_curtin_command_runner()
+            config_location = self.write_config()
 
             if os.path.exists(self.model.target):
                 await self.unmount_target(
                     context=context, target=self.model.target)
 
-            await self.curtin_install(context=context)
+            await self.curtin_install(
+                context=context, config_location=config_location)
 
             self.app.update_state(ApplicationState.POST_WAIT)
 
@@ -344,17 +205,18 @@ class InstallController(SubiquityController):
         name="install_{package}",
         description="installing {package}")
     async def install_package(self, *, context, package):
-        await self.curtin_runner.run(context, 'system-install', '--', package)
+        await run_curtin_command(
+            self.app, context, 'system-install', '--', package)
 
     @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):
-        await self.command_runner.run(["umount", self.tpath('etc/apt')])
+        await self.app.command_runner.run(["umount", self.tpath('etc/apt')])
         if self.model.network.has_network:
-            await self.curtin_runner.run(
-                context, "in-target", "-t", self.tpath(),
+            await run_curtin_command(
+                self.app, context, "in-target", "-t", self.tpath(),
                 "--", "apt-get", "update")
         else:
-            await self.command_runner.run(
+            await self.app.command_runner.run(
                 ["umount", self.tpath('var/lib/apt/lists')])
 
     @with_context(description="downloading and installing {policy} updates")
@@ -374,27 +236,26 @@ class InstallController(SubiquityController):
             apt_conf.write(apt_conf_contents)
             apt_conf.close()
             self.unattended_upgrades_ctx = context
-            self.unattended_upgrades_proc = await self.command_runner.start(
-                self.curtin_runner.make_command(
-                    "in-target", "-t", self.tpath(),
-                    "--", "unattended-upgrades", "-v"))
-            await self.unattended_upgrades_proc.communicate()
-            self.unattended_upgrades_proc = None
+            self.unattended_upgrades_cmd = await start_curtin_command(
+                self.app, context, "in-target", "-t", self.tpath(),
+                "--", "unattended-upgrades", "-v")
+            await self.unattended_upgrades_cmd.wait()
+            self.unattended_upgrades_cmd = None
             self.unattended_upgrades_ctx = None
 
     async def stop_unattended_upgrades(self):
         with self.unattended_upgrades_ctx.parent.child(
                 "stop_unattended_upgrades",
                 "cancelling update"):
-            await self.command_runner.run([
+            await self.app.command_runner.run([
                 'chroot', self.tpath(),
                 '/usr/share/unattended-upgrades/'
                 'unattended-upgrade-shutdown',
                 '--stop-only',
                 ])
             if self.app.opts.dry_run and \
-               self.unattended_upgrades_proc is not None:
-                self.unattended_upgrades_proc.terminate()
+               self.unattended_upgrades_cmd is not None:
+                self.unattended_upgrades_cmd.proc.terminate()
 
 
 uu_apt_conf = b"""\

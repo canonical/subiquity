@@ -116,7 +116,7 @@ class TestSubiquityModel(unittest.TestCase):
         model = self.make_model()
         proxy_val = 'http://my-proxy'
         model.proxy.proxy = proxy_val
-        config = model.render('ident')
+        config = model.render()
         self.assertConfigHasVal(config, 'proxy.http_proxy', proxy_val)
         self.assertConfigHasVal(config, 'proxy.https_proxy', proxy_val)
         self.assertConfigHasVal(config, 'apt.http_proxy', proxy_val)
@@ -129,7 +129,7 @@ class TestSubiquityModel(unittest.TestCase):
 
     def test_proxy_notset(self):
         model = self.make_model()
-        config = model.render('ident')
+        config = model.render()
         self.assertConfigDoesNotHaveVal(config, 'proxy.http_proxy')
         self.assertConfigDoesNotHaveVal(config, 'proxy.https_proxy')
         self.assertConfigDoesNotHaveVal(config, 'apt.http_proxy')
@@ -142,7 +142,7 @@ class TestSubiquityModel(unittest.TestCase):
 
     def test_keyboard(self):
         model = self.make_model()
-        config = model.render('ident')
+        config = model.render()
         self.assertConfigWritesFile(config, 'etc/default/keyboard')
 
     def test_writes_machine_id_media_info(self):
@@ -150,18 +150,18 @@ class TestSubiquityModel(unittest.TestCase):
         model_proxy = self.make_model()
         model_proxy.proxy.proxy = 'http://something'
         for model in model_no_proxy, model_proxy:
-            config = model.render('ident')
+            config = model.render()
             self.assertConfigWritesFile(config, 'etc/machine-id')
             self.assertConfigWritesFile(config, 'var/log/installer/media-info')
 
     def test_storage_version(self):
         model = self.make_model()
-        config = model.render('ident')
+        config = model.render()
         self.assertConfigHasVal(config, 'storage.version', 1)
 
     def test_write_netplan(self):
         model = self.make_model()
-        config = model.render('ident')
+        config = model.render()
         netplan_content = None
         for fspec in config['write_files'].values():
             if fspec['path'].startswith('etc/netplan'):
@@ -174,14 +174,14 @@ class TestSubiquityModel(unittest.TestCase):
 
     def test_has_sources(self):
         model = self.make_model()
-        config = model.render('ident')
+        config = model.render()
         self.assertIn('sources', config)
 
     def test_mirror(self):
         model = self.make_model()
         mirror_val = 'http://my-mirror'
         model.mirror.set_mirror(mirror_val)
-        config = model.render('ident')
+        config = model.render()
         from curtin.commands.apt_config import get_mirror
         try:
             from curtin.distro import get_architecture

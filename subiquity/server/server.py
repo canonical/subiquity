@@ -68,6 +68,7 @@ from subiquity.models.subiquity import (
 from subiquity.server.controller import SubiquityController
 from subiquity.server.geoip import GeoIP
 from subiquity.server.errors import ErrorController
+from subiquity.server.runner import get_command_runner
 from subiquity.server.types import InstallerChannels
 from subiquitycore.snapd import (
     AsyncSnapd,
@@ -269,6 +270,7 @@ class SubiquityServer(Application):
         self.echo_syslog_id = 'subiquity_echo.{}'.format(os.getpid())
         self.event_syslog_id = 'subiquity_event.{}'.format(os.getpid())
         self.log_syslog_id = 'subiquity_log.{}'.format(os.getpid())
+        self.command_runner = get_command_runner(self)
 
         self.error_reporter = ErrorReporter(
             self.context.child("ErrorReporter"), self.opts.dry_run, self.root)
