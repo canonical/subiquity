@@ -6,7 +6,7 @@ TESTER=${IMAGE##*:}
 
 lxd init --auto
 
-if [ -z "$(lxc list -f csv | grep $TESTER)" ]
+if [ -z "$(lxc list -f csv -c n ^${TESTER}\$)" ]
 then
     lxc launch $IMAGE $TESTER
     lxc config device add $TESTER code disk source=`pwd` path=/subiquity
