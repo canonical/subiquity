@@ -72,6 +72,4 @@ class MirrorModel(object):
         config["uri"] = mirror
 
     def render(self):
-        return {
-             'apt': copy.deepcopy(self.config)
-            }
+        return {}
