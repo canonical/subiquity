@@ -42,12 +42,10 @@ class ConfigureController(SubiquityController):
         self.install_task = self.app.aio_loop.create_task(self.configure())
 
     def __locale_gen_cmd(self) -> Tuple[str, bool]:
-        """ Returns the locale-gen command path if not in dry-run.
-            Otherwise, copies the locale-gen script, altering the localedef
-            command line to output into a specified directory.
-            Additionally, indicates success by returning True
-            as the second element of the tuple. """
-
+        """ Return a tuple of the locale-gen command path and True for
+        validity. In dry-run, copy the locale-gen script, altering the
+        localedef command line to output into a specified directory.
+        """
         cmd = "usr/sbin/locale-gen"
         if self.app.opts.dry_run is False or self.app.opts.dry_run is None:
             return (os.path.join("/", cmd), True)
@@ -61,7 +59,6 @@ class ConfigureController(SubiquityController):
         # Supply LC_* definition files to avoid complains from localedef.
         shutil.copytree("/usr/lib/locale/C.UTF-8/", outDir,
                         dirs_exist_ok=True)
-
         try:
             # Altering locale-gen script to output to the desired folder.
             with open(cmdFile, "r+") as f:
@@ -86,7 +83,7 @@ class ConfigureController(SubiquityController):
             return ("", False)
 
     def __update_locale_cmd(self, lang) -> List[str]:
-        """ Adds mocking cli to update-locale if in dry-run. """
+        """ Add mocking cli to update-locale if in dry-run."""
         updateLocCmd = ["update-locale", "LANG={}".format(lang)]
         if not self.app.opts.dry_run:
             return updateLocCmd
@@ -97,12 +94,12 @@ class ConfigureController(SubiquityController):
         updateLocCmd += ["--locale-file",
                          os.path.join(defaultLocDir, "locale"),
                          "--no-checks"]
-
         return updateLocCmd
 
     async def _activate_locale(self, lang, env) -> bool:
-        """ Last commands to run for locale support. Returns True on success"""
-
+        """ Return true if succeed in running the last commands
+        to set the locale.
+        """
         (locGenCmd, ok) = self.__locale_gen_cmd()
         if not ok:
             log.error("Locale generation failed.")
@@ -116,12 +113,13 @@ class ConfigureController(SubiquityController):
                 log.error('Command "{}" failed with return code {}'
                           .format(cp.args, cp.returncode))
                 return False
+
         return True
 
     async def _install_check_lang_support_packages(self, lang, env) -> bool:
-        """ Installs packages recommended by check-language-support command.
-            lang is expected to be one single language/locale. """
-
+        """ Install packages recommended by check-language-support
+        command. lang is expected to be one single language/locale.
+        """
         clsCommand = "check-language-support"
         # lang code may be separated by @, dot or spaces.
         # clsLang = lang.split('@')[0].split('.')[0].split(' ')[0]
@@ -137,7 +135,6 @@ class ConfigureController(SubiquityController):
             return False
 
         clsLang = langCodes[0]
-
         # Running that command doesn't require root.
         cp = await arun_command([clsCommand, "-l", clsLang], env=env)
         if cp.returncode != 0:
@@ -180,11 +177,11 @@ class ConfigureController(SubiquityController):
         return True
 
     def _update_locale_gen_file(self, localeGenPath, lang) -> bool:
-        """ Uncomments the line in locale.gen file where lang is found,
-            if found commented. A fully qualified language is expected,
-            since that would have passed thru the Locale controller
-            validation. e.g. en_UK.UTF-8. Returns True for success. """
-
+        """ Uncomment the line in locale.gen file matching lang,
+        if found commented. A fully qualified language is expected,
+        since that would have passed thru the Locale controller
+        validation. e.g. en_UK.UTF-8. Return True for success.
+        """
         fileContents: str
         try:
             with open(localeGenPath, "r+") as f:
@@ -212,6 +209,7 @@ class ConfigureController(SubiquityController):
             return False
 
     def _locale_gen_file_path(self):
+        """ Return the proper locale.gen path for dry or live-run."""
         localeGenPath = "/etc/locale.gen"
         if self.app.opts.dry_run is False or self.app.opts.dry_run is None:
             return localeGenPath
@@ -221,11 +219,11 @@ class ConfigureController(SubiquityController):
         testLocGenPath = os.path.join(etc_dir,
                                       os.path.basename(localeGenPath))
         shutil.copy(localeGenPath, testLocGenPath)
-        shutil.copy(localeGenPath, "{}-".format(testLocGenPath))
+        shutil.copy(localeGenPath, "{}.test".format(testLocGenPath))
         return testLocGenPath
 
     async def apply_locale(self, lang):
-        """ Effectively apply the locale configuration to the new system. """
+        """ Effectively apply the locale setup to the new system."""
         env = os.environ.copy()
         localeGenPath = self._locale_gen_file_path()
         if self._update_locale_gen_file(localeGenPath, lang) is False:
@@ -233,7 +231,6 @@ class ConfigureController(SubiquityController):
             return
 
         ok = await self._install_check_lang_support_packages(lang, env)
-
         if not ok:
             log.error("Failed to install recommended language packs.")
             return
@@ -247,6 +244,7 @@ class ConfigureController(SubiquityController):
         description="final system configuration", level="INFO",
         childlevel="DEBUG")
     async def configure(self, *, context):
+        """ Apply the installation steps submitted by the user."""
         context.set('is-install-context', True)
         try:
 
@@ -261,15 +259,6 @@ class ConfigureController(SubiquityController):
             await self.model.wait_postinstall()
 
             self.app.update_state(ApplicationState.POST_WAIT)
-
-            # TODO WSL:
-            # 1. Use self.model to get all data to commit
-            # 2. Write directly (without wsl utilities) to wsl.conf and other
-            #    fstab files
-            # 3. If not in reconfigure mode: create User, otherwise just write
-            #    wsl.conf files.
-            # This must not use subprocesses.
-            # If dry-run: write in .subiquity
 
             self.app.update_state(ApplicationState.POST_RUNNING)
 
@@ -293,10 +282,10 @@ class ConfigureController(SubiquityController):
                     os.makedirs(home_dir, exist_ok=True)
                     pseudo_files = ["passwd", "shadow", "gshadow", "group",
                                     "subgid", "subuid"]
-
                     for file in pseudo_files:
                         filepath = os.path.join(etc_dir, file)
                         open(filepath, "a").close()
+
                     # mimic groupadd
                     group_id = 1000
                     for group in usergroups_list:
@@ -336,6 +325,7 @@ class ConfigureController(SubiquityController):
                                     % (username, assign_grp_proc.stderr))
 
                 await self.apply_locale(lang)
+
             else:
                 wsl_config_update(self.model.wslconfadvanced.wslconfadvanced,
                                   root_dir)
@@ -350,6 +340,7 @@ class ConfigureController(SubiquityController):
                               default_user=username)
 
             self.app.update_state(ApplicationState.DONE)
+
         except Exception:
             kw = {}
             self.app.make_apport_report(
