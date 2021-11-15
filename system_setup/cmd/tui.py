@@ -51,6 +51,10 @@ def make_client_args_parser():
     parser.add_argument('--socket')
     parser.add_argument('--answers')
     parser.add_argument('--server-pid')
+    parser.add_argument('--prefill',
+                        dest='prefill',
+                        help='Prefills UI models with data provided in'
+                        ' a prefill.yaml file yet allowing overrides.')
     return parser
 
 
@@ -69,8 +73,8 @@ def main():
     server_args = []
     server_output_dir = "/var/log/installer"
     server_state_file = "/run/subiquity/server-state"
+    opts, unknown = parser.parse_known_args(args)
     if '--dry-run' in args:
-        opts, unknown = parser.parse_known_args(args)
         server_state_file = ".subiquity/run/subiquity/server-state"
         if opts.socket is None:
             need_start_server = True
@@ -78,13 +82,13 @@ def main():
             sock_path = os.path.join(server_output_dir, 'socket')
             opts.socket = sock_path
             server_args = ['--dry-run', '--socket=' + sock_path] + unknown
-        else:
-            opts = parser.parse_args(args)
-    else:
-        opts = parser.parse_args(args)
-        if opts.socket is None:
-            need_start_server = True
-            opts.socket = '/run/subiquity/socket'
+
+    elif opts.socket is None:
+        need_start_server = True
+        opts.socket = '/run/subiquity/socket'
+
+    if opts.prefill:
+        server_args += ['--prefill='+opts.prefill]
 
     os.makedirs(server_output_dir, exist_ok=True)
     server_output = open(os.path.join(server_output_dir, 'server-output'), 'w')
