@@ -78,8 +78,10 @@ class SystemSetupServer(SubiquityServer):
         root = '/'
         if self.opts.dry_run:
             root = os.path.abspath('.subiquity')
-        return SystemSetupModel(root, self.hub, INSTALL_MODEL_NAMES,
-                                POSTINSTALL_MODEL_NAMES)
+        model = SystemSetupModel(root, self.hub, INSTALL_MODEL_NAMES,
+                                 POSTINSTALL_MODEL_NAMES)
+        model.set_source_variant(self.variant)
+        return model
 
     # We don’t have cloudinit in system_setup.
     async def wait_for_cloudinit(self):
