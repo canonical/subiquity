@@ -15,6 +15,10 @@
 import os
 import shutil
 import logging
+import re
+from typing import Tuple, List
+import apt
+import apt_pkg
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.types import ApplicationState
@@ -37,10 +41,210 @@ class ConfigureController(SubiquityController):
     def start(self):
         self.install_task = self.app.aio_loop.create_task(self.configure())
 
+    def __locale_gen_cmd(self) -> Tuple[str, bool]:
+        """ Return a tuple of the locale-gen command path and True for
+        validity. In dry-run, copy the locale-gen script, altering the
+        localedef command line to output into a specified directory.
+        """
+        cmd = "usr/sbin/locale-gen"
+        if self.app.opts.dry_run is False or self.app.opts.dry_run is None:
+            return (os.path.join("/", cmd), True)
+
+        outDir = os.path.join(self.model.root, "usr/lib/locale")
+        usrSbinDir = os.path.join(self.model.root, "usr/sbin")
+        os.makedirs(outDir, exist_ok=True)
+        os.makedirs(usrSbinDir, exist_ok=True)
+        cmdFile = os.path.join(self.model.root, cmd)
+        shutil.copy(os.path.join("/", cmd), cmdFile)
+        # Supply LC_* definition files to avoid complains from localedef.
+        shutil.copytree("/usr/lib/locale/C.UTF-8/", outDir,
+                        dirs_exist_ok=True)
+        try:
+            # Altering locale-gen script to output to the desired folder.
+            with open(cmdFile, "r+") as f:
+                script = f.read()
+                pattern = r'(localedef .+) (\|\| :; \\)'
+                localeDefRe = re.compile(pattern)
+                replacement = r'\1 "{}/" \2'.format(outDir)
+                (fileContents, n) = localeDefRe.subn(replacement, script,
+                                                     count=1)
+                if n != 1:
+                    log.error("locale-gen script contents were unexpected."
+                              " Aborting mock creation")
+                    return ("", False)
+
+                f.seek(0)
+                f.write(fileContents)
+
+            return (cmdFile, True)
+
+        except IOError as err:
+            log.error("Failed to modify %s file. %s", cmdFile, err)
+            return ("", False)
+
+    def __update_locale_cmd(self, lang) -> List[str]:
+        """ Add mocking cli to update-locale if in dry-run."""
+        updateLocCmd = ["update-locale", "LANG={}".format(lang)]
+        if not self.app.opts.dry_run:
+            return updateLocCmd
+
+        defaultLocDir = os.path.join(self.model.root,
+                                     "etc/default/")
+        os.makedirs(defaultLocDir, exist_ok=True)
+        updateLocCmd += ["--locale-file",
+                         os.path.join(defaultLocDir, "locale"),
+                         "--no-checks"]
+        return updateLocCmd
+
+    async def _activate_locale(self, lang, env) -> bool:
+        """ Return true if succeed in running the last commands
+        to set the locale.
+        """
+        (locGenCmd, ok) = self.__locale_gen_cmd()
+        if not ok:
+            log.error("Locale generation failed.")
+            return False
+
+        updateCmd = self.__update_locale_cmd(lang)
+        cmds = [[locGenCmd], updateCmd]
+        for cmd in cmds:
+            cp = await arun_command(cmd, env=env)
+            if cp.returncode != 0:
+                log.error('Command "{}" failed with return code {}'
+                          .format(cp.args, cp.returncode))
+                return False
+
+        return True
+
+    async def _install_check_lang_support_packages(self, lang, env) -> bool:
+        """ Install packages recommended by check-language-support
+        command. lang is expected to be one single language/locale.
+        """
+        clsCommand = "check-language-support"
+        # lang code may be separated by @, dot or spaces.
+        # clsLang = lang.split('@')[0].split('.')[0].split(' ')[0]
+        pattern = re.compile(r'([^.@\s]+)', re.IGNORECASE)
+        matches = pattern.match(lang)
+        if matches is None:
+            log.error("Failed to match expected language format: %s", lang)
+            return False
+
+        langCodes = matches.groups()
+        if len(langCodes) != 1:
+            log.error("Only one match was expected for: %s", lang)
+            return False
+
+        clsLang = langCodes[0]
+        # Running that command doesn't require root.
+        cp = await arun_command([clsCommand, "-l", clsLang], env=env)
+        if cp.returncode != 0:
+            log.error('Command "%s" failed with return code %d',
+                      cp.args, cp.returncode)
+            return False
+
+        packages = cp.stdout.strip('\n').split(' ')
+        if len(packages) == 0:
+            log.debug("%s didn't recommend any packages. Nothing to do.",
+                      clsCommand)
+            return True
+
+        cache = apt.Cache()
+        if self.app.opts.dry_run:
+            packs_dir = os.path.join(self.model.root,
+                                     apt_pkg.config
+                                     .find_dir("Dir::Cache::Archives")[1:])
+            os.makedirs(packs_dir, exist_ok=True)
+            try:
+                for package in packages:
+                    # Just write the package uri to a file.
+                    archive = os.path.join(packs_dir, cache[package].fullname)
+                    with open(archive, "wt") as f:
+                        f.write(cache[package].candidate.uri)
+            except IOError:
+                log.error("Failed to write %s file.", archive)
+                return False
+
+            return True
+
+        cache.update()
+        cache.open(None)
+        with cache.actiongroup():
+            for package in packages:
+                cache[package].mark_install()
+
+            cache.commit()
+
+        return True
+
+    def _update_locale_gen_file(self, localeGenPath, lang) -> bool:
+        """ Uncomment the line in locale.gen file matching lang,
+        if found commented. A fully qualified language is expected,
+        since that would have passed thru the Locale controller
+        validation. e.g. en_UK.UTF-8. Return True for success.
+        """
+        fileContents: str
+        try:
+            with open(localeGenPath, "r+") as f:
+                fileContents = f.read()
+                lineFound = fileContents.find(lang)
+                if lineFound == -1:
+                    # An unsupported locale coming from our UI is a bug
+                    log.error("Selected language %s not supported.", lang)
+                    return False
+
+                pattern = r'[# ]*({}.*)'.format(lang)
+                commented = re.compile(pattern)
+                (fileContents, n) = commented.subn(r'\1', fileContents,
+                                                   count=1)
+                if n != 1:
+                    log.error("Unexpected locale.gen file contents. Aborting.")
+                    return False
+
+                f.seek(0)
+                f.write(fileContents)
+                return True
+
+        except IOError as err:
+            log.error("Failed to modify %s file. %s", localeGenPath, err)
+            return False
+
+    def _locale_gen_file_path(self):
+        """ Return the proper locale.gen path for dry or live-run."""
+        localeGenPath = "/etc/locale.gen"
+        if self.app.opts.dry_run is False or self.app.opts.dry_run is None:
+            return localeGenPath
+
+        # For testing purposes.
+        etc_dir = os.path.join(self.model.root, "etc")
+        testLocGenPath = os.path.join(etc_dir,
+                                      os.path.basename(localeGenPath))
+        shutil.copy(localeGenPath, testLocGenPath)
+        shutil.copy(localeGenPath, "{}.test".format(testLocGenPath))
+        return testLocGenPath
+
+    async def apply_locale(self, lang):
+        """ Effectively apply the locale setup to the new system."""
+        env = os.environ.copy()
+        localeGenPath = self._locale_gen_file_path()
+        if self._update_locale_gen_file(localeGenPath, lang) is False:
+            log.error("Failed to update locale.gen")
+            return
+
+        ok = await self._install_check_lang_support_packages(lang, env)
+        if not ok:
+            log.error("Failed to install recommended language packs.")
+            return
+
+        ok = await self._activate_locale(lang, env)
+        if not ok:
+            log.error("Failed to run locale activation commands.")
+            return
+
     @with_context(
         description="final system configuration", level="INFO",
         childlevel="DEBUG")
     async def configure(self, *, context):
+        """ Apply the installation steps submitted by the user."""
         context.set('is-install-context', True)
         try:
 
@@ -56,15 +260,6 @@ class ConfigureController(SubiquityController):
 
             self.app.update_state(ApplicationState.POST_WAIT)
 
-            # TODO WSL:
-            # 1. Use self.model to get all data to commit
-            # 2. Write directly (without wsl utilities) to wsl.conf and other
-            #    fstab files
-            # 3. If not in reconfigure mode: create User, otherwise just write
-            #    wsl.conf files.
-            # This must not use subprocesses.
-            # If dry-run: write in .subiquity
-
             self.app.update_state(ApplicationState.POST_RUNNING)
 
             dryrun = self.app.opts.dry_run
@@ -77,6 +272,7 @@ class ConfigureController(SubiquityController):
                 create_user_base = []
                 assign_grp_base = []
                 usergroups_list = get_users_and_groups()
+                lang = self.model.locale.selected_language
                 if dryrun:
                     log.debug("creating a mock-up env for user %s", username)
                     # creating folders and files for dryrun
@@ -89,6 +285,7 @@ class ConfigureController(SubiquityController):
                     for file in pseudo_files:
                         filepath = os.path.join(etc_dir, file)
                         open(filepath, "a").close()
+
                     # mimic groupadd
                     group_id = 1000
                     for group in usergroups_list:
@@ -126,6 +323,9 @@ class ConfigureController(SubiquityController):
                 if assign_grp_proc.returncode != 0:
                     raise Exception(("Failed to assign group to user %s: %s")
                                     % (username, assign_grp_proc.stderr))
+
+                await self.apply_locale(lang)
+
             else:
                 wsl_config_update(self.model.wslconfadvanced.wslconfadvanced,
                                   root_dir)
@@ -140,6 +340,7 @@ class ConfigureController(SubiquityController):
                               default_user=username)
 
             self.app.update_state(ApplicationState.DONE)
+
         except Exception:
             kw = {}
             self.app.make_apport_report(

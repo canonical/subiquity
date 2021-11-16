@@ -78,6 +78,14 @@ validate () {
                 echo "user not assigned with the expected group sudo"
                 exit 1
             fi
+            if [ -z "$( ls .subiquity/var/cache/apt/archives/)" ] ; then
+                echo "expected not empty directory var/cache/apt/archives/"
+                exit 1
+            fi
+            if [ -z "$( diff -Nup .subiquity/etc/locale.gen .subiquity/etc/locale.gen-)" ] ; then
+                echo "expected changes in etc/locale.gen"
+                exit 1
+            fi
         fi
     else
         echo "W: Unknown validation mode: ${mode}"
@@ -91,10 +99,11 @@ clean () {
     rm -rf .subiquity/run/
     rm -rf .subiquity/home/
     rm -rf .subiquity/etc/.pwd.lock
-    rm -rf .subiquity/etc/{passwd*,shadow*,group*,gshadow*,subgid*,subuid*}
+    rm -rf .subiquity/etc/{locale*,passwd*,shadow*,group*,gshadow*,subgid*,subuid*}
     rm -rf .subiquity/etc/*.conf
     rm -rf .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg
     rm -rf .subiquity/var/crash
+    rm -rf .subiquity/var/cache
 }
 
 error () {
