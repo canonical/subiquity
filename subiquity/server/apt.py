@@ -126,7 +126,9 @@ class AptConfigurer:
                 self.tpath('etc/apt/sources.list'),
                 self.tpath('etc/apt/sources.list.d/original.list'))
         else:
-            os.unlink(self.tpath('etc/apt/apt.conf.d/90curtin-aptproxy'))
+            proxy_path = self.tpath('etc/apt/apt.conf.d/90curtin-aptproxy')
+            if os.path.exists(proxy_path):
+                os.unlink(proxy_path)
             await self.setup_overlay(self.tpath('var/lib/apt/lists'))
 
         codename = lsb_release()['codename']
