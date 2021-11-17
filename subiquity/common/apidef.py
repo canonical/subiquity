@@ -294,11 +294,6 @@ class API:
         def GET() -> TimeZoneInfo: ...
         def POST(tz: str): ...
 
-    class install:
-        class configure_apt:
-            def POST():
-                "Not for client use."
-
     class shutdown:
         def POST(mode: ShutdownMode, immediate: bool = False): ...
 

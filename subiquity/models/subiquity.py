@@ -26,7 +26,7 @@ from curtin.config import merge_config
 
 from subiquitycore.file_util import write_file
 
-from subiquity.common.resources import resource_path, get_users_and_groups
+from subiquity.common.resources import get_users_and_groups
 from subiquity.server.types import InstallerChannels
 
 from .filesystem import FilesystemModel
@@ -335,8 +335,8 @@ class SubiquityModel:
             'stages': stages,
 
             'curthooks_commands': {
-                '001-configure-apt': [
-                    resource_path('bin/subiquity-configure-apt'),
+                '001-mount-cdrom': [
+                    'mount', '--bind', '/cdrom', '/target/cdrom',
                     ],
                 },
 

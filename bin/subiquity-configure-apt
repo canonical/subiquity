@@ -1,3 +1,0 @@
-#!/bin/bash -eux
-
-curl --fail --unix-socket /run/subiquity/socket --data '' a/install/configure_apt
