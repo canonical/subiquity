@@ -14,6 +14,8 @@ from urllib.parse import unquote
 
 from subiquitycore.utils import astart_command
 
+default_timeout = 10
+
 
 def find(items, key, value):
     for item in items:
@@ -25,11 +27,11 @@ def first(items, key, value):
     return next(find(items, key, value))
 
 
-def timeout(_timeout):
+def timeout(multiplier=1):
     def wrapper(coro):
         @wraps(coro)
         async def run(*args, **kwargs):
-            with async_timeout.timeout(_timeout):
+            with async_timeout.timeout(default_timeout * multiplier):
                 return await coro(*args, **kwargs)
         return run
     return wrapper
@@ -78,7 +80,7 @@ class Client:
             return self.loads(content)
 
     async def poll_startup(self):
-        for _ in range(20):
+        for _ in range(default_timeout * 10):
             try:
                 await self.get('/meta/status')
                 return
@@ -109,6 +111,8 @@ class Server(Client):
         try:
             await asyncio.wait_for(self.server_shutdown(), timeout=5.0)
             await asyncio.wait_for(self.server_task, timeout=5.0)
+        except asyncio.exceptions.TimeoutError:
+            pass
         finally:
             try:
                 self.proc.kill()
@@ -121,7 +125,7 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
 
 
 async def poll_for_socket_exist(socket_path):
-    for _ in range(100):
+    for _ in range(default_timeout * 5):
         # test level timeout will trigger first, this loop is just a fallback
         if os.path.exists(socket_path):
             return
@@ -154,13 +158,13 @@ async def connect_server(*args, **kwargs):
 
 
 class TestBitlocker(TestAPI):
-    @timeout(5)
+    @timeout()
     async def test_has_bitlocker(self):
         async with start_server('examples/win10.json') as inst:
             resp = await inst.get('/storage/has_bitlocker')
             self.assertEqual(1, len(resp))
 
-    @timeout(5)
+    @timeout()
     async def test_not_bitlocker(self):
         async with start_server('examples/simple.json') as inst:
             resp = await inst.get('/storage/has_bitlocker')
@@ -168,7 +172,7 @@ class TestBitlocker(TestAPI):
 
 
 class TestFlow(TestAPI):
-    @timeout(10)
+    @timeout(2)
     async def test_server_flow(self):
         async with start_server('examples/simple.json') as inst:
             await inst.post('/locale', 'en_US.UTF-8')
@@ -209,7 +213,7 @@ class TestFlow(TestAPI):
             for state in 'RUNNING', 'POST_WAIT', 'POST_RUNNING', 'UU_RUNNING':
                 await inst.get('/meta/status', cur=state)
 
-    @timeout(5)
+    @timeout()
     async def test_v2_flow(self):
         async with start_server('examples/win10.json') as inst:
             disk_id = 'disk-sda'
@@ -263,7 +267,7 @@ class TestFlow(TestAPI):
 
 
 class TestGuided(TestAPI):
-    @timeout(5)
+    @timeout()
     async def test_guided_v2(self):
         async with start_server('examples/simple.json') as inst:
             choice = {'disk_id': 'disk-sda'}
@@ -273,7 +277,7 @@ class TestGuided(TestAPI):
 
 
 class TestAdd(TestAPI):
-    @timeout(5)
+    @timeout()
     async def test_v2_add_boot_partition(self):
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
@@ -297,7 +301,7 @@ class TestAdd(TestAPI):
             manual_add = await inst.post('/storage/v2/add_partition', data)
             self.assertEqual(single_add, manual_add)
 
-    @timeout(5)
+    @timeout()
     async def test_v2_deny_multiple_add_boot_partition(self):
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
@@ -306,7 +310,7 @@ class TestAdd(TestAPI):
                 await inst.post('/storage/v2/add_boot_partition',
                                 disk_id=disk_id)
 
-    @timeout(5)
+    @timeout()
     async def test_v2_deny_multiple_add_boot_partition_BIOS(self):
         async with start_server('examples/simple.json', 'bios') as inst:
             disk_id = 'disk-sda'
@@ -315,7 +319,7 @@ class TestAdd(TestAPI):
                 await inst.post('/storage/v2/add_boot_partition',
                                 disk_id=disk_id)
 
-    @timeout(5)
+    @timeout()
     async def test_v2_free_for_partitions(self):
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
@@ -338,7 +342,7 @@ class TestAdd(TestAPI):
             sda = first(resp['disks'], 'id', disk_id)
             self.assertEqual(expected_free, sda['free_for_partitions'])
 
-    @timeout(5)
+    @timeout()
     async def test_add_format_required(self):
         disk_id = 'disk-sda'
         async with start_server('examples/simple.json') as inst:
@@ -352,7 +356,7 @@ class TestAdd(TestAPI):
                                        msg=f'data {data}'):
                     await inst.post('/storage/v2/add_partition', data)
 
-    @timeout(5)
+    @timeout()
     async def test_add_default_size_handling(self):
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
@@ -373,7 +377,7 @@ class TestAdd(TestAPI):
             sda2 = first(sda['partitions'], 'number', 2)
             self.assertEqual(expected_total, sda1['size'] + sda2['size'])
 
-    @timeout(5)
+    @timeout()
     async def test_v2_add_boot_BIOS(self):
         async with start_server('examples/simple.json', 'bios') as inst:
             disk_id = 'disk-sda'
@@ -384,7 +388,7 @@ class TestAdd(TestAPI):
             self.assertTrue(sda['boot_device'])
             self.assertTrue(sda1['boot'])
 
-    @timeout(5)
+    @timeout()
     async def test_v2_blank_is_not_boot(self):
         async with start_server('examples/simple.json', 'bios') as inst:
             disk_id = 'disk-sda'
@@ -392,7 +396,7 @@ class TestAdd(TestAPI):
             sda = first(resp['disks'], 'id', disk_id)
             self.assertFalse(sda['boot_device'])
 
-    @timeout(5)
+    @timeout()
     async def test_v2_multi_disk_multi_boot(self):
         async with start_server('examples/many-nics-and-disks.json') as inst:
             resp = await inst.get('/storage/v2')
@@ -406,7 +410,7 @@ class TestAdd(TestAPI):
 
 
 class TestDelete(TestAPI):
-    @timeout(5)
+    @timeout()
     async def test_v2_delete_without_reformat(self):
         async with start_server('examples/win10.json') as inst:
             disk_id = 'disk-sda'
@@ -417,7 +421,7 @@ class TestDelete(TestAPI):
             with self.assertRaises(ClientResponseError):
                 await inst.post('/storage/v2/delete_partition', data)
 
-    @timeout(5)
+    @timeout()
     async def test_v2_delete_with_reformat(self):
         async with start_server('examples/win10.json') as inst:
             disk_id = 'disk-sda'
@@ -436,7 +440,7 @@ class TestDelete(TestAPI):
             }
             await inst.post('/storage/v2/delete_partition', data)
 
-    @timeout(5)
+    @timeout()
     async def test_delete_nonexistant(self):
         async with start_server('examples/win10.json') as inst:
             disk_id = 'disk-sda'
@@ -450,7 +454,7 @@ class TestDelete(TestAPI):
 
 
 class TestEdit(TestAPI):
-    @timeout(5)
+    @timeout()
     async def test_edit_no_change_size(self):
         async with start_server('examples/win10.json') as inst:
             disk_id = 'disk-sda'
@@ -468,7 +472,7 @@ class TestEdit(TestAPI):
             with self.assertRaises(ClientResponseError):
                 await inst.post('/storage/v2/edit_partition', data)
 
-    @timeout(5)
+    @timeout()
     async def test_edit_no_change_grub(self):
         async with start_server('examples/win10.json') as inst:
             disk_id = 'disk-sda'
@@ -482,7 +486,7 @@ class TestEdit(TestAPI):
             with self.assertRaises(ClientResponseError):
                 await inst.post('/storage/v2/edit_partition', data)
 
-    @timeout(5)
+    @timeout()
     async def test_edit_format(self):
         async with start_server('examples/win10.json') as inst:
             disk_id = 'disk-sda'
@@ -499,7 +503,7 @@ class TestEdit(TestAPI):
             sda3 = first(sda['partitions'], 'number', 3)
             self.assertEqual('btrfs', sda3['format'])
 
-    @timeout(5)
+    @timeout()
     async def test_edit_mount(self):
         async with start_server('examples/win10.json') as inst:
             disk_id = 'disk-sda'
@@ -516,7 +520,7 @@ class TestEdit(TestAPI):
             sda3 = first(sda['partitions'], 'number', 3)
             self.assertEqual('/', sda3['mount'])
 
-    @timeout(5)
+    @timeout()
     async def test_edit_format_and_mount(self):
         async with start_server('examples/win10.json') as inst:
             disk_id = 'disk-sda'
@@ -535,7 +539,7 @@ class TestEdit(TestAPI):
             self.assertEqual('btrfs', sda3['format'])
             self.assertEqual('/', sda3['mount'])
 
-    @timeout(5)
+    @timeout()
     async def test_v2_reuse(self):
         async with start_server('examples/win10.json') as inst:
             disk_id = 'disk-sda'
@@ -574,21 +578,21 @@ class TestEdit(TestAPI):
 
 
 class TestPartitionTableTypes(TestAPI):
-    @timeout(5)
+    @timeout()
     async def test_ptable_gpt(self):
         async with start_server('examples/win10.json') as inst:
             resp = await inst.get('/storage/v2')
             sda = first(resp['disks'], 'id', 'disk-sda')
             self.assertEqual('gpt', sda['ptable'])
 
-    @timeout(5)
+    @timeout()
     async def test_ptable_msdos(self):
         async with start_server('examples/many-nics-and-disks.json') as inst:
             resp = await inst.get('/storage/v2')
             sda = first(resp['disks'], 'id', 'disk-sda')
             self.assertEqual('msdos', sda['ptable'])
 
-    @timeout(5)
+    @timeout()
     async def test_ptable_none(self):
         async with start_server('examples/simple.json') as inst:
             resp = await inst.get('/storage/v2')
@@ -597,7 +601,7 @@ class TestPartitionTableTypes(TestAPI):
 
 
 class TestTodos(TestAPI):  # server indicators of required client actions
-    @timeout(5)
+    @timeout()
     async def test_todos_simple(self):
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
@@ -617,7 +621,7 @@ class TestTodos(TestAPI):  # server indicators of required client actions
             self.assertFalse(resp['need_root'])
             self.assertFalse(resp['need_boot'])
 
-    @timeout(5)
+    @timeout()
     async def test_todos_manual(self):
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
@@ -642,7 +646,7 @@ class TestTodos(TestAPI):  # server indicators of required client actions
             self.assertFalse(resp['need_root'])
             self.assertFalse(resp['need_boot'])
 
-    @timeout(5)
+    @timeout()
     async def test_todos_guided(self):
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
@@ -658,7 +662,7 @@ class TestTodos(TestAPI):  # server indicators of required client actions
 
 
 class TestInfo(TestAPI):
-    @timeout(5)
+    @timeout()
     async def test_path(self):
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
@@ -668,7 +672,7 @@ class TestInfo(TestAPI):
 
 
 class TestRegression(TestAPI):
-    @timeout(5)
+    @timeout()
     async def test_edit_not_trigger_boot_device(self):
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
