@@ -142,7 +142,7 @@ class ConfigureController(SubiquityController):
                       cp.args, cp.returncode)
             return False
 
-        packages = cp.stdout.strip('\n').split(' ')
+        packages = [pkg for pkg in cp.stdout.strip().split(' ') if pkg]
         if len(packages) == 0:
             log.debug("%s didn't recommend any packages. Nothing to do.",
                       clsCommand)
