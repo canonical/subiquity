@@ -111,12 +111,11 @@ class Server(Client):
               + ' --machine-config ' + machine_config
         cmd = cmd.split(' ')
         self.proc = await astart_command(cmd, env=env)
-        self.server_task = asyncio.create_task(self.proc.communicate())
 
     async def close(self):
         try:
             await asyncio.wait_for(self.server_shutdown(), timeout=5.0)
-            await asyncio.wait_for(self.server_task, timeout=5.0)
+            await asyncio.wait_for(self.proc.communicate(), timeout=5.0)
         except asyncio.exceptions.TimeoutError:
             pass
         finally:
