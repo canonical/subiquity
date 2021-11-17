@@ -82,7 +82,7 @@ validate () {
                 echo "expected not empty directory var/cache/apt/archives/"
                 exit 1
             fi
-            if [ -z "$( diff -Nup .subiquity/etc/locale.gen .subiquity/etc/locale.gen-)" ] ; then
+            if [ -z "$( diff -Nup .subiquity/etc/locale.gen .subiquity/etc/locale.gen.test)" ] ; then
                 echo "expected changes in etc/locale.gen"
                 exit 1
             fi

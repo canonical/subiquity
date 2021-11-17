@@ -143,11 +143,6 @@ class ConfigureController(SubiquityController):
             return False
 
         packages = [pkg for pkg in cp.stdout.strip().split(' ') if pkg]
-        if len(packages) == 0:
-            log.debug("%s didn't recommend any packages. Nothing to do.",
-                      clsCommand)
-            return True
-
         cache = apt.Cache()
         if self.app.opts.dry_run:
             packs_dir = os.path.join(self.model.root,
@@ -155,16 +150,27 @@ class ConfigureController(SubiquityController):
                                      .find_dir("Dir::Cache::Archives")[1:])
             os.makedirs(packs_dir, exist_ok=True)
             try:
+                if len(packages) == 0:
+                    message = "{} didn't recommend any packages." \
+                              " Nothing to do.".format(clsCommand)
+                    log.debug(message)
+                    msgFile = os.path.join(packs_dir, "msgFile")
+                    with open(msgFile, "wt") as f:
+                        f.write(message)
+
+                    return True
+
                 for package in packages:
                     # Just write the package uri to a file.
                     archive = os.path.join(packs_dir, cache[package].fullname)
                     with open(archive, "wt") as f:
                         f.write(cache[package].candidate.uri)
+
+                return True
+
             except IOError:
                 log.error("Failed to write %s file.", archive)
                 return False
-
-            return True
 
         cache.update()
         cache.open(None)
