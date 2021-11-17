@@ -82,7 +82,13 @@ class Client:
     async def poll_startup(self):
         for _ in range(default_timeout * 10):
             try:
-                await self.get('/meta/status')
+                resp = await self.get('/meta/status')
+                if resp["state"] in ('STARTING_UP', 'CLOUD_INIT_WAIT',
+                                     'EARLY_COMMANDS'):
+                    await asyncio.sleep(.5)
+                    continue
+                if resp["state"] == 'ERROR':
+                    raise Exception('server in error state')
                 return
             except aiohttp.client_exceptions.ClientConnectorError:
                 await asyncio.sleep(.5)
