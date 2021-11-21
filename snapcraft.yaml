@@ -70,6 +70,8 @@ parts:
      - "-lib/python*/site-packages/wheel*"
      - "-lib/python*/site-packages/probert"
      - "-bin/activate*"
+     - -bin/python
+     - -bin/python3*
      - "-lib/python3.8/site-packages/__pycache__/six.cpython*"
      - "-lib/python3.8/site-packages/pip-*.dist-info/RECORD"
      - "-lib/python3.8/site-packages/wheel-*.dist-info/RECORD"
@@ -112,6 +114,10 @@ parts:
       - python3-requests-unixsocket
       - python3-requests
       - python3-pyudev
+    stage:
+      - "*"
+      - -bin/python
+      - -bin/python3
     source: .
     source-type: git
     build-environment:
@@ -178,6 +184,7 @@ parts:
     requirements: [requirements.txt]
     stage:
       - "*"
+      - -bin/python
       - -bin/python3*
       - -bin/activate*
       - -lib/python3.8/site-packages/_distutils_hack
