@@ -78,8 +78,9 @@ validate () {
                 echo "user not assigned with the expected group sudo"
                 exit 1
             fi
-            if [ -z "$( ls .subiquity/var/cache/apt/archives/)" ] ; then
-                echo "expected not empty directory var/cache/apt/archives/"
+            lang="$(grep -Eo 'LANG="([^.@ _]+)' .subiquity/etc/default/locale | cut -d \" -f 2)"
+            if [ -z "$( ls .subiquity/var/cache/apt/archives/) | grep $lang" ] ; then
+                echo "expected $lang language packs in directory var/cache/apt/archives/"
                 exit 1
             fi
             if [ -z "$( diff -Nup .subiquity/etc/locale.gen .subiquity/etc/locale.gen.test)" ] ; then
@@ -99,6 +100,7 @@ clean () {
     rm -rf .subiquity/run/
     rm -rf .subiquity/home/
     rm -rf .subiquity/etc/.pwd.lock
+    rm -rf .subiquity/etc/default/locale
     rm -rf .subiquity/etc/{locale*,passwd*,shadow*,group*,gshadow*,subgid*,subuid*}
     rm -rf .subiquity/etc/*.conf
     rm -rf .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg

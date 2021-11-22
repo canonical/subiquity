@@ -116,9 +116,10 @@ class ConfigureController(SubiquityController):
 
         return True
 
-    async def _install_check_lang_support_packages(self, lang, env) -> bool:
-        """ Install packages recommended by check-language-support
-        command. lang is expected to be one single language/locale.
+    async def __recommended_packages_to_install(self, lang, env) -> List[str]:
+        """ Return a list of package names recommended by
+         check-language-support (or a fake list if in dryrun).
+         List returned can be empty, but never None.
         """
         clsCommand = "check-language-support"
         # lang code may be separated by @, dot or spaces.
@@ -127,12 +128,12 @@ class ConfigureController(SubiquityController):
         matches = pattern.match(lang)
         if matches is None:
             log.error("Failed to match expected language format: %s", lang)
-            return False
+            return []
 
         langCodes = matches.groups()
         if len(langCodes) != 1:
             log.error("Only one match was expected for: %s", lang)
-            return False
+            return []
 
         clsLang = langCodes[0]
         # Running that command doesn't require root.
@@ -140,26 +141,31 @@ class ConfigureController(SubiquityController):
         if cp.returncode != 0:
             log.error('Command "%s" failed with return code %d',
                       cp.args, cp.returncode)
-            return False
+            return []
 
-        packages = [pkg for pkg in cp.stdout.strip().split(' ') if pkg]
+        packages = cp.stdout.strip().split(' ')
+        # We will always have language-pack-{clsLang}-base in dryrun.
+        if len(packages) == 0 and self.app.opts.dryrun:
+            packages += ["language-pack-{}-base".format(clsLang)]
+
+        return [pkg for pkg in packages if pkg]
+
+    async def _install_check_lang_support_packages(self, lang, env) -> bool:
+        """ Install recommended packages.
+        lang is expected to be one single language/locale.
+        """
+        packages = await self.__recommended_packages_to_install(lang, env)
         cache = apt.Cache()
-        if self.app.opts.dry_run:
+        if self.app.opts.dry_run:  # only empty in dry-run on failure.
+            if len(packages) == 0:
+                log.error("Packages list in dry-run should never be empty.")
+                return False
+
             packs_dir = os.path.join(self.model.root,
                                      apt_pkg.config
                                      .find_dir("Dir::Cache::Archives")[1:])
             os.makedirs(packs_dir, exist_ok=True)
             try:
-                if len(packages) == 0:
-                    message = "{} didn't recommend any packages." \
-                              " Nothing to do.".format(clsCommand)
-                    log.debug(message)
-                    msgFile = os.path.join(packs_dir, "msgFile")
-                    with open(msgFile, "wt") as f:
-                        f.write(message)
-
-                    return True
-
                 for package in packages:
                     # Just write the package uri to a file.
                     archive = os.path.join(packs_dir, cache[package].fullname)
@@ -171,6 +177,10 @@ class ConfigureController(SubiquityController):
             except IOError:
                 log.error("Failed to write %s file.", archive)
                 return False
+
+        if len(packages) == 0:
+            log.info("No missing recommended packages. Nothing to do.")
+            return True
 
         cache.update()
         cache.open(None)
