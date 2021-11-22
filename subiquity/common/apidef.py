@@ -95,6 +95,14 @@ class API:
         class ssh_info:
             def GET() -> Optional[LiveSessionSSHInfo]: ...
 
+        class free_only:
+            def GET() -> bool: ...
+
+            def POST(enable: bool) -> None:
+                """Enable or disable free-only mode.  Currently only controlls
+                the list of components.  free-only choice must be made prior to
+                confirmation of filesystem changes"""
+
     class errors:
         class wait:
             def GET(error_ref: ErrorReportRef) -> ErrorReportRef:

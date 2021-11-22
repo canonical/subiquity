@@ -667,6 +667,25 @@ class TestInfo(TestAPI):
             self.assertEqual('/dev/sda', sda['path'])
 
 
+class TestFree(TestAPI):
+    @timeout(5)
+    async def test_free_only(self):
+        async with start_server('examples/simple.json') as inst:
+            await inst.post('/meta/free_only', enable=True)
+            components = await inst.get('/mirror/disable_components')
+            components.sort()
+            self.assertEqual(['multiverse', 'restricted'], components)
+
+    @timeout(5)
+    async def test_not_free_only(self):
+        async with start_server('examples/simple.json') as inst:
+            comps = ['universe', 'multiverse']
+            await inst.post('/mirror/disable_components', comps)
+            await inst.post('/meta/free_only', enable=False)
+            components = await inst.get('/mirror/disable_components')
+            self.assertEqual(['universe'], components)
+
+
 class TestRegression(TestAPI):
     @timeout(5)
     async def test_edit_not_trigger_boot_device(self):
