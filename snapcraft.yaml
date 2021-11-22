@@ -42,7 +42,7 @@ parts:
     plugin: python
     source-type: git
     source: https://git.launchpad.net/curtin
-    source-commit: f13edc1ac71dde678149b4918ee923b25a1b7039
+    source-commit: ce811db127fe1ce46498b83615f8faed8c7dfeb6
     build-packages:
       - shared-mime-info
       - zlib1g-dev
