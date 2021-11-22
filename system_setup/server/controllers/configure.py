@@ -116,10 +116,10 @@ class ConfigureController(SubiquityController):
 
         return True
 
-    async def __recommended_packages_to_install(self, lang, env) -> List[str]:
+    async def __recommended_language_packs(self, lang, env) -> List[str]:
         """ Return a list of package names recommended by
          check-language-support (or a fake list if in dryrun).
-         List returned can be empty, but never None.
+         List returned can be empty on success. None for failure.
         """
         clsCommand = "check-language-support"
         # lang code may be separated by @, dot or spaces.
@@ -128,12 +128,12 @@ class ConfigureController(SubiquityController):
         matches = pattern.match(lang)
         if matches is None:
             log.error("Failed to match expected language format: %s", lang)
-            return []
+            return None
 
         langCodes = matches.groups()
         if len(langCodes) != 1:
             log.error("Only one match was expected for: %s", lang)
-            return []
+            return None
 
         clsLang = langCodes[0]
         # Running that command doesn't require root.
@@ -141,7 +141,7 @@ class ConfigureController(SubiquityController):
         if cp.returncode != 0:
             log.error('Command "%s" failed with return code %d',
                       cp.args, cp.returncode)
-            return []
+            return None
 
         packages = cp.stdout.strip().split(' ')
         # We will always have language-pack-{clsLang}-base in dryrun.
@@ -154,7 +154,11 @@ class ConfigureController(SubiquityController):
         """ Install recommended packages.
         lang is expected to be one single language/locale.
         """
-        packages = await self.__recommended_packages_to_install(lang, env)
+        packages = await self.__recommended_language_packs(lang, env)
+        if packages is None:
+            log.error('Failed to detect recommended language packs.')
+            return False
+
         cache = apt.Cache()
         if self.app.opts.dry_run:  # only empty in dry-run on failure.
             if len(packages) == 0:
