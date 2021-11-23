@@ -86,6 +86,7 @@ class MetaController:
     def __init__(self, app):
         self.app = app
         self.context = app.context.child("Meta")
+        self.free_only = False
 
     async def status_GET(self, cur: Optional[ApplicationState] = None) \
             -> ApplicationStatus:
@@ -157,6 +158,18 @@ class MetaController:
             authorized_key_fingerprints=user_fingerprints,
             ips=ips,
             host_key_fingerprints=host_fingerprints)
+
+    async def free_only_GET(self) -> bool:
+        return self.free_only
+
+    async def free_only_POST(self, enable: bool) -> None:
+        self.free_only = enable
+        to_disable = {'restricted', 'multiverse'}
+        if enable:
+            # enabling free only mode means disabling components
+            self.app.base_model.mirror.disable_components |= to_disable
+        else:
+            self.app.base_model.mirror.disable_components -= to_disable
 
 
 def get_installer_password_from_cloudinit_log():

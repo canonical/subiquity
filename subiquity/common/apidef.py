@@ -60,7 +60,6 @@ class API:
     """The API offered by the subiquity installer process."""
     identity = simple_endpoint(IdentityData)
     locale = simple_endpoint(str)
-    mirror = simple_endpoint(str)
     proxy = simple_endpoint(str)
     ssh = simple_endpoint(SSHData)
     updates = simple_endpoint(str)
@@ -95,6 +94,14 @@ class API:
 
         class ssh_info:
             def GET() -> Optional[LiveSessionSSHInfo]: ...
+
+        class free_only:
+            def GET() -> bool: ...
+
+            def POST(enable: bool) -> None:
+                """Enable or disable free-only mode.  Currently only controlls
+                the list of components.  free-only choice must be made prior to
+                confirmation of filesystem changes"""
 
     class errors:
         class wait:
@@ -296,6 +303,14 @@ class API:
 
     class shutdown:
         def POST(mode: ShutdownMode, immediate: bool = False): ...
+
+    class mirror:
+        def GET() -> str: ...
+        def POST(data: Payload[str]): ...
+
+        class disable_components:
+            def GET() -> List[str]: ...
+            def POST(data: Payload[List[str]]): ...
 
 
 class LinkAction(enum.Enum):

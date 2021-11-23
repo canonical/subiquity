@@ -104,7 +104,7 @@ class AptConfigurer:
         config_upper = await self.setup_overlay(self.source, self.configured)
 
         config = {
-            'apt': self.app.base_model.mirror.config,
+            'apt': self.app.base_model.mirror.get_config(),
             }
         config_location = os.path.join(
             self.app.root, 'var/log/installer/subiquity-curtin-apt.conf')

@@ -51,12 +51,18 @@ class MirrorModel(object):
         self.config = copy.deepcopy(DEFAULT)
         self.architecture = get_architecture()
         self.default_mirror = self.get_mirror()
+        self.disable_components = set()
 
-    def is_default(self):
+    def get_config(self):
+        config = copy.deepcopy(self.config)
+        config['disable_components'] = list(self.disable_components)
+        return config
+
+    def mirror_is_default(self):
         return self.get_mirror() == self.default_mirror
 
     def set_country(self, cc):
-        if not self.is_default():
+        if not self.mirror_is_default():
             return
         uri = self.get_mirror()
         parsed = parse.urlparse(uri)
