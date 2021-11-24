@@ -48,7 +48,7 @@ class DriversForm(Form):
 
 class DriversView(BaseView):
 
-    title = _("Third party drivers.")
+    title = _("Third-party drivers.")
 
     def __init__(self, controller, has_drivers):
         self.controller = controller
@@ -61,7 +61,11 @@ class DriversView(BaseView):
     def make_waiting(self):
         self.spinner = Spinner(self.controller.app.aio_loop, style='dots')
         self.spinner.start()
-        rows = [Text(_("waiting")), self.spinner]
+        rows = [
+            Text(_("Looking for applicable third-party drivers...")),
+            Text(""),
+            self.spinner,
+            ]
         btn = ok_btn(_("Continue"), on_press=lambda sender: self.done(False))
         self._w = screen(rows, [btn])
         asyncio.create_task(self._wait())
@@ -69,12 +73,21 @@ class DriversView(BaseView):
     async def _wait(self):
         has_drivers = await self.controller._wait_drivers()
         self.spinner.stop()
-        self.make_main()
+        if has_drivers:
+            self.make_main()
+        else:
+            self.make_no_drivers()
+
+    def make_no_drivers(self):
+        rows = [Text(_("No applicable third-party drivers were found."))]
+        btn = ok_btn(_("Continue"), on_press=lambda sender: self.done(False))
+        self._w = screen(rows, [btn])
 
     def make_main(self):
         self.form = DriversForm(initial={'install': True})
 
-        excerpt = _("There are drivers. They are nice.")
+        excerpt = _(
+            "Third-party drivers were found. Do you want to install them?")
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
