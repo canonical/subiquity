@@ -200,6 +200,7 @@ INSTALL_MODEL_NAMES = ModelNames({
     })
 
 POSTINSTALL_MODEL_NAMES = ModelNames({
+    "drivers",
     "identity",
     "locale",
     "network",
@@ -252,6 +253,7 @@ class SubiquityServer(Application):
         "Identity",
         "SSH",
         "SnapList",
+        "Drivers",
         "TimeZone",
         "Install",
         "Updates",
