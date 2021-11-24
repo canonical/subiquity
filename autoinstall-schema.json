@@ -361,6 +361,9 @@
                 "additionalProperties": false
             }
         },
+        "drivers": {
+            "type": "boolean"
+        },
         "timezone": {
             "type": "string"
         },
