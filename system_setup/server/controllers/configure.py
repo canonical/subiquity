@@ -136,19 +136,24 @@ class ConfigureController(SubiquityController):
             return None
 
         clsLang = langCodes[0]
+        packages = []
         # Running that command doesn't require root.
         cp = await arun_command([clsCommand, "-l", clsLang], env=env)
         if cp.returncode != 0:
             log.error('Command "%s" failed with return code %d',
                       cp.args, cp.returncode)
-            return None
+            if not self.app.opts.dry_run:
+                return None
 
-        packages = cp.stdout.strip().split(' ')
-        # We will always have language-pack-{clsLang}-base in dryrun.
-        if len(packages) == 0 and self.app.opts.dryrun:
-            packages += ["language-pack-{}-base".format(clsLang)]
+        else:
+            packages += [pkg for pkg in cp.stdout.strip().split(' ') if pkg]
 
-        return [pkg for pkg in packages if pkg]
+        # We will always have language-pack-{baseLang}-base in dryrun.
+        if len(packages) == 0 and self.app.opts.dry_run:
+            baseLang = clsLang.split('_')[0]
+            packages += ["language-pack-{}-base".format(baseLang)]
+
+        return packages
 
     async def _install_check_lang_support_packages(self, lang, env) -> bool:
         """ Install recommended packages.
@@ -178,8 +183,8 @@ class ConfigureController(SubiquityController):
 
                 return True
 
-            except IOError:
-                log.error("Failed to write %s file.", archive)
+            except IOError as e:
+                log.error("Failed to write file.", e)
                 return False
 
         if len(packages) == 0:
