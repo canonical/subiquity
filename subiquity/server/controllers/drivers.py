@@ -46,21 +46,30 @@ class DriversController(SubiquityController):
         self.model.do_install = data
 
     def start(self):
+        self._wait_apt = asyncio.Event()
         self.app.hub.subscribe(
             InstallerChannels.APT_CONFIGURED,
-            self._wait_apt_configured)
-
-    def _wait_apt_configured(self):
+            self._wait_apt.set)
         self._drivers_task = asyncio.create_task(self._list_drivers())
 
     @with_context()
     async def _list_drivers(self, context):
+        with context.child("wait_apt"):
+            await self._wait_apt.wait()
         path = self.app.controllers.Install.for_install_path
         cmd = ['chroot', path, 'ubuntu-drivers', 'list']
         if self.app.base_model.source.current.variant == 'server':
             cmd.append('--gpgpu')
         if self.app.opts.dry_run:
-            del cmd[:2]
+            if 'has-drivers' in self.app.debug_flags:
+                self.has_drivers = True
+                return
+            elif 'run-drivers' in self.app.debug_flags:
+                del cmd[:2]
+            else:
+                self.has_drivers = False
+                await self.configured()
+                return
         result = await arun_command(cmd)
         self.has_drivers = bool(result.stdout.strip())
         if not self.has_drivers:

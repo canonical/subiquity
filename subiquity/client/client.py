@@ -111,6 +111,7 @@ class SubiquityClient(TuiApplication):
         "Filesystem",
         "Identity",
         "SSH",
+        "Drivers",
         "SnapList",
         "Progress",
         ]
