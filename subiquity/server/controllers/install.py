@@ -196,6 +196,16 @@ class InstallController(SubiquityController):
         packages = await self.get_target_packages(context=context)
         for package in packages:
             await self.install_package(context=context, package=package)
+        if self.model.drivers.do_install:
+            with context.child(
+                    "ubuntu-drivers-install",
+                    "installing third-party drivers") as child:
+                cmd = ["ubuntu-drivers", "install"]
+                if self.model.source.current.variant == 'server':
+                    cmd.append('--gpgpu')
+                await start_curtin_command(
+                    self.app, child, "in-target", "-t", self.tpath(),
+                    "--", *cmd)
 
         if self.model.network.has_network:
             self.app.update_state(ApplicationState.UU_RUNNING)
