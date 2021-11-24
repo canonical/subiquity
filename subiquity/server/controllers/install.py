@@ -48,6 +48,10 @@ from subiquity.server.curtin import (
     run_curtin_command,
     start_curtin_command,
     )
+from subiquity.server.types import (
+    InstallerChannels,
+    )
+
 
 log = logging.getLogger("subiquity.server.controllers.install")
 
@@ -167,14 +171,16 @@ class InstallController(SubiquityController):
 
             self.apt_configurer = get_apt_configurer(self.app, path)
 
-            for_install_path = await self.configure_apt()
+            self.for_install_path = await self.configure_apt()
+
+            await self.app.hub.abroadcast(InstallerChannels.APT_CONFIGURED)
 
             if os.path.exists(self.model.target):
                 await self.unmount_target(
                     context=context, target=self.model.target)
 
             await self.curtin_install(
-                context=context, source='cp://' + for_install_path)
+                context=context, source='cp://' + self.for_install_path)
 
             self.app.update_state(ApplicationState.POST_WAIT)
 

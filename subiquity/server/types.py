@@ -21,3 +21,4 @@ class InstallerChannels(CoreChannels):
     SNAPD_NETWORK_CHANGE = 'snapd-network-change'
     GEOIP = 'geoip'
     CONFIGURED = 'configured'
+    APT_CONFIGURED = 'apt-configured'
