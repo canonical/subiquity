@@ -30,6 +30,7 @@ from subiquitycore.file_util import write_file
 from subiquity.common.resources import get_users_and_groups
 from subiquity.server.types import InstallerChannels
 
+from .drivers import DriversModel
 from .filesystem import FilesystemModel
 from .identity import IdentityModel
 from .kernel import KernelModel
@@ -132,6 +133,7 @@ class SubiquityModel:
             self.chroot_prefix = []
 
         self.debconf_selections = DebconfSelectionsModel()
+        self.drivers = DriversModel()
         self.filesystem = FilesystemModel()
         self.identity = IdentityModel()
         self.kernel = KernelModel()
