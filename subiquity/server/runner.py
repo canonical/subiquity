@@ -24,21 +24,26 @@ class LoggedCommandRunner:
     def __init__(self, ident):
         self.ident = ident
 
-    async def start(self, cmd):
-        proc = await astart_command([
-            'systemd-cat', '--level-prefix=false', '--identifier='+self.ident,
-            ] + cmd)
+    async def start(self, cmd, *, nolog=False):
+        if not nolog:
+            cmd = [
+                'systemd-cat',
+                '--level-prefix=false',
+                '--identifier='+self.ident,
+                ] + cmd
+        proc = await astart_command(cmd)
         proc.args = cmd
         return proc
 
     async def wait(self, proc):
-        await proc.communicate()
+        stdout, stderr = await proc.communicate()
         if proc.returncode != 0:
             raise subprocess.CalledProcessError(proc.returncode, proc.args)
         else:
-            return subprocess.CompletedProcess(proc.args, proc.returncode)
+            return subprocess.CompletedProcess(
+                proc.args, proc.returncode, stdout=stdout, stderr=stderr)
 
-    async def run(self, cmd):
+    async def run(self, cmd, *, nolog=False):
         proc = await self.start(cmd)
         return await self.wait(proc)
 
@@ -49,8 +54,11 @@ class DryRunCommandRunner(LoggedCommandRunner):
         super().__init__(ident)
         self.delay = delay
 
-    async def start(self, cmd):
+    async def start(self, cmd, *, nolog=False):
         if 'scripts/replay-curtin-log.py' in cmd:
+            delay = 0
+        elif cmd[-3:] == ['ubuntu-drivers', 'list', '--gpgpu']:
+            cmd = cmd[-3:]
             delay = 0
         else:
             cmd = ['echo', 'not running:'] + cmd
@@ -58,7 +66,7 @@ class DryRunCommandRunner(LoggedCommandRunner):
                 delay = 3*self.delay
             else:
                 delay = self.delay
-        proc = await super().start(cmd)
+        proc = await super().start(cmd, nolog=nolog)
         await asyncio.sleep(delay)
         return proc
 

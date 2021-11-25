@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import datetime
 import os
 import shutil
@@ -34,6 +35,7 @@ class AptConfigurer:
         self.app = app
         self.source = source
         self.configured = None
+        self.for_install = None
         self._mounts = []
         self._tdirs = []
 
@@ -52,7 +54,9 @@ class AptConfigurer:
             ['mount'] + opts + [device, mountpoint])
         self._mounts.append(mountpoint)
 
-    async def unmount(self, mountpoint):
+    async def unmount(self, mountpoint, remove=True):
+        if remove:
+            self._mounts.remove(mountpoint)
         await self.app.command_runner.run(['umount', mountpoint])
 
     async def setup_overlay(self, source, target):
@@ -101,7 +105,8 @@ class AptConfigurer:
 
         self.configured = self.tdir()
 
-        config_upper = await self.setup_overlay(self.source, self.configured)
+        self.config_upper = await self.setup_overlay(
+            self.source, self.configured)
 
         config = {
             'apt': self.app.base_model.mirror.get_config(),
@@ -119,32 +124,45 @@ class AptConfigurer:
             self.app, context, 'apt-config', '-t', self.configured,
             config=config_location)
 
-        for_install = self.tdir()
-        await self.setup_overlay(config_upper + ':' + self.source, for_install)
+        self.for_install = self.tdir()
+        self.for_install_upper = await self.setup_overlay(
+            self.config_upper + ':' + self.source, self.for_install)
 
-        os.mkdir(f'{for_install}/cdrom')
-        await self.mount('/cdrom', f'{for_install}/cdrom', options='bind')
+        os.mkdir(f'{self.for_install}/cdrom')
+        await self.mount('/cdrom', f'{self.for_install}/cdrom', options='bind')
 
         if self.app.base_model.network.has_network:
             os.rename(
-                f'{for_install}/etc/apt/sources.list',
-                f'{for_install}/etc/apt/sources.list.d/original.list')
+                f'{self.for_install}/etc/apt/sources.list',
+                f'{self.for_install}/etc/apt/sources.list.d/original.list')
         else:
-            proxy_path = f'{for_install}/etc/apt/apt.conf.d/90curtin-aptproxy'
+            proxy_path = \
+              f'{self.for_install}/etc/apt/apt.conf.d/90curtin-aptproxy'
             if os.path.exists(proxy_path):
                 os.unlink(proxy_path)
 
         codename = lsb_release()['codename']
 
         write_file(
-            f'{for_install}/etc/apt/sources.list',
+            f'{self.for_install}/etc/apt/sources.list',
             f'deb [check-date=no] file:///cdrom {codename} main restricted\n')
 
         await run_curtin_command(
-            self.app, context, "in-target", "-t", for_install,
+            self.app, context, "in-target", "-t", self.for_install,
             "--", "apt-get", "update")
 
-        return for_install
+        return self.for_install
+
+    @contextlib.asynccontextmanager
+    async def overlay(self):
+        overlay = self.tdir()
+        await self.setup_overlay(
+            ':'.join([self.for_install_upper, self.config_upper, self.source]),
+            overlay)
+        try:
+            yield overlay
+        finally:
+            await self.unmount(overlay)
 
     async def deconfigure(self, context, target):
         await self.unmount(f'{target}/cdrom')
@@ -165,7 +183,7 @@ class AptConfigurer:
                 "--", "apt-get", "update")
 
         for m in reversed(self._mounts):
-            await self.unmount(m)
+            await self.unmount(m, remove=False)
         for d in self._tdirs:
             shutil.rmtree(d)
         if self.app.base_model.network.has_network:
@@ -175,6 +193,9 @@ class AptConfigurer:
 
 
 class DryRunAptConfigurer(AptConfigurer):
+
+    async def unmount(self, mountpoint):
+        pass
 
     async def setup_overlay(self, source, target):
         if source.startswith('u+'):

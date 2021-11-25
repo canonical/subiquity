@@ -89,14 +89,16 @@ class DriversView(BaseView):
         excerpt = _(
             "Third-party drivers were found. Do you want to install them?")
 
-        connect_signal(self.form, 'submit', self.done)
+        connect_signal(
+            self.form, 'submit',
+            lambda result: self.done(result.install.value))
         connect_signal(self.form, 'cancel', self.cancel)
 
         self._w = self.form.as_screen(excerpt=_(excerpt))
 
     def done(self, result):
-        log.debug("User input: {}".format(result.as_data()))
-        self.controller.done(result.install.value)
+        log.debug(f"User input: {result}")
+        self.controller.done(result)
 
     def cancel(self, result=None):
         self.controller.cancel()

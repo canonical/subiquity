@@ -219,7 +219,7 @@ class InstallController(SubiquityController):
                 cmd = ["ubuntu-drivers", "install"]
                 if self.model.source.current.variant == 'server':
                     cmd.append('--gpgpu')
-                await start_curtin_command(
+                await run_curtin_command(
                     self.app, child, "in-target", "-t", self.tpath(),
                     "--", *cmd)
 
