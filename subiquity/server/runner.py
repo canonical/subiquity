@@ -24,8 +24,8 @@ class LoggedCommandRunner:
     def __init__(self, ident):
         self.ident = ident
 
-    async def start(self, cmd, *, nolog=False):
-        if not nolog:
+    async def start(self, cmd, *, capture=False):
+        if not capture:
             cmd = [
                 'systemd-cat',
                 '--level-prefix=false',
@@ -43,8 +43,8 @@ class LoggedCommandRunner:
             return subprocess.CompletedProcess(
                 proc.args, proc.returncode, stdout=stdout, stderr=stderr)
 
-    async def run(self, cmd, *, nolog=False):
-        proc = await self.start(cmd)
+    async def run(self, cmd, **opts):
+        proc = await self.start(cmd, **opts)
         return await self.wait(proc)
 
 
@@ -54,11 +54,14 @@ class DryRunCommandRunner(LoggedCommandRunner):
         super().__init__(ident)
         self.delay = delay
 
-    async def start(self, cmd, *, nolog=False):
+    async def start(self, cmd, *, capture=False):
         if 'scripts/replay-curtin-log.py' in cmd:
             delay = 0
         elif cmd[-3:] == ['ubuntu-drivers', 'list', '--gpgpu']:
             cmd = cmd[-3:]
+            delay = 0
+        elif cmd[-2:] == ['ubuntu-drivers', 'list']:
+            cmd = cmd[-2:]
             delay = 0
         else:
             cmd = ['echo', 'not running:'] + cmd
@@ -66,7 +69,7 @@ class DryRunCommandRunner(LoggedCommandRunner):
                 delay = 3*self.delay
             else:
                 delay = self.delay
-        proc = await super().start(cmd, nolog=nolog)
+        proc = await super().start(cmd, capture=capture)
         await asyncio.sleep(delay)
         return proc
 

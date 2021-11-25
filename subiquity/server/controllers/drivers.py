@@ -73,7 +73,7 @@ class DriversController(SubiquityController):
         async with apt.overlay() as d:
             result = await run_curtin_command(
                 self.app, context, "in-target", "-t", d,
-                "--", *cmd, nolog=True)
+                "--", *cmd, capture=True)
         self.has_drivers = bool(result.stdout.strip())
         if not self.has_drivers:
             await self.configured()

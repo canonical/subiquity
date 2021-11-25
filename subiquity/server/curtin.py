@@ -99,14 +99,14 @@ class _CurtinCommand:
         cmd.extend(args)
         return cmd
 
-    async def start(self, context, *, nolog=False):
+    async def start(self, context, **opts):
         self._fd = journald_listen(
             asyncio.get_event_loop(), [self._event_syslog_id], self._event)
         # Yield to the event loop before starting curtin to avoid missing the
         # first couple of events.
         await asyncio.sleep(0)
         self._event_contexts[''] = context
-        self.proc = await self.runner.start(self._cmd, nolog=nolog)
+        self.proc = await self.runner.start(self._cmd, **opts)
 
     async def wait(self):
         result = await self.runner.wait(self.proc)
@@ -147,7 +147,7 @@ class _FailingDryRunCurtinCommand(_DryRunCurtinCommand):
 
 
 async def start_curtin_command(
-        app, context, command, *args, config=None, nolog=False):
+        app, context, command, *args, config=None, **opts):
     if app.opts.dry_run:
         if 'install-fail' in app.debug_flags:
             cls = _FailingDryRunCurtinCommand
@@ -156,12 +156,12 @@ async def start_curtin_command(
     else:
         cls = _CurtinCommand
     curtin_cmd = cls(app.command_runner, command, *args, config=config)
-    await curtin_cmd.start(context, nolog=nolog)
+    await curtin_cmd.start(context, **opts)
     return curtin_cmd
 
 
 async def run_curtin_command(
-        app, context, command, *args, config=None, nolog=False):
+        app, context, command, *args, config=None, **opts):
     cmd = await start_curtin_command(
-        app, context, command, *args, config=config, nolog=nolog)
+        app, context, command, *args, config=config, **opts)
     return await cmd.wait()
