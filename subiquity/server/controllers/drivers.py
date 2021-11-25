@@ -18,10 +18,10 @@ import logging
 from typing import Optional
 
 from subiquitycore.context import with_context
-from subiquitycore.utils import arun_command
 
 from subiquity.common.apidef import API
 from subiquity.server.controller import SubiquityController
+from subiquity.server.curtin import run_curtin_command
 from subiquity.server.types import InstallerChannels
 
 log = logging.getLogger('subiquity.server.controllers.drivers')
@@ -56,8 +56,8 @@ class DriversController(SubiquityController):
     async def _list_drivers(self, context):
         with context.child("wait_apt"):
             await self._wait_apt.wait()
-        path = self.app.controllers.Install.for_install_path
-        cmd = ['chroot', path, 'ubuntu-drivers', 'list']
+        apt = self.app.controllers.Mirror.apt_configurer
+        cmd = ['ubuntu-drivers', 'list']
         if self.app.base_model.source.current.variant == 'server':
             cmd.append('--gpgpu')
         if self.app.opts.dry_run:
@@ -65,12 +65,15 @@ class DriversController(SubiquityController):
                 self.has_drivers = True
                 return
             elif 'run-drivers' in self.app.debug_flags:
-                del cmd[:2]
+                pass
             else:
                 self.has_drivers = False
                 await self.configured()
                 return
-        result = await arun_command(cmd)
+        async with apt.overlay() as d:
+            result = await run_curtin_command(
+                self.app, context, "in-target", "-t", d.mountpoint,
+                "--", *cmd, capture=True)
         self.has_drivers = bool(result.stdout.strip())
         if not self.has_drivers:
             await self.configured()

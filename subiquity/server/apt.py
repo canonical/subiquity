@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import functools
 import logging
 import os
@@ -153,7 +154,9 @@ class AptConfigurer:
         self._mounts.append(m)
         return m
 
-    async def unmount(self, mountpoint: str):
+    async def unmount(self, mountpoint: str, remove=True):
+        if remove:
+            self._mounts.remove(mountpoint)
         await self.app.command_runner.run(['umount', mountpoint])
 
     async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
@@ -224,11 +227,27 @@ class AptConfigurer:
 
         return self.install_tree.p()
 
+    @contextlib.asynccontextmanager
+    async def overlay(self):
+        overlay = await self.setup_overlay([
+                self.install_tree.upperdir,
+                self.configured_tree.upperdir,
+                self.source
+            ])
+        try:
+            yield overlay
+        finally:
+            await self.unmount(overlay.mountpoint)
+
     async def cleanup(self):
         for m in reversed(self._mounts):
-            await self.unmount(m.mountpoint)
+            await self.unmount(m.mountpoint, remove=False)
         for d in self._tdirs:
             shutil.rmtree(d)
+        if self.app.base_model.network.has_network:
+            await run_curtin_command(
+                self.app, context, "in-target", "-t", target,
+                "--", "apt-get", "update")
 
     async def deconfigure(self, context, target: str) -> None:
         target_mnt = Mountpoint(mountpoint=target)
@@ -239,7 +258,7 @@ class AptConfigurer:
                 'cp', '-aT', self.configured_tree.p(dir), target_mnt.p(dir),
                 ])
 
-        await self.unmount(target_mnt.p('cdrom'))
+        await self.unmount(target_mnt.p('cdrom'), remove=False)
         os.rmdir(target_mnt.p('cdrom'))
 
         await _restore_dir('etc/apt')
@@ -253,13 +272,11 @@ class AptConfigurer:
 
         await self.cleanup()
 
-        if self.app.base_model.network.has_network:
-            await run_curtin_command(
-                self.app, context, "in-target", "-t", target_mnt.p(),
-                "--", "apt-get", "update")
-
 
 class DryRunAptConfigurer(AptConfigurer):
+
+    async def unmount(self, mountpoint: str, remove=True):
+        pass
 
     async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
         # XXX This implementation expects that:

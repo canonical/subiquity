@@ -155,7 +155,7 @@ class InstallController(SubiquityController):
 
             self.app.update_state(ApplicationState.RUNNING)
 
-            self.for_install_path = await self.configure_apt(context=context)
+            for_install_path = await self.configure_apt(context=context)
 
             await self.app.hub.abroadcast(InstallerChannels.APT_CONFIGURED)
 
@@ -164,7 +164,7 @@ class InstallController(SubiquityController):
                     context=context, target=self.model.target)
 
             await self.curtin_install(
-                context=context, source='cp://' + self.for_install_path)
+                context=context, source='cp://' + for_install_path)
 
             self.app.update_state(ApplicationState.POST_WAIT)
 
@@ -203,7 +203,7 @@ class InstallController(SubiquityController):
                 cmd = ["ubuntu-drivers", "install"]
                 if self.model.source.current.variant == 'server':
                     cmd.append('--gpgpu')
-                await start_curtin_command(
+                await run_curtin_command(
                     self.app, child, "in-target", "-t", self.tpath(),
                     "--", *cmd)
 
