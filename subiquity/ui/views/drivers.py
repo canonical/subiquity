@@ -50,6 +50,8 @@ class DriversView(BaseView):
 
     title = _("Third-party drivers.")
 
+    form = None
+
     def __init__(self, controller, has_drivers):
         self.controller = controller
 

@@ -33,3 +33,5 @@ SnapList:
       classic: false
 InstallProgress:
   reboot: yes
+Drivers:
+  install: no
