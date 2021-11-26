@@ -165,7 +165,7 @@ class AptConfigurer:
             await self.unmount(overlay)
 
     async def deconfigure(self, context, target):
-        await self.unmount(f'{target}/cdrom')
+        await self.unmount(f'{target}/cdrom', remove=False)
         os.rmdir(f'{target}/cdrom')
 
         restore_dirs = ['etc/apt']
@@ -194,7 +194,7 @@ class AptConfigurer:
 
 class DryRunAptConfigurer(AptConfigurer):
 
-    async def unmount(self, mountpoint):
+    async def unmount(self, mountpoint, remove=True):
         pass
 
     async def setup_overlay(self, source, target):
