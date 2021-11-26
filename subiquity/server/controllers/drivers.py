@@ -71,6 +71,7 @@ class DriversController(SubiquityController):
                 await self.configured()
                 return
         async with apt.overlay() as d:
+            # XXX need to check ubuntu-drivers is available here!
             result = await run_curtin_command(
                 self.app, context, "in-target", "-t", d,
                 "--", *cmd, capture=True)
