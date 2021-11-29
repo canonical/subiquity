@@ -15,6 +15,7 @@
 
 import asyncio
 import logging
+import subprocess
 from typing import Optional
 
 from subiquitycore.context import with_context
@@ -80,6 +81,15 @@ class DriversController(SubiquityController):
                 await self.configured()
                 return
         async with apt.overlay() as d:
+            try:
+                await self.app.command_runner.run(
+                    ['chroot', d.mountpoint,
+                     'sh', '-c',
+                     "command -v ubuntu-drivers"])
+            except subprocess.CalledProcessError:
+                self.has_drivers = False
+                await self.configured()
+                return
             result = await run_curtin_command(
                 self.app, context, "in-target", "-t", d.mountpoint,
                 "--", *cmd, capture=True)
