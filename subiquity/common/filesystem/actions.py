@@ -218,9 +218,13 @@ def _can_partition_device(device):
     if device.free_for_partitions <= 0:
         return False
     # We only create msdos partition tables with FBA dasds, which
-    # only support 3 partitions. As and when we support editing
-    # partition msdos tables we'll need to be more clever here.
-    if device.ptable in ['vtoc', 'msdos'] and len(device._partitions) >= 3:
+    # only support 3 partitions.
+    if device.ptable == 'vtoc' and len(device._partitions) >= 3:
+        return False
+    # Existing msdos partition tables will be used though, so offer at least
+    # the 4 partitions there.  When we support editing msdos partition tables
+    # we'll need to be more clever here.
+    if device.ptable == 'msdos' and len(device._partitions) >= 4:
         return False
     return True
 
