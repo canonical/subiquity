@@ -30,6 +30,10 @@ from subiquity.common.types import (
     RefreshCheckState,
     RefreshStatus,
     )
+from subiquity.common.snap import (
+    SnapVersion,
+    SnapVersionParsingError,
+    )
 from subiquity.server.controller import (
     SubiquityController,
     )
@@ -177,8 +181,28 @@ class RefreshController(SubiquityController):
             return
         log.debug("check_for_update received %s", result)
         for snap in result["result"]:
-            if snap["name"] == self.snap_name:
-                self.status.new_snap_version = snap["version"]
+            if snap["name"] != self.snap_name:
+                continue
+            self.status.new_snap_version = snap["version"]
+            # In certain circumstances, the version of the snap that is
+            # reported by snapd is older than the one currently running. In
+            # this scenario, we do not want to suggest an update that would
+            # result in a downgrade.
+            snapd_version_is_newer = True
+            try:
+                current_version = SnapVersion.from_string(
+                        self.status.current_snap_version
+                )
+                snapd_version = SnapVersion.from_string(
+                        self.status.new_snap_version
+                )
+            except SnapVersionParsingError as e:
+                log.warning("failed to parse snap version: %s", e.version)
+            else:
+                if not snapd_version > current_version:
+                    snapd_version_is_newer = False
+
+            if snapd_version_is_newer:
                 context.description = (
                     "new version of snap available: %r"
                     % self.status.new_snap_version)
