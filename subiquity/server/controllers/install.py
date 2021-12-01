@@ -167,7 +167,7 @@ class InstallController(SubiquityController):
 
             self.apt_configurer = get_apt_configurer(self.app, path)
 
-            for_install_path = await self.configure_apt()
+            for_install_path = await self.configure_apt(context=context)
 
             if os.path.exists(self.model.target):
                 await self.unmount_target(
