@@ -72,7 +72,7 @@ unit: gitdeps
 	python3 -m pytest --ignore curtin --ignore probert \
 		--ignore subiquity/tests/api
 
-api:
+api: gitdeps
 	$(PYTHON) -m pytest subiquity/tests/api
 
 integration: gitdeps
