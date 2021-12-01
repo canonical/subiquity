@@ -2,7 +2,7 @@
 
 '''kvm-test - boot a kvm with a test iso, possibly building that test iso first
 
-kvm-test --build -q --install -o --boot
+kvm-test -q --install -o --boot
    slimy build, install, overwrite existing image if it exists,
    and boot the result after install
 
@@ -16,19 +16,21 @@ import crypt
 import os
 import random
 import socket
+import subprocess
 import sys
 import tempfile
 import yaml
 
 
 cfg = '''
+default_mem: '8G'
 iso:
     basedir: /srv/iso
     release:
         edge: jammy/subiquity-edge/jammy-live-server-subiquity-edge-amd64.iso
         canary: jammy/jammy-desktop-canary-amd64.iso
         jammy: jammy/jammy-live-server-amd64.iso
-        desktop: impish/jammy-desktop-amd64.iso
+        desktop: jammy/jammy-desktop-amd64.iso
         impish: impish/ubuntu-21.10-live-server-amd64.iso
         hirsute: hirsute/ubuntu-21.04-live-server-amd64.iso
         groovy: groovy/ubuntu-20.10-live-server-amd64.iso
@@ -36,9 +38,6 @@ iso:
         bionic: bionic/bionic-live-server-amd64.iso
     default: edge
 '''
-
-sys_memory = '8G'
-
 
 def salted_crypt(plaintext_password):
     # match subiquity documentation
@@ -51,6 +50,7 @@ class Context:
         self.config = self.load_config()
         self.args = args
         self.release = args.release
+        self.default_mem = self.config('default_mem', '8G')
         if not self.release:
             self.release = self.config["iso"]["default"]
         iso = self.config["iso"]
@@ -60,10 +60,8 @@ class Context:
         except KeyError:
             pass
         self.curdir = os.getcwd()
-        # self.iso = f'{self.curdir}/{self.release}-test.iso'
         self.iso = f'/tmp/kvm-test/{self.release}-test.iso'
         self.hostname = f'{self.release}-test'
-        # self.target = f'{self.curdir}/{self.hostname}.img'
         self.target = f'/tmp/kvm-test/{self.hostname}.img'
         self.password = salted_crypt('ubuntu')
         self.cloudconfig = f'''\
@@ -80,9 +78,6 @@ autoinstall:
         password: "{self.password}"
         username: ubuntu
 '''
-    # refresh-installer:
-    #     update: yes
-    #     channel: candidate
 
     def merge(self, a, b):
         '''Take a pair of dictionaries, and provide the merged result.
@@ -137,8 +132,8 @@ parser.add_argument('--basesnap', default=None, action='store',
 parser.add_argument('--snap', default=None, action='store',
                     help='inject this snap into the ISO')
 parser.add_argument('-B', '--bios', action='store_true', default=False,
-                    help='boot in BIOS mode')
-parser.add_argument('-c', '--channel', default=False, action='store',
+                    help='boot in BIOS mode (default mode is UEFI)')
+parser.add_argument('-c', '--channel', action='store',
                     help='build iso with snap from channel')
 parser.add_argument('-d', '--disksize', default='12G', action='store',
                     help='size of disk to create (12G default)')
@@ -157,14 +152,15 @@ parser.add_argument('-s', '--serial', default=False, action='store_true',
                     help='attach to serial console')
 parser.add_argument('-S', '--sound', default=False, action='store_true',
                     help='enable sound')
-parser.add_argument('-t', '--this', action='store',
-                    help='use this iso')
+parser.add_argument('--iso', action='store', help='use this iso')
 parser.add_argument('-u', '--update', action='store',
                     help='subiquity-channel argument')
+parser.add_argument('-m', '--memory', action='store',
+                    help='memory for VM')
 parser.add_argument('--save', action='store_true',
                     help='preserve built snap')
 parser.add_argument('--reuse', action='store_true',
-                    help='reuse previously saved snap')
+                    help='reuse previously saved snap.  Implies --save')
 parser.add_argument('--build', default=False, action='store_true',
                     help='build test iso')
 parser.add_argument('--install', default=False, action='store_true',
@@ -174,44 +170,31 @@ parser.add_argument('--boot', default=False, action='store_true',
                     help='boot test image')
 
 
-def waitstatus_to_exitcode(waitstatus):
-    '''If the process exited normally (if WIFEXITED(status) is true), return
-    the process exit status (return WEXITSTATUS(status)): result greater
-    than or equal to 0.
-
-    If the process was terminated by a signal (if WIFSIGNALED(status) is
-    true), return -signum where signum is the number of the signal that
-    caused the process to terminate (return -WTERMSIG(status)): result less
-    than 0.
-
-    Otherwise, raise a ValueError.'''
-
-    # This function is for python 3.9 compat
-
-    if 'waitstatus_to_exitcode' in dir(os):
-        return os.waitstatus_to_exitcode(waitstatus)
-    if os.WIFEXITED(waitstatus):
-        return os.WEXITSTATUS(waitstatus)
-    if os.WIFSIGNALED(waitstatus):
-        return -os.WTERMSIG(waitstatus)
-
-    raise ValueError
+def parse_args():
+    ctx = Context(parser.parse_args())
+    if ctx.args.quick or ctx.args.basesnap or ctx.args.snap \
+            or ctx.args.channel or ctx.args.reuse:
+        ctx.args.build = True
+    if ctx.args.reuse:
+        ctx.args.save = True
+    return ctx
 
 
-class SubProcessFailure(Exception):
-    pass
+def run(cmd):
+    if isinstance(cmd, str):
+        cmd_str = cmd
+        cmd_array = cmd.split(' ')
+    else:
+        cmd_str = ' '.join(cmd)
+        cmd_array = cmd
+    # semi-simulate "bash -x"
+    print(f'+ {cmd_str}')
+    subprocess.run(cmd_array, check=True)
 
 
-def run(cmds):
-    for cmd in [line.strip() for line in cmds.splitlines()]:
-        if len(cmd) < 1:
-            continue
-        # semi-simulate "bash -x"
-        print(f'+ {cmd}')
-        # FIXME subprocess check
-        ec = waitstatus_to_exitcode(os.system(cmd))
-        if ec != 0:
-            raise SubProcessFailure(f'command [{cmd}] returned [{ec}]')
+def assert_exists(path):
+    if not os.path.exists(path):
+        raise Exception('Expected file {path} not found')
 
 
 @contextlib.contextmanager
@@ -236,16 +219,17 @@ def mounter(src, dest):
         run(f'sudo umount {dest}')
 
 
+def livefs_edit(ctx, *args):
+    run(f'sudo PYTHONPATH=$LIVEFS_EDITOR python3 -m livefs_edit \
+          {ctx.baseiso} {ctx.iso} {*args}')
+
+
 def build(ctx):
-    run('sudo -v')
-    run(f'rm -f {ctx.iso}')
+    os.remove(ctx.iso)
     project = os.path.basename(os.getcwd())
 
     snap_manager = noop if ctx.args.save else delete_later
-    # FIXME generalize to
-    # PYTHONPATH=$LIVEFS_EDITOR python3 -m livefs_edit $OLD_ISO $NEW_ISO
-    # --inject-snap $SUBIQUITY_SNAP_PATH
-    if project.startswith('subiquity'):
+    if project == 'subiquity':
         if ctx.args.quick:
             run(f'sudo ./scripts/quick-test-this-branch.sh {ctx.baseiso} \
                 {ctx.iso}')
@@ -259,38 +243,27 @@ def build(ctx):
             run(f'sudo ./scripts/inject-subiquity-snap.sh {ctx.baseiso} \
                 {ctx.args.snap} {ctx.iso}')
         elif ctx.args.channel:
-            run(f'sudo PYTHONPATH=$LIVEFS_EDITOR python3 -m livefs_edit \
-                    {ctx.baseiso} {ctx.iso} \
-                    --add-snap-from-store subiquity {ctx.args.channel}')
+            livefs_edit(ctx, '--add-snap-from-store', 'core20', 'stable',
+                        '--add-snap-from-store', 'subiquity',
+                        ctx.args.channel)
         else:
             with snap_manager('subiquity_test.snap') as snap:
                 if not ctx.args.reuse:
-                    run(f'''
-                        snapcraft clean --use-lxd
-                        snapcraft snap --use-lxd --output {snap}
-                        ''')
-                run(f'''
-                    test -f {snap}
-                    sudo PYTHONPATH=$LIVEFS_EDITOR python3 -m livefs_edit \
-                        {ctx.baseiso} {ctx.iso} \
-                        --add-snap-from-store core20 stable \
-                        --inject-snap {snap}
-                    ''')
-                # sudo ./scripts/inject-subiquity-snap.sh {ctx.baseiso} \
-                #     {snap} {ctx.iso}
+                    run('snapcraft clean --use-lxd')
+                    run(f'snapcraft snap --use-lxd --output {snap}')
+                assert_exists(snap)
+                livefs_edit(ctx, '--add-snap-from-store', 'core20', 'stable',
+                      '--inject-snap', snap)
     elif project == 'ubuntu-desktop-installer':
         with snap_manager('udi_test.snap') as snap:
-            run(f'''
-                snapcraft clean --use-lxd
-                snapcraft snap --use-lxd --output {snap}
-                test -f {snap}
-                sudo ./scripts/inject-snap {ctx.baseiso} \
-                    {ctx.iso} {snap}
-                ''')
+            run('snapcraft clean --use-lxd')
+            run(f'snapcraft snap --use-lxd --output {snap}')
+            assert_exists(snap)
+            run(f'sudo ./scripts/inject-snap {ctx.baseiso} {ctx.iso} {snap}')
     else:
         raise Exception(f'do not know how to build {project}')
 
-    run(f'test -f {ctx.iso}')
+    assert_exists(ctx.iso)
 
 
 def write(dest, data):
@@ -315,15 +288,12 @@ def drive(path, format='qcow2'):
     kwargs = []
     serial = None
     cparam = 'writethrough'
-    # if cache == False: cparam = 'none'
-    # serial doesn't work..
-    # serial = str(int(random.random() * 100000000)).zfill(8)
-    kwargs += [f'file={path}']
-    kwargs += [f'format={format}']
-    kwargs += [f'cache={cparam}']
-    kwargs += ['if=virtio']
+    kwargs.append(f'file={path}')
+    kwargs.append(f'format={format}')
+    kwargs.append(f'cache={cparam}')
+    kwargs.append('if=virtio')
     if serial:
-        kwargs += [f'serial={serial}']
+        kwargs.append(f'serial={serial}')
 
     return '-drive ' + ','.join(kwargs)
 
@@ -346,15 +316,15 @@ class PortFinder:
 def nets(ctx):
     ports = PortFinder()
 
-    ret = []
     if ctx.args.nets > 0:
+        ret = []
         for _ in range(ctx.args.nets):
             port = ports.get()
-            ret += ['-nic',
-                    'user,model=virtio-net-pci,' +
-                    f'hostfwd=tcp::{port}-:22']  # ,restrict=on']
+            ret.extend(('-nic',
+                        'user,model=virtio-net-pci,' +
+                        f'hostfwd=tcp::{port}-:22'))
     else:
-        ret += ['-nic', 'none']
+        ret = ['-nic', 'none']
     return ret
 
 
@@ -362,12 +332,12 @@ def bios(ctx):
     ret = []
     # https://help.ubuntu.com/community/UEFI
     if not ctx.args.bios:
-        ret += ['-bios', '/usr/share/qemu/OVMF.fd']
+        ret = ['-bios', '/usr/share/qemu/OVMF.fd']
     return ret
 
 
 def memory(ctx):
-    return ['-m', str(sys_memory)]
+    return ['-m', ctx.args.memory or ctx.default_mem]
 
 
 def kvm_common(ctx):
@@ -378,35 +348,6 @@ def kvm_common(ctx):
     ret.extend(nets(ctx))
     if ctx.args.sound:
         ret.extend(('-device', 'AC97', '-device', 'usb-ehci'))
-    return ret
-
-
-def grub_get_extra_args(mntdir):
-    # The inject-snap process of livefs-edit adds a new layer squash
-    # that must be in place, or the injected snap isn't there.
-    # We don't want to hardcode the current value, because that layer
-    # isn't there if a base iso is being used.
-    # Parse the args out of grub.cfg and include them with ours.
-    cfgpath = f'{mntdir}/boot/grub/grub.cfg'
-    ret = []
-    try:
-        with open(cfgpath, 'r') as fp:
-            for line in fp.readlines():
-                chunks = line.strip().split('\t')
-                # ['linux', '/casper/vmlinuz  ---']
-                # layerfs-path=a.b.c.d.e.squashfs
-                if not chunks or not chunks[0] == 'linux':
-                    continue
-                subchunks = chunks[1].split(' ')
-                if not subchunks or not subchunks[0] == '/casper/vmlinuz':
-                    continue
-                for sc in subchunks[1:]:
-                    if sc != '---':
-                        ret.append(sc)
-                break
-        # breakpoint()
-    except FileNotFoundError:
-        pass
     return ret
 
 
@@ -422,8 +363,8 @@ def install(ctx):
     if os.path.exists(ctx.target):
         if ctx.args.overwrite:
             os.remove(ctx.target)
-
-    run('sudo -v')
+        else:
+            raise Exception('refusing to overwrite existing image')
 
     with tempfile.TemporaryDirectory() as tempdir:
         mntdir = f'{tempdir}/mnt'
@@ -439,40 +380,36 @@ def install(ctx):
         else:
             iso = ctx.iso
 
-        kvm += ['-cdrom', iso]
+        kvm.extend(('-cdrom', iso))
 
         if ctx.args.serial:
-            kvm += ['-nographic']
-            appends += ['console=ttyS0']
+            kvm.append('-nographic')
+            appends.append('console=ttyS0')
 
         if ctx.args.autoinstall or ctx.args.autoinstall_file:
             if ctx.args.autoinstall_file:
                 ctx.cloudconfig = ctx.args.autoinstall_file.read()
-            kvm += [drive(create_seed(ctx.cloudconfig, tempdir), 'raw')]
-            appends += ['autoinstall']
+            kvm.append(drive(create_seed(ctx.cloudconfig, tempdir), 'raw'))
+            appends.append('autoinstall')
 
         if ctx.args.update:
-            appends += ['subiquity-channel=candidate']
+            appends.append('subiquity-channel=' + ctx.args.update)
 
-        kvm += [drive(ctx.target)]
+        kvm.append(drive(ctx.target))
         if not os.path.exists(ctx.target) or ctx.args.overwrite:
             run(f'qemu-img create -f qcow2 {ctx.target} {ctx.args.disksize}')
 
-        # drive2 = f'{ctx.curdir}/drive2.img'
-
-        # appends += ['subiquity-channel=edge']
-
-        with mounter(iso, mntdir):
-            if len(appends) > 0:
-                appends += grub_get_extra_args(mntdir)
+        if len(appends) > 0:
+            with mounter(iso, mntdir):
                 # if we're passing kernel args, we need to manually specify
                 # kernel / initrd
-                kvm += ['-kernel', f'{mntdir}/casper/vmlinuz']
-                kvm += ['-initrd', get_initrd(mntdir)]
+                kvm.extend(('-kernel', f'{mntdir}/casper/vmlinuz'))
+                kvm.extend(('-initrd', get_initrd(mntdir)))
                 toappend = ' '.join(appends)
-                kvm += ['-append', f'"{toappend}"']
-
-            run(' '.join(kvm))
+                kvm.extend(('-append', f'"{toappend}"'))
+                run(kvm)
+        else:
+            run(kvm)
 
 
 def boot(ctx):
@@ -481,8 +418,8 @@ def boot(ctx):
         target = ctx.args.img
 
     kvm = kvm_common(ctx)
-    kvm += [drive(target)]
-    run(' '.join(kvm))
+    kvm.append(target)
+    run(kvm)
 
 
 def help(ctx):
@@ -490,12 +427,8 @@ def help(ctx):
     sys.exit(1)
 
 
-def cloud(ctx):
-    print(ctx.cloudconfig)
-
-
 try:
-    ctx = Context(parser.parse_args())
+    ctx = parse_args()
 except TypeError:
     help()
 
