@@ -226,7 +226,8 @@ class InstallController(SubiquityController):
         description="installing {package}")
     async def install_package(self, *, context, package):
         await run_curtin_command(
-            self.app, context, 'system-install', '--', package)
+            self.app, context, 'system-install', '-t', self.tpath(),
+            '--', package)
 
     @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):
