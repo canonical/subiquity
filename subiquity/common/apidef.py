@@ -48,6 +48,7 @@ from subiquity.common.types import (
     StorageResponse,
     StorageResponseV2,
     TimeZoneInfo,
+    UbuntuAdvantageInfo,
     WLANSupportInstallState,
     ZdevInfo,
     WSLConfigurationBase,
@@ -62,6 +63,7 @@ class API:
     locale = simple_endpoint(str)
     proxy = simple_endpoint(str)
     ssh = simple_endpoint(SSHData)
+    ubuntu_advantage = simple_endpoint(UbuntuAdvantageInfo)
     updates = simple_endpoint(str)
     wslconfbase = simple_endpoint(WSLConfigurationBase)
     wslconfadvanced = simple_endpoint(WSLConfigurationAdvanced)

@@ -45,6 +45,8 @@ Filesystem:
         fstype: ext4
         mount: /
     - action: done
+UbuntuAdvantage:
+  token: "a1b2c3d4"
 Identity:
   realname: Ubuntu
   username: ubuntu

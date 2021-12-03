@@ -110,6 +110,7 @@ class SubiquityClient(TuiApplication):
         "Refresh",
         "Filesystem",
         "Identity",
+        "UbuntuAdvantage",
         "SSH",
         "SnapList",
         "Progress",
