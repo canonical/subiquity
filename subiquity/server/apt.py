@@ -29,12 +29,38 @@ from subiquitycore.utils import arun_command
 from subiquity.server.curtin import run_curtin_command
 
 
+class _MountBase:
+
+    def p(self, *args):
+        for a in args:
+            if a.startswith('/'):
+                raise Exception('no absolute paths here please')
+        return os.path.join(self.mountpoint, *args)
+
+    def write(self, path, content):
+        with open(self.p(path), 'w') as fp:
+            fp.write(content)
+
+
+class Mountpoint(_MountBase):
+    def __init__(self, *, mountpoint):
+        self.mountpoint = mountpoint
+
+
+class OverlayMountpoint(_MountBase):
+    def __init__(self, *, lowers, upperdir, mountpoint):
+        self.lowers = lowers
+        self.upperdir = upperdir
+        self.mountpoint = mountpoint
+
+
 class AptConfigurer:
 
     def __init__(self, app, source):
         self.app = app
         self.source = source
-        self.configured = None
+        self.configured_tree = None
+        self.install_mount = None
         self._mounts = []
         self._tdirs = []
 
@@ -51,21 +77,42 @@ class AptConfigurer:
             opts.extend(['-t', type])
         await self.app.command_runner.run(
             ['mount'] + opts + [device, mountpoint])
-        self._mounts.append(mountpoint)
+        m = Mountpoint(mountpoint=mountpoint)
+        self._mounts.append(m)
+        return m
 
     async def unmount(self, mountpoint):
         await self.app.command_runner.run(['umount', mountpoint])
 
-    async def setup_overlay(self, source, target):
+    async def setup_overlay(self, lowers):
         tdir = self.tdir()
-        w = f'{tdir}/work'
-        u = f'{tdir}/upper'
-        for d in w, u:
+        target = f'{tdir}/mount'
+        workdir = f'{tdir}/work'
+        upperdir = f'{tdir}/upper'
+        for d in target, workdir, upperdir:
             os.mkdir(d)
-        await self.mount(
-            'overlay', target, type='overlay',
-            options=f'lowerdir={source},upperdir={u},workdir={w}')
-        return u
+
+        def lowerdir_for(lower):
+            if isinstance(lower, str):
+                return lower
+            if isinstance(lower, Mountpoint):
+                return lower.p()
+            if isinstance(lower, OverlayMountpoint):
+                return lowerdir_for(lower.lowers)
+            if isinstance(lower, list):
+                return ':'.join(reversed([lowerdir_for(ll) for ll in lower]))
+            raise Exception(f'lowerdir_for({lower!r})')
+
+        lowerdir = lowerdir_for(lowers)
+        options = f'lowerdir={lowerdir},upperdir={upperdir},workdir={workdir}'
+
+        mount = await self.mount(
+            'overlay', target, options=options, type='overlay')
+
+        return OverlayMountpoint(
+            lowers=lowers,
+            mountpoint=mount.p(),
+            upperdir=upperdir)
 
     def apt_config(self):
         cfg = {}
@@ -77,11 +124,11 @@ class AptConfigurer:
         # Configure apt so that installs from the pool on the cdrom are
         # preferred during installation but not in the installed system.
         #
-        # First we create an overlay ('configured') over the installation
+        # First we create an overlay ('configured_tree') over the installation
         # source and configure that overlay as we want the target system to
         # end up by running curtin's apt-config subcommand.
         #
-        # Then we create a fresh overlay ('for_install') over the first one
+        # Then we create a fresh overlay ('install_tree') over the first one
         # and configure it for the installation. This means:
         #
         # 1. Bind-mounting /cdrom into this new overlay.
@@ -106,9 +153,7 @@ class AptConfigurer:
         #    system, or if it is not, just copy /var/lib/apt/lists from the
         #    'configured' overlay.
 
-        self.configured = self.tdir()
-
-        config_upper = await self.setup_overlay(self.source, self.configured)
+        self.configured_tree = await self.setup_overlay(self.source)
 
         config_location = os.path.join(
             self.app.root, 'var/log/installer/subiquity-curtin-apt.conf')
@@ -120,75 +165,77 @@ class AptConfigurer:
         self.app.note_data_for_apport("CurtinAptConfig", config_location)
 
         await run_curtin_command(
-            self.app, context, 'apt-config', '-t', self.configured,
+            self.app, context, 'apt-config', '-t', self.configured_tree.p(),
             config=config_location)
 
-        for_install = self.tdir()
-        await self.setup_overlay(config_upper + ':' + self.source, for_install)
+        self.install_tree = await self.setup_overlay(self.configured_tree)
 
-        os.mkdir(f'{for_install}/cdrom')
-        await self.mount('/cdrom', f'{for_install}/cdrom', options='bind')
+        os.mkdir(self.install_tree.p('cdrom'))
+        await self.mount(
+            '/cdrom', self.install_tree.p('cdrom'), options='bind')
 
         if self.app.base_model.network.has_network:
             os.rename(
-                f'{for_install}/etc/apt/sources.list',
-                f'{for_install}/etc/apt/sources.list.d/original.list')
+                self.install_tree.p('etc/apt/sources.list'),
+                self.install_tree.p('etc/apt/sources.list.d/original.list'))
         else:
-            proxy_path = f'{for_install}/etc/apt/apt.conf.d/90curtin-aptproxy'
+            proxy_path = self.install_tree.p(
+                'etc/apt/apt.conf.d/90curtin-aptproxy')
             if os.path.exists(proxy_path):
                 os.unlink(proxy_path)
 
         codename = lsb_release()['codename']
 
         write_file(
-            f'{for_install}/etc/apt/sources.list',
+            self.install_tree.p('etc/apt/sources.list'),
             f'deb [check-date=no] file:///cdrom {codename} main restricted\n')
 
         await run_curtin_command(
-            self.app, context, "in-target", "-t", for_install,
+            self.app, context, "in-target", "-t", self.install_tree.p(),
             "--", "apt-get", "update")
 
-        return for_install
+        return self.install_tree.p()
 
     async def cleanup(self):
         for m in reversed(self._mounts):
-            await self.unmount(m)
+            await self.unmount(m.mountpoint)
         for d in self._tdirs:
             shutil.rmtree(d)
 
     async def deconfigure(self, context, target):
-        await self.unmount(f'{target}/cdrom')
-        os.rmdir(f'{target}/cdrom')
+        target = Mountpoint(mountpoint=target)
+
+        await self.unmount(target.p('cdrom'))
+        os.rmdir(target.p('cdrom'))
 
         restore_dirs = ['etc/apt']
         if not self.app.base_model.network.has_network:
             restore_dirs.append('var/lib/apt/lists')
         for dir in restore_dirs:
-            shutil.rmtree(f'{target}/{dir}')
+            shutil.rmtree(target.p(dir))
             await self.app.command_runner.run([
-                'cp', '-aT', f'{self.configured}/{dir}', f'{target}/{dir}',
+                'cp', '-aT', self.configured_tree.p(dir), target.p(dir),
                 ])
 
         if self.app.base_model.network.has_network:
             await run_curtin_command(
-                self.app, context, "in-target", "-t", target,
+                self.app, context, "in-target", "-t", target.p(),
                 "--", "apt-get", "update")
 
         await self.cleanup()
 
         if self.app.base_model.network.has_network:
             await run_curtin_command(
-                self.app, context, "in-target", "-t", target,
+                self.app, context, "in-target", "-t", target.p(),
                 "--", "apt-get", "update")
 
 
 class DryRunAptConfigurer(AptConfigurer):
 
-    async def setup_overlay(self, source, target):
-        if source.startswith('u+'):
-            # Please excuse the obscure way the path is transmitted
-            # from the first invocation of this method to the second :/
-            source = source.split(':')[0][2:]
+    async def setup_overlay(self, source):
+        if isinstance(source, OverlayMountpoint):
+            source = source.lowers[0]
+        target = self.tdir()
         os.mkdir(f'{target}/etc')
         await arun_command([
             'cp', '-aT', f'{source}/etc/apt', f'{target}/etc/apt',
@@ -196,7 +243,10 @@ class DryRunAptConfigurer(AptConfigurer):
         if os.path.isdir(f'{target}/etc/apt/sources.list.d'):
             shutil.rmtree(f'{target}/etc/apt/sources.list.d')
         os.mkdir(f'{target}/etc/apt/sources.list.d')
-        return 'u+' + target
+        return OverlayMountpoint(
+            lowers=[source],
+            mountpoint=target,
+            upperdir=None)
 
     async def deconfigure(self, context, target):
         return
