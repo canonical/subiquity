@@ -15,6 +15,9 @@
 
 import os
 
+from curtin.commands.extract import get_handler_for_source
+from curtin.util import sanitize_source
+
 from subiquity.common.apidef import API
 from subiquity.common.types import (
     SourceSelection,
@@ -48,6 +51,11 @@ class SourceController(SubiquityController):
 
     endpoint = API.source
 
+    def __init__(self, app):
+        super().__init__(app)
+        self._handler = None
+        self.source_path = None
+
     def start(self):
         path = '/cdrom/casper/install-sources.yaml'
         if self.app.opts.source_catalog is not None:
@@ -80,6 +88,14 @@ class SourceController(SubiquityController):
             self.model.current.id)
 
     async def configured(self):
+        if self._handler is not None:
+            self._handler.cleanup()
+        self._handler = get_handler_for_source(
+            sanitize_source(self.model.get_source()))
+        if self.app.opts.dry_run:
+            self.source_path = '/'
+        else:
+            self.source_path = self._handler.setup()
         await super().configured()
         self.app.base_model.set_source_variant(self.model.current.variant)
 

@@ -19,12 +19,11 @@ import os
 import re
 import shutil
 
-from curtin.commands.extract import get_handler_for_source
 from curtin.commands.install import (
     ERROR_TARFILE,
     INSTALL_LOG,
     )
-from curtin.util import sanitize_source, write_file
+from curtin.util import write_file
 
 import yaml
 
@@ -157,15 +156,8 @@ class InstallController(SubiquityController):
 
             self.app.update_state(ApplicationState.RUNNING)
 
-            handler = get_handler_for_source(
-                sanitize_source(self.model.source.get_source()))
-
-            if self.app.opts.dry_run:
-                path = '/'
-            else:
-                path = handler.setup()
-
-            self.apt_configurer = get_apt_configurer(self.app, path)
+            self.apt_configurer = get_apt_configurer(
+                self.app, self.app.controllers.Source.source_path)
 
             for_install_path = await self.configure_apt(context=context)
 
