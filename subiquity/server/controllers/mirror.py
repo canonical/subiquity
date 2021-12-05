@@ -23,6 +23,7 @@ from curtin.config import merge_config
 from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
+from subiquity.server.apt import get_apt_configurer
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
 
@@ -57,7 +58,11 @@ class MirrorController(SubiquityController):
         super().__init__(app)
         self.geoip_enabled = True
         self.app.hub.subscribe(InstallerChannels.GEOIP, self.on_geoip)
+        self.app.hub.subscribe(
+            (InstallerChannels.CONFIGURED, 'source'), self.on_source)
         self.cc_event = asyncio.Event()
+        self.configured_once = True
+        self.apt_configurer = None
 
     def load_autoinstall_data(self, data):
         if data is None:
@@ -81,6 +86,10 @@ class MirrorController(SubiquityController):
             self.model.set_country(self.app.geoip.countrycode)
         self.cc_event.set()
 
+    def on_source(self):
+        if self.configured_once:
+            self.make_apt_configurer()
+
     def serialize(self):
         return self.model.get_mirror()
 
@@ -91,6 +100,17 @@ class MirrorController(SubiquityController):
         r = copy.deepcopy(self.model.config)
         r['geoip'] = self.geoip_enabled
         return r
+
+    async def configured(self):
+        await super().configured()
+        self.configured_once = True
+        self.make_apt_configurer()
+
+    def make_apt_configurer(self):
+        if self.apt_configurer is not None:
+            self.apt_configurer.cleanup()
+        self.apt_configurer = get_apt_configurer(
+            self.app, self.app.controllers.Source.source_path)
 
     async def GET(self) -> str:
         return self.model.get_mirror()

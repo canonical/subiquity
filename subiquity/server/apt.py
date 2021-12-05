@@ -150,6 +150,12 @@ class AptConfigurer:
 
         return for_install
 
+    async def cleanup(self):
+        for m in reversed(self._mounts):
+            await self.unmount(m)
+        for d in self._tdirs:
+            shutil.rmtree(d)
+
     async def deconfigure(self, context, target):
         await self.unmount(f'{target}/cdrom')
         os.rmdir(f'{target}/cdrom')
@@ -168,10 +174,8 @@ class AptConfigurer:
                 self.app, context, "in-target", "-t", target,
                 "--", "apt-get", "update")
 
-        for m in reversed(self._mounts):
-            await self.unmount(m)
-        for d in self._tdirs:
-            shutil.rmtree(d)
+        await self.cleanup()
+
         if self.app.base_model.network.has_network:
             await run_curtin_command(
                 self.app, context, "in-target", "-t", target,

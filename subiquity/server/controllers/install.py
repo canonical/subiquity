@@ -39,7 +39,6 @@ from subiquity.common.types import (
 from subiquity.journald import (
     journald_listen,
     )
-from subiquity.server.apt import get_apt_configurer
 from subiquity.server.controller import (
     SubiquityController,
     )
@@ -79,7 +78,6 @@ class InstallController(SubiquityController):
         self.unattended_upgrades_cmd = None
         self.unattended_upgrades_ctx = None
         self.tb_extractor = TracebackExtractor()
-        self.apt_configurer = None
 
     def interactive(self):
         return True
@@ -128,7 +126,8 @@ class InstallController(SubiquityController):
     @with_context(
         description="configuring apt", level="INFO", childlevel="DEBUG")
     async def configure_apt(self, *, context):
-        return await self.apt_configurer.configure(context)
+        configurer = self.app.controllers.Mirror.apt_configurer
+        return await configurer.configure(context)
 
     @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
@@ -155,9 +154,6 @@ class InstallController(SubiquityController):
                     break
 
             self.app.update_state(ApplicationState.RUNNING)
-
-            self.apt_configurer = get_apt_configurer(
-                self.app, self.app.controllers.Source.source_path)
 
             for_install_path = await self.configure_apt(context=context)
 
@@ -223,7 +219,8 @@ class InstallController(SubiquityController):
 
     @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):
-        await self.apt_configurer.deconfigure(context, self.tpath())
+        configurer = self.app.controllers.Mirror.apt_configurer
+        await configurer.deconfigure(context, self.tpath())
 
     @with_context(description="downloading and installing {policy} updates")
     async def run_unattended_upgrades(self, context, policy):
