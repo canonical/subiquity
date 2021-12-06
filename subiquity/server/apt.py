@@ -55,6 +55,40 @@ class OverlayMountpoint(_MountBase):
 
 
 class AptConfigurer:
+    # We configure apt during installation so that installs from the pool on
+    # the cdrom are preferred during installation but remove this again in the
+    # installed system.
+    #
+    # First we create an overlay ('configured_tree') over the installation
+    # source and configure that overlay as we want the target system to end up
+    # by running curtin's apt-config subcommand. This is done in the
+    # apply_apt_config method.
+    #
+    # Then in configure_for_install we create a fresh overlay ('install_tree')
+    # over the first one and configure it for the installation. This means:
+    #
+    # 1. Bind-mounting /cdrom into this new overlay.
+    #
+    # 2. When the network is expected to be working, copying the original
+    #    /etc/apt/sources.list to /etc/apt/sources.list.d/original.list.
+    #
+    # 3. writing "deb file:///cdrom $(lsb_release -sc) main restricted"
+    #    to /etc/apt/sources.list.
+    #
+    # 4. running "apt-get update" in the new overlay.
+    #
+    # When the install is done the deconfigure method makes the installed
+    # system's apt state look as if the pool had never been configured. So
+    # this means:
+    #
+    # 1. Removing /cdrom from the installed system.
+    #
+    # 2. Copying /etc/apt from the 'configured' overlay to the installed
+    #    system.
+    #
+    # 3. If the network is working, run apt-get update in the installed
+    #    system, or if it is not, just copy /var/lib/apt/lists from the
+    #    'configured_tree' overlay.
 
     def __init__(self, app, source):
         self.app = app
@@ -164,42 +198,6 @@ class AptConfigurer:
         await run_curtin_command(
             self.app, context, "in-target", "-t", self.install_tree.p(),
             "--", "apt-get", "update")
-
-    async def configure(self, context):
-        # Configure apt so that installs from the pool on the cdrom are
-        # preferred during installation but not in the installed system.
-        #
-        # First we create an overlay ('configured_tree') over the installation
-        # source and configure that overlay as we want the target system to
-        # end up by running curtin's apt-config subcommand.
-        #
-        # Then we create a fresh overlay ('install_tree') over the first one
-        # and configure it for the installation. This means:
-        #
-        # 1. Bind-mounting /cdrom into this new overlay.
-        #
-        # 2. When the network is expected to be working, copying the original
-        #    /etc/apt/sources.list to /etc/apt/sources.list.d/original.list.
-        #
-        # 3. writing "deb file:///cdrom $(lsb_release -sc) main restricted"
-        #    to /etc/apt/sources.list.
-        #
-        # 4. running "apt-get update" in the new overlay.
-        #
-        # When the install is done we try to make the installed system's apt
-        # state look as if the pool had never been configured. So this means:
-        #
-        # 1. Removing /cdrom from the installed system.
-        #
-        # 2. Copying /etc/apt from the 'configured' overlay to the installed
-        #    system.
-        #
-        # 3. If the network is working, run apt-get update in the installed
-        #    system, or if it is not, just copy /var/lib/apt/lists from the
-        #    'configured' overlay.
-
-        await self.apply_apt_config(context)
-        await self.configure_for_install(context)
 
         return self.install_tree.p()
 
