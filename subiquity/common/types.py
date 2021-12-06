@@ -272,6 +272,8 @@ class Disk:
     path: Optional[str]
     free_for_partitions: int
     boot_device: bool
+    model: Optional[str] = None
+    vendor: Optional[str] = None
 
 
 @attr.s(auto_attribs=True)

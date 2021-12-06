@@ -675,6 +675,22 @@ class TestInfo(TestAPI):
             sda = first(resp['disks'], 'id', disk_id)
             self.assertEqual('/dev/sda', sda['path'])
 
+    async def test_model_and_vendor(self):
+        async with start_server('examples/simple.json') as inst:
+            disk_id = 'disk-sda'
+            resp = await inst.get('/storage/v2')
+            sda = first(resp['disks'], 'id', disk_id)
+            self.assertEqual('QEMU HARDDISK', sda['model'])
+            self.assertEqual('ATA', sda['vendor'])
+
+    async def test_no_vendor(self):
+        async with start_server('examples/many-nics-and-disks.json') as inst:
+            disk_id = 'disk-sda'
+            resp = await inst.get('/storage/v2')
+            sda = first(resp['disks'], 'id', disk_id)
+            self.assertEqual('QEMU HARDDISK', sda['model'])
+            self.assertEqual(None, sda['vendor'])
+
 
 class TestFree(TestAPI):
     @timeout(5)

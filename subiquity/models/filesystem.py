@@ -569,7 +569,6 @@ class Disk(_Device):
     wwn = attr.ib(default=None)
     multipath = attr.ib(default=None)
     path = attr.ib(default=None)
-    model = attr.ib(default=None)
     wipe = attr.ib(default=None)
     preserve = attr.ib(default=False)
     name = attr.ib(default="")
@@ -641,6 +640,20 @@ class Disk(_Device):
         return True
 
     ok_for_lvm_vg = ok_for_raid
+
+    @property
+    def model(self):
+        return self._decode_id('ID_MODEL_ENC')
+
+    @property
+    def vendor(self):
+        return self._decode_id('ID_VENDOR_ENC')
+
+    def _decode_id(self, id):
+        id = self._info.raw.get(id)
+        if id is None:
+            return None
+        return id.encode('utf-8').decode('unicode_escape').strip()
 
 
 @fsobj("partition")
