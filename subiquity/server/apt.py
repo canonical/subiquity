@@ -210,22 +210,23 @@ class AptConfigurer:
     async def deconfigure(self, context, target):
         target = Mountpoint(mountpoint=target)
 
-        await self.unmount(target.p('cdrom'))
-        os.rmdir(target.p('cdrom'))
-
-        restore_dirs = ['etc/apt']
-        if not self.app.base_model.network.has_network:
-            restore_dirs.append('var/lib/apt/lists')
-        for dir in restore_dirs:
+        async def _restore_dir(dir):
             shutil.rmtree(target.p(dir))
             await self.app.command_runner.run([
                 'cp', '-aT', self.configured_tree.p(dir), target.p(dir),
                 ])
 
+        await self.unmount(target.p('cdrom'))
+        os.rmdir(target.p('cdrom'))
+
+        await _restore_dir('etc/apt')
+
         if self.app.base_model.network.has_network:
             await run_curtin_command(
                 self.app, context, "in-target", "-t", target.p(),
                 "--", "apt-get", "update")
+        else:
+            await _restore_dir('var/lib/apt/lists')
 
         await self.cleanup()
 
