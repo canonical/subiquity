@@ -1034,6 +1034,14 @@
             }
         ],
         "multipath": {},
+        "os": {
+            "/dev/sda1": {
+                "label": "Windows",
+                "long": "Windows Boot Manager",
+                "subpath": "/efi/Microsoft/Boot/bootmgfw.efi",
+                "type": "efi"
+            }
+        },
         "raid": {},
         "zfs": {
             "zpools": {}
