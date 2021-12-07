@@ -116,9 +116,10 @@ class ConfigureController(SubiquityController):
 
         return True
 
-    async def _install_check_lang_support_packages(self, lang, env) -> bool:
-        """ Install packages recommended by check-language-support
-        command. lang is expected to be one single language/locale.
+    async def __recommended_language_packs(self, lang, env) -> List[str]:
+        """ Return a list of package names recommended by
+         check-language-support (or a fake list if in dryrun).
+         List returned can be empty on success. None for failure.
         """
         clsCommand = "check-language-support"
         # lang code may be separated by @, dot or spaces.
@@ -127,29 +128,48 @@ class ConfigureController(SubiquityController):
         matches = pattern.match(lang)
         if matches is None:
             log.error("Failed to match expected language format: %s", lang)
-            return False
+            return None
 
         langCodes = matches.groups()
         if len(langCodes) != 1:
             log.error("Only one match was expected for: %s", lang)
-            return False
+            return None
 
         clsLang = langCodes[0]
+        packages = []
         # Running that command doesn't require root.
         cp = await arun_command([clsCommand, "-l", clsLang], env=env)
         if cp.returncode != 0:
             log.error('Command "%s" failed with return code %d',
                       cp.args, cp.returncode)
+            if not self.app.opts.dry_run:
+                return None
+
+        else:
+            packages += [pkg for pkg in cp.stdout.strip().split(' ') if pkg]
+
+        # We will always have language-pack-{baseLang}-base in dryrun.
+        if len(packages) == 0 and self.app.opts.dry_run:
+            baseLang = clsLang.split('_')[0]
+            packages += ["language-pack-{}-base".format(baseLang)]
+
+        return packages
+
+    async def _install_check_lang_support_packages(self, lang, env) -> bool:
+        """ Install recommended packages.
+        lang is expected to be one single language/locale.
+        """
+        packages = await self.__recommended_language_packs(lang, env)
+        if packages is None:
+            log.error('Failed to detect recommended language packs.')
             return False
 
-        packages = [pkg for pkg in cp.stdout.strip().split(' ') if pkg]
-        if len(packages) == 0:
-            log.debug("%s didn't recommend any packages. Nothing to do.",
-                      clsCommand)
-            return True
-
         cache = apt.Cache()
-        if self.app.opts.dry_run:
+        if self.app.opts.dry_run:  # only empty in dry-run on failure.
+            if len(packages) == 0:
+                log.error("Packages list in dry-run should never be empty.")
+                return False
+
             packs_dir = os.path.join(self.model.root,
                                      apt_pkg.config
                                      .find_dir("Dir::Cache::Archives")[1:])
@@ -160,10 +180,15 @@ class ConfigureController(SubiquityController):
                     archive = os.path.join(packs_dir, cache[package].fullname)
                     with open(archive, "wt") as f:
                         f.write(cache[package].candidate.uri)
-            except IOError:
-                log.error("Failed to write %s file.", archive)
+
+                return True
+
+            except IOError as e:
+                log.error("Failed to write file.", e)
                 return False
 
+        if len(packages) == 0:
+            log.info("No missing recommended packages. Nothing to do.")
             return True
 
         cache.update()
