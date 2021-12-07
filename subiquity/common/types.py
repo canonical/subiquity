@@ -243,6 +243,15 @@ class Bootloader(enum.Enum):
 
 
 @attr.s(auto_attribs=True)
+class OsProber:
+    long: str
+    label: str
+    type: str
+    subpath: Optional[str] = None
+    version: Optional[str] = None
+
+
+@attr.s(auto_attribs=True)
 class Partition:
     size: Optional[int] = None
     number: Optional[int] = None
@@ -256,6 +265,7 @@ class Partition:
     grub_device: Optional[bool] = None
     # does this partition represent the actual boot partition for this device?
     boot: Optional[bool] = None
+    os: Optional[OsProber] = None
 
 
 @attr.s(auto_attribs=True)
