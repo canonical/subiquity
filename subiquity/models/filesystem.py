@@ -31,7 +31,7 @@ from curtin.util import human2bytes
 
 from probert.storage import StorageInfo
 
-from subiquity.common.types import Bootloader
+from subiquity.common.types import Bootloader, OsProber
 
 
 log = logging.getLogger('subiquity.models.filesystem')
@@ -707,6 +707,17 @@ class Partition(_Formattable):
         if self._constructed_device is not None:
             return False
         return True
+
+    @property
+    def os(self):
+        # This path calculation is overly simplistic and doesn't handle RAID or
+        # multipath.  Don't take it seriously.
+        path = self.device.path + str(self.number)
+
+        os_data = self._m._probe_data.get('os', {}).get(path)
+        if not os_data:
+            return None
+        return OsProber(**os_data)
 
     ok_for_lvm_vg = ok_for_raid
 

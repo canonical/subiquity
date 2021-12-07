@@ -693,7 +693,7 @@ class TestInfo(TestAPI):
 
 
 class TestFree(TestAPI):
-    @timeout(5)
+    @timeout()
     async def test_free_only(self):
         async with start_server('examples/simple.json') as inst:
             await inst.post('/meta/free_only', enable=True)
@@ -701,7 +701,7 @@ class TestFree(TestAPI):
             components.sort()
             self.assertEqual(['multiverse', 'restricted'], components)
 
-    @timeout(5)
+    @timeout()
     async def test_not_free_only(self):
         async with start_server('examples/simple.json') as inst:
             comps = ['universe', 'multiverse']
@@ -709,6 +709,24 @@ class TestFree(TestAPI):
             await inst.post('/meta/free_only', enable=False)
             components = await inst.get('/mirror/disable_components')
             self.assertEqual(['universe'], components)
+
+
+class TestOSProbe(TestAPI):
+    @timeout()
+    async def test_win10(self):
+        async with start_server('examples/win10.json') as inst:
+            resp = await inst.get('/storage/v2')
+            sda = first(resp['disks'], 'id', 'disk-sda')
+            sda1 = first(sda['partitions'], 'number', 1)
+            expected = {
+                'label': 'Windows',
+                'long': 'Windows Boot Manager',
+                'subpath': '/efi/Microsoft/Boot/bootmgfw.efi',
+                'type': 'efi',
+                'version': None
+            }
+
+            self.assertEqual(expected, sda1['os'])
 
 
 class TestRegression(TestAPI):

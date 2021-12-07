@@ -285,5 +285,6 @@ def _for_client_partition(partition, *, min_size=0):
         grub_device=partition.grub_device,
         boot=partition.boot,
         annotations=annotations(partition) + usage_labels(partition),
+        os=partition.os,
         mount=partition.mount,
         format=partition.format)
