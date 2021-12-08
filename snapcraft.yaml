@@ -192,3 +192,14 @@ parts:
       - -lib/python3.8/site-packages/pkg_resources
       - -lib/python3.8/site-packages/setuptools
       - -lib/python3.8/site-packages/wheel*
+
+  os-prober:
+    plugin: nil
+    stage-packages: [os-prober]
+    override-stage: |
+      snapcraftctl stage
+      for file in $(grep -lr /usr usr|grep -v /usr/share/doc); do
+        sed -i 's, \(/usr\), $SNAP\1,' $file
+      done
+      sed -i 's/mkdir "$tmpmnt"/mkdir -p "$tmpmnt"/' \
+          usr/lib/os-probes/50mounted-tests
