@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
+import functools
 import os
 import shutil
 import tempfile
@@ -52,6 +53,34 @@ class OverlayMountpoint(_MountBase):
         self.lowers = lowers
         self.upperdir = upperdir
         self.mountpoint = mountpoint
+
+
+@functools.singledispatch
+def lowerdir_for(x):
+    """Return value suitable for passing to the lowerdir= overlayfs option."""
+    raise NotImplementedError(x)
+
+
+@lowerdir_for.register(str)
+def _lowerdir_for_str(path):
+    return path
+
+
+@lowerdir_for.register(Mountpoint)
+def _lowerdir_for_mnt(mnt):
+    return mnt.mountpoint
+
+
+@lowerdir_for.register(OverlayMountpoint)
+def _lowerdir_for_ovmnt(ovmnt):
+    # One cannot indefinitely stack overlayfses so construct an
+    # explicit list of the layers of the overlayfs.
+    return lowerdir_for(ovmnt.lowers + [ovmnt.upperdir])
+
+
+@lowerdir_for.register(list)
+def _lowerdir_for_lst(lst):
+    return ':'.join(reversed([lowerdir_for(item) for item in lst]))
 
 
 class AptConfigurer:
@@ -121,23 +150,12 @@ class AptConfigurer:
     async def setup_overlay(self, lowers):
         tdir = self.tdir()
         target = f'{tdir}/mount'
-        workdir = f'{tdir}/work'
+        lowerdir = lowerdir_for(lowers)
         upperdir = f'{tdir}/upper'
+        workdir = f'{tdir}/work'
         for d in target, workdir, upperdir:
             os.mkdir(d)
 
-        def lowerdir_for(lower):
-            if isinstance(lower, str):
-                return lower
-            if isinstance(lower, Mountpoint):
-                return lower.p()
-            if isinstance(lower, OverlayMountpoint):
-                return lowerdir_for(lower.lowers)
-            if isinstance(lower, list):
-                return ':'.join(reversed([lowerdir_for(ll) for ll in lower]))
-            raise Exception(f'lowerdir_for({lower!r})')
-
-        lowerdir = lowerdir_for(lowers)
         options = f'lowerdir={lowerdir},upperdir={upperdir},workdir={workdir}'
 
         mount = await self.mount(
