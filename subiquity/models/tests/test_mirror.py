@@ -44,11 +44,11 @@ class TestMirrorModel(unittest.TestCase):
         self.assertEqual(model.get_mirror(), "http://mymirror.invalid/")
 
     def test_default_disable_components(self):
-        config = MirrorModel().get_config()
+        config = MirrorModel().get_apt_config()
         self.assertEqual([], config['disable_components'])
 
     def test_set_disable_components(self):
         model = MirrorModel()
         model.disable_components = set(['universe'])
-        config = model.get_config()
+        config = model.get_apt_config()
         self.assertEqual(['universe'], config['disable_components'])

@@ -53,7 +53,7 @@ class MirrorModel(object):
         self.default_mirror = self.get_mirror()
         self.disable_components = set()
 
-    def get_config(self):
+    def get_apt_config(self):
         config = copy.deepcopy(self.config)
         config['disable_components'] = list(self.disable_components)
         return config

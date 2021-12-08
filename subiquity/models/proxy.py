@@ -32,13 +32,18 @@ class ProxyModel(object):
     def proxy_systemd_dropin(self):
         return dropin_template.format(proxy=self.proxy)
 
+    def get_apt_config(self):
+        if self.proxy:
+            return {
+                'http_proxy': self.proxy,
+                'https_proxy': self.proxy,
+            }
+        else:
+            return {}
+
     def render(self):
         if self.proxy:
             return {
-                'apt': {
-                    'http_proxy': self.proxy,
-                    'https_proxy': self.proxy,
-                    },
                 'proxy': {
                     'http_proxy': self.proxy,
                     'https_proxy': self.proxy,

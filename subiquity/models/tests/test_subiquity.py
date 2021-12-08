@@ -119,8 +119,6 @@ class TestSubiquityModel(unittest.TestCase):
         config = model.render()
         self.assertConfigHasVal(config, 'proxy.http_proxy', proxy_val)
         self.assertConfigHasVal(config, 'proxy.https_proxy', proxy_val)
-        self.assertConfigHasVal(config, 'apt.http_proxy', proxy_val)
-        self.assertConfigHasVal(config, 'apt.https_proxy', proxy_val)
         confs = self.writtenFilesMatchingContaining(
             config,
             'etc/systemd/system/snapd.service.d/*.conf',
