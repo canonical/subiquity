@@ -69,7 +69,7 @@ flake8:
 	$(PYTHON) -m flake8 $(CHECK_DIRS)
 
 unit: gitdeps
-	python3 -m pytest --ignore curtin --ignore probert \
+	$(PYTHON) -m pytest --ignore curtin --ignore probert \
 		--ignore subiquity/tests/api
 
 api: gitdeps
