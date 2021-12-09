@@ -522,7 +522,7 @@ class _Device(_Formattable, ABC):
 
     @property
     def available_for_partitions(self):
-        return self.size - GPT_OVERHEAD
+        return align_down(self.size, 1 << 20) - GPT_OVERHEAD
 
     @property
     def free_for_partitions(self):
@@ -622,7 +622,7 @@ class Disk(_Device):
 
     @property
     def size(self):
-        return align_down(self._info.size)
+        return self._info.size
 
     def dasd(self):
         return self._m._one(type='dasd', device_id=self.device_id)
