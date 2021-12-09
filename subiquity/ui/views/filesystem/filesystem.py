@@ -63,7 +63,7 @@ from subiquitycore.view import BaseView
 from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
-from subiquity.common.filesystem import boot, labels
+from subiquity.common.filesystem import boot, gaps, labels
 from subiquity.models.filesystem import (
     humanize_size,
     )
@@ -361,6 +361,8 @@ class DeviceList(WidgetWrap):
                 enabled=enabled,
                 value=(action, meth),
                 opens_dialog=getattr(meth, 'opens_dialog', False)))
+        if not device_actions:
+            return Text("")
         menu = ActionMenu(device_actions)
         connect_signal(menu, 'action', self._action, device)
         return menu
@@ -386,34 +388,30 @@ class DeviceList(WidgetWrap):
             Text(""),
             Text(""),
         ])))
+
+        if self.show_available:
+            def filter(part):
+                if isinstance(part, gaps.Gap):
+                    return True
+                return part.available()
+        else:
+            def filter(part):
+                if isinstance(part, gaps.Gap):
+                    return False
+                return not part.available()
+
         for device in devices:
-            for obj, cells in summarize_device(
-                    device,
-                    lambda part: part.available() == self.show_available):
-                if obj is not None:
-                    menu = self._action_menu_for_device(obj)
-                else:
-                    menu = Text("")
+            for obj, cells in summarize_device(device, filter):
+                menu = self._action_menu_for_device(obj)
                 if obj is device:
                     start, end = '[', ']'
                 else:
                     start, end = '', ''
                 cells = [Text(start)] + cells + [menu, Text(end)]
-                if obj is not None:
+                if isinstance(menu, ActionMenu):
                     rows.append(make_action_menu_row(cells, menu))
                 else:
                     rows.append(TableRow(cells))
-            if (self.show_available
-                    and device.used > 0
-                    and device.free_for_partitions > 0):
-                free = humanize_size(device.free_for_partitions)
-                rows.append(TableRow([
-                    Text(""),
-                    (3, Color.info_minor(Text(_("free space")))),
-                    Text(free, align="right"),
-                    Text(""),
-                    Text(""),
-                ]))
             rows.append(TableRow([Text("")]))
         self.table.set_contents(rows[:-1])
         if self.table._w.focus_position >= len(rows):

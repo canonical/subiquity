@@ -17,7 +17,7 @@ import enum
 import functools
 from gettext import pgettext
 
-from subiquity.common.filesystem import boot, labels
+from subiquity.common.filesystem import boot, gaps, labels
 from subiquity.models.filesystem import (
     Bootloader,
     Disk,
@@ -139,6 +139,11 @@ def _lv_actions(lv):
         DeviceAction.EDIT,
         DeviceAction.DELETE,
         ]
+
+
+@_supported_actions.register(gaps.Gap)
+def _gap_actions(lv):
+    return []
 
 
 _can_info = make_checker(DeviceAction.INFO)

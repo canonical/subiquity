@@ -16,7 +16,7 @@
 import functools
 
 from subiquity.common import types
-from subiquity.common.filesystem import boot
+from subiquity.common.filesystem import boot, gaps
 from subiquity.models.filesystem import (
     Disk,
     LVM_LogicalVolume,
@@ -50,7 +50,8 @@ def annotations(device):
 
 
 @annotations.register(Disk)
-def _annotations_disk(disk):
+@annotations.register(gaps.Gap)
+def _annotations_none(disk):
     return []
 
 
@@ -182,7 +183,12 @@ def _label_partition(partition, *, short=False):
             number=partition._number, device=label(partition.device))
 
 
-def _usage_labels_generic(device):
+@label.register(gaps.Gap)
+def _label_gap(gap, *, short=False):
+    return _("free space")
+
+
+def _usage_labels_generic(device, *, exclude_final_unused=False):
     cd = device.constructed_device()
     if cd is not None:
         return [
@@ -219,7 +225,10 @@ def _usage_labels_generic(device):
                 r.append(_("used"))
         return r
     else:
-        return [_("unused")]
+        if exclude_final_unused:
+            return []
+        else:
+            return [_("unused")]
 
 
 @functools.singledispatch
@@ -239,6 +248,11 @@ def _usage_labels_partition(partition):
     return _usage_labels_generic(partition)
 
 
+@usage_labels.register(Disk)
+def _usage_labels_disk(disk):
+    return _usage_labels_generic(disk, exclude_final_unused=True)
+
+
 @usage_labels.register(Raid)
 def _usage_labels_raid(raid):
     if raid.metadata == 'imsm' and raid._subvolumes:
@@ -247,6 +261,16 @@ def _usage_labels_raid(raid):
                 devices=', '.join([label(v) for v in raid._subvolumes]))
             ]
     return _usage_labels_generic(raid)
+
+
+@usage_labels.register(LVM_VolGroup)
+def _usage_labels_vg(vg):
+    return []
+
+
+@usage_labels.register(gaps.Gap)
+def _usage_labels_gap(gap):
+    return []
 
 
 @functools.singledispatch
