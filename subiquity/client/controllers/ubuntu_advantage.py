@@ -18,7 +18,18 @@
 import logging
 from typing import Optional
 
+from subiquitycore.async_helpers import schedule_task
+
 from subiquity.client.controller import SubiquityTuiController
+from subiquity.common.ubuntu_advantage import (
+    InvalidUATokenError,
+    ExpiredUATokenError,
+    CheckSubscriptionError,
+    UAInterface,
+    UAInterfaceStrategy,
+    MockedUAInterfaceStrategy,
+    UAClientUAInterfaceStrategy,
+)
 from subiquity.common.types import UbuntuAdvantageInfo
 from subiquity.ui.views.ubuntu_advantage import UbuntuAdvantageView
 
@@ -32,6 +43,16 @@ class UbuntuAdvantageController(SubiquityTuiController):
     """ Client-side controller for Ubuntu Advantage configuration. """
 
     endpoint_name = "ubuntu_advantage"
+
+    def __init__(self, app):
+        """ Initializer for client-side UA controller. """
+        strategy: UAInterfaceStrategy
+        if app.opts.dry_run:
+            strategy = MockedUAInterfaceStrategy()
+        else:
+            strategy = UAClientUAInterfaceStrategy()
+        self.ua_interface = UAInterface(strategy)
+        super().__init__(app)
 
     async def make_ui(self) -> UbuntuAdvantageView:
         """ Generate the UI, based on the data provided by the model. """
@@ -49,6 +70,31 @@ class UbuntuAdvantageController(SubiquityTuiController):
     def run_answers(self) -> None:
         if "token" in self.answers:
             self.done(self.answers["token"])
+
+    def check_token(self, token: str):
+        """ Asynchronously check the token passed as an argument. """
+        async def inner() -> None:
+            try:
+                svcs = await self.ua_interface.get_avail_services(token=token)
+            except InvalidUATokenError:
+                if isinstance(self.ui.body, UbuntuAdvantageView):
+                    self.ui.body.show_invalid_token()
+            except ExpiredUATokenError:
+                if isinstance(self.ui.body, UbuntuAdvantageView):
+                    self.ui.body.show_expired_token()
+            except CheckSubscriptionError:
+                if isinstance(self.ui.body, UbuntuAdvantageView):
+                    self.ui.body.show_unknown_error()
+            else:
+                if isinstance(self.ui.body, UbuntuAdvantageView):
+                    self.ui.body.show_available_services(svcs)
+
+        self._check_task = schedule_task(inner())
+
+    def cancel_check_token(self) -> None:
+        """ Cancel the asynchronous token check (if started). """
+        if self._check_task is not None:
+            self._check_task.cancel()
 
     def cancel(self) -> None:
         self.app.prev_screen()
