@@ -49,7 +49,6 @@ class DeviceAction(enum.Enum):
     EDIT = pgettext("DeviceAction", "Edit")
     REFORMAT = pgettext("DeviceAction", "Reformat")
     PARTITION = pgettext("DeviceAction", "Add Partition")
-    CREATE_LV = pgettext("DeviceAction", "Create Logical Volume")
     FORMAT = pgettext("DeviceAction", "Format")
     REMOVE = pgettext("DeviceAction", "Remove from RAID/LVM")
     DELETE = pgettext("DeviceAction", "Delete")
@@ -217,14 +216,6 @@ _can_partition = make_checker(DeviceAction.PARTITION)
 @_can_partition.register(gaps.Gap)
 def _can_partition_gap(gap):
     return True
-
-
-_can_create_lv = make_checker(DeviceAction.CREATE_LV)
-
-
-@_can_create_lv.register(LVM_VolGroup)
-def _can_create_lv_vg(vg):
-    return not vg.preserve and vg.free_for_partitions > 0
 
 
 _can_format = make_checker(DeviceAction.FORMAT)
