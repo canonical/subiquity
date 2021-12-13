@@ -30,7 +30,13 @@ from subiquity.models.filesystem import (
 
 @attr.s(auto_attribs=True)
 class Gap:
+    device: object
     size: int
+    type: str = 'gap'
+
+    @property
+    def id(self):
+        return 'gap-' + self.device.id
 
 
 @functools.singledispatch
@@ -54,7 +60,7 @@ def parts_and_gaps_disk(device):
         return r
     end = align_down(device.size, 1 << 20) - GPT_OVERHEAD
     if end - used >= (1 << 20):
-        r.append(Gap(end - used))
+        r.append(Gap(device, end - used))
     return r
 
 
@@ -69,5 +75,16 @@ def _parts_and_gaps_vg(device):
         return r
     remaining = align_down(device.size - used, LVM_CHUNK_SIZE)
     if remaining >= LVM_CHUNK_SIZE:
-        r.append(Gap(remaining))
+        r.append(Gap(device, remaining))
     return r
+
+
+def largest_gap(device):
+    largest_size = 0
+    largest = None
+    for pg in parts_and_gaps(device):
+        if isinstance(pg, Gap):
+            if pg.size > largest_size:
+                largest = pg
+                largest_size = pg.size
+    return largest

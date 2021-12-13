@@ -18,6 +18,7 @@ import unittest
 from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
+from subiquity.common.filesystem import gaps
 from subiquity.models.filesystem import Bootloader
 from subiquity.models.tests.test_filesystem import (
     make_disk,
@@ -110,23 +111,7 @@ class TestActions(unittest.TestCase):
 
     def test_disk_action_PARTITION(self):
         model, disk = make_model_and_disk()
-        self.assertActionPossible(disk, DeviceAction.PARTITION)
-        make_partition(model, disk, size=disk.free_for_partitions//2)
-        self.assertActionPossible(disk, DeviceAction.PARTITION)
-        make_partition(model, disk, size=disk.free_for_partitions)
-        self.assertActionNotPossible(disk, DeviceAction.PARTITION)
-
-        # Can partition a disk with .preserve=True
-        disk2 = make_disk(model)
-        disk2.preserve = True
-        self.assertActionPossible(disk2, DeviceAction.PARTITION)
-        # But not if it has a partition.
-        make_partition(model, disk2, preserve=True)
-        self.assertActionNotPossible(disk2, DeviceAction.PARTITION)
-
-    def test_disk_action_CREATE_LV(self):
-        model, disk = make_model_and_disk()
-        self.assertActionNotSupported(disk, DeviceAction.CREATE_LV)
+        self.assertActionNotSupported(disk, DeviceAction.PARTITION)
 
     def test_disk_action_FORMAT(self):
         model, disk = make_model_and_disk()
@@ -240,10 +225,6 @@ class TestActions(unittest.TestCase):
         model, part = make_model_and_partition()
         self.assertActionNotSupported(part, DeviceAction.PARTITION)
 
-    def test_partition_action_CREATE_LV(self):
-        model, part = make_model_and_partition()
-        self.assertActionNotSupported(part, DeviceAction.CREATE_LV)
-
     def test_partition_action_FORMAT(self):
         model, part = make_model_and_partition()
         self.assertActionNotSupported(part, DeviceAction.FORMAT)
@@ -332,23 +313,7 @@ class TestActions(unittest.TestCase):
 
     def test_raid_action_PARTITION(self):
         model, raid = make_model_and_raid()
-        self.assertActionPossible(raid, DeviceAction.PARTITION)
-        make_partition(model, raid, size=raid.free_for_partitions//2)
-        self.assertActionPossible(raid, DeviceAction.PARTITION)
-        make_partition(model, raid, size=raid.free_for_partitions)
-        self.assertActionNotPossible(raid, DeviceAction.PARTITION)
-
-        # Can partition a raid with .preserve=True
-        raid2 = make_raid(model)
-        raid2.preserve = True
-        self.assertActionPossible(raid2, DeviceAction.PARTITION)
-        # But not if it has a partition.
-        make_partition(model, raid2, preserve=True)
-        self.assertActionNotPossible(raid2, DeviceAction.PARTITION)
-
-    def test_raid_action_CREATE_LV(self):
-        model, raid = make_model_and_raid()
-        self.assertActionNotSupported(raid, DeviceAction.CREATE_LV)
+        self.assertActionNotSupported(raid, DeviceAction.PARTITION)
 
     def test_raid_action_FORMAT(self):
         model, raid = make_model_and_raid()
@@ -413,17 +378,6 @@ class TestActions(unittest.TestCase):
         model, vg = make_model_and_vg()
         self.assertActionNotSupported(vg, DeviceAction.PARTITION)
 
-    def test_vg_action_CREATE_LV(self):
-        model, vg = make_model_and_vg()
-        self.assertActionPossible(vg, DeviceAction.CREATE_LV)
-        model.add_logical_volume(vg, 'lv1', size=vg.free_for_partitions//2)
-        self.assertActionPossible(vg, DeviceAction.CREATE_LV)
-        model.add_logical_volume(vg, 'lv2', size=vg.free_for_partitions)
-        self.assertActionNotPossible(vg, DeviceAction.CREATE_LV)
-        vg2 = make_vg(model)
-        vg2.preserve = True
-        self.assertActionNotPossible(vg2, DeviceAction.CREATE_LV)
-
     def test_vg_action_FORMAT(self):
         model, vg = make_model_and_vg()
         self.assertActionNotSupported(vg, DeviceAction.FORMAT)
@@ -464,10 +418,6 @@ class TestActions(unittest.TestCase):
         model, lv = make_model_and_lv()
         self.assertActionNotSupported(lv, DeviceAction.PARTITION)
 
-    def test_lv_action_CREATE_LV(self):
-        model, lv = make_model_and_lv()
-        self.assertActionNotSupported(lv, DeviceAction.CREATE_LV)
-
     def test_lv_action_FORMAT(self):
         model, lv = make_model_and_lv()
         self.assertActionNotSupported(lv, DeviceAction.FORMAT)
@@ -491,3 +441,6 @@ class TestActions(unittest.TestCase):
     def test_lv_action_TOGGLE_BOOT(self):
         model, lv = make_model_and_lv()
         self.assertActionNotSupported(lv, DeviceAction.TOGGLE_BOOT)
+
+    def test_gap_PARTITION(self):
+        self.assertActionPossible(gaps.Gap(None, 0), DeviceAction.PARTITION)

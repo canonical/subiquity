@@ -265,7 +265,6 @@ class DeviceList(WidgetWrap):
 
     _disk_INFO = _stretchy_shower(DiskInfoStretchy)
     _disk_REFORMAT = _stretchy_shower(ConfirmReformatStretchy)
-    _disk_PARTITION = _stretchy_shower(PartitionStretchy)
     _disk_FORMAT = _stretchy_shower(FormatEntireStretchy)
 
     def _disk_REMOVE(self, disk):
@@ -298,7 +297,6 @@ class DeviceList(WidgetWrap):
     _partition_DELETE = _stretchy_shower(ConfirmDeleteStretchy)
 
     _raid_EDIT = _stretchy_shower(RaidStretchy)
-    _raid_PARTITION = _disk_PARTITION
     _raid_FORMAT = _disk_FORMAT
     _raid_REFORMAT = _disk_REFORMAT
     _raid_REMOVE = _disk_REMOVE
@@ -306,12 +304,14 @@ class DeviceList(WidgetWrap):
     _raid_TOGGLE_BOOT = _disk_TOGGLE_BOOT
 
     _lvm_volgroup_EDIT = _stretchy_shower(VolGroupStretchy)
-    _lvm_volgroup_CREATE_LV = _disk_PARTITION
     _lvm_volgroup_DELETE = _partition_DELETE
 
     _lvm_partition_EDIT = _stretchy_shower(
         lambda parent, part: PartitionStretchy(parent, part.volgroup, part))
     _lvm_partition_DELETE = _partition_DELETE
+
+    _gap_PARTITION = _stretchy_shower(
+        lambda parent, gap: PartitionStretchy(parent, gap.device))
 
     def _action(self, sender, value, device):
         action, meth = value
@@ -325,9 +325,13 @@ class DeviceList(WidgetWrap):
         else:
             return action.str()
 
-    def _label_PARTITION(self, action, device):
-        return _("Add {ptype} Partition").format(
-            ptype=device.ptable_for_new_partition().upper())
+    def _label_PARTITION(self, action, gap):
+        device = gap.device
+        if device.type == 'lvm_volgroup':
+            return _("Create Logical Volume")
+        else:
+            return _("Add {ptype} Partition").format(
+                ptype=device.ptable_for_new_partition().upper())
 
     def _label_TOGGLE_BOOT(self, action, device):
         if boot.is_boot_device(device):

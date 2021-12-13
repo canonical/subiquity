@@ -84,7 +84,6 @@ def _disk_actions(disk):
     actions = [
         DeviceAction.INFO,
         DeviceAction.REFORMAT,
-        DeviceAction.PARTITION,
         DeviceAction.FORMAT,
         DeviceAction.REMOVE,
         ]
@@ -112,7 +111,6 @@ def _raid_actions(raid):
     else:
         actions = [
             DeviceAction.EDIT,
-            DeviceAction.PARTITION,
             DeviceAction.FORMAT,
             DeviceAction.REMOVE,
             DeviceAction.DELETE,
@@ -128,7 +126,6 @@ def _raid_actions(raid):
 def _vg_actions(vg):
     return [
         DeviceAction.EDIT,
-        DeviceAction.CREATE_LV,
         DeviceAction.DELETE,
         ]
 
@@ -143,7 +140,9 @@ def _lv_actions(lv):
 
 @_supported_actions.register(gaps.Gap)
 def _gap_actions(lv):
-    return []
+    return [
+        DeviceAction.PARTITION,
+        ]
 
 
 _can_info = make_checker(DeviceAction.INFO)
@@ -215,18 +214,8 @@ def _can_reformat_device(device):
 _can_partition = make_checker(DeviceAction.PARTITION)
 
 
-@_can_partition.register(Disk)
-@_can_partition.register(Raid)
-def _can_partition_device(device):
-    if device._has_preexisting_partition():
-        return False
-    if device.free_for_partitions <= 0:
-        return False
-    # We only create msdos partition tables with FBA dasds, which
-    # only support 3 partitions. As and when we support editing
-    # partition msdos tables we'll need to be more clever here.
-    if device.ptable in ['vtoc', 'msdos'] and len(device._partitions) >= 3:
-        return False
+@_can_partition.register(gaps.Gap)
+def _can_partition_gap(gap):
     return True
 
 
