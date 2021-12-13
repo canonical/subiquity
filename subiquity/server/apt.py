@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
+import functools
 import os
 import shutil
 import tempfile
@@ -29,12 +30,100 @@ from subiquitycore.utils import arun_command
 from subiquity.server.curtin import run_curtin_command
 
 
+class _MountBase:
+
+    def p(self, *args):
+        for a in args:
+            if a.startswith('/'):
+                raise Exception('no absolute paths here please')
+        return os.path.join(self.mountpoint, *args)
+
+    def write(self, path, content):
+        with open(self.p(path), 'w') as fp:
+            fp.write(content)
+
+
+class Mountpoint(_MountBase):
+    def __init__(self, *, mountpoint):
+        self.mountpoint = mountpoint
+
+
+class OverlayMountpoint(_MountBase):
+    def __init__(self, *, lowers, upperdir, mountpoint):
+        self.lowers = lowers
+        self.upperdir = upperdir
+        self.mountpoint = mountpoint
+
+
+@functools.singledispatch
+def lowerdir_for(x):
+    """Return value suitable for passing to the lowerdir= overlayfs option."""
+    raise NotImplementedError(x)
+
+
+@lowerdir_for.register(str)
+def _lowerdir_for_str(path):
+    return path
+
+
+@lowerdir_for.register(Mountpoint)
+def _lowerdir_for_mnt(mnt):
+    return mnt.mountpoint
+
+
+@lowerdir_for.register(OverlayMountpoint)
+def _lowerdir_for_ovmnt(ovmnt):
+    # One cannot indefinitely stack overlayfses so construct an
+    # explicit list of the layers of the overlayfs.
+    return lowerdir_for(ovmnt.lowers + [ovmnt.upperdir])
+
+
+@lowerdir_for.register(list)
+def _lowerdir_for_lst(lst):
+    return ':'.join(reversed([lowerdir_for(item) for item in lst]))
+
+
 class AptConfigurer:
+    # We configure apt during installation so that installs from the pool on
+    # the cdrom are preferred during installation but remove this again in the
+    # installed system.
+    #
+    # First we create an overlay ('configured_tree') over the installation
+    # source and configure that overlay as we want the target system to end up
+    # by running curtin's apt-config subcommand. This is done in the
+    # apply_apt_config method.
+    #
+    # Then in configure_for_install we create a fresh overlay ('install_tree')
+    # over the first one and configure it for the installation. This means:
+    #
+    # 1. Bind-mounting /cdrom into this new overlay.
+    #
+    # 2. When the network is expected to be working, copying the original
+    #    /etc/apt/sources.list to /etc/apt/sources.list.d/original.list.
+    #
+    # 3. writing "deb file:///cdrom $(lsb_release -sc) main restricted"
+    #    to /etc/apt/sources.list.
+    #
+    # 4. running "apt-get update" in the new overlay.
+    #
+    # When the install is done the deconfigure method makes the installed
+    # system's apt state look as if the pool had never been configured. So
+    # this means:
+    #
+    # 1. Removing /cdrom from the installed system.
+    #
+    # 2. Copying /etc/apt from the 'configured' overlay to the installed
+    #    system.
+    #
+    # 3. If the network is working, run apt-get update in the installed
+    #    system, or if it is not, just copy /var/lib/apt/lists from the
+    #    'configured_tree' overlay.
 
     def __init__(self, app, source):
         self.app = app
         self.source = source
-        self.configured = None
+        self.configured_tree = None
+        self.install_mount = None
         self._mounts = []
         self._tdirs = []
 
@@ -51,21 +140,31 @@ class AptConfigurer:
             opts.extend(['-t', type])
         await self.app.command_runner.run(
             ['mount'] + opts + [device, mountpoint])
-        self._mounts.append(mountpoint)
+        m = Mountpoint(mountpoint=mountpoint)
+        self._mounts.append(m)
+        return m
 
     async def unmount(self, mountpoint):
         await self.app.command_runner.run(['umount', mountpoint])
 
-    async def setup_overlay(self, source, target):
+    async def setup_overlay(self, lowers):
         tdir = self.tdir()
-        w = f'{tdir}/work'
-        u = f'{tdir}/upper'
-        for d in w, u:
+        target = f'{tdir}/mount'
+        lowerdir = lowerdir_for(lowers)
+        upperdir = f'{tdir}/upper'
+        workdir = f'{tdir}/work'
+        for d in target, workdir, upperdir:
             os.mkdir(d)
-        await self.mount(
-            'overlay', target, type='overlay',
-            options=f'lowerdir={source},upperdir={u},workdir={w}')
-        return u
+
+        options = f'lowerdir={lowerdir},upperdir={upperdir},workdir={workdir}'
+
+        mount = await self.mount(
+            'overlay', target, options=options, type='overlay')
+
+        return OverlayMountpoint(
+            lowers=lowers,
+            mountpoint=mount.p(),
+            upperdir=upperdir)
 
     def apt_config(self):
         cfg = {}
@@ -73,42 +172,8 @@ class AptConfigurer:
         merge_config(cfg, self.app.base_model.proxy.get_apt_config())
         return {'apt': cfg}
 
-    async def configure(self, context):
-        # Configure apt so that installs from the pool on the cdrom are
-        # preferred during installation but not in the installed system.
-        #
-        # First we create an overlay ('configured') over the installation
-        # source and configure that overlay as we want the target system to
-        # end up by running curtin's apt-config subcommand.
-        #
-        # Then we create a fresh overlay ('for_install') over the first one
-        # and configure it for the installation. This means:
-        #
-        # 1. Bind-mounting /cdrom into this new overlay.
-        #
-        # 2. When the network is expected to be working, copying the original
-        #    /etc/apt/sources.list to /etc/apt/sources.list.d/original.list.
-        #
-        # 3. writing "deb file:///cdrom $(lsb_release -sc) main restricted"
-        #    to /etc/apt/sources.list.
-        #
-        # 4. running "apt-get update" in the new overlay.
-        #
-        # When the install is done we try to make the installed system's apt
-        # state look as if the pool had never been configured. So this means:
-        #
-        # 1. Removing /cdrom from the installed system.
-        #
-        # 2. Copying /etc/apt from the 'configured' overlay to the installed
-        #    system.
-        #
-        # 3. If the network is working, run apt-get update in the installed
-        #    system, or if it is not, just copy /var/lib/apt/lists from the
-        #    'configured' overlay.
-
-        self.configured = self.tdir()
-
-        config_upper = await self.setup_overlay(self.source, self.configured)
+    async def apply_apt_config(self, context):
+        self.configured_tree = await self.setup_overlay(self.source)
 
         config_location = os.path.join(
             self.app.root, 'var/log/installer/subiquity-curtin-apt.conf')
@@ -120,71 +185,81 @@ class AptConfigurer:
         self.app.note_data_for_apport("CurtinAptConfig", config_location)
 
         await run_curtin_command(
-            self.app, context, 'apt-config', '-t', self.configured,
+            self.app, context, 'apt-config', '-t', self.configured_tree.p(),
             config=config_location)
 
-        for_install = self.tdir()
-        await self.setup_overlay(config_upper + ':' + self.source, for_install)
+    async def configure_for_install(self, context):
+        assert self.configured_tree is not None
 
-        os.mkdir(f'{for_install}/cdrom')
-        await self.mount('/cdrom', f'{for_install}/cdrom', options='bind')
+        self.install_tree = await self.setup_overlay(self.configured_tree)
+
+        os.mkdir(self.install_tree.p('cdrom'))
+        await self.mount(
+            '/cdrom', self.install_tree.p('cdrom'), options='bind')
 
         if self.app.base_model.network.has_network:
             os.rename(
-                f'{for_install}/etc/apt/sources.list',
-                f'{for_install}/etc/apt/sources.list.d/original.list')
+                self.install_tree.p('etc/apt/sources.list'),
+                self.install_tree.p('etc/apt/sources.list.d/original.list'))
         else:
-            proxy_path = f'{for_install}/etc/apt/apt.conf.d/90curtin-aptproxy'
+            proxy_path = self.install_tree.p(
+                'etc/apt/apt.conf.d/90curtin-aptproxy')
             if os.path.exists(proxy_path):
                 os.unlink(proxy_path)
 
         codename = lsb_release()['codename']
 
         write_file(
-            f'{for_install}/etc/apt/sources.list',
+            self.install_tree.p('etc/apt/sources.list'),
             f'deb [check-date=no] file:///cdrom {codename} main restricted\n')
 
         await run_curtin_command(
-            self.app, context, "in-target", "-t", for_install,
+            self.app, context, "in-target", "-t", self.install_tree.p(),
             "--", "apt-get", "update")
 
-        return for_install
+        return self.install_tree.p()
 
-    async def deconfigure(self, context, target):
-        await self.unmount(f'{target}/cdrom')
-        os.rmdir(f'{target}/cdrom')
-
-        restore_dirs = ['etc/apt']
-        if not self.app.base_model.network.has_network:
-            restore_dirs.append('var/lib/apt/lists')
-        for dir in restore_dirs:
-            shutil.rmtree(f'{target}/{dir}')
-            await self.app.command_runner.run([
-                'cp', '-aT', f'{self.configured}/{dir}', f'{target}/{dir}',
-                ])
-
-        if self.app.base_model.network.has_network:
-            await run_curtin_command(
-                self.app, context, "in-target", "-t", target,
-                "--", "apt-get", "update")
-
+    async def cleanup(self):
         for m in reversed(self._mounts):
-            await self.unmount(m)
+            await self.unmount(m.mountpoint)
         for d in self._tdirs:
             shutil.rmtree(d)
+
+    async def deconfigure(self, context, target):
+        target = Mountpoint(mountpoint=target)
+
+        async def _restore_dir(dir):
+            shutil.rmtree(target.p(dir))
+            await self.app.command_runner.run([
+                'cp', '-aT', self.configured_tree.p(dir), target.p(dir),
+                ])
+
+        await self.unmount(target.p('cdrom'))
+        os.rmdir(target.p('cdrom'))
+
+        await _restore_dir('etc/apt')
+
         if self.app.base_model.network.has_network:
             await run_curtin_command(
-                self.app, context, "in-target", "-t", target,
+                self.app, context, "in-target", "-t", target.p(),
+                "--", "apt-get", "update")
+        else:
+            await _restore_dir('var/lib/apt/lists')
+
+        await self.cleanup()
+
+        if self.app.base_model.network.has_network:
+            await run_curtin_command(
+                self.app, context, "in-target", "-t", target.p(),
                 "--", "apt-get", "update")
 
 
 class DryRunAptConfigurer(AptConfigurer):
 
-    async def setup_overlay(self, source, target):
-        if source.startswith('u+'):
-            # Please excuse the obscure way the path is transmitted
-            # from the first invocation of this method to the second :/
-            source = source.split(':')[0][2:]
+    async def setup_overlay(self, source):
+        if isinstance(source, OverlayMountpoint):
+            source = source.lowers[0]
+        target = self.tdir()
         os.mkdir(f'{target}/etc')
         await arun_command([
             'cp', '-aT', f'{source}/etc/apt', f'{target}/etc/apt',
@@ -192,7 +267,10 @@ class DryRunAptConfigurer(AptConfigurer):
         if os.path.isdir(f'{target}/etc/apt/sources.list.d'):
             shutil.rmtree(f'{target}/etc/apt/sources.list.d')
         os.mkdir(f'{target}/etc/apt/sources.list.d')
-        return 'u+' + target
+        return OverlayMountpoint(
+            lowers=[source],
+            mountpoint=target,
+            upperdir=None)
 
     async def deconfigure(self, context, target):
         return

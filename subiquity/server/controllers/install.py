@@ -19,12 +19,11 @@ import os
 import re
 import shutil
 
-from curtin.commands.extract import get_handler_for_source
 from curtin.commands.install import (
     ERROR_TARFILE,
     INSTALL_LOG,
     )
-from curtin.util import sanitize_source, write_file
+from curtin.util import write_file
 
 import yaml
 
@@ -40,7 +39,6 @@ from subiquity.common.types import (
 from subiquity.journald import (
     journald_listen,
     )
-from subiquity.server.apt import get_apt_configurer
 from subiquity.server.controller import (
     SubiquityController,
     )
@@ -80,7 +78,6 @@ class InstallController(SubiquityController):
         self.unattended_upgrades_cmd = None
         self.unattended_upgrades_ctx = None
         self.tb_extractor = TracebackExtractor()
-        self.apt_configurer = None
 
     def interactive(self):
         return True
@@ -129,7 +126,9 @@ class InstallController(SubiquityController):
     @with_context(
         description="configuring apt", level="INFO", childlevel="DEBUG")
     async def configure_apt(self, *, context):
-        return await self.apt_configurer.configure(context)
+        mirror = self.app.controllers.Mirror
+        configurer = await mirror.wait_config()
+        return await configurer.configure_for_install(context)
 
     @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
@@ -156,16 +155,6 @@ class InstallController(SubiquityController):
                     break
 
             self.app.update_state(ApplicationState.RUNNING)
-
-            handler = get_handler_for_source(
-                sanitize_source(self.model.source.get_source()))
-
-            if self.app.opts.dry_run:
-                path = '/'
-            else:
-                path = handler.setup()
-
-            self.apt_configurer = get_apt_configurer(self.app, path)
 
             for_install_path = await self.configure_apt(context=context)
 
@@ -231,7 +220,8 @@ class InstallController(SubiquityController):
 
     @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):
-        await self.apt_configurer.deconfigure(context, self.tpath())
+        configurer = self.app.controllers.Mirror.apt_configurer
+        await configurer.deconfigure(context, self.tpath())
 
     @with_context(description="downloading and installing {policy} updates")
     async def run_unattended_upgrades(self, context, policy):
