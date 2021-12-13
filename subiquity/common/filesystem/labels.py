@@ -292,7 +292,7 @@ def _for_client_disk(disk, *, min_size=0):
         preserve=disk.preserve,
         usage_labels=usage_labels(disk),
         partitions=[for_client(p) for p in disk._partitions],
-        free_for_partitions=disk.free_for_partitions,
+        free_for_partitions=gaps.largest_gap_size(disk),
         boot_device=boot.is_boot_device(disk),
         ok_for_guided=disk.size >= min_size,
         model=getattr(disk, 'model', None),

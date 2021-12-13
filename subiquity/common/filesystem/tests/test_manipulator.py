@@ -18,6 +18,7 @@ import unittest
 from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
+from subiquity.common.filesystem import gaps
 from subiquity.common.filesystem.manipulator import (
     FilesystemManipulator,
     )
@@ -130,7 +131,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             disk1 = make_disk(manipulator.model, preserve=False)
             disk2 = make_disk(manipulator.model, preserve=False)
             disk2p1 = manipulator.model.add_partition(
-                disk2, size=disk2.free_for_partitions)
+                disk2, size=gaps.largest_gap_size(disk2))
 
             manipulator.add_boot_disk(disk1)
             self.assertIsBootDisk(manipulator, disk1)
@@ -171,7 +172,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             disk1 = make_disk(manipulator.model, preserve=False)
             disk2 = make_disk(manipulator.model, preserve=False)
             disk2p1 = manipulator.model.add_partition(
-                disk2, size=disk2.free_for_partitions)
+                disk2, size=gaps.largest_gap_size(disk2))
 
             manipulator.add_boot_disk(disk1)
             self.assertIsBootDisk(manipulator, disk1)
@@ -218,7 +219,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             disk1, size=512 << 20, flag="boot")
         disk1p1.preserve = True
         disk1p2 = manipulator.model.add_partition(
-            disk1, size=disk1.free_for_partitions)
+            disk1, size=gaps.largest_gap_size(disk1))
         disk1p2.preserve = True
         manipulator.partition_disk_handler(
             disk1, disk1p2, {'fstype': 'ext4', 'mount': '/'})

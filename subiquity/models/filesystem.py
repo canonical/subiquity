@@ -524,10 +524,6 @@ class _Device(_Formattable, ABC):
     def available_for_partitions(self):
         return align_down(self.size, 1 << 20) - GPT_OVERHEAD
 
-    @property
-    def free_for_partitions(self):
-        return self.available_for_partitions - self.used
-
     def available(self):
         # A _Device is available if:
         # 1) it is not part of a device like a RAID or LVM or zpool or ...
@@ -540,9 +536,11 @@ class _Device(_Formattable, ABC):
             return False
         if self._fs is not None:
             return self._fs._available()
-        if self.free_for_partitions > 0:
-            if not self._has_preexisting_partition():
-                return True
+        from subiquity.common.filesystem.gaps import (
+            largest_gap_size,
+            )
+        if largest_gap_size(self) > 0:
+            return True
         return any(p.available() for p in self._partitions)
 
     def has_unavailable_partition(self):
@@ -802,11 +800,6 @@ class LVM_VolGroup(_Device):
     @property
     def available_for_partitions(self):
         return self.size
-
-    @property
-    def free_for_partitions(self):
-        return align_down(
-            self.available_for_partitions - self.used, LVM_CHUNK_SIZE)
 
     ok_for_raid = False
     ok_for_lvm_vg = False
@@ -1083,10 +1076,10 @@ class FilesystemModel(object):
                         raise Exception(
                             "{} has negative size but is not final partition "
                             "of {}".format(p, parent))
-                    p.size = 0
-                    p.size = parent.free_for_partitions
-                    if p.type == 'lvm_partition':
-                        p.size = align_down(p.size, LVM_CHUNK_SIZE)
+                    from subiquity.common.filesystem.gaps import (
+                        largest_gap_size,
+                        )
+                    p.size = largest_gap_size(parent)
             elif isinstance(p.size, str):
                 if p.size.endswith("%"):
                     percentage = int(p.size[:-1])
@@ -1346,8 +1339,6 @@ class FilesystemModel(object):
     def add_partition(self, device, size, flag="", wipe=None,
                       grub_device=None):
         from subiquity.common.filesystem import boot
-        if size > device.free_for_partitions:
-            raise Exception("%s > %s", size, device.free_for_partitions)
         real_size = align_up(size)
         log.debug("add_partition: rounded size from %s to %s", size, real_size)
         if device._fs is not None:

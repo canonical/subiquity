@@ -28,6 +28,7 @@ from subiquity.models.filesystem import (
     align_down,
     LVM_CHUNK_SIZE,
     )
+from subiquity.common.filesystem import gaps
 
 
 class TestHumanizeSize(unittest.TestCase):
@@ -164,7 +165,7 @@ def make_partition(model, device=None, *, preserve=False, size=None, **kw):
     if device is None:
         device = make_disk(model)
     if size is None:
-        size = device.free_for_partitions//2
+        size = gaps.largest_gap_size(device)//2
     partition = Partition(
         m=model, device=device, size=size, preserve=preserve, **kw)
     if preserve:
@@ -203,7 +204,7 @@ def make_model_and_vg(bootloader=None):
 def make_lv(model):
     vg = make_vg(model)
     name = 'lv%s' % len(model._actions)
-    return model.add_logical_volume(vg, name, vg.free_for_partitions//2)
+    return model.add_logical_volume(vg, name, gaps.largest_gap_size(vg))
 
 
 def make_model_and_lv(bootloader=None):

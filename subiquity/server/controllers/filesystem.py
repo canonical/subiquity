@@ -40,7 +40,7 @@ from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
-from subiquity.common.filesystem import boot, labels
+from subiquity.common.filesystem import boot, gaps, labels
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.common.types import (
     Bootloader,
@@ -126,7 +126,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     def guided_direct(self, disk):
         self.reformat(disk)
         result = {
-            "size": disk.free_for_partitions,
+            "size": gaps.largest_gap_size(disk),
             "fstype": "ext4",
             "mount": "/",
             }
@@ -144,7 +144,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 ))
         part = self.create_partition(
             device=disk, spec=dict(
-                size=disk.free_for_partitions,
+                size=gaps.largest_gap_size(disk),
                 fstype=None,
                 ))
         vg_name = 'ubuntu-vg'
@@ -348,7 +348,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         disk = self.model._one(id=data.disk_id)
         size = data.partition.size
         if size is None or size < 0:
-            size = disk.free_for_partitions
+            size = gaps.largest_gap_size(disk)
         spec = {
             'size': size,
             'fstype': data.partition.format,

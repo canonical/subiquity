@@ -88,3 +88,10 @@ def largest_gap(device):
                 largest = pg
                 largest_size = pg.size
     return largest
+
+
+def largest_gap_size(device):
+    largest = largest_gap(device)
+    if largest is not None:
+        return largest.size
+    return 0
