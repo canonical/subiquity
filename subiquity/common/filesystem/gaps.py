@@ -20,17 +20,23 @@ import attr
 from subiquity.models.filesystem import (
     align_up,
     align_down,
+    BIOS_GRUB_SIZE_BYTES,
+    Bootloader,
     Disk,
     LVM_CHUNK_SIZE,
     LVM_VolGroup,
     GPT_OVERHEAD,
+    Partition,
+    PREP_GRUB_SIZE_BYTES,
     Raid,
+    UEFI_GRUB_SIZE_BYTES,
     )
 
 
 @attr.s(auto_attribs=True)
 class Gap:
     device: object
+    start: int
     size: int
     type: str = 'gap'
 
@@ -51,7 +57,7 @@ def parts_and_gaps_disk(device):
         return []
     r = []
     used = 0
-    for p in device._partitions:
+    for p in sorted(device._partitions, key=lambda p: p.offset):
         used = align_up(used + p.size, 1 << 20)
         r.append(p)
     if device._has_preexisting_partition():
@@ -60,7 +66,7 @@ def parts_and_gaps_disk(device):
         return r
     end = align_down(device.size, 1 << 20) - GPT_OVERHEAD
     if end - used >= (1 << 20):
-        r.append(Gap(device, end - used))
+        r.append(Gap(device, used, end - used))
     return r
 
 
@@ -75,7 +81,7 @@ def _parts_and_gaps_vg(device):
         return r
     remaining = align_down(device.size - used, LVM_CHUNK_SIZE)
     if remaining >= LVM_CHUNK_SIZE:
-        r.append(Gap(device, remaining))
+        r.append(Gap(device, None, remaining))
     return r
 
 
@@ -95,3 +101,54 @@ def largest_gap_size(device):
     if largest is not None:
         return largest.size
     return 0
+
+
+def trailing_gap(part):
+    pgs = parts_and_gaps(part.device)
+    for pg in pgs[pgs.index(part)+1:]:
+        if isinstance(pg, Gap):
+            return pg
+        if pg.preserve:
+            return None
+    return None
+
+
+def trailing_gap_size(part):
+    g = trailing_gap(part)
+    if g is not None:
+        return g.size
+    return 0
+
+
+def _can_fit_bootloader_partition_bios(disk):
+    for pg in parts_and_gaps(disk):
+        if isinstance(pg, Partition):
+            if pg.preserve:
+                return False
+            elif BIOS_GRUB_SIZE_BYTES - trailing_gap_size(pg) < pg.size//2:
+                return True
+        if isinstance(pg, Gap) and pg.size >= BIOS_GRUB_SIZE_BYTES:
+            return True
+
+
+def _can_fit_bootloader_partition_of_size(disk, size):
+    for pg in parts_and_gaps(disk):
+        if isinstance(pg, Partition):
+            if pg.preserve:
+                continue
+            elif size - trailing_gap_size(pg) < pg.size//2:
+                return True
+        if isinstance(pg, Gap) and pg.size >= size:
+            return True
+
+
+def can_fit_bootloader_partition(disk):
+    bl = disk._model.bootloader
+    if bl == Bootloader.BIOS:
+        return _can_fit_bootloader_partition_bios(disk)
+    elif bl == Bootloader.UEFI:
+        return _can_fit_bootloader_partition_of_size(
+            disk, UEFI_GRUB_SIZE_BYTES)
+    elif bl == Bootloader.PREP:
+        return _can_fit_bootloader_partition_of_size(
+            disk, PREP_GRUB_SIZE_BYTES)

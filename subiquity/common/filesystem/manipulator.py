@@ -125,10 +125,10 @@ class FilesystemManipulator:
         self.model.remove_filesystem(fs)
     delete_format = delete_filesystem
 
-    def create_partition(self, device, spec, flag="", wipe=None,
+    def create_partition(self, device, gap, spec, flag="", wipe=None,
                          grub_device=None):
         part = self.model.add_partition(
-            device, spec["size"], flag, wipe, grub_device)
+            device, spec["size"], flag, wipe, grub_device, start=gap.start)
         self.create_filesystem(part, spec)
         return part
 
