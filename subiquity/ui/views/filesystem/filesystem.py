@@ -292,7 +292,7 @@ class DeviceList(WidgetWrap):
         self.parent.refresh_model_inputs()
 
     _partition_EDIT = _stretchy_shower(
-        lambda parent, part: PartitionStretchy(parent, part.device, part))
+        lambda parent, part: PartitionStretchy(parent, part))
     _partition_REMOVE = _disk_REMOVE
     _partition_DELETE = _stretchy_shower(ConfirmDeleteStretchy)
 
@@ -307,11 +307,11 @@ class DeviceList(WidgetWrap):
     _lvm_volgroup_DELETE = _partition_DELETE
 
     _lvm_partition_EDIT = _stretchy_shower(
-        lambda parent, part: PartitionStretchy(parent, part.volgroup, part))
+        lambda parent, part: PartitionStretchy(parent, part))
     _lvm_partition_DELETE = _partition_DELETE
 
     _gap_PARTITION = _stretchy_shower(
-        lambda parent, gap: PartitionStretchy(parent, gap.device))
+        lambda parent, gap: PartitionStretchy(parent, gap=gap))
 
     def _action(self, sender, value, device):
         action, meth = value

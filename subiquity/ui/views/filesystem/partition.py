@@ -369,13 +369,16 @@ def initial_data_for_fs(fs):
 
 class PartitionStretchy(Stretchy):
 
-    def __init__(self, parent, disk, partition=None):
-        self.disk = disk
+    def __init__(self, parent, partition=None, gap=None):
+        if partition is not None:
+            disk = partition.device
+        else:
+            disk = gap.device
         self.partition = partition
+        self.gap = gap
         self.model = parent.model
         self.controller = parent.controller
         self.parent = parent
-        max_size = gaps.largest_gap_size(disk)
 
         initial = {}
         label = _("Create")
@@ -394,7 +397,8 @@ class PartitionStretchy(Stretchy):
             else:
                 label = _("Save")
             initial['size'] = humanize_size(self.partition.size)
-            max_size += self.partition.size
+            max_size = self.partition.size + \
+                gaps.trailing_gap_size(self.partition)
 
             if not boot.is_esp(partition):
                 initial.update(initial_data_for_fs(self.partition.fs()))
@@ -416,6 +420,7 @@ class PartitionStretchy(Stretchy):
                         break
                     x += 1
                 initial['name'] = name
+            max_size = gap.size
 
         self.form = PartitionForm(
             self.model, max_size, initial, lvm_names, partition, alignment)
