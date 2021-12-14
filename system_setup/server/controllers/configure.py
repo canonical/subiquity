@@ -32,6 +32,7 @@ log = logging.getLogger("system_setup.server.controllers.configure")
 
 
 class ConfigureController(SubiquityController):
+    default_uid = 0
 
     def __init__(self, app):
         super().__init__(app)
@@ -343,6 +344,16 @@ class ConfigureController(SubiquityController):
                     raise Exception("Failed to create user %s: %s"
                                     % (username, create_user_proc.stderr))
                 log.debug("created user %s", username)
+                with open(os.path.join(etc_dir, "passwd")) as f:
+                    for line in f:
+                        if username not in line:
+                            continue
+                        uid = int(line.split(":")[2])
+
+                if uid == 0:
+                    log.error("Could not retrieve UID from %s", username)
+
+                self.default_uid = uid
 
                 assign_grp_proc = await arun_command(assign_grp_cmd)
                 if assign_grp_proc.returncode != 0:
@@ -361,8 +372,7 @@ class ConfigureController(SubiquityController):
                 wsl_config_update(self.model.wslconfadvanced.wslconfadvanced,
                                   root_dir)
 
-            wsl_config_update(self.model.wslconfbase.wslconfbase, root_dir,
-                              default_user=username)
+            wsl_config_update(self.model.wslconfbase.wslconfbase, root_dir)
 
             self.app.update_state(ApplicationState.DONE)
 
@@ -375,3 +385,7 @@ class ConfigureController(SubiquityController):
     def stop_uu(self):
         # This is a no-op to allow Shutdown controller to depend on this one
         pass
+
+    # Allows passing the recently created user UID to the Shutdown controller.
+    def get_default_uid(self):
+        return self.default_uid
