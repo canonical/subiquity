@@ -3,7 +3,7 @@ import unittest
 from subiquity.common.snap import SnapVersion, SnapVersionParsingError
 
 
-class TestSnapSnapVersion(unittest.TestCase):
+class TestSnapVersion(unittest.TestCase):
     def test_snap_version_from_string(self):
         obj = SnapVersion.from_string("19.04.2")
 
