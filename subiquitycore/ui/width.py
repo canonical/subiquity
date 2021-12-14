@@ -57,4 +57,4 @@ def widget_width(w):
                 r += widget_width(w1)
         r += (len(w.contents) - 1) * w.dividechars
         return r
-    raise Exception("don't know how to find width of %r", w)
+    raise Exception(f"don't know how to find width of {w!r}")
