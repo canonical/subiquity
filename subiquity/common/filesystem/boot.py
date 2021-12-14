@@ -15,6 +15,7 @@
 
 import functools
 
+from subiquity.common.filesystem import gaps
 from subiquity.models.filesystem import (
     Disk,
     Raid,
@@ -63,18 +64,21 @@ def can_be_boot_device(device, *, with_reformatting=False):
 @can_be_boot_device.register(Disk)
 def _can_be_boot_device_disk(disk, *, with_reformatting=False):
     bl = disk._m.bootloader
-    if disk._has_preexisting_partition() and not with_reformatting:
+    if with_reformatting:
+        return True
+    if disk._has_preexisting_partition():
         if bl == Bootloader.BIOS:
             if disk.ptable == "msdos":
                 return True
-            else:
-                return disk._partitions[0].flag == "bios_grub"
+            elif disk._partitions[0].flag == "bios_grub":
+                return True
         elif bl == Bootloader.UEFI:
-            return any(is_esp(p) for p in disk._partitions)
+            if any(is_esp(p) for p in disk._partitions):
+                return True
         elif bl == Bootloader.PREP:
-            return any(p.flag == "prep" for p in disk._partitions)
-    else:
-        return True
+            if any(p.flag == "prep" for p in disk._partitions):
+                return True
+    return gaps.can_fit_bootloader_partition(disk)
 
 
 @can_be_boot_device.register(Raid)
@@ -84,10 +88,12 @@ def _can_be_boot_device_raid(raid, *, with_reformatting=False):
         return False
     if not raid.container or raid.container.metadata != 'imsm':
         return False
-    if raid._has_preexisting_partition() and not with_reformatting:
-        return any(is_esp(p) for p in raid._partitions)
-    else:
+    if with_reformatting:
         return True
+    if raid._has_preexisting_partition():
+        if any(is_esp(p) for p in raid._partitions):
+            return True
+    return gaps.can_fit_bootloader_partition(raid)
 
 
 @functools.singledispatch
