@@ -16,10 +16,14 @@
 """
 
 import logging
+from typing import Optional
 
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import UbuntuAdvantageInfo
 from subiquity.ui.views.ubuntu_advantage import UbuntuAdvantageView
+
+from subiquitycore.lsb_release import lsb_release
+from subiquitycore.tuicontroller import Skip
 
 log = logging.getLogger("subiquity.client.controllers.ubuntu_advantage")
 
@@ -31,6 +35,14 @@ class UbuntuAdvantageController(SubiquityTuiController):
 
     async def make_ui(self) -> UbuntuAdvantageView:
         """ Generate the UI, based on the data provided by the model. """
+        path_lsb_release: Optional[str] = None
+        if self.app.opts.dry_run:
+            # In dry-run mode, always pretend to be on LTS
+            path_lsb_release = "examples/lsb-release-focal"
+        if "LTS" not in lsb_release(path_lsb_release)["description"]:
+            await self.endpoint.skip.POST()
+            raise Skip("Not running LTS version")
+
         ubuntu_advantage_info = await self.endpoint.GET()
         return UbuntuAdvantageView(self, ubuntu_advantage_info.token)
 

@@ -44,10 +44,15 @@ class UbuntuAdvantageController(SubiquityController):
         """ Handle a GET request coming from the client-side controller. """
         return UbuntuAdvantageInfo(token=self.model.token)
 
-    async def POST(self, data: UbuntuAdvantageInfo):
+    async def POST(self, data: UbuntuAdvantageInfo) -> None:
         """ Handle a POST request coming from the client-side controller and
         then call .configured().
         """
         log.debug("Received POST: %s", data)
         self.model.token = data.token
+        await self.configured()
+
+    async def skip_POST(self) -> None:
+        """ When running on a non-LTS release, we want to call this so we can
+        skip the screen on the client side. """
         await self.configured()

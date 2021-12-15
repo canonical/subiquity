@@ -63,7 +63,6 @@ class API:
     locale = simple_endpoint(str)
     proxy = simple_endpoint(str)
     ssh = simple_endpoint(SSHData)
-    ubuntu_advantage = simple_endpoint(UbuntuAdvantageInfo)
     updates = simple_endpoint(str)
     wslconfbase = simple_endpoint(WSLConfigurationBase)
     wslconfadvanced = simple_endpoint(WSLConfigurationAdvanced)
@@ -313,6 +312,13 @@ class API:
         class disable_components:
             def GET() -> List[str]: ...
             def POST(data: Payload[List[str]]): ...
+
+    class ubuntu_advantage:
+        def GET() -> UbuntuAdvantageInfo: ...
+        def POST(data: Payload[UbuntuAdvantageInfo]) -> None: ...
+
+        class skip:
+            def POST() -> None: ...
 
 
 class LinkAction(enum.Enum):
