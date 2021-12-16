@@ -75,6 +75,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     autoinstall_schema = {'type': 'object'}  # ...
     model_name = "filesystem"
 
+    _configured = False
+
     def __init__(self, app):
         self.ai_data = {}
         super().__init__(app)
@@ -104,6 +106,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.ai_data = data
 
     async def configured(self):
+        self._configured = True
         await super().configured()
         self.stop_listening_udev()
 
@@ -393,6 +396,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             key = "ProbeData"
         storage = await run_in_thread(
             self.app.prober.get_storage, probe_types)
+        # It is possible for the user to submit filesystem config
+        # while a probert probe is running. We don't want to overwrite
+        # the users config with a blank one if this happens! (See
+        # https://bugs.launchpad.net/bugs/1954848).
+        if self._configured:
+            return
         fpath = os.path.join(self.app.block_log_dir, fname)
         with open(fpath, 'w') as fp:
             json.dump(storage, fp, indent=4)
