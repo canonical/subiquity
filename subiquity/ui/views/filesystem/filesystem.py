@@ -63,7 +63,7 @@ from subiquitycore.view import BaseView
 from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
-from subiquity.common.filesystem import boot, labels
+from subiquity.common.filesystem import boot, gaps, labels
 from subiquity.models.filesystem import (
     humanize_size,
     )
@@ -265,7 +265,6 @@ class DeviceList(WidgetWrap):
 
     _disk_INFO = _stretchy_shower(DiskInfoStretchy)
     _disk_REFORMAT = _stretchy_shower(ConfirmReformatStretchy)
-    _disk_PARTITION = _stretchy_shower(PartitionStretchy)
     _disk_FORMAT = _stretchy_shower(FormatEntireStretchy)
 
     def _disk_REMOVE(self, disk):
@@ -298,7 +297,6 @@ class DeviceList(WidgetWrap):
     _partition_DELETE = _stretchy_shower(ConfirmDeleteStretchy)
 
     _raid_EDIT = _stretchy_shower(RaidStretchy)
-    _raid_PARTITION = _disk_PARTITION
     _raid_FORMAT = _disk_FORMAT
     _raid_REFORMAT = _disk_REFORMAT
     _raid_REMOVE = _disk_REMOVE
@@ -306,12 +304,14 @@ class DeviceList(WidgetWrap):
     _raid_TOGGLE_BOOT = _disk_TOGGLE_BOOT
 
     _lvm_volgroup_EDIT = _stretchy_shower(VolGroupStretchy)
-    _lvm_volgroup_CREATE_LV = _disk_PARTITION
     _lvm_volgroup_DELETE = _partition_DELETE
 
     _lvm_partition_EDIT = _stretchy_shower(
         lambda parent, part: PartitionStretchy(parent, part.volgroup, part))
     _lvm_partition_DELETE = _partition_DELETE
+
+    _gap_PARTITION = _stretchy_shower(
+        lambda parent, gap: PartitionStretchy(parent, gap.device))
 
     def _action(self, sender, value, device):
         action, meth = value
@@ -325,9 +325,13 @@ class DeviceList(WidgetWrap):
         else:
             return action.str()
 
-    def _label_PARTITION(self, action, device):
-        return _("Add {ptype} Partition").format(
-            ptype=device.ptable_for_new_partition().upper())
+    def _label_PARTITION(self, action, gap):
+        device = gap.device
+        if device.type == 'lvm_volgroup':
+            return _("Create Logical Volume")
+        else:
+            return _("Add {ptype} Partition").format(
+                ptype=device.ptable_for_new_partition().upper())
 
     def _label_TOGGLE_BOOT(self, action, device):
         if boot.is_boot_device(device):
@@ -361,6 +365,8 @@ class DeviceList(WidgetWrap):
                 enabled=enabled,
                 value=(action, meth),
                 opens_dialog=getattr(meth, 'opens_dialog', False)))
+        if not device_actions:
+            return Text("")
         menu = ActionMenu(device_actions)
         connect_signal(menu, 'action', self._action, device)
         return menu
@@ -386,34 +392,30 @@ class DeviceList(WidgetWrap):
             Text(""),
             Text(""),
         ])))
+
+        if self.show_available:
+            def filter(part):
+                if isinstance(part, gaps.Gap):
+                    return True
+                return part.available()
+        else:
+            def filter(part):
+                if isinstance(part, gaps.Gap):
+                    return False
+                return not part.available()
+
         for device in devices:
-            for obj, cells in summarize_device(
-                    device,
-                    lambda part: part.available() == self.show_available):
-                if obj is not None:
-                    menu = self._action_menu_for_device(obj)
-                else:
-                    menu = Text("")
+            for obj, cells in summarize_device(device, filter):
+                menu = self._action_menu_for_device(obj)
                 if obj is device:
                     start, end = '[', ']'
                 else:
                     start, end = '', ''
                 cells = [Text(start)] + cells + [menu, Text(end)]
-                if obj is not None:
+                if isinstance(menu, ActionMenu):
                     rows.append(make_action_menu_row(cells, menu))
                 else:
                     rows.append(TableRow(cells))
-            if (self.show_available
-                    and device.used > 0
-                    and device.free_for_partitions > 0):
-                free = humanize_size(device.free_for_partitions)
-                rows.append(TableRow([
-                    Text(""),
-                    (3, Color.info_minor(Text(_("free space")))),
-                    Text(free, align="right"),
-                    Text(""),
-                    Text(""),
-                ]))
             rows.append(TableRow([Text("")]))
         self.table.set_contents(rows[:-1])
         if self.table._w.focus_position >= len(rows):

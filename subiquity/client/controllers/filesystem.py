@@ -19,6 +19,7 @@ import logging
 from subiquitycore.lsb_release import lsb_release
 
 from subiquity.client.controller import SubiquityTuiController
+from subiquity.common.filesystem import gaps
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.common.types import ProbeStatus
 from subiquity.models.filesystem import (
@@ -159,6 +160,10 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             action_name = action['action']
             if action_name == "MAKE_BOOT":
                 action_name = "TOGGLE_BOOT"
+            if action_name == "CREATE_LV":
+                action_name = "PARTITION"
+            if action_name == "PARTITION":
+                obj = gaps.largest_gap(obj)
             meth = getattr(
                 self.ui.body.avail_list,
                 "_{}_{}".format(obj.type, action_name))

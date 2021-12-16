@@ -15,11 +15,7 @@
 
 from urwid import Text
 
-from subiquitycore.ui.utils import (
-    Color,
-    )
-
-from subiquity.common.filesystem import labels
+from subiquity.common.filesystem import gaps, labels
 from subiquity.models.filesystem import (
     humanize_size,
     )
@@ -35,7 +31,7 @@ def summarize_device(device, part_filter=lambda p: True):
     out by looking at the uses of this function.
     """
     label = labels.label(device)
-    anns = labels.annotations(device)
+    anns = labels.annotations(device) + labels.usage_labels(device)
     if anns:
         label = "{} ({})".format(label, ", ".join(anns))
     rows = [(device, [
@@ -43,20 +39,15 @@ def summarize_device(device, part_filter=lambda p: True):
         Text(labels.desc(device)),
         Text(humanize_size(device.size), align="right"),
         ])]
-    partitions = device.partitions()
-    if partitions:
-        for part in device.partitions():
-            if not part_filter(part):
-                continue
-            details = ", ".join(
-                labels.annotations(part) + labels.usage_labels(part))
-            rows.append((part, [
-                Text(labels.label(part, short=True)),
-                (2, Text(details)),
-                Text(humanize_size(part.size), align="right"),
-                ]))
-    else:
-        rows.append((None, [
-            (4, Color.info_minor(Text(", ".join(labels.usage_labels(device)))))
+    partitions = gaps.parts_and_gaps(device)
+    for part in partitions:
+        if not part_filter(part):
+            continue
+        details = ", ".join(
+            labels.annotations(part) + labels.usage_labels(part))
+        rows.append((part, [
+            Text(labels.label(part, short=True)),
+            (2, Text(details)),
+            Text(humanize_size(part.size), align="right"),
             ]))
     return rows
