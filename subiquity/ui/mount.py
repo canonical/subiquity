@@ -129,7 +129,7 @@ class MountSelector(WidgetWrap):
             self._selector.value = OTHER
             self._showhide_other(True)
             if not val.startswith('/'):
-                raise ValueError("%s does not start with /", val)
+                raise ValueError(f"{val} does not start with /")
             self._other.value = val[1:]
 
 

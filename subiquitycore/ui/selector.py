@@ -125,7 +125,7 @@ class Option:
                 self.enabled = True
                 self.value = val
             else:
-                raise SelectorError("invalid option %r", val)
+                raise SelectorError(f"invalid option {val!r}")
         elif len(val) == 1:
             self.label = val[0]
             self.enabled = True

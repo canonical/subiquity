@@ -164,7 +164,7 @@ class Serializer:
             serializer = self.type_serializers[annotation]
         except KeyError:
             raise Exception(
-                "do not know how to handle %s at %s", annotation, path)
+                f"do not know how to handle {annotation} at {path}")
         else:
             return serializer(annotation, value, metadata, path)
 

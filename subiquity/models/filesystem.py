@@ -1417,7 +1417,7 @@ class FilesystemModel(object):
                         volume.flag == 'bios_grub' and fstype == 'fat32')):
                     raise Exception("{} is not available".format(volume))
         if volume._fs is not None:
-            raise Exception("%s is already formatted", volume)
+            raise Exception(f"{volume} is already formatted")
         fs = Filesystem(
             m=self, volume=volume, fstype=fstype, preserve=preserve)
         self._actions.append(fs)
@@ -1430,7 +1430,7 @@ class FilesystemModel(object):
 
     def add_mount(self, fs, path):
         if fs._mount is not None:
-            raise Exception("%s is already mounted", fs)
+            raise Exception(f"{fs} is already mounted")
         m = Mount(m=self, device=fs, path=path)
         self._actions.append(m)
         return m
