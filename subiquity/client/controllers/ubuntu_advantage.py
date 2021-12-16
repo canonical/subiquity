@@ -35,11 +35,6 @@ class UbuntuAdvantageController(SubiquityTuiController):
 
     async def make_ui(self) -> UbuntuAdvantageView:
         """ Generate the UI, based on the data provided by the model. """
-
-        # TODO remove these two lines to enable this screen
-        await self.endpoint.skip.POST()
-        raise Skip("Hiding the screen until we can validate the token.")
-
         path_lsb_release: Optional[str] = None
         if self.app.opts.dry_run:
             # In dry-run mode, always pretend to be on LTS
