@@ -32,6 +32,7 @@ from .snaplist import SnapListController
 from .source import SourceController
 from .ssh import SSHController
 from .timezone import TimeZoneController
+from .ubuntu_advantage import UbuntuAdvantageController
 from .updates import UpdatesController
 from .userdata import UserdataController
 from .zdev import ZdevController
@@ -58,6 +59,7 @@ __all__ = [
     'SourceController',
     'SSHController',
     'TimeZoneController',
+    'UbuntuAdvantageController',
     'UpdatesController',
     'UserdataController',
     'ZdevController',

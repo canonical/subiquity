@@ -48,6 +48,7 @@ from subiquity.common.types import (
     StorageResponse,
     StorageResponseV2,
     TimeZoneInfo,
+    UbuntuAdvantageInfo,
     WLANSupportInstallState,
     ZdevInfo,
     WSLConfigurationBase,
@@ -311,6 +312,13 @@ class API:
         class disable_components:
             def GET() -> List[str]: ...
             def POST(data: Payload[List[str]]): ...
+
+    class ubuntu_advantage:
+        def GET() -> UbuntuAdvantageInfo: ...
+        def POST(data: Payload[UbuntuAdvantageInfo]) -> None: ...
+
+        class skip:
+            def POST() -> None: ...
 
 
 class LinkAction(enum.Enum):

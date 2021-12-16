@@ -389,6 +389,11 @@ class TimeZoneInfo:
     from_geoip: bool
 
 
+@attr.s(auto_attribs=True)
+class UbuntuAdvantageInfo:
+    token: str
+
+
 class ShutdownMode(enum.Enum):
     REBOOT = enum.auto()
     POWEROFF = enum.auto()

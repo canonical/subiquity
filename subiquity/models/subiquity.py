@@ -41,6 +41,7 @@ from .snaplist import SnapListModel
 from .source import SourceModel
 from .ssh import SSHModel
 from .timezone import TimeZoneModel
+from .ubuntu_advantage import UbuntuAdvantageModel
 from .updates import UpdatesModel
 
 
@@ -143,6 +144,7 @@ class SubiquityModel:
         self.ssh = SSHModel()
         self.source = SourceModel()
         self.timezone = TimeZoneModel()
+        self.ubuntu_advantage = UbuntuAdvantageModel()
         self.updates = UpdatesModel()
         self.userdata = {}
 
