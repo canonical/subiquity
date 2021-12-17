@@ -266,6 +266,81 @@ class ConfigureController(SubiquityController):
             log.error("Failed to run locale activation commands.")
             return
 
+    def __query_uid(self, etc_dir, username):
+        """ Finds the UID of username in etc_dir/passwd file. """
+        uid = None
+        with open(os.path.join(etc_dir, "passwd")) as f:
+            for line in f:
+                tokens = line.split(":")
+                if username == tokens[0]:
+                    if len(tokens) != 7:
+                        raise Exception("Invalid passwd entry")
+
+                    uid = int(tokens[2])
+                    break
+
+        return uid
+
+    async def _create_user(self, root_dir):
+        """ Helper method to create the user from the identity model
+            and store it's UID. """
+        wsl_id = self.model.identity.user
+        username = wsl_id.username
+        create_user_base = []
+        assign_grp_base = []
+        usergroups_list = get_users_and_groups()
+        if self.app.opts.dry_run:
+            log.debug("creating a mock-up env for user %s", username)
+            # creating folders and files for dryrun
+            etc_dir = os.path.join(root_dir, "etc")
+            os.makedirs(etc_dir, exist_ok=True)
+            home_dir = os.path.join(root_dir, "home")
+            os.makedirs(home_dir, exist_ok=True)
+            pseudo_files = ["passwd", "shadow", "gshadow", "group",
+                            "subgid", "subuid"]
+            for file in pseudo_files:
+                filepath = os.path.join(etc_dir, file)
+                open(filepath, "a").close()
+
+            # mimic groupadd
+            group_id = 1000
+            for group in usergroups_list:
+                group_filepath = os.path.join(etc_dir, "group")
+                gshadow_filepath = os.path.join(etc_dir, "gshadow")
+                shutil.copy(group_filepath,
+                            "{}-".format(group_filepath))
+                with open(group_filepath, "a") as group_file:
+                    group_file.write("{}:x:{}:\n".format(group, group_id))
+                group_id += 1
+                shutil.copy(gshadow_filepath,
+                            "{}-".format(gshadow_filepath))
+                with open(gshadow_filepath, "a") as gshadow_file:
+                    gshadow_file.write("{}:!::\n".format(group))
+
+            create_user_base = ["-P", root_dir]
+            assign_grp_base = ["-P", root_dir]
+
+        create_user_cmd = ["useradd"] + create_user_base + \
+                          ["-m", "-s", "/bin/bash", "-c", wsl_id.realname,
+                           "-p", wsl_id.password, username]
+        assign_grp_cmd = ["usermod"] + assign_grp_base + \
+                         ["-a", "-G", ",".join(usergroups_list), username]
+
+        create_user_proc = await arun_command(create_user_cmd)
+        if create_user_proc.returncode != 0:
+            raise Exception("Failed to create user %s: %s"
+                            % (username, create_user_proc.stderr))
+        log.debug("created user %s", username)
+
+        self.default_uid = self.__query_uid(etc_dir, username)
+        if self.default_uid is None:
+            log.error("Could not retrieve %s UID", username)
+
+        assign_grp_proc = await arun_command(assign_grp_cmd)
+        if assign_grp_proc.returncode != 0:
+            raise Exception(("Failed to assign group to user %s: %s")
+                            % (username, assign_grp_proc.stderr))
+
     @with_context(
         description="final system configuration", level="INFO",
         childlevel="DEBUG")
@@ -288,78 +363,12 @@ class ConfigureController(SubiquityController):
 
             self.app.update_state(ApplicationState.POST_RUNNING)
 
-            dryrun = self.app.opts.dry_run
             variant = self.app.variant
             root_dir = self.model.root
-            username = None
+
             if variant == "wsl_setup":
-                wsl_id = self.model.identity.user
-                username = wsl_id.username
-                create_user_base = []
-                assign_grp_base = []
-                usergroups_list = get_users_and_groups()
+                await self._create_user(root_dir)
                 lang = self.model.locale.selected_language
-                if dryrun:
-                    log.debug("creating a mock-up env for user %s", username)
-                    # creating folders and files for dryrun
-                    etc_dir = os.path.join(root_dir, "etc")
-                    os.makedirs(etc_dir, exist_ok=True)
-                    home_dir = os.path.join(root_dir, "home")
-                    os.makedirs(home_dir, exist_ok=True)
-                    pseudo_files = ["passwd", "shadow", "gshadow", "group",
-                                    "subgid", "subuid"]
-                    for file in pseudo_files:
-                        filepath = os.path.join(etc_dir, file)
-                        open(filepath, "a").close()
-
-                    # mimic groupadd
-                    group_id = 1000
-                    for group in usergroups_list:
-                        group_filepath = os.path.join(etc_dir, "group")
-                        gshadow_filepath = os.path.join(etc_dir, "gshadow")
-                        shutil.copy(group_filepath,
-                                    "{}-".format(group_filepath))
-                        with open(group_filepath, "a") as group_file:
-                            group_file.write("{}:x:{}:\n".
-                                             format(group, group_id))
-                        group_id += 1
-                        shutil.copy(gshadow_filepath,
-                                    "{}-".format(gshadow_filepath))
-                        with open(gshadow_filepath, "a") as gshadow_file:
-                            gshadow_file.write("{}:!::\n".format(group))
-
-                    create_user_base = ["-P", root_dir]
-                    assign_grp_base = ["-P", root_dir]
-
-                create_user_cmd = ["useradd"] + create_user_base + \
-                                  ["-m", "-s", "/bin/bash",
-                                   "-c", wsl_id.realname,
-                                   "-p", wsl_id.password, username]
-                assign_grp_cmd = ["usermod"] + assign_grp_base + \
-                                 ["-a", "-G", ",".join(usergroups_list),
-                                  username]
-
-                create_user_proc = await arun_command(create_user_cmd)
-                if create_user_proc.returncode != 0:
-                    raise Exception("Failed to create user %s: %s"
-                                    % (username, create_user_proc.stderr))
-                log.debug("created user %s", username)
-                with open(os.path.join(etc_dir, "passwd")) as f:
-                    for line in f:
-                        if username not in line:
-                            continue
-                        uid = int(line.split(":")[2])
-
-                if uid == 0:
-                    log.error("Could not retrieve UID from %s", username)
-
-                self.default_uid = uid
-
-                assign_grp_proc = await arun_command(assign_grp_cmd)
-                if assign_grp_proc.returncode != 0:
-                    raise Exception(("Failed to assign group to user %s: %s")
-                                    % (username, assign_grp_proc.stderr))
-
                 await self.apply_locale(lang)
 
             else:
