@@ -260,6 +260,14 @@
                 }
             ]
         },
+        "ubuntu-advantage": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
         "proxy": {
             "type": [
                 "string",

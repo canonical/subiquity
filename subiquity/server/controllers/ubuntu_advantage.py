@@ -29,6 +29,29 @@ class UbuntuAdvantageController(SubiquityController):
     endpoint = API.ubuntu_advantage
 
     model_name = "ubuntu_advantage"
+    autoinstall_key = "ubuntu-advantage"
+    autoinstall_schema = {
+        "type": "object",
+        "properties": {
+            "token": {
+                "type": "string",
+            },
+        },
+    }
+
+    def load_autoinstall_data(self, data: dict) -> None:
+        """ Load autoinstall data and update the model. """
+        if data is None:
+            return
+        self.model.token = data.get("token", "")
+
+    def make_autoinstall(self) -> dict:
+        """ Return a dictionary that can be used as an autoinstall snippet for
+        Ubuntu Advantage.
+        """
+        return {
+            "token": self.model.token
+        }
 
     def serialize(self) -> str:
         """ Save the current state of the model so it can be loaded later.
