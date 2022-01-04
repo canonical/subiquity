@@ -15,6 +15,7 @@ import copy
 import crypt
 import os
 import random
+import shlex
 import socket
 import subprocess
 import sys
@@ -50,7 +51,7 @@ class Context:
         self.config = self.load_config()
         self.args = args
         self.release = args.release
-        self.default_mem = self.config('default_mem', '8G')
+        self.default_mem = self.config.get('default_mem', '8G')
         if not self.release:
             self.release = self.config["iso"]["default"]
         iso = self.config["iso"]
@@ -183,18 +184,23 @@ def parse_args():
 def run(cmd):
     if isinstance(cmd, str):
         cmd_str = cmd
-        cmd_array = cmd.split(' ')
+        cmd_array = shlex.split(cmd)
     else:
-        cmd_str = ' '.join(cmd)
+        cmd_str = shlex.join(cmd)
         cmd_array = cmd
     # semi-simulate "bash -x"
-    print(f'+ {cmd_str}')
+    print(f'+ {cmd_str}', file=sys.stderr)
     subprocess.run(cmd_array, check=True)
 
 
 def assert_exists(path):
     if not os.path.exists(path):
-        raise Exception('Expected file {path} not found')
+        raise Exception(f'Expected file {path} not found')
+
+
+def remove_if_exists(path):
+    if os.path.exists(path):
+        os.remove(path)
 
 
 @contextlib.contextmanager
@@ -202,7 +208,7 @@ def delete_later(path):
     try:
         yield path
     finally:
-        os.remove(path)
+        remove_if_exists(path)
 
 
 @contextlib.contextmanager
@@ -220,12 +226,12 @@ def mounter(src, dest):
 
 
 def livefs_edit(ctx, *args):
-    run(f'sudo PYTHONPATH=$LIVEFS_EDITOR python3 -m livefs_edit \
-          {ctx.baseiso} {ctx.iso} {*args}')
+    run(['sudo', 'PYTHONPATH=$LIVEFS_EDITOR', 'python3', '-m', 'livefs_edit',
+           ctx.baseiso, ctx.iso, *args])
 
 
 def build(ctx):
-    os.remove(ctx.iso)
+    remove_if_exists(ctx.iso)
     project = os.path.basename(os.getcwd())
 
     snap_manager = noop if ctx.args.save else delete_later
@@ -373,8 +379,8 @@ def install(ctx):
 
         kvm = kvm_common(ctx)
 
-        if ctx.args.this:
-            iso = ctx.args.this
+        if ctx.args.iso:
+            iso = ctx.args.iso
         elif ctx.args.base:
             iso = ctx.baseiso
         else:
@@ -422,7 +428,7 @@ def boot(ctx):
     run(kvm)
 
 
-def help(ctx):
+def help():
     parser.print_usage()
     sys.exit(1)
 
