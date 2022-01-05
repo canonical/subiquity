@@ -16,7 +16,6 @@
 """
 
 import logging
-from typing import Optional
 
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import UbuntuAdvantageInfo
@@ -40,11 +39,8 @@ class UbuntuAdvantageController(SubiquityTuiController):
         await self.endpoint.skip.POST()
         raise Skip("Hiding the screen until we can validate the token.")
 
-        path_lsb_release: Optional[str] = None
-        if self.app.opts.dry_run:
-            # In dry-run mode, always pretend to be on LTS
-            path_lsb_release = "examples/lsb-release-focal"
-        if "LTS" not in lsb_release(path_lsb_release)["description"]:
+        dry_run: bool = self.app.opts.dry_run
+        if "LTS" not in lsb_release(dry_run=dry_run)["description"]:
             await self.endpoint.skip.POST()
             raise Skip("Not running LTS version")
 
