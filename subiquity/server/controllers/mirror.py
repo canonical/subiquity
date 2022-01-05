@@ -50,6 +50,28 @@ class MirrorController(SubiquityController):
                     'enum': ['universe', 'multiverse', 'restricted',
                              'contrib', 'non-free']
                 }
+            },
+            "preferences": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "package": {
+                            "type": "string",
+                        },
+                        "pin": {
+                            "type": "string",
+                        },
+                        "pin-priority": {
+                            "type": "integer",
+                        },
+                    },
+                    "required": [
+                        "package",
+                        "pin",
+                        "pin-priority",
+                    ],
+                }
             }
         }
     }
