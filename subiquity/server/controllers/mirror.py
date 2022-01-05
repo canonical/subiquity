@@ -129,7 +129,7 @@ class MirrorController(SubiquityController):
         await self.configured()
 
     async def disable_components_GET(self) -> List[str]:
-        return list(self.model.disable_components)
+        return self.model.config.get('disable_components', [])
 
     async def disable_components_POST(self, data: List[str]):
-        self.model.disable_components = set(data)
+        self.model.config['disable_components'] = data

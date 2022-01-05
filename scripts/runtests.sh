@@ -155,6 +155,8 @@ timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoi
                                --kernel-cmdline 'autoinstall' \
                                --source-catalog=examples/install-sources.yaml"
 validate
+python3 scripts/check-yaml-fields.py .subiquity/var/log/installer/subiquity-curtin-apt.conf \
+        apt.disable_components='[non-free, restricted]'
 python3 scripts/check-yaml-fields.py .subiquity/var/log/installer/subiquity-curtin-install.conf \
         debconf_selections.subiquity='"eek"' \
         storage.config[-1].options='"errors=remount-ro"'

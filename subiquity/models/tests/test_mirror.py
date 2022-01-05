@@ -15,6 +15,8 @@
 
 import unittest
 
+from curtin.config import merge_config
+
 from subiquity.models.mirror import (
     MirrorModel,
     )
@@ -47,8 +49,10 @@ class TestMirrorModel(unittest.TestCase):
         config = MirrorModel().get_apt_config()
         self.assertEqual([], config['disable_components'])
 
-    def test_set_disable_components(self):
+    def test_from_autoinstall(self):
+        # autoinstall loads to the config directly
         model = MirrorModel()
-        model.disable_components = set(['universe'])
+        data = {'disable_components': ['non-free']}
+        merge_config(model.config, data)
         config = model.get_apt_config()
-        self.assertEqual(['universe'], config['disable_components'])
+        self.assertEqual(['non-free'], config['disable_components'])
