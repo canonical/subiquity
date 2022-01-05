@@ -28,19 +28,30 @@ validate () {
         netplan generate --root .subiquity
     elif [ "${mode}" = "system_setup" ]; then
         setup_mode="$2"
+        launcher_cmds=".subiquity/run/launcher-command"
         echo "system setup validation for $setup_mode"
-        echo "checking launcher-status"
-        [ -d ".subiquity/run/subiquity/" ] || (echo "run/subiquity/ dir not created for status"; exit 1)
-        [ -e ".subiquity/run/subiquity/launcher-status" ] || (echo "run/subiquity/launcher-status not created"; exit 1)
+        echo "checking ${launcher_cmds}"
+        if [ ! -f ${launcher_cmds} ]; then
+            echo "Expected launcher commands to be written to the file."
+            exit 1
+        elif [ -z "$(grep action ${launcher_cmds})" ] && [ "${setup_mode}" != "autoinstall-no-shutdown" ]; then
+            echo "Expected action to be set in launcher commands."
+            exit 1
+        elif [ -z "$(grep defaultUid ${launcher_cmds})" ] && [ "${setup_mode}" != "answers-reconf" ]; then
+            echo "Expected defaultUid to be set in launcher commands."
+            exit 1
+        else
+            cat ${launcher_cmds}
+        fi
         expected_status="reboot"
         if [ "${setup_mode}" = "autoinstall-full" ]; then
             expected_status="shutdown"
         elif [ "${setup_mode}" = "autoinstall-no-shutdown" ]; then
-            expected_status="complete"
+            expected_status=""
         fi
-        result_status="$(cat .subiquity/run/subiquity/launcher-status)"
+        result_status="$(cat ${launcher_cmds} | grep action | cut -d = -f 2)"
         if [ "${result_status}" != "${expected_status}" ]; then
-            echo "incorrect run/subiquity/launcher-status: expect ${expected_status}, got ${result_status}"
+            echo "incorrect ${launcher_cmds}: expect ${expected_status}, got ${result_status}"
             exit 1
         fi
         echo "checking generated config"
@@ -52,7 +63,7 @@ validate () {
         for file in system_setup/tests/golden/${setup_mode}/*.conf; do
             filename=$(basename ${file})
             conf_filepath=".subiquity/etc/${filename}"
-            diff -Nup "${file}" "${conf_filepath}" || exit 1
+            diff -NBup "${file}" "${conf_filepath}" || exit 1
         done
         if [ "${setup_mode}" != "answers-reconf" ]; then
             echo "checking user created"
