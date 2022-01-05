@@ -43,7 +43,8 @@ snaps:
 updates: all
 timezone: Pacific/Guam
 ubuntu-advantage:
-  token: "dummy-token"
+  # Token that passes the basic format checking but is invalid (i.e. contains more than 16 bytes of random data)
+  token: C1NWcZTHLteJXGVMM6YhvHDpGrhyy7
 storage:
   config:
   - {type: disk, ptable: gpt, path: /dev/vdb, wipe: superblock, preserve: false, grub_device: true, id: disk-1}

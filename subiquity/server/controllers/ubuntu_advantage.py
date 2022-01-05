@@ -22,6 +22,10 @@ from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger("subiquity.server.controllers.ubuntu_advantage")
 
+TOKEN_DESC = """\
+A valid token starts with a C and is followed by 23 to 29 Base58 characters.
+See https://pkg.go.dev/github.com/btcsuite/btcutil/base58#CheckEncode"""
+
 
 class UbuntuAdvantageController(SubiquityController):
     """ Represent the server-side Ubuntu Advantage controller. """
@@ -35,6 +39,10 @@ class UbuntuAdvantageController(SubiquityController):
         "properties": {
             "token": {
                 "type": "string",
+                "minLength": 24,
+                "maxLength": 30,
+                "pattern": "^C[1-9A-HJ-NP-Za-km-z]+$",
+                "description": TOKEN_DESC,
             },
         },
     }
