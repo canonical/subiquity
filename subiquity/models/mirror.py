@@ -75,5 +75,14 @@ class MirrorModel(object):
             self.config, "primary", self.architecture)
         config["uri"] = mirror
 
+    def disable_components(self, comps, add):
+        dc = set(self.config.get('disable_components', []))
+        comps = set(comps)
+        if add:
+            dc |= comps
+        else:
+            dc -= comps
+        self.config['disable_components'] = list(dc)
+
     def render(self):
         return {}
