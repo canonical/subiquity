@@ -48,7 +48,7 @@ class UbuntuAdvantageController(SubiquityTuiController):
         """ Initializer for client-side UA controller. """
         strategy: UAInterfaceStrategy
         if app.opts.dry_run:
-            strategy = MockedUAInterfaceStrategy()
+            strategy = MockedUAInterfaceStrategy(scale_factor=app.scale_factor)
         else:
             strategy = UAClientUAInterfaceStrategy()
         self.ua_interface = UAInterface(strategy)
