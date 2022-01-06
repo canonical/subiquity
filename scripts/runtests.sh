@@ -89,7 +89,8 @@ validate () {
                 echo "user not assigned with the expected group sudo"
                 exit 1
             fi
-            lang="$(grep -Eo 'LANG="([^.@ _]+)' .subiquity/etc/default/locale | cut -d \" -f 2)"
+            # Extract value of the LANG variable from etc/default/locale (with or without quotes)
+            lang="$(grep -Eo 'LANG=([^.@ _]+)' .subiquity/etc/default/locale | cut -d= -f 2- | cut -d\" -f 2-)"
             if ! ls .subiquity/var/cache/apt/archives/ | grep --fixed-strings --quiet -- "$lang"; then
                 echo "expected $lang language packs in directory var/cache/apt/archives/"
                 exit 1
