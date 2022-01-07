@@ -22,6 +22,10 @@ from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger("subiquity.server.controllers.ubuntu_advantage")
 
+TOKEN_DESC = """\
+A valid token starts with a C and is followed by 23 to 29 Base58 characters.
+See https://pkg.go.dev/github.com/btcsuite/btcutil/base58#CheckEncode"""
+
 
 class UbuntuAdvantageController(SubiquityController):
     """ Represent the server-side Ubuntu Advantage controller. """
@@ -29,6 +33,33 @@ class UbuntuAdvantageController(SubiquityController):
     endpoint = API.ubuntu_advantage
 
     model_name = "ubuntu_advantage"
+    autoinstall_key = "ubuntu-advantage"
+    autoinstall_schema = {
+        "type": "object",
+        "properties": {
+            "token": {
+                "type": "string",
+                "minLength": 24,
+                "maxLength": 30,
+                "pattern": "^C[1-9A-HJ-NP-Za-km-z]+$",
+                "description": TOKEN_DESC,
+            },
+        },
+    }
+
+    def load_autoinstall_data(self, data: dict) -> None:
+        """ Load autoinstall data and update the model. """
+        if data is None:
+            return
+        self.model.token = data.get("token", "")
+
+    def make_autoinstall(self) -> dict:
+        """ Return a dictionary that can be used as an autoinstall snippet for
+        Ubuntu Advantage.
+        """
+        return {
+            "token": self.model.token
+        }
 
     def serialize(self) -> str:
         """ Save the current state of the model so it can be loaded later.
