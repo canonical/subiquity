@@ -16,15 +16,41 @@
 
 import logging
 import re
+from typing import List
 
-from urwid import connect_signal
+from urwid import (
+    connect_signal,
+    LineBox,
+    Text,
+    Widget,
+    )
 
 from subiquitycore.view import BaseView
+from subiquitycore.ui.buttons import (
+    back_btn,
+    cancel_btn,
+    done_btn,
+    ok_btn,
+    )
+from subiquitycore.ui.container import (
+    Pile,
+    WidgetWrap,
+    )
 from subiquitycore.ui.form import (
     Form,
     simple_field,
     WantsToKnowFormField,
-)
+    )
+from subiquitycore.ui.spinner import (
+    Spinner,
+    )
+from subiquitycore.ui.stretchy import (
+    Stretchy,
+    )
+from subiquitycore.ui.utils import (
+    button_pile,
+    SomethingFailed,
+    )
 
 from subiquitycore.ui.interactive import StringEditor
 
@@ -67,6 +93,31 @@ class UbuntuAdvantageForm(Form):
     token = UATokenField(_("Ubuntu Advantage token:"), help=ua_help)
 
 
+class CheckingUAToken(WidgetWrap):
+    """ Widget displaying a loading animation while checking ubuntu advantage
+    subscription. """
+    def __init__(self, parent: BaseView):
+        """ Initializes the loading animation widget. """
+        self.parent = parent
+        spinner = Spinner(parent.controller.app.aio_loop, style="dots")
+        spinner.start()
+        text = _("Checking Ubuntu Advantage subscription...")
+        button = cancel_btn(label=_("Cancel"), on_press=self.cancel)
+        self.width = len(text) + 4
+        super().__init__(
+            LineBox(
+                Pile([
+                    ('pack', Text(' ' + text)),
+                    ('pack', spinner),
+                    ('pack', button_pile([button])),
+                    ])))
+
+    def cancel(self, sender) -> None:
+        """ Close the loading animation and cancel the check operation. """
+        self.parent.controller.cancel_check_token()
+        self.parent.remove_overlay()
+
+
 class UbuntuAdvantageView(BaseView):
     """ Represent the view of the Ubuntu Advantage configuration. """
 
@@ -89,11 +140,107 @@ class UbuntuAdvantageView(BaseView):
         super().__init__(self.form.as_screen(excerpt=_(self.excerpt)))
 
     def done(self, form: UbuntuAdvantageForm) -> None:
-        """ Called when the user presses the Done button. """
+        """ If no token was supplied, move on to the next screen.
+        If a token was provided, open the loading dialog and
+        asynchronously check if the token is valid. """
         log.debug("User input: %r", form.as_data())
 
-        self.controller.done(form.token.value)
+        token: str = form.token.value
+        if token:
+            checking_token_overlay = CheckingUAToken(self)
+            self.show_overlay(checking_token_overlay,
+                              width=checking_token_overlay.width,
+                              min_width=None)
+            self.controller.check_token(token)
+        else:
+            self.controller.done(token)
 
     def cancel(self) -> None:
         """ Called when the user presses the Back button. """
         self.controller.cancel()
+
+    def show_invalid_token(self) -> None:
+        """ Display an overlay that indicates that the user-supplied token is
+        invalid. """
+        self.remove_overlay()
+        self.show_stretchy_overlay(
+                SomethingFailed(self,
+                                "Invalid token.",
+                                "The Ubuntu Advantage token that you provided"
+                                " is invalid. Please make sure that you typed"
+                                " your token correctly."))
+
+    def show_expired_token(self) -> None:
+        """ Display an overlay that indicates that the user-supplied token has
+        expired. """
+        self.remove_overlay()
+        self.show_stretchy_overlay(
+                SomethingFailed(self,
+                                "Token expired.",
+                                "The Ubuntu Advantage token that you provided"
+                                " has expired. Please use a different token."))
+
+    def show_unknown_error(self) -> None:
+        """ Display an overlay that indicates that we were unable to retrieve
+        the subscription information. Reasons can be multiple include lack of
+        network connection, temporary service unavailability, API issue ...
+        The user is prompted to continue anyway or go back.
+        """
+        self.remove_overlay()
+        self.show_stretchy_overlay(ContinueAnywayWidget(self))
+
+    def show_available_services(self, services: dict) -> None:
+        """ Display an overlay with the list of services that will be enabled
+        via Ubuntu Advantage subscription. After the user confirms, the next we
+        will quit the current view and move on. """
+        self.remove_overlay()
+        self.show_stretchy_overlay(ShowServicesWidget(self, services))
+
+
+class ShowServicesWidget(Stretchy):
+    """ Widget to show the available services for UA subscription. """
+    def __init__(self, parent: UbuntuAdvantageView, services: list):
+        """ Initializes the widget by including the list of services as a
+        bullet-point list. """
+        self.parent = parent
+
+        ok = ok_btn(label=_("OK"), on_press=self.ok)
+
+        title = _("Available Services")
+        header = _("List of services that will be enabled through your "
+                   "Ubuntu Advantage subscription:")
+
+        widgets: List[Widget] = [Text(header)]
+        widgets.extend([Text(f"* {svc['description']}") for svc in services])
+        widgets.append(button_pile([ok]))
+
+        super().__init__(title, widgets, 0, 0)
+
+    def ok(self, sender) -> None:
+        """ Close the overlay and submit the token. """
+        self.parent.controller.done(self.parent.form.token.value)
+
+
+class ContinueAnywayWidget(Stretchy):
+    """ Widget that requests the user if he wants to go back or continue
+    anyway. """
+    def __init__(self, parent: UbuntuAdvantageView) -> None:
+        """ Initializes the widget by showing two buttons, one to go back and
+        one to move forward anyway. """
+        self.parent = parent
+        back = back_btn(label=_("Back"), on_press=self.back)
+        cont = done_btn(label=_("Continue anyway"), on_press=self.cont)
+        widgets = [
+            Text("Unable to check your subscription information."
+                 " Do you want to go back or continue anyway?"),
+            button_pile([back, cont]),
+            ]
+        super().__init__("Unknown error", widgets, 0, 0)
+
+    def back(self, sender) -> None:
+        """ Close the overlay. """
+        self.parent.remove_overlay()
+
+    def cont(self, sender) -> None:
+        """ Move on to the next screen. """
+        self.parent.controller.done(self.parent.form.token.value)

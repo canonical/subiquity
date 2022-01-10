@@ -1,0 +1,49 @@
+{
+    "version": "27.4.2~21.10.1",
+    "effective": null,
+    "expires": "2035-12-31T00:00:00+00:00",
+    "services": [
+        {
+            "name": "cis",
+            "description": "Center for Internet Security Audit Tools",
+            "entitled": "yes",
+            "auto_enabled": "no",
+            "available": "yes"
+        },
+        {
+            "name": "esm-apps",
+            "description": "UA Apps: Extended Security Maintenance (ESM)",
+            "entitled": "yes",
+            "auto_enabled": "yes",
+            "available": "yes"
+        },
+        {
+            "name": "esm-infra",
+            "description": "UA Infra: Extended Security Maintenance (ESM)",
+            "entitled": "yes",
+            "auto_enabled": "yes",
+            "available": "yes"
+        },
+        {
+            "name": "fips",
+            "description": "NIST-certified core packages",
+            "entitled": "yes",
+            "auto_enabled": "no",
+            "available": "yes"
+        },
+        {
+            "name": "fips-updates",
+            "description": "NIST-certified core packages with priority security updates",
+            "entitled": "yes",
+            "auto_enabled": "no",
+            "available": "yes"
+        },
+        {
+            "name": "livepatch",
+            "description": "Canonical Livepatch service",
+            "entitled": "yes",
+            "auto_enabled": "yes",
+            "available": "yes"
+        }
+    ]
+}
