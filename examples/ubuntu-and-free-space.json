@@ -1,0 +1,932 @@
+{
+    "network": {
+        "links": [
+            {
+                "addresses": [
+                    {
+                        "address": "127.0.0.1/8",
+                        "family": 2,
+                        "scope": "host",
+                        "source": "static"
+                    },
+                    {
+                        "address": "::1/128",
+                        "family": 10,
+                        "scope": "host",
+                        "source": "static"
+                    }
+                ],
+                "bond": {
+                    "is_master": false,
+                    "is_slave": false,
+                    "lacp_rate": null,
+                    "master": null,
+                    "mode": null,
+                    "slaves": [],
+                    "xmit_hash_policy": null
+                },
+                "bridge": {
+                    "interfaces": [],
+                    "is_bridge": false,
+                    "is_port": false,
+                    "options": {}
+                },
+                "netlink_data": {
+                    "arptype": 772,
+                    "family": 0,
+                    "flags": 65609,
+                    "ifindex": 1,
+                    "is_vlan": false,
+                    "name": "lo"
+                },
+                "type": "lo",
+                "udev_data": {
+                    "DEVPATH": "/devices/virtual/net/lo",
+                    "ID_MM_CANDIDATE": "1",
+                    "IFINDEX": "1",
+                    "INTERFACE": "lo",
+                    "SUBSYSTEM": "net",
+                    "USEC_INITIALIZED": "926609",
+                    "attrs": {
+                        "addr_assign_type": "0",
+                        "addr_len": "6",
+                        "address": "00:00:00:00:00:00",
+                        "broadcast": "00:00:00:00:00:00",
+                        "carrier": "1",
+                        "carrier_changes": "0",
+                        "carrier_down_count": "0",
+                        "carrier_up_count": "0",
+                        "dev_id": "0x0",
+                        "dev_port": "0",
+                        "dormant": "0",
+                        "duplex": null,
+                        "flags": "0x9",
+                        "gro_flush_timeout": "0",
+                        "ifalias": "",
+                        "ifindex": "1",
+                        "iflink": "1",
+                        "link_mode": "0",
+                        "mtu": "65536",
+                        "name_assign_type": null,
+                        "napi_defer_hard_irqs": "0",
+                        "netdev_group": "0",
+                        "operstate": "unknown",
+                        "phys_port_id": null,
+                        "phys_port_name": null,
+                        "phys_switch_id": null,
+                        "proto_down": "0",
+                        "speed": null,
+                        "subsystem": "net",
+                        "testing": "0",
+                        "threaded": "0",
+                        "tx_queue_len": "1000",
+                        "type": "772",
+                        "uevent": "INTERFACE=lo\nIFINDEX=1"
+                    }
+                }
+            },
+            {
+                "addresses": [
+                    {
+                        "address": "10.90.211.10/24",
+                        "family": 2,
+                        "scope": "global",
+                        "source": "dhcp"
+                    },
+                    {
+                        "address": "fe80::5054:ff:fe39:a3da/64",
+                        "family": 10,
+                        "scope": "link",
+                        "source": "static"
+                    }
+                ],
+                "bond": {
+                    "is_master": false,
+                    "is_slave": false,
+                    "lacp_rate": null,
+                    "master": null,
+                    "mode": null,
+                    "slaves": [],
+                    "xmit_hash_policy": null
+                },
+                "bridge": {
+                    "interfaces": [],
+                    "is_bridge": false,
+                    "is_port": false,
+                    "options": {}
+                },
+                "netlink_data": {
+                    "arptype": 1,
+                    "family": 0,
+                    "flags": 69699,
+                    "ifindex": 2,
+                    "is_vlan": false,
+                    "name": "ens3"
+                },
+                "type": "eth",
+                "udev_data": {
+                    "DEVPATH": "/devices/pci0000:00/0000:00:03.0/net/ens3",
+                    "ID_BUS": "pci",
+                    "ID_MM_CANDIDATE": "1",
+                    "ID_MODEL_FROM_DATABASE": "82540EM Gigabit Ethernet Controller (QEMU Virtual Machine)",
+                    "ID_MODEL_ID": "0x100e",
+                    "ID_NET_DRIVER": "e1000",
+                    "ID_NET_LINK_FILE": "/usr/lib/systemd/network/99-default.link",
+                    "ID_NET_NAME": "ens3",
+                    "ID_NET_NAME_MAC": "enx52540039a3da",
+                    "ID_NET_NAME_PATH": "enp0s3",
+                    "ID_NET_NAME_SLOT": "ens3",
+                    "ID_NET_NAMING_SCHEME": "v249",
+                    "ID_PATH": "pci-0000:00:03.0",
+                    "ID_PATH_TAG": "pci-0000_00_03_0",
+                    "ID_PCI_CLASS_FROM_DATABASE": "Network controller",
+                    "ID_PCI_SUBCLASS_FROM_DATABASE": "Ethernet controller",
+                    "ID_VENDOR_FROM_DATABASE": "Intel Corporation",
+                    "ID_VENDOR_ID": "0x8086",
+                    "IFINDEX": "2",
+                    "INTERFACE": "ens3",
+                    "SUBSYSTEM": "net",
+                    "SYSTEMD_ALIAS": "/sys/subsystem/net/devices/ens3",
+                    "TAGS": ":systemd:",
+                    "USEC_INITIALIZED": "1298371",
+                    "attrs": {
+                        "addr_assign_type": "0",
+                        "addr_len": "6",
+                        "address": "52:54:00:39:a3:da",
+                        "broadcast": "ff:ff:ff:ff:ff:ff",
+                        "carrier": "1",
+                        "carrier_changes": "2",
+                        "carrier_down_count": "1",
+                        "carrier_up_count": "1",
+                        "dev_id": "0x0",
+                        "dev_port": "0",
+                        "device": null,
+                        "dormant": "0",
+                        "duplex": "full",
+                        "flags": "0x1003",
+                        "gro_flush_timeout": "0",
+                        "ifalias": "",
+                        "ifindex": "2",
+                        "iflink": "2",
+                        "link_mode": "0",
+                        "mtu": "1500",
+                        "name_assign_type": "4",
+                        "napi_defer_hard_irqs": "0",
+                        "netdev_group": "0",
+                        "operstate": "up",
+                        "phys_port_id": null,
+                        "phys_port_name": null,
+                        "phys_switch_id": null,
+                        "proto_down": "0",
+                        "speed": "1000",
+                        "subsystem": "net",
+                        "testing": "0",
+                        "threaded": "0",
+                        "tx_queue_len": "1000",
+                        "type": "1",
+                        "uevent": "INTERFACE=ens3\nIFINDEX=2"
+                    }
+                }
+            }
+        ],
+        "routes": [
+            {
+                "dst": "default",
+                "family": 2,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "10.90.211.0/24",
+                "family": 2,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "10.90.211.1",
+                "family": 2,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "10.90.211.0",
+                "family": 2,
+                "ifindex": 2,
+                "table": 255,
+                "type": 3
+            },
+            {
+                "dst": "10.90.211.10",
+                "family": 2,
+                "ifindex": 2,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "10.90.211.255",
+                "family": 2,
+                "ifindex": 2,
+                "table": 255,
+                "type": 3
+            },
+            {
+                "dst": "127.0.0.0",
+                "family": 2,
+                "ifindex": 1,
+                "table": 255,
+                "type": 3
+            },
+            {
+                "dst": "127.0.0.0/8",
+                "family": 2,
+                "ifindex": 1,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "127.0.0.1",
+                "family": 2,
+                "ifindex": 1,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "127.255.255.255",
+                "family": 2,
+                "ifindex": 1,
+                "table": 255,
+                "type": 3
+            },
+            {
+                "dst": "::1",
+                "family": 10,
+                "ifindex": 1,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "fe80::/64",
+                "family": 10,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "::1",
+                "family": 10,
+                "ifindex": 1,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "fe80::5054:ff:fe39:a3da",
+                "family": 10,
+                "ifindex": 2,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "ff00::/8",
+                "family": 10,
+                "ifindex": 2,
+                "table": 255,
+                "type": 5
+            }
+        ]
+    },
+    "storage": {
+        "bcache": {
+            "backing": {},
+            "caching": {}
+        },
+        "blockdev": {
+            "/dev/sda": {
+                "DEVLINKS": "/dev/disk/by-path/pci-0000:00:01.1-ata-1.0 /dev/disk/by-id/scsi-1ATA_QEMU_HARDDISK_QM00001 /dev/disk/by-id/scsi-0ATA_QEMU_HARDDISK_QM00001 /dev/disk/by-path/pci-0000:00:01.1-ata-1 /dev/disk/by-id/ata-QEMU_HARDDISK_QM00001 /dev/disk/by-id/scsi-SATA_QEMU_HARDDISK_QM00001",
+                "DEVNAME": "/dev/sda",
+                "DEVPATH": "/devices/pci0000:00/0000:00:01.1/ata1/host0/target0:0:0/0:0:0:0/block/sda",
+                "DEVTYPE": "disk",
+                "DM_MULTIPATH_DEVICE_PATH": "0",
+                "ID_ATA": "1",
+                "ID_BUS": "ata",
+                "ID_MODEL": "QEMU_HARDDISK",
+                "ID_MODEL_ENC": "QEMU\\x20HARDDISK\\x20\\x20\\x20",
+                "ID_PART_TABLE_TYPE": "gpt",
+                "ID_PART_TABLE_UUID": "92c3eb81-2d36-4d48-a446-30b5a5f2de01",
+                "ID_PATH": "pci-0000:00:01.1-ata-1.0",
+                "ID_PATH_ATA_COMPAT": "pci-0000:00:01.1-ata-1",
+                "ID_PATH_TAG": "pci-0000_00_01_1-ata-1_0",
+                "ID_REVISION": "2.5+",
+                "ID_SCSI": "1",
+                "ID_SCSI_INQUIRY": "1",
+                "ID_SCSI_SERIAL": "QM00001",
+                "ID_SERIAL": "QEMU_HARDDISK_QM00001",
+                "ID_SERIAL_SHORT": "QM00001",
+                "ID_TYPE": "disk",
+                "ID_VENDOR": "ATA",
+                "ID_VENDOR_ENC": "ATA\\x20\\x20\\x20\\x20\\x20",
+                "MAJOR": "8",
+                "MINOR": "0",
+                "MPATH_SBIN_PATH": "/sbin",
+                "SCSI_IDENT_LUN_ATA": "QEMU_HARDDISK_QM00001",
+                "SCSI_IDENT_LUN_T10": "ATA_QEMU_HARDDISK_QM00001",
+                "SCSI_IDENT_LUN_VENDOR": "QM00001",
+                "SCSI_IDENT_SERIAL": "QM00001",
+                "SCSI_MODEL": "QEMU_HARDDISK",
+                "SCSI_MODEL_ENC": "QEMU\\x20HARDDISK\\x20\\x20\\x20",
+                "SCSI_REVISION": "2.5+",
+                "SCSI_TPGS": "0",
+                "SCSI_TYPE": "disk",
+                "SCSI_VENDOR": "ATA",
+                "SCSI_VENDOR_ENC": "ATA\\x20\\x20\\x20\\x20\\x20",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "USEC_INITIALIZED": "1024996",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "bdi": null,
+                    "capability": "50",
+                    "dev": "8:0",
+                    "device": null,
+                    "discard_alignment": "0",
+                    "events": "",
+                    "events_async": "",
+                    "events_poll_msecs": "-1",
+                    "ext_range": "256",
+                    "hidden": "0",
+                    "inflight": "       0        0",
+                    "range": "16",
+                    "removable": "0",
+                    "ro": "0",
+                    "size": "42949672960",
+                    "stat": "    1550       60    90826      445       28        8      104      267        0      880      979        0        0        0        0       23      265",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=8\nMINOR=0\nDEVNAME=sda\nDEVTYPE=disk"
+                }
+            },
+            "/dev/sda1": {
+                "DEVLINKS": "/dev/disk/by-partuuid/87f90929-bfa8-4bdd-89d8-5741201c8eed /dev/disk/by-uuid/BB70-EF00 /dev/disk/by-path/pci-0000:00:01.1-ata-1-part1 /dev/disk/by-id/scsi-SATA_QEMU_HARDDISK_QM00001-part1 /dev/disk/by-id/scsi-1ATA_QEMU_HARDDISK_QM00001-part1 /dev/disk/by-path/pci-0000:00:01.1-ata-1.0-part1 /dev/disk/by-id/ata-QEMU_HARDDISK_QM00001-part1 /dev/disk/by-id/scsi-0ATA_QEMU_HARDDISK_QM00001-part1",
+                "DEVNAME": "/dev/sda1",
+                "DEVPATH": "/devices/pci0000:00/0000:00:01.1/ata1/host0/target0:0:0/0:0:0:0/block/sda/sda1",
+                "DEVTYPE": "partition",
+                "DM_MULTIPATH_DEVICE_PATH": "0",
+                "ID_ATA": "1",
+                "ID_BUS": "ata",
+                "ID_FS_TYPE": "vfat",
+                "ID_FS_USAGE": "filesystem",
+                "ID_FS_UUID": "BB70-EF00",
+                "ID_FS_UUID_ENC": "BB70-EF00",
+                "ID_FS_VERSION": "FAT32",
+                "ID_MODEL": "QEMU_HARDDISK",
+                "ID_MODEL_ENC": "QEMU\\x20HARDDISK\\x20\\x20\\x20",
+                "ID_PART_ENTRY_DISK": "8:0",
+                "ID_PART_ENTRY_NUMBER": "1",
+                "ID_PART_ENTRY_OFFSET": "2048",
+                "ID_PART_ENTRY_SCHEME": "gpt",
+                "ID_PART_ENTRY_SIZE": "1998848",
+                "ID_PART_ENTRY_TYPE": "c12a7328-f81f-11d2-ba4b-00a0c93ec93b",
+                "ID_PART_ENTRY_UUID": "87f90929-bfa8-4bdd-89d8-5741201c8eed",
+                "ID_PART_TABLE_TYPE": "gpt",
+                "ID_PART_TABLE_UUID": "92c3eb81-2d36-4d48-a446-30b5a5f2de01",
+                "ID_PATH": "pci-0000:00:01.1-ata-1.0",
+                "ID_PATH_ATA_COMPAT": "pci-0000:00:01.1-ata-1",
+                "ID_PATH_TAG": "pci-0000_00_01_1-ata-1_0",
+                "ID_REVISION": "2.5+",
+                "ID_SCSI": "1",
+                "ID_SCSI_INQUIRY": "1",
+                "ID_SCSI_SERIAL": "QM00001",
+                "ID_SERIAL": "QEMU_HARDDISK_QM00001",
+                "ID_SERIAL_SHORT": "QM00001",
+                "ID_TYPE": "disk",
+                "ID_VENDOR": "ATA",
+                "ID_VENDOR_ENC": "ATA\\x20\\x20\\x20\\x20\\x20",
+                "MAJOR": "8",
+                "MINOR": "1",
+                "PARTN": "1",
+                "SCSI_IDENT_LUN_ATA": "QEMU_HARDDISK_QM00001",
+                "SCSI_IDENT_LUN_T10": "ATA_QEMU_HARDDISK_QM00001",
+                "SCSI_IDENT_LUN_VENDOR": "QM00001",
+                "SCSI_IDENT_SERIAL": "QM00001",
+                "SCSI_MODEL": "QEMU_HARDDISK",
+                "SCSI_MODEL_ENC": "QEMU\\x20HARDDISK\\x20\\x20\\x20",
+                "SCSI_REVISION": "2.5+",
+                "SCSI_TPGS": "0",
+                "SCSI_TYPE": "disk",
+                "SCSI_VENDOR": "ATA",
+                "SCSI_VENDOR_ENC": "ATA\\x20\\x20\\x20\\x20\\x20",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "UDISKS_IGNORE": "1",
+                "USEC_INITIALIZED": "138673523",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "dev": "8:1",
+                    "discard_alignment": "0",
+                    "inflight": "       0        0",
+                    "partition": "1",
+                    "ro": "0",
+                    "size": "1023410176",
+                    "start": "2048",
+                    "stat": "      81        0     5336       23        0        0        0        0        0       60       23        0        0        0        0        0        0",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=8\nMINOR=1\nDEVNAME=sda1\nDEVTYPE=partition\nPARTN=1"
+                }
+            },
+            "/dev/sda2": {
+                "DEVLINKS": "/dev/disk/by-id/scsi-0ATA_QEMU_HARDDISK_QM00001-part2 /dev/disk/by-id/scsi-1ATA_QEMU_HARDDISK_QM00001-part2 /dev/disk/by-id/scsi-SATA_QEMU_HARDDISK_QM00001-part2 /dev/disk/by-partuuid/3f59e142-f5cf-4492-bc89-a2e66036af48 /dev/disk/by-uuid/9f5a85fc-d4aa-4f2f-a9cb-7d7666ded764 /dev/disk/by-path/pci-0000:00:01.1-ata-1-part2 /dev/disk/by-path/pci-0000:00:01.1-ata-1.0-part2 /dev/disk/by-id/ata-QEMU_HARDDISK_QM00001-part2",
+                "DEVNAME": "/dev/sda2",
+                "DEVPATH": "/devices/pci0000:00/0000:00:01.1/ata1/host0/target0:0:0/0:0:0:0/block/sda/sda2",
+                "DEVTYPE": "partition",
+                "DM_MULTIPATH_DEVICE_PATH": "0",
+                "ID_ATA": "1",
+                "ID_BUS": "ata",
+                "ID_FS_TYPE": "ext4",
+                "ID_FS_USAGE": "filesystem",
+                "ID_FS_UUID": "9f5a85fc-d4aa-4f2f-a9cb-7d7666ded764",
+                "ID_FS_UUID_ENC": "9f5a85fc-d4aa-4f2f-a9cb-7d7666ded764",
+                "ID_FS_VERSION": "1.0",
+                "ID_MODEL": "QEMU_HARDDISK",
+                "ID_MODEL_ENC": "QEMU\\x20HARDDISK\\x20\\x20\\x20",
+                "ID_PART_ENTRY_DISK": "8:0",
+                "ID_PART_ENTRY_NUMBER": "2",
+                "ID_PART_ENTRY_OFFSET": "2000896",
+                "ID_PART_ENTRY_SCHEME": "gpt",
+                "ID_PART_ENTRY_SIZE": "2000896",
+                "ID_PART_ENTRY_TYPE": "0fc63daf-8483-4772-8e79-3d69d8477de4",
+                "ID_PART_ENTRY_UUID": "3f59e142-f5cf-4492-bc89-a2e66036af48",
+                "ID_PART_TABLE_TYPE": "gpt",
+                "ID_PART_TABLE_UUID": "92c3eb81-2d36-4d48-a446-30b5a5f2de01",
+                "ID_PATH": "pci-0000:00:01.1-ata-1.0",
+                "ID_PATH_ATA_COMPAT": "pci-0000:00:01.1-ata-1",
+                "ID_PATH_TAG": "pci-0000_00_01_1-ata-1_0",
+                "ID_REVISION": "2.5+",
+                "ID_SCSI": "1",
+                "ID_SCSI_INQUIRY": "1",
+                "ID_SCSI_SERIAL": "QM00001",
+                "ID_SERIAL": "QEMU_HARDDISK_QM00001",
+                "ID_SERIAL_SHORT": "QM00001",
+                "ID_TYPE": "disk",
+                "ID_VENDOR": "ATA",
+                "ID_VENDOR_ENC": "ATA\\x20\\x20\\x20\\x20\\x20",
+                "MAJOR": "8",
+                "MINOR": "2",
+                "PARTN": "2",
+                "SCSI_IDENT_LUN_ATA": "QEMU_HARDDISK_QM00001",
+                "SCSI_IDENT_LUN_T10": "ATA_QEMU_HARDDISK_QM00001",
+                "SCSI_IDENT_LUN_VENDOR": "QM00001",
+                "SCSI_IDENT_SERIAL": "QM00001",
+                "SCSI_MODEL": "QEMU_HARDDISK",
+                "SCSI_MODEL_ENC": "QEMU\\x20HARDDISK\\x20\\x20\\x20",
+                "SCSI_REVISION": "2.5+",
+                "SCSI_TPGS": "0",
+                "SCSI_TYPE": "disk",
+                "SCSI_VENDOR": "ATA",
+                "SCSI_VENDOR_ENC": "ATA\\x20\\x20\\x20\\x20\\x20",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "USEC_INITIALIZED": "138675585",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "dev": "8:2",
+                    "discard_alignment": "0",
+                    "inflight": "       0        0",
+                    "partition": "2",
+                    "ro": "0",
+                    "size": "1024458752",
+                    "start": "2000896",
+                    "stat": "      99        0     6216       23        4        0        0        0        0       84       24        0        0        0        0        0        0",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=8\nMINOR=2\nDEVNAME=sda2\nDEVTYPE=partition\nPARTN=2"
+                }
+            },
+            "/dev/sda3": {
+                "DEVLINKS": "/dev/disk/by-path/pci-0000:00:01.1-ata-1-part3 /dev/disk/by-id/scsi-SATA_QEMU_HARDDISK_QM00001-part3 /dev/disk/by-id/ata-QEMU_HARDDISK_QM00001-part3 /dev/disk/by-partuuid/46d9a143-d91a-4328-8591-bc92d3fe4422 /dev/disk/by-uuid/19e681fc-9577-4cfc-96ea-ebfebaa3aba6 /dev/disk/by-path/pci-0000:00:01.1-ata-1.0-part3 /dev/disk/by-id/scsi-1ATA_QEMU_HARDDISK_QM00001-part3 /dev/disk/by-id/scsi-0ATA_QEMU_HARDDISK_QM00001-part3",
+                "DEVNAME": "/dev/sda3",
+                "DEVPATH": "/devices/pci0000:00/0000:00:01.1/ata1/host0/target0:0:0/0:0:0:0/block/sda/sda3",
+                "DEVTYPE": "partition",
+                "DM_MULTIPATH_DEVICE_PATH": "0",
+                "ID_ATA": "1",
+                "ID_BUS": "ata",
+                "ID_FS_TYPE": "ext4",
+                "ID_FS_USAGE": "filesystem",
+                "ID_FS_UUID": "19e681fc-9577-4cfc-96ea-ebfebaa3aba6",
+                "ID_FS_UUID_ENC": "19e681fc-9577-4cfc-96ea-ebfebaa3aba6",
+                "ID_FS_VERSION": "1.0",
+                "ID_MODEL": "QEMU_HARDDISK",
+                "ID_MODEL_ENC": "QEMU\\x20HARDDISK\\x20\\x20\\x20",
+                "ID_PART_ENTRY_DISK": "8:0",
+                "ID_PART_ENTRY_NUMBER": "3",
+                "ID_PART_ENTRY_OFFSET": "4001792",
+                "ID_PART_ENTRY_SCHEME": "gpt",
+                "ID_PART_ENTRY_SIZE": "19537096",
+                "ID_PART_ENTRY_TYPE": "0fc63daf-8483-4772-8e79-3d69d8477de4",
+                "ID_PART_ENTRY_UUID": "46d9a143-d91a-4328-8591-bc92d3fe4422",
+                "ID_PART_TABLE_TYPE": "gpt",
+                "ID_PART_TABLE_UUID": "92c3eb81-2d36-4d48-a446-30b5a5f2de01",
+                "ID_PATH": "pci-0000:00:01.1-ata-1.0",
+                "ID_PATH_ATA_COMPAT": "pci-0000:00:01.1-ata-1",
+                "ID_PATH_TAG": "pci-0000_00_01_1-ata-1_0",
+                "ID_REVISION": "2.5+",
+                "ID_SCSI": "1",
+                "ID_SCSI_INQUIRY": "1",
+                "ID_SCSI_SERIAL": "QM00001",
+                "ID_SERIAL": "QEMU_HARDDISK_QM00001",
+                "ID_SERIAL_SHORT": "QM00001",
+                "ID_TYPE": "disk",
+                "ID_VENDOR": "ATA",
+                "ID_VENDOR_ENC": "ATA\\x20\\x20\\x20\\x20\\x20",
+                "MAJOR": "8",
+                "MINOR": "3",
+                "PARTN": "3",
+                "SCSI_IDENT_LUN_ATA": "QEMU_HARDDISK_QM00001",
+                "SCSI_IDENT_LUN_T10": "ATA_QEMU_HARDDISK_QM00001",
+                "SCSI_IDENT_LUN_VENDOR": "QM00001",
+                "SCSI_IDENT_SERIAL": "QM00001",
+                "SCSI_MODEL": "QEMU_HARDDISK",
+                "SCSI_MODEL_ENC": "QEMU\\x20HARDDISK\\x20\\x20\\x20",
+                "SCSI_REVISION": "2.5+",
+                "SCSI_TPGS": "0",
+                "SCSI_TYPE": "disk",
+                "SCSI_VENDOR": "ATA",
+                "SCSI_VENDOR_ENC": "ATA\\x20\\x20\\x20\\x20\\x20",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "USEC_INITIALIZED": "138672725",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "dev": "8:3",
+                    "discard_alignment": "0",
+                    "inflight": "       0        0",
+                    "partition": "3",
+                    "ro": "0",
+                    "size": "10002993152",
+                    "start": "4001792",
+                    "stat": "     101        0     6296       26        4        0        0        0        0       76       27        0        0        0        0        0        0",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=8\nMINOR=3\nDEVNAME=sda3\nDEVTYPE=partition\nPARTN=3"
+                }
+            },
+            "/dev/sr0": {
+                "DEVLINKS": "/dev/disk/by-id/scsi-1ATA_QEMU_DVD-ROM_QM00002 /dev/disk/by-path/pci-0000:00:01.1-ata-1.1 /dev/disk/by-uuid/2022-01-06-11-11-55-00 /dev/disk/by-label/Ubuntu-Server\\x2022.04\\x20LTS\\x20amd64 /dev/disk/by-id/scsi-0QEMU_QEMU_DVD-ROM_QM00002 /dev/disk/by-id/ata-QEMU_DVD-ROM_QM00002 /dev/cdrom /dev/disk/by-path/pci-0000:00:01.1-ata-1",
+                "DEVNAME": "/dev/sr0",
+                "DEVPATH": "/devices/pci0000:00/0000:00:01.1/ata1/host0/target0:0:1/0:0:1:0/block/sr0",
+                "DEVTYPE": "disk",
+                "ID_ATA": "1",
+                "ID_BUS": "ata",
+                "ID_CDROM": "1",
+                "ID_CDROM_DVD": "1",
+                "ID_CDROM_MEDIA": "1",
+                "ID_CDROM_MEDIA_DVD": "1",
+                "ID_CDROM_MEDIA_SESSION_COUNT": "1",
+                "ID_CDROM_MEDIA_STATE": "complete",
+                "ID_CDROM_MEDIA_TRACK_COUNT": "1",
+                "ID_CDROM_MEDIA_TRACK_COUNT_DATA": "1",
+                "ID_CDROM_MRW": "1",
+                "ID_CDROM_MRW_W": "1",
+                "ID_FOR_SEAT": "block-pci-0000_00_01_1-ata-1_1",
+                "ID_FS_BOOT_SYSTEM_ID": "EL\\x20TORITO\\x20SPECIFICATION",
+                "ID_FS_DATA_PREPARER_ID": "XORRISO-1.5.2\\x202019.10.26.180001\\x2c\\x20LIBISOBURN-1.5.2\\x2c\\x20LIBISOFS-1.5.2\\x2c\\x20LIBBURN-1.5.2",
+                "ID_FS_LABEL": "Ubuntu-Server_22.04_LTS_amd64",
+                "ID_FS_LABEL_ENC": "Ubuntu-Server\\x2022.04\\x20LTS\\x20amd64",
+                "ID_FS_TYPE": "iso9660",
+                "ID_FS_USAGE": "filesystem",
+                "ID_FS_UUID": "2022-01-06-11-11-55-00",
+                "ID_FS_UUID_ENC": "2022-01-06-11-11-55-00",
+                "ID_FS_VERSION": "Joliet Extension",
+                "ID_MODEL": "QEMU_DVD-ROM",
+                "ID_MODEL_ENC": "QEMU\\x20DVD-ROM\\x20\\x20\\x20\\x20",
+                "ID_PART_TABLE_TYPE": "PMBR",
+                "ID_PATH": "pci-0000:00:01.1-ata-1.1",
+                "ID_PATH_ATA_COMPAT": "pci-0000:00:01.1-ata-1",
+                "ID_PATH_TAG": "pci-0000_00_01_1-ata-1_1",
+                "ID_REVISION": "2.5+",
+                "ID_SCSI": "1",
+                "ID_SCSI_INQUIRY": "1",
+                "ID_SERIAL": "QEMU_DVD-ROM_QM00002",
+                "ID_TYPE": "cd/dvd",
+                "ID_VENDOR": "QEMU",
+                "ID_VENDOR_ENC": "QEMU\\x20\\x20\\x20\\x20",
+                "MAJOR": "11",
+                "MINOR": "0",
+                "SCSI_IDENT_LUN_ATA": "QEMU_DVD-ROM_QM00002",
+                "SCSI_IDENT_LUN_T10": "ATA_QEMU_DVD-ROM_QM00002",
+                "SCSI_IDENT_LUN_VENDOR": "QM00002",
+                "SCSI_MODEL": "QEMU_DVD-ROM",
+                "SCSI_MODEL_ENC": "QEMU\\x20DVD-ROM\\x20\\x20\\x20\\x20",
+                "SCSI_REVISION": "2.5+",
+                "SCSI_TPGS": "0",
+                "SCSI_TYPE": "cd/dvd",
+                "SCSI_VENDOR": "QEMU",
+                "SCSI_VENDOR_ENC": "QEMU\\x20\\x20\\x20\\x20",
+                "SUBSYSTEM": "block",
+                "TAGS": ":uaccess:seat:systemd:",
+                "USEC_INITIALIZED": "1039027",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "bdi": null,
+                    "capability": "119",
+                    "dev": "11:0",
+                    "device": null,
+                    "discard_alignment": "0",
+                    "events": "media_change eject_request",
+                    "events_async": "",
+                    "events_poll_msecs": "-1",
+                    "ext_range": "1",
+                    "hidden": "0",
+                    "inflight": "       0        0",
+                    "range": "1",
+                    "removable": "1",
+                    "ro": "0",
+                    "size": "1295249408",
+                    "stat": "   11828       68  2503437     3205        0        0        0        0        0     6268     3205        0        0        0        0        0        0",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=11\nMINOR=0\nDEVNAME=sr0\nDEVTYPE=disk"
+                },
+                "partitiontable": {
+                    "device": "/dev/sr0",
+                    "id": "0x00000000",
+                    "label": "dos",
+                    "partitions": [
+                        {
+                            "node": "/dev/sr0p1",
+                            "size": 632445,
+                            "start": 1,
+                            "type": "ee"
+                        },
+                        {
+                            "bootable": true,
+                            "node": "/dev/sr0p2",
+                            "size": 1,
+                            "start": 0,
+                            "type": "0"
+                        }
+                    ],
+                    "sectorsize": 2048,
+                    "unit": "sectors"
+                }
+            }
+        },
+        "dasd": {},
+        "dmcrypt": {},
+        "filesystem": {
+            "/dev/sda1": {
+                "TYPE": "vfat",
+                "USAGE": "filesystem",
+                "UUID": "BB70-EF00",
+                "UUID_ENC": "BB70-EF00",
+                "VERSION": "FAT32"
+            },
+            "/dev/sda2": {
+                "TYPE": "ext4",
+                "USAGE": "filesystem",
+                "UUID": "9f5a85fc-d4aa-4f2f-a9cb-7d7666ded764",
+                "UUID_ENC": "9f5a85fc-d4aa-4f2f-a9cb-7d7666ded764",
+                "VERSION": "1.0"
+            },
+            "/dev/sda3": {
+                "TYPE": "ext4",
+                "USAGE": "filesystem",
+                "UUID": "19e681fc-9577-4cfc-96ea-ebfebaa3aba6",
+                "UUID_ENC": "19e681fc-9577-4cfc-96ea-ebfebaa3aba6",
+                "VERSION": "1.0"
+            },
+            "/dev/sr0": {
+                "BOOT_SYSTEM_ID": "EL\\x20TORITO\\x20SPECIFICATION",
+                "DATA_PREPARER_ID": "XORRISO-1.5.2\\x202019.10.26.180001\\x2c\\x20LIBISOBURN-1.5.2\\x2c\\x20LIBISOFS-1.5.2\\x2c\\x20LIBBURN-1.5.2",
+                "LABEL": "Ubuntu-Server_22.04_LTS_amd64",
+                "LABEL_ENC": "Ubuntu-Server\\x2022.04\\x20LTS\\x20amd64",
+                "TYPE": "iso9660",
+                "USAGE": "filesystem",
+                "UUID": "2022-01-06-11-11-55-00",
+                "UUID_ENC": "2022-01-06-11-11-55-00",
+                "VERSION": "Joliet Extension"
+            }
+        },
+        "lvm": {},
+        "mount": [
+            {
+                "children": [
+                    {
+                        "children": [
+                            {
+                                "fstype": "securityfs",
+                                "options": "rw,nosuid,nodev,noexec,relatime",
+                                "source": "securityfs",
+                                "target": "/sys/kernel/security"
+                            },
+                            {
+                                "fstype": "cgroup2",
+                                "options": "rw,nosuid,nodev,noexec,relatime,nsdelegate,memory_recursiveprot",
+                                "source": "cgroup2",
+                                "target": "/sys/fs/cgroup"
+                            },
+                            {
+                                "fstype": "pstore",
+                                "options": "rw,nosuid,nodev,noexec,relatime",
+                                "source": "pstore",
+                                "target": "/sys/fs/pstore"
+                            },
+                            {
+                                "fstype": "efivarfs",
+                                "options": "rw,nosuid,nodev,noexec,relatime",
+                                "source": "efivarfs",
+                                "target": "/sys/firmware/efi/efivars"
+                            },
+                            {
+                                "fstype": "bpf",
+                                "options": "rw,nosuid,nodev,noexec,relatime,mode=700",
+                                "source": "none",
+                                "target": "/sys/fs/bpf"
+                            },
+                            {
+                                "fstype": "debugfs",
+                                "options": "rw,nosuid,nodev,noexec,relatime",
+                                "source": "debugfs",
+                                "target": "/sys/kernel/debug"
+                            },
+                            {
+                                "fstype": "tracefs",
+                                "options": "rw,nosuid,nodev,noexec,relatime",
+                                "source": "tracefs",
+                                "target": "/sys/kernel/tracing"
+                            },
+                            {
+                                "fstype": "fusectl",
+                                "options": "rw,nosuid,nodev,noexec,relatime",
+                                "source": "fusectl",
+                                "target": "/sys/fs/fuse/connections"
+                            },
+                            {
+                                "fstype": "configfs",
+                                "options": "rw,nosuid,nodev,noexec,relatime",
+                                "source": "configfs",
+                                "target": "/sys/kernel/config"
+                            }
+                        ],
+                        "fstype": "sysfs",
+                        "options": "rw,nosuid,nodev,noexec,relatime",
+                        "source": "sysfs",
+                        "target": "/sys"
+                    },
+                    {
+                        "children": [
+                            {
+                                "fstype": "autofs",
+                                "options": "rw,relatime,fd=29,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=14618",
+                                "source": "systemd-1",
+                                "target": "/proc/sys/fs/binfmt_misc"
+                            }
+                        ],
+                        "fstype": "proc",
+                        "options": "rw,nosuid,nodev,noexec,relatime",
+                        "source": "proc",
+                        "target": "/proc"
+                    },
+                    {
+                        "children": [
+                            {
+                                "fstype": "devpts",
+                                "options": "rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000",
+                                "source": "devpts",
+                                "target": "/dev/pts"
+                            },
+                            {
+                                "fstype": "tmpfs",
+                                "options": "rw,nosuid,nodev,inode64",
+                                "source": "tmpfs",
+                                "target": "/dev/shm"
+                            },
+                            {
+                                "fstype": "mqueue",
+                                "options": "rw,nosuid,nodev,noexec,relatime",
+                                "source": "mqueue",
+                                "target": "/dev/mqueue"
+                            },
+                            {
+                                "fstype": "hugetlbfs",
+                                "options": "rw,relatime,pagesize=2M",
+                                "source": "hugetlbfs",
+                                "target": "/dev/hugepages"
+                            }
+                        ],
+                        "fstype": "devtmpfs",
+                        "options": "rw,nosuid,relatime,size=3936268k,nr_inodes=984067,mode=755,inode64",
+                        "source": "udev",
+                        "target": "/dev"
+                    },
+                    {
+                        "children": [
+                            {
+                                "fstype": "tmpfs",
+                                "options": "rw,nosuid,nodev,noexec,relatime,size=5120k,inode64",
+                                "source": "tmpfs",
+                                "target": "/run/lock"
+                            },
+                            {
+                                "fstype": "ramfs",
+                                "options": "ro,nosuid,nodev,noexec,relatime,mode=700",
+                                "source": "none",
+                                "target": "/run/credentials/systemd-sysusers.service"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "fstype": "nsfs",
+                                        "options": "rw",
+                                        "source": "nsfs[mnt:[4026532219]]",
+                                        "target": "/run/snapd/ns/lxd.mnt"
+                                    }
+                                ],
+                                "fstype": "tmpfs",
+                                "options": "rw,nosuid,nodev,noexec,relatime,size=794580k,mode=755,inode64",
+                                "source": "tmpfs[/snapd/ns]",
+                                "target": "/run/snapd/ns"
+                            },
+                            {
+                                "fstype": "tmpfs",
+                                "options": "rw,nosuid,nodev,relatime,size=794576k,nr_inodes=198644,mode=700,uid=999,gid=999,inode64",
+                                "source": "tmpfs",
+                                "target": "/run/user/999"
+                            }
+                        ],
+                        "fstype": "tmpfs",
+                        "options": "rw,nosuid,nodev,noexec,relatime,size=794580k,mode=755,inode64",
+                        "source": "tmpfs",
+                        "target": "/run"
+                    },
+                    {
+                        "fstype": "iso9660",
+                        "options": "ro,noatime,nojoliet,check=s,map=n,blocksize=2048",
+                        "source": "/dev/sr0",
+                        "target": "/cdrom"
+                    },
+                    {
+                        "fstype": "squashfs",
+                        "options": "ro,noatime",
+                        "source": "/dev/loop0",
+                        "target": "/rofs"
+                    },
+                    {
+                        "fstype": "squashfs",
+                        "options": "ro,relatime",
+                        "source": "/dev/loop4",
+                        "target": "/media/minimal"
+                    },
+                    {
+                        "fstype": "squashfs",
+                        "options": "ro,relatime",
+                        "source": "/dev/loop5",
+                        "target": "/media/full"
+                    },
+                    {
+                        "fstype": "overlay",
+                        "options": "ro,relatime,lowerdir=/root/media/full:/root/media/minimal",
+                        "source": "overlay",
+                        "target": "/media/filesystem"
+                    },
+                    {
+                        "fstype": "tmpfs",
+                        "options": "rw,nosuid,nodev,relatime,inode64",
+                        "source": "tmpfs",
+                        "target": "/tmp"
+                    },
+                    {
+                        "fstype": "squashfs",
+                        "options": "ro,nodev,relatime",
+                        "source": "/dev/loop7",
+                        "target": "/snap/core20/1270"
+                    },
+                    {
+                        "fstype": "squashfs",
+                        "options": "ro,nodev,relatime",
+                        "source": "/dev/loop6",
+                        "target": "/snap/lxd/22147"
+                    },
+                    {
+                        "fstype": "squashfs",
+                        "options": "ro,nodev,relatime",
+                        "source": "/dev/loop8",
+                        "target": "/snap/subiquity/2974"
+                    },
+                    {
+                        "fstype": "squashfs",
+                        "options": "ro,nodev,relatime",
+                        "source": "/dev/loop9",
+                        "target": "/snap/snapd/14295"
+                    }
+                ],
+                "fstype": "overlay",
+                "options": "rw,relatime,lowerdir=/ubuntu-server-minimal.ubuntu-server.installer.generic.squashfs:/ubuntu-server-minimal.ubuntu-server.installer.squashfs:/ubuntu-server-minimal.ubuntu-server.squashfs:/ubuntu-server-minimal.squashfs,upperdir=/cow/upper,workdir=/cow/work,xino=off",
+                "source": "/cow",
+                "target": "/"
+            }
+        ],
+        "multipath": {},
+        "raid": {},
+        "zfs": {
+            "zpools": {}
+        }
+    }
+}
