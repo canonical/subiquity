@@ -441,7 +441,7 @@ class HelpMenu(PopUpLauncher):
         self.app.add_global_overlay(stretchy)
 
     def about(self, sender=None):
-        info = lsb_release()
+        info = lsb_release(dry_run=self.app.opts.dry_run)
         if 'LTS' in info['description']:
             template = _(ABOUT_INSTALLER_LTS)
         else:

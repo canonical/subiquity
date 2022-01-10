@@ -16,7 +16,6 @@
 """
 
 import logging
-from typing import Optional
 
 from subiquitycore.async_helpers import schedule_task
 
@@ -56,11 +55,9 @@ class UbuntuAdvantageController(SubiquityTuiController):
 
     async def make_ui(self) -> UbuntuAdvantageView:
         """ Generate the UI, based on the data provided by the model. """
-        path_lsb_release: Optional[str] = None
-        if self.app.opts.dry_run:
-            # In dry-run mode, always pretend to be on LTS
-            path_lsb_release = "examples/lsb-release-focal"
-        if "LTS" not in lsb_release(path_lsb_release)["description"]:
+
+        dry_run: bool = self.app.opts.dry_run
+        if "LTS" not in lsb_release(dry_run=dry_run)["description"]:
             await self.endpoint.skip.POST()
             raise Skip("Not running LTS version")
 

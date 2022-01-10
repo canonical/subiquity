@@ -448,7 +448,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if self.model.bootloader == Bootloader.PREP:
             self.supports_resilient_boot = False
         else:
-            release = lsb_release()['release']
+            release = lsb_release(dry_run=self.app.opts.dry_run)['release']
             self.supports_resilient_boot = release >= '20.04'
         self._start_task = schedule_task(self._start())
 

@@ -111,7 +111,7 @@ def default_loader(is_advanced=False):
     return data
 
 
-def wsl_config_update(config_class, root_dir, default_user=None):
+def wsl_config_update(config_class, root_dir):
     """
     This update the configuration file for the given class.
 
@@ -162,11 +162,6 @@ def wsl_config_update(config_class, root_dir, default_user=None):
                     if config_section not in config:
                         config.add_section(config_section)
                     config[config_section][config_setting] = config_value
-
-        if config_type == "wsl" and default_user is not None:
-            if "user" not in config:
-                config.add_section("user")
-            config["user"]["default"] = default_user
 
         # sort config in ascii order
         for section in config._sections:

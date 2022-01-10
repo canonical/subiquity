@@ -207,7 +207,7 @@ class AptConfigurer:
             if os.path.exists(proxy_path):
                 os.unlink(proxy_path)
 
-        codename = lsb_release()['codename']
+        codename = lsb_release(dry_run=self.app.opts.dry_run)['codename']
 
         write_file(
             self.install_tree.p('etc/apt/sources.list'),

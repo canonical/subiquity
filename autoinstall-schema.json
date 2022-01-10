@@ -260,6 +260,18 @@
                 }
             ]
         },
+        "ubuntu-advantage": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "minLength": 24,
+                    "maxLength": 30,
+                    "pattern": "^C[1-9A-HJ-NP-Za-km-z]+$",
+                    "description": "A valid token starts with a C and is followed by 23 to 29 Base58 characters.\nSee https://pkg.go.dev/github.com/btcsuite/btcutil/base58#CheckEncode"
+                }
+            }
+        },
         "proxy": {
             "type": [
                 "string",

@@ -70,8 +70,10 @@ class KernelController(NonInteractiveController):
                     # Should check this package exists really but
                     # that's a bit tricky until we get cleverer about
                     # the apt config in general.
+                    dry_run: bool = self.app.opts.dry_run
                     package = 'linux-{flavor}-{release}'.format(
-                        flavor=flavor, release=lsb_release()['release'])
+                        flavor=flavor,
+                        release=lsb_release(dry_run=dry_run)['release'])
         self.model.metapkg_name = package
 
     def make_autoinstall(self):
