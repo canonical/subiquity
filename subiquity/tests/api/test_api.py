@@ -735,6 +735,24 @@ class TestOSProbe(TestAPI):
             self.assertEqual(expected, sda1['os'])
 
 
+class TestPartitionTableEditing(TestAPI):
+    @timeout()
+    async def test_add_when_no_space(self):
+        async with start_server('examples/simple.json') as inst:
+            data = {
+                'disk_id': 'disk-sda',
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/',
+                }
+            }
+            await inst.post('/storage/v2/add_partition', data)
+
+            # Adding a second should fail.
+            with self.assertRaises(ClientResponseError, msg=str(data)):
+                data['partition']['mount'] = '/usr'
+                await inst.post('/storage/v2/add_partition', data)
+
 class TestRegression(TestAPI):
     @timeout()
     async def test_edit_not_trigger_boot_device(self):

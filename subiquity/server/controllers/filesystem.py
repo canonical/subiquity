@@ -348,13 +348,17 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise ValueError('add_partition must supply format')
         if data.partition.boot is not None:
             raise ValueError('add_partition does not support changing boot')
-
         disk = self.model._one(id=data.disk_id)
-        size = data.partition.size
-        if size is None or size < 0:
-            size = gaps.largest_gap_size(disk)
+        largest_size = gaps.largest_gap_size(disk)
+        if largest_size == 0:
+            raise ValueError('no space on disk')
+        requested_size = data.partition.size or 0
+        if requested_size > largest_size:
+            raise ValueError('new partition too large')
+        if requested_size < 1:
+            requested_size = largest_size
         spec = {
-            'size': size,
+            'size': requested_size,
             'fstype': data.partition.format,
             'mount': data.partition.mount,
         }
