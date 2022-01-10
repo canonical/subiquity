@@ -31,6 +31,7 @@ log = logging.getLogger('subiquitycore.models.mirror')
 
 
 DEFAULT = {
+    "disable_components": [],
     "preserve_sources_list": False,
     "primary": [
         {
@@ -51,12 +52,9 @@ class MirrorModel(object):
         self.config = copy.deepcopy(DEFAULT)
         self.architecture = get_architecture()
         self.default_mirror = self.get_mirror()
-        self.disable_components = set()
 
     def get_apt_config(self):
-        config = copy.deepcopy(self.config)
-        config['disable_components'] = list(self.disable_components)
-        return config
+        return copy.deepcopy(self.config)
 
     def mirror_is_default(self):
         return self.get_mirror() == self.default_mirror
@@ -76,6 +74,15 @@ class MirrorModel(object):
         config = get_arch_mirrorconfig(
             self.config, "primary", self.architecture)
         config["uri"] = mirror
+
+    def disable_components(self, comps, add):
+        dc = set(self.config.get('disable_components', []))
+        comps = set(comps)
+        if add:
+            dc |= comps
+        else:
+            dc -= comps
+        self.config['disable_components'] = list(dc)
 
     def render(self):
         return {}

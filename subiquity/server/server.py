@@ -165,11 +165,8 @@ class MetaController:
     async def free_only_POST(self, enable: bool) -> None:
         self.free_only = enable
         to_disable = {'restricted', 'multiverse'}
-        if enable:
-            # enabling free only mode means disabling components
-            self.app.base_model.mirror.disable_components |= to_disable
-        else:
-            self.app.base_model.mirror.disable_components -= to_disable
+        # enabling free only mode means disabling components
+        self.app.base_model.mirror.disable_components(to_disable, enable)
 
 
 def get_installer_password_from_cloudinit_log():

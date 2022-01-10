@@ -15,40 +15,60 @@
 
 import unittest
 
+from curtin.config import merge_config
+
 from subiquity.models.mirror import (
     MirrorModel,
     )
 
 
 class TestMirrorModel(unittest.TestCase):
+    def setUp(self):
+        self.model = MirrorModel()
 
     def test_set_country(self):
-        model = MirrorModel()
-        model.set_country("CC")
+        self.model.set_country("CC")
         self.assertIn(
-            model.get_mirror(),
+            self.model.get_mirror(),
             [
                 "http://CC.archive.ubuntu.com/ubuntu",
                 "http://CC.ports.ubuntu.com/ubuntu-ports",
             ])
 
     def test_set_mirror(self):
-        model = MirrorModel()
-        model.set_mirror("http://mymirror.invalid/")
-        self.assertEqual(model.get_mirror(), "http://mymirror.invalid/")
+        self.model.set_mirror("http://mymirror.invalid/")
+        self.assertEqual(self.model.get_mirror(), "http://mymirror.invalid/")
 
     def test_set_country_after_set_mirror(self):
-        model = MirrorModel()
-        model.set_mirror("http://mymirror.invalid/")
-        model.set_country("CC")
-        self.assertEqual(model.get_mirror(), "http://mymirror.invalid/")
+        self.model.set_mirror("http://mymirror.invalid/")
+        self.model.set_country("CC")
+        self.assertEqual(self.model.get_mirror(), "http://mymirror.invalid/")
 
     def test_default_disable_components(self):
-        config = MirrorModel().get_apt_config()
+        config = self.model.get_apt_config()
         self.assertEqual([], config['disable_components'])
 
-    def test_set_disable_components(self):
-        model = MirrorModel()
-        model.disable_components = set(['universe'])
-        config = model.get_apt_config()
-        self.assertEqual(['universe'], config['disable_components'])
+    def test_from_autoinstall(self):
+        # autoinstall loads to the config directly
+        data = {'disable_components': ['non-free']}
+        merge_config(self.model.config, data)
+        config = self.model.get_apt_config()
+        self.assertEqual(['non-free'], config['disable_components'])
+
+    def test_disable_add(self):
+        expected = ['things', 'stuff']
+        self.model.disable_components(expected.copy(), add=True)
+        actual = self.model.get_apt_config()['disable_components']
+        actual.sort()
+        expected.sort()
+        self.assertEqual(expected, actual)
+
+    def test_disable_remove(self):
+        self.model.config['disable_components'] = ['a', 'b', 'things']
+        to_remove = ['things', 'stuff']
+        expected = ['a', 'b']
+        self.model.disable_components(to_remove, add=False)
+        actual = self.model.get_apt_config()['disable_components']
+        actual.sort()
+        expected.sort()
+        self.assertEqual(expected, actual)

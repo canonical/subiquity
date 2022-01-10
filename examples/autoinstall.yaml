@@ -19,6 +19,9 @@ apt:
   primary:
     - arches: [default]
       uri: "http://mymirror.local/repository/Apt/ubuntu/"
+  disable_components:
+    - non-free
+    - restricted
 packages:
   - package1
   - package2
