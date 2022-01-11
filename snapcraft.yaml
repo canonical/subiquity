@@ -114,6 +114,7 @@ parts:
       - python3-requests-unixsocket
       - python3-requests
       - python3-pyudev
+      - ubuntu-advantage-tools
     stage:
       - "*"
       - -bin/python
