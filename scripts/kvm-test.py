@@ -122,6 +122,9 @@ Sample usage:
     kvm-test --install -bo -rfocal
         boot the focal base iso unmodified and run install manually
 
+If DEBOOTSTRAP_PROXY is set, that will be passed to snapcraft to pick up
+packages from a cache.
+
 See 'cfg' in script for expected layout of iso files,
 which can be managed with ~/.kvm-test.yaml''')
 parser.add_argument('-a', '--autoinstall', default=False,
@@ -178,6 +181,13 @@ def parse_args():
         ctx.args.build = True
     if ctx.args.reuse:
         ctx.args.save = True
+
+    ctx.livefs_editor = os.environ.get('LIVEFS_EDITOR')
+    if not ctx.livefs_editor:
+        raise Exception('Obtain a copy of livefs-editor and point ' +
+                        'LIVEFS_EDITOR to it\n'
+                        'https://github.com/mwhudson/livefs-editor')
+
     return ctx
 
 
@@ -226,13 +236,19 @@ def mounter(src, dest):
 
 
 def livefs_edit(ctx, *args):
-    run(['sudo', 'PYTHONPATH=$LIVEFS_EDITOR', 'python3', '-m', 'livefs_edit',
+    livefs_editor = os.environ['LIVEFS_EDITOR']
+    run(['sudo', f'PYTHONPATH={livefs_editor}', 'python3', '-m', 'livefs_edit',
            ctx.baseiso, ctx.iso, *args])
 
 
 def build(ctx):
     remove_if_exists(ctx.iso)
     project = os.path.basename(os.getcwd())
+
+    http_proxy = os.environ.get('DEBOOTSTRAP_PROXY')
+    snapargs = '--debug'
+    if http_proxy:
+        snapargs += f' --http-proxy={http_proxy}'
 
     snap_manager = noop if ctx.args.save else delete_later
     if project == 'subiquity':
@@ -256,14 +272,14 @@ def build(ctx):
             with snap_manager('subiquity_test.snap') as snap:
                 if not ctx.args.reuse:
                     run('snapcraft clean --use-lxd')
-                    run(f'snapcraft snap --use-lxd --output {snap}')
+                    run(f'snapcraft snap --use-lxd --output {snap} {snapargs}')
                 assert_exists(snap)
                 livefs_edit(ctx, '--add-snap-from-store', 'core20', 'stable',
                       '--inject-snap', snap)
     elif project == 'ubuntu-desktop-installer':
         with snap_manager('udi_test.snap') as snap:
             run('snapcraft clean --use-lxd')
-            run(f'snapcraft snap --use-lxd --output {snap}')
+            run(f'snapcraft snap --use-lxd --output {snap} {snapargs}')
             assert_exists(snap)
             run(f'sudo ./scripts/inject-snap {ctx.baseiso} {ctx.iso} {snap}')
     else:
@@ -301,7 +317,7 @@ def drive(path, format='qcow2'):
     if serial:
         kwargs.append(f'serial={serial}')
 
-    return '-drive ' + ','.join(kwargs)
+    return ['-drive', ','.join(kwargs)]
 
 
 class PortFinder:
@@ -370,7 +386,8 @@ def install(ctx):
         if ctx.args.overwrite:
             os.remove(ctx.target)
         else:
-            raise Exception('refusing to overwrite existing image')
+            raise Exception('refusing to overwrite existing image, use the ' +
+                            '-o option to allow overwriting')
 
     with tempfile.TemporaryDirectory() as tempdir:
         mntdir = f'{tempdir}/mnt'
@@ -395,13 +412,13 @@ def install(ctx):
         if ctx.args.autoinstall or ctx.args.autoinstall_file:
             if ctx.args.autoinstall_file:
                 ctx.cloudconfig = ctx.args.autoinstall_file.read()
-            kvm.append(drive(create_seed(ctx.cloudconfig, tempdir), 'raw'))
+            kvm.extend(drive(create_seed(ctx.cloudconfig, tempdir), 'raw'))
             appends.append('autoinstall')
 
         if ctx.args.update:
             appends.append('subiquity-channel=' + ctx.args.update)
 
-        kvm.append(drive(ctx.target))
+        kvm.extend(drive(ctx.target))
         if not os.path.exists(ctx.target) or ctx.args.overwrite:
             run(f'qemu-img create -f qcow2 {ctx.target} {ctx.args.disksize}')
 
@@ -424,7 +441,7 @@ def boot(ctx):
         target = ctx.args.img
 
     kvm = kvm_common(ctx)
-    kvm.append(target)
+    kvm.extend(drive(target))
     run(kvm)
 
 
