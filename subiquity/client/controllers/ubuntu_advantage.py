@@ -16,6 +16,7 @@
 """
 
 import logging
+import os
 
 from subiquitycore.async_helpers import schedule_task
 
@@ -49,7 +50,12 @@ class UbuntuAdvantageController(SubiquityTuiController):
         if app.opts.dry_run:
             strategy = MockedUAInterfaceStrategy(scale_factor=app.scale_factor)
         else:
-            strategy = UAClientUAInterfaceStrategy()
+            # Make sure we execute `$PYTHON "$SNAP/usr/bin/ubuntu-advantage"`.
+            executable = (
+                os.environ["PYTHON"],
+                os.path.join(os.environ["SNAP"], "usr/bin/ubuntu-advantage"),
+            )
+            strategy = UAClientUAInterfaceStrategy(executable=executable)
         self.ua_interface = UAInterface(strategy)
         super().__init__(app)
 
