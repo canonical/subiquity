@@ -40,6 +40,7 @@ iso:
     default: edge
 '''
 
+
 def salted_crypt(plaintext_password):
     # match subiquity documentation
     salt = '$6$exDY1mhS4KUYCE/2'
@@ -238,7 +239,7 @@ def mounter(src, dest):
 def livefs_edit(ctx, *args):
     livefs_editor = os.environ['LIVEFS_EDITOR']
     run(['sudo', f'PYTHONPATH={livefs_editor}', 'python3', '-m', 'livefs_edit',
-           ctx.baseiso, ctx.iso, *args])
+         ctx.baseiso, ctx.iso, *args])
 
 
 def build(ctx):
@@ -275,7 +276,7 @@ def build(ctx):
                     run(f'snapcraft snap --use-lxd --output {snap} {snapargs}')
                 assert_exists(snap)
                 livefs_edit(ctx, '--add-snap-from-store', 'core20', 'stable',
-                      '--inject-snap', snap)
+                            '--inject-snap', snap)
     elif project == 'ubuntu-desktop-installer':
         with snap_manager('udi_test.snap') as snap:
             run('snapcraft clean --use-lxd')
