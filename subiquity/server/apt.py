@@ -15,6 +15,7 @@
 
 import datetime
 import functools
+import logging
 import os
 import shutil
 import tempfile
@@ -28,6 +29,8 @@ from subiquitycore.lsb_release import lsb_release
 from subiquitycore.utils import arun_command
 
 from subiquity.server.curtin import run_curtin_command
+
+log = logging.getLogger('subiquity.server.apt')
 
 
 class _MountBase:
@@ -75,7 +78,7 @@ def _lowerdir_for_mnt(mnt):
 def _lowerdir_for_ovmnt(ovmnt):
     # One cannot indefinitely stack overlayfses so construct an
     # explicit list of the layers of the overlayfs.
-    return lowerdir_for(ovmnt.lowers + [ovmnt.upperdir])
+    return lowerdir_for([ovmnt.lowers, ovmnt.upperdir])
 
 
 @lowerdir_for.register(list)
