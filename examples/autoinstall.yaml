@@ -22,6 +22,9 @@ apt:
   disable_components:
     - non-free
     - restricted
+  preferences:
+    - {package: "python3-*", pin: "origin *ubuntu.com*", pin-priority: 200}
+    - {package: "python-*", pin: "origin *ubuntu.com*", pin-priority: -1}
 packages:
   - package1
   - package2

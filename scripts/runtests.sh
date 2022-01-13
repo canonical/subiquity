@@ -168,7 +168,11 @@ timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoi
                                --source-catalog=examples/install-sources.yaml"
 validate
 python3 scripts/check-yaml-fields.py .subiquity/var/log/installer/subiquity-curtin-apt.conf \
-        apt.disable_components='[non-free, restricted]'
+        apt.disable_components='[non-free, restricted]' \
+        apt.preferences[0].pin-priority=200 \
+        apt.preferences[0].pin='"origin *ubuntu.com*"' \
+        apt.preferences[1].package='"python-*"' \
+        apt.preferences[1].pin-priority=-1
 python3 scripts/check-yaml-fields.py .subiquity/var/log/installer/subiquity-curtin-install.conf \
         debconf_selections.subiquity='"eek"' \
         storage.config[-1].options='"errors=remount-ro"'
