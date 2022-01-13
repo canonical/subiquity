@@ -431,8 +431,7 @@ def install(ctx):
                 # kernel / initrd
                 kvm.extend(('-kernel', f'{mntdir}/casper/vmlinuz'))
                 kvm.extend(('-initrd', get_initrd(mntdir)))
-                toappend = ' '.join(appends)
-                kvm.extend(('-append', f'"{toappend}"'))
+                kvm.extend(('-append', ' '.join(appends)))
                 run(kvm)
         else:
             run(kvm)
