@@ -246,8 +246,8 @@ def build(ctx):
     remove_if_exists(ctx.iso)
     project = os.path.basename(os.getcwd())
 
-    http_proxy = os.environ.get('DEBOOTSTRAP_PROXY')
     snapargs = '--debug'
+    http_proxy = os.environ.get('DEBOOTSTRAP_PROXY')
     if http_proxy:
         snapargs += f' --http-proxy={http_proxy}'
 
