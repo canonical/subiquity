@@ -207,14 +207,21 @@ class ShowServicesWidget(Stretchy):
         ok = ok_btn(label=_("OK"), on_press=self.ok)
 
         title = _("Available Services")
-        header = _("List of services that will be enabled through your "
+        header = _("List of services that are available through your "
                    "Ubuntu Advantage subscription:")
 
-        widgets: List[Widget] = [Text(header)]
-        widgets.extend([Text(f"* {svc['description']}") for svc in services])
-        widgets.append(button_pile([ok]))
+        widgets: List[Widget] = [
+            Text(header),
+            Text(""),
+            Pile([Text(f"* {svc['description']}") for svc in services]),
+            Text(""),
+            Text("Once the installation has finished, you can enable these "
+                 "services using the `ua` command-line tool."),
+            Text(""),
+            button_pile([ok]),
+        ]
 
-        super().__init__(title, widgets, 0, 0)
+        super().__init__(title, widgets, 2, 6)
 
     def ok(self, sender) -> None:
         """ Close the overlay and submit the token. """
@@ -233,9 +240,10 @@ class ContinueAnywayWidget(Stretchy):
         widgets = [
             Text("Unable to check your subscription information."
                  " Do you want to go back or continue anyway?"),
+            Text(""),
             button_pile([back, cont]),
             ]
-        super().__init__("Unknown error", widgets, 0, 0)
+        super().__init__("Unknown error", widgets, 0, 2)
 
     def back(self, sender) -> None:
         """ Close the overlay. """
