@@ -134,7 +134,7 @@ class MirrorController(SubiquityController):
 
     async def _apply_apt_config(self):
         if self.apt_configurer is not None:
-            self.apt_configurer.cleanup()
+            await self.apt_configurer.cleanup()
         self.apt_configurer = get_apt_configurer(
             self.app, self.app.controllers.Source.source_path)
         await self.apt_configurer.apply_apt_config(self.context)
