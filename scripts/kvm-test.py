@@ -20,6 +20,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+from typing import Tuple
 import yaml
 
 
@@ -307,7 +308,8 @@ def create_seed(cloudconfig, tempdir):
     return seed
 
 
-def drive(path, format='qcow2'):
+def drive(path, format='qcow2') -> Tuple[str, str]:
+    """ Return a tuple (-drive, <options>) that can be passed to kvm """
     kwargs = []
     serial = None
     cparam = 'writethrough'
@@ -318,7 +320,7 @@ def drive(path, format='qcow2'):
     if serial:
         kwargs.append(f'serial={serial}')
 
-    return ['-drive', ','.join(kwargs)]
+    return ('-drive', ','.join(kwargs))
 
 
 class PortFinder:
@@ -429,8 +431,7 @@ def install(ctx):
                 # kernel / initrd
                 kvm.extend(('-kernel', f'{mntdir}/casper/vmlinuz'))
                 kvm.extend(('-initrd', get_initrd(mntdir)))
-                toappend = ' '.join(appends)
-                kvm.extend(('-append', f'"{toappend}"'))
+                kvm.extend(('-append', ' '.join(appends)))
                 run(kvm)
         else:
             run(kvm)
