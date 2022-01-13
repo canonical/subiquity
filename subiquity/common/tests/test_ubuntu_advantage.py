@@ -58,6 +58,22 @@ class TestMockedUAInterfaceStrategy(unittest.TestCase):
 class TestUAClientUAInterfaceStrategy(unittest.TestCase):
     arun_command = "subiquity.common.ubuntu_advantage.utils.arun_command"
 
+    def test_init(self):
+        # Default initializer.
+        strategy = UAClientUAInterfaceStrategy()
+        self.assertEqual(strategy.executable, ["ubuntu-advantage"])
+
+        # Initialize with a mere path.
+        strategy = UAClientUAInterfaceStrategy("/usr/bin/ubuntu-advantage")
+        self.assertEqual(strategy.executable, ["/usr/bin/ubuntu-advantage"])
+
+        # Initialize with a path + interpreter.
+        strategy = UAClientUAInterfaceStrategy(
+            ("python3", "/usr/bin/ubuntu-advantage")
+        )
+        self.assertEqual(strategy.executable,
+                         ["python3", "/usr/bin/ubuntu-advantage"])
+
     def test_query_info_succeeded(self):
         strategy = UAClientUAInterfaceStrategy()
         command = (

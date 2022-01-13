@@ -20,6 +20,7 @@ from datetime import datetime as dt
 import json
 import logging
 from subprocess import CalledProcessError, CompletedProcess
+from typing import List, Sequence, Union
 import asyncio
 
 from subiquitycore import utils
@@ -96,12 +97,24 @@ class MockedUAInterfaceStrategy(UAInterfaceStrategy):
 class UAClientUAInterfaceStrategy(UAInterfaceStrategy):
     """ Strategy that relies on UA client script to retrieve the information.
     """
+    Executable = Union[str, Sequence[str]]
+
+    def __init__(self, executable: Executable = "ubuntu-advantage") -> None:
+        """ Initialize the strategy using the path to the ubuntu-advantage
+        executable we want to use. The executable can be specified as a
+        sequence of strings so that we can specify the interpret to use as
+        well.
+        """
+        self.executable: List[str] = \
+            [executable] if isinstance(executable, str) else list(executable)
+        super().__init__()
+
     async def query_info(self, token: str) -> dict:
         """ Return the subscription info associated with the supplied
-        UA token. The information will be queried using UA client.
+        UA token. The information will be queried using the UA client
+        executable passed to the initializer.
         """
-        command = (
-            "ubuntu-advantage",
+        command = tuple(self.executable) + (
             "status",
             "--format", "json",
             "--simulate-with-token", token,
