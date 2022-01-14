@@ -58,7 +58,7 @@ class CheckSubscriptionError(Exception):
 class UAInterfaceStrategy(ABC):
     """ Strategy to query information about a UA subscription. """
     @abstractmethod
-    async def query_info(token: str) -> dict:
+    async def query_info(self, token: str) -> dict:
         """ Return information about the UA subscription based on the token
         provided.  """
 
