@@ -13,11 +13,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import datetime
 import functools
 import logging
 import os
 import shutil
+import subprocess
 import tempfile
 
 from curtin.config import merge_config
@@ -148,7 +150,15 @@ class AptConfigurer:
         return m
 
     async def unmount(self, mountpoint):
-        await self.app.command_runner.run(['umount', mountpoint])
+        for _ in range(5):
+            try:
+                await self.app.command_runner.run(['umount', mountpoint])
+            except subprocess.CalledProcessError as cpe:
+                _cpe = cpe
+                await asyncio.sleep(1)
+            else:
+                return
+        raise _cpe
 
     async def setup_overlay(self, lowers):
         tdir = self.tdir()
