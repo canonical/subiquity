@@ -43,3 +43,7 @@ class TestSnapVersion(unittest.TestCase):
         # Make sure we ignore the build ID when the patch version is different
         self.assertLess(SnapVersion.from_string("21.10.2+git255.deadbeef"),
                         SnapVersion.from_string("21.10.3+git135.deadbeef"))
+
+        snap_version = SnapVersion.from_string("21.10.02")
+        self.assertFalse(snap_version < snap_version)
+        self.assertFalse(snap_version > snap_version)

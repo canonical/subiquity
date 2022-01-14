@@ -76,9 +76,9 @@ class SnapVersion:
         elif self.patch < other.patch:
             return False
 
-        if self.git_build_id is not None and other.git_build_id is None:
-            return True
-        elif self.git_build_id is None and other.git_build_id is not None:
-            return False
+        build_id_self = \
+            float("-inf") if self.git_build_id is None else self.git_build_id
+        build_id_other = \
+            float("-inf") if other.git_build_id is None else other.git_build_id
 
-        return self.git_build_id > other.git_build_id
+        return build_id_self > build_id_other
