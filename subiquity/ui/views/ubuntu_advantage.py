@@ -189,7 +189,7 @@ class UbuntuAdvantageView(BaseView):
         self.remove_overlay()
         self.show_stretchy_overlay(ContinueAnywayWidget(self))
 
-    def show_available_services(self, services: dict) -> None:
+    def show_available_services(self, services: List[dict]) -> None:
         """ Display an overlay with the list of services that will be enabled
         via Ubuntu Advantage subscription. After the user confirms, the next we
         will quit the current view and move on. """
@@ -199,7 +199,8 @@ class UbuntuAdvantageView(BaseView):
 
 class ShowServicesWidget(Stretchy):
     """ Widget to show the available services for UA subscription. """
-    def __init__(self, parent: UbuntuAdvantageView, services: list):
+    def __init__(self, parent: UbuntuAdvantageView,
+                 services: List[dict]) -> None:
         """ Initializes the widget by including the list of services as a
         bullet-point list. """
         self.parent = parent
