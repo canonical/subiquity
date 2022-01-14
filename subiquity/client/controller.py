@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from typing import Optional
 
 from subiquitycore.tuicontroller import (
     TuiController,
@@ -28,7 +29,7 @@ class Confirm(Exception):
 
 class SubiquityTuiController(TuiController):
 
-    endpoint_name = None
+    endpoint_name: Optional[str] = None
 
     def __init__(self, app):
         super().__init__(app)

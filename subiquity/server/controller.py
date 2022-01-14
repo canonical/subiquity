@@ -16,6 +16,7 @@
 import json
 import logging
 import os
+from typing import Any, Optional
 
 import jsonschema
 
@@ -32,10 +33,10 @@ log = logging.getLogger("subiquity.server.controller")
 
 class SubiquityController(BaseController):
 
-    autoinstall_key = None
-    autoinstall_schema = None
-    autoinstall_default = None
-    endpoint = None
+    autoinstall_key: Optional[str] = None
+    autoinstall_schema: Any = None
+    autoinstall_default: Any = None
+    endpoint: Optional[type] = None
 
     def __init__(self, app):
         super().__init__(app)

@@ -15,6 +15,7 @@
 
 from abc import ABC
 import logging
+from typing import Optional
 
 log = logging.getLogger("subiquitycore.controller")
 
@@ -22,7 +23,7 @@ log = logging.getLogger("subiquitycore.controller")
 class BaseController(ABC):
     """Base class for controllers."""
 
-    model_name = None
+    model_name: Optional[str] = None
 
     def __init__(self, app):
         self.name = type(self).__name__[:-len("Controller")]
