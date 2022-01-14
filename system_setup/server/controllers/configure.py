@@ -16,7 +16,7 @@ import os
 import shutil
 import logging
 import re
-from typing import Tuple, List
+from typing import Optional, Tuple, List
 import apt
 import apt_pkg
 
@@ -117,7 +117,8 @@ class ConfigureController(SubiquityController):
 
         return True
 
-    async def __recommended_language_packs(self, lang, env) -> List[str]:
+    async def __recommended_language_packs(self, lang, env) \
+            -> Optional[List[str]]:
         """ Return a list of package names recommended by
          check-language-support (or a fake list if in dryrun).
          List returned can be empty on success. None for failure.
