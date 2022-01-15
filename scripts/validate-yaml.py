@@ -14,7 +14,10 @@ class StorageChecker:
     def _check_partition(self, action):
         assert 'device' in action
         assert 'size' in action
-        assert action['size'] % 512 == 0
+        size = str(action['size'])
+        size_units = ['B', 'KB', 'K', 'MB', 'M', 'GB', 'G', 'TB', 'T', '%']
+        valid_unit = any(unit in size for unit in size_units)
+        assert size == '-1' or valid_unit or int(size) % 512 == 0
         assert 'number' in action
         assert action['device'] in self.actions
         assert 'ptable' in self.actions[action['device']]
@@ -30,7 +33,7 @@ class StorageChecker:
     def _check_mount(self, action):
         assert 'device' in action
         assert action['device'] in self.actions
-        if not action.get('path'):
+        if not action.get('path') or action.get('path') == 'none':
             assert self.actions[action['device']]['fstype'] == "swap"
             self.unmounted_swap_ids.remove(action['device'])
         else:
