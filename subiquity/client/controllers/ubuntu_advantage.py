@@ -16,21 +16,14 @@
 """
 
 import logging
-import os
 
 from subiquitycore.async_helpers import schedule_task
 
 from subiquity.client.controller import SubiquityTuiController
-from subiquity.common.ubuntu_advantage import (
-    InvalidUATokenError,
-    ExpiredUATokenError,
-    CheckSubscriptionError,
-    UAInterface,
-    UAInterfaceStrategy,
-    MockedUAInterfaceStrategy,
-    UAClientUAInterfaceStrategy,
-)
-from subiquity.common.types import UbuntuAdvantageInfo
+from subiquity.common.types import (
+    UbuntuAdvantageInfo,
+    UbuntuAdvantageCheckTokenStatus as TokenStatus,
+    )
 from subiquity.ui.views.ubuntu_advantage import UbuntuAdvantageView
 
 from subiquitycore.lsb_release import lsb_release
@@ -43,21 +36,6 @@ class UbuntuAdvantageController(SubiquityTuiController):
     """ Client-side controller for Ubuntu Advantage configuration. """
 
     endpoint_name = "ubuntu_advantage"
-
-    def __init__(self, app):
-        """ Initializer for client-side UA controller. """
-        strategy: UAInterfaceStrategy
-        if app.opts.dry_run:
-            strategy = MockedUAInterfaceStrategy(scale_factor=app.scale_factor)
-        else:
-            # Make sure we execute `$PYTHON "$SNAP/usr/bin/ubuntu-advantage"`.
-            executable = (
-                os.environ["PYTHON"],
-                os.path.join(os.environ["SNAP"], "usr/bin/ubuntu-advantage"),
-            )
-            strategy = UAClientUAInterfaceStrategy(executable=executable)
-        self.ua_interface = UAInterface(strategy)
-        super().__init__(app)
 
     async def make_ui(self) -> UbuntuAdvantageView:
         """ Generate the UI, based on the data provided by the model. """
@@ -77,21 +55,19 @@ class UbuntuAdvantageController(SubiquityTuiController):
     def check_token(self, token: str):
         """ Asynchronously check the token passed as an argument. """
         async def inner() -> None:
-            try:
-                svcs = await \
-                        self.ua_interface.get_activable_services(token=token)
-            except InvalidUATokenError:
+            answer = await self.endpoint.check_token.GET(token)
+            if answer.status == TokenStatus.INVALID_TOKEN:
                 if isinstance(self.ui.body, UbuntuAdvantageView):
                     self.ui.body.show_invalid_token()
-            except ExpiredUATokenError:
+            elif answer.status == TokenStatus.EXPIRED_TOKEN:
                 if isinstance(self.ui.body, UbuntuAdvantageView):
                     self.ui.body.show_expired_token()
-            except CheckSubscriptionError:
+            elif answer.status == TokenStatus.UNKNOWN_ERROR:
                 if isinstance(self.ui.body, UbuntuAdvantageView):
                     self.ui.body.show_unknown_error()
             else:
                 if isinstance(self.ui.body, UbuntuAdvantageView):
-                    self.ui.body.show_activable_services(svcs)
+                    self.ui.body.show_activable_services(answer.services)
 
         self._check_task = schedule_task(inner())
 

@@ -394,6 +394,20 @@ class UbuntuAdvantageInfo:
     token: str
 
 
+class UbuntuAdvantageCheckTokenStatus(enum.Enum):
+    VALID_TOKEN = enum.auto()
+    INVALID_TOKEN = enum.auto()
+    EXPIRED_TOKEN = enum.auto()
+    UNKNOWN_ERROR = enum.auto()
+
+
+@attr.s(auto_attribs=True)
+class UbuntuAdvantageCheckTokenAnswer:
+    status: UbuntuAdvantageCheckTokenStatus
+
+    services: Optional[List[dict]]
+
+
 class ShutdownMode(enum.Enum):
     REBOOT = enum.auto()
     POWEROFF = enum.auto()
