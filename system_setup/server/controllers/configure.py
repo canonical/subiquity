@@ -139,7 +139,18 @@ class ConfigureController(SubiquityController):
         clsLang = langCodes[0]
         packages = []
         # Running that command doesn't require root.
-        cp = await arun_command([clsCommand, "-l", clsLang], env=env)
+        snap_dir = os.getenv("SNAP")
+        if snap_dir is None:
+            snap_dir = "/"
+
+        data_dir = os.path.join(snap_dir, "usr/share/language-selector")
+        if not os.path.exists(data_dir):
+            log.error("Misconfigured snap environment pointed L-S-C data dir"
+                      " to %s", data_dir)
+            return None
+
+        cp = await arun_command([clsCommand, "-d", data_dir, "-l", clsLang],
+                                env=env)
         if cp.returncode != 0:
             log.error('Command "%s" failed with return code %d',
                       cp.args, cp.returncode)
