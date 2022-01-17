@@ -289,6 +289,7 @@ class ConfigureController(SubiquityController):
         create_user_base = []
         assign_grp_base = []
         usergroups_list = get_users_and_groups()
+        etc_dir = "/etc"  # default if not dryrun.
         if self.app.opts.dry_run:
             log.debug("creating a mock-up env for user %s", username)
             # creating folders and files for dryrun
