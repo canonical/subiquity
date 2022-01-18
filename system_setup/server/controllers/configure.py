@@ -85,7 +85,8 @@ class ConfigureController(SubiquityController):
 
     def __update_locale_cmd(self, lang) -> List[str]:
         """ Add mocking cli to update-locale if in dry-run."""
-        updateLocCmd = ["update-locale", "LANG={}".format(lang)]
+        updateLocCmd = ["update-locale", "LANG={}".format(lang),
+                        "--no-checks"]
         if not self.app.opts.dry_run:
             return updateLocCmd
 
@@ -93,8 +94,7 @@ class ConfigureController(SubiquityController):
                                      "etc/default/")
         os.makedirs(defaultLocDir, exist_ok=True)
         updateLocCmd += ["--locale-file",
-                         os.path.join(defaultLocDir, "locale"),
-                         "--no-checks"]
+                         os.path.join(defaultLocDir, "locale")]
         return updateLocCmd
 
     async def _activate_locale(self, lang, env) -> bool:
