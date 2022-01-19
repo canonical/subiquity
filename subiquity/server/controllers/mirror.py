@@ -133,8 +133,9 @@ class MirrorController(SubiquityController):
         self._apply_apt_config_task.start_sync()
 
     async def _apply_apt_config(self):
-        if self.apt_configurer is not None:
-            await self.apt_configurer.cleanup()
+        # if self.apt_configurer is not None:
+        # FIXME disabled until we can sort out umount
+        # await self.apt_configurer.cleanup()
         self.apt_configurer = get_apt_configurer(
             self.app, self.app.controllers.Source.source_path)
         await self.apt_configurer.apply_apt_config(self.context)
