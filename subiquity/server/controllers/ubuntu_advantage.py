@@ -57,6 +57,8 @@ class UbuntuAdvantageController(SubiquityController):
         """ Return a dictionary that can be used as an autoinstall snippet for
         Ubuntu Advantage.
         """
+        if not self.model.token:
+            return {}
         return {
             "token": self.model.token
         }
