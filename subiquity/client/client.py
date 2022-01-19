@@ -21,6 +21,7 @@ import os
 import signal
 import sys
 import traceback
+from typing import Optional
 
 import aiohttp
 
@@ -82,9 +83,9 @@ installed system will be mounted at /target.""")
 
 class SubiquityClient(TuiApplication):
 
-    snapd_socket_path = '/run/snapd.socket'
+    snapd_socket_path: Optional[str] = '/run/snapd.socket'
 
-    variant = None
+    variant: Optional[str] = None
     cmdline = ['snap', 'run', 'subiquity']
     dryrun_cmdline_module = 'subiquity.cmd.tui'
 
