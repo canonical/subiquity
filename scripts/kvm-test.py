@@ -230,11 +230,11 @@ def noop(path):
 
 @contextlib.contextmanager
 def mounter(src, dest):
-    run(f'sudo mount -r {src} {dest}')
+    run(["fuseiso", src, dest])
     try:
         yield
     finally:
-        run(f'sudo umount {dest}')
+        run(["fusermount", "-u", dest])
 
 
 def livefs_edit(ctx, *args):
