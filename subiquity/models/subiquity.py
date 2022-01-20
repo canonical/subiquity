@@ -18,6 +18,7 @@ from collections import OrderedDict
 import functools
 import logging
 import os
+from typing import Set
 import uuid
 import yaml
 
@@ -190,23 +191,27 @@ class SubiquityModel:
             self._postinstall_event.set()
 
     def _configured(self, model_name):
+        """ Add the model to the set of models that have been configured. If
+        there is no more model to configure in the relevant section(s) (i.e.,
+        INSTALL or POSTINSTALL), we trigger the associated event(s).  """
+        def log_and_trigger(stage: str, names: Set[str],
+                            event: asyncio.Event) -> None:
+            unconfigured = names - self._configured_names
+            log.debug(
+                "model %s for %s stage is configured, to go %s",
+                model_name, stage, unconfigured)
+            if not unconfigured:
+                event.set()
+
         self._configured_names.add(model_name)
         if model_name in self._cur_install_model_names:
-            stage = 'install'
-            names = self._cur_install_model_names
-            event = self._install_event
-        elif model_name in self._cur_postinstall_model_names:
-            stage = 'postinstall'
-            names = self._cur_postinstall_model_names
-            event = self._postinstall_event
-        else:
-            return
-        unconfigured = names - self._configured_names
-        log.debug(
-            "model %s for %s stage is configured, to go %s",
-            model_name, stage, unconfigured)
-        if not unconfigured:
-            event.set()
+            log_and_trigger(stage="install",
+                            names=self._cur_install_model_names,
+                            event=self._install_event)
+        if model_name in self._cur_postinstall_model_names:
+            log_and_trigger(stage="postinstall",
+                            names=self._cur_postinstall_model_names,
+                            event=self._postinstall_event)
 
     async def wait_install(self):
         if len(self._cur_install_model_names) == 0:
