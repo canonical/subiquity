@@ -174,8 +174,6 @@ parser.add_argument('--install', default=False, action='store_true',
                     iso, use a base iso, or reuse previous test iso''')
 parser.add_argument('--boot', default=False, action='store_true',
                     help='boot test image')
-parser.add_argument('--use-fuse', default=False, action='store_true',
-                    help="use FUSE to mount ISO (doesn't require root)")
 
 
 def parse_args():
@@ -231,23 +229,12 @@ def noop(path):
 
 
 @contextlib.contextmanager
-def mounter(src, dest, use_fuse: bool = False):
-    commands_with_fuse = (
-        ["fuseiso", src, dest],
-        ["fusermount", "-u", dest],
-    )
-    commands_without_fuse = (
-        f'sudo mount -r {src} {dest}',
-        f'sudo umount {dest}',
-    )
-
-    mount, unmount = commands_with_fuse if use_fuse else commands_without_fuse
-
-    run(mount)
+def mounter(src, dest):
+    run(["fuseiso", src, dest])
     try:
         yield
     finally:
-        run(unmount)
+        run(["fusermount", "-u", dest])
 
 
 def livefs_edit(ctx, *args):
@@ -439,7 +426,7 @@ def install(ctx):
             run(f'qemu-img create -f qcow2 {ctx.target} {ctx.args.disksize}')
 
         if len(appends) > 0:
-            with mounter(iso, mntdir, ctx.args.use_fuse):
+            with mounter(iso, mntdir):
                 # if we're passing kernel args, we need to manually specify
                 # kernel / initrd
                 kvm.extend(('-kernel', f'{mntdir}/casper/vmlinuz'))
