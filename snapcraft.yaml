@@ -19,6 +19,8 @@ apps:
     daemon: simple
     restart-condition: always
     environment:
+      OS_PROBER_LIB: $SNAP/usr/lib
+      OS_PROBER_SHARE: $SNAP/usr/share
       PYTHONIOENCODING: utf-8
       SUBIQUITY_ROOT: $SNAP
       PYTHON: $SNAP/usr/bin/python3.8
@@ -32,6 +34,11 @@ apps:
       PYTHONIOENCODING: utf-8
       SUBIQUITY_ROOT: $SNAP
       PYTHON: $SNAP/usr/bin/python3.8
+  os-prober:
+    command: usr/bin/os-prober
+    environment:
+      OS_PROBER_LIB: $SNAP/usr/lib
+      OS_PROBER_SHARE: $SNAP/usr/share
 
 parts:
   curtin:
@@ -181,7 +188,7 @@ parts:
       - libnl-route-3-dev
     source: https://github.com/canonical/probert.git
     source-type: git
-    source-commit: 2bb505172b5f97372eb1abd12ced4629e852504b
+    source-commit: 693cd0040307c1390163c013f22fd82c8b27cd6b
     requirements: [requirements.txt]
     stage:
       - "*"
@@ -193,3 +200,10 @@ parts:
       - -lib/python3.8/site-packages/pkg_resources
       - -lib/python3.8/site-packages/setuptools
       - -lib/python3.8/site-packages/wheel*
+
+  os-prober:
+    plugin: nil
+    stage-packages: [os-prober]
+    override-stage: |
+      snapcraftctl stage
+      patch -p3 < $SNAPCRAFT_PROJECT_DIR/snap/local/os-prober-envvar.patch
