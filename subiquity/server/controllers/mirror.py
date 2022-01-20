@@ -84,7 +84,7 @@ class MirrorController(SubiquityController):
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, 'source'), self.on_source)
         self.cc_event = asyncio.Event()
-        self.configured_once = True
+        self.configured_once = False
         self._apt_config_key = None
         self._apply_apt_config_task = SingleInstanceTask(
             self._apply_apt_config)
