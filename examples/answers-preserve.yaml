@@ -26,7 +26,7 @@ Identity:
   # ubuntu
   password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
 UbuntuAdvantage:
-  token: "a1b2c3d4"
+  token: ""
 SSH:
   install_server: true
   pwauth: false

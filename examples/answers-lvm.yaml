@@ -46,7 +46,7 @@ Filesystem:
         mount: /
     - action: done
 UbuntuAdvantage:
-  token: "a1b2c3d4"
+  token: C1NWcZTHLteJXGVMM6YhvHDpGrhyy7
 Identity:
   realname: Ubuntu
   username: ubuntu
