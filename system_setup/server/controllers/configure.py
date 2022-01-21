@@ -85,7 +85,8 @@ class ConfigureController(SubiquityController):
 
     def __update_locale_cmd(self, lang) -> List[str]:
         """ Add mocking cli to update-locale if in dry-run."""
-        updateLocCmd = ["update-locale", "LANG={}".format(lang)]
+        updateLocCmd = ["update-locale", "LANG={}".format(lang),
+                        "--no-checks"]
         if not self.app.opts.dry_run:
             return updateLocCmd
 
@@ -93,8 +94,7 @@ class ConfigureController(SubiquityController):
                                      "etc/default/")
         os.makedirs(defaultLocDir, exist_ok=True)
         updateLocCmd += ["--locale-file",
-                         os.path.join(defaultLocDir, "locale"),
-                         "--no-checks"]
+                         os.path.join(defaultLocDir, "locale")]
         return updateLocCmd
 
     async def _activate_locale(self, lang, env) -> bool:
@@ -140,7 +140,18 @@ class ConfigureController(SubiquityController):
         clsLang = langCodes[0]
         packages = []
         # Running that command doesn't require root.
-        cp = await arun_command([clsCommand, "-l", clsLang], env=env)
+        snap_dir = os.getenv("SNAP")
+        if snap_dir is None:
+            snap_dir = "/"
+
+        data_dir = os.path.join(snap_dir, "usr/share/language-selector")
+        if not os.path.exists(data_dir):
+            log.error("Misconfigured snap environment pointed L-S-C data dir"
+                      " to %s", data_dir)
+            return None
+
+        cp = await arun_command([clsCommand, "-d", data_dir, "-l", clsLang],
+                                env=env)
         if cp.returncode != 0:
             log.error('Command "%s" failed with return code %d',
                       cp.args, cp.returncode)
@@ -290,6 +301,7 @@ class ConfigureController(SubiquityController):
         create_user_base = []
         assign_grp_base = []
         usergroups_list = get_users_and_groups()
+        etc_dir = "/etc"  # default if not dryrun.
         if self.app.opts.dry_run:
             log.debug("creating a mock-up env for user %s", username)
             # creating folders and files for dryrun
