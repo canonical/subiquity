@@ -21,6 +21,7 @@ validate () {
             echo "log file not created"
             exit 1
         fi
+        python3 scripts/validate-autoinstall-user-data.py < .subiquity/var/log/installer/autoinstall-user-data
         if grep passw0rd .subiquity/subiquity-client-debug.log .subiquity/subiquity-server-debug.log | grep -v "Loaded answers" | grep -v "answers_action"; then
             echo "password leaked into log file"
             exit 1
@@ -118,6 +119,7 @@ clean () {
     rm -rf .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg
     rm -rf .subiquity/var/crash
     rm -rf .subiquity/var/cache
+    rm -rf .subiquity/run/subiquity/states
 }
 
 error () {
