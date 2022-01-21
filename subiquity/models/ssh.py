@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from typing import List
 
 log = logging.getLogger("subiquity.models.ssh")
 
@@ -22,7 +23,7 @@ class SSHModel:
 
     def __init__(self):
         self.install_server = False
-        self.authorized_keys = None
+        self.authorized_keys: List[str] = []
         self.pwauth = True
         # Although the generated config just contains the key above,
         # we store the imported id so that we can re-fill the form if
