@@ -201,7 +201,7 @@ parts:
     stage-packages: [os-prober]
     override-stage: |
       snapcraftctl stage
-      for file in $(grep -lr /usr usr|grep -v /usr/share/doc); do
+      for file in $(grep -lr /usr | grep 'usr/[^/]*/[^/]*-probe[sr]'); do
         sed -i 's, \(/usr\), $SNAP\1,' $file
       done
       sed -i 's/mkdir "$tmpmnt"/mkdir -p "$tmpmnt"/' \
