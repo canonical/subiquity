@@ -32,6 +32,8 @@ apps:
       PYTHONIOENCODING: utf-8
       SUBIQUITY_ROOT: $SNAP
       PYTHON: $SNAP/usr/bin/python3.8
+  os-prober:
+    command: usr/bin/os-prober
 
 parts:
   curtin:
