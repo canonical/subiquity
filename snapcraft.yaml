@@ -19,8 +19,6 @@ apps:
     daemon: simple
     restart-condition: always
     environment:
-      OS_PROBER_LIB: $SNAP/usr/lib
-      OS_PROBER_SHARE: $SNAP/usr/share
       PYTHONIOENCODING: utf-8
       SUBIQUITY_ROOT: $SNAP
       PYTHON: $SNAP/usr/bin/python3.8
@@ -36,9 +34,6 @@ apps:
       PYTHON: $SNAP/usr/bin/python3.8
   os-prober:
     command: usr/bin/os-prober
-    environment:
-      OS_PROBER_LIB: $SNAP/usr/lib
-      OS_PROBER_SHARE: $SNAP/usr/share
 
 parts:
   curtin:
@@ -206,4 +201,8 @@ parts:
     stage-packages: [os-prober]
     override-stage: |
       snapcraftctl stage
-      patch -p3 < $SNAPCRAFT_PROJECT_DIR/snap/local/os-prober-envvar.patch
+      for file in $(grep -lr /usr | grep 'usr/[^/]*/[^/]*-probe[sr]'); do
+        sed -i 's, \(/usr\), $SNAP\1,' $file
+      done
+      sed -i 's/mkdir "$tmpmnt"/mkdir -p "$tmpmnt"/' \
+          usr/lib/os-probes/50mounted-tests
