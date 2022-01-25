@@ -62,7 +62,7 @@ class Application:
 
         self.root = '/'
         if opts.dry_run:
-            self.root = '.subiquity'
+            self.root = opts.output_base
         self.state_dir = os.path.join(self.root, 'run', self.project)
         os.makedirs(self.state_path('states'), exist_ok=True)
 

@@ -134,7 +134,7 @@ class BaseNetworkController(BaseController):
         super().__init__(app)
         self.apply_config_task = SingleInstanceTask(self._apply_config)
         if self.opts.dry_run:
-            self.root = os.path.abspath(".subiquity")
+            self.root = os.path.abspath(self.opts.output_base)
             netplan_path = self.netplan_path
             netplan_dir = os.path.dirname(netplan_path)
             if os.path.exists(netplan_dir):

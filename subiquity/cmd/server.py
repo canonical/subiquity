@@ -67,6 +67,10 @@ def make_server_args_parser():
               "list screen."))
     parser.add_argument(
         '--source-catalog', dest='source_catalog', action='store')
+    parser.add_argument(
+        '--output-base', action='store', dest='output_base',
+        default='.subiquity',
+        help='in dryrun, control basedir of files')
     return parser
 
 
@@ -82,10 +86,10 @@ def main():
     if opts.dry_run:
         if opts.snaps_from_examples is None:
             opts.snaps_from_examples = True
-        logdir = ".subiquity"
+        logdir = opts.output_base
     if opts.socket is None:
         if opts.dry_run:
-            opts.socket = '.subiquity/socket'
+            opts.socket = opts.output_base + '/socket'
         else:
             opts.socket = '/run/subiquity/socket'
     os.makedirs(os.path.dirname(opts.socket), exist_ok=True)
