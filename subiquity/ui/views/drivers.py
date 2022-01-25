@@ -13,9 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Install Path
-
-Provides high level options for Ubuntu install
+""" Module defining the view for third-party drivers installation.
 
 """
 import asyncio
@@ -42,6 +40,8 @@ log = logging.getLogger('subiquity.ui.views.drivers')
 
 
 class DriversForm(Form):
+    """ Form that shows a checkbox to configure whether we want to install the
+    available drivers or not. """
 
     cancel_label = _("Back")
 
@@ -69,7 +69,9 @@ class DriversView(BaseView):
         else:
             self.make_main(install)
 
-    def make_waiting(self, install: bool):
+    def make_waiting(self, install: bool) -> None:
+        """ Change the view into a spinner and start waiting for drivers
+        asynchronously. """
         self.spinner = Spinner(self.controller.app.aio_loop, style='dots')
         self.spinner.start()
         rows = [
@@ -84,7 +86,9 @@ class DriversView(BaseView):
         asyncio.create_task(self._wait(install))
         self.status = DriversViewStatus.WAITING
 
-    async def _wait(self, install: bool):
+    async def _wait(self, install: bool) -> None:
+        """ Wait until the "list" of drivers is available and change the view
+        accordingly. """
         has_drivers = await self.controller._wait_drivers()
         self.spinner.stop()
         if has_drivers:
@@ -92,7 +96,10 @@ class DriversView(BaseView):
         else:
             self.make_no_drivers()
 
-    def make_no_drivers(self):
+    def make_no_drivers(self) -> None:
+        """ Change the view into an information page that shows that no
+        third-party drivers are available for installation. """
+
         rows = [Text(_("No applicable third-party drivers were found."))]
         self.cont_btn = ok_btn(
                 _("Continue"),
@@ -101,6 +108,7 @@ class DriversView(BaseView):
         self.status = DriversViewStatus.NO_DRIVERS
 
     def make_main(self, install: bool) -> None:
+        """ Change the view to display the drivers form. """
         self.form = DriversForm(initial={'install': install})
 
         excerpt = _(
