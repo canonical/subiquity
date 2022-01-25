@@ -62,10 +62,10 @@ class DriversController(SubiquityTuiController):
 
         click(view.form.done_btn.base_widget)
 
-    def cancel(self):
+    def cancel(self) -> None:
         self.app.prev_screen()
 
-    def done(self, install):
+    def done(self, install: bool) -> None:
         log.debug("DriversController.done next_screen install=%s", install)
         self.app.next_screen(
                 self.endpoint.POST(DriversPayload(install=install)))
