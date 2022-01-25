@@ -269,13 +269,19 @@ class Partition:
 
 
 @attr.s(auto_attribs=True)
+class Gap:
+    offset: int
+    size: int
+
+
+@attr.s(auto_attribs=True)
 class Disk:
     id: str
     label: str
     type: str
     size: int
     usage_labels: List[str]
-    partitions: List[Partition]
+    partitions: List[Union[Partition, Gap]]
     ok_for_guided: bool
     ptable: Optional[str]
     preserve: bool

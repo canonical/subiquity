@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import aiohttp
 from aiohttp.client_exceptions import ClientResponseError
 import async_timeout
@@ -19,7 +17,7 @@ default_timeout = 10
 
 def find(items, key, value):
     for item in items:
-        if item[key] == value:
+        if key in item and item[key] == value:
             yield item
 
 
@@ -53,7 +51,7 @@ class Client:
     def dumps(self, data):
         # if the data we're dumping is literally False,
         # we want that to be 'false'
-        if data or type(data) is bool:
+        if data or isinstance(data, bool):
             return json.dumps(data, separators=(',', ':'))
         elif data is not None:
             return '""'
@@ -235,7 +233,8 @@ class TestFlow(TestAPI):
             resp = await inst.post('/storage/v2/reformat_disk',
                                    disk_id=disk_id)
             sda = first(resp['disks'], 'id', disk_id)
-            self.assertEqual(0, len(sda['partitions']))
+            self.assertEqual(1, len(sda['partitions']))
+            self.assertEqual('Gap', sda['partitions'][0]['$type'])
 
             data = {
                 'disk_id': disk_id,
@@ -265,7 +264,10 @@ class TestFlow(TestAPI):
                              resp['disks'][0]['partitions'][1]['format'])
 
             resp = await inst.post('/storage/v2/delete_partition', data)
-            self.assertEqual(1, len(resp['disks'][0]['partitions']))
+            sda = first(resp['disks'], 'id', disk_id)
+            self.assertEqual(2, len(sda['partitions']))
+            self.assertEqual('Partition', sda['partitions'][0]['$type'])
+            self.assertEqual('Gap', sda['partitions'][1]['$type'])
 
             resp = await inst.post('/storage/v2/reset')
             self.assertEqual(orig_resp, resp)
@@ -752,6 +754,34 @@ class TestPartitionTableEditing(TestAPI):
             with self.assertRaises(ClientResponseError, msg=str(data)):
                 data['partition']['mount'] = '/usr'
                 await inst.post('/storage/v2/add_partition', data)
+
+
+class TestGap(TestAPI):
+    async def test_blank_disk_is_one_big_gap(self):
+        async with start_server('examples/simple.json') as inst:
+            resp = await inst.get('/storage/v2')
+            sda = first(resp['disks'], 'id', 'disk-sda')
+            gap = sda['partitions'][0]
+            expected = (10 << 30) - (2 << 20)
+            self.assertEqual(expected, gap['size'])
+
+    async def test_gap_at_end(self):
+        async with start_server('examples/simple.json') as inst:
+            data = {
+                'disk_id': 'disk-sda',
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/',
+                    'size': 4 << 30,
+                }
+            }
+            resp = await inst.post('/storage/v2/add_partition', data)
+            sda = first(resp['disks'], 'id', 'disk-sda')
+            boot = first(sda['partitions'], 'number', 1)
+            gap = sda['partitions'][2]
+            expected = (10 << 30) - boot['size'] - (4 << 30) - (2 << 20)
+            self.assertEqual(expected, gap['size'])
+
 
 class TestRegression(TestAPI):
     @timeout()
