@@ -117,9 +117,9 @@ class DriversView(BaseView):
         self._w = self.form.as_screen(excerpt=_(excerpt))
         self.status = DriversViewStatus.MAIN
 
-    def done(self, result):
-        log.debug("User input: %r", result)
-        self.controller.done(result)
+    def done(self, install: bool) -> None:
+        log.debug("User input: %r", install)
+        self.controller.done(install)
 
     def cancel(self) -> None:
         self.controller.cancel()
