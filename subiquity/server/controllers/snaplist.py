@@ -22,6 +22,7 @@ import requests.exceptions
 
 from subiquitycore.async_helpers import (
     schedule_task,
+    SingleInstanceTask,
     )
 from subiquitycore.context import with_context
 
@@ -62,8 +63,9 @@ class SnapdSnapInfoLoader:
 
     async def _start(self):
         with self.context:
-            task = self.tasks[None] = schedule_task(self._load_list())
-            await task
+            task = self.tasks[None] = \
+                    SingleInstanceTask(self._load_list, propagate_errors=False)
+            task.start_sync()
             self.pending_snaps = self.model.get_snap_list()
             log.debug("fetched list of %s snaps", len(self.pending_snaps))
             while self.pending_snaps:
@@ -172,7 +174,10 @@ class SnapListController(SubiquityController):
             return SnapListResponse(status=SnapCheckState.FAILED)
         if not self.loader.snap_list_fetched and not wait:
             return SnapListResponse(status=SnapCheckState.LOADING)
-        await self.loader.get_snap_list_task()
+        await self.loader.get_snap_list_task().wait()
+        if self.loader.failed or not self.app.base_model.network.has_network:
+            await self.configured()
+            return SnapListResponse(status=SnapCheckState.FAILED)
         return SnapListResponse(
             status=SnapCheckState.DONE,
             snaps=self.model.get_snap_list(),

@@ -148,7 +148,8 @@ parser.add_argument('-f', '--autoinstall-file', action='store',
                     help='load autoinstall from file')
 parser.add_argument('-i', '--img', action='store', help='use this img')
 parser.add_argument('-n', '--nets', action='store', default=1, type=int,
-                    help='number of network interfaces')
+                    help='''number of network interfaces.
+                    0=no network, -1=deadnet''')
 parser.add_argument('-o', '--overwrite', default=False, action='store_true',
                     help='allow overwrite of the target image')
 parser.add_argument('-q', '--quick', default=False, action='store_true',
@@ -339,18 +340,21 @@ class PortFinder:
 
 
 def nets(ctx):
-    ports = PortFinder()
-
     if ctx.args.nets > 0:
+        ports = PortFinder()
         ret = []
         for _ in range(ctx.args.nets):
             port = ports.get()
             ret.extend(('-nic',
                         'user,model=virtio-net-pci,' +
                         f'hostfwd=tcp::{port}-:22'))
+        return ret
+    elif ctx.args.nets == 0:
+        # no network
+        return ('-nic', 'none')
     else:
-        ret = ['-nic', 'none']
-    return ret
+        # nic present but restricted - simulate deadnet environment
+        return ('-nic', 'user,model=virtio-net-pci,restrict=on')
 
 
 def bios(ctx):
