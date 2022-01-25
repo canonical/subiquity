@@ -20,6 +20,7 @@ from typing import Optional
 from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
+from subiquity.common.types import DriversResponse
 from subiquity.server.controller import SubiquityController
 from subiquity.server.curtin import run_curtin_command
 from subiquity.server.types import InstallerChannels
@@ -42,7 +43,7 @@ class DriversController(SubiquityController):
     }
     autoinstall_default = {"install": False}
 
-    has_drivers = None
+    has_drivers: Optional[bool] = None
 
     def make_autoinstall(self):
         return {
@@ -86,11 +87,12 @@ class DriversController(SubiquityController):
         if not self.has_drivers:
             await self.configured()
 
-    async def GET(self, wait: bool = False) -> Optional[bool]:
+    async def GET(self, wait: bool = False) -> DriversResponse:
         if wait:
             await self._drivers_task
-        return self.has_drivers
+        return DriversResponse(install=self.model.do_install,
+                               has_drivers=self.has_drivers)
 
-    async def POST(self, install: bool):
+    async def POST(self, install: bool) -> None:
         self.model.do_install = install
         await self.configured()
