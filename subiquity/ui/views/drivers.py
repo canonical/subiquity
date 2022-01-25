@@ -19,6 +19,7 @@ Provides high level options for Ubuntu install
 
 """
 import asyncio
+from enum import auto, Enum
 import logging
 from typing import Optional
 
@@ -47,6 +48,12 @@ class DriversForm(Form):
     install = BooleanField(_("Install the drivers?"))
 
 
+class DriversViewStatus(Enum):
+    WAITING = auto()
+    NO_DRIVERS = auto()
+    MAIN = auto()
+
+
 class DriversView(BaseView):
 
     title = _("Third-party drivers.")
@@ -70,9 +77,12 @@ class DriversView(BaseView):
             Text(""),
             self.spinner,
             ]
-        btn = ok_btn(_("Continue"), on_press=lambda sender: self.done(False))
-        self._w = screen(rows, [btn])
+        self.cont_btn = ok_btn(
+                _("Continue"),
+                on_press=lambda sender: self.done(False))
+        self._w = screen(rows, [self.cont_btn])
         asyncio.create_task(self._wait(install))
+        self.status = DriversViewStatus.WAITING
 
     async def _wait(self, install: bool):
         has_drivers = await self.controller._wait_drivers()
@@ -84,8 +94,11 @@ class DriversView(BaseView):
 
     def make_no_drivers(self):
         rows = [Text(_("No applicable third-party drivers were found."))]
-        btn = ok_btn(_("Continue"), on_press=lambda sender: self.done(False))
-        self._w = screen(rows, [btn])
+        self.cont_btn = ok_btn(
+                _("Continue"),
+                on_press=lambda sender: self.done(False))
+        self._w = screen(rows, [self.cont_btn])
+        self.status = DriversViewStatus.NO_DRIVERS
 
     def make_main(self, install: bool) -> None:
         self.form = DriversForm(initial={'install': install})
@@ -102,6 +115,7 @@ class DriversView(BaseView):
         connect_signal(self.form, 'cancel', on_cancel)
 
         self._w = self.form.as_screen(excerpt=_(excerpt))
+        self.status = DriversViewStatus.MAIN
 
     def done(self, result):
         log.debug("User input: %r", result)
