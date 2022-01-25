@@ -6,7 +6,7 @@
         {
             "name": "cis",
             "description": "Center for Internet Security Audit Tools",
-            "entitled": "yes",
+            "entitled": "no",
             "auto_enabled": "no",
             "available": "yes"
         },
@@ -15,7 +15,7 @@
             "description": "UA Apps: Extended Security Maintenance (ESM)",
             "entitled": "yes",
             "auto_enabled": "yes",
-            "available": "yes"
+            "available": "no"
         },
         {
             "name": "esm-infra",

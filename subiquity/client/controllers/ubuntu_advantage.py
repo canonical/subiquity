@@ -78,7 +78,8 @@ class UbuntuAdvantageController(SubiquityTuiController):
         """ Asynchronously check the token passed as an argument. """
         async def inner() -> None:
             try:
-                svcs = await self.ua_interface.get_avail_services(token=token)
+                svcs = await \
+                        self.ua_interface.get_activable_services(token=token)
             except InvalidUATokenError:
                 if isinstance(self.ui.body, UbuntuAdvantageView):
                     self.ui.body.show_invalid_token()
@@ -90,7 +91,7 @@ class UbuntuAdvantageController(SubiquityTuiController):
                     self.ui.body.show_unknown_error()
             else:
                 if isinstance(self.ui.body, UbuntuAdvantageView):
-                    self.ui.body.show_available_services(svcs)
+                    self.ui.body.show_activable_services(svcs)
 
         self._check_task = schedule_task(inner())
 

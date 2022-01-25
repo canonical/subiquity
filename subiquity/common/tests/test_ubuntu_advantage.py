@@ -125,24 +125,26 @@ class TestUAClientUAInterfaceStrategy(unittest.TestCase):
 
 class TestUAInterface(unittest.TestCase):
 
-    def test_mocked_get_avail_services(self):
+    def test_mocked_get_activable_services(self):
         strategy = MockedUAInterfaceStrategy(scale_factor=1_000_000)
         interface = UAInterface(strategy)
 
         with self.assertRaises(InvalidUATokenError):
-            run_coro(interface.get_avail_services(token="invalidToken"))
+            run_coro(interface.get_activable_services(token="invalidToken"))
         # Tokens starting with "f" in dry-run mode simulate an "internal"
         # error.
         with self.assertRaises(CheckSubscriptionError):
-            run_coro(interface.get_avail_services(token="failure"))
+            run_coro(interface.get_activable_services(token="failure"))
 
         # Tokens starting with "x" is dry-run mode simulate an expired token.
         with self.assertRaises(ExpiredUATokenError):
-            run_coro(interface.get_avail_services(token="xpiredToken"))
+            run_coro(interface.get_activable_services(token="xpiredToken"))
 
         # Other tokens are considered valid in dry-run mode.
-        services = run_coro(interface.get_avail_services(token="validToken"))
+        services = run_coro(
+                interface.get_activable_services(token="validToken"))
         for service in services:
             self.assertIn("name", service)
             self.assertIn("description", service)
-            self.assertTrue(service["available"])
+            self.assertEqual(service["available"], "yes")
+            self.assertEqual(service["entitled"], "yes")
