@@ -156,6 +156,19 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
             }
         self.assertSerialization(typing.Union[Data, Container], data, expected)
 
+    def test_arbitrary_types_may_have_type_field(self):
+        # The serializer will add a $type field to data elements in a Union.
+        # If we then take that serialized value and fling it back to another
+        # API entrypoint, one that isn't taking a Union, it must be cool with
+        # the excess $type field.
+        data = {
+            '$type': 'Data',
+            'field1': '1',
+            'field2': 2,
+        }
+        expected = Data(field1='1', field2=2)
+        self.assertDeserializesTo(Data, data, expected)
+
 
 class TestCompactSerializer(CommonSerializerTests, unittest.TestCase):
 
