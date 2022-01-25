@@ -20,7 +20,7 @@ from subiquitycore.tuicontroller import Skip
 
 from subiquity.common.types import DriversPayload, DriversResponse
 from subiquity.client.controller import SubiquityTuiController
-from subiquity.ui.views.drivers import DriversView
+from subiquity.ui.views.drivers import DriversView, DriversViewStatus
 
 log = logging.getLogger('subiquity.client.controllers.drivers')
 
@@ -47,28 +47,20 @@ class DriversController(SubiquityTuiController):
         if 'install' not in self.answers:
             return
 
-        import urwid
         from subiquitycore.testing.view_helpers import (
             click,
-            find_button_matching,
-            find_with_pred,
-            )
-
-        def text_finder(txt):
-            def pred(w):
-                return isinstance(w, urwid.Text) and txt in w.text
-            return pred
+        )
 
         view = self.app.ui.body
-        while find_with_pred(view, text_finder('Looking for')):
+        while view.status == DriversViewStatus.WAITING:
             await asyncio.sleep(0.2)
-        if find_with_pred(view, text_finder('No applicable')):
-            click(find_button_matching(view, "Continue"))
+        if view.status == DriversViewStatus.NO_DRIVERS:
+            click(view.cont_btn.base_widget)
             return
 
         view.form.install.value = self.answers['install']
 
-        click(view.form.done_btn)
+        click(view.form.done_btn.base_widget)
 
     def cancel(self):
         self.app.prev_screen()
