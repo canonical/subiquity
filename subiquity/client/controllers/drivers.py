@@ -15,6 +15,7 @@
 
 import asyncio
 import logging
+from typing import List
 
 from subiquitycore.tuicontroller import Skip
 
@@ -31,17 +32,14 @@ class DriversController(SubiquityTuiController):
 
     async def make_ui(self) -> DriversView:
         response: DriversResponse = await self.endpoint.GET()
-        if response.drivers is not None and not response.drivers:
+        if not response.drivers and response.drivers is not None:
             raise Skip
-        if response.drivers is None:
-            return DriversView(self, None, response.install)
-        else:
-            return DriversView(self, bool(response.drivers), response.install)
+        return DriversView(self, response.drivers, response.install)
 
-    async def _wait_drivers(self) -> bool:
+    async def _wait_drivers(self) -> List[str]:
         response: DriversResponse = await self.endpoint.GET(wait=True)
         assert response.drivers is not None
-        return bool(response.drivers)
+        return response.drivers
 
     async def run_answers(self):
         if 'install' not in self.answers:
