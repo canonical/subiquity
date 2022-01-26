@@ -55,6 +55,9 @@ def make_client_args_parser():
                         dest='prefill',
                         help='Prefills UI models with data provided in'
                         ' a prefill.yaml file yet allowing overrides.')
+    parser.add_argument('--output-base', action='store', dest='output_base',
+                        default='.subiquity',
+                        help='in dryrun, control basedir of files')
     return parser
 
 
@@ -75,10 +78,10 @@ def main():
     server_state_file = "/run/subiquity/server-state"
     opts, unknown = parser.parse_known_args(args)
     if '--dry-run' in args:
-        server_state_file = ".subiquity/run/subiquity/server-state"
+        server_state_file = opts.output_base + "/run/subiquity/server-state"
         if opts.socket is None:
             need_start_server = True
-            server_output_dir = '.subiquity'
+            server_output_dir = opts.output_base
             sock_path = os.path.join(server_output_dir, 'socket')
             opts.socket = sock_path
             server_args = ['--dry-run', '--socket=' + sock_path] + unknown
@@ -111,7 +114,7 @@ def main():
     os.makedirs(os.path.basename(opts.socket), exist_ok=True)
     logdir = LOGDIR
     if opts.dry_run:
-        logdir = ".subiquity"
+        logdir = opts.output_base
     logfiles = setup_logger(dir=logdir, base='systemsetup-client')
 
     logger = logging.getLogger('subiquity')

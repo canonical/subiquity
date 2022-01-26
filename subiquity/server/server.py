@@ -259,7 +259,7 @@ class SubiquityServer(Application):
     def make_model(self):
         root = '/'
         if self.opts.dry_run:
-            root = os.path.abspath('.subiquity')
+            root = os.path.abspath(self.opts.output_base)
         return SubiquityModel(
             root, self.hub, INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES)
 
@@ -298,7 +298,7 @@ class SubiquityServer(Application):
                         os.path.dirname(
                             os.path.dirname(__file__))),
                     "examples", "snaps"),
-                self.scale_factor)
+                self.scale_factor, opts.output_base)
             self.snapd = AsyncSnapd(connection)
         elif os.path.exists(self.snapd_socket_path):
             connection = SnapdConnection(self.root, self.snapd_socket_path)

@@ -70,6 +70,9 @@ def make_client_args_parser():
                         help='Synthesize a click on a button matching PAT')
     parser.add_argument('--answers')
     parser.add_argument('--server-pid')
+    parser.add_argument('--output-base', action='store', dest='output_base',
+                        default='.subiquity',
+                        help='in dryrun, control basedir of files')
     return parser
 
 
@@ -86,15 +89,17 @@ def main():
     if '--dry-run' in args:
         opts, unknown = parser.parse_known_args(args)
         if opts.socket is None:
-            os.makedirs('.subiquity', exist_ok=True)
-            if os.path.exists('.subiquity/run/subiquity/server-state'):
-                os.unlink('.subiquity/run/subiquity/server-state')
-            sock_path = '.subiquity/socket'
+            base = opts.output_base
+            os.makedirs(base, exist_ok=True)
+            if os.path.exists(f'{base}/run/subiquity/server-state'):
+                os.unlink(f'{base}/run/subiquity/server-state')
+            sock_path = base + '/socket'
             opts.socket = sock_path
             server_args = ['--dry-run', '--socket=' + sock_path] + unknown
+            server_args.extend(('--output-base', base))
             server_parser = make_server_args_parser()
             server_parser.parse_args(server_args)  # just to check
-            server_output = open('.subiquity/server-output', 'w')
+            server_output = open(base + '/server-output', 'w')
             server_cmd = [sys.executable, '-m', 'subiquity.cmd.server'] + \
                 server_args
             server_proc = subprocess.Popen(
@@ -112,7 +117,7 @@ def main():
     os.makedirs(os.path.basename(opts.socket), exist_ok=True)
     logdir = LOGDIR
     if opts.dry_run:
-        logdir = ".subiquity"
+        logdir = opts.output_base
     logfiles = setup_logger(dir=logdir, base='subiquity-client')
 
     logger = logging.getLogger('subiquity')

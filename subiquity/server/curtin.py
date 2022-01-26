@@ -37,7 +37,8 @@ class _CurtinCommand:
 
     _count = 0
 
-    def __init__(self, runner, command, *args, config=None):
+    def __init__(self, opts, runner, command, *args, config=None):
+        self.opts = opts
         self.runner = runner
         self._event_contexts = {}
         _CurtinCommand._count += 1
@@ -134,7 +135,7 @@ class _DryRunCurtinCommand(_CurtinCommand):
                 "scripts/replay-curtin-log.py",
                 self.event_file,
                 self._event_syslog_id,
-                '.subiquity' + INSTALL_LOG,
+                self.opts.output_base + INSTALL_LOG,
                 ]
         else:
             return super().make_command(command, *args, config=config)
@@ -153,7 +154,8 @@ async def start_curtin_command(app, context, command, *args, config=None):
             cls = _DryRunCurtinCommand
     else:
         cls = _CurtinCommand
-    curtin_cmd = cls(app.command_runner, command, *args, config=config)
+    curtin_cmd = cls(app.opts, app.command_runner, command, *args,
+                     config=config)
     await curtin_cmd.start(context)
     return curtin_cmd
 

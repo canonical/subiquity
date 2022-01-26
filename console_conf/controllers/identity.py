@@ -168,7 +168,7 @@ class IdentityController(TuiController):
                 'username': email,
                 }
             self.model.add_user(result)
-            login_details_path = '.subiquity/login-details.txt'
+            login_details_path = self.opts.output_base + '/login-details.txt'
         else:
             self.app.urwid_loop.draw_screen()
             cp = run_command(

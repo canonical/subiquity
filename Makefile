@@ -31,7 +31,7 @@ aptdeps:
 		python3-requests-unixsocket python3-jsonschema python3-apport \
 		python3-bson xorriso isolinux python3-aiohttp cloud-init ssh-import-id \
 		curl jq build-essential python3-pytest python3-async-timeout \
-	        language-selector-common fuseiso
+	        language-selector-common fuseiso python3-pytest-xdist
 
 .PHONY: install_deps
 install_deps: aptdeps gitdeps
@@ -88,7 +88,7 @@ unit: gitdeps
 
 .PHONY: api
 api: gitdeps
-	$(PYTHON) -m pytest subiquity/tests/api
+	$(PYTHON) -m pytest -n auto subiquity/tests/api
 
 .PHONY: integration
 integration: gitdeps

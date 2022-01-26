@@ -77,7 +77,7 @@ class SystemSetupServer(SubiquityServer):
     def make_model(self):
         root = '/'
         if self.opts.dry_run:
-            root = os.path.abspath('.subiquity')
+            root = os.path.abspath(self.opts.output_base)
         model = SystemSetupModel(root, self.hub, INSTALL_MODEL_NAMES,
                                  POSTINSTALL_MODEL_NAMES)
         model.set_source_variant(self.variant)

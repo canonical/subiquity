@@ -103,8 +103,8 @@ class InstallController(SubiquityController):
         config_location = '/var/log/installer/subiquity-curtin-install.conf'
         log_location = INSTALL_LOG
         if self.app.opts.dry_run:
-            config_location = '.subiquity' + config_location
-            log_location = '.subiquity' + INSTALL_LOG
+            config_location = self.app.opts.output_base + config_location
+            log_location = self.app.opts.output_base + INSTALL_LOG
         os.makedirs(os.path.dirname(config_location), exist_ok=True)
         os.makedirs(os.path.dirname(log_location), exist_ok=True)
         with open(config_location, 'w') as conf:

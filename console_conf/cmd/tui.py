@@ -59,6 +59,9 @@ def parse_options(argv):
                         dest='chooser_systems',
                         help=('Run as a recovery chooser interacting with the '
                               'calling process over stdin/stdout streams'))
+    parser.add_argument('--output-base', action='store', dest='output_base',
+                        default='.subiquity',
+                        help='in dryrun, control basedir of files')
     return parser.parse_args(argv)
 
 
@@ -69,7 +72,7 @@ def main():
     opts = parse_options(sys.argv[1:])
     global LOGDIR
     if opts.dry_run:
-        LOGDIR = ".subiquity"
+        LOGDIR = opts.output_base
     setup_logger(dir=LOGDIR)
     logger = logging.getLogger('console_conf')
     logger.info("Starting console-conf v{}".format(VERSION))

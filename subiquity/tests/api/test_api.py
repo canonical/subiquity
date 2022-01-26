@@ -102,14 +102,16 @@ class Server(Client):
         except aiohttp.client_exceptions.ServerDisconnectedError:
             return
 
-    async def spawn(self, socket_path, machine_config, bootloader='uefi'):
+    async def spawn(self, output_base, socket, machine_config,
+                    bootloader='uefi'):
         env = os.environ.copy()
         env['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
-        cmd = 'python3 -m subiquity.cmd.server --dry-run' \
-              + ' --bootloader ' + bootloader \
-              + ' --socket ' + socket_path \
-              + ' --machine-config ' + machine_config
-        cmd = cmd.split(' ')
+        cmd = ['python3', '-m', 'subiquity.cmd.server',
+               '--dry-run',
+               '--bootloader', bootloader,
+               '--socket', socket,
+               '--output-base', output_base,
+               '--machine-config', machine_config]
         self.proc = await astart_command(cmd, env=env)
 
     async def close(self):
@@ -146,7 +148,7 @@ async def start_server(*args, **kwargs):
         async with aiohttp.ClientSession(connector=conn) as session:
             server = Server(session)
             try:
-                await server.spawn(socket_path, *args, **kwargs)
+                await server.spawn(tempdir, socket_path, *args, **kwargs)
                 await poll_for_socket_exist(socket_path)
                 await server.poll_startup()
                 yield server
