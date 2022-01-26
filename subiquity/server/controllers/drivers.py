@@ -16,7 +16,7 @@
 import asyncio
 import logging
 import subprocess
-from typing import Optional
+from typing import List, Optional
 
 from subiquitycore.context import with_context
 
@@ -44,7 +44,7 @@ class DriversController(SubiquityController):
     }
     autoinstall_default = {"install": False}
 
-    has_drivers: Optional[bool] = None
+    drivers: Optional[List[str]] = None
 
     def make_autoinstall(self):
         return {
@@ -67,17 +67,18 @@ class DriversController(SubiquityController):
         with context.child("wait_apt"):
             await self._wait_apt.wait()
         apt = self.app.controllers.Mirror.apt_configurer
-        cmd = ['ubuntu-drivers', 'list']
+        # TODO make sure --recommended is a supported option
+        cmd = ['ubuntu-drivers', 'list', '--recommended']
         if self.app.base_model.source.current.variant == 'server':
             cmd.append('--gpgpu')
         if self.app.opts.dry_run:
             if 'has-drivers' in self.app.debug_flags:
-                self.has_drivers = True
+                self.drivers = ["nvidia-driver-470"]
                 return
             elif 'run-drivers' in self.app.debug_flags:
                 pass
             else:
-                self.has_drivers = False
+                self.drivers = []
                 await self.configured()
                 return
         async with apt.overlay() as d:
@@ -87,21 +88,29 @@ class DriversController(SubiquityController):
                      'sh', '-c',
                      "command -v ubuntu-drivers"])
             except subprocess.CalledProcessError:
-                self.has_drivers = False
+                self.drivers = []
                 await self.configured()
                 return
             result = await run_curtin_command(
                 self.app, context, "in-target", "-t", d.mountpoint,
                 "--", *cmd, capture=True)
-        self.has_drivers = bool(result.stdout.strip())
-        if not self.has_drivers:
+        # Drivers are listed one per line, but each is followed by a
+        # linux-modules-* package (which we are not interested in) ; e.g.:
+        # $ ubuntu-drivers list --recommended
+        # nvidia-driver-470 linux-modules-nvidia-470-generic-hwe-20.04
+        self.drivers = []
+        for line in [x.strip() for x in result.stdout.split("\n")]:
+            if not line:
+                continue
+            self.drivers.append(line.split(" ", maxsplit=1)[0])
+        if not self.drivers:
             await self.configured()
 
     async def GET(self, wait: bool = False) -> DriversResponse:
         if wait:
             await self._drivers_task
         return DriversResponse(install=self.model.do_install,
-                               has_drivers=self.has_drivers)
+                               drivers=self.drivers)
 
     async def POST(self, install: bool) -> None:
         self.model.do_install = install
