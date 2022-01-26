@@ -799,6 +799,44 @@ class TestGap(TestAPI):
             expected = (10 << 30) - boot['size'] - (4 << 30) - (2 << 20)
             self.assertEqual(expected, gap['size'])
 
+    async def SKIP_test_two_gaps(self):
+        async with start_server('examples/simple.json') as inst:
+            disk_id = 'disk-sda'
+            resp = await inst.post('/storage/v2/add_boot_partition',
+                                   disk_id=disk_id)
+            json_print(resp)
+            boot_size = resp['disks'][0]['partitions'][0]['size']
+            root_size = 4 << 30
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/',
+                    'size': root_size,
+                }
+            }
+            await inst.post('/storage/v2/add_partition', data)
+            data = {
+                'disk_id': disk_id,
+                'partition': {'number': 1}
+            }
+            resp = await inst.post('/storage/v2/delete_partition', data)
+            sda = first(resp['disks'], 'id', disk_id)
+            self.assertEqual(3, len(sda['partitions']))
+
+            boot_gap = sda['partitions'][0]
+            self.assertEqual(boot_size, boot_gap['size'])
+            self.assertEqual('Gap', boot_gap['$type'])
+
+            root = sda['partitions'][1]
+            self.assertEqual(root_size, root['size'])
+            self.assertEqual('Partition', root['$type'])
+
+            end_gap = sda['partitions'][2]
+            end_size = (10 << 30) - boot_size - root_size - (2 << 20)
+            self.assertEqual(end_size, end_gap['size'])
+            self.assertEqual('Gap', end_gap['$type'])
+
 
 class TestRegression(TestAPI):
     @timeout()
