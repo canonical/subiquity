@@ -138,6 +138,20 @@ async def poll_for_socket_exist(socket_path):
     raise Exception('timeout looking for socket to exist')
 
 
+@contextlib.contextmanager
+def tempdirs(*args, **kwargs):
+    # This does the following:
+    # * drop in replacement for TemporaryDirectory that doesn't cleanup, so
+    #   that the log files can be examined later
+    # * make it an otherwise-unnecessary contextmanager so that the indentation
+    #   of the caller can be preserved
+    prefix = '/tmp/testapi/'
+    os.makedirs(prefix, exist_ok=True)
+    tempdir = tempfile.mkdtemp(prefix=prefix)
+    print(tempdir)
+    yield tempdir
+
+
 @contextlib.asynccontextmanager
 async def start_server(*args, **kwargs):
     with tempfile.TemporaryDirectory() as tempdir:
@@ -156,6 +170,9 @@ async def start_server(*args, **kwargs):
 
 @contextlib.asynccontextmanager
 async def connect_server(*args, **kwargs):
+    # This is not used by the tests directly, but can be convenient when
+    # wanting to debug the server process.  Change a test's start_server
+    # to connect_server, disable the test timeout, and run just that test.
     socket_path = '.subiquity/socket'
     conn = aiohttp.UnixConnector(path=socket_path)
     async with aiohttp.ClientSession(connector=conn) as session:
