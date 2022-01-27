@@ -772,6 +772,23 @@ class TestPartitionTableEditing(TestAPI):
                 data['partition']['mount'] = '/usr'
                 await inst.post('/storage/v2/add_partition', data)
 
+    @timeout()
+    async def SKIP_test_try_to_use_free_space(self):
+        # disabled until we can modify existing partition tables
+        # see also parts_and_gaps_disk()
+        async with start_server('examples/ubuntu-and-free-space.json') as inst:
+            # Disk has 3 existing partitions and free space.  Add one to end.
+            data = {
+                'disk_id': 'disk-sda',
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/',
+                }
+            }
+            await inst.post('/storage/v2/add_partition', data)
+            resp = await inst.get('/storage')
+            json_print(resp)
+
 
 class TestGap(TestAPI):
     async def test_blank_disk_is_one_big_gap(self):
