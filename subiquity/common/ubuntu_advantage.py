@@ -147,9 +147,9 @@ class UAInterface:
         """ Return a dictionary containing the subscription information. """
         return await self.strategy.query_info(token)
 
-    async def get_avail_services(self, token: str) -> List[dict]:
-        """ Return a list of available services for the subscription
-        associated with the token provided.
+    async def get_activable_services(self, token: str) -> List[dict]:
+        """ Return a list of activable services (i.e. services that are
+        entitled to the subscription and available on the current hardware).
         """
         info = await self.get_subscription(token)
 
@@ -157,8 +157,12 @@ class UAInterface:
         if expiration.timestamp() <= dt.utcnow().timestamp():
             raise ExpiredUATokenError(token, expires=info["expires"])
 
-        def is_avail_service(service: dict) -> bool:
-            # TODO do we need to check for service["entitled"] as well?
-            return service["available"] == "yes"
+        def is_activable_service(service: dict) -> bool:
+            # - the available field for a service refers to its availability on
+            # the current machine (e.g. on Focal running on a amd64 CPU) ;
+            # whereas
+            # - the entitled field tells us if the contract covers the service.
+            return service["available"] == "yes" \
+               and service["entitled"] == "yes"
 
-        return [svc for svc in info["services"] if is_avail_service(svc)]
+        return [svc for svc in info["services"] if is_activable_service(svc)]
