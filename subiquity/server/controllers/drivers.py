@@ -33,17 +33,25 @@ class DriversController(SubiquityController):
 
     autoinstall_key = model_name = "drivers"
     autoinstall_schema = {
-        'type': 'boolean',
+        'type': 'object',
+        'properties': {
+            'install': {
+                'type': 'boolean',
+            },
+        },
     }
-    autoinstall_default = False
+    autoinstall_default = {"install": False}
 
     has_drivers = None
 
     def make_autoinstall(self):
-        return self.model.do_install
+        return {
+            "install": self.model.do_install,
+        }
 
     def load_autoinstall_data(self, data):
-        self.model.do_install = data
+        if data is not None and "install" in data:
+            self.model.do_install = data["install"]
 
     def start(self):
         self._wait_apt = asyncio.Event()
