@@ -396,7 +396,12 @@
             }
         },
         "drivers": {
-            "type": "boolean"
+            "type": "object",
+            "properties": {
+                "install": {
+                    "type": "boolean"
+                }
+            }
         },
         "timezone": {
             "type": "string"
