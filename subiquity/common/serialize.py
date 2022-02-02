@@ -194,6 +194,13 @@ class Serializer:
             args = {}
             fields = {field.name: field for field in attr.fields(annotation)}
             for key in value.keys():
+                if key not in fields and key == '$type':
+                    # Union types can contain a '$type' field that is not
+                    # actually one of the keys.  This happens if a object is
+                    # serialized as part of a Union, sent to an API caller,
+                    # then received back on a different endpoint that isn't a
+                    # Union.
+                    continue
                 args.update(self._deserialize_field(
                     fields[key], value[key], path))
             return annotation(**args)
