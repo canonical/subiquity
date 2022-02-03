@@ -26,7 +26,7 @@ import asyncio
 from subiquitycore import utils
 
 
-log = logging.getLogger("subiquitycore.common.ubuntu_advantage")
+log = logging.getLogger("subiquity.server.ubuntu_advantage")
 
 
 class InvalidUATokenError(Exception):

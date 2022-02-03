@@ -17,7 +17,7 @@ from subprocess import CalledProcessError, CompletedProcess
 import unittest
 from unittest.mock import patch
 
-from subiquity.common.ubuntu_advantage import (
+from subiquity.server.ubuntu_advantage import (
     InvalidUATokenError,
     ExpiredUATokenError,
     CheckSubscriptionError,
@@ -56,7 +56,7 @@ class TestMockedUAInterfaceStrategy(unittest.TestCase):
 
 
 class TestUAClientUAInterfaceStrategy(unittest.TestCase):
-    arun_command = "subiquity.common.ubuntu_advantage.utils.arun_command"
+    arun_command = "subiquity.server.ubuntu_advantage.utils.arun_command"
 
     def test_init(self):
         # Default initializer.

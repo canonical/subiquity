@@ -23,7 +23,7 @@ from subiquity.common.types import (
     UbuntuAdvantageCheckTokenAnswer,
     UbuntuAdvantageCheckTokenStatus,
 )
-from subiquity.common.ubuntu_advantage import (
+from subiquity.server.ubuntu_advantage import (
     InvalidUATokenError,
     ExpiredUATokenError,
     CheckSubscriptionError,
