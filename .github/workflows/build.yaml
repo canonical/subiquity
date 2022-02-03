@@ -10,7 +10,6 @@ jobs:
       matrix:
         image:
           - ubuntu-daily:focal
-          - ubuntu-daily:hirsute
           - ubuntu-daily:impish
           - ubuntu-daily:jammy
     steps:
