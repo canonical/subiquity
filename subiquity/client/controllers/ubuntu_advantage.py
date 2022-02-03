@@ -15,7 +15,9 @@
 """ Module that defines the client-side controller class for Ubuntu Advantage.
 """
 
+import asyncio
 import logging
+from typing import Optional
 
 from subiquitycore.async_helpers import schedule_task
 
@@ -36,6 +38,12 @@ class UbuntuAdvantageController(SubiquityTuiController):
     """ Client-side controller for Ubuntu Advantage configuration. """
 
     endpoint_name = "ubuntu_advantage"
+
+    def __init__(self, app) -> None:
+        """ Initializer for the client-side UA controller. """
+        self._check_task: Optional[asyncio.Future] = None
+
+        super().__init__(app)
 
     async def make_ui(self) -> UbuntuAdvantageView:
         """ Generate the UI, based on the data provided by the model. """
