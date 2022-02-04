@@ -25,6 +25,7 @@ from urwid import (
     Widget,
     )
 
+from subiquity.common.types import UbuntuAdvantageService as UAService
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import (
     back_btn,
@@ -189,7 +190,7 @@ class UbuntuAdvantageView(BaseView):
         self.remove_overlay()
         self.show_stretchy_overlay(ContinueAnywayWidget(self))
 
-    def show_activable_services(self, services: List[dict]) -> None:
+    def show_activable_services(self, services: List[UAService]) -> None:
         """ Display an overlay with the list of services that can be enabled
         via Ubuntu Advantage subscription. After the user confirms, we will
         quit the current view and move on. """
@@ -200,7 +201,7 @@ class UbuntuAdvantageView(BaseView):
 class ShowServicesWidget(Stretchy):
     """ Widget to show the activable services for UA subscription. """
     def __init__(self, parent: UbuntuAdvantageView,
-                 services: List[dict]) -> None:
+                 services: List[UAService]) -> None:
         """ Initializes the widget by including the list of services as a
         bullet-point list. """
         self.parent = parent
@@ -214,7 +215,7 @@ class ShowServicesWidget(Stretchy):
         widgets: List[Widget] = [
             Text(header),
             Text(""),
-            Pile([Text(f"* {svc['description']}") for svc in services]),
+            Pile([Text(f"* {svc.description}") for svc in services]),
             Text(""),
             Text("Once the installation has finished, you can enable these "
                  "services using the `ua` command-line tool."),

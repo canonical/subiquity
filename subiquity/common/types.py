@@ -402,10 +402,16 @@ class UbuntuAdvantageCheckTokenStatus(enum.Enum):
 
 
 @attr.s(auto_attribs=True)
+class UbuntuAdvantageService:
+    name: str
+    description: str
+
+
+@attr.s(auto_attribs=True)
 class UbuntuAdvantageCheckTokenAnswer:
     status: UbuntuAdvantageCheckTokenStatus
 
-    services: Optional[List[dict]]
+    services: Optional[List[UbuntuAdvantageService]]
 
 
 class ShutdownMode(enum.Enum):
