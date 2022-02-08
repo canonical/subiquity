@@ -89,10 +89,20 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
                 [disk] = [d for d in self.ui.body.form.disks
                           if d.label == label]
             method = self.answers.get('guided-method')
-            self.ui.body.form.guided_choice.value = {
+            value = {
                 'disk': disk,
                 'use_lvm': method == "lvm",
                 }
+            passphrase = self.answers.get('guided-passphrase')
+            if passphrase is not None:
+                value['lvm_options'] = {
+                    'encrypt': True,
+                    'luks_options': {
+                        'password': passphrase,
+                        'confirm_password': passphrase,
+                        }
+                    }
+            self.ui.body.form.guided_choice.value = value
             self.ui.body.done(self.ui.body.form)
             await self.app.confirm_install()
             while not isinstance(self.ui.body, FilesystemView):

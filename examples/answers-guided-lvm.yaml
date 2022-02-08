@@ -14,6 +14,7 @@ Filesystem:
   guided: yes
   guided-method: lvm
   guided-index: 0
+  guided-passphrase: passw0rd
 Identity:
   realname: Ubuntu
   username: ubuntu
