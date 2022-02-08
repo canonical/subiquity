@@ -143,8 +143,6 @@ class UbuntuAdvantageView(BaseView):
         """ If no token was supplied, move on to the next screen.
         If a token was provided, open the loading dialog and
         asynchronously check if the token is valid. """
-        log.debug("User input: %r", form.as_data())
-
         token: str = form.token.value
         if token:
             checking_token_overlay = CheckingUAToken(self)

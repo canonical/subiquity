@@ -104,7 +104,6 @@ class UbuntuAdvantageController(SubiquityTuiController):
         self.app.prev_screen()
 
     def done(self, token: str) -> None:
-        log.debug("UbuntuAdvantageController.done token=%s", token)
         self.app.next_screen(
             self.endpoint.POST(UbuntuAdvantageInfo(token=token))
         )
