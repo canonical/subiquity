@@ -232,6 +232,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             dasd=self.model._probe_data.get('dasd', {}))
 
     async def POST(self, config: list):
+        log.debug(config)
         self.model._actions = self.model._actions_from_config(
             config, self.model._probe_data['blockdev'], is_probe_data=False)
         await self.configured()
@@ -268,6 +269,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             disks=[labels.for_client(d, min_size=min_size) for d in disks])
 
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
+        log.debug(data)
         self.guided(data)
         return await self.GET()
 
@@ -322,6 +324,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return await self.v2_GET()
 
     async def v2_guided_POST(self, data: GuidedChoice) -> StorageResponseV2:
+        log.debug(data)
         self.guided(data)
         return await self.v2_GET()
 
@@ -341,6 +344,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_add_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
+        log.debug(data)
         if data.partition.format is None:
             raise ValueError('add_partition must supply format')
         if data.partition.boot is not None:
@@ -361,6 +365,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_delete_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
+        log.debug(data)
         disk = self.model._one(id=data.disk_id)
         partition = self.get_partition(disk, data.partition.number)
         self.delete_partition(partition)
@@ -368,6 +373,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_edit_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
+        log.debug(data)
         disk = self.model._one(id=data.disk_id)
         partition = self.get_partition(disk, data.partition.number)
         if data.partition.size not in (None, partition.size):

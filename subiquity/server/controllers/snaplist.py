@@ -184,6 +184,7 @@ class SnapListController(SubiquityController):
             selections=self.model.selections)
 
     async def POST(self, data: List[SnapSelection]):
+        log.debug(data)
         self.model.set_installed_list(data)
         await self.configured()
 
