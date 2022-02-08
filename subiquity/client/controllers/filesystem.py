@@ -220,8 +220,11 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             raise Exception("could not process action {}".format(action))
 
     async def _guided_choice(self, choice):
-        status = await self.app.wait_with_progress(
-            self.endpoint.guided.POST(choice))
+        if choice is not None:
+            coro = self.endpoint.guided.POST(choice)
+        else:
+            coro = self.endpoint.GET()
+        status = await self.app.wait_with_progress(coro)
         self.model = FilesystemModel(status.bootloader)
         self.model.load_server_data(status)
         if self.model.bootloader == Bootloader.PREP:

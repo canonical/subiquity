@@ -19,7 +19,7 @@ import json
 import logging
 import os
 import select
-from typing import List, Optional
+from typing import List
 
 import pyudev
 
@@ -267,10 +267,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             error_report=self.full_probe_error(),
             disks=[labels.for_client(d, min_size=min_size) for d in disks])
 
-    async def guided_POST(self, choice: Optional[GuidedChoice]) \
-            -> StorageResponse:
-        if choice is not None:
-            self.guided(choice)
+    async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
+        self.guided(data)
         return await self.GET()
 
     async def reset_POST(self, context, request) -> StorageResponse:
@@ -323,8 +321,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.model.reset()
         return await self.v2_GET()
 
-    async def v2_guided_POST(self, choice: GuidedChoice) -> StorageResponseV2:
-        self.guided(choice)
+    async def v2_guided_POST(self, data: GuidedChoice) -> StorageResponseV2:
+        self.guided(data)
         return await self.v2_GET()
 
     async def v2_reformat_disk_POST(self, disk_id: str) -> StorageResponseV2:

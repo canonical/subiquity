@@ -230,7 +230,7 @@ class API:
             def GET(wait: bool = False) -> GuidedStorageResponse:
                 pass
 
-            def POST(choice: Optional[GuidedChoice]) \
+            def POST(data: Payload[GuidedChoice]) \
                     -> StorageResponse:
                 pass
 
@@ -252,7 +252,8 @@ class API:
             def POST() -> StorageResponseV2: ...
 
             class guided:
-                def POST(choice: GuidedChoice) -> StorageResponseV2: ...
+                def POST(data: Payload[GuidedChoice]) \
+                    -> StorageResponseV2: ...
 
             class reset:
                 def POST() -> StorageResponseV2: ...
