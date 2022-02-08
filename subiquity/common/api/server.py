@@ -98,8 +98,7 @@ def _make_handler(controller, definition, implementation, serializer):
             definition.__qualname__, check_def_sig, check_impl_sig)
 
     async def handler(request):
-        context = controller.context.child(
-            implementation.__name__, trim(await request.text()))
+        context = controller.context.child(implementation.__name__)
         with context:
             context.set('request', request)
             args = {}
