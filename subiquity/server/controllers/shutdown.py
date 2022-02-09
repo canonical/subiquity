@@ -19,6 +19,7 @@ import os
 import platform
 import subprocess
 
+from subiquitycore.file_util import open_perms
 from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command, run_command
 
@@ -99,7 +100,7 @@ class ShutdownController(SubiquityController):
                 ['cp', '-aT', '/var/log/installer', target_logs])
         journal_txt = os.path.join(target_logs, 'installer-journal.txt')
         try:
-            with open(journal_txt, 'w') as output:
+            with open_perms(journal_txt) as output:
                 await arun_command(
                     ['journalctl', '-b'],
                     stdout=output, stderr=subprocess.STDOUT)
