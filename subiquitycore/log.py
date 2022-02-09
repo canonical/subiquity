@@ -17,12 +17,14 @@ import grp
 import logging
 import os
 
+from subiquitycore.file_util import _DEF_PERMS, _DEF_GROUP
+
 
 def setup_logger(dir, base='subiquity'):
     os.makedirs(dir, exist_ok=True)
     if os.getuid() == 0:
-        os.chmod(dir, 0o775)
-        os.chown(dir, -1, grp.getgrnam('adm').gr_gid)
+        os.chmod(dir, 0o750)
+        os.chown(dir, -1, grp.getgrnam(_DEF_GROUP).gr_gid)
 
     logger = logging.getLogger("")
     logger.setLevel(logging.DEBUG)
@@ -33,6 +35,9 @@ def setup_logger(dir, base='subiquity'):
         nopid_file = os.path.join(dir, "{}-{}.log".format(base, level))
         logfile = "{}.{}".format(nopid_file, os.getpid())
         handler = logging.FileHandler(logfile)
+        os.chmod(logfile, _DEF_PERMS)
+        if os.getuid() == 0:
+            os.chown(logfile, -1, grp.getgrnam(_DEF_GROUP).gr_gid)
         # os.symlink cannot replace an existing file or symlink so create
         # it and then rename it over.
         tmplink = logfile + ".link"
