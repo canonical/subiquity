@@ -13,12 +13,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import mock
+from aioresponses import aioresponses
 
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.util import run_coro
-from subiquity.server.geoip import GeoIP
+from subiquity.server.geoip import (
+    GeoIP,
+    HTTPGeoIPStrategy,
+    )
 
 xml = '''
 <Response>
@@ -44,29 +47,17 @@ empty_tz = '<Response><TimeZone></TimeZone></Response>'
 empty_cc = '<Response><CountryCode></CountryCode></Response>'
 
 
-class MockGeoIPResponse:
-    def __init__(self, text, status_code=200):
-        self.text = text
-        self.status_code = status_code
-
-    def raise_for_status(self, *args, **kwargs):
-        pass
-
-
-def requests_get_factory(text):
-    def requests_get(*args, **kwargs):
-        return MockGeoIPResponse(text)
-    return requests_get
-
-
 class TestGeoIP(SubiTestCase):
-    @mock.patch('requests.get', new=requests_get_factory(xml))
     def setUp(self):
-        self.geoip = GeoIP(make_app())
+        strategy = HTTPGeoIPStrategy()
+        self.geoip = GeoIP(make_app(), strategy)
 
         async def fn():
             self.assertTrue(await self.geoip.lookup())
-        run_coro(fn())
+
+        with aioresponses() as mocked:
+            mocked.get("https://geoip.ubuntu.com/lookup", body=xml)
+            run_coro(fn())
 
     def test_countrycode(self):
         self.assertEqual("us", self.geoip.countrycode)
@@ -77,39 +68,45 @@ class TestGeoIP(SubiTestCase):
 
 class TestGeoIPBadData(SubiTestCase):
     def setUp(self):
-        self.geoip = GeoIP(make_app())
+        strategy = HTTPGeoIPStrategy()
+        self.geoip = GeoIP(make_app(), strategy)
 
-    @mock.patch('requests.get', new=requests_get_factory(partial))
     def test_partial_reponse(self):
         async def fn():
             self.assertFalse(await self.geoip.lookup())
-        run_coro(fn())
+        with aioresponses() as mocked:
+            mocked.get("https://geoip.ubuntu.com/lookup", body=partial)
+            run_coro(fn())
 
-    @mock.patch('requests.get', new=requests_get_factory(incomplete))
     def test_incomplete(self):
         async def fn():
             self.assertFalse(await self.geoip.lookup())
-        run_coro(fn())
+        with aioresponses() as mocked:
+            mocked.get("https://geoip.ubuntu.com/lookup", body=incomplete)
+            run_coro(fn())
         self.assertIsNone(self.geoip.countrycode)
         self.assertIsNone(self.geoip.timezone)
 
-    @mock.patch('requests.get', new=requests_get_factory(long_cc))
     def test_long_cc(self):
         async def fn():
             self.assertFalse(await self.geoip.lookup())
-        run_coro(fn())
+        with aioresponses() as mocked:
+            mocked.get("https://geoip.ubuntu.com/lookup", body=long_cc)
+            run_coro(fn())
         self.assertIsNone(self.geoip.countrycode)
 
-    @mock.patch('requests.get', new=requests_get_factory(empty_cc))
     def test_empty_cc(self):
         async def fn():
             self.assertFalse(await self.geoip.lookup())
-        run_coro(fn())
+        with aioresponses() as mocked:
+            mocked.get("https://geoip.ubuntu.com/lookup", body=empty_cc)
+            run_coro(fn())
         self.assertIsNone(self.geoip.countrycode)
 
-    @mock.patch('requests.get', new=requests_get_factory(empty_tz))
     def test_empty_tz(self):
         async def fn():
             self.assertFalse(await self.geoip.lookup())
-        run_coro(fn())
+        with aioresponses() as mocked:
+            mocked.get("https://geoip.ubuntu.com/lookup", body=empty_tz)
+            run_coro(fn())
         self.assertIsNone(self.geoip.timezone)
