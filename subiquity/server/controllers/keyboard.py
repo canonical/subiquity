@@ -216,6 +216,7 @@ class KeyboardController(SubiquityController):
             layouts=self.keyboard_list.layouts)
 
     async def POST(self, data: KeyboardSetting):
+        log.debug(data)
         new = latinizable(data.layout, data.variant)
         if new is not None:
             data = KeyboardSetting(new[0], new[1], data.toggle)

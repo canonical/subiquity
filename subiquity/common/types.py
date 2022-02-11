@@ -391,7 +391,7 @@ class TimeZoneInfo:
 
 @attr.s(auto_attribs=True)
 class UbuntuAdvantageInfo:
-    token: str
+    token: str = attr.ib(repr=False)
 
 
 class ShutdownMode(enum.Enum):

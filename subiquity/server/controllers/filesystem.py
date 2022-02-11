@@ -19,7 +19,7 @@ import json
 import logging
 import os
 import select
-from typing import List, Optional
+from typing import List
 
 import pyudev
 
@@ -232,6 +232,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             dasd=self.model._probe_data.get('dasd', {}))
 
     async def POST(self, config: list):
+        log.debug(config)
         self.model._actions = self.model._actions_from_config(
             config, self.model._probe_data['blockdev'], is_probe_data=False)
         await self.configured()
@@ -267,10 +268,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             error_report=self.full_probe_error(),
             disks=[labels.for_client(d, min_size=min_size) for d in disks])
 
-    async def guided_POST(self, choice: Optional[GuidedChoice]) \
-            -> StorageResponse:
-        if choice is not None:
-            self.guided(choice)
+    async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
+        log.debug(data)
+        self.guided(data)
         return await self.GET()
 
     async def reset_POST(self, context, request) -> StorageResponse:
@@ -323,8 +323,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.model.reset()
         return await self.v2_GET()
 
-    async def v2_guided_POST(self, choice: GuidedChoice) -> StorageResponseV2:
-        self.guided(choice)
+    async def v2_guided_POST(self, data: GuidedChoice) -> StorageResponseV2:
+        log.debug(data)
+        self.guided(data)
         return await self.v2_GET()
 
     async def v2_reformat_disk_POST(self, disk_id: str) -> StorageResponseV2:
@@ -343,6 +344,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_add_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
+        log.debug(data)
         if data.partition.format is None:
             raise ValueError('add_partition must supply format')
         if data.partition.boot is not None:
@@ -363,6 +365,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_delete_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
+        log.debug(data)
         disk = self.model._one(id=data.disk_id)
         partition = self.get_partition(disk, data.partition.number)
         self.delete_partition(partition)
@@ -370,6 +373,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_edit_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
+        log.debug(data)
         disk = self.model._one(id=data.disk_id)
         partition = self.get_partition(disk, data.partition.number)
         if data.partition.size not in (None, partition.size):

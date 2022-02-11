@@ -81,7 +81,6 @@ class UbuntuAdvantageController(SubiquityController):
         """ Handle a POST request coming from the client-side controller and
         then call .configured().
         """
-        log.debug("Received POST: %s", data)
         self.model.token = data.token
         await self.configured()
 
