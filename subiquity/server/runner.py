@@ -52,20 +52,22 @@ class LoggedCommandRunner:
 
         return prefix + cmd
 
-    async def start(self, cmd, private_mounts: bool = False):
+    async def start(self, cmd: List[str], private_mounts: bool = False) \
+            -> asyncio.subprocess.Process:
         forged: List[str] = self._forge_systemd_cmd(cmd, private_mounts)
         proc = await astart_command(forged)
         proc.args = forged
         return proc
 
-    async def wait(self, proc):
+    async def wait(self, proc: asyncio.subprocess.Process) \
+            -> subprocess.CompletedProcess:
         await proc.communicate()
         if proc.returncode != 0:
             raise subprocess.CalledProcessError(proc.returncode, proc.args)
         else:
             return subprocess.CompletedProcess(proc.args, proc.returncode)
 
-    async def run(self, cmd, **opts):
+    async def run(self, cmd: List[str], **opts) -> subprocess.CompletedProcess:
         proc = await self.start(cmd, **opts)
         return await self.wait(proc)
 
@@ -103,7 +105,8 @@ class DryRunCommandRunner(LoggedCommandRunner):
         else:
             return self.delay
 
-    async def start(self, cmd, private_mounts: bool = False):
+    async def start(self, cmd: List[str], private_mounts=False) \
+            -> asyncio.subprocess.Process:
         delay = self._get_delay_for_cmd(cmd)
         proc = await super().start(cmd, private_mounts)
         await asyncio.sleep(delay)
