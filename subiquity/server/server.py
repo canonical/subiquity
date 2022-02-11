@@ -66,7 +66,11 @@ from subiquity.models.subiquity import (
     SubiquityModel,
     )
 from subiquity.server.controller import SubiquityController
-from subiquity.server.geoip import GeoIP
+from subiquity.server.geoip import (
+    GeoIP,
+    DryRunGeoIPStrategy,
+    HTTPGeoIPStrategy,
+    )
 from subiquity.server.errors import ErrorController
 from subiquity.server.runner import get_command_runner
 from subiquity.server.types import InstallerChannels
@@ -312,7 +316,12 @@ class SubiquityServer(Application):
         self.hub.subscribe(InstallerChannels.NETWORK_UP, self._network_change)
         self.hub.subscribe(InstallerChannels.NETWORK_PROXY_SET,
                            self._proxy_set)
-        self.geoip = GeoIP(self)
+        if self.opts.dry_run:
+            geoip_strategy = DryRunGeoIPStrategy()
+        else:
+            geoip_strategy = HTTPGeoIPStrategy()
+
+        self.geoip = GeoIP(self, strategy=geoip_strategy)
 
     def set_source_variant(self, variant):
         self.variant = variant

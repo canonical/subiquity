@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from abc import ABC, abstractmethod
 import logging
 import enum
 import requests
@@ -35,8 +36,57 @@ class CheckState(enum.IntEnum):
     DONE = enum.auto()
 
 
+class LookupError(Exception):
+    """ Error to raise when retrieving the GeoIP information. """
+
+
+class GeoIPStrategy(ABC):
+    """ Base class for strategies (e.g. HTTP or dry-run) to retrieve the GeoIP
+    information. """
+    @abstractmethod
+    async def get_response(self) -> str:
+        """ Return the GeoIP information as an XML document. """
+
+
+class DryRunGeoIPStrategy(GeoIPStrategy):
+    """ Dry-run implementation to retrieve GeoIP information. """
+    async def get_response(self) -> str:
+        """ Return the GeoIP information as an XML document. """
+        return """\
+<?xml version="1.0" encoding="UTF-8"?>
+  <Response>
+    <Ip>255.255.255.255</Ip>
+    <Status>OK</Status>
+    <CountryCode>FR</CountryCode>
+    <CountryCode3>FRA</CountryCode3>
+    <CountryName>France</CountryName>
+    <RegionCode>A8</RegionCode>
+    <RegionName>Ile-de-France</RegionName>
+    <City>Paris</City>
+    <ZipPostalCode>75013</ZipPostalCode>
+    <Latitude>48.8151</Latitude>
+    <Longitude>2.2182</Longitude>
+    <AreaCode>0</AreaCode>
+    <TimeZone>Europe/Paris</TimeZone>
+  </Response>
+"""
+
+
+class HTTPGeoIPStrategy(GeoIPStrategy):
+    """ HTTP implementation to retrieve GeoIP information. We use the
+    geoip.ubuntu.com service. """
+    async def get_response(self) -> str:
+        try:
+            response = await run_in_thread(
+                requests.get, "https://geoip.ubuntu.com/lookup")
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            raise LookupError from e
+        return response.text
+
+
 class GeoIP:
-    def __init__(self, app):
+    def __init__(self, app, strategy: GeoIPStrategy):
         self.app = app
         self.element = None
         self.cc = None
@@ -47,6 +97,7 @@ class GeoIP:
                                self.maybe_start_check)
         self.app.hub.subscribe(InstallerChannels.NETWORK_PROXY_SET,
                                self.maybe_start_check)
+        self.strategy = strategy
 
     def maybe_start_check(self):
         if self.check_state != CheckState.DONE:
@@ -63,13 +114,10 @@ class GeoIP:
 
     async def _lookup(self):
         try:
-            response = await run_in_thread(
-                requests.get, "https://geoip.ubuntu.com/lookup")
-            response.raise_for_status()
-        except requests.exceptions.RequestException:
+            self.response_text = await self.strategy.get_response()
+        except LookupError:
             log.exception("geoip lookup failed")
             return False
-        self.response_text = response.text
         try:
             self.element = ElementTree.fromstring(self.response_text)
         except ElementTree.ParseError:

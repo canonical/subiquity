@@ -15,10 +15,15 @@
 
 import mock
 
+from aioresponses import aioresponses
+
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.util import run_coro
-from subiquity.server.geoip import GeoIP
+from subiquity.server.geoip import (
+    GeoIP,
+    HTTPGeoIPStrategy,
+    )
 
 xml = '''
 <Response>
@@ -62,7 +67,8 @@ def requests_get_factory(text):
 class TestGeoIP(SubiTestCase):
     @mock.patch('requests.get', new=requests_get_factory(xml))
     def setUp(self):
-        self.geoip = GeoIP(make_app())
+        strategy = HTTPGeoIPStrategy()
+        self.geoip = GeoIP(make_app(), strategy)
 
         async def fn():
             self.assertTrue(await self.geoip.lookup())
@@ -77,7 +83,8 @@ class TestGeoIP(SubiTestCase):
 
 class TestGeoIPBadData(SubiTestCase):
     def setUp(self):
-        self.geoip = GeoIP(make_app())
+        strategy = HTTPGeoIPStrategy()
+        self.geoip = GeoIP(make_app(), strategy)
 
     @mock.patch('requests.get', new=requests_get_factory(partial))
     def test_partial_reponse(self):
