@@ -19,6 +19,7 @@ import json
 import logging
 import os
 import sys
+from typing import List
 
 from curtin.commands.install import (
     INSTALL_LOG,
@@ -37,7 +38,7 @@ class _CurtinCommand:
 
     _count = 0
 
-    def __init__(self, opts, runner, command, *args, config=None):
+    def __init__(self, opts, runner, command: str, *args: str, config=None):
         self.opts = opts
         self.runner = runner
         self._event_contexts = {}
@@ -81,7 +82,7 @@ class _CurtinCommand:
             if curtin_ctx is not None:
                 curtin_ctx.exit(result=status)
 
-    def make_command(self, command, *args, config=None):
+    def make_command(self, command: str, *args: str, config=None) -> List[str]:
         reporting_conf = {
             'subiquity': {
                 'type': 'journald',
@@ -146,7 +147,9 @@ class _FailingDryRunCurtinCommand(_DryRunCurtinCommand):
     event_file = 'examples/curtin-events-fail.json'
 
 
-async def start_curtin_command(app, context, command, *args, config=None):
+async def start_curtin_command(app, context,
+                               command: str, *args: str,
+                               config=None):
     if app.opts.dry_run:
         if 'install-fail' in app.debug_flags:
             cls = _FailingDryRunCurtinCommand
@@ -160,7 +163,9 @@ async def start_curtin_command(app, context, command, *args, config=None):
     return curtin_cmd
 
 
-async def run_curtin_command(app, context, command, *args, config=None):
+async def run_curtin_command(app, context,
+                             command: str, *args: str,
+                             config=None) -> None:
     cmd = await start_curtin_command(
         app, context, command, *args, config=config)
     await cmd.wait()
