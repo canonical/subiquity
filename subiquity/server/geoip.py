@@ -75,9 +75,10 @@ class HTTPGeoIPStrategy(GeoIPStrategy):
     """ HTTP implementation to retrieve GeoIP information. We use the
     geoip.ubuntu.com service. """
     async def get_response(self) -> str:
+        url = "https://geoip.ubuntu.com/lookup"
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get("https://geoip.ubuntu.com/lookup") as response:
+                async with session.get(url) as response:
                     response.raise_for_status()
                     return await response.text()
         except aiohttp.ClientError as e:
