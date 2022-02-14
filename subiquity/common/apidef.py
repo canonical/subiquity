@@ -49,6 +49,7 @@ from subiquity.common.types import (
     StorageResponseV2,
     TimeZoneInfo,
     UbuntuAdvantageInfo,
+    UbuntuAdvantageCheckTokenAnswer,
     WLANSupportInstallState,
     ZdevInfo,
     WSLConfigurationBase,
@@ -320,6 +321,10 @@ class API:
 
         class skip:
             def POST() -> None: ...
+
+        class check_token:
+            def GET(token: Payload[str]) \
+                    -> UbuntuAdvantageCheckTokenAnswer: ...
 
 
 class LinkAction(enum.Enum):

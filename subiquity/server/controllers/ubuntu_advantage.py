@@ -15,9 +15,23 @@
 """ Module defining the server-side controller class for Ubuntu Advantage. """
 
 import logging
+import os
 
 from subiquity.common.apidef import API
-from subiquity.common.types import UbuntuAdvantageInfo
+from subiquity.common.types import (
+    UbuntuAdvantageInfo,
+    UbuntuAdvantageCheckTokenAnswer,
+    UbuntuAdvantageCheckTokenStatus,
+)
+from subiquity.server.ubuntu_advantage import (
+    InvalidUATokenError,
+    ExpiredUATokenError,
+    CheckSubscriptionError,
+    UAInterface,
+    UAInterfaceStrategy,
+    MockedUAInterfaceStrategy,
+    UAClientUAInterfaceStrategy,
+)
 from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger("subiquity.server.controllers.ubuntu_advantage")
@@ -46,6 +60,21 @@ class UbuntuAdvantageController(SubiquityController):
             },
         },
     }
+
+    def __init__(self, app) -> None:
+        """ Initializer for server-side UA controller. """
+        strategy: UAInterfaceStrategy
+        if app.opts.dry_run:
+            strategy = MockedUAInterfaceStrategy(scale_factor=app.scale_factor)
+        else:
+            # Make sure we execute `$PYTHON "$SNAP/usr/bin/ubuntu-advantage"`.
+            executable = (
+                os.environ["PYTHON"],
+                os.path.join(os.environ["SNAP"], "usr/bin/ubuntu-advantage"),
+            )
+            strategy = UAClientUAInterfaceStrategy(executable=executable)
+        self.ua_interface = UAInterface(strategy)
+        super().__init__(app)
 
     def load_autoinstall_data(self, data: dict) -> None:
         """ Load autoinstall data and update the model. """
@@ -88,3 +117,25 @@ class UbuntuAdvantageController(SubiquityController):
         """ When running on a non-LTS release, we want to call this so we can
         skip the screen on the client side. """
         await self.configured()
+
+    async def check_token_GET(self, token: str) \
+            -> UbuntuAdvantageCheckTokenAnswer:
+        """ Handle a GET request asking whether the contract token is valid or
+        not. If it is valid, we provide the list of activable services
+        associated with the subscription.
+        """
+        services = None
+        try:
+            services = await \
+                    self.ua_interface.get_activable_services(token=token)
+        except InvalidUATokenError:
+            status = UbuntuAdvantageCheckTokenStatus.INVALID_TOKEN
+        except ExpiredUATokenError:
+            status = UbuntuAdvantageCheckTokenStatus.EXPIRED_TOKEN
+        except CheckSubscriptionError:
+            status = UbuntuAdvantageCheckTokenStatus.UNKNOWN_ERROR
+        else:
+            status = UbuntuAdvantageCheckTokenStatus.VALID_TOKEN
+
+        return UbuntuAdvantageCheckTokenAnswer(status=status,
+                                               services=services)

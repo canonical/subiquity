@@ -23,10 +23,11 @@ from subprocess import CalledProcessError, CompletedProcess
 from typing import List, Sequence, Union
 import asyncio
 
+from subiquity.common.types import UbuntuAdvantageService
 from subiquitycore import utils
 
 
-log = logging.getLogger("subiquitycore.common.ubuntu_advantage")
+log = logging.getLogger("subiquity.server.ubuntu_advantage")
 
 
 class InvalidUATokenError(Exception):
@@ -147,7 +148,8 @@ class UAInterface:
         """ Return a dictionary containing the subscription information. """
         return await self.strategy.query_info(token)
 
-    async def get_activable_services(self, token: str) -> List[dict]:
+    async def get_activable_services(self, token: str) \
+            -> List[UbuntuAdvantageService]:
         """ Return a list of activable services (i.e. services that are
         entitled to the subscription and available on the current hardware).
         """
@@ -165,4 +167,16 @@ class UAInterface:
             return service["available"] == "yes" \
                and service["entitled"] == "yes"
 
-        return [svc for svc in info["services"] if is_activable_service(svc)]
+        def service_from_dict(service: dict) -> UbuntuAdvantageService:
+            return UbuntuAdvantageService(
+               name=service["name"],
+               description=service["description"],
+            )
+
+        activable_services: List[UbuntuAdvantageService] = []
+
+        for service in info["services"]:
+            if not is_activable_service(service):
+                continue
+            activable_services.append(service_from_dict(service))
+        return activable_services

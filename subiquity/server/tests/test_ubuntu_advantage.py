@@ -15,9 +15,10 @@
 
 from subprocess import CalledProcessError, CompletedProcess
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 
-from subiquity.common.ubuntu_advantage import (
+from subiquity.common.types import UbuntuAdvantageService
+from subiquity.server.ubuntu_advantage import (
     InvalidUATokenError,
     ExpiredUATokenError,
     CheckSubscriptionError,
@@ -56,7 +57,7 @@ class TestMockedUAInterfaceStrategy(unittest.TestCase):
 
 
 class TestUAClientUAInterfaceStrategy(unittest.TestCase):
-    arun_command = "subiquity.common.ubuntu_advantage.utils.arun_command"
+    arun_command = "subiquity.server.ubuntu_advantage.utils.arun_command"
 
     def test_init(self):
         # Default initializer.
@@ -141,10 +142,65 @@ class TestUAInterface(unittest.TestCase):
             run_coro(interface.get_activable_services(token="xpiredToken"))
 
         # Other tokens are considered valid in dry-run mode.
+        run_coro(interface.get_activable_services(token="validToken"))
+
+    def test_get_activable_services(self):
+        # We use the standard strategy but don't actually run it
+        strategy = UAClientUAInterfaceStrategy()
+        interface = UAInterface(strategy)
+
+        subscription = {
+            "expires": "2035-12-31T00:00:00+00:00",
+            "services": [
+                {
+                    "name": "cis",
+                    "description": "Center for Internet Security Audit Tools",
+                    "entitled": "no",
+                    "auto_enabled": "no",
+                    "available": "yes"
+                },
+                {
+                    "name": "esm-apps",
+                    "description":
+                        "UA Apps: Extended Security Maintenance (ESM)",
+                    "entitled": "yes",
+                    "auto_enabled": "yes",
+                    "available": "no"
+                },
+                {
+                    "name": "esm-infra",
+                    "description":
+                        "UA Infra: Extended Security Maintenance (ESM)",
+                    "entitled": "yes",
+                    "auto_enabled": "yes",
+                    "available": "yes"
+                },
+                {
+                    "name": "fips",
+                    "description": "NIST-certified core packages",
+                    "entitled": "yes",
+                    "auto_enabled": "no",
+                    "available": "yes"
+                },
+            ]
+        }
+        interface.get_subscription = AsyncMock(return_value=subscription)
         services = run_coro(
-                interface.get_activable_services(token="validToken"))
-        for service in services:
-            self.assertIn("name", service)
-            self.assertIn("description", service)
-            self.assertEqual(service["available"], "yes")
-            self.assertEqual(service["entitled"], "yes")
+                interface.get_activable_services(token="XXX"))
+
+        self.assertIn(UbuntuAdvantageService(
+            name="esm-infra",
+            description="UA Infra: Extended Security Maintenance (ESM)",
+        ), services)
+        self.assertIn(UbuntuAdvantageService(
+            name="fips",
+            description="NIST-certified core packages",
+        ), services)
+        self.assertNotIn(UbuntuAdvantageService(
+            name="esm-apps",
+            description="UA Apps: Extended Security Maintenance (ESM)",
+        ), services)
+        self.assertNotIn(UbuntuAdvantageService(
+            name="cis",
+            description="Center for Internet Security Audit Tools",
+        ), services)
