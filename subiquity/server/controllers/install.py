@@ -29,7 +29,7 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     )
 from subiquitycore.context import with_context
-from subiquitycore.file_util import write_file, generate_config
+from subiquitycore.file_util import write_file, generate_config_yaml
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.types import (
@@ -106,7 +106,7 @@ class InstallController(SubiquityController):
             log_location = self.app.opts.output_base + INSTALL_LOG
         os.makedirs(os.path.dirname(config_location), exist_ok=True)
         os.makedirs(os.path.dirname(log_location), exist_ok=True)
-        generate_config(config_location, yaml.dump(config))
+        generate_config_yaml(config_location, config)
         self.app.note_file_for_apport("CurtinConfig", config_location)
         self.app.note_file_for_apport("CurtinErrors", ERROR_TARFILE)
         self.app.note_file_for_apport("CurtinLog", log_location)

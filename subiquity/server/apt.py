@@ -21,9 +21,7 @@ import tempfile
 
 from curtin.config import merge_config
 
-import yaml
-
-from subiquitycore.file_util import write_file, generate_config
+from subiquitycore.file_util import write_file, generate_config_yaml
 from subiquitycore.lsb_release import lsb_release
 from subiquitycore.utils import arun_command
 
@@ -179,7 +177,7 @@ class AptConfigurer:
 
         config_location = os.path.join(
             self.app.root, 'var/log/installer/subiquity-curtin-apt.conf')
-        generate_config(config_location, yaml.dump(self.apt_config()))
+        generate_config_yaml(config_location, self.apt_config())
         self.app.note_data_for_apport("CurtinAptConfig", config_location)
 
         await run_curtin_command(
