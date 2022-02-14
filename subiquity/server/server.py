@@ -23,7 +23,7 @@ from typing import List, Optional
 
 from aiohttp import web
 
-from cloudinit import atomic_helper, safeyaml, stages
+from cloudinit import safeyaml, stages
 from cloudinit.config.cc_set_passwords import rand_user_password
 from cloudinit.distros import ug_util
 
@@ -36,6 +36,7 @@ import yaml
 from subiquitycore.async_helpers import run_in_thread
 from subiquitycore.context import with_context
 from subiquitycore.core import Application
+from subiquitycore.file_util import write_file
 from subiquitycore.prober import Prober
 from subiquitycore.ssh import (
     host_key_fingerprints,
@@ -379,8 +380,7 @@ class SubiquityServer(Application):
 
     def update_state(self, state):
         self._state = state
-        atomic_helper.write_file(
-            self.state_path("server-state"), state.name, omode='w')
+        write_file(self.state_path("server-state"), state.name)
         self.state_event.set()
         self.state_event.clear()
 
@@ -525,11 +525,8 @@ class SubiquityServer(Application):
                 autoinstall_path = '/autoinstall.yaml'
                 if 'autoinstall' in self.cloud.cfg:
                     if not os.path.exists(autoinstall_path):
-                        atomic_helper.write_file(
-                            autoinstall_path,
-                            safeyaml.dumps(
-                                self.cloud.cfg['autoinstall']).encode('utf-8'),
-                            mode=0o600)
+                        cfg = self.cloud.cfg['autoinstall']
+                        write_file(autoinstall_path, safeyaml.dumps(cfg))
                 if os.path.exists(autoinstall_path):
                     self.opts.autoinstall = autoinstall_path
         else:

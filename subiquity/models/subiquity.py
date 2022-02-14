@@ -315,10 +315,10 @@ class SubiquityModel:
         return files
 
     def configure_cloud_init(self):
-        for path, content, mode in self._cloud_init_files():
+        for path, content, cmode in self._cloud_init_files():
             path = os.path.join(self.target, path)
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            write_file(path, content, mode, omode="w")
+            write_file(path, content, cmode=cmode)
 
     def _media_info(self):
         if os.path.exists('/cdrom/.disk/info'):

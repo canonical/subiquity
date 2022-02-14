@@ -245,10 +245,7 @@ class BaseNetworkController(BaseController):
                 continue
             os.rename(p, p + ".dist-" + self.opts.project)
 
-        write_file(
-            self.netplan_path,
-            self.model.stringify_config(config),
-            omode="w")
+        write_file(self.netplan_path, self.model.stringify_config(config))
 
         self.parse_netplan_configs()
 
