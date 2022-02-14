@@ -17,7 +17,6 @@ import contextlib
 import datetime
 import grp
 import os
-import stat
 import tempfile
 
 import yaml
@@ -27,21 +26,15 @@ _DEF_GROUP = 'adm'
 
 
 @contextlib.contextmanager
-def open_perms(filename, *, cmode=None, omode='w', copy_mode=False):
+def open_perms(filename, *, cmode=None):
     if cmode is None:
         cmode = _DEF_PERMS
-    if copy_mode:
-        try:
-            file_stat = os.stat(filename)
-            cmode = stat.S_IMODE(file_stat.st_mode)
-        except OSError:
-            pass
 
     tf = None
     try:
         dirname = os.path.dirname(filename)
         os.makedirs(dirname, exist_ok=True)
-        tf = tempfile.NamedTemporaryFile(dir=dirname, delete=False, mode=omode)
+        tf = tempfile.NamedTemporaryFile(dir=dirname, delete=False, mode='w')
         yield tf
         tf.close()
         os.chmod(tf.name, cmode)
@@ -55,9 +48,6 @@ def open_perms(filename, *, cmode=None, omode='w', copy_mode=False):
 
 
 def write_file(filename, content, **kwargs):
-    """Atomically write filename.
-    open filename in mode 'omode', write content, chmod to 'cmode'.
-    """
     with open_perms(filename, **kwargs) as tf:
         tf.write(content)
 
