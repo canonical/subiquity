@@ -114,7 +114,8 @@ class InstallController(SubiquityController):
 
     @with_context(description="umounting /target dir")
     async def unmount_target(self, *, context, target):
-        await run_curtin_command(self.app, context, 'unmount', '-t', target)
+        await run_curtin_command(self.app, context, 'unmount', '-t', target,
+                                 private_mounts=False)
         if not self.app.opts.dry_run:
             shutil.rmtree(target)
 
@@ -128,8 +129,9 @@ class InstallController(SubiquityController):
     @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
     async def curtin_install(self, *, context, source):
-        await run_curtin_command(
-            self.app, context, 'install', source, config=self.write_config())
+        await run_curtin_command(self.app, context, 'install', source,
+                                 config=self.write_config(),
+                                 private_mounts=False)
 
     @with_context()
     async def install(self, *, context):
@@ -211,7 +213,8 @@ class InstallController(SubiquityController):
     async def install_package(self, *, context, package):
         await run_curtin_command(
             self.app, context, 'system-install', '-t', self.tpath(),
-            '--', package)
+            '--', package,
+            private_mounts=False)
 
     @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):
@@ -237,7 +240,8 @@ class InstallController(SubiquityController):
             self.unattended_upgrades_ctx = context
             self.unattended_upgrades_cmd = await start_curtin_command(
                 self.app, context, "in-target", "-t", self.tpath(),
-                "--", "unattended-upgrades", "-v")
+                "--", "unattended-upgrades", "-v",
+                private_mounts=True)
             await self.unattended_upgrades_cmd.wait()
             self.unattended_upgrades_cmd = None
             self.unattended_upgrades_ctx = None

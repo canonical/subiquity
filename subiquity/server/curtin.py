@@ -38,7 +38,8 @@ class _CurtinCommand:
 
     _count = 0
 
-    def __init__(self, opts, runner, command: str, *args: str, config=None):
+    def __init__(self, opts, runner, command: str, *args: str,
+                 config=None, private_mounts: bool):
         self.opts = opts
         self.runner = runner
         self._event_contexts = {}
@@ -48,6 +49,7 @@ class _CurtinCommand:
         self._fd = None
         self.proc = None
         self._cmd = self.make_command(command, *args, config=config)
+        self.private_mounts = private_mounts
 
     def _event(self, event):
         e = {
@@ -108,7 +110,8 @@ class _CurtinCommand:
         # first couple of events.
         await asyncio.sleep(0)
         self._event_contexts[''] = context
-        self.proc = await self.runner.start(self._cmd)
+        self.proc = await self.runner.start(self._cmd,
+                                            private_mounts=self.private_mounts)
 
     async def wait(self):
         await self.runner.wait(self.proc)
@@ -149,7 +152,7 @@ class _FailingDryRunCurtinCommand(_DryRunCurtinCommand):
 
 async def start_curtin_command(app, context,
                                command: str, *args: str,
-                               config=None):
+                               config=None, private_mounts: bool):
     if app.opts.dry_run:
         if 'install-fail' in app.debug_flags:
             cls = _FailingDryRunCurtinCommand
@@ -158,14 +161,15 @@ async def start_curtin_command(app, context,
     else:
         cls = _CurtinCommand
     curtin_cmd = cls(app.opts, app.command_runner, command, *args,
-                     config=config)
+                     config=config, private_mounts=private_mounts)
     await curtin_cmd.start(context)
     return curtin_cmd
 
 
 async def run_curtin_command(app, context,
                              command: str, *args: str,
-                             config=None) -> None:
+                             config=None, private_mounts: bool) -> None:
     cmd = await start_curtin_command(
-        app, context, command, *args, config=config)
+        app, context, command, *args,
+        config=config, private_mounts=private_mounts)
     await cmd.wait()
