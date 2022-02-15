@@ -136,6 +136,22 @@ If you want to help improve the installer, you can send an error report.
 """)
 
 
+class NotInDryRunStretchy(Stretchy):
+
+    def __init__(self, app):
+        self.app = app
+
+        title = _("Not actually sending a report")
+        widgets = [
+            Text(_("Let's not send error reports in dry run.")),
+            Text(""),
+            button_pile([
+                close_btn(self, _("Close")),
+            ]),
+        ]
+        super().__init__(title, widgets, 0, 2)
+
+
 class ErrorReportStretchy(Stretchy):
 
     def __init__(self, app, ref, interrupting=True):
@@ -295,7 +311,12 @@ class ErrorReportStretchy(Stretchy):
         self.app.run_command_in_foreground(["less", self.report.path])
 
     def submit(self, sender):
-        self.report.upload()
+        if self.app.opts.dry_run:
+            self.app.remove_global_overlay(self)
+            self._report_changed()
+            self.app.add_global_overlay(NotInDryRunStretchy(self.app))
+        else:
+            self.report.upload()
 
     def cancel_upload(self, sender):
         self.report.uploader.cancelled = True
