@@ -54,7 +54,6 @@ from subiquity.common.types import (
     )
 from subiquity.models.filesystem import (
     align_down,
-    dehumanize_size,
     LVM_CHUNK_SIZE,
     Raid,
     )
@@ -141,7 +140,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self.add_boot_disk(disk)
         self.create_partition(
             device=disk, spec=dict(
-                size=dehumanize_size('1G'),
+                size=self._get_bootfs_size(disk),
                 fstype="ext4",
                 mount='/boot'
                 ))
