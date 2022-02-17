@@ -58,8 +58,14 @@ class ConfigureController(SubiquityController):
         cmdFile = os.path.join(self.model.root, cmd)
         shutil.copy(os.path.join("/", cmd), cmdFile)
         # Supply LC_* definition files to avoid complains from localedef.
-        shutil.copytree("/usr/lib/locale/C.UTF-8/", outDir,
-                        dirs_exist_ok=True)
+        candidateSourceDirs = ["/usr/lib/locale/C.UTF-8/",
+                               "/usr/lib/locale/C.utf8/"]
+        sourceDirs = [d for d in candidateSourceDirs if os.path.exists(d)]
+        if len(sourceDirs) == 0 or sourceDirs is None:
+            log.error("No available LC_* definitions found in this system")
+            return ("", False)
+
+        shutil.copytree(sourceDirs[0], outDir, dirs_exist_ok=True)
         try:
             # Altering locale-gen script to output to the desired folder.
             with open(cmdFile, "r+") as f:
