@@ -61,7 +61,7 @@ class ConfigureController(SubiquityController):
         candidateSourceDirs = ["/usr/lib/locale/C.UTF-8/",
                                "/usr/lib/locale/C.utf8/"]
         sourceDirs = [d for d in candidateSourceDirs if os.path.exists(d)]
-        if len(sourceDirs) == 0 or sourceDirs is None:
+        if len(sourceDirs) == 0:
             log.error("No available LC_* definitions found in this system")
             return ("", False)
 
