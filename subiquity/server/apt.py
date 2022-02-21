@@ -154,8 +154,7 @@ class AptConfigurer:
     async def unmount(self, mountpoint: str):
         await self.app.command_runner.run(['umount', mountpoint])
 
-    async def setup_overlay(self, lowers: Union[List[Lower], Lower]) \
-            -> OverlayMountpoint:
+    async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
         tdir = self.tdir()
         target = f'{tdir}/mount'
         lowerdir = lowerdir_for(lowers)
@@ -181,7 +180,7 @@ class AptConfigurer:
         return {'apt': cfg}
 
     async def apply_apt_config(self, context):
-        self.configured_tree = await self.setup_overlay(self.source)
+        self.configured_tree = await self.setup_overlay([self.source])
 
         config_location = os.path.join(
             self.app.root, 'var/log/installer/subiquity-curtin-apt.conf')
@@ -195,7 +194,7 @@ class AptConfigurer:
     async def configure_for_install(self, context):
         assert self.configured_tree is not None
 
-        self.install_tree = await self.setup_overlay(self.configured_tree)
+        self.install_tree = await self.setup_overlay([self.configured_tree])
 
         os.mkdir(self.install_tree.p('cdrom'))
         await self.mount(
@@ -260,16 +259,17 @@ class AptConfigurer:
 
 class DryRunAptConfigurer(AptConfigurer):
 
-    async def setup_overlay(self, lowers: Union[List[Lower], Lower]) \
-            -> OverlayMountpoint:
+    async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
         # XXX This implementation expects that:
-        # - on first invocation, we pass a string as "lowers"
-        # - on second invocation, we pass the OverlayMountPoint returned by the
-        # first invocation.
-        if isinstance(lowers, OverlayMountpoint):
-            source = lowers.lowers[0]
+        # - on first invocation, the lowers list contains a single string
+        # element.
+        # - on second invocation, the lowers list contains the
+        # OverlayMountPoint returned by the first invocation.
+        lowerdir = lowers[0]
+        if isinstance(lowerdir, OverlayMountpoint):
+            source = lowerdir.lowers[0]
         else:
-            source = lowers
+            source = lowerdir
         target = self.tdir()
         os.mkdir(f'{target}/etc')
         await arun_command([
