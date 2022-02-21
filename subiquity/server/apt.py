@@ -20,6 +20,8 @@ import shutil
 import tempfile
 from typing import List, Optional, Union
 
+import attr
+
 from curtin.config import merge_config
 
 from subiquitycore.file_util import write_file, generate_config_yaml
@@ -44,18 +46,18 @@ class _MountBase:
             fp.write(content)
 
 
+@attr.s(auto_attribs=True, kw_only=True)
 class Mountpoint(_MountBase):
-    def __init__(self, *, mountpoint: str):
-        self.mountpoint: str = mountpoint
+    mountpoint: str
 
 
+@attr.s(auto_attribs=True, kw_only=True)
 class OverlayMountpoint(_MountBase):
-    def __init__(self, *, lowers, upperdir: Optional[str], mountpoint: str):
-        # The first element in lowers will be the bottom layer and the last
-        # element will be the top layer.
-        self.lowers: List[Lower] = lowers
-        self.upperdir: Optional[str] = upperdir
-        self.mountpoint: str = mountpoint
+    # The first element in lowers will be the bottom layer and the last element
+    # will be the top layer.
+    lowers: List["Lower"]
+    upperdir: Optional[str]
+    mountpoint: str
 
 
 Lower = Union[Mountpoint, str, OverlayMountpoint]
