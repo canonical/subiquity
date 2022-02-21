@@ -99,7 +99,10 @@ class DriversController(SubiquityController):
         # $ ubuntu-drivers list --recommended
         # nvidia-driver-470 linux-modules-nvidia-470-generic-hwe-20.04
         self.drivers = []
-        for line in [x.strip() for x in result.stdout.split("\n")]:
+        # Currently we have no way to specify universal_newlines=True or
+        # encoding="utf-8" to run_curtin_command.
+        stdout = result.stdout.decode("utf-8")
+        for line in [x.strip() for x in stdout.split("\n")]:
             if not line:
                 continue
             self.drivers.append(line.split(" ", maxsplit=1)[0])
