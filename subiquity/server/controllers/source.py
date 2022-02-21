@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
 import os
 
 from curtin.commands.extract import get_handler_for_source
@@ -54,7 +55,7 @@ class SourceController(SubiquityController):
     def __init__(self, app):
         super().__init__(app)
         self._handler = None
-        self.source_path = None
+        self.source_path: Optional[str] = None
 
     def start(self):
         path = '/cdrom/casper/install-sources.yaml'
