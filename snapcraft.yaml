@@ -183,7 +183,7 @@ parts:
       - libnl-route-3-dev
     source: https://github.com/canonical/probert.git
     source-type: git
-    source-commit: 693cd0040307c1390163c013f22fd82c8b27cd6b
+    source-commit: 2bb505172b5f97372eb1abd12ced4629e852504b
     requirements: [requirements.txt]
     stage:
       - "*"
