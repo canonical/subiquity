@@ -88,6 +88,9 @@ class DriversController(SubiquityController):
         log.debug("Available drivers to install: %s", self.drivers)
         if not self.drivers:
             await self.configured()
+        else:
+            # TODO Remove this once we have the GUI controller.
+            await self.POST(install=True)
 
     async def GET(self, wait: bool = False) -> DriversResponse:
         if wait:
