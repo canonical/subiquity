@@ -97,14 +97,9 @@ class DryRunCommandRunner(LoggedCommandRunner):
 
     def _forge_systemd_cmd(self, cmd: List[str],
                            private_mounts: bool, capture: bool) -> List[str]:
-        ubuntu_drivers_cmd = ["ubuntu-drivers", "list", "--recommended"]
         if "scripts/replay-curtin-log.py" in cmd:
             # We actually want to run this command
             prefixed_command = cmd
-        elif cmd[-4:] == ubuntu_drivers_cmd + ["--gpgpu"]:
-            prefixed_command = cmd[-4:]
-        elif cmd[-3:] == ubuntu_drivers_cmd:
-            prefixed_command = cmd[-3:]
         else:
             prefixed_command = ["echo", "not running:"] + cmd
 
@@ -113,15 +108,10 @@ class DryRunCommandRunner(LoggedCommandRunner):
                                           capture=capture)
 
     def _get_delay_for_cmd(self, cmd: List[str]) -> float:
-        ubuntu_drivers_cmd = ["ubuntu-drivers", "list", "--recommended"]
         if 'scripts/replay-curtin-log.py' in cmd:
             return 0
         elif 'unattended-upgrades' in cmd:
             return 3 * self.delay
-        elif cmd[-4:] == ubuntu_drivers_cmd + ["--gpgpu"]:
-            return 0
-        elif cmd[-3:] == ubuntu_drivers_cmd:
-            return 0
         else:
             return self.delay
 
