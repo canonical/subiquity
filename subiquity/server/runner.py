@@ -57,12 +57,6 @@ class DryRunCommandRunner(LoggedCommandRunner):
     async def start(self, cmd, *, capture=False):
         if 'scripts/replay-curtin-log.py' in cmd:
             delay = 0
-        elif cmd[-4:] == ['ubuntu-drivers', 'list', '--recommended', '--gpgpu']:
-            cmd = cmd[-4:]
-            delay = 0
-        elif cmd[-3:] == ['ubuntu-drivers', 'list', '--recommended']:
-            cmd = cmd[-3:]
-            delay = 0
         else:
             cmd = ['echo', 'not running:'] + cmd
             if 'unattended-upgrades' in cmd:

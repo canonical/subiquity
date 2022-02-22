@@ -200,12 +200,9 @@ class InstallController(SubiquityController):
             with context.child(
                     "ubuntu-drivers-install",
                     "installing third-party drivers") as child:
-                cmd = ["ubuntu-drivers", "install"]
-                if self.model.source.current.variant == 'server':
-                    cmd.append('--gpgpu')
-                await run_curtin_command(
-                    self.app, child, "in-target", "-t", self.tpath(),
-                    "--", *cmd)
+                ubuntu_drivers = self.app.controllers.Drivers.ubuntu_drivers
+                await ubuntu_drivers.install_drivers(root_dir=self.tpath(),
+                                                     context=child)
 
         if self.model.network.has_network:
             self.app.update_state(ApplicationState.UU_RUNNING)

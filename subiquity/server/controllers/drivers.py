@@ -15,7 +15,6 @@
 
 import asyncio
 import logging
-import subprocess
 from typing import List, Optional
 
 from subiquitycore.context import with_context
@@ -23,8 +22,12 @@ from subiquitycore.context import with_context
 from subiquity.common.apidef import API
 from subiquity.common.types import DriversResponse
 from subiquity.server.controller import SubiquityController
-from subiquity.server.curtin import run_curtin_command
 from subiquity.server.types import InstallerChannels
+from subiquity.server.ubuntu_drivers import (
+    CommandNotFoundError,
+    UbuntuDriversInterface,
+    get_ubuntu_drivers_interface,
+    )
 
 log = logging.getLogger('subiquity.server.controllers.drivers')
 
@@ -45,6 +48,11 @@ class DriversController(SubiquityController):
     autoinstall_default = {"install": False}
 
     drivers: Optional[List[str]] = None
+
+    def __init__(self, app) -> None:
+        super().__init__(app)
+        self.ubuntu_drivers: UbuntuDriversInterface = \
+            get_ubuntu_drivers_interface(app)
 
     def make_autoinstall(self):
         return {
@@ -67,49 +75,17 @@ class DriversController(SubiquityController):
         with context.child("wait_apt"):
             await self._wait_apt.wait()
         apt = self.app.controllers.Mirror.apt_configurer
-        # TODO make sure --recommended is a supported option
-        cmd = ['ubuntu-drivers', 'list', '--recommended']
-        server: bool = self.app.base_model.source.current.variant == "server"
-        if server:
-            cmd.append('--gpgpu')
-        if self.app.opts.dry_run:
-            if 'has-drivers' in self.app.debug_flags:
-                if server:
-                    self.drivers = ["nvidia-driver-470-server"]
-                else:
-                    self.drivers = ["nvidia-driver-510"]
-                return
-            elif 'run-drivers' in self.app.debug_flags:
-                pass
-            else:
-                self.drivers = []
-                await self.configured()
-                return
         async with apt.overlay() as d:
             try:
-                await self.app.command_runner.run(
-                    ['chroot', d.mountpoint,
-                     'sh', '-c',
-                     "command -v ubuntu-drivers"])
-            except subprocess.CalledProcessError:
+                # Make sure ubuntu-drivers is available.
+                self.ubuntu_drivers.ensure_cmd_exists(d.mountpoint)
+            except CommandNotFoundError:
                 self.drivers = []
-                await self.configured()
-                return
-            result = await run_curtin_command(
-                self.app, context, "in-target", "-t", d.mountpoint,
-                "--", *cmd, capture=True)
-        # Drivers are listed one per line, but each is followed by a
-        # linux-modules-* package (which we are not interested in) ; e.g.:
-        # $ ubuntu-drivers list --recommended
-        # nvidia-driver-470 linux-modules-nvidia-470-generic-hwe-20.04
-        self.drivers = []
-        # Currently we have no way to specify universal_newlines=True or
-        # encoding="utf-8" to run_curtin_command.
-        stdout = result.stdout.decode("utf-8")
-        for line in [x.strip() for x in stdout.split("\n")]:
-            if not line:
-                continue
-            self.drivers.append(line.split(" ", maxsplit=1)[0])
+            else:
+                self.drivers = await self.ubuntu_drivers.list_drivers(
+                    root_dir=d.mountpoint,
+                    context=context)
+        log.debug("Available drivers to install: %s", self.drivers)
         if not self.drivers:
             await self.configured()
 
