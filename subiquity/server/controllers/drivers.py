@@ -69,11 +69,15 @@ class DriversController(SubiquityController):
         apt = self.app.controllers.Mirror.apt_configurer
         # TODO make sure --recommended is a supported option
         cmd = ['ubuntu-drivers', 'list', '--recommended']
-        if self.app.base_model.source.current.variant == 'server':
+        server: bool = self.app.base_model.source.current.variant == "server"
+        if server:
             cmd.append('--gpgpu')
         if self.app.opts.dry_run:
             if 'has-drivers' in self.app.debug_flags:
-                self.drivers = ["nvidia-driver-470"]
+                if server:
+                    self.drivers = ["nvidia-driver-470-server"]
+                else:
+                    self.drivers = ["nvidia-driver-510"]
                 return
             elif 'run-drivers' in self.app.debug_flags:
                 pass
