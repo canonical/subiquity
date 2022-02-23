@@ -280,7 +280,8 @@ class AptConfigurer:
 class DryRunAptConfigurer(AptConfigurer):
 
     async def unmount(self, mountpoint: Mountpoint, remove=True):
-        pass
+        if remove:
+            self._mounts.remove(mountpoint)
 
     async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
         # XXX This implementation expects that:
@@ -311,7 +312,7 @@ class DryRunAptConfigurer(AptConfigurer):
         yield await self.setup_overlay(self.install_tree.mountpoint)
 
     async def deconfigure(self, context, target):
-        return
+        await self.cleanup()
 
 
 def get_apt_configurer(app, source: str):
