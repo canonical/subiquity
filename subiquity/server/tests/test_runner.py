@@ -24,13 +24,26 @@ from subiquity.server.runner import (
 
 
 class TestLoggedCommandRunner(SubiTestCase):
-    def setUp(self):
-        self.runner = LoggedCommandRunner(ident="my-identifier")
-
     def test_init(self):
-        self.assertEqual(self.runner.ident, "my-identifier")
+        with patch("os.geteuid", return_value=0):
+            runner = LoggedCommandRunner(ident="my-identifier")
+            self.assertEqual(runner.ident, "my-identifier")
+            self.assertEqual(runner.use_systemd_user, False)
+
+        with patch("os.geteuid", return_value=1000):
+            runner = LoggedCommandRunner(ident="my-identifier")
+            self.assertEqual(runner.use_systemd_user, True)
+
+        runner = LoggedCommandRunner(ident="my-identifier",
+                                     use_systemd_user=True)
+        self.assertEqual(runner.use_systemd_user, True)
+
+        runner = LoggedCommandRunner(ident="my-identifier",
+                                     use_systemd_user=False)
+        self.assertEqual(runner.use_systemd_user, False)
 
     def test_forge_systemd_cmd(self):
+        runner = LoggedCommandRunner(ident="my-id", use_systemd_user=False)
         environ = {
             "PATH": "/snap/subiquity/x1/bin",
             "PYTHONPATH": "/usr/lib/python3.8/site-packages",
@@ -41,14 +54,14 @@ class TestLoggedCommandRunner(SubiTestCase):
         }
 
         with patch.dict(os.environ, environ):
-            cmd = self.runner._forge_systemd_cmd(
+            cmd = runner._forge_systemd_cmd(
                     ["/bin/ls", "/root"],
                     private_mounts=True)
 
         expected = [
             "systemd-run",
             "--wait", "--same-dir",
-            "--property", "SyslogIdentifier=my-identifier",
+            "--property", "SyslogIdentifier=my-id",
             "--property", "PrivateMounts=yes",
             "--setenv", "PATH=/snap/subiquity/x1/bin",
             "--setenv", "PYTHONPATH=/usr/lib/python3.8/site-packages",
@@ -60,19 +73,21 @@ class TestLoggedCommandRunner(SubiTestCase):
         ]
         self.assertEqual(cmd, expected)
 
+        runner = LoggedCommandRunner(ident="my-id", use_systemd_user=True)
         # Make sure unset variables are ignored
         environ = {
             "PYTHONPATH": "/usr/lib/python3.8/site-packages",
         }
         with patch.dict(os.environ, environ, clear=True):
-            cmd = self.runner._forge_systemd_cmd(
+            cmd = runner._forge_systemd_cmd(
                     ["/bin/ls", "/root"],
                     private_mounts=False)
 
         expected = [
             "systemd-run",
             "--wait", "--same-dir",
-            "--property", "SyslogIdentifier=my-identifier",
+            "--property", "SyslogIdentifier=my-id",
+            "--user",
             "--setenv", "PYTHONPATH=/usr/lib/python3.8/site-packages",
             "--",
             "/bin/ls", "/root",
@@ -82,36 +97,30 @@ class TestLoggedCommandRunner(SubiTestCase):
 
 class TestDryRunCommandRunner(SubiTestCase):
     def setUp(self):
-        self.runner = DryRunCommandRunner(ident="my-identifier", delay=10)
+        self.runner = DryRunCommandRunner(ident="my-identifier",
+                                          delay=10, use_systemd_user=True)
 
     def test_init(self):
         self.assertEqual(self.runner.ident, "my-identifier")
+        self.assertEqual(self.runner.delay, 10)
+        self.assertEqual(self.runner.use_systemd_user, True)
 
-    def test_forge_systemd_cmd(self):
-        cmd = self.runner._forge_systemd_cmd(
+    @patch.object(LoggedCommandRunner, "_forge_systemd_cmd")
+    def test_forge_systemd_cmd(self, mock_super):
+        self.runner._forge_systemd_cmd(
                 ["/bin/ls", "/root"],
                 private_mounts=True)
+        mock_super.assert_called_once_with(
+                ["echo", "not running:", "/bin/ls", "/root"],
+                private_mounts=True)
 
-        expected = [
-            "systemd-cat",
-            "--level-prefix=false",
-            "--identifier=my-identifier",
-            "--",
-            "echo", "not running:",
-            "/bin/ls", "/root",
-        ]
-        self.assertEqual(cmd, expected)
-
+        mock_super.reset_mock()
         # Make sure exceptions are handled.
-        cmd = self.runner._forge_systemd_cmd(["scripts/replay-curtin-log.py"],
-                                             private_mounts=True)
-        self.assertEqual(cmd, [
-            "systemd-cat",
-            "--level-prefix=false",
-            "--identifier=my-identifier",
-            "--",
-            "scripts/replay-curtin-log.py",
-        ])
+        self.runner._forge_systemd_cmd(["scripts/replay-curtin-log.py"],
+                                       private_mounts=True)
+        mock_super.assert_called_once_with(
+                ["scripts/replay-curtin-log.py"],
+                private_mounts=True)
 
     def test_get_delay_for_cmd(self):
         # Most commands use the default delay

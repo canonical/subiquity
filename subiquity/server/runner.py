@@ -17,14 +17,15 @@ import asyncio
 from contextlib import suppress
 import os
 import subprocess
-from typing import List
+from typing import List, Optional
 
 from subiquitycore.utils import astart_command
 
 
 class LoggedCommandRunner:
-
-    def __init__(self, ident):
+    """ Class that executes commands using systemd-run. """
+    def __init__(self, ident,
+                 *, use_systemd_user: Optional[bool] = None) -> None:
         self.ident = ident
         self.env_whitelist = [
             "PATH", "PYTHONPATH",
@@ -32,6 +33,10 @@ class LoggedCommandRunner:
             "TARGET_MOUNT_POINT",
             "SNAP",
         ]
+        if use_systemd_user is not None:
+            self.use_systemd_user = use_systemd_user
+        else:
+            self.use_systemd_user = os.geteuid() != 0
 
     def _forge_systemd_cmd(self, cmd: List[str], private_mounts: bool) \
             -> List[str]:
@@ -44,6 +49,8 @@ class LoggedCommandRunner:
         ]
         if private_mounts:
             prefix.extend(("--property", "PrivateMounts=yes"))
+        if self.use_systemd_user:
+            prefix.append("--user")
         for key in self.env_whitelist:
             with suppress(KeyError):
                 prefix.extend(("--setenv", f"{key}={os.environ[key]}"))
@@ -74,28 +81,21 @@ class LoggedCommandRunner:
 
 class DryRunCommandRunner(LoggedCommandRunner):
 
-    def __init__(self, ident, delay):
-        super().__init__(ident)
+    def __init__(self, ident, delay,
+                 *, use_systemd_user: Optional[bool] = None) -> None:
+        super().__init__(ident, use_systemd_user=use_systemd_user)
         self.delay = delay
 
     def _forge_systemd_cmd(self, cmd: List[str], private_mounts: bool) \
             -> List[str]:
-        # We would like to use systemd-run here but unfortunately it requires
-        # root privileges.
-        # Using systemd-run --user would be an option but it not available
-        # everywhere ; so we fallback to using systemd-cat.
-        prefix = [
-            "systemd-cat",
-            "--level-prefix=false",
-            f"--identifier={self.ident}",
-            "--",
-        ]
-
         if "scripts/replay-curtin-log.py" in cmd:
             # We actually want to run this command
-            return prefix + cmd
+            prefixed_command = cmd
+        else:
+            prefixed_command = ["echo", "not running:"] + cmd
 
-        return prefix + ["echo", "not running:"] + cmd
+        return super()._forge_systemd_cmd(prefixed_command,
+                                          private_mounts=private_mounts)
 
     def _get_delay_for_cmd(self, cmd: List[str]) -> float:
         if 'scripts/replay-curtin-log.py' in cmd:
