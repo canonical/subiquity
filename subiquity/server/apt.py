@@ -154,10 +154,10 @@ class AptConfigurer:
         self._mounts.append(m)
         return m
 
-    async def unmount(self, mountpoint: str, remove=True):
+    async def unmount(self, mountpoint: Mountpoint, remove=True):
         if remove:
             self._mounts.remove(mountpoint)
-        await self.app.command_runner.run(['umount', mountpoint])
+        await self.app.command_runner.run(['umount', mountpoint.mountpoint])
 
     async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
         tdir = self.tdir()
@@ -237,11 +237,17 @@ class AptConfigurer:
         try:
             yield overlay
         finally:
-            await self.unmount(overlay.mountpoint)
+            # TODO self.unmount expects a Mountpoint object. Unfortunately, the
+            # one we created in setup_overlay was discarded and replaced by an
+            # OverlayMountPoint object instead. Here we re-create a new
+            # Mountpoint object and (thanks to attr.s) make sure that it
+            # compares equal to the one we discarded earlier.
+            # But really, there should be better ways to handle this.
+            await self.unmount(Mountpoint(mountpoint=overlay.mountpoint))
 
     async def cleanup(self):
         for m in reversed(self._mounts):
-            await self.unmount(m.mountpoint, remove=False)
+            await self.unmount(m, remove=False)
         for d in self._tdirs:
             shutil.rmtree(d)
 
@@ -254,7 +260,9 @@ class AptConfigurer:
                 'cp', '-aT', self.configured_tree.p(dir), target_mnt.p(dir),
                 ])
 
-        await self.unmount(target_mnt.p('cdrom'), remove=False)
+        await self.unmount(
+                Mountpoint(mountpoint=target_mnt.p('cdrom')),
+                remove=False)
         os.rmdir(target_mnt.p('cdrom'))
 
         await _restore_dir('etc/apt')
@@ -271,7 +279,7 @@ class AptConfigurer:
 
 class DryRunAptConfigurer(AptConfigurer):
 
-    async def unmount(self, mountpoint: str, remove=True):
+    async def unmount(self, mountpoint: Mountpoint, remove=True):
         pass
 
     async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
