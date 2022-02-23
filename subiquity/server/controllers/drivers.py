@@ -20,7 +20,7 @@ from typing import List, Optional
 from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
-from subiquity.common.types import DriversResponse
+from subiquity.common.types import DriversPayload, DriversResponse
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
 from subiquity.server.ubuntu_drivers import (
@@ -98,6 +98,6 @@ class DriversController(SubiquityController):
         return DriversResponse(install=self.model.do_install,
                                drivers=self.drivers)
 
-    async def POST(self, install: bool) -> None:
-        self.model.do_install = install
+    async def POST(self, data: DriversPayload) -> None:
+        self.model.do_install = data.install
         await self.configured()

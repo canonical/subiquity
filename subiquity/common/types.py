@@ -383,6 +383,11 @@ class DriversResponse:
 
 
 @attr.s(auto_attribs=True)
+class DriversPayload:
+    install: bool
+
+
+@attr.s(auto_attribs=True)
 class SnapSelection:
     name: str
     channel: str

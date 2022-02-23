@@ -40,6 +40,7 @@ from subiquity.common.types import (
     RefreshStatus,
     ShutdownMode,
     DriversResponse,
+    DriversPayload,
     SnapInfo,
     SnapListResponse,
     SnapSelection,
@@ -296,7 +297,7 @@ class API:
 
     class drivers:
         def GET(wait: bool = False) -> DriversResponse: ...
-        def POST(install: bool) -> None: ...
+        def POST(data: Payload[DriversPayload]) -> None: ...
 
     class snaplist:
         def GET(wait: bool = False) -> SnapListResponse: ...
