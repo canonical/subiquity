@@ -45,7 +45,7 @@ class DriversForm(Form):
 
     cancel_label = _("Back")
 
-    install = BooleanField(_("Install the drivers?"))
+    install = BooleanField(_("Install the drivers"))
 
 
 class DriversViewStatus(Enum):
@@ -56,7 +56,7 @@ class DriversViewStatus(Enum):
 
 class DriversView(BaseView):
 
-    title = _("Third-party drivers.")
+    title = _("Third-party drivers")
 
     form = None
 
