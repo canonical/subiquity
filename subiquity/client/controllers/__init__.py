@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from subiquitycore.tuicontroller import RepeatedController
+from .drivers import DriversController
 from .filesystem import FilesystemController
 from .identity import IdentityController
 from .keyboard import KeyboardController
@@ -32,6 +33,7 @@ from .zdev import ZdevController
 
 # see SubiquityClient.controllers for another list
 __all__ = [
+    'DriversController',
     'FilesystemController',
     'IdentityController',
     'KeyboardController',
