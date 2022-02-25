@@ -30,7 +30,7 @@ from subiquitycore.ui.container import (
     )
 from subiquitycore.ui.selector import Selector
 
-log = logging.getLogger("subiquitycore.ui.input")
+log = logging.getLogger("subiquitycore.ui.interactive")
 
 
 class StringEditor(Edit):

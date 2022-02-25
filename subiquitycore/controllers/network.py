@@ -48,7 +48,7 @@ from subiquitycore.utils import (
     )
 
 
-log = logging.getLogger("subiquitycore.controller.network")
+log = logging.getLogger("subiquitycore.controllers.network")
 
 
 class SubiquityNetworkEventReceiver(NetworkEventReceiver):

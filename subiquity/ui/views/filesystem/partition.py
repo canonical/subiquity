@@ -54,7 +54,7 @@ from subiquity.ui.mount import (
     )
 
 
-log = logging.getLogger('subiquity.ui.filesystem.add_partition')
+log = logging.getLogger('subiquity.ui.views.filesystem.partition')
 
 
 DEFAULT_ALIGNMENT = 1 << 20

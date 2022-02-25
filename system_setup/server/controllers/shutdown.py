@@ -21,7 +21,7 @@ from subiquitycore.context import with_context
 from subiquity.common.types import ShutdownMode
 from subiquity.server.controllers import ShutdownController
 
-log = logging.getLogger("system_setup.server.controllers.restart")
+log = logging.getLogger("system_setup.server.controllers.shutdown")
 
 
 class WSLShutdownMode(enum.Enum):

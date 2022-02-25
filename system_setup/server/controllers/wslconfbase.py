@@ -25,8 +25,7 @@ from subiquity.server.controller import SubiquityController
 from system_setup.common.wsl_conf import default_loader
 from system_setup.common.wsl_utils import convert_if_bool
 
-log = logging.getLogger('system_setup.server' +
-                        '.controllers.wsl_configuration_base')
+log = logging.getLogger('system_setup.server.controllers.wslconfbase')
 
 
 class WSLConfigurationBaseController(SubiquityController):

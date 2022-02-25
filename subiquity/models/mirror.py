@@ -27,7 +27,7 @@ try:
 except ImportError:
     from curtin.util import get_architecture
 
-log = logging.getLogger('subiquitycore.models.mirror')
+log = logging.getLogger('subiquity.models.mirror')
 
 
 DEFAULT = {

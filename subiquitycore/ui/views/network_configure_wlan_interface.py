@@ -23,7 +23,7 @@ from subiquitycore.ui.utils import (
     )
 
 log = logging.getLogger(
-    'subiquitycore.network.network_configure_wlan_interface')
+    'subiquitycore.ui.views.network_configure_wlan_interface')
 
 
 class NetworkList(WidgetWrap):

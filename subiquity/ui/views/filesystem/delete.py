@@ -31,7 +31,7 @@ from subiquity.common.filesystem import labels
 from .helpers import summarize_device
 
 
-log = logging.getLogger('subiquity.ui.filesystem.disk_info')
+log = logging.getLogger('subiquity.ui.views.filesystem.delete')
 
 
 class ConfirmDeleteStretchy(Stretchy):

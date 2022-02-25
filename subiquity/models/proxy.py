@@ -15,7 +15,7 @@
 
 import logging
 
-log = logging.getLogger('subiquitycore.models.proxy')
+log = logging.getLogger('subiquity.models.proxy')
 
 dropin_template = '''\
 [Service]

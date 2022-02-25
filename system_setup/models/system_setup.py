@@ -26,7 +26,7 @@ from .wslconfbase import WSLConfigurationBaseModel
 from .wslconfadvanced import WSLConfigurationAdvancedModel
 
 
-log = logging.getLogger('system_setup.models.system_server')
+log = logging.getLogger('system_setup.models.system_setup')
 
 HOSTS_CONTENT = """\
 127.0.0.1 localhost

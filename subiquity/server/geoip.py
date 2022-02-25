@@ -25,7 +25,7 @@ from subiquitycore.async_helpers import (
 
 from subiquity.server.types import InstallerChannels
 
-log = logging.getLogger('subiquity.common.geoip')
+log = logging.getLogger('subiquity.server.geoip')
 
 
 class CheckState(enum.IntEnum):

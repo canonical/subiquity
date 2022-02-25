@@ -47,7 +47,7 @@ from subiquitycore.ui.utils import (
     )
 from subiquitycore.view import BaseView
 
-log = logging.getLogger('subiquity.ui.zdev')
+log = logging.getLogger('subiquity.ui.views.zdev')
 
 
 def status(zdevinfo):

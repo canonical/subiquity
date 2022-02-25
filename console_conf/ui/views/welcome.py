@@ -24,7 +24,7 @@ from subiquitycore.ui.buttons import done_btn
 from subiquitycore.ui.utils import button_pile, screen
 from subiquitycore.view import BaseView
 
-log = logging.getLogger("console_conf.views.welcome")
+log = logging.getLogger("console_conf.ui.views.welcome")
 
 
 class WelcomeView(BaseView):

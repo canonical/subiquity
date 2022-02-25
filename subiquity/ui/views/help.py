@@ -58,7 +58,7 @@ from subiquitycore.ui.width import (
 from subiquity.common.types import PasswordKind
 from subiquity.ui.views.error import ErrorReportListStretchy
 
-log = logging.getLogger('subiquity.ui.help')
+log = logging.getLogger('subiquity.ui.views.help')
 
 
 def close_btn(app, stretchy):

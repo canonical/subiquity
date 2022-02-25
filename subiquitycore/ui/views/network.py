@@ -62,7 +62,7 @@ from .network_configure_wlan_interface import NetworkConfigureWLANStretchy
 from subiquitycore.view import BaseView
 
 
-log = logging.getLogger('subiquitycore.views.network')
+log = logging.getLogger('subiquitycore.ui.views.network')
 
 
 def _stretchy_shower(cls, *args):

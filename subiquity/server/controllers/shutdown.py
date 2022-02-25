@@ -28,7 +28,7 @@ from subiquity.common.types import ShutdownMode
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.install import ApplicationState
 
-log = logging.getLogger("subiquity.controllers.restart")
+log = logging.getLogger("subiquity.server.controllers.shutdown")
 
 
 class ShutdownController(SubiquityController):

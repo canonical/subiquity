@@ -24,7 +24,7 @@ from subiquitycore.ui.table import ColSpec, TablePile, TableRow
 from subiquity.common.filesystem import labels
 
 
-log = logging.getLogger('subiquity.ui.filesystem.disk_info')
+log = logging.getLogger('subiquity.ui.views.filesystem.disk_info')
 
 
 labels_keys = [

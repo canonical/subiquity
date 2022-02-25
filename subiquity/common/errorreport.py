@@ -46,7 +46,7 @@ from subiquity.common.types import (
     )
 
 
-log = logging.getLogger('subiquitycore.common.errorreport')
+log = logging.getLogger('subiquity.common.errorreport')
 
 
 @attr.s(eq=False)

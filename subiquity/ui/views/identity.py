@@ -38,7 +38,7 @@ from subiquity.common.resources import resource_path
 from subiquity.common.types import IdentityData
 
 
-log = logging.getLogger("subiquity.views.identity")
+log = logging.getLogger("subiquity.ui.views.identity")
 
 HOSTNAME_MAXLEN = 64
 HOSTNAME_REGEX = r'[a-z0-9_][a-z0-9_-]*'

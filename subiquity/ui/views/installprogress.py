@@ -36,7 +36,7 @@ from subiquitycore.ui.width import widget_width
 from subiquity.common.types import ApplicationState
 
 
-log = logging.getLogger("subiquity.views.installprogress")
+log = logging.getLogger("subiquity.ui.views.installprogress")
 
 
 class MyLineBox(LineBox):

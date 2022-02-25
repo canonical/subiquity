@@ -57,7 +57,7 @@ from subiquity.ui.views.identity import (
     )
 
 
-log = logging.getLogger('subiquity.ui.ssh')
+log = logging.getLogger('subiquity.ui.views.ssh')
 
 
 SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:

@@ -19,8 +19,7 @@ from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import WSLConfigurationAdvanced
 from system_setup.ui.views.wslconfadvanced import WSLConfigurationAdvancedView
 
-log = logging.getLogger(
-    'system_setup.client.controllers.wslconfigurationadvanced')
+log = logging.getLogger('system_setup.client.controllers.wslconfadvanced')
 
 
 class WSLConfigurationAdvancedController(SubiquityTuiController):
