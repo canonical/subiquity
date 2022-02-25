@@ -26,7 +26,7 @@ from subiquitycore.ui.form import (
 )
 
 
-log = logging.getLogger('subiquity.ui.mirror')
+log = logging.getLogger('subiquity.ui.views.mirror')
 
 mirror_help = _(
     "You may provide an archive mirror that will be used instead "

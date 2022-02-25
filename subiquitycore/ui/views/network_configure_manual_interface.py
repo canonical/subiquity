@@ -44,7 +44,7 @@ from subiquitycore.ui.utils import button_pile
 from subiquitycore.ui.buttons import done_btn
 
 log = logging.getLogger(
-    'subiquitycore.network.network_configure_ipv4_interface')
+    'subiquitycore.ui.views.network_configure_manual_interface')
 
 ip_families = {
     4: {

@@ -19,7 +19,7 @@ from subiquity.common.types import ApplicationState
 from subiquitycore.ui.container import ListBox
 from urwid import Text
 
-log = logging.getLogger("ubuntu_wsl_oobe.ui.views.summary")
+log = logging.getLogger("system_setup.ui.views.summary")
 
 
 class SummaryView(BaseView):

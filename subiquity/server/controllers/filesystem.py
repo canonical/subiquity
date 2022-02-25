@@ -62,7 +62,7 @@ from subiquity.server.controller import (
     )
 
 
-log = logging.getLogger("subiquity.server.controller.filesystem")
+log = logging.getLogger("subiquity.server.controllers.filesystem")
 block_discover_log = logging.getLogger('block-discover')
 
 

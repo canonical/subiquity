@@ -28,7 +28,7 @@ from subiquity.common.types import Bootloader, ZdevInfo
 from subiquity.server.controller import SubiquityController
 
 
-log = logging.getLogger("subiquity.server.controller.zdev")
+log = logging.getLogger("subiquity.server.controllers.zdev")
 
 lszdev_cmd = ['lszdev', '--quiet', '--pairs', '--columns',
               'id,type,on,exists,pers,auto,failed,names']

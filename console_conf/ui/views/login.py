@@ -27,7 +27,7 @@ from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.view import BaseView
 
-log = logging.getLogger("subiquitycore.views.login")
+log = logging.getLogger("console_conf.ui.views.login")
 
 
 class LoginView(BaseView):

@@ -31,7 +31,7 @@ from subiquitycore.view import BaseView
 
 from subiquity.common.resources import resource_path
 
-log = logging.getLogger("subiquity.views.welcome")
+log = logging.getLogger("subiquity.ui.views.welcome")
 
 
 HELP = _("""

@@ -75,7 +75,7 @@ from .lvm import VolGroupStretchy
 from .partition import PartitionStretchy, FormatEntireStretchy
 from .raid import RaidStretchy
 
-log = logging.getLogger('subiquity.ui.filesystem.filesystem')
+log = logging.getLogger('subiquity.ui.views.filesystem.filesystem')
 
 
 @attr.s

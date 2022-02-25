@@ -60,7 +60,7 @@ from subiquity.common.types import (
     )
 from subiquity.models.filesystem import humanize_size
 
-log = logging.getLogger("subiquity.views.snaplist")
+log = logging.getLogger("subiquity.ui.views.snaplist")
 
 
 class StarRadioButton(RadioButton):

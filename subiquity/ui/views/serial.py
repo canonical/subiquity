@@ -26,7 +26,7 @@ from subiquitycore.ui.buttons import forward_btn, other_btn
 from subiquitycore.ui.utils import rewrap, screen
 from subiquitycore.view import BaseView
 
-log = logging.getLogger("subiquity.views.serial")
+log = logging.getLogger("subiquity.ui.views.serial")
 
 
 SERIAL_TEXT = """

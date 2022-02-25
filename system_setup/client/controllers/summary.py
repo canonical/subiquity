@@ -16,7 +16,7 @@ from subiquity.ui.views.installprogress import (
 from system_setup.ui.views.summary import SummaryView
 
 
-log = logging.getLogger('ubuntu_wsl_oobe.controllers.summary')
+log = logging.getLogger('system_setup.client.controllers.summary')
 
 
 class SummaryController(SubiquityTuiController):

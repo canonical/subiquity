@@ -44,7 +44,7 @@ from subiquitycore.ui.table import TableRow, TablePile
 from subiquitycore.view import BaseView
 
 
-log = logging.getLogger("console_conf.views.chooser")
+log = logging.getLogger("console_conf.ui.views.chooser")
 
 
 class ChooserBaseView(BaseView):

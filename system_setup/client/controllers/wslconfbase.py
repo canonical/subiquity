@@ -4,7 +4,7 @@ from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import WSLConfigurationBase
 from system_setup.ui.views.wslconfbase import WSLConfigurationBaseView
 
-log = logging.getLogger('system_setup.client.controllers.wslconfigurationbase')
+log = logging.getLogger('system_setup.client.controllers.wslconfbase')
 
 
 class WSLConfigurationBaseController(SubiquityTuiController):

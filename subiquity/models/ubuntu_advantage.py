@@ -16,7 +16,7 @@
 
 import logging
 
-log = logging.getLogger("subiquitycore.models.ubuntu_advantage")
+log = logging.getLogger("subiquity.models.ubuntu_advantage")
 
 
 class UbuntuAdvantageModel:

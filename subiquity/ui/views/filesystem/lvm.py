@@ -52,7 +52,7 @@ from subiquity.ui.views.identity import (
     setup_password_validation,
     )
 
-log = logging.getLogger('subiquity.ui.lvm')
+log = logging.getLogger('subiquity.ui.views.filesystem.lvm')
 
 
 class VGNameEditor(StringEditor, WantsToKnowFormField):

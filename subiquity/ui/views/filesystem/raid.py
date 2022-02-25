@@ -52,7 +52,7 @@ from subiquity.ui.views.filesystem.compound import (
     MultiDeviceField,
     )
 
-log = logging.getLogger('subiquity.ui.raid')
+log = logging.getLogger('subiquity.ui.views.filesystem.raid')
 
 
 raidlevel_choices = [

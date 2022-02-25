@@ -32,7 +32,7 @@ from subiquitycore.ui.utils import (
 from subiquitycore.view import BaseView
 
 
-log = logging.getLogger("subiquity.ui.views.filesystem.slow")
+log = logging.getLogger("subiquity.ui.views.filesystem.probing")
 
 
 class SlowProbing(BaseView):

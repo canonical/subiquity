@@ -52,7 +52,7 @@ from subiquity.common.errorreport import (
     )
 
 
-log = logging.getLogger('subiquity.ui.error')
+log = logging.getLogger('subiquity.ui.views.error')
 
 
 def close_btn(stretchy, label=None):

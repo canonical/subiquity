@@ -47,7 +47,7 @@ from subiquity.models.filesystem import (
     humanize_size,
     )
 
-log = logging.getLogger('subiquity.ui.raid')
+log = logging.getLogger('subiquity.ui.views.filesystem.compound')
 
 
 LABEL, DEVICE, PART = range(3)

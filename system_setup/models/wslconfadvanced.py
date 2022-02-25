@@ -16,7 +16,7 @@
 import logging
 import attr
 
-log = logging.getLogger('system_setup.models.wsl_configuration_advanced')
+log = logging.getLogger('system_setup.models.wslconfadvanced')
 
 
 @attr.s

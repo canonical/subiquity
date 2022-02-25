@@ -24,7 +24,7 @@ from subiquitycore.ui.form import (
 )
 
 
-log = logging.getLogger("console_conf.views.identity")
+log = logging.getLogger("console_conf.ui.views.identity")
 
 sso_help = ("If you do not have an account, visit "
             "https://login.ubuntu.com to create one.")
