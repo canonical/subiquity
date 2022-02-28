@@ -34,6 +34,9 @@ apps:
       PYTHON: $SNAP/usr/bin/python3.8
   os-prober:
     command: usr/bin/os-prober
+    environment:
+      OS_PROBER_SHARE: $SNAP/usr/share
+      OS_PROBER_LIB: $SNAP/usr/lib
 
 parts:
   curtin:
@@ -199,7 +202,7 @@ parts:
     plugin: nil
     source-type: git
     source: https://github.com/dbungert/os-prober
-    source-commit: 2f5ec629a224aa322cb34f1378793d9cef7006d1
+    source-commit: 80d6a3157a814278af4f96da91f9ab7218e20fdc
     build-packages:
       - build-essential
       - debhelper
