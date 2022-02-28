@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import aiohttp
 from aiohttp.client_exceptions import ClientResponseError
 import async_timeout
@@ -19,7 +17,7 @@ default_timeout = 10
 
 def find(items, key, value):
     for item in items:
-        if item[key] == value:
+        if key in item and item[key] == value:
             yield item
 
 
@@ -53,7 +51,7 @@ class Client:
     def dumps(self, data):
         # if the data we're dumping is literally False,
         # we want that to be 'false'
-        if data or type(data) is bool:
+        if data or isinstance(data, bool):
             return json.dumps(data, separators=(',', ':'))
         elif data is not None:
             return '""'
@@ -140,6 +138,20 @@ async def poll_for_socket_exist(socket_path):
     raise Exception('timeout looking for socket to exist')
 
 
+@contextlib.contextmanager
+def tempdirs(*args, **kwargs):
+    # This does the following:
+    # * drop in replacement for TemporaryDirectory that doesn't cleanup, so
+    #   that the log files can be examined later
+    # * make it an otherwise-unnecessary contextmanager so that the indentation
+    #   of the caller can be preserved
+    prefix = '/tmp/testapi/'
+    os.makedirs(prefix, exist_ok=True)
+    tempdir = tempfile.mkdtemp(prefix=prefix)
+    print(tempdir)
+    yield tempdir
+
+
 @contextlib.asynccontextmanager
 async def start_server(*args, **kwargs):
     with tempfile.TemporaryDirectory() as tempdir:
@@ -158,6 +170,9 @@ async def start_server(*args, **kwargs):
 
 @contextlib.asynccontextmanager
 async def connect_server(*args, **kwargs):
+    # This is not used by the tests directly, but can be convenient when
+    # wanting to debug the server process.  Change a test's start_server
+    # to connect_server, disable the test timeout, and run just that test.
     socket_path = '.subiquity/socket'
     conn = aiohttp.UnixConnector(path=socket_path)
     async with aiohttp.ClientSession(connector=conn) as session:
@@ -235,7 +250,8 @@ class TestFlow(TestAPI):
             resp = await inst.post('/storage/v2/reformat_disk',
                                    disk_id=disk_id)
             sda = first(resp['disks'], 'id', disk_id)
-            self.assertEqual(0, len(sda['partitions']))
+            self.assertEqual(1, len(sda['partitions']))
+            self.assertEqual('Gap', sda['partitions'][0]['$type'])
 
             data = {
                 'disk_id': disk_id,
@@ -265,7 +281,10 @@ class TestFlow(TestAPI):
                              resp['disks'][0]['partitions'][1]['format'])
 
             resp = await inst.post('/storage/v2/delete_partition', data)
-            self.assertEqual(1, len(resp['disks'][0]['partitions']))
+            sda = first(resp['disks'], 'id', disk_id)
+            self.assertEqual(2, len(sda['partitions']))
+            self.assertEqual('Partition', sda['partitions'][0]['$type'])
+            self.assertEqual('Gap', sda['partitions'][1]['$type'])
 
             resp = await inst.post('/storage/v2/reset')
             self.assertEqual(orig_resp, resp)
@@ -733,6 +752,107 @@ class TestOSProbe(TestAPI):
             }
 
             self.assertEqual(expected, sda1['os'])
+
+
+class TestPartitionTableEditing(TestAPI):
+    @timeout()
+    async def test_add_when_no_space(self):
+        async with start_server('examples/simple.json') as inst:
+            data = {
+                'disk_id': 'disk-sda',
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/',
+                }
+            }
+            await inst.post('/storage/v2/add_partition', data)
+
+            # Adding a second should fail.
+            with self.assertRaises(ClientResponseError, msg=str(data)):
+                data['partition']['mount'] = '/usr'
+                await inst.post('/storage/v2/add_partition', data)
+
+    @timeout()
+    async def SKIP_test_try_to_use_free_space(self):
+        # disabled until we can modify existing partition tables
+        # see also parts_and_gaps_disk()
+        async with start_server('examples/ubuntu-and-free-space.json') as inst:
+            # Disk has 3 existing partitions and free space.  Add one to end.
+            data = {
+                'disk_id': 'disk-sda',
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/',
+                }
+            }
+            await inst.post('/storage/v2/add_partition', data)
+            resp = await inst.get('/storage')
+            json_print(resp)
+
+
+class TestGap(TestAPI):
+    async def test_blank_disk_is_one_big_gap(self):
+        async with start_server('examples/simple.json') as inst:
+            resp = await inst.get('/storage/v2')
+            sda = first(resp['disks'], 'id', 'disk-sda')
+            gap = sda['partitions'][0]
+            expected = (10 << 30) - (2 << 20)
+            self.assertEqual(expected, gap['size'])
+
+    async def test_gap_at_end(self):
+        async with start_server('examples/simple.json') as inst:
+            data = {
+                'disk_id': 'disk-sda',
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/',
+                    'size': 4 << 30,
+                }
+            }
+            resp = await inst.post('/storage/v2/add_partition', data)
+            sda = first(resp['disks'], 'id', 'disk-sda')
+            boot = first(sda['partitions'], 'number', 1)
+            gap = sda['partitions'][2]
+            expected = (10 << 30) - boot['size'] - (4 << 30) - (2 << 20)
+            self.assertEqual(expected, gap['size'])
+
+    async def SKIP_test_two_gaps(self):
+        async with start_server('examples/simple.json') as inst:
+            disk_id = 'disk-sda'
+            resp = await inst.post('/storage/v2/add_boot_partition',
+                                   disk_id=disk_id)
+            json_print(resp)
+            boot_size = resp['disks'][0]['partitions'][0]['size']
+            root_size = 4 << 30
+            data = {
+                'disk_id': disk_id,
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/',
+                    'size': root_size,
+                }
+            }
+            await inst.post('/storage/v2/add_partition', data)
+            data = {
+                'disk_id': disk_id,
+                'partition': {'number': 1}
+            }
+            resp = await inst.post('/storage/v2/delete_partition', data)
+            sda = first(resp['disks'], 'id', disk_id)
+            self.assertEqual(3, len(sda['partitions']))
+
+            boot_gap = sda['partitions'][0]
+            self.assertEqual(boot_size, boot_gap['size'])
+            self.assertEqual('Gap', boot_gap['$type'])
+
+            root = sda['partitions'][1]
+            self.assertEqual(root_size, root['size'])
+            self.assertEqual('Partition', root['$type'])
+
+            end_gap = sda['partitions'][2]
+            end_size = (10 << 30) - boot_size - root_size - (2 << 20)
+            self.assertEqual(end_size, end_gap['size'])
+            self.assertEqual('Gap', end_gap['$type'])
 
 
 class TestRegression(TestAPI):
