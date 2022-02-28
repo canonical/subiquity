@@ -197,11 +197,12 @@ parts:
 
   os-prober:
     plugin: nil
-    stage-packages: [os-prober]
-    override-stage: |
-      snapcraftctl stage
-      for file in $(grep -lr /usr | grep 'usr/[^/]*/[^/]*-probe[sr]'); do
-        sed -i 's, \(/usr\), $SNAP\1,' $file
-      done
-      sed -i 's/mkdir "$tmpmnt"/mkdir -p "$tmpmnt"/' \
-          usr/lib/os-probes/50mounted-tests
+    source-type: git
+    source: https://github.com/dbungert/os-prober
+    source-commit: 2f5ec629a224aa322cb34f1378793d9cef7006d1
+    build-packages:
+      - build-essential
+      - debhelper
+    override-build: |
+      ./debian/rules build install
+      cp -a debian/os-prober/{usr,var} $SNAPCRAFT_PART_INSTALL
