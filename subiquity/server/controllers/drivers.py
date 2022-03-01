@@ -90,7 +90,9 @@ class DriversController(SubiquityController):
             await self.configured()
         else:
             # TODO Remove this once we have the GUI controller.
-            await self.POST(install=True)
+            await self.POST(data=DriversPayload(
+                install=True,
+                ))
 
     async def GET(self, wait: bool = False) -> DriversResponse:
         if wait:
