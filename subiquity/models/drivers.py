@@ -13,12 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquitycore.pubsub import CoreChannels
+import logging
+
+log = logging.getLogger('subiquity.models.drivers')
 
 
-class InstallerChannels(CoreChannels):
-    NETWORK_PROXY_SET = 'network-proxy-set'
-    SNAPD_NETWORK_CHANGE = 'snapd-network-change'
-    GEOIP = 'geoip'
-    CONFIGURED = 'configured'
-    APT_CONFIGURED = 'apt-configured'
+class DriversModel:
+    do_install = False
