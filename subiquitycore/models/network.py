@@ -105,6 +105,8 @@ class BondConfig:
         params = {
             'mode': self.mode,
             }
+        if mode == "active-backup":
+            params['mii-monitor-interval'] = 100
         if mode in BondParameters.supports_xmit_hash_policy:
             params['transmit-hash-policy'] = self.xmit_hash_policy
         if mode in BondParameters.supports_lacp_rate:
