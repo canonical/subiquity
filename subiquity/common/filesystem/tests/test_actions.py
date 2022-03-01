@@ -445,4 +445,4 @@ class TestActions(unittest.TestCase):
         self.assertActionNotSupported(lv, DeviceAction.TOGGLE_BOOT)
 
     def test_gap_PARTITION(self):
-        self.assertActionPossible(gaps.Gap(None, 0), DeviceAction.PARTITION)
+        self.assertActionPossible(gaps.Gap(None, 0, 0), DeviceAction.PARTITION)
