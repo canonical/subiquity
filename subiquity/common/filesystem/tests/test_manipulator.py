@@ -22,6 +22,8 @@ from subiquity.common.filesystem import gaps
 from subiquity.common.filesystem.manipulator import (
     bootfs_scale,
     FilesystemManipulator,
+    get_efi_size,
+    get_bootfs_size,
     PartitionScaleFactors,
     scale_partitions,
     uefi_scale,
@@ -271,15 +273,15 @@ class TestPartitionSizeScaling(unittest.TestCase):
         ]
         for disk_size, uefi, bootfs in tests:
             disk = make_disk(manipulator.model, preserve=True, size=disk_size)
-            self.assertEqual(uefi, manipulator._get_efi_size(disk))
-            self.assertEqual(bootfs, manipulator._get_bootfs_size(disk))
+            self.assertEqual(uefi, get_efi_size(disk))
+            self.assertEqual(bootfs, get_bootfs_size(disk))
 
         # something in between for scaling
         disk_size = 15 << 30
         disk = make_disk(manipulator.model, preserve=True, size=disk_size)
-        efi_size = manipulator._get_efi_size(disk)
+        efi_size = get_efi_size(disk)
         self.assertTrue(uefi_scale.maximum > efi_size)
         self.assertTrue(efi_size > uefi_scale.minimum)
-        bootfs_size = manipulator._get_bootfs_size(disk)
+        bootfs_size = get_bootfs_size(disk)
         self.assertTrue(bootfs_scale.maximum > bootfs_size)
         self.assertTrue(bootfs_size > bootfs_scale.minimum)

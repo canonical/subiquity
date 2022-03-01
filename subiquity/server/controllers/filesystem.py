@@ -41,7 +41,10 @@ from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
 from subiquity.common.filesystem import boot, gaps, labels
-from subiquity.common.filesystem.manipulator import FilesystemManipulator
+from subiquity.common.filesystem.manipulator import (
+    FilesystemManipulator,
+    get_bootfs_size,
+)
 from subiquity.common.types import (
     Bootloader,
     Disk,
@@ -140,7 +143,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self.add_boot_disk(disk)
         self.create_partition(
             device=disk, spec=dict(
-                size=self._get_bootfs_size(disk),
+                size=get_bootfs_size(disk),
                 fstype="ext4",
                 mount='/boot'
                 ))

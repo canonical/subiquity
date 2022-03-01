@@ -20,17 +20,20 @@ import attr
 from subiquity.models.filesystem import (
     align_up,
     align_down,
-    BIOS_GRUB_SIZE_BYTES,
     Bootloader,
     Disk,
     LVM_CHUNK_SIZE,
     LVM_VolGroup,
     GPT_OVERHEAD,
     Partition,
-    PREP_GRUB_SIZE_BYTES,
     Raid,
-    UEFI_GRUB_SIZE_BYTES,
     )
+
+from subiquity.common.filesystem.manipulator import (
+    BIOS_GRUB_SIZE_BYTES,
+    get_efi_size,
+    PREP_GRUB_SIZE_BYTES,
+)
 
 
 @attr.s(auto_attribs=True)
@@ -148,7 +151,7 @@ def can_fit_bootloader_partition(disk):
         return _can_fit_bootloader_partition_bios(disk)
     elif bl == Bootloader.UEFI:
         return _can_fit_bootloader_partition_of_size(
-            disk, UEFI_GRUB_SIZE_BYTES)
+            disk, get_efi_size(disk))
     elif bl == Bootloader.PREP:
         return _can_fit_bootloader_partition_of_size(
             disk, PREP_GRUB_SIZE_BYTES)
