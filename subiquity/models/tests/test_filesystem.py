@@ -150,9 +150,9 @@ def make_disk(fs_model, **kw):
     if 'ptable' not in kw:
         kw['ptable'] = 'gpt'
     size = kw.pop('size', 100*(2**30))
-    fs_model._actions.append(Disk(
-        m=fs_model, info=FakeStorageInfo(size=size), **kw))
-    disk = fs_model._actions[-1]
+    info = FakeStorageInfo(size=size)
+    disk = Disk(m=fs_model, info=info, **kw)
+    fs_model._actions.append(disk)
     return disk
 
 

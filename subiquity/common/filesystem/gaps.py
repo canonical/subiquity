@@ -144,7 +144,7 @@ def _can_fit_bootloader_partition_of_size(disk, size):
 
 
 def can_fit_bootloader_partition(disk):
-    bl = disk._model.bootloader
+    bl = disk._m.bootloader
     if bl == Bootloader.BIOS:
         return _can_fit_bootloader_partition_bios(disk)
     elif bl == Bootloader.UEFI:

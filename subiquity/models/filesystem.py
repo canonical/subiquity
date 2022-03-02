@@ -578,7 +578,7 @@ class Disk(_Device):
     _info = attr.ib(default=None)
 
     def alignment_data(self):
-        return self._model.alignment_data[self.ptable_for_new_partition()]
+        return self._m.alignment_data[self.ptable_for_new_partition()]
 
     def info_for_display(self):
         bus = self._info.raw.get('ID_BUS', None)
