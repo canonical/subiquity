@@ -36,6 +36,9 @@ from subiquity.common.types import Bootloader, OsProber
 log = logging.getLogger('subiquity.models.filesystem')
 
 
+MiB = 1024 * 1024
+
+
 def _set_backlinks(obj):
     if obj.id is None:
         base = obj.type
@@ -946,34 +949,31 @@ class PartitionAlignmentData:
     ebr_space: int = 0
 
 
-ONE_MB = 1 << 20
-
-
 class FilesystemModel(object):
 
     target = None
 
     _partition_alignment_data = {
         'gpt': PartitionAlignmentData(
-            part_align=ONE_MB,
-            min_gap_size=ONE_MB,
+            part_align=MiB,
+            min_gap_size=MiB,
             min_start_offset=GPT_OVERHEAD//2,
             min_end_offset=GPT_OVERHEAD//2,
             primary_part_limit=128),
         'msdos': PartitionAlignmentData(
-            part_align=ONE_MB,
-            min_gap_size=ONE_MB,
+            part_align=MiB,
+            min_gap_size=MiB,
             min_start_offset=GPT_OVERHEAD//2,
             min_end_offset=0,
-            ebr_space=ONE_MB,
+            ebr_space=MiB,
             primary_part_limit=4),
         # XXX check this one!!
         'vtoc': PartitionAlignmentData(
-            part_align=ONE_MB,
-            min_gap_size=ONE_MB,
+            part_align=MiB,
+            min_gap_size=MiB,
             min_start_offset=GPT_OVERHEAD//2,
             min_end_offset=0,
-            ebr_space=ONE_MB,
+            ebr_space=MiB,
             primary_part_limit=3),
         }
 
