@@ -196,9 +196,10 @@ class TestActions(unittest.TestCase):
         # UEFI/PREP boot disk.
         old_disk = make_disk(model, preserve=True, ptable='gpt')
         self.assertActionPossible(old_disk, DeviceAction.TOGGLE_BOOT)
-        # If there is an existing partition though, it cannot.
+        # If there is an existing partition though, it can now that we can edit
+        # partition tables.
         make_partition(model, old_disk, preserve=True)
-        self.assertActionNotPossible(old_disk, DeviceAction.TOGGLE_BOOT)
+        self.assertActionPossible(old_disk, DeviceAction.TOGGLE_BOOT)
         # If there is an existing ESP/PReP partition though, fine!
         make_partition(model, old_disk, flag=flag, preserve=True)
         self.assertActionPossible(old_disk, DeviceAction.TOGGLE_BOOT)
