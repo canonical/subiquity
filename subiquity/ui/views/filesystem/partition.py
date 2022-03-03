@@ -371,9 +371,9 @@ class PartitionStretchy(Stretchy):
 
     def __init__(self, parent, partition=None, gap=None):
         if partition is not None:
-            disk = partition.device
+            self.disk = disk = partition.device
         else:
-            disk = gap.device
+            self.disk = disk = gap.device
         self.partition = partition
         self.gap = gap
         self.model = parent.model
