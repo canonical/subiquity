@@ -44,7 +44,11 @@ from subiquitycore.ui.utils import (
     )
 from subiquitycore.view import BaseView
 
-from subiquity.common.types import GuidedChoice
+from subiquity.common.types import (
+    Gap,
+    GuidedChoice,
+    Partition,
+)
 from subiquity.models.filesystem import humanize_size
 
 
@@ -90,12 +94,20 @@ def summarize_device(disk):
         ])]
     if disk.partitions:
         for part in disk.partitions:
-            details = ", ".join(part.annotations)
-            rows.append((part, [
-                Text(_("partition {number}").format(number=part.number)),
-                (2, Text(details)),
-                Text(humanize_size(part.size), align="right"),
-                ]))
+            if isinstance(part, Partition):
+                details = ", ".join(part.annotations)
+                rows.append((part, [
+                    Text(_("partition {number}").format(number=part.number)),
+                    (2, Text(details)),
+                    Text(humanize_size(part.size), align="right"),
+                    ]))
+            elif isinstance(part, Gap):
+                # If desired, we could show gaps here.  It is less critical,
+                # given that the context is reformatting full disks and the
+                # partition display is showing what is about to be lost.
+                pass
+            else:
+                raise Exception(f'unhandled partition type {part}')
     else:
         rows.append((None, [
             (4, Color.info_minor(Text(", ".join(disk.usage_labels))))

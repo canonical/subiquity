@@ -138,6 +138,7 @@ class RefreshView(BaseView):
 
     def __init__(self, controller):
         self.controller = controller
+        self.check_task = None
         self.spinner = Spinner(self.controller.app.aio_loop, style="dots")
 
         if self.controller.status.availability == RefreshCheckState.UNKNOWN:
@@ -160,7 +161,7 @@ class RefreshView(BaseView):
         self.title = self.checking_title
         self.controller.ui.set_header(self.title)
         self._w = screen(rows, buttons, excerpt=_(self.checking_excerpt))
-        schedule_task(self._wait_check_result())
+        self.check_task = schedule_task(self._wait_check_result())
 
     async def _wait_check_result(self):
         try:
@@ -210,7 +211,8 @@ class RefreshView(BaseView):
 
         buttons = button_pile([
             done_btn(_("Update to the new installer"), on_press=self.update),
-            done_btn(_("Continue without updating"), on_press=self.done),
+            done_btn(_("Continue without updating"),
+                     on_press=self.skip_update),
             other_btn(_("Back"), on_press=self.cancel),
             ])
         buttons.base_widget.focus_position = 1
@@ -226,7 +228,7 @@ class RefreshView(BaseView):
             if self.controller.answers['update']:
                 self.update()
             else:
-                self.controller.app.aio_loop.call_soon(self.controller.done)
+                self.controller.app.aio_loop.call_soon(self.skip_update)
 
     def update(self, sender=None):
         self.spinner.stop()
@@ -272,7 +274,8 @@ class RefreshView(BaseView):
 
         buttons = button_pile([
             done_btn(_("Try again"), on_press=self.try_update_again),
-            done_btn(_("Continue without updating"), on_press=self.done),
+            done_btn(_("Continue without updating"),
+                     on_press=self.skip_update),
             other_btn(_("Back"), on_press=self.cancel),
             ])
         buttons.base_widget.focus_position = 1
@@ -299,6 +302,13 @@ class RefreshView(BaseView):
     def done(self, result=None):
         self.spinner.stop()
         self.controller.done()
+
+    def skip_update(self, result=None):
+        # stop attempting the update and move forward
+        if self.check_task is not None:
+            self.check_task.cancel()
+            self.check_task = None
+        self.done()
 
     def cancel(self, result=None):
         self.spinner.stop()

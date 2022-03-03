@@ -269,13 +269,19 @@ class Partition:
 
 
 @attr.s(auto_attribs=True)
+class Gap:
+    offset: int
+    size: int
+
+
+@attr.s(auto_attribs=True)
 class Disk:
     id: str
     label: str
     type: str
     size: int
     usage_labels: List[str]
-    partitions: List[Partition]
+    partitions: List[Union[Partition, Gap]]
     ok_for_guided: bool
     ptable: Optional[str]
     preserve: bool
@@ -367,6 +373,24 @@ class SnapInfo:
     confinement: str = ''
     license: str = ''
     channels: List[ChannelSnapInfo] = attr.Factory(list)
+
+
+@attr.s(auto_attribs=True)
+class DriversResponse:
+    """ Response to GET request to drivers.
+    :install: tells whether third-party drivers will be installed (if any is
+    available).
+    :drivers: tells what third-party drivers will be installed should we decide
+    to do it. It will bet set to None until we figure out what drivers are
+    available.
+    """
+    install: bool
+    drivers: Optional[List[str]]
+
+
+@attr.s(auto_attribs=True)
+class DriversPayload:
+    install: bool
 
 
 @attr.s(auto_attribs=True)

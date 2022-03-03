@@ -39,6 +39,8 @@ from subiquity.common.types import (
     ModifyPartitionV2,
     RefreshStatus,
     ShutdownMode,
+    DriversResponse,
+    DriversPayload,
     SnapInfo,
     SnapListResponse,
     SnapSelection,
@@ -292,6 +294,10 @@ class API:
                 """
                 def POST(data: Payload[ModifyPartitionV2]) \
                     -> StorageResponseV2: ...
+
+    class drivers:
+        def GET(wait: bool = False) -> DriversResponse: ...
+        def POST(data: Payload[DriversPayload]) -> None: ...
 
     class snaplist:
         def GET(wait: bool = False) -> SnapListResponse: ...

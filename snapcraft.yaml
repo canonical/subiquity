@@ -34,6 +34,9 @@ apps:
       PYTHON: $SNAP/usr/bin/python3.8
   os-prober:
     command: usr/bin/os-prober
+    environment:
+      OS_PROBER_SHARE: $SNAP/usr/share
+      OS_PROBER_LIB: $SNAP/usr/lib
 
 parts:
   curtin:
@@ -182,7 +185,7 @@ parts:
       - libnl-route-3-dev
     source: https://github.com/canonical/probert.git
     source-type: git
-    source-commit: 2bb505172b5f97372eb1abd12ced4629e852504b
+    source-commit: feada4cbd01a56bca8adbc98aab2507590a017d5
     requirements: [requirements.txt]
     stage:
       - "*"
@@ -197,11 +200,12 @@ parts:
 
   os-prober:
     plugin: nil
-    stage-packages: [os-prober]
-    override-stage: |
-      snapcraftctl stage
-      for file in $(grep -lr /usr | grep 'usr/[^/]*/[^/]*-probe[sr]'); do
-        sed -i 's, \(/usr\), $SNAP\1,' $file
-      done
-      sed -i 's/mkdir "$tmpmnt"/mkdir -p "$tmpmnt"/' \
-          usr/lib/os-probes/50mounted-tests
+    source-type: git
+    source: https://github.com/dbungert/os-prober
+    source-commit: 80d6a3157a814278af4f96da91f9ab7218e20fdc
+    build-packages:
+      - build-essential
+      - debhelper
+    override-build: |
+      ./debian/rules build install
+      cp -a debian/os-prober/{usr,var} $SNAPCRAFT_PART_INSTALL

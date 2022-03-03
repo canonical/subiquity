@@ -45,6 +45,10 @@ from subiquity.server.curtin import (
     run_curtin_command,
     start_curtin_command,
     )
+from subiquity.server.types import (
+    InstallerChannels,
+    )
+
 
 log = logging.getLogger("subiquity.server.controllers.install")
 
@@ -155,6 +159,8 @@ class InstallController(SubiquityController):
 
             for_install_path = await self.configure_apt(context=context)
 
+            await self.app.hub.abroadcast(InstallerChannels.APT_CONFIGURED)
+
             if os.path.exists(self.model.target):
                 await self.unmount_target(
                     context=context, target=self.model.target)
@@ -192,6 +198,13 @@ class InstallController(SubiquityController):
         packages = await self.get_target_packages(context=context)
         for package in packages:
             await self.install_package(context=context, package=package)
+        if self.model.drivers.do_install:
+            with context.child(
+                    "ubuntu-drivers-install",
+                    "installing third-party drivers") as child:
+                ubuntu_drivers = self.app.controllers.Drivers.ubuntu_drivers
+                await ubuntu_drivers.install_drivers(root_dir=self.tpath(),
+                                                     context=child)
 
         if self.model.network.has_network:
             self.app.update_state(ApplicationState.UU_RUNNING)

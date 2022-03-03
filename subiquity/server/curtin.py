@@ -18,6 +18,7 @@ import asyncio
 import json
 import logging
 import os
+import subprocess
 import sys
 from typing import List
 
@@ -103,18 +104,18 @@ class _CurtinCommand:
         cmd.extend(args)
         return cmd
 
-    async def start(self, context):
+    async def start(self, context, **opts):
         self._fd = journald_listen(
             asyncio.get_event_loop(), [self._event_syslog_id], self._event)
         # Yield to the event loop before starting curtin to avoid missing the
         # first couple of events.
         await asyncio.sleep(0)
         self._event_contexts[''] = context
-        self.proc = await self.runner.start(self._cmd,
-                                            private_mounts=self.private_mounts)
+        self.proc = await self.runner.start(
+                self._cmd, **opts, private_mounts=self.private_mounts)
 
     async def wait(self):
-        await self.runner.wait(self.proc)
+        result = await self.runner.wait(self.proc)
         waited = 0.0
         while len(self._event_contexts) > 1 and waited < 5.0:
             await asyncio.sleep(0.1)
@@ -122,10 +123,11 @@ class _CurtinCommand:
             log.debug("waited %s seconds for events to drain", waited)
         self._event_contexts.pop('', None)
         asyncio.get_event_loop().remove_reader(self._fd)
+        return result
 
     async def run(self, context):
         await self.start(context)
-        await self.wait()
+        return await self.wait()
 
 
 class _DryRunCurtinCommand(_CurtinCommand):
@@ -152,7 +154,8 @@ class _FailingDryRunCurtinCommand(_DryRunCurtinCommand):
 
 async def start_curtin_command(app, context,
                                command: str, *args: str,
-                               config=None, private_mounts: bool):
+                               config=None, private_mounts: bool,
+                               **opts):
     if app.opts.dry_run:
         if 'install-fail' in app.debug_flags:
             cls = _FailingDryRunCurtinCommand
@@ -162,14 +165,17 @@ async def start_curtin_command(app, context,
         cls = _CurtinCommand
     curtin_cmd = cls(app.opts, app.command_runner, command, *args,
                      config=config, private_mounts=private_mounts)
-    await curtin_cmd.start(context)
+    await curtin_cmd.start(context, **opts)
     return curtin_cmd
 
 
-async def run_curtin_command(app, context,
-                             command: str, *args: str,
-                             config=None, private_mounts: bool) -> None:
+async def run_curtin_command(
+        app, context,
+        command: str, *args: str,
+        config=None,
+        private_mounts: bool,
+        **opts) -> subprocess.CompletedProcess:
     cmd = await start_curtin_command(
         app, context, command, *args,
-        config=config, private_mounts=private_mounts)
-    await cmd.wait()
+        config=config, private_mounts=private_mounts, **opts)
+    return await cmd.wait()
