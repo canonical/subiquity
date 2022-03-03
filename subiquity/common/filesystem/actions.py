@@ -66,10 +66,10 @@ class DeviceAction(enum.Enum):
         r = _checkers[self](device)
         if isinstance(r, bool):
             return r, None
-        elif isinstance(r, str):
-            return False, r
+        elif r is None:
+            return False, _("Unknown reason")
         else:
-            return r
+            return False, str(r)
 
 
 @functools.singledispatch

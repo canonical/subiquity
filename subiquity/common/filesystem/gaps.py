@@ -130,6 +130,7 @@ def _can_fit_bootloader_partition_bios(disk):
                 return True
         if isinstance(pg, Gap) and pg.size >= BIOS_GRUB_SIZE_BYTES:
             return True
+    return False
 
 
 def _can_fit_bootloader_partition_of_size(disk, size):
@@ -141,6 +142,7 @@ def _can_fit_bootloader_partition_of_size(disk, size):
                 return True
         if isinstance(pg, Gap) and pg.size >= size:
             return True
+    return False
 
 
 def can_fit_bootloader_partition(disk):
