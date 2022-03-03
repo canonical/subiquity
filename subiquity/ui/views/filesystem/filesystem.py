@@ -280,7 +280,7 @@ class DeviceList(WidgetWrap):
         elif cd.type == "lvm_volgroup":
             cd.devices.remove(disk)
         else:
-            1/0
+            raise Exception(f'Attempted removal of unknown disktype {cd.type}')
         disk._constructed_device = None
         self.parent.refresh_model_inputs()
 
