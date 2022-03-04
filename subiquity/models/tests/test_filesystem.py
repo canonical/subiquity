@@ -161,13 +161,18 @@ def make_model_and_disk(bootloader=None):
     return model, make_disk(model)
 
 
-def make_partition(model, device=None, *, preserve=False, size=None, **kw):
+def make_partition(model, device=None, *, preserve=False, size=None,
+                   offset=None, **kw):
     if device is None:
         device = make_disk(model)
-    if size is None:
-        size = gaps.largest_gap_size(device)//2
-    partition = Partition(
-        m=model, device=device, size=size, preserve=preserve, **kw)
+    if size is None or offset is None:
+        gap = gaps.largest_gap(device)
+        if size is None:
+            size = gap.size//2
+        if offset is None:
+            offset = gap.offset
+    partition = Partition(m=model, device=device, size=size, offset=offset,
+                          preserve=preserve, **kw)
     if preserve:
         partition.number = len(device._partitions)
     model._actions.append(partition)
