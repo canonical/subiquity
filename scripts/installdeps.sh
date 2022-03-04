@@ -1,5 +1,7 @@
 #!/bin/bash
 set -eux
+cd "$(dirname ${BASH_SOURCE:0})/.."
+
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get -o APT::Get::Always-Include-Phased-Updates=true -y dist-upgrade
 mkdir -p /etc/systemd/system/zfs-mount.service.d/
