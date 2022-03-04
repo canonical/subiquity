@@ -141,14 +141,16 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.reformat(disk)
         if DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk):
             self.add_boot_disk(disk)
+        gap = gaps.largest_gap(disk)
         self.create_partition(
-            device=disk, spec=dict(
+            device=disk, gap=gap, spec=dict(
                 size=get_bootfs_size(disk),
                 fstype="ext4",
                 mount='/boot'
                 ))
+        gap = gaps.largest_gap(disk)
         part = self.create_partition(
-            device=disk, spec=dict(
+            device=disk, gap=gap, spec=dict(
                 size=gaps.largest_gap_size(disk),
                 fstype=None,
                 ))
