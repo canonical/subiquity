@@ -78,6 +78,7 @@ def _can_be_boot_device_disk(disk, *, with_reformatting=False):
         elif bl == Bootloader.PREP:
             if any(p.flag == "prep" for p in disk._partitions):
                 return True
+        return False  # Temporary measure until we allow partition editing
     return gaps.can_fit_bootloader_partition(disk)
 
 
@@ -93,6 +94,7 @@ def _can_be_boot_device_raid(raid, *, with_reformatting=False):
     if raid._has_preexisting_partition():
         if any(is_esp(p) for p in raid._partitions):
             return True
+        return False  # Temporary measure until we allow partition editing
     return gaps.can_fit_bootloader_partition(raid)
 
 
