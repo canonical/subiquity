@@ -60,7 +60,7 @@ def parts_and_gaps_disk(device):
         return []
     r = []
     used = 0
-    for p in sorted(device._partitions, key=lambda p: p.offset):
+    for p in device.partitions():
         used = align_up(used + p.size, 1 << 20)
         r.append(p)
     if device.ptable == 'vtoc' and len(device._partitions) >= 3:

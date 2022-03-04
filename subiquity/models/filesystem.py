@@ -502,7 +502,7 @@ class _Device(_Formattable, ABC):
         return 'gpt'
 
     def partitions(self):
-        return self._partitions
+        return sorted(self._partitions, key=lambda part: part.sort_value())
 
     @property
     def used(self):
@@ -670,6 +670,9 @@ class Partition(_Formattable):
     multipath = attr.ib(default=None)
     offset = attr.ib(default=None)
 
+    def sort_value(self):
+        return (self._number, self.offset)
+
     def available(self):
         if self.flag in ['bios_grub', 'prep'] or self.grub_device:
             return False
@@ -819,6 +822,9 @@ class LVM_LogicalVolume(_Formattable):
     wipe = attr.ib(default=None)
 
     preserve = attr.ib(default=False)
+
+    def sort_value(self):
+        return self.name
 
     def serialize_size(self):
         if self.size is None:
@@ -1374,7 +1380,7 @@ class FilesystemModel(object):
         _remove_backlinks(obj)
         self._actions.remove(obj)
 
-    def add_partition(self, device, size, offset=None, flag="", wipe=None,
+    def add_partition(self, device, size, *, offset=None, flag="", wipe=None,
                       grub_device=None):
         from subiquity.common.filesystem import boot
         real_size = align_up(size)
