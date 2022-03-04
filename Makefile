@@ -25,13 +25,7 @@ all: dryrun
 .PHONY: aptdeps
 aptdeps:
 	sudo apt update && \
-	sudo apt-get install -y python3-urwid python3-pyudev python3-nose python3-flake8 \
-		python3-yaml python3-coverage python3-dev pkg-config libnl-genl-3-dev \
-		libnl-route-3-dev python3-attr python3-distutils-extra python3-requests \
-		python3-requests-unixsocket python3-jsonschema python3-apport \
-		python3-bson xorriso isolinux python3-aiohttp cloud-init ssh-import-id \
-		curl jq build-essential python3-pytest python3-async-timeout \
-	        language-selector-common fuseiso python3-pytest-xdist python3-aioresponses
+	sudo apt-get install -y $(shell cat apt-deps.txt)
 
 .PHONY: install_deps
 install_deps: aptdeps gitdeps
