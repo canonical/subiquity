@@ -63,8 +63,6 @@ def parts_and_gaps_disk(device):
     for p in sorted(device._partitions, key=lambda p: p.offset):
         used = align_up(used + p.size, 1 << 20)
         r.append(p)
-    if device._has_preexisting_partition():
-        return r
     if device.ptable == 'vtoc' and len(device._partitions) >= 3:
         return r
     end = align_down(device.size, 1 << 20) - GPT_OVERHEAD
