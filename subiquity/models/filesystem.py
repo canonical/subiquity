@@ -669,7 +669,7 @@ class Partition(_Formattable):
     grub_device = attr.ib(default=False)
     name = attr.ib(default=None)
     multipath = attr.ib(default=None)
-    offset = attr.ib(offset=None)
+    offset = attr.ib(default=None)
 
     def available(self):
         if self.flag in ['bios_grub', 'prep'] or self.grub_device:
@@ -1375,7 +1375,7 @@ class FilesystemModel(object):
         _remove_backlinks(obj)
         self._actions.remove(obj)
 
-    def add_partition(self, device, size, offset, flag="", wipe=None,
+    def add_partition(self, device, size, offset=None, flag="", wipe=None,
                       grub_device=None):
         from subiquity.common.filesystem import boot
         real_size = align_up(size)

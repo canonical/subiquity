@@ -36,7 +36,7 @@ from subiquity.models.filesystem import (
 @attr.s(auto_attribs=True)
 class Gap:
     device: object
-    start: int
+    offset: int
     size: int
     type: str = 'gap'
 
