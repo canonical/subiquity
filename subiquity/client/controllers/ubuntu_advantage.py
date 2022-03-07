@@ -49,7 +49,11 @@ class UbuntuAdvantageController(SubiquityTuiController):
         """ Generate the UI, based on the data provided by the model. """
 
         dry_run: bool = self.app.opts.dry_run
-        if "LTS" not in lsb_release(dry_run=dry_run)["description"]:
+
+        lsb = lsb_release(dry_run=dry_run)
+        # TODO Remove explicit check for jammy when 22.04 gets marked as a LTS
+        # version instead of a "(development branch)".
+        if "LTS" not in lsb["description"] and lsb["codename"] != "jammy":
             await self.endpoint.skip.POST()
             raise Skip("Not running LTS version")
 
