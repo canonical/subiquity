@@ -137,7 +137,9 @@ class UbuntuDriversRunDriversInterface(UbuntuDriversInterface):
         # TODO This does not tell us if the "--recommended" option is
         # available.
         try:
-            await arun_command(["command", "-v", "ubuntu-drivers"])
+            await arun_command(
+                    ["sh", "-c", "command -v ubuntu-driver"],
+                    check=True)
         except subprocess.CalledProcessError:
             raise CommandNotFoundError(
                     "Command ubuntu-drivers is not available in this system")
