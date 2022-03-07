@@ -78,7 +78,7 @@ class DriversController(SubiquityController):
         async with apt.overlay() as d:
             try:
                 # Make sure ubuntu-drivers is available.
-                self.ubuntu_drivers.ensure_cmd_exists(d.mountpoint)
+                await self.ubuntu_drivers.ensure_cmd_exists(d.mountpoint)
             except CommandNotFoundError:
                 self.drivers = []
             else:
