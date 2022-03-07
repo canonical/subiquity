@@ -59,7 +59,8 @@ class UbuntuDriversInterface(ABC):
     async def install_drivers(self, root_dir: str, context) -> None:
         await run_curtin_command(
             self.app, context,
-            "in-target", "-t", root_dir, "--", *self.install_drivers_cmd)
+            "in-target", "-t", root_dir, "--", *self.install_drivers_cmd,
+            private_mounts=True)
 
     def _drivers_from_output(self, output: str) -> List[str]:
         """ Parse the output of ubuntu-drivers list --recommended and return a
@@ -98,7 +99,7 @@ class UbuntuDriversClientInterface(UbuntuDriversInterface):
         result = await run_curtin_command(
             self.app, context,
             "in-target", "-t", root_dir, "--", *self.list_drivers_cmd,
-            capture=True)
+            capture=True, private_mounts=True)
         # Currently we have no way to specify universal_newlines=True or
         # encoding="utf-8" to run_curtin_command so we need to decode the
         # output.

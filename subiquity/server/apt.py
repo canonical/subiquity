@@ -149,7 +149,7 @@ class AptConfigurer:
         if type is not None:
             opts.extend(['-t', type])
         await self.app.command_runner.run(
-            ['mount'] + opts + [device, mountpoint])
+            ['mount'] + opts + [device, mountpoint], private_mounts=False)
         m = Mountpoint(mountpoint=mountpoint)
         self._mounts.append(m)
         return m
@@ -157,7 +157,9 @@ class AptConfigurer:
     async def unmount(self, mountpoint: Mountpoint, remove=True):
         if remove:
             self._mounts.remove(mountpoint)
-        await self.app.command_runner.run(['umount', mountpoint.mountpoint])
+        await self.app.command_runner.run(
+                ['umount', mountpoint.mountpoint],
+                private_mounts=False)
 
     async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
         tdir = self.tdir()
@@ -194,7 +196,7 @@ class AptConfigurer:
 
         await run_curtin_command(
             self.app, context, 'apt-config', '-t', self.configured_tree.p(),
-            config=config_location)
+            config=config_location, private_mounts=True)
 
     async def configure_for_install(self, context):
         assert self.configured_tree is not None
@@ -223,7 +225,7 @@ class AptConfigurer:
 
         await run_curtin_command(
             self.app, context, "in-target", "-t", self.install_tree.p(),
-            "--", "apt-get", "update")
+            "--", "apt-get", "update", private_mounts=True)
 
         return self.install_tree.p()
 
@@ -270,7 +272,7 @@ class AptConfigurer:
         if self.app.base_model.network.has_network:
             await run_curtin_command(
                 self.app, context, "in-target", "-t", target_mnt.p(),
-                "--", "apt-get", "update")
+                "--", "apt-get", "update", private_mounts=True)
         else:
             await _restore_dir('var/lib/apt/lists')
 

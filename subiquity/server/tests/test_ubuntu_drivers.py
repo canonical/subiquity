@@ -62,7 +62,8 @@ class TestUbuntuDriversInterface(unittest.TestCase):
                 self.app, "installing third-party drivers",
                 "in-target", "-t", "/target",
                 "--",
-                "ubuntu-drivers", "install"
+                "ubuntu-drivers", "install",
+                private_mounts=True,
                 )
 
     @patch.multiple(UbuntuDriversInterface, __abstractmethods__=set())
@@ -130,6 +131,6 @@ nvidia-driver-510 linux-modules-nvidia-510-generic-hwe-20.04
                 "in-target", "-t", "/target",
                 "--",
                 "ubuntu-drivers", "list", "--recommended",
-                capture=True)
+                capture=True, private_mounts=True)
 
         self.assertEqual(drivers, ["nvidia-driver-510"])

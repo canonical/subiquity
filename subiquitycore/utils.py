@@ -19,6 +19,7 @@ import logging
 import os
 import random
 import subprocess
+from typing import List
 
 log = logging.getLogger("subiquitycore.utils")
 
@@ -34,9 +35,9 @@ def _clean_env(env):
     return env
 
 
-def run_command(cmd, *, input=None, stdout=subprocess.PIPE,
+def run_command(cmd: List[str], *, input=None, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, encoding='utf-8', errors='replace',
-                env=None, **kw):
+                env=None, **kw) -> subprocess.CompletedProcess:
     """A wrapper around subprocess.run with logging and different defaults.
 
     We never ever want a subprocess to inherit our file descriptors!
@@ -62,9 +63,11 @@ def run_command(cmd, *, input=None, stdout=subprocess.PIPE,
         return cp
 
 
-async def arun_command(cmd, *, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+async def arun_command(cmd: List[str], *,
+                       stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                        encoding='utf-8', input=None, errors='replace',
-                       env=None, check=False, **kw):
+                       env=None, check=False, **kw) \
+                       -> subprocess.CompletedProcess:
     if input is None:
         if 'stdin' not in kw:
             kw['stdin'] = subprocess.DEVNULL
@@ -88,23 +91,24 @@ async def arun_command(cmd, *, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             cmd, proc.returncode, stdout, stderr)
 
 
-async def astart_command(cmd, *, stdout=subprocess.PIPE,
+async def astart_command(cmd: List[str], *, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE, stdin=subprocess.DEVNULL,
-                         env=None, **kw):
+                         env=None, **kw) -> asyncio.subprocess.Process:
     log.debug("astart_command called: %s", cmd)
     return await asyncio.create_subprocess_exec(
         *cmd, stdout=stdout, stderr=stderr,
         env=_clean_env(env), **kw)
 
 
-async def split_cmd_output(cmd, split_on):
+async def split_cmd_output(cmd: List[str], split_on: str) -> List[str]:
     cp = await arun_command(cmd, check=True)
     return cp.stdout.split(split_on)
 
 
-def start_command(cmd, *, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+def start_command(cmd: List[str], *,
+                  stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                   stderr=subprocess.PIPE, encoding='utf-8', errors='replace',
-                  env=None, **kw):
+                  env=None, **kw) -> subprocess.Popen:
     """A wrapper around subprocess.Popen with logging and different defaults.
 
     We never ever want a subprocess to inherit our file descriptors!
