@@ -155,7 +155,10 @@ class UAInterface:
         """
         info = await self.get_subscription(token)
 
-        expiration = dt.fromisoformat(info["expires"])
+        # Sometimes, a time zone offset of 0 is replaced by the letter Z. This
+        # is specified in RFC 3339 but not supported by fromisoformat.
+        # See https://bugs.python.org/issue35829
+        expiration = dt.fromisoformat(info["expires"].replace("Z", "+00:00"))
         if expiration.timestamp() <= dt.utcnow().timestamp():
             raise ExpiredUATokenError(token, expires=info["expires"])
 
