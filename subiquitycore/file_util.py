@@ -21,14 +21,27 @@ import tempfile
 
 import yaml
 
-_DEF_PERMS = 0o640
+_DEF_PERMS_FILE = 0o640
 _DEF_GROUP = 'adm'
+
+
+def set_log_perms(target, *, isdir=True, group_write=False, mode=None):
+    if os.getuid() != 0:
+        return
+    if mode is None:
+        mode = _DEF_PERMS_FILE
+        if isdir:
+            mode |= 0o110
+        if group_write:
+            mode |= 0o020
+    os.chmod(target, mode)
+    os.chown(target, -1, grp.getgrnam(_DEF_GROUP).gr_gid)
 
 
 @contextlib.contextmanager
 def open_perms(filename, *, cmode=None):
     if cmode is None:
-        cmode = _DEF_PERMS
+        cmode = _DEF_PERMS_FILE
 
     tf = None
     try:
@@ -37,9 +50,7 @@ def open_perms(filename, *, cmode=None):
         tf = tempfile.NamedTemporaryFile(dir=dirname, delete=False, mode='w')
         yield tf
         tf.close()
-        os.chmod(tf.name, cmode)
-        if os.getuid() == 0:
-            os.chown(tf.name, -1, grp.getgrnam(_DEF_GROUP).gr_gid)
+        set_log_perms(tf.name, mode=cmode)
         os.rename(tf.name, filename)
     except OSError as e:
         if tf is not None:

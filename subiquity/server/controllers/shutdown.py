@@ -19,7 +19,10 @@ import os
 import platform
 import subprocess
 
-from subiquitycore.file_util import open_perms
+from subiquitycore.file_util import (
+    open_perms,
+    set_log_perms,
+)
 from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command, run_command
 
@@ -98,6 +101,9 @@ class ShutdownController(SubiquityController):
         else:
             await arun_command(
                 ['cp', '-aT', '/var/log/installer', target_logs])
+            # Close the permissions from group writes on the target.
+            set_log_perms(target_logs, isdir=True, group_write=False)
+
         journal_txt = os.path.join(target_logs, 'installer-journal.txt')
         try:
             with open_perms(journal_txt) as output:

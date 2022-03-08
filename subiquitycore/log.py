@@ -13,18 +13,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import grp
 import logging
 import os
 
-from subiquitycore.file_util import _DEF_PERMS, _DEF_GROUP
+from subiquitycore.file_util import set_log_perms
 
 
 def setup_logger(dir, base='subiquity'):
     os.makedirs(dir, exist_ok=True)
-    if os.getuid() == 0:
-        os.chmod(dir, 0o750)
-        os.chown(dir, -1, grp.getgrnam(_DEF_GROUP).gr_gid)
+    # Create the log directory in such a way that users in the group may
+    # write to this directory in the installation environment.
+    set_log_perms(dir, isdir=True, group_write=True)
 
     logger = logging.getLogger("")
     logger.setLevel(logging.DEBUG)
@@ -35,9 +34,7 @@ def setup_logger(dir, base='subiquity'):
         nopid_file = os.path.join(dir, "{}-{}.log".format(base, level))
         logfile = "{}.{}".format(nopid_file, os.getpid())
         handler = logging.FileHandler(logfile)
-        os.chmod(logfile, _DEF_PERMS)
-        if os.getuid() == 0:
-            os.chown(logfile, -1, grp.getgrnam(_DEF_GROUP).gr_gid)
+        set_log_perms(logfile, isdir=False, group_write=False)
         # os.symlink cannot replace an existing file or symlink so create
         # it and then rename it over.
         tmplink = logfile + ".link"
