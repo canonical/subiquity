@@ -15,6 +15,11 @@ validate () {
         exit 1
     fi
 
+    if [ -s .subiquity/server-stderr ]; then
+        cat .subiquity/server-stderr
+        exit 1
+    fi
+
     if [ "${mode}" = "install" ]; then
         python3 scripts/validate-yaml.py .subiquity/var/log/installer/subiquity-curtin-install.conf
         if [ ! -e .subiquity/subiquity-client-debug.log ] || [ ! -e .subiquity/subiquity-server-debug.log ]; then
