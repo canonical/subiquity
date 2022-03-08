@@ -3,6 +3,7 @@ set -eux
 
 testschema=.subiquity/test-autoinstall-schema.json
 export PYTHONPATH=$PWD:$PWD/probert:$PWD/curtin
+export PYTHONTRACEMALLOC=3
 
 RELEASE=$(lsb_release -rs)
 
