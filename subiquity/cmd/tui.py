@@ -99,11 +99,12 @@ def main():
             server_args.extend(('--output-base', base))
             server_parser = make_server_args_parser()
             server_parser.parse_args(server_args)  # just to check
-            server_output = open(base + '/server-output', 'w')
+            server_stdout = open(os.path.join(base, 'server-stdout'), 'w')
+            server_stderr = open(os.path.join(base, 'server-stderr'), 'w')
             server_cmd = [sys.executable, '-m', 'subiquity.cmd.server'] + \
                 server_args
             server_proc = subprocess.Popen(
-                server_cmd, stdout=server_output, stderr=subprocess.STDOUT)
+                server_cmd, stdout=server_stdout, stderr=server_stderr)
             opts.server_pid = str(server_proc.pid)
             print("running server pid {}".format(server_proc.pid))
         elif opts.server_pid is not None:
