@@ -204,3 +204,8 @@ class TestUAInterface(unittest.TestCase):
             name="cis",
             description="Center for Internet Security Audit Tools",
         ), services)
+
+        # Test with "Z" suffix for the expiration date.
+        subscription["expires"] = "2035-12-31T00:00:00Z"
+        services = run_coro(
+                interface.get_activable_services(token="XXX"))
