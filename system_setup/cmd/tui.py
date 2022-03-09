@@ -94,7 +94,8 @@ def main():
         server_args += ['--prefill='+opts.prefill]
 
     os.makedirs(server_output_dir, exist_ok=True)
-    server_output = open(os.path.join(server_output_dir, 'server-output'), 'w')
+    server_stdout = open(os.path.join(server_output_dir, 'server-stdout'), 'w')
+    server_stderr = open(os.path.join(server_output_dir, 'server-stderr'), 'w')
 
     if need_start_server:
         if os.path.exists(server_state_file):
@@ -104,7 +105,7 @@ def main():
         server_cmd = [sys.executable, '-m', 'system_setup.cmd.server'] + \
             server_args
         server_proc = subprocess.Popen(
-            server_cmd, stdout=server_output, stderr=subprocess.STDOUT)
+            server_cmd, stdout=server_stdout, stderr=server_stderr)
         opts.server_pid = str(server_proc.pid)
         print("running server pid {} with args: {}"
               .format(server_proc.pid, server_cmd))
