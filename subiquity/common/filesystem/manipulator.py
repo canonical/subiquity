@@ -75,6 +75,16 @@ def scale_partitions(all_factors, disk_size):
     return ret
 
 
+def get_efi_size(disk):
+    all_factors = (uefi_scale, bootfs_scale, rootfs_scale)
+    return scale_partitions(all_factors, disk.size)[0]
+
+
+def get_bootfs_size(disk):
+    all_factors = (uefi_scale, bootfs_scale, rootfs_scale)
+    return scale_partitions(all_factors, disk.size)[1]
+
+
 class FilesystemManipulator:
 
     def create_mount(self, fs, spec):
@@ -138,14 +148,6 @@ class FilesystemManipulator:
         self.clear(part)
         self.model.remove_partition(part)
 
-    def _get_efi_size(self, disk):
-        all_factors = (uefi_scale, bootfs_scale, rootfs_scale)
-        return scale_partitions(all_factors, disk.size)[0]
-
-    def _get_bootfs_size(self, disk):
-        all_factors = (uefi_scale, bootfs_scale, rootfs_scale)
-        return scale_partitions(all_factors, disk.size)[1]
-
     def _create_boot_with_resize(self, disk, spec, **kwargs):
         part_size = spec['size']
         if part_size > gaps.largest_gap_size(disk):
@@ -156,7 +158,7 @@ class FilesystemManipulator:
     def _create_boot_partition(self, disk):
         bootloader = self.model.bootloader
         if bootloader == Bootloader.UEFI:
-            part_size = self._get_efi_size(disk)
+            part_size = get_efi_size(disk)
             log.debug('_create_boot_partition - adding EFI partition')
             spec = dict(size=part_size, fstype='fat32')
             if self.model._mount_for_path("/boot/efi") is None:
