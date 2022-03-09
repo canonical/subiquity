@@ -39,10 +39,6 @@ from subiquity.ui.views.filesystem.probing import (
 
 log = logging.getLogger("subiquity.client.controllers.filesystem")
 
-BIOS_GRUB_SIZE_BYTES = 1 * 1024 * 1024    # 1MiB
-PREP_GRUB_SIZE_BYTES = 8 * 1024 * 1024    # 8MiB
-UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
-
 
 class FilesystemController(SubiquityTuiController, FilesystemManipulator):
 
