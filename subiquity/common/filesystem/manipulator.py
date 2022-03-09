@@ -21,13 +21,12 @@ from subiquity.common.filesystem import boot, gaps
 from subiquity.common.types import Bootloader
 from subiquity.models.filesystem import (
     align_up,
+    MiB,
     Partition,
     )
 
 log = logging.getLogger('subiquity.common.filesystem.manipulator')
 
-
-MiB = 1024 * 1024
 BIOS_GRUB_SIZE_BYTES = 1 * MiB
 PREP_GRUB_SIZE_BYTES = 8 * MiB
 
