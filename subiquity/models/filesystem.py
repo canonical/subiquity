@@ -576,6 +576,10 @@ class Disk(_Device):
 
     _info = attr.ib(default=None)
 
+    def alignment_data(self):
+        ptable = self.ptable_for_new_partition()
+        return self._m._partition_alignment_data[ptable]
+
     def info_for_display(self):
         bus = self._info.raw.get('ID_BUS', None)
         major = self._info.raw.get('MAJOR', None)
@@ -928,11 +932,43 @@ def align_down(size, block_size=1 << 20):
     return size & ~(block_size - 1)
 
 
+@attr.s(auto_attribs=True)
+class PartitionAlignmentData:
+    part_align: int
+    min_gap_size: int
+    min_start_offset: int
+    min_end_offset: int
+    primary_part_limit: int
+    ebr_space: int = 0
+
+
 class FilesystemModel(object):
 
-    lower_size_limit = 128 * (1 << 20)
-
     target = None
+
+    _partition_alignment_data = {
+        'gpt': PartitionAlignmentData(
+            part_align=MiB,
+            min_gap_size=MiB,
+            min_start_offset=GPT_OVERHEAD//2,
+            min_end_offset=GPT_OVERHEAD//2,
+            primary_part_limit=128),
+        'msdos': PartitionAlignmentData(
+            part_align=MiB,
+            min_gap_size=MiB,
+            min_start_offset=GPT_OVERHEAD//2,
+            min_end_offset=0,
+            ebr_space=MiB,
+            primary_part_limit=4),
+        # XXX check this one!!
+        'vtoc': PartitionAlignmentData(
+            part_align=MiB,
+            min_gap_size=MiB,
+            min_start_offset=GPT_OVERHEAD//2,
+            min_end_offset=0,
+            ebr_space=MiB,
+            primary_part_limit=3),
+        }
 
     @classmethod
     def is_mounted_filesystem(self, fstype):
