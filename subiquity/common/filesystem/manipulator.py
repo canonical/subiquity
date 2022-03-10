@@ -134,10 +134,9 @@ class FilesystemManipulator:
         self.model.remove_filesystem(fs)
     delete_format = delete_filesystem
 
-    def create_partition(self, device, spec, flag="", wipe=None,
-                         grub_device=None):
+    def create_partition(self, device, gap, spec, **kw):
         part = self.model.add_partition(
-            device, spec["size"], flag, wipe, grub_device)
+            device, spec["size"], offset=gap.offset, **kw)
         self.create_filesystem(part, spec)
         return part
 
@@ -152,7 +151,8 @@ class FilesystemManipulator:
         if part_size > gaps.largest_gap_size(disk):
             largest_part = max(disk.partitions(), key=lambda p: p.size)
             largest_part.size -= (part_size - gaps.largest_gap_size(disk))
-        return self.create_partition(disk, spec, **kwargs)
+        gap = gaps.largest_gap(disk)
+        return self.create_partition(disk, gap, spec, **kwargs)
 
     def _create_boot_partition(self, disk):
         bootloader = self.model.bootloader
@@ -290,7 +290,8 @@ class FilesystemManipulator:
                     spec['size'], part.size, gaps.largest_gap_size(disk))
                 spec['size'] = gaps.largest_gap_size(disk)
 
-        self.create_partition(disk, spec)
+        gap = gaps.largest_gap(disk)
+        self.create_partition(disk, gap, spec)
 
         log.debug("Successfully added partition")
 

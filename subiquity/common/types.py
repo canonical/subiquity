@@ -266,6 +266,7 @@ class Partition:
     # does this partition represent the actual boot partition for this device?
     boot: Optional[bool] = None
     os: Optional[OsProber] = None
+    offset: Optional[int] = None
 
 
 @attr.s(auto_attribs=True)

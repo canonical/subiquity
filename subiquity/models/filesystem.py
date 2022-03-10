@@ -671,6 +671,7 @@ class Partition(_Formattable):
     grub_device = attr.ib(default=False)
     name = attr.ib(default=None)
     multipath = attr.ib(default=None)
+    offset = attr.ib(default=None)
 
     def available(self):
         if self.flag in ['bios_grub', 'prep'] or self.grub_device:
@@ -1377,16 +1378,19 @@ class FilesystemModel(object):
         _remove_backlinks(obj)
         self._actions.remove(obj)
 
-    def add_partition(self, device, size, flag="", wipe=None,
+    def add_partition(self, device, size, *, offset=None, flag="", wipe=None,
                       grub_device=None):
         from subiquity.common.filesystem import boot
         real_size = align_up(size)
         log.debug("add_partition: rounded size from %s to %s", size, real_size)
+        if offset is None:
+            from subiquity.common.filesystem.gaps import largest_gap
+            offset = largest_gap(device).offset
         if device._fs is not None:
             raise Exception("%s is already formatted" % (device,))
         p = Partition(
             m=self, device=device, size=real_size, flag=flag, wipe=wipe,
-            grub_device=grub_device)
+            grub_device=grub_device, offset=offset)
         if boot.is_bootloader_partition(p):
             device._partitions.insert(0, device._partitions.pop())
         device.ptable = device.ptable_for_new_partition()

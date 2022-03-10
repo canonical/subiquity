@@ -31,6 +31,7 @@ from subiquity.models.filesystem import (
 @attr.s(auto_attribs=True)
 class Gap:
     device: object
+    offset: int
     size: int
     type: str = 'gap'
 
@@ -60,7 +61,7 @@ def parts_and_gaps_disk(device):
         return r
     end = align_down(device.size, 1 << 20) - GPT_OVERHEAD
     if end - used >= (1 << 20):
-        r.append(Gap(device, end - used))
+        r.append(Gap(device, used, end - used))
     return r
 
 
@@ -75,7 +76,7 @@ def _parts_and_gaps_vg(device):
         return r
     remaining = align_down(device.size - used, LVM_CHUNK_SIZE)
     if remaining >= LVM_CHUNK_SIZE:
-        r.append(Gap(device, remaining))
+        r.append(Gap(device, 0, remaining))
     return r
 
 

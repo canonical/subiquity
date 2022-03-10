@@ -225,7 +225,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             disk1, size=512 << 20, flag="boot")
         disk1p1.preserve = True
         disk1p2 = manipulator.model.add_partition(
-            disk1, size=gaps.largest_gap_size(disk1))
+            disk1, size=8192 << 20, offset=513 << 20)
         disk1p2.preserve = True
         manipulator.partition_disk_handler(
             disk1, disk1p2, {'fstype': 'ext4', 'mount': '/'})
