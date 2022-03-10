@@ -758,6 +758,10 @@ class Raid(_Device):
                     return s
         return get_raid_size(self.raidlevel, self.devices)
 
+    def alignment_data(self):
+        ptable = self.ptable_for_new_partition()
+        return self._m._partition_alignment_data[ptable]
+
     @property
     def available_for_partitions(self):
         # For some reason, the overhead on RAID devices seems to be
