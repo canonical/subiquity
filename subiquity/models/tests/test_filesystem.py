@@ -661,3 +661,20 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertTrue(disk1p1.id in rendered_ids)
         self.assertTrue(disk2.id in rendered_ids)
         self.assertTrue(disk2p1.id in rendered_ids)
+
+
+class TestAlignmentData(unittest.TestCase):
+    def test_alignment_gaps_coherence(self):
+        for ptable in 'gpt', 'msdos', 'vtoc':
+            model = make_model(Bootloader.NONE)
+            disk1 = make_disk(model, ptable=ptable)
+            gaps_max = gaps.largest_gap_size(disk1)
+
+            align_data = disk1.alignment_data()
+            align_max = (disk1.size - align_data.min_start_offset
+                         - align_data.min_end_offset)
+
+            # The alignment data currently has a better notion of end
+            # information, so gaps produces numbers that are too small by 1MiB
+            # for ptable != 'gpt'
+            self.assertTrue(gaps_max <= align_max, f'ptable={ptable}')
