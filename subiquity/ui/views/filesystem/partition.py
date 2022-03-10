@@ -57,9 +57,6 @@ from subiquity.ui.mount import (
 log = logging.getLogger('subiquity.ui.views.filesystem.partition')
 
 
-DEFAULT_ALIGNMENT = 1 << 20
-
-
 class FSTypeField(FormField):
 
     takes_default_style = False
@@ -383,7 +380,7 @@ class PartitionStretchy(Stretchy):
             alignment = LVM_CHUNK_SIZE
             lvm_names = {p.name for p in disk.partitions()}
         else:
-            alignment = DEFAULT_ALIGNMENT
+            alignment = disk.alignment_data().part_align
             lvm_names = None
         if self.partition:
             if partition.flag in ["bios_grub", "prep"]:
@@ -576,7 +573,8 @@ class FormatEntireStretchy(Stretchy):
         elif not isinstance(device, Disk):
             initial['fstype'] = 'ext4'
         self.form = PartitionForm(
-            self.model, 0, initial, None, device, DEFAULT_ALIGNMENT)
+            self.model, 0, initial, None, device,
+            alignment=device.alignment_data().part_align)
         self.form.remove_field('size')
         self.form.remove_field('name')
 
