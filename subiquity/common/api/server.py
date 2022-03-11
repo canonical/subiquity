@@ -18,6 +18,7 @@ import os
 import traceback
 
 from aiohttp import web
+from aiohttp.web_exceptions import HTTPConflict
 
 from subiquity.common.serialize import Serializer
 
@@ -123,6 +124,8 @@ def _make_handler(controller, definition, implementation, serializer):
                 resp = web.json_response(
                     serializer.serialize(def_ret_ann, result),
                     headers={'x-status': 'ok'})
+            except HTTPConflict as e:
+                resp = e
             except Exception as exc:
                 tb = traceback.TracebackException.from_exception(exc)
                 resp = web.Response(

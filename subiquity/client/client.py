@@ -69,6 +69,11 @@ class Abort(Exception):
         self.error_report_ref = error_report_ref
 
 
+class ServerTaskCancelled(Exception):
+    """ Exception to raise when the server cancels a task that we are waiting
+    on through an HTTP query. """
+
+
 DEBUG_SHELL_INTRO = _("""\
 Installer shell session activated.
 
@@ -221,7 +226,9 @@ class SubiquityClient(TuiApplication):
             raise Abort(ref)
         try:
             response.raise_for_status()
-        except aiohttp.ClientError:
+        except aiohttp.ClientError as e:
+            if isinstance(e, aiohttp.ClientResponseError) and e.status == 409:
+                raise ServerTaskCancelled()
             report = self.error_reporter.make_apport_report(
                 ErrorReportKind.SERVER_REQUEST_FAIL,
                 "request to {}".format(response.url.path))
