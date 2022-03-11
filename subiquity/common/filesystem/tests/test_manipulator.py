@@ -232,6 +232,16 @@ class TestFilesystemManipulator(unittest.TestCase):
         efi_mnt = manipulator.model._mount_for_path("/boot/efi")
         self.assertEqual(efi_mnt.device.volume, disk1p1)
 
+    def test_add_boot_has_valid_offset(self):
+        for bl in Bootloader:
+            if bl == Bootloader.NONE:
+                continue
+            manipulator = make_manipulator(bl)
+
+            disk1 = make_disk(manipulator.model, preserve=True)
+            part = manipulator.add_boot_disk(disk1)
+            self.assertEqual(1024 * 1024, part.offset)
+
 
 class TestPartitionSizeScaling(unittest.TestCase):
     def test_scale_factors(self):
