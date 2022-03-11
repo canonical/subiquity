@@ -239,7 +239,8 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator = make_manipulator(bl)
 
             disk1 = make_disk(manipulator.model, preserve=True)
-            part = manipulator.add_boot_disk(disk1)
+            manipulator.add_boot_disk(disk1)
+            part = gaps.parts_and_gaps(disk1)[0]
             self.assertEqual(1024 * 1024, part.offset)
 
 
