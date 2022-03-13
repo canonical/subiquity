@@ -510,7 +510,7 @@ class SubiquityServer(Application):
         status_coro = arun_command(["cloud-init", "status", "--wait"])
         try:
             status_cp = await asyncio.wait_for(status_coro, 600)
-        except asyncio.CancelledError:
+        except asyncio.TimeoutError:
             status_txt = '<timeout>'
             self.cloud_init_ok = False
         else:
