@@ -434,7 +434,7 @@ class BaseNetworkController(BaseController):
             self.update_link(dev)
         self.apply_config()
 
-    def get_info_for_netdev(self, dev_name: str) -> str:
+    async def get_info_for_netdev(self, dev_name: str) -> str:
         device = self.model.get_netdev_by_name(dev_name)
         if device.info is not None:
             return yaml.dump(
