@@ -13,6 +13,7 @@ from subiquity.models.filesystem import (
     )
 from subiquity.models.tests.test_filesystem import (
     FakeStorageInfo,
+    make_model,
     )
 from subiquity.ui.views.filesystem.filesystem import FilesystemView
 
@@ -23,14 +24,14 @@ class FilesystemViewTests(unittest.TestCase):
         controller = mock.create_autospec(spec=FilesystemController)
         controller.ui = mock.Mock()
         model.bootloader = Bootloader.NONE
-        model.all_devices.return_value = devices
+        model.all_devices = mock.Mock(return_value=devices)
         return FilesystemView(model, controller)
 
     def test_simple(self):
         self.make_view(mock.create_autospec(spec=FilesystemModel))
 
     def test_one_disk(self):
-        model = mock.create_autospec(spec=FilesystemModel)
+        model = make_model()
         model._probe_data = {}
         model._actions = []
         model._all_ids = set()

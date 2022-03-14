@@ -142,14 +142,16 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.reformat(disk)
         if DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk):
             self.add_boot_disk(disk)
+        gap = gaps.largest_gap(disk)
         self.create_partition(
-            device=disk, spec=dict(
+            device=disk, gap=gap, spec=dict(
                 size=get_bootfs_size(disk),
                 fstype="ext4",
                 mount='/boot'
                 ))
+        gap = gaps.largest_gap(disk)
         part = self.create_partition(
-            device=disk, spec=dict(
+            device=disk, gap=gap, spec=dict(
                 size=gaps.largest_gap_size(disk),
                 fstype=None,
                 ))
@@ -353,21 +355,21 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if data.partition.boot is not None:
             raise ValueError('add_partition does not support changing boot')
         disk = self.model._one(id=data.disk_id)
-        largest_size = gaps.largest_gap_size(disk)
-        if largest_size == 0:
+        gap = gaps.largest_gap(disk)
+        if gap.size == 0:
             raise ValueError('no space on disk')
         requested_size = data.partition.size or 0
-        if requested_size > largest_size:
+        if requested_size > gap.size:
             raise ValueError('new partition too large')
         if requested_size < 1:
-            requested_size = largest_size
+            requested_size = gap.size
         spec = {
             'size': requested_size,
             'fstype': data.partition.format,
             'mount': data.partition.mount,
         }
 
-        self.create_partition(disk, spec, '', 'superblock', None)
+        self.create_partition(disk, gap, spec, wipe='superblock')
         return await self.v2_GET()
 
     async def v2_delete_partition_POST(self, data: ModifyPartitionV2) \

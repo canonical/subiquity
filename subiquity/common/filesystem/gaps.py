@@ -23,7 +23,6 @@ from subiquity.models.filesystem import (
     Disk,
     LVM_CHUNK_SIZE,
     LVM_VolGroup,
-    GPT_OVERHEAD,
     Raid,
     )
 
@@ -31,6 +30,7 @@ from subiquity.models.filesystem import (
 @attr.s(auto_attribs=True)
 class Gap:
     device: object
+    offset: int
     size: int
     type: str = 'gap'
 
@@ -51,6 +51,8 @@ def parts_and_gaps_disk(device):
         return []
     r = []
     used = 0
+    ad = device.alignment_data()
+    used += ad.min_start_offset
     for p in device._partitions:
         used = align_up(used + p.size, 1 << 20)
         r.append(p)
@@ -58,9 +60,9 @@ def parts_and_gaps_disk(device):
         return r
     if device.ptable == 'vtoc' and len(device._partitions) >= 3:
         return r
-    end = align_down(device.size, 1 << 20) - GPT_OVERHEAD
+    end = align_down(device.size - ad.min_end_offset, 1 << 20)
     if end - used >= (1 << 20):
-        r.append(Gap(device, end - used))
+        r.append(Gap(device, used, end - used))
     return r
 
 
@@ -75,7 +77,7 @@ def _parts_and_gaps_vg(device):
         return r
     remaining = align_down(device.size - used, LVM_CHUNK_SIZE)
     if remaining >= LVM_CHUNK_SIZE:
-        r.append(Gap(device, remaining))
+        r.append(Gap(device, 0, remaining))
     return r
 
 

@@ -225,12 +225,23 @@ class TestFilesystemManipulator(unittest.TestCase):
             disk1, size=512 << 20, flag="boot")
         disk1p1.preserve = True
         disk1p2 = manipulator.model.add_partition(
-            disk1, size=gaps.largest_gap_size(disk1))
+            disk1, size=8192 << 20, offset=513 << 20)
         disk1p2.preserve = True
         manipulator.partition_disk_handler(
             disk1, disk1p2, {'fstype': 'ext4', 'mount': '/'})
         efi_mnt = manipulator.model._mount_for_path("/boot/efi")
         self.assertEqual(efi_mnt.device.volume, disk1p1)
+
+    def test_add_boot_has_valid_offset(self):
+        for bl in Bootloader:
+            if bl == Bootloader.NONE:
+                continue
+            manipulator = make_manipulator(bl)
+
+            disk1 = make_disk(manipulator.model, preserve=True)
+            manipulator.add_boot_disk(disk1)
+            part = gaps.parts_and_gaps(disk1)[0]
+            self.assertEqual(1024 * 1024, part.offset)
 
 
 class TestPartitionSizeScaling(unittest.TestCase):

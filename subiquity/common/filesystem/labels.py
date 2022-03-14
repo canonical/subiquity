@@ -310,10 +310,11 @@ def _for_client_partition(partition, *, min_size=0):
         boot=partition.boot,
         annotations=annotations(partition) + usage_labels(partition),
         os=partition.os,
+        offset=partition.offset,
         mount=partition.mount,
         format=partition.format)
 
 
 @for_client.register(gaps.Gap)
 def _for_client_gap(gap, *, min_size=0):
-    return types.Gap(offset=0, size=gap.size)
+    return types.Gap(offset=gap.offset, size=gap.size)

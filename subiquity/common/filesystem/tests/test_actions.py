@@ -165,17 +165,17 @@ class TestActions(unittest.TestCase):
         self.assertActionNotPossible(gpt_disk2, DeviceAction.TOGGLE_BOOT)
         # Unless there is already a bios_grub partition we can reuse
         gpt_disk3 = make_disk(model, ptable='gpt', preserve=True)
-        make_partition(
-            model, gpt_disk3, flag="bios_grub", preserve=True)
-        make_partition(
-            model, gpt_disk3, preserve=True)
+        make_partition(model, gpt_disk3, flag="bios_grub", preserve=True,
+                       offset=1 << 20, size=512 << 20)
+        make_partition(model, gpt_disk3, preserve=True,
+                       offset=513 << 20, size=8192 << 20)
         self.assertActionPossible(gpt_disk3, DeviceAction.TOGGLE_BOOT)
         # Edge case city: the bios_grub partition has to be first
         gpt_disk4 = make_disk(model, ptable='gpt', preserve=True)
-        make_partition(
-            model, gpt_disk4, preserve=True)
-        make_partition(
-            model, gpt_disk4, flag="bios_grub", preserve=True)
+        make_partition(model, gpt_disk4, preserve=True,
+                       offset=1 << 20, size=8192 << 20)
+        make_partition(model, gpt_disk4, flag="bios_grub", preserve=True,
+                       offset=8193 << 20, size=512 << 20)
         self.assertActionNotPossible(gpt_disk4, DeviceAction.TOGGLE_BOOT)
 
     def _test_TOGGLE_BOOT_boot_partition(self, bl, flag):
@@ -200,7 +200,8 @@ class TestActions(unittest.TestCase):
         make_partition(model, old_disk, preserve=True)
         self.assertActionNotPossible(old_disk, DeviceAction.TOGGLE_BOOT)
         # If there is an existing ESP/PReP partition though, fine!
-        make_partition(model, old_disk, flag=flag, preserve=True)
+        make_partition(model, old_disk, flag=flag, preserve=True,
+                       offset=1 << 20, size=512 << 20)
         self.assertActionPossible(old_disk, DeviceAction.TOGGLE_BOOT)
 
     def test_disk_action_TOGGLE_BOOT_UEFI(self):
@@ -445,4 +446,4 @@ class TestActions(unittest.TestCase):
         self.assertActionNotSupported(lv, DeviceAction.TOGGLE_BOOT)
 
     def test_gap_PARTITION(self):
-        self.assertActionPossible(gaps.Gap(None, 0), DeviceAction.PARTITION)
+        self.assertActionPossible(gaps.Gap(None, 0, 0), DeviceAction.PARTITION)

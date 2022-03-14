@@ -161,13 +161,18 @@ def make_model_and_disk(bootloader=None):
     return model, make_disk(model)
 
 
-def make_partition(model, device=None, *, preserve=False, size=None, **kw):
+def make_partition(model, device=None, *, preserve=False, size=None,
+                   offset=None, **kw):
     if device is None:
         device = make_disk(model)
-    if size is None:
-        size = gaps.largest_gap_size(device)//2
-    partition = Partition(
-        m=model, device=device, size=size, preserve=preserve, **kw)
+    if size is None or offset is None:
+        gap = gaps.largest_gap(device)
+        if size is None:
+            size = gap.size//2
+        if offset is None:
+            offset = gap.offset
+    partition = Partition(m=model, device=device, size=size, offset=offset,
+                          preserve=preserve, **kw)
     if preserve:
         partition.number = len(device._partitions)
     model._actions.append(partition)
@@ -627,8 +632,10 @@ class TestAutoInstallConfig(unittest.TestCase):
     def test_render_includes_all_partitions(self):
         model = make_model(Bootloader.NONE)
         disk1 = make_disk(model, preserve=True)
-        disk1p1 = make_partition(model, disk1, preserve=True)
-        disk1p2 = make_partition(model, disk1, preserve=True)
+        disk1p1 = make_partition(model, disk1, preserve=True,
+                                 offset=1 << 20, size=512 << 20)
+        disk1p2 = make_partition(model, disk1, preserve=True,
+                                 offset=513 << 20, size=8192 << 20)
         fs = model.add_filesystem(disk1p2, 'ext4')
         model.add_mount(fs, '/')
         rendered_ids = {action['id'] for action in model._render_actions()}
