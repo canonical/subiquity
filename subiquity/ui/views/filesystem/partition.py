@@ -366,13 +366,17 @@ def initial_data_for_fs(fs):
 
 class PartitionStretchy(Stretchy):
 
-    def __init__(self, parent, disk, partition=None):
+    def __init__(self, parent, disk, *, partition=None, gap=None):
         self.disk = disk
         self.partition = partition
+        self.gap = gap
         self.model = parent.model
         self.controller = parent.controller
         self.parent = parent
         max_size = gaps.largest_gap_size(disk)
+
+        if partition is None and gap is None:
+            raise Exception('bad PartitionStretchy - needs partition or gap')
 
         initial = {}
         label = _("Create")
@@ -382,7 +386,7 @@ class PartitionStretchy(Stretchy):
         else:
             alignment = disk.alignment_data().part_align
             lvm_names = None
-        if self.partition:
+        if partition:
             if partition.flag in ["bios_grub", "prep"]:
                 label = None
                 initial['mount'] = None
@@ -405,6 +409,7 @@ class PartitionStretchy(Stretchy):
                 lvm_names.remove(partition.name)
         else:
             initial['fstype'] = 'ext4'
+            max_size = self.gap.size
             if isinstance(disk, LVM_VolGroup):
                 x = 0
                 while True:
@@ -540,19 +545,19 @@ class PartitionStretchy(Stretchy):
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
-        data = form.as_data()
+        spec = form.as_data()
         if self.partition is not None and boot.is_esp(self.partition):
             if self.partition.original_fstype() is None:
-                data['fstype'] = self.partition.fs().fstype
+                spec['fstype'] = self.partition.fs().fstype
             if self.partition.fs().mount() is not None:
-                data['mount'] = self.partition.fs().mount().path
+                spec['mount'] = self.partition.fs().mount().path
             else:
-                data['mount'] = None
+                spec['mount'] = None
         if isinstance(self.disk, LVM_VolGroup):
             handler = self.controller.logical_volume_handler
         else:
             handler = self.controller.partition_disk_handler
-        handler(self.disk, self.partition, data)
+        handler(self.disk, spec, partition=self.partition, gap=self.gap)
         self.parent.refresh_model_inputs()
         self.parent.remove_overlay()
 

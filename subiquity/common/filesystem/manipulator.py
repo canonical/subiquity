@@ -197,9 +197,9 @@ class FilesystemManipulator:
             self.delete_partition(p, True)
         self.clear(disk)
 
-    def partition_disk_handler(self, disk, partition, spec):
-        log.debug('partition_disk_handler: %s %s %s', disk, partition, spec)
-        log.debug('disk.freespace: {}'.format(gaps.largest_gap_size(disk)))
+    def partition_disk_handler(self, disk, spec, *, partition=None, gap=None):
+        log.debug('partition_disk_handler: %s %s %s %s',
+                  disk, spec, partition, gap)
 
         if partition is not None:
             if 'size' in spec:
@@ -231,14 +231,15 @@ class FilesystemManipulator:
                     spec['size'], part.size, gaps.largest_gap_size(disk))
                 spec['size'] = gaps.largest_gap_size(disk)
 
-        gap = gaps.largest_gap(disk)
         self.create_partition(disk, gap, spec)
 
         log.debug("Successfully added partition")
 
-    def logical_volume_handler(self, vg, lv, spec):
+    def logical_volume_handler(self, vg, spec, *, partition, gap):
+        # keep the partition name for compat with PartitionStretchy.handler
+        lv = partition
+
         log.debug('logical_volume_handler: %s %s %s', vg, lv, spec)
-        log.debug('vg.freespace: {}'.format(gaps.largest_gap_size(vg)))
 
         if lv is not None:
             if 'name' in spec:
