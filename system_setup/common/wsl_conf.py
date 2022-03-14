@@ -47,26 +47,11 @@ config_adv_default = {
             "enabled": "true",
             "appendwindowspath": "true"
         }
-    },
-    "ubuntu": {
-        "GUI": {
-            "theme": "default",
-            "followwintheme": "false"
-        },
-        "Interop": {
-            "guiintegration": "false",
-            "audiointegration": "false",
-            "advancedipdetection": "false"
-        },
-        "Motd": {
-            "wslnewsenabled": "true"
-        }
     }
 }
 
 conf_type_to_file = {
     "wsl": "/etc/wsl.conf",
-    "ubuntu": "/etc/ubuntu-wsl.conf"
 }
 
 
@@ -105,9 +90,6 @@ def default_loader(is_advanced=False):
     data = {}
     conf_ref = config_adv_default if is_advanced else config_base_default
     data = wsl_config_loader(data, conf_ref, "wsl")
-    if is_advanced:
-        data = \
-            wsl_config_loader(data, conf_ref, "ubuntu")
     return data
 
 

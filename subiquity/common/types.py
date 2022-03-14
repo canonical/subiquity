@@ -453,12 +453,6 @@ class WSLConfigurationBase:
 
 @attr.s(auto_attribs=True)
 class WSLConfigurationAdvanced:
-    gui_theme: str = attr.ib(default='default')
-    gui_followwintheme: bool = attr.ib(default=False)
-    interop_guiintegration: bool = attr.ib(default=False)
-    interop_audiointegration: bool = attr.ib(default=False)
-    interop_advancedipdetection: bool = attr.ib(default=False)
-    motd_wslnewsenabled: bool = attr.ib(default=True)
     automount_enabled:  bool = attr.ib(default=True)
     automount_mountfstab:  bool = attr.ib(default=True)
     interop_enabled:  bool = attr.ib(default=True)
