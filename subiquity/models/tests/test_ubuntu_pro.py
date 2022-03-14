@@ -15,20 +15,24 @@
 
 import unittest
 
-from subiquity.server.controllers.ubuntu_advantage import (
-    UbuntuAdvantageController,
-)
-from subiquitycore.tests.mocks import make_app
+from subiquity.models.ubuntu_pro import UbuntuProModel
 
 
-class TestUbuntuAdvantageController(unittest.TestCase):
-    def setUp(self):
-        self.controller = UbuntuAdvantageController(make_app())
+class TestUbuntuProModel(unittest.TestCase):
+    def test_make_cloudconfig_(self):
+        model = UbuntuProModel()
 
-    def test_serialize(self):
-        self.controller.model.token = "1a2b3C"
-        self.assertEqual(self.controller.serialize(), "1a2b3C")
+        # Test with a token
+        model.token = "0a1b2c3d4e5f6"
+        expected = {
+            "ubuntu_advantage": {
+                "token": "0a1b2c3d4e5f6",
+            }
+        }
+        self.assertEqual(model.make_cloudconfig(), expected)
 
-    def test_deserialize(self):
-        self.controller.deserialize("1A2B3C4D")
-        self.assertEqual(self.controller.model.token, "1A2B3C4D")
+        # Test without token
+        model.token = ""
+        self.assertEqual(model.make_cloudconfig(), {})
+        model.token = None
+        self.assertEqual(model.make_cloudconfig(), {})

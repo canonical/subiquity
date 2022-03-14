@@ -414,11 +414,11 @@ class TimeZoneInfo:
 
 
 @attr.s(auto_attribs=True)
-class UbuntuAdvantageInfo:
+class UbuntuProInfo:
     token: str = attr.ib(repr=False)
 
 
-class UbuntuAdvantageCheckTokenStatus(enum.Enum):
+class UbuntuProCheckTokenStatus(enum.Enum):
     VALID_TOKEN = enum.auto()
     INVALID_TOKEN = enum.auto()
     EXPIRED_TOKEN = enum.auto()
@@ -426,16 +426,16 @@ class UbuntuAdvantageCheckTokenStatus(enum.Enum):
 
 
 @attr.s(auto_attribs=True)
-class UbuntuAdvantageService:
+class UbuntuProService:
     name: str
     description: str
 
 
 @attr.s(auto_attribs=True)
-class UbuntuAdvantageCheckTokenAnswer:
-    status: UbuntuAdvantageCheckTokenStatus
+class UbuntuProCheckTokenAnswer:
+    status: UbuntuProCheckTokenStatus
 
-    services: Optional[List[UbuntuAdvantageService]]
+    services: Optional[List[UbuntuProService]]
 
 
 class ShutdownMode(enum.Enum):

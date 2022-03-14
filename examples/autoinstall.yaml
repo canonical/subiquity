@@ -48,7 +48,7 @@ snaps:
     channel: 3.2/stable
 updates: all
 timezone: Pacific/Guam
-ubuntu-advantage:
+ubuntu-pro:
   # Token that passes the basic format checking but is invalid (i.e. contains more than 16 bytes of random data)
   token: C1NWcZTHLteJXGVMM6YhvHDpGrhyy7
 storage:

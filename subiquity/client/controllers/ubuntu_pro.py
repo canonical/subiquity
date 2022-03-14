@@ -12,8 +12,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-""" Module that defines the client-side controller class for Ubuntu Advantage.
-"""
+""" Module that defines the client-side controller class for Ubuntu Pro. """
 
 import asyncio
 import logging
@@ -23,21 +22,21 @@ from subiquitycore.async_helpers import schedule_task
 
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import (
-    UbuntuAdvantageInfo,
-    UbuntuAdvantageCheckTokenStatus as TokenStatus,
+    UbuntuProInfo,
+    UbuntuProCheckTokenStatus as TokenStatus,
     )
-from subiquity.ui.views.ubuntu_advantage import UbuntuAdvantageView
+from subiquity.ui.views.ubuntu_pro import UbuntuProView
 
 from subiquitycore.lsb_release import lsb_release
 from subiquitycore.tuicontroller import Skip
 
-log = logging.getLogger("subiquity.client.controllers.ubuntu_advantage")
+log = logging.getLogger("subiquity.client.controllers.ubuntu_pro")
 
 
-class UbuntuAdvantageController(SubiquityTuiController):
-    """ Client-side controller for Ubuntu Advantage configuration. """
+class UbuntuProController(SubiquityTuiController):
+    """ Client-side controller for Ubuntu Pro configuration. """
 
-    endpoint_name = "ubuntu_advantage"
+    endpoint_name = "ubuntu_pro"
 
     def __init__(self, app) -> None:
         """ Initializer for the client-side UA controller. """
@@ -45,7 +44,7 @@ class UbuntuAdvantageController(SubiquityTuiController):
 
         super().__init__(app)
 
-    async def make_ui(self) -> UbuntuAdvantageView:
+    async def make_ui(self) -> UbuntuProView:
         """ Generate the UI, based on the data provided by the model. """
 
         dry_run: bool = self.app.opts.dry_run
@@ -57,8 +56,8 @@ class UbuntuAdvantageController(SubiquityTuiController):
             await self.endpoint.skip.POST()
             raise Skip("Not running LTS version")
 
-        ubuntu_advantage_info = await self.endpoint.GET()
-        return UbuntuAdvantageView(self, ubuntu_advantage_info.token)
+        ubuntu_pro_info = await self.endpoint.GET()
+        return UbuntuProView(self, ubuntu_pro_info.token)
 
     def run_answers(self) -> None:
         if "token" in self.answers:
@@ -69,16 +68,16 @@ class UbuntuAdvantageController(SubiquityTuiController):
         async def inner() -> None:
             answer = await self.endpoint.check_token.GET(token)
             if answer.status == TokenStatus.INVALID_TOKEN:
-                if isinstance(self.ui.body, UbuntuAdvantageView):
+                if isinstance(self.ui.body, UbuntuProView):
                     self.ui.body.show_invalid_token()
             elif answer.status == TokenStatus.EXPIRED_TOKEN:
-                if isinstance(self.ui.body, UbuntuAdvantageView):
+                if isinstance(self.ui.body, UbuntuProView):
                     self.ui.body.show_expired_token()
             elif answer.status == TokenStatus.UNKNOWN_ERROR:
-                if isinstance(self.ui.body, UbuntuAdvantageView):
+                if isinstance(self.ui.body, UbuntuProView):
                     self.ui.body.show_unknown_error()
             else:
-                if isinstance(self.ui.body, UbuntuAdvantageView):
+                if isinstance(self.ui.body, UbuntuProView):
                     self.ui.body.show_activable_services(answer.services)
 
         self._check_task = schedule_task(inner())
@@ -93,5 +92,5 @@ class UbuntuAdvantageController(SubiquityTuiController):
 
     def done(self, token: str) -> None:
         self.app.next_screen(
-            self.endpoint.POST(UbuntuAdvantageInfo(token=token))
+            self.endpoint.POST(UbuntuProInfo(token=token))
         )

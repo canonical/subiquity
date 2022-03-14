@@ -26,7 +26,7 @@ from .serial import SerialController
 from .snaplist import SnapListController
 from .source import SourceController
 from .ssh import SSHController
-from .ubuntu_advantage import UbuntuAdvantageController
+from .ubuntu_pro import UbuntuProController
 from .welcome import WelcomeController
 from .zdev import ZdevController
 
@@ -45,7 +45,7 @@ __all__ = [
     'SnapListController',
     'SourceController',
     'SSHController',
-    'UbuntuAdvantageController',
+    'UbuntuProController',
     'WelcomeController',
     'ZdevController',
 ]

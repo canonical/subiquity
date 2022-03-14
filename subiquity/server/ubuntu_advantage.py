@@ -12,8 +12,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-""" This module defines utilities to interface with Ubuntu Advantage
-subscriptions. """
+""" This module defines utilities to interface with the ubuntu-advantage-tools
+helper. """
 
 from abc import ABC, abstractmethod
 from datetime import datetime as dt
@@ -23,14 +23,14 @@ from subprocess import CalledProcessError, CompletedProcess
 from typing import List, Sequence, Union
 import asyncio
 
-from subiquity.common.types import UbuntuAdvantageService
+from subiquity.common.types import UbuntuProService
 from subiquitycore import utils
 
 
 log = logging.getLogger("subiquity.server.ubuntu_advantage")
 
 
-class InvalidUATokenError(Exception):
+class InvalidTokenError(Exception):
     """ Exception to be raised when the supplied token is invalid. """
     def __init__(self, token: str, message: str = "") -> None:
         self.token = token
@@ -38,7 +38,7 @@ class InvalidUATokenError(Exception):
         super().__init__(message)
 
 
-class ExpiredUATokenError(Exception):
+class ExpiredTokenError(Exception):
     """ Exception to be raised when the supplied token has expired. """
     def __init__(self, token: str, expires: str, message: str = "") -> None:
         self.token = token
@@ -85,7 +85,7 @@ class MockedUAInterfaceStrategy(UAInterfaceStrategy):
         if token[0] == "x":
             path = "examples/uaclient-status-expired.json"
         elif token[0] == "i":
-            raise InvalidUATokenError(token)
+            raise InvalidTokenError(token)
         elif token[0] == "f":
             raise CheckSubscriptionError(token)
         else:
@@ -149,7 +149,7 @@ class UAInterface:
         return await self.strategy.query_info(token)
 
     async def get_activable_services(self, token: str) \
-            -> List[UbuntuAdvantageService]:
+            -> List[UbuntuProService]:
         """ Return a list of activable services (i.e. services that are
         entitled to the subscription and available on the current hardware).
         """
@@ -160,7 +160,7 @@ class UAInterface:
         # See https://bugs.python.org/issue35829
         expiration = dt.fromisoformat(info["expires"].replace("Z", "+00:00"))
         if expiration.timestamp() <= dt.utcnow().timestamp():
-            raise ExpiredUATokenError(token, expires=info["expires"])
+            raise ExpiredTokenError(token, expires=info["expires"])
 
         def is_activable_service(service: dict) -> bool:
             # - the available field for a service refers to its availability on
@@ -170,13 +170,13 @@ class UAInterface:
             return service["available"] == "yes" \
                and service["entitled"] == "yes"
 
-        def service_from_dict(service: dict) -> UbuntuAdvantageService:
-            return UbuntuAdvantageService(
+        def service_from_dict(service: dict) -> UbuntuProService:
+            return UbuntuProService(
                name=service["name"],
                description=service["description"],
             )
 
-        activable_services: List[UbuntuAdvantageService] = []
+        activable_services: List[UbuntuProService] = []
 
         for service in info["services"]:
             if not is_activable_service(service):

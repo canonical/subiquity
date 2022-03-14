@@ -50,8 +50,8 @@ from subiquity.common.types import (
     StorageResponse,
     StorageResponseV2,
     TimeZoneInfo,
-    UbuntuAdvantageInfo,
-    UbuntuAdvantageCheckTokenAnswer,
+    UbuntuProInfo,
+    UbuntuProCheckTokenAnswer,
     WLANSupportInstallState,
     ZdevInfo,
     WSLConfigurationBase,
@@ -321,16 +321,16 @@ class API:
             def GET() -> List[str]: ...
             def POST(data: Payload[List[str]]): ...
 
-    class ubuntu_advantage:
-        def GET() -> UbuntuAdvantageInfo: ...
-        def POST(data: Payload[UbuntuAdvantageInfo]) -> None: ...
+    class ubuntu_pro:
+        def GET() -> UbuntuProInfo: ...
+        def POST(data: Payload[UbuntuProInfo]) -> None: ...
 
         class skip:
             def POST() -> None: ...
 
         class check_token:
             def GET(token: Payload[str]) \
-                    -> UbuntuAdvantageCheckTokenAnswer: ...
+                    -> UbuntuProCheckTokenAnswer: ...
 
 
 class LinkAction(enum.Enum):
