@@ -16,6 +16,7 @@
 import contextlib
 import datetime
 import grp
+import logging
 import os
 import tempfile
 
@@ -24,9 +25,13 @@ import yaml
 _DEF_PERMS_FILE = 0o640
 _DEF_GROUP = 'adm'
 
+log = logging.getLogger('subiquitycore.file_util')
+
 
 def set_log_perms(target, *, isdir=True, group_write=False, mode=None):
     if os.getuid() != 0:
+        log.warning('set_log_perms: running as non-root - not adjusting' +
+                    ' group owner or permissions for ' + target)
         return
     if mode is None:
         mode = _DEF_PERMS_FILE
