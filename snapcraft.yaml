@@ -206,6 +206,8 @@ parts:
     build-packages:
       - build-essential
       - debhelper
+      - fakeroot
     override-build: |
-      ./debian/rules build install
+      ./debian/rules build
+      fakeroot ./debian/rules install
       cp -a debian/os-prober/{usr,var} $SNAPCRAFT_PART_INSTALL
