@@ -21,16 +21,10 @@ log = logging.getLogger('system_setup.models.wslconfadvanced')
 
 @attr.s
 class WSLConfigurationAdvanced(object):
-    gui_theme = attr.ib()
-    gui_followwintheme = attr.ib()
-    interop_guiintegration = attr.ib()
-    interop_audiointegration = attr.ib()
-    interop_advancedipdetection = attr.ib()
-    motd_wslnewsenabled = attr.ib()
-    automount_enabled = attr.ib()
-    automount_mountfstab = attr.ib()
     interop_enabled = attr.ib()
     interop_appendwindowspath = attr.ib()
+    automount_enabled = attr.ib()
+    automount_mountfstab = attr.ib()
 
 
 class WSLConfigurationAdvancedModel(object):

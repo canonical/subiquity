@@ -38,12 +38,6 @@ class WSLConfigurationAdvancedController(SubiquityController):
         'properties': {
             'interop_enabled': {'type': 'boolean'},
             'interop_appendwindowspath': {'type': 'boolean'},
-            'gui_theme': {'type': 'string'},
-            'gui_followwintheme': {'type': 'boolean'},
-            'interop_guiintegration': {'type': 'boolean'},
-            'interop_audiointegration': {'type': 'boolean'},
-            'interop_advancedipdetection': {'type': 'boolean'},
-            'motd_wslnewsenabled': {'type': 'boolean'},
             'automount_enabled': {'type': 'boolean'},
             'automount_mountfstab': {'type': 'boolean'}
         },
@@ -82,18 +76,6 @@ class WSLConfigurationAdvancedController(SubiquityController):
                 self.model.wslconfadvanced.interop_enabled
             data.interop_appendwindowspath = \
                 self.model.wslconfadvanced.interop_appendwindowspath
-            data.gui_theme = \
-                self.model.wslconfadvanced.gui_theme
-            data.gui_followwintheme = \
-                self.model.wslconfadvanced.gui_followwintheme
-            data.interop_guiintegration = \
-                self.model.wslconfadvanced.interop_guiintegration
-            data.interop_audiointegration = \
-                self.model.wslconfadvanced.interop_audiointegration
-            data.interop_advancedipdetection = \
-                self.model.wslconfadvanced.interop_advancedipdetection
-            data.motd_wslnewsenabled = \
-                self.model.wslconfadvanced.motd_wslnewsenabled
             data.automount_enabled = \
                 self.model.wslconfadvanced.automount_enabled
             data.automount_mountfstab = \

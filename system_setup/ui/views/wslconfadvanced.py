@@ -13,7 +13,6 @@ from urwid import (
 from subiquitycore.ui.form import (
     Form,
     BooleanField,
-    ChoiceField,
     simple_field,
     WantsToKnowFormField
 )
@@ -60,35 +59,6 @@ class WSLConfigurationAdvancedForm(Form):
         BooleanField(_("Append Windows Path"),
                      help=_("Whether Windows Path will be append in the"
                             " PATH environment variable in WSL."))
-    gui_theme = \
-        ChoiceField(_("GUI Theme"),
-                    help=_("This option changes the Ubuntu theme."),
-                    choices=["default", "light", "dark"])
-    gui_followwintheme = \
-        BooleanField(_("Follow Windows Theme"),
-                     help=_("This option manages whether the Ubuntu theme"
-                            " follows the Windows theme; that is, when "
-                            "Windows uses dark theme, Ubuntu also uses dark"
-                            " theme. Requires WSL interoperability enabled. "))
-    interop_guiintegration = \
-        BooleanField(_("Legacy GUI Integration"),
-                     help=_("This option enables the Legacy GUI Integration "
-                     "on Windows 10. Requires a Third-party X Server."))
-    interop_audiointegration = \
-        BooleanField(_("Legacy Audio Integration"),
-                     help=_("This option enables the Legacy Audio Integration "
-                            "on Windows 10. Requires PulseAudio for Windows "
-                            "Installed."))
-    interop_advancedipdetection = \
-        BooleanField(_("Advanced IP Detection"),
-                     help=_("This option enables advanced detection of IP by "
-                            "Windows IPv4 Address which is more reliable to "
-                            "use with WSL2. Requires WSL interoperability "
-                            "enabled."))
-    motd_wslnewsenabled = \
-        BooleanField(_("Enable WSL News"),
-                     help=_("This option allows you to control your MOTD News."
-                            " Toggling it on allows you to see the MOTD."))
 
 
 class WSLConfigurationAdvancedView(BaseView):
@@ -104,18 +74,6 @@ class WSLConfigurationAdvancedView(BaseView):
                 configuration_data.interop_enabled,
             'interop_appendwindowspath':
                 configuration_data.interop_appendwindowspath,
-            'gui_theme':
-                configuration_data.gui_theme,
-            'gui_followwintheme':
-                configuration_data.gui_followwintheme,
-            'interop_guiintegration':
-                configuration_data.interop_guiintegration,
-            'interop_audiointegration':
-                configuration_data.interop_audiointegration,
-            'interop_advancedipdetection':
-                configuration_data.interop_advancedipdetection,
-            'motd_wslnewsenabled':
-                configuration_data.motd_wslnewsenabled,
             'automount_enabled':
                 configuration_data.automount_enabled,
             'automount_mountfstab':
@@ -139,18 +97,6 @@ class WSLConfigurationAdvancedView(BaseView):
             .interop_enabled.value,
             interop_appendwindowspath=self.form
             .interop_appendwindowspath.value,
-            gui_theme=self.form
-            .gui_theme.value,
-            gui_followwintheme=self.form
-            .gui_followwintheme.value,
-            interop_guiintegration=self.form
-            .interop_guiintegration.value,
-            interop_audiointegration=self.form
-            .interop_audiointegration.value,
-            interop_advancedipdetection=self.form
-            .interop_advancedipdetection.value,
-            motd_wslnewsenabled=self.form
-            .motd_wslnewsenabled.value,
             automount_enabled=self.form
             .automount_enabled.value,
             automount_mountfstab=self.form

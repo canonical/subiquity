@@ -94,24 +94,6 @@
                 "interop_appendwindowspath": {
                     "type": "boolean"
                 },
-                "gui_theme": {
-                    "type": "string"
-                },
-                "gui_followwintheme": {
-                    "type": "boolean"
-                },
-                "interop_guiintegration": {
-                    "type": "boolean"
-                },
-                "interop_audiointegration": {
-                    "type": "boolean"
-                },
-                "interop_advancedipdetection": {
-                    "type": "boolean"
-                },
-                "motd_wslnewsenabled": {
-                    "type": "boolean"
-                },
                 "automount_enabled": {
                     "type": "boolean"
                 },
