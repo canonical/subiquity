@@ -31,9 +31,11 @@ from subiquity.common.filesystem.manipulator import (
 from subiquity.models.tests.test_filesystem import (
     make_disk,
     make_model,
+    make_partition,
     )
 from subiquity.models.filesystem import (
     Bootloader,
+    MiB,
     )
 
 
@@ -242,6 +244,53 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.add_boot_disk(disk1)
             part = gaps.parts_and_gaps(disk1)[0]
             self.assertEqual(1024 * 1024, part.offset)
+
+    def test_add_boot_BIOS_empty(self):
+        manipulator = make_manipulator(Bootloader.BIOS)
+        disk = make_disk(manipulator.model, preserve=True)
+        manipulator.add_boot_disk(disk)
+        [part] = disk.partitions()
+        self.assertEqual(part.offset, MiB)
+
+    def test_add_boot_BIOS_full(self):
+        manipulator = make_manipulator(Bootloader.BIOS)
+        disk = make_disk(manipulator.model, preserve=True)
+        part = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk))
+        size_before = part.size
+        manipulator.add_boot_disk(disk)
+        [p1, p2] = disk.partitions()
+        self.assertIs(p2, part)
+        size_after = p2.size
+        self.assertEqual(p1.offset, MiB)
+        self.assertEqual(p2.offset, 2*MiB)
+        self.assertEqual(size_after, size_before - MiB)
+
+    def test_add_boot_BIOS_half_full(self):
+        manipulator = make_manipulator(Bootloader.BIOS)
+        disk = make_disk(manipulator.model, preserve=True)
+        part = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk)//2)
+        size_before = part.size
+        manipulator.add_boot_disk(disk)
+        [p1, p2] = disk.partitions()
+        size_after = p2.size
+        self.assertIs(p2, part)
+        self.assertEqual(p1.offset, MiB)
+        self.assertEqual(p2.offset, 2*MiB)
+        self.assertEqual(size_after, size_before)
+
+    def DONT_test_add_boot_BIOS_preserved(self):  # needs v2 partitioning
+        manipulator = make_manipulator(Bootloader.BIOS)
+        disk = make_disk(manipulator.model, preserve=True)
+        half_size = gaps.largest_gap_size(disk)//2
+        part = make_partition(
+            manipulator.model, disk, size=half_size, offset=half_size)
+        manipulator.add_boot_disk(disk)
+        [p1, p2] = disk.partitions()
+        self.assertIs(p2, part)
+        self.assertEqual(p1.offset, MiB)
+        self.assertEqual(p2.offset, half_size)
 
 
 class TestPartitionSizeScaling(unittest.TestCase):

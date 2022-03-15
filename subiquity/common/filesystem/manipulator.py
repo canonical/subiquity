@@ -146,6 +146,40 @@ class FilesystemManipulator:
         self.clear(part)
         self.model.remove_partition(part)
 
+    def _create_bios_grub(self, disk):
+        size = BIOS_GRUB_SIZE_BYTES
+        pgs = gaps.parts_and_gaps(disk)
+        if isinstance(pgs[0], gaps.Gap):
+            gap = pgs[0]
+        else:
+            parts = []
+            gap_to_shrink = None
+            for pg in pgs:
+                if isinstance(pg, gaps.Gap):
+                    gap_to_shrink = pg
+                    break
+                if pg.preserve:
+                    break
+                parts.append(pg)
+            if gap_to_shrink is None:
+                assert parts, (
+                    "trying to create bios_grub on disk that "
+                    "cannot take it")
+                largest_i = max(range(len(parts)), key=lambda i: parts[i].size)
+                parts[largest_i].size -= size
+                for part in parts[:largest_i+1]:
+                    part.offset += size
+            else:
+                for part in parts:
+                    part.offset += size
+            gap = gaps.Gap(disk, disk.alignment_data().min_start_offset, size)
+        spec = {
+            'size': size,
+            'fstype': None,
+            'mount': None,
+            }
+        return self.create_partition(disk, gap, spec, flag='bios_grub')
+
     def _create_boot_with_resize(self, disk, spec, **kwargs):
         part_size = spec['size']
         if part_size > gaps.largest_gap_size(disk):
@@ -174,10 +208,7 @@ class FilesystemManipulator:
                 flag='prep', grub_device=True)
         elif bootloader == Bootloader.BIOS:
             log.debug('_create_boot_partition - adding bios_grub partition')
-            part = self._create_boot_with_resize(
-                disk,
-                dict(size=BIOS_GRUB_SIZE_BYTES, fstype=None, mount=None),
-                flag='bios_grub')
+            part = self._create_bios_grub(disk)
             disk.grub_device = True
         return part
 
