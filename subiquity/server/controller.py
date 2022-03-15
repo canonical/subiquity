@@ -38,6 +38,11 @@ class SubiquityController(BaseController):
     autoinstall_default: Any = None
     endpoint: Optional[type] = None
 
+    # If we want to update the autoinstall_key, we can add the old value
+    # here to keep being backwards compatible. The old value will be marked
+    # deprecated in favor of autoinstall_key.
+    autoinstall_key_alias: Optional[str] = None
+
     def __init__(self, app):
         super().__init__(app)
         self.context.set('controller', self)
@@ -46,9 +51,19 @@ class SubiquityController(BaseController):
         if not self.app.autoinstall_config:
             return
         with self.context.child("load_autoinstall_data"):
-            ai_data = self.app.autoinstall_config.get(
-                self.autoinstall_key,
-                self.autoinstall_default)
+            key_candidates = [self.autoinstall_key]
+            if self.autoinstall_key_alias is not None:
+                key_candidates.append(self.autoinstall_key_alias)
+
+            for key in key_candidates:
+                try:
+                    ai_data = self.app.autoinstall_config[key]
+                    break
+                except KeyError:
+                    pass
+            else:
+                ai_data = self.autoinstall_default
+
             if ai_data is not None and self.autoinstall_schema is not None:
                 jsonschema.validate(ai_data, self.autoinstall_schema)
             self.load_autoinstall_data(ai_data)
@@ -77,7 +92,15 @@ class SubiquityController(BaseController):
             return True
         i_sections = self.app.autoinstall_config.get(
             'interactive-sections', [])
-        return '*' in i_sections or self.autoinstall_key in i_sections
+
+        if "*" in i_sections:
+            return True
+
+        if self.autoinstall_key in i_sections:
+            return True
+
+        return (self.autoinstall_key_alias is not None
+                and self.autoinstall_key_alias in i_sections)
 
     async def configured(self):
         """Let the world know that this controller's model is now configured.

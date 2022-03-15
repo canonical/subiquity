@@ -33,7 +33,19 @@ def make_schema(app):
         cschema = getattr(controller, "autoinstall_schema", None)
         if cschema is None:
             continue
+
         schema['properties'][ckey] = cschema
+
+        ckey_alias = getattr(controller, 'autoinstall_key_alias', None)
+        if ckey_alias is None:
+            continue
+
+        cschema = cschema.copy()
+        cschema["deprecated"] = True
+        cschema["description"] = f"Compatibility only - use {ckey} instead"
+
+        schema['properties'][ckey_alias] = cschema
+
     return schema
 
 
