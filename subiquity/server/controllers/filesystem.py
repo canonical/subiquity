@@ -87,6 +87,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if self.opts.dry_run and self.opts.bootloader:
             name = self.opts.bootloader.upper()
             self.model.bootloader = getattr(Bootloader, name)
+        self.model.storage_version = self.opts.storage_version
         self._monitor = None
         self._errors = {}
         self._probe_once_task = SingleInstanceTask(

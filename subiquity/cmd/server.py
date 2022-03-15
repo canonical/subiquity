@@ -71,6 +71,8 @@ def make_server_args_parser():
         '--output-base', action='store', dest='output_base',
         default='.subiquity',
         help='in dryrun, control basedir of files')
+    parser.add_argument(
+        '--storage-version', action='store', type=int, default=1)
     return parser
 
 

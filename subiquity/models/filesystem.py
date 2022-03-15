@@ -998,6 +998,7 @@ class FilesystemModel(object):
         if bootloader is None:
             bootloader = self._probe_bootloader()
         self.bootloader = bootloader
+        self.storage_version = 1
         self._probe_data = None
         self.reset()
 
@@ -1294,7 +1295,7 @@ class FilesystemModel(object):
     def render(self):
         config = {
             'storage': {
-                'version': 1,
+                'version': self.storage_version,
                 'config': self._render_actions(),
                 },
             }
