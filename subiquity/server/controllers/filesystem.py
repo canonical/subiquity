@@ -235,7 +235,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             orig_config=self.model._orig_config,
             config=self.model._render_actions(include_all=True),
             blockdev=self.model._probe_data['blockdev'],
-            dasd=self.model._probe_data.get('dasd', {}))
+            dasd=self.model._probe_data.get('dasd', {}),
+            storage_version=self.model.storage_version)
 
     async def POST(self, config: list):
         log.debug(config)

@@ -1020,6 +1020,7 @@ class FilesystemModel(object):
     def load_server_data(self, status):
         log.debug('load_server_data %s', status)
         self._all_ids = set()
+        self.storage_version = status.storage_version
         self._orig_config = status.orig_config
         self._probe_data = {
             'blockdev': status.blockdev,

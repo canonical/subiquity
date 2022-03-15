@@ -316,6 +316,7 @@ class StorageResponse:
     config: Optional[list] = None
     blockdev: Optional[dict] = None
     dasd: Optional[dict] = None
+    storage_version: int = 1
 
 
 @attr.s(auto_attribs=True)
