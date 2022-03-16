@@ -25,6 +25,7 @@ class WSLConfigurationAdvanced(object):
     interop_appendwindowspath = attr.ib()
     automount_enabled = attr.ib()
     automount_mountfstab = attr.ib()
+    systemd_enabled = attr.ib()
 
 
 class WSLConfigurationAdvancedModel(object):

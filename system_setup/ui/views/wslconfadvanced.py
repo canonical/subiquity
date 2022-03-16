@@ -43,7 +43,7 @@ class WSLConfigurationAdvancedForm(Form):
 
     automount_enabled = \
         BooleanField(_("Enable Auto-Mount"),
-                     help=_("Whether the Auto-Mount freature is enabled. "
+                     help=_("Whether the Auto-Mount feature is enabled. "
                             "This feature allows you to mount Windows drive"
                             " in WSL."))
     automount_mountfstab = \
@@ -59,6 +59,10 @@ class WSLConfigurationAdvancedForm(Form):
         BooleanField(_("Append Windows Path"),
                      help=_("Whether Windows Path will be append in the"
                             " PATH environment variable in WSL."))
+    systemd_enabled = \
+        BooleanField(_("Enable Systemd"),
+                     help=_("EXPERIMENTAL - Whether systemd should be"
+                            " activated at boot time."))
 
 
 class WSLConfigurationAdvancedView(BaseView):
@@ -78,6 +82,8 @@ class WSLConfigurationAdvancedView(BaseView):
                 configuration_data.automount_enabled,
             'automount_mountfstab':
                 configuration_data.automount_mountfstab,
+            'systemd_enabled':
+                configuration_data.systemd_enabled,
         }
         self.form = WSLConfigurationAdvancedForm(initial=initial)
 
@@ -101,4 +107,6 @@ class WSLConfigurationAdvancedView(BaseView):
             .automount_enabled.value,
             automount_mountfstab=self.form
             .automount_mountfstab.value,
+            systemd_enabled=self.form
+            .systemd_enabled.value,
             ))

@@ -39,7 +39,8 @@ class WSLConfigurationAdvancedController(SubiquityController):
             'interop_enabled': {'type': 'boolean'},
             'interop_appendwindowspath': {'type': 'boolean'},
             'automount_enabled': {'type': 'boolean'},
-            'automount_mountfstab': {'type': 'boolean'}
+            'automount_mountfstab': {'type': 'boolean'},
+            'systemd_enabled': {'type': 'boolean'}
         },
         'additionalProperties': False,
     }
@@ -80,6 +81,8 @@ class WSLConfigurationAdvancedController(SubiquityController):
                 self.model.wslconfadvanced.automount_enabled
             data.automount_mountfstab = \
                 self.model.wslconfadvanced.automount_mountfstab
+            data.systemd_enabled = \
+                self.model.wslconfadvanced.systemd_enabled
         return data
 
     async def POST(self, data: WSLConfigurationAdvanced):
