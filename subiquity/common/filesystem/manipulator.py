@@ -182,10 +182,32 @@ class FilesystemManipulator:
 
     def _create_boot_with_resize(self, disk, spec, **kwargs):
         part_size = spec['size']
-        if part_size > gaps.largest_gap_size(disk):
-            largest_part = max(disk.partitions(), key=lambda p: p.size)
-            largest_part.size -= (part_size - gaps.largest_gap_size(disk))
         gap = gaps.largest_gap(disk)
+        if gap is None or part_size > gap.size:
+            new_parts = [p for p in disk.partitions() if not p.preserve]
+            largest_new = max(new_parts, key=lambda p: p.size)
+            parts_and_gaps = gaps.parts_and_gaps(disk)
+            largest_i = parts_and_gaps.index(largest_new)
+            needed = part_size
+            preceding_gap_size = 0
+            preceding_gap_offset = largest_new.offset
+            if largest_i - 1 >= 0:
+                preceding = parts_and_gaps[largest_i - 1]
+                if isinstance(preceding, gaps.Gap):
+                    preceding_gap_size = preceding.size
+                    preceding_gap_offset = preceding.offset
+            needed -= preceding_gap_size
+            trailing_gap_size = 0
+            if largest_i + 1 < len(parts_and_gaps):
+                if isinstance(parts_and_gaps[largest_i + 1], gaps.Gap):
+                    trailing_gap_size = parts_and_gaps[largest_i + 1].size
+                    move_amount = min(trailing_gap_size, needed)
+                    largest_new.offset += move_amount
+                    needed -= move_amount
+            if needed > 0:
+                largest_new.offset += needed
+                largest_new.size -= needed
+            gap = gaps.Gap(disk, preceding_gap_offset, part_size)
         return self.create_partition(disk, gap, spec, **kwargs)
 
     def _create_boot_partition(self, disk):
