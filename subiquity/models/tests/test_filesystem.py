@@ -156,9 +156,9 @@ def make_disk(fs_model, **kw):
     return disk
 
 
-def make_model_and_disk(bootloader=None):
+def make_model_and_disk(bootloader=None, **kw):
     model = make_model(bootloader)
-    return model, make_disk(model)
+    return model, make_disk(model, **kw)
 
 
 def make_partition(model, device=None, *, preserve=False, size=None,

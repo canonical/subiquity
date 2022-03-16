@@ -998,6 +998,7 @@ class FilesystemModel(object):
         if bootloader is None:
             bootloader = self._probe_bootloader()
         self.bootloader = bootloader
+        self.storage_version = 1
         self._probe_data = None
         self.reset()
 
@@ -1019,6 +1020,7 @@ class FilesystemModel(object):
     def load_server_data(self, status):
         log.debug('load_server_data %s', status)
         self._all_ids = set()
+        self.storage_version = status.storage_version
         self._orig_config = status.orig_config
         self._probe_data = {
             'blockdev': status.blockdev,
@@ -1294,7 +1296,7 @@ class FilesystemModel(object):
     def render(self):
         config = {
             'storage': {
-                'version': 1,
+                'version': self.storage_version,
                 'config': self._render_actions(),
                 },
             }

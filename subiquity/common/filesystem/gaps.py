@@ -32,6 +32,8 @@ class Gap:
     device: object
     offset: int
     size: int
+    in_extended: bool = False
+
     type: str = 'gap'
 
     @property
@@ -44,11 +46,7 @@ def parts_and_gaps(device):
     raise NotImplementedError(device)
 
 
-@parts_and_gaps.register(Disk)
-@parts_and_gaps.register(Raid)
-def parts_and_gaps_disk(device):
-    if device._fs is not None:
-        return []
+def find_disk_gaps_v1(device):
     r = []
     used = 0
     ad = device.alignment_data()
@@ -64,6 +62,76 @@ def parts_and_gaps_disk(device):
     if end - used >= (1 << 20):
         r.append(Gap(device, used, end - used))
     return r
+
+
+def find_disk_gaps_v2(device, info=None):
+    result = []
+    extended_end = None
+
+    if info is None:
+        info = device.alignment_data()
+
+    def au(v):  # au == "align up"
+        r = v % info.part_align
+        if r:
+            return v + info.part_align - r
+        else:
+            return v
+
+    def ad(v):  # ad == "align down"
+        return v - v % info.part_align
+
+    def maybe_add_gap(start, end, in_extended):
+        if end - start >= info.min_gap_size:
+            result.append(Gap(device, start, end - start, in_extended))
+
+    prev_end = info.min_start_offset
+
+    parts = sorted(device._partitions, key=lambda p: p.offset)
+    extended_end = None
+
+    for part in parts + [None]:
+        if part is None:
+            gap_end = ad(device.size - info.min_end_offset)
+        else:
+            gap_end = ad(part.offset)
+
+        gap_start = au(prev_end)
+
+        if extended_end is not None:
+            gap_start = min(
+                extended_end, au(gap_start + info.ebr_space))
+
+        if extended_end is not None and gap_end >= extended_end:
+            maybe_add_gap(gap_start, ad(extended_end), True)
+            maybe_add_gap(au(extended_end), gap_end, False)
+            extended_end = None
+        else:
+            maybe_add_gap(gap_start, gap_end, extended_end is not None)
+
+        if part is None:
+            break
+
+        result.append(part)
+
+        if part.flag == "extended":
+            prev_end = part.offset
+            extended_end = part.offset + part.size
+        else:
+            prev_end = part.offset + part.size
+
+    return result
+
+
+@parts_and_gaps.register(Disk)
+@parts_and_gaps.register(Raid)
+def parts_and_gaps_disk(device):
+    if device._fs is not None:
+        return []
+    if device._m.storage_version == 1:
+        return find_disk_gaps_v1(device)
+    else:
+        return find_disk_gaps_v2(device)
 
 
 @parts_and_gaps.register(LVM_VolGroup)

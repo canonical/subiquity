@@ -87,6 +87,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if self.opts.dry_run and self.opts.bootloader:
             name = self.opts.bootloader.upper()
             self.model.bootloader = getattr(Bootloader, name)
+        self.model.storage_version = self.opts.storage_version
         self._monitor = None
         self._errors = {}
         self._probe_once_task = SingleInstanceTask(
@@ -234,7 +235,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             orig_config=self.model._orig_config,
             config=self.model._render_actions(include_all=True),
             blockdev=self.model._probe_data['blockdev'],
-            dasd=self.model._probe_data.get('dasd', {}))
+            dasd=self.model._probe_data.get('dasd', {}),
+            storage_version=self.model.storage_version)
 
     async def POST(self, config: list):
         log.debug(config)
