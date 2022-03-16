@@ -97,14 +97,8 @@ class FilesystemManipulator:
 
     def _create_boot_partition(self, disk):
         bootloader = self.model.bootloader
-        if bootloader == Bootloader.UEFI:
-            part_size = sizes.get_efi_size(disk)
-            log.debug('_create_boot_partition - adding EFI partition')
-            spec = dict(size=part_size, fstype='fat32')
-            if self.model._mount_for_path("/boot/efi") is None:
-                spec['mount'] = '/boot/efi'
-            self._create_boot_with_resize(
-                disk, spec, flag="boot", grub_device=True)
+        if bootloader in [Bootloader.UEFI, Bootloader.BIOS]:
+            boot.get_boot_device_plan(disk).apply(self)
         elif bootloader == Bootloader.PREP:
             log.debug('_create_boot_partition - adding PReP partition')
             self._create_boot_with_resize(
@@ -113,9 +107,8 @@ class FilesystemManipulator:
                 # must be wiped or grub-install will fail
                 wipe='zero',
                 flag='prep', grub_device=True)
-        elif bootloader == Bootloader.BIOS:
-            log.debug('_create_boot_partition - adding bios_grub partition')
-            boot.get_boot_device_plan_bios(disk).apply(self)
+        else:
+            raise Exception(f'unexpected bootloader {bootloader} here')
 
     def create_raid(self, spec):
         for d in spec['devices'] | spec['spare_devices']:
@@ -340,23 +333,17 @@ class FilesystemManipulator:
         if not self.supports_resilient_boot:
             for disk in boot.all_boot_devices(self.model):
                 self.remove_boot_disk(disk)
-        if bootloader == Bootloader.BIOS:
-            boot.get_boot_device_plan_bios(new_boot_disk).apply(self)
+        if bootloader in [Bootloader.BIOS, Bootloader.UEFI]:
+            boot.get_boot_device_plan(new_boot_disk).apply(self)
             return
         if new_boot_disk._has_preexisting_partition():
-            if bootloader == Bootloader.UEFI:
-                should_mount = self.model._mount_for_path('/boot/efi') is None
-                for p in new_boot_disk.partitions():
-                    if boot.is_esp(p):
-                        p.grub_device = True
-                        if should_mount:
-                            self._mount_esp(p)
-                            should_mount = False
-            elif bootloader == Bootloader.PREP:
+            if bootloader == Bootloader.PREP:
                 for p in new_boot_disk.partitions():
                     if p.flag == 'prep':
                         p.wipe = 'zero'
                         p.grub_device = True
+            else:
+                raise Exception(f'unexpected bootloader {bootloader} here')
         else:
             if new_boot_disk.type == "disk":
                 new_boot_disk.preserve = False

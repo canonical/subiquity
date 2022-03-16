@@ -348,27 +348,9 @@ class TestAdd(TestAPI):
             # these manual steps are expected to be equivalent to just adding
             # the single partition and getting the automatic boot partition
             await inst.post('/storage/v2/add_boot_partition', disk_id=disk_id)
-            # manual_add =
-            await inst.post('/storage/v2/add_partition', data)
+            manual_add = await inst.post('/storage/v2/add_partition', data)
 
-            # FIXME single_add places /boot/efi physically second
-            # self.assertEqual(single_add, manual_add)
-
-            # manual behaves as expected
-            # /boot/efi
-            #   offset: 1 MiB
-            #   size: 538 MiB
-            # /
-            #   offset: 539 MiB
-            #   size: 9700 MiB
-
-            # single flips the order of the physical layout
-            # /boot/efi
-            #   offset: 9701 MiB
-            #   size: 538 MiB
-            # /
-            #   offset: 1 MiB
-            #   size: 9700 MiB
+            self.assertEqual(single_add, manual_add)
 
     @timeout()
     async def test_v2_deny_multiple_add_boot_partition(self):

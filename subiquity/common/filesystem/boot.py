@@ -98,6 +98,14 @@ class SetAttrPlan:
 
 
 @attr.s(auto_attribs=True)
+class MountBootEfiPlan:
+    part: object
+
+    def apply(self, manipulator):
+        manipulator._mount_esp(self.part)
+
+
+@attr.s(auto_attribs=True)
 class MultiStepPlan:
     plans: list
 
@@ -148,6 +156,56 @@ def get_boot_device_plan_bios(device):
             ])
 
 
+def get_boot_device_plan_uefi(device):
+    if device._has_preexisting_partition():
+        for part in device.partitions():
+            if is_esp(part):
+                plans = [SetAttrPlan(part, 'grub_device', True)]
+                if device._m._mount_for_path('/boot/efi') is None:
+                    plans.append(MountBootEfiPlan(part))
+                return MultiStepPlan(plans=plans)
+        return None
+
+    size = sizes.get_efi_size(device)
+
+    create_part_plan = CreatePartPlan(
+        device=device,
+        offset=None,
+        spec=dict(size=size, fstype='fat32', mount=None),
+        args=dict(flag='boot', grub_device=True))
+    if device._m._mount_for_path("/boot/efi") is None:
+        create_part_plan.spec['mount'] = '/boot/efi'
+
+    partitions = device.partitions()
+
+    if gaps.largest_gap_size(device) >= size:
+        create_part_plan.offset = gaps.largest_gap(device).offset
+        return create_part_plan
+    else:
+        largest_i, largest_part = max(
+            enumerate(partitions),
+            key=lambda i_p: i_p[1].size)
+        create_part_plan.offset = largest_part.offset
+        return MultiStepPlan(plans=[
+            SlidePlan(
+                parts=[largest_part],
+                offset_delta=size),
+            ResizePlan(
+                part=largest_part,
+                size_delta=-size),
+            create_part_plan,
+            ])
+
+
+def get_boot_device_plan(device):
+    bl = device._m.bootloader
+    if bl == Bootloader.BIOS:
+        return get_boot_device_plan_bios(device)
+    if bl == Bootloader.UEFI:
+        return get_boot_device_plan_uefi(device)
+    raise Exception(f'unexpected bootloader {bl} here')
+
+
 @functools.singledispatch
 def can_be_boot_device(device, *, with_reformatting=False):
     """Can `device` be made into a boot device?
@@ -163,13 +221,13 @@ def _can_be_boot_device_disk(disk, *, with_reformatting=False):
     bl = disk._m.bootloader
     if with_reformatting:
         return True
-    if bl == Bootloader.BIOS:
-        return get_boot_device_plan_bios(disk) is not None
+    if bl in [Bootloader.BIOS, Bootloader.UEFI]:
+        return get_boot_device_plan(disk) is not None
     if disk._has_preexisting_partition():
-        if bl == Bootloader.UEFI:
-            return any(is_esp(p) for p in disk._partitions)
-        elif bl == Bootloader.PREP:
+        if bl == Bootloader.PREP:
             return any(p.flag == "prep" for p in disk._partitions)
+        else:
+            raise Exception(f'unexpected bootloader {bl} here')
     else:
         return True
 
@@ -181,10 +239,9 @@ def _can_be_boot_device_raid(raid, *, with_reformatting=False):
         return False
     if not raid.container or raid.container.metadata != 'imsm':
         return False
-    if raid._has_preexisting_partition() and not with_reformatting:
-        return any(is_esp(p) for p in raid._partitions)
-    else:
+    if with_reformatting:
         return True
+    return get_boot_device_plan_uefi(raid) is not None
 
 
 @functools.singledispatch

@@ -18,7 +18,7 @@ import unittest
 from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
-from subiquity.common.filesystem import gaps
+from subiquity.common.filesystem import boot, gaps
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.models.tests.test_filesystem import (
     make_disk,
@@ -285,3 +285,61 @@ class TestFilesystemManipulator(unittest.TestCase):
         self.assertIs(p2, part)
         self.assertEqual(p1.offset, MiB)
         self.assertEqual(p2.offset, half_size)
+
+    def test_add_boot_UEFI_empty(self):
+        manipulator = make_manipulator(Bootloader.UEFI)
+        disk = make_disk(manipulator.model, preserve=True)
+        manipulator.add_boot_disk(disk)
+        [part] = disk.partitions()
+        self.assertEqual(part.offset, MiB)
+
+    def test_add_boot_UEFI_full(self):
+        manipulator = make_manipulator(Bootloader.UEFI)
+        disk = make_disk(manipulator.model, preserve=True)
+        part = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk))
+        size_before = part.size
+        manipulator.add_boot_disk(disk)
+        [p1, p2] = disk.partitions()
+        self.assertIs(p2, part)
+        size_after = p2.size
+        self.assertEqual(p1.offset, MiB)
+        self.assertEqual(p2.offset, MiB+p1.size)
+        self.assertEqual(size_after, size_before - p1.size)
+
+    def test_add_boot_UEFI_half_full(self):
+        manipulator = make_manipulator(Bootloader.UEFI)
+        disk = make_disk(manipulator.model, preserve=True)
+        part = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk)//2)
+        size_before = part.size
+        manipulator.add_boot_disk(disk)
+        [p1, p2] = sorted(disk.partitions(), key=lambda p: p.offset)
+        size_after = p1.size
+        self.assertIs(p1, part)
+        self.assertEqual(p1.offset, MiB)
+        self.assertEqual(p2.offset, p1.offset + p1.size)
+        self.assertTrue(boot.is_esp(p2))
+        self.assertEqual(size_after, size_before)
+
+    def test_add_boot_UEFI_full_resizes_larger(self):
+        manipulator = make_manipulator(Bootloader.UEFI)
+        # 402MiB so that the space available for partitioning (400MiB)
+        # divided by 4 is an whole number of megabytes.
+        disk = make_disk(manipulator.model, preserve=True, size=402*MiB)
+        part_smaller = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk)//4)
+        part_larger = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk))
+        larger_size_before = part_larger.size
+        smaller_size_before = part_smaller.size
+        manipulator.add_boot_disk(disk)
+        [p1, p2, p3] = sorted(disk.partitions(), key=lambda p: p.offset)
+        self.assertIs(p1, part_smaller)
+        self.assertIs(p3, part_larger)
+        self.assertEqual(smaller_size_before, p1.size)
+        self.assertEqual(p1.offset, MiB)
+        self.assertEqual(p2.offset, p1.offset + p1.size)
+        self.assertEqual(p3.offset, p2.offset + p2.size)
+        self.assertTrue(boot.is_esp(p2))
+        self.assertEqual(p3.size, larger_size_before - p2.size)
