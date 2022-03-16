@@ -43,7 +43,7 @@ class WSLConfigurationAdvancedForm(Form):
 
     automount_enabled = \
         BooleanField(_("Enable Auto-Mount"),
-                     help=_("Whether the Auto-Mount freature is enabled. "
+                     help=_("Whether the Auto-Mount feature is enabled. "
                             "This feature allows you to mount Windows drive"
                             " in WSL."))
     automount_mountfstab = \

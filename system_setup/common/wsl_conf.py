@@ -131,7 +131,7 @@ def wsl_config_update(config_class, root_dir):
         config_sections = temp_conf_default[config_type]
 
         config = ConfigParser()
-        config.BasicInterpolcation = None
+        config.BasicInterpolation = None
 
         os.makedirs(os.path.join(root_dir, "etc"), exist_ok=True)
         conf_file = os.path.join(root_dir, conf_type_to_file[config_type][1:])
