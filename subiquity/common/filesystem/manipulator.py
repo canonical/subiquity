@@ -180,35 +180,71 @@ class FilesystemManipulator:
             }
         return self.create_partition(disk, gap, spec, flag='bios_grub')
 
+    def _create_boot_with_resize_plan(self, disk, part_size):
+
+        @attr.s(auto_attribs=True)
+        class Adjustment:
+            part: object = None
+            offset_delta: int = 0
+            size_delta: int = 0
+            gap_offset: int = 0
+            gap_size: int = 0
+
+            def apply(self):
+                if self.part is None:
+                    return
+                self.part.offset += self.part.offset_delta
+                self.part.size -= self.part.size_delta
+
+            def gap(self, device):
+                return gaps.Gap(device, self.gap_offset, self.gap_size)
+
+        adjustment = Adjustment()
+
+        parts_and_gaps = gaps.parts_and_gaps(disk)
+
+        for pg in parts_and_gaps:
+            if isinstance(pg, gaps.Gap):
+                if pg.size >= part_size:
+                    adjustment.gap_offset = pg.offset
+                    adjustment.gap_size = pg.size
+                    return adjustment
+
+        new_parts = [p for p in disk.partitions() if not p.preserve]
+        part = adjustment.part = max(new_parts, key=lambda p: p.size)
+        adjustment.gap_offset = part.offset
+        adjustment.gap_size = part_size
+        needed = part_size
+
+        largest_i = parts_and_gaps.index(part)
+
+        if largest_i - 1 >= 0:
+            preceding = parts_and_gaps[largest_i - 1]
+            if isinstance(preceding, gaps.Gap):
+                adjustment.gap_offset = preceding.offset
+                needed -= preceding.size
+
+        if largest_i + 1 < len(parts_and_gaps):
+            trailing = parts_and_gaps[largest_i + 1]
+            if isinstance(trailing, gaps.Gap):
+                move_amount = min(trailing.size, needed)
+                adjustment.offset_delta = move_amount
+                needed -= move_amount
+
+        if needed == 0:
+            return adjustment
+        elif needed > 0 and needed < part.size//2:
+            adjustment.offset_delta += needed
+            adjustment.size_delta -= needed
+            return adjustment
+        else:
+            return None
+
     def _create_boot_with_resize(self, disk, spec, **kwargs):
-        part_size = spec['size']
-        gap = gaps.largest_gap(disk)
-        if gap is None or part_size > gap.size:
-            new_parts = [p for p in disk.partitions() if not p.preserve]
-            largest_new = max(new_parts, key=lambda p: p.size)
-            parts_and_gaps = gaps.parts_and_gaps(disk)
-            largest_i = parts_and_gaps.index(largest_new)
-            needed = part_size
-            preceding_gap_size = 0
-            preceding_gap_offset = largest_new.offset
-            if largest_i - 1 >= 0:
-                preceding = parts_and_gaps[largest_i - 1]
-                if isinstance(preceding, gaps.Gap):
-                    preceding_gap_size = preceding.size
-                    preceding_gap_offset = preceding.offset
-            needed -= preceding_gap_size
-            trailing_gap_size = 0
-            if largest_i + 1 < len(parts_and_gaps):
-                if isinstance(parts_and_gaps[largest_i + 1], gaps.Gap):
-                    trailing_gap_size = parts_and_gaps[largest_i + 1].size
-                    move_amount = min(trailing_gap_size, needed)
-                    largest_new.offset += move_amount
-                    needed -= move_amount
-            if needed > 0:
-                largest_new.offset += needed
-                largest_new.size -= needed
-            gap = gaps.Gap(disk, preceding_gap_offset, part_size)
-        return self.create_partition(disk, gap, spec, **kwargs)
+        adjustment = self._create_boot_with_resize_plan(spec['size'])
+        assert adjustment is not None
+        adjustment.apply()
+        return self.create_partition(disk, adjustment.gap(), spec, **kwargs)
 
     def _create_boot_partition(self, disk):
         bootloader = self.model.bootloader
