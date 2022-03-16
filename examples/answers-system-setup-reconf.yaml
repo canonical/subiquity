@@ -8,5 +8,6 @@ WSLConfigurationAdvanced:
   interop_appendwindowspath: false
   automount_enabled: false
   automount_mountfstab: false
+  systemd_enabled: true
 Summary:
   reboot: yes

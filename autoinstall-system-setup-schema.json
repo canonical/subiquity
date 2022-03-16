@@ -99,6 +99,9 @@
                 },
                 "automount_mountfstab": {
                     "type": "boolean"
+                },
+                "systemd_enabled": {
+                    "type": "boolean"
                 }
             },
             "additionalProperties": false

@@ -458,3 +458,4 @@ class WSLConfigurationAdvanced:
     automount_mountfstab:  bool = attr.ib(default=True)
     interop_enabled:  bool = attr.ib(default=True)
     interop_appendwindowspath: bool = attr.ib(default=True)
+    systemd_enabled:  bool = attr.ib(default=False)
