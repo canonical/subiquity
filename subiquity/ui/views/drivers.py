@@ -26,7 +26,7 @@ from urwid import (
     Text,
     )
 
-from subiquitycore.ui.buttons import ok_btn
+from subiquitycore.ui.buttons import back_btn, ok_btn
 from subiquitycore.ui.form import (
     Form,
     BooleanField,
@@ -81,10 +81,10 @@ class DriversView(BaseView):
             Text(""),
             self.spinner,
             ]
-        self.cont_btn = ok_btn(
-                _("Continue"),
-                on_press=lambda sender: self.done(False))
-        self._w = screen(rows, [self.cont_btn])
+        self.back_btn = back_btn(
+                _("Back"),
+                on_press=lambda sender: self.cancel())
+        self._w = screen(rows, [self.back_btn])
         asyncio.create_task(self._wait(install))
         self.status = DriversViewStatus.WAITING
 
