@@ -60,15 +60,16 @@ conf_type_to_file = {
 }
 
 
-def wsl_config_loader(data, config_ref, id):
+def wsl_config_loader(config_ref, id):
     """
     Loads the configuration from the given file type,
     section and reference config.
 
-    :param data: dict, the data to load into
-    :param pathname: string, the path to the file to load
+    :param config_ref: dict, default entries
     :param id: string, the name of the section to load
+    return the data loaded
     """
+    data = {}
     pathname = conf_type_to_file[id]
     if not os.path.exists(pathname):
         return data
@@ -103,9 +104,8 @@ def default_loader(is_advanced=False):
     :param is_advanced: boolean, True if it is WSLConfigurationAdvanced,
                         else is WSLConfigurationBase
     """
-    data = {}
     conf_ref = config_adv_default if is_advanced else config_base_default
-    data = wsl_config_loader(data, conf_ref, "wsl")
+    data = wsl_config_loader(conf_ref, "wsl")
     return data
 
 
