@@ -66,6 +66,8 @@ class DriversView(BaseView):
 
         if drivers is None:
             self.make_waiting(install)
+        elif not drivers:
+            self.make_no_drivers()
         else:
             self.make_main(install, drivers)
 
