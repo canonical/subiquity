@@ -13,8 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import attr
 import functools
 
+from subiquity.common.filesystem import gaps
 from subiquity.models.filesystem import (
     Disk,
     Raid,
@@ -134,3 +136,67 @@ def is_bootloader_partition(partition):
         return partition.flag == "prep"
     else:
         return False
+
+
+@attr.s(auto_attribs=True)
+class ResizePlan:
+    part: object = None
+    offset_delta: int = 0
+    size_delta: int = 0
+    gap_offset: int = 0
+    gap_size: int = 0
+
+    def apply(self):
+        if self.part is None:
+            return
+        self.part.offset += self.part.offset_delta
+        self.part.size -= self.part.size_delta
+
+    def gap(self, device):
+        return gaps.Gap(device, self.gap_offset, self.gap_size)
+
+
+def resize_plan_for_size(self, disk, part_size):
+    plan = ResizePlan()
+    parts_and_gaps = gaps.parts_and_gaps(disk)
+
+    for pg in parts_and_gaps:
+        if isinstance(pg, gaps.Gap):
+            if pg.size >= part_size:
+                plan.gap_offset = pg.offset
+                plan.gap_size = pg.size
+                return plan
+
+    new_parts = [p for p in disk.partitions() if not p.preserve]
+    part = plan.part = max(new_parts, key=lambda p: p.size)
+    plan.gap_offset = part.offset
+    plan.gap_size = part_size
+    needed = part_size
+
+    largest_i = parts_and_gaps.index(part)
+
+    if largest_i - 1 >= 0:
+        preceding = parts_and_gaps[largest_i - 1]
+        if isinstance(preceding, gaps.Gap):
+            plan.gap_offset = preceding.offset
+            needed -= preceding.size
+
+    if largest_i + 1 < len(parts_and_gaps):
+        trailing = parts_and_gaps[largest_i + 1]
+        if isinstance(trailing, gaps.Gap):
+            move_amount = min(trailing.size, needed)
+            plan.offset_delta = move_amount
+            needed -= move_amount
+
+    if needed == 0:
+        return plan
+    elif needed > 0 and needed < part.size//2:
+        plan.offset_delta += needed
+        plan.size_delta -= needed
+        return plan
+    else:
+        return None
+
+
+def resize_plan_for_bios_grub(disk):
+    pass
