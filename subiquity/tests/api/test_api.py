@@ -250,8 +250,8 @@ class TestFlow(TestAPI):
             resp = await inst.post('/storage/v2/reformat_disk',
                                    disk_id=disk_id)
             sda = first(resp['disks'], 'id', disk_id)
-            self.assertEqual(1, len(sda['partitions']))
-            self.assertEqual('Gap', sda['partitions'][0]['$type'])
+            [gap] = sda['partitions']
+            self.assertEqual('Gap', gap['$type'])
 
             data = {
                 'disk_id': disk_id,
@@ -272,22 +272,28 @@ class TestFlow(TestAPI):
                     'format': 'ext4',
                 }
             }
-            resp = await inst.post('/storage/v2/edit_partition', data)
-            expected = add_resp['disks'][0]['partitions'][1]
-            actual = resp['disks'][0]['partitions'][1]
+            edit_resp = await inst.post('/storage/v2/edit_partition', data)
+
+            add_sda = first(add_resp['disks'], 'id', disk_id)
+            add_sda2 = first(add_sda['partitions'], 'number', 2)
+
+            edit_sda = first(edit_resp['disks'], 'id', disk_id)
+            edit_sda2 = first(edit_sda['partitions'], 'number', 2)
+
             for key in 'size', 'number', 'mount', 'boot':
-                self.assertEqual(expected[key], actual[key])
-            self.assertEqual('ext4',
-                             resp['disks'][0]['partitions'][1]['format'])
+                self.assertEqual(add_sda2[key], edit_sda2[key])
+            self.assertEqual('ext4', edit_sda2['format'])
 
-            resp = await inst.post('/storage/v2/delete_partition', data)
-            sda = first(resp['disks'], 'id', disk_id)
+            del_resp = await inst.post('/storage/v2/delete_partition', data)
+            sda = first(del_resp['disks'], 'id', disk_id)
             self.assertEqual(2, len(sda['partitions']))
-            self.assertEqual('Partition', sda['partitions'][0]['$type'])
-            self.assertEqual('Gap', sda['partitions'][1]['$type'])
 
-            resp = await inst.post('/storage/v2/reset')
-            self.assertEqual(orig_resp, resp)
+            for type in 'Partition', 'Gap':
+                pgs = [pg for pg in sda['partitions'] if pg['$type'] == type]
+                self.assertEqual(len(pgs), 1)
+
+            reset_resp = await inst.post('/storage/v2/reset')
+            self.assertEqual(orig_resp, reset_resp)
 
             choice = {'disk_id': disk_id}
             guided_resp = await inst.post('/storage/v2/guided', choice)
