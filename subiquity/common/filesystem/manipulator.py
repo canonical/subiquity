@@ -103,11 +103,11 @@ class FilesystemManipulator:
             spec = dict(size=part_size, fstype='fat32')
             if self.model._mount_for_path("/boot/efi") is None:
                 spec['mount'] = '/boot/efi'
-            part = self._create_boot_with_resize(
+            self._create_boot_with_resize(
                 disk, spec, flag="boot", grub_device=True)
         elif bootloader == Bootloader.PREP:
             log.debug('_create_boot_partition - adding PReP partition')
-            part = self._create_boot_with_resize(
+            self._create_boot_with_resize(
                 disk,
                 dict(size=sizes.PREP_GRUB_SIZE_BYTES, fstype=None, mount=None),
                 # must be wiped or grub-install will fail
@@ -115,12 +115,7 @@ class FilesystemManipulator:
                 flag='prep', grub_device=True)
         elif bootloader == Bootloader.BIOS:
             log.debug('_create_boot_partition - adding bios_grub partition')
-            part = self._create_boot_with_resize(
-                disk,
-                dict(size=sizes.BIOS_GRUB_SIZE_BYTES, fstype=None, mount=None),
-                flag='bios_grub')
-            disk.grub_device = True
-        return part
+            boot.get_boot_device_plan_bios(disk).apply(self)
 
     def create_raid(self, spec):
         for d in spec['devices'] | spec['spare_devices']:
@@ -221,14 +216,14 @@ class FilesystemManipulator:
         log.debug('model needs a bootloader partition? {}'.format(needs_boot))
         can_be_boot = boot.can_be_boot_device(disk)
         if needs_boot and len(disk.partitions()) == 0 and can_be_boot:
-            part = self._create_boot_partition(disk)
+            self._create_boot_partition(disk)
 
             # adjust downward the partition size (if necessary) to accommodate
             # bios/grub partition
             if spec['size'] > gaps.largest_gap_size(disk):
                 log.debug(
-                    "Adjusting request down: %s - %s = %s",
-                    spec['size'], part.size, gaps.largest_gap_size(disk))
+                    "Adjusting request down from %s to %s",
+                    spec['size'], gaps.largest_gap_size(disk))
                 spec['size'] = gaps.largest_gap_size(disk)
 
         self.create_partition(disk, gap, spec)
@@ -345,10 +340,11 @@ class FilesystemManipulator:
         if not self.supports_resilient_boot:
             for disk in boot.all_boot_devices(self.model):
                 self.remove_boot_disk(disk)
+        if bootloader == Bootloader.BIOS:
+            boot.get_boot_device_plan_bios(new_boot_disk).apply(self)
+            return
         if new_boot_disk._has_preexisting_partition():
-            if bootloader == Bootloader.BIOS:
-                new_boot_disk.grub_device = True
-            elif bootloader == Bootloader.UEFI:
+            if bootloader == Bootloader.UEFI:
                 should_mount = self.model._mount_for_path('/boot/efi') is None
                 for p in new_boot_disk.partitions():
                     if boot.is_esp(p):
