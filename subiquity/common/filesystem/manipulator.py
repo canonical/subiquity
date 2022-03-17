@@ -15,73 +15,14 @@
 
 import logging
 
-import attr
-
-from subiquity.common.filesystem import boot, gaps
+from subiquity.common.filesystem import boot, gaps, sizes
 from subiquity.common.types import Bootloader
 from subiquity.models.filesystem import (
     align_up,
-    MiB,
     Partition,
     )
 
 log = logging.getLogger('subiquity.common.filesystem.manipulator')
-
-BIOS_GRUB_SIZE_BYTES = 1 * MiB
-PREP_GRUB_SIZE_BYTES = 8 * MiB
-
-
-@attr.s(auto_attribs=True)
-class PartitionScaleFactors:
-    minimum: int
-    priority: int
-    maximum: int
-
-
-uefi_scale = PartitionScaleFactors(
-        minimum=538 * MiB,
-        priority=538,
-        maximum=1075 * MiB)
-bootfs_scale = PartitionScaleFactors(
-        minimum=768 * MiB,
-        priority=1024,
-        maximum=1536 * MiB)
-rootfs_scale = PartitionScaleFactors(
-        minimum=900 * MiB,
-        priority=10000,
-        maximum=-1)
-
-
-def scale_partitions(all_factors, disk_size):
-    """for the list of scale factors, provide list of scaled partition size.
-    Assumes at most one scale factor with maximum==-1, and
-    disk_size is at least as big as the sum of all partition minimums.
-    The scale factor with maximum==-1 is given all remaining disk space."""
-    ret = []
-    sum_priorities = sum([factor.priority for factor in all_factors])
-    for cur in all_factors:
-        scaled = int((disk_size / sum_priorities) * cur.priority)
-        if scaled < cur.minimum:
-            ret.append(cur.minimum)
-        elif scaled > cur.maximum:
-            ret.append(cur.maximum)
-        else:
-            ret.append(scaled)
-    if -1 in ret:
-        used = sum(filter(lambda x: x != -1, ret))
-        idx = ret.index(-1)
-        ret[idx] = disk_size - used
-    return ret
-
-
-def get_efi_size(disk):
-    all_factors = (uefi_scale, bootfs_scale, rootfs_scale)
-    return scale_partitions(all_factors, disk.size)[0]
-
-
-def get_bootfs_size(disk):
-    all_factors = (uefi_scale, bootfs_scale, rootfs_scale)
-    return scale_partitions(all_factors, disk.size)[1]
 
 
 class FilesystemManipulator:
@@ -157,7 +98,7 @@ class FilesystemManipulator:
     def _create_boot_partition(self, disk):
         bootloader = self.model.bootloader
         if bootloader == Bootloader.UEFI:
-            part_size = get_efi_size(disk)
+            part_size = sizes.get_efi_size(disk)
             log.debug('_create_boot_partition - adding EFI partition')
             spec = dict(size=part_size, fstype='fat32')
             if self.model._mount_for_path("/boot/efi") is None:
@@ -168,7 +109,7 @@ class FilesystemManipulator:
             log.debug('_create_boot_partition - adding PReP partition')
             part = self._create_boot_with_resize(
                 disk,
-                dict(size=PREP_GRUB_SIZE_BYTES, fstype=None, mount=None),
+                dict(size=sizes.PREP_GRUB_SIZE_BYTES, fstype=None, mount=None),
                 # must be wiped or grub-install will fail
                 wipe='zero',
                 flag='prep', grub_device=True)
@@ -176,7 +117,7 @@ class FilesystemManipulator:
             log.debug('_create_boot_partition - adding bios_grub partition')
             part = self._create_boot_with_resize(
                 disk,
-                dict(size=BIOS_GRUB_SIZE_BYTES, fstype=None, mount=None),
+                dict(size=sizes.BIOS_GRUB_SIZE_BYTES, fstype=None, mount=None),
                 flag='bios_grub')
             disk.grub_device = True
         return part

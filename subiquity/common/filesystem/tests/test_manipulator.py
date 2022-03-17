@@ -19,15 +19,7 @@ from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
 from subiquity.common.filesystem import gaps
-from subiquity.common.filesystem.manipulator import (
-    bootfs_scale,
-    FilesystemManipulator,
-    get_efi_size,
-    get_bootfs_size,
-    PartitionScaleFactors,
-    scale_partitions,
-    uefi_scale,
-    )
+from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.models.tests.test_filesystem import (
     make_disk,
     make_model,
@@ -242,57 +234,3 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.add_boot_disk(disk1)
             part = gaps.parts_and_gaps(disk1)[0]
             self.assertEqual(1024 * 1024, part.offset)
-
-
-class TestPartitionSizeScaling(unittest.TestCase):
-    def test_scale_factors(self):
-        psf = [
-            PartitionScaleFactors(minimum=100, priority=500, maximum=500),
-            PartitionScaleFactors(minimum=1000, priority=9500, maximum=-1),
-        ]
-
-        # match priorities, should get same values back
-        self.assertEqual([500, 9500], scale_partitions(psf, 10000))
-
-        # half priorities, should be scaled
-        self.assertEqual([250, 4750], scale_partitions(psf, 5000))
-
-        # hit max on first partition, second should use rest of space
-        self.assertEqual([500, 19500], scale_partitions(psf, 20000))
-
-        # minimums
-        self.assertEqual([100, 1000], scale_partitions(psf, 1100))
-
-        # ints
-        self.assertEqual([105, 1996], scale_partitions(psf, 2101))
-
-    def test_no_max_equal_minus_one(self):
-        psf = [
-            PartitionScaleFactors(minimum=100, priority=500, maximum=500),
-            PartitionScaleFactors(minimum=100, priority=500, maximum=500),
-        ]
-
-        self.assertEqual([500, 500], scale_partitions(psf, 2000))
-
-    def test_efi(self):
-        manipulator = make_manipulator(Bootloader.UEFI)
-        tests = [
-            # something large to hit maximums
-            (30 << 30, uefi_scale.maximum, bootfs_scale.maximum),
-            # and something small to hit minimums
-            (8 << 30, uefi_scale.minimum, bootfs_scale.minimum),
-        ]
-        for disk_size, uefi, bootfs in tests:
-            disk = make_disk(manipulator.model, preserve=True, size=disk_size)
-            self.assertEqual(uefi, get_efi_size(disk))
-            self.assertEqual(bootfs, get_bootfs_size(disk))
-
-        # something in between for scaling
-        disk_size = 15 << 30
-        disk = make_disk(manipulator.model, preserve=True, size=disk_size)
-        efi_size = get_efi_size(disk)
-        self.assertTrue(uefi_scale.maximum > efi_size)
-        self.assertTrue(efi_size > uefi_scale.minimum)
-        bootfs_size = get_bootfs_size(disk)
-        self.assertTrue(bootfs_scale.maximum > bootfs_size)
-        self.assertTrue(bootfs_size > bootfs_scale.minimum)
