@@ -41,10 +41,9 @@ from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
-from subiquity.common.filesystem import boot, gaps, labels
+from subiquity.common.filesystem import boot, gaps, labels, sizes
 from subiquity.common.filesystem.manipulator import (
     FilesystemManipulator,
-    get_bootfs_size,
 )
 from subiquity.common.types import (
     Bootloader,
@@ -146,7 +145,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         gap = gaps.largest_gap(disk)
         self.create_partition(
             device=disk, gap=gap, spec=dict(
-                size=get_bootfs_size(disk),
+                size=sizes.get_bootfs_size(disk),
                 fstype="ext4",
                 mount='/boot'
                 ))
