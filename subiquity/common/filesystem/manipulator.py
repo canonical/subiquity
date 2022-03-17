@@ -15,7 +15,7 @@
 
 import logging
 
-from subiquity.common.filesystem import boot, gaps, sizes
+from subiquity.common.filesystem import boot, gaps
 from subiquity.common.types import Bootloader
 from subiquity.models.filesystem import (
     align_up,
@@ -86,29 +86,6 @@ class FilesystemManipulator:
             raise Exception("cannot delete partitions from preserved disks")
         self.clear(part)
         self.model.remove_partition(part)
-
-    def _create_boot_with_resize(self, disk, spec, **kwargs):
-        part_size = spec['size']
-        if part_size > gaps.largest_gap_size(disk):
-            largest_part = max(disk.partitions(), key=lambda p: p.size)
-            largest_part.size -= (part_size - gaps.largest_gap_size(disk))
-        gap = gaps.largest_gap(disk)
-        return self.create_partition(disk, gap, spec, **kwargs)
-
-    def _create_boot_partition(self, disk):
-        bootloader = self.model.bootloader
-        if bootloader in [Bootloader.UEFI, Bootloader.BIOS]:
-            boot.get_boot_device_plan(disk).apply(self)
-        elif bootloader == Bootloader.PREP:
-            log.debug('_create_boot_partition - adding PReP partition')
-            self._create_boot_with_resize(
-                disk,
-                dict(size=sizes.PREP_GRUB_SIZE_BYTES, fstype=None, mount=None),
-                # must be wiped or grub-install will fail
-                wipe='zero',
-                flag='prep', grub_device=True)
-        else:
-            raise Exception(f'unexpected bootloader {bootloader} here')
 
     def create_raid(self, spec):
         for d in spec['devices'] | spec['spare_devices']:
@@ -209,7 +186,7 @@ class FilesystemManipulator:
         log.debug('model needs a bootloader partition? {}'.format(needs_boot))
         can_be_boot = boot.can_be_boot_device(disk)
         if needs_boot and len(disk.partitions()) == 0 and can_be_boot:
-            self._create_boot_partition(disk)
+            self.add_boot_disk(disk)
 
             # adjust downward the partition size (if necessary) to accommodate
             # bios/grub partition
@@ -329,22 +306,10 @@ class FilesystemManipulator:
                 self._mount_esp(part)
 
     def add_boot_disk(self, new_boot_disk):
-        bootloader = self.model.bootloader
         if not self.supports_resilient_boot:
             for disk in boot.all_boot_devices(self.model):
                 self.remove_boot_disk(disk)
-        if bootloader in [Bootloader.BIOS, Bootloader.UEFI]:
-            boot.get_boot_device_plan(new_boot_disk).apply(self)
-            return
-        if new_boot_disk._has_preexisting_partition():
-            if bootloader == Bootloader.PREP:
-                for p in new_boot_disk.partitions():
-                    if p.flag == 'prep':
-                        p.wipe = 'zero'
-                        p.grub_device = True
-            else:
-                raise Exception(f'unexpected bootloader {bootloader} here')
-        else:
+        boot.get_boot_device_plan(new_boot_disk).apply(self)
+        if not new_boot_disk._has_preexisting_partition():
             if new_boot_disk.type == "disk":
                 new_boot_disk.preserve = False
-            self._create_boot_partition(new_boot_disk)

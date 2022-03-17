@@ -243,6 +243,7 @@ class TestFilesystemManipulator(unittest.TestCase):
         manipulator = make_manipulator(Bootloader.BIOS)
         disk = make_disk(manipulator.model, preserve=True)
         manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
         [part] = disk.partitions()
         self.assertEqual(part.offset, MiB)
 
@@ -253,6 +254,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.model, disk, size=gaps.largest_gap_size(disk))
         size_before = part.size
         manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
         [p1, p2] = disk.partitions()
         self.assertIs(p2, part)
         size_after = p2.size
@@ -267,12 +269,36 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.model, disk, size=gaps.largest_gap_size(disk)//2)
         size_before = part.size
         manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
         [p1, p2] = disk.partitions()
         size_after = p2.size
         self.assertIs(p2, part)
         self.assertEqual(p1.offset, MiB)
         self.assertEqual(p2.offset, 2*MiB)
         self.assertEqual(size_after, size_before)
+
+    def test_add_boot_BIOS_full_resizes_larger(self):
+        manipulator = make_manipulator(Bootloader.BIOS)
+        # 402MiB so that the space available for partitioning (400MiB)
+        # divided by 4 is an whole number of megabytes.
+        disk = make_disk(manipulator.model, preserve=True, size=402*MiB)
+        part_smaller = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk)//4)
+        part_larger = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk))
+        larger_size_before = part_larger.size
+        smaller_size_before = part_smaller.size
+        manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
+        [p1, p2, p3] = sorted(disk.partitions(), key=lambda p: p.offset)
+        self.assertIs(p2, part_smaller)
+        self.assertIs(p3, part_larger)
+        self.assertEqual(smaller_size_before, p2.size)
+        self.assertEqual(p1.offset, MiB)
+        self.assertEqual(p2.offset, p1.offset + p1.size)
+        self.assertEqual(p3.offset, p2.offset + p2.size)
+        self.assertEqual(p1.flag, "bios_grub")
+        self.assertEqual(p3.size, larger_size_before - p1.size)
 
     def DONT_test_add_boot_BIOS_preserved(self):  # needs v2 partitioning
         manipulator = make_manipulator(Bootloader.BIOS)
@@ -281,6 +307,7 @@ class TestFilesystemManipulator(unittest.TestCase):
         part = make_partition(
             manipulator.model, disk, size=half_size, offset=half_size)
         manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
         [p1, p2] = disk.partitions()
         self.assertIs(p2, part)
         self.assertEqual(p1.offset, MiB)
@@ -290,6 +317,7 @@ class TestFilesystemManipulator(unittest.TestCase):
         manipulator = make_manipulator(Bootloader.UEFI)
         disk = make_disk(manipulator.model, preserve=True)
         manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
         [part] = disk.partitions()
         self.assertEqual(part.offset, MiB)
 
@@ -300,6 +328,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.model, disk, size=gaps.largest_gap_size(disk))
         size_before = part.size
         manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
         [p1, p2] = disk.partitions()
         self.assertIs(p2, part)
         size_after = p2.size
@@ -314,6 +343,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.model, disk, size=gaps.largest_gap_size(disk)//2)
         size_before = part.size
         manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
         [p1, p2] = sorted(disk.partitions(), key=lambda p: p.offset)
         size_after = p1.size
         self.assertIs(p1, part)
@@ -334,6 +364,7 @@ class TestFilesystemManipulator(unittest.TestCase):
         larger_size_before = part_larger.size
         smaller_size_before = part_smaller.size
         manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
         [p1, p2, p3] = sorted(disk.partitions(), key=lambda p: p.offset)
         self.assertIs(p1, part_smaller)
         self.assertIs(p3, part_larger)
@@ -342,4 +373,66 @@ class TestFilesystemManipulator(unittest.TestCase):
         self.assertEqual(p2.offset, p1.offset + p1.size)
         self.assertEqual(p3.offset, p2.offset + p2.size)
         self.assertTrue(boot.is_esp(p2))
+        self.assertEqual(p3.size, larger_size_before - p2.size)
+
+    def test_add_boot_PREP_empty(self):
+        manipulator = make_manipulator(Bootloader.PREP)
+        disk = make_disk(manipulator.model, preserve=True)
+        manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
+        [part] = disk.partitions()
+        self.assertEqual(part.offset, MiB)
+
+    def test_add_boot_PREP_full(self):
+        manipulator = make_manipulator(Bootloader.PREP)
+        disk = make_disk(manipulator.model, preserve=True)
+        part = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk))
+        size_before = part.size
+        manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
+        [p1, p2] = disk.partitions()
+        self.assertIs(p2, part)
+        size_after = p2.size
+        self.assertEqual(p1.offset, MiB)
+        self.assertEqual(p2.offset, MiB+p1.size)
+        self.assertEqual(size_after, size_before - p1.size)
+
+    def test_add_boot_PREP_half_full(self):
+        manipulator = make_manipulator(Bootloader.PREP)
+        disk = make_disk(manipulator.model, preserve=True)
+        part = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk)//2)
+        size_before = part.size
+        manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
+        [p1, p2] = sorted(disk.partitions(), key=lambda p: p.offset)
+        size_after = p1.size
+        self.assertIs(p1, part)
+        self.assertEqual(p1.offset, MiB)
+        self.assertEqual(p2.offset, p1.offset + p1.size)
+        self.assertEqual(p2.flag, "prep")
+        self.assertEqual(size_after, size_before)
+
+    def test_add_boot_PREP_full_resizes_larger(self):
+        manipulator = make_manipulator(Bootloader.PREP)
+        # 402MiB so that the space available for partitioning (400MiB)
+        # divided by 4 is an whole number of megabytes.
+        disk = make_disk(manipulator.model, preserve=True, size=402*MiB)
+        part_smaller = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk)//4)
+        part_larger = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk))
+        larger_size_before = part_larger.size
+        smaller_size_before = part_smaller.size
+        manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
+        [p1, p2, p3] = sorted(disk.partitions(), key=lambda p: p.offset)
+        self.assertIs(p1, part_smaller)
+        self.assertIs(p3, part_larger)
+        self.assertEqual(smaller_size_before, p1.size)
+        self.assertEqual(p1.offset, MiB)
+        self.assertEqual(p2.offset, p1.offset + p1.size)
+        self.assertEqual(p3.offset, p2.offset + p2.size)
+        self.assertEqual(p2.flag, "prep")
         self.assertEqual(p3.size, larger_size_before - p2.size)

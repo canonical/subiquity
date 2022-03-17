@@ -197,12 +197,51 @@ def get_boot_device_plan_uefi(device):
             ])
 
 
+def get_boot_device_plan_prep(device):
+    if device._has_preexisting_partition():
+        for part in device.partitions():
+            if part.flag == "prep":
+                return MultiStepPlan(plans=[
+                    SetAttrPlan(part, 'grub_device', True),
+                    SetAttrPlan(part, 'wipe', 'zero')
+                    ])
+        return None
+
+    create_part_plan = CreatePartPlan(
+        device=device,
+        offset=None,
+        spec=dict(size=sizes.PREP_GRUB_SIZE_BYTES, fstype=None, mount=None),
+        args=dict(flag='prep', grub_device=True, wipe='zero'))
+
+    partitions = device.partitions()
+
+    if gaps.largest_gap_size(device) >= sizes.PREP_GRUB_SIZE_BYTES:
+        create_part_plan.offset = gaps.largest_gap(device).offset
+        return create_part_plan
+    else:
+        largest_i, largest_part = max(
+            enumerate(partitions),
+            key=lambda i_p: i_p[1].size)
+        create_part_plan.offset = largest_part.offset
+        return MultiStepPlan(plans=[
+            SlidePlan(
+                parts=[largest_part],
+                offset_delta=sizes.PREP_GRUB_SIZE_BYTES),
+            ResizePlan(
+                part=largest_part,
+                size_delta=-sizes.PREP_GRUB_SIZE_BYTES),
+            create_part_plan,
+            ])
+
+
 def get_boot_device_plan(device):
     bl = device._m.bootloader
     if bl == Bootloader.BIOS:
         return get_boot_device_plan_bios(device)
     if bl == Bootloader.UEFI:
         return get_boot_device_plan_uefi(device)
+    if bl == Bootloader.PREP:
+        return get_boot_device_plan_prep(device)
     raise Exception(f'unexpected bootloader {bl} here')
 
 
@@ -218,18 +257,9 @@ def can_be_boot_device(device, *, with_reformatting=False):
 
 @can_be_boot_device.register(Disk)
 def _can_be_boot_device_disk(disk, *, with_reformatting=False):
-    bl = disk._m.bootloader
     if with_reformatting:
         return True
-    if bl in [Bootloader.BIOS, Bootloader.UEFI]:
-        return get_boot_device_plan(disk) is not None
-    if disk._has_preexisting_partition():
-        if bl == Bootloader.PREP:
-            return any(p.flag == "prep" for p in disk._partitions)
-        else:
-            raise Exception(f'unexpected bootloader {bl} here')
-    else:
-        return True
+    return get_boot_device_plan(disk) is not None
 
 
 @can_be_boot_device.register(Raid)
