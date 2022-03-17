@@ -17,10 +17,10 @@ from subprocess import CalledProcessError, CompletedProcess
 import unittest
 from unittest.mock import patch, AsyncMock
 
-from subiquity.common.types import UbuntuAdvantageService
+from subiquity.common.types import UbuntuProService
 from subiquity.server.ubuntu_advantage import (
-    InvalidUATokenError,
-    ExpiredUATokenError,
+    InvalidTokenError,
+    ExpiredTokenError,
     CheckSubscriptionError,
     UAInterface,
     MockedUAInterfaceStrategy,
@@ -36,7 +36,7 @@ class TestMockedUAInterfaceStrategy(unittest.TestCase):
     def test_query_info_invalid(self):
         # Tokens starting with "i" in dry-run mode cause the token to be
         # reported as invalid.
-        with self.assertRaises(InvalidUATokenError):
+        with self.assertRaises(InvalidTokenError):
             run_coro(self.strategy.query_info(token="invalidToken"))
 
     def test_query_info_failure(self):
@@ -130,7 +130,7 @@ class TestUAInterface(unittest.TestCase):
         strategy = MockedUAInterfaceStrategy(scale_factor=1_000_000)
         interface = UAInterface(strategy)
 
-        with self.assertRaises(InvalidUATokenError):
+        with self.assertRaises(InvalidTokenError):
             run_coro(interface.get_activable_services(token="invalidToken"))
         # Tokens starting with "f" in dry-run mode simulate an "internal"
         # error.
@@ -138,7 +138,7 @@ class TestUAInterface(unittest.TestCase):
             run_coro(interface.get_activable_services(token="failure"))
 
         # Tokens starting with "x" is dry-run mode simulate an expired token.
-        with self.assertRaises(ExpiredUATokenError):
+        with self.assertRaises(ExpiredTokenError):
             run_coro(interface.get_activable_services(token="xpiredToken"))
 
         # Other tokens are considered valid in dry-run mode.
@@ -188,19 +188,19 @@ class TestUAInterface(unittest.TestCase):
         services = run_coro(
                 interface.get_activable_services(token="XXX"))
 
-        self.assertIn(UbuntuAdvantageService(
+        self.assertIn(UbuntuProService(
             name="esm-infra",
             description="UA Infra: Extended Security Maintenance (ESM)",
         ), services)
-        self.assertIn(UbuntuAdvantageService(
+        self.assertIn(UbuntuProService(
             name="fips",
             description="NIST-certified core packages",
         ), services)
-        self.assertNotIn(UbuntuAdvantageService(
+        self.assertNotIn(UbuntuProService(
             name="esm-apps",
             description="UA Apps: Extended Security Maintenance (ESM)",
         ), services)
-        self.assertNotIn(UbuntuAdvantageService(
+        self.assertNotIn(UbuntuProService(
             name="cis",
             description="Center for Internet Security Audit Tools",
         ), services)

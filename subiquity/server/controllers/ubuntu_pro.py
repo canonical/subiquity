@@ -19,13 +19,13 @@ import os
 
 from subiquity.common.apidef import API
 from subiquity.common.types import (
-    UbuntuAdvantageInfo,
-    UbuntuAdvantageCheckTokenAnswer,
-    UbuntuAdvantageCheckTokenStatus,
+    UbuntuProInfo,
+    UbuntuProCheckTokenAnswer,
+    UbuntuProCheckTokenStatus,
 )
 from subiquity.server.ubuntu_advantage import (
-    InvalidUATokenError,
-    ExpiredUATokenError,
+    InvalidTokenError,
+    ExpiredTokenError,
     CheckSubscriptionError,
     UAInterface,
     UAInterfaceStrategy,
@@ -34,20 +34,21 @@ from subiquity.server.ubuntu_advantage import (
 )
 from subiquity.server.controller import SubiquityController
 
-log = logging.getLogger("subiquity.server.controllers.ubuntu_advantage")
+log = logging.getLogger("subiquity.server.controllers.ubuntu_pro")
 
 TOKEN_DESC = """\
 A valid token starts with a C and is followed by 23 to 29 Base58 characters.
 See https://pkg.go.dev/github.com/btcsuite/btcutil/base58#CheckEncode"""
 
 
-class UbuntuAdvantageController(SubiquityController):
-    """ Represent the server-side Ubuntu Advantage controller. """
+class UbuntuProController(SubiquityController):
+    """ Represent the server-side Ubuntu Pro controller. """
 
-    endpoint = API.ubuntu_advantage
+    endpoint = API.ubuntu_pro
 
-    model_name = "ubuntu_advantage"
-    autoinstall_key = "ubuntu-advantage"
+    model_name = "ubuntu_pro"
+    autoinstall_key = "ubuntu-pro"
+    autoinstall_key_alias = "ubuntu-advantage"
     autoinstall_schema = {
         "type": "object",
         "properties": {
@@ -62,7 +63,7 @@ class UbuntuAdvantageController(SubiquityController):
     }
 
     def __init__(self, app) -> None:
-        """ Initializer for server-side UA controller. """
+        """ Initializer for server-side Ubuntu Pro controller. """
         strategy: UAInterfaceStrategy
         if app.opts.dry_run:
             strategy = MockedUAInterfaceStrategy(scale_factor=app.scale_factor)
@@ -84,7 +85,7 @@ class UbuntuAdvantageController(SubiquityController):
 
     def make_autoinstall(self) -> dict:
         """ Return a dictionary that can be used as an autoinstall snippet for
-        Ubuntu Advantage.
+        Ubuntu Pro.
         """
         if not self.model.token:
             return {}
@@ -102,11 +103,11 @@ class UbuntuAdvantageController(SubiquityController):
         """ Loads the last-known state of the model. """
         self.model.token = token
 
-    async def GET(self) -> UbuntuAdvantageInfo:
+    async def GET(self) -> UbuntuProInfo:
         """ Handle a GET request coming from the client-side controller. """
-        return UbuntuAdvantageInfo(token=self.model.token)
+        return UbuntuProInfo(token=self.model.token)
 
-    async def POST(self, data: UbuntuAdvantageInfo) -> None:
+    async def POST(self, data: UbuntuProInfo) -> None:
         """ Handle a POST request coming from the client-side controller and
         then call .configured().
         """
@@ -119,7 +120,7 @@ class UbuntuAdvantageController(SubiquityController):
         await self.configured()
 
     async def check_token_GET(self, token: str) \
-            -> UbuntuAdvantageCheckTokenAnswer:
+            -> UbuntuProCheckTokenAnswer:
         """ Handle a GET request asking whether the contract token is valid or
         not. If it is valid, we provide the list of activable services
         associated with the subscription.
@@ -128,14 +129,13 @@ class UbuntuAdvantageController(SubiquityController):
         try:
             services = await \
                     self.ua_interface.get_activable_services(token=token)
-        except InvalidUATokenError:
-            status = UbuntuAdvantageCheckTokenStatus.INVALID_TOKEN
-        except ExpiredUATokenError:
-            status = UbuntuAdvantageCheckTokenStatus.EXPIRED_TOKEN
+        except InvalidTokenError:
+            status = UbuntuProCheckTokenStatus.INVALID_TOKEN
+        except ExpiredTokenError:
+            status = UbuntuProCheckTokenStatus.EXPIRED_TOKEN
         except CheckSubscriptionError:
-            status = UbuntuAdvantageCheckTokenStatus.UNKNOWN_ERROR
+            status = UbuntuProCheckTokenStatus.UNKNOWN_ERROR
         else:
-            status = UbuntuAdvantageCheckTokenStatus.VALID_TOKEN
+            status = UbuntuProCheckTokenStatus.VALID_TOKEN
 
-        return UbuntuAdvantageCheckTokenAnswer(status=status,
-                                               services=services)
+        return UbuntuProCheckTokenAnswer(status=status, services=services)

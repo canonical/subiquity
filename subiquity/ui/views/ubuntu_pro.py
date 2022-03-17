@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-""" Module that defines the view class for Ubuntu Advantage configuration. """
+""" Module that defines the view class for Ubuntu Pro configuration. """
 
 import logging
 import re
@@ -25,7 +25,7 @@ from urwid import (
     Widget,
     )
 
-from subiquity.common.types import UbuntuAdvantageService as UAService
+from subiquity.common.types import UbuntuProService
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import (
     back_btn,
@@ -56,15 +56,15 @@ from subiquitycore.ui.utils import (
 from subiquitycore.ui.interactive import StringEditor
 
 
-log = logging.getLogger('subiquity.ui.views.ubuntu_advantage')
+log = logging.getLogger('subiquity.ui.views.ubuntu_pro')
 
-ua_help = _("If you want to enroll this system using your Ubuntu Advantage "
-            "subscription, enter your Ubuntu Advantage token here. "
+ua_help = _("If you want to enroll this system using your Ubuntu Pro "
+            "subscription, enter your Ubuntu Pro token here. "
             "Otherwise, leave this blank.")
 
 
 class UATokenEditor(StringEditor, WantsToKnowFormField):
-    """ Represent a text-box editor for the Ubuntu Advantage Token.  """
+    """ Represent a text-box editor for the Ubuntu Pro Token.  """
     def __init__(self):
         """ Initialize the text-field editor for UA token. """
         self.valid_char_pat = r"[a-zA-Z0-9]"
@@ -83,26 +83,26 @@ class UATokenEditor(StringEditor, WantsToKnowFormField):
         return super().valid_char(ch)
 
 
-class UbuntuAdvantageForm(Form):
+class UbuntuProForm(Form):
     """
-    Represents a form requesting Ubuntu Advantage information
+    Represents a form requesting Ubuntu Pro information
     """
     cancel_label = _("Back")
 
     UATokenField = simple_field(UATokenEditor)
 
-    token = UATokenField(_("Ubuntu Advantage token:"), help=ua_help)
+    token = UATokenField(_("Ubuntu Pro token:"), help=ua_help)
 
 
 class CheckingUAToken(WidgetWrap):
-    """ Widget displaying a loading animation while checking ubuntu advantage
+    """ Widget displaying a loading animation while checking ubuntu pro
     subscription. """
     def __init__(self, parent: BaseView):
         """ Initializes the loading animation widget. """
         self.parent = parent
         spinner = Spinner(parent.controller.app.aio_loop, style="dots")
         spinner.start()
-        text = _("Checking Ubuntu Advantage subscription...")
+        text = _("Checking Ubuntu Pro subscription...")
         button = cancel_btn(label=_("Cancel"), on_press=self.cancel)
         self.width = len(text) + 4
         super().__init__(
@@ -119,20 +119,20 @@ class CheckingUAToken(WidgetWrap):
         self.parent.remove_overlay()
 
 
-class UbuntuAdvantageView(BaseView):
-    """ Represent the view of the Ubuntu Advantage configuration. """
+class UbuntuProView(BaseView):
+    """ Represent the view of the Ubuntu Pro configuration. """
 
-    title = _("Enable Ubuntu Advantage")
-    excerpt = _("Enter your Ubuntu Advantage token if you want to enroll "
+    title = _("Enable Ubuntu Pro")
+    excerpt = _("Enter your Ubuntu Pro token if you want to enroll "
                 "this system.")
 
     def __init__(self, controller, token: str):
         """ Initialize the view with the default value for the token. """
         self.controller = controller
 
-        self.form = UbuntuAdvantageForm(initial={"token": token})
+        self.form = UbuntuProForm(initial={"token": token})
 
-        def on_cancel(_: UbuntuAdvantageForm):
+        def on_cancel(_: UbuntuProForm):
             self.cancel()
 
         connect_signal(self.form, 'submit', self.done)
@@ -140,7 +140,7 @@ class UbuntuAdvantageView(BaseView):
 
         super().__init__(self.form.as_screen(excerpt=_(self.excerpt)))
 
-    def done(self, form: UbuntuAdvantageForm) -> None:
+    def done(self, form: UbuntuProForm) -> None:
         """ If no token was supplied, move on to the next screen.
         If a token was provided, open the loading dialog and
         asynchronously check if the token is valid. """
@@ -165,7 +165,7 @@ class UbuntuAdvantageView(BaseView):
         self.show_stretchy_overlay(
                 SomethingFailed(self,
                                 "Invalid token.",
-                                "The Ubuntu Advantage token that you provided"
+                                "The Ubuntu Pro token that you provided"
                                 " is invalid. Please make sure that you typed"
                                 " your token correctly."))
 
@@ -176,7 +176,7 @@ class UbuntuAdvantageView(BaseView):
         self.show_stretchy_overlay(
                 SomethingFailed(self,
                                 "Token expired.",
-                                "The Ubuntu Advantage token that you provided"
+                                "The Ubuntu Pro token that you provided"
                                 " has expired. Please use a different token."))
 
     def show_unknown_error(self) -> None:
@@ -188,9 +188,10 @@ class UbuntuAdvantageView(BaseView):
         self.remove_overlay()
         self.show_stretchy_overlay(ContinueAnywayWidget(self))
 
-    def show_activable_services(self, services: List[UAService]) -> None:
+    def show_activable_services(self,
+                                services: List[UbuntuProService]) -> None:
         """ Display an overlay with the list of services that can be enabled
-        via Ubuntu Advantage subscription. After the user confirms, we will
+        via Ubuntu Pro subscription. After the user confirms, we will
         quit the current view and move on. """
         self.remove_overlay()
         self.show_stretchy_overlay(ShowServicesWidget(self, services))
@@ -198,8 +199,8 @@ class UbuntuAdvantageView(BaseView):
 
 class ShowServicesWidget(Stretchy):
     """ Widget to show the activable services for UA subscription. """
-    def __init__(self, parent: UbuntuAdvantageView,
-                 services: List[UAService]) -> None:
+    def __init__(self, parent: UbuntuProView,
+                 services: List[UbuntuProService]) -> None:
         """ Initializes the widget by including the list of services as a
         bullet-point list. """
         self.parent = parent
@@ -208,7 +209,7 @@ class ShowServicesWidget(Stretchy):
 
         title = _("Activable Services")
         header = _("List of services that are activable through your "
-                   "Ubuntu Advantage subscription:")
+                   "Ubuntu Pro subscription:")
 
         widgets: List[Widget] = [
             Text(header),
@@ -231,7 +232,7 @@ class ShowServicesWidget(Stretchy):
 class ContinueAnywayWidget(Stretchy):
     """ Widget that requests the user if he wants to go back or continue
     anyway. """
-    def __init__(self, parent: UbuntuAdvantageView) -> None:
+    def __init__(self, parent: UbuntuProView) -> None:
         """ Initializes the widget by showing two buttons, one to go back and
         one to move forward anyway. """
         self.parent = parent

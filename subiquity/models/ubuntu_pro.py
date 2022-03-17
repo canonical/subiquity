@@ -12,16 +12,16 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-""" Module that defines the model for Ubuntu Advantage configuration. """
+""" Module that defines the model for Ubuntu Pro configuration. """
 
 import logging
 
-log = logging.getLogger("subiquity.models.ubuntu_advantage")
+log = logging.getLogger("subiquity.models.ubuntu_pro")
 
 
-class UbuntuAdvantageModel:
+class UbuntuProModel:
     """
-    Model that represents the Ubuntu Advantage configuration.
+    Model that represents the Ubuntu Pro configuration.
     Currently, we rely only on cloud-init so we have no means to validate that
     the provided token is correct ; nor to retrieve information about the
     subscription.

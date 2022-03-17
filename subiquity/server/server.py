@@ -207,7 +207,7 @@ POSTINSTALL_MODEL_NAMES = ModelNames({
     "packages",
     "snaplist",
     "ssh",
-    "ubuntu_advantage",
+    "ubuntu_pro",
     "userdata",
     },
     desktop={"timezone"})
@@ -246,7 +246,7 @@ class SubiquityServer(Application):
         "Zdev",
         "Source",
         "Network",
-        "UbuntuAdvantage",
+        "UbuntuPro",
         "Proxy",
         "Mirror",
         "Filesystem",

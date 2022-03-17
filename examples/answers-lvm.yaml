@@ -45,7 +45,7 @@ Filesystem:
         fstype: ext4
         mount: /
     - action: done
-UbuntuAdvantage:
+UbuntuPro:
   token: C1NWcZTHLteJXGVMM6YhvHDpGrhyy7
 Identity:
   realname: Ubuntu
