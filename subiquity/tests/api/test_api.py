@@ -451,6 +451,8 @@ class TestAdd(TestAPI):
             resp = await inst.get('/storage/v2')
             vda = first(resp['disks'], 'id', 'disk-vda')
             vdb = first(resp['disks'], 'id', 'disk-vdb')
+            await inst.post('/storage/v2/reformat_disk', disk_id=vda['id'])
+            await inst.post('/storage/v2/reformat_disk', disk_id=vdb['id'])
             await inst.post('/storage/v2/add_boot_partition',
                             disk_id=vda['id'])
             await inst.post('/storage/v2/add_boot_partition',
