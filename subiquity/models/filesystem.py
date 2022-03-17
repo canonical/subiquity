@@ -1157,6 +1157,9 @@ class FilesystemModel(object):
         byid = {}
         objs = []
         exclusions = set()
+        if config is None:
+            log.debug("config is None")
+            return []
         for action in config:
             if is_probe_data and action['type'] == 'mount':
                 if not action['path'].startswith(self.target):
