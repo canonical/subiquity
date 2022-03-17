@@ -13,7 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import abc
 import functools
+from typing import Optional
 
 import attr
 
@@ -53,8 +55,25 @@ def _is_boot_device_raid(raid):
     return any(p.grub_device for p in raid._partitions)
 
 
+class MakeBootDevicePlan(abc.ABC):
+    """A way of making a device into boot device.
+
+    The code for checking if a device can be a boot device attempts to
+    construct one of these to find out. The code for making a device a
+    boot device calls apply(). This way we don't have to keep the
+    implementation of "can this be a boot device" and "how do we make
+    this a boot device" in sync.
+    """
+
+    @abc.abstractmethod
+    def apply(self, manipulator):
+        pass
+
+
 @attr.s(auto_attribs=True)
-class CreatePartPlan:
+class CreatePartPlan(MakeBootDevicePlan):
+    """Create a partition on the device."""
+
     device: object
 
     offset: int = 0
@@ -69,26 +88,34 @@ class CreatePartPlan:
 
 
 @attr.s(auto_attribs=True)
-class ResizePlan:
+class ResizePlan(MakeBootDevicePlan):
+    """Resize a partition."""
+
     part: object
     size_delta: int = 0
 
     def apply(self, manipulator):
+        assert not self.part.preserve
         self.part.size += self.size_delta
 
 
 @attr.s(auto_attribs=True)
-class SlidePlan:
+class SlidePlan(MakeBootDevicePlan):
+    """Move a collection of partitions by the same amount."""
+
     parts: list
     offset_delta: int = 0
 
     def apply(self, manipulator):
         for part in self.parts:
+            assert not part.preserve
             part.offset += self.offset_delta
 
 
 @attr.s(auto_attribs=True)
-class SetAttrPlan:
+class SetAttrPlan(MakeBootDevicePlan):
+    """Set an attribute on an object."""
+
     device: object
     attr: str
     val: str
@@ -98,7 +125,9 @@ class SetAttrPlan:
 
 
 @attr.s(auto_attribs=True)
-class MountBootEfiPlan:
+class MountBootEfiPlan(MakeBootDevicePlan):
+    """Mount a partition at /boot/efi."""
+
     part: object
 
     def apply(self, manipulator):
@@ -106,7 +135,9 @@ class MountBootEfiPlan:
 
 
 @attr.s(auto_attribs=True)
-class MultiStepPlan:
+class MultiStepPlan(MakeBootDevicePlan):
+    """Execute several MakeBootDevicePlans in sequence."""
+
     plans: list
 
     def apply(self, manipulator):
@@ -114,7 +145,7 @@ class MultiStepPlan:
             plan.apply(manipulator)
 
 
-def get_boot_device_plan_bios(device):
+def get_boot_device_plan_bios(device) -> Optional[MakeBootDevicePlan]:
     attr_plan = SetAttrPlan(device, 'grub_device', True)
     if device.ptable == 'msdos':
         return attr_plan
