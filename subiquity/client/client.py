@@ -113,6 +113,7 @@ class SubiquityClient(TuiApplication):
         "Identity",
         "UbuntuPro",
         "SSH",
+        "Drivers",
         "SnapList",
         "Progress",
         ]
