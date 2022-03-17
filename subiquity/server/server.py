@@ -17,6 +17,7 @@ import asyncio
 import logging
 import os
 import shlex
+import shutil
 import sys
 import time
 from typing import List, Optional
@@ -82,6 +83,10 @@ from subiquitycore.snapd import (
     )
 
 NOPROBERARG = "NOPROBER"
+
+iso_autoinstall_path = 'autoinstall.yaml'
+reload_autoinstall_path = 'run/subiquity/reload.autoinstall.yaml'
+cloud_autoinstall_path = 'run/subiquity/cloud.autoinstall.yaml'
 
 log = logging.getLogger('subiquity.server.server')
 
@@ -468,12 +473,11 @@ class SubiquityServer(Application):
             await controller.configured()
 
     def load_autoinstall_config(self, *, only_early):
-        log.debug("load_autoinstall_config only_early %s", only_early)
-        if not self.opts.autoinstall:
-            # autoinstall is None -> no autoinstall file supplied or found
-            # autoinstall is empty -> explicitly disabling autoinstall
+        log.debug('load_autoinstall_config only_early %s file %s',
+                  only_early, self.autoinstall)
+        if not self.autoinstall:
             return
-        with open(self.opts.autoinstall) as fp:
+        with open(self.autoinstall) as fp:
             self.autoinstall_config = yaml.safe_load(fp)
         if only_early:
             self.controllers.Reporting.setup_autoinstall()
@@ -502,6 +506,9 @@ class SubiquityServer(Application):
         # It is intended that a non-root client can connect.
         os.chmod(self.opts.socket, 0o666)
 
+    def base_relative(self, path):
+        return os.path.join(self.base_model.root, path)
+
     async def wait_for_cloudinit(self):
         if self.opts.dry_run:
             self.cloud_init_ok = True
@@ -523,18 +530,48 @@ class SubiquityServer(Application):
             init.read_cfg()
             init.fetch(existing="trust")
             self.cloud = init.cloudify()
-            if self.opts.autoinstall is None:
-                autoinstall_path = '/autoinstall.yaml'
-                if 'autoinstall' in self.cloud.cfg:
-                    if not os.path.exists(autoinstall_path):
-                        cfg = self.cloud.cfg['autoinstall']
-                        write_file(autoinstall_path, safeyaml.dumps(cfg))
-                if os.path.exists(autoinstall_path):
-                    self.opts.autoinstall = autoinstall_path
+            if 'autoinstall' in self.cloud.cfg:
+                cfg = self.cloud.cfg['autoinstall']
+                target = self.base_relative(cloud_autoinstall_path)
+                write_file(target, safeyaml.dumps(cfg))
         else:
             log.debug(
                 "cloud-init status: %r, assumed disabled",
                 status_txt)
+
+    def select_autoinstall_location(self):
+        # precedence
+        # 1. data from before reload
+        # 2. command line argument autoinstall
+        # 3. autoinstall supplied by cloud config
+        # 4. autoinstall baked into the iso at /autoinstall.yaml
+
+        # if opts.autoinstall is set and empty, that means
+        # autoinstall has been explicitly disabled.
+        if self.opts.autoinstall == "":
+            return None
+
+        locations = (self.base_relative(reload_autoinstall_path),
+                     self.opts.autoinstall,
+                     self.base_relative(cloud_autoinstall_path),
+                     self.base_relative(iso_autoinstall_path))
+
+        for loc in locations:
+            if loc is not None and os.path.exists(loc):
+                return loc
+        return None
+
+    def save_autoinstall_for_reload(self):
+        target = self.base_relative(reload_autoinstall_path)
+        if self.autoinstall is None:
+            return
+        if not os.path.exists(self.autoinstall):
+            return
+        if os.path.exists(target):
+            return
+        dirname = os.path.dirname(target)
+        os.makedirs(dirname, exist_ok=True)
+        shutil.copyfile(self.autoinstall, target)
 
     def _user_has_password(self, username):
         with open('/etc/shadow') as fp:
@@ -599,6 +636,7 @@ class SubiquityServer(Application):
         await self.start_api_server()
         self.update_state(ApplicationState.CLOUD_INIT_WAIT)
         await self.wait_for_cloudinit()
+        self.autoinstall = self.select_autoinstall_location()
         self.set_installer_password()
         self.load_autoinstall_config(only_early=True)
         if self.autoinstall_config and self.controllers.Early.cmds:
@@ -612,6 +650,7 @@ class SubiquityServer(Application):
                 open(stamp_file, 'w').close()
                 await asyncio.sleep(1)
         self.load_autoinstall_config(only_early=False)
+        self.save_autoinstall_for_reload()
         if self.autoinstall_config:
             self.interactive = bool(
                 self.autoinstall_config.get('interactive-sections'))
