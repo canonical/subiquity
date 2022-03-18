@@ -87,6 +87,10 @@ class CreatePartPlan(MakeBootDevicePlan):
             **self.args)
 
 
+def _no_preserve_part(inst, field, part):
+    assert not part.preserve
+
+
 @attr.s(auto_attribs=True)
 class ResizePlan(MakeBootDevicePlan):
     """Resize a partition."""
@@ -95,20 +99,23 @@ class ResizePlan(MakeBootDevicePlan):
     size_delta: int = 0
 
     def apply(self, manipulator):
-        assert not self.part.preserve
         self.part.size += self.size_delta
+
+
+def _no_preserve_parts(inst, field, parts):
+    for part in parts:
+        assert not part.preserve
 
 
 @attr.s(auto_attribs=True)
 class SlidePlan(MakeBootDevicePlan):
     """Move a collection of partitions by the same amount."""
 
-    parts: list
+    parts: list = attr.ib(validator=_no_preserve_parts)
     offset_delta: int = 0
 
     def apply(self, manipulator):
         for part in self.parts:
-            assert not part.preserve
             part.offset += self.offset_delta
 
 
