@@ -279,9 +279,9 @@ class TestFilesystemManipulator(unittest.TestCase):
 
     def test_add_boot_BIOS_full_resizes_larger(self):
         manipulator = make_manipulator(Bootloader.BIOS)
-        # 402MiB so that the space available for partitioning (400MiB)
+        # 2002MiB so that the space available for partitioning (2000MiB)
         # divided by 4 is an whole number of megabytes.
-        disk = make_disk(manipulator.model, preserve=True, size=402*MiB)
+        disk = make_disk(manipulator.model, preserve=True, size=2002*MiB)
         part_smaller = make_partition(
             manipulator.model, disk, size=gaps.largest_gap_size(disk)//4)
         part_larger = make_partition(
@@ -354,9 +354,9 @@ class TestFilesystemManipulator(unittest.TestCase):
 
     def test_add_boot_UEFI_full_resizes_larger(self):
         manipulator = make_manipulator(Bootloader.UEFI)
-        # 402MiB so that the space available for partitioning (400MiB)
+        # 2002MiB so that the space available for partitioning (2000MiB)
         # divided by 4 is an whole number of megabytes.
-        disk = make_disk(manipulator.model, preserve=True, size=402*MiB)
+        disk = make_disk(manipulator.model, preserve=True, size=2002*MiB)
         part_smaller = make_partition(
             manipulator.model, disk, size=gaps.largest_gap_size(disk)//4)
         part_larger = make_partition(

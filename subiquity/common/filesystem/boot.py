@@ -208,6 +208,8 @@ def get_add_part_plan(device, *, spec, args):
         largest_i, largest_part = max(
             enumerate(partitions),
             key=lambda i_p: i_p[1].size)
+        if size > largest_part.size // 2:
+            return None
         create_part_plan.offset = largest_part.offset
         return MultiStepPlan(plans=[
             SlidePlan(
