@@ -223,10 +223,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         else:
             return None
 
-    async def GET(self, wait: bool = False) -> StorageResponse:
-        probe_resp = await self._probe_response(wait, StorageResponse)
-        if probe_resp is not None:
-            return probe_resp
+    def _done_response(self):
         return StorageResponse(
             status=ProbeStatus.DONE,
             bootloader=self.model.bootloader,
@@ -236,6 +233,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             blockdev=self.model._probe_data['blockdev'],
             dasd=self.model._probe_data.get('dasd', {}),
             storage_version=self.model.storage_version)
+
+    async def GET(self, wait: bool = False) -> StorageResponse:
+        probe_resp = await self._probe_response(wait, StorageResponse)
+        if probe_resp is not None:
+            return probe_resp
+        return self._done_response()
 
     async def POST(self, config: list):
         log.debug(config)
@@ -277,7 +280,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
         log.debug(data)
         self.guided(data)
-        return await self.GET()
+        return self._done_response()
 
     async def reset_POST(self, context, request) -> StorageResponse:
         log.info("Resetting Filesystem model")
