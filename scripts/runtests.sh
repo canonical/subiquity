@@ -119,13 +119,19 @@ clean () {
     tmpdir=$(mktemp -d)
 }
 
-error () {
-    set +x  # show PASS/FAIL as the last line of output
-    echo 'Runtests FAILURE'
-    echo "Output from the last run is at $tmpdir"
+on_exit () {
+    ec=$?
+    set +x  # show PASS/FAIL in the last lines of output
+    if [[ $ec = 0 ]] ; then
+        echo 'Runtests all PASSED'
+    else
+        echo 'Runtests FAILURE'
+        echo "Output from the last run is at $tmpdir"
+    fi
+    exit $ec
 }
 
-trap error ERR
+trap on_exit EXIT
 tty=$(tty) || tty=/dev/console
 
 export SUBIQUITY_REPLAY_TIMESCALE=100
@@ -210,8 +216,5 @@ fi
 
 python3 -m subiquity.cmd.schema > $tmpdir/test-schema.json
 diff -u "autoinstall-schema.json" $tmpdir/test-schema.json
-
-set +x  # show PASS/FAIL as the last line of output
-echo 'Runtests all PASSED'
 
 clean
