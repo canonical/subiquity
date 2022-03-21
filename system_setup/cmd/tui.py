@@ -85,6 +85,7 @@ def main():
             sock_path = os.path.join(server_output_dir, 'socket')
             opts.socket = sock_path
             server_args = ['--dry-run', '--socket=' + sock_path] + unknown
+            server_args += ['--output-base', opts.output_base]
 
     elif opts.socket is None:
         need_start_server = True

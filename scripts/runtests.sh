@@ -1,41 +1,43 @@
 #!/bin/bash
 set -eux
 
-testschema=.subiquity/test-autoinstall-schema.json
 export PYTHONPATH=$PWD:$PWD/probert:$PWD/curtin
 export PYTHONTRACEMALLOC=3
 
 RELEASE=$(lsb_release -rs)
 
+tmpdir=$(mktemp -d)
+
 validate () {
     mode="install"
     [ $# -gt 0 ] && mode="$1"
 
-    if [ -d .subiquity/var/crash -a -n "$(ls -A .subiquity/var/crash)" ] ; then
-        echo "subiquity crashed"
+    if [ -d $tmpdir/var/crash -a -n "$(ls -A $tmpdir/var/crash)" ] ; then
+        echo "error: subiquity crashed"
         exit 1
     fi
 
-    if [ -s .subiquity/server-stderr ]; then
-        cat .subiquity/server-stderr
+    if [ -s $tmpdir/server-stderr ]; then
+        echo "error: unexpected output on stderr"
+        cat $tmpdir/server-stderr
         exit 1
     fi
 
     if [ "${mode}" = "install" ]; then
-        python3 scripts/validate-yaml.py .subiquity/var/log/installer/subiquity-curtin-install.conf
-        if [ ! -e .subiquity/subiquity-client-debug.log ] || [ ! -e .subiquity/subiquity-server-debug.log ]; then
+        python3 scripts/validate-yaml.py $tmpdir/var/log/installer/subiquity-curtin-install.conf
+        if [ ! -e $tmpdir/subiquity-client-debug.log ] || [ ! -e $tmpdir/subiquity-server-debug.log ]; then
             echo "log file not created"
             exit 1
         fi
-        python3 scripts/validate-autoinstall-user-data.py < .subiquity/var/log/installer/autoinstall-user-data
-        if grep passw0rd .subiquity/subiquity-client-debug.log .subiquity/subiquity-server-debug.log | grep -v "Loaded answers" | grep -v "answers_action"; then
+        python3 scripts/validate-autoinstall-user-data.py < $tmpdir/var/log/installer/autoinstall-user-data
+        if grep passw0rd $tmpdir/subiquity-client-debug.log $tmpdir/subiquity-server-debug.log | grep -v "Loaded answers" | grep -v "answers_action"; then
             echo "password leaked into log file"
             exit 1
         fi
-        netplan generate --root .subiquity
+        netplan generate --root $tmpdir
     elif [ "${mode}" = "system_setup" ]; then
         setup_mode="$2"
-        launcher_cmds=".subiquity/run/launcher-command"
+        launcher_cmds="$tmpdir/run/launcher-command"
         echo "system setup validation for $setup_mode"
         echo "checking ${launcher_cmds}"
         if [ ! -f ${launcher_cmds} ]; then
@@ -62,47 +64,47 @@ validate () {
             exit 1
         fi
         echo "checking generated config"
-        [ -d ".subiquity/etc/" ] || (echo "etc/ dir not created for config"; exit 1)
+        [ -d "$tmpdir/etc/" ] || (echo "etc/ dir not created for config"; exit 1)
         if [ "${setup_mode}" = "autoinstall-no-shutdown" ]; then
             setup_mode="autoinstall"
         fi
         [ -d "system_setup/tests/golden/${setup_mode}" ] || (echo "tests/golden not found in system_setup"; exit 1)
         for file in system_setup/tests/golden/${setup_mode}/*.conf; do
             filename=$(basename ${file})
-            conf_filepath=".subiquity/etc/${filename}"
+            conf_filepath="$tmpdir/etc/${filename}"
             diff -NBup "${file}" "${conf_filepath}" || exit 1
         done
         if [ "${setup_mode}" != "answers-reconf" ]; then
             echo "checking user created"
-            [ -d ".subiquity/home/" ] || (echo "home/ dir not created for the environment"; exit 1)
-            [ -d ".subiquity/home/ubuntu" ] || (echo "home folder not created for the user"; exit 1)
-            if grep -v ubuntu .subiquity/etc/passwd ; then
+            [ -d "$tmpdir/home/" ] || (echo "home/ dir not created for the environment"; exit 1)
+            [ -d "$tmpdir/home/ubuntu" ] || (echo "home folder not created for the user"; exit 1)
+            if grep -v ubuntu $tmpdir/etc/passwd ; then
                 echo "user definition not included in etc/passwd"
                 exit 1
             fi
-            if grep -v Ubuntu .subiquity/etc/passwd ; then
+            if grep -v Ubuntu $tmpdir/etc/passwd ; then
                 echo "username not added in etc/passwd"
                 exit 1
             fi
-            if grep -v ubuntu .subiquity/etc/shadow ; then
+            if grep -v ubuntu $tmpdir/etc/shadow ; then
                 echo "user definition not included in etc/shadow"
                 exit 1
             fi
-            if ! grep -q sudo .subiquity/etc/group ; then
+            if ! grep -q sudo $tmpdir/etc/group ; then
                 echo "expected group sudo not included in etc/group"
                 exit 1
             fi
-            if ! (grep sudo .subiquity/etc/group | grep -q ubuntu) ; then
+            if ! (grep sudo $tmpdir/etc/group | grep -q ubuntu) ; then
                 echo "user not assigned with the expected group sudo"
                 exit 1
             fi
             # Extract value of the LANG variable from etc/default/locale (with or without quotes)
-            lang="$(grep -Eo 'LANG=([^.@ _]+)' .subiquity/etc/default/locale | cut -d= -f 2- | cut -d\" -f 2-)"
-            if ! ls .subiquity/var/cache/apt/archives/ | grep --fixed-strings --quiet -- "$lang"; then
+            lang="$(grep -Eo 'LANG=([^.@ _]+)' $tmpdir/etc/default/locale | cut -d= -f 2- | cut -d\" -f 2-)"
+            if ! ls $tmpdir/var/cache/apt/archives/ | grep --fixed-strings --quiet -- "$lang"; then
                 echo "expected $lang language packs in directory var/cache/apt/archives/"
                 exit 1
             fi
-            if [ -z "$( diff -Nup .subiquity/etc/locale.gen .subiquity/etc/locale.gen.test)" ] ; then
+            if [ -z "$( diff -Nup $tmpdir/etc/locale.gen $tmpdir/etc/locale.gen.test)" ] ; then
                 echo "expected changes in etc/locale.gen"
                 exit 1
             fi
@@ -113,32 +115,27 @@ validate () {
 }
 
 clean () {
-    rm -rf .subiquity/var/log/
-    rm -f .subiquity/subiquity-*.log
-    rm -f "$testschema"
-    rm -rf .subiquity/run/
-    rm -rf .subiquity/home/
-    rm -rf .subiquity/etc/.pwd.lock
-    rm -rf .subiquity/etc/default/locale
-    rm -rf .subiquity/etc/{locale*,passwd*,shadow*,group*,gshadow*,subgid*,subuid*}
-    rm -rf .subiquity/etc/*.conf
-    rm -rf .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg
-    rm -rf .subiquity/var/crash
-    rm -rf .subiquity/var/cache
-    rm -rf .subiquity/run/subiquity/states
+    [ -d "$tmpdir" ] && rm -fr $tmpdir
+    tmpdir=$(mktemp -d)
 }
 
-error () {
-    set +x  # show PASS/FAIL as the last line of output
-    echo 'Runtests FAILURE'
+on_exit () {
+    ec=$?
+    set +x  # show PASS/FAIL in the last lines of output
+    if [[ $ec = 0 ]] ; then
+        echo 'Runtests all PASSED'
+    else
+        echo 'Runtests FAILURE'
+        echo "Output from the last run is at $tmpdir"
+    fi
+    exit $ec
 }
 
-trap error ERR
+trap on_exit EXIT
 tty=$(tty) || tty=/dev/console
 
 export SUBIQUITY_REPLAY_TIMESCALE=100
 for answers in examples/answers*.yaml; do
-    clean
     if echo $answers|grep -vq system-setup; then
         config=$(sed -n 's/^#machine-config: \(.*\)/\1/p' $answers || true)
         if [ -z "$config" ]; then
@@ -150,9 +147,9 @@ for answers in examples/answers*.yaml; do
             opts='--serial'
         fi
         # The --foreground is important to avoid subiquity getting SIGTTOU-ed.
-        timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --bootloader uefi --answers $answers --dry-run --snaps-from-examples --machine-config $config $opts" < $tty
+        timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --bootloader uefi --answers $answers --dry-run --snaps-from-examples --machine-config $config --output-base $tmpdir $opts" < $tty
         validate
-        grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
+        grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
     else
         # The OOBE doesn't exist in WSL < 20.04
         if [ "${RELEASE%.*}" -ge 20 ]; then
@@ -163,60 +160,61 @@ for answers in examples/answers*.yaml; do
                 reconf_settings="true"
                 validate_subtype="answers-reconf"
             fi
-            timeout --foreground 60 sh -c "DRYRUN_RECONFIG=$reconf_settings LANG=C.UTF-8 python3 -m system_setup.cmd.tui --answers $answers --dry-run " < $tty
+            timeout --foreground 60 sh -c "DRYRUN_RECONFIG=$reconf_settings LANG=C.UTF-8 python3 -m system_setup.cmd.tui --answers $answers --output-base $tmpdir --dry-run " < $tty
             validate "system_setup" "$validate_subtype"
         fi
     fi
+    clean
 done
 
-clean
 timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoinstall examples/autoinstall.yaml \
                                --dry-run --machine-config examples/existing-partitions.json --bootloader bios \
                                --kernel-cmdline 'autoinstall' \
+                               --output-base $tmpdir \
                                --source-catalog=examples/install-sources.yaml"
 validate
-python3 scripts/check-yaml-fields.py .subiquity/var/log/installer/subiquity-curtin-apt.conf \
+python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/subiquity-curtin-apt.conf \
         apt.disable_components='[non-free, restricted]' \
         apt.preferences[0].pin-priority=200 \
         apt.preferences[0].pin='"origin *ubuntu.com*"' \
         apt.preferences[1].package='"python-*"' \
         apt.preferences[1].pin-priority=-1
-python3 scripts/check-yaml-fields.py .subiquity/var/log/installer/subiquity-curtin-install.conf \
+python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/subiquity-curtin-install.conf \
         debconf_selections.subiquity='"eek"' \
         storage.config[-1].options='"errors=remount-ro"'
-python3 scripts/check-yaml-fields.py <(python3 scripts/check-yaml-fields.py .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg datasource.None.userdata_raw) \
+python3 scripts/check-yaml-fields.py <(python3 scripts/check-yaml-fields.py $tmpdir/etc/cloud/cloud.cfg.d/99-installer.cfg datasource.None.userdata_raw) \
         locale='"en_GB.UTF-8"' \
         timezone='"Pacific/Guam"' \
         ubuntu_advantage.token='"C1NWcZTHLteJXGVMM6YhvHDpGrhyy7"' \
         'snap.commands=[snap install --channel=3.2/stable etcd]'
 grep -q 'finish: subiquity/Install/install/postinstall/install_package1: SUCCESS: installing package1' \
-     .subiquity/subiquity-server-debug.log
+     $tmpdir/subiquity-server-debug.log
 grep -q 'finish: subiquity/Install/install/postinstall/install_package2: SUCCESS: installing package2' \
-     .subiquity/subiquity-server-debug.log
-grep -q 'switching subiquity to edge' .subiquity/subiquity-server-debug.log
+     $tmpdir/subiquity-server-debug.log
+grep -q 'switching subiquity to edge' $tmpdir/subiquity-server-debug.log
 grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing all updates' \
-    .subiquity/subiquity-server-debug.log
+    $tmpdir/subiquity-server-debug.log
 
 clean
 timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoinstall examples/autoinstall-user-data.yaml \
+                               --output-base $tmpdir \
                                --dry-run --machine-config examples/simple.json --kernel-cmdline 'autoinstall'"
 validate
-grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
+grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
 
 # The OOBE doesn't exist in WSL < 20.04
 if [ "${RELEASE%.*}" -ge 20 ]; then
     for mode in "" "-full" "-no-shutdown"; do
         clean
-        timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m system_setup.cmd.tui --autoinstall examples/autoinstall-system-setup${mode}.yaml --dry-run"
+        timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m system_setup.cmd.tui --autoinstall examples/autoinstall-system-setup${mode}.yaml --output-base $tmpdir --dry-run"
         validate "system_setup" "autoinstall${mode}"
     done
 
-    python3 -m system_setup.cmd.schema > "$testschema"
-    diff -u "autoinstall-system-setup-schema.json" "$testschema"
+    python3 -m system_setup.cmd.schema > $tmpdir/test-schema.json
+    diff -u "autoinstall-system-setup-schema.json" $tmpdir/test-schema.json
 fi
 
-python3 -m subiquity.cmd.schema > "$testschema"
-diff -u "autoinstall-schema.json" "$testschema"
+python3 -m subiquity.cmd.schema > $tmpdir/test-schema.json
+diff -u "autoinstall-schema.json" $tmpdir/test-schema.json
 
-set +x  # show PASS/FAIL as the last line of output
-echo 'Runtests all PASSED'
+clean
