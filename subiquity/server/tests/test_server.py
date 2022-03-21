@@ -32,8 +32,7 @@ class TestAutoinstallLoad(SubiTestCase):
         opts.output_base = self.tempdir
         opts.machine_config = 'examples/simple.json'
         opts.kernel_cmdline = ''
-        autoinstall = self.path('arg.autoinstall.yaml')
-        opts.autoinstall = autoinstall
+        opts.autoinstall = None
         self.server = SubiquityServer(opts, None)
         self.server.base_model = Mock()
         self.server.base_model.root = opts.output_base
@@ -55,13 +54,15 @@ class TestAutoinstallLoad(SubiTestCase):
 
     def test_reload_wins(self):
         expected = self.create(reload_autoinstall_path)
-        self.create(self.server.opts.autoinstall)
+        autoinstall = self.create(self.path('arg.autoinstall.yaml'))
+        self.server.opts.autoinstall = autoinstall
         self.create(cloud_autoinstall_path)
         self.create(iso_autoinstall_path)
         self.assertEqual(expected, self.server.select_autoinstall_location())
 
     def test_arg_wins(self):
-        expected = self.create(self.server.opts.autoinstall)
+        expected = self.create(self.path('arg.autoinstall.yaml'))
+        self.server.opts.autoinstall = expected
         self.create(cloud_autoinstall_path)
         self.create(iso_autoinstall_path)
         self.assertEqual(expected, self.server.select_autoinstall_location())
@@ -79,10 +80,15 @@ class TestAutoinstallLoad(SubiTestCase):
         self.assertIsNone(self.server.select_autoinstall_location())
 
     def test_copied_to_reload(self):
-        self.server.autoinstall = self.server.opts.autoinstall
+        self.server.autoinstall = self.tmp_path('test.yaml', dir=self.tempdir)
         expected = 'stuff things'
         with open(self.server.autoinstall, 'w') as fp:
             fp.write(expected)
         self.server.save_autoinstall_for_reload()
         with open(self.path(reload_autoinstall_path), 'r') as fp:
             self.assertEqual(expected, fp.read())
+
+    def test_bogus_autoinstall_argument(self):
+        self.server.opts.autoinstall = self.path('nonexistant.yaml')
+        with self.assertRaises(Exception):
+            self.server.select_autoinstall_location()

@@ -550,6 +550,10 @@ class SubiquityServer(Application):
         # autoinstall has been explicitly disabled.
         if self.opts.autoinstall == "":
             return None
+        if self.opts.autoinstall is not None and not \
+                os.path.exists(self.opts.autoinstall):
+            raise Exception(
+                f'Autoinstall argument {self.opts.autoinstall} not found')
 
         locations = (self.base_relative(reload_autoinstall_path),
                      self.opts.autoinstall,
