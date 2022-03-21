@@ -139,7 +139,7 @@ class UbuntuDriversRunDriversInterface(UbuntuDriversInterface):
         # available.
         try:
             await arun_command(
-                    ["sh", "-c", "command -v ubuntu-driver"],
+                    ["sh", "-c", "command -v ubuntu-drivers"],
                     check=True)
         except subprocess.CalledProcessError:
             raise CommandNotFoundError(
