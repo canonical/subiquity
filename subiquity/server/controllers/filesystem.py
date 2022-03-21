@@ -408,7 +408,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             fname = 'probe-data-restricted.json'
             key = "ProbeDataRestricted"
         else:
-            probe_types = None
+            probe_types = {'defaults'}
+            if self.app.opts.use_os_prober:
+                probe_types |= {'os'}
             fname = 'probe-data.json'
             key = "ProbeData"
         storage = await run_in_thread(

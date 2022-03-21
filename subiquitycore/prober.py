@@ -50,7 +50,7 @@ class Prober():
                 time.sleep(2)
                 1/0
             r = self.saved_config['storage'].copy()
-            if probe_types is not None:
+            if probe_types is not None and 'defaults' not in probe_types:
                 for k in self.saved_config['storage']:
                     if k not in probe_types:
                         r[k] = {}
