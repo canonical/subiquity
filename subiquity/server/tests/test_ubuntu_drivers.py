@@ -23,6 +23,7 @@ from subiquitycore.tests.util import run_coro
 from subiquity.server.ubuntu_drivers import (
     UbuntuDriversInterface,
     UbuntuDriversClientInterface,
+    UbuntuDriversRunDriversInterface,
     CommandNotFoundError,
     )
 
@@ -134,3 +135,17 @@ nvidia-driver-510 linux-modules-nvidia-510-generic-hwe-20.04
                 capture=True, private_mounts=True)
 
         self.assertEqual(drivers, ["nvidia-driver-510"])
+
+
+class TestUbuntuDriversRunDriversInterface(unittest.TestCase):
+    def setUp(self):
+        self.app = make_app()
+        self.ubuntu_drivers = UbuntuDriversRunDriversInterface(
+                self.app, gpgpu=False)
+
+    @patch("subiquity.server.ubuntu_drivers.arun_command")
+    def test_ensure_cmd_exists(self, mock_arun_command):
+        run_coro(self.ubuntu_drivers.ensure_cmd_exists("/target"))
+        mock_arun_command.assert_called_once_with(
+                ["sh", "-c", "command -v ubuntu-drivers"],
+                check=True)
