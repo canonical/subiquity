@@ -56,7 +56,7 @@ class TestLoggedCommandRunner(SubiTestCase):
         with patch.dict(os.environ, environ):
             cmd = runner._forge_systemd_cmd(
                     ["/bin/ls", "/root"],
-                    private_mounts=True)
+                    private_mounts=True, capture=False)
 
         expected = [
             "systemd-run",
@@ -81,13 +81,14 @@ class TestLoggedCommandRunner(SubiTestCase):
         with patch.dict(os.environ, environ, clear=True):
             cmd = runner._forge_systemd_cmd(
                     ["/bin/ls", "/root"],
-                    private_mounts=False)
+                    private_mounts=False, capture=True)
 
         expected = [
             "systemd-run",
             "--wait", "--same-dir",
             "--property", "SyslogIdentifier=my-id",
             "--user",
+            "--pipe",
             "--setenv", "PYTHONPATH=/usr/lib/python3.8/site-packages",
             "--",
             "/bin/ls", "/root",
@@ -109,18 +110,18 @@ class TestDryRunCommandRunner(SubiTestCase):
     def test_forge_systemd_cmd(self, mock_super):
         self.runner._forge_systemd_cmd(
                 ["/bin/ls", "/root"],
-                private_mounts=True)
+                private_mounts=True, capture=True)
         mock_super.assert_called_once_with(
                 ["echo", "not running:", "/bin/ls", "/root"],
-                private_mounts=True)
+                private_mounts=True, capture=True)
 
         mock_super.reset_mock()
         # Make sure exceptions are handled.
         self.runner._forge_systemd_cmd(["scripts/replay-curtin-log.py"],
-                                       private_mounts=True)
+                                       private_mounts=True, capture=False)
         mock_super.assert_called_once_with(
                 ["scripts/replay-curtin-log.py"],
-                private_mounts=True)
+                private_mounts=True, capture=False)
 
     def test_get_delay_for_cmd(self):
         # Most commands use the default delay
