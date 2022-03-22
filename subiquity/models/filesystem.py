@@ -1380,7 +1380,7 @@ class FilesystemModel(object):
         _remove_backlinks(obj)
         self._actions.remove(obj)
 
-    def add_partition(self, device, size, *, offset, flag="", wipe=None,
+    def add_partition(self, device, *, size, offset, flag="", wipe=None,
                       grub_device=None):
         from subiquity.common.filesystem import boot
         real_size = align_up(size)

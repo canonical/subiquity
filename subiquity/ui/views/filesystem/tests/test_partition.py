@@ -74,7 +74,7 @@ class PartitionViewTests(unittest.TestCase):
             'fstype': "xfs",
             }
         model, disk = make_model_and_disk()
-        partition = model.add_partition(disk, 512*(2**20), offset=0)
+        partition = model.add_partition(disk, size=512*(2**20), offset=0)
         model.add_filesystem(partition, "ext4")
         view, stretchy = make_partition_view(model, disk, partition)
         self.assertTrue(stretchy.form.done_btn.enabled)
@@ -91,7 +91,7 @@ class PartitionViewTests(unittest.TestCase):
 
     def test_size_clamping(self):
         model, disk = make_model_and_disk()
-        partition = model.add_partition(disk, 512*(2**20), offset=0)
+        partition = model.add_partition(disk, size=512*(2**20), offset=0)
         model.add_filesystem(partition, "ext4")
         view, stretchy = make_partition_view(model, disk, partition)
         self.assertTrue(stretchy.form.done_btn.enabled)
@@ -106,7 +106,7 @@ class PartitionViewTests(unittest.TestCase):
             'fstype': "xfs",
             }
         model, disk = make_model_and_disk()
-        partition = model.add_partition(disk, 512*(2**20), offset=0)
+        partition = model.add_partition(disk, size=512*(2**20), offset=0)
         partition.preserve = True
         model.add_filesystem(partition, "ext4")
         view, stretchy = make_partition_view(model, disk, partition)
@@ -126,7 +126,7 @@ class PartitionViewTests(unittest.TestCase):
         # Set up a PartitionStretchy for editing a partition with an
         # existing filesystem.
         model, disk = make_model_and_disk()
-        partition = model.add_partition(disk, 512*(2**20), offset=0)
+        partition = model.add_partition(disk, size=512*(2**20), offset=0)
         partition.preserve = True
         partition.number = 1
         fs = model.add_filesystem(partition, "ext4")
@@ -167,7 +167,7 @@ class PartitionViewTests(unittest.TestCase):
             'size': "256M",
             }
         model, disk = make_model_and_disk()
-        partition = model.add_partition(disk, 512*(2**20),
+        partition = model.add_partition(disk, size=512*(2**20),
                                         offset=0, flag="boot")
         fs = model.add_filesystem(partition, "fat32")
         model.add_mount(fs, '/boot/efi')
@@ -191,7 +191,7 @@ class PartitionViewTests(unittest.TestCase):
 
     def test_edit_existing_unused_boot_partition(self):
         model, disk = make_model_and_disk()
-        partition = model.add_partition(disk, 512*(2**20),
+        partition = model.add_partition(disk, size=512*(2**20),
                                         offset=0, flag="boot")
         fs = model.add_filesystem(partition, "fat32")
         model._orig_config = model._render_actions()
@@ -213,7 +213,7 @@ class PartitionViewTests(unittest.TestCase):
 
     def test_edit_existing_used_boot_partition(self):
         model, disk = make_model_and_disk()
-        partition = model.add_partition(disk, 512*(2**20),
+        partition = model.add_partition(disk, size=512*(2**20),
                                         offset=0, flag="boot")
         fs = model.add_filesystem(partition, "fat32")
         model._orig_config = model._render_actions()
