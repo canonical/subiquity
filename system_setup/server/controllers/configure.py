@@ -17,8 +17,6 @@ import shutil
 import logging
 import re
 from typing import Optional, Tuple, List
-import apt
-import apt_pkg
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.types import ApplicationState
@@ -174,27 +172,36 @@ class ConfigureController(SubiquityController):
         """ Install recommended packages.
         lang is expected to be one single language/locale.
         """
-        packages = await self.__recommended_language_packs(lang, env)
+        packages = await self.__recommended_language_packs(lang)
+        # Hardcoded path is necessary to ensure escaping out of the snap env.
+        aptCommand = "/usr/bin/apt"
         if packages is None:
             log.error('Failed to detect recommended language packs.')
             return False
 
-        cache = apt.Cache()
+        cp = await arun_command([aptCommand,"update"], env=env)
+
+        if cp.returncode != 0:
+            # TODO: deal with the error case.
+            log.error("Failed to update apt cache.\n%s", cp.stderr)
+
+
         if self.app.opts.dry_run:  # only empty in dry-run on failure.
             if len(packages) == 0:
                 log.error("Packages list in dry-run should never be empty.")
                 return False
 
             packs_dir = os.path.join(self.model.root,
-                                     apt_pkg.config
-                                     .find_dir("Dir::Cache::Archives")[1:])
+                                     "var/cache/apt/archives/")
             os.makedirs(packs_dir, exist_ok=True)
             try:
                 for package in packages:
                     # Just write the package uri to a file.
-                    archive = os.path.join(packs_dir, cache[package].fullname)
+                    lcp = await arun_command([aptCommand,"install",package,
+                                              "--simulate"], env=env)
+                    archive = os.path.join(packs_dir, package)
                     with open(archive, "wt") as f:
-                        f.write(cache[package].candidate.uri)
+                        f.write(lcp.stdout)
 
                 return True
 
@@ -206,15 +213,11 @@ class ConfigureController(SubiquityController):
             log.info("No missing recommended packages. Nothing to do.")
             return True
 
-        cache.update()
-        cache.open(None)
-        with cache.actiongroup():
-            for package in packages:
-                cache[package].mark_install()
+        cmd = [aptCommand,"install","-y"] + packages
+        acp = await arun_command(cmd, env=env)
 
-            cache.commit()
+        return acp.returncode==0
 
-        return True
 
     def _update_locale_gen_file(self, localeGenPath, lang) -> bool:
         """ Uncomment the line in locale.gen file matching lang,
