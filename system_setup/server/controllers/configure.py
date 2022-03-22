@@ -180,10 +180,8 @@ class ConfigureController(SubiquityController):
             return False
 
         cp = await arun_command([aptCommand, "update"], env=env)
-
         if cp.returncode != 0:
-            # TODO: deal with the error case.
-            log.error("Failed to update apt cache.\n%s", cp.stderr)
+            log.debug("Failed to update apt cache.\n%s", cp.stderr)
 
         if self.app.opts.dry_run:  # only empty in dry-run on failure.
             if len(packages) == 0:
@@ -195,12 +193,14 @@ class ConfigureController(SubiquityController):
             os.makedirs(packs_dir, exist_ok=True)
             try:
                 for package in packages:
-                    # Just write the package uri to a file.
+                    # Just write the apt simulation log if succeeds.
                     lcp = await arun_command([aptCommand, "install", package,
                                               "--simulate"], env=env)
-                    archive = os.path.join(packs_dir, package)
+                    archive = os.path.join(packs_dir, package+".log")
                     with open(archive, "wt") as f:
-                        f.write(lcp.stdout)
+                        if lcp.returncode == 0:
+                            f.write(lcp.stdout)
+                        # otherwise file will be empty.
 
                 return True
 
@@ -335,7 +335,6 @@ class ConfigureController(SubiquityController):
             create_user_base = ["-P", root_dir]
             assign_grp_base = ["-P", root_dir]
 
-        # TODO: Figure out if Hardcoded paths here cause trouble for runtests.
         create_user_cmd = ["/usr/sbin/useradd"] + create_user_base + \
                           ["-m", "-s", "/bin/bash", "-c", wsl_id.realname,
                            "-p", wsl_id.password, username]

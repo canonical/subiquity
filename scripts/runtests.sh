@@ -100,10 +100,16 @@ validate () {
             fi
             # Extract value of the LANG variable from etc/default/locale (with or without quotes)
             lang="$(grep -Eo 'LANG=([^.@ _]+)' $tmpdir/etc/default/locale | cut -d= -f 2- | cut -d\" -f 2-)"
-            if ! ls $tmpdir/var/cache/apt/archives/ | grep --fixed-strings --quiet -- "$lang"; then
+            if ! ls $tmpdir/var/cache/apt/archives/*.log | grep --fixed-strings --quiet -- "$lang"; then
                 echo "expected $lang language packs in directory var/cache/apt/archives/"
                 exit 1
             fi
+            for f in $tmpdir/var/cache/apt/archives/*.log ; do
+                if ! [ -s $f ]; then  
+                    echo "apt failed for package $f"
+                    exit 1
+                fi
+            done
             if [ -z "$( diff -Nup $tmpdir/etc/locale.gen $tmpdir/etc/locale.gen.test)" ] ; then
                 echo "expected changes in etc/locale.gen"
                 exit 1
