@@ -43,8 +43,8 @@ class LVMViewTests(unittest.TestCase):
 
     def test_create_vg(self):
         model, disk = make_model_and_disk()
-        part1 = model.add_partition(disk, 10*(2**30))
-        part2 = model.add_partition(disk, 10*(2**30))
+        part1 = model.add_partition(disk, 10*(2**30), offset=0)
+        part2 = model.add_partition(disk, 10*(2**30), offset=10*(2**30))
         view, stretchy = make_view(model)
         form_data = {
             'name': 'vg1',
@@ -62,8 +62,8 @@ class LVMViewTests(unittest.TestCase):
 
     def test_create_vg_encrypted(self):
         model, disk = make_model_and_disk()
-        part1 = model.add_partition(disk, 10*(2**30))
-        part2 = model.add_partition(disk, 10*(2**30))
+        part1 = model.add_partition(disk, 10*(2**30), offset=0)
+        part2 = model.add_partition(disk, 10*(2**30), offset=10*(2**30))
         view, stretchy = make_view(model)
         form_data = {
             'name': 'vg1',
