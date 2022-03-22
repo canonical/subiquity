@@ -179,12 +179,11 @@ class ConfigureController(SubiquityController):
             log.error('Failed to detect recommended language packs.')
             return False
 
-        cp = await arun_command([aptCommand,"update"], env=env)
+        cp = await arun_command([aptCommand, "update"], env=env)
 
         if cp.returncode != 0:
             # TODO: deal with the error case.
             log.error("Failed to update apt cache.\n%s", cp.stderr)
-
 
         if self.app.opts.dry_run:  # only empty in dry-run on failure.
             if len(packages) == 0:
@@ -197,7 +196,7 @@ class ConfigureController(SubiquityController):
             try:
                 for package in packages:
                     # Just write the package uri to a file.
-                    lcp = await arun_command([aptCommand,"install",package,
+                    lcp = await arun_command([aptCommand, "install", package,
                                               "--simulate"], env=env)
                     archive = os.path.join(packs_dir, package)
                     with open(archive, "wt") as f:
@@ -213,11 +212,10 @@ class ConfigureController(SubiquityController):
             log.info("No missing recommended packages. Nothing to do.")
             return True
 
-        cmd = [aptCommand,"install","-y"] + packages
+        cmd = [aptCommand, "install", "-y"] + packages
         acp = await arun_command(cmd, env=env)
 
-        return acp.returncode==0
-
+        return acp.returncode == 0
 
     def _update_locale_gen_file(self, localeGenPath, lang) -> bool:
         """ Uncomment the line in locale.gen file matching lang,
@@ -389,8 +387,8 @@ class ConfigureController(SubiquityController):
                 envcp = os.environ.copy()
                 # Ensures a safe escape out of the snap environment for WSL.
                 if not self.app.opts.dry_run:
-                    envcp['LD_LIBRARY_PATH']=''
-                    envcp['LD_PRELOAD']=''
+                    envcp['LD_LIBRARY_PATH'] = ''
+                    envcp['LD_PRELOAD'] = ''
                 await self.create_user(root_dir, envcp)
                 await self.apply_locale(lang, envcp)
 
