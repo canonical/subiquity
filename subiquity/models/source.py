@@ -89,6 +89,12 @@ class SourceModel:
 
     def get_source(self):
         path = os.path.join(self._dir, self.current.path)
+        scheme = self.current.type
+
+        if self.current.path.startswith("http"):
+            path = self.current.path
+            return f'{scheme}:{path}'
+
         if self.current.preinstalled_langs:
             base, ext = os.path.splitext(path)
             if self.lang in self.current.preinstalled_langs:
@@ -96,7 +102,6 @@ class SourceModel:
             else:
                 suffix = 'no-languages'
             path = base + '.' + suffix + ext
-        scheme = self.current.type
         return f'{scheme}://{path}'
 
     def render(self):
