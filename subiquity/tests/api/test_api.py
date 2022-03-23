@@ -101,7 +101,7 @@ class Server(Client):
             return
 
     async def spawn(self, output_base, socket, machine_config,
-                    bootloader='uefi'):
+                    bootloader='uefi', extra_args=None):
         env = os.environ.copy()
         env['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
         cmd = ['python3', '-m', 'subiquity.cmd.server',
@@ -110,6 +110,8 @@ class Server(Client):
                '--socket', socket,
                '--output-base', output_base,
                '--machine-config', machine_config]
+        if extra_args is not None:
+            cmd.extend(extra_args)
         self.proc = await astart_command(cmd, env=env)
 
     async def close(self):
@@ -800,10 +802,10 @@ class TestPartitionTableEditing(TestAPI):
                 await inst.post('/storage/v2/add_partition', data)
 
     @timeout()
-    async def SKIP_test_try_to_use_free_space(self):
-        # disabled until we can modify existing partition tables
-        # see also parts_and_gaps_disk()
-        async with start_server('examples/ubuntu-and-free-space.json') as inst:
+    async def test_use_free_space_after_existing(self):
+        cfg = 'examples/ubuntu-and-free-space.json'
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
             # Disk has 3 existing partitions and free space.  Add one to end.
             data = {
                 'disk_id': 'disk-sda',
@@ -812,8 +814,7 @@ class TestPartitionTableEditing(TestAPI):
                     'mount': '/',
                 }
             }
-            await inst.post('/storage/v2/add_partition', data)
-            resp = await inst.get('/storage')
+            resp = await inst.post('/storage/v2/add_partition', data)
             json_print(resp)
 
 
