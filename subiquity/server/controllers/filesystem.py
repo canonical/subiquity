@@ -46,6 +46,7 @@ from subiquity.common.filesystem.manipulator import (
     FilesystemManipulator,
 )
 from subiquity.common.types import (
+    AddPartitionV2,
     Bootloader,
     Disk,
     GuidedChoice,
@@ -351,7 +352,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.add_boot_disk(disk)
         return await self.v2_GET()
 
-    async def v2_add_partition_POST(self, data: ModifyPartitionV2) \
+    async def v2_add_partition_POST(self, data: AddPartitionV2) \
             -> StorageResponseV2:
         log.debug(data)
         if data.partition.format is None:
@@ -359,21 +360,18 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if data.partition.boot is not None:
             raise ValueError('add_partition does not support changing boot')
         disk = self.model._one(id=data.disk_id)
-        gap = gaps.largest_gap(disk)
-        if gap.size == 0:
-            raise ValueError('no space on disk')
         requested_size = data.partition.size or 0
-        if requested_size > gap.size:
+        if requested_size > data.gap.size:
             raise ValueError('new partition too large')
         if requested_size < 1:
-            requested_size = gap.size
+            requested_size = data.gap.size
         spec = {
             'size': requested_size,
             'fstype': data.partition.format,
             'mount': data.partition.mount,
         }
 
-        self.create_partition(disk, gap, spec, wipe='superblock')
+        self.create_partition(disk, data.gap, spec, wipe='superblock')
         return await self.v2_GET()
 
     async def v2_delete_partition_POST(self, data: ModifyPartitionV2) \

@@ -25,6 +25,7 @@ from subiquitycore.models.network import (
 
 from subiquity.common.api.defs import api, Payload, simple_endpoint
 from subiquity.common.types import (
+    AddPartitionV2,
     AnyStep,
     ApplicationState,
     ApplicationStatus,
@@ -276,7 +277,7 @@ class API:
                    result in the boot partition being added automatically - see
                    add_boot_partition for more control over this.
                 """
-                def POST(data: Payload[ModifyPartitionV2]) \
+                def POST(data: Payload[AddPartitionV2]) \
                     -> StorageResponseV2: ...
 
             class delete_partition:
