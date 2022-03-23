@@ -17,8 +17,6 @@ import shutil
 import logging
 import re
 from typing import Optional, Tuple, List
-import apt
-import apt_pkg
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.types import ApplicationState
@@ -123,7 +121,7 @@ class ConfigureController(SubiquityController):
 
         return True
 
-    async def __recommended_language_packs(self, lang, env) \
+    async def __recommended_language_packs(self, lang) \
             -> Optional[List[str]]:
         """ Return a list of package names recommended by
          check-language-support (or a fake list if in dryrun).
@@ -146,18 +144,14 @@ class ConfigureController(SubiquityController):
         clsLang = langCodes[0]
         packages = []
         # Running that command doesn't require root.
-        snap_dir = os.getenv("SNAP")
-        if snap_dir is None:
-            snap_dir = "/"
-
+        snap_dir = os.getenv("SNAP", default="/")
         data_dir = os.path.join(snap_dir, "usr/share/language-selector")
         if not os.path.exists(data_dir):
             log.error("Misconfigured snap environment pointed L-S-C data dir"
                       " to %s", data_dir)
             return None
 
-        cp = await arun_command([clsCommand, "-d", data_dir, "-l", clsLang],
-                                env=env)
+        cp = await arun_command([clsCommand, "-d", data_dir, "-l", clsLang])
         if cp.returncode != 0:
             log.error('Command "%s" failed with return code %d',
                       cp.args, cp.returncode)
@@ -178,27 +172,35 @@ class ConfigureController(SubiquityController):
         """ Install recommended packages.
         lang is expected to be one single language/locale.
         """
-        packages = await self.__recommended_language_packs(lang, env)
+        packages = await self.__recommended_language_packs(lang)
+        # Hardcoded path is necessary to ensure escaping out of the snap env.
+        aptCommand = "/usr/bin/apt"
         if packages is None:
             log.error('Failed to detect recommended language packs.')
             return False
 
-        cache = apt.Cache()
+        cp = await arun_command([aptCommand, "update"], env=env)
+        if cp.returncode != 0:
+            log.debug("Failed to update apt cache.\n%s", cp.stderr)
+
         if self.app.opts.dry_run:  # only empty in dry-run on failure.
             if len(packages) == 0:
                 log.error("Packages list in dry-run should never be empty.")
                 return False
 
             packs_dir = os.path.join(self.model.root,
-                                     apt_pkg.config
-                                     .find_dir("Dir::Cache::Archives")[1:])
+                                     "var/cache/apt/archives/")
             os.makedirs(packs_dir, exist_ok=True)
             try:
                 for package in packages:
-                    # Just write the package uri to a file.
-                    archive = os.path.join(packs_dir, cache[package].fullname)
+                    # Just write the apt simulation log if succeeds.
+                    lcp = await arun_command([aptCommand, "install", package,
+                                              "--simulate"], env=env)
+                    archive = os.path.join(packs_dir, package+".log")
                     with open(archive, "wt") as f:
-                        f.write(cache[package].candidate.uri)
+                        if lcp.returncode == 0:
+                            f.write(lcp.stdout)
+                        # otherwise file will be empty.
 
                 return True
 
@@ -210,15 +212,10 @@ class ConfigureController(SubiquityController):
             log.info("No missing recommended packages. Nothing to do.")
             return True
 
-        cache.update()
-        cache.open(None)
-        with cache.actiongroup():
-            for package in packages:
-                cache[package].mark_install()
+        cmd = [aptCommand, "install", "-y"] + packages
+        acp = await arun_command(cmd, env=env)
 
-            cache.commit()
-
-        return True
+        return acp.returncode == 0
 
     def _update_locale_gen_file(self, localeGenPath, lang) -> bool:
         """ Uncomment the line in locale.gen file matching lang,
@@ -266,9 +263,8 @@ class ConfigureController(SubiquityController):
         shutil.copy(localeGenPath, "{}.test".format(testLocGenPath))
         return testLocGenPath
 
-    async def apply_locale(self, lang):
+    async def apply_locale(self, lang, env):
         """ Effectively apply the locale setup to the new system."""
-        env = os.environ.copy()
         localeGenPath = self._locale_gen_file_path()
         if self._update_locale_gen_file(localeGenPath, lang) is False:
             log.error("Failed to update locale.gen")
@@ -299,7 +295,7 @@ class ConfigureController(SubiquityController):
 
         return uid
 
-    async def _create_user(self, root_dir):
+    async def create_user(self, root_dir, env):
         """ Helper method to create the user from the identity model
             and store it's UID. """
         wsl_id = self.model.identity.user
@@ -339,13 +335,13 @@ class ConfigureController(SubiquityController):
             create_user_base = ["-P", root_dir]
             assign_grp_base = ["-P", root_dir]
 
-        create_user_cmd = ["useradd"] + create_user_base + \
+        create_user_cmd = ["/usr/sbin/useradd"] + create_user_base + \
                           ["-m", "-s", "/bin/bash", "-c", wsl_id.realname,
                            "-p", wsl_id.password, username]
-        assign_grp_cmd = ["usermod"] + assign_grp_base + \
+        assign_grp_cmd = ["/usr/sbin/usermod"] + assign_grp_base + \
                          ["-a", "-G", ",".join(usergroups_list), username]
 
-        create_user_proc = await arun_command(create_user_cmd)
+        create_user_proc = await arun_command(create_user_cmd, env=env)
         if create_user_proc.returncode != 0:
             raise Exception("Failed to create user %s: %s"
                             % (username, create_user_proc.stderr))
@@ -355,7 +351,7 @@ class ConfigureController(SubiquityController):
         if self.default_uid is None:
             log.error("Could not retrieve %s UID", username)
 
-        assign_grp_proc = await arun_command(assign_grp_cmd)
+        assign_grp_proc = await arun_command(assign_grp_cmd, env=env)
         if assign_grp_proc.returncode != 0:
             raise Exception(("Failed to assign group to user %s: %s")
                             % (username, assign_grp_proc.stderr))
@@ -386,9 +382,14 @@ class ConfigureController(SubiquityController):
             root_dir = self.model.root
 
             if variant == "wsl_setup":
-                await self._create_user(root_dir)
                 lang = self.model.locale.selected_language
-                await self.apply_locale(lang)
+                envcp = os.environ.copy()
+                # Ensures a safe escape out of the snap environment for WSL.
+                if not self.app.opts.dry_run:
+                    envcp['LD_LIBRARY_PATH'] = ''
+                    envcp['LD_PRELOAD'] = ''
+                await self.create_user(root_dir, envcp)
+                await self.apply_locale(lang, envcp)
 
             else:
                 wsl_config_update(self.model.wslconfadvanced.wslconfadvanced,
