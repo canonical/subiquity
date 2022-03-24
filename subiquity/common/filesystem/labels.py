@@ -282,6 +282,8 @@ def for_client(device, *, min_size=0):
 @for_client.register(Disk)
 @for_client.register(Raid)
 def _for_client_disk(disk, *, min_size=0):
+    gap_sum = sum([gap.size for gap in gaps.parts_and_gaps(disk)
+                   if type(gap) == gaps.Gap])
     return types.Disk(
         id=disk.id,
         label=label(disk),
@@ -292,7 +294,7 @@ def _for_client_disk(disk, *, min_size=0):
         preserve=disk.preserve,
         usage_labels=usage_labels(disk),
         partitions=[for_client(p) for p in gaps.parts_and_gaps(disk)],
-        free_for_partitions=gaps.largest_gap_size(disk),
+        free_for_partitions=gap_sum,
         boot_device=boot.is_boot_device(disk),
         ok_for_guided=disk.size >= min_size,
         model=getattr(disk, 'model', None),

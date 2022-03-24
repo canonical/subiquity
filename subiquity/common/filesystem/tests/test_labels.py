@@ -16,11 +16,15 @@
 
 import unittest
 
+from subiquity.common.filesystem import gaps
 from subiquity.common.filesystem.labels import (
     annotations,
+    for_client,
     usage_labels,
     )
+from subiquity.models.filesystem import GiB
 from subiquity.models.tests.test_filesystem import (
+    make_disk,
     make_model,
     make_model_and_disk,
     make_model_and_partition,
@@ -123,3 +127,33 @@ class TestUsageLabels(unittest.TestCase):
         self.assertEqual(
             usage_labels(partition),
             ["to be reformatted as ext4", "mounted at /"])
+
+    def test_disk_free_for_partitions_one_gap(self):
+        for sv in 1, 2:
+            model = make_model(storage_version=sv)
+            d1 = make_disk(model)
+            make_partition(model, d1, offset=0, size=10 * GiB)
+            d1_labels = for_client(d1)
+            d1g1 = gaps.parts_and_gaps(d1)[1]
+            self.assertEqual(d1g1.size, d1_labels.free_for_partitions,
+                             msg=f'storage_version={sv}')
+
+    def test_disk_free_for_partitions_two_gaps(self):
+        model = make_model(storage_version=2)
+        d1 = make_disk(model)
+        make_partition(model, d1, offset=0, size=10 * GiB)
+        make_partition(model, d1, offset=20 * GiB, size=10 * GiB)
+        d1_labels = for_client(d1)
+        [_, d1g1, _, d1g2] = gaps.parts_and_gaps(d1)
+        expected = d1g1.size + d1g2.size
+        self.assertEqual(expected, d1_labels.free_for_partitions)
+
+    def test_disk_free_for_partitions_three_gaps(self):
+        model = make_model(storage_version=2)
+        d1 = make_disk(model)
+        make_partition(model, d1, offset=10 * GiB, size=10 * GiB)
+        make_partition(model, d1, offset=30 * GiB, size=10 * GiB)
+        d1_labels = for_client(d1)
+        [d1g1, _, d1g2, _, d1g3] = gaps.parts_and_gaps(d1)
+        expected = d1g1.size + d1g2.size + d1g3.size
+        self.assertEqual(expected, d1_labels.free_for_partitions)
