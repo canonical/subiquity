@@ -32,6 +32,7 @@ class LoggedCommandRunner:
             "PYTHON",
             "TARGET_MOUNT_POINT",
             "SNAP",
+            "SUBIQUITY_REPLAY_TIMESCALE",
         ]
         if use_systemd_user is not None:
             self.use_systemd_user = use_systemd_user
