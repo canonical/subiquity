@@ -53,7 +53,7 @@ class TestLoggedCommandRunner(SubiTestCase):
             "DUMMY": "should-not-be-exported",
         }
 
-        with patch.dict(os.environ, environ):
+        with patch.dict(os.environ, environ, clear=True):
             cmd = runner._forge_systemd_cmd(
                     ["/bin/ls", "/root"],
                     private_mounts=True, capture=False)

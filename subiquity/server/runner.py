@@ -27,11 +27,12 @@ class LoggedCommandRunner:
     def __init__(self, ident,
                  *, use_systemd_user: Optional[bool] = None) -> None:
         self.ident = ident
-        self.env_whitelist = [
+        self.env_allowlist = [
             "PATH", "PYTHONPATH",
             "PYTHON",
             "TARGET_MOUNT_POINT",
             "SNAP",
+            "SUBIQUITY_REPLAY_TIMESCALE",
         ]
         if use_systemd_user is not None:
             self.use_systemd_user = use_systemd_user
@@ -57,7 +58,7 @@ class LoggedCommandRunner:
             # --pipe also opens a pipe on stdin. This will effectively make the
             # child process behave differently if it reads from stdin.
             prefix.append("--pipe")
-        for key in self.env_whitelist:
+        for key in self.env_allowlist:
             with suppress(KeyError):
                 prefix.extend(("--setenv", f"{key}={os.environ[key]}"))
 
