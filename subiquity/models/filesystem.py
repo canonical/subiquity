@@ -997,11 +997,11 @@ class FilesystemModel(object):
         else:
             return Bootloader.BIOS
 
-    def __init__(self, bootloader=None):
+    def __init__(self, bootloader=None, storage_version=1):
         if bootloader is None:
             bootloader = self._probe_bootloader()
         self.bootloader = bootloader
-        self.storage_version = 1
+        self.storage_version = storage_version
         self._probe_data = None
         self.reset()
 

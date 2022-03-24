@@ -135,10 +135,9 @@ class FakeStorageInfo:
     raw = attr.ib(default=attr.Factory(dict))
 
 
-def make_model(bootloader=None):
-    model = FilesystemModel()
-    if bootloader is not None:
-        model.bootloader = bootloader
+def make_model(bootloader=None, **kw):
+    model = FilesystemModel(bootloader=bootloader, **kw)
+    model._probe_data = {}
     return model
 
 
