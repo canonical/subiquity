@@ -370,6 +370,24 @@ class SnapInfo:
 
 
 @attr.s(auto_attribs=True)
+class DriversResponse:
+    """ Response to GET request to drivers.
+    :install: tells whether third-party drivers will be installed (if any is
+    available).
+    :drivers: tells what third-party drivers will be installed should we decide
+    to do it. It will bet set to None until we figure out what drivers are
+    available.
+    """
+    install: bool
+    drivers: Optional[List[str]]
+
+
+@attr.s(auto_attribs=True)
+class DriversPayload:
+    install: bool
+
+
+@attr.s(auto_attribs=True)
 class SnapSelection:
     name: str
     channel: str

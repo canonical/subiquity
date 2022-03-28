@@ -13,11 +13,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import functools
 import logging
 import os
 import shutil
 import tempfile
+from typing import List, Optional, Union
+
+import attr
 
 from curtin.config import merge_config
 
@@ -32,7 +36,7 @@ log = logging.getLogger('subiquity.server.apt')
 
 class _MountBase:
 
-    def p(self, *args):
+    def p(self, *args: str) -> str:
         for a in args:
             if a.startswith('/'):
                 raise Exception('no absolute paths here please')
@@ -43,16 +47,21 @@ class _MountBase:
             fp.write(content)
 
 
+@attr.s(auto_attribs=True, kw_only=True)
 class Mountpoint(_MountBase):
-    def __init__(self, *, mountpoint):
-        self.mountpoint = mountpoint
+    mountpoint: str
 
 
+@attr.s(auto_attribs=True, kw_only=True)
 class OverlayMountpoint(_MountBase):
-    def __init__(self, *, lowers, upperdir, mountpoint):
-        self.lowers = lowers
-        self.upperdir = upperdir
-        self.mountpoint = mountpoint
+    # The first element in lowers will be the bottom layer and the last element
+    # will be the top layer.
+    lowers: List["Lower"]
+    upperdir: Optional[str]
+    mountpoint: str
+
+
+Lower = Union[Mountpoint, str, OverlayMountpoint]
 
 
 @functools.singledispatch
@@ -119,10 +128,11 @@ class AptConfigurer:
     #    system, or if it is not, just copy /var/lib/apt/lists from the
     #    'configured_tree' overlay.
 
-    def __init__(self, app, source):
+    def __init__(self, app, source: str):
         self.app = app
-        self.source = source
-        self.configured_tree = None
+        self.source: str = source
+        self.configured_tree: Optional[OverlayMountpoint] = None
+        self.install_tree: Optional[OverlayMountpoint] = None
         self.install_mount = None
         self._mounts = []
         self._tdirs = []
@@ -139,15 +149,18 @@ class AptConfigurer:
         if type is not None:
             opts.extend(['-t', type])
         await self.app.command_runner.run(
-            ['mount'] + opts + [device, mountpoint])
+            ['mount'] + opts + [device, mountpoint], private_mounts=False)
         m = Mountpoint(mountpoint=mountpoint)
         self._mounts.append(m)
         return m
 
-    async def unmount(self, mountpoint):
-        await self.app.command_runner.run(['umount', mountpoint])
+    async def unmount(self, mountpoint: Mountpoint, remove=True):
+        if remove:
+            self._mounts.remove(mountpoint)
+        await self.app.command_runner.run(['umount', mountpoint.mountpoint],
+                                          private_mounts=False)
 
-    async def setup_overlay(self, lowers):
+    async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
         tdir = self.tdir()
         target = f'{tdir}/mount'
         lowerdir = lowerdir_for(lowers)
@@ -173,7 +186,7 @@ class AptConfigurer:
         return {'apt': cfg}
 
     async def apply_apt_config(self, context):
-        self.configured_tree = await self.setup_overlay(self.source)
+        self.configured_tree = await self.setup_overlay([self.source])
 
         config_location = os.path.join(
             self.app.root, 'var/log/installer/subiquity-curtin-apt.conf')
@@ -182,12 +195,12 @@ class AptConfigurer:
 
         await run_curtin_command(
             self.app, context, 'apt-config', '-t', self.configured_tree.p(),
-            config=config_location)
+            config=config_location, private_mounts=True)
 
     async def configure_for_install(self, context):
         assert self.configured_tree is not None
 
-        self.install_tree = await self.setup_overlay(self.configured_tree)
+        self.install_tree = await self.setup_overlay([self.configured_tree])
 
         os.mkdir(self.install_tree.p('cdrom'))
         await self.mount(
@@ -211,50 +224,77 @@ class AptConfigurer:
 
         await run_curtin_command(
             self.app, context, "in-target", "-t", self.install_tree.p(),
-            "--", "apt-get", "update")
+            "--", "apt-get", "update", private_mounts=True)
 
         return self.install_tree.p()
 
+    @contextlib.asynccontextmanager
+    async def overlay(self):
+        overlay = await self.setup_overlay([
+                self.install_tree.upperdir,
+                self.configured_tree.upperdir,
+                self.source
+            ])
+        try:
+            yield overlay
+        finally:
+            # TODO self.unmount expects a Mountpoint object. Unfortunately, the
+            # one we created in setup_overlay was discarded and replaced by an
+            # OverlayMountPoint object instead. Here we re-create a new
+            # Mountpoint object and (thanks to attr.s) make sure that it
+            # compares equal to the one we discarded earlier.
+            # But really, there should be better ways to handle this.
+            await self.unmount(Mountpoint(mountpoint=overlay.mountpoint))
+
     async def cleanup(self):
         for m in reversed(self._mounts):
-            await self.unmount(m.mountpoint)
+            await self.unmount(m, remove=False)
         for d in self._tdirs:
             shutil.rmtree(d)
 
-    async def deconfigure(self, context, target):
-        target = Mountpoint(mountpoint=target)
+    async def deconfigure(self, context, target: str) -> None:
+        target_mnt = Mountpoint(mountpoint=target)
 
         async def _restore_dir(dir):
-            shutil.rmtree(target.p(dir))
+            shutil.rmtree(target_mnt.p(dir))
             await self.app.command_runner.run([
-                'cp', '-aT', self.configured_tree.p(dir), target.p(dir),
+                'cp', '-aT', self.configured_tree.p(dir), target_mnt.p(dir),
                 ])
 
-        await self.unmount(target.p('cdrom'))
-        os.rmdir(target.p('cdrom'))
+        await self.unmount(
+                Mountpoint(mountpoint=target_mnt.p('cdrom')),
+                remove=False)
+        os.rmdir(target_mnt.p('cdrom'))
 
         await _restore_dir('etc/apt')
 
         if self.app.base_model.network.has_network:
             await run_curtin_command(
-                self.app, context, "in-target", "-t", target.p(),
-                "--", "apt-get", "update")
+                self.app, context, "in-target", "-t", target_mnt.p(),
+                "--", "apt-get", "update", private_mounts=True)
         else:
             await _restore_dir('var/lib/apt/lists')
 
         await self.cleanup()
 
-        if self.app.base_model.network.has_network:
-            await run_curtin_command(
-                self.app, context, "in-target", "-t", target.p(),
-                "--", "apt-get", "update")
-
 
 class DryRunAptConfigurer(AptConfigurer):
 
-    async def setup_overlay(self, source):
-        if isinstance(source, OverlayMountpoint):
-            source = source.lowers[0]
+    async def unmount(self, mountpoint: Mountpoint, remove=True):
+        if remove:
+            self._mounts.remove(mountpoint)
+
+    async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
+        # XXX This implementation expects that:
+        # - on first invocation, the lowers list contains a single string
+        # element.
+        # - on second invocation, the lowers list contains the
+        # OverlayMountPoint returned by the first invocation.
+        lowerdir = lowers[0]
+        if isinstance(lowerdir, OverlayMountpoint):
+            source = lowerdir.lowers[0]
+        else:
+            source = lowerdir
         target = self.tdir()
         os.mkdir(f'{target}/etc')
         await arun_command([
@@ -268,11 +308,15 @@ class DryRunAptConfigurer(AptConfigurer):
             mountpoint=target,
             upperdir=None)
 
+    @contextlib.asynccontextmanager
+    async def overlay(self):
+        yield await self.setup_overlay(self.install_tree.mountpoint)
+
     async def deconfigure(self, context, target):
-        return
+        await self.cleanup()
 
 
-def get_apt_configurer(app, source):
+def get_apt_configurer(app, source: str):
     if app.opts.dry_run:
         return DryRunAptConfigurer(app, source)
     else:

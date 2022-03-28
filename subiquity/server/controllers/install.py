@@ -45,6 +45,10 @@ from subiquity.server.curtin import (
     run_curtin_command,
     start_curtin_command,
     )
+from subiquity.server.types import (
+    InstallerChannels,
+    )
+
 
 log = logging.getLogger("subiquity.server.controllers.install")
 
@@ -114,7 +118,8 @@ class InstallController(SubiquityController):
 
     @with_context(description="umounting /target dir")
     async def unmount_target(self, *, context, target):
-        await run_curtin_command(self.app, context, 'unmount', '-t', target)
+        await run_curtin_command(self.app, context, 'unmount', '-t', target,
+                                 private_mounts=False)
         if not self.app.opts.dry_run:
             shutil.rmtree(target)
 
@@ -128,8 +133,9 @@ class InstallController(SubiquityController):
     @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
     async def curtin_install(self, *, context, source):
-        await run_curtin_command(
-            self.app, context, 'install', source, config=self.write_config())
+        await run_curtin_command(self.app, context, 'install', source,
+                                 config=self.write_config(),
+                                 private_mounts=False)
 
     @with_context()
     async def install(self, *, context):
@@ -152,6 +158,8 @@ class InstallController(SubiquityController):
             self.app.update_state(ApplicationState.RUNNING)
 
             for_install_path = await self.configure_apt(context=context)
+
+            await self.app.hub.abroadcast(InstallerChannels.APT_CONFIGURED)
 
             if os.path.exists(self.model.target):
                 await self.unmount_target(
@@ -190,6 +198,13 @@ class InstallController(SubiquityController):
         packages = await self.get_target_packages(context=context)
         for package in packages:
             await self.install_package(context=context, package=package)
+        if self.model.drivers.do_install:
+            with context.child(
+                    "ubuntu-drivers-install",
+                    "installing third-party drivers") as child:
+                ubuntu_drivers = self.app.controllers.Drivers.ubuntu_drivers
+                await ubuntu_drivers.install_drivers(root_dir=self.tpath(),
+                                                     context=child)
 
         if self.model.network.has_network:
             self.app.update_state(ApplicationState.UU_RUNNING)
@@ -211,7 +226,8 @@ class InstallController(SubiquityController):
     async def install_package(self, *, context, package):
         await run_curtin_command(
             self.app, context, 'system-install', '-t', self.tpath(),
-            '--', package)
+            '--', package,
+            private_mounts=False)
 
     @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):
@@ -237,7 +253,8 @@ class InstallController(SubiquityController):
             self.unattended_upgrades_ctx = context
             self.unattended_upgrades_cmd = await start_curtin_command(
                 self.app, context, "in-target", "-t", self.tpath(),
-                "--", "unattended-upgrades", "-v")
+                "--", "unattended-upgrades", "-v",
+                private_mounts=True)
             await self.unattended_upgrades_cmd.wait()
             self.unattended_upgrades_cmd = None
             self.unattended_upgrades_ctx = None
