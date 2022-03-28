@@ -48,6 +48,9 @@ class UbuntuAdvantageController(SubiquityTuiController):
     async def make_ui(self) -> UbuntuAdvantageView:
         """ Generate the UI, based on the data provided by the model. """
 
+        # Currently disabled in 22.04
+        await self.endpoint.skip.POST()
+        raise Skip
         dry_run: bool = self.app.opts.dry_run
         if "LTS" not in lsb_release(dry_run=dry_run)["description"]:
             await self.endpoint.skip.POST()
