@@ -68,6 +68,7 @@ class SourceModel:
         self.current = fake_entries['server']
         self.sources = [self.current]
         self.lang = None
+        self.search_drivers = False
 
     def load_from_file(self, fp):
         self._dir = os.path.dirname(fp.name)

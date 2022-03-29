@@ -948,6 +948,8 @@ class TestCancel(TestAPI):
     async def test_cancel_drivers(self):
         with patch.dict(os.environ, {'SUBIQUITY_DEBUG': 'has-drivers'}):
             async with start_server('examples/simple.json') as inst:
+                await inst.post('/source', source_id="dummy",
+                                search_drivers=True)
                 # /drivers?wait=true is expected to block until APT is
                 # configured.
                 # Let's make sure we cancel it.

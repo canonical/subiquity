@@ -14,13 +14,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from urwid import connect_signal
+from typing import List
+
+from urwid import (
+    connect_signal,
+    Text,
+)
 
 from subiquitycore.view import BaseView
+from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.form import (
+    BooleanField,
     Form,
     RadioButtonField,
 )
+from subiquitycore.ui.utils import screen
 
 log = logging.getLogger('subiquity.ui.views.source')
 
@@ -29,10 +37,10 @@ class SourceView(BaseView):
 
     title = _("Choose type of install")
 
-    def __init__(self, controller, sources, current_id):
+    def __init__(self, controller, sources, current_id, search_drivers: bool):
         self.controller = controller
 
-        group = []
+        group: List[RadioButtonField] = []
 
         ns = {
             'cancel_label': _("Back"),
@@ -47,6 +55,12 @@ class SourceView(BaseView):
                     group, source.name, '\n' + source.description)
                 initial[source.id] = source.id == current_id
 
+        ns["search_drivers"] = BooleanField(
+            _("Search for third-party drivers"), "\n" +
+            _("This software is subject to license terms included with its "
+              "documentation. Some is proprietary."))
+        initial["search_drivers"] = search_drivers
+
         SourceForm = type(Form)('SourceForm', (Form,), ns)
         log.debug('%r %r', ns, current_id)
 
@@ -57,13 +71,27 @@ class SourceView(BaseView):
 
         excerpt = _("Choose the base for the installation.")
 
-        super().__init__(self.form.as_screen(excerpt=excerpt))
+        # NOTE Hack to insert the "Additional options" text between two fields
+        # of the form.
+        rows = self.form.as_rows()
+        rows.insert(-2, Text(""))
+        rows.insert(-2, Text("Additional options"))
+
+        super().__init__(
+            screen(
+                ListBox(rows),
+                self.form.buttons,
+                excerpt=excerpt,
+                focus_buttons=True))
 
     def done(self, result):
         log.debug("User input: {}".format(result.as_data()))
+        search_drivers = result.as_data()["search_drivers"]
         for k, v in result.as_data().items():
+            if k == "search_drivers":
+                continue
             if v:
-                self.controller.done(k)
+                self.controller.done(k, search_drivers=search_drivers)
 
     def cancel(self, result=None):
         self.controller.cancel()

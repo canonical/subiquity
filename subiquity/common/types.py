@@ -183,6 +183,7 @@ class SourceSelection:
 class SourceSelectionAndSetting:
     sources: List[SourceSelection]
     current_id: str
+    search_drivers: bool
 
 
 @attr.s(auto_attribs=True)
