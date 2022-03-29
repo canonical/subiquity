@@ -73,6 +73,8 @@ def make_server_args_parser():
         help='in dryrun, control basedir of files')
     parser.add_argument(
         '--storage-version', action='store', type=int, default=1)
+    parser.add_argument(
+        '--use-os-prober', action='store_true', default=False)
     return parser
 
 
