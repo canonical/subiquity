@@ -101,7 +101,7 @@ class Server(Client):
             return
 
     async def spawn(self, output_base, socket, machine_config,
-                    bootloader='uefi'):
+                    bootloader='uefi', extra_args=None):
         env = os.environ.copy()
         env['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
         cmd = ['python3', '-m', 'subiquity.cmd.server',
@@ -110,6 +110,8 @@ class Server(Client):
                '--socket', socket,
                '--output-base', output_base,
                '--machine-config', machine_config]
+        if extra_args is not None:
+            cmd.extend(extra_args)
         self.proc = await astart_command(cmd, env=env)
 
     async def close(self):
@@ -126,7 +128,13 @@ class Server(Client):
 
 
 class TestAPI(unittest.IsolatedAsyncioTestCase):
-    pass
+    def assertDictSubset(self, expected, actual):
+        """All keys in dictionary expected, and matching values, must match
+        keys and values in actual.  Actual may contain additional keys and
+        values that don't appear in expected, and this is not a failure."""
+
+        for k, v in expected.items():
+            self.assertEqual(v, actual[k], k)
 
 
 async def poll_for_socket_exist(socket_path):
@@ -255,6 +263,7 @@ class TestFlow(TestAPI):
 
             data = {
                 'disk_id': disk_id,
+                'gap': gap,
                 'partition': {
                     'format': 'ext3',
                     'mount': '/',
@@ -318,8 +327,13 @@ class TestAdd(TestAPI):
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
 
+            resp = await inst.post('/storage/v2')
+            sda = first(resp['disks'], 'id', disk_id)
+            gap = first(sda['partitions'], '$type', 'Gap')
+
             data = {
                 'disk_id': disk_id,
+                'gap': gap,
                 'partition': {
                     'format': 'ext4',
                     'mount': '/',
@@ -381,12 +395,14 @@ class TestAdd(TestAPI):
             resp = await inst.post('/storage/v2/add_boot_partition',
                                    disk_id=disk_id)
             sda = first(resp['disks'], 'id', disk_id)
+            gap = first(sda['partitions'], '$type', 'Gap')
             orig_free = sda['free_for_partitions']
 
             size_requested = 6 << 30
             expected_free = orig_free - size_requested
             data = {
                 'disk_id': disk_id,
+                'gap': gap,
                 'partition': {
                     'size': size_requested,
                     'format': 'ext4',
@@ -417,10 +433,12 @@ class TestAdd(TestAPI):
             disk_id = 'disk-sda'
             resp = await inst.get('/storage/v2')
             sda = first(resp['disks'], 'id', disk_id)
+            gap = first(sda['partitions'], '$type', 'Gap')
             expected_total = sda['free_for_partitions']
 
             data = {
                 'disk_id': disk_id,
+                'gap': gap,
                 'partition': {
                     'format': 'ext4',
                     'mount': '/',
@@ -482,9 +500,13 @@ class TestDelete(TestAPI):
     async def test_v2_delete_with_reformat(self):
         async with start_server('examples/win10.json') as inst:
             disk_id = 'disk-sda'
-            await inst.post('/storage/v2/reformat_disk', disk_id=disk_id)
+            resp = await inst.post('/storage/v2/reformat_disk',
+                                   disk_id=disk_id)
+            [sda] = resp['disks']
+            [gap] = sda['partitions']
             data = {
                 'disk_id': disk_id,
+                'gap': gap,
                 'partition': {
                     'mount': '/',
                     'format': 'ext4',
@@ -667,8 +689,11 @@ class TestTodos(TestAPI):  # server indicators of required client actions
             self.assertTrue(resp['need_root'])
             self.assertTrue(resp['need_boot'])
 
+            [sda] = resp['disks']
+            [gap] = sda['partitions']
             data = {
                 'disk_id': disk_id,
+                'gap': gap,
                 'partition': {
                     'format': 'ext4',
                     'mount': '/',
@@ -692,8 +717,11 @@ class TestTodos(TestAPI):  # server indicators of required client actions
             self.assertTrue(resp['need_root'])
             self.assertFalse(resp['need_boot'])
 
+            [sda] = resp['disks']
+            gap = first(sda['partitions'], '$type', 'Gap')
             data = {
                 'disk_id': disk_id,
+                'gap': gap,
                 'partition': {
                     'format': 'ext4',
                     'mount': '/',
@@ -783,38 +811,45 @@ class TestOSProbe(TestAPI):
 
 class TestPartitionTableEditing(TestAPI):
     @timeout()
-    async def test_add_when_no_space(self):
-        async with start_server('examples/simple.json') as inst:
-            data = {
-                'disk_id': 'disk-sda',
-                'partition': {
-                    'format': 'ext4',
-                    'mount': '/',
-                }
-            }
-            await inst.post('/storage/v2/add_partition', data)
-
-            # Adding a second should fail.
-            with self.assertRaises(ClientResponseError, msg=str(data)):
-                data['partition']['mount'] = '/usr'
-                await inst.post('/storage/v2/add_partition', data)
-
-    @timeout()
-    async def SKIP_test_try_to_use_free_space(self):
-        # disabled until we can modify existing partition tables
-        # see also parts_and_gaps_disk()
-        async with start_server('examples/ubuntu-and-free-space.json') as inst:
+    async def test_use_free_space_after_existing(self):
+        cfg = 'examples/ubuntu-and-free-space.json'
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
             # Disk has 3 existing partitions and free space.  Add one to end.
+            # sda1 is an ESP, so that should get implicitly picked up.
+            resp = await inst.get('/storage/v2')
+            [sda] = resp['disks']
+            [e1, e2, e3, gap] = sda['partitions']
+            self.assertEqual('Gap', gap['$type'])
+
             data = {
                 'disk_id': 'disk-sda',
+                'gap': gap,
                 'partition': {
                     'format': 'ext4',
                     'mount': '/',
                 }
             }
-            await inst.post('/storage/v2/add_partition', data)
-            resp = await inst.get('/storage')
-            json_print(resp)
+            resp = await inst.post('/storage/v2/add_partition', data)
+            [sda] = resp['disks']
+            [p1, p2, p3, p4] = sda['partitions']
+            e1.pop('annotations')
+            e1.update({
+                'mount': '/boot/efi',
+                'grub_device': True,
+            })
+            self.assertDictSubset(e1, p1)
+            self.assertEqual(e2, p2)
+            self.assertEqual(e3, p3)
+            e4 = {
+                '$type': 'Partition',
+                'number': 4,
+                'size': gap['size'],
+                'offset': gap['offset'],
+                'format': 'ext4',
+                'mount': '/',
+            }
+            self.assertDictSubset(e4, p4)
 
 
 class TestGap(TestAPI):
@@ -828,8 +863,12 @@ class TestGap(TestAPI):
 
     async def test_gap_at_end(self):
         async with start_server('examples/simple.json') as inst:
+            resp = await inst.get('/storage/v2')
+            [sda] = resp['disks']
+            gap = first(sda['partitions'], '$type', 'Gap')
             data = {
                 'disk_id': 'disk-sda',
+                'gap': gap,
                 'partition': {
                     'format': 'ext4',
                     'mount': '/',
@@ -887,9 +926,12 @@ class TestRegression(TestAPI):
     async def test_edit_not_trigger_boot_device(self):
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
-
+            resp = await inst.get('/storage/v2')
+            [sda] = resp['disks']
+            [gap] = sda['partitions']
             data = {
                 'disk_id': disk_id,
+                'gap': gap,
                 'partition': {
                     'format': 'ext4',
                     'mount': '/foo',
@@ -900,5 +942,6 @@ class TestRegression(TestAPI):
             sda2 = first(sda['partitions'], 'number', 2)
             sda2.update({'format': 'ext3', 'mount': '/bar'})
             data['partition'] = sda2
+            data.pop('gap')
             await inst.post('/storage/v2/edit_partition', data)
             # should not throw an exception complaining about boot
