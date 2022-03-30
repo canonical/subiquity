@@ -85,7 +85,7 @@ class SourceView(BaseView):
                 focus_buttons=True))
 
     def done(self, result):
-        log.debug("User input: {}".format(result.as_data()))
+        log.debug("User input: %s", result.as_data())
         search_drivers = result.as_data()["search_drivers"]
         for k, v in result.as_data().items():
             if k == "search_drivers":
