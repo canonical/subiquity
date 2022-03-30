@@ -29,7 +29,7 @@ from urwid import (
 from subiquitycore.ui.buttons import back_btn, ok_btn
 from subiquitycore.ui.form import (
     Form,
-    BooleanField,
+    RadioButtonField,
 )
 from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.utils import screen
@@ -44,8 +44,16 @@ class DriversForm(Form):
     available drivers or not. """
 
     cancel_label = _("Back")
+    ok_label = _("Continue")
 
-    install = BooleanField(_("Install the drivers"))
+    group: List[RadioButtonField] = []
+
+    install = RadioButtonField(
+            group,
+            _("Install all third-party drivers"))
+    do_not_install = RadioButtonField(
+            group,
+            _("Do not install third-party drivers now"))
 
 
 class DriversViewStatus(Enum):
@@ -63,6 +71,13 @@ class DriversView(BaseView):
     def __init__(self, controller, drivers: Optional[List[str]],
                  install: bool) -> None:
         self.controller = controller
+
+        self.search_later = [
+            Text(_("Note: You can search again later for third-party " +
+                   "drivers using the command:")),
+            Text(""),
+            Text("  $ ubuntu-drivers list --recommended --gpgpu"),
+        ]
 
         if drivers is None:
             self.make_waiting(install)
@@ -102,7 +117,10 @@ class DriversView(BaseView):
         """ Change the view into an information page that shows that no
         third-party drivers are available for installation. """
 
-        rows = [Text(_("No applicable third-party drivers were found."))]
+        rows = [
+            Text(_("No applicable third-party drivers were found.")),
+            Text(""),
+        ] + self.search_later
         self.cont_btn = ok_btn(
                 _("Continue"),
                 on_press=lambda sender: self.done(False))
@@ -111,7 +129,10 @@ class DriversView(BaseView):
 
     def make_main(self, install: bool, drivers: List[str]) -> None:
         """ Change the view to display the drivers form. """
-        self.form = DriversForm(initial={'install': install})
+        self.form = DriversForm(initial={
+            "install": bool(install),
+            "do_not_install": (not install),
+            })
 
         excerpt = _(
             "The following third-party drivers were found. "
@@ -128,6 +149,8 @@ class DriversView(BaseView):
         rows = [Text(f"* {driver}") for driver in drivers]
         rows.append(Text(""))
         rows.extend(self.form.as_rows())
+        rows.append(Text(""))
+        rows.extend(self.search_later)
 
         self._w = screen(rows, self.form.buttons, excerpt=excerpt)
         self.status = DriversViewStatus.MAIN
