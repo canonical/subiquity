@@ -128,7 +128,13 @@ class Server(Client):
 
 
 class TestAPI(unittest.IsolatedAsyncioTestCase):
-    pass
+    def assertDictSubset(self, expected, actual):
+        """All keys in dictionary expected, and matching values, must match
+        keys and values in actual.  Actual may contain additional keys and
+        values that don't appear in expected, and this is not a failure."""
+
+        for k, v in expected.items():
+            self.assertEqual(v, actual[k], k)
 
 
 async def poll_for_socket_exist(socket_path):
@@ -322,8 +328,6 @@ class TestAdd(TestAPI):
             disk_id = 'disk-sda'
 
             resp = await inst.post('/storage/v2')
-            json_print(resp)
-
             sda = first(resp['disks'], 'id', disk_id)
             gap = first(sda['partitions'], '$type', 'Gap')
 
@@ -812,9 +816,12 @@ class TestPartitionTableEditing(TestAPI):
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
             # Disk has 3 existing partitions and free space.  Add one to end.
+            # sda1 is an ESP, so that should get implicitly picked up.
             resp = await inst.get('/storage/v2')
             [sda] = resp['disks']
-            gap = first(sda['partitions'], '$type', 'Gap')
+            [e1, e2, e3, gap] = sda['partitions']
+            self.assertEqual('Gap', gap['$type'])
+
             data = {
                 'disk_id': 'disk-sda',
                 'gap': gap,
@@ -824,7 +831,25 @@ class TestPartitionTableEditing(TestAPI):
                 }
             }
             resp = await inst.post('/storage/v2/add_partition', data)
-            json_print(resp)
+            [sda] = resp['disks']
+            [p1, p2, p3, p4] = sda['partitions']
+            e1.pop('annotations')
+            e1.update({
+                'mount': '/boot/efi',
+                'grub_device': True,
+            })
+            self.assertDictSubset(e1, p1)
+            self.assertEqual(e2, p2)
+            self.assertEqual(e3, p3)
+            e4 = {
+                '$type': 'Partition',
+                'number': 4,
+                'size': gap['size'],
+                'offset': gap['offset'],
+                'format': 'ext4',
+                'mount': '/',
+            }
+            self.assertDictSubset(e4, p4)
 
 
 class TestGap(TestAPI):
