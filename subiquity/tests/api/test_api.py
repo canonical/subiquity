@@ -389,31 +389,6 @@ class TestAdd(TestAPI):
                                 disk_id=disk_id)
 
     @timeout()
-    async def test_v2_free_for_partitions(self):
-        async with start_server('examples/simple.json') as inst:
-            disk_id = 'disk-sda'
-            resp = await inst.post('/storage/v2/add_boot_partition',
-                                   disk_id=disk_id)
-            sda = first(resp['disks'], 'id', disk_id)
-            gap = first(sda['partitions'], '$type', 'Gap')
-            orig_free = sda['free_for_partitions']
-
-            size_requested = 6 << 30
-            expected_free = orig_free - size_requested
-            data = {
-                'disk_id': disk_id,
-                'gap': gap,
-                'partition': {
-                    'size': size_requested,
-                    'format': 'ext4',
-                    'mount': '/',
-                }
-            }
-            resp = await inst.post('/storage/v2/add_partition', data)
-            sda = first(resp['disks'], 'id', disk_id)
-            self.assertEqual(expected_free, sda['free_for_partitions'])
-
-    @timeout()
     async def test_add_format_required(self):
         disk_id = 'disk-sda'
         async with start_server('examples/simple.json') as inst:
@@ -433,8 +408,7 @@ class TestAdd(TestAPI):
             disk_id = 'disk-sda'
             resp = await inst.get('/storage/v2')
             sda = first(resp['disks'], 'id', disk_id)
-            gap = first(sda['partitions'], '$type', 'Gap')
-            expected_total = sda['free_for_partitions']
+            [gap] = sda['partitions']
 
             data = {
                 'disk_id': disk_id,
@@ -448,7 +422,7 @@ class TestAdd(TestAPI):
             sda = first(resp['disks'], 'id', disk_id)
             sda1 = first(sda['partitions'], 'number', 1)
             sda2 = first(sda['partitions'], 'number', 2)
-            self.assertEqual(expected_total, sda1['size'] + sda2['size'])
+            self.assertEqual(gap['size'], sda1['size'] + sda2['size'])
 
     @timeout()
     async def test_v2_add_boot_BIOS(self):
