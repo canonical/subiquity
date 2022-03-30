@@ -347,7 +347,18 @@ class TestAdd(TestAPI):
 
             # these manual steps are expected to be equivalent to just adding
             # the single partition and getting the automatic boot partition
-            await inst.post('/storage/v2/add_boot_partition', disk_id=disk_id)
+            resp = await inst.post(
+                '/storage/v2/add_boot_partition', disk_id=disk_id)
+            sda = first(resp['disks'], 'id', disk_id)
+            gap = first(sda['partitions'], '$type', 'Gap')
+            data = {
+                'disk_id': disk_id,
+                'gap': gap,
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/',
+                }
+            }
             manual_add = await inst.post('/storage/v2/add_partition', data)
 
             self.assertEqual(single_add, manual_add)
