@@ -95,7 +95,7 @@ def _no_preserve_part(inst, field, part):
 class ResizePlan(MakeBootDevicePlan):
     """Resize a partition."""
 
-    part: object
+    part: object = attr.ib(validator=_no_preserve_part)
     size_delta: int = 0
 
     def apply(self, manipulator):
