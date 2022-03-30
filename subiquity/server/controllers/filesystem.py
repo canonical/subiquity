@@ -132,12 +132,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     def guided_direct(self, disk):
         self.reformat(disk)
-        result = {
-            "size": gaps.largest_gap_size(disk),
+        gap = gaps.largest_gap(disk)
+        spec = {
+            "size": gap.size,
             "fstype": "ext4",
             "mount": "/",
             }
-        self.partition_disk_handler(disk, None, result)
+        self.partition_disk_handler(disk, spec, gap=gap)
 
     def guided_lvm(self, disk, lvm_options=None):
         self.reformat(disk)
@@ -396,7 +397,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             'fstype': data.partition.format or partition.format,
             'mount': data.partition.mount or partition.mount,
         }
-        self.partition_disk_handler(disk, partition, spec)
+        self.partition_disk_handler(disk, spec, partition=partition)
         return await self.v2_GET()
 
     @with_context(name='probe_once', description='restricted={restricted}')

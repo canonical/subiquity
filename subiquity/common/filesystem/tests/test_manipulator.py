@@ -222,7 +222,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             disk1, size=8192 << 20, offset=513 << 20)
         disk1p2.preserve = True
         manipulator.partition_disk_handler(
-            disk1, disk1p2, {'fstype': 'ext4', 'mount': '/'})
+            disk1, {'fstype': 'ext4', 'mount': '/'}, partition=disk1p2)
         efi_mnt = manipulator.model._mount_for_path("/boot/efi")
         self.assertEqual(efi_mnt.device.volume, disk1p1)
 
