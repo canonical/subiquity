@@ -373,7 +373,6 @@ class PartitionStretchy(Stretchy):
         self.model = parent.model
         self.controller = parent.controller
         self.parent = parent
-        max_size = gaps.largest_gap_size(disk)
 
         if partition is None and gap is None:
             raise Exception('bad PartitionStretchy - needs partition or gap')
@@ -394,8 +393,11 @@ class PartitionStretchy(Stretchy):
                 label = None
             else:
                 label = _("Save")
-            initial['size'] = humanize_size(self.partition.size)
-            max_size += self.partition.size
+            initial['size'] = humanize_size(partition.size)
+            max_size = partition.size
+            next_gap = gaps.gap_after_partition(partition)
+            if next_gap is not None:
+                max_size += next_gap.size
 
             if not boot.is_esp(partition):
                 initial.update(initial_data_for_fs(self.partition.fs()))
