@@ -81,13 +81,13 @@ class TestFilesystemManipulator(unittest.TestCase):
     def add_existing_boot_partition(self, manipulator, disk):
         if manipulator.model.bootloader == Bootloader.BIOS:
             part = manipulator.model.add_partition(
-                disk, size=1 << 20, flag="bios_grub")
+                disk, size=1 << 20, offset=0, flag="bios_grub")
         elif manipulator.model.bootloader == Bootloader.UEFI:
             part = manipulator.model.add_partition(
-                disk, size=512 << 20, flag="boot")
+                disk, size=512 << 20, offset=0, flag="boot")
         elif manipulator.model.bootloader == Bootloader.PREP:
             part = manipulator.model.add_partition(
-                disk, size=8 << 20, flag="prep")
+                disk, size=8 << 20, offset=0, flag="prep")
         part.preserve = True
         return part
 
@@ -128,8 +128,9 @@ class TestFilesystemManipulator(unittest.TestCase):
 
             disk1 = make_disk(manipulator.model, preserve=False)
             disk2 = make_disk(manipulator.model, preserve=False)
+            gap = gaps.largest_gap(disk2)
             disk2p1 = manipulator.model.add_partition(
-                disk2, size=gaps.largest_gap_size(disk2))
+                disk2, size=gap.size, offset=gap.offset)
 
             manipulator.add_boot_disk(disk1)
             self.assertIsBootDisk(manipulator, disk1)
@@ -169,8 +170,9 @@ class TestFilesystemManipulator(unittest.TestCase):
 
             disk1 = make_disk(manipulator.model, preserve=False)
             disk2 = make_disk(manipulator.model, preserve=False)
+            gap = gaps.largest_gap(disk2)
             disk2p1 = manipulator.model.add_partition(
-                disk2, size=gaps.largest_gap_size(disk2))
+                disk2, size=gap.size, offset=gap.offset)
 
             manipulator.add_boot_disk(disk1)
             self.assertIsBootDisk(manipulator, disk1)
@@ -214,7 +216,7 @@ class TestFilesystemManipulator(unittest.TestCase):
         manipulator = make_manipulator(Bootloader.UEFI)
         disk1 = make_disk(manipulator.model, preserve=True)
         disk1p1 = manipulator.model.add_partition(
-            disk1, size=512 << 20, flag="boot")
+            disk1, size=512 << 20, offset=0, flag="boot")
         disk1p1.preserve = True
         disk1p2 = manipulator.model.add_partition(
             disk1, size=8192 << 20, offset=513 << 20)

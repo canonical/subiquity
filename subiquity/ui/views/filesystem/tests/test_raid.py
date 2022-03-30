@@ -31,9 +31,9 @@ class RaidViewTests(unittest.TestCase):
 
     def test_create_raid(self):
         model, disk = make_model_and_disk()
-        part1 = model.add_partition(disk, 10*(2**30))
-        part2 = model.add_partition(disk, 10*(2**30))
-        part3 = model.add_partition(disk, 10*(2**30))
+        part1 = model.add_partition(disk, size=10*(2**30), offset=0)
+        part2 = model.add_partition(disk, size=10*(2**30), offset=10*(2**30))
+        part3 = model.add_partition(disk, size=10*(2**30), offset=20*(2**30))
         view, stretchy = make_view(model)
         form_data = {
             'name': 'md0',
@@ -52,8 +52,8 @@ class RaidViewTests(unittest.TestCase):
 
     def test_edit_raid(self):
         model, disk = make_model_and_disk()
-        part1 = model.add_partition(disk, 10*(2**30))
-        part2 = model.add_partition(disk, 10*(2**30))
+        part1 = model.add_partition(disk, size=10*(2**30), offset=0)
+        part2 = model.add_partition(disk, size=10*(2**30), offset=10*(2**30))
         raid = model.add_raid("md0", "raid1", {part1, part2}, set())
         view, stretchy = make_view(model, raid)
         form_data = {

@@ -77,7 +77,7 @@ class FilesystemManipulator:
 
     def create_partition(self, device, gap, spec, **kw):
         part = self.model.add_partition(
-            device, spec["size"], offset=gap.offset, **kw)
+            device, size=spec["size"], offset=gap.offset, **kw)
         self.create_filesystem(part, spec)
         return part
 
