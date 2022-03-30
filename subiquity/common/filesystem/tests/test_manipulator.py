@@ -13,19 +13,25 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import unittest
+
+import attr
 
 from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
-from subiquity.common.filesystem import gaps
+from subiquity.common.filesystem import gaps, sizes
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.models.tests.test_filesystem import (
     make_disk,
     make_model,
+    make_partition,
     )
 from subiquity.models.filesystem import (
     Bootloader,
+    MiB,
+    Partition,
     )
 
 
@@ -39,6 +45,31 @@ def make_manipulator(bootloader=None):
 def make_manipulator_and_disk(bootloader=None):
     manipulator = make_manipulator(bootloader)
     return manipulator, make_disk(manipulator.model)
+
+
+@attr.s(auto_attribs=True)
+class MoveResize:
+    part: Partition
+    offset: int
+    size: int
+
+
+def Move(part, offset):
+    return MoveResize(part, offset, 0)
+
+
+def Resize(part, size):
+    return MoveResize(part, 0, size)
+
+
+def Unchanged(part):
+    return MoveResize(part, 0, 0)
+
+
+@attr.s(auto_attribs=True)
+class Create:
+    offset: int
+    size: int
 
 
 class TestFilesystemManipulator(unittest.TestCase):
@@ -236,3 +267,239 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.add_boot_disk(disk1)
             part = gaps.parts_and_gaps(disk1)[0]
             self.assertEqual(1024 * 1024, part.offset)
+
+    @contextlib.contextmanager
+    def assertPartitionOperations(self, disk, *ops):
+
+        existing_parts = set(disk.partitions())
+        part_details = {}
+
+        for op in ops:
+            if isinstance(op, MoveResize):
+                part_details[op.part] = (
+                    op.part.offset + op.offset, op.part.size + op.size)
+
+        try:
+            yield
+        finally:
+            new_parts = set(disk.partitions())
+            created_parts = new_parts - existing_parts
+            try:
+                for op in ops:
+                    if isinstance(op, MoveResize):
+                        new_parts.remove(op.part)
+                        self.assertEqual(
+                            part_details[op.part],
+                            (op.part.offset, op.part.size))
+                    else:
+                        for part in created_parts:
+                            lhs = (part.offset, part.size)
+                            rhs = (op.offset, op.size)
+                            if lhs == rhs:
+                                created_parts.remove(part)
+                                new_parts.remove(part)
+                                break
+                        else:
+                            self.fail("did not find new partition")
+            except AssertionError as exc:
+                self.fail("Failure checking {}:\n{}".format(op, exc))
+            if new_parts:
+                self.fail("no assertion about {}".format(new_parts))
+
+    def test_add_boot_BIOS_empty(self):
+        manipulator = make_manipulator(Bootloader.BIOS)
+        disk = make_disk(manipulator.model, preserve=True)
+        with self.assertPartitionOperations(
+                disk,
+                Create(
+                    offset=disk.alignment_data().min_start_offset,
+                    size=sizes.BIOS_GRUB_SIZE_BYTES),
+                ):
+            manipulator.add_boot_disk(disk)
+
+        self.assertIsBootDisk(manipulator, disk)
+
+    def test_add_boot_BIOS_full(self):
+        manipulator = make_manipulator(Bootloader.BIOS)
+        disk = make_disk(manipulator.model, preserve=True)
+        part = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk))
+
+        with self.assertPartitionOperations(
+                disk,
+                Create(
+                    offset=disk.alignment_data().min_start_offset,
+                    size=sizes.BIOS_GRUB_SIZE_BYTES),
+                MoveResize(
+                    part=part,
+                    offset=sizes.BIOS_GRUB_SIZE_BYTES,
+                    size=-sizes.BIOS_GRUB_SIZE_BYTES),
+                ):
+            manipulator.add_boot_disk(disk)
+
+        self.assertIsBootDisk(manipulator, disk)
+
+    def test_add_boot_BIOS_half_full(self):
+        manipulator = make_manipulator(Bootloader.BIOS)
+        disk = make_disk(manipulator.model, preserve=True)
+        part = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk)//2)
+        with self.assertPartitionOperations(
+                disk,
+                Create(
+                    offset=disk.alignment_data().min_start_offset,
+                    size=sizes.BIOS_GRUB_SIZE_BYTES),
+                Move(
+                    part=part, offset=sizes.BIOS_GRUB_SIZE_BYTES),
+                ):
+            manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
+
+    def test_add_boot_BIOS_full_resizes_larger(self):
+        manipulator = make_manipulator(Bootloader.BIOS)
+        # 2002MiB so that the space available for partitioning (2000MiB)
+        # divided by 4 is an whole number of megabytes.
+        disk = make_disk(manipulator.model, preserve=True, size=2002*MiB)
+        part_smaller = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk)//4)
+        part_larger = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk))
+        with self.assertPartitionOperations(
+                disk,
+                Create(
+                    offset=disk.alignment_data().min_start_offset,
+                    size=sizes.BIOS_GRUB_SIZE_BYTES),
+                Move(
+                    part=part_smaller, offset=sizes.BIOS_GRUB_SIZE_BYTES),
+                MoveResize(
+                    part=part_larger,
+                    offset=sizes.BIOS_GRUB_SIZE_BYTES,
+                    size=-sizes.BIOS_GRUB_SIZE_BYTES),
+                ):
+            manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
+
+    def DONT_test_add_boot_BIOS_preserved(self):  # needs v2 partitioning
+        manipulator = make_manipulator(Bootloader.BIOS)
+        disk = make_disk(manipulator.model, preserve=True)
+        half_size = gaps.largest_gap_size(disk)//2
+        part = make_partition(
+            manipulator.model, disk, size=half_size, offset=half_size)
+        with self.assertPartitionOperations(
+                disk,
+                Create(
+                    offset=disk.alignment_data().min_start_offset,
+                    size=sizes.BIOS_GRUB_SIZE_BYTES),
+                Unchanged(part=part),
+                ):
+            manipulator.add_boot_disk(disk)
+
+    def _test_add_boot_empty(self, manipulator, disk, size):
+        with self.assertPartitionOperations(
+                disk,
+                Create(
+                    offset=disk.alignment_data().min_start_offset,
+                    size=size),
+                ):
+            manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
+
+    def test_add_boot_UEFI_empty(self):
+        manipulator = make_manipulator(Bootloader.UEFI)
+        disk = make_disk(manipulator.model, preserve=True)
+        self._test_add_boot_empty(
+            manipulator, disk, sizes.get_efi_size(disk))
+
+    def test_add_boot_PREP_empty(self):
+        manipulator = make_manipulator(Bootloader.PREP)
+        disk = make_disk(manipulator.model, preserve=True)
+        self._test_add_boot_empty(
+            manipulator, disk, sizes.PREP_GRUB_SIZE_BYTES)
+
+    def _test_add_boot_full(self, manipulator, disk, size):
+        part = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk))
+        with self.assertPartitionOperations(
+                disk,
+                Create(
+                    offset=disk.alignment_data().min_start_offset,
+                    size=size),
+                MoveResize(
+                    part=part,
+                    offset=size,
+                    size=-size),
+                ):
+            manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
+
+    def test_add_boot_UEFI_full(self):
+        manipulator = make_manipulator(Bootloader.UEFI)
+        disk = make_disk(manipulator.model, preserve=True)
+        self._test_add_boot_full(
+            manipulator, disk, sizes.get_efi_size(disk))
+
+    def test_add_boot_PREP_full(self):
+        manipulator = make_manipulator(Bootloader.PREP)
+        disk = make_disk(manipulator.model, preserve=True)
+        self._test_add_boot_full(
+            manipulator, disk, sizes.PREP_GRUB_SIZE_BYTES)
+
+    def _test_add_boot_half_full(self, manipulator, disk, size):
+        part = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk)//2)
+        with self.assertPartitionOperations(
+                disk,
+                Unchanged(part=part),
+                Create(
+                    offset=part.offset + part.size,
+                    size=size),
+                ):
+            manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
+
+    def test_add_boot_UEFI_half_full(self):
+        manipulator = make_manipulator(Bootloader.UEFI)
+        disk = make_disk(manipulator.model, preserve=True)
+        self._test_add_boot_half_full(
+            manipulator, disk, sizes.get_efi_size(disk))
+
+    def test_add_boot_PREP_half_full(self):
+        manipulator = make_manipulator(Bootloader.PREP)
+        disk = make_disk(manipulator.model, preserve=True)
+        self._test_add_boot_half_full(
+            manipulator, disk, sizes.PREP_GRUB_SIZE_BYTES)
+
+    def _test_add_boot_full_resizes_larger(self, manipulator, disk, size):
+        part_smaller = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk)//4)
+        part_larger = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk))
+        with self.assertPartitionOperations(
+                disk,
+                Unchanged(part_smaller),
+                Create(
+                    offset=part_smaller.offset + part_smaller.size,
+                    size=size),
+                MoveResize(
+                    part=part_larger,
+                    offset=size,
+                    size=-size),
+                ):
+            manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
+
+    def test_add_boot_UEFI_full_resizes_larger(self):
+        manipulator = make_manipulator(Bootloader.UEFI)
+        # 2002MiB so that the space available for partitioning (2000MiB)
+        # divided by 4 is an whole number of megabytes.
+        disk = make_disk(manipulator.model, preserve=True, size=2002*MiB)
+        self._test_add_boot_full_resizes_larger(
+            manipulator, disk, sizes.get_efi_size(disk))
+
+    def test_add_boot_PREP_full_resizes_larger(self):
+        manipulator = make_manipulator(Bootloader.PREP)
+        # 2002MiB so that the space available for partitioning (2000MiB)
+        # divided by 4 is an whole number of megabytes.
+        disk = make_disk(manipulator.model, preserve=True, size=2002*MiB)
+        self._test_add_boot_full_resizes_larger(
+            manipulator, disk, sizes.PREP_GRUB_SIZE_BYTES)
