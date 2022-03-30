@@ -287,7 +287,6 @@ class Disk:
     ptable: Optional[str]
     preserve: bool
     path: Optional[str]
-    free_for_partitions: int
     boot_device: bool
     model: Optional[str] = None
     vendor: Optional[str] = None
