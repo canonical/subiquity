@@ -165,3 +165,15 @@ def largest_gap_size(device):
     if largest is not None:
         return largest.size
     return 0
+
+
+def gap_after_partition(partition):
+    pg = parts_and_gaps(partition.device)
+    part_idx = pg.index(partition)
+    try:
+        gap = pg[part_idx + 1]
+    except IndexError:
+        return None
+    if isinstance(gap, Gap):
+        return gap
+    return None

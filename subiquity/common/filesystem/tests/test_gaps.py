@@ -13,7 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from functools import partial
 import unittest
+from unittest import mock
 
 from subiquity.models.filesystem import (
     PartitionAlignmentData,
@@ -165,3 +167,43 @@ class TestDiskGaps(unittest.TestCase):
                 gaps.Gap(d, 35, 15, True),
                 gaps.Gap(d, 50, 50, False),
             ])
+
+
+class TestGapAfterPartition(unittest.TestCase):
+    @mock.patch('subiquity.common.filesystem.gaps.parts_and_gaps')
+    def test_no_next_gap(self, parts_and_gaps):
+        info = PartitionAlignmentData(
+            part_align=10, min_gap_size=1, min_start_offset=10,
+            min_end_offset=10, primary_part_limit=10)
+        parts_and_gaps.side_effect = partial(gaps.find_disk_gaps_v2, info=info)
+        m, d = make_model_and_disk(size=100)
+        p = make_partition(m, d, offset=10, size=80)
+        self.assertIsNone(gaps.gap_after_partition(p))
+
+    @mock.patch('subiquity.common.filesystem.gaps.parts_and_gaps')
+    def test_next_gap(self, parts_and_gaps):
+        info = PartitionAlignmentData(
+            part_align=10, min_gap_size=1, min_start_offset=10,
+            min_end_offset=10, primary_part_limit=10)
+        parts_and_gaps.side_effect = partial(gaps.find_disk_gaps_v2, info=info)
+        m, d = make_model_and_disk(size=100)
+        p1 = make_partition(m, d, offset=10, size=20)
+        p2 = make_partition(m, d, offset=50, size=10)
+        g1 = gaps.gap_after_partition(p1)
+        self.assertEqual(gaps.Gap(device=d, offset=30, size=20), g1)
+        g2 = gaps.gap_after_partition(p2)
+        self.assertEqual(gaps.Gap(device=d, offset=60, size=30), g2)
+
+    @mock.patch('subiquity.common.filesystem.gaps.parts_and_gaps')
+    def test_next_is_not_a_gap(self, parts_and_gaps):
+        info = PartitionAlignmentData(
+            part_align=10, min_gap_size=1, min_start_offset=10,
+            min_end_offset=10, primary_part_limit=10)
+        parts_and_gaps.side_effect = partial(gaps.find_disk_gaps_v2, info=info)
+        m, d = make_model_and_disk(size=100)
+        p1 = make_partition(m, d, offset=10, size=40)
+        p2 = make_partition(m, d, offset=50, size=10)
+        g1 = gaps.gap_after_partition(p1)
+        self.assertIsNone(g1)
+        g2 = gaps.gap_after_partition(p2)
+        self.assertEqual(gaps.Gap(device=d, offset=60, size=30), g2)
