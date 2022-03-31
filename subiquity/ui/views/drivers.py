@@ -143,7 +143,10 @@ class DriversView(BaseView):
         self.cont_btn = ok_btn(
                 _("Continue"),
                 on_press=lambda sender: self.done(False))
-        self._w = screen(rows, [self.cont_btn])
+        self.back_btn = back_btn(
+                _("Back"),
+                on_press=lambda sender: self.cancel())
+        self._w = screen(rows, [self.cont_btn, self.back_btn])
         self.status = DriversViewStatus.NO_DRIVERS
 
     def make_main(self, install: bool, drivers: List[str]) -> None:
