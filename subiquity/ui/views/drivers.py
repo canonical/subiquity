@@ -69,12 +69,14 @@ class DriversView(BaseView):
     form = None
 
     def __init__(self, controller, drivers: Optional[List[str]],
-                 install: bool) -> None:
+                 install: bool, local_only: bool) -> None:
         self.controller = controller
+        self.local_only = local_only
 
         self.search_later = [
-            Text(_("Note: You can search again later for third-party " +
-                   "drivers using the command:")),
+            Text(_("Note: Once the installation has finished and you are " +
+                   "connected to a network, you can search again for " +
+                   "third-party drivers using the following command:")),
             Text(""),
             Text("  $ ubuntu-drivers list --recommended --gpgpu"),
         ]
@@ -91,8 +93,17 @@ class DriversView(BaseView):
         asynchronously. """
         self.spinner = Spinner(self.controller.app.aio_loop, style='dots')
         self.spinner.start()
+
+        if self.local_only:
+            looking_for_drivers = _("Not connected to a network. " +
+                                    "Looking for applicable third-party " +
+                                    "drivers available locally...")
+        else:
+            looking_for_drivers = _("Looking for applicable third-party " +
+                                    "drivers available locally or online...")
+
         rows = [
-            Text(_("Looking for applicable third-party drivers...")),
+            Text(looking_for_drivers),
             Text(""),
             self.spinner,
             ]
@@ -117,10 +128,18 @@ class DriversView(BaseView):
         """ Change the view into an information page that shows that no
         third-party drivers are available for installation. """
 
-        rows = [
-            Text(_("No applicable third-party drivers were found.")),
-            Text(""),
-        ] + self.search_later
+        if self.local_only:
+            no_drivers_found = _("No applicable third-party drivers are " +
+                                 "available locally.")
+        else:
+            no_drivers_found = _("No applicable third-party drivers are " +
+                                 "available locally or online.")
+
+        rows = [Text(no_drivers_found)]
+        if self.local_only:
+            rows.append(Text(""))
+            rows.extend(self.search_later)
+
         self.cont_btn = ok_btn(
                 _("Continue"),
                 on_press=lambda sender: self.done(False))
@@ -149,8 +168,10 @@ class DriversView(BaseView):
         rows = [Text(f"* {driver}") for driver in drivers]
         rows.append(Text(""))
         rows.extend(self.form.as_rows())
-        rows.append(Text(""))
-        rows.extend(self.search_later)
+
+        if self.local_only:
+            rows.append(Text(""))
+            rows.extend(self.search_later)
 
         self._w = screen(rows, self.form.buttons, excerpt=excerpt)
         self.status = DriversViewStatus.MAIN

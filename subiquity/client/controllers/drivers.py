@@ -38,7 +38,8 @@ class DriversController(SubiquityTuiController):
             raise Skip
 
         response: DriversResponse = await self.endpoint.GET()
-        return DriversView(self, response.drivers, response.install)
+        return DriversView(self, response.drivers,
+                           response.install, response.local_only)
 
     async def _wait_drivers(self) -> List[str]:
         response: DriversResponse = await self.endpoint.GET(wait=True)

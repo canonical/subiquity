@@ -98,10 +98,13 @@ class DriversController(SubiquityController):
             await self.configured()
 
     async def GET(self, wait: bool = False) -> DriversResponse:
+        local_only = not self.app.base_model.network.has_network
         if wait:
             await asyncio.shield(self._drivers_task)
+
         return DriversResponse(install=self.model.do_install,
-                               drivers=self.drivers)
+                               drivers=self.drivers,
+                               local_only=local_only)
 
     async def POST(self, data: DriversPayload) -> None:
         self.model.do_install = data.install

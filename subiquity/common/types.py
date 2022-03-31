@@ -398,9 +398,11 @@ class DriversResponse:
     :drivers: tells what third-party drivers will be installed should we decide
     to do it. It will bet set to None until we figure out what drivers are
     available.
+    :local_only: tells if we are looking for drivers only from the ISO.
     """
     install: bool
     drivers: Optional[List[str]]
+    local_only: bool
 
 
 @attr.s(auto_attribs=True)
