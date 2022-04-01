@@ -176,6 +176,8 @@ def movable_trailing_partitions_and_gap(partition):
     for idx in range(part_idx + 1, len(pgs)):
         pg = pgs[idx]
         if isinstance(pg, Partition):
+            if pg.preserve:
+                break
             if in_extended and pg.flag != "logical":
                 break
             trailing_partitions.append(pg)

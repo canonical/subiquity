@@ -305,3 +305,16 @@ class TestMovableTrailingPartitionsAndGaps(unittest.TestCase):
         self.assertEqual(
             ([p6], None),
             mtpg)
+
+    def test_trailing_preserved_partition(self):
+        self.use_alignment_data(PartitionAlignmentData(
+            part_align=10, min_gap_size=1, min_start_offset=10,
+            min_end_offset=10, primary_part_limit=10))
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # #####[ p1               ][ p2 p   ]          #####
+        m, d = make_model_and_disk(size=100)
+        p1 = make_partition(m, d, offset=10, size=40)
+        make_partition(m, d, offset=50, size=20, preserve=True)
+        self.assertEqual(
+            ([], None),
+            gaps.movable_trailing_partitions_and_gap(p1))
