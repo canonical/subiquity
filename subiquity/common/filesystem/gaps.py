@@ -168,7 +168,7 @@ def largest_gap_size(device):
     return 0
 
 
-def movable_trailing_partitions_and_gap(partition):
+def movable_trailing_partitions_and_gap_size(partition):
     pgs = parts_and_gaps(partition.device)
     part_idx = pgs.index(partition)
     trailing_partitions = []
@@ -183,7 +183,7 @@ def movable_trailing_partitions_and_gap(partition):
             trailing_partitions.append(pg)
         else:
             if pg.in_extended == in_extended:
-                return (trailing_partitions, pg)
+                return (trailing_partitions, pg.size)
             else:
-                return (trailing_partitions, None)
-    return (trailing_partitions, None)
+                return (trailing_partitions, 0)
+    return (trailing_partitions, 0)
