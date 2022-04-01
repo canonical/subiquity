@@ -13,7 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from functools import partial
 import unittest
+from unittest import mock
 
 from subiquity.models.filesystem import (
     PartitionAlignmentData,
@@ -165,3 +167,62 @@ class TestDiskGaps(unittest.TestCase):
                 gaps.Gap(d, 35, 15, True),
                 gaps.Gap(d, 50, 50, False),
             ])
+
+
+class TestMovableTrailingPartitionsAndGaps(unittest.TestCase):
+
+    def use_alignment_data(self, alignment_data):
+        m = mock.patch('subiquity.common.filesystem.gaps.parts_and_gaps')
+        p = m.start()
+        self.addCleanup(m.stop)
+        p.side_effect = partial(
+            gaps.find_disk_gaps_v2, info=alignment_data)
+
+    def test_no_next_gap(self):
+        self.use_alignment_data(PartitionAlignmentData(
+            part_align=10, min_gap_size=1, min_start_offset=10,
+            min_end_offset=10, primary_part_limit=10))
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # #####[ p1                                   ]#####
+        m, d = make_model_and_disk(size=100)
+        p = make_partition(m, d, offset=10, size=80)
+        self.assertEqual(
+            gaps.movable_trailing_partitions_and_gap(p), ([], None))
+
+    def test_immediately_trailing_gap(self):
+        self.use_alignment_data(PartitionAlignmentData(
+            part_align=10, min_gap_size=1, min_start_offset=10,
+            min_end_offset=10, primary_part_limit=10))
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # #####[ p1      ]         [ p2 ]              #####
+        m, d = make_model_and_disk(size=100)
+        p1 = make_partition(m, d, offset=10, size=20)
+        p2 = make_partition(m, d, offset=50, size=10)
+        mtpg1 = gaps.movable_trailing_partitions_and_gap(p1)
+        self.assertEqual(([], gaps.Gap(device=d, offset=30, size=20)), mtpg1)
+        mtpg2 = gaps.movable_trailing_partitions_and_gap(p2)
+        self.assertEqual(([], gaps.Gap(device=d, offset=60, size=30)), mtpg2)
+
+    def test_one_trailing_movable_partition_and_gap(self):
+        self.use_alignment_data(PartitionAlignmentData(
+            part_align=10, min_gap_size=1, min_start_offset=10,
+            min_end_offset=10, primary_part_limit=10))
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # #####[ p1               ][ p2 ]              #####
+        m, d = make_model_and_disk(size=100)
+        p1 = make_partition(m, d, offset=10, size=40)
+        p2 = make_partition(m, d, offset=50, size=10)
+        mtpg = gaps.movable_trailing_partitions_and_gap(p1)
+        self.assertEqual(([p2], gaps.Gap(device=d, offset=60, size=30)), mtpg)
+
+    def test_one_trailing_movable_partition_and_no_gap(self):
+        self.use_alignment_data(PartitionAlignmentData(
+            part_align=10, min_gap_size=1, min_start_offset=10,
+            min_end_offset=10, primary_part_limit=10))
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # #####[ p1               ][ p2               ]#####
+        m, d = make_model_and_disk(size=100)
+        p1 = make_partition(m, d, offset=10, size=40)
+        p2 = make_partition(m, d, offset=50, size=40)
+        mtpg = gaps.movable_trailing_partitions_and_gap(p1)
+        self.assertEqual(([p2], None), mtpg)
