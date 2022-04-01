@@ -187,7 +187,8 @@ class TestMovableTrailingPartitionsAndGaps(unittest.TestCase):
         m, d = make_model_and_disk(size=100)
         p = make_partition(m, d, offset=10, size=80)
         self.assertEqual(
-            gaps.movable_trailing_partitions_and_gap(p), ([], None))
+            ([], None),
+            gaps.movable_trailing_partitions_and_gap(p))
 
     def test_immediately_trailing_gap(self):
         self.use_alignment_data(PartitionAlignmentData(
@@ -198,10 +199,12 @@ class TestMovableTrailingPartitionsAndGaps(unittest.TestCase):
         m, d = make_model_and_disk(size=100)
         p1 = make_partition(m, d, offset=10, size=20)
         p2 = make_partition(m, d, offset=50, size=10)
-        mtpg1 = gaps.movable_trailing_partitions_and_gap(p1)
-        self.assertEqual(([], gaps.Gap(device=d, offset=30, size=20)), mtpg1)
-        mtpg2 = gaps.movable_trailing_partitions_and_gap(p2)
-        self.assertEqual(([], gaps.Gap(device=d, offset=60, size=30)), mtpg2)
+        self.assertEqual(
+            ([], gaps.Gap(device=d, offset=30, size=20)),
+            gaps.movable_trailing_partitions_and_gap(p1))
+        self.assertEqual(
+            ([], gaps.Gap(device=d, offset=60, size=30)),
+            gaps.movable_trailing_partitions_and_gap(p2))
 
     def test_one_trailing_movable_partition_and_gap(self):
         self.use_alignment_data(PartitionAlignmentData(
@@ -212,8 +215,9 @@ class TestMovableTrailingPartitionsAndGaps(unittest.TestCase):
         m, d = make_model_and_disk(size=100)
         p1 = make_partition(m, d, offset=10, size=40)
         p2 = make_partition(m, d, offset=50, size=10)
-        mtpg = gaps.movable_trailing_partitions_and_gap(p1)
-        self.assertEqual(([p2], gaps.Gap(device=d, offset=60, size=30)), mtpg)
+        self.assertEqual(
+            ([p2], gaps.Gap(device=d, offset=60, size=30)),
+            gaps.movable_trailing_partitions_and_gap(p1))
 
     def test_one_trailing_movable_partition_and_no_gap(self):
         self.use_alignment_data(PartitionAlignmentData(
@@ -224,5 +228,80 @@ class TestMovableTrailingPartitionsAndGaps(unittest.TestCase):
         m, d = make_model_and_disk(size=100)
         p1 = make_partition(m, d, offset=10, size=40)
         p2 = make_partition(m, d, offset=50, size=40)
-        mtpg = gaps.movable_trailing_partitions_and_gap(p1)
-        self.assertEqual(([p2], None), mtpg)
+        self.assertEqual(
+            ([p2], None),
+            gaps.movable_trailing_partitions_and_gap(p1))
+
+    def test_full_extended_partition_then_gap(self):
+        self.use_alignment_data(PartitionAlignmentData(
+            part_align=1, min_gap_size=1, min_start_offset=10,
+            min_end_offset=10, primary_part_limit=10, ebr_space=2))
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # #####[ p1 (extended)    ]                    #####
+        # ######[ p5 (logical)    ]                    #####
+        m, d = make_model_and_disk(size=100)
+        make_partition(m, d, offset=10, size=40, flag='extended')
+        p5 = make_partition(m, d, offset=12, size=38, flag='logical')
+        self.assertEqual(
+            ([], None),
+            gaps.movable_trailing_partitions_and_gap(p5))
+
+    def test_full_extended_partition_then_part(self):
+        self.use_alignment_data(PartitionAlignmentData(
+            part_align=1, min_gap_size=1, min_start_offset=10,
+            min_end_offset=10, primary_part_limit=10, ebr_space=2))
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # #####[ p1 (extended)    ][ p2               ]#####
+        # ######[ p5 (logical)    ]                    #####
+        m, d = make_model_and_disk(size=100)
+        make_partition(m, d, offset=10, size=40, flag='extended')
+        make_partition(m, d, offset=50, size=40)
+        p5 = make_partition(m, d, offset=12, size=38, flag='logical')
+        self.assertEqual(
+            ([], None),
+            gaps.movable_trailing_partitions_and_gap(p5))
+
+    def test_gap_in_extended_partition(self):
+        self.use_alignment_data(PartitionAlignmentData(
+            part_align=1, min_gap_size=1, min_start_offset=10,
+            min_end_offset=10, primary_part_limit=10, ebr_space=2))
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # #####[ p1 (extended)    ]                    #####
+        # ######[ p5 (logical)]                        #####
+        m, d = make_model_and_disk(size=100)
+        make_partition(m, d, offset=10, size=40, flag='extended')
+        p5 = make_partition(m, d, offset=12, size=30, flag='logical')
+        self.assertEqual(
+            ([], gaps.Gap(device=d, offset=44, size=6, in_extended=True)),
+            gaps.movable_trailing_partitions_and_gap(p5))
+
+    def test_trailing_logical_partition_then_gap(self):
+        self.use_alignment_data(PartitionAlignmentData(
+            part_align=1, min_gap_size=1, min_start_offset=10,
+            min_end_offset=10, primary_part_limit=10, ebr_space=2))
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # #####[ p1 (extended)                        ]#####
+        # ######[ p5 (logical)] [ p6 (logical)]        #####
+        m, d = make_model_and_disk(size=100)
+        make_partition(m, d, offset=10, size=80, flag='extended')
+        p5 = make_partition(m, d, offset=12, size=30, flag='logical')
+        p6 = make_partition(m, d, offset=44, size=30, flag='logical')
+        self.assertEqual(
+            ([p6], gaps.Gap(device=d, offset=76, size=14, in_extended=True)),
+            gaps.movable_trailing_partitions_and_gap(p5))
+
+    def test_trailing_logical_partition_then_no_gap(self):
+        self.use_alignment_data(PartitionAlignmentData(
+            part_align=1, min_gap_size=1, min_start_offset=10,
+            min_end_offset=10, primary_part_limit=10, ebr_space=2))
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # #####[ p1 (extended)                        ]#####
+        # ######[ p5 (logical)] [ p6 (logical)       ] #####
+        m, d = make_model_and_disk(size=100)
+        make_partition(m, d, offset=10, size=80, flag='extended')
+        p5 = make_partition(m, d, offset=12, size=30, flag='logical')
+        p6 = make_partition(m, d, offset=44, size=44, flag='logical')
+        mtpg = gaps.movable_trailing_partitions_and_gap(p5)
+        self.assertEqual(
+            ([p6], None),
+            mtpg)

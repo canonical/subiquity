@@ -169,13 +169,19 @@ def largest_gap_size(device):
 
 
 def movable_trailing_partitions_and_gap(partition):
-    pg = parts_and_gaps(partition.device)
-    part_idx = pg.index(partition)
+    pgs = parts_and_gaps(partition.device)
+    part_idx = pgs.index(partition)
     trailing_partitions = []
-    for idx in range(part_idx + 1, len(pg)):
-        p = pg[idx]
-        if isinstance(p, Partition):
-            trailing_partitions.append(p)
+    in_extended = partition.flag == "logical"
+    for idx in range(part_idx + 1, len(pgs)):
+        pg = pgs[idx]
+        if isinstance(pg, Partition):
+            if in_extended and pg.flag != "logical":
+                break
+            trailing_partitions.append(pg)
         else:
-            return (trailing_partitions, p)
+            if pg.in_extended == in_extended:
+                return (trailing_partitions, pg)
+            else:
+                return (trailing_partitions, None)
     return (trailing_partitions, None)
