@@ -181,6 +181,8 @@ def get_boot_device_plan_bios(device) -> Optional[MakeBootDevicePlan]:
             else:
                 return None
         elif pg.preserve:
+            if device._m.storage_version == 1:
+                return None
             break
         else:
             movable.append(pg)
