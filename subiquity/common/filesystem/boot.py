@@ -156,11 +156,9 @@ def get_boot_device_plan_bios(device) -> Optional[MakeBootDevicePlan]:
     attr_plan = SetAttrPlan(device, 'grub_device', True)
     if device.ptable == 'msdos':
         return attr_plan
-    if device._has_preexisting_partition():
-        if device._partitions[0].flag == "bios_grub":
-            return attr_plan
-        else:
-            return None
+    pgs = gaps.parts_and_gaps(device)
+    if isinstance(pgs[0], Partition) and pgs[0].flag == "bios_grub":
+        return attr_plan
 
     create_part_plan = CreatePartPlan(
         device=device,
@@ -168,30 +166,41 @@ def get_boot_device_plan_bios(device) -> Optional[MakeBootDevicePlan]:
         spec=dict(size=sizes.BIOS_GRUB_SIZE_BYTES, fstype=None, mount=None),
         args=dict(flag='bios_grub'))
 
-    partitions = device.partitions()
+    movable = []
 
-    if gaps.largest_gap_size(device) >= sizes.BIOS_GRUB_SIZE_BYTES:
-        return MultiStepPlan(plans=[
-            SlidePlan(
-                parts=partitions,
-                offset_delta=sizes.BIOS_GRUB_SIZE_BYTES),
-            create_part_plan,
-            attr_plan,
-            ])
-    else:
-        largest_i, largest_part = max(
-            enumerate(partitions),
-            key=lambda i_p: i_p[1].size)
-        return MultiStepPlan(plans=[
-            SlidePlan(
-                parts=partitions[:largest_i+1],
-                offset_delta=sizes.BIOS_GRUB_SIZE_BYTES),
-            ResizePlan(
-                part=largest_part,
-                size_delta=-sizes.BIOS_GRUB_SIZE_BYTES),
-            create_part_plan,
-            attr_plan,
-            ])
+    for pg in pgs:
+        if isinstance(pg, gaps.Gap):
+            if pg.size >= sizes.BIOS_GRUB_SIZE_BYTES:
+                return MultiStepPlan(plans=[
+                    SlidePlan(
+                        parts=movable,
+                        offset_delta=sizes.BIOS_GRUB_SIZE_BYTES),
+                    create_part_plan,
+                    attr_plan,
+                    ])
+            else:
+                return None
+        elif pg.preserve:
+            break
+        else:
+            movable.append(pg)
+
+    if not movable:
+        return None
+
+    largest_i, largest_part = max(
+        enumerate(movable),
+        key=lambda i_p: i_p[1].size)
+    return MultiStepPlan(plans=[
+        SlidePlan(
+            parts=movable[:largest_i+1],
+            offset_delta=sizes.BIOS_GRUB_SIZE_BYTES),
+        ResizePlan(
+            part=largest_part,
+            size_delta=-sizes.BIOS_GRUB_SIZE_BYTES),
+        create_part_plan,
+        attr_plan,
+        ])
 
 
 def get_add_part_plan(device, *, spec, args):

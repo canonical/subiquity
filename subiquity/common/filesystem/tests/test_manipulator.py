@@ -18,10 +18,12 @@ import unittest
 
 import attr
 
+import pytest
+
 from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
-from subiquity.common.filesystem import gaps, sizes
+from subiquity.common.filesystem import boot, gaps, sizes
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.models.tests.test_filesystem import (
     make_disk,
@@ -35,9 +37,10 @@ from subiquity.models.filesystem import (
     )
 
 
-def make_manipulator(bootloader=None):
+def make_manipulator(bootloader=None, storage_version=1):
     manipulator = FilesystemManipulator()
     manipulator.model = make_model(bootloader)
+    manipulator.model.storage_version = storage_version
     manipulator.supports_resilient_boot = True
     return manipulator
 
@@ -125,7 +128,8 @@ class TestFilesystemManipulator(unittest.TestCase):
     def assertIsBootDisk(self, manipulator, disk):
         if manipulator.model.bootloader == Bootloader.BIOS:
             self.assertTrue(disk.grub_device)
-            self.assertEqual(disk.partitions()[0].flag, "bios_grub")
+            if disk.ptable == 'gpt':
+                self.assertEqual(disk.partitions()[0].flag, "bios_grub")
         elif manipulator.model.bootloader == Bootloader.UEFI:
             for part in disk.partitions():
                 if part.flag == "boot" and part.grub_device:
@@ -379,12 +383,13 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
-    def DONT_test_add_boot_BIOS_preserved(self):  # needs v2 partitioning
-        manipulator = make_manipulator(Bootloader.BIOS)
+    def test_add_boot_BIOS_preserved(self):
+        manipulator = make_manipulator(Bootloader.BIOS, 2)
         disk = make_disk(manipulator.model, preserve=True)
         half_size = gaps.largest_gap_size(disk)//2
         part = make_partition(
-            manipulator.model, disk, size=half_size, offset=half_size)
+            manipulator.model, disk, size=half_size, offset=half_size,
+            preserve=True)
         with self.assertPartitionOperations(
                 disk,
                 Create(
@@ -393,6 +398,59 @@ class TestFilesystemManipulator(unittest.TestCase):
                 Unchanged(part=part),
                 ):
             manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
+
+    def test_add_boot_BIOS_new_and_preserved(self):
+        manipulator = make_manipulator(Bootloader.BIOS, 2)
+        # 2002MiB so that the space available for partitioning (2000MiB)
+        # divided by 4 is an whole number of megabytes.
+        disk = make_disk(manipulator.model, preserve=True, size=2002*MiB)
+        avail = gaps.largest_gap_size(disk)
+        p1_new = make_partition(
+            manipulator.model, disk, size=avail//4)
+        p2_preserved = make_partition(
+            manipulator.model, disk, size=3*avail//4, preserve=True)
+        with self.assertPartitionOperations(
+                disk,
+                Create(
+                    offset=disk.alignment_data().min_start_offset,
+                    size=sizes.BIOS_GRUB_SIZE_BYTES),
+                MoveResize(
+                    part=p1_new,
+                    offset=sizes.BIOS_GRUB_SIZE_BYTES,
+                    size=-sizes.BIOS_GRUB_SIZE_BYTES),
+                Unchanged(part=p2_preserved),
+                ):
+            manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
+
+    def _test_no_add_boot_BIOS_preserved_at_start(self, version):
+        manipulator = make_manipulator(Bootloader.BIOS, version)
+        disk = make_disk(manipulator.model, preserve=True)
+        half_size = gaps.largest_gap_size(disk)//2
+        make_partition(
+            manipulator.model, disk, size=half_size,
+            preserve=True)
+        self.assertFalse(boot.can_be_boot_device(disk))
+
+    def test_no_add_boot_BIOS_preserved_at_start_v1(self):
+        self._test_no_add_boot_BIOS_preserved_at_start(1)
+
+    def test_no_add_boot_BIOS_preserved_at_start_v2(self):
+        self._test_no_add_boot_BIOS_preserved_at_start(2)
+
+    def test_add_boot_BIOS_msdos(self):
+        manipulator = make_manipulator(Bootloader.BIOS)
+        disk = make_disk(manipulator.model, preserve=True, ptable='msdos')
+        part = make_partition(
+            manipulator.model, disk, size=gaps.largest_gap_size(disk),
+            preserve=True)
+        with self.assertPartitionOperations(
+                disk,
+                Unchanged(part=part),
+                ):
+            manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
 
     def _test_add_boot_empty(self, manipulator, disk, size):
         with self.assertPartitionOperations(
