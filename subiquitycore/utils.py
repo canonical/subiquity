@@ -84,6 +84,8 @@ async def arun_command(cmd: List[str], *,
         if stderr is not None:
             stderr = stderr.decode(encoding)
     log.debug("arun_command %s exited with code %s", cmd, proc.returncode)
+    # .communicate() forces returncode to be set to a value
+    assert(proc.returncode is not None)
     if check and proc.returncode != 0:
         raise subprocess.CalledProcessError(proc.returncode, cmd)
     else:
