@@ -17,7 +17,6 @@ import asyncio
 import logging
 import os
 import shlex
-import shutil
 import sys
 import time
 from typing import List, Optional
@@ -37,7 +36,10 @@ import yaml
 from subiquitycore.async_helpers import run_in_thread
 from subiquitycore.context import with_context
 from subiquitycore.core import Application
-from subiquitycore.file_util import write_file
+from subiquitycore.file_util import (
+    copy_file_if_exists,
+    write_file,
+    )
 from subiquitycore.prober import Prober
 from subiquitycore.ssh import (
     host_key_fingerprints,
@@ -567,18 +569,8 @@ class SubiquityServer(Application):
             return None
 
         isopath = self.base_relative(iso_autoinstall_path)
-        self.copy_autoinstall(loc, isopath)
+        copy_file_if_exists(loc, isopath)
         return isopath
-
-    def copy_autoinstall(self, source, target):
-        if source is None or not os.path.exists(source):
-            return
-        dirname = os.path.dirname(target)
-        os.makedirs(dirname, exist_ok=True)
-        try:
-            shutil.copyfile(source, target)
-        except shutil.SameFileError:
-            pass
 
     def _user_has_password(self, username):
         with open('/etc/shadow') as fp:
@@ -657,9 +649,10 @@ class SubiquityServer(Application):
                 open(stamp_file, 'w').close()
                 await asyncio.sleep(1)
         self.load_autoinstall_config(only_early=False)
-        self.copy_autoinstall(
-            self.autoinstall,
-            self.base_relative(reload_autoinstall_path))
+        if self.autoinstall is not None:
+            copy_file_if_exists(
+                self.autoinstall,
+                self.base_relative(reload_autoinstall_path))
         if self.autoinstall_config:
             self.interactive = bool(
                 self.autoinstall_config.get('interactive-sections'))

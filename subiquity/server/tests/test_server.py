@@ -27,10 +27,6 @@ from subiquity.server.server import (
 
 
 class TestAutoinstallLoad(SubiTestCase):
-    def assertContents(self, path, expected):
-        with open(path, 'r') as fp:
-            self.assertEqual(expected, fp.read())
-
     def setUp(self):
         self.tempdir = self.tmp_dir()
         opts = Mock()
@@ -66,7 +62,7 @@ class TestAutoinstallLoad(SubiTestCase):
         self.create(cloud_autoinstall_path, 'cloud')
         iso = self.create(iso_autoinstall_path, 'iso')
         self.assertEqual(iso, self.server.select_autoinstall())
-        self.assertContents(iso, 'reload')
+        self.assert_contents(iso, 'reload')
 
     def test_arg_wins(self):
         arg = self.create(self.path('arg.autoinstall.yaml'), 'arg')
@@ -74,28 +70,21 @@ class TestAutoinstallLoad(SubiTestCase):
         self.create(cloud_autoinstall_path, 'cloud')
         iso = self.create(iso_autoinstall_path, 'iso')
         self.assertEqual(iso, self.server.select_autoinstall())
-        self.assertContents(iso, 'arg')
+        self.assert_contents(iso, 'arg')
 
     def test_cloud_wins(self):
         self.create(cloud_autoinstall_path, 'cloud')
         iso = self.create(iso_autoinstall_path, 'iso')
         self.assertEqual(iso, self.server.select_autoinstall())
-        self.assertContents(iso, 'cloud')
+        self.assert_contents(iso, 'cloud')
 
     def test_iso_wins(self):
         iso = self.create(iso_autoinstall_path, 'iso')
         self.assertEqual(iso, self.server.select_autoinstall())
-        self.assertContents(iso, 'iso')
+        self.assert_contents(iso, 'iso')
 
     def test_nobody_wins(self):
         self.assertIsNone(self.server.select_autoinstall())
-
-    def test_copied_to_reload(self):
-        data = 'stuff things'
-        src = self.create(self.path('test.yaml'), data)
-        tgt = self.path(reload_autoinstall_path)
-        self.server.copy_autoinstall(src, tgt)
-        self.assertContents(tgt, data)
 
     def test_bogus_autoinstall_argument(self):
         self.server.opts.autoinstall = self.path('nonexistant.yaml')
