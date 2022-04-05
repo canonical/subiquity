@@ -57,7 +57,7 @@ class TestMockedUAInterfaceStrategy(unittest.TestCase):
 
 
 class TestUAClientUAInterfaceStrategy(unittest.TestCase):
-    arun_command = "subiquity.server.ubuntu_advantage.utils.arun_command"
+    arun_command_sym = "subiquity.server.ubuntu_advantage.utils.arun_command"
 
     def test_init(self):
         # Default initializer.
@@ -84,7 +84,7 @@ class TestUAClientUAInterfaceStrategy(unittest.TestCase):
             "--simulate-with-token", "123456789",
         )
 
-        with patch(self.arun_command) as mock_arun:
+        with patch(self.arun_command_sym) as mock_arun:
             mock_arun.return_value = CompletedProcess([], 0)
             mock_arun.return_value.stdout = "{}"
             run_coro(strategy.query_info(token="123456789"))
@@ -99,7 +99,7 @@ class TestUAClientUAInterfaceStrategy(unittest.TestCase):
             "--simulate-with-token", "123456789",
         )
 
-        with patch(self.arun_command) as mock_arun:
+        with patch(self.arun_command_sym) as mock_arun:
             mock_arun.side_effect = CalledProcessError(returncode=1,
                                                        cmd=command)
             mock_arun.return_value.stdout = "{}"
@@ -116,7 +116,7 @@ class TestUAClientUAInterfaceStrategy(unittest.TestCase):
             "--simulate-with-token", "123456789",
         )
 
-        with patch(self.arun_command) as mock_arun:
+        with patch(self.arun_command_sym) as mock_arun:
             mock_arun.return_value = CompletedProcess([], 0)
             mock_arun.return_value.stdout = "invalid-json"
             with self.assertRaises(CheckSubscriptionError):
