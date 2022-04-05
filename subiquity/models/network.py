@@ -15,12 +15,12 @@
 
 import logging
 
-from subiquitycore.models.network import NetworkModel
+from subiquitycore.models.network import NetworkModel as CoreNetworkModel
 
 log = logging.getLogger('subiquity.models.network')
 
 
-class NetworkModel(NetworkModel):
+class NetworkModel(CoreNetworkModel):
 
     def __init__(self):
         super().__init__("subiquity")
