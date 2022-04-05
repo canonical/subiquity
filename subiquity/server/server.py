@@ -141,7 +141,7 @@ class MetaController:
         return self.app.variant
 
     async def ssh_info_GET(self) -> Optional[LiveSessionSSHInfo]:
-        ips = []
+        ips: List[str] = []
         if self.app.base_model.network:
             for dev in self.app.base_model.network.get_all_netdevs():
                 ips.extend(map(str, dev.actual_global_ip_addresses))

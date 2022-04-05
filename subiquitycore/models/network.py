@@ -20,7 +20,7 @@ import logging
 import yaml
 from socket import AF_INET, AF_INET6
 import attr
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from subiquitycore import netplan
 
@@ -231,7 +231,7 @@ class NetworkDev(object):
             wlan = None
 
         dhcp_addresses = self.dhcp_addresses()
-        configured_addresses = {4: [], 6: []}
+        configured_addresses: Dict[int, List[str]] = {4: [], 6: []}
         if self.config is not None:
             for addr in self.config.get('addresses', []):
                 configured_addresses[addr_version(addr)].append(addr)

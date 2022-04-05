@@ -291,7 +291,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
         await self.configured()
 
     async def global_addresses_GET(self) -> List[str]:
-        ips = []
+        ips: List[str] = []
         for dev in self.model.get_all_netdevs():
             ips.extend(map(str, dev.actual_global_ip_addresses))
         return ips

@@ -20,13 +20,13 @@ import logging
 import os
 import subprocess
 import sys
-from typing import List
+from typing import Dict, List, Type
 
 from curtin.commands.install import (
     INSTALL_LOG,
     )
 
-from subiquitycore.context import Status
+from subiquitycore.context import Context, Status
 
 from subiquity.journald import (
     journald_listen,
@@ -43,7 +43,7 @@ class _CurtinCommand:
                  config=None, private_mounts: bool):
         self.opts = opts
         self.runner = runner
-        self._event_contexts = {}
+        self._event_contexts: Dict[str, Context] = {}
         _CurtinCommand._count += 1
         self._event_syslog_id = 'curtin_event.%s.%s' % (
             os.getpid(), _CurtinCommand._count)
@@ -155,7 +155,8 @@ class _FailingDryRunCurtinCommand(_DryRunCurtinCommand):
 async def start_curtin_command(app, context,
                                command: str, *args: str,
                                config=None, private_mounts: bool,
-                               **opts):
+                               **opts) -> _CurtinCommand:
+    cls: Type[_CurtinCommand]
     if app.opts.dry_run:
         if 'install-fail' in app.debug_flags:
             cls = _FailingDryRunCurtinCommand
