@@ -516,8 +516,8 @@ class FilesystemView(BaseView):
                     raid_devices.add(p)
                 if p.ok_for_lvm_vg:
                     lvm_devices.add(p)
-            self._create_raid_btn.enabled = len(raid_devices) > 1
-            self._create_vg_btn.enabled = len(lvm_devices) > 0
+        self._create_raid_btn.enabled = len(raid_devices) > 1
+        self._create_vg_btn.enabled = len(lvm_devices) > 0
         self.mount_list.refresh_model_inputs()
         self.avail_list.refresh_model_inputs()
         self.used_list.refresh_model_inputs()
