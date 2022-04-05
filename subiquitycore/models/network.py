@@ -208,6 +208,7 @@ class NetworkDev(object):
             if self.name in dev2.config.get('interfaces', []):
                 bond_master = dev2.name
                 break
+        bond: Optional[BondConfig] = None
         if self.type == 'bond' and self.config is not None:
             params = self.config['parameters']
             bond = BondConfig(
@@ -215,20 +216,16 @@ class NetworkDev(object):
                 mode=params['mode'],
                 xmit_hash_policy=params.get('xmit-hash-policy'),
                 lacp_rate=params.get('lacp-rate'))
-        else:
-            bond = None
+        vlan: Optional[VLANConfig] = None
         if self.type == 'vlan' and self.config is not None:
             vlan = VLANConfig(id=self.config['id'], link=self.config['link'])
-        else:
-            vlan = None
+        wlan: Optional[WLANStatus] = None
         if self.type == 'wlan':
             ssid, psk = self.configured_ssid
             wlan = WLANStatus(
                 config=WLANConfig(ssid=ssid, psk=psk),
                 scan_state=self.info.wlan['scan_state'],
                 visible_ssids=self.info.wlan['visible_ssids'])
-        else:
-            wlan = None
 
         dhcp_addresses = self.dhcp_addresses()
         configured_addresses: Dict[int, List[str]] = {4: [], 6: []}
