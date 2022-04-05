@@ -231,10 +231,10 @@ class NetworkDev(object):
             wlan = None
 
         dhcp_addresses = self.dhcp_addresses()
-        configured_addresseses = {4: [], 6: []}
+        configured_addresses = {4: [], 6: []}
         if self.config is not None:
             for addr in self.config.get('addresses', []):
-                configured_addresseses[addr_version(addr)].append(addr)
+                configured_addresses[addr_version(addr)].append(addr)
             ns = self.config.get('nameservers', {})
         else:
             ns = {}
@@ -250,7 +250,7 @@ class NetworkDev(object):
             else:
                 gateway = None
             static_configs[v] = StaticConfig(
-                addresses=configured_addresseses[v],
+                addresses=configured_addresses[v],
                 gateway=gateway,
                 nameservers=ns.get('nameservers', []),
                 searchdomains=ns.get('search', []))
