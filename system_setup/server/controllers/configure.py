@@ -145,6 +145,13 @@ class ConfigureController(SubiquityController):
         packages = []
         # Running that command doesn't require root.
         snap_dir = os.getenv("SNAP", default="/")
+        # UDI sets the SNAP env var to '.' for development purposes.
+        # See:
+        # https://github.com/canonical/ubuntu-desktop-installer/commit/9eb6f04
+        # It is unlikely that under test or production that env var will
+        # ever by just '.'. On the other hand in dry-run we want it pointing to
+        # '/' if not properly set.
+        snap_dir = snap_dir if snap_dir != '.' else '/'
         data_dir = os.path.join(snap_dir, "usr/share/language-selector")
         if not os.path.exists(data_dir):
             log.error("Misconfigured snap environment pointed L-S-C data dir"
