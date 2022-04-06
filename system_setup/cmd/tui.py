@@ -51,6 +51,7 @@ def make_client_args_parser():
     parser.add_argument('--socket')
     parser.add_argument('--answers')
     parser.add_argument('--server-pid')
+    parser.add_argument('--autoinstall', action='store', dest='autoinstall')
     parser.add_argument('--prefill',
                         dest='prefill',
                         help='Prefills UI models with data provided in'
@@ -93,6 +94,9 @@ def main():
 
     if opts.prefill:
         server_args += ['--prefill='+opts.prefill]
+
+    if opts.autoinstall:
+        server_args += ['--autoinstall='+opts.autoinstall]
 
     os.makedirs(server_output_dir, exist_ok=True)
     server_stdout = open(os.path.join(server_output_dir, 'server-stdout'), 'w')
