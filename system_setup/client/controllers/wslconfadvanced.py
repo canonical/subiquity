@@ -32,8 +32,7 @@ class WSLConfigurationAdvancedController(SubiquityTuiController):
     def run_answers(self):
         if all(elem in self.answers for elem in
                ['interop_enabled', 'interop_appendwindowspath',
-                'automount_enabled', 'automount_mountfstab',
-                'systemd_enabled']):
+                'automount_enabled', 'automount_mountfstab']):
 
             reconfiguration = WSLConfigurationAdvanced(**self.answers)
             self.done(reconfiguration)
