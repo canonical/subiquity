@@ -186,9 +186,10 @@ class ConfigureController(SubiquityController):
             log.error('Failed to detect recommended language packs.')
             return False
 
-        cp = await arun_command([aptCommand, "update"], env=env)
-        if cp.returncode != 0:
-            log.debug("Failed to update apt cache.\n%s", cp.stderr)
+        if not self.app.opts.dry_run:
+            cp = await arun_command([aptCommand, "update"], env=env)
+            if cp.returncode != 0:
+                log.debug("Failed to update apt cache.\n%s", cp.stderr)
 
         if self.app.opts.dry_run:  # only empty in dry-run on failure.
             if len(packages) == 0:
