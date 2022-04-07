@@ -63,6 +63,9 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         status = await self.endpoint.guided.GET(wait=True)
         if isinstance(self.ui.body, SlowProbing):
             self.ui.set_body(self.make_guided_ui(status))
+        else:
+            log.debug("not refreshing the display. Current display is %r",
+                      self.ui.body)
 
     def make_guided_ui(self, status):
         if status.status == ProbeStatus.FAILED:
