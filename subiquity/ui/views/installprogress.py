@@ -141,6 +141,15 @@ class ProgressView(BaseView):
         if state == ApplicationState.WAITING:
             self.title = _("Installing system")
             btns = []
+        elif state == ApplicationState.STARTING_UP:
+            self.title = _("Starting installer")
+            btns = []
+        elif state == ApplicationState.CLOUD_INIT_WAIT:
+            self.title = _("Waiting on cloud-init")
+            btns = []
+        elif state == ApplicationState.EARLY_COMMANDS:
+            self.title = _("Running early-commands")
+            btns = []
         elif state == ApplicationState.NEEDS_CONFIRMATION:
             self.title = _("Installing system")
             btns = []
@@ -185,6 +194,9 @@ class ProgressView(BaseView):
                 self.view_error_btn,
                 self.reboot_btn,
                 ]
+        elif state == ApplicationState.EXITED:
+            self.title = _('Subiquity server process has exited')
+            btns = [self.view_log_btn]
         else:
             raise Exception(state)
         if self.controller.showing:
