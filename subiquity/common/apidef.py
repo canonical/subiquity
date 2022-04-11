@@ -291,7 +291,7 @@ class API:
 
             class edit_partition:
                 """required field number
-                   optional fields wipe, mount, format
+                   optional fields wipe, mount, format, size
                    It is an error to do wipe=null and change the format.
                    It is an error to modify other Partition fields.
                 """

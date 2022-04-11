@@ -43,7 +43,7 @@ class FilesystemManipulator:
         self.model.remove_mount(mount)
 
     def create_filesystem(self, volume, spec):
-        if spec['fstype'] is None:
+        if spec.get('fstype') is None:
             # prep partitions are always wiped (and never have a filesystem)
             if getattr(volume, 'flag', None) != 'prep':
                 volume.wipe = None
@@ -61,9 +61,9 @@ class FilesystemManipulator:
                 volume.flag = "swap"
             elif volume.flag == "swap":
                 volume.flag = ""
-        if spec['fstype'] == "swap":
+        if spec.get('fstype') == "swap":
             self.model.add_mount(fs, "")
-        if spec['fstype'] is None and spec['use_swap']:
+        if spec.get('fstype') is None and spec.get('use_swap'):
             self.model.add_mount(fs, "")
         self.create_mount(fs, spec)
         return fs
@@ -178,6 +178,7 @@ class FilesystemManipulator:
                 if size_change > gap_size:
                     raise Exception("partition size too large")
                 partition.size = new_size
+                partition.resize = True
                 for part in trailing:
                     part.offset += size_change
             self.delete_filesystem(partition.fs())
