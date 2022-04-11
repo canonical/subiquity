@@ -173,8 +173,7 @@ def movable_trailing_partitions_and_gap_size(partition):
     part_idx = pgs.index(partition)
     trailing_partitions = []
     in_extended = partition.flag == "logical"
-    for idx in range(part_idx + 1, len(pgs)):
-        pg = pgs[idx]
+    for pg in pgs[part_idx + 1:]:
         if isinstance(pg, Partition):
             if pg.preserve:
                 break
