@@ -23,6 +23,7 @@ from subiquity.models.filesystem import (
     Disk,
     LVM_CHUNK_SIZE,
     LVM_VolGroup,
+    Partition,
     Raid,
     )
 
@@ -165,3 +166,23 @@ def largest_gap_size(device):
     if largest is not None:
         return largest.size
     return 0
+
+
+def movable_trailing_partitions_and_gap_size(partition):
+    pgs = parts_and_gaps(partition.device)
+    part_idx = pgs.index(partition)
+    trailing_partitions = []
+    in_extended = partition.flag == "logical"
+    for pg in pgs[part_idx + 1:]:
+        if isinstance(pg, Partition):
+            if pg.preserve:
+                break
+            if in_extended and pg.flag != "logical":
+                break
+            trailing_partitions.append(pg)
+        else:
+            if pg.in_extended == in_extended:
+                return (trailing_partitions, pg.size)
+            else:
+                return (trailing_partitions, 0)
+    return (trailing_partitions, 0)

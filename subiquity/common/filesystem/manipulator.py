@@ -168,9 +168,15 @@ class FilesystemManipulator:
 
         if partition is not None:
             if 'size' in spec:
-                partition.size = align_up(spec['size'])
-                if gaps.largest_gap_size(disk) < 0:
+                trailing, gap_size = \
+                     gaps.movable_trailing_partitions_and_gap_size(partition)
+                new_size = align_up(spec['size'])
+                size_change = new_size - partition.size
+                if size_change > gap_size:
                     raise Exception("partition size too large")
+                partition.size = new_size
+                for part in trailing:
+                    part.offset += size_change
             self.delete_filesystem(partition.fs())
             self.create_filesystem(partition, spec)
             return
