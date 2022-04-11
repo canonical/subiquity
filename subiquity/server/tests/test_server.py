@@ -13,8 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import shlex
 from unittest.mock import Mock
 
+from subiquitycore.utils import run_command
 from subiquitycore.tests import SubiTestCase
 from subiquity.server.server import (
     SubiquityServer,
@@ -40,55 +42,76 @@ class TestAutoinstallLoad(SubiTestCase):
     def path(self, relative_path):
         return self.tmp_path(relative_path, dir=self.tempdir)
 
-    def create(self, path):
+    def create(self, path, contents):
         path = self.path(path)
-        open(path, 'w').close()
+        with open(path, 'w') as fp:
+            fp.write(contents)
         return path
 
     def test_autoinstall_disabled(self):
-        self.create(reload_autoinstall_path)
-        self.create(cloud_autoinstall_path)
-        self.create(iso_autoinstall_path)
+        self.create(reload_autoinstall_path, 'reload')
+        self.create(cloud_autoinstall_path, 'cloud')
+        self.create(iso_autoinstall_path, 'iso')
         self.server.opts.autoinstall = ""
-        self.assertIsNone(self.server.select_autoinstall_location())
+        self.assertIsNone(self.server.select_autoinstall())
 
     def test_reload_wins(self):
-        expected = self.create(reload_autoinstall_path)
-        autoinstall = self.create(self.path('arg.autoinstall.yaml'))
+        self.create(reload_autoinstall_path, 'reload')
+        autoinstall = self.create(self.path('arg.autoinstall.yaml'), 'arg')
         self.server.opts.autoinstall = autoinstall
-        self.create(cloud_autoinstall_path)
-        self.create(iso_autoinstall_path)
-        self.assertEqual(expected, self.server.select_autoinstall_location())
+        self.create(cloud_autoinstall_path, 'cloud')
+        iso = self.create(iso_autoinstall_path, 'iso')
+        self.assertEqual(iso, self.server.select_autoinstall())
+        self.assert_contents(iso, 'reload')
 
     def test_arg_wins(self):
-        expected = self.create(self.path('arg.autoinstall.yaml'))
-        self.server.opts.autoinstall = expected
-        self.create(cloud_autoinstall_path)
-        self.create(iso_autoinstall_path)
-        self.assertEqual(expected, self.server.select_autoinstall_location())
+        arg = self.create(self.path('arg.autoinstall.yaml'), 'arg')
+        self.server.opts.autoinstall = arg
+        self.create(cloud_autoinstall_path, 'cloud')
+        iso = self.create(iso_autoinstall_path, 'iso')
+        self.assertEqual(iso, self.server.select_autoinstall())
+        self.assert_contents(iso, 'arg')
 
     def test_cloud_wins(self):
-        expected = self.create(cloud_autoinstall_path)
-        self.create(iso_autoinstall_path)
-        self.assertEqual(expected, self.server.select_autoinstall_location())
+        self.create(cloud_autoinstall_path, 'cloud')
+        iso = self.create(iso_autoinstall_path, 'iso')
+        self.assertEqual(iso, self.server.select_autoinstall())
+        self.assert_contents(iso, 'cloud')
 
     def test_iso_wins(self):
-        expected = self.create(iso_autoinstall_path)
-        self.assertEqual(expected, self.server.select_autoinstall_location())
+        iso = self.create(iso_autoinstall_path, 'iso')
+        self.assertEqual(iso, self.server.select_autoinstall())
+        self.assert_contents(iso, 'iso')
 
     def test_nobody_wins(self):
-        self.assertIsNone(self.server.select_autoinstall_location())
-
-    def test_copied_to_reload(self):
-        self.server.autoinstall = self.tmp_path('test.yaml', dir=self.tempdir)
-        expected = 'stuff things'
-        with open(self.server.autoinstall, 'w') as fp:
-            fp.write(expected)
-        self.server.save_autoinstall_for_reload()
-        with open(self.path(reload_autoinstall_path), 'r') as fp:
-            self.assertEqual(expected, fp.read())
+        self.assertIsNone(self.server.select_autoinstall())
 
     def test_bogus_autoinstall_argument(self):
         self.server.opts.autoinstall = self.path('nonexistant.yaml')
         with self.assertRaises(Exception):
-            self.server.select_autoinstall_location()
+            self.server.select_autoinstall()
+
+    def test_early_commands_changes_autoinstall(self):
+        self.server.controllers = Mock()
+        self.server.controllers.instances = []
+        isopath = self.create(iso_autoinstall_path, '')
+
+        cmd = f"sed -i -e '$ a stuff: things' {isopath}"
+        contents = f'''\
+version: 1
+early-commands: ["{cmd}"]
+'''
+        self.create(cloud_autoinstall_path, contents)
+
+        self.server.autoinstall = self.server.select_autoinstall()
+        self.server.load_autoinstall_config(only_early=True)
+        before_early = {'version': 1,
+                        'early-commands': [cmd]}
+        self.assertEqual(before_early, self.server.autoinstall_config)
+        run_command(shlex.split(cmd), check=True)
+
+        self.server.load_autoinstall_config(only_early=False)
+        after_early = {'version': 1,
+                       'early-commands': [cmd],
+                       'stuff': 'things'}
+        self.assertEqual(after_early, self.server.autoinstall_config)

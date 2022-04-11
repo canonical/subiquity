@@ -25,6 +25,10 @@ class SubiTestCase(TestCase):
             dir = self.tmp_dir()
         return os.path.normpath(os.path.abspath(os.path.join(dir, path)))
 
+    def assert_contents(self, path, expected_contents):
+        with open(path, 'r') as fp:
+            self.assertEqual(expected_contents, fp.read())
+
 
 def populate_dir(path, files):
     if not os.path.exists(path):

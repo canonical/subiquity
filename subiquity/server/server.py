@@ -17,7 +17,6 @@ import asyncio
 import logging
 import os
 import shlex
-import shutil
 import sys
 import time
 from typing import List, Optional
@@ -37,7 +36,10 @@ import yaml
 from subiquitycore.async_helpers import run_in_thread
 from subiquitycore.context import with_context
 from subiquitycore.core import Application
-from subiquitycore.file_util import write_file
+from subiquitycore.file_util import (
+    copy_file_if_exists,
+    write_file,
+    )
 from subiquitycore.prober import Prober
 from subiquitycore.ssh import (
     host_key_fingerprints,
@@ -539,7 +541,7 @@ class SubiquityServer(Application):
                 "cloud-init status: %r, assumed disabled",
                 status_txt)
 
-    def select_autoinstall_location(self):
+    def select_autoinstall(self):
         # precedence
         # 1. data from before reload
         # 2. command line argument autoinstall
@@ -562,20 +564,13 @@ class SubiquityServer(Application):
 
         for loc in locations:
             if loc is not None and os.path.exists(loc):
-                return loc
-        return None
+                break
+        else:
+            return None
 
-    def save_autoinstall_for_reload(self):
-        target = self.base_relative(reload_autoinstall_path)
-        if self.autoinstall is None:
-            return
-        if not os.path.exists(self.autoinstall):
-            return
-        if os.path.exists(target):
-            return
-        dirname = os.path.dirname(target)
-        os.makedirs(dirname, exist_ok=True)
-        shutil.copyfile(self.autoinstall, target)
+        isopath = self.base_relative(iso_autoinstall_path)
+        copy_file_if_exists(loc, isopath)
+        return isopath
 
     def _user_has_password(self, username):
         with open('/etc/shadow') as fp:
@@ -640,8 +635,8 @@ class SubiquityServer(Application):
         await self.start_api_server()
         self.update_state(ApplicationState.CLOUD_INIT_WAIT)
         await self.wait_for_cloudinit()
-        self.autoinstall = self.select_autoinstall_location()
         self.set_installer_password()
+        self.autoinstall = self.select_autoinstall()
         self.load_autoinstall_config(only_early=True)
         if self.autoinstall_config and self.controllers.Early.cmds:
             stamp_file = self.state_path("early-commands")
@@ -654,7 +649,10 @@ class SubiquityServer(Application):
                 open(stamp_file, 'w').close()
                 await asyncio.sleep(1)
         self.load_autoinstall_config(only_early=False)
-        self.save_autoinstall_for_reload()
+        if self.autoinstall is not None:
+            copy_file_if_exists(
+                self.autoinstall,
+                self.base_relative(reload_autoinstall_path))
         if self.autoinstall_config:
             self.interactive = bool(
                 self.autoinstall_config.get('interactive-sections'))
