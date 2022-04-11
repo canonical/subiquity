@@ -195,15 +195,15 @@ class TestMovableTrailingPartitionsAndGapSize(unittest.TestCase):
             part_align=10, min_gap_size=1, min_start_offset=10,
             min_end_offset=10, primary_part_limit=10))
         # 0----10---20---30---40---50---60---70---80---90---100
-        # #####[ p1      ]         [ p2 ]              #####
+        # #####[ p1      ]         [ p2     ]          #####
         m, d = make_model_and_disk(size=100)
         p1 = make_partition(m, d, offset=10, size=20)
-        p2 = make_partition(m, d, offset=50, size=10)
+        p2 = make_partition(m, d, offset=50, size=20)
         self.assertEqual(
             ([], 20),
             gaps.movable_trailing_partitions_and_gap_size(p1))
         self.assertEqual(
-            ([], 30),
+            ([], 20),
             gaps.movable_trailing_partitions_and_gap_size(p2))
 
     def test_one_trailing_movable_partition_and_gap(self):
