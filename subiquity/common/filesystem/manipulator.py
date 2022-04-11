@@ -170,7 +170,7 @@ class FilesystemManipulator:
                   disk, spec, partition, gap)
 
         if partition is not None:
-            if 'size' in spec:
+            if 'size' in spec and spec['size'] != partition.size:
                 trailing, gap_size = \
                      gaps.movable_trailing_partitions_and_gap_size(partition)
                 new_size = align_up(spec['size'])
