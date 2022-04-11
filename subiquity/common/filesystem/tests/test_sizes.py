@@ -72,7 +72,7 @@ class TestPartitionSizeScaling(unittest.TestCase):
             self.assertEqual(bootfs, get_bootfs_size(disk))
 
         # something in between for scaling
-        disk_size = 15 << 30
+        disk_size = 20 << 30
         disk = make_disk(manipulator.model, preserve=True, size=disk_size)
         efi_size = get_efi_size(disk)
         self.assertTrue(uefi_scale.maximum > efi_size)
