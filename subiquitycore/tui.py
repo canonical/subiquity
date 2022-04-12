@@ -18,6 +18,7 @@ import inspect
 import logging
 import os
 import signal
+from typing import Callable, Optional, Union
 
 import urwid
 
@@ -34,6 +35,7 @@ from subiquitycore.tuicontroller import Skip
 from subiquitycore.ui.utils import LoadingDialog
 from subiquitycore.ui.frame import SubiquityCoreUI
 from subiquitycore.utils import astart_command
+from subiquitycore.view import BaseView
 
 log = logging.getLogger('subiquitycore.tui')
 
@@ -122,7 +124,8 @@ class TuiApplication(Application):
             before_hook()
         schedule_task(_run())
 
-    async def make_view_for_controller(self, new):
+    async def make_view_for_controller(self, new) \
+            -> Union[BaseView, Callable[[], BaseView]]:
         new.context.enter("starting UI")
         if self.opts.screens and new.name not in self.opts.screens:
             raise Skip
@@ -205,7 +208,8 @@ class TuiApplication(Application):
     async def wait_with_progress(self, awaitable):
         return await self._wait_with_indication(awaitable, self.show_progress)
 
-    async def _move_screen(self, increment, coro):
+    async def _move_screen(self, increment, coro) \
+            -> Optional[Union[BaseView, Callable[[], BaseView]]]:
         if coro is not None:
             await coro
         old, self.cur_screen = self.cur_screen, None
@@ -234,9 +238,13 @@ class TuiApplication(Application):
                 return
 
     async def move_screen(self, increment, coro):
-        view = await self.wait_with_progress(
+        view_or_callable = await self.wait_with_progress(
             self._move_screen(increment, coro))
-        if view is not None:
+        if view_or_callable is not None:
+            if callable(view_or_callable):
+                view = view_or_callable()
+            else:
+                view = view_or_callable
             self.ui.set_body(view)
 
     def next_screen(self, coro=None):
