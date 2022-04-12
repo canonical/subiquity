@@ -29,6 +29,7 @@ from subiquity.models.tests.test_filesystem import (
     make_disk,
     make_model,
     make_partition,
+    make_filesystem,
     )
 from subiquity.models.filesystem import (
     Bootloader,
@@ -663,3 +664,26 @@ class TestReformat(unittest.TestCase):
         disk = make_disk(self.manipulator.model, ptable=None)
         self.manipulator.reformat(disk, 'msdos')
         self.assertEqual('msdos', disk.ptable)
+
+
+class TestCanResize(unittest.TestCase):
+    def setUp(self):
+        self.manipulator = make_manipulator()
+        self.manipulator.model._probe_data = {}
+
+    def test_resize_unpreserved(self):
+        disk = make_disk(self.manipulator.model, ptable=None)
+        part = make_partition(self.manipulator.model, disk, preserve=False)
+        self.assertTrue(self.manipulator.can_resize_partition(part))
+
+    def test_resize_ext4(self):
+        disk = make_disk(self.manipulator.model, ptable=None)
+        part = make_partition(self.manipulator.model, disk, preserve=True)
+        make_filesystem(self.manipulator.model, partition=part, fstype='ext4')
+        self.assertTrue(self.manipulator.can_resize_partition(part))
+
+    def test_resize_invalid(self):
+        disk = make_disk(self.manipulator.model, ptable=None)
+        part = make_partition(self.manipulator.model, disk, preserve=True)
+        make_filesystem(self.manipulator.model, partition=part, fstype='asdf')
+        self.assertFalse(self.manipulator.can_resize_partition(part))

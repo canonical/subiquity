@@ -15,6 +15,8 @@
 
 import logging
 
+from curtin.block import get_resize_fstypes
+
 from subiquity.common.filesystem import boot, gaps
 from subiquity.common.types import Bootloader
 from subiquity.models.filesystem import (
@@ -165,6 +167,13 @@ class FilesystemManipulator:
             self.delete_partition(p, True)
         self.clear(disk)
 
+    def can_resize_partition(self, partition):
+        if not partition.preserve:
+            return True
+        if partition.format not in get_resize_fstypes():
+            return False
+        return True
+
     def partition_disk_handler(self, disk, spec, *, partition=None, gap=None):
         log.debug('partition_disk_handler: %s %s %s %s',
                   disk, spec, partition, gap)
@@ -177,6 +186,8 @@ class FilesystemManipulator:
                 size_change = new_size - partition.size
                 if size_change > gap_size:
                     raise Exception("partition size too large")
+                if not self.can_resize_partition(partition):
+                    raise Exception("partition cannot support resize")
                 partition.size = new_size
                 partition.resize = True
                 for part in trailing:
