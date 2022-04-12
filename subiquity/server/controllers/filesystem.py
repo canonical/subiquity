@@ -18,6 +18,7 @@ import glob
 import json
 import logging
 import os
+import platform
 import select
 from typing import List
 
@@ -427,7 +428,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 # We wait on the task directly here, not
                 # self._probe_once_task.wait as if _probe_once_task
                 # gets cancelled, we should be cancelled too.
-                await asyncio.wait_for(self._probe_once_task.task, 15.0)
+                if platform.machine() == 'riscv64':
+                    # block probing is taking much longer on RISC-V - but why?
+                    timeout = 60.0
+                else:
+                    timeout = 15.0
+                await asyncio.wait_for(self._probe_once_task.task, timeout)
             except asyncio.CancelledError:
                 # asyncio.CancelledError is a subclass of Exception in
                 # Python 3.6 (sadface)
