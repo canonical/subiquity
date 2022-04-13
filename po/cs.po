@@ -8,15 +8,15 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-04-12 09:48+1200\n"
-"PO-Revision-Date: 2021-12-01 19:53+0000\n"
+"PO-Revision-Date: 2022-04-13 15:22+0000\n"
 "Last-Translator: Pavel Borecki <Unknown>\n"
 "Language-Team: Czech <cs@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"X-Launchpad-Export-Date: 2022-04-12 05:28+0000\n"
-"X-Generator: Launchpad (build 4c58cf79c82ce3fbd42288b21369cc838fb5b9e0)\n"
+"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
+"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
 "Language: cs\n"
 
 #: ../subiquity/client/client.py:72
@@ -273,12 +273,12 @@ msgstr "oddíl na {device}"
 
 #: ../subiquity/common/filesystem/labels.py:134
 msgid "software"
-msgstr ""
+msgstr "software"
 
 #: ../subiquity/common/filesystem/labels.py:135
 #, python-brace-format
 msgid "{type} RAID {level}"
-msgstr ""
+msgstr "{type} RAID {level}"
 
 #: ../subiquity/common/filesystem/labels.py:141
 msgid "LVM volume group"
@@ -350,7 +350,7 @@ msgstr "používán"
 #: ../subiquity/common/filesystem/labels.py:260
 #, python-brace-format
 msgid "container for {devices}"
-msgstr ""
+msgstr "kontejner pro {devices}"
 
 #: ../subiquity/common/types.py:39
 msgid "Block device probe failure"
@@ -683,18 +683,22 @@ msgid ""
 "A wifi device was detected but the necessary support packages were not\n"
 "available.\n"
 msgstr ""
+"Bylo zjištěno wifi zařízení, ale nejsou k dispozici potřebné balíčky pro "
+"jeho podporu.\n"
 
 #: ../subiquitycore/ui/views/network.py:217
 msgid "Wifi support packages are being installed.\n"
-msgstr ""
+msgstr "Balíčky pro podporu wifi jsou instalovány.\n"
 
 #: ../subiquitycore/ui/views/network.py:220
 msgid "Wifi support packages failed to install. Please check the logs.\n"
 msgstr ""
+"Balíčky pro podporu wifi se nepodařilo nainstalovat. Zkontrolujte záznamy "
+"událostí.\n"
 
 #: ../subiquitycore/ui/views/network.py:223
 msgid "Wifi support packages will be installed in the target system.\n"
-msgstr ""
+msgstr "Balíčky pro podporu wifi budou nainstalovány do cílového systému.\n"
 
 #: ../subiquitycore/ui/views/network.py:230
 msgid "Network connections"
@@ -756,7 +760,7 @@ msgstr "10"
 
 #: ../subiquity/models/filesystem.py:177
 msgid "Container"
-msgstr ""
+msgstr "Kontejner"
 
 #. Attempting to convert input to a size
 #: ../subiquity/models/filesystem.py:212
@@ -1064,8 +1068,9 @@ msgstr[2] "Obsahuje {n} oddílů"
 #, python-brace-format
 msgid "It contains 1 volume."
 msgid_plural "It contains {n} volumes."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Obsahuje 1 svazek."
+msgstr[1] "Obsahuje {n} svazky."
+msgstr[2] "Obsahuje {n} svazků."
 
 #: ../subiquity/ui/views/filesystem/delete.py:91
 msgid "It is not formatted or mounted."
@@ -2627,16 +2632,18 @@ msgstr "Uživatelské jméno importu:"
 
 #: ../subiquity/ui/views/ssh.py:74
 msgid "GitHub Username:"
-msgstr ""
+msgstr "Uživatelské jméno na GitHub:"
 
 #: ../subiquity/ui/views/ssh.py:75
 msgid "Enter your GitHub username."
-msgstr ""
+msgstr "Zadejte své uživatelské jméno na GitHub."
 
 #: ../subiquity/ui/views/ssh.py:77
 msgid ""
 "A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
+"Uživatelské jméno na GitHub může obsahovat pouze písmena a číslice nebo "
+"spojovníky."
 
 #: ../subiquity/ui/views/ssh.py:81
 msgid "Launchpad Username:"
@@ -2660,7 +2667,7 @@ msgstr "Importovat SSH identitu:"
 
 #: ../subiquity/ui/views/ssh.py:99
 msgid "from GitHub"
-msgstr ""
+msgstr "z portálu GitHub"
 
 #: ../subiquity/ui/views/ssh.py:100
 msgid "from Launchpad"
@@ -2668,7 +2675,7 @@ msgstr "z účtu na Launchpad"
 
 #: ../subiquity/ui/views/ssh.py:102
 msgid "You can import your SSH keys from GitHub or Launchpad."
-msgstr ""
+msgstr "Své SSH klíče můžete importovat z portálu GitHub nebo Launchpad."
 
 #: ../subiquity/ui/views/ssh.py:106
 msgid "Allow password authentication over SSH"
@@ -2697,6 +2704,8 @@ msgid ""
 "A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
 msgstr ""
+"Uživatelské jméno na GitHub může obsahovat pouze písmena a číslice nebo "
+"jednotlivé spojovníky, na které nemůže začínat či končit."
 
 #: ../subiquity/ui/views/ssh.py:161
 msgid "Fetching SSH keys..."
