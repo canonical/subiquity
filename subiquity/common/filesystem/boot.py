@@ -15,7 +15,7 @@
 
 import abc
 import functools
-from typing import Optional
+from typing import Any, Optional
 
 import attr
 
@@ -125,7 +125,7 @@ class SetAttrPlan(MakeBootDevicePlan):
 
     device: object
     attr: str
-    val: str
+    val: Any
 
     def apply(self, manipulator):
         setattr(self.device, self.attr, self.val)

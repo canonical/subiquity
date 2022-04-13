@@ -134,8 +134,8 @@ class AptConfigurer:
         self.configured_tree: Optional[OverlayMountpoint] = None
         self.install_tree: Optional[OverlayMountpoint] = None
         self.install_mount = None
-        self._mounts = []
-        self._tdirs = []
+        self._mounts: List[Mountpoint] = []
+        self._tdirs: List[str] = []
 
     def tdir(self):
         d = tempfile.mkdtemp()

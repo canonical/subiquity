@@ -25,14 +25,12 @@ from curtin.reporter.events import (
     report_start_event,
     status,
     )
-from curtin.reporter.handlers import (
-    LogHandler,
-    )
+from curtin.reporter.handlers import LogHandler as CurtinLogHandler
 
 from subiquity.server.controller import NonInteractiveController
 
 
-class LogHandler(LogHandler):
+class LogHandler(CurtinLogHandler):
     def publish_event(self, event):
         level = getattr(logging, event.level)
         logger = logging.getLogger('')

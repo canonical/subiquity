@@ -20,7 +20,7 @@ import logging
 import yaml
 from socket import AF_INET, AF_INET6
 import attr
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from subiquitycore import netplan
 
@@ -208,6 +208,7 @@ class NetworkDev(object):
             if self.name in dev2.config.get('interfaces', []):
                 bond_master = dev2.name
                 break
+        bond: Optional[BondConfig] = None
         if self.type == 'bond' and self.config is not None:
             params = self.config['parameters']
             bond = BondConfig(
@@ -215,26 +216,22 @@ class NetworkDev(object):
                 mode=params['mode'],
                 xmit_hash_policy=params.get('xmit-hash-policy'),
                 lacp_rate=params.get('lacp-rate'))
-        else:
-            bond = None
+        vlan: Optional[VLANConfig] = None
         if self.type == 'vlan' and self.config is not None:
             vlan = VLANConfig(id=self.config['id'], link=self.config['link'])
-        else:
-            vlan = None
+        wlan: Optional[WLANStatus] = None
         if self.type == 'wlan':
             ssid, psk = self.configured_ssid
             wlan = WLANStatus(
                 config=WLANConfig(ssid=ssid, psk=psk),
                 scan_state=self.info.wlan['scan_state'],
                 visible_ssids=self.info.wlan['visible_ssids'])
-        else:
-            wlan = None
 
         dhcp_addresses = self.dhcp_addresses()
-        configured_addresseses = {4: [], 6: []}
+        configured_addresses: Dict[int, List[str]] = {4: [], 6: []}
         if self.config is not None:
             for addr in self.config.get('addresses', []):
-                configured_addresseses[addr_version(addr)].append(addr)
+                configured_addresses[addr_version(addr)].append(addr)
             ns = self.config.get('nameservers', {})
         else:
             ns = {}
@@ -250,7 +247,7 @@ class NetworkDev(object):
             else:
                 gateway = None
             static_configs[v] = StaticConfig(
-                addresses=configured_addresseses[v],
+                addresses=configured_addresses[v],
                 gateway=gateway,
                 nameservers=ns.get('nameservers', []),
                 searchdomains=ns.get('search', []))

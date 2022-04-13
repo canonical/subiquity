@@ -21,7 +21,7 @@ import os
 import signal
 import sys
 import traceback
-from typing import Optional
+from typing import Dict, List, Optional
 
 import aiohttp
 
@@ -118,7 +118,7 @@ class SubiquityClient(TuiApplication):
         "Progress",
         ]
 
-    variant_to_controllers = {}
+    variant_to_controllers: Dict[str, List[str]] = {}
 
     def __init__(self, opts):
         if is_linux_tty():

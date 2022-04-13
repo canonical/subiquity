@@ -729,7 +729,7 @@ class Partition(_Formattable):
 @fsobj("raid")
 class Raid(_Device):
     name = attr.ib()
-    raidlevel = attr.ib(converter=lambda x: raidlevels_by_value[x].value)
+    raidlevel: str = attr.ib(converter=lambda x: raidlevels_by_value[x].value)
     devices = attributes.reflist(
         backlink="_constructed_device", default=attr.Factory(set))
 

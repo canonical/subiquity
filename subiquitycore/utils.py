@@ -19,7 +19,7 @@ import logging
 import os
 import random
 import subprocess
-from typing import List
+from typing import List, Sequence
 
 log = logging.getLogger("subiquitycore.utils")
 
@@ -35,7 +35,7 @@ def _clean_env(env):
     return env
 
 
-def run_command(cmd: List[str], *, input=None, stdout=subprocess.PIPE,
+def run_command(cmd: Sequence[str], *, input=None, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, encoding='utf-8', errors='replace',
                 env=None, **kw) -> subprocess.CompletedProcess:
     """A wrapper around subprocess.run with logging and different defaults.
@@ -63,7 +63,7 @@ def run_command(cmd: List[str], *, input=None, stdout=subprocess.PIPE,
         return cp
 
 
-async def arun_command(cmd: List[str], *,
+async def arun_command(cmd: Sequence[str], *,
                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                        encoding='utf-8', input=None, errors='replace',
                        env=None, check=False, **kw) \
@@ -84,6 +84,8 @@ async def arun_command(cmd: List[str], *,
         if stderr is not None:
             stderr = stderr.decode(encoding)
     log.debug("arun_command %s exited with code %s", cmd, proc.returncode)
+    # .communicate() forces returncode to be set to a value
+    assert(proc.returncode is not None)
     if check and proc.returncode != 0:
         raise subprocess.CalledProcessError(proc.returncode, cmd)
     else:
@@ -91,7 +93,7 @@ async def arun_command(cmd: List[str], *,
             cmd, proc.returncode, stdout, stderr)
 
 
-async def astart_command(cmd: List[str], *, stdout=subprocess.PIPE,
+async def astart_command(cmd: Sequence[str], *, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE, stdin=subprocess.DEVNULL,
                          env=None, **kw) -> asyncio.subprocess.Process:
     log.debug("astart_command called: %s", cmd)
@@ -100,12 +102,12 @@ async def astart_command(cmd: List[str], *, stdout=subprocess.PIPE,
         env=_clean_env(env), **kw)
 
 
-async def split_cmd_output(cmd: List[str], split_on: str) -> List[str]:
+async def split_cmd_output(cmd: Sequence[str], split_on: str) -> List[str]:
     cp = await arun_command(cmd, check=True)
     return cp.stdout.split(split_on)
 
 
-def start_command(cmd: List[str], *,
+def start_command(cmd: Sequence[str], *,
                   stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                   stderr=subprocess.PIPE, encoding='utf-8', errors='replace',
                   env=None, **kw) -> subprocess.Popen:
