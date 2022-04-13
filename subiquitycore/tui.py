@@ -234,8 +234,6 @@ class TuiApplication(Application):
             except Exception:
                 self.controllers.index = cur_index
                 raise
-            else:
-                return
 
     async def move_screen(self, increment, coro):
         view_or_callable = await self.wait_with_progress(
