@@ -82,7 +82,8 @@ class FilesystemManipulator:
         return part
 
     def delete_partition(self, part, override_preserve=False):
-        if not override_preserve and part.device.preserve:
+        if not override_preserve and part.device.preserve and \
+                self.model.storage_version < 2:
             raise Exception("cannot delete partitions from preserved disks")
         self.clear(part)
         self.model.remove_partition(part)
