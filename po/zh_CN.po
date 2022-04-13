@@ -7,19 +7,19 @@ msgid ""
 msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-06-04 13:18+1200\n"
-"PO-Revision-Date: 2019-12-24 05:46+0000\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"POT-Creation-Date: 2022-04-12 09:48+1200\n"
+"PO-Revision-Date: 2021-12-27 04:47+0000\n"
+"Last-Translator: Yulin Yang <yylteam@icloud.com>\n"
 "Language-Team: Chinese (Simplified) <zh_CN@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Launchpad-Export-Date: 2021-06-05 04:52+0000\n"
-"X-Generator: Launchpad (build b45bdbe3a00b6b668fa7f2069bd545c35c41f7f4)\n"
+"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
+"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
 "Language: \n"
 
-#: ../subiquity/client/client.py:70
+#: ../subiquity/client/client.py:72
 msgid ""
 "Installer shell session activated.\n"
 "\n"
@@ -31,374 +31,391 @@ msgid ""
 "environment will not survive a reboot. If the install has started, the\n"
 "installed system will be mounted at /target."
 msgstr ""
+"已激活安装程序shell会话。\n"
+"\n"
+"此shell会话正在安装程序环境中运行。你\n"
+"将在退出此shell时返回给安装程序，\n"
+"例如，键入Control-D或“exit”。\n"
+"\n"
+"请注意，这是一个短暂的环境。对此的更改\n"
+"重新启动后，环境将无法生存。如果安装已开始，则\n"
+"已安装的系统将安装在 /target。"
 
-#: ../subiquity/client/client.py:212
+#: ../subiquity/client/client.py:234
 msgid "yes"
-msgstr ""
+msgstr "是"
 
-#: ../subiquity/client/client.py:213
+#: ../subiquity/client/client.py:235
 msgid "no"
-msgstr ""
+msgstr "否"
 
-#: ../subiquity/client/client.py:215
+#: ../subiquity/client/client.py:237
 msgid "Confirmation is required to continue."
-msgstr ""
+msgstr "需要确认才能继续。"
 
-#: ../subiquity/client/client.py:216
+#: ../subiquity/client/client.py:238
 msgid "Add 'autoinstall' to your kernel command line to avoid this"
-msgstr ""
+msgstr "将“autoinstall”添加到内核命令行以避免这种情况"
 
-#: ../subiquity/client/client.py:219
+#: ../subiquity/client/client.py:241
 msgid "Continue with autoinstall?"
-msgstr ""
+msgstr "是否继续自动安装？"
 
 #: ../subiquity/client/controllers/ssh.py:91
 msgid "Importing keys failed:"
-msgstr ""
+msgstr "导入密钥失败："
 
 #: ../subiquity/client/controllers/ssh.py:100
 msgid "ssh-keygen failed to show fingerprint of downloaded keys:"
-msgstr ""
+msgstr "ssh-keygen无法显示下载密钥的指纹："
 
 #. Information about a drive
-#: ../subiquity/common/filesystem/actions.py:48
+#: ../subiquity/common/filesystem/actions.py:47
 msgctxt "DeviceAction"
 msgid "Info"
-msgstr ""
+msgstr "信息"
 
 #. Edit a device (partition, logical volume, RAID, etc)
-#: ../subiquity/common/filesystem/actions.py:50
+#: ../subiquity/common/filesystem/actions.py:49
 msgctxt "DeviceAction"
 msgid "Edit"
-msgstr ""
+msgstr "编辑"
+
+#: ../subiquity/common/filesystem/actions.py:50
+msgctxt "DeviceAction"
+msgid "Reformat"
+msgstr "重新格式化"
 
 #: ../subiquity/common/filesystem/actions.py:51
 msgctxt "DeviceAction"
-msgid "Reformat"
-msgstr ""
+msgid "Add Partition"
+msgstr "添加分区"
 
 #: ../subiquity/common/filesystem/actions.py:52
 msgctxt "DeviceAction"
-msgid "Add Partition"
-msgstr ""
+msgid "Format"
+msgstr "格式化"
 
 #: ../subiquity/common/filesystem/actions.py:53
 msgctxt "DeviceAction"
-msgid "Create Logical Volume"
-msgstr ""
+msgid "Remove from RAID/LVM"
+msgstr "从RAID/LVM中删除"
 
 #: ../subiquity/common/filesystem/actions.py:54
 msgctxt "DeviceAction"
-msgid "Format"
-msgstr ""
+msgid "Delete"
+msgstr "删除"
 
 #: ../subiquity/common/filesystem/actions.py:55
 msgctxt "DeviceAction"
-msgid "Remove from RAID/LVM"
-msgstr ""
-
-#: ../subiquity/common/filesystem/actions.py:56
-msgctxt "DeviceAction"
-msgid "Delete"
-msgstr ""
-
-#: ../subiquity/common/filesystem/actions.py:57
-msgctxt "DeviceAction"
 msgid "Make Boot Device"
-msgstr ""
+msgstr "制作引导设备"
 
-#: ../subiquity/common/filesystem/actions.py:151
+#: ../subiquity/common/filesystem/actions.py:163
 #, python-brace-format
 msgid "Cannot edit {selflabel} as it is part of the {cdtype} {cdname}."
-msgstr ""
-
-#: ../subiquity/common/filesystem/actions.py:165
-msgid "Cannot edit pre-existing RAIDs."
-msgstr ""
-
-#: ../subiquity/common/filesystem/actions.py:168
-#, python-brace-format
-msgid "Cannot edit {raidlabel} because it has partitions."
-msgstr ""
+msgstr "无法编辑 {selflabel}，因为它是 {cdtype} {cdname} 的一部分。"
 
 #: ../subiquity/common/filesystem/actions.py:177
-msgid "Cannot edit pre-existing volume groups."
-msgstr ""
+msgid "Cannot edit pre-existing RAIDs."
+msgstr "无法编辑预先存在的RAID。"
 
 #: ../subiquity/common/filesystem/actions.py:180
 #, python-brace-format
-msgid "Cannot edit {vglabel} because it has logical volumes."
-msgstr ""
+msgid "Cannot edit {raidlabel} because it has partitions."
+msgstr "无法编辑 {raidlabel} ，因为它有分区。"
 
-#: ../subiquity/common/filesystem/actions.py:247
+#: ../subiquity/common/filesystem/actions.py:189
+msgid "Cannot edit pre-existing volume groups."
+msgstr "无法编辑预先存在的卷组。"
+
+#: ../subiquity/common/filesystem/actions.py:192
+#, python-brace-format
+msgid "Cannot edit {vglabel} because it has logical volumes."
+msgstr "无法编辑 {vglabel} ，因为它有逻辑卷。"
+
+#: ../subiquity/common/filesystem/actions.py:241
 #, python-brace-format
 msgid "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
-msgstr ""
+msgstr "无法从预先存在的 {cdtype} {cdlabel} 中删除 {selflabel}。"
 
-#: ../subiquity/common/filesystem/actions.py:258
+#: ../subiquity/common/filesystem/actions.py:252
 #, python-brace-format
 msgid ""
 "Removing {selflabel} would leave the {cdtype} {cdlabel} with less than "
 "{min_devices} devices."
-msgstr ""
+msgstr "删除{selflabel}将使{cdtype} {cdlabel}的设备少于{min_devices}。"
 
-#: ../subiquity/common/filesystem/actions.py:267
+#: ../subiquity/common/filesystem/actions.py:261
 #, python-brace-format
 msgid ""
 "Removing {selflabel} would leave the {cdtype} {cdlabel} with no devices."
-msgstr ""
+msgstr "删除{selflabel}将使{cdtype} {cdlabel}没有设备。"
 
-#: ../subiquity/common/filesystem/actions.py:283
+#: ../subiquity/common/filesystem/actions.py:277
 #, python-brace-format
 msgid "Cannot delete {selflabel} as it is part of the {cdtype} {cdname}."
-msgstr ""
+msgstr "无法删除{selflabel}，因为它是{cdtype} {cdname}的一部分。"
 
-#: ../subiquity/common/filesystem/actions.py:293
+#: ../subiquity/common/filesystem/actions.py:287
 msgid ""
 "Cannot delete a single partition from a device that already has partitions."
-msgstr ""
+msgstr "无法从已具有分区的设备中删除单个分区。"
 
-#: ../subiquity/common/filesystem/actions.py:296
+#: ../subiquity/common/filesystem/actions.py:290
 msgid "Cannot delete required bootloader partition"
-msgstr ""
+msgstr "无法删除所需的引导加载程序分区"
 
-#: ../subiquity/common/filesystem/actions.py:310
+#: ../subiquity/common/filesystem/actions.py:304
 #, python-brace-format
 msgid ""
 "Cannot delete {devicelabel} as partition {partnum} is part of the {cdtype} "
 "{cdname}."
-msgstr ""
+msgstr "无法删除{devicelabel}，因为分区{partnum}是{cdtype} {cdname}的一部分。"
 
-#: ../subiquity/common/filesystem/actions.py:319
+#: ../subiquity/common/filesystem/actions.py:313
 #, python-brace-format
 msgid ""
 "Cannot delete {devicelabel} because it has {count} mounted partitions."
-msgstr ""
+msgstr "无法删除{devicelabel}，因为它已装入{count}个分区。"
 
-#: ../subiquity/common/filesystem/actions.py:325
+#: ../subiquity/common/filesystem/actions.py:319
 #, python-brace-format
 msgid "Cannot delete {devicelabel} because it has 1 mounted partition."
-msgstr ""
+msgstr "无法删除{devicelabel}，因为它已装入1个分区。"
 
-#: ../subiquity/common/filesystem/actions.py:334
+#: ../subiquity/common/filesystem/actions.py:328
 msgid ""
 "Cannot delete a single logical volume from a volume group that already has "
 "logical volumes."
-msgstr ""
+msgstr "无法从已具有逻辑卷的卷组中删除单个逻辑卷。"
 
 #. A pre-existing device such as a partition or RAID
-#: ../subiquity/common/filesystem/labels.py:34
+#: ../subiquity/common/filesystem/labels.py:35
 msgid "existing"
-msgstr ""
+msgstr "存在的"
 
 #. A newly created device such as a partition or RAID
-#: ../subiquity/common/filesystem/labels.py:37
+#: ../subiquity/common/filesystem/labels.py:38
 msgid "new"
-msgstr ""
+msgstr "新建"
 
-#: ../subiquity/common/filesystem/labels.py:60
+#: ../subiquity/common/filesystem/labels.py:62
 msgid "PReP"
-msgstr ""
+msgstr "PReP"
 
 #. boot loader partition
-#: ../subiquity/common/filesystem/labels.py:64
-#: ../subiquity/common/filesystem/labels.py:78
-msgid "configured"
-msgstr ""
-
-#. boot loader partition
-#: ../subiquity/common/filesystem/labels.py:67
+#: ../subiquity/common/filesystem/labels.py:66
 #: ../subiquity/common/filesystem/labels.py:80
-msgid "unconfigured"
-msgstr ""
+msgid "configured"
+msgstr "已配置的"
 
-#: ../subiquity/common/filesystem/labels.py:70
-msgid "primary ESP"
-msgstr ""
+#. boot loader partition
+#: ../subiquity/common/filesystem/labels.py:69
+#: ../subiquity/common/filesystem/labels.py:82
+msgid "unconfigured"
+msgstr "未配置的"
 
 #: ../subiquity/common/filesystem/labels.py:72
-msgid "backup ESP"
-msgstr ""
+msgid "primary ESP"
+msgstr "初始ESP"
 
 #: ../subiquity/common/filesystem/labels.py:74
-msgid "unused ESP"
-msgstr ""
+msgid "backup ESP"
+msgstr "备份ESP"
 
-#: ../subiquity/common/filesystem/labels.py:81
+#: ../subiquity/common/filesystem/labels.py:76
+msgid "unused ESP"
+msgstr "未使用的ESP"
+
+#: ../subiquity/common/filesystem/labels.py:83
 msgid "BIOS grub spacer"
-msgstr ""
+msgstr "BIOS grub间隔器"
 
 #. extended partition
-#: ../subiquity/common/filesystem/labels.py:84
+#: ../subiquity/common/filesystem/labels.py:86
 msgid "extended"
-msgstr ""
+msgstr "扩展分区"
 
 #. logical partition
-#: ../subiquity/common/filesystem/labels.py:87
+#: ../subiquity/common/filesystem/labels.py:89
 msgid "logical"
-msgstr ""
+msgstr "逻辑分区"
 
 #. Flag for a LVM volume group
-#: ../subiquity/common/filesystem/labels.py:97
+#: ../subiquity/common/filesystem/labels.py:99
 msgid "encrypted"
-msgstr ""
+msgstr "加密分区"
 
-#: ../subiquity/common/filesystem/labels.py:113
+#: ../subiquity/common/filesystem/labels.py:115
 msgid "multipath device"
-msgstr ""
+msgstr "多路径设备"
 
-#: ../subiquity/common/filesystem/labels.py:114
+#: ../subiquity/common/filesystem/labels.py:116
 msgid "local disk"
-msgstr ""
+msgstr "本地磁盘"
 
-#: ../subiquity/common/filesystem/labels.py:119
+#: ../subiquity/common/filesystem/labels.py:121
 #, python-brace-format
 msgid "partition of {device}"
-msgstr ""
-
-#: ../subiquity/common/filesystem/labels.py:124
-#, python-brace-format
-msgid "software RAID {level}"
-msgstr ""
-
-#: ../subiquity/common/filesystem/labels.py:129
-msgid "LVM volume group"
-msgstr ""
+msgstr "{device}的分区"
 
 #: ../subiquity/common/filesystem/labels.py:134
-msgid "LVM logical volume"
+msgid "software"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:168
-#: ../subiquity/ui/views/filesystem/guided.py:95
+#: ../subiquity/common/filesystem/labels.py:135
+#, python-brace-format
+msgid "{type} RAID {level}"
+msgstr ""
+
+#: ../subiquity/common/filesystem/labels.py:141
+msgid "LVM volume group"
+msgstr "LVM卷组"
+
+#: ../subiquity/common/filesystem/labels.py:146
+msgid "LVM logical volume"
+msgstr "LVM逻辑卷"
+
+#: ../subiquity/common/filesystem/labels.py:180
+#: ../subiquity/ui/views/filesystem/guided.py:100
 #, python-brace-format
 msgid "partition {number}"
-msgstr ""
+msgstr "分区{number}"
 
-#: ../subiquity/common/filesystem/labels.py:170
+#: ../subiquity/common/filesystem/labels.py:182
 #, python-brace-format
 msgid "partition {number} of {device}"
-msgstr ""
-
-#: ../subiquity/common/filesystem/labels.py:178
-#, python-brace-format
-msgid "{component_name} of {desc} {name}"
-msgstr ""
-
-#: ../subiquity/common/filesystem/labels.py:186
-#, python-brace-format
-msgid "already formatted as {fstype}"
-msgstr ""
+msgstr "{device}的分区{number}"
 
 #: ../subiquity/common/filesystem/labels.py:188
+msgid "free space"
+msgstr "空闲空间"
+
+#: ../subiquity/common/filesystem/labels.py:195
+#, python-brace-format
+msgid "{component_name} of {desc} {name}"
+msgstr "{desc} {name}的{component_name}"
+
+#: ../subiquity/common/filesystem/labels.py:203
+#, python-brace-format
+msgid "already formatted as {fstype}"
+msgstr "已格式化为{fstype}"
+
+#: ../subiquity/common/filesystem/labels.py:205
 #, python-brace-format
 msgid "to be reformatted as {fstype}"
-msgstr ""
+msgstr "要重新格式化为{fstype}"
 
-#: ../subiquity/common/filesystem/labels.py:190
+#: ../subiquity/common/filesystem/labels.py:207
 #, python-brace-format
 msgid "to be formatted as {fstype}"
-msgstr ""
+msgstr "要格式化为{fstype}"
 
 #. A filesytem
-#: ../subiquity/common/filesystem/labels.py:196
+#: ../subiquity/common/filesystem/labels.py:213
 #, python-brace-format
 msgid "mounted at {path}"
-msgstr ""
+msgstr "安装在{path}"
 
 #. A filesytem
-#: ../subiquity/common/filesystem/labels.py:199
+#: ../subiquity/common/filesystem/labels.py:216
 msgid "not mounted"
-msgstr ""
+msgstr "未安装"
 
 #. A filesytem that cannot be mounted (i.e. swap)
 #. is used or unused
-#: ../subiquity/common/filesystem/labels.py:204
-#: ../subiquity/common/filesystem/labels.py:211
+#: ../subiquity/common/filesystem/labels.py:221
+#: ../subiquity/common/filesystem/labels.py:231
 msgid "unused"
-msgstr ""
+msgstr "未使用"
 
 #. A filesytem that cannot be mounted (i.e. swap)
 #. is used or unused
-#: ../subiquity/common/filesystem/labels.py:208
+#: ../subiquity/common/filesystem/labels.py:225
 msgid "used"
-msgstr ""
+msgstr "已使用"
 
-#: ../subiquity/common/types.py:37
-msgid "Block device probe failure"
-msgstr ""
-
-#: ../subiquity/common/types.py:38
-msgid "Disk probe failure"
+#: ../subiquity/common/filesystem/labels.py:260
+#, python-brace-format
+msgid "container for {devices}"
 msgstr ""
 
 #: ../subiquity/common/types.py:39
-msgid "Install failure"
-msgstr ""
+msgid "Block device probe failure"
+msgstr "块设备探针故障"
 
 #: ../subiquity/common/types.py:40
-msgid "Installer crash"
-msgstr ""
+msgid "Disk probe failure"
+msgstr "磁盘探查故障"
 
 #: ../subiquity/common/types.py:41
-msgid "Network error"
-msgstr ""
+msgid "Install failure"
+msgstr "安装失败"
 
 #: ../subiquity/common/types.py:42
-msgid "Network client error"
-msgstr ""
+msgid "Installer crash"
+msgstr "安装程序崩溃"
 
 #: ../subiquity/common/types.py:43
-msgid "Server request failure"
-msgstr ""
+msgid "Network error"
+msgstr "网络错误"
 
 #: ../subiquity/common/types.py:44
-msgid "Unknown error"
-msgstr ""
+msgid "Network client error"
+msgstr "网络客户端错误"
 
-#: ../subiquitycore/controllers/network.py:202
+#: ../subiquity/common/types.py:45
+msgid "Server request failure"
+msgstr "服务器请求失败"
+
+#: ../subiquity/common/types.py:46
+msgid "Unknown error"
+msgstr "未知错误"
+
+#: ../subiquitycore/controllers/network.py:203
 msgid "autoconfiguration failed"
-msgstr ""
+msgstr "自动配置失败"
 
 #. Information about a network interface
 #: ../subiquitycore/models/network.py:43
 msgctxt "NetDevAction"
 msgid "Info"
-msgstr ""
+msgstr "信息"
 
 #: ../subiquitycore/models/network.py:44
 msgctxt "NetDevAction"
 msgid "Edit Wifi"
-msgstr ""
+msgstr "编辑Wifi"
 
 #: ../subiquitycore/models/network.py:45
 msgctxt "NetDevAction"
 msgid "Edit IPv4"
-msgstr ""
+msgstr "编辑IPv4"
 
 #: ../subiquitycore/models/network.py:46
 msgctxt "NetDevAction"
 msgid "Edit IPv6"
-msgstr ""
+msgstr "编辑IPv6"
 
 #: ../subiquitycore/models/network.py:47
 msgctxt "NetDevAction"
 msgid "Edit bond"
-msgstr ""
+msgstr "编辑捆绑"
 
 #: ../subiquitycore/models/network.py:48
 msgctxt "NetDevAction"
 msgid "Add a VLAN tag"
-msgstr ""
+msgstr "添加VLAN标记"
 
 #: ../subiquitycore/models/network.py:49
 msgctxt "NetDevAction"
 msgid "Delete"
-msgstr ""
+msgstr "删除"
 
 #: ../subiquitycore/ssh.py:59
 msgid "The host key fingerprints are:\n"
-msgstr ""
+msgstr "主机密钥指纹是：\n"
 
 #: ../subiquitycore/ssh.py:66
 #, python-brace-format
@@ -406,46 +423,48 @@ msgid ""
 "The {keytype} host key fingerprint is:\n"
 "    {fingerprint}\n"
 msgstr ""
+"{keytype}主机密钥指纹是：\n"
+"    {fingerprint}\n"
 
 #: ../subiquitycore/ui/form.py:365
 msgid ", or "
-msgstr ""
+msgstr "或 "
 
 #: ../subiquitycore/ui/form.py:367
 msgid " or "
-msgstr ""
+msgstr " 或 "
 
 #: ../subiquitycore/ui/form.py:371
 #, python-brace-format
 msgid "This field must be a {schemes} URL."
-msgstr ""
+msgstr "该字段必须是{schemes}URL。"
 
-#: ../subiquitycore/ui/form.py:451 ../subiquitycore/ui/views/network.py:308
-#: ../subiquity/ui/views/filesystem/filesystem.py:494
-#: ../subiquity/ui/views/snaplist.py:454
+#: ../subiquitycore/ui/form.py:451 ../subiquitycore/ui/views/network.py:330
+#: ../subiquity/ui/views/filesystem/filesystem.py:498
+#: ../subiquity/ui/views/snaplist.py:456
 msgid "Done"
-msgstr ""
+msgstr "完成"
 
 #: ../subiquitycore/ui/form.py:452 ../subiquitycore/ui/utils.py:382
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:33
-#: ../subiquity/ui/views/filesystem/delete.py:89
-#: ../subiquity/ui/views/filesystem/delete.py:155
+#: ../subiquity/ui/views/filesystem/delete.py:98
+#: ../subiquity/ui/views/filesystem/delete.py:164
 #: ../subiquity/ui/views/keyboard.py:99 ../subiquity/ui/views/keyboard.py:333
-#: ../subiquity/ui/views/snaplist.py:265 ../subiquity/ui/views/ssh.py:162
+#: ../subiquity/ui/views/snaplist.py:266 ../subiquity/ui/views/ssh.py:162
 msgid "Cancel"
-msgstr ""
+msgstr "取消"
 
 #: ../subiquitycore/ui/interactive.py:109 ../subiquity/ui/views/keyboard.py:218
 #: ../subiquity/ui/views/ssh.py:185
 msgid "Yes"
-msgstr ""
+msgstr "是"
 
 #: ../subiquitycore/ui/interactive.py:109
 #: ../subiquity/ui/views/installprogress.py:247
 #: ../subiquity/ui/views/keyboard.py:219 ../subiquity/ui/views/ssh.py:98
 #: ../subiquity/ui/views/ssh.py:186
 msgid "No"
-msgstr ""
+msgstr "否"
 
 #: ../subiquitycore/ui/utils.py:349
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:319
@@ -453,9 +472,9 @@ msgstr ""
 #: ../subiquity/ui/views/filesystem/disk_info.py:55
 #: ../subiquity/ui/views/filesystem/filesystem.py:232
 #: ../subiquity/ui/views/help.py:66 ../subiquity/ui/views/installprogress.py:82
-#: ../subiquity/ui/views/snaplist.py:315 ../subiquity/ui/views/welcome.py:115
+#: ../subiquity/ui/views/snaplist.py:316 ../subiquity/ui/views/welcome.py:115
 msgid "Close"
-msgstr ""
+msgstr "关闭"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:86
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:152
@@ -463,299 +482,333 @@ msgstr ""
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:425
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:51
 #: ../subiquity/ui/views/filesystem/lvm.py:158
-#: ../subiquity/ui/views/filesystem/partition.py:387
-#: ../subiquity/ui/views/filesystem/raid.py:144
+#: ../subiquity/ui/views/filesystem/partition.py:395
+#: ../subiquity/ui/views/filesystem/raid.py:147
 msgid "Save"
-msgstr ""
+msgstr "保存"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:88
 msgid "Subnet:"
-msgstr ""
+msgstr "子网："
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:89
 msgid "Address:"
-msgstr ""
+msgstr "地址："
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:90
 msgid "Gateway:"
-msgstr ""
+msgstr "网关："
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:91
 msgid "Name servers:"
-msgstr ""
+msgstr "名称服务器："
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:92
 msgid "IP addresses, comma separated"
-msgstr ""
+msgstr "IP地址，用逗号分隔"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:93
 msgid "Search domains:"
-msgstr ""
+msgstr "搜索域："
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:94
 msgid "Domains, comma separated"
-msgstr ""
+msgstr "域名，用逗号分隔"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:102
 #, python-brace-format
 msgid "should be in CIDR form ({example})"
-msgstr ""
+msgstr "应为CIDR格式（{example}）"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:114
 #, python-brace-format
 msgid "'{address}' is not contained in '{subnet}'"
-msgstr ""
+msgstr "“{address}”不包含在“{subnet}”中"
 
 #. A choice for how to configure a network interface
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:143
 msgid "Automatic (DHCP)"
-msgstr ""
+msgstr "自动（DHCP）"
 
 #. A choice for how to configure a network interface
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:145
 msgid "Manual"
-msgstr ""
+msgstr "手动"
 
 #. A choice for how to configure a network interface
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:147
 msgid "Disabled"
-msgstr ""
+msgstr "禁用"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:165
 #, python-brace-format
 msgid "IPv{v} Method: "
-msgstr ""
+msgstr "IPv{v}方式： "
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:263
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:410
 #: ../subiquity/ui/views/filesystem/lvm.py:143
-#: ../subiquity/ui/views/filesystem/partition.py:375
-#: ../subiquity/ui/views/filesystem/raid.py:127
+#: ../subiquity/ui/views/filesystem/partition.py:381
+#: ../subiquity/ui/views/filesystem/raid.py:130
 msgid "Create"
-msgstr ""
+msgstr "新建"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:270
 msgid "VLAN ID:"
-msgstr ""
+msgstr "VLAN ID:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:279
 msgid "VLAN ID must be between 1 and 4095"
-msgstr ""
+msgstr "VLAN ID必须介于1和4095之间"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:285
 #, python-brace-format
 msgid "{netdev} already exists"
-msgstr ""
+msgstr "{netdev}已存在"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:297
 msgid "Add a VLAN tag"
-msgstr ""
+msgstr "添加VLAN标记"
 
 #. {device} is the name of a network device
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:322
 #: ../subiquity/ui/views/filesystem/disk_info.py:57
 #, python-brace-format
 msgid "Info for {device}"
-msgstr ""
+msgstr "{device}的信息"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:376
 #: ../subiquity/ui/views/filesystem/lvm.py:89
-#: ../subiquity/ui/views/filesystem/raid.py:90
+#: ../subiquity/ui/views/filesystem/raid.py:93
 msgid "Name:"
-msgstr ""
+msgstr "名称："
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:377
 msgid "Devices: "
-msgstr ""
+msgstr "设备： "
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:378
 msgid "Bond mode:"
-msgstr ""
+msgstr "捆绑模式："
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:380
 msgid "XMIT hash policy:"
-msgstr ""
+msgstr "XMIT哈希策略："
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:381
 msgid "LACP rate:"
-msgstr ""
+msgstr "LACP费率："
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:394
 #, python-brace-format
 msgid "There is already a network device named \"{netdev}\""
-msgstr ""
+msgstr "已存在名为“{netdev}”的网络设备"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:397
 msgid "Name cannot be empty"
-msgstr ""
+msgstr "名称不能为空"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:399
 msgid "Name cannot be more than 16 characters long"
-msgstr ""
+msgstr "名称长度不能超过16个字符"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:409
-#: ../subiquitycore/ui/views/network.py:244
+#: ../subiquitycore/ui/views/network.py:263
 msgid "Create bond"
-msgstr ""
+msgstr "创建捆绑"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:424
 msgid "Edit bond"
-msgstr ""
+msgstr "编辑捆绑"
 
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:38
 msgid "Select a network"
-msgstr ""
+msgstr "选择网络"
 
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:70
 #, python-brace-format
 msgid "Network interface {nic} WIFI configuration"
-msgstr ""
+msgstr "网络接口{nic}WIFI配置"
 
-#: ../subiquitycore/ui/views/network.py:118
+#: ../subiquitycore/ui/views/network.py:119
 #, python-brace-format
 msgid "VLAN {id} on interface {link}"
-msgstr ""
+msgstr "接口{link}上的VLAN {id}"
 
-#: ../subiquitycore/ui/views/network.py:121
+#: ../subiquitycore/ui/views/network.py:122
 #, python-brace-format
 msgid "bond master for {interfaces}"
-msgstr ""
+msgstr "{interfaces}的键合主机"
 
-#: ../subiquitycore/ui/views/network.py:141
+#: ../subiquitycore/ui/views/network.py:142
 #, python-brace-format
 msgid "ssid: {ssid}"
-msgstr ""
+msgstr "ssid: {ssid}"
 
-#: ../subiquitycore/ui/views/network.py:143
-#: ../subiquitycore/ui/views/network.py:145
+#: ../subiquitycore/ui/views/network.py:144
+#: ../subiquitycore/ui/views/network.py:146
 msgid "not connected"
-msgstr ""
+msgstr "未连接"
 
-#: ../subiquitycore/ui/views/network.py:148
+#: ../subiquitycore/ui/views/network.py:149
 #, python-brace-format
 msgid "enslaved to {device}"
-msgstr ""
+msgstr "受制于{device}"
 
-#: ../subiquitycore/ui/views/network.py:175
+#: ../subiquitycore/ui/views/network.py:176
 msgid "timed out"
-msgstr ""
+msgstr "超时"
 
-#: ../subiquitycore/ui/views/network.py:180
+#: ../subiquitycore/ui/views/network.py:181
 msgid "static"
-msgstr ""
+msgstr "静态"
 
-#: ../subiquitycore/ui/views/network.py:187
+#: ../subiquitycore/ui/views/network.py:188
 msgid "disabled"
-msgstr ""
-
-#: ../subiquitycore/ui/views/network.py:212
-msgid "Network connections"
-msgstr ""
+msgstr "禁用"
 
 #: ../subiquitycore/ui/views/network.py:213
 msgid ""
-"Configure at least one interface this server can use to talk to other "
-"machines, and which preferably provides sufficient access for updates."
+"A wifi device was detected but the necessary support packages were not\n"
+"available.\n"
 msgstr ""
 
+#: ../subiquitycore/ui/views/network.py:217
+msgid "Wifi support packages are being installed.\n"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:220
+msgid "Wifi support packages failed to install. Please check the logs.\n"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:223
+msgid "Wifi support packages will be installed in the target system.\n"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:230
+msgid "Network connections"
+msgstr "网络连接"
+
+#: ../subiquitycore/ui/views/network.py:231
+msgid ""
+"Configure at least one interface this server can use to talk to other "
+"machines, and which preferably provides sufficient access for updates."
+msgstr "至少配置一个此服务器可用于与其他计算机对话的接口，最好提供足够的更新访问权限。"
+
 #. See _route_watcher
-#: ../subiquitycore/ui/views/network.py:255
-#: ../subiquity/ui/views/filesystem/filesystem.py:499
-#: ../subiquity/ui/views/filesystem/guided.py:147
+#: ../subiquitycore/ui/views/network.py:274
+#: ../subiquity/ui/views/filesystem/filesystem.py:503
+#: ../subiquity/ui/views/filesystem/guided.py:159
 #: ../subiquity/ui/views/filesystem/probing.py:53
 #: ../subiquity/ui/views/filesystem/probing.py:79
 #: ../subiquity/ui/views/keyboard.py:353 ../subiquity/ui/views/mirror.py:38
-#: ../subiquity/ui/views/proxy.py:41 ../subiquity/ui/views/refresh.py:157
-#: ../subiquity/ui/views/refresh.py:184 ../subiquity/ui/views/refresh.py:214
-#: ../subiquity/ui/views/refresh.py:276 ../subiquity/ui/views/snaplist.py:455
+#: ../subiquity/ui/views/proxy.py:41 ../subiquity/ui/views/refresh.py:158
+#: ../subiquity/ui/views/refresh.py:185 ../subiquity/ui/views/refresh.py:216
+#: ../subiquity/ui/views/refresh.py:279 ../subiquity/ui/views/snaplist.py:457
 #: ../subiquity/ui/views/ssh.py:108 ../subiquity/ui/views/welcome.py:93
 #: ../subiquity/ui/views/zdev.py:163
 msgid "Back"
-msgstr ""
+msgstr "返回"
 
-#: ../subiquitycore/ui/views/network.py:310
+#: ../subiquitycore/ui/views/network.py:332
 msgid "Continue without network"
-msgstr ""
+msgstr "继续而不使用网络"
 
-#: ../subiquitycore/ui/views/network.py:323
+#: ../subiquitycore/ui/views/network.py:345
 msgid "Applying changes"
-msgstr ""
+msgstr "正在应用更改"
 
 #. for translators: this is a description of a RAID level
-#: ../subiquity/models/filesystem.py:170
+#: ../subiquity/models/filesystem.py:171
 msgid "0 (striped)"
-msgstr ""
+msgstr "0 (分割的)"
 
 #. for translators: this is a description of a RAID level
-#: ../subiquity/models/filesystem.py:172
-msgid "1 (mirrored)"
-msgstr ""
-
 #: ../subiquity/models/filesystem.py:173
-msgid "5"
-msgstr ""
+msgid "1 (mirrored)"
+msgstr "1 (映像的)"
 
 #: ../subiquity/models/filesystem.py:174
-msgid "6"
-msgstr ""
+msgid "5"
+msgstr "5"
 
 #: ../subiquity/models/filesystem.py:175
+msgid "6"
+msgstr "6"
+
+#: ../subiquity/models/filesystem.py:176
 msgid "10"
+msgstr "10"
+
+#: ../subiquity/models/filesystem.py:177
+msgid "Container"
 msgstr ""
 
 #. Attempting to convert input to a size
-#: ../subiquity/models/filesystem.py:210
+#: ../subiquity/models/filesystem.py:212
 msgid "input cannot be empty"
-msgstr ""
+msgstr "输入不能为空"
 
 #. Attempting to convert input to a size
-#: ../subiquity/models/filesystem.py:222 ../subiquity/models/filesystem.py:234
+#: ../subiquity/models/filesystem.py:224 ../subiquity/models/filesystem.py:236
 msgid "{input!r} is not valid input"
-msgstr ""
+msgstr "{input!r}不是有效的输入"
 
 #: ../subiquity/ui/mount.py:71
 msgid "Other"
-msgstr ""
+msgstr "其它"
 
 #: ../subiquity/ui/mount.py:73
 msgid "Leave unmounted"
-msgstr ""
+msgstr "不挂载"
 
 #: ../subiquity/ui/views/error.py:67 ../subiquity/ui/views/error.py:70
 msgid ""
 "\n"
 "Sorry, there was a problem examining the storage devices on this system.\n"
 msgstr ""
+"\n"
+"抱歉，检查此系统上的存储设备时出现问题。\n"
 
 #: ../subiquity/ui/views/error.py:73
 msgid ""
 "\n"
 "Sorry, there was a problem completing the installation.\n"
 msgstr ""
+"\n"
+"抱歉，完成安装时出现问题。\n"
 
 #: ../subiquity/ui/views/error.py:76
 msgid ""
 "\n"
 "Sorry, there was a problem applying the network configuration.\n"
 msgstr ""
+"\n"
+"抱歉，应用网络配置时出现问题。\n"
 
 #: ../subiquity/ui/views/error.py:79
 msgid ""
 "\n"
 "Sorry, the installer has encountered an internal error.\n"
 msgstr ""
+"\n"
+"抱歉，安装程序遇到内部错误。\n"
 
 #: ../subiquity/ui/views/error.py:82
 msgid ""
 "\n"
 "Sorry, the installer has restarted because of an error.\n"
 msgstr ""
+"\n"
+"抱歉，由于发生错误，安装程序已重启。\n"
 
 #: ../subiquity/ui/views/error.py:85
 msgid ""
 "\n"
 "Sorry, an unknown error occurred.\n"
 msgstr ""
+"\n"
+"抱歉，发生了未知错误。\n"
 
 #: ../subiquity/ui/views/error.py:91
 msgid ""
@@ -763,12 +816,16 @@ msgid ""
 "Information is being collected from the system that will help the\n"
 "developers diagnose the report.\n"
 msgstr ""
+"\n"
+"正在从系统中收集信息，以帮助开发人员诊断报告。\n"
 
 #: ../subiquity/ui/views/error.py:95
 msgid ""
 "\n"
 "Loading report...\n"
 msgstr ""
+"\n"
+"加载报告...\n"
 
 #: ../subiquity/ui/views/error.py:98
 msgid ""
@@ -776,12 +833,16 @@ msgid ""
 "Collecting information from the system failed. See the files in\n"
 "/var/log/installer for more.\n"
 msgstr ""
+"\n"
+"从系统收集信息失败。有关更多信息，请参阅 /var/log/installer 中的文件。\n"
 
 #: ../subiquity/ui/views/error.py:102
 msgid ""
 "\n"
 "Loading the report failed. See the files in /var/log/installer for more.\n"
 msgstr ""
+"\n"
+"加载报告失败。有关更多信息，请参阅 /var/log/installer 中的文件。\n"
 
 #: ../subiquity/ui/views/error.py:108
 msgid ""
@@ -791,6 +852,11 @@ msgid ""
 "the issue by switching to a shell and reconfiguring the system's block\n"
 "devices manually.\n"
 msgstr ""
+"\n"
+"你可以继续，这样安装程序只显示系统中\n"
+"存在的磁盘，而不显示其他块设备，或者你可以\n"
+"通过切换到shell并手动重新配置系统的块设备来\n"
+"解决此问题。\n"
 
 #: ../subiquity/ui/views/error.py:114
 msgid ""
@@ -798,6 +864,9 @@ msgid ""
 "You may be able to fix the issue by switching to a shell and\n"
 "reconfiguring the system's block devices manually.\n"
 msgstr ""
+"\n"
+"你可以通过切换到shell并手动\n"
+"重新配置系统的块设备来解决此问题。\n"
 
 #: ../subiquity/ui/views/error.py:118
 msgid ""
@@ -805,66 +874,74 @@ msgid ""
 "You can continue with the installation but it will be assumed the network\n"
 "is not functional.\n"
 msgstr ""
+"\n"
+"你可以继续安装，但假定网络无法正常工作。\n"
 
 #: ../subiquity/ui/views/error.py:122
 msgid ""
 "\n"
 "You can continue or restart the installer.\n"
 msgstr ""
+"\n"
+"你可以继续或重启安装程序。\n"
 
 #: ../subiquity/ui/views/error.py:125
 msgid ""
 "\n"
 "Do you want to try starting the installation again?\n"
 msgstr ""
+"\n"
+"是否要再次尝试启动安装？\n"
 
 #: ../subiquity/ui/views/error.py:129
 msgid "Select continue to try the installation again."
-msgstr ""
+msgstr "选择“继续”以重试安装。"
 
 #: ../subiquity/ui/views/error.py:134
 msgid ""
 "\n"
 "If you want to help improve the installer, you can send an error report.\n"
 msgstr ""
+"\n"
+"如果你想帮助改进安装程序，可以发送错误报告。\n"
 
 #: ../subiquity/ui/views/error.py:156
 msgid "Cancel upload"
-msgstr ""
+msgstr "取消上传"
 
 #: ../subiquity/ui/views/error.py:157
 msgid "Close report"
-msgstr ""
+msgstr "关闭报告"
 
 #: ../subiquity/ui/views/error.py:158
 #: ../subiquity/ui/views/installprogress.py:65
 #: ../subiquity/ui/views/installprogress.py:248
-#: ../subiquity/ui/views/snaplist.py:352 ../subiquity/ui/views/snaplist.py:377
+#: ../subiquity/ui/views/snaplist.py:354 ../subiquity/ui/views/snaplist.py:379
 #: ../subiquity/ui/views/zdev.py:162
 msgid "Continue"
-msgstr ""
+msgstr "继续"
 
 #: ../subiquity/ui/views/error.py:160
 #: ../subiquity/ui/views/installprogress.py:282
 #: ../subiquity/ui/views/welcome.py:113
 msgid "Switch to a shell"
-msgstr ""
+msgstr "切换到shell"
 
 #: ../subiquity/ui/views/error.py:162
 msgid "Restart the installer"
-msgstr ""
+msgstr "重启安装程序"
 
 #: ../subiquity/ui/views/error.py:164
 msgid "Send to Canonical"
-msgstr ""
+msgstr "发送到Canonical"
 
 #: ../subiquity/ui/views/error.py:165
 msgid "Sent to Canonical"
-msgstr ""
+msgstr "发送到Canonical"
 
 #: ../subiquity/ui/views/error.py:167
 msgid "View full report"
-msgstr ""
+msgstr "查看完整报告"
 
 #: ../subiquity/ui/views/error.py:235
 msgid ""
@@ -874,285 +951,295 @@ msgid ""
 "\n"
 "on the filesystem with label {label!r}."
 msgstr ""
+"错误报告已保存到\n"
+"\n"
+"  {loc}\n"
+"\n"
+"在标签为{label!r}的文件系统上。"
 
 #: ../subiquity/ui/views/error.py:317
 msgid "DATE"
-msgstr ""
+msgstr "日期"
 
 #: ../subiquity/ui/views/error.py:318
 msgid "KIND"
-msgstr ""
+msgstr "类型"
 
 #: ../subiquity/ui/views/error.py:319
 msgid "STATUS"
-msgstr ""
+msgstr "状态"
 
 #: ../subiquity/ui/views/error.py:330
 msgid "Select an error report to view:"
-msgstr ""
+msgstr "选择要查看的错误报告："
 
 #: ../subiquity/ui/views/error.py:344
 msgid "VIEWED"
-msgstr ""
+msgstr "已查看"
 
 #: ../subiquity/ui/views/error.py:345
 msgid "UNVIEWED"
-msgstr ""
+msgstr "未查看"
 
 #: ../subiquity/ui/views/filesystem/compound.py:130
 #, python-brace-format
 msgid "formatted as {fstype}"
-msgstr ""
+msgstr "格式化为{fstype}"
 
 #: ../subiquity/ui/views/filesystem/compound.py:132
 #, python-brace-format
 msgid ", mounted at {path}"
-msgstr ""
+msgstr "，安装在{path}"
 
 #: ../subiquity/ui/views/filesystem/compound.py:134
 msgid ", not mounted"
-msgstr ""
+msgstr "，未安装"
 
 #: ../subiquity/ui/views/filesystem/compound.py:136
 #, python-brace-format
 msgid "unused {device}"
-msgstr ""
+msgstr "未使用 {device}"
 
 #: ../subiquity/ui/views/filesystem/compound.py:217
 msgid ""
 "If you put all disks into RAIDs or LVM VGs, there will be nowhere to put the "
 "boot partition."
-msgstr ""
+msgstr "如果您将所有磁盘放入RAID或LVM VG中，那么将没有地方放置引导分区。"
 
-#: ../subiquity/ui/views/filesystem/delete.py:43
+#: ../subiquity/ui/views/filesystem/delete.py:44
 #, python-brace-format
 msgid "Do you really want to delete the {desc} {label}?"
-msgstr ""
+msgstr "是否确实要删除{desc} {label}？"
 
-#: ../subiquity/ui/views/filesystem/delete.py:53
-#: ../subiquity/ui/views/filesystem/delete.py:124
+#: ../subiquity/ui/views/filesystem/delete.py:54
+#: ../subiquity/ui/views/filesystem/delete.py:133
 #, python-brace-format
 msgid "It is formatted as {fstype} and mounted at {path}"
-msgstr ""
+msgstr "它被格式化为{fstype}并安装到{path}"
 
-#: ../subiquity/ui/views/filesystem/delete.py:59
-#: ../subiquity/ui/views/filesystem/delete.py:130
+#: ../subiquity/ui/views/filesystem/delete.py:60
+#: ../subiquity/ui/views/filesystem/delete.py:139
 #, python-brace-format
 msgid "It is formatted as {fstype} and not mounted."
-msgstr ""
+msgstr "它的格式为{fstype}，未安装。"
 
-#: ../subiquity/ui/views/filesystem/delete.py:65
+#: ../subiquity/ui/views/filesystem/delete.py:66
 #, python-brace-format
 msgid "It contains 1 logical volume"
 msgid_plural "It contains {n} logical volumes"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "它包含{n}个逻辑分区"
 
-#: ../subiquity/ui/views/filesystem/delete.py:70
+#: ../subiquity/ui/views/filesystem/delete.py:71
 #, python-brace-format
 msgid "It contains 1 partition"
 msgid_plural "It contains {n} partitions"
+msgstr[0] "它包含{n}个分区"
+
+#: ../subiquity/ui/views/filesystem/delete.py:85
+#, python-brace-format
+msgid "It contains 1 volume."
+msgid_plural "It contains {n} volumes."
 msgstr[0] ""
 msgstr[1] ""
 
-#: ../subiquity/ui/views/filesystem/delete.py:82
+#: ../subiquity/ui/views/filesystem/delete.py:91
 msgid "It is not formatted or mounted."
-msgstr ""
+msgstr "它没有格式化或安装。"
 
-#: ../subiquity/ui/views/filesystem/delete.py:84
+#: ../subiquity/ui/views/filesystem/delete.py:93
 msgid "Delete"
-msgstr ""
+msgstr "删除"
 
-#: ../subiquity/ui/views/filesystem/delete.py:112
+#: ../subiquity/ui/views/filesystem/delete.py:121
 #, python-brace-format
 msgid "Remove filesystem from {device}"
-msgstr ""
+msgstr "从{device}删除文件系统"
 
-#: ../subiquity/ui/views/filesystem/delete.py:116
+#: ../subiquity/ui/views/filesystem/delete.py:125
 #, python-brace-format
 msgid "Do you really want to remove the existing filesystem from {device}?"
-msgstr ""
+msgstr "是否确实要从{device}中删除现有文件系统？"
 
-#: ../subiquity/ui/views/filesystem/delete.py:134
+#: ../subiquity/ui/views/filesystem/delete.py:143
 msgid "logical volumes"
-msgstr ""
+msgstr "逻辑卷"
 
-#: ../subiquity/ui/views/filesystem/delete.py:136
+#: ../subiquity/ui/views/filesystem/delete.py:145
 msgid "partitions"
-msgstr ""
+msgstr "分区"
 
 #. things is either "logical volumes" or "partitions"
-#: ../subiquity/ui/views/filesystem/delete.py:138
+#: ../subiquity/ui/views/filesystem/delete.py:147
 #, python-brace-format
 msgid "Remove all {things} from {obj}"
-msgstr ""
+msgstr "从{obj}中删除所有{things}"
 
-#: ../subiquity/ui/views/filesystem/delete.py:142
+#: ../subiquity/ui/views/filesystem/delete.py:151
 #, python-brace-format
 msgid "Do you really want to remove all {things} from {obj}?"
-msgstr ""
+msgstr "是否确实要从{obj}中删除所有{things}？"
 
 #. XXX summarize partitions here?
-#: ../subiquity/ui/views/filesystem/delete.py:149
+#: ../subiquity/ui/views/filesystem/delete.py:158
 msgid "Reformat"
-msgstr ""
+msgstr "重新格式化"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:101
 #, python-brace-format
 msgid "existing {fstype}"
-msgstr ""
+msgstr "现有{fstype}"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:103
 #, python-brace-format
 msgid "new {fstype}"
-msgstr ""
+msgstr "新建{fstype}"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:135
 msgid "No disks or partitions mounted."
-msgstr ""
+msgstr "没有安装磁盘或分区。"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:160
 msgid "MOUNT POINT"
-msgstr ""
+msgstr "挂载点"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:161
-#: ../subiquity/ui/views/filesystem/filesystem.py:385
-#: ../subiquity/ui/views/snaplist.py:162
+#: ../subiquity/ui/views/filesystem/filesystem.py:393
+#: ../subiquity/ui/views/snaplist.py:163
 msgid "SIZE"
-msgstr ""
+msgstr "大小"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:162
-#: ../subiquity/ui/views/filesystem/filesystem.py:384
+#: ../subiquity/ui/views/filesystem/filesystem.py:392
 msgid "TYPE"
-msgstr ""
+msgstr "类型"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:163
 msgid "DEVICE TYPE"
-msgstr ""
+msgstr "设备类型"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:186
 msgid "Unmount"
-msgstr ""
+msgstr "弹出"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:260
 msgid "No available devices"
-msgstr ""
+msgstr "没有可用的设备"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:262
 msgid "No used devices"
-msgstr ""
+msgstr "没有使用的设备"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:323
+#: ../subiquity/ui/views/filesystem/filesystem.py:326
 #, python-brace-format
 msgid "Remove from {device}"
-msgstr ""
-
-#: ../subiquity/ui/views/filesystem/filesystem.py:328
-#, python-brace-format
-msgid "Add {ptype} Partition"
-msgstr ""
+msgstr "从{device}删除"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:333
+msgid "Create Logical Volume"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:335
+#, python-brace-format
+msgid "Add {ptype} Partition"
+msgstr "添加{ptype}分区"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:340
 msgid "Stop Using As Boot Device"
-msgstr ""
+msgstr "停止用作启动设备"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:338
+#: ../subiquity/ui/views/filesystem/filesystem.py:344
 msgid "Add As Another Boot Device"
-msgstr ""
+msgstr "添加为另一个启动设备"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:339
+#: ../subiquity/ui/views/filesystem/filesystem.py:345
 msgid "Use As Boot Device"
-msgstr ""
+msgstr "用作启动设备"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:383
+#: ../subiquity/ui/views/filesystem/filesystem.py:391
 msgid "DEVICE"
-msgstr ""
+msgstr "设备"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:412
-msgid "free space"
-msgstr ""
-
-#: ../subiquity/ui/views/filesystem/filesystem.py:426
+#: ../subiquity/ui/views/filesystem/filesystem.py:430
 msgid "Storage configuration"
-msgstr ""
+msgstr "存储配置"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:437
+#: ../subiquity/ui/views/filesystem/filesystem.py:441
 msgid "Create software RAID (md)"
-msgstr ""
+msgstr "创建软件RAID（md）"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:440
+#: ../subiquity/ui/views/filesystem/filesystem.py:444
 msgid "Create volume group (LVM)"
-msgstr ""
+msgstr "创建卷组（LVM）"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:447
+#: ../subiquity/ui/views/filesystem/filesystem.py:451
 msgid "FILE SYSTEM SUMMARY"
-msgstr ""
+msgstr "文件系统摘要"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:452
+#: ../subiquity/ui/views/filesystem/filesystem.py:456
 msgid "AVAILABLE DEVICES"
-msgstr ""
+msgstr "可用设备"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:459
+#: ../subiquity/ui/views/filesystem/filesystem.py:463
 msgid "USED DEVICES"
-msgstr ""
+msgstr "使用的设备"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:477
+#: ../subiquity/ui/views/filesystem/filesystem.py:481
 msgid "Mount a filesystem at /"
-msgstr ""
+msgstr "在以下位置装载文件系统：/"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:479
+#: ../subiquity/ui/views/filesystem/filesystem.py:483
 msgid "Select a boot disk"
-msgstr ""
+msgstr "Select a boot disk"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:484
+#: ../subiquity/ui/views/filesystem/filesystem.py:488
 msgid "To continue you need to:"
-msgstr ""
+msgstr "若要继续，您需要："
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:498
+#: ../subiquity/ui/views/filesystem/filesystem.py:502
 msgid "Reset"
-msgstr ""
+msgstr "重置"
 
-#: ../subiquity/ui/views/filesystem/guided.py:53
+#: ../subiquity/ui/views/filesystem/guided.py:57
 msgid "Configure a guided storage layout, or create a custom one:"
-msgstr ""
+msgstr "配置引导式存储布局，或创建自定义布局："
 
-#: ../subiquity/ui/views/filesystem/guided.py:58
+#: ../subiquity/ui/views/filesystem/guided.py:62
 #: ../subiquity/ui/views/filesystem/lvm.py:93
 msgid "Passphrase:"
-msgstr ""
-
-#: ../subiquity/ui/views/filesystem/guided.py:59
-#: ../subiquity/ui/views/filesystem/lvm.py:94
-msgid "Confirm passphrase:"
-msgstr ""
+msgstr "密码："
 
 #: ../subiquity/ui/views/filesystem/guided.py:63
-#: ../subiquity/ui/views/identity.py:137
-msgid "Password must be set"
-msgstr ""
+#: ../subiquity/ui/views/filesystem/lvm.py:94
+msgid "Confirm passphrase:"
+msgstr "确认密码："
 
 #: ../subiquity/ui/views/filesystem/guided.py:67
-#: ../subiquity/ui/views/identity.py:141
+#: ../subiquity/ui/views/identity.py:138
+msgid "Password must be set"
+msgstr "必须设置密码"
+
+#: ../subiquity/ui/views/filesystem/guided.py:71
+#: ../subiquity/ui/views/identity.py:142
 msgid "Passwords do not match"
-msgstr ""
+msgstr "密码不匹配"
 
-#: ../subiquity/ui/views/filesystem/guided.py:80
+#: ../subiquity/ui/views/filesystem/guided.py:84
 msgid "Encrypt the LVM group with LUKS"
-msgstr ""
+msgstr "使用LUKS加密LVM组"
 
-#: ../subiquity/ui/views/filesystem/guided.py:109
+#: ../subiquity/ui/views/filesystem/guided.py:121
 msgid "Set up this disk as an LVM group"
-msgstr ""
+msgstr "将此磁盘设置为LVM组"
 
-#: ../subiquity/ui/views/filesystem/guided.py:143
+#: ../subiquity/ui/views/filesystem/guided.py:155
 msgid "Use an entire disk"
-msgstr ""
+msgstr "使用整个磁盘"
 
-#: ../subiquity/ui/views/filesystem/guided.py:145
+#: ../subiquity/ui/views/filesystem/guided.py:157
 msgid "Custom storage layout"
-msgstr ""
+msgstr "自定义存储布局"
 
-#: ../subiquity/ui/views/filesystem/guided.py:158
+#: ../subiquity/ui/views/filesystem/guided.py:170
 msgid ""
 "\n"
 "\n"
@@ -1185,190 +1272,223 @@ msgid ""
 "at /.\n"
 "\n"
 msgstr ""
+"\n"
+"\n"
+"“使用整个磁盘”选项将Ubuntu安装到所选磁盘上，\n"
+"并替换所有已经存在的分区和数据。\n"
+"\n"
+"如果平台需要，将在磁盘上创建引导加载程序分区。\n"
+"\n"
+"如果选择使用LVM，则会创建两个额外的分区，\n"
+"一个用于/boot，另一个用于覆盖磁盘的其余部分。\n"
+"将创建一个包含大分区的LVM卷组。为根文件系统\n"
+"创建一个逻辑卷，使用一些简单的启发式方法调整大小。\n"
+"可以使用标准LVM命令行工具（或在下一个屏幕上）\n"
+"轻松地扩大它。\n"
+"\n"
+"您还可以选择加密LVM卷组。这将需要设置\n"
+"一个密码，在系统启动之前，每次启动时\n"
+"都需要输入该密码。\n"
+"\n"
+"如果您不选择使用LVM，将创建一个覆盖\n"
+"磁盘其余部分的分区，然后将其格式化为ext4并装载在/。\n"
+"\n"
+"无论哪种情况，您都有机会查看和修改结果。\n"
+"\n"
+"如果您选择使用自定义存储布局，则不会对磁盘\n"
+"进行任何更改，您至少必须选择一个引导磁盘，\n"
+"并在/处安装一个文件系统。\n"
+"\n"
 
-#: ../subiquity/ui/views/filesystem/guided.py:188
+#: ../subiquity/ui/views/filesystem/guided.py:200
 msgid ""
 "\n"
 "Block probing did not discover any disks big enough to support guided "
 "storage\n"
 "configuration. Manual configuration may still be possible.\n"
 msgstr ""
+"\n"
+"块探测未发现任何足以支持引导式存储配置的磁盘。\n"
+"手动配置仍然是可用的。\n"
 
-#: ../subiquity/ui/views/filesystem/guided.py:194
+#: ../subiquity/ui/views/filesystem/guided.py:206
 msgid ""
 "\n"
 "Block probing did not discover any disks. Unfortunately this means that\n"
 "installation will not be possible.\n"
 msgstr ""
+"\n"
+"块探测未发现任何磁盘。不幸的是，\n"
+"这意味着无法安装。\n"
 
-#: ../subiquity/ui/views/filesystem/guided.py:202
+#: ../subiquity/ui/views/filesystem/guided.py:214
 msgid "Guided storage configuration"
-msgstr ""
+msgstr "引导存储配置"
 
-#: ../subiquity/ui/views/filesystem/guided.py:221
-#: ../subiquity/ui/views/filesystem/partition.py:422
+#: ../subiquity/ui/views/filesystem/guided.py:233
+#: ../subiquity/ui/views/filesystem/partition.py:432
 #: ../subiquity/ui/views/keyboard.py:98 ../subiquity/ui/views/keyboard.py:136
 #: ../subiquity/ui/views/keyboard.py:332
 msgid "OK"
-msgstr ""
+msgstr "确定"
 
-#: ../subiquity/ui/views/filesystem/guided.py:229
+#: ../subiquity/ui/views/filesystem/guided.py:241
 msgid "Help on guided storage configuration"
-msgstr ""
+msgstr "有关引导式存储配置的帮助"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:61
 msgid ""
 "The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
 "9, +, _, . and -"
-msgstr ""
+msgstr "卷组名称中唯一允许的字符是a-z、A-Z、0-9、+、_，.及-"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:86
 msgid "passphrases"
-msgstr ""
+msgstr "密码"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:90
-#: ../subiquity/ui/views/filesystem/raid.py:92
+#: ../subiquity/ui/views/filesystem/raid.py:95
 msgid "Devices:"
-msgstr ""
+msgstr "设备："
 
 #: ../subiquity/ui/views/filesystem/lvm.py:91
-#: ../subiquity/ui/views/filesystem/raid.py:93
+#: ../subiquity/ui/views/filesystem/raid.py:96
 msgid "Size:"
-msgstr ""
+msgstr "大小："
 
 #: ../subiquity/ui/views/filesystem/lvm.py:92
 msgid "Create encrypted volume"
-msgstr ""
+msgstr "建立加密硬盘"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:105
 msgid "Select at least one device to be part of the volume group."
-msgstr ""
+msgstr "至少选择一个设备作为卷组的一部分。"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:111
 msgid "The name of a volume group cannot be empty"
-msgstr ""
+msgstr "卷组的名称不能为空"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:113
 msgid "The name of a volume group cannot start with a hyphen"
-msgstr ""
+msgstr "卷组的名称不能以连字符开头"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:115
 #, python-brace-format
 msgid "There is already a volume group named '{name}'"
-msgstr ""
+msgstr "已存在名为“{name}”的卷组"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:119
 #, python-brace-format
 msgid "{name} is not a valid name for a volume group"
-msgstr ""
+msgstr "{name}不是卷组的有效名称"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:124
 msgid "Passphrase must be set"
-msgstr ""
+msgstr "必须设置密码短"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:129
 msgid "Passphrases do not match"
-msgstr ""
+msgstr "密码不匹配"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:142
 msgid "Create LVM volume group"
-msgstr ""
+msgstr "创建LVM卷组"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:157
 #, python-brace-format
 msgid "Edit volume group \"{name}\""
-msgstr ""
+msgstr "编辑卷组“{name}”"
 
-#: ../subiquity/ui/views/filesystem/partition.py:76
+#: ../subiquity/ui/views/filesystem/partition.py:77
 msgid "Leave unformatted"
-msgstr ""
+msgstr "未格式化"
 
-#: ../subiquity/ui/views/filesystem/partition.py:79
+#: ../subiquity/ui/views/filesystem/partition.py:80
 #, python-brace-format
 msgid "Leave formatted as {fstype}"
-msgstr ""
+msgstr "已格式化为为{fstype}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:112
+#: ../subiquity/ui/views/filesystem/partition.py:113
 #, python-brace-format
 msgid "Capped partition size at {size}"
-msgstr ""
+msgstr "在{size}处的限制分区大小"
 
-#: ../subiquity/ui/views/filesystem/partition.py:119
+#: ../subiquity/ui/views/filesystem/partition.py:121
 #, python-brace-format
 msgid "Rounded size up to {size}"
-msgstr ""
+msgstr "四舍五入到{size}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:131
+#: ../subiquity/ui/views/filesystem/partition.py:133
 msgid ""
 "The only characters permitted in the name of a logical volume are a-z, A-Z, "
 "0-9, +, _, . and -"
-msgstr ""
+msgstr "逻辑卷名称中唯一允许的字符是a-z、A-Z、0-9、+、_、.及-"
 
-#: ../subiquity/ui/views/filesystem/partition.py:165
+#: ../subiquity/ui/views/filesystem/partition.py:167
 #, python-brace-format
 msgid "Size (max {size}):"
-msgstr ""
-
-#: ../subiquity/ui/views/filesystem/partition.py:202
-msgid "Name: "
-msgstr ""
-
-#: ../subiquity/ui/views/filesystem/partition.py:204
-msgid "Format:"
-msgstr ""
+msgstr "大小（最大{size}）："
 
 #: ../subiquity/ui/views/filesystem/partition.py:205
-msgid "Mount:"
-msgstr ""
+msgid "Name: "
+msgstr "名称： "
 
 #: ../subiquity/ui/views/filesystem/partition.py:207
-msgid "Use as swap"
-msgstr ""
+msgid "Format:"
+msgstr "格式："
 
 #: ../subiquity/ui/views/filesystem/partition.py:208
+msgid "Mount:"
+msgstr "挂载："
+
+#: ../subiquity/ui/views/filesystem/partition.py:210
+msgid "Use as swap"
+msgstr "用作交换分区"
+
+#: ../subiquity/ui/views/filesystem/partition.py:211
 msgid "Use this swap partition in the installed system."
-msgstr ""
+msgstr "在已安装的系统中使用此交换分区。"
 
-#: ../subiquity/ui/views/filesystem/partition.py:232
+#: ../subiquity/ui/views/filesystem/partition.py:235
 msgid "The name of a logical volume cannot be empty"
-msgstr ""
-
-#: ../subiquity/ui/views/filesystem/partition.py:234
-msgid "The name of a logical volume cannot start with a hyphen"
-msgstr ""
+msgstr "逻辑卷的名称不能为空"
 
 #: ../subiquity/ui/views/filesystem/partition.py:237
+msgid "The name of a logical volume cannot start with a hyphen"
+msgstr "逻辑卷的名称不能以连字符开头"
+
+#: ../subiquity/ui/views/filesystem/partition.py:240
 #, python-brace-format
 msgid "A logical volume may not be called {name}"
-msgstr ""
+msgstr "逻辑卷不能称为{name}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:244
+#: ../subiquity/ui/views/filesystem/partition.py:247
 #, python-brace-format
 msgid "The name of a logical volume may not contain \"{substring}\""
-msgstr ""
+msgstr "逻辑卷的名称不能包含“{substring}”"
 
-#: ../subiquity/ui/views/filesystem/partition.py:249
+#: ../subiquity/ui/views/filesystem/partition.py:252
 #, python-brace-format
 msgid "There is already a logical volume named {name}."
-msgstr ""
-
-#: ../subiquity/ui/views/filesystem/partition.py:258
-msgid "Path exceeds PATH_MAX"
-msgstr ""
+msgstr "已经有一个名为{name}的逻辑卷。"
 
 #: ../subiquity/ui/views/filesystem/partition.py:261
+msgid "Path exceeds PATH_MAX"
+msgstr "路径超过路径最大值"
+
+#: ../subiquity/ui/views/filesystem/partition.py:264
 #, python-brace-format
 msgid "{device} is already mounted at {path}."
-msgstr ""
+msgstr "{device}已安装在{path}上。"
 
-#: ../subiquity/ui/views/filesystem/partition.py:269
+#: ../subiquity/ui/views/filesystem/partition.py:272
 #, python-brace-format
 msgid ""
 "Mounting an existing filesystem at {mountpoint} is usually a bad idea, "
 "proceed only with caution."
-msgstr ""
+msgstr "在{mountpoint}上挂载现有文件系统通常是个坏主意，请谨慎操作。"
 
-#: ../subiquity/ui/views/filesystem/partition.py:285
+#: ../subiquity/ui/views/filesystem/partition.py:288
 #, python-brace-format
 msgid ""
 "Bootloader partition\n"
@@ -1381,20 +1501,28 @@ msgid ""
 "will not contain a filesystem and will not be mounted, and cannot be\n"
 "edited here.\n"
 msgstr ""
+"引导加载程序分区\n"
+"\n"
+"{middle}\n"
+"\n"
+"但是，在具有GPT分区表的磁盘上，MBR之后没有足够\n"
+"的空间用于GRUB存储其第二阶段core.img，因此\n"
+"需要在磁盘的开始处使用一个小的未格式化分区。它\n"
+"将不包含文件系统，也不会装载，并且不能在此处编辑。\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:297
+#: ../subiquity/ui/views/filesystem/partition.py:300
 msgid ""
 "If this disk is selected as a boot device, GRUB will be installed onto\n"
 "the target disk's MBR."
-msgstr ""
+msgstr "如果选择此磁盘作为启动设备，GRUB将安装到目标磁盘的MBR上。"
 
-#: ../subiquity/ui/views/filesystem/partition.py:301
+#: ../subiquity/ui/views/filesystem/partition.py:304
 msgid ""
 "As this disk has been selected as a boot device, GRUB will be\n"
 "installed onto the target disk's MBR."
-msgstr ""
+msgstr "由于此磁盘已被选为启动设备，GRUB将安装到目标磁盘的MBR上。"
 
-#: ../subiquity/ui/views/filesystem/partition.py:305
+#: ../subiquity/ui/views/filesystem/partition.py:308
 msgid ""
 "Bootloader partition\n"
 "\n"
@@ -1402,8 +1530,13 @@ msgid ""
 "disk is selected as a boot device, Grub will be installed onto this\n"
 "partition, which must be formatted as fat32.\n"
 msgstr ""
+"引导加载程序分区\n"
+"\n"
+"这是UEFI要求的ESP/“EFI系统分区”。如果\n"
+"选择此磁盘作为启动设备，Grub将安装到此\n"
+"分区上，该分区必须格式化为fat32。\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:313
+#: ../subiquity/ui/views/filesystem/partition.py:316
 msgid ""
 "Bootloader partition\n"
 "\n"
@@ -1411,26 +1544,37 @@ msgid ""
 "disk has been selected as a boot device, Grub will be installed onto\n"
 "this partition, which must be formatted as fat32.\n"
 msgstr ""
+"引导加载程序分区\n"
+"\n"
+"这是UEFI要求的ESP/“EFI系统分区”。由于\n"
+"已选择此磁盘作为启动设备，Grub将安装到\n"
+"此分区上，该分区必须格式化为fat32。\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:321
+#: ../subiquity/ui/views/filesystem/partition.py:324
 msgid "The only aspect of this partition that can be edited is the size.\n"
-msgstr ""
+msgstr "这个分区唯一可以编辑的方面是大小。\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:325
+#: ../subiquity/ui/views/filesystem/partition.py:328
 msgid ""
 "You can choose whether to use the existing filesystem on this\n"
 "partition or reformat it.\n"
 msgstr ""
+"您可以选择是使用这个分区上现有的文件系统，\n"
+"还是重新格式化它。\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:330
+#: ../subiquity/ui/views/filesystem/partition.py:333
 msgid ""
 "Required bootloader partition\n"
 "\n"
 "This is the PReP partion which is required on POWER. If this disk is\n"
 "selected as a boot device, Grub will be installed onto this partition.\n"
 msgstr ""
+"所需的引导加载程序分区\n"
+"\n"
+"这是电源所需的准备部分。如果选择此磁盘\n"
+"作为启动设备，Grub将安装到此分区上。\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:337
+#: ../subiquity/ui/views/filesystem/partition.py:340
 msgid ""
 "Required bootloader partition\n"
 "\n"
@@ -1438,105 +1582,109 @@ msgid ""
 "been selected as a boot device, Grub will be installed onto this\n"
 "partition.\n"
 msgstr ""
+"所需的引导加载程序分区\n"
+"\n"
+"这是电源所需的准备部分。由于已选择此磁盘\n"
+"作为启动设备，Grub将安装到此分区上。\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:429
+#: ../subiquity/ui/views/filesystem/partition.py:439
 msgid "Use existing fat32 filesystem"
-msgstr ""
+msgstr "使用现有fat32文件系统"
 
-#: ../subiquity/ui/views/filesystem/partition.py:435
+#: ../subiquity/ui/views/filesystem/partition.py:445
 msgid "Reformat as fresh fat32 filesystem"
-msgstr ""
+msgstr "重新格式化为新的fat32文件系统"
 
-#: ../subiquity/ui/views/filesystem/partition.py:513
+#: ../subiquity/ui/views/filesystem/partition.py:523
 #, python-brace-format
 msgid "Adding logical volume to {vgname}"
-msgstr ""
+msgstr "正在将逻辑卷添加到{vgname}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:516
+#: ../subiquity/ui/views/filesystem/partition.py:526
 #, python-brace-format
 msgid "Adding {ptype} partition to {device}"
-msgstr ""
+msgstr "正在将{ptype}分区添加到{device}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:522
+#: ../subiquity/ui/views/filesystem/partition.py:532
 #, python-brace-format
 msgid "Editing logical volume {lvname} of {vgname}"
-msgstr ""
+msgstr "编辑{vgname}的逻辑卷{lvname}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:527
+#: ../subiquity/ui/views/filesystem/partition.py:537
 #, python-brace-format
 msgid "Editing partition {number} of {device}"
-msgstr ""
+msgstr "编辑{device}的分区{number}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:580
+#: ../subiquity/ui/views/filesystem/partition.py:592
 msgid ""
 "Formatting and mounting a disk directly is unusual. You probably want to add "
 "a partition instead."
-msgstr ""
+msgstr "直接格式化和装入磁盘是不寻常的。您可能想添加一个分区。"
 
-#: ../subiquity/ui/views/filesystem/partition.py:592
+#: ../subiquity/ui/views/filesystem/partition.py:604
 #, python-brace-format
 msgid "Format and/or mount {device}"
-msgstr ""
+msgstr "格式化和/或装入{device}"
 
 #: ../subiquity/ui/views/filesystem/probing.py:40
 msgid "Waiting for storage probing to complete"
-msgstr ""
+msgstr "等待存储探测完成"
 
 #: ../subiquity/ui/views/filesystem/probing.py:48
 msgid ""
 "The installer is probing for block devices to install to. Please wait until "
 "it completes."
-msgstr ""
+msgstr "安装程序正在探测要安装到的块设备。请等到它完成。"
 
 #: ../subiquity/ui/views/filesystem/probing.py:61
 msgid ""
 "Unfortunately probing for devices to install to failed. Please report a bug "
 "on Launchpad, and if possible include the contents of the /var/log/installer "
 "directory."
-msgstr ""
+msgstr "不幸的是，探测要安装到的设备失败。请在Launchpad上报告一个问题，如果可能，请包括/var/log/installer目录的内容。"
 
 #: ../subiquity/ui/views/filesystem/probing.py:68
 msgid "Probing for devices to install to failed"
-msgstr ""
+msgstr "探测要安装到的设备失败"
 
 #: ../subiquity/ui/views/filesystem/probing.py:77
 msgid "Show Error Report"
-msgstr ""
+msgstr "显示错误报告"
 
-#: ../subiquity/ui/views/filesystem/raid.py:67
+#: ../subiquity/ui/views/filesystem/raid.py:70
 msgid "/ is not permitted in the name of a RAID device"
-msgstr ""
+msgstr "RAID设备的名称中不允许使用“/”"
 
-#: ../subiquity/ui/views/filesystem/raid.py:73
+#: ../subiquity/ui/views/filesystem/raid.py:76
 msgid "Whitespace is not permitted in the name of a RAID device"
-msgstr ""
+msgstr "RAID设备的名称中不允许使用空格"
 
-#: ../subiquity/ui/views/filesystem/raid.py:91
+#: ../subiquity/ui/views/filesystem/raid.py:94
 msgid "RAID Level:"
-msgstr ""
-
-#: ../subiquity/ui/views/filesystem/raid.py:104
-#, python-brace-format
-msgid "There is already a RAID named '{name}'"
-msgstr ""
+msgstr "RAID 级别："
 
 #: ../subiquity/ui/views/filesystem/raid.py:107
-msgid ". and .. are not valid names for RAID devices"
-msgstr ""
+#, python-brace-format
+msgid "There is already a RAID named '{name}'"
+msgstr "已存在名为“{name}”的RAID"
 
-#: ../subiquity/ui/views/filesystem/raid.py:113
+#: ../subiquity/ui/views/filesystem/raid.py:110
+msgid ". and .. are not valid names for RAID devices"
+msgstr "“.”和“..”不是RAID设备的有效名称"
+
+#: ../subiquity/ui/views/filesystem/raid.py:116
 #, python-brace-format
 msgid "RAID Level \"{level}\" requires at least {min_active} active devices"
-msgstr ""
+msgstr "RAID级别{level}至少需要{min_active}个活动设备"
 
-#: ../subiquity/ui/views/filesystem/raid.py:126
+#: ../subiquity/ui/views/filesystem/raid.py:129
 msgid "Create software RAID (\"MD\") disk"
-msgstr ""
+msgstr "创建软件RAID（“MD”）磁盘"
 
-#: ../subiquity/ui/views/filesystem/raid.py:142
+#: ../subiquity/ui/views/filesystem/raid.py:145
 #, python-brace-format
 msgid "Edit software RAID disk \"{name}\""
-msgstr ""
+msgstr "编辑软件RAID磁盘“{name}”"
 
 #: ../subiquity/ui/views/help.py:70
 #, python-brace-format
@@ -1555,6 +1703,17 @@ msgid ""
 "\n"
 "This is version {snap_version} of the installer.\n"
 msgstr ""
+"\n"
+"欢迎使用Ubuntu Server安装程序！\n"
+"\n"
+"作为云计算和数据中心中最流行的服务器Linux，\n"
+"此版本的Ubuntu将接收更新直到发布后9个月内。\n"
+"\n"
+"安装程序将指导您完成Ubuntu Server {release}的安装。\n"
+"\n"
+"安装程序只需要上下箭头键、空格（或回车键）和偶尔的键入。\n"
+"\n"
+"安装程序版本：{snap_version}。\n"
 
 #: ../subiquity/ui/views/help.py:86
 #, python-brace-format
@@ -1573,6 +1732,17 @@ msgid ""
 "\n"
 "This is version {snap_version} of the installer.\n"
 msgstr ""
+"\n"
+"欢迎使用Ubuntu Server安装程序！\n"
+"\n"
+"作为云计算和数据中心中最流行的服务器Linux，\n"
+"您可以依赖Ubuntu服务器及其五年免费升级保证。\n"
+"\n"
+"安装程序将指导您完成Ubuntu Server {release} LTS的安装。\n"
+"\n"
+"安装程序只需要上下箭头键、空格（或回车键）和偶尔的键入。\n"
+"\n"
+"安装程序版本：{snap_version}。\n"
 
 #: ../subiquity/ui/views/help.py:102
 msgid ""
@@ -1581,12 +1751,18 @@ msgid ""
 "might allow the use of a more capable terminal and can offer more languages\n"
 "than can be rendered in the Linux console."
 msgstr ""
+"\n"
+"可以通过网络连接到安装程序，这可能\n"
+"允许使用功能更强的终端，并且可以提供\n"
+"比Linux控制台更多的语言。"
 
 #: ../subiquity/ui/views/help.py:107
 msgid ""
 "\n"
 "To connect, SSH to any of these addresses:\n"
 msgstr ""
+"\n"
+"若要连接，请使用SSH连接到以下任一地址：\n"
 
 #: ../subiquity/ui/views/help.py:111
 #, python-brace-format
@@ -1594,15 +1770,17 @@ msgid ""
 "\n"
 "To connect, SSH to {username}@{ip}."
 msgstr ""
+"\n"
+"若要连接，请使用SSH连接到{username}@{ip}。"
 
 #: ../subiquity/ui/views/help.py:114
 #, python-brace-format
 msgid "The password you should use is \"{password}\"."
-msgstr ""
+msgstr "您应该使用的密码是“{password}”。"
 
 #: ../subiquity/ui/views/help.py:117
 msgid "You should use the preconfigured password passed to cloud-init."
-msgstr ""
+msgstr "您应该使用传递给cloud-init的预配置密码。"
 
 #: ../subiquity/ui/views/help.py:120
 #, python-brace-format
@@ -1611,10 +1789,13 @@ msgid ""
 "\n"
 "    {fingerprint}\n"
 msgstr ""
+"您可以使用带有指纹的{keytype}密钥登录：\n"
+"\n"
+"    {fingerprint}\n"
 
 #: ../subiquity/ui/views/help.py:126
 msgid "You can log in with one of the following keys:\n"
-msgstr ""
+msgstr "您可以使用以下密钥之一登录：\n"
 
 #: ../subiquity/ui/views/help.py:130
 #, python-brace-format
@@ -1622,12 +1803,16 @@ msgid ""
 "\n"
 "Or you can use the password \"{password}\"."
 msgstr ""
+"\n"
+"或者您可以使用密码“{password}”。"
 
 #: ../subiquity/ui/views/help.py:133
 msgid ""
 "\n"
 "Or you can use the preconfigured password passed to cloud-init."
 msgstr ""
+"\n"
+"或者，您可以使用传递给cloud-init的预配置密码。"
 
 #: ../subiquity/ui/views/help.py:136
 msgid ""
@@ -1635,6 +1820,8 @@ msgid ""
 "Unfortunately this system seems to have no global IP addresses at this\n"
 "time.\n"
 msgstr ""
+"\n"
+"不幸的是，这个系统此时似乎没有全局IP地址。\n"
 
 #: ../subiquity/ui/views/help.py:141
 msgid ""
@@ -1642,245 +1829,247 @@ msgid ""
 "Unfortunately the installer was unable to detect the password that has\n"
 "been set.\n"
 msgstr ""
+"\n"
+"不幸的是，安装程序无法检测到已设置的密码。\n"
 
 #: ../subiquity/ui/views/help.py:217
 msgid "The following keys can be used at any time:"
-msgstr ""
+msgstr "以下密钥可随时使用："
 
 #: ../subiquity/ui/views/help.py:221
 msgid "ESC"
-msgstr ""
+msgstr "ESC"
 
 #: ../subiquity/ui/views/help.py:221
 msgid "go back"
-msgstr ""
+msgstr "后退"
 
 #: ../subiquity/ui/views/help.py:222
 msgid "F1"
-msgstr ""
+msgstr "F1"
 
 #: ../subiquity/ui/views/help.py:222
 msgid "open help menu"
-msgstr ""
+msgstr "打开帮助菜单"
 
 #: ../subiquity/ui/views/help.py:223
 msgid "Control-Z, F2"
-msgstr ""
+msgstr "Ctrl-Z, F2"
 
 #: ../subiquity/ui/views/help.py:223
 msgid "switch to shell"
-msgstr ""
+msgstr "切换到shell"
 
 #: ../subiquity/ui/views/help.py:224
 msgid "Control-L, F3"
-msgstr ""
+msgstr "Ctrl-L, F3"
 
 #: ../subiquity/ui/views/help.py:224
 msgid "redraw screen"
-msgstr ""
+msgstr "重绘屏幕"
 
 #: ../subiquity/ui/views/help.py:228
 msgid "Control-T, F4"
-msgstr ""
+msgstr "Ctrl-T, F4"
 
 #: ../subiquity/ui/views/help.py:228
 msgid "toggle rich mode (colour, unicode) on and off"
-msgstr ""
+msgstr "打开和关闭丰富模式（颜色、unicode）"
 
 #: ../subiquity/ui/views/help.py:232
 msgid "Control-X"
-msgstr ""
+msgstr "Ctrl-X"
 
 #: ../subiquity/ui/views/help.py:232
 msgid "quit"
-msgstr ""
+msgstr "退出"
 
 #: ../subiquity/ui/views/help.py:233
 msgid "Control-E"
-msgstr ""
+msgstr "Ctrl-E"
 
 #: ../subiquity/ui/views/help.py:233
 msgid "generate noisy error report"
-msgstr ""
+msgstr "生成错误报告"
 
 #: ../subiquity/ui/views/help.py:234
 msgid "Control-R"
-msgstr ""
+msgstr "Ctrl-R"
 
 #: ../subiquity/ui/views/help.py:234
 msgid "generate quiet error report"
-msgstr ""
+msgstr "静默生成错误报告"
 
 #: ../subiquity/ui/views/help.py:235
 msgid "Control-G"
-msgstr ""
+msgstr "Ctrl-G"
 
 #: ../subiquity/ui/views/help.py:235
 msgid "pretend to run an install"
-msgstr ""
+msgstr "伪装运行安装"
 
 #: ../subiquity/ui/views/help.py:236
 msgid "Control-U"
-msgstr ""
+msgstr "Ctrl-U"
 
 #: ../subiquity/ui/views/help.py:236
 msgid "crash the ui"
-msgstr ""
+msgstr "崩溃用户界面"
 
 #: ../subiquity/ui/views/help.py:250
 msgid "(dry-run only)"
-msgstr ""
+msgstr "（仅限试运行）"
 
 #: ../subiquity/ui/views/help.py:266
 msgid "Shortcut Keys"
-msgstr ""
+msgstr "快捷键"
 
 #: ../subiquity/ui/views/help.py:292
 msgid "About this installer"
-msgstr ""
+msgstr "关于安装程序"
 
 #: ../subiquity/ui/views/help.py:294
 msgid "Keyboard shortcuts"
-msgstr ""
+msgstr "键盘快捷键"
 
 #: ../subiquity/ui/views/help.py:296
 msgid "Enter shell"
-msgstr ""
+msgstr "进入shell"
 
 #: ../subiquity/ui/views/help.py:305 ../subiquity/ui/views/help.py:465
 msgid "Help on SSH access"
-msgstr ""
+msgstr "有关SSH访问的帮助"
 
 #: ../subiquity/ui/views/help.py:309
 msgid "Toggle rich mode"
-msgstr ""
+msgstr "切换丰富模式"
 
 #: ../subiquity/ui/views/help.py:321
 msgid "Help on this screen"
-msgstr ""
+msgstr "有关此页面的帮助"
 
 #: ../subiquity/ui/views/help.py:326 ../subiquity/ui/views/help.py:331
 msgid "View error reports"
-msgstr ""
+msgstr "查看错误报告"
 
 #: ../subiquity/ui/views/help.py:399
 msgid "Help"
-msgstr ""
+msgstr "帮助"
 
 #: ../subiquity/ui/views/help.py:456
 msgid "About the installer"
-msgstr ""
+msgstr "关于安装程序"
 
-#: ../subiquity/ui/views/identity.py:55
+#: ../subiquity/ui/views/identity.py:56
 msgid "The characters : , and = are not permitted in this field"
-msgstr ""
+msgstr "此字段中不允许使用字符：,和="
 
-#: ../subiquity/ui/views/identity.py:65
+#: ../subiquity/ui/views/identity.py:66
 msgid "The only characters permitted in this field are a-z, 0-9, _ and -"
-msgstr ""
+msgstr "该字段只允许使用a-z、0-9、_和-等字符。"
 
-#: ../subiquity/ui/views/identity.py:89
+#: ../subiquity/ui/views/identity.py:90
 msgid "Your name:"
-msgstr ""
-
-#: ../subiquity/ui/views/identity.py:91
-msgid "Your server's name:"
-msgstr ""
+msgstr "您的姓名："
 
 #: ../subiquity/ui/views/identity.py:92
-msgid "The name it uses when it talks to other computers."
-msgstr ""
+msgid "Your server's name:"
+msgstr "您的服务器名："
 
 #: ../subiquity/ui/views/identity.py:93
-msgid "Pick a username:"
-msgstr ""
+msgid "The name it uses when it talks to other computers."
+msgstr "与其他计算机联络时使用的名称。"
 
 #: ../subiquity/ui/views/identity.py:94
-msgid "Choose a password:"
-msgstr ""
+msgid "Pick a username:"
+msgstr "选择一个用户名："
 
 #: ../subiquity/ui/views/identity.py:95
-msgid "Confirm your password:"
-msgstr ""
+msgid "Choose a password:"
+msgstr "选择一个密码："
 
-#: ../subiquity/ui/views/identity.py:100
+#: ../subiquity/ui/views/identity.py:96
+msgid "Confirm your password:"
+msgstr "确认您的密码："
+
+#: ../subiquity/ui/views/identity.py:101
 #, python-brace-format
 msgid "Name too long, must be less than {limit}"
-msgstr ""
+msgstr "姓名太长，必须小于{limit}。"
 
-#: ../subiquity/ui/views/identity.py:105
+#: ../subiquity/ui/views/identity.py:106
 msgid "Server name must not be empty"
-msgstr ""
+msgstr "服务器名不能为空"
 
-#: ../subiquity/ui/views/identity.py:109
+#: ../subiquity/ui/views/identity.py:110
 #, python-brace-format
 msgid "Server name too long, must be less than {limit}"
-msgstr ""
+msgstr "服务器名太长，必须小于{limit}。"
 
-#: ../subiquity/ui/views/identity.py:114
+#: ../subiquity/ui/views/identity.py:115
 msgid "Hostname must match HOSTNAME_REGEX: "
-msgstr ""
+msgstr "主机名必须与HOSTNAME_REGEX匹配： "
 
-#: ../subiquity/ui/views/identity.py:119
+#: ../subiquity/ui/views/identity.py:120
 msgid "Username missing"
-msgstr ""
+msgstr "用户名丢失"
 
-#: ../subiquity/ui/views/identity.py:123
+#: ../subiquity/ui/views/identity.py:124
 #, python-brace-format
 msgid "Username too long, must be less than {limit}"
-msgstr ""
+msgstr "用户名太长，必须小于{limit}。"
 
-#: ../subiquity/ui/views/identity.py:128
+#: ../subiquity/ui/views/identity.py:129
 msgid "Username must match USERNAME_REGEX: "
-msgstr ""
+msgstr "用户名必须与USERNAME_REGEX匹配： "
 
-#: ../subiquity/ui/views/identity.py:132
+#: ../subiquity/ui/views/identity.py:133
 #, python-brace-format
 msgid "The username \"{username}\" is reserved for use by the system."
-msgstr ""
+msgstr "用户名\"{username}\"为系统保留使用。"
 
 #. desc is "passwords" or "passphrases"
-#: ../subiquity/ui/views/identity.py:150
+#: ../subiquity/ui/views/identity.py:151
 #, python-brace-format
 msgid "{desc} do not match"
-msgstr ""
-
-#: ../subiquity/ui/views/identity.py:158
-msgid "Profile setup"
-msgstr ""
+msgstr "{desc}不匹配"
 
 #: ../subiquity/ui/views/identity.py:159
+msgid "Profile setup"
+msgstr "配置文件设置"
+
+#: ../subiquity/ui/views/identity.py:160
 msgid ""
 "Enter the username and password you will use to log in to the system. You "
 "can configure SSH access on the next screen but a password is still needed "
 "for sudo."
-msgstr ""
+msgstr "输入用于登录系统的用户名和密码。您可以在下一个屏幕上配置SSH访问，但是sudo命令仍然需要密码。"
 
 #: ../subiquity/ui/views/identity.py:188
 msgid "passwords"
-msgstr ""
+msgstr "密码"
 
 #: ../subiquity/ui/views/installprogress.py:52
 msgid "Install progress"
-msgstr ""
+msgstr "安装进度"
 
 #: ../subiquity/ui/views/installprogress.py:59
 #: ../subiquity/ui/views/installprogress.py:174
 #: ../subiquity/ui/views/installprogress.py:181
 msgid "Reboot Now"
-msgstr ""
+msgstr "现在重启"
 
 #: ../subiquity/ui/views/installprogress.py:61
 msgid "View error report"
-msgstr ""
+msgstr "查看错误报告"
 
 #: ../subiquity/ui/views/installprogress.py:63
 msgid "View full log"
-msgstr ""
+msgstr "查看完整日志"
 
 #: ../subiquity/ui/views/installprogress.py:79
 msgid "Full installer output"
-msgstr ""
+msgstr "完整安装程序输出"
 
 #: ../subiquity/ui/views/installprogress.py:142
 #: ../subiquity/ui/views/installprogress.py:145
@@ -1888,26 +2077,26 @@ msgstr ""
 #: ../subiquity/ui/views/installprogress.py:151
 #: ../subiquity/ui/views/installprogress.py:154
 msgid "Installing system"
-msgstr ""
+msgstr "正在安装系统"
 
 #: ../subiquity/ui/views/installprogress.py:157
 #: ../subiquity/ui/views/installprogress.py:165
 #: ../subiquity/ui/views/installprogress.py:173
 msgid "Install complete!"
-msgstr ""
+msgstr "安装完成！"
 
 #: ../subiquity/ui/views/installprogress.py:159
 msgid "Cancel update and reboot"
-msgstr ""
+msgstr "取消更新并重启"
 
 #: ../subiquity/ui/views/installprogress.py:166
 #: ../subiquity/ui/views/installprogress.py:214
 msgid "Rebooting..."
-msgstr ""
+msgstr "正在重启..."
 
 #: ../subiquity/ui/views/installprogress.py:180
 msgid "An error occurred during installation"
-msgstr ""
+msgstr "在安装中发生了一个错误"
 
 #: ../subiquity/ui/views/installprogress.py:230
 msgid ""
@@ -1919,10 +2108,16 @@ msgid ""
 "\n"
 "Are you sure you want to continue?"
 msgstr ""
+"选择下面的“继续”将开始安装过程，并\n"
+"导致选定要格式化的磁盘上的数据丢失。\n"
+"\n"
+"一旦安装开始，您将无法返回到此屏幕或上一屏幕。\n"
+"\n"
+"您确定要继续吗？"
 
 #: ../subiquity/ui/views/installprogress.py:251
 msgid "Confirm destructive action"
-msgstr ""
+msgstr "确认破坏性行动"
 
 #: ../subiquity/ui/views/installprogress.py:271
 #, python-brace-format
@@ -1931,16 +2126,19 @@ msgid ""
 "\n"
 "You can wait for this to complete or switch to a shell.\n"
 msgstr ""
+"在{tty}上运行的安装程序当前正在安装系统。\n"
+"\n"
+"您可以等待此操作完成，也可以切换到shell。\n"
 
 #: ../subiquity/ui/views/keyboard.py:67
 msgid "Keyboard auto-detection"
-msgstr ""
+msgstr "键盘自动检测"
 
 #: ../subiquity/ui/views/keyboard.py:93
 msgid ""
 "Keyboard detection starting. You will be asked a series of questions about "
 "your keyboard. Press escape at any time to go back to the previous screen."
-msgstr ""
+msgstr "键盘检测正在启动。您将被问及一系列关于键盘的问题。可随时按Esc键返回上一屏幕。"
 
 #: ../subiquity/ui/views/keyboard.py:106
 msgid ""
@@ -1948,6 +2146,9 @@ msgid ""
 "\n"
 "Your keyboard was detected as:\n"
 msgstr ""
+"键盘自动检测完成。\n"
+"\n"
+"检测到您的键盘为：\n"
 
 #: ../subiquity/ui/views/keyboard.py:111
 msgid ""
@@ -1956,26 +2157,29 @@ msgid ""
 "another layout or run the automated detection again.\n"
 "\n"
 msgstr ""
+"\n"
+"如果正确，请在下一屏幕上选择“完成”。如果没有，您可以选择其他布局或再次运行自动检测。\n"
+"\n"
 
 #: ../subiquity/ui/views/keyboard.py:128
 msgid "Layout"
-msgstr ""
+msgstr "布局"
 
 #: ../subiquity/ui/views/keyboard.py:129
 msgid "Variant"
-msgstr ""
+msgstr "变量"
 
 #: ../subiquity/ui/views/keyboard.py:152
 msgid "Please press one of the following keys:"
-msgstr ""
+msgstr "请按以下按键："
 
 #: ../subiquity/ui/views/keyboard.py:188 ../subiquity/ui/views/keyboard.py:196
 msgid "Input was not recognized, try again"
-msgstr ""
+msgstr "无法识别输入，请重试"
 
 #: ../subiquity/ui/views/keyboard.py:213
 msgid "Is the following key present on your keyboard?"
-msgstr ""
+msgstr "您的键盘上有下面这些按键吗？"
 
 #: ../subiquity/ui/views/keyboard.py:277
 msgid ""
@@ -1989,131 +2193,137 @@ msgid ""
 "\n"
 "Not all listed keys are present on all keyboards. "
 msgstr ""
+"您需要一种在全国布局和标准拉丁布局之间切换键盘的方法。\n"
+"\n"
+"出于符合人体工程学的原因，通常选择右Alt键或Caps Lock键（在后一种情况下，使用Shift+Caps "
+"Lock组合键进行普通Caps切换）。Alt+Shift也是一种流行的组合；然而，在Emacs和其他针对特定需求使用它的程序中，它将失去通常的行为。\n"
+"\n"
+"并非所有列出的键都出现在所有键盘上。 "
 
 #: ../subiquity/ui/views/keyboard.py:290
 msgid "Caps Lock"
-msgstr ""
+msgstr "大写锁 (Caps Lock)"
 
 #: ../subiquity/ui/views/keyboard.py:291
 msgid "Right Alt (AltGr)"
-msgstr ""
+msgstr "右 Alt 键 (AltGr)"
 
 #: ../subiquity/ui/views/keyboard.py:292
 msgid "Right Control"
-msgstr ""
+msgstr "右 Ctrl 键"
 
 #: ../subiquity/ui/views/keyboard.py:293
 msgid "Right Shift"
-msgstr ""
+msgstr "右 Shift 键"
 
 #: ../subiquity/ui/views/keyboard.py:294
 msgid "Right Logo key"
-msgstr ""
+msgstr "右徽标键"
 
 #: ../subiquity/ui/views/keyboard.py:295
 msgid "Menu key"
-msgstr ""
+msgstr "菜单键"
 
 #: ../subiquity/ui/views/keyboard.py:296
 msgid "Alt+Shift"
-msgstr ""
+msgstr "Alt+Shift"
 
 #: ../subiquity/ui/views/keyboard.py:297
 msgid "Control+Shift"
-msgstr ""
+msgstr "Ctrl+Shift"
 
 #: ../subiquity/ui/views/keyboard.py:298
 msgid "Control+Alt"
-msgstr ""
+msgstr "Ctrl+Alt"
 
 #: ../subiquity/ui/views/keyboard.py:299
 msgid "Alt+Caps Lock"
-msgstr ""
+msgstr "Alt+大写锁键"
 
 #: ../subiquity/ui/views/keyboard.py:300
 msgid "Left Control+Left Shift"
-msgstr ""
+msgstr "左Ctrl+左Shift"
 
 #: ../subiquity/ui/views/keyboard.py:301
 msgid "Left Alt"
-msgstr ""
+msgstr "左Alt键"
 
 #: ../subiquity/ui/views/keyboard.py:302
 msgid "Left Control"
-msgstr ""
+msgstr "左 Ctrl 键"
 
 #: ../subiquity/ui/views/keyboard.py:303
 msgid "Left Shift"
-msgstr ""
+msgstr "左 Shift 键"
 
 #: ../subiquity/ui/views/keyboard.py:304
 msgid "Left Logo key"
-msgstr ""
+msgstr "左徽标键"
 
 #: ../subiquity/ui/views/keyboard.py:305
 msgid "Scroll Lock key"
-msgstr ""
+msgstr "滚动锁键"
 
 #: ../subiquity/ui/views/keyboard.py:306
 msgid "No toggling"
-msgstr ""
+msgstr "无切换"
 
 #: ../subiquity/ui/views/keyboard.py:327
 msgid "Shortcut: "
-msgstr ""
+msgstr "快捷键： "
 
 #: ../subiquity/ui/views/keyboard.py:337
 msgid "Select layout toggle"
-msgstr ""
+msgstr "选择布局切换"
 
 #: ../subiquity/ui/views/keyboard.py:355
 msgid "Layout:"
-msgstr ""
+msgstr "布局："
 
 #: ../subiquity/ui/views/keyboard.py:356
 msgid "Variant:"
-msgstr ""
+msgstr "变体："
 
 #: ../subiquity/ui/views/keyboard.py:361
 msgid "Keyboard configuration"
-msgstr ""
+msgstr "键盘配置"
 
 #: ../subiquity/ui/views/keyboard.py:382
 msgid ""
 "Please select the layout of the keyboard directly attached to the system, if "
 "any."
-msgstr ""
+msgstr "请选择直接连接到系统的键盘布局（如果有）。"
 
 #: ../subiquity/ui/views/keyboard.py:385
 msgid ""
 "Please select your keyboard layout below, or select \"Identify keyboard\" to "
 "detect your layout automatically."
-msgstr ""
+msgstr "请在下面选择您的键盘布局，或选择“识别键盘”自动检测您的布局。"
 
 #: ../subiquity/ui/views/keyboard.py:394
 msgid "Identify keyboard"
-msgstr ""
+msgstr "识别键盘"
 
 #: ../subiquity/ui/views/keyboard.py:429
 msgid "Applying config"
-msgstr ""
+msgstr "正在应用配置"
 
 #: ../subiquity/ui/views/mirror.py:32
 msgid ""
 "You may provide an archive mirror that will be used instead of the default."
-msgstr ""
+msgstr "您可以提供将要使用的存档镜像，而不是默认镜像。"
 
 #: ../subiquity/ui/views/mirror.py:40
 msgid "Mirror address:"
-msgstr ""
+msgstr "镜像地址："
 
 #: ../subiquity/ui/views/mirror.py:45
 msgid "Configure Ubuntu archive mirror"
-msgstr ""
+msgstr "配置Ubuntu存档镜像"
 
 #: ../subiquity/ui/views/mirror.py:46
 msgid "If you use an alternative mirror for Ubuntu, enter its details here."
-msgstr ""
+msgstr "如果你使用Ubuntu的另一个镜像，请在这里输入它的详细信息。"
 
 #: ../subiquity/ui/views/proxy.py:33
 msgid ""
@@ -2123,344 +2333,374 @@ msgid ""
 "The proxy information should be given in the standard form of "
 "\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
+"如果需要使用HTTP代理访问外部世界，请在此处输入代理信息。否则，请将此项留空。\n"
+"\n"
+"代理信息应以“http://[[用户名][:密码]@]主机名[:端口号]/”的标准格式提供。"
 
 #: ../subiquity/ui/views/proxy.py:43
 msgid "Proxy address:"
-msgstr ""
+msgstr "代理地址："
 
 #: ../subiquity/ui/views/proxy.py:48
 msgid "Configure proxy"
-msgstr ""
+msgstr "配置代理"
 
 #: ../subiquity/ui/views/proxy.py:49
 msgid ""
 "If this system requires a proxy to connect to the internet, enter its "
 "details here."
-msgstr ""
+msgstr "如果此系统需要代理连接到互联网，请在此处输入其详细信息。"
 
 #: ../subiquity/ui/views/refresh.py:111
 msgid "Checking for installer update..."
-msgstr ""
+msgstr "正在检查安装程序更新..."
 
 #: ../subiquity/ui/views/refresh.py:113
 msgid ""
 "Contacting the snap store to check if a new version of the installer is "
 "available."
-msgstr ""
+msgstr "正在连接snap商店以检查是否有新版本的安装程序可用。"
 
 #: ../subiquity/ui/views/refresh.py:117
 msgid "Contacting the snap store failed"
-msgstr ""
+msgstr "连接snap商店失败"
 
 #: ../subiquity/ui/views/refresh.py:119
 msgid "Contacting the snap store failed:"
-msgstr ""
+msgstr "连接snap商店失败："
 
 #: ../subiquity/ui/views/refresh.py:122
 msgid "Installer update available"
-msgstr ""
+msgstr "安装程序更新可用"
 
 #: ../subiquity/ui/views/refresh.py:124
 #, python-brace-format
 msgid ""
 "Version {new} of the installer is now available ({current} is currently "
 "running)."
-msgstr ""
+msgstr "安装程序版本{new}现在可用（当前正在运行{current}）。"
 
 #: ../subiquity/ui/views/refresh.py:128
 msgid "Downloading update..."
-msgstr ""
+msgstr "正在下载更新..."
 
 #: ../subiquity/ui/views/refresh.py:130
 msgid ""
 "Please wait while the updated installer is being downloaded. The installer "
 "will restart automatically when the download is complete."
-msgstr ""
+msgstr "正在下载更新的安装程序，请稍候。下载完成后，安装程序将自动重新启动。"
 
 #: ../subiquity/ui/views/refresh.py:134
 msgid "Update failed"
-msgstr ""
+msgstr "更新失败"
 
 #: ../subiquity/ui/views/refresh.py:136
 msgid "Downloading and applying the update:"
-msgstr ""
+msgstr "正在下载并应用更新："
 
-#: ../subiquity/ui/views/refresh.py:156 ../subiquity/ui/views/refresh.py:183
-#: ../subiquity/ui/views/refresh.py:213 ../subiquity/ui/views/refresh.py:275
+#: ../subiquity/ui/views/refresh.py:157 ../subiquity/ui/views/refresh.py:184
+#: ../subiquity/ui/views/refresh.py:214 ../subiquity/ui/views/refresh.py:277
 msgid "Continue without updating"
-msgstr ""
+msgstr "继续而不更新"
 
-#: ../subiquity/ui/views/refresh.py:182 ../subiquity/ui/views/refresh.py:274
-#: ../subiquity/ui/views/snaplist.py:264 ../subiquity/ui/views/snaplist.py:376
+#: ../subiquity/ui/views/refresh.py:183 ../subiquity/ui/views/refresh.py:276
+#: ../subiquity/ui/views/snaplist.py:265 ../subiquity/ui/views/snaplist.py:378
 msgid "Try again"
-msgstr ""
+msgstr "重试"
 
-#: ../subiquity/ui/views/refresh.py:199
+#: ../subiquity/ui/views/refresh.py:200
 msgid "You can read the release notes for each version at:"
-msgstr ""
+msgstr "您可以在以下位置阅读每个版本的发行说明："
 
-#: ../subiquity/ui/views/refresh.py:206
+#: ../subiquity/ui/views/refresh.py:207
 msgid ""
 "If you choose to update, the update will be downloaded and the installation "
 "will continue from here."
-msgstr ""
+msgstr "如果选择更新，将下载更新，并从此处继续安装。"
 
-#: ../subiquity/ui/views/refresh.py:212
+#: ../subiquity/ui/views/refresh.py:213
 msgid "Update to the new installer"
-msgstr ""
+msgstr "更新到新版安装程序"
 
-#: ../subiquity/ui/views/refresh.py:238
+#: ../subiquity/ui/views/refresh.py:240
 msgid "Cancel update"
-msgstr ""
+msgstr "取消更新"
 
 #: ../subiquity/ui/views/snaplist.py:83
 msgid "just now"
-msgstr ""
+msgstr "刚刚"
 
 #: ../subiquity/ui/views/snaplist.py:87
 msgid "minute"
-msgstr ""
+msgstr "分钟"
 
 #: ../subiquity/ui/views/snaplist.py:89
 msgid "minutes"
-msgstr ""
+msgstr "分钟"
 
 #: ../subiquity/ui/views/snaplist.py:93
 msgid "hour"
-msgstr ""
+msgstr "小时"
 
 #: ../subiquity/ui/views/snaplist.py:95
 msgid "hours"
-msgstr ""
+msgstr "小时"
 
 #: ../subiquity/ui/views/snaplist.py:99
 msgid "day"
-msgstr ""
+msgstr "天"
 
 #: ../subiquity/ui/views/snaplist.py:101
 msgid "days"
-msgstr ""
+msgstr "天"
 
 #: ../subiquity/ui/views/snaplist.py:104
 #, python-brace-format
 msgid "{amount:2} {unit} ago"
-msgstr ""
+msgstr "{amount:2} {unit} 之前"
 
-#: ../subiquity/ui/views/snaplist.py:150
+#: ../subiquity/ui/views/snaplist.py:151
 msgid "LICENSE: "
-msgstr ""
+msgstr "许可证： "
 
-#: ../subiquity/ui/views/snaplist.py:155
+#: ../subiquity/ui/views/snaplist.py:156
 msgid "LAST UPDATED: "
-msgstr ""
-
-#: ../subiquity/ui/views/snaplist.py:160
-msgid "CHANNEL"
-msgstr ""
+msgstr "最后更新： "
 
 #: ../subiquity/ui/views/snaplist.py:161
-msgid "VERSION"
-msgstr ""
+msgid "CHANNEL"
+msgstr "频道"
 
-#: ../subiquity/ui/views/snaplist.py:163
-msgid "PUBLISHED"
-msgstr ""
+#: ../subiquity/ui/views/snaplist.py:162
+msgid "VERSION"
+msgstr "版本"
 
 #: ../subiquity/ui/views/snaplist.py:164
+msgid "PUBLISHED"
+msgstr "发行"
+
+#: ../subiquity/ui/views/snaplist.py:165
 msgid "CONFINEMENT"
-msgstr ""
+msgstr "限制"
 
-#: ../subiquity/ui/views/snaplist.py:182
+#: ../subiquity/ui/views/snaplist.py:183
 msgid "by: "
-msgstr ""
+msgstr "由： "
 
-#: ../subiquity/ui/views/snaplist.py:260
+#: ../subiquity/ui/views/snaplist.py:261
 #, python-brace-format
 msgid "Fetching info for {snap} failed"
-msgstr ""
+msgstr "获取{snap}的信息失败"
 
-#: ../subiquity/ui/views/snaplist.py:301
+#: ../subiquity/ui/views/snaplist.py:302
 #, python-brace-format
 msgid "Fetching info for {snap}"
-msgstr ""
+msgstr "获取{snap}的信息"
 
-#: ../subiquity/ui/views/snaplist.py:339
+#: ../subiquity/ui/views/snaplist.py:340
 msgid "Featured Server Snaps"
-msgstr ""
+msgstr "特色服务器snap"
 
-#: ../subiquity/ui/views/snaplist.py:353
+#: ../subiquity/ui/views/snaplist.py:355
 msgid "Loading server snaps from store, please wait..."
-msgstr ""
+msgstr "正在从存储区加载服务器快照，请稍候..."
 
-#: ../subiquity/ui/views/snaplist.py:374
+#: ../subiquity/ui/views/snaplist.py:376
 msgid "Sorry, loading snaps from the store failed."
-msgstr ""
+msgstr "很抱歉，从存储加载快照失败。"
 
-#: ../subiquity/ui/views/snaplist.py:460
+#: ../subiquity/ui/views/snaplist.py:462
 msgid ""
 "These are popular snaps in server environments. Select or deselect with "
 "SPACE, press ENTER to see more details of the package, publisher and "
 "versions available."
-msgstr ""
+msgstr "这些是服务器环境中流行的快照。使用空格选择或取消选择，按回车键查看软件包、发布者和可用版本的更多详细信息。"
 
 #: ../subiquity/ui/views/ssh.py:67
 msgid "Import Username:"
-msgstr ""
+msgstr "导入用户名："
 
 #: ../subiquity/ui/views/ssh.py:74
-msgid "Github Username:"
+msgid "GitHub Username:"
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:75
-msgid "Enter your Github username."
+msgid "Enter your GitHub username."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:77
 msgid ""
-"A Github username may only contain alphanumeric characters or hyphens."
+"A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:81
 msgid "Launchpad Username:"
-msgstr ""
+msgstr "Launchpad用户名："
 
 #: ../subiquity/ui/views/ssh.py:84
 msgid ""
 "A Launchpad username may only contain lower-case alphanumeric characters, "
 "hyphens, plus, or periods."
-msgstr ""
+msgstr "Launchpad用户名只能包含小写字母数字字符、连字符、加号或句点。"
 
 #: ../subiquity/ui/views/ssh.py:93
 msgid "Install OpenSSH server"
-msgstr ""
+msgstr "安装OpenSSH服务器"
 
 #: ../subiquity/ui/views/ssh.py:96
 msgid "Import SSH identity:"
-msgstr ""
+msgstr "导入SSH标识："
 
 #: ../subiquity/ui/views/ssh.py:99
-msgid "from Github"
+msgid "from GitHub"
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:100
 msgid "from Launchpad"
-msgstr ""
+msgstr "来自Launchpad"
 
 #: ../subiquity/ui/views/ssh.py:102
-msgid "You can import your SSH keys from Github or Launchpad."
+msgid "You can import your SSH keys from GitHub or Launchpad."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:106
 msgid "Allow password authentication over SSH"
-msgstr ""
+msgstr "允许通过SSH进行密码身份验证"
 
 #: ../subiquity/ui/views/ssh.py:139
 msgid "This field must not be blank."
-msgstr ""
+msgstr "此字段不能为空。"
 
 #: ../subiquity/ui/views/ssh.py:141
 msgid "SSH id too long, must be < "
-msgstr ""
+msgstr "SSH ID太长，必须小于 "
 
 #: ../subiquity/ui/views/ssh.py:145
 msgid ""
 "A Launchpad username must start with a letter or number. All letters must be "
 "lower-case. The characters +, - and . are also allowed after the first "
 "character."
-msgstr ""
+msgstr "Launchpad用户名必须以字母或数字开头。所有字母必须小写。第一个字符后面还允许有“+”、“-”和“.”。"
 
 #: ../subiquity/ui/views/ssh.py:151
 msgid ""
-"A Github username may only contain alphanumeric characters or single "
+"A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:161
 msgid "Fetching SSH keys..."
-msgstr ""
+msgstr "正在获取SSH密钥..."
 
 #: ../subiquity/ui/views/ssh.py:189
 msgid "Confirm SSH keys"
-msgstr ""
+msgstr "确认SSH密钥"
 
 #: ../subiquity/ui/views/ssh.py:190
 msgid ""
 "Keys with the following fingerprints were fetched. Do you want to use them?"
-msgstr ""
+msgstr "匹配了具有以下指纹的密钥。你想用它们吗？"
 
 #: ../subiquity/ui/views/ssh.py:193
 msgid "Confirm SSH key"
-msgstr ""
+msgstr "确认SSH密钥"
 
 #: ../subiquity/ui/views/ssh.py:194
 msgid ""
 "A key with the following fingerprint was fetched. Do you want to use it?"
-msgstr ""
+msgstr "已获取具有以下指纹的密钥。你想用它吗？"
 
 #: ../subiquity/ui/views/ssh.py:220
 msgid "SSH Setup"
-msgstr ""
+msgstr "SSH设置"
 
 #: ../subiquity/ui/views/ssh.py:221
 msgid ""
 "You can choose to install the OpenSSH server package to enable secure remote "
 "access to your server."
-msgstr ""
+msgstr "您可以选择安装OpenSSH服务器包，以实现对服务器的安全远程访问。"
 
-#: ../subiquity/ui/views/welcome.py:36
+#: ../subiquity/ui/views/welcome.py:37
 msgid ""
 "\n"
 "Select the language to use for the installer and to be configured in the\n"
 "installed system.\n"
 msgstr ""
+"\n"
+"选择安装程序和系统要使用的语言。\n"
 
 #: ../subiquity/ui/views/welcome.py:99
 msgid "Use UP, DOWN and ENTER keys to select your language."
-msgstr ""
+msgstr "使用向上、向下和回车键选择语言。"
 
 #: ../subiquity/ui/views/welcome.py:106
 msgid "Help choosing a language"
-msgstr ""
+msgstr "帮助选择语言"
 
 #. for translator: failed is a zdev device status
 #: ../subiquity/ui/views/zdev.py:56
 msgid "failed"
-msgstr ""
+msgstr "失败"
 
 #. for translator: auto is a zdev device status
 #: ../subiquity/ui/views/zdev.py:59
 msgid "auto"
-msgstr ""
+msgstr "自动"
 
 #. for translator: online is a zdev device status
 #: ../subiquity/ui/views/zdev.py:62
 msgid "online"
-msgstr ""
+msgstr "在线"
 
 #: ../subiquity/ui/views/zdev.py:77
 msgid "No zdev devices found."
-msgstr ""
+msgstr "未发现zdev设备。"
 
 #: ../subiquity/ui/views/zdev.py:92
 msgid "ID"
-msgstr ""
+msgstr "标识号"
 
 #: ../subiquity/ui/views/zdev.py:93
 msgid "ONLINE"
-msgstr ""
+msgstr "在线"
 
 #: ../subiquity/ui/views/zdev.py:94
 msgid "NAMES"
-msgstr ""
+msgstr "名称"
 
 #: ../subiquity/ui/views/zdev.py:118
 msgid "Enable"
-msgstr ""
+msgstr "启用"
 
 #: ../subiquity/ui/views/zdev.py:119
 msgid "Disable"
-msgstr ""
+msgstr "禁用"
 
 #: ../subiquity/ui/views/zdev.py:144
 msgid "Zdev setup"
-msgstr ""
+msgstr "Zdev设置"
+
+#, python-brace-format
+#~ msgid "software RAID {level}"
+#~ msgstr "软件RAID{level}"
+
+#~ msgid ""
+#~ "A Github username may only contain alphanumeric characters or hyphens."
+#~ msgstr "Github用户名只能包含字母数字字符或连字符。"
+
+#~ msgid "Enter your Github username."
+#~ msgstr "输入您的Github用户名。"
+
+#~ msgid "Github Username:"
+#~ msgstr "Github用户名："
+
+#~ msgid "from Github"
+#~ msgstr "来自Github"
+
+#~ msgid "You can import your SSH keys from Github or Launchpad."
+#~ msgstr "您可以从Github或Launchpad导入SSH密钥。"
+
+#~ msgid ""
+#~ "A Github username may only contain alphanumeric characters or single "
+#~ "hyphens, and cannot begin or end with a hyphen."
+#~ msgstr "Github用户名只能包含字母数字字符或单连字符，不能以连字符开头或结尾。"

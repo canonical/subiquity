@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-06-04 13:18+1200\n"
+"POT-Creation-Date: 2022-04-12 09:48+1200\n"
 "PO-Revision-Date: 2018-04-23 16:26+0000\n"
 "Last-Translator: Åka Sikrom <Unknown>\n"
 "Language-Team: Norwegian Bokmal <nb@li.org>\n"
@@ -15,11 +15,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Launchpad-Export-Date: 2021-06-05 04:52+0000\n"
-"X-Generator: Launchpad (build b45bdbe3a00b6b668fa7f2069bd545c35c41f7f4)\n"
+"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
+"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
 "Language: nb\n"
 
-#: ../subiquity/client/client.py:70
+#: ../subiquity/client/client.py:72
 msgid ""
 "Installer shell session activated.\n"
 "\n"
@@ -32,23 +32,23 @@ msgid ""
 "installed system will be mounted at /target."
 msgstr ""
 
-#: ../subiquity/client/client.py:212
+#: ../subiquity/client/client.py:234
 msgid "yes"
 msgstr ""
 
-#: ../subiquity/client/client.py:213
+#: ../subiquity/client/client.py:235
 msgid "no"
 msgstr ""
 
-#: ../subiquity/client/client.py:215
+#: ../subiquity/client/client.py:237
 msgid "Confirmation is required to continue."
 msgstr ""
 
-#: ../subiquity/client/client.py:216
+#: ../subiquity/client/client.py:238
 msgid "Add 'autoinstall' to your kernel command line to avoid this"
 msgstr ""
 
-#: ../subiquity/client/client.py:219
+#: ../subiquity/client/client.py:241
 msgid "Continue with autoinstall?"
 msgstr ""
 
@@ -61,302 +61,310 @@ msgid "ssh-keygen failed to show fingerprint of downloaded keys:"
 msgstr ""
 
 #. Information about a drive
-#: ../subiquity/common/filesystem/actions.py:48
+#: ../subiquity/common/filesystem/actions.py:47
 msgctxt "DeviceAction"
 msgid "Info"
 msgstr ""
 
 #. Edit a device (partition, logical volume, RAID, etc)
-#: ../subiquity/common/filesystem/actions.py:50
+#: ../subiquity/common/filesystem/actions.py:49
 msgctxt "DeviceAction"
 msgid "Edit"
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:51
+#: ../subiquity/common/filesystem/actions.py:50
 msgctxt "DeviceAction"
 msgid "Reformat"
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:52
+#: ../subiquity/common/filesystem/actions.py:51
 msgctxt "DeviceAction"
 msgid "Add Partition"
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:53
-msgctxt "DeviceAction"
-msgid "Create Logical Volume"
-msgstr ""
-
-#: ../subiquity/common/filesystem/actions.py:54
+#: ../subiquity/common/filesystem/actions.py:52
 msgctxt "DeviceAction"
 msgid "Format"
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:55
+#: ../subiquity/common/filesystem/actions.py:53
 msgctxt "DeviceAction"
 msgid "Remove from RAID/LVM"
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:56
+#: ../subiquity/common/filesystem/actions.py:54
 msgctxt "DeviceAction"
 msgid "Delete"
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:57
+#: ../subiquity/common/filesystem/actions.py:55
 msgctxt "DeviceAction"
 msgid "Make Boot Device"
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:151
+#: ../subiquity/common/filesystem/actions.py:163
 #, python-brace-format
 msgid "Cannot edit {selflabel} as it is part of the {cdtype} {cdname}."
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:165
-msgid "Cannot edit pre-existing RAIDs."
-msgstr ""
-
-#: ../subiquity/common/filesystem/actions.py:168
-#, python-brace-format
-msgid "Cannot edit {raidlabel} because it has partitions."
-msgstr ""
-
 #: ../subiquity/common/filesystem/actions.py:177
-msgid "Cannot edit pre-existing volume groups."
+msgid "Cannot edit pre-existing RAIDs."
 msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:180
 #, python-brace-format
+msgid "Cannot edit {raidlabel} because it has partitions."
+msgstr ""
+
+#: ../subiquity/common/filesystem/actions.py:189
+msgid "Cannot edit pre-existing volume groups."
+msgstr ""
+
+#: ../subiquity/common/filesystem/actions.py:192
+#, python-brace-format
 msgid "Cannot edit {vglabel} because it has logical volumes."
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:247
+#: ../subiquity/common/filesystem/actions.py:241
 #, python-brace-format
 msgid "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:258
+#: ../subiquity/common/filesystem/actions.py:252
 #, python-brace-format
 msgid ""
 "Removing {selflabel} would leave the {cdtype} {cdlabel} with less than "
 "{min_devices} devices."
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:267
+#: ../subiquity/common/filesystem/actions.py:261
 #, python-brace-format
 msgid ""
 "Removing {selflabel} would leave the {cdtype} {cdlabel} with no devices."
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:283
+#: ../subiquity/common/filesystem/actions.py:277
 #, python-brace-format
 msgid "Cannot delete {selflabel} as it is part of the {cdtype} {cdname}."
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:293
+#: ../subiquity/common/filesystem/actions.py:287
 msgid ""
 "Cannot delete a single partition from a device that already has partitions."
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:296
+#: ../subiquity/common/filesystem/actions.py:290
 msgid "Cannot delete required bootloader partition"
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:310
+#: ../subiquity/common/filesystem/actions.py:304
 #, python-brace-format
 msgid ""
 "Cannot delete {devicelabel} as partition {partnum} is part of the {cdtype} "
 "{cdname}."
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:319
+#: ../subiquity/common/filesystem/actions.py:313
 #, python-brace-format
 msgid ""
 "Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:325
+#: ../subiquity/common/filesystem/actions.py:319
 #, python-brace-format
 msgid "Cannot delete {devicelabel} because it has 1 mounted partition."
 msgstr ""
 
-#: ../subiquity/common/filesystem/actions.py:334
+#: ../subiquity/common/filesystem/actions.py:328
 msgid ""
 "Cannot delete a single logical volume from a volume group that already has "
 "logical volumes."
 msgstr ""
 
 #. A pre-existing device such as a partition or RAID
-#: ../subiquity/common/filesystem/labels.py:34
+#: ../subiquity/common/filesystem/labels.py:35
 msgid "existing"
 msgstr ""
 
 #. A newly created device such as a partition or RAID
-#: ../subiquity/common/filesystem/labels.py:37
+#: ../subiquity/common/filesystem/labels.py:38
 msgid "new"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:60
+#: ../subiquity/common/filesystem/labels.py:62
 msgid "PReP"
 msgstr ""
 
 #. boot loader partition
-#: ../subiquity/common/filesystem/labels.py:64
-#: ../subiquity/common/filesystem/labels.py:78
+#: ../subiquity/common/filesystem/labels.py:66
+#: ../subiquity/common/filesystem/labels.py:80
 msgid "configured"
 msgstr ""
 
 #. boot loader partition
-#: ../subiquity/common/filesystem/labels.py:67
-#: ../subiquity/common/filesystem/labels.py:80
+#: ../subiquity/common/filesystem/labels.py:69
+#: ../subiquity/common/filesystem/labels.py:82
 msgid "unconfigured"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:70
+#: ../subiquity/common/filesystem/labels.py:72
 msgid "primary ESP"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:72
+#: ../subiquity/common/filesystem/labels.py:74
 msgid "backup ESP"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:74
+#: ../subiquity/common/filesystem/labels.py:76
 msgid "unused ESP"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:81
+#: ../subiquity/common/filesystem/labels.py:83
 msgid "BIOS grub spacer"
 msgstr ""
 
 #. extended partition
-#: ../subiquity/common/filesystem/labels.py:84
+#: ../subiquity/common/filesystem/labels.py:86
 msgid "extended"
 msgstr ""
 
 #. logical partition
-#: ../subiquity/common/filesystem/labels.py:87
+#: ../subiquity/common/filesystem/labels.py:89
 msgid "logical"
 msgstr ""
 
 #. Flag for a LVM volume group
-#: ../subiquity/common/filesystem/labels.py:97
+#: ../subiquity/common/filesystem/labels.py:99
 msgid "encrypted"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:113
+#: ../subiquity/common/filesystem/labels.py:115
 msgid "multipath device"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:114
+#: ../subiquity/common/filesystem/labels.py:116
 msgid "local disk"
 msgstr "lokal enhet"
 
-#: ../subiquity/common/filesystem/labels.py:119
+#: ../subiquity/common/filesystem/labels.py:121
 #, python-brace-format
 msgid "partition of {device}"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:124
-#, python-brace-format
-msgid "software RAID {level}"
+#: ../subiquity/common/filesystem/labels.py:134
+msgid "software"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:129
+#: ../subiquity/common/filesystem/labels.py:135
+#, python-brace-format
+msgid "{type} RAID {level}"
+msgstr ""
+
+#: ../subiquity/common/filesystem/labels.py:141
 msgid "LVM volume group"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:134
+#: ../subiquity/common/filesystem/labels.py:146
 msgid "LVM logical volume"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:168
-#: ../subiquity/ui/views/filesystem/guided.py:95
+#: ../subiquity/common/filesystem/labels.py:180
+#: ../subiquity/ui/views/filesystem/guided.py:100
 #, python-brace-format
 msgid "partition {number}"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:170
+#: ../subiquity/common/filesystem/labels.py:182
 #, python-brace-format
 msgid "partition {number} of {device}"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:178
+#: ../subiquity/common/filesystem/labels.py:188
+msgid "free space"
+msgstr "ledig plass"
+
+#: ../subiquity/common/filesystem/labels.py:195
 #, python-brace-format
 msgid "{component_name} of {desc} {name}"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:186
+#: ../subiquity/common/filesystem/labels.py:203
 #, python-brace-format
 msgid "already formatted as {fstype}"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:188
+#: ../subiquity/common/filesystem/labels.py:205
 #, python-brace-format
 msgid "to be reformatted as {fstype}"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:190
+#: ../subiquity/common/filesystem/labels.py:207
 #, python-brace-format
 msgid "to be formatted as {fstype}"
 msgstr ""
 
 #. A filesytem
-#: ../subiquity/common/filesystem/labels.py:196
+#: ../subiquity/common/filesystem/labels.py:213
 #, python-brace-format
 msgid "mounted at {path}"
 msgstr ""
 
 #. A filesytem
-#: ../subiquity/common/filesystem/labels.py:199
+#: ../subiquity/common/filesystem/labels.py:216
 msgid "not mounted"
 msgstr ""
 
 #. A filesytem that cannot be mounted (i.e. swap)
 #. is used or unused
-#: ../subiquity/common/filesystem/labels.py:204
-#: ../subiquity/common/filesystem/labels.py:211
+#: ../subiquity/common/filesystem/labels.py:221
+#: ../subiquity/common/filesystem/labels.py:231
 msgid "unused"
 msgstr ""
 
 #. A filesytem that cannot be mounted (i.e. swap)
 #. is used or unused
-#: ../subiquity/common/filesystem/labels.py:208
+#: ../subiquity/common/filesystem/labels.py:225
 msgid "used"
 msgstr ""
 
-#: ../subiquity/common/types.py:37
-msgid "Block device probe failure"
-msgstr ""
-
-#: ../subiquity/common/types.py:38
-msgid "Disk probe failure"
+#: ../subiquity/common/filesystem/labels.py:260
+#, python-brace-format
+msgid "container for {devices}"
 msgstr ""
 
 #: ../subiquity/common/types.py:39
-msgid "Install failure"
+msgid "Block device probe failure"
 msgstr ""
 
 #: ../subiquity/common/types.py:40
-msgid "Installer crash"
+msgid "Disk probe failure"
 msgstr ""
 
 #: ../subiquity/common/types.py:41
-msgid "Network error"
+msgid "Install failure"
 msgstr ""
 
 #: ../subiquity/common/types.py:42
-msgid "Network client error"
+msgid "Installer crash"
 msgstr ""
 
 #: ../subiquity/common/types.py:43
-msgid "Server request failure"
+msgid "Network error"
 msgstr ""
 
 #: ../subiquity/common/types.py:44
+msgid "Network client error"
+msgstr ""
+
+#: ../subiquity/common/types.py:45
+msgid "Server request failure"
+msgstr ""
+
+#: ../subiquity/common/types.py:46
 msgid "Unknown error"
 msgstr ""
 
-#: ../subiquitycore/controllers/network.py:202
+#: ../subiquitycore/controllers/network.py:203
 msgid "autoconfiguration failed"
 msgstr ""
 
@@ -420,18 +428,18 @@ msgstr " eller "
 msgid "This field must be a {schemes} URL."
 msgstr ""
 
-#: ../subiquitycore/ui/form.py:451 ../subiquitycore/ui/views/network.py:308
-#: ../subiquity/ui/views/filesystem/filesystem.py:494
-#: ../subiquity/ui/views/snaplist.py:454
+#: ../subiquitycore/ui/form.py:451 ../subiquitycore/ui/views/network.py:330
+#: ../subiquity/ui/views/filesystem/filesystem.py:498
+#: ../subiquity/ui/views/snaplist.py:456
 msgid "Done"
 msgstr "Ferdig"
 
 #: ../subiquitycore/ui/form.py:452 ../subiquitycore/ui/utils.py:382
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:33
-#: ../subiquity/ui/views/filesystem/delete.py:89
-#: ../subiquity/ui/views/filesystem/delete.py:155
+#: ../subiquity/ui/views/filesystem/delete.py:98
+#: ../subiquity/ui/views/filesystem/delete.py:164
 #: ../subiquity/ui/views/keyboard.py:99 ../subiquity/ui/views/keyboard.py:333
-#: ../subiquity/ui/views/snaplist.py:265 ../subiquity/ui/views/ssh.py:162
+#: ../subiquity/ui/views/snaplist.py:266 ../subiquity/ui/views/ssh.py:162
 msgid "Cancel"
 msgstr "Avbryt"
 
@@ -453,7 +461,7 @@ msgstr "Nei"
 #: ../subiquity/ui/views/filesystem/disk_info.py:55
 #: ../subiquity/ui/views/filesystem/filesystem.py:232
 #: ../subiquity/ui/views/help.py:66 ../subiquity/ui/views/installprogress.py:82
-#: ../subiquity/ui/views/snaplist.py:315 ../subiquity/ui/views/welcome.py:115
+#: ../subiquity/ui/views/snaplist.py:316 ../subiquity/ui/views/welcome.py:115
 msgid "Close"
 msgstr "Lukk"
 
@@ -463,8 +471,8 @@ msgstr "Lukk"
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:425
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:51
 #: ../subiquity/ui/views/filesystem/lvm.py:158
-#: ../subiquity/ui/views/filesystem/partition.py:387
-#: ../subiquity/ui/views/filesystem/raid.py:144
+#: ../subiquity/ui/views/filesystem/partition.py:395
+#: ../subiquity/ui/views/filesystem/raid.py:147
 msgid "Save"
 msgstr "Lagre"
 
@@ -529,8 +537,8 @@ msgstr ""
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:263
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:410
 #: ../subiquity/ui/views/filesystem/lvm.py:143
-#: ../subiquity/ui/views/filesystem/partition.py:375
-#: ../subiquity/ui/views/filesystem/raid.py:127
+#: ../subiquity/ui/views/filesystem/partition.py:381
+#: ../subiquity/ui/views/filesystem/raid.py:130
 msgid "Create"
 msgstr "Opprett"
 
@@ -560,7 +568,7 @@ msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:376
 #: ../subiquity/ui/views/filesystem/lvm.py:89
-#: ../subiquity/ui/views/filesystem/raid.py:90
+#: ../subiquity/ui/views/filesystem/raid.py:93
 msgid "Name:"
 msgstr ""
 
@@ -594,7 +602,7 @@ msgid "Name cannot be more than 16 characters long"
 msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:409
-#: ../subiquitycore/ui/views/network.py:244
+#: ../subiquitycore/ui/views/network.py:263
 msgid "Create bond"
 msgstr ""
 
@@ -611,48 +619,66 @@ msgstr ""
 msgid "Network interface {nic} WIFI configuration"
 msgstr ""
 
-#: ../subiquitycore/ui/views/network.py:118
+#: ../subiquitycore/ui/views/network.py:119
 #, python-brace-format
 msgid "VLAN {id} on interface {link}"
 msgstr ""
 
-#: ../subiquitycore/ui/views/network.py:121
+#: ../subiquitycore/ui/views/network.py:122
 #, python-brace-format
 msgid "bond master for {interfaces}"
 msgstr ""
 
-#: ../subiquitycore/ui/views/network.py:141
+#: ../subiquitycore/ui/views/network.py:142
 #, python-brace-format
 msgid "ssid: {ssid}"
 msgstr ""
 
-#: ../subiquitycore/ui/views/network.py:143
-#: ../subiquitycore/ui/views/network.py:145
+#: ../subiquitycore/ui/views/network.py:144
+#: ../subiquitycore/ui/views/network.py:146
 msgid "not connected"
 msgstr ""
 
-#: ../subiquitycore/ui/views/network.py:148
+#: ../subiquitycore/ui/views/network.py:149
 #, python-brace-format
 msgid "enslaved to {device}"
 msgstr ""
 
-#: ../subiquitycore/ui/views/network.py:175
+#: ../subiquitycore/ui/views/network.py:176
 msgid "timed out"
 msgstr ""
 
-#: ../subiquitycore/ui/views/network.py:180
+#: ../subiquitycore/ui/views/network.py:181
 msgid "static"
 msgstr ""
 
-#: ../subiquitycore/ui/views/network.py:187
+#: ../subiquitycore/ui/views/network.py:188
 msgid "disabled"
 msgstr ""
 
-#: ../subiquitycore/ui/views/network.py:212
+#: ../subiquitycore/ui/views/network.py:213
+msgid ""
+"A wifi device was detected but the necessary support packages were not\n"
+"available.\n"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:217
+msgid "Wifi support packages are being installed.\n"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:220
+msgid "Wifi support packages failed to install. Please check the logs.\n"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:223
+msgid "Wifi support packages will be installed in the target system.\n"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:230
 msgid "Network connections"
 msgstr "Nettverkstilkoblinger"
 
-#: ../subiquitycore/ui/views/network.py:213
+#: ../subiquitycore/ui/views/network.py:231
 msgid ""
 "Configure at least one interface this server can use to talk to other "
 "machines, and which preferably provides sufficient access for updates."
@@ -662,57 +688,61 @@ msgstr ""
 "det kan hente oppdateringer."
 
 #. See _route_watcher
-#: ../subiquitycore/ui/views/network.py:255
-#: ../subiquity/ui/views/filesystem/filesystem.py:499
-#: ../subiquity/ui/views/filesystem/guided.py:147
+#: ../subiquitycore/ui/views/network.py:274
+#: ../subiquity/ui/views/filesystem/filesystem.py:503
+#: ../subiquity/ui/views/filesystem/guided.py:159
 #: ../subiquity/ui/views/filesystem/probing.py:53
 #: ../subiquity/ui/views/filesystem/probing.py:79
 #: ../subiquity/ui/views/keyboard.py:353 ../subiquity/ui/views/mirror.py:38
-#: ../subiquity/ui/views/proxy.py:41 ../subiquity/ui/views/refresh.py:157
-#: ../subiquity/ui/views/refresh.py:184 ../subiquity/ui/views/refresh.py:214
-#: ../subiquity/ui/views/refresh.py:276 ../subiquity/ui/views/snaplist.py:455
+#: ../subiquity/ui/views/proxy.py:41 ../subiquity/ui/views/refresh.py:158
+#: ../subiquity/ui/views/refresh.py:185 ../subiquity/ui/views/refresh.py:216
+#: ../subiquity/ui/views/refresh.py:279 ../subiquity/ui/views/snaplist.py:457
 #: ../subiquity/ui/views/ssh.py:108 ../subiquity/ui/views/welcome.py:93
 #: ../subiquity/ui/views/zdev.py:163
 msgid "Back"
 msgstr "Tilbake"
 
-#: ../subiquitycore/ui/views/network.py:310
+#: ../subiquitycore/ui/views/network.py:332
 msgid "Continue without network"
 msgstr ""
 
-#: ../subiquitycore/ui/views/network.py:323
+#: ../subiquitycore/ui/views/network.py:345
 msgid "Applying changes"
 msgstr ""
 
 #. for translators: this is a description of a RAID level
-#: ../subiquity/models/filesystem.py:170
+#: ../subiquity/models/filesystem.py:171
 msgid "0 (striped)"
 msgstr ""
 
 #. for translators: this is a description of a RAID level
-#: ../subiquity/models/filesystem.py:172
+#: ../subiquity/models/filesystem.py:173
 msgid "1 (mirrored)"
 msgstr ""
 
-#: ../subiquity/models/filesystem.py:173
+#: ../subiquity/models/filesystem.py:174
 msgid "5"
 msgstr ""
 
-#: ../subiquity/models/filesystem.py:174
+#: ../subiquity/models/filesystem.py:175
 msgid "6"
 msgstr ""
 
-#: ../subiquity/models/filesystem.py:175
+#: ../subiquity/models/filesystem.py:176
 msgid "10"
 msgstr ""
 
+#: ../subiquity/models/filesystem.py:177
+msgid "Container"
+msgstr ""
+
 #. Attempting to convert input to a size
-#: ../subiquity/models/filesystem.py:210
+#: ../subiquity/models/filesystem.py:212
 msgid "input cannot be empty"
 msgstr ""
 
 #. Attempting to convert input to a size
-#: ../subiquity/models/filesystem.py:222 ../subiquity/models/filesystem.py:234
+#: ../subiquity/models/filesystem.py:224 ../subiquity/models/filesystem.py:236
 msgid "{input!r} is not valid input"
 msgstr ""
 
@@ -842,7 +872,7 @@ msgstr ""
 #: ../subiquity/ui/views/error.py:158
 #: ../subiquity/ui/views/installprogress.py:65
 #: ../subiquity/ui/views/installprogress.py:248
-#: ../subiquity/ui/views/snaplist.py:352 ../subiquity/ui/views/snaplist.py:377
+#: ../subiquity/ui/views/snaplist.py:354 ../subiquity/ui/views/snaplist.py:379
 #: ../subiquity/ui/views/zdev.py:162
 msgid "Continue"
 msgstr "Fortsett"
@@ -927,76 +957,83 @@ msgid ""
 "boot partition."
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/delete.py:43
+#: ../subiquity/ui/views/filesystem/delete.py:44
 #, python-brace-format
 msgid "Do you really want to delete the {desc} {label}?"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/delete.py:53
-#: ../subiquity/ui/views/filesystem/delete.py:124
+#: ../subiquity/ui/views/filesystem/delete.py:54
+#: ../subiquity/ui/views/filesystem/delete.py:133
 #, python-brace-format
 msgid "It is formatted as {fstype} and mounted at {path}"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/delete.py:59
-#: ../subiquity/ui/views/filesystem/delete.py:130
+#: ../subiquity/ui/views/filesystem/delete.py:60
+#: ../subiquity/ui/views/filesystem/delete.py:139
 #, python-brace-format
 msgid "It is formatted as {fstype} and not mounted."
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/delete.py:65
+#: ../subiquity/ui/views/filesystem/delete.py:66
 #, python-brace-format
 msgid "It contains 1 logical volume"
 msgid_plural "It contains {n} logical volumes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ../subiquity/ui/views/filesystem/delete.py:70
+#: ../subiquity/ui/views/filesystem/delete.py:71
 #, python-brace-format
 msgid "It contains 1 partition"
 msgid_plural "It contains {n} partitions"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ../subiquity/ui/views/filesystem/delete.py:82
+#: ../subiquity/ui/views/filesystem/delete.py:85
+#, python-brace-format
+msgid "It contains 1 volume."
+msgid_plural "It contains {n} volumes."
+msgstr[0] ""
+msgstr[1] ""
+
+#: ../subiquity/ui/views/filesystem/delete.py:91
 msgid "It is not formatted or mounted."
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/delete.py:84
+#: ../subiquity/ui/views/filesystem/delete.py:93
 msgid "Delete"
 msgstr "Slett"
 
-#: ../subiquity/ui/views/filesystem/delete.py:112
+#: ../subiquity/ui/views/filesystem/delete.py:121
 #, python-brace-format
 msgid "Remove filesystem from {device}"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/delete.py:116
+#: ../subiquity/ui/views/filesystem/delete.py:125
 #, python-brace-format
 msgid "Do you really want to remove the existing filesystem from {device}?"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/delete.py:134
+#: ../subiquity/ui/views/filesystem/delete.py:143
 msgid "logical volumes"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/delete.py:136
+#: ../subiquity/ui/views/filesystem/delete.py:145
 msgid "partitions"
 msgstr ""
 
 #. things is either "logical volumes" or "partitions"
-#: ../subiquity/ui/views/filesystem/delete.py:138
+#: ../subiquity/ui/views/filesystem/delete.py:147
 #, python-brace-format
 msgid "Remove all {things} from {obj}"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/delete.py:142
+#: ../subiquity/ui/views/filesystem/delete.py:151
 #, python-brace-format
 msgid "Do you really want to remove all {things} from {obj}?"
 msgstr ""
 
 #. XXX summarize partitions here?
-#: ../subiquity/ui/views/filesystem/delete.py:149
+#: ../subiquity/ui/views/filesystem/delete.py:158
 msgid "Reformat"
 msgstr ""
 
@@ -1019,13 +1056,13 @@ msgid "MOUNT POINT"
 msgstr "MONTERINGSPUNKT"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:161
-#: ../subiquity/ui/views/filesystem/filesystem.py:385
-#: ../subiquity/ui/views/snaplist.py:162
+#: ../subiquity/ui/views/filesystem/filesystem.py:393
+#: ../subiquity/ui/views/snaplist.py:163
 msgid "SIZE"
 msgstr "STØRRELSE"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:162
-#: ../subiquity/ui/views/filesystem/filesystem.py:384
+#: ../subiquity/ui/views/filesystem/filesystem.py:392
 msgid "TYPE"
 msgstr "TYPE"
 
@@ -1045,117 +1082,117 @@ msgstr ""
 msgid "No used devices"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:323
+#: ../subiquity/ui/views/filesystem/filesystem.py:326
 #, python-brace-format
 msgid "Remove from {device}"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:328
+#: ../subiquity/ui/views/filesystem/filesystem.py:333
+msgid "Create Logical Volume"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:335
 #, python-brace-format
 msgid "Add {ptype} Partition"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:333
+#: ../subiquity/ui/views/filesystem/filesystem.py:340
 msgid "Stop Using As Boot Device"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:338
+#: ../subiquity/ui/views/filesystem/filesystem.py:344
 msgid "Add As Another Boot Device"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:339
+#: ../subiquity/ui/views/filesystem/filesystem.py:345
 msgid "Use As Boot Device"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:383
+#: ../subiquity/ui/views/filesystem/filesystem.py:391
 msgid "DEVICE"
 msgstr "ENHET"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:412
-msgid "free space"
-msgstr "ledig plass"
-
-#: ../subiquity/ui/views/filesystem/filesystem.py:426
+#: ../subiquity/ui/views/filesystem/filesystem.py:430
 msgid "Storage configuration"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:437
+#: ../subiquity/ui/views/filesystem/filesystem.py:441
 msgid "Create software RAID (md)"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:440
+#: ../subiquity/ui/views/filesystem/filesystem.py:444
 msgid "Create volume group (LVM)"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:447
+#: ../subiquity/ui/views/filesystem/filesystem.py:451
 msgid "FILE SYSTEM SUMMARY"
 msgstr "OPPSUMMERING AV FILSYSTEM"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:452
+#: ../subiquity/ui/views/filesystem/filesystem.py:456
 msgid "AVAILABLE DEVICES"
 msgstr "TILGJENGELIGE ENHETER"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:459
+#: ../subiquity/ui/views/filesystem/filesystem.py:463
 msgid "USED DEVICES"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:477
+#: ../subiquity/ui/views/filesystem/filesystem.py:481
 msgid "Mount a filesystem at /"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:479
+#: ../subiquity/ui/views/filesystem/filesystem.py:483
 msgid "Select a boot disk"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:484
+#: ../subiquity/ui/views/filesystem/filesystem.py:488
 msgid "To continue you need to:"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:498
+#: ../subiquity/ui/views/filesystem/filesystem.py:502
 msgid "Reset"
 msgstr "Tilbakestill"
 
-#: ../subiquity/ui/views/filesystem/guided.py:53
+#: ../subiquity/ui/views/filesystem/guided.py:57
 msgid "Configure a guided storage layout, or create a custom one:"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/guided.py:58
+#: ../subiquity/ui/views/filesystem/guided.py:62
 #: ../subiquity/ui/views/filesystem/lvm.py:93
 msgid "Passphrase:"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/guided.py:59
+#: ../subiquity/ui/views/filesystem/guided.py:63
 #: ../subiquity/ui/views/filesystem/lvm.py:94
 msgid "Confirm passphrase:"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/guided.py:63
-#: ../subiquity/ui/views/identity.py:137
+#: ../subiquity/ui/views/filesystem/guided.py:67
+#: ../subiquity/ui/views/identity.py:138
 msgid "Password must be set"
 msgstr "Du må velge passord"
 
-#: ../subiquity/ui/views/filesystem/guided.py:67
-#: ../subiquity/ui/views/identity.py:141
+#: ../subiquity/ui/views/filesystem/guided.py:71
+#: ../subiquity/ui/views/identity.py:142
 msgid "Passwords do not match"
 msgstr "Passordene er ulike"
 
-#: ../subiquity/ui/views/filesystem/guided.py:80
+#: ../subiquity/ui/views/filesystem/guided.py:84
 msgid "Encrypt the LVM group with LUKS"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/guided.py:109
+#: ../subiquity/ui/views/filesystem/guided.py:121
 msgid "Set up this disk as an LVM group"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/guided.py:143
+#: ../subiquity/ui/views/filesystem/guided.py:155
 msgid "Use an entire disk"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/guided.py:145
+#: ../subiquity/ui/views/filesystem/guided.py:157
 msgid "Custom storage layout"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/guided.py:158
+#: ../subiquity/ui/views/filesystem/guided.py:170
 msgid ""
 "\n"
 "\n"
@@ -1189,7 +1226,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/guided.py:188
+#: ../subiquity/ui/views/filesystem/guided.py:200
 msgid ""
 "\n"
 "Block probing did not discover any disks big enough to support guided "
@@ -1197,25 +1234,25 @@ msgid ""
 "configuration. Manual configuration may still be possible.\n"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/guided.py:194
+#: ../subiquity/ui/views/filesystem/guided.py:206
 msgid ""
 "\n"
 "Block probing did not discover any disks. Unfortunately this means that\n"
 "installation will not be possible.\n"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/guided.py:202
+#: ../subiquity/ui/views/filesystem/guided.py:214
 msgid "Guided storage configuration"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/guided.py:221
-#: ../subiquity/ui/views/filesystem/partition.py:422
+#: ../subiquity/ui/views/filesystem/guided.py:233
+#: ../subiquity/ui/views/filesystem/partition.py:432
 #: ../subiquity/ui/views/keyboard.py:98 ../subiquity/ui/views/keyboard.py:136
 #: ../subiquity/ui/views/keyboard.py:332
 msgid "OK"
 msgstr "OK"
 
-#: ../subiquity/ui/views/filesystem/guided.py:229
+#: ../subiquity/ui/views/filesystem/guided.py:241
 msgid "Help on guided storage configuration"
 msgstr ""
 
@@ -1230,12 +1267,12 @@ msgid "passphrases"
 msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:90
-#: ../subiquity/ui/views/filesystem/raid.py:92
+#: ../subiquity/ui/views/filesystem/raid.py:95
 msgid "Devices:"
 msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:91
-#: ../subiquity/ui/views/filesystem/raid.py:93
+#: ../subiquity/ui/views/filesystem/raid.py:96
 msgid "Size:"
 msgstr ""
 
@@ -1282,96 +1319,96 @@ msgstr ""
 msgid "Edit volume group \"{name}\""
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:76
+#: ../subiquity/ui/views/filesystem/partition.py:77
 msgid "Leave unformatted"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:79
+#: ../subiquity/ui/views/filesystem/partition.py:80
 #, python-brace-format
 msgid "Leave formatted as {fstype}"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:112
+#: ../subiquity/ui/views/filesystem/partition.py:113
 #, python-brace-format
 msgid "Capped partition size at {size}"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:119
+#: ../subiquity/ui/views/filesystem/partition.py:121
 #, python-brace-format
 msgid "Rounded size up to {size}"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:131
+#: ../subiquity/ui/views/filesystem/partition.py:133
 msgid ""
 "The only characters permitted in the name of a logical volume are a-z, A-Z, "
 "0-9, +, _, . and -"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:165
+#: ../subiquity/ui/views/filesystem/partition.py:167
 #, python-brace-format
 msgid "Size (max {size}):"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:202
+#: ../subiquity/ui/views/filesystem/partition.py:205
 msgid "Name: "
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:204
+#: ../subiquity/ui/views/filesystem/partition.py:207
 msgid "Format:"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:205
+#: ../subiquity/ui/views/filesystem/partition.py:208
 msgid "Mount:"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:207
+#: ../subiquity/ui/views/filesystem/partition.py:210
 msgid "Use as swap"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:208
+#: ../subiquity/ui/views/filesystem/partition.py:211
 msgid "Use this swap partition in the installed system."
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:232
+#: ../subiquity/ui/views/filesystem/partition.py:235
 msgid "The name of a logical volume cannot be empty"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:234
+#: ../subiquity/ui/views/filesystem/partition.py:237
 msgid "The name of a logical volume cannot start with a hyphen"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:237
+#: ../subiquity/ui/views/filesystem/partition.py:240
 #, python-brace-format
 msgid "A logical volume may not be called {name}"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:244
+#: ../subiquity/ui/views/filesystem/partition.py:247
 #, python-brace-format
 msgid "The name of a logical volume may not contain \"{substring}\""
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:249
+#: ../subiquity/ui/views/filesystem/partition.py:252
 #, python-brace-format
 msgid "There is already a logical volume named {name}."
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:258
+#: ../subiquity/ui/views/filesystem/partition.py:261
 msgid "Path exceeds PATH_MAX"
 msgstr "Sti overskrider «PATH_MAX»"
 
-#: ../subiquity/ui/views/filesystem/partition.py:261
+#: ../subiquity/ui/views/filesystem/partition.py:264
 #, python-brace-format
 msgid "{device} is already mounted at {path}."
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:269
+#: ../subiquity/ui/views/filesystem/partition.py:272
 #, python-brace-format
 msgid ""
 "Mounting an existing filesystem at {mountpoint} is usually a bad idea, "
 "proceed only with caution."
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:285
+#: ../subiquity/ui/views/filesystem/partition.py:288
 #, python-brace-format
 msgid ""
 "Bootloader partition\n"
@@ -1385,19 +1422,19 @@ msgid ""
 "edited here.\n"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:297
+#: ../subiquity/ui/views/filesystem/partition.py:300
 msgid ""
 "If this disk is selected as a boot device, GRUB will be installed onto\n"
 "the target disk's MBR."
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:301
+#: ../subiquity/ui/views/filesystem/partition.py:304
 msgid ""
 "As this disk has been selected as a boot device, GRUB will be\n"
 "installed onto the target disk's MBR."
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:305
+#: ../subiquity/ui/views/filesystem/partition.py:308
 msgid ""
 "Bootloader partition\n"
 "\n"
@@ -1406,7 +1443,7 @@ msgid ""
 "partition, which must be formatted as fat32.\n"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:313
+#: ../subiquity/ui/views/filesystem/partition.py:316
 msgid ""
 "Bootloader partition\n"
 "\n"
@@ -1415,17 +1452,17 @@ msgid ""
 "this partition, which must be formatted as fat32.\n"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:321
+#: ../subiquity/ui/views/filesystem/partition.py:324
 msgid "The only aspect of this partition that can be edited is the size.\n"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:325
+#: ../subiquity/ui/views/filesystem/partition.py:328
 msgid ""
 "You can choose whether to use the existing filesystem on this\n"
 "partition or reformat it.\n"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:330
+#: ../subiquity/ui/views/filesystem/partition.py:333
 msgid ""
 "Required bootloader partition\n"
 "\n"
@@ -1433,7 +1470,7 @@ msgid ""
 "selected as a boot device, Grub will be installed onto this partition.\n"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:337
+#: ../subiquity/ui/views/filesystem/partition.py:340
 msgid ""
 "Required bootloader partition\n"
 "\n"
@@ -1442,41 +1479,41 @@ msgid ""
 "partition.\n"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:429
+#: ../subiquity/ui/views/filesystem/partition.py:439
 msgid "Use existing fat32 filesystem"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:435
+#: ../subiquity/ui/views/filesystem/partition.py:445
 msgid "Reformat as fresh fat32 filesystem"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:513
+#: ../subiquity/ui/views/filesystem/partition.py:523
 #, python-brace-format
 msgid "Adding logical volume to {vgname}"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:516
+#: ../subiquity/ui/views/filesystem/partition.py:526
 #, python-brace-format
 msgid "Adding {ptype} partition to {device}"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:522
+#: ../subiquity/ui/views/filesystem/partition.py:532
 #, python-brace-format
 msgid "Editing logical volume {lvname} of {vgname}"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:527
+#: ../subiquity/ui/views/filesystem/partition.py:537
 #, python-brace-format
 msgid "Editing partition {number} of {device}"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:580
+#: ../subiquity/ui/views/filesystem/partition.py:592
 msgid ""
 "Formatting and mounting a disk directly is unusual. You probably want to add "
 "a partition instead."
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:592
+#: ../subiquity/ui/views/filesystem/partition.py:604
 #, python-brace-format
 msgid "Format and/or mount {device}"
 msgstr ""
@@ -1506,37 +1543,37 @@ msgstr ""
 msgid "Show Error Report"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/raid.py:67
+#: ../subiquity/ui/views/filesystem/raid.py:70
 msgid "/ is not permitted in the name of a RAID device"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/raid.py:73
+#: ../subiquity/ui/views/filesystem/raid.py:76
 msgid "Whitespace is not permitted in the name of a RAID device"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/raid.py:91
+#: ../subiquity/ui/views/filesystem/raid.py:94
 msgid "RAID Level:"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/raid.py:104
+#: ../subiquity/ui/views/filesystem/raid.py:107
 #, python-brace-format
 msgid "There is already a RAID named '{name}'"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/raid.py:107
+#: ../subiquity/ui/views/filesystem/raid.py:110
 msgid ". and .. are not valid names for RAID devices"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/raid.py:113
+#: ../subiquity/ui/views/filesystem/raid.py:116
 #, python-brace-format
 msgid "RAID Level \"{level}\" requires at least {min_active} active devices"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/raid.py:126
+#: ../subiquity/ui/views/filesystem/raid.py:129
 msgid "Create software RAID (\"MD\") disk"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/raid.py:142
+#: ../subiquity/ui/views/filesystem/raid.py:145
 #, python-brace-format
 msgid "Edit software RAID disk \"{name}\""
 msgstr ""
@@ -1774,86 +1811,86 @@ msgstr ""
 msgid "About the installer"
 msgstr ""
 
-#: ../subiquity/ui/views/identity.py:55
+#: ../subiquity/ui/views/identity.py:56
 msgid "The characters : , and = are not permitted in this field"
 msgstr "Tegnene «:» og «=» er ikke tillatt i dette feltet"
 
-#: ../subiquity/ui/views/identity.py:65
+#: ../subiquity/ui/views/identity.py:66
 msgid "The only characters permitted in this field are a-z, 0-9, _ and -"
 msgstr ""
 "Du kan bare bruke bokstavene a-z, tallene 0-9, «_» og «-» i dette feltet"
 
-#: ../subiquity/ui/views/identity.py:89
+#: ../subiquity/ui/views/identity.py:90
 msgid "Your name:"
 msgstr "Navnet ditt:"
 
-#: ../subiquity/ui/views/identity.py:91
+#: ../subiquity/ui/views/identity.py:92
 msgid "Your server's name:"
 msgstr "Vertsnavn:"
 
-#: ../subiquity/ui/views/identity.py:92
+#: ../subiquity/ui/views/identity.py:93
 msgid "The name it uses when it talks to other computers."
 msgstr "Navn som datamaskinen bruker når den snakker med andre maskiner."
 
-#: ../subiquity/ui/views/identity.py:93
+#: ../subiquity/ui/views/identity.py:94
 msgid "Pick a username:"
 msgstr "Velg brukernavn:"
 
-#: ../subiquity/ui/views/identity.py:94
+#: ../subiquity/ui/views/identity.py:95
 msgid "Choose a password:"
 msgstr "Velg passord:"
 
-#: ../subiquity/ui/views/identity.py:95
+#: ../subiquity/ui/views/identity.py:96
 msgid "Confirm your password:"
 msgstr "Bekreft passord:"
 
-#: ../subiquity/ui/views/identity.py:100
+#: ../subiquity/ui/views/identity.py:101
 #, python-brace-format
 msgid "Name too long, must be less than {limit}"
 msgstr ""
 
-#: ../subiquity/ui/views/identity.py:105
+#: ../subiquity/ui/views/identity.py:106
 msgid "Server name must not be empty"
 msgstr "Du må velge et tjenernavn"
 
-#: ../subiquity/ui/views/identity.py:109
+#: ../subiquity/ui/views/identity.py:110
 #, python-brace-format
 msgid "Server name too long, must be less than {limit}"
 msgstr ""
 
-#: ../subiquity/ui/views/identity.py:114
+#: ../subiquity/ui/views/identity.py:115
 msgid "Hostname must match HOSTNAME_REGEX: "
 msgstr ""
 
-#: ../subiquity/ui/views/identity.py:119
+#: ../subiquity/ui/views/identity.py:120
 msgid "Username missing"
 msgstr "Brukernavn mangler"
 
-#: ../subiquity/ui/views/identity.py:123
+#: ../subiquity/ui/views/identity.py:124
 #, python-brace-format
 msgid "Username too long, must be less than {limit}"
 msgstr ""
 
-#: ../subiquity/ui/views/identity.py:128
+#: ../subiquity/ui/views/identity.py:129
 msgid "Username must match USERNAME_REGEX: "
 msgstr ""
 
-#: ../subiquity/ui/views/identity.py:132
+#: ../subiquity/ui/views/identity.py:133
 #, python-brace-format
 msgid "The username \"{username}\" is reserved for use by the system."
 msgstr ""
 
 #. desc is "passwords" or "passphrases"
-#: ../subiquity/ui/views/identity.py:150
+#: ../subiquity/ui/views/identity.py:151
 #, python-brace-format
 msgid "{desc} do not match"
 msgstr ""
 
-#: ../subiquity/ui/views/identity.py:158
+#: ../subiquity/ui/views/identity.py:159
 msgid "Profile setup"
 msgstr "Profiloppsett"
 
-#: ../subiquity/ui/views/identity.py:159
+#: ../subiquity/ui/views/identity.py:160
 msgid ""
 "Enter the username and password you will use to log in to the system. You "
 "can configure SSH access on the next screen but a password is still needed "
@@ -2215,31 +2252,31 @@ msgstr ""
 msgid "Downloading and applying the update:"
 msgstr ""
 
-#: ../subiquity/ui/views/refresh.py:156 ../subiquity/ui/views/refresh.py:183
-#: ../subiquity/ui/views/refresh.py:213 ../subiquity/ui/views/refresh.py:275
+#: ../subiquity/ui/views/refresh.py:157 ../subiquity/ui/views/refresh.py:184
+#: ../subiquity/ui/views/refresh.py:214 ../subiquity/ui/views/refresh.py:277
 msgid "Continue without updating"
 msgstr ""
 
-#: ../subiquity/ui/views/refresh.py:182 ../subiquity/ui/views/refresh.py:274
-#: ../subiquity/ui/views/snaplist.py:264 ../subiquity/ui/views/snaplist.py:376
+#: ../subiquity/ui/views/refresh.py:183 ../subiquity/ui/views/refresh.py:276
+#: ../subiquity/ui/views/snaplist.py:265 ../subiquity/ui/views/snaplist.py:378
 msgid "Try again"
 msgstr ""
 
-#: ../subiquity/ui/views/refresh.py:199
+#: ../subiquity/ui/views/refresh.py:200
 msgid "You can read the release notes for each version at:"
 msgstr ""
 
-#: ../subiquity/ui/views/refresh.py:206
+#: ../subiquity/ui/views/refresh.py:207
 msgid ""
 "If you choose to update, the update will be downloaded and the installation "
 "will continue from here."
 msgstr ""
 
-#: ../subiquity/ui/views/refresh.py:212
+#: ../subiquity/ui/views/refresh.py:213
 msgid "Update to the new installer"
 msgstr ""
 
-#: ../subiquity/ui/views/refresh.py:238
+#: ../subiquity/ui/views/refresh.py:240
 msgid "Cancel update"
 msgstr ""
 
@@ -2276,57 +2313,57 @@ msgstr ""
 msgid "{amount:2} {unit} ago"
 msgstr ""
 
-#: ../subiquity/ui/views/snaplist.py:150
+#: ../subiquity/ui/views/snaplist.py:151
 msgid "LICENSE: "
 msgstr ""
 
-#: ../subiquity/ui/views/snaplist.py:155
+#: ../subiquity/ui/views/snaplist.py:156
 msgid "LAST UPDATED: "
 msgstr ""
 
-#: ../subiquity/ui/views/snaplist.py:160
+#: ../subiquity/ui/views/snaplist.py:161
 msgid "CHANNEL"
 msgstr ""
 
-#: ../subiquity/ui/views/snaplist.py:161
+#: ../subiquity/ui/views/snaplist.py:162
 msgid "VERSION"
 msgstr ""
 
-#: ../subiquity/ui/views/snaplist.py:163
+#: ../subiquity/ui/views/snaplist.py:164
 msgid "PUBLISHED"
 msgstr ""
 
-#: ../subiquity/ui/views/snaplist.py:164
+#: ../subiquity/ui/views/snaplist.py:165
 msgid "CONFINEMENT"
 msgstr ""
 
-#: ../subiquity/ui/views/snaplist.py:182
+#: ../subiquity/ui/views/snaplist.py:183
 msgid "by: "
 msgstr ""
 
-#: ../subiquity/ui/views/snaplist.py:260
+#: ../subiquity/ui/views/snaplist.py:261
 #, python-brace-format
 msgid "Fetching info for {snap} failed"
 msgstr ""
 
-#: ../subiquity/ui/views/snaplist.py:301
+#: ../subiquity/ui/views/snaplist.py:302
 #, python-brace-format
 msgid "Fetching info for {snap}"
 msgstr ""
 
-#: ../subiquity/ui/views/snaplist.py:339
+#: ../subiquity/ui/views/snaplist.py:340
 msgid "Featured Server Snaps"
 msgstr ""
 
-#: ../subiquity/ui/views/snaplist.py:353
+#: ../subiquity/ui/views/snaplist.py:355
 msgid "Loading server snaps from store, please wait..."
 msgstr ""
 
-#: ../subiquity/ui/views/snaplist.py:374
+#: ../subiquity/ui/views/snaplist.py:376
 msgid "Sorry, loading snaps from the store failed."
 msgstr ""
 
-#: ../subiquity/ui/views/snaplist.py:460
+#: ../subiquity/ui/views/snaplist.py:462
 msgid ""
 "These are popular snaps in server environments. Select or deselect with "
 "SPACE, press ENTER to see more details of the package, publisher and "
@@ -2338,16 +2375,16 @@ msgid "Import Username:"
 msgstr "Importer brukernavn:"
 
 #: ../subiquity/ui/views/ssh.py:74
-msgid "Github Username:"
-msgstr "Github-brukernavn:"
+msgid "GitHub Username:"
+msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:75
-msgid "Enter your Github username."
+msgid "Enter your GitHub username."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:77
 msgid ""
-"A Github username may only contain alphanumeric characters or hyphens."
+"A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:81
@@ -2369,16 +2406,16 @@ msgid "Import SSH identity:"
 msgstr "Importer SSH-identitet:"
 
 #: ../subiquity/ui/views/ssh.py:99
-msgid "from Github"
-msgstr "fra Github"
+msgid "from GitHub"
+msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:100
 msgid "from Launchpad"
 msgstr "fra Launchpad"
 
 #: ../subiquity/ui/views/ssh.py:102
-msgid "You can import your SSH keys from Github or Launchpad."
-msgstr "Du kan importere SSH-nøkler fra Github eller Launchpad."
+msgid "You can import your SSH keys from GitHub or Launchpad."
+msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:106
 msgid "Allow password authentication over SSH"
@@ -2401,11 +2438,9 @@ msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:151
 msgid ""
-"A Github username may only contain alphanumeric characters or single "
+"A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
 msgstr ""
-"Github-brukernavn kan bare inneholde alfanumeriske tegn og bindestreker, og "
-"de kan ikke begynne med bindestrek."
 
 #: ../subiquity/ui/views/ssh.py:161
 msgid "Fetching SSH keys..."
@@ -2439,7 +2474,7 @@ msgid ""
 "access to your server."
 msgstr ""
 
-#: ../subiquity/ui/views/welcome.py:36
+#: ../subiquity/ui/views/welcome.py:37
 msgid ""
 "\n"
 "Select the language to use for the installer and to be configured in the\n"
@@ -2534,6 +2569,9 @@ msgstr ""
 #~ msgid "Choose the disk to install to:"
 #~ msgstr "Velg enhet å installere på:"
 
+#~ msgid "from Github"
+#~ msgstr "fra Github"
+
 #~ msgid "Username too long, must be < "
 #~ msgstr "Valgt brukernavn er for langt. Det må være < "
 
@@ -2617,6 +2655,19 @@ msgstr ""
 #~ "uformatert ekstrapartisjon ved begynnelsen av enheten/disken. Denne "
 #~ "partisjonen vil ikke inneholde et filsystem. Den blir heller ikke montert, "
 #~ "og du kan ikke gjøre endringer på den her."
+
+#~ msgid "Github Username:"
+#~ msgstr "Github-brukernavn:"
+
+#~ msgid "You can import your SSH keys from Github or Launchpad."
+#~ msgstr "Du kan importere SSH-nøkler fra Github eller Launchpad."
+
+#~ msgid ""
+#~ "A Github username may only contain alphanumeric characters or single "
+#~ "hyphens, and cannot begin or end with a hyphen."
+#~ msgstr ""
+#~ "Github-brukernavn kan bare inneholde alfanumeriske tegn og bindestreker, og "
+#~ "de kan ikke begynne med bindestrek."
 
 #~ msgid "Use UP, DOWN and ENTER keys to select your keyboard."
 #~ msgstr "Bruk OPP, NED og ENTER for å velge tastaturutforming."
