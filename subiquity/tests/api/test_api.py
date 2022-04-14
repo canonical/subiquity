@@ -8,6 +8,7 @@ import json
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 from urllib.parse import unquote
 
 from subiquitycore.utils import astart_command
@@ -912,3 +913,26 @@ class TestRegression(TestAPI):
             data.pop('gap')
             await inst.post('/storage/v2/edit_partition', data)
             # should not throw an exception complaining about boot
+
+
+class TestCancel(TestAPI):
+    @timeout()
+    async def test_cancel_drivers(self):
+        with patch.dict(os.environ, {'SUBIQUITY_DEBUG': 'has-drivers'}):
+            async with start_server('examples/simple.json') as inst:
+                names = ['locale', 'keyboard', 'source', 'network', 'proxy',
+                         'mirror', 'storage']
+                await inst.post('/meta/mark_configured', endpoint_names=names)
+                await inst.get('/meta/status', cur='WAITING')
+                await inst.post('/meta/confirm', tty='/dev/tty1')
+                await inst.get('/meta/status', cur='NEEDS_CONFIRMATION')
+
+                try:
+                    await asyncio.wait_for(inst.get('/drivers', wait=True),
+                                           0.001)
+                except asyncio.exceptions.TimeoutError:
+                    pass
+
+                # should not raise ServerDisconnectedError
+                resp = await inst.get('/drivers', wait=True)
+                self.assertEqual(['nvidia-driver-470-server'], resp['drivers'])
