@@ -454,14 +454,26 @@ class TestAdd(TestAPI):
 class TestDelete(TestAPI):
     @timeout()
     async def test_v2_delete_without_reformat(self):
-        async with start_server('examples/win10.json') as inst:
-            disk_id = 'disk-sda'
+        cfg = 'examples/win10.json'
+        extra = ['--storage-version', '1']
+        async with start_server(cfg, extra_args=extra) as inst:
             data = {
-                'disk_id': disk_id,
+                'disk_id': 'disk-sda',
                 'partition': {'number': 1}
             }
             with self.assertRaises(ClientResponseError):
                 await inst.post('/storage/v2/delete_partition', data)
+
+    @timeout()
+    async def test_v2_delete_without_reformat_is_ok_with_sv2(self):
+        cfg = 'examples/win10.json'
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
+            data = {
+                'disk_id': 'disk-sda',
+                'partition': {'number': 1}
+            }
+            await inst.post('/storage/v2/delete_partition', data)
 
     @timeout()
     async def test_v2_delete_with_reformat(self):
