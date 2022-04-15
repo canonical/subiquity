@@ -137,10 +137,12 @@ class FakeStorageInfo:
     raw = attr.ib(default=attr.Factory(dict))
 
 
-def make_model(bootloader=None):
+def make_model(bootloader=None, storage_version=None):
     model = FilesystemModel()
     if bootloader is not None:
         model.bootloader = bootloader
+    if storage_version is not None:
+        model.storage_version = storage_version
     model._probe_data = {}
     return model
 
@@ -678,18 +680,49 @@ class TestAutoInstallConfig(unittest.TestCase):
 
 
 class TestPartitionNumbering(unittest.TestCase):
-    def test_basic(self):
+    def setUp(self):
+        self.cur_idx = 1
+
+    def assert_next(self, part):
+        self.assertEqual(self.cur_idx, part.number)
+        self.cur_idx += 1
+
+    def test_gpt(self):
         m, d1 = make_model_and_disk(ptable='gpt')
-        p1 = make_partition(m, d1)
-        p2 = make_partition(m, d1)
-        p3 = make_partition(m, d1)
-        self.assertEqual(1, p1.number)
-        self.assertEqual(2, p2.number)
-        self.assertEqual(3, p3.number)
+        for _ in range(8):
+            self.assert_next(make_partition(m, d1))
+
+    def test_msdos_all_primary(self):
+        m, d1 = make_model_and_disk(ptable='msdos')
+        for _ in range(4):
+            self.assert_next(make_partition(m, d1))
+
+    def test_msdos_one_primary(self):
+        m, d1 = make_model_and_disk(ptable='msdos')
+        self.assert_next(make_partition(m, d1))
+        self.assert_next(make_partition(m, d1, flag='extended'))
+        self.cur_idx = 5
+        for _ in range(3):
+            self.assert_next(make_partition(m, d1, flag='logical'))
+
+    def test_msdos_three_primary(self):
+        m, d1 = make_model_and_disk(ptable='msdos')
+        for _ in range(3):
+            self.assert_next(make_partition(m, d1))
+        self.assert_next(
+            make_partition(m, d1, flag='extended'))
+        for _ in range(3):
+            self.assert_next(make_partition(m, d1, flag='logical'))
+
+    def test_msdos_no_fifth_primary(self):
+        m, d1 = make_model_and_disk(ptable='msdos')
+        for _ in range(4):
+            self.assert_next(make_partition(m, d1))
+        with self.assertRaises(Exception):
+            make_partition(m, d1)
 
     def test_p1_preserved(self):
-        m = make_model()
-        m.storage_version = 2
+        m = make_model(storage_version=2)
         d1 = make_disk(m, ptable='gpt')
         p1 = make_partition(m, d1, preserve=True, number=1)
         p2 = make_partition(m, d1)
@@ -702,8 +735,7 @@ class TestPartitionNumbering(unittest.TestCase):
         self.assertEqual(False, p3.preserve)
 
     def test_p2_preserved(self):
-        m = make_model()
-        m.storage_version = 2
+        m = make_model(storage_version=2)
         d1 = make_disk(m, ptable='gpt')
         p2 = make_partition(m, d1, preserve=True, number=2)
         p1 = make_partition(m, d1)
