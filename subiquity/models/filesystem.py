@@ -690,6 +690,10 @@ class Partition(_Formattable):
     def _number(self):
         if self.preserve:
             return self.number
+        elif self.flag == 'logical':
+            logicals = [part for part in self.device._partitions
+                        if part.flag == 'logical']
+            return logicals.index(self) + 5
         else:
             return self.device._partitions.index(self) + 1
 

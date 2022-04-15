@@ -675,6 +675,42 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertTrue(disk2p1.id in rendered_ids)
 
 
+class TestPartitionNumbering(unittest.TestCase):
+    def setUp(self):
+        self.cur_idx = 1
+
+    def assert_next(self, part):
+        self.assertEqual(self.cur_idx, part._number)
+        self.cur_idx += 1
+
+    def test_gpt(self):
+        m, d1 = make_model_and_disk(ptable='gpt')
+        for _ in range(8):
+            self.assert_next(make_partition(m, d1))
+
+    def test_msdos_all_primary(self):
+        m, d1 = make_model_and_disk(ptable='msdos')
+        for _ in range(4):
+            self.assert_next(make_partition(m, d1))
+
+    def test_msdos_one_primary(self):
+        m, d1 = make_model_and_disk(ptable='msdos')
+        self.assert_next(make_partition(m, d1))
+        self.assert_next(make_partition(m, d1, flag='extended'))
+        self.cur_idx += 2
+        for _ in range(3):
+            self.assert_next(make_partition(m, d1, flag='logical'))
+
+    def test_msdos_three_primary(self):
+        m, d1 = make_model_and_disk(ptable='msdos')
+        for _ in range(3):
+            self.assert_next(make_partition(m, d1))
+        self.assert_next(
+            make_partition(m, d1, flag='extended'))
+        for _ in range(3):
+            self.assert_next(make_partition(m, d1, flag='logical'))
+
+
 class TestAlignmentData(unittest.TestCase):
     def test_alignment_gaps_coherence(self):
         for ptable in 'gpt', 'msdos', 'vtoc':
