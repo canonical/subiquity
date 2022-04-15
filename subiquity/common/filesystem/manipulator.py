@@ -196,12 +196,15 @@ class FilesystemManipulator:
             self.add_boot_disk(disk)
 
             # adjust downward the partition size (if necessary) to accommodate
-            # bios/grub partition
-            if spec['size'] > gaps.largest_gap_size(disk):
+            # bios/grub partition.  It's OK and useful to assign a new gap:
+            # 1) with len(partitions()) == 0 there could only have been 1 gap
+            # 2) having just done add_boot_disk(), the gap is no longer valid.
+            gap = gaps.largest_gap(disk)
+            if spec['size'] > gap.size:
                 log.debug(
                     "Adjusting request down from %s to %s",
-                    spec['size'], gaps.largest_gap_size(disk))
-                spec['size'] = gaps.largest_gap_size(disk)
+                    spec['size'], gap.size)
+                spec['size'] = gap.size
 
         self.create_partition(disk, gap, spec)
 
