@@ -340,6 +340,12 @@ class ModifyPartitionV2:
 
 
 @attr.s(auto_attribs=True)
+class ReformatDisk:
+    disk_id: str
+    ptable: Optional[str] = None
+
+
+@attr.s(auto_attribs=True)
 class IdentityData:
     realname: str = ''
     username: str = ''

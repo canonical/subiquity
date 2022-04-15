@@ -38,6 +38,7 @@ from subiquity.common.types import (
     IdentityData,
     NetworkStatus,
     ModifyPartitionV2,
+    ReformatDisk,
     RefreshStatus,
     ShutdownMode,
     DriversResponse,
@@ -263,7 +264,8 @@ class API:
                 def POST() -> StorageResponseV2: ...
 
             class reformat_disk:
-                def POST(disk_id: str) -> StorageResponseV2: ...
+                def POST(data: Payload[ReformatDisk]) \
+                    -> StorageResponseV2: ...
 
             class add_boot_partition:
                 def POST(disk_id: str) -> StorageResponseV2: ...

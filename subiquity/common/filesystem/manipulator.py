@@ -157,8 +157,10 @@ class FilesystemManipulator:
         for subobj in obj.fs(), obj.constructed_device():
             self.delete(subobj)
 
-    def reformat(self, disk):
+    def reformat(self, disk, ptable=None):
         disk.grub_device = False
+        if ptable is not None:
+            disk.ptable = ptable
         for p in list(disk.partitions()):
             self.delete_partition(p, True)
         self.clear(disk)
