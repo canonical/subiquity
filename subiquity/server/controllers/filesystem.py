@@ -359,7 +359,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_add_partition_POST(self, data: AddPartitionV2) \
             -> StorageResponseV2:
         log.debug(data)
-        if data.partition.format is None:
+        if data.partition.format is None and \
+                data.partition.partition_type != 'extended':
             raise ValueError('add_partition must supply format')
         if data.partition.boot is not None:
             raise ValueError('add_partition does not support changing boot')
@@ -375,7 +376,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             'mount': data.partition.mount,
         }
 
-        self.create_partition(disk, data.gap, spec, wipe='superblock')
+        flag = ""
+        if data.partition.partition_type in ('extended', 'logical'):
+            flag = data.partition.partition_type
+
+        self.create_partition(disk, data.gap, spec, wipe='superblock',
+                              flag=flag)
         return await self.v2_GET()
 
     async def v2_delete_partition_POST(self, data: ModifyPartitionV2) \

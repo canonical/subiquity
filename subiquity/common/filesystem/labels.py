@@ -300,6 +300,9 @@ def _for_client_disk(disk, *, min_size=0):
 
 @for_client.register(Partition)
 def _for_client_partition(partition, *, min_size=0):
+    partition_type = None
+    if partition.flag in ('extended', 'logical'):
+        partition_type = partition.flag
     return types.Partition(
         size=partition.size,
         number=partition._number,
@@ -311,6 +314,7 @@ def _for_client_partition(partition, *, min_size=0):
         os=partition.os,
         offset=partition.offset,
         resize=partition.resize,
+        partition_type=partition_type,
         mount=partition.mount,
         format=partition.format)
 

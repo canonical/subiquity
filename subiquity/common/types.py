@@ -268,6 +268,7 @@ class Partition:
     os: Optional[OsProber] = None
     offset: Optional[int] = None
     resize: Optional[bool] = None
+    partition_type: Optional[str] = None
 
 
 @attr.s(auto_attribs=True)
