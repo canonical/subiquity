@@ -19,6 +19,11 @@ from subiquity.server.controllers.filesystem import FilesystemController
 
 from subiquitycore.tests.util import run_coro
 from subiquitycore.tests.mocks import make_app
+from subiquity.common.types import Bootloader
+from subiquity.models.tests.test_filesystem import (
+    make_disk,
+    make_model,
+    )
 
 
 class TestSubiquityControllerFilesystem(TestCase):
@@ -44,3 +49,54 @@ class TestSubiquityControllerFilesystem(TestCase):
         self.app.opts.use_os_prober = True
         run_coro(self.fsc._probe_once(context=None, restricted=False))
         self.app.prober.get_storage.assert_called_with({'defaults', 'os'})
+
+
+class TestGuided(TestCase):
+    def _guided_direct(self, bootloader, ptable):
+        self.app = make_app()
+        self.app.opts.bootloader = bootloader.value
+        self.controller = FilesystemController(self.app)
+        self.controller.model = make_model(bootloader)
+        self.controller.model._probe_data = {'blockdev': {}}
+        self.d1 = make_disk(self.controller.model, ptable=ptable)
+        self.controller.guided_direct(self.d1)
+
+    def test_guided_direct_UEFI_GPT(self):
+        self._guided_direct(Bootloader.UEFI, 'gpt')
+        [d1p1, d1p2] = self.d1.partitions()
+        self.assertEqual('/boot/efi', d1p1.mount)
+        self.assertEqual('/', d1p2.mount)
+        self.assertEqual(d1p1.size + d1p1.offset, d1p2.offset)
+
+    def test_guided_direct_UEFI_MSDOS(self):
+        self._guided_direct(Bootloader.UEFI, 'msdos')
+        [d1p1, d1p2] = self.d1.partitions()
+        self.assertEqual('/boot/efi', d1p1.mount)
+        self.assertEqual('/', d1p2.mount)
+        self.assertEqual(d1p1.size + d1p1.offset, d1p2.offset)
+
+    def test_guided_direct_BIOS_GPT(self):
+        self._guided_direct(Bootloader.BIOS, 'gpt')
+        [d1p1, d1p2] = self.d1.partitions()
+        self.assertEqual(None, d1p1.mount)
+        self.assertEqual('/', d1p2.mount)
+        self.assertEqual(d1p1.size + d1p1.offset, d1p2.offset)
+
+    def test_guided_direct_BIOS_MSDOS(self):
+        self._guided_direct(Bootloader.BIOS, 'msdos')
+        [d1p1] = self.d1.partitions()
+        self.assertEqual('/', d1p1.mount)
+
+    def test_guided_direct_PREP_GPT(self):
+        self._guided_direct(Bootloader.PREP, 'gpt')
+        [d1p1, d1p2] = self.d1.partitions()
+        self.assertEqual(None, d1p1.mount)
+        self.assertEqual('/', d1p2.mount)
+        self.assertEqual(d1p1.size + d1p1.offset, d1p2.offset)
+
+    def test_guided_direct_PREP_MSDOS(self):
+        self._guided_direct(Bootloader.PREP, 'msdos')
+        [d1p1, d1p2] = self.d1.partitions()
+        self.assertEqual(None, d1p1.mount)
+        self.assertEqual('/', d1p2.mount)
+        self.assertEqual(d1p1.size + d1p1.offset, d1p2.offset)

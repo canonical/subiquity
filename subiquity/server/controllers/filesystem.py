@@ -94,6 +94,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self._probe_once, propagate_errors=False)
         self._probe_task = SingleInstanceTask(
             self._probe, propagate_errors=False)
+        self.supports_resilient_boot = False
 
     def load_autoinstall_data(self, data):
         log.debug("load_autoinstall_data %s", data)
