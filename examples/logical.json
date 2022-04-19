@@ -1,0 +1,1056 @@
+{
+    "network": {
+        "links": [
+            {
+                "addresses": [
+                    {
+                        "address": "10.0.2.15/24",
+                        "family": 2,
+                        "scope": "global",
+                        "source": "dhcp"
+                    },
+                    {
+                        "address": "fec0::5054:ff:fe12:3456/64",
+                        "family": 10,
+                        "scope": "site",
+                        "source": "dhcp"
+                    },
+                    {
+                        "address": "fe80::5054:ff:fe12:3456/64",
+                        "family": 10,
+                        "scope": "link",
+                        "source": "static"
+                    }
+                ],
+                "bond": {
+                    "is_master": false,
+                    "is_slave": false,
+                    "lacp_rate": null,
+                    "master": null,
+                    "mode": null,
+                    "slaves": [],
+                    "xmit_hash_policy": null
+                },
+                "bridge": {
+                    "interfaces": [],
+                    "is_bridge": false,
+                    "is_port": false,
+                    "options": {}
+                },
+                "netlink_data": {
+                    "arptype": 1,
+                    "family": 0,
+                    "flags": 69699,
+                    "ifindex": 2,
+                    "is_vlan": false,
+                    "name": "ens3"
+                },
+                "type": "eth",
+                "udev_data": {
+                    "DEVPATH": "/devices/pci0000:00/0000:00:03.0/net/ens3",
+                    "ID_BUS": "pci",
+                    "ID_MM_CANDIDATE": "1",
+                    "ID_MODEL_FROM_DATABASE": "82540EM Gigabit Ethernet Controller (QEMU Virtual Machine)",
+                    "ID_MODEL_ID": "0x100e",
+                    "ID_NET_NAME_MAC": "enx525400123456",
+                    "ID_NET_NAME_PATH": "enp0s3",
+                    "ID_NET_NAME_SLOT": "ens3",
+                    "ID_NET_NAMING_SCHEME": "v240",
+                    "ID_PATH": "pci-0000:00:03.0",
+                    "ID_PATH_TAG": "pci-0000_00_03_0",
+                    "ID_PCI_CLASS_FROM_DATABASE": "Network controller",
+                    "ID_PCI_SUBCLASS_FROM_DATABASE": "Ethernet controller",
+                    "ID_VENDOR_FROM_DATABASE": "Intel Corporation",
+                    "ID_VENDOR_ID": "0x8086",
+                    "IFINDEX": "2",
+                    "INTERFACE": "ens3",
+                    "SUBSYSTEM": "net",
+                    "SYSTEMD_ALIAS": "/sys/subsystem/net/devices/ens3",
+                    "TAGS": ":systemd:",
+                    "USEC_INITIALIZED": "82651806",
+                    "attrs": {
+                        "addr_assign_type": "0",
+                        "addr_len": "6",
+                        "address": "52:54:00:12:34:56",
+                        "broadcast": "ff:ff:ff:ff:ff:ff",
+                        "carrier": "1",
+                        "carrier_changes": "2",
+                        "carrier_down_count": "1",
+                        "carrier_up_count": "1",
+                        "dev_id": "0x0",
+                        "dev_port": "0",
+                        "device": null,
+                        "dormant": "0",
+                        "duplex": "full",
+                        "flags": "0x1003",
+                        "gro_flush_timeout": "0",
+                        "ifalias": "",
+                        "ifindex": "2",
+                        "iflink": "2",
+                        "link_mode": "0",
+                        "mtu": "1500",
+                        "name_assign_type": "4",
+                        "netdev_group": "0",
+                        "operstate": "up",
+                        "phys_port_id": null,
+                        "phys_port_name": null,
+                        "phys_switch_id": null,
+                        "proto_down": "0",
+                        "speed": "1000",
+                        "subsystem": "net",
+                        "tx_queue_len": "1000",
+                        "type": "1",
+                        "uevent": "INTERFACE=ens3\nIFINDEX=2"
+                    }
+                }
+            },
+            {
+                "addresses": [
+                    {
+                        "address": "127.0.0.1/8",
+                        "family": 2,
+                        "scope": "host",
+                        "source": "static"
+                    },
+                    {
+                        "address": "::1/128",
+                        "family": 10,
+                        "scope": "host",
+                        "source": "static"
+                    }
+                ],
+                "bond": {
+                    "is_master": false,
+                    "is_slave": false,
+                    "lacp_rate": null,
+                    "master": null,
+                    "mode": null,
+                    "slaves": [],
+                    "xmit_hash_policy": null
+                },
+                "bridge": {
+                    "interfaces": [],
+                    "is_bridge": false,
+                    "is_port": false,
+                    "options": {}
+                },
+                "netlink_data": {
+                    "arptype": 772,
+                    "family": 0,
+                    "flags": 65609,
+                    "ifindex": 1,
+                    "is_vlan": false,
+                    "name": "lo"
+                },
+                "type": "lo",
+                "udev_data": {
+                    "DEVPATH": "/devices/virtual/net/lo",
+                    "ID_MM_CANDIDATE": "1",
+                    "IFINDEX": "1",
+                    "INTERFACE": "lo",
+                    "SUBSYSTEM": "net",
+                    "USEC_INITIALIZED": "89206115",
+                    "attrs": {
+                        "addr_assign_type": "0",
+                        "addr_len": "6",
+                        "address": "00:00:00:00:00:00",
+                        "broadcast": "00:00:00:00:00:00",
+                        "carrier": "1",
+                        "carrier_changes": "0",
+                        "carrier_down_count": "0",
+                        "carrier_up_count": "0",
+                        "dev_id": "0x0",
+                        "dev_port": "0",
+                        "dormant": "0",
+                        "duplex": null,
+                        "flags": "0x9",
+                        "gro_flush_timeout": "0",
+                        "ifalias": "",
+                        "ifindex": "1",
+                        "iflink": "1",
+                        "link_mode": "0",
+                        "mtu": "65536",
+                        "name_assign_type": null,
+                        "netdev_group": "0",
+                        "operstate": "unknown",
+                        "phys_port_id": null,
+                        "phys_port_name": null,
+                        "phys_switch_id": null,
+                        "proto_down": "0",
+                        "speed": null,
+                        "subsystem": "net",
+                        "tx_queue_len": "1000",
+                        "type": "772",
+                        "uevent": "INTERFACE=lo\nIFINDEX=1"
+                    }
+                }
+            }
+        ],
+        "routes": [
+            {
+                "dst": "default",
+                "family": 2,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "10.0.2.0/24",
+                "family": 2,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "10.0.2.2",
+                "family": 2,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "10.0.2.0",
+                "family": 2,
+                "ifindex": 2,
+                "table": 255,
+                "type": 3
+            },
+            {
+                "dst": "10.0.2.15",
+                "family": 2,
+                "ifindex": 2,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "10.0.2.255",
+                "family": 2,
+                "ifindex": 2,
+                "table": 255,
+                "type": 3
+            },
+            {
+                "dst": "127.0.0.0",
+                "family": 2,
+                "ifindex": 1,
+                "table": 255,
+                "type": 3
+            },
+            {
+                "dst": "127.0.0.0/8",
+                "family": 2,
+                "ifindex": 1,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "127.0.0.1",
+                "family": 2,
+                "ifindex": 1,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "127.255.255.255",
+                "family": 2,
+                "ifindex": 1,
+                "table": 255,
+                "type": 3
+            },
+            {
+                "dst": "::1",
+                "family": 10,
+                "ifindex": 1,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "fe80::/64",
+                "family": 10,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "fec0::/64",
+                "family": 10,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "default",
+                "family": 10,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "::1",
+                "family": 10,
+                "ifindex": 1,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "fe80::5054:ff:fe12:3456",
+                "family": 10,
+                "ifindex": 2,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "fec0::5054:ff:fe12:3456",
+                "family": 10,
+                "ifindex": 2,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "ff00::/8",
+                "family": 10,
+                "ifindex": 2,
+                "table": 255,
+                "type": 1
+            }
+        ]
+    },
+    "storage": {
+        "lvm": {},
+        "raid": {},
+        "zfs": {
+            "zpools": {}
+        },
+        "blockdev": {
+            "/dev/sr0": {
+                "DEVLINKS": "/dev/disk/by-id/scsi-0QEMU_QEMU_DVD-ROM_QM00003 /dev/disk/by-id/scsi-1ATA_QEMU_DVD-ROM_QM00003 /dev/cdrom /dev/disk/by-path/pci-0000:00:01.1-ata-2.0 /dev/disk/by-uuid/2022-04-10-08-22-35-00 /dev/disk/by-path/pci-0000:00:01.1-ata-2 /dev/disk/by-id/ata-QEMU_DVD-ROM_QM00003 /dev/disk/by-label/Ubuntu\\x20custom",
+                "DEVNAME": "/dev/sr0",
+                "DEVPATH": "/devices/pci0000:00/0000:00:01.1/ata2/host1/target1:0:0/1:0:0:0/block/sr0",
+                "DEVTYPE": "disk",
+                "DISKSEQ": "10",
+                "ID_ATA": "1",
+                "ID_BUS": "ata",
+                "ID_CDROM": "1",
+                "ID_CDROM_DVD": "1",
+                "ID_CDROM_MEDIA": "1",
+                "ID_CDROM_MEDIA_DVD": "1",
+                "ID_CDROM_MEDIA_SESSION_COUNT": "1",
+                "ID_CDROM_MEDIA_STATE": "complete",
+                "ID_CDROM_MEDIA_TRACK_COUNT": "1",
+                "ID_CDROM_MEDIA_TRACK_COUNT_DATA": "1",
+                "ID_CDROM_MRW": "1",
+                "ID_CDROM_MRW_W": "1",
+                "ID_FOR_SEAT": "block-pci-0000_00_01_1-ata-2_0",
+                "ID_FS_BOOT_SYSTEM_ID": "EL\\x20TORITO\\x20SPECIFICATION",
+                "ID_FS_DATA_PREPARER_ID": "XORRISO-1.5.2\\x202019.10.26.180001\\x2c\\x20LIBISOBURN-1.5.2\\x2c\\x20LIBISOFS-1.5.2\\x2c\\x20LIBBURN-1.5.2",
+                "ID_FS_LABEL": "Ubuntu_custom",
+                "ID_FS_LABEL_ENC": "Ubuntu\\x20custom",
+                "ID_FS_TYPE": "iso9660",
+                "ID_FS_USAGE": "filesystem",
+                "ID_FS_UUID": "2022-04-10-08-22-35-00",
+                "ID_FS_UUID_ENC": "2022-04-10-08-22-35-00",
+                "ID_MODEL": "QEMU_DVD-ROM",
+                "ID_MODEL_ENC": "QEMU\\x20DVD-ROM\\x20\\x20\\x20\\x20",
+                "ID_PART_TABLE_TYPE": "dos",
+                "ID_PATH": "pci-0000:00:01.1-ata-2.0",
+                "ID_PATH_ATA_COMPAT": "pci-0000:00:01.1-ata-2",
+                "ID_PATH_TAG": "pci-0000_00_01_1-ata-2_0",
+                "ID_REVISION": "2.5+",
+                "ID_SCSI": "1",
+                "ID_SCSI_INQUIRY": "1",
+                "ID_SERIAL": "QEMU_DVD-ROM_QM00003",
+                "ID_TYPE": "cd/dvd",
+                "ID_VENDOR": "QEMU",
+                "ID_VENDOR_ENC": "QEMU\\x20\\x20\\x20\\x20",
+                "MAJOR": "11",
+                "MINOR": "0",
+                "SCSI_IDENT_LUN_ATA": "QEMU_DVD-ROM_QM00003",
+                "SCSI_IDENT_LUN_T10": "ATA_QEMU_DVD-ROM_QM00003",
+                "SCSI_IDENT_LUN_VENDOR": "QM00003",
+                "SCSI_MODEL": "QEMU_DVD-ROM",
+                "SCSI_MODEL_ENC": "QEMU\\x20DVD-ROM\\x20\\x20\\x20\\x20",
+                "SCSI_REVISION": "2.5+",
+                "SCSI_TPGS": "0",
+                "SCSI_TYPE": "cd/dvd",
+                "SCSI_VENDOR": "QEMU",
+                "SCSI_VENDOR_ENC": "QEMU\\x20\\x20\\x20\\x20",
+                "SUBSYSTEM": "block",
+                "TAGS": ":seat:systemd:uaccess:",
+                "USEC_INITIALIZED": "1161991",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "bdi": null,
+                    "capability": "109",
+                    "dev": "11:0",
+                    "device": null,
+                    "discard_alignment": "0",
+                    "diskseq": "10",
+                    "events": "media_change eject_request",
+                    "events_async": "",
+                    "events_poll_msecs": "-1",
+                    "ext_range": "1",
+                    "hidden": "0",
+                    "inflight": "       0        0",
+                    "range": "1",
+                    "removable": "1",
+                    "ro": "0",
+                    "size": "1583212544",
+                    "stat": "   13661       70  2900941     3676        0        0        0        0        0    11136     3676        0        0        0        0        0        0",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=11\nMINOR=0\nDEVNAME=sr0\nDEVTYPE=disk\nDISKSEQ=10"
+                },
+                "partitiontable": {
+                    "label": "dos",
+                    "id": "0x00000000",
+                    "device": "/dev/sr0",
+                    "unit": "sectors",
+                    "sectorsize": 2048,
+                    "partitions": [
+                        {
+                            "node": "/dev/sr0p1",
+                            "start": 64,
+                            "size": 3082988,
+                            "type": "83",
+                            "bootable": true
+                        },
+                        {
+                            "node": "/dev/sr0p2",
+                            "start": 3083052,
+                            "size": 8496,
+                            "type": "ef"
+                        }
+                    ]
+                }
+            },
+            "/dev/vda": {
+                "DEVLINKS": "/dev/disk/by-path/virtio-pci-0000:00:04.0 /dev/disk/by-path/pci-0000:00:04.0",
+                "DEVNAME": "/dev/vda",
+                "DEVPATH": "/devices/pci0000:00/0000:00:04.0/virtio2/block/vda",
+                "DEVTYPE": "disk",
+                "DISKSEQ": "11",
+                "ID_PART_TABLE_TYPE": "dos",
+                "ID_PART_TABLE_UUID": "2c7be746",
+                "ID_PATH": "pci-0000:00:04.0",
+                "ID_PATH_TAG": "pci-0000_00_04_0",
+                "MAJOR": "252",
+                "MINOR": "0",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "USEC_INITIALIZED": "1082089",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "bdi": null,
+                    "cache_type": "write through",
+                    "capability": "40",
+                    "dev": "252:0",
+                    "device": null,
+                    "discard_alignment": "512",
+                    "diskseq": "11",
+                    "events": "",
+                    "events_async": "",
+                    "events_poll_msecs": "-1",
+                    "ext_range": "256",
+                    "hidden": "0",
+                    "inflight": "       0        0",
+                    "range": "16",
+                    "removable": "0",
+                    "ro": "0",
+                    "serial": "",
+                    "size": "12884901888",
+                    "stat": "    1862        0   106616      127        0        0        0        0        0     1016      127        0        0        0        0        0        0",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=252\nMINOR=0\nDEVNAME=vda\nDEVTYPE=disk\nDISKSEQ=11"
+                },
+                "partitiontable": {
+                    "label": "dos",
+                    "id": "0x2c7be746",
+                    "device": "/dev/vda",
+                    "unit": "sectors",
+                    "sectorsize": 512,
+                    "partitions": [
+                        {
+                            "node": "/dev/vda1",
+                            "start": 2048,
+                            "size": 2097152,
+                            "type": "83"
+                        },
+                        {
+                            "node": "/dev/vda2",
+                            "start": 2099200,
+                            "size": 23066624,
+                            "type": "5"
+                        },
+                        {
+                            "node": "/dev/vda5",
+                            "start": 2101248,
+                            "size": 23064576,
+                            "type": "83"
+                        }
+                    ]
+                }
+            },
+            "/dev/vda1": {
+                "DEVLINKS": "/dev/disk/by-uuid/bfc49bcf-9011-424c-8ba2-7e5499ecdefc /dev/disk/by-path/virtio-pci-0000:00:04.0-part1 /dev/disk/by-partuuid/2c7be746-01 /dev/disk/by-path/pci-0000:00:04.0-part1",
+                "DEVNAME": "/dev/vda1",
+                "DEVPATH": "/devices/pci0000:00/0000:00:04.0/virtio2/block/vda/vda1",
+                "DEVTYPE": "partition",
+                "DISKSEQ": "11",
+                "ID_FS_TYPE": "ext4",
+                "ID_FS_USAGE": "filesystem",
+                "ID_FS_UUID": "bfc49bcf-9011-424c-8ba2-7e5499ecdefc",
+                "ID_FS_UUID_ENC": "bfc49bcf-9011-424c-8ba2-7e5499ecdefc",
+                "ID_FS_VERSION": "1.0",
+                "ID_PART_ENTRY_DISK": "252:0",
+                "ID_PART_ENTRY_NUMBER": "1",
+                "ID_PART_ENTRY_OFFSET": "2048",
+                "ID_PART_ENTRY_SCHEME": "dos",
+                "ID_PART_ENTRY_SIZE": "2097152",
+                "ID_PART_ENTRY_TYPE": "0x83",
+                "ID_PART_ENTRY_UUID": "2c7be746-01",
+                "ID_PART_TABLE_TYPE": "dos",
+                "ID_PART_TABLE_UUID": "2c7be746",
+                "ID_PATH": "pci-0000:00:04.0",
+                "ID_PATH_TAG": "pci-0000_00_04_0",
+                "MAJOR": "252",
+                "MINOR": "1",
+                "PARTN": "1",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "USEC_INITIALIZED": "237846267129",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "dev": "252:1",
+                    "discard_alignment": "0",
+                    "inflight": "       0        0",
+                    "partition": "1",
+                    "ro": "0",
+                    "size": "1073741824",
+                    "start": "2048",
+                    "stat": "     310        0    19408       21        0        0        0        0        0      268       21        0        0        0        0        0        0",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=252\nMINOR=1\nDEVNAME=vda1\nDEVTYPE=partition\nDISKSEQ=11\nPARTN=1"
+                }
+            },
+            "/dev/vda2": {
+                "DEVLINKS": "/dev/disk/by-partuuid/2c7be746-02 /dev/disk/by-path/pci-0000:00:04.0-part2 /dev/disk/by-path/virtio-pci-0000:00:04.0-part2",
+                "DEVNAME": "/dev/vda2",
+                "DEVPATH": "/devices/pci0000:00/0000:00:04.0/virtio2/block/vda/vda2",
+                "DEVTYPE": "partition",
+                "DISKSEQ": "11",
+                "ID_PART_ENTRY_DISK": "252:0",
+                "ID_PART_ENTRY_NUMBER": "2",
+                "ID_PART_ENTRY_OFFSET": "2099200",
+                "ID_PART_ENTRY_SCHEME": "dos",
+                "ID_PART_ENTRY_SIZE": "23066624",
+                "ID_PART_ENTRY_TYPE": "0x5",
+                "ID_PART_ENTRY_UUID": "2c7be746-02",
+                "ID_PART_TABLE_TYPE": "dos",
+                "ID_PART_TABLE_UUID": "2c7be746",
+                "ID_PATH": "pci-0000:00:04.0",
+                "ID_PATH_TAG": "pci-0000_00_04_0",
+                "MAJOR": "252",
+                "MINOR": "2",
+                "PARTN": "2",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "USEC_INITIALIZED": "237846258591",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "dev": "252:2",
+                    "discard_alignment": "0",
+                    "inflight": "       0        0",
+                    "partition": "2",
+                    "ro": "0",
+                    "size": "1024",
+                    "start": "2099200",
+                    "stat": "      12        0       24        0        0        0        0        0        0       48        0        0        0        0        0        0        0",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=252\nMINOR=2\nDEVNAME=vda2\nDEVTYPE=partition\nDISKSEQ=11\nPARTN=2"
+                },
+                "partitiontable": {
+                    "label": "dos",
+                    "id": "0x00000000",
+                    "device": "/dev/vda2",
+                    "unit": "sectors",
+                    "grain": "512",
+                    "sectorsize": 512,
+                    "partitions": [
+                        {
+                            "node": "/dev/vda2p1",
+                            "start": 2048,
+                            "size": 23064576,
+                            "type": "83"
+                        }
+                    ]
+                }
+            },
+            "/dev/vda5": {
+                "DEVLINKS": "/dev/disk/by-path/virtio-pci-0000:00:04.0-part5 /dev/disk/by-path/pci-0000:00:04.0-part5 /dev/disk/by-partuuid/2c7be746-05 /dev/disk/by-uuid/3ea674fc-66b8-4a29-8c8d-fac1c86df32b",
+                "DEVNAME": "/dev/vda5",
+                "DEVPATH": "/devices/pci0000:00/0000:00:04.0/virtio2/block/vda/vda5",
+                "DEVTYPE": "partition",
+                "DISKSEQ": "11",
+                "ID_FS_TYPE": "ext4",
+                "ID_FS_USAGE": "filesystem",
+                "ID_FS_UUID": "3ea674fc-66b8-4a29-8c8d-fac1c86df32b",
+                "ID_FS_UUID_ENC": "3ea674fc-66b8-4a29-8c8d-fac1c86df32b",
+                "ID_FS_VERSION": "1.0",
+                "ID_PART_ENTRY_DISK": "252:0",
+                "ID_PART_ENTRY_NUMBER": "5",
+                "ID_PART_ENTRY_OFFSET": "2101248",
+                "ID_PART_ENTRY_SCHEME": "dos",
+                "ID_PART_ENTRY_SIZE": "23064576",
+                "ID_PART_ENTRY_TYPE": "0x83",
+                "ID_PART_ENTRY_UUID": "2c7be746-05",
+                "ID_PART_TABLE_TYPE": "dos",
+                "ID_PART_TABLE_UUID": "2c7be746",
+                "ID_PATH": "pci-0000:00:04.0",
+                "ID_PATH_TAG": "pci-0000_00_04_0",
+                "MAJOR": "252",
+                "MINOR": "5",
+                "PARTN": "5",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "USEC_INITIALIZED": "237846266987",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "dev": "252:5",
+                    "discard_alignment": "0",
+                    "inflight": "       0        0",
+                    "partition": "5",
+                    "ro": "0",
+                    "size": "11809062912",
+                    "start": "2101248",
+                    "stat": "     310        0    19408       19        0        0        0        0        0      280       19        0        0        0        0        0        0",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=252\nMINOR=5\nDEVNAME=vda5\nDEVTYPE=partition\nDISKSEQ=11\nPARTN=5"
+                }
+            },
+            "/dev/fd0": {
+                "DEVNAME": "/dev/fd0",
+                "DEVPATH": "/devices/platform/floppy.0/block/fd0",
+                "DEVTYPE": "disk",
+                "DISKSEQ": "38",
+                "ID_DRIVE_FLOPPY": "1",
+                "MAJOR": "2",
+                "MINOR": "0",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "USEC_INITIALIZED": "1068120",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "bdi": null,
+                    "capability": "1",
+                    "dev": "2:0",
+                    "device": null,
+                    "discard_alignment": "0",
+                    "diskseq": "38",
+                    "events": "",
+                    "events_async": "",
+                    "events_poll_msecs": "-1",
+                    "ext_range": "1",
+                    "hidden": "0",
+                    "inflight": "       0        0",
+                    "range": "1",
+                    "removable": "1",
+                    "ro": "0",
+                    "size": "4096",
+                    "stat": "      26        0      208      837        0        0        0        0        0      952      837        0        0        0        0        0        0",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=2\nMINOR=0\nDEVNAME=fd0\nDEVTYPE=disk\nDISKSEQ=38"
+                }
+            }
+        },
+        "dmcrypt": {},
+        "filesystem": {
+            "/dev/sr0": {
+                "BOOT_SYSTEM_ID": "EL\\x20TORITO\\x20SPECIFICATION",
+                "DATA_PREPARER_ID": "XORRISO-1.5.2\\x202019.10.26.180001\\x2c\\x20LIBISOBURN-1.5.2\\x2c\\x20LIBISOFS-1.5.2\\x2c\\x20LIBBURN-1.5.2",
+                "LABEL": "Ubuntu_custom",
+                "LABEL_ENC": "Ubuntu\\x20custom",
+                "TYPE": "iso9660",
+                "USAGE": "filesystem",
+                "UUID": "2022-04-10-08-22-35-00",
+                "UUID_ENC": "2022-04-10-08-22-35-00"
+            },
+            "/dev/vda1": {
+                "TYPE": "ext4",
+                "USAGE": "filesystem",
+                "UUID": "bfc49bcf-9011-424c-8ba2-7e5499ecdefc",
+                "UUID_ENC": "bfc49bcf-9011-424c-8ba2-7e5499ecdefc",
+                "VERSION": "1.0"
+            },
+            "/dev/vda5": {
+                "TYPE": "ext4",
+                "USAGE": "filesystem",
+                "UUID": "3ea674fc-66b8-4a29-8c8d-fac1c86df32b",
+                "UUID_ENC": "3ea674fc-66b8-4a29-8c8d-fac1c86df32b",
+                "VERSION": "1.0"
+            }
+        },
+        "bcache": {
+            "backing": {},
+            "caching": {}
+        },
+        "mount": [
+            {
+                "target": "/",
+                "source": "/cow",
+                "fstype": "overlay",
+                "options": "rw,relatime,lowerdir=/ubuntu-server-minimal.ubuntu-server.installer.generic.custom.custom.squashfs:/ubuntu-server-minimal.ubuntu-server.installer.generic.custom.squashfs:/ubuntu-server-minimal.ubuntu-server.installer.generic.squashfs:/ubuntu-server-minimal.ubuntu-server.installer.squashfs:/ubuntu-server-minimal.ubuntu-server.squashfs:/ubuntu-server-minimal.squashfs,upperdir=/cow/upper,workdir=/cow/work,xino=off",
+                "children": [
+                    {
+                        "target": "/sys",
+                        "source": "sysfs",
+                        "fstype": "sysfs",
+                        "options": "rw,nosuid,nodev,noexec,relatime",
+                        "children": [
+                            {
+                                "target": "/sys/kernel/security",
+                                "source": "securityfs",
+                                "fstype": "securityfs",
+                                "options": "rw,nosuid,nodev,noexec,relatime"
+                            },
+                            {
+                                "target": "/sys/fs/cgroup",
+                                "source": "cgroup2",
+                                "fstype": "cgroup2",
+                                "options": "rw,nosuid,nodev,noexec,relatime,nsdelegate,memory_recursiveprot"
+                            },
+                            {
+                                "target": "/sys/fs/pstore",
+                                "source": "pstore",
+                                "fstype": "pstore",
+                                "options": "rw,nosuid,nodev,noexec,relatime"
+                            },
+                            {
+                                "target": "/sys/fs/bpf",
+                                "source": "bpf",
+                                "fstype": "bpf",
+                                "options": "rw,nosuid,nodev,noexec,relatime,mode=700"
+                            },
+                            {
+                                "target": "/sys/kernel/debug",
+                                "source": "debugfs",
+                                "fstype": "debugfs",
+                                "options": "rw,nosuid,nodev,noexec,relatime"
+                            },
+                            {
+                                "target": "/sys/kernel/tracing",
+                                "source": "tracefs",
+                                "fstype": "tracefs",
+                                "options": "rw,nosuid,nodev,noexec,relatime"
+                            },
+                            {
+                                "target": "/sys/fs/fuse/connections",
+                                "source": "fusectl",
+                                "fstype": "fusectl",
+                                "options": "rw,nosuid,nodev,noexec,relatime"
+                            },
+                            {
+                                "target": "/sys/kernel/config",
+                                "source": "configfs",
+                                "fstype": "configfs",
+                                "options": "rw,nosuid,nodev,noexec,relatime"
+                            }
+                        ]
+                    },
+                    {
+                        "target": "/proc",
+                        "source": "proc",
+                        "fstype": "proc",
+                        "options": "rw,nosuid,nodev,noexec,relatime",
+                        "children": [
+                            {
+                                "target": "/proc/sys/fs/binfmt_misc",
+                                "source": "systemd-1",
+                                "fstype": "autofs",
+                                "options": "rw,relatime,fd=29,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=14488"
+                            }
+                        ]
+                    },
+                    {
+                        "target": "/dev",
+                        "source": "udev",
+                        "fstype": "devtmpfs",
+                        "options": "rw,nosuid,relatime,size=4014564k,nr_inodes=1003641,mode=755,inode64",
+                        "children": [
+                            {
+                                "target": "/dev/pts",
+                                "source": "devpts",
+                                "fstype": "devpts",
+                                "options": "rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000"
+                            },
+                            {
+                                "target": "/dev/shm",
+                                "source": "tmpfs",
+                                "fstype": "tmpfs",
+                                "options": "rw,nosuid,nodev,inode64"
+                            },
+                            {
+                                "target": "/dev/hugepages",
+                                "source": "hugetlbfs",
+                                "fstype": "hugetlbfs",
+                                "options": "rw,relatime,pagesize=2M"
+                            },
+                            {
+                                "target": "/dev/mqueue",
+                                "source": "mqueue",
+                                "fstype": "mqueue",
+                                "options": "rw,nosuid,nodev,noexec,relatime"
+                            }
+                        ]
+                    },
+                    {
+                        "target": "/run",
+                        "source": "tmpfs",
+                        "fstype": "tmpfs",
+                        "options": "rw,nosuid,nodev,noexec,relatime,size=814280k,mode=755,inode64",
+                        "children": [
+                            {
+                                "target": "/run/lock",
+                                "source": "tmpfs",
+                                "fstype": "tmpfs",
+                                "options": "rw,nosuid,nodev,noexec,relatime,size=5120k,inode64"
+                            },
+                            {
+                                "target": "/run/credentials/systemd-sysusers.service",
+                                "source": "none",
+                                "fstype": "ramfs",
+                                "options": "ro,nosuid,nodev,noexec,relatime,mode=700"
+                            },
+                            {
+                                "target": "/run/snapd/ns",
+                                "source": "tmpfs[/snapd/ns]",
+                                "fstype": "tmpfs",
+                                "options": "rw,nosuid,nodev,noexec,relatime,size=814280k,mode=755,inode64",
+                                "children": [
+                                    {
+                                        "target": "/run/snapd/ns/lxd.mnt",
+                                        "source": "nsfs[mnt:[4026532193]]",
+                                        "fstype": "nsfs",
+                                        "options": "rw"
+                                    }
+                                ]
+                            },
+                            {
+                                "target": "/run/user/999",
+                                "source": "tmpfs",
+                                "fstype": "tmpfs",
+                                "options": "rw,nosuid,nodev,relatime,size=814276k,nr_inodes=203569,mode=700,uid=999,gid=999,inode64"
+                            }
+                        ]
+                    },
+                    {
+                        "target": "/cdrom",
+                        "source": "/dev/sr0",
+                        "fstype": "iso9660",
+                        "options": "ro,noatime,nojoliet,check=s,map=n,blocksize=2048,iocharset=utf8"
+                    },
+                    {
+                        "target": "/rofs",
+                        "source": "/dev/loop0",
+                        "fstype": "squashfs",
+                        "options": "ro,noatime,errors=continue"
+                    },
+                    {
+                        "target": "/media/minimal",
+                        "source": "/dev/loop6",
+                        "fstype": "squashfs",
+                        "options": "ro,relatime,errors=continue"
+                    },
+                    {
+                        "target": "/media/full",
+                        "source": "/dev/loop7",
+                        "fstype": "squashfs",
+                        "options": "ro,relatime,errors=continue"
+                    },
+                    {
+                        "target": "/media/filesystem",
+                        "source": "overlay",
+                        "fstype": "overlay",
+                        "options": "ro,relatime,lowerdir=/root/media/full:/root/media/minimal"
+                    },
+                    {
+                        "target": "/snap/core20/1405",
+                        "source": "/dev/loop8",
+                        "fstype": "squashfs",
+                        "options": "ro,nodev,relatime,errors=continue"
+                    },
+                    {
+                        "target": "/snap/snapd/15177",
+                        "source": "/dev/loop10",
+                        "fstype": "squashfs",
+                        "options": "ro,nodev,relatime,errors=continue"
+                    },
+                    {
+                        "target": "/snap/lxd/22826",
+                        "source": "/dev/loop11",
+                        "fstype": "squashfs",
+                        "options": "ro,nodev,relatime,errors=continue"
+                    },
+                    {
+                        "target": "/snap/subiquity/x1",
+                        "source": "/dev/loop9",
+                        "fstype": "squashfs",
+                        "options": "ro,nodev,relatime,errors=continue"
+                    },
+                    {
+                        "target": "/tmp",
+                        "source": "tmpfs",
+                        "fstype": "tmpfs",
+                        "options": "rw,nosuid,nodev,relatime,inode64",
+                        "children": [
+                            {
+                                "target": "/tmp/tmp2v57fcnj/ubuntu-server-minimal.squashfs.dir",
+                                "source": "/dev/loop6",
+                                "fstype": "squashfs",
+                                "options": "ro,relatime,errors=continue"
+                            },
+                            {
+                                "target": "/tmp/tmp2v57fcnj/ubuntu-server-minimal.ubuntu-server.squashfs.dir",
+                                "source": "/dev/loop1",
+                                "fstype": "squashfs",
+                                "options": "ro,relatime,errors=continue"
+                            },
+                            {
+                                "target": "/tmp/tmp54pic7l2/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmp6o5s9ykd/root.dir,upperdir=/tmp/tmp54pic7l2/upper,workdir=/tmp/tmp54pic7l2/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmpmldqvi8c/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmpo7jtgbie/root.dir,upperdir=/tmp/tmpmldqvi8c/upper,workdir=/tmp/tmpmldqvi8c/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmps638su0y/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmpo7jtgbie/root.dir,upperdir=/tmp/tmps638su0y/upper,workdir=/tmp/tmps638su0y/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmpqtalq2c8/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmp1nt1_rco/root.dir,upperdir=/tmp/tmpqtalq2c8/upper,workdir=/tmp/tmpqtalq2c8/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmp719ffxut/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmptk3zq10q/root.dir,upperdir=/tmp/tmp719ffxut/upper,workdir=/tmp/tmp719ffxut/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmp7kdxa59g/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmptk3zq10q/root.dir,upperdir=/tmp/tmp7kdxa59g/upper,workdir=/tmp/tmp7kdxa59g/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmprfouq4l6/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmp1nt1_rco/root.dir,upperdir=/tmp/tmprfouq4l6/upper,workdir=/tmp/tmprfouq4l6/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmp2v57fcnj/root.dir",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "ro,relatime,lowerdir=/tmp/tmp2v57fcnj/ubuntu-server-minimal.ubuntu-server.squashfs.dir:/tmp/tmp2v57fcnj/ubuntu-server-minimal.squashfs.dir"
+                            },
+                            {
+                                "target": "/tmp/tmphdnoa3rw/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmpkjo691sy/root.dir,upperdir=/tmp/tmphdnoa3rw/upper,workdir=/tmp/tmphdnoa3rw/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmp2u6a6eow/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmppzmwpf6s/root.dir,upperdir=/tmp/tmp2u6a6eow/upper,workdir=/tmp/tmp2u6a6eow/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmp497gwrt9/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmppzmwpf6s/root.dir,upperdir=/tmp/tmp497gwrt9/upper,workdir=/tmp/tmp497gwrt9/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmpwp5xsuox/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmpkjo691sy/root.dir,upperdir=/tmp/tmpwp5xsuox/upper,workdir=/tmp/tmpwp5xsuox/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmpo5nr7epo/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmprnaxr1od/root.dir,upperdir=/tmp/tmpo5nr7epo/upper,workdir=/tmp/tmpo5nr7epo/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmplrwba09z/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmprnaxr1od/root.dir,upperdir=/tmp/tmplrwba09z/upper,workdir=/tmp/tmplrwba09z/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmp1xrh9bxv/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmp5co1mbha/root.dir,upperdir=/tmp/tmp1xrh9bxv/upper,workdir=/tmp/tmp1xrh9bxv/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmpzz6ivz59/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmp_5ijon13/root.dir,upperdir=/tmp/tmpzz6ivz59/upper,workdir=/tmp/tmpzz6ivz59/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmpepnxd63k/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmp_5ijon13/root.dir,upperdir=/tmp/tmpepnxd63k/upper,workdir=/tmp/tmpepnxd63k/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmppqsy0c8b/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmp5co1mbha/root.dir,upperdir=/tmp/tmppqsy0c8b/upper,workdir=/tmp/tmppqsy0c8b/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmpbjlczsx7/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmpvt8pyiee/root.dir,upperdir=/tmp/tmpbjlczsx7/upper,workdir=/tmp/tmpbjlczsx7/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmpz2e1cylh/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmpvt8pyiee/root.dir,upperdir=/tmp/tmpz2e1cylh/upper,workdir=/tmp/tmpz2e1cylh/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmpyk7m9bfz/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmp2v57fcnj/root.dir,upperdir=/tmp/tmpyk7m9bfz/upper,workdir=/tmp/tmpyk7m9bfz/work,xino=off"
+                            },
+                            {
+                                "target": "/tmp/tmpgzm_k6gl/mount",
+                                "source": "overlay",
+                                "fstype": "overlay",
+                                "options": "rw,relatime,lowerdir=/tmp/tmp2v57fcnj/root.dir,upperdir=/tmp/tmpgzm_k6gl/upper,workdir=/tmp/tmpgzm_k6gl/work,xino=off"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "dasd": {},
+        "multipath": {}
+    }
+}

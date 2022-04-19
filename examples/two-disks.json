@@ -1,0 +1,801 @@
+{
+    "storage": {
+        "bcache": {
+            "backing": {},
+            "caching": {}
+        },
+        "blockdev": {
+            "/dev/vda": {
+                "DEVLINKS": "/dev/disk/by-path/virtio-pci-0000:00:07.0 /dev/disk/by-path/pci-0000:00:07.0",
+                "DEVNAME": "/dev/vda",
+                "DEVPATH": "/devices/pci0000:00/0000:00:07.0/virtio1/block/vda",
+                "DEVTYPE": "disk",
+                "ID_PART_TABLE_TYPE": "gpt",
+                "ID_PART_TABLE_UUID": "849d8d86-1cdc-425f-b3cb-f4ab28e8a4d6",
+                "ID_PATH": "pci-0000:00:07.0",
+                "ID_PATH_TAG": "pci-0000_00_07_0",
+                "MAJOR": "252",
+                "MINOR": "0",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "USEC_INITIALIZED": "4141881",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "bdi": null,
+                    "cache_type": "write back",
+                    "capability": "50",
+                    "dev": "252:0",
+                    "device": null,
+                    "discard_alignment": "0",
+                    "ext_range": "256",
+                    "hidden": "0",
+                    "inflight": "       0        0",
+                    "range": "16",
+                    "removable": "0",
+                    "ro": "0",
+                    "serial": "",
+                    "size": "21474836480",
+                    "stat": "     352        0    17536       56        0        0        0        0        0       12       12",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=252\nMINOR=0\nDEVNAME=vda\nDEVTYPE=disk"
+                }
+            },
+            "/dev/vda1": {
+                "DEVLINKS": "/dev/disk/by-partuuid/c545dab2-e929-47d5-a514-aff2d6414487 /dev/disk/by-path/pci-0000:00:07.0-part1 /dev/disk/by-path/virtio-pci-0000:00:07.0-part1",
+                "DEVNAME": "/dev/vda1",
+                "DEVPATH": "/devices/pci0000:00/0000:00:07.0/virtio1/block/vda/vda1",
+                "DEVTYPE": "partition",
+                "ID_PART_ENTRY_DISK": "252:0",
+                "ID_PART_ENTRY_NUMBER": "1",
+                "ID_PART_ENTRY_OFFSET": "2048",
+                "ID_PART_ENTRY_SCHEME": "gpt",
+                "ID_PART_ENTRY_SIZE": "2048",
+                "ID_PART_ENTRY_TYPE": "21686148-6449-6e6f-744e-656564454649",
+                "ID_PART_ENTRY_UUID": "c545dab2-e929-47d5-a514-aff2d6414487",
+                "ID_PART_TABLE_TYPE": "gpt",
+                "ID_PART_TABLE_UUID": "849d8d86-1cdc-425f-b3cb-f4ab28e8a4d6",
+                "ID_PATH": "pci-0000:00:07.0",
+                "ID_PATH_TAG": "pci-0000_00_07_0",
+                "MAJOR": "252",
+                "MINOR": "1",
+                "PARTN": "1",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "USEC_INITIALIZED": "4157473",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "dev": "252:1",
+                    "discard_alignment": "0",
+                    "inflight": "       0        0",
+                    "partition": "1",
+                    "ro": "0",
+                    "size": "1048576",
+                    "start": "2048",
+                    "stat": "      92        0      736       16        0        0        0        0        0        0        0",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=252\nMINOR=1\nDEVNAME=vda1\nDEVTYPE=partition\nPARTN=1"
+                }
+            },
+            "/dev/vda2": {
+                "DEVLINKS": "/dev/disk/by-path/pci-0000:00:07.0-part2 /dev/disk/by-path/virtio-pci-0000:00:07.0-part2 /dev/disk/by-uuid/fc2da14e-4f2a-11e8-acd0-525400722bce /dev/disk/by-partuuid/f424c06e-88f1-4a7e-93f9-ac45ec9c130d",
+                "DEVNAME": "/dev/vda2",
+                "DEVPATH": "/devices/pci0000:00/0000:00:07.0/virtio1/block/vda/vda2",
+                "DEVTYPE": "partition",
+                "ID_FS_TYPE": "ext4",
+                "ID_FS_USAGE": "filesystem",
+                "ID_FS_UUID": "fc2da14e-4f2a-11e8-acd0-525400722bce",
+                "ID_FS_UUID_ENC": "fc2da14e-4f2a-11e8-acd0-525400722bce",
+                "ID_FS_VERSION": "1.0",
+                "ID_PART_ENTRY_DISK": "252:0",
+                "ID_PART_ENTRY_NUMBER": "2",
+                "ID_PART_ENTRY_OFFSET": "4096",
+                "ID_PART_ENTRY_SCHEME": "gpt",
+                "ID_PART_ENTRY_SIZE": "41936896",
+                "ID_PART_ENTRY_TYPE": "a19d880f-05fc-4d3b-a006-743f0f84911e",
+                "ID_PART_ENTRY_UUID": "f424c06e-88f1-4a7e-93f9-ac45ec9c130d",
+                "ID_PART_TABLE_TYPE": "gpt",
+                "ID_PART_TABLE_UUID": "849d8d86-1cdc-425f-b3cb-f4ab28e8a4d6",
+                "ID_PATH": "pci-0000:00:07.0",
+                "ID_PATH_TAG": "pci-0000_00_07_0",
+                "MAJOR": "252",
+                "MINOR": "2",
+                "PARTN": "2",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "USEC_INITIALIZED": "4153127",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "dev": "252:2",
+                    "discard_alignment": "0",
+                    "inflight": "       0        0",
+                    "partition": "2",
+                    "ro": "0",
+                    "size": "21471690752",
+                    "start": "4096",
+                    "stat": "      93        0     8360       20        0        0        0        0        0        0        0",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=252\nMINOR=2\nDEVNAME=vda2\nDEVTYPE=partition\nPARTN=2"
+                }
+            },
+            "/dev/vdb": {
+                "DEVLINKS": "/dev/disk/by-path/pci-0000:00:08.0 /dev/disk/by-path/virtio-pci-0000:00:08.0",
+                "DEVNAME": "/dev/vdb",
+                "DEVPATH": "/devices/pci0000:00/0000:00:08.0/virtio2/block/vdb",
+                "DEVTYPE": "disk",
+                "ID_PART_TABLE_TYPE": "dos",
+                "ID_PART_TABLE_UUID": "678f7cd7",
+                "ID_PATH": "pci-0000:00:08.0",
+                "ID_PATH_TAG": "pci-0000_00_08_0",
+                "MAJOR": "252",
+                "MINOR": "16",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "USEC_INITIALIZED": "4134063",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "bdi": null,
+                    "cache_type": "write back",
+                    "capability": "50",
+                    "dev": "252:16",
+                    "device": null,
+                    "discard_alignment": "0",
+                    "ext_range": "256",
+                    "hidden": "0",
+                    "inflight": "       0        0",
+                    "range": "16",
+                    "removable": "0",
+                    "ro": "0",
+                    "serial": "",
+                    "size": "21474836480",
+                    "stat": "     507        0    21176      144        0        0        0        0        0       16       48",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=252\nMINOR=16\nDEVNAME=vdb\nDEVTYPE=disk"
+                }
+            },
+            "/dev/vdb1": {
+                "DEVLINKS": "/dev/disk/by-partuuid/678f7cd7-01 /dev/disk/by-id/lvm-pv-uuid-YdCYBR-lxBY-T2AA-40qu-hkqn-Pde2-gZHyeK /dev/disk/by-path/virtio-pci-0000:00:08.0-part1 /dev/disk/by-path/pci-0000:00:08.0-part1",
+                "DEVNAME": "/dev/vdb1",
+                "DEVPATH": "/devices/pci0000:00/0000:00:08.0/virtio2/block/vdb/vdb1",
+                "DEVTYPE": "partition",
+                "ID_FS_TYPE": "LVM2_member",
+                "ID_FS_USAGE": "raid",
+                "ID_FS_UUID": "YdCYBR-lxBY-T2AA-40qu-hkqn-Pde2-gZHyeK",
+                "ID_FS_UUID_ENC": "YdCYBR-lxBY-T2AA-40qu-hkqn-Pde2-gZHyeK",
+                "ID_FS_VERSION": "LVM2 001",
+                "ID_PART_ENTRY_DISK": "252:16",
+                "ID_PART_ENTRY_NUMBER": "1",
+                "ID_PART_ENTRY_OFFSET": "2048",
+                "ID_PART_ENTRY_SCHEME": "dos",
+                "ID_PART_ENTRY_SIZE": "41938944",
+                "ID_PART_ENTRY_TYPE": "0x8e",
+                "ID_PART_ENTRY_UUID": "678f7cd7-01",
+                "ID_PART_TABLE_TYPE": "dos",
+                "ID_PART_TABLE_UUID": "678f7cd7",
+                "ID_PATH": "pci-0000:00:08.0",
+                "ID_PATH_TAG": "pci-0000_00_08_0",
+                "MAJOR": "252",
+                "MINOR": "17",
+                "PARTN": "1",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "USEC_INITIALIZED": "4136873",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "dev": "252:17",
+                    "discard_alignment": "0",
+                    "inflight": "       0        0",
+                    "partition": "1",
+                    "ro": "0",
+                    "size": "21472739328",
+                    "start": "2048",
+                    "stat": "     354        0    12944       32        0        0        0        0        0        4       12",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=252\nMINOR=17\nDEVNAME=vdb1\nDEVTYPE=partition\nPARTN=1"
+                }
+            }
+        }
+    },
+    "network": {
+        "links": [
+            {
+                "addresses": [
+                    {
+                        "source": "dhcp",
+                        "family": 2,
+                        "address": "192.168.122.134/24",
+                        "scope": "global"
+                    },
+                    {
+                        "source": "static",
+                        "family": 10,
+                        "address": "fe80::5054:ff:fe72:2bce/64",
+                        "scope": "link"
+                    }
+                ],
+                "udev_data": {
+                    "DEVPATH": "/devices/pci0000:00/0000:00:03.0/net/ens3",
+                    "ID_BUS": "pci",
+                    "ID_MM_CANDIDATE": "1",
+                    "ID_MODEL_FROM_DATABASE": "RTL-8100/8101L/8139 PCI Fast Ethernet Adapter (QEMU Virtual Machine)",
+                    "ID_MODEL_ID": "0x8139",
+                    "ID_NET_NAME_MAC": "enx525400722bce",
+                    "ID_NET_NAME_PATH": "enp0s3",
+                    "ID_NET_NAME_SLOT": "ens3",
+                    "ID_PATH": "pci-0000:00:03.0",
+                    "ID_PATH_TAG": "pci-0000_00_03_0",
+                    "ID_PCI_CLASS_FROM_DATABASE": "Network controller",
+                    "ID_PCI_SUBCLASS_FROM_DATABASE": "Ethernet controller",
+                    "ID_VENDOR_FROM_DATABASE": "Realtek Semiconductor Co., Ltd.",
+                    "ID_VENDOR_ID": "0x10ec",
+                    "IFINDEX": "2",
+                    "INTERFACE": "ens3",
+                    "SUBSYSTEM": "net",
+                    "SYSTEMD_ALIAS": "/sys/subsystem/net/devices/ens3",
+                    "TAGS": ":systemd:",
+                    "USEC_INITIALIZED": "4622369",
+                    "attrs": {
+                        "addr_assign_type": "0",
+                        "addr_len": "6",
+                        "address": "52:54:00:72:2b:ce",
+                        "broadcast": "ff:ff:ff:ff:ff:ff",
+                        "carrier": "1",
+                        "carrier_changes": "2",
+                        "dev_id": "0x0",
+                        "dev_port": "0",
+                        "device": null,
+                        "dormant": "0",
+                        "duplex": "full",
+                        "flags": "0x1003",
+                        "gro_flush_timeout": "0",
+                        "ifalias": "",
+                        "ifindex": "2",
+                        "iflink": "2",
+                        "link_mode": "0",
+                        "mtu": "1500",
+                        "name_assign_type": "4",
+                        "netdev_group": "0",
+                        "operstate": "up",
+                        "phys_port_id": null,
+                        "phys_port_name": null,
+                        "phys_switch_id": null,
+                        "proto_down": "0",
+                        "speed": "100",
+                        "subsystem": "net",
+                        "tx_queue_len": "1000",
+                        "type": "1",
+                        "uevent": "INTERFACE=ens3\nIFINDEX=2"
+                    }
+                },
+                "type": "eth",
+                "netlink_data": {
+                    "ifindex": 2,
+                    "flags": 69699,
+                    "arptype": 1,
+                    "family": 0,
+                    "name": "ens3"
+                },
+                "bond": {
+                    "is_master": false,
+                    "is_slave": false,
+                    "slaves": [],
+                    "mode": null
+                },
+                "bridge": {
+                    "is_bridge": false,
+                    "is_port": false,
+                    "interfaces": [],
+                    "options": {}
+                }
+            },
+            {
+                "addresses": [
+                    {
+                        "source": "static",
+                        "family": 2,
+                        "address": "127.0.0.1/8",
+                        "scope": "host"
+                    },
+                    {
+                        "source": "static",
+                        "family": 10,
+                        "address": "::1/128",
+                        "scope": "host"
+                    }
+                ],
+                "udev_data": {
+                    "DEVPATH": "/devices/virtual/net/lo",
+                    "ID_MM_CANDIDATE": "1",
+                    "IFINDEX": "1",
+                    "INTERFACE": "lo",
+                    "SUBSYSTEM": "net",
+                    "USEC_INITIALIZED": "20696190",
+                    "attrs": {
+                        "addr_assign_type": "0",
+                        "addr_len": "6",
+                        "address": "00:00:00:00:00:00",
+                        "broadcast": "00:00:00:00:00:00",
+                        "carrier": "1",
+                        "carrier_changes": "0",
+                        "dev_id": "0x0",
+                        "dev_port": "0",
+                        "dormant": "0",
+                        "duplex": null,
+                        "flags": "0x9",
+                        "gro_flush_timeout": "0",
+                        "ifalias": "",
+                        "ifindex": "1",
+                        "iflink": "1",
+                        "link_mode": "0",
+                        "mtu": "65536",
+                        "name_assign_type": null,
+                        "netdev_group": "0",
+                        "operstate": "unknown",
+                        "phys_port_id": null,
+                        "phys_port_name": null,
+                        "phys_switch_id": null,
+                        "proto_down": "0",
+                        "speed": null,
+                        "subsystem": "net",
+                        "tx_queue_len": "1000",
+                        "type": "772",
+                        "uevent": "INTERFACE=lo\nIFINDEX=1"
+                    }
+                },
+                "type": "lo",
+                "netlink_data": {
+                    "ifindex": 1,
+                    "flags": 65609,
+                    "arptype": 772,
+                    "family": 0,
+                    "name": "lo"
+                },
+                "bond": {
+                    "is_master": false,
+                    "is_slave": false,
+                    "slaves": [],
+                    "mode": null
+                },
+                "bridge": {
+                    "is_bridge": false,
+                    "is_port": false,
+                    "interfaces": [],
+                    "options": {}
+                }
+            },
+            {
+                "addresses": [
+                    {
+                        "source": "dhcp",
+                        "family": 2,
+                        "address": "192.168.122.189/24",
+                        "scope": "global"
+                    },
+                    {
+                        "source": "static",
+                        "family": 10,
+                        "address": "fe80::5054:ff:fe60:eb72/64",
+                        "scope": "link"
+                    }
+                ],
+                "udev_data": {
+                    "DEVPATH": "/devices/pci0000:00/0000:00:0b.0/net/ens11",
+                    "ID_BUS": "pci",
+                    "ID_MM_CANDIDATE": "1",
+                    "ID_MODEL_FROM_DATABASE": "RTL-8100/8101L/8139 PCI Fast Ethernet Adapter (QEMU Virtual Machine)",
+                    "ID_MODEL_ID": "0x8139",
+                    "ID_NET_NAME_MAC": "enx52540060eb72",
+                    "ID_NET_NAME_PATH": "enp0s11",
+                    "ID_NET_NAME_SLOT": "ens11",
+                    "ID_PATH": "pci-0000:00:0b.0",
+                    "ID_PATH_TAG": "pci-0000_00_0b_0",
+                    "ID_PCI_CLASS_FROM_DATABASE": "Network controller",
+                    "ID_PCI_SUBCLASS_FROM_DATABASE": "Ethernet controller",
+                    "ID_VENDOR_FROM_DATABASE": "Realtek Semiconductor Co., Ltd.",
+                    "ID_VENDOR_ID": "0x10ec",
+                    "IFINDEX": "3",
+                    "INTERFACE": "ens11",
+                    "SUBSYSTEM": "net",
+                    "SYSTEMD_ALIAS": "/sys/subsystem/net/devices/ens11",
+                    "TAGS": ":systemd:",
+                    "USEC_INITIALIZED": "4620150",
+                    "attrs": {
+                        "addr_assign_type": "0",
+                        "addr_len": "6",
+                        "address": "52:54:00:60:eb:72",
+                        "broadcast": "ff:ff:ff:ff:ff:ff",
+                        "carrier": "1",
+                        "carrier_changes": "2",
+                        "dev_id": "0x0",
+                        "dev_port": "0",
+                        "device": null,
+                        "dormant": "0",
+                        "duplex": "full",
+                        "flags": "0x1003",
+                        "gro_flush_timeout": "0",
+                        "ifalias": "",
+                        "ifindex": "3",
+                        "iflink": "3",
+                        "link_mode": "0",
+                        "mtu": "1500",
+                        "name_assign_type": "4",
+                        "netdev_group": "0",
+                        "operstate": "up",
+                        "phys_port_id": null,
+                        "phys_port_name": null,
+                        "phys_switch_id": null,
+                        "proto_down": "0",
+                        "speed": "100",
+                        "subsystem": "net",
+                        "tx_queue_len": "1000",
+                        "type": "1",
+                        "uevent": "INTERFACE=ens11\nIFINDEX=3"
+                    }
+                },
+                "type": "eth",
+                "netlink_data": {
+                    "ifindex": 3,
+                    "flags": 69699,
+                    "arptype": 1,
+                    "family": 0,
+                    "name": "ens11"
+                },
+                "bond": {
+                    "is_master": false,
+                    "is_slave": false,
+                    "slaves": [],
+                    "mode": null
+                },
+                "bridge": {
+                    "is_bridge": false,
+                    "is_port": false,
+                    "interfaces": [],
+                    "options": {}
+                }
+            },
+            {
+                "addresses": [
+                    {
+                        "source": "dhcp",
+                        "family": 2,
+                        "address": "10.100.2.156/22",
+                        "scope": "global"
+                    },
+                    {
+                        "source": "static",
+                        "family": 10,
+                        "address": "fe80::5054:ff:fed5:d94/64",
+                        "scope": "link"
+                    }
+                ],
+                "udev_data": {
+                    "DEVPATH": "/devices/pci0000:00/0000:00:0d.0/net/ens13",
+                    "ID_BUS": "pci",
+                    "ID_MM_CANDIDATE": "1",
+                    "ID_MODEL_FROM_DATABASE": "RTL-8100/8101L/8139 PCI Fast Ethernet Adapter (QEMU Virtual Machine)",
+                    "ID_MODEL_ID": "0x8139",
+                    "ID_NET_NAME_MAC": "enx525400d50d94",
+                    "ID_NET_NAME_PATH": "enp0s13",
+                    "ID_NET_NAME_SLOT": "ens13",
+                    "ID_PATH": "pci-0000:00:0d.0",
+                    "ID_PATH_TAG": "pci-0000_00_0d_0",
+                    "ID_PCI_CLASS_FROM_DATABASE": "Network controller",
+                    "ID_PCI_SUBCLASS_FROM_DATABASE": "Ethernet controller",
+                    "ID_VENDOR_FROM_DATABASE": "Realtek Semiconductor Co., Ltd.",
+                    "ID_VENDOR_ID": "0x10ec",
+                    "IFINDEX": "5",
+                    "INTERFACE": "ens13",
+                    "SUBSYSTEM": "net",
+                    "SYSTEMD_ALIAS": "/sys/subsystem/net/devices/ens13",
+                    "TAGS": ":systemd:",
+                    "USEC_INITIALIZED": "4612129",
+                    "attrs": {
+                        "addr_assign_type": "0",
+                        "addr_len": "6",
+                        "address": "52:54:00:d5:0d:94",
+                        "broadcast": "ff:ff:ff:ff:ff:ff",
+                        "carrier": "1",
+                        "carrier_changes": "2",
+                        "dev_id": "0x0",
+                        "dev_port": "0",
+                        "device": null,
+                        "dormant": "0",
+                        "duplex": "full",
+                        "flags": "0x1003",
+                        "gro_flush_timeout": "0",
+                        "ifalias": "",
+                        "ifindex": "5",
+                        "iflink": "5",
+                        "link_mode": "0",
+                        "mtu": "1500",
+                        "name_assign_type": "4",
+                        "netdev_group": "0",
+                        "operstate": "up",
+                        "phys_port_id": null,
+                        "phys_port_name": null,
+                        "phys_switch_id": null,
+                        "proto_down": "0",
+                        "speed": "100",
+                        "subsystem": "net",
+                        "tx_queue_len": "1000",
+                        "type": "1",
+                        "uevent": "INTERFACE=ens13\nIFINDEX=5"
+                    }
+                },
+                "type": "eth",
+                "netlink_data": {
+                    "ifindex": 5,
+                    "flags": 69699,
+                    "arptype": 1,
+                    "family": 0,
+                    "name": "ens13"
+                },
+                "bond": {
+                    "is_master": false,
+                    "is_slave": false,
+                    "slaves": [],
+                    "mode": null
+                },
+                "bridge": {
+                    "is_bridge": false,
+                    "is_port": false,
+                    "interfaces": [],
+                    "options": {}
+                }
+            },
+            {
+                "addresses": [
+                    {
+                        "source": "static",
+                        "family": 10,
+                        "address": "fe80::5054:ff:fe1c:335e/64",
+                        "scope": "link"
+                    }
+                ],
+                "udev_data": {
+                    "DEVPATH": "/devices/pci0000:00/0000:00:0c.0/net/ens12",
+                    "ID_BUS": "pci",
+                    "ID_MM_CANDIDATE": "1",
+                    "ID_MODEL_FROM_DATABASE": "RTL-8100/8101L/8139 PCI Fast Ethernet Adapter (QEMU Virtual Machine)",
+                    "ID_MODEL_ID": "0x8139",
+                    "ID_NET_NAME_MAC": "enx5254001c335e",
+                    "ID_NET_NAME_PATH": "enp0s12",
+                    "ID_NET_NAME_SLOT": "ens12",
+                    "ID_PATH": "pci-0000:00:0c.0",
+                    "ID_PATH_TAG": "pci-0000_00_0c_0",
+                    "ID_PCI_CLASS_FROM_DATABASE": "Network controller",
+                    "ID_PCI_SUBCLASS_FROM_DATABASE": "Ethernet controller",
+                    "ID_VENDOR_FROM_DATABASE": "Realtek Semiconductor Co., Ltd.",
+                    "ID_VENDOR_ID": "0x10ec",
+                    "IFINDEX": "4",
+                    "INTERFACE": "ens12",
+                    "SUBSYSTEM": "net",
+                    "SYSTEMD_ALIAS": "/sys/subsystem/net/devices/ens12",
+                    "TAGS": ":systemd:",
+                    "USEC_INITIALIZED": "4612438",
+                    "attrs": {
+                        "addr_assign_type": "0",
+                        "addr_len": "6",
+                        "address": "52:54:00:1c:33:5e",
+                        "broadcast": "ff:ff:ff:ff:ff:ff",
+                        "carrier": "1",
+                        "carrier_changes": "2",
+                        "dev_id": "0x0",
+                        "dev_port": "0",
+                        "device": null,
+                        "dormant": "0",
+                        "duplex": "full",
+                        "flags": "0x1003",
+                        "gro_flush_timeout": "0",
+                        "ifalias": "",
+                        "ifindex": "4",
+                        "iflink": "4",
+                        "link_mode": "0",
+                        "mtu": "1500",
+                        "name_assign_type": "4",
+                        "netdev_group": "0",
+                        "operstate": "up",
+                        "phys_port_id": null,
+                        "phys_port_name": null,
+                        "phys_switch_id": null,
+                        "proto_down": "0",
+                        "speed": "100",
+                        "subsystem": "net",
+                        "tx_queue_len": "1000",
+                        "type": "1",
+                        "uevent": "INTERFACE=ens12\nIFINDEX=4"
+                    }
+                },
+                "type": "eth",
+                "netlink_data": {
+                    "ifindex": 4,
+                    "flags": 69699,
+                    "arptype": 1,
+                    "family": 0,
+                    "name": "ens12"
+                },
+                "bond": {
+                    "is_master": false,
+                    "is_slave": false,
+                    "slaves": [],
+                    "mode": null
+                },
+                "bridge": {
+                    "is_bridge": false,
+                    "is_port": false,
+                    "interfaces": [],
+                    "options": {}
+                }
+            }
+        ],
+        "routes": [
+            {
+                "family": 2,
+                "type": 1,
+                "table": 254,
+                "dst": "default",
+                "ifindex": 5
+            },
+            {
+                "family": 2,
+                "type": 1,
+                "table": 254,
+                "dst": "10.100.0.0/22",
+                "ifindex": 5
+            },
+            {
+                "family": 2,
+                "type": 1,
+                "table": 254,
+                "dst": "10.100.0.1",
+                "ifindex": 5
+            },
+            {
+                "family": 2,
+                "type": 1,
+                "table": 254,
+                "dst": "192.168.122.0/24",
+                "ifindex": 3
+            },
+            {
+                "family": 2,
+                "type": 1,
+                "table": 254,
+                "dst": "192.168.122.1",
+                "ifindex": 3
+            },
+            {
+                "family": 2,
+                "type": 3,
+                "table": 255,
+                "dst": "10.100.0.0",
+                "ifindex": 5
+            },
+            {
+                "family": 2,
+                "type": 2,
+                "table": 255,
+                "dst": "10.100.2.156",
+                "ifindex": 5
+            },
+            {
+                "family": 2,
+                "type": 3,
+                "table": 255,
+                "dst": "10.100.3.255",
+                "ifindex": 5
+            },
+            {
+                "family": 2,
+                "type": 3,
+                "table": 255,
+                "dst": "127.0.0.0",
+                "ifindex": 1
+            },
+            {
+                "family": 2,
+                "type": 2,
+                "table": 255,
+                "dst": "127.0.0.0/8",
+                "ifindex": 1
+            },
+            {
+                "family": 2,
+                "type": 2,
+                "table": 255,
+                "dst": "127.0.0.1",
+                "ifindex": 1
+            },
+            {
+                "family": 2,
+                "type": 3,
+                "table": 255,
+                "dst": "127.255.255.255",
+                "ifindex": 1
+            },
+            {
+                "family": 2,
+                "type": 3,
+                "table": 255,
+                "dst": "192.168.122.0",
+                "ifindex": 3
+            },
+            {
+                "family": 2,
+                "type": 2,
+                "table": 255,
+                "dst": "192.168.122.134",
+                "ifindex": 2
+            },
+            {
+                "family": 2,
+                "type": 2,
+                "table": 255,
+                "dst": "192.168.122.189",
+                "ifindex": 3
+            },
+            {
+                "family": 2,
+                "type": 3,
+                "table": 255,
+                "dst": "192.168.122.255",
+                "ifindex": 3
+            },
+            {
+                "family": 10,
+                "type": 2,
+                "table": 254,
+                "dst": "::1",
+                "ifindex": 1
+            },
+            {
+                "family": 10,
+                "type": 1,
+                "table": 254,
+                "dst": "fe80::/64",
+                "ifindex": 5
+            },
+            {
+                "family": 10,
+                "type": 2,
+                "table": 255,
+                "dst": "::1",
+                "ifindex": 1
+            },
+            {
+                "family": 10,
+                "type": 2,
+                "table": 255,
+                "dst": "fe80::5054:ff:fe1c:335e",
+                "ifindex": 4
+            },
+            {
+                "family": 10,
+                "type": 2,
+                "table": 255,
+                "dst": "fe80::5054:ff:fe60:eb72",
+                "ifindex": 3
+            },
+            {
+                "family": 10,
+                "type": 2,
+                "table": 255,
+                "dst": "fe80::5054:ff:fe72:2bce",
+                "ifindex": 2
+            },
+            {
+                "family": 10,
+                "type": 2,
+                "table": 255,
+                "dst": "fe80::5054:ff:fed5:d94",
+                "ifindex": 5
+            },
+            {
+                "family": 10,
+                "type": 1,
+                "table": 255,
+                "dst": "ff00::/8",
+                "ifindex": 5
+            }
+        ]
+    }
+}

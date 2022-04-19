@@ -644,18 +644,127 @@ class TestEdit(TestAPI):
             self.assertEqual(orig_sda4, sda4)
 
 
-class TestReformat(TestAPI):
+class TestMSDOSTable(TestAPI):
     @timeout()
     async def test_reformat_msdos(self):
         cfg = 'examples/simple.json'
         async with start_server(cfg) as inst:
-            data = {
-                'disk_id': 'disk-sda',
-                'ptable': 'msdos',
-            }
+            data = {'disk_id': 'disk-sda', 'ptable': 'msdos'}
             resp = await inst.post('/storage/v2/reformat_disk', data)
             [sda] = resp['disks']
             self.assertEqual('msdos', sda['ptable'])
+
+    @timeout()
+    async def test_create_logical(self):
+        cfg = 'examples/simple.json'
+        bootloader = 'bios'
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, bootloader, extra_args=extra) as inst:
+            data = {'disk_id': 'disk-sda', 'ptable': 'msdos'}
+            await inst.post('/storage/v2/reformat_disk', data)
+            resp = await inst.post('/storage/v2/add_boot_partition',
+                                   disk_id='disk-sda')
+            [sda] = resp['disks']
+            [gap] = sda['partitions']
+            data = {
+                'disk_id': 'disk-sda',
+                'gap': gap,
+                'partition': {
+                    'size': 1 << 30,
+                    'format': 'ext4',
+                    'mount': '/boot',
+                }
+            }
+            resp = await inst.post('/storage/v2/add_partition', data)
+
+            [sda] = resp['disks']
+            [_, gap] = sda['partitions']
+            data = {
+                'disk_id': 'disk-sda',
+                'gap': gap,
+                'partition': {
+                    'partition_type': 'extended'
+                }
+            }
+            resp = await inst.post('/storage/v2/add_partition', data)
+
+            [sda] = resp['disks']
+            [_, _, gap] = sda['partitions']
+            data = {
+                'disk_id': 'disk-sda',
+                'gap': gap,
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/',
+                    'partition_type': 'logical'
+                }
+            }
+            resp = await inst.post('/storage/v2/add_partition', data)
+            [sda] = resp['disks']
+            [p1, p2, p5] = sda['partitions']
+            self.assertEqual(1 << 30, p1['size'])
+            self.assertEqual('extended', p2['partition_type'])
+            self.assertEqual('logical', p5['partition_type'])
+            self.assertEqual('/', p5['mount'])
+            self.assertEqual(5, p5['number'])
+
+    @timeout()
+    async def test_resize_logical(self):
+        cfg = 'examples/logical.json'
+        bootloader = 'bios'
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, bootloader, extra_args=extra) as inst:
+            v1resp = await inst.get('/storage')
+            config = v1resp['config']
+            [cp5] = match(config, type='partition', number=5)
+            self.assertEqual('logical', cp5['flag'])
+
+            # disk-vda is 12G and has msdos table and existing partitions
+            resp = await inst.post('/storage/v2/add_boot_partition',
+                                   disk_id='disk-vda')
+
+            [vda] = match(resp['disks'], id='disk-vda')
+            [_, _, p5] = vda['partitions']
+            self.assertEqual('logical', p5['partition_type'])
+            p5['size'] = 4 << 30
+            data = {'disk_id': 'disk-vda', 'partition': p5}
+            resp = await inst.post('/storage/v2/edit_partition', data)
+
+            [vda] = match(resp['disks'], id='disk-vda')
+            [_, _, p5, gap] = vda['partitions']
+            self.assertTrue(p5['resize'])
+            v1resp = await inst.get('/storage')
+            config = v1resp['config']
+            [cp5] = match(config, type='partition', number=5)
+            self.assertTrue(cp5['preserve'])
+            self.assertTrue(cp5['resize'])
+            self.assertEqual(4 << 30, cp5['size'])
+            [cp5_fmt] = match(config, type='format', volume=cp5['id'])
+            self.assertTrue(cp5_fmt['preserve'])
+
+            # now add a disk, p5 shouldn't change
+            orig_p5 = p5
+            orig_cp5 = cp5
+            orig_cp5_fmt = cp5_fmt
+            data = {
+                'disk_id': 'disk-vda',
+                'gap': gap,
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/',
+                    'partition_type': 'logical'
+                }
+            }
+            await inst.post('/storage/v2/add_partition', data)
+            [_, _, p5, p6] = vda['partitions']
+            v1resp = await inst.get('/storage')
+            config = v1resp['config']
+
+            [cp5] = match(config, type='partition', number=5)
+            [cp5_fmt] = match(config, type='format', volume=cp5['id'])
+            self.assertEqual(orig_p5, p5)
+            self.assertEqual(orig_cp5, cp5)
+            self.assertEqual(orig_cp5_fmt, cp5_fmt)
 
 
 class TestPartitionTableTypes(TestAPI):
