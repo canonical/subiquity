@@ -1,3 +1,6 @@
+Source:
+  source: ubuntu-server-minimal
+  search_drivers: true
 Welcome:
   lang: en_US
 Refresh:

@@ -213,7 +213,8 @@ class TestFlow(TestAPI):
                 'toggle': None
             }
             await inst.post('/keyboard', keyboard)
-            await inst.post('/source', source_id='ubuntu-server')
+            await inst.post('/source',
+                            source_id='ubuntu-server', search_drivers=True)
             await inst.post('/network')
             await inst.post('/proxy', '')
             await inst.post('/mirror', 'http://us.archive.ubuntu.com/ubuntu')

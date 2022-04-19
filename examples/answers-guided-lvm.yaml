@@ -1,3 +1,6 @@
+Source:
+  source: ubuntu-server
+  search_drivers: false
 Welcome:
   lang: en_US
 Refresh:

@@ -72,11 +72,6 @@ class SourceController(SubiquityController):
         current = self.app.base_model.locale.selected_language
         self.model.lang = current.split('_')[0]
 
-    def interactive(self):
-        if len(self.model.sources) <= 1:
-            return False
-        return super().interactive()
-
     async def GET(self) -> SourceSelectionAndSetting:
         cur_lang = self.app.base_model.locale.selected_language
         cur_lang = cur_lang.rsplit('.', 1)[0]

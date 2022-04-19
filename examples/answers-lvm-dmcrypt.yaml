@@ -1,3 +1,5 @@
+Source:
+  source: ubuntu-server-minimal
 Welcome:
   lang: en_US
 Refresh:
