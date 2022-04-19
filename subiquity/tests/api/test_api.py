@@ -255,8 +255,8 @@ class TestFlow(TestAPI):
             sda = first(orig_resp['disks'], 'id', disk_id)
             self.assertTrue(len(sda['partitions']) > 0)
 
-            resp = await inst.post('/storage/v2/reformat_disk',
-                                   disk_id=disk_id)
+            data = {'disk_id': disk_id}
+            resp = await inst.post('/storage/v2/reformat_disk', data)
             sda = first(resp['disks'], 'id', disk_id)
             [gap] = sda['partitions']
             self.assertEqual('Gap', gap['$type'])
@@ -442,8 +442,10 @@ class TestAdd(TestAPI):
             resp = await inst.get('/storage/v2')
             vda = first(resp['disks'], 'id', 'disk-vda')
             vdb = first(resp['disks'], 'id', 'disk-vdb')
-            await inst.post('/storage/v2/reformat_disk', disk_id=vda['id'])
-            await inst.post('/storage/v2/reformat_disk', disk_id=vdb['id'])
+            await inst.post('/storage/v2/reformat_disk',
+                            {'disk_id': vda['id']})
+            await inst.post('/storage/v2/reformat_disk',
+                            {'disk_id': vdb['id']})
             await inst.post('/storage/v2/add_boot_partition',
                             disk_id=vda['id'])
             await inst.post('/storage/v2/add_boot_partition',
@@ -480,7 +482,7 @@ class TestDelete(TestAPI):
         async with start_server('examples/win10.json') as inst:
             disk_id = 'disk-sda'
             resp = await inst.post('/storage/v2/reformat_disk',
-                                   disk_id=disk_id)
+                                   {'disk_id': disk_id})
             [sda] = resp['disks']
             [gap] = sda['partitions']
             data = {
@@ -502,7 +504,7 @@ class TestDelete(TestAPI):
     async def test_delete_nonexistant(self):
         async with start_server('examples/win10.json') as inst:
             disk_id = 'disk-sda'
-            await inst.post('/storage/v2/reformat_disk', disk_id=disk_id)
+            await inst.post('/storage/v2/reformat_disk', {'disk_id': disk_id})
             data = {
                 'disk_id': disk_id,
                 'partition': {'number': 1}
@@ -635,6 +637,20 @@ class TestEdit(TestAPI):
             self.assertEqual(orig_sda4, sda4)
 
 
+class TestReformat(TestAPI):
+    @timeout()
+    async def test_reformat_msdos(self):
+        cfg = 'examples/simple.json'
+        async with start_server(cfg) as inst:
+            data = {
+                'disk_id': 'disk-sda',
+                'ptable': 'msdos',
+            }
+            resp = await inst.post('/storage/v2/reformat_disk', data)
+            [sda] = resp['disks']
+            self.assertEqual('msdos', sda['ptable'])
+
+
 class TestPartitionTableTypes(TestAPI):
     @timeout()
     async def test_ptable_gpt(self):
@@ -664,7 +680,7 @@ class TestTodos(TestAPI):  # server indicators of required client actions
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
             resp = await inst.post('/storage/v2/reformat_disk',
-                                   disk_id=disk_id)
+                                   {'disk_id': disk_id})
             self.assertTrue(resp['need_root'])
             self.assertTrue(resp['need_boot'])
 
@@ -687,7 +703,7 @@ class TestTodos(TestAPI):  # server indicators of required client actions
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
             resp = await inst.post('/storage/v2/reformat_disk',
-                                   disk_id=disk_id)
+                                   {'disk_id': disk_id})
             self.assertTrue(resp['need_root'])
             self.assertTrue(resp['need_boot'])
 
@@ -715,7 +731,7 @@ class TestTodos(TestAPI):  # server indicators of required client actions
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
             resp = await inst.post('/storage/v2/reformat_disk',
-                                   disk_id=disk_id)
+                                   {'disk_id': disk_id})
             self.assertTrue(resp['need_root'])
             self.assertTrue(resp['need_boot'])
 

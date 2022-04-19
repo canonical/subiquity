@@ -503,3 +503,28 @@ class TestFilesystemManipulator(unittest.TestCase):
         disk = make_disk(manipulator.model, preserve=True, size=2002*MiB)
         self._test_add_boot_full_resizes_larger(
             manipulator, disk, sizes.PREP_GRUB_SIZE_BYTES)
+
+
+class TestReformat(unittest.TestCase):
+    def setUp(self):
+        self.manipulator = make_manipulator()
+
+    def test_reformat_default(self):
+        disk = make_disk(self.manipulator.model, ptable=None)
+        self.manipulator.reformat(disk)
+        self.assertEqual(None, disk.ptable)
+
+    def test_reformat_keep_current(self):
+        disk = make_disk(self.manipulator.model, ptable='msdos')
+        self.manipulator.reformat(disk)
+        self.assertEqual('msdos', disk.ptable)
+
+    def test_reformat_to_gpt(self):
+        disk = make_disk(self.manipulator.model, ptable=None)
+        self.manipulator.reformat(disk, 'gpt')
+        self.assertEqual('gpt', disk.ptable)
+
+    def test_reformat_to_msdos(self):
+        disk = make_disk(self.manipulator.model, ptable=None)
+        self.manipulator.reformat(disk, 'msdos')
+        self.assertEqual('msdos', disk.ptable)

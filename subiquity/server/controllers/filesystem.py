@@ -53,6 +53,7 @@ from subiquity.common.types import (
     GuidedStorageResponse,
     ModifyPartitionV2,
     ProbeStatus,
+    ReformatDisk,
     StorageResponse,
     StorageResponseV2,
     )
@@ -340,8 +341,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.guided(data)
         return await self.v2_GET()
 
-    async def v2_reformat_disk_POST(self, disk_id: str) -> StorageResponseV2:
-        self.reformat(self.model._one(id=disk_id))
+    async def v2_reformat_disk_POST(self, data: ReformatDisk) \
+            -> StorageResponseV2:
+        self.reformat(self.model._one(id=data.disk_id), data.ptable)
         return await self.v2_GET()
 
     async def v2_add_boot_partition_POST(self, disk_id: str) \
