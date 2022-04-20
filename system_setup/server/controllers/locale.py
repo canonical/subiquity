@@ -20,7 +20,8 @@ log = logging.getLogger('system_setup.server.controllers.locale')
 
 
 class WSLLocaleController(LocaleController):
-    def start(self):
+    def __init__(self, app):
+        super().__init__(app)
         if self.app.prefillInfo:
             welcome = self.app.prefillInfo.get('Welcome', {'lang': None})
             win_lang = welcome.get('lang')
@@ -29,4 +30,3 @@ class WSLLocaleController(LocaleController):
                 log.debug('Prefilled Language: {}'
                           .format(self.model.selected_language))
 
-        super().start()
