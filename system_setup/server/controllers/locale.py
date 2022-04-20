@@ -29,4 +29,3 @@ class WSLLocaleController(LocaleController):
                 self.model.selected_language = win_lang
                 log.debug('Prefilled Language: {}'
                           .format(self.model.selected_language))
-
