@@ -61,6 +61,7 @@ class SystemSetupServer(SubiquityServer):
         super().__init__(opts, block_log_dir)
         self.event_syslog_id = ""
         self.log_syslog_id = ""
+        self.echo_syslog_id = ""
         if is_reconfigure(opts.dry_run):
             self.set_source_variant("wsl_configuration")
         if self.opts.prefill:
