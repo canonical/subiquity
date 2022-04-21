@@ -920,18 +920,18 @@ class TestCancel(TestAPI):
     async def test_cancel_drivers(self):
         with patch.dict(os.environ, {'SUBIQUITY_DEBUG': 'has-drivers'}):
             async with start_server('examples/simple.json') as inst:
+                # /drivers?wait=true is expected to block until APT is
+                # configured.
+                # Let's make sure we cancel it.
+                with self.assertRaises(asyncio.TimeoutError):
+                    await asyncio.wait_for(inst.get('/drivers', wait=True),
+                                           0.1)
                 names = ['locale', 'keyboard', 'source', 'network', 'proxy',
                          'mirror', 'storage']
                 await inst.post('/meta/mark_configured', endpoint_names=names)
                 await inst.get('/meta/status', cur='WAITING')
                 await inst.post('/meta/confirm', tty='/dev/tty1')
                 await inst.get('/meta/status', cur='NEEDS_CONFIRMATION')
-
-                try:
-                    await asyncio.wait_for(inst.get('/drivers', wait=True),
-                                           0.001)
-                except asyncio.exceptions.TimeoutError:
-                    pass
 
                 # should not raise ServerDisconnectedError
                 resp = await inst.get('/drivers', wait=True)
