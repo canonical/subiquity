@@ -422,18 +422,6 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
-    def test_no_add_boot_BIOS_new_and_preserved_v1(self):
-        manipulator = make_manipulator(Bootloader.BIOS, 1)
-        # 2002MiB so that the space available for partitioning (2000MiB)
-        # divided by 4 is an whole number of megabytes.
-        disk = make_disk(manipulator.model, preserve=True, size=2002*MiB)
-        avail = gaps.largest_gap_size(disk)
-        make_partition(
-            manipulator.model, disk, size=avail//4)
-        make_partition(
-            manipulator.model, disk, size=3*avail//4, preserve=True)
-        self.assertFalse(boot.can_be_boot_device(disk))
-
     def test_add_boot_BIOS_new_and_preserved_v2(self):
         manipulator = make_manipulator(Bootloader.BIOS, 2)
         # 2002MiB so that the space available for partitioning (2000MiB)
