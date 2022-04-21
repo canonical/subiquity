@@ -194,12 +194,12 @@ def get_boot_device_plan_bios(device) -> Optional[MakeBootDevicePlan]:
         enumerate(movable),
         key=lambda i_p: i_p[1].size)
     return MultiStepPlan(plans=[
-        SlidePlan(
-            parts=movable[:largest_i+1],
-            offset_delta=sizes.BIOS_GRUB_SIZE_BYTES),
         ResizePlan(
             part=largest_part,
             size_delta=-sizes.BIOS_GRUB_SIZE_BYTES),
+        SlidePlan(
+            parts=movable[:largest_i+1],
+            offset_delta=sizes.BIOS_GRUB_SIZE_BYTES),
         create_part_plan,
         attr_plan,
         ])
@@ -216,32 +216,31 @@ def get_add_part_plan(device, *, spec, args):
         create_part_plan.offset = gaps.largest_gap(device).offset
         return create_part_plan
     else:
-        largest_i, largest_part = max(
-            enumerate(partitions),
-            key=lambda i_p: i_p[1].size)
+        new_parts = [p for p in partitions if not p.preserve]
+        if not new_parts:
+            return None
+        largest_part = max(new_parts, key=lambda p: p.size)
         if size > largest_part.size // 2:
             return None
         create_part_plan.offset = largest_part.offset
         return MultiStepPlan(plans=[
-            SlidePlan(
-                parts=[largest_part],
-                offset_delta=size),
             ResizePlan(
                 part=largest_part,
                 size_delta=-size),
+            SlidePlan(
+                parts=[largest_part],
+                offset_delta=size),
             create_part_plan,
             ])
 
 
 def get_boot_device_plan_uefi(device):
-    if device._has_preexisting_partition():
-        for part in device.partitions():
-            if is_esp(part):
-                plans = [SetAttrPlan(part, 'grub_device', True)]
-                if device._m._mount_for_path('/boot/efi') is None:
-                    plans.append(MountBootEfiPlan(part))
-                return MultiStepPlan(plans=plans)
-        return None
+    for part in device.partitions():
+        if is_esp(part):
+            plans = [SetAttrPlan(part, 'grub_device', True)]
+            if device._m._mount_for_path('/boot/efi') is None:
+                plans.append(MountBootEfiPlan(part))
+            return MultiStepPlan(plans=plans)
 
     spec = dict(size=sizes.get_efi_size(device), fstype='fat32', mount=None)
     if device._m._mount_for_path("/boot/efi") is None:
@@ -252,14 +251,12 @@ def get_boot_device_plan_uefi(device):
 
 
 def get_boot_device_plan_prep(device):
-    if device._has_preexisting_partition():
-        for part in device.partitions():
-            if part.flag == "prep":
-                return MultiStepPlan(plans=[
-                    SetAttrPlan(part, 'grub_device', True),
-                    SetAttrPlan(part, 'wipe', 'zero')
-                    ])
-        return None
+    for part in device.partitions():
+        if part.flag == "prep":
+            return MultiStepPlan(plans=[
+                SetAttrPlan(part, 'grub_device', True),
+                SetAttrPlan(part, 'wipe', 'zero')
+                ])
 
     return get_add_part_plan(
         device,

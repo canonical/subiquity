@@ -582,21 +582,98 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
-    def test_add_boot_UEFI_full_resizes_larger(self):
-        manipulator = make_manipulator(Bootloader.UEFI)
-        # 2002MiB so that the space available for partitioning (2000MiB)
-        # divided by 4 is an whole number of megabytes.
-        disk = make_disk(manipulator.model, preserve=True, size=2002*MiB)
-        self._test_add_boot_full_resizes_larger(
-            manipulator, disk, sizes.get_efi_size(disk))
+    @parameterized.expand([
+        (Bootloader.UEFI, 1),
+        (Bootloader.PREP, 2),
+        (Bootloader.UEFI, 1),
+        (Bootloader.PREP, 2)])
+    def test_no_add_boot_full_preserved_partition(self, bl, version):
+        manipulator = make_manipulator(bl, version)
+        disk = make_disk(manipulator.model, preserve=True)
+        full_size = gaps.largest_gap_size(disk)
+        make_partition(
+            manipulator.model, disk, size=full_size, preserve=True)
+        self.assertFalse(boot.can_be_boot_device(disk))
 
-    def test_add_boot_PREP_full_resizes_larger(self):
-        manipulator = make_manipulator(Bootloader.PREP)
-        # 2002MiB so that the space available for partitioning (2000MiB)
-        # divided by 4 is an whole number of megabytes.
+    @parameterized.expand([
+        (Bootloader.UEFI, 1),
+        (Bootloader.PREP, 2),
+        (Bootloader.UEFI, 1),
+        (Bootloader.PREP, 2)])
+    def test_add_boot_half_preserved_partition(self, bl, version):
+        manipulator = make_manipulator(bl, version)
+        disk = make_disk(manipulator.model, preserve=True)
+        half_size = gaps.largest_gap_size(disk)//2
+        part = make_partition(
+            manipulator.model, disk, size=half_size,
+            preserve=True)
+        size = self.boot_size_for_disk(disk)
+        if version == 1:
+            self.assertFalse(boot.can_be_boot_device(disk))
+        else:
+            with self.assertPartitionOperations(
+                    disk,
+                    Unchanged(part),
+                    Create(
+                        offset=part.offset + part.size,
+                        size=size),
+                    ):
+                manipulator.add_boot_disk(disk)
+            self.assertIsBootDisk(manipulator, disk)
+
+    @parameterized.expand([
+        (Bootloader.UEFI,),
+        (Bootloader.PREP,)])
+    def test_add_boot_half_preserved_half_new_partition(self, bl):
+        # This test is v2 only because you can only get into this
+        # situation in a v2 world.
+        manipulator = make_manipulator(bl, 2)
+        disk = make_disk(manipulator.model, preserve=True)
+        half_size = gaps.largest_gap_size(disk)//2
+        old_part = make_partition(
+            manipulator.model, disk, size=half_size)
+        new_part = make_partition(
+            manipulator.model, disk, size=half_size)
+        old_part.preserve = True
+        size = self.boot_size_for_disk(disk)
+        with self.assertPartitionOperations(
+                disk,
+                Unchanged(old_part),
+                Create(
+                    offset=new_part.offset,
+                    size=size),
+                MoveResize(
+                    part=new_part,
+                    offset=size,
+                    size=-size),
+                ):
+            manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
+
+    @parameterized.expand([
+        (Bootloader.UEFI, 1),
+        (Bootloader.PREP, 2),
+        (Bootloader.UEFI, 1),
+        (Bootloader.PREP, 2)])
+    def test_add_boot_existing_boot_partition(self, bl, version):
+        manipulator = make_manipulator(bl, version)
         disk = make_disk(manipulator.model, preserve=True, size=2002*MiB)
-        self._test_add_boot_full_resizes_larger(
-            manipulator, disk, sizes.PREP_GRUB_SIZE_BYTES)
+        if bl == Bootloader.UEFI:
+            flag = 'boot'
+        else:
+            flag = 'prep'
+        boot_part = make_partition(
+            manipulator.model, disk, size=self.boot_size_for_disk(disk),
+            flag=flag)
+        rest_part = make_partition(manipulator.model, disk)
+        boot_part.preserve = rest_part.preserve = True
+        with self.assertPartitionOperations(
+                disk,
+                Unchanged(boot_part),
+                Unchanged(rest_part),
+                ):
+            manipulator.add_boot_disk(disk)
+        self.assertIsBootDisk(manipulator, disk)
 
 
 class TestReformat(unittest.TestCase):
