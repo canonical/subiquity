@@ -91,7 +91,7 @@ class DriversController(SubiquityController):
 
     async def GET(self, wait: bool = False) -> DriversResponse:
         if wait:
-            await self._drivers_task
+            await asyncio.shield(self._drivers_task)
         return DriversResponse(install=self.model.do_install,
                                drivers=self.drivers)
 
