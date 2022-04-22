@@ -155,13 +155,13 @@ for answers in examples/answers*.yaml; do
         # The --foreground is important to avoid subiquity getting SIGTTOU-ed.
         LANG=C.UTF-8 timeout --foreground 60 \
             python3 -m subiquity.cmd.tui < "$tty" \
-            --bootloader uefi \
-            --answers "$answers" \
             --dry-run \
-            --snaps-from-examples \
-            --machine-config "$config" \
             --output-base "$tmpdir" \
-            "${opts[@]}"
+            --answers "$answers" \
+            "${opts[@]}" \
+            --machine-config "$config" \
+            --bootloader uefi \
+            --snaps-from-examples
         validate
         grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
     else
@@ -176,9 +176,9 @@ for answers in examples/answers*.yaml; do
             fi
             DRYRUN_RECONFIG="$reconf_settings" LANG=C.UTF-8 timeout --foreground 60 \
                 python3 -m system_setup.cmd.tui < "$tty" \
+                --dry-run \
                 --answers "$answers" \
-                --output-base "$tmpdir" \
-                --dry-run
+                --output-base "$tmpdir"
             validate "system_setup" "$validate_subtype"
         fi
     fi
@@ -187,13 +187,13 @@ done
 
 LANG=C.UTF-8 timeout --foreground 60 \
     python3 -m subiquity.cmd.tui \
-    --autoinstall examples/autoinstall.yaml \
     --dry-run \
+    --output-base "$tmpdir" \
     --machine-config examples/existing-partitions.json \
     --bootloader bios \
+    --autoinstall examples/autoinstall.yaml \
     --kernel-cmdline autoinstall \
-    --output-base "$tmpdir" \
-    --source-catalog=examples/install-sources.yaml
+    --source-catalog examples/install-sources.yaml
 validate
 python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/subiquity-curtin-apt.conf \
         apt.disable_components='[non-free, restricted]' \
@@ -220,10 +220,10 @@ grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: 
 clean
 LANG=C.UTF-8 timeout --foreground 60 \
     python3 -m subiquity.cmd.tui \
-    --autoinstall examples/autoinstall-user-data.yaml \
-    --output-base "$tmpdir" \
     --dry-run \
+    --output-base "$tmpdir" \
     --machine-config examples/simple.json \
+    --autoinstall examples/autoinstall-user-data.yaml \
     --kernel-cmdline autoinstall
 validate
 grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
@@ -234,9 +234,9 @@ if [ "${RELEASE%.*}" -ge 20 ]; then
         clean
         LANG=C.UTF-8 timeout --foreground 60 \
             python3 -m system_setup.cmd.tui \
-            --autoinstall "examples/autoinstall-system-setup${mode}.yaml" \
+            --dry-run \
             --output-base "$tmpdir" \
-            --dry-run
+            --autoinstall "examples/autoinstall-system-setup${mode}.yaml"
         validate "system_setup" "autoinstall${mode}"
     done
 
