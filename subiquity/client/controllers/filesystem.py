@@ -15,8 +15,10 @@
 
 import asyncio
 import logging
+from typing import Callable, Optional
 
 from subiquitycore.lsb_release import lsb_release
+from subiquitycore.view import BaseView
 
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.filesystem import gaps
@@ -50,19 +52,34 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
+        self.current_view: Optional[BaseView] = None
 
-    async def make_ui(self):
+    async def make_ui(self) -> Callable[[], BaseView]:
+        def get_current_view() -> BaseView:
+            assert self.current_view is not None
+            return self.current_view
+
         status = await self.endpoint.guided.GET()
         if status.status == ProbeStatus.PROBING:
             self.app.aio_loop.create_task(self._wait_for_probing())
-            return SlowProbing(self)
+            self.current_view = SlowProbing(self)
         else:
-            return self.make_guided_ui(status)
+            self.current_view = self.make_guided_ui(status)
+        # NOTE: If we return a BaseView instance directly here, we have no
+        # guarantee that it will be displayed on the screen by the time the
+        # probing operation finishes. Therefore, to allow us to reliably
+        # replace the screen by the "Guided Storage" when the probing operation
+        # finishes, we add a level of indirection.
+        # In essence, this allows us to make modifications to the screen
+        # that eventually will be displayed.
+        # This is mostly a workaround for the issue described in LP #1968161
+        return get_current_view
 
     async def _wait_for_probing(self):
         status = await self.endpoint.guided.GET(wait=True)
+        self.current_view = self.make_guided_ui(status)
         if isinstance(self.ui.body, SlowProbing):
-            self.ui.set_body(self.make_guided_ui(status))
+            self.ui.set_body(self.current_view)
         else:
             log.debug("not refreshing the display. Current display is %r",
                       self.ui.body)

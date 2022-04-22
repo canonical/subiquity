@@ -21,7 +21,7 @@ import os
 import signal
 import sys
 import traceback
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 import aiohttp
 
@@ -486,11 +486,20 @@ class SubiquityClient(TuiApplication):
         log.debug("showing InstallConfirmation over %s", self.ui.body)
         self.add_global_overlay(InstallConfirmation(self))
 
-    async def _start_answers_for_view(self, controller, view):
+    async def _start_answers_for_view(
+            self, controller, view: Union[BaseView, Callable[[], BaseView]]):
+        def noop():
+            return view
+
+        if callable(view):
+            deref_view = view
+        else:
+            deref_view = noop
+
         # The view returned by make_view_for_controller is not always shown
         # immediately (if progress is being shown, but has not yet been shown
         # for a full second) so wait until it is before starting the answers.
-        while self.ui.body is not view:
+        while self.ui.body is not deref_view():
             await asyncio.sleep(0.1)
         coro = controller.run_answers()
         if inspect.iscoroutine(coro):
