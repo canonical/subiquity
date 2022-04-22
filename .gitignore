@@ -5,6 +5,9 @@ __pycache__/
 # C extensions
 *.so
 
+# ctags
+.tags
+
 # Distribution / packaging
 .Python
 env/
@@ -39,6 +42,7 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+.mypy_cache/
 nosetests.xml
 coverage.xml
 *,cover
