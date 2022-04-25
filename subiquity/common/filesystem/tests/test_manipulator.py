@@ -479,11 +479,13 @@ class TestFilesystemManipulator(unittest.TestCase):
         else:
             self.fail("unexpected bootloader %r" % (bl,))
 
-    @parameterized.expand([
+    ADD_BOOT_PARAMS = [
         (Bootloader.UEFI, 1),
-        (Bootloader.PREP, 2),
-        (Bootloader.UEFI, 1),
-        (Bootloader.PREP, 2)])
+        (Bootloader.PREP, 1),
+        (Bootloader.UEFI, 2),
+        (Bootloader.PREP, 2)]
+
+    @parameterized.expand(ADD_BOOT_PARAMS)
     def test_add_boot_empty(self, bl, version):
         manipulator = make_manipulator(bl, version)
         disk = make_disk(manipulator.model, preserve=True)
@@ -496,11 +498,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
-    @parameterized.expand([
-        (Bootloader.UEFI, 1),
-        (Bootloader.PREP, 2),
-        (Bootloader.UEFI, 1),
-        (Bootloader.PREP, 2)])
+    @parameterized.expand(ADD_BOOT_PARAMS)
     def test_add_boot_full(self, bl, version):
         manipulator = make_manipulator(bl, version)
         disk = make_disk(manipulator.model, preserve=True)
@@ -520,11 +518,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
-    @parameterized.expand([
-        (Bootloader.UEFI, 1),
-        (Bootloader.PREP, 2),
-        (Bootloader.UEFI, 1),
-        (Bootloader.PREP, 2)])
+    @parameterized.expand(ADD_BOOT_PARAMS)
     def test_add_boot_half_full(self, bl, version):
         manipulator = make_manipulator(bl, version)
         disk = make_disk(manipulator.model, preserve=True)
@@ -541,11 +535,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
-    @parameterized.expand([
-        (Bootloader.UEFI, 1),
-        (Bootloader.PREP, 2),
-        (Bootloader.UEFI, 1),
-        (Bootloader.PREP, 2)])
+    @parameterized.expand(ADD_BOOT_PARAMS)
     def test_add_boot_full_resizes_larger(self, bl, version):
         manipulator = make_manipulator(bl, version)
         # 2002MiB so that the space available for partitioning (2000MiB)
@@ -570,11 +560,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
-    @parameterized.expand([
-        (Bootloader.UEFI, 1),
-        (Bootloader.PREP, 2),
-        (Bootloader.UEFI, 1),
-        (Bootloader.PREP, 2)])
+    @parameterized.expand(ADD_BOOT_PARAMS)
     def test_no_add_boot_full_preserved_partition(self, bl, version):
         manipulator = make_manipulator(bl, version)
         disk = make_disk(manipulator.model, preserve=True)
@@ -583,11 +569,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.model, disk, size=full_size, preserve=True)
         self.assertFalse(boot.can_be_boot_device(disk))
 
-    @parameterized.expand([
-        (Bootloader.UEFI, 1),
-        (Bootloader.PREP, 2),
-        (Bootloader.UEFI, 1),
-        (Bootloader.PREP, 2)])
+    @parameterized.expand(ADD_BOOT_PARAMS)
     def test_add_boot_half_preserved_partition(self, bl, version):
         manipulator = make_manipulator(bl, version)
         disk = make_disk(manipulator.model, preserve=True)
@@ -609,9 +591,7 @@ class TestFilesystemManipulator(unittest.TestCase):
                 manipulator.add_boot_disk(disk)
             self.assertIsBootDisk(manipulator, disk)
 
-    @parameterized.expand([
-        (Bootloader.UEFI,),
-        (Bootloader.PREP,)])
+    @parameterized.expand([(Bootloader.UEFI,), (Bootloader.PREP,)])
     def test_add_boot_half_preserved_half_new_partition(self, bl):
         # This test is v2 only because you can only get into this
         # situation in a v2 world.
@@ -638,11 +618,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
-    @parameterized.expand([
-        (Bootloader.UEFI, 1),
-        (Bootloader.PREP, 2),
-        (Bootloader.UEFI, 1),
-        (Bootloader.PREP, 2)])
+    @parameterized.expand(ADD_BOOT_PARAMS)
     def test_add_boot_existing_boot_partition(self, bl, version):
         manipulator = make_manipulator(bl, version)
         disk = make_disk(manipulator.model, preserve=True, size=2002*MiB)
