@@ -12,6 +12,7 @@ jobs:
           - ubuntu-daily:focal
           - ubuntu-daily:impish
           - ubuntu-daily:jammy
+          - ubuntu-daily:kinetic
     steps:
     - uses: actions/checkout@v2
     - name: run
