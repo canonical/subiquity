@@ -148,12 +148,20 @@ for answers in examples/answers*.yaml; do
             config=examples/simple.json
         fi
         serial=$(sed -n 's/^#serial/x/p' $answers || true)
-        opts=''
+        opts=()
         if [ -n "$serial" ]; then
-            opts='--serial'
+            opts+=(--serial)
         fi
         # The --foreground is important to avoid subiquity getting SIGTTOU-ed.
-        timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --bootloader uefi --answers $answers --dry-run --snaps-from-examples --machine-config $config --output-base $tmpdir $opts" < $tty
+        LANG=C.UTF-8 timeout --foreground 60 \
+            python3 -m subiquity.cmd.tui < "$tty" \
+            --dry-run \
+            --output-base "$tmpdir" \
+            --answers "$answers" \
+            "${opts[@]}" \
+            --machine-config "$config" \
+            --bootloader uefi \
+            --snaps-from-examples
         validate
         grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
     else
@@ -166,18 +174,26 @@ for answers in examples/answers*.yaml; do
                 reconf_settings="true"
                 validate_subtype="answers-reconf"
             fi
-            timeout --foreground 60 sh -c "DRYRUN_RECONFIG=$reconf_settings LANG=C.UTF-8 python3 -m system_setup.cmd.tui --answers $answers --output-base $tmpdir --dry-run " < $tty
+            DRYRUN_RECONFIG="$reconf_settings" LANG=C.UTF-8 timeout --foreground 60 \
+                python3 -m system_setup.cmd.tui < "$tty" \
+                --dry-run \
+                --answers "$answers" \
+                --output-base "$tmpdir"
             validate "system_setup" "$validate_subtype"
         fi
     fi
     clean
 done
 
-timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoinstall examples/autoinstall.yaml \
-                               --dry-run --machine-config examples/existing-partitions.json --bootloader bios \
-                               --kernel-cmdline 'autoinstall' \
-                               --output-base $tmpdir \
-                               --source-catalog=examples/install-sources.yaml"
+LANG=C.UTF-8 timeout --foreground 60 \
+    python3 -m subiquity.cmd.tui \
+    --dry-run \
+    --output-base "$tmpdir" \
+    --machine-config examples/existing-partitions.json \
+    --bootloader bios \
+    --autoinstall examples/autoinstall.yaml \
+    --kernel-cmdline autoinstall \
+    --source-catalog examples/install-sources.yaml
 validate
 python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/subiquity-curtin-apt.conf \
         apt.disable_components='[non-free, restricted]' \
@@ -202,9 +218,13 @@ grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: 
     $tmpdir/subiquity-server-debug.log
 
 clean
-timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoinstall examples/autoinstall-user-data.yaml \
-                               --output-base $tmpdir \
-                               --dry-run --machine-config examples/simple.json --kernel-cmdline 'autoinstall'"
+LANG=C.UTF-8 timeout --foreground 60 \
+    python3 -m subiquity.cmd.tui \
+    --dry-run \
+    --output-base "$tmpdir" \
+    --machine-config examples/simple.json \
+    --autoinstall examples/autoinstall-user-data.yaml \
+    --kernel-cmdline autoinstall
 validate
 grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
 
@@ -212,7 +232,11 @@ grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: 
 if [ "${RELEASE%.*}" -ge 20 ]; then
     for mode in "" "-full" "-no-shutdown"; do
         clean
-        timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m system_setup.cmd.tui --autoinstall examples/autoinstall-system-setup${mode}.yaml --output-base $tmpdir --dry-run"
+        LANG=C.UTF-8 timeout --foreground 60 \
+            python3 -m system_setup.cmd.tui \
+            --dry-run \
+            --output-base "$tmpdir" \
+            --autoinstall "examples/autoinstall-system-setup${mode}.yaml"
         validate "system_setup" "autoinstall${mode}"
     done
 
