@@ -102,9 +102,12 @@ class DriversController(SubiquityController):
         if wait:
             await asyncio.shield(self._drivers_task)
 
+        search_drivers = self.app.controllers.Source.model.search_drivers
+
         return DriversResponse(install=self.model.do_install,
                                drivers=self.drivers,
-                               local_only=local_only)
+                               local_only=local_only,
+                               search_drivers=search_drivers)
 
     async def POST(self, data: DriversPayload) -> None:
         self.model.do_install = data.install

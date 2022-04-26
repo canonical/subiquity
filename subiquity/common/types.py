@@ -399,10 +399,12 @@ class DriversResponse:
     to do it. It will bet set to None until we figure out what drivers are
     available.
     :local_only: tells if we are looking for drivers only from the ISO.
+    :search_drivers: enables or disables drivers listing.
     """
     install: bool
     drivers: Optional[List[str]]
     local_only: bool
+    search_drivers: bool
 
 
 @attr.s(auto_attribs=True)
