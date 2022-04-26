@@ -118,6 +118,17 @@
             ],
             "additionalProperties": false
         },
+        "source": {
+            "type": "object",
+            "properties": {
+                "search_drivers": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "search_drivers"
+            ]
+        },
         "network": {
             "oneOf": [
                 {

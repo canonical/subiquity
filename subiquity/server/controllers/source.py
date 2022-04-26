@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from typing import Any, Optional
 import os
 
 from curtin.commands.extract import get_handler_for_source
@@ -52,10 +52,40 @@ class SourceController(SubiquityController):
 
     endpoint = API.source
 
+    autoinstall_key = "source"
+    autoinstall_schema = {
+         "type": "object",
+         "properties": {
+             "search_drivers": {
+                 "type": "boolean",
+             },
+         },
+         "required": ["search_drivers"],
+    }
+    # Defaults to true for backward compatibility with existing autoinstall
+    # configurations. Back then, then users were able to install third-party
+    # drivers without this field.
+    autoinstall_default = {"search_drivers": True}
+
     def __init__(self, app):
         super().__init__(app)
         self._handler = None
         self.source_path: Optional[str] = None
+
+    def make_autoinstall(self):
+        return {"search_drivers": self.model.search_drivers}
+
+    def load_autoinstall_data(self, data: Any) -> None:
+        if data is None:
+            # For some reason, the schema validator does not reject
+            # "source: null" despite "type" being "object"
+            data = self.autoinstall_default
+
+        # search_drivers is marked required so the schema validator should
+        # reject any missing data.
+        assert "search_drivers" in data
+
+        self.model.search_drivers = data["search_drivers"]
 
     def start(self):
         path = '/cdrom/casper/install-sources.yaml'
