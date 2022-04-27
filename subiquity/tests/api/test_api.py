@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 from urllib.parse import unquote
 
+from subiquitycore.tests import SubiTestCase
 from subiquitycore.utils import astart_command
 
 default_timeout = 10
@@ -24,6 +25,11 @@ def find(items, key, value):
 
 def first(items, key, value):
     return next(find(items, key, value))
+
+
+def match(items, **kwargs):
+    return [item for item in items
+            if all(item.get(k) == v for k, v in kwargs.items())]
 
 
 def timeout(multiplier=1):
@@ -128,7 +134,7 @@ class Server(Client):
                 pass
 
 
-class TestAPI(unittest.IsolatedAsyncioTestCase):
+class TestAPI(unittest.IsolatedAsyncioTestCase, SubiTestCase):
     def assertDictSubset(self, expected, actual):
         """All keys in dictionary expected, and matching values, must match
         keys and values in actual.  Actual may contain additional keys and
@@ -291,7 +297,7 @@ class TestFlow(TestAPI):
             edit_sda2 = first(edit_sda['partitions'], 'number', 2)
 
             for key in 'size', 'number', 'mount', 'boot':
-                self.assertEqual(add_sda2[key], edit_sda2[key])
+                self.assertEqual(add_sda2[key], edit_sda2[key], key)
             self.assertEqual('ext4', edit_sda2['format'])
 
             del_resp = await inst.post('/storage/v2/delete_partition', data)
@@ -830,10 +836,7 @@ class TestPartitionTableEditing(TestAPI):
             [sda] = resp['disks']
             [p1, p2, p3, p4] = sda['partitions']
             e1.pop('annotations')
-            e1.update({
-                'mount': '/boot/efi',
-                'grub_device': True,
-            })
+            e1.update({'mount': '/boot/efi', 'grub_device': True})
             self.assertDictSubset(e1, p1)
             self.assertEqual(e2, p2)
             self.assertEqual(e3, p3)
@@ -846,6 +849,77 @@ class TestPartitionTableEditing(TestAPI):
                 'mount': '/',
             }
             self.assertDictSubset(e4, p4)
+
+    @timeout()
+    async def test_resize(self):
+        # load config, edit size, use that for server
+        with open('examples/ubuntu-and-free-space.json', 'r') as fp:
+            data = json.load(fp)
+
+        # expand sda3 to use the rest of the disk
+        def get_size(key):
+            return int(data['storage']['blockdev'][key]['attrs']['size'])
+
+        sda_size = get_size('/dev/sda')
+        sda1_size = get_size('/dev/sda1')
+        sda2_size = get_size('/dev/sda2')
+        sda3_size = sda_size - sda1_size - sda2_size - (2 << 20)
+        data['storage']['blockdev']['/dev/sda3']['attrs']['size'] = \
+            str(sda3_size)
+        cfg = self.tmp_path('machine-config.json')
+        with open(cfg, 'w') as fp:
+            json.dump(data, fp)
+
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
+            # Disk has 3 existing partitions and no free space.
+            resp = await inst.get('/storage/v2')
+            [sda] = resp['disks']
+            [orig_p1, orig_p2, orig_p3] = sda['partitions']
+
+            p3 = orig_p3.copy()
+            p3['size'] = 10 << 30
+            data = {
+                'disk_id': 'disk-sda',
+                'partition': p3,
+            }
+            resp = await inst.post('/storage/v2/edit_partition', data)
+            [sda] = resp['disks']
+            [_, _, actual_p3, g1] = sda['partitions']
+            self.assertEqual(10 << 30, actual_p3['size'])
+            self.assertEqual(True, actual_p3['resize'])
+            self.assertIsNone(actual_p3['wipe'])
+            end_size = orig_p3['size'] - (10 << 30)
+            self.assertEqual(end_size, g1['size'])
+
+            expected_p1 = orig_p1.copy()
+            expected_p1.pop('annotations')
+            expected_p1.update({'mount': '/boot/efi', 'grub_device': True})
+            expected_p3 = actual_p3
+            data = {
+                'disk_id': 'disk-sda',
+                'gap': g1,
+                'partition': {
+                    'format': 'ext4',
+                    'mount': '/srv',
+                }
+            }
+            resp = await inst.post('/storage/v2/add_partition', data)
+            [sda] = resp['disks']
+            [actual_p1, actual_p2, actual_p3, actual_p4] = sda['partitions']
+            self.assertDictSubset(expected_p1, actual_p1)
+            self.assertEqual(orig_p2, actual_p2)
+            self.assertEqual(expected_p3, actual_p3)
+            self.assertEqual(end_size, actual_p4['size'])
+            self.assertEqual('Partition', actual_p4['$type'])
+
+            v1resp = await inst.get('/storage')
+            config = v1resp['config']
+            [sda3] = match(config, type='partition', number=3)
+            [sda3_format] = match(config, type='format', volume=sda3['id'])
+            self.assertTrue(sda3['preserve'])
+            self.assertTrue(sda3['resize'])
+            self.assertTrue(sda3_format['preserve'])
 
 
 class TestGap(TestAPI):

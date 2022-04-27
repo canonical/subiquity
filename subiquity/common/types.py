@@ -267,6 +267,7 @@ class Partition:
     boot: Optional[bool] = None
     os: Optional[OsProber] = None
     offset: Optional[int] = None
+    resize: Optional[bool] = None
 
 
 @attr.s(auto_attribs=True)

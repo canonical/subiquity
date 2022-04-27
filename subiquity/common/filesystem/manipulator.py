@@ -15,6 +15,8 @@
 
 import logging
 
+from curtin.block import get_resize_fstypes
+
 from subiquity.common.filesystem import boot, gaps
 from subiquity.common.types import Bootloader
 from subiquity.models.filesystem import (
@@ -43,7 +45,7 @@ class FilesystemManipulator:
         self.model.remove_mount(mount)
 
     def create_filesystem(self, volume, spec):
-        if spec['fstype'] is None:
+        if spec.get('fstype') is None:
             # prep partitions are always wiped (and never have a filesystem)
             if getattr(volume, 'flag', None) != 'prep':
                 volume.wipe = None
@@ -61,9 +63,9 @@ class FilesystemManipulator:
                 volume.flag = "swap"
             elif volume.flag == "swap":
                 volume.flag = ""
-        if spec['fstype'] == "swap":
+        if spec.get('fstype') == "swap":
             self.model.add_mount(fs, "")
-        if spec['fstype'] is None and spec['use_swap']:
+        if spec.get('fstype') is None and spec.get('use_swap'):
             self.model.add_mount(fs, "")
         self.create_mount(fs, spec)
         return fs
@@ -165,19 +167,29 @@ class FilesystemManipulator:
             self.delete_partition(p, True)
         self.clear(disk)
 
+    def can_resize_partition(self, partition):
+        if not partition.preserve:
+            return True
+        if partition.format not in get_resize_fstypes():
+            return False
+        return True
+
     def partition_disk_handler(self, disk, spec, *, partition=None, gap=None):
         log.debug('partition_disk_handler: %s %s %s %s',
                   disk, spec, partition, gap)
 
         if partition is not None:
-            if 'size' in spec:
+            if 'size' in spec and spec['size'] != partition.size:
                 trailing, gap_size = \
                      gaps.movable_trailing_partitions_and_gap_size(partition)
                 new_size = align_up(spec['size'])
                 size_change = new_size - partition.size
                 if size_change > gap_size:
                     raise Exception("partition size too large")
+                if not self.can_resize_partition(partition):
+                    raise Exception("partition cannot support resize")
                 partition.size = new_size
+                partition.resize = True
                 for part in trailing:
                     part.offset += size_change
             self.delete_filesystem(partition.fs())

@@ -672,6 +672,7 @@ class Partition(_Formattable):
     name = attr.ib(default=None)
     multipath = attr.ib(default=None)
     offset = attr.ib(default=None)
+    resize = attr.ib(default=None)
 
     def available(self):
         if self.flag in ['bios_grub', 'prep'] or self.grub_device:

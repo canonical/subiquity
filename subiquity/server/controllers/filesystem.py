@@ -391,15 +391,18 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug(data)
         disk = self.model._one(id=data.disk_id)
         partition = self.get_partition(disk, data.partition.number)
-        if data.partition.size not in (None, partition.size):
+        if data.partition.size not in (None, partition.size) \
+                and self.app.opts.storage_version < 2:
             raise ValueError('edit_partition does not support changing size')
         if data.partition.boot is not None \
                 and data.partition.boot != partition.boot:
             raise ValueError('edit_partition does not support changing boot')
-        spec = {
-            'fstype': data.partition.format or partition.format,
-            'mount': data.partition.mount or partition.mount,
-        }
+        spec = {'mount': data.partition.mount or partition.mount}
+        if data.partition.format is not None \
+                and data.partition.format != partition.format:
+            spec['fstype'] = data.partition.format
+        if data.partition.size is not None:
+            spec['size'] = data.partition.size
         self.partition_disk_handler(disk, spec, partition=partition)
         return await self.v2_GET()
 

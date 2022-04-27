@@ -21,6 +21,7 @@ from subiquity.models.filesystem import (
     Bootloader,
     dehumanize_size,
     Disk,
+    Filesystem,
     FilesystemModel,
     get_raid_size,
     humanize_size,
@@ -177,6 +178,10 @@ def make_partition(model, device=None, *, preserve=False, size=None,
         partition.number = len(device._partitions)
     model._actions.append(partition)
     return partition
+
+
+def make_filesystem(model, *, partition, **kw):
+    return Filesystem(m=model, volume=partition, **kw)
 
 
 def make_model_and_partition(bootloader=None):

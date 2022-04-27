@@ -310,6 +310,7 @@ def _for_client_partition(partition, *, min_size=0):
         annotations=annotations(partition) + usage_labels(partition),
         os=partition.os,
         offset=partition.offset,
+        resize=partition.resize,
         mount=partition.mount,
         format=partition.format)
 
