@@ -456,21 +456,27 @@ def help():
     sys.exit(1)
 
 
-try:
-    ctx = parse_args()
-except TypeError:
-    help()
+def main() -> None:
+    """ Entry point. """
+    try:
+        ctx = parse_args()
+    except TypeError:
+        help()
 
-if ctx.args.base and ctx.args.build:
-    raise Exception('cannot use base iso and build')
+    if ctx.args.base and ctx.args.build:
+        raise Exception('cannot use base iso and build')
 
-os.makedirs('/tmp/kvm-test', exist_ok=True)
+    os.makedirs('/tmp/kvm-test', exist_ok=True)
 
-if ctx.args.build:
-    build(ctx)
-if ctx.args.install:
-    install(ctx)
-if ctx.args.boot:
-    boot(ctx)
-if True not in (ctx.args.build, ctx.args.install, ctx.args.boot):
-    parser.print_help()
+    if ctx.args.build:
+        build(ctx)
+    if ctx.args.install:
+        install(ctx)
+    if ctx.args.boot:
+        boot(ctx)
+    if True not in (ctx.args.build, ctx.args.install, ctx.args.boot):
+        parser.print_help()
+
+
+if __name__ == "__main__":
+    main()
