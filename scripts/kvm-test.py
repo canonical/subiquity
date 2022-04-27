@@ -14,7 +14,6 @@ import contextlib
 import copy
 import crypt
 import os
-import random
 import shlex
 import socket
 import subprocess
