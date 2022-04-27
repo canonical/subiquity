@@ -186,7 +186,7 @@ def parse_args():
         ctx.args.save = True
 
     ctx.livefs_editor = os.environ.get('LIVEFS_EDITOR')
-    if not ctx.livefs_editor:
+    if not ctx.livefs_editor and ctx.args.build:
         raise Exception('Obtain a copy of livefs-editor and point ' +
                         'LIVEFS_EDITOR to it\n'
                         'https://github.com/mwhudson/livefs-editor')
