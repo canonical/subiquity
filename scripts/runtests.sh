@@ -161,7 +161,8 @@ for answers in examples/answers*.yaml; do
             "${opts[@]}" \
             --machine-config "$config" \
             --bootloader uefi \
-            --snaps-from-examples
+            --snaps-from-examples \
+            --source-catalog examples/install-sources.yaml
         validate
         grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
     else

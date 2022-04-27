@@ -1,4 +1,6 @@
 #machine-config: examples/existing-partitions.json
+Source:
+  source: ubuntu-server
 Welcome:
   lang: en_US
 Refresh:

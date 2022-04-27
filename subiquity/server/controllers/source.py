@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from typing import Any, Optional
 import os
 
 from curtin.commands.extract import get_handler_for_source
@@ -52,10 +52,40 @@ class SourceController(SubiquityController):
 
     endpoint = API.source
 
+    autoinstall_key = "source"
+    autoinstall_schema = {
+         "type": "object",
+         "properties": {
+             "search_drivers": {
+                 "type": "boolean",
+             },
+         },
+         "required": ["search_drivers"],
+    }
+    # Defaults to true for backward compatibility with existing autoinstall
+    # configurations. Back then, then users were able to install third-party
+    # drivers without this field.
+    autoinstall_default = {"search_drivers": True}
+
     def __init__(self, app):
         super().__init__(app)
         self._handler = None
         self.source_path: Optional[str] = None
+
+    def make_autoinstall(self):
+        return {"search_drivers": self.model.search_drivers}
+
+    def load_autoinstall_data(self, data: Any) -> None:
+        if data is None:
+            # For some reason, the schema validator does not reject
+            # "source: null" despite "type" being "object"
+            data = self.autoinstall_default
+
+        # search_drivers is marked required so the schema validator should
+        # reject any missing data.
+        assert "search_drivers" in data
+
+        self.model.search_drivers = data["search_drivers"]
 
     def start(self):
         path = '/cdrom/casper/install-sources.yaml'
@@ -72,11 +102,6 @@ class SourceController(SubiquityController):
         current = self.app.base_model.locale.selected_language
         self.model.lang = current.split('_')[0]
 
-    def interactive(self):
-        if len(self.model.sources) <= 1:
-            return False
-        return super().interactive()
-
     async def GET(self) -> SourceSelectionAndSetting:
         cur_lang = self.app.base_model.locale.selected_language
         cur_lang = cur_lang.rsplit('.', 1)[0]
@@ -86,7 +111,8 @@ class SourceController(SubiquityController):
                 convert_source(source, cur_lang)
                 for source in self.model.sources
             ],
-            self.model.current.id)
+            self.model.current.id,
+            search_drivers=self.model.search_drivers)
 
     async def configured(self):
         if self._handler is not None:
@@ -100,7 +126,8 @@ class SourceController(SubiquityController):
         await super().configured()
         self.app.base_model.set_source_variant(self.model.current.variant)
 
-    async def POST(self, source_id: str) -> None:
+    async def POST(self, source_id: str, search_drivers: bool) -> None:
+        self.model.search_drivers = search_drivers
         for source in self.model.sources:
             if source.id == source_id:
                 self.model.current = source

@@ -219,7 +219,8 @@ class TestFlow(TestAPI):
                 'toggle': None
             }
             await inst.post('/keyboard', keyboard)
-            await inst.post('/source', source_id='ubuntu-server')
+            await inst.post('/source',
+                            source_id='ubuntu-server', search_drivers=True)
             await inst.post('/network')
             await inst.post('/proxy', '')
             await inst.post('/mirror', 'http://us.archive.ubuntu.com/ubuntu')
@@ -1022,6 +1023,8 @@ class TestCancel(TestAPI):
     async def test_cancel_drivers(self):
         with patch.dict(os.environ, {'SUBIQUITY_DEBUG': 'has-drivers'}):
             async with start_server('examples/simple.json') as inst:
+                await inst.post('/source', source_id="dummy",
+                                search_drivers=True)
                 # /drivers?wait=true is expected to block until APT is
                 # configured.
                 # Let's make sure we cancel it.

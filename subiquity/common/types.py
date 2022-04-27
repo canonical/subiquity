@@ -183,6 +183,7 @@ class SourceSelection:
 class SourceSelectionAndSetting:
     sources: List[SourceSelection]
     current_id: str
+    search_drivers: bool
 
 
 @attr.s(auto_attribs=True)
@@ -398,9 +399,13 @@ class DriversResponse:
     :drivers: tells what third-party drivers will be installed should we decide
     to do it. It will bet set to None until we figure out what drivers are
     available.
+    :local_only: tells if we are looking for drivers only from the ISO.
+    :search_drivers: enables or disables drivers listing.
     """
     install: bool
     drivers: Optional[List[str]]
+    local_only: bool
+    search_drivers: bool
 
 
 @attr.s(auto_attribs=True)

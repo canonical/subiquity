@@ -74,6 +74,14 @@ class DriversController(SubiquityController):
     async def _list_drivers(self, context):
         with context.child("wait_apt"):
             await self._wait_apt.wait()
+        # The APT_CONFIGURED event (which unblocks _wait_apt.wait) is sent
+        # after the user confirms the destruction changes. At this point, the
+        # source is already mounted so the user can't go back all the way to
+        # the source screen to enable/disable the "search drivers" checkbox.
+        if not self.app.controllers.Source.model.search_drivers:
+            self.drivers = []
+            await self.configured()
+            return
         apt = self.app.controllers.Mirror.apt_configurer
         async with apt.overlay() as d:
             try:
@@ -90,10 +98,16 @@ class DriversController(SubiquityController):
             await self.configured()
 
     async def GET(self, wait: bool = False) -> DriversResponse:
+        local_only = not self.app.base_model.network.has_network
         if wait:
             await asyncio.shield(self._drivers_task)
+
+        search_drivers = self.app.controllers.Source.model.search_drivers
+
         return DriversResponse(install=self.model.do_install,
-                               drivers=self.drivers)
+                               drivers=self.drivers,
+                               local_only=local_only,
+                               search_drivers=search_drivers)
 
     async def POST(self, data: DriversPayload) -> None:
         self.model.do_install = data.install

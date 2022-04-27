@@ -32,9 +32,12 @@ class DriversController(SubiquityTuiController):
 
     async def make_ui(self) -> DriversView:
         response: DriversResponse = await self.endpoint.GET()
-        if not response.drivers and response.drivers is not None:
+
+        if not response.search_drivers:
             raise Skip
-        return DriversView(self, response.drivers, response.install)
+
+        return DriversView(self, response.drivers,
+                           response.install, response.local_only)
 
     async def _wait_drivers(self) -> List[str]:
         response: DriversResponse = await self.endpoint.GET(wait=True)

@@ -1,4 +1,6 @@
 #serial
+Source:
+  source: ubuntu-server
 Serial:
   rich: false
 Welcome:

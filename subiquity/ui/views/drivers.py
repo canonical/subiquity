@@ -26,10 +26,10 @@ from urwid import (
     Text,
     )
 
-from subiquitycore.ui.buttons import ok_btn
+from subiquitycore.ui.buttons import back_btn, ok_btn
 from subiquitycore.ui.form import (
     Form,
-    BooleanField,
+    RadioButtonField,
 )
 from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.utils import screen
@@ -44,8 +44,16 @@ class DriversForm(Form):
     available drivers or not. """
 
     cancel_label = _("Back")
+    ok_label = _("Continue")
 
-    install = BooleanField(_("Install the drivers"))
+    group: List[RadioButtonField] = []
+
+    install = RadioButtonField(
+            group,
+            _("Install all third-party drivers"))
+    do_not_install = RadioButtonField(
+            group,
+            _("Do not install third-party drivers now"))
 
 
 class DriversViewStatus(Enum):
@@ -61,11 +69,22 @@ class DriversView(BaseView):
     form = None
 
     def __init__(self, controller, drivers: Optional[List[str]],
-                 install: bool) -> None:
+                 install: bool, local_only: bool) -> None:
         self.controller = controller
+        self.local_only = local_only
+
+        self.search_later = [
+            Text(_("Note: Once the installation has finished and you are " +
+                   "connected to a network, you can search again for " +
+                   "third-party drivers using the following command:")),
+            Text(""),
+            Text("  $ ubuntu-drivers list --recommended --gpgpu"),
+        ]
 
         if drivers is None:
             self.make_waiting(install)
+        elif not drivers:
+            self.make_no_drivers()
         else:
             self.make_main(install, drivers)
 
@@ -74,15 +93,24 @@ class DriversView(BaseView):
         asynchronously. """
         self.spinner = Spinner(self.controller.app.aio_loop, style='dots')
         self.spinner.start()
+
+        if self.local_only:
+            looking_for_drivers = _("Not connected to a network. " +
+                                    "Looking for applicable third-party " +
+                                    "drivers available locally...")
+        else:
+            looking_for_drivers = _("Looking for applicable third-party " +
+                                    "drivers available locally or online...")
+
         rows = [
-            Text(_("Looking for applicable third-party drivers...")),
+            Text(looking_for_drivers),
             Text(""),
             self.spinner,
             ]
-        self.cont_btn = ok_btn(
-                _("Continue"),
-                on_press=lambda sender: self.done(False))
-        self._w = screen(rows, [self.cont_btn])
+        self.back_btn = back_btn(
+                _("Back"),
+                on_press=lambda sender: self.cancel())
+        self._w = screen(rows, [self.back_btn])
         asyncio.create_task(self._wait(install))
         self.status = DriversViewStatus.WAITING
 
@@ -100,16 +128,33 @@ class DriversView(BaseView):
         """ Change the view into an information page that shows that no
         third-party drivers are available for installation. """
 
-        rows = [Text(_("No applicable third-party drivers were found."))]
+        if self.local_only:
+            no_drivers_found = _("No applicable third-party drivers are " +
+                                 "available locally.")
+        else:
+            no_drivers_found = _("No applicable third-party drivers are " +
+                                 "available locally or online.")
+
+        rows = [Text(no_drivers_found)]
+        if self.local_only:
+            rows.append(Text(""))
+            rows.extend(self.search_later)
+
         self.cont_btn = ok_btn(
                 _("Continue"),
                 on_press=lambda sender: self.done(False))
-        self._w = screen(rows, [self.cont_btn])
+        self.back_btn = back_btn(
+                _("Back"),
+                on_press=lambda sender: self.cancel())
+        self._w = screen(rows, [self.cont_btn, self.back_btn])
         self.status = DriversViewStatus.NO_DRIVERS
 
     def make_main(self, install: bool, drivers: List[str]) -> None:
         """ Change the view to display the drivers form. """
-        self.form = DriversForm(initial={'install': install})
+        self.form = DriversForm(initial={
+            "install": bool(install),
+            "do_not_install": (not install),
+            })
 
         excerpt = _(
             "The following third-party drivers were found. "
@@ -126,6 +171,10 @@ class DriversView(BaseView):
         rows = [Text(f"* {driver}") for driver in drivers]
         rows.append(Text(""))
         rows.extend(self.form.as_rows())
+
+        if self.local_only:
+            rows.append(Text(""))
+            rows.extend(self.search_later)
 
         self._w = screen(rows, self.form.buttons, excerpt=excerpt)
         self.status = DriversViewStatus.MAIN
