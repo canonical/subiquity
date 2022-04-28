@@ -19,7 +19,7 @@ import socket
 import subprocess
 import sys
 import tempfile
-from typing import Tuple
+from typing import List, Tuple
 import yaml
 
 
@@ -45,6 +45,11 @@ def salted_crypt(plaintext_password):
     # match subiquity documentation
     salt = '$6$exDY1mhS4KUYCE/2'
     return crypt.crypt(plaintext_password, salt)
+
+
+class Tap:
+    def __init__(self, ifname: str) -> None:
+        self.ifname = ifname
 
 
 class Context:
@@ -149,6 +154,18 @@ parser.add_argument('-i', '--img', action='store', help='use this img')
 parser.add_argument('-n', '--nets', action='store', default=1, type=int,
                     help='''number of network interfaces.
                     0=no network, -1=deadnet''')
+parser.add_argument('--nic-user', action="append_const", dest="nics",
+                    const=None,
+                    help='pass user host -nic to QEMU'
+                         ' - overrides --nets')
+parser.add_argument('--nic-tap', action="append", dest="nics", type=Tap,
+                    metavar="ifname",
+                    help='TAP interface to be passed as -nic to QEMU'
+                         ' - overrides --nets')
+parser.add_argument('--nic', action="append", dest="nics",
+                    metavar="argument",
+                    help='pass custom -nic argument to QEMU'
+                         ' - overrides --nets')
 parser.add_argument('-o', '--overwrite', default=False, action='store_true',
                     help='allow overwrite of the target image')
 parser.add_argument('-q', '--quick', default=False, action='store_true',
@@ -338,22 +355,58 @@ class PortFinder:
         return next(self.finder)
 
 
-def nets(ctx):
-    if ctx.args.nets > 0:
-        ports = PortFinder()
-        ret = []
-        for _ in range(ctx.args.nets):
-            port = ports.get()
-            ret.extend(('-nic',
-                        'user,model=virtio-net-pci,' +
-                        f'hostfwd=tcp::{port}-:22'))
-        return ret
-    elif ctx.args.nets == 0:
-        # no network
-        return ('-nic', 'none')
-    else:
-        # nic present but restricted - simulate deadnet environment
+class NetFactory:
+    """ Generate -nic options for QEMU. """
+    ports_finder = PortFinder()
+
+    def user(self) -> Tuple[str, ...]:
+        """ User host network with SSH forwarding """
+        port = self.ports_finder.get()
+        return ('-nic', f'user,model=virtio-net-pci,hostfwd=tcp::{port}-:22')
+
+    def tap(self, ifname: str) -> Tuple[str, ...]:
+        """ Network using an existing TAP interface. """
+        tap_props = {
+            "id": ifname,
+            "ifname": ifname,
+            "script": "no",
+            "downscript": "no",
+            "model": "e1000",
+        }
+
+        nic = ",".join(["tap"] + [f"{k}={v}" for k, v in tap_props.items()])
+
+        return ('-nic', nic)
+
+    def deadnet(self) -> Tuple[str, ...]:
+        """ NIC present but restricted - simulate deadnet environment """
         return ('-nic', 'user,model=virtio-net-pci,restrict=on')
+
+    def nonet(self) -> Tuple[str, ...]:
+        """ No network """
+        return ('-nic', 'none')
+
+
+def nets(ctx) -> List[str]:
+    nics: List[str] = []
+    factory = NetFactory()
+
+    if ctx.args.nics:
+        for nic in ctx.args.nics:
+            if nic is None:
+                nics.extend(factory.user())
+            elif isinstance(nic, Tap):
+                nics.extend(factory.tap(nic.ifname))
+            else:
+                nics.extend(('-nic', nic))
+    elif ctx.args.nets > 0:
+        for _ in range(ctx.args.nets):
+            nics.extend(factory.user())
+    elif ctx.args.nets == 0:
+        nics.extend(factory.nonet())
+    else:
+        nics.extend(factory.deadnet())
+    return nics
 
 
 def bios(ctx):
