@@ -176,16 +176,23 @@ def _label_just_name(device, *, short=False):
 
 @label.register(Partition)
 def _label_partition(partition, *, short=False):
-    if short:
-        return _("partition {number}").format(number=partition._number)
+    if partition.flag == "logical":
+        p = "  "
     else:
-        return _("partition {number} of {device}").format(
+        p = ""
+    if short:
+        return p + _("partition {number}").format(number=partition._number)
+    else:
+        return p + _("partition {number} of {device}").format(
             number=partition._number, device=label(partition.device))
 
 
 @label.register(gaps.Gap)
 def _label_gap(gap, *, short=False):
-    return _("free space")
+    r = _("free space")
+    if gap.in_extended:
+        r = "  " + r
+    return r
 
 
 def _usage_labels_generic(device, *, exclude_final_unused=False):
