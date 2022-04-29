@@ -178,7 +178,8 @@ class FilesystemManipulator:
             return False
         return True
 
-    def partition_disk_handler(self, disk, spec, *, partition=None, gap=None):
+    def partition_disk_handler(self, disk, spec,
+                               *, partition=None, gap=None, flag=None):
         log.debug('partition_disk_handler: %s %s %s %s',
                   disk, spec, partition, gap)
 
@@ -224,7 +225,7 @@ class FilesystemManipulator:
                     spec['size'], gap.size)
                 spec['size'] = gap.size
 
-        self.create_partition(disk, gap, spec)
+        self.create_partition(disk, gap, spec, flag=flag)
 
         log.debug("Successfully added partition")
 
