@@ -364,18 +364,25 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if data.partition.boot is not None:
             raise ValueError('add_partition does not support changing boot')
         disk = self.model._one(id=data.disk_id)
+        for pg in gaps.parts_and_gaps(disk):
+            if isinstance(pg, gaps.Gap):
+                if pg.offset == data.gap.offset and pg.size == data.gap.size:
+                    gap = pg
+                    break
+        else:
+            raise ValueError('invalid gap')
         requested_size = data.partition.size or 0
-        if requested_size > data.gap.size:
+        if requested_size > gap.size:
             raise ValueError('new partition too large')
         if requested_size < 1:
-            requested_size = data.gap.size
+            requested_size = gap.size
         spec = {
             'size': requested_size,
             'fstype': data.partition.format,
             'mount': data.partition.mount,
         }
 
-        self.create_partition(disk, data.gap, spec, wipe='superblock')
+        self.create_partition(disk, gap, spec, wipe='superblock')
         return await self.v2_GET()
 
     async def v2_delete_partition_POST(self, data: ModifyPartitionV2) \
