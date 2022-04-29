@@ -332,8 +332,13 @@ class DeviceList(WidgetWrap):
         if device.type == 'lvm_volgroup':
             return _("Create Logical Volume")
         else:
-            return _("Add {ptype} Partition").format(
-                ptype=device.ptable_for_new_partition().upper())
+            ptype = device.ptable_for_new_partition().upper()
+            if ptype == "MSDOS":
+                if gap.in_extended:
+                    ptype += " logical"
+                else:
+                    ptype += " primary"
+            return _("Add {ptype} Partition").format(ptype=ptype)
 
     def _label_TOGGLE_BOOT(self, action, device):
         if boot.is_boot_device(device):
