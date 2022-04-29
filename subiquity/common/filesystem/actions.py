@@ -283,11 +283,15 @@ def _can_delete_generic(device):
 
 @_can_delete.register(Partition)
 def _can_delete_partition(partition):
-    if partition.device._has_preexisting_partition():
-        return _("Cannot delete a single partition from a device that "
-                 "already has partitions.")
-    if boot.is_bootloader_partition(partition):
+    if partition._m.storage_version == 1 and \
+       boot.is_bootloader_partition(partition):
         return _("Cannot delete required bootloader partition")
+    if partition.flag == "extended":
+        for p in partition.partitions():
+            if p.flag == "logical":
+                return _(
+                    "Cannot delete extended partition if logical "
+                    "partitions are present")
     return _can_delete_generic(partition)
 
 
