@@ -1041,3 +1041,21 @@ class TestCancel(TestAPI):
                 # should not raise ServerDisconnectedError
                 resp = await inst.get('/drivers', wait=True)
                 self.assertEqual(['nvidia-driver-470-server'], resp['drivers'])
+
+
+class TestSource(TestAPI):
+    async def test_optional_search_drivers(self):
+        async with start_server('examples/simple.json') as inst:
+            await inst.post('/source', source_id='ubuntu-server')
+            resp = await inst.get('/source')
+            self.assertFalse(resp['search_drivers'])
+
+            await inst.post('/source', source_id='ubuntu-server',
+                            search_drivers=True)
+            resp = await inst.get('/source')
+            self.assertTrue(resp['search_drivers'])
+
+            await inst.post('/source', source_id='ubuntu-server',
+                            search_drivers=False)
+            resp = await inst.get('/source')
+            self.assertFalse(resp['search_drivers'])

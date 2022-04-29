@@ -126,7 +126,8 @@ class SourceController(SubiquityController):
         await super().configured()
         self.app.base_model.set_source_variant(self.model.current.variant)
 
-    async def POST(self, source_id: str, search_drivers: bool) -> None:
+    async def POST(self, source_id: str,
+                   search_drivers: bool = False) -> None:
         self.model.search_drivers = search_drivers
         for source in self.model.sources:
             if source.id == source_id:
