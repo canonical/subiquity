@@ -182,7 +182,11 @@ class SnapInfoView(WidgetWrap):
 
         publisher = [('info_minor', _("by: ")), snap.publisher]
         if snap.verified:
-            publisher.append(('verified', ' \N{check mark}'))
+            # Check extend_dec_special_charmap for the meaning of the
+            # narrow non-breakable space here.
+            publisher.append(('verified', ' \N{check mark}\N{NNBSP}'))
+        elif snap.starred:
+            publisher.append(' \N{circled white star}')
 
         title = Columns([
             Text(snap.name),
@@ -433,9 +437,13 @@ class SnapListView(BaseView):
                 continue
             box = self.snap_boxes[snap.name] = SnapCheckBox(
                 self, snap, snap.name in self.selections_by_name)
-            publisher = snap.publisher
+            publisher = [snap.publisher]
             if snap.verified:
-                publisher = [publisher, ('verified', '\N{check mark}')]
+                # Check extend_dec_special_charmap for the meaning of the
+                # narrow non-breakable space here.
+                publisher.append(('verified', '\N{check mark}\N{NNBSP}'))
+            elif snap.starred:
+                publisher.append('\N{circled white star}')
             row = [
                 box,
                 Text(publisher),
