@@ -254,7 +254,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         self.app.aio_loop.create_task(self._guided_choice(choice))
 
     async def _guided(self):
-        self.ui.set_body(await self.make_ui())
+        self.ui.set_body((await self.make_ui())())
 
     def guided(self):
         self.app.aio_loop.create_task(self._guided())
