@@ -354,6 +354,7 @@ class IdentityData:
     crypted_password: str = attr.ib(default='', repr=False)
     hostname: str = ''
 
+
 class UsernameValidation(enum.Enum):
     OK = enum.auto()
     ALREADY_IN_USE = enum.auto()

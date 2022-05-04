@@ -16,20 +16,40 @@
 import logging
 
 import attr
+import pwd
+import os
+import re
 
 from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
-from subiquity.common.types import IdentityData
+from subiquity.common.resources import resource_path
+from subiquity.common.types import IdentityData, UsernameValidation
 from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger('subiquity.server.controllers.identity')
+
+USERNAME_MAXLEN = 32
+USERNAME_REGEX = r'[a-z_][a-z0-9_-]*'
+
+
+def _reserved_names_from_file(path: str) -> set[str]:
+    if os.path.exists(path):
+        with open(path, "r") as f:
+            return {
+                s.split()[0] for line in f.readlines()
+                if (s := line.strip()) and not s.startswith("#")
+            }
+    else:
+        return set()
 
 
 class IdentityController(SubiquityController):
 
     endpoint = API.identity
 
+    _system_reserved_names = set()
+    _existing_usernames = set()
     autoinstall_key = model_name = "identity"
     autoinstall_schema = {
         'type': 'object',
@@ -41,6 +61,18 @@ class IdentityController(SubiquityController):
             },
         'required': ['username', 'hostname', 'password'],
         'additionalProperties': False,
+        }
+
+    # TODO: Find THE way to initialize application_reserved_names.
+    def __init__(self, app):
+        super().__init__(app)
+        core_reserved_path = resource_path("reserved-usernames")
+        self._system_reserved_names = \
+            _reserved_names_from_file(core_reserved_path)
+        self._system_reserved_names.add('root')
+
+        self._existing_usernames = {
+            u.pw_name for u in pwd.getpwall()
         }
 
     def load_autoinstall_data(self, data):
@@ -77,4 +109,23 @@ class IdentityController(SubiquityController):
 
     async def POST(self, data: IdentityData):
         self.model.add_user(data)
+        if await self.validate_username_GET(data.username) != \
+                UsernameValidation.OK:
+            log.error("Username <%s> is invalid and should not be submitted.",
+                      data.username)
         await self.configured()
+
+    async def validate_username_GET(self, username: str) -> UsernameValidation:
+        if username in self._existing_usernames:
+            return UsernameValidation.ALREADY_IN_USE
+
+        if username in self._system_reserved_names:
+            return UsernameValidation.SYSTEM_RESERVED
+
+        if not re.match(USERNAME_REGEX, username):
+            return UsernameValidation.INVALID_CHARS
+
+        if len(username) > USERNAME_MAXLEN:
+            return UsernameValidation.TOO_LONG
+
+        return UsernameValidation.OK
