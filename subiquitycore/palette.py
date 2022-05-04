@@ -65,7 +65,6 @@ PALETTE_COLOR = [
     ('scrollbar focus',     'gray',    'bg'),
 
     ('verified',            'good',    'bg'),
-    ('verified header',     'good',    'orange'),
     ('verified focus',      'good',    'gray'),
 ]
 
@@ -98,6 +97,9 @@ PALETTE_MONO = [
     ('progress_complete',   'black',   'white'),
     ('scrollbar_fg',        'white',   'black'),
     ('scrollbar_bg',        'white',   'black'),
+
+    ('verified',            'white',   'black'),
+    ('verified focus',      'black',   'white'),
 ]
 
 urwid_8_names = (
