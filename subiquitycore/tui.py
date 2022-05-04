@@ -53,11 +53,6 @@ def extend_dec_special_charmap():
         ord('\N{upper half block}'): '=',
         ord('\N{FULL BLOCK}'): urwid.escape.DEC_SPECIAL_CHARMAP[
             ord('\N{BOX DRAWINGS LIGHT VERTICAL}')],
-        # XXX: Hack to show the verified snap publishers with two stars when
-        # unicode is not supported. In rich mode, we display ✪ followed by a
-        # mostly invisible character (i.e., NNBSP). In basic mode,
-        # both characters get translated to a star, resulting in two stars.
-        ord('\N{NNBSP}'): '*',
     })
 
 
