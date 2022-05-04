@@ -54,6 +54,7 @@ from subiquity.common.types import (
     TimeZoneInfo,
     UbuntuProInfo,
     UbuntuProCheckTokenAnswer,
+    UsernameValidation,
     WLANSupportInstallState,
     ZdevInfo,
     WSLConfigurationBase,
@@ -64,7 +65,6 @@ from subiquity.common.types import (
 @api
 class API:
     """The API offered by the subiquity installer process."""
-    identity = simple_endpoint(IdentityData)
     locale = simple_endpoint(str)
     proxy = simple_endpoint(str)
     ssh = simple_endpoint(SSHData)
@@ -334,6 +334,11 @@ class API:
         class check_token:
             def GET(token: Payload[str]) \
                     -> UbuntuProCheckTokenAnswer: ...
+    class identity:
+        def GET() -> IdentityData: ...
+        def POST(data: Payload[IdentityData]): ...
+        class validate:
+            def GET(username: str) ->UsernameValidation: ...
 
 
 class LinkAction(enum.Enum):

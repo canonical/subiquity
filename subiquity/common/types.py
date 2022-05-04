@@ -354,6 +354,13 @@ class IdentityData:
     crypted_password: str = attr.ib(default='', repr=False)
     hostname: str = ''
 
+class UsernameValidation(enum.Enum):
+    OK = enum.auto()
+    ALREADY_IN_USE = enum.auto()
+    SYSTEM_RESERVED = enum.auto()
+    INVALID_CHARS = enum.auto()
+    TOO_LONG = enum.auto()
+
 
 @attr.s(auto_attribs=True)
 class SSHData:
