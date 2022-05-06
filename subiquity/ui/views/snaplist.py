@@ -200,7 +200,7 @@ class SnapInfoView(WidgetWrap):
             publisher.append(" ")
             publisher.extend(check_mark())
         elif snap.starred:
-            publisher.append(' \N{circled white star}')
+            publisher.append(('starred', ' \N{circled white star}'))
 
         title = Columns([
             Text(snap.name),
@@ -455,7 +455,7 @@ class SnapListView(BaseView):
             if snap.verified:
                 publisher.extend(check_mark())
             elif snap.starred:
-                publisher.append('\N{circled white star}')
+                publisher.append(('starred', '\N{circled white star}'))
             row = [
                 box,
                 Text(publisher),
@@ -468,7 +468,8 @@ class SnapListView(BaseView):
                 {
                     None: 'menu_button focus',
                     'verified': 'verified focus',
-                    'verified invisible': 'verified inv focus'
+                    'verified invisible': 'verified inv focus',
+                    'starred': 'starred focus',
                 },
                 ))
         table = NoTabCyclingTableListBox(

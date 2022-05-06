@@ -68,6 +68,9 @@ PALETTE_COLOR = [
     ('verified focus',      'good',    'gray'),
     ('verified invisible',  'bg',      'bg'),
     ('verified inv focus',  'gray',    'gray'),
+
+    ('starred',             'orange',  'bg'),
+    ('starred focus',       'orange',  'gray'),
 ]
 
 PALETTE_MONO = [
@@ -104,6 +107,9 @@ PALETTE_MONO = [
     ('verified focus',      'black',   'white'),
     ('verified invisible',  'white',   'black'),
     ('verified inv focus',  'black',   'white'),
+
+    ('starred',             'white',   'black'),
+    ('starred focus',       'black',   'white'),
 ]
 
 urwid_8_names = (
