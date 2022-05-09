@@ -16,7 +16,7 @@
 import logging
 
 from subiquity.client.controller import SubiquityTuiController
-from subiquity.common.types import IdentityData
+from subiquity.common.types import IdentityData, UsernameValidation
 from subiquity.ui.views import IdentityView
 
 log = logging.getLogger('subiquity.client.controllers.identity')
@@ -25,6 +25,7 @@ log = logging.getLogger('subiquity.client.controllers.identity')
 class IdentityController(SubiquityTuiController):
 
     endpoint_name = 'identity'
+    username_validation = UsernameValidation.OK
 
     async def make_ui(self):
         data = await self.endpoint.GET()
@@ -48,3 +49,10 @@ class IdentityController(SubiquityTuiController):
             "IdentityController.done next_screen user_spec=%s",
             identity_data)
         self.app.next_screen(self.endpoint.POST(identity_data))
+
+    async def _validate_username(self, username):
+        self.username_validation = \
+            await self.endpoint.validate_username.GET(username)
+
+    def validate_username(self, _, value):
+        self.app.aio_loop.create_task(self._validate_username(value))

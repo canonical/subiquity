@@ -35,7 +35,7 @@ from subiquitycore.utils import crypt_password
 from subiquitycore.view import BaseView
 
 from subiquity.common.resources import resource_path
-from subiquity.common.types import IdentityData
+from subiquity.common.types import IdentityData, UsernameValidation
 
 
 log = logging.getLogger("subiquity.ui.views.identity")
@@ -83,9 +83,11 @@ PasswordField = simple_field(PasswordEditor)
 
 class IdentityForm(Form):
 
-    def __init__(self, reserved_usernames, initial):
-        self.reserved_usernames = reserved_usernames
+    def __init__(self, controller, initial):
+        self.controller = controller
         super().__init__(initial=initial)
+        connect_signal(self.username.widget, 'change',
+                       controller.validate_username)
 
     realname = RealnameField(_("Your name:"))
     hostname = UsernameField(
@@ -116,6 +118,7 @@ class IdentityForm(Form):
 
     def validate_username(self):
         username = self.username.value
+        state = self.controller.username_validation
         if len(username) < 1:
             return _("Username missing")
 
@@ -128,9 +131,14 @@ class IdentityForm(Form):
             return _(
                 "Username must match USERNAME_REGEX: " + USERNAME_REGEX)
 
-        if username in self.reserved_usernames:
+        if state == UsernameValidation.SYSTEM_RESERVED:
             return _(
                 'The username "{username}" is reserved for use by the system.'
+                ).format(username=username)
+
+        if state == UsernameValidation.ALREADY_IN_USE:
+            return _(
+                'The username "{username}" is already in use.'
                 ).format(username=username)
 
     def validate_password(self):
@@ -182,7 +190,7 @@ class IdentityView(BaseView):
             'hostname': identity_data.hostname,
             }
 
-        self.form = IdentityForm(reserved_usernames, initial)
+        self.form = IdentityForm(controller, initial)
 
         connect_signal(self.form, 'submit', self.done)
         setup_password_validation(self.form, _("passwords"))
