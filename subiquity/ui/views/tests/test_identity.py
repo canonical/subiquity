@@ -4,7 +4,7 @@ from unittest import mock
 from subiquitycore.testing import view_helpers
 
 from subiquity.client.controllers.identity import IdentityController
-from subiquity.common.types import IdentityData
+from subiquity.common.types import IdentityData, UsernameValidation
 from subiquity.ui.views.identity import IdentityView
 
 
@@ -12,6 +12,30 @@ valid_data = {
     'realname': 'Real Name',
     'hostname': 'host-name',
     'username': 'username',
+    'password': 'password',
+    'confirm_password': 'password'
+    }
+
+too_long = {
+    'realname': 'Real Name',
+    'hostname': 'host-name',
+    'username': 'u'*33,
+    'password': 'password',
+    'confirm_password': 'password'
+    }
+
+already_taken = {
+    'realname': 'Real Name',
+    'hostname': 'host-name',
+    'username': 'root',
+    'password': 'password',
+    'confirm_password': 'password'
+    }
+
+system_reserved = {
+    'realname': 'Real Name',
+    'hostname': 'host-name',
+    'username': 'plugdev',
     'password': 'password',
     'confirm_password': 'password'
     }
@@ -40,6 +64,25 @@ class IdentityViewTests(unittest.TestCase):
         view = self.make_view()
         view_helpers.enter_data(view.form, valid_data)
         self.assertTrue(view.form.done_btn.enabled)
+
+    def test_username_validation_system_reserved(self):
+        view = self.make_view()
+        view.controller.username_validation = \
+            UsernameValidation.SYSTEM_RESERVED
+        view_helpers.enter_data(view.form, system_reserved)
+        self.assertFalse(view.form.done_btn.enabled)
+
+    def test_username_validation_in_use(self):
+        view = self.make_view()
+        view.controller.username_validation = UsernameValidation.ALREADY_IN_USE
+        view_helpers.enter_data(view.form, already_taken)
+        self.assertFalse(view.form.done_btn.enabled)
+
+    def test_username_validation_too_long(self):
+        view = self.make_view()
+        view.controller.username_validation = UsernameValidation.TOO_LONG
+        view_helpers.enter_data(view.form, too_long)
+        self.assertFalse(view.form.done_btn.enabled)
 
     def test_click_done(self):
         view = self.make_view()
