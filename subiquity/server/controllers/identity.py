@@ -35,14 +35,16 @@ USERNAME_REGEX = r'[a-z_][a-z0-9_-]*'
 
 
 def _reserved_names_from_file(path: str) -> Set[str]:
+    names = set()
     if os.path.exists(path):
         with open(path, "r") as f:
-            return {
-                s.split()[0] for line in f.readlines()
-                if (s := line.strip()) and not s.startswith("#")
-            }
-    else:
-        return set()
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                names.add(line.split()[0])
+
+    return names
 
 
 class IdentityController(SubiquityController):
