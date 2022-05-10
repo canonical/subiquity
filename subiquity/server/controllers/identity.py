@@ -19,6 +19,7 @@ import attr
 import pwd
 import os
 import re
+from typing import Set
 
 from subiquitycore.context import with_context
 
@@ -33,7 +34,7 @@ USERNAME_MAXLEN = 32
 USERNAME_REGEX = r'[a-z_][a-z0-9_-]*'
 
 
-def _reserved_names_from_file(path: str) -> set[str]:
+def _reserved_names_from_file(path: str) -> Set[str]:
     if os.path.exists(path):
         with open(path, "r") as f:
             return {
