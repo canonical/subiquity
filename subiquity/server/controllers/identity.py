@@ -17,7 +17,6 @@ import logging
 
 import attr
 import pwd
-import os
 import re
 from typing import Set
 
@@ -36,13 +35,23 @@ USERNAME_REGEX = r'[a-z_][a-z0-9_-]*'
 
 def _reserved_names_from_file(path: str) -> Set[str]:
     names = set()
-    if os.path.exists(path):
+    try:
         with open(path, "r") as f:
             for line in f:
                 line = line.strip()
                 if not line or line.startswith('#'):
                     continue
                 names.add(line.split()[0])
+
+    except FileNotFoundError:
+        log.error("Could not find %s", path)
+
+    except OSError:
+        log.error("Failed to process %s", path)
+
+    except Exception:
+        log.error("Unexpected error happened when attempted to read %s",
+                  path)
 
     return names
 
