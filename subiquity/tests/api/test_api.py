@@ -1083,3 +1083,7 @@ class TestIdentityValidation(TestAPI):
             resp = await inst.get('/identity/validate_username',
                                   username='01root')
             self.assertEqual(resp, 'INVALID_CHARS')
+
+            resp = await inst.get('/identity/validate_username',
+                                  username='o#$%^&')
+            self.assertEqual(resp, 'INVALID_CHARS')

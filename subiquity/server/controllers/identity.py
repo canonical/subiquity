@@ -160,7 +160,7 @@ class IdentityController(SubiquityController):
         if username in self._system_reserved_names:
             return UsernameValidation.SYSTEM_RESERVED
 
-        if not re.match(USERNAME_REGEX, username):
+        if not re.fullmatch(USERNAME_REGEX, username):
             return UsernameValidation.INVALID_CHARS
 
         if len(username) > USERNAME_MAXLEN:
