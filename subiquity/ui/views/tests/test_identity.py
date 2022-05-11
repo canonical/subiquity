@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 from unittest import mock
 
@@ -65,22 +66,24 @@ class IdentityViewTests(unittest.TestCase):
         view_helpers.enter_data(view.form, valid_data)
         self.assertTrue(view.form.done_btn.enabled)
 
-    def test_username_validation_system_reserved(self):
+    async def test_username_validation_system_reserved(self):
         view = self.make_view()
-        view.controller.username_validation = \
+        view.controller.validate_username.return_value = \
             UsernameValidation.SYSTEM_RESERVED
         view_helpers.enter_data(view.form, system_reserved)
+        await asyncio.wait(view.form.validation_task)
         self.assertFalse(view.form.done_btn.enabled)
 
-    def test_username_validation_in_use(self):
+    async def test_username_validation_in_use(self):
         view = self.make_view()
-        view.controller.username_validation = UsernameValidation.ALREADY_IN_USE
+        view.controller.validate_username.return_value = \
+            UsernameValidation.ALREADY_IN_USE
         view_helpers.enter_data(view.form, already_taken)
+        await asyncio.wait(view.form.validation_task)
         self.assertFalse(view.form.done_btn.enabled)
 
     def test_username_validation_too_long(self):
         view = self.make_view()
-        view.controller.username_validation = UsernameValidation.TOO_LONG
         view_helpers.enter_data(view.form, too_long)
         self.assertFalse(view.form.done_btn.enabled)
 

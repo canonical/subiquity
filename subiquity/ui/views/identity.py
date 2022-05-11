@@ -20,6 +20,7 @@ import re
 from urwid import (
     connect_signal,
     )
+from subiquitycore.async_helpers import schedule_task
 
 from subiquitycore.ui.interactive import (
     PasswordEditor,
@@ -85,9 +86,10 @@ class IdentityForm(Form):
 
     def __init__(self, controller, initial):
         self.controller = controller
+        self.validation_task = None
         super().__init__(initial=initial)
         connect_signal(self.username.widget, 'change',
-                       controller.validate_username)
+                       self.on_username_change)
 
     realname = RealnameField(_("Your name:"))
     hostname = UsernameField(
@@ -96,6 +98,23 @@ class IdentityForm(Form):
     username = UsernameField(_("Pick a username:"))
     password = PasswordField(_("Choose a password:"))
     confirm_password = PasswordField(_("Confirm your password:"))
+
+    def on_username_change(self, _, value):
+        if len(value) < 2:
+            return
+
+        if self.validation_task is not None:
+            self.validation_task.cancel()
+
+        self.validation_task = \
+            schedule_task(self.controller.validate_username(value))
+
+    def username_validation_state(self):
+        task = self.validation_task
+        if task is None or not task.done():
+            return UsernameValidation.OK
+
+        return task.result()
 
     def validate_realname(self):
         if len(self.realname.value) > REALNAME_MAXLEN:
@@ -118,7 +137,6 @@ class IdentityForm(Form):
 
     def validate_username(self):
         username = self.username.value
-        state = self.controller.username_validation
         if len(username) < 1:
             return _("Username missing")
 
@@ -131,6 +149,7 @@ class IdentityForm(Form):
             return _(
                 "Username must match USERNAME_REGEX: " + USERNAME_REGEX)
 
+        state = self.username_validation_state()
         if state == UsernameValidation.SYSTEM_RESERVED:
             return _(
                 'The username "{username}" is reserved for use by the system.'

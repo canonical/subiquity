@@ -50,9 +50,5 @@ class IdentityController(SubiquityTuiController):
             identity_data)
         self.app.next_screen(self.endpoint.POST(identity_data))
 
-    async def _validate_username(self, username):
-        self.username_validation = \
-            await self.endpoint.validate_username.GET(username)
-
-    def validate_username(self, _, value):
-        self.app.aio_loop.create_task(self._validate_username(value))
+    async def validate_username(self, username):
+        return await self.endpoint.validate_username.GET(username)
