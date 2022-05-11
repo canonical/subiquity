@@ -1069,7 +1069,7 @@ class TestIdentityValidation(TestAPI):
             self.assertEqual(resp, 'SYSTEM_RESERVED')
 
             resp = await inst.get('/identity/validate_username',
-                                  username='lxd')
+                                  username='gdm')
             self.assertEqual(resp, 'ALREADY_IN_USE')
 
             resp = await inst.get('/identity/validate_username',
