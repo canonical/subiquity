@@ -121,10 +121,11 @@ class IdentityController(SubiquityController):
 
     async def POST(self, data: IdentityData):
         self.model.add_user(data)
-        if await self.validate_username_GET(data.username) != \
-                UsernameValidation.OK:
-            log.error("Username <%s> is invalid and should not be submitted.",
-                      data.username)
+        validated = await self.validate_username_GET(data.username)
+        if validated != UsernameValidation.OK:
+            raise ValueError("Username <{}> is invalid and should not be"
+                             " submitted.".format(data.username), validated)
+
         await self.configured()
 
     async def validate_username_GET(self, username: str) -> UsernameValidation:
