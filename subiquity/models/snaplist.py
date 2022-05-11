@@ -54,6 +54,7 @@ class SnapListModel:
         snap.summary = data['summary']
         snap.publisher = data['developer']
         snap.verified = data['publisher']['validation'] == "verified"
+        snap.starred = data['publisher']['validation'] == "starred"
         snap.description = data['description']
         snap.confinement = data['confinement']
         snap.license = data['license']

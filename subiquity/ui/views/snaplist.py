@@ -16,6 +16,7 @@
 import asyncio
 import datetime
 import logging
+from typing import Tuple
 
 import yaml
 
@@ -104,6 +105,20 @@ def format_datetime(d):
     return _("{amount:2} {unit} ago").format(amount=amount, unit=unit)
 
 
+def check_mark() -> Tuple[Tuple[str, str], ...]:
+    """ Return a tuple that can be passed to a urwid.Text() """
+
+    # We want a single check-mark "✓" in rich-mode but a double star "**" in
+    # basic mode.  Because we have a 1:1 mapping between a given unicode
+    # character and its ASCII substitute, we use two check-marks and make one
+    # invisible in rich-mode. In basic mode, they both get substituted with a
+    # star.
+    return (
+        ('verified', '\N{check mark}'),
+        ('verified invisible', '\N{check mark}'),
+    )
+
+
 class SnapInfoView(WidgetWrap):
 
     # This is mostly like a Pile but it tries to be a bit smart about
@@ -182,7 +197,10 @@ class SnapInfoView(WidgetWrap):
 
         publisher = [('info_minor', _("by: ")), snap.publisher]
         if snap.verified:
-            publisher.append(('verified', ' \N{check mark}'))
+            publisher.append(" ")
+            publisher.extend(check_mark())
+        elif snap.starred:
+            publisher.append(('starred', ' \N{circled white star}'))
 
         title = Columns([
             Text(snap.name),
@@ -433,9 +451,11 @@ class SnapListView(BaseView):
                 continue
             box = self.snap_boxes[snap.name] = SnapCheckBox(
                 self, snap, snap.name in self.selections_by_name)
-            publisher = snap.publisher
+            publisher = [snap.publisher]
             if snap.verified:
-                publisher = [publisher, ('verified', '\N{check mark}')]
+                publisher.extend(check_mark())
+            elif snap.starred:
+                publisher.append(('starred', '\N{circled white star}'))
             row = [
                 box,
                 Text(publisher),
@@ -445,7 +465,12 @@ class SnapListView(BaseView):
             body.append(AttrMap(
                 TableRow(row),
                 'menu_button',
-                {None: 'menu_button focus', 'verified': 'verified focus'},
+                {
+                    None: 'menu_button focus',
+                    'verified': 'verified focus',
+                    'verified invisible': 'verified inv focus',
+                    'starred': 'starred focus',
+                },
                 ))
         table = NoTabCyclingTableListBox(
             body,

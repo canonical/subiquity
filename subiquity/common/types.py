@@ -385,6 +385,7 @@ class SnapInfo:
     summary: str = ''
     publisher: str = ''
     verified: bool = False
+    starred: bool = False
     description: str = ''
     confinement: str = ''
     license: str = ''
