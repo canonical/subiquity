@@ -16,7 +16,7 @@
 import logging
 
 import attr
-import pwd
+import os
 import re
 from typing import Set
 
@@ -56,12 +56,33 @@ def _reserved_names_from_file(path: str) -> Set[str]:
     return names
 
 
+def _existing_user_names(path: str) -> Set[str]:
+    names = set()
+    try:
+        with open(path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                names.add(line.split(":")[0])
+
+    except FileNotFoundError:
+        log.error("Could not find passwd database %s", path)
+
+    except OSError:
+        log.error("Failed to process %s", path)
+
+    except Exception:
+        log.error("Unexpected error happened when attempted to read %s",
+                  path)
+
+    return names
+
+
 class IdentityController(SubiquityController):
 
     endpoint = API.identity
 
-    _system_reserved_names = set()
-    _existing_usernames = set()
     autoinstall_key = model_name = "identity"
     autoinstall_schema = {
         'type': 'object',
@@ -83,9 +104,13 @@ class IdentityController(SubiquityController):
             _reserved_names_from_file(core_reserved_path)
         self._system_reserved_names.add('root')
 
-        self._existing_usernames = {
-            u.pw_name for u in pwd.getpwall()
-        }
+        self._existing_usernames = _existing_user_names(self._passwd_path())
+
+    def _passwd_path(self) -> str:
+        if self.app.opts.dry_run:
+            return resource_path("passwd")
+        else:
+            return os.path.join(self.app.base_model.target, "etc/passwd")
 
     def load_autoinstall_data(self, data):
         if data is not None:
