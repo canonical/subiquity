@@ -16,11 +16,26 @@
 import logging
 
 import attr
+import os
+from typing import Set
 
+from subiquity.common.resources import resource_path
 from subiquity.common.types import IdentityData
 from subiquity.server.controllers.identity import IdentityController
 
 log = logging.getLogger('system_setup.server.controllers.identity')
+
+
+def _existing_user_names(path: str) -> Set[str]:
+    names = set()
+    with open(path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            names.add(line.split(":")[0])
+
+    return names
 
 
 class WSLIdentityController(IdentityController):
@@ -38,6 +53,7 @@ class WSLIdentityController(IdentityController):
 
     def __init__(self, app):
         super().__init__(app)
+        self.existing_usernames = _existing_user_names(self._passwd_path())
         if app.prefillInfo is None or self.interactive() is False:
             return
 
@@ -57,6 +73,12 @@ class WSLIdentityController(IdentityController):
 
         self.model.add_user(identity_data)
         log.debug('Prefilled Identity: {}'.format(self.model.user))
+
+    def _passwd_path(self) -> str:
+        if self.app.opts.dry_run:
+            return resource_path("passwd")
+        else:
+            return os.path.join(self.app.base_model.target, "etc/passwd")
 
     def load_autoinstall_data(self, data):
         if data is not None:
