@@ -1069,12 +1069,8 @@ class TestIdentityValidation(TestAPI):
             self.assertEqual(resp, 'SYSTEM_RESERVED')
 
             resp = await inst.get('/identity/validate_username',
-                                  username='gdm')
-            self.assertEqual(resp, 'ALREADY_IN_USE')
-
-            resp = await inst.get('/identity/validate_username',
                                   username='root')
-            self.assertNotEqual(resp, 'OK')
+            self.assertEqual(resp, 'ALREADY_IN_USE')
 
             resp = await inst.get('/identity/validate_username',
                                   username='r'*33)

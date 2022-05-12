@@ -16,7 +16,6 @@
 import logging
 
 import attr
-import os
 import re
 from typing import Set
 
@@ -35,46 +34,13 @@ USERNAME_REGEX = r'[a-z_][a-z0-9_-]*'
 
 def _reserved_names_from_file(path: str) -> Set[str]:
     names = set()
-    try:
-        with open(path, "r") as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith('#'):
-                    continue
-                names.add(line.split()[0])
-
-    except FileNotFoundError:
-        log.error("Could not find %s", path)
-
-    except OSError:
-        log.error("Failed to process %s", path)
-
-    except Exception:
-        log.error("Unexpected error happened when attempted to read %s",
-                  path)
-
-    return names
-
-
-def _existing_user_names(path: str) -> Set[str]:
-    names = set()
-    try:
-        with open(path, "r") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                names.add(line.split(":")[0])
-
-    except FileNotFoundError:
-        log.error("Could not find passwd database %s", path)
-
-    except OSError:
-        log.error("Failed to process %s", path)
-
-    except Exception:
-        log.error("Unexpected error happened when attempted to read %s",
-                  path)
+    # The absence of this file is an installer bug.
+    with open(path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            names.add(line.split()[0])
 
     return names
 
@@ -101,15 +67,9 @@ class IdentityController(SubiquityController):
         core_reserved_path = resource_path("reserved-usernames")
         self._system_reserved_names = \
             _reserved_names_from_file(core_reserved_path)
-        self._system_reserved_names.add('root')
 
-        self._existing_usernames = _existing_user_names(self._passwd_path())
-
-    def _passwd_path(self) -> str:
-        if self.app.opts.dry_run:
-            return resource_path("passwd")
-        else:
-            return os.path.join(self.app.base_model.target, "etc/passwd")
+        # Let this field be the customisation point for variants.
+        self.existing_usernames = {'root'}
 
     def load_autoinstall_data(self, data):
         if data is not None:
@@ -153,7 +113,7 @@ class IdentityController(SubiquityController):
         await self.configured()
 
     async def validate_username_GET(self, username: str) -> UsernameValidation:
-        if username in self._existing_usernames:
+        if username in self.existing_usernames:
             return UsernameValidation.ALREADY_IN_USE
 
         if username in self._system_reserved_names:
