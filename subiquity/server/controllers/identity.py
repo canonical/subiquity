@@ -96,7 +96,6 @@ class IdentityController(SubiquityController):
         'additionalProperties': False,
         }
 
-    # TODO: Find THE way to initialize application_reserved_names.
     def __init__(self, app):
         super().__init__(app)
         core_reserved_path = resource_path("reserved-usernames")
