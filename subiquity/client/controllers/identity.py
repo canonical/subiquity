@@ -16,7 +16,7 @@
 import logging
 
 from subiquity.client.controller import SubiquityTuiController
-from subiquity.common.types import IdentityData, UsernameValidation
+from subiquity.common.types import IdentityData
 from subiquity.ui.views import IdentityView
 
 log = logging.getLogger('subiquity.client.controllers.identity')
@@ -25,7 +25,6 @@ log = logging.getLogger('subiquity.client.controllers.identity')
 class IdentityController(SubiquityTuiController):
 
     endpoint_name = 'identity'
-    username_validation = UsernameValidation.OK
 
     async def make_ui(self):
         data = await self.endpoint.GET()
