@@ -318,6 +318,7 @@ def _for_client_partition(partition, *, min_size=0):
         os=partition.os,
         offset=partition.offset,
         resize=partition.resize,
+        path=partition._path(),
         mount=partition.mount,
         format=partition.format)
 
