@@ -63,10 +63,15 @@ class RealnameEditor(StringEditor, WantsToKnowFormField):
 
 class UsernameEditor(StringEditor, WantsToKnowFormField):
     def __init__(self):
+        self.on_lost_focus = None
         self.valid_char_pat = r'[-a-z0-9_]'
         self.error_invalid_char = _("The only characters permitted in this "
                                     "field are a-z, 0-9, _ and -")
         super().__init__()
+
+    def lost_focus(self):
+        if self.on_lost_focus is not None:
+            self.on_lost_focus(self.value)
 
     def valid_char(self, ch):
         if len(ch) == 1 and not re.match(self.valid_char_pat, ch):
@@ -87,9 +92,12 @@ class IdentityForm(Form):
     def __init__(self, controller, initial):
         self.controller = controller
         self.validation_task = None
+        self.validation_result = UsernameValidation.OK
         super().__init__(initial=initial)
-        connect_signal(self.username.widget, 'change',
-                       self.on_username_change)
+        # Server validation is only applied on focus leave.
+        # While editting no previous server validaiton error should be shown.
+        connect_signal(self.username.widget, 'change', self._reset_validation)
+        self.username.widget.on_lost_focus = self.on_username_edit_complete
 
     realname = RealnameField(_("Your name:"))
     hostname = UsernameField(
@@ -99,7 +107,10 @@ class IdentityForm(Form):
     password = PasswordField(_("Choose a password:"))
     confirm_password = PasswordField(_("Confirm your password:"))
 
-    def on_username_change(self, _, value):
+    def _reset_validation(self, _, __):
+        self.validation_result = UsernameValidation.OK
+
+    def on_username_edit_complete(self, value):
         if len(value) < 2:
             return
 
@@ -107,14 +118,13 @@ class IdentityForm(Form):
             self.validation_task.cancel()
 
         self.validation_task = \
-            schedule_task(self.controller.validate_username(value))
+            schedule_task(self._validate_async(value))
 
-    def username_validation_state(self):
-        task = self.validation_task
-        if task is None or not task.done():
-            return UsernameValidation.OK
-
-        return task.result()
+    async def _validate_async(self, value):
+        self.validation_result = await self.controller.validate_username(value)
+        # Retrigger field validation because it's not guaranteed that the async
+        # call result will be available when the form fields are validated.
+        self.username.validate()
 
     def validate_realname(self):
         if len(self.realname.value) > REALNAME_MAXLEN:
@@ -149,7 +159,7 @@ class IdentityForm(Form):
             return _(
                 "Username must match USERNAME_REGEX: " + USERNAME_REGEX)
 
-        state = self.username_validation_state()
+        state = self.validation_result
         if state == UsernameValidation.SYSTEM_RESERVED:
             return _(
                 'The username "{username}" is reserved for use by the system.'
