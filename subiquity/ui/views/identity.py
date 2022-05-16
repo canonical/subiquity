@@ -61,17 +61,46 @@ class RealnameEditor(StringEditor, WantsToKnowFormField):
             return super().valid_char(ch)
 
 
-class UsernameEditor(StringEditor, WantsToKnowFormField):
+class _AsyncValidatedMixin:
+    """ Provides Editor widgets with async validation capabilities """
     def __init__(self):
-        self.on_lost_focus = None
+        self.validation_task = None
+        self.initial = None
+        self.validation_result = None
+        self._validate_async_inner = None
+        connect_signal(self, 'change', self._reset_validation)
+
+    def set_initial_state(self, initial):
+        self.initial = initial
+        self.validation_result = initial
+
+    def _reset_validation(self, _, __):
+        self.validation_result = self.initial
+
+    def set_validation_call(self, async_call):
+        self._validate_async_inner = async_call
+
+    def lost_focus(self):
+        if self.validation_task is not None:
+            self.validation_task.cancel()
+
+        self.validation_task = \
+            schedule_task(self._validate_async(self.value))
+
+    async def _validate_async(self, value):
+        # Retrigger field validation because it's not guaranteed that the async
+        # call result will be available when the form fields are validated.
+        if self._validate_async_inner is not None:
+            self.validation_result = await self._validate_async_inner(value)
+            self.bff.validate()
+
+
+class UsernameEditor(StringEditor, _AsyncValidatedMixin, WantsToKnowFormField):
+    def __init__(self):
         self.valid_char_pat = r'[-a-z0-9_]'
         self.error_invalid_char = _("The only characters permitted in this "
                                     "field are a-z, 0-9, _ and -")
         super().__init__()
-
-    def lost_focus(self):
-        if self.on_lost_focus is not None:
-            self.on_lost_focus(self.value)
 
     def valid_char(self, ch):
         if len(ch) == 1 and not re.match(self.valid_char_pat, ch):
@@ -91,13 +120,10 @@ class IdentityForm(Form):
 
     def __init__(self, controller, initial):
         self.controller = controller
-        self.validation_task = None
-        self.validation_result = UsernameValidation.OK
         super().__init__(initial=initial)
-        # Server validation is only applied on focus leave.
-        # While editting no previous server validaiton error should be shown.
-        connect_signal(self.username.widget, 'change', self._reset_validation)
-        self.username.widget.on_lost_focus = self.on_username_edit_complete
+        widget = self.username.widget
+        widget.set_initial_state(UsernameValidation.OK)
+        widget.set_validation_call(self.controller.validate_username)
 
     realname = RealnameField(_("Your name:"))
     hostname = UsernameField(
@@ -106,25 +132,6 @@ class IdentityForm(Form):
     username = UsernameField(_("Pick a username:"))
     password = PasswordField(_("Choose a password:"))
     confirm_password = PasswordField(_("Confirm your password:"))
-
-    def _reset_validation(self, _, __):
-        self.validation_result = UsernameValidation.OK
-
-    def on_username_edit_complete(self, value):
-        if len(value) < 2:
-            return
-
-        if self.validation_task is not None:
-            self.validation_task.cancel()
-
-        self.validation_task = \
-            schedule_task(self._validate_async(value))
-
-    async def _validate_async(self, value):
-        self.validation_result = await self.controller.validate_username(value)
-        # Retrigger field validation because it's not guaranteed that the async
-        # call result will be available when the form fields are validated.
-        self.username.validate()
 
     def validate_realname(self):
         if len(self.realname.value) > REALNAME_MAXLEN:
@@ -159,7 +166,7 @@ class IdentityForm(Form):
             return _(
                 "Username must match USERNAME_REGEX: " + USERNAME_REGEX)
 
-        state = self.validation_result
+        state = self.username.widget.validation_result
         if state == UsernameValidation.SYSTEM_RESERVED:
             return _(
                 'The username "{username}" is reserved for use by the system.'
