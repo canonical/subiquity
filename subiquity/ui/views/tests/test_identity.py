@@ -42,7 +42,21 @@ system_reserved = {
     }
 
 
-class IdentityViewTests(unittest.TestCase):
+def tearDownModule() -> None:
+    # Set empty loop policy, so that subsequent get_event_loop() returns a new
+    # loop. If there is no running event loop set, that function will return
+    # the result of `get_event_loop_policy().get_event_loop()` call. If there
+    # is a policy there must be a running loop. IsolatedAsyncioTestCase
+    # closes the loop during tear down, though. It doesn't touch the policy.
+    # By having it as None, it autoinits and the next tests run smoothly.
+    # Another approach would be set a new event_loop for the current policy on
+    # test fixture tearDown, as pytest-ayncio does.
+    # Either way we would prevent failure on tests that depend on [run_coro]
+    # (subiquitycore/tests/util.py), for instance.
+    asyncio.set_event_loop_policy(None)
+
+
+class IdentityViewTests(unittest.IsolatedAsyncioTestCase):
 
     def make_view(self):
         controller = mock.create_autospec(spec=IdentityController)
@@ -68,18 +82,22 @@ class IdentityViewTests(unittest.TestCase):
 
     async def test_username_validation_system_reserved(self):
         view = self.make_view()
+        widget = view.form.username.widget
         view.controller.validate_username.return_value = \
             UsernameValidation.SYSTEM_RESERVED
         view_helpers.enter_data(view.form, system_reserved)
-        await asyncio.wait(view.form.validation_task)
+        widget.lost_focus()
+        await widget.validation_task
         self.assertFalse(view.form.done_btn.enabled)
 
     async def test_username_validation_in_use(self):
         view = self.make_view()
+        widget = view.form.username.widget
         view.controller.validate_username.return_value = \
             UsernameValidation.ALREADY_IN_USE
         view_helpers.enter_data(view.form, already_taken)
-        await asyncio.wait(view.form.validation_task)
+        widget.lost_focus()
+        await widget.validation_task
         self.assertFalse(view.form.done_btn.enabled)
 
     def test_username_validation_too_long(self):
