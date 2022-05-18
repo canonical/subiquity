@@ -69,7 +69,7 @@ class WSLIdentityView(BaseView):
 
         # This is the different form model with IdentityView
         # which prevents us from inheriting it
-        self.form = WSLIdentityForm([], initial)
+        self.form = WSLIdentityForm(controller, initial)
 
         connect_signal(self.form, 'submit', self.done)
         setup_password_validation(self.form, _("passwords"))

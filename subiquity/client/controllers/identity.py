@@ -48,3 +48,6 @@ class IdentityController(SubiquityTuiController):
             "IdentityController.done next_screen user_spec=%s",
             identity_data)
         self.app.next_screen(self.endpoint.POST(identity_data))
+
+    async def validate_username(self, username):
+        return await self.endpoint.validate_username.GET(username)

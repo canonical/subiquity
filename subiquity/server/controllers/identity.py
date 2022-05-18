@@ -16,14 +16,33 @@
 import logging
 
 import attr
+import re
+from typing import Set
 
 from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
-from subiquity.common.types import IdentityData
+from subiquity.common.resources import resource_path
+from subiquity.common.types import IdentityData, UsernameValidation
 from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger('subiquity.server.controllers.identity')
+
+USERNAME_MAXLEN = 32
+USERNAME_REGEX = r'[a-z_][a-z0-9_-]*'
+
+
+def _reserved_names_from_file(path: str) -> Set[str]:
+    names = set()
+    # The absence of this file is an installer bug.
+    with open(path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            names.add(line.split()[0])
+
+    return names
 
 
 class IdentityController(SubiquityController):
@@ -42,6 +61,15 @@ class IdentityController(SubiquityController):
         'required': ['username', 'hostname', 'password'],
         'additionalProperties': False,
         }
+
+    def __init__(self, app):
+        super().__init__(app)
+        core_reserved_path = resource_path("reserved-usernames")
+        self._system_reserved_names = \
+            _reserved_names_from_file(core_reserved_path)
+
+        # Let this field be the customisation point for variants.
+        self.existing_usernames = {'root'}
 
     def load_autoinstall_data(self, data):
         if data is not None:
@@ -76,5 +104,25 @@ class IdentityController(SubiquityController):
         return data
 
     async def POST(self, data: IdentityData):
+        validated = await self.validate_username_GET(data.username)
+        if validated != UsernameValidation.OK:
+            raise ValueError("Username <{}> is invalid and should not be"
+                             " submitted.".format(data.username), validated)
+
         self.model.add_user(data)
         await self.configured()
+
+    async def validate_username_GET(self, username: str) -> UsernameValidation:
+        if username in self.existing_usernames:
+            return UsernameValidation.ALREADY_IN_USE
+
+        if username in self._system_reserved_names:
+            return UsernameValidation.SYSTEM_RESERVED
+
+        if not re.fullmatch(USERNAME_REGEX, username):
+            return UsernameValidation.INVALID_CHARS
+
+        if len(username) > USERNAME_MAXLEN:
+            return UsernameValidation.TOO_LONG
+
+        return UsernameValidation.OK

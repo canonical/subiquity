@@ -20,6 +20,7 @@ import re
 from urwid import (
     connect_signal,
     )
+from subiquitycore.async_helpers import schedule_task
 
 from subiquitycore.ui.interactive import (
     PasswordEditor,
@@ -35,7 +36,7 @@ from subiquitycore.utils import crypt_password
 from subiquitycore.view import BaseView
 
 from subiquity.common.resources import resource_path
-from subiquity.common.types import IdentityData
+from subiquity.common.types import IdentityData, UsernameValidation
 
 
 log = logging.getLogger("subiquity.ui.views.identity")
@@ -60,7 +61,41 @@ class RealnameEditor(StringEditor, WantsToKnowFormField):
             return super().valid_char(ch)
 
 
-class UsernameEditor(StringEditor, WantsToKnowFormField):
+class _AsyncValidatedMixin:
+    """ Provides Editor widgets with async validation capabilities """
+    def __init__(self):
+        self.validation_task = None
+        self.initial = None
+        self.validation_result = None
+        self._validate_async_inner = None
+        connect_signal(self, 'change', self._reset_validation)
+
+    def set_initial_state(self, initial):
+        self.initial = initial
+        self.validation_result = initial
+
+    def _reset_validation(self, _, __):
+        self.validation_result = self.initial
+
+    def set_validation_call(self, async_call):
+        self._validate_async_inner = async_call
+
+    def lost_focus(self):
+        if self.validation_task is not None:
+            self.validation_task.cancel()
+
+        self.validation_task = \
+            schedule_task(self._validate_async(self.value))
+
+    async def _validate_async(self, value):
+        # Retrigger field validation because it's not guaranteed that the async
+        # call result will be available when the form fields are validated.
+        if self._validate_async_inner is not None:
+            self.validation_result = await self._validate_async_inner(value)
+            self.bff.validate()
+
+
+class UsernameEditor(StringEditor, _AsyncValidatedMixin, WantsToKnowFormField):
     def __init__(self):
         self.valid_char_pat = r'[-a-z0-9_]'
         self.error_invalid_char = _("The only characters permitted in this "
@@ -83,9 +118,12 @@ PasswordField = simple_field(PasswordEditor)
 
 class IdentityForm(Form):
 
-    def __init__(self, reserved_usernames, initial):
-        self.reserved_usernames = reserved_usernames
+    def __init__(self, controller, initial):
+        self.controller = controller
         super().__init__(initial=initial)
+        widget = self.username.widget
+        widget.set_initial_state(UsernameValidation.OK)
+        widget.set_validation_call(self.controller.validate_username)
 
     realname = RealnameField(_("Your name:"))
     hostname = UsernameField(
@@ -128,9 +166,15 @@ class IdentityForm(Form):
             return _(
                 "Username must match USERNAME_REGEX: " + USERNAME_REGEX)
 
-        if username in self.reserved_usernames:
+        state = self.username.widget.validation_result
+        if state == UsernameValidation.SYSTEM_RESERVED:
             return _(
                 'The username "{username}" is reserved for use by the system.'
+                ).format(username=username)
+
+        if state == UsernameValidation.ALREADY_IN_USE:
+            return _(
+                'The username "{username}" is already in use.'
                 ).format(username=username)
 
     def validate_password(self):
@@ -182,7 +226,7 @@ class IdentityView(BaseView):
             'hostname': identity_data.hostname,
             }
 
-        self.form = IdentityForm(reserved_usernames, initial)
+        self.form = IdentityForm(controller, initial)
 
         connect_signal(self.form, 'submit', self.done)
         setup_password_validation(self.form, _("passwords"))

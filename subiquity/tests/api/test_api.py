@@ -1059,3 +1059,27 @@ class TestSource(TestAPI):
                             search_drivers=False)
             resp = await inst.get('/source')
             self.assertFalse(resp['search_drivers'])
+
+
+class TestIdentityValidation(TestAPI):
+    async def test_username_validation(self):
+        async with start_server('examples/simple.json') as inst:
+            resp = await inst.get('/identity/validate_username',
+                                  username='plugdev')
+            self.assertEqual(resp, 'SYSTEM_RESERVED')
+
+            resp = await inst.get('/identity/validate_username',
+                                  username='root')
+            self.assertEqual(resp, 'ALREADY_IN_USE')
+
+            resp = await inst.get('/identity/validate_username',
+                                  username='r'*33)
+            self.assertEqual(resp, 'TOO_LONG')
+
+            resp = await inst.get('/identity/validate_username',
+                                  username='01root')
+            self.assertEqual(resp, 'INVALID_CHARS')
+
+            resp = await inst.get('/identity/validate_username',
+                                  username='o#$%^&')
+            self.assertEqual(resp, 'INVALID_CHARS')
