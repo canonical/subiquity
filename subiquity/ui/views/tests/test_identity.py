@@ -50,7 +50,7 @@ def tearDownModule() -> None:
     # closes the loop during tear down, though. It doesn't touch the policy.
     # By having it as None, it autoinits and the next tests run smoothly.
     # Another approach would be set a new event_loop for the current policy on
-    # test fixture tearDown, as pytest-ayncio does.
+    # test fixture tearDown, as pytest-asyncio does.
     # Either way we would prevent failure on tests that depend on [run_coro]
     # (subiquitycore/tests/util.py), for instance.
     asyncio.set_event_loop_policy(None)
