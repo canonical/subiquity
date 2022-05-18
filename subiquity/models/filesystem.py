@@ -703,6 +703,16 @@ class Partition(_Formattable):
         return boot.is_bootloader_partition(self)
 
     @property
+    def estimated_min_size(self):
+        fs_data = self._m._probe_data.get('filesystem', {}).get(self._path())
+        if fs_data is None:
+            return -1
+        val = fs_data.get('ESTIMATED_MIN_SIZE')
+        if val == 0:
+            return self.device.alignment_data().part_align
+        return val
+
+    @property
     def ok_for_raid(self):
         if self.boot:
             return False
