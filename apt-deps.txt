@@ -15,6 +15,7 @@ os-prober
 pep8
 pkg-config
 python3-aiohttp
+python3-aioresponses
 python3-apport
 python3-async-timeout
 python3-attr
