@@ -414,7 +414,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             fname = 'probe-data-restricted.json'
             key = "ProbeDataRestricted"
         else:
-            probe_types = {'defaults'}
+            probe_types = {'defaults', 'filesystem_sizing'}
             if self.app.opts.use_os_prober:
                 probe_types |= {'os'}
             fname = 'probe-data.json'
