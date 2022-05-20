@@ -14,13 +14,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from abc import ABC, abstractmethod
+import aiohttp
 import logging
 import enum
-import requests
 from xml.etree import ElementTree
 
 from subiquitycore.async_helpers import (
-    run_in_thread,
     SingleInstanceTask,
 )
 
@@ -76,13 +75,14 @@ class HTTPGeoIPStrategy(GeoIPStrategy):
     """ HTTP implementation to retrieve GeoIP information. We use the
     geoip.ubuntu.com service. """
     async def get_response(self) -> str:
+        url = "https://geoip.ubuntu.com/lookup"
         try:
-            response = await run_in_thread(
-                requests.get, "https://geoip.ubuntu.com/lookup")
-            response.raise_for_status()
-        except requests.exceptions.RequestException as e:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    response.raise_for_status()
+                    return await response.text()
+        except aiohttp.ClientError as e:
             raise LookupError from e
-        return response.text
 
 
 class GeoIP:
