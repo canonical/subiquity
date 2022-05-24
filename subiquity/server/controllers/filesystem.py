@@ -29,6 +29,7 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     schedule_task,
     SingleInstanceTask,
+    TaskAlreadyRunningError,
     )
 from subiquitycore.context import with_context
 from subiquitycore.utils import (
@@ -94,7 +95,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._probe_once_task = SingleInstanceTask(
             self._probe_once, propagate_errors=False)
         self._probe_task = SingleInstanceTask(
-            self._probe, propagate_errors=False)
+            self._probe, propagate_errors=False, cancel_restart=False)
         self.supports_resilient_boot = False
 
     def load_autoinstall_data(self, data):
@@ -522,7 +523,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         while select.select([self._monitor.fileno()], [], [], 0)[0]:
             action, dev = self._monitor.receive_device()
             log.debug("_udev_event %s %s", action, dev)
-        self._probe_task.start_sync()
+        try:
+            self._probe_task.start_sync()
+        except TaskAlreadyRunningError:
+            log.debug('Skipping run of Probert - probe run already active')
+        else:
+            log.debug('Triggered Probert run on udev event')
 
     def make_autoinstall(self):
         rendered = self.model.render()
