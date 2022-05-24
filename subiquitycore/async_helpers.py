@@ -48,12 +48,21 @@ async def run_in_thread(func, *args):
         raise asyncio.CancelledError
 
 
+class TaskAlreadyRunningError(Exception):
+    """Used to let callers know that a task hasn't been started due to
+    cancel_restart == False and the task already running."""
+    pass
+
+
 class SingleInstanceTask:
 
-    def __init__(self, func, propagate_errors=True):
+    def __init__(self, func, propagate_errors=True, cancel_restart=True):
         self.func = func
         self.propagate_errors = propagate_errors
         self.task = None
+        # if True, allow subsequent start calls to cancel a running task
+        # raises TaskAlreadyRunningError if we skip starting the task.
+        self.cancel_restart = cancel_restart
 
     async def _start(self, old):
         if old is not None:
@@ -69,6 +78,10 @@ class SingleInstanceTask:
         return self.task
 
     def start_sync(self, *args, **kw):
+        if not self.cancel_restart:
+            if self.task is not None and not self.task.done():
+                raise TaskAlreadyRunningError(
+                    'Skipping invocation of task - already running')
         old = self.task
         coro = self.func(*args, **kw)
         if asyncio.iscoroutine(coro):
