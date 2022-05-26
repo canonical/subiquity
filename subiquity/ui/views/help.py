@@ -396,7 +396,7 @@ class HelpMenu(PopUpLauncher):
 
     def __init__(self, app, about_msg=None):
         self.app = app
-        self.about_message = about_msg
+        self._about_message = about_msg
         self.btn = header_btn(_("Help"), on_press=self._open)
         self.ssh_info = None
         self.current_help = None
@@ -454,14 +454,14 @@ class HelpMenu(PopUpLauncher):
         return template.format(**info)
 
     def about(self, sender=None):
-        if not self.about_message:
-            self.about_message = self._default_about_msg()
+        if not self._about_message:
+            self._about_message = self._default_about_msg()
 
         self._show_overlay(
             SimpleTextStretchy(
                 self.app,
                 _("About the installer"),
-                self.about_message))
+                self._about_message))
 
     def ssh_help(self, sender=None):
         texts = ssh_help_texts(self.ssh_info)

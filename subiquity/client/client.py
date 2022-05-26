@@ -120,13 +120,13 @@ class SubiquityClient(TuiApplication):
 
     variant_to_controllers: Dict[str, List[str]] = {}
 
-    def __init__(self, opts):
+    def __init__(self, opts, about_msg=None):
         if is_linux_tty():
             self.input_filter = KeyCodesFilter()
         else:
             self.input_filter = DummyKeycodesFilter()
 
-        self.help_menu = HelpMenu(self)
+        self.help_menu = HelpMenu(self, about_msg)
         super().__init__(opts)
         self.interactive = None
         self.server_updated = None
