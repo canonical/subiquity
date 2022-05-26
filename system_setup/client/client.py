@@ -76,6 +76,4 @@ class SystemSetupClient(SubiquityClient):
     }
 
     def __init__(self, opts):
-        super().__init__(opts)
-        self.help_menu.about_message = \
-            _about_msg(ABOUT_UBUNTU_WSL, self.opts.dry_run)
+        super().__init__(opts, _about_msg(ABOUT_UBUNTU_WSL, opts.dry_run))
