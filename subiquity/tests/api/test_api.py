@@ -874,23 +874,14 @@ class TestPartitionTableEditing(TestAPI):
 
     @timeout()
     async def test_resize(self):
-        # load config, edit size, use that for server
-        with open('examples/ubuntu-and-free-space.json', 'r') as fp:
-            data = json.load(fp)
-
-        # expand sda3 to use the rest of the disk
-        def get_size(key):
-            return int(data['storage']['blockdev'][key]['attrs']['size'])
-
-        sda_size = get_size('/dev/sda')
-        sda1_size = get_size('/dev/sda1')
-        sda2_size = get_size('/dev/sda2')
-        sda3_size = sda_size - sda1_size - sda2_size - (2 << 20)
-        data['storage']['blockdev']['/dev/sda3']['attrs']['size'] = \
-            str(sda3_size)
-        cfg = self.tmp_path('machine-config.json')
-        with open(cfg, 'w') as fp:
-            json.dump(data, fp)
+        cfg = self.machineConfig('examples/ubuntu-and-free-space.json')
+        with cfg.edit() as data:
+            blockdev = data['storage']['blockdev']
+            sizes = {k: int(v['attrs']['size']) for k, v in blockdev.items()}
+            # expand sda3 to use the rest of the disk
+            sda3_size = (sizes['/dev/sda'] - sizes['/dev/sda1']
+                         - sizes['/dev/sda2'] - (2 << 20))
+            blockdev['/dev/sda3']['attrs']['size'] = str(sda3_size)
 
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
