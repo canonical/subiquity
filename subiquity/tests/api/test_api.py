@@ -135,6 +135,27 @@ class Server(Client):
 
 
 class TestAPI(unittest.IsolatedAsyncioTestCase, SubiTestCase):
+    class _MachineConfig(os.PathLike):
+        def __init__(self, outer, path):
+            self.outer = outer
+            self.orig_path = path
+            self.path = None
+
+        def __fspath__(self):
+            return self.path or self.orig_path
+
+        @contextlib.contextmanager
+        def edit(self):
+            with open(self.orig_path, 'r') as fp:
+                data = json.load(fp)
+            yield data
+            self.path = self.outer.tmp_path('machine-config.json')
+            with open(self.path, 'w') as fp:
+                json.dump(data, fp)
+
+    def machineConfig(self, path):
+        return self._MachineConfig(self, path)
+
     def assertDictSubset(self, expected, actual):
         """All keys in dictionary expected, and matching values, must match
         keys and values in actual.  Actual may contain additional keys and
