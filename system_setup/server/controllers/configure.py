@@ -101,7 +101,7 @@ class ConfigureController(SubiquityController):
                          os.path.join(defaultLocDir, "locale")]
         return updateLocCmd
 
-    async def _activate_locale(self, lang, env) -> bool:
+    async def _activate_locale(self, lang, env, skipLocGen=False) -> bool:
         """ Return true if succeed in running the last commands
         to set the locale.
         """
@@ -111,7 +111,7 @@ class ConfigureController(SubiquityController):
             return False
 
         updateCmd = self.__update_locale_cmd(lang)
-        cmds = [[locGenCmd], updateCmd]
+        cmds = [updateCmd] if skipLocGen else [[locGenCmd], updateCmd]
         for cmd in cmds:
             cp = await arun_command(cmd, env=env)
             if cp.returncode != 0:
@@ -283,7 +283,9 @@ class ConfigureController(SubiquityController):
             log.error("Failed to install recommended language packs.")
             return
 
-        ok = await self._activate_locale(lang, env)
+        # We want to run locale-gen if apt fails to install language packs,
+        # so the other locale definitions match the user expectation.
+        ok = await self._activate_locale(lang, env, skipLocGen=ok)
         if not ok:
             log.error("Failed to run locale activation commands.")
             return
