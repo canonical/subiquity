@@ -40,15 +40,18 @@ class TestSubiquityControllerFilesystem(TestCase):
         run_coro(self.fsc._probe_once(context=None, restricted=True))
         self.app.prober.get_storage.assert_called_with({'blockdev'})
 
-    def test_probe_defaults(self):
+    def test_probe_os_prober_false(self):
         self.app.opts.use_os_prober = False
         run_coro(self.fsc._probe_once(context=None, restricted=False))
-        self.app.prober.get_storage.assert_called_with({'defaults'})
+        actual = self.app.prober.get_storage.call_args.args[0]
+        self.assertTrue({'defaults'} <= actual)
+        self.assertNotIn('os', actual)
 
-    def test_probe_defaults_and_os(self):
+    def test_probe_os_prober_true(self):
         self.app.opts.use_os_prober = True
         run_coro(self.fsc._probe_once(context=None, restricted=False))
-        self.app.prober.get_storage.assert_called_with({'defaults', 'os'})
+        actual = self.app.prober.get_storage.call_args.args[0]
+        self.assertTrue({'defaults', 'os'} <= actual)
 
 
 class TestGuided(TestCase):

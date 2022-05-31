@@ -268,6 +268,7 @@ class Partition:
     boot: Optional[bool] = None
     os: Optional[OsProber] = None
     offset: Optional[int] = None
+    estimated_min_size: Optional[int] = -1
     resize: Optional[bool] = None
     path: Optional[str] = None
 

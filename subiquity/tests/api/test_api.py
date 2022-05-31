@@ -135,6 +135,27 @@ class Server(Client):
 
 
 class TestAPI(unittest.IsolatedAsyncioTestCase, SubiTestCase):
+    class _MachineConfig(os.PathLike):
+        def __init__(self, outer, path):
+            self.outer = outer
+            self.orig_path = path
+            self.path = None
+
+        def __fspath__(self):
+            return self.path or self.orig_path
+
+        @contextlib.contextmanager
+        def edit(self):
+            with open(self.orig_path, 'r') as fp:
+                data = json.load(fp)
+            yield data
+            self.path = self.outer.tmp_path('machine-config.json')
+            with open(self.path, 'w') as fp:
+                json.dump(data, fp)
+
+    def machineConfig(self, path):
+        return self._MachineConfig(self, path)
+
     def assertDictSubset(self, expected, actual):
         """All keys in dictionary expected, and matching values, must match
         keys and values in actual.  Actual may contain additional keys and
@@ -853,23 +874,14 @@ class TestPartitionTableEditing(TestAPI):
 
     @timeout()
     async def test_resize(self):
-        # load config, edit size, use that for server
-        with open('examples/ubuntu-and-free-space.json', 'r') as fp:
-            data = json.load(fp)
-
-        # expand sda3 to use the rest of the disk
-        def get_size(key):
-            return int(data['storage']['blockdev'][key]['attrs']['size'])
-
-        sda_size = get_size('/dev/sda')
-        sda1_size = get_size('/dev/sda1')
-        sda2_size = get_size('/dev/sda2')
-        sda3_size = sda_size - sda1_size - sda2_size - (2 << 20)
-        data['storage']['blockdev']['/dev/sda3']['attrs']['size'] = \
-            str(sda3_size)
-        cfg = self.tmp_path('machine-config.json')
-        with open(cfg, 'w') as fp:
-            json.dump(data, fp)
+        cfg = self.machineConfig('examples/ubuntu-and-free-space.json')
+        with cfg.edit() as data:
+            blockdev = data['storage']['blockdev']
+            sizes = {k: int(v['attrs']['size']) for k, v in blockdev.items()}
+            # expand sda3 to use the rest of the disk
+            sda3_size = (sizes['/dev/sda'] - sizes['/dev/sda1']
+                         - sizes['/dev/sda2'] - (2 << 20))
+            blockdev['/dev/sda3']['attrs']['size'] = str(sda3_size)
 
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
@@ -921,6 +933,25 @@ class TestPartitionTableEditing(TestAPI):
             self.assertTrue(sda3['preserve'])
             self.assertTrue(sda3['resize'])
             self.assertTrue(sda3_format['preserve'])
+
+    @timeout()
+    async def test_est_min_size(self):
+        cfg = self.machineConfig('examples/win10-along-ubuntu.json')
+        with cfg.edit() as data:
+            fs = data['storage']['filesystem']
+            fs['/dev/sda1']['ESTIMATED_MIN_SIZE'] = 0
+            # data file has no sda2 in filesystem
+            fs['/dev/sda3']['ESTIMATED_MIN_SIZE'] = -1
+            fs['/dev/sda4']['ESTIMATED_MIN_SIZE'] = (1 << 20) + 1
+
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
+            resp = await inst.get('/storage/v2')
+            [sda] = resp['disks']
+            [p1, _, p3, p4, _] = sda['partitions']
+            self.assertEqual(1 << 20, p1['estimated_min_size'])
+            self.assertEqual(-1, p3['estimated_min_size'])
+            self.assertEqual(2 << 20, p4['estimated_min_size'])
 
 
 class TestGap(TestAPI):
