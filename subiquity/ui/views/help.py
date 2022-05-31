@@ -394,8 +394,9 @@ class OpenHelpMenu(WidgetWrap):
 
 class HelpMenu(PopUpLauncher):
 
-    def __init__(self, app):
+    def __init__(self, app, about_msg=None):
         self.app = app
+        self._about_message = about_msg
         self.btn = header_btn(_("Help"), on_press=self._open)
         self.ssh_info = None
         self.current_help = None
@@ -440,7 +441,7 @@ class HelpMenu(PopUpLauncher):
 
         self.app.add_global_overlay(stretchy)
 
-    def about(self, sender=None):
+    def _default_about_msg(self):
         info = lsb_release(dry_run=self.app.opts.dry_run)
         if 'LTS' in info['description']:
             template = _(ABOUT_INSTALLER_LTS)
@@ -450,11 +451,17 @@ class HelpMenu(PopUpLauncher):
             'snap_version': os.environ.get("SNAP_VERSION", "SNAP_VERSION"),
             'snap_revision': os.environ.get("SNAP_REVISION", "SNAP_REVISION"),
             })
+        return template.format(**info)
+
+    def about(self, sender=None):
+        if not self._about_message:
+            self._about_message = self._default_about_msg()
+
         self._show_overlay(
             SimpleTextStretchy(
                 self.app,
                 _("About the installer"),
-                template.format(**info)))
+                self._about_message))
 
     def ssh_help(self, sender=None):
         texts = ssh_help_texts(self.ssh_info)

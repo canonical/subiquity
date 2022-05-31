@@ -14,11 +14,39 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 import sys
 
+from subiquitycore.lsb_release import lsb_release
 from subiquity.client.client import SubiquityClient
 
 log = logging.getLogger('system_setup.client.client')
+
+ABOUT_UBUNTU_WSL = _("""
+Welcome to the {id} Installer!
+
+A full Ubuntu environment, deeply integrated with Windows,
+for Linux application development and execution.
+Optimised for cloud, web, data science, IOT and fun!
+
+The installer will guide you through installing {description}.
+
+The installer only requires the up and down arrow keys, space (or
+return) and the occasional bit of typing.
+
+This is version {snap_version} of the installer.
+""")
+
+
+def _about_msg(msg, dry_run):
+    info = lsb_release(dry_run=dry_run)
+    newId = info["id"] + " WSL"
+    info.update({
+        'id': newId,
+        'description': info["description"].replace(info["id"], newId),
+        'snap_version': os.environ.get("SNAP_VERSION", "SNAP_VERSION")
+        })
+    return msg.format(**info)
 
 
 class SystemSetupClient(SubiquityClient):
@@ -46,3 +74,6 @@ class SystemSetupClient(SubiquityClient):
             "Summary",
         ]
     }
+
+    def __init__(self, opts):
+        super().__init__(opts, _about_msg(ABOUT_UBUNTU_WSL, opts.dry_run))

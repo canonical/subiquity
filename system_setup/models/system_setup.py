@@ -58,6 +58,7 @@ class SystemSetupModel(SubiquityModel):
         self.userdata = {}
         self.locale = LocaleModel(self.chroot_prefix)
         self.identity = IdentityModel()
+        self.network = None
         self.wslconfbase = WSLConfigurationBaseModel()
         self.wslconfadvanced = WSLConfigurationAdvancedModel()
 
