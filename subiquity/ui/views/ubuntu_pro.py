@@ -19,6 +19,7 @@ import re
 from typing import List
 
 from urwid import (
+    Columns,
     connect_signal,
     LineBox,
     Text,
@@ -210,6 +211,77 @@ class UbuntuProView(BaseView):
         via Ubuntu Pro subscription. After the user confirms, we will
         quit the current view and move on. """
         self.show_stretchy_overlay(ShowServicesWidget(self, services))
+
+
+class AboutProWidget(Stretchy):
+    """ Widget showing some information about what Ubuntu Pro offers.
+    +------------------- About Ubuntu Pro --------------------+
+    |                                                         |
+    | Ubuntu Pro subscription gives you access to multiple    |
+    | security & compliance services, including:              |
+    |                                                         |
+    | • Security patching for over 30.000 packages, with a    |
+    |   focus on High and Critical CVEs (extended from 2.500) |
+    | • ...                                                   |
+    | • ...                                                   |
+    |                                                         |
+    | Ubuntu Pro is free for personal use on up to 3 machines.|
+    | More information on ubuntu.com/pro                      |
+    |                                                         |
+    |                       [ Continue ]                      |
+    +---------------------------------------------------------+
+    """
+    def __init__(self, parent: UbuntuProView) -> None:
+        """ Initializes the widget."""
+        self.parent = parent
+
+        ok = ok_btn(label=_("Continue"), on_press=lambda unused: self.close())
+
+        title = _("About Ubuntu Pro")
+        header = _("Ubuntu Pro subscription gives you access to multiple"
+                   " security & compliance services, including:")
+
+        services = [
+            _("Security patching for over 30.000 packages, with a focus on"
+              " High and Critical CVEs (extended from 2.500)"),
+            _("10 years of security Maintenance (extended from 5 years)"),
+            _("Kernel Livepatch service for increased uptime and security"),
+            _("Ubuntu Security Guide for hardening profiles, including CIS"
+              " and DISA-STIG"),
+            _("FIPS 140-2 NIST-certified crypto-modules for FedRAMP"
+              " compliance"),
+        ]
+
+        def itemize(item: str, marker: str = "•") -> Columns:
+            """ Return the text specified in a Text widget prepended with a
+            bullet point / marker. If the text is too long to fit in a single
+            line, the continuation lines are indented as shown below:
+            +---------------------------+
+            | * This is an example of   |
+            |   what such element would |
+            |   look like.              |
+            +---------------------------+
+            """
+            return Columns(
+                    [(len(marker), Text(marker)), Text(item)], dividechars=1)
+
+        widgets: List[Widget] = [
+            Text(header),
+            Text(""),
+            Pile([itemize(svc) for svc in services]),
+            Text(""),
+            Text(_("Ubuntu Pro is free for personal use on up to 3"
+                   " machines.")),
+            Text(_("More information on ubuntu.com/pro")),
+            Text(""),
+            button_pile([ok]),
+        ]
+
+        super().__init__(title, widgets, stretchy_index=2, focus_index=7)
+
+    def close(self) -> None:
+        """ Close the overlay. """
+        self.parent.remove_overlay()
 
 
 class ShowServicesWidget(Stretchy):
