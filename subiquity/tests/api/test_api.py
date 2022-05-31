@@ -936,14 +936,13 @@ class TestPartitionTableEditing(TestAPI):
 
     @timeout()
     async def test_est_min_size(self):
-        # load config, edit size, use that for server
         cfg = self.machineConfig('examples/win10-along-ubuntu.json')
         with cfg.edit() as data:
             fs = data['storage']['filesystem']
             fs['/dev/sda1']['ESTIMATED_MIN_SIZE'] = 0
             # data file has no sda2 in filesystem
             fs['/dev/sda3']['ESTIMATED_MIN_SIZE'] = -1
-            fs['/dev/sda4']['ESTIMATED_MIN_SIZE'] = 1 << 30
+            fs['/dev/sda4']['ESTIMATED_MIN_SIZE'] = (1 << 20) + 1
 
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
@@ -952,7 +951,7 @@ class TestPartitionTableEditing(TestAPI):
             [p1, _, p3, p4, _] = sda['partitions']
             self.assertEqual(1 << 20, p1['estimated_min_size'])
             self.assertEqual(-1, p3['estimated_min_size'])
-            self.assertEqual(1 << 30, p4['estimated_min_size'])
+            self.assertEqual(2 << 20, p4['estimated_min_size'])
 
 
 class TestGap(TestAPI):

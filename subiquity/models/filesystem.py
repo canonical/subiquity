@@ -707,10 +707,12 @@ class Partition(_Formattable):
         fs_data = self._m._probe_data.get('filesystem', {}).get(self._path())
         if fs_data is None:
             return -1
-        val = fs_data.get('ESTIMATED_MIN_SIZE')
+        val = fs_data.get('ESTIMATED_MIN_SIZE', -1)
         if val == 0:
             return self.device.alignment_data().part_align
-        return val
+        if val == -1:
+            return -1
+        return align_up(val, self.device.alignment_data().part_align)
 
     @property
     def ok_for_raid(self):
