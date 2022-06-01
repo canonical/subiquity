@@ -133,12 +133,11 @@ class RefreshController(SubiquityController):
 
     def get_refresh_channel(self):
         """Return the channel we should refresh subiquity to."""
-        prefix = "subiquity-channel="
-        for arg in self.app.kernel_cmdline:
-            if arg.startswith(prefix):
-                log.debug(
-                    "get_refresh_channel: found %s on kernel cmdline", arg)
-                return arg[len(prefix):]
+        channel = self.app.kernel_cmdline.get('subiquity-channel')
+        if channel is not None:
+            log.debug(
+                "get_refresh_channel: found %s on kernel cmdline", channel)
+            return channel
         if 'channel' in self.ai_data:
             return self.ai_data['channel']
 

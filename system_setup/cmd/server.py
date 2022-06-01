@@ -56,7 +56,7 @@ def main():
     opts = parser.parse_args(sys.argv[1:])
     logdir = LOGDIR
     opts.snaps_from_examples = False
-    opts.kernel_cmdline = ""
+    opts.kernel_cmdline = {}
     opts.machine_config = NOPROBERARG
     if opts.dry_run:
         logdir = opts.output_base

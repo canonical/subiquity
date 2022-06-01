@@ -16,7 +16,10 @@
 import argparse
 import logging
 import os
+import shlex
 import sys
+
+import attr
 
 from subiquitycore.log import setup_logger
 
@@ -24,6 +27,30 @@ from .common import (
     LOGDIR,
     setup_environment,
     )
+
+
+@attr.s(auto_attribs=True)
+class CommandLineParams:
+    _raw: str
+    _tokens: set = attr.Factory(set)
+    _values: dict = attr.Factory(dict)
+
+    @classmethod
+    def from_cmdline(cls, cmdline):
+        r = cls(cmdline)
+        for tok in shlex.split(cmdline):
+            if '=' in tok:
+                k, v = tok.split('=', 1)
+                r._values[k] = v
+            else:
+                r._tokens.add(tok)
+        return r
+
+    def __contains__(self, item):
+        return item in self._tokens
+
+    def get(self, key, default=None):
+        return self._values.get(key, default)
 
 
 def make_server_args_parser():
@@ -48,7 +75,9 @@ def make_server_args_parser():
               'or autoinstall data from cloud-init.'))
     with open('/proc/cmdline') as fp:
         cmdline = fp.read()
-    parser.add_argument('--kernel-cmdline', action='store', default=cmdline)
+    parser.add_argument(
+        '--kernel-cmdline', action='store', default=cmdline,
+        type=CommandLineParams.from_cmdline)
     parser.add_argument(
         '--snaps-from-examples', action='store_const', const=True,
         dest="snaps_from_examples",
@@ -115,6 +144,7 @@ def main():
     version = os.environ.get("SNAP_REVISION", "unknown")
     logger.info("Starting Subiquity server revision {}".format(version))
     logger.info("Arguments passed: {}".format(sys.argv))
+    logger.debug("Kernel commandline: {}".format(opts.kernel_cmdline))
 
     server = SubiquityServer(opts, block_log_dir)
 
