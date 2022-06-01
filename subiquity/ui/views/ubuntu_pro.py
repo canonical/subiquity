@@ -43,7 +43,11 @@ from subiquitycore.ui.container import (
     )
 from subiquitycore.ui.form import (
     Form,
+    SubForm,
+    SubFormField,
+    NO_HELP,
     simple_field,
+    RadioButtonField,
     WantsToKnowFormField,
     )
 from subiquitycore.ui.spinner import (
@@ -61,10 +65,6 @@ from subiquitycore.ui.interactive import StringEditor
 
 
 log = logging.getLogger('subiquity.ui.views.ubuntu_pro')
-
-ua_help = _("If you want to enroll this system using your Ubuntu Pro "
-            "subscription, enter your Ubuntu Pro token here. "
-            "Otherwise, leave this blank.")
 
 
 class UATokenEditor(StringEditor, WantsToKnowFormField):
@@ -87,15 +87,56 @@ class UATokenEditor(StringEditor, WantsToKnowFormField):
         return super().valid_char(ch)
 
 
+class UbuntuProTokenForm(SubForm):
+    """ Represents a sub-form requesting Ubuntu Pro token.
+    +---------------------------------------------------------+
+    |      Contract token: C123456789ABCDEF                   |
+    +---------------------------------------------------------+
+    """
+    UATokenField = simple_field(UATokenEditor)
+
+    token = UATokenField(_("Contract token:"), help=NO_HELP)
+
+
 class UbuntuProForm(Form):
     """
     Represents a form requesting Ubuntu Pro information
+    +---------------------------------------------------------+
+    | (X)  Enable now with my contract token                  |
+    |                                                         |
+    |      Contract token: C123456789ABCDEF                   |
+    |                                                         |
+    | ( )  Skip Ubuntu Pro for now                            |
+    |                                                         |
+    |                         [ Done ]                        |
+    |                         [ Back ]                        |
+    +---------------------------------------------------------+
     """
     cancel_label = _("Back")
+    group = []
 
-    UATokenField = simple_field(UATokenEditor)
+    with_token = RadioButtonField(
+            group,
+            _("Enable now with my contract token"), help=NO_HELP)
+    token_form = SubFormField(UbuntuProTokenForm, "", help=NO_HELP)
+    skip_ua = RadioButtonField(
+            group,
+            _("Skip Ubuntu Pro for now"), help=NO_HELP)
 
-    token = UATokenField(_("Ubuntu Pro token:"), help=ua_help)
+    def __init__(self, initial):
+        super().__init__(initial)
+        connect_signal(self.with_token.widget,
+                       'change', self._toggle_token_input)
+
+        if not initial["token_form"]["token"]:
+            self.skip_ua.widget.state = True
+            self.with_token.widget.state = False
+        else:
+            self.skip_ua.widget.state = False
+            self.with_token.widget.state = True
+
+    def _toggle_token_input(self, sender, new_value):
+        self.token_form.enabled = new_value
 
 
 class CheckingUAToken(WidgetWrap):
@@ -124,17 +165,37 @@ class CheckingUAToken(WidgetWrap):
 
 
 class UbuntuProView(BaseView):
-    """ Represent the view of the Ubuntu Pro configuration. """
+    """ Represent the view of the Ubuntu Pro configuration.
+    +---------------------------------------------------------+
+    | Enable Ubuntu Pro                              [ Help ] |
+    +---------------------------------------------------------+
+    | If you want to enable Ubuntu Pro, you can do it now     |
+    | with your contract token. Otherwise, you can skip this  |
+    | step and enable Ubuntu Pro later using the command      |
+    | 'ua attach'.                                            |
+    |                                                         |
+    | (X)  Enable now with my contract token                  |
+    |                                                         |
+    |      Contract token: C123456789ABCDEF                   |
+    |                                                         |
+    | ( )  Skip Ubuntu Pro for now                            |
+    |                                                         |
+    |                         [ Done ]                        |
+    |                         [ Back ]                        |
+    +---------------------------------------------------------+
+    """
 
     title = _("Enable Ubuntu Pro")
-    excerpt = _("Enter your Ubuntu Pro token if you want to enroll "
-                "this system.")
+    excerpt = _("If you want to enable Ubuntu Pro, you can do it now with"
+                " your contract token. "
+                "Otherwise, you can skip this step and enable Ubuntu Pro"
+                " later using the command `ua attach`.")
 
     def __init__(self, controller, token: str):
         """ Initialize the view with the default value for the token. """
         self.controller = controller
 
-        self.form = UbuntuProForm(initial={"token": token})
+        self.form = UbuntuProForm(initial={"token_form": {"token": token}})
 
         def on_cancel(_: UbuntuProForm):
             self.cancel()
@@ -148,8 +209,8 @@ class UbuntuProView(BaseView):
         """ If no token was supplied, move on to the next screen.
         If a token was provided, open the loading dialog and
         asynchronously check if the token is valid. """
-        token: str = form.token.value
-        if token:
+        results = form.as_data()
+        if not results["skip_ua"]:
             def on_success(services: List[UbuntuProService]) -> None:
                 self.remove_overlay()
                 self.show_activable_services(services)
@@ -163,6 +224,7 @@ class UbuntuProView(BaseView):
                 elif status == UbuntuProCheckTokenStatus.UNKNOWN_ERROR:
                     self.show_unknown_error()
 
+            token: str = results["token_form"]["token"]
             checking_token_overlay = CheckingUAToken(self)
             self.show_overlay(checking_token_overlay,
                               width=checking_token_overlay.width,
@@ -172,7 +234,7 @@ class UbuntuProView(BaseView):
                                         on_success=on_success,
                                         on_failure=on_failure)
         else:
-            self.controller.done(token)
+            self.controller.done("")
 
     def cancel(self) -> None:
         """ Called when the user presses the Back button. """
@@ -326,7 +388,8 @@ class ShowServicesWidget(Stretchy):
 
     def ok(self, sender) -> None:
         """ Close the overlay and submit the token. """
-        self.parent.controller.done(self.parent.form.token.value)
+        token = self.parent.form.as_data()["token_form"]["token"]
+        self.parent.controller.done(token)
 
 
 class ContinueAnywayWidget(Stretchy):
@@ -361,4 +424,5 @@ class ContinueAnywayWidget(Stretchy):
 
     def cont(self, sender) -> None:
         """ Move on to the next screen. """
-        self.parent.controller.done(self.parent.form.token.value)
+        token = self.parent.form.as_data()["token_form"]["token"]
+        self.parent.controller.done(token)

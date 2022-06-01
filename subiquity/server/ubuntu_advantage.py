@@ -79,11 +79,15 @@ class MockedUAInterfaceStrategy(UAInterfaceStrategy):
         UA token. No actual query is done to the UA servers in this
         implementation. Instead, we create a response based on the following
         rules:
+        * Empty tokens are considered invalid.
         * Tokens starting with "x" will be considered expired.
         * Tokens starting with "i" will be considered invalid.
         * Tokens starting with "f" will generate an internal error.
         """
         await asyncio.sleep(1 / self.scale_factor)
+
+        if not token:
+            raise InvalidTokenError(token)
 
         if token[0] == "x":
             path = "examples/uaclient-status-expired.json"
@@ -118,6 +122,11 @@ class UAClientUAInterfaceStrategy(UAInterfaceStrategy):
         UA token. The information will be queried using the UA client
         executable passed to the initializer.
         """
+        if not token:
+            # u-a-c does not produce the expected output when the contract
+            # token is empty ; so let's not call it at all.
+            raise InvalidTokenError(token)
+
         command = tuple(self.executable) + (
             "status",
             "--format", "json",
