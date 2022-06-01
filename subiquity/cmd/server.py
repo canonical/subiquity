@@ -101,7 +101,7 @@ def make_server_args_parser():
         default='.subiquity',
         help='in dryrun, control basedir of files')
     parser.add_argument(
-        '--storage-version', action='store', type=int, default=1)
+        '--storage-version', action='store', type=int)
     parser.add_argument(
         '--use-os-prober', action='store_true', default=False)
     return parser
@@ -115,6 +115,9 @@ def main():
     from subiquity.server.server import SubiquityServer
     parser = make_server_args_parser()
     opts = parser.parse_args(sys.argv[1:])
+    if opts.storage_version is None:
+        opts.storage_version = int(opts.kernel_cmdline.get(
+            'subiquity-storage-version', 1))
     logdir = LOGDIR
     if opts.dry_run:
         if opts.snaps_from_examples is None:
