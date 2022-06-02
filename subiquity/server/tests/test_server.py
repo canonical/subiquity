@@ -33,7 +33,7 @@ class TestAutoinstallLoad(SubiTestCase):
         opts.dry_run = True
         opts.output_base = self.tempdir
         opts.machine_config = 'examples/simple.json'
-        opts.kernel_cmdline = ''
+        opts.kernel_cmdline = {}
         opts.autoinstall = None
         self.server = SubiquityServer(opts, None)
         self.server.base_model = Mock()

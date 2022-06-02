@@ -29,7 +29,7 @@ def make_app():
     parser = make_server_args_parser()
     opts, unknown = parser.parse_known_args(['--dry-run'])
     opts.machine_config = NOPROBERARG
-    opts.kernel_cmdline = ""
+    opts.kernel_cmdline = {}
     opts.snaps_from_examples = False
     app = SystemSetupServer(opts, '')
     app.base_model = app.make_model()
