@@ -35,9 +35,11 @@ from subiquitycore.ui.buttons import (
     back_btn,
     cancel_btn,
     done_btn,
+    menu_btn,
     ok_btn,
     )
 from subiquitycore.ui.container import (
+    ListBox,
     Pile,
     WidgetWrap,
     )
@@ -58,6 +60,7 @@ from subiquitycore.ui.stretchy import (
     )
 from subiquitycore.ui.utils import (
     button_pile,
+    screen,
     SomethingFailed,
     )
 
@@ -203,7 +206,22 @@ class UbuntuProView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', on_cancel)
 
-        super().__init__(self.form.as_screen(excerpt=_(self.excerpt)))
+        about_pro_btn = menu_btn(
+                _("About Ubuntu Pro"),
+                on_press=lambda unused: self.show_about_ubuntu_pro())
+
+        bp = button_pile([about_pro_btn])
+        bp.align = "left"
+        rows = [
+            bp,
+            Text(""),
+        ] + self.form.as_rows()
+        super().__init__(
+            screen(
+                ListBox(rows),
+                self.form.buttons,
+                excerpt=self.excerpt,
+                focus_buttons=True))
 
     def done(self, form: UbuntuProForm) -> None:
         """ If no token was supplied, move on to the next screen.
@@ -239,6 +257,10 @@ class UbuntuProView(BaseView):
     def cancel(self) -> None:
         """ Called when the user presses the Back button. """
         self.controller.cancel()
+
+    def show_about_ubuntu_pro(self) -> None:
+        """ Display an overlay that shows information about Ubuntu Pro. """
+        self.show_stretchy_overlay(AboutProWidget(self))
 
     def show_invalid_token(self) -> None:
         """ Display an overlay that indicates that the user-supplied token is
