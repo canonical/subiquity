@@ -192,8 +192,8 @@ class UbuntuProView(BaseView):
     +---------------------------------------------------------+
     """
 
-    title = _("Enable Ubuntu Pro")
-    excerpt = _("If you want to enable Ubuntu Pro, you can do it now with"
+    title = _("Upgrade to Ubuntu Pro")
+    excerpt = _("If you want to upgrade to Ubuntu Pro, you can do it now with"
                 " your contract token. "
                 "Otherwise, you can skip this step.")
 
