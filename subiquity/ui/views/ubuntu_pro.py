@@ -104,19 +104,12 @@ class ContractTokenForm(SubForm):
             help=_("This is your Ubuntu Pro token"))
 
 
-class UbuntuProForm(Form):
-    """
-    Represents a form requesting Ubuntu Pro information
+class UpgradeModeForm(Form):
+    """ Represents a form requesting the Ubuntu Pro credentials.
     +---------------------------------------------------------+
-    | (X)  Enable now with my contract token                  |
-    |                                                         |
+    | (X)  Add token manually                                 |
     |      Token: C123456789ABCDEF                            |
     |             This is your Ubuntu Pro token               |
-    |                                                         |
-    | ( )  Skip Ubuntu Pro for now                            |
-    |                                                         |
-    |      You can always enable Ubuntu Pro later via the     |
-    |      'ua attach' command.                               |
     |                                                         |
     |                       [ Continue ]                      |
     |                       [ Back     ]                      |
@@ -124,31 +117,53 @@ class UbuntuProForm(Form):
     """
     cancel_label = _("Back")
     ok_label = _("Continue")
-    group = []
+    group: List[RadioButtonField] = []
 
-    with_token = RadioButtonField(
-            group,
-            _("Enable now with my contract token"), help=NO_HELP)
-    token_form = SubFormField(ContractTokenForm, "", help=NO_HELP)
-    skip_ua = RadioButtonField(
+    with_contract_token = RadioButtonField(
+            group, _("Add token manually"),
+            help=NO_HELP)
+    with_contract_token_subform = SubFormField(
+            ContractTokenForm, "", help=NO_HELP)
+
+    def __init__(self, initial) -> None:
+        """ Initializer that configures the callback to run when the radio is
+        checked/unchecked. Since there is a single radio for now, it can
+        only be unchecked programmatically. """
+        super().__init__(initial)
+        connect_signal(self.with_contract_token.widget,
+                       'change', self._toggle_contract_token_input)
+
+    def _toggle_contract_token_input(self, sender, new_value):
+        """ Enable/disable the sub-form that requests the contract token. """
+        self.with_contract_token_subform.enabled = new_value
+
+
+class UpgradeYesNoForm(Form):
+    """ Represents a form asking if we want to upgrade to Ubuntu Pro.
+    +---------------------------------------------------------+
+    | (X)  Upgrade to Ubuntu Pro                              |
+    |                                                         |
+    | ( )  Do this later                                      |
+    |                                                         |
+    |      You can always enable Ubuntu Pro later via the     |
+    |      'ua attach' command                                |
+    |                                                         |
+    |                       [ Continue ]                      |
+    |                       [ Back     ]                      |
+    +---------------------------------------------------------+
+    """
+
+    cancel_label = _("Back")
+    ok_label = _("Continue")
+    group: List[RadioButtonField] = []
+
+    upgrade = RadioButtonField(
+            group, _("Upgrade to Ubuntu Pro"),
+            help=NO_HELP)
+    skip = RadioButtonField(
             group, _("Do this later"),
             help="\n" + _("You can always enable Ubuntu Pro later via the"
                           " 'ua attach' command."))
-
-    def __init__(self, initial):
-        super().__init__(initial)
-        connect_signal(self.with_token.widget,
-                       'change', self._toggle_token_input)
-
-        if not initial["token_form"]["token"]:
-            self.skip_ua.widget.state = True
-            self.with_token.widget.state = False
-        else:
-            self.skip_ua.widget.state = False
-            self.with_token.widget.state = True
-
-    def _toggle_token_input(self, sender, new_value):
-        self.token_form.enabled = new_value
 
 
 class CheckingContractToken(WidgetWrap):
@@ -177,43 +192,99 @@ class CheckingContractToken(WidgetWrap):
 
 
 class UbuntuProView(BaseView):
-    """ Represent the view of the Ubuntu Pro configuration.
-    +---------------------------------------------------------+
-    | Enable Ubuntu Pro                              [ Help ] |
-    +---------------------------------------------------------+
-    | If you want to enable Ubuntu Pro, you can do it now     |
-    | with your contract token. Otherwise, you can skip this  |
-    | step and enable Ubuntu Pro later using the command      |
-    | 'ua attach'.                                            |
-    |                                                         |
-    | (X)  Enable now with my contract token                  |
-    |                                                         |
-    |      Token: C123456789ABCDEF                            |
-    |             This is your Ubuntu Pro token               |
-    |                                                         |
-    | ( )  Skip Ubuntu Pro for now                            |
-    |                                                         |
-    |                       [ Continue ]                      |
-    |                       [ Back     ]                      |
-    +---------------------------------------------------------+
-    """
+    """ Represent the view of the Ubuntu Pro configuration. """
 
     title = _("Upgrade to Ubuntu Pro")
-    excerpt = _("If you want to upgrade to Ubuntu Pro, you can do it now with"
-                " your contract token. "
-                "Otherwise, you can skip this step.")
 
     def __init__(self, controller, token: str):
         """ Initialize the view with the default value for the token. """
         self.controller = controller
 
-        self.form = UbuntuProForm(initial={"token_form": {"token": token}})
+        self.upgrade_yes_no_form = UpgradeYesNoForm(initial={
+            "skip": not token,
+            "upgrade": bool(token),
+            })
+        self.upgrade_mode_form = UpgradeModeForm(initial={
+            "with_contract_token_subform": {"token": token},
+            })
 
-        def on_cancel(_: UbuntuProForm):
+        def on_upgrade_yes_no_cancel(unused: UpgradeYesNoForm):
+            """ Function to call when hitting Done from the upgrade/skip
+            screen. """
             self.cancel()
 
-        connect_signal(self.form, 'submit', self.done)
-        connect_signal(self.form, 'cancel', on_cancel)
+        def on_upgrade_mode_cancel(unused: UpgradeModeForm):
+            """ Function to call when hitting Back from the contract token
+            form. """
+            self._w = self.upgrade_yes_no_screen()
+
+        connect_signal(self.upgrade_yes_no_form,
+                       'submit', self.upgrade_yes_no_done)
+        connect_signal(self.upgrade_yes_no_form,
+                       'cancel', on_upgrade_yes_no_cancel)
+        connect_signal(self.upgrade_mode_form,
+                       'submit', self.upgrade_mode_done)
+        connect_signal(self.upgrade_mode_form,
+                       'cancel', on_upgrade_mode_cancel)
+
+        super().__init__(self.upgrade_yes_no_screen())
+
+    def upgrade_mode_screen(self) -> Widget:
+        """ Return a screen that asks the user for his information (e.g.,
+        contract token).
+        +---------------------------------------------------------+
+        | To upgrade to Ubuntu Pro, you can enter your token      |
+        | manually.                                               |
+        |                                                         |
+        | [ How to Register -> ]                                  |
+        |                                                         |
+        | (X)  Add token manually                                 |
+        |      Token: C123456789ABCDEF                            |
+        |             This is your Ubuntu Pro token               |
+        |                                                         |
+        |                        [ Continue ]                     |
+        |                        [ Back     ]                     |
+        +---------------------------------------------------------+
+        """
+
+        excerpt = _("To upgrade to Ubuntu Pro, you can enter your token"
+                    " manually.")
+
+        how_to_register_btn = menu_btn(
+                _("How to Register"),
+                on_press=lambda unused: self.show_how_to_register()
+                )
+        bp = button_pile([how_to_register_btn])
+        bp.align = "left"
+        rows = [
+            bp,
+            Text(""),
+        ] + self.upgrade_mode_form.as_rows()
+        return screen(
+                ListBox(rows),
+                self.upgrade_mode_form.buttons,
+                excerpt=excerpt,
+                focus_buttons=True)
+
+    def upgrade_yes_no_screen(self) -> Widget:
+        """ Return a screen that asks the user to skip or upgrade.
+        +---------------------------------------------------------+
+        | Upgrade this machine to Ubuntu Pro or skip this step.   |
+        |                                                         |
+        | [ About Ubuntu Pro -> ]                                 |
+        |                                                         |
+        | ( )  Upgrade to Ubuntu Pro                              |
+        |                                                         |
+        | (X)  Do this later                                      |
+        |      You can always enable Ubuntu Pro later via the     |
+        |      'ua attach' command.                               |
+        |                                                         |
+        |                        [ Continue ]                     |
+        |                        [ Back     ]                     |
+        +---------------------------------------------------------+
+        """
+
+        excerpt = _("Upgrade this machine to Ubuntu Pro or skip this step.")
 
         about_pro_btn = menu_btn(
                 _("About Ubuntu Pro"),
@@ -224,44 +295,46 @@ class UbuntuProView(BaseView):
         rows = [
             bp,
             Text(""),
-        ] + self.form.as_rows()
-        super().__init__(
-            screen(
+        ] + self.upgrade_yes_no_form.as_rows()
+        return screen(
                 ListBox(rows),
-                self.form.buttons,
-                excerpt=self.excerpt,
-                focus_buttons=True))
+                self.upgrade_yes_no_form.buttons,
+                excerpt=excerpt,
+                focus_buttons=True)
 
-    def done(self, form: UbuntuProForm) -> None:
-        """ If no token was supplied, move on to the next screen.
-        If a token was provided, open the loading dialog and
-        asynchronously check if the token is valid. """
-        results = form.as_data()
-        if not results["skip_ua"]:
-            def on_success(services: List[UbuntuProService]) -> None:
-                self.remove_overlay()
-                self.show_activable_services(services)
+    def upgrade_mode_done(self, form: UpgradeModeForm) -> None:
+        """ Open the loading dialog and asynchronously check if the token is
+        valid. """
+        def on_success(services: List[UbuntuProService]) -> None:
+            self.remove_overlay()
+            self.show_activable_services(services)
 
-            def on_failure(status: UbuntuProCheckTokenStatus) -> None:
-                self.remove_overlay()
-                if status == UbuntuProCheckTokenStatus.INVALID_TOKEN:
-                    self.show_invalid_token()
-                elif status == UbuntuProCheckTokenStatus.EXPIRED_TOKEN:
-                    self.show_expired_token()
-                elif status == UbuntuProCheckTokenStatus.UNKNOWN_ERROR:
-                    self.show_unknown_error()
+        def on_failure(status: UbuntuProCheckTokenStatus) -> None:
+            self.remove_overlay()
+            if status == UbuntuProCheckTokenStatus.INVALID_TOKEN:
+                self.show_invalid_token()
+            elif status == UbuntuProCheckTokenStatus.EXPIRED_TOKEN:
+                self.show_expired_token()
+            elif status == UbuntuProCheckTokenStatus.UNKNOWN_ERROR:
+                self.show_unknown_error()
 
-            token: str = results["token_form"]["token"]
-            checking_token_overlay = CheckingContractToken(self)
-            self.show_overlay(checking_token_overlay,
-                              width=checking_token_overlay.width,
-                              min_width=None)
+        token: str = form.with_contract_token_subform.value["token"]
+        checking_token_overlay = CheckingContractToken(self)
+        self.show_overlay(checking_token_overlay,
+                          width=checking_token_overlay.width,
+                          min_width=None)
 
-            self.controller.check_token(token,
-                                        on_success=on_success,
-                                        on_failure=on_failure)
-        else:
+        self.controller.check_token(token,
+                                    on_success=on_success,
+                                    on_failure=on_failure)
+
+    def upgrade_yes_no_done(self, form: UpgradeYesNoForm) -> None:
+        """ If skip is selected, move on to the next screen.
+        Otherwise, show the form requesting the contract token. """
+        if form.skip.value:
             self.controller.done("")
+        else:
+            self._w = self.upgrade_mode_screen()
 
     def cancel(self) -> None:
         """ Called when the user presses the Back button. """
@@ -463,8 +536,8 @@ class ShowServicesWidget(Stretchy):
 
     def ok(self, sender) -> None:
         """ Close the overlay and submit the token. """
-        token = self.parent.form.as_data()["token_form"]["token"]
-        self.parent.controller.done(token)
+        subform = self.parent.upgrade_mode_form.with_contract_token_subform
+        self.parent.controller.done(subform.value["token"])
 
 
 class ContinueAnywayWidget(Stretchy):
@@ -499,5 +572,5 @@ class ContinueAnywayWidget(Stretchy):
 
     def cont(self, sender) -> None:
         """ Move on to the next screen. """
-        token = self.parent.form.as_data()["token_form"]["token"]
-        self.parent.controller.done(token)
+        subform = self.parent.upgrade_mode_form.with_contract_token_subform
+        self.parent.controller.done(subform.value["token"])
