@@ -269,6 +269,11 @@ class UbuntuProView(BaseView):
         """ Display an overlay that shows information about Ubuntu Pro. """
         self.show_stretchy_overlay(AboutProWidget(self))
 
+    def show_how_to_register(self) -> None:
+        """ Display an overlay that shows instructions to register to
+        Ubuntu Pro. """
+        self.show_stretchy_overlay(HowToRegisterWidget(self))
+
     def show_invalid_token(self) -> None:
         """ Display an overlay that indicates that the user-supplied token is
         invalid. """
@@ -369,6 +374,45 @@ class AboutProWidget(Stretchy):
         ]
 
         super().__init__(title, widgets, stretchy_index=2, focus_index=7)
+
+    def close(self) -> None:
+        """ Close the overlay. """
+        self.parent.remove_overlay()
+
+
+class HowToRegisterWidget(Stretchy):
+    """ Widget showing some instructions to register to Ubuntu Pro.
+    +-------------------- How to register --------------------+
+    |                                                         |
+    | You can register for a free Ubuntu One account and get  |
+    | a personal token for up to 3 machines.                  |
+    |                                                         |
+    | To register an account, visit ubuntu.com/pro on another |
+    | device.                                                 |
+    |                                                         |
+    |                       [ Continue ]                      |
+    +---------------------------------------------------------+
+    """
+    def __init__(self, parent: UbuntuProView) -> None:
+        """ Initializes the widget."""
+        self.parent = parent
+
+        ok = ok_btn(label=_("Continue"), on_press=lambda unused: self.close())
+
+        title = _("How to register")
+        header = _("You can register for a free Ubuntu One account and get a"
+                   " personal token for up to 3 machines.")
+
+        widgets: List[Widget] = [
+            Text(header),
+            Text(""),
+            Text("To register an account, visit ubuntu.com/pro on another"
+                 " device."),
+            Text(""),
+            button_pile([ok]),
+        ]
+
+        super().__init__(title, widgets, stretchy_index=2, focus_index=4)
 
     def close(self) -> None:
         """ Close the overlay. """
