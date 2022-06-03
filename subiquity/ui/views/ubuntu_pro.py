@@ -50,6 +50,7 @@ from subiquitycore.ui.form import (
     NO_HELP,
     simple_field,
     RadioButtonField,
+    ReadOnlyField,
     WantsToKnowFormField,
     )
 from subiquitycore.ui.spinner import (
@@ -61,6 +62,7 @@ from subiquitycore.ui.stretchy import (
 from subiquitycore.ui.utils import (
     button_pile,
     screen,
+    SomethingFailed,
     )
 
 from subiquitycore.ui.interactive import StringEditor
@@ -109,20 +111,44 @@ class ContractTokenForm(SubForm):
             return _("Invalid token: should be between 24 and 30 characters")
 
 
-class UpgradeModeForm(Form):
-    """ Represents a form requesting the Ubuntu Pro credentials.
+class UbuntuOneForm(SubForm):
+    """ Represents a sub-form showing a user-code and requesting the user to
+    browse ubuntu.com/pro/attach.
     +---------------------------------------------------------+
-    | (X)  Add token manually                                 |
+    |      Code: 1A3-4V6                                      |
+    |            Attach machine via your Ubuntu One account   |
+    +---------------------------------------------------------+
+    """
+    user_code = ReadOnlyField(
+            _("Code:"),
+            help=_("Attach machine via your Ubuntu One account"))
+
+
+class UpgradeModeForm(Form):
+    """ Represents a form requesting information to enable Ubuntu Pro.
+    +---------------------------------------------------------+
+    | (X)  Enter code on ubuntu.com/pro/attach                |
+    |      Code: 1A3-4V6                                      |
+    |            Attach machine via your Ubuntu One account   |
+    |                                                         |
+    | ( )  Add token manually                                 |
     |      Token: C123456789ABCDEF                            |
     |             This is your Ubuntu Pro token               |
     |                                                         |
-    |                       [ Continue ]                      |
+    |                       [ Waiting  ]                      |
     |                       [ Back     ]                      |
     +---------------------------------------------------------+
     """
     cancel_label = _("Back")
     ok_label = _("Continue")
+    ok_label_waiting = _("Waiting")
     group: List[RadioButtonField] = []
+
+    with_ubuntu_one = RadioButtonField(
+            group, _("Enter code on ubuntu.com/pro/attach"),
+            help=NO_HELP)
+    with_ubuntu_one_subform = SubFormField(
+            UbuntuOneForm, "", help=NO_HELP)
 
     with_contract_token = RadioButtonField(
             group, _("Add token manually"),
@@ -131,16 +157,41 @@ class UpgradeModeForm(Form):
             ContractTokenForm, "", help=NO_HELP)
 
     def __init__(self, initial) -> None:
-        """ Initializer that configures the callback to run when the radio is
-        checked/unchecked. Since there is a single radio for now, it can
-        only be unchecked programmatically. """
+        """ Initializer that configures the callback to run when the radios are
+        checked/unchecked. """
         super().__init__(initial)
         connect_signal(self.with_contract_token.widget,
                        'change', self._toggle_contract_token_input)
+        connect_signal(self.with_ubuntu_one.widget,
+                       'change', self._toggle_ubuntu_one_input)
+
+        if initial["with_contract_token_subform"]["token"]:
+            self._toggle_contract_token_input(None, True)
+            self._toggle_ubuntu_one_input(None, False)
+        else:
+            self._toggle_contract_token_input(None, False)
+            self._toggle_ubuntu_one_input(None, True)
+
+        # Make sure the OK button is disabled when we're using the user-code.
+        self.with_ubuntu_one_subform.widget.form.user_code.in_error = True
 
     def _toggle_contract_token_input(self, sender, new_value):
         """ Enable/disable the sub-form that requests the contract token. """
         self.with_contract_token_subform.enabled = new_value
+        if new_value:
+            self.buttons.base_widget[0].set_label(self.ok_label)
+
+    def _toggle_ubuntu_one_input(self, sender, new_value):
+        """ Enable/disable the sub-form that shows the user-code. """
+        self.with_ubuntu_one_subform.enabled = new_value
+        if new_value:
+            self.buttons.base_widget[0].set_label(self.ok_label_waiting)
+
+    def set_user_code(self, user_code: str) -> None:
+        """ Show the new value of user code in a green backgroud. """
+        value = ("user_code", user_code)
+
+        self.with_ubuntu_one_subform.widget.form.user_code.value = value
 
 
 class UpgradeYesNoForm(Form):
@@ -212,6 +263,8 @@ class UbuntuProView(BaseView):
             })
         self.upgrade_mode_form = UpgradeModeForm(initial={
             "with_contract_token_subform": {"token": token},
+            "with_contract_token": bool(token),
+            "with_ubuntu_one": not token,
             })
 
         def on_upgrade_yes_no_cancel(unused: UpgradeYesNoForm):
@@ -236,15 +289,20 @@ class UbuntuProView(BaseView):
         super().__init__(self.upgrade_yes_no_screen())
 
     def upgrade_mode_screen(self) -> Widget:
-        """ Return a screen that asks the user for his information (e.g.,
-        contract token).
+        """ Return a screen that asks the user to provide a contract token or
+        input a user-code on the portal.
         +---------------------------------------------------------+
-        | To upgrade to Ubuntu Pro, you can enter your token      |
-        | manually.                                               |
+        | To upgrade to Ubuntu Pro, use your existing free        |
+        | personal, or company Ubuntu One account, or provide a   |
+        | token.                                                  |
         |                                                         |
         | [ How to register -> ]                                  |
         |                                                         |
-        | (X)  Add token manually                                 |
+        | (X)  Enter code on ubuntu.com/pro/attach                |
+        |      Code: 1A3-4V6                                      |
+        |            Attach machine via your Ubuntu One account   |
+        |                                                         |
+        | ( )  Add token manually                                 |
         |      Token: C123456789ABCDEF                            |
         |             This is your Ubuntu Pro token               |
         |                                                         |
@@ -253,8 +311,9 @@ class UbuntuProView(BaseView):
         +---------------------------------------------------------+
         """
 
-        excerpt = _("To upgrade to Ubuntu Pro, you can enter your token"
-                    " manually.")
+        excerpt = _("To upgrade to Ubuntu Pro, use your existing free"
+                    " personal, or company Ubuntu One account, or provide a"
+                    " token.")
 
         how_to_register_btn = menu_btn(
                 _("How to register"),
@@ -399,19 +458,29 @@ class UbuntuProView(BaseView):
                 excerpt=None,
                 focus_buttons=True)
 
+    def contract_token_check_ok(self, subscription: UbuntuProSubscription) \
+            -> None:
+        """ Close the "checking-token" overlay and open the token added overlay
+        instead. """
+        def show_subscription() -> None:
+            self.remove_overlay()
+            self.show_subscription(subscription=subscription)
+
+        self.remove_overlay()
+        widget = TokenAddedWidget(
+                parent=self,
+                on_continue=show_subscription)
+        self.show_stretchy_overlay(widget)
+
     def upgrade_mode_done(self, form: UpgradeModeForm) -> None:
         """ Open the loading dialog and asynchronously check if the token is
         valid. """
         def on_success(subscription: UbuntuProSubscription) -> None:
-            def show_subscription() -> None:
-                self.remove_overlay()
-                self.show_subscription(subscription=subscription)
-
-            self.remove_overlay()
-            widget = TokenAddedWidget(
-                    parent=self,
-                    on_continue=show_subscription)
-            self.show_stretchy_overlay(widget)
+            def noop() -> None:
+                pass
+            if self.controller.cs_initiated:
+                self.controller.contract_selection_cancel(on_cancelled=noop)
+            self.contract_token_check_ok(subscription)
 
         def on_failure(status: UbuntuProCheckTokenStatus) -> None:
             self.remove_overlay()
@@ -439,13 +508,60 @@ class UbuntuProView(BaseView):
                                     on_success=on_success,
                                     on_failure=on_failure)
 
+    def cs_initiated(self, user_code: str) -> None:
+        """ Function to call when the contract selection has successfully
+        initiated. It will start the polling asynchronously. """
+        def reinitiate() -> None:
+            self.controller.contract_selection_initiate(
+                    on_initiated=self.cs_initiated)
+
+        self.upgrade_mode_form.set_user_code(user_code)
+        self.controller.contract_selection_wait(
+                on_contract_selected=self.on_contract_selected,
+                on_timeout=reinitiate,
+                )
+
+    def on_contract_selected(self, contract_token: str) -> None:
+        """ Function to call when the contract selection has finished
+        succesfully. """
+        checking_token_overlay = CheckingContractToken(self)
+        self.show_overlay(checking_token_overlay,
+                          width=checking_token_overlay.width,
+                          min_width=None)
+
+        def on_failure(status: UbuntuProCheckTokenStatus) -> None:
+            """ Open a message box stating that the contract-token
+            obtained via contract-selection is not valid ; and then go
+            back to the previous screen. """
+
+            log.error("contract-token obtained via contract-selection"
+                      " counld not be validated: %r", status)
+            self._w = self.upgrade_mode_screen()
+            self.show_stretchy_overlay(SomethingFailed(
+                self,
+                msg=_("Internal error"),
+                stderr=_("Could not add the contract token selected.")
+            ))
+
+        # It would be uncommon to have this call fail in production
+        # because the contract token obtained via contract-selection is
+        # expected to be valid. During testing, a mismatch in the
+        # environment used (e.g., staging in subiquity and production
+        # in u-a-c) can lead to this error though.
+        self.controller.check_token(
+                contract_token,
+                on_success=self.contract_token_check_ok,
+                on_failure=on_failure)
+
     def upgrade_yes_no_done(self, form: UpgradeYesNoForm) -> None:
         """ If skip is selected, move on to the next screen.
-        Otherwise, show the form requesting the contract token. """
+        Otherwise, show the form requesting a contract token. """
         if form.skip.value:
             self.controller.done("")
         else:
             self._w = self.upgrade_mode_screen()
+            self.controller.contract_selection_initiate(
+                    on_initiated=self.cs_initiated)
 
     def cancel(self) -> None:
         """ Called when the user presses the Back button. """

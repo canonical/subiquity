@@ -71,6 +71,8 @@ PALETTE_COLOR = [
 
     ('starred',             'orange',  'bg'),
     ('starred focus',       'orange',  'gray'),
+
+    ('user_code',           'fg',      'good'),
 ]
 
 PALETTE_MONO = [
@@ -110,6 +112,8 @@ PALETTE_MONO = [
 
     ('starred',             'white',   'black'),
     ('starred focus',       'black',   'white'),
+
+    ('user_code',           'white',   'black'),
 ]
 
 urwid_8_names = (

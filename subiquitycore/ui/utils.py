@@ -179,6 +179,7 @@ STYLE_NAMES = set([
     'scrollbar',
     'string_input focus',
     'string_input',
+    'user_code',
 ])
 
 
