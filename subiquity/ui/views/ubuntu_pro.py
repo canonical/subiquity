@@ -213,7 +213,20 @@ class UbuntuProView(BaseView):
 
 
 class ShowServicesWidget(Stretchy):
-    """ Widget to show the activable services for UA subscription. """
+    """ Widget to show the activable services for UA subscription.
+    +------------------ Activable Services -------------------+
+    |                                                         |
+    | List of services that are activable through your Ubuntu |
+    | Pro subscription:                                       |
+    | * ...                                                   |
+    | * ...                                                   |
+    |                                                         |
+    | One the installation has finished, you can enable these |
+    | services using the 'ua' command-line tool.              |
+    |                                                         |
+    |                          [ OK ]                         |
+    +---------------------------------------------------------+
+    """
     def __init__(self, parent: UbuntuProView,
                  services: List[UbuntuProService]) -> None:
         """ Initializes the widget by including the list of services as a
@@ -246,7 +259,16 @@ class ShowServicesWidget(Stretchy):
 
 class ContinueAnywayWidget(Stretchy):
     """ Widget that requests the user if he wants to go back or continue
-    anyway. """
+    anyway.
+    +--------------------- Unknown error ---------------------+
+    |                                                         |
+    | Unable to check your subscription information. Do you   |
+    | want to go back or continue anyway?                     |
+    |                                                         |
+    |                   [ Back            ]                   |
+    |                   [ Continue anyway ]                   |
+    +---------------------------------------------------------+
+    """
     def __init__(self, parent: UbuntuProView) -> None:
         """ Initializes the widget by showing two buttons, one to go back and
         one to move forward anyway. """
