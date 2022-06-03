@@ -118,11 +118,12 @@ class UbuntuProForm(Form):
     |      You can always enable Ubuntu Pro later via the     |
     |      'ua attach' command.                               |
     |                                                         |
-    |                         [ Done ]                        |
-    |                         [ Back ]                        |
+    |                       [ Continue ]                      |
+    |                       [ Back     ]                      |
     +---------------------------------------------------------+
     """
     cancel_label = _("Back")
+    ok_label = _("Continue")
     group = []
 
     with_token = RadioButtonField(
@@ -192,8 +193,8 @@ class UbuntuProView(BaseView):
     |                                                         |
     | ( )  Skip Ubuntu Pro for now                            |
     |                                                         |
-    |                         [ Done ]                        |
-    |                         [ Back ]                        |
+    |                       [ Continue ]                      |
+    |                       [ Back     ]                      |
     +---------------------------------------------------------+
     """
 
