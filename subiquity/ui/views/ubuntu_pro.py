@@ -70,7 +70,7 @@ from subiquitycore.ui.interactive import StringEditor
 log = logging.getLogger('subiquity.ui.views.ubuntu_pro')
 
 
-class UATokenEditor(StringEditor, WantsToKnowFormField):
+class ContractTokenEditor(StringEditor, WantsToKnowFormField):
     """ Represent a text-box editor for the Ubuntu Pro Token.  """
     def __init__(self):
         """ Initialize the text-field editor for UA token. """
@@ -90,17 +90,18 @@ class UATokenEditor(StringEditor, WantsToKnowFormField):
         return super().valid_char(ch)
 
 
-class UbuntuProTokenForm(SubForm):
+class ContractTokenForm(SubForm):
     """ Represents a sub-form requesting Ubuntu Pro token.
     +---------------------------------------------------------+
     |      Token: C123456789ABCDEF                            |
     |             This is your Ubuntu Pro token               |
     +---------------------------------------------------------+
     """
-    UATokenField = simple_field(UATokenEditor)
+    ContractTokenField = simple_field(ContractTokenEditor)
 
-    token = UATokenField(_("Token:"),
-                         help=_("This is your Ubuntu Pro token"))
+    token = ContractTokenField(
+            _("Token:"),
+            help=_("This is your Ubuntu Pro token"))
 
 
 class UbuntuProForm(Form):
@@ -127,7 +128,7 @@ class UbuntuProForm(Form):
     with_token = RadioButtonField(
             group,
             _("Enable now with my contract token"), help=NO_HELP)
-    token_form = SubFormField(UbuntuProTokenForm, "", help=NO_HELP)
+    token_form = SubFormField(ContractTokenForm, "", help=NO_HELP)
     skip_ua = RadioButtonField(
             group, _("Do this later"),
             help="\n" + _("You can always enable Ubuntu Pro later via the"
@@ -149,7 +150,7 @@ class UbuntuProForm(Form):
         self.token_form.enabled = new_value
 
 
-class CheckingUAToken(WidgetWrap):
+class CheckingContractToken(WidgetWrap):
     """ Widget displaying a loading animation while checking ubuntu pro
     subscription. """
     def __init__(self, parent: BaseView):
@@ -250,7 +251,7 @@ class UbuntuProView(BaseView):
                     self.show_unknown_error()
 
             token: str = results["token_form"]["token"]
-            checking_token_overlay = CheckingUAToken(self)
+            checking_token_overlay = CheckingContractToken(self)
             self.show_overlay(checking_token_overlay,
                               width=checking_token_overlay.width,
                               min_width=None)
