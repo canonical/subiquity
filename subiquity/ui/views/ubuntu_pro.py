@@ -111,6 +111,9 @@ class UbuntuProForm(Form):
     |                                                         |
     | ( )  Skip Ubuntu Pro for now                            |
     |                                                         |
+    |      You can always enable Ubuntu Pro later via the     |
+    |      'ua attach' command.                               |
+    |                                                         |
     |                         [ Done ]                        |
     |                         [ Back ]                        |
     +---------------------------------------------------------+
@@ -123,8 +126,9 @@ class UbuntuProForm(Form):
             _("Enable now with my contract token"), help=NO_HELP)
     token_form = SubFormField(UbuntuProTokenForm, "", help=NO_HELP)
     skip_ua = RadioButtonField(
-            group,
-            _("Skip Ubuntu Pro for now"), help=NO_HELP)
+            group, _("Do this later"),
+            help="\n" + _("You can always enable Ubuntu Pro later via the"
+                          " 'ua attach' command."))
 
     def __init__(self, initial):
         super().__init__(initial)
@@ -191,8 +195,7 @@ class UbuntuProView(BaseView):
     title = _("Enable Ubuntu Pro")
     excerpt = _("If you want to enable Ubuntu Pro, you can do it now with"
                 " your contract token. "
-                "Otherwise, you can skip this step and enable Ubuntu Pro"
-                " later using the command `ua attach`.")
+                "Otherwise, you can skip this step.")
 
     def __init__(self, controller, token: str):
         """ Initialize the view with the default value for the token. """
