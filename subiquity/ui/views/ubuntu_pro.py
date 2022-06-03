@@ -93,12 +93,14 @@ class UATokenEditor(StringEditor, WantsToKnowFormField):
 class UbuntuProTokenForm(SubForm):
     """ Represents a sub-form requesting Ubuntu Pro token.
     +---------------------------------------------------------+
-    |      Contract token: C123456789ABCDEF                   |
+    |      Token: C123456789ABCDEF                            |
+    |             This is your Ubuntu Pro token               |
     +---------------------------------------------------------+
     """
     UATokenField = simple_field(UATokenEditor)
 
-    token = UATokenField(_("Contract token:"), help=NO_HELP)
+    token = UATokenField(_("Token:"),
+                         help=_("This is your Ubuntu Pro token"))
 
 
 class UbuntuProForm(Form):
@@ -107,7 +109,8 @@ class UbuntuProForm(Form):
     +---------------------------------------------------------+
     | (X)  Enable now with my contract token                  |
     |                                                         |
-    |      Contract token: C123456789ABCDEF                   |
+    |      Token: C123456789ABCDEF                            |
+    |             This is your Ubuntu Pro token               |
     |                                                         |
     | ( )  Skip Ubuntu Pro for now                            |
     |                                                         |
@@ -183,7 +186,8 @@ class UbuntuProView(BaseView):
     |                                                         |
     | (X)  Enable now with my contract token                  |
     |                                                         |
-    |      Contract token: C123456789ABCDEF                   |
+    |      Token: C123456789ABCDEF                            |
+    |             This is your Ubuntu Pro token               |
     |                                                         |
     | ( )  Skip Ubuntu Pro for now                            |
     |                                                         |
