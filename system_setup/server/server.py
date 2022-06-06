@@ -39,7 +39,8 @@ INSTALL_MODEL_NAMES = ModelNames({
 
 POSTINSTALL_MODEL_NAMES = ModelNames(set())
 
-LOCALHOST_ADDR="127.0.0.1"
+LOCALHOST_ADDR = "127.0.0.1"
+
 
 class SystemSetupServer(SubiquityServer):
     prefillInfo = None
