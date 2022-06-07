@@ -98,7 +98,7 @@ class SystemSetupServer(SubiquityServer):
         if port is None:
             return await super().start_site(runner)
 
-        # Subiquity runs with root privileges. We don't wont outsiders to
-        # connect to it.
+        # Subiquity runs with root privileges, that's why we don't want
+        # outsiders to connect to it. Only localhost loopback is allowed.
         site = web.TCPSite(runner, host=LOCALHOST_ADDR, port=port)
         await site.start()
