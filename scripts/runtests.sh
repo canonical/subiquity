@@ -231,6 +231,29 @@ grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: 
 
 # The OOBE doesn't exist in WSL < 20.04
 if [ "${RELEASE%.*}" -ge 20 ]; then
+    # Test TCP connectivity (system_setup only)
+    clean
+    port=50321
+    LANG=C.UTF-8 timeout --foreground 60 \
+        python3 -m system_setup.cmd.server --dry-run --tcp-port=$port &
+    subiquity_pid=$!
+    next_time=3
+    until [ $next_time -eq 0 ] || [ ! -z "$(ss -Hlt sport = $port)" ]; do
+        sleep $(( next_time-- ))
+    done
+    if [ $next_time -eq 0 ]; then
+        echo "Timeout reached before Subiquity TCP socket started listening"
+        exit 1
+    fi
+    curl "http://localhost:$port/meta/status"
+    curl_ec=$?
+    kill $subiquity_pid
+    if [ $curl_ec != 0 ]; then
+        echo "GET Request to meta/status failed with code: $curl_ec"
+        exit 1
+    fi
+
+    # Test system_setup autoinstall.
     for mode in "" "-full" "-no-shutdown"; do
         clean
         LANG=C.UTF-8 timeout --foreground 60 \
