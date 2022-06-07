@@ -245,11 +245,32 @@ if [ "${RELEASE%.*}" -ge 20 ]; then
         echo "Timeout reached before Subiquity TCP socket started listening"
         exit 1
     fi
-    curl "http://localhost:$port/meta/status"
-    curl_ec=$?
+    loopback_failed=0
+    unallowed_failed=0
+    # Assert that only loopback interface is accepted.
+    interfaces=($(ip --json link show up | jq -r '.[]["ifname"] | select ( . != null )'))
+    for if in ${interfaces[@]}; do
+        curl_ec=0
+        timeout 10s curl "http://localhost:$port/meta/status" --interface $if || curl_ec=$?
+        # Loopback should exit 0
+        if [ $if = "lo" ]; then
+            if [ $curl_ec -ne 0 ]; then
+                loopback_failed=1
+            fi
+        # Other interfaces shoud not
+        else
+            if [ $curl_ec -eq 0 ]; then
+                unallowed_failed=1
+            fi
+        fi
+    done
     kill $subiquity_pid
-    if [ $curl_ec != 0 ]; then
-        echo "GET Request to meta/status failed with code: $curl_ec"
+    if [ $loopback_failed -ne 0 ]; then
+        echo "Loopback was expected to connect"
+        exit 1
+    fi
+    if [ $unallowed_failed -ne 0 ]; then
+        echo "Only the loopback interface should be allowed."
         exit 1
     fi
 
