@@ -74,9 +74,8 @@ class ContractTokenEditor(StringEditor, WantsToKnowFormField):
     """ Represent a text-box editor for the Ubuntu Pro Token.  """
     def __init__(self):
         """ Initialize the text-field editor for UA token. """
-        self.valid_char_pat = r"[a-zA-Z0-9]"
-        self.error_invalid_char = _("The only characters permitted in this "
-                                    "field are alphanumeric characters.")
+        self.valid_char_pat = r"[1-9A-HJ-NP-Za-km-z]"
+        self.error_invalid_char = _("'{}' is not a valid character.")
         super().__init__()
 
     def valid_char(self, ch: str) -> bool:
@@ -85,7 +84,8 @@ class ContractTokenEditor(StringEditor, WantsToKnowFormField):
         """
         if len(ch) == 1 and not re.match(self.valid_char_pat, ch):
             self.bff.in_error = True
-            self.bff.show_extra(("info_error", self.error_invalid_char))
+            self.bff.show_extra(
+                    ("info_error", self.error_invalid_char.format(ch)))
             return False
         return super().valid_char(ch)
 
@@ -102,6 +102,12 @@ class ContractTokenForm(SubForm):
     token = ContractTokenField(
             _("Token:"),
             help=_("This is your Ubuntu Pro token"))
+
+    def validate_token(self):
+        """ Return an error if the token input does not match the expected
+        format. """
+        if not 24 <= len(self.token.value) <= 30:
+            return _("Invalid token: should be between 24 and 30 characters")
 
 
 class UpgradeModeForm(Form):
