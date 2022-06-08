@@ -22,6 +22,7 @@ from subiquity.models.filesystem import (
     MiB,
     )
 from subiquity.models.tests.test_filesystem import (
+    make_disk,
     make_model_and_disk,
     make_partition,
     )
@@ -31,26 +32,23 @@ from subiquity.common.filesystem import gaps
 
 class TestGaps(unittest.TestCase):
     def test_basic(self):
-        model, disk1 = make_model_and_disk()
-
-        pg = gaps.parts_and_gaps(disk1)
-        self.assertEqual(1, len(pg))
-        self.assertTrue(isinstance(pg[0], gaps.Gap))
-        self.assertEqual(MiB, pg[0].offset)
+        [gap] = gaps.parts_and_gaps(make_disk())
+        self.assertTrue(isinstance(gap, gaps.Gap))
+        self.assertEqual(MiB, gap.offset)
 
 
 class TestDiskGaps(unittest.TestCase):
 
     def test_no_partition_gpt(self):
         size = 1 << 30
-        m, d = make_model_and_disk(size=size, ptable='gpt')
+        d = make_disk(size=size, ptable='gpt')
         self.assertEqual(
             gaps.find_disk_gaps_v2(d),
             [gaps.Gap(d, MiB, size - 2*MiB, False)])
 
     def test_no_partition_dos(self):
         size = 1 << 30
-        m, d = make_model_and_disk(size=size, ptable='dos')
+        d = make_disk(size=size, ptable='dos')
         self.assertEqual(
             gaps.find_disk_gaps_v2(d),
             [gaps.Gap(d, MiB, size - MiB, False)])
