@@ -160,6 +160,18 @@ class BoundFormField(object):
         if isinstance(widget, WantsToKnowFormField):
             widget.set_bound_form_field(self)
 
+    def is_in_error(self) -> bool:
+        """ Tells whether this field is in error. We will also check if any of
+        the enabled subform reports an error.
+        """
+        if self.in_error:
+            return True
+
+        if not self._enabled or not isinstance(self.widget, SubFormWidget):
+            return False
+
+        return self.widget.form.has_validation_error()
+
     def _build_table(self):
         widget = self.widget
         if self.field.takes_default_style:
@@ -504,13 +516,12 @@ class Form(object, metaclass=MetaForm):
             focus_buttons=focus_buttons, excerpt=excerpt,
             narrow_rows=narrow_rows)
 
+    def has_validation_error(self) -> bool:
+        """ Tells if any field (or subformfield) is in error. """
+        return any(map(lambda f: f.is_in_error(), self._fields))
+
     def validated(self):
-        in_error = False
-        for f in self._fields:
-            if f.in_error:
-                in_error = True
-                break
-        if in_error:
+        if self.has_validation_error():
             self.buttons.base_widget.contents[0][0].enabled = False
             self.buttons.base_widget.focus_position = 1
         else:
@@ -558,3 +569,8 @@ class SubForm(Form):
     def __init__(self, parent, **kw):
         self.parent = parent
         super().__init__(**kw)
+
+    def validated(self):
+        """ Propagate the validation to the parent. """
+        self.parent.validated()
+        super().validated()
