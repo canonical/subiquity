@@ -74,17 +74,14 @@ class MakeBootDevicePlan(abc.ABC):
 class CreatePartPlan(MakeBootDevicePlan):
     """Create a partition on the device."""
 
-    device: object
-
-    offset: int = 0
+    gap: gaps.Gap
 
     spec: dict = attr.ib(factory=dict)
     args: dict = attr.ib(factory=dict)
 
     def apply(self, manipulator):
         manipulator.create_partition(
-            self.device, gaps.Gap(self.device, self.offset, 0), self.spec,
-            **self.args)
+            self.gap.device, self.gap, self.spec, **self.args)
 
 
 def _no_preserve_part(inst, field, part):
@@ -160,9 +157,11 @@ def get_boot_device_plan_bios(device) -> Optional[MakeBootDevicePlan]:
     if isinstance(pgs[0], Partition) and pgs[0].flag == "bios_grub":
         return attr_plan
 
+    gap = gaps.Gap(device=device,
+                   offset=sizes.BIOS_GRUB_SIZE_BYTES,
+                   size=sizes.BIOS_GRUB_SIZE_BYTES)
     create_part_plan = CreatePartPlan(
-        device=device,
-        offset=sizes.BIOS_GRUB_SIZE_BYTES,
+        gap=gap,
         spec=dict(size=sizes.BIOS_GRUB_SIZE_BYTES, fstype=None, mount=None),
         args=dict(flag='bios_grub'))
 
@@ -207,11 +206,10 @@ def get_add_part_plan(device, *, spec, args):
     size = spec['size']
     partitions = device.partitions()
 
-    create_part_plan = CreatePartPlan(
-        device=device, offset=None, spec=spec, args=args)
+    create_part_plan = CreatePartPlan(gap=None, spec=spec, args=args)
 
     if gaps.largest_gap_size(device) >= size:
-        create_part_plan.offset = gaps.largest_gap(device).offset
+        create_part_plan.gap = gaps.largest_gap(device)
         return create_part_plan
     else:
         new_parts = [p for p in partitions if not p.preserve]
@@ -220,7 +218,8 @@ def get_add_part_plan(device, *, spec, args):
         largest_part = max(new_parts, key=lambda p: p.size)
         if size > largest_part.size // 2:
             return None
-        create_part_plan.offset = largest_part.offset
+        create_part_plan.gap = gaps.Gap(
+                device=device, offset=largest_part.offset, size=size)
         return MultiStepPlan(plans=[
             ResizePlan(
                 part=largest_part,
