@@ -85,7 +85,7 @@ from subiquitycore.snapd import (
 
 NOPROBERARG = "NOPROBER"
 
-iso_autoinstall_path = 'autoinstall.yaml'
+iso_autoinstall_path = 'cdrom/autoinstall.yaml'
 reload_autoinstall_path = 'run/subiquity/reload.autoinstall.yaml'
 cloud_autoinstall_path = 'run/subiquity/cloud.autoinstall.yaml'
 
