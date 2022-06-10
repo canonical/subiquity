@@ -42,6 +42,13 @@ def make_server_args_parser():
     parser.add_argument('--output-base', action='store', dest='output_base',
                         default='.subiquity',
                         help='in dryrun, control basedir of files')
+    parser.add_argument('--tcp-port',
+                        dest='tcp_port',
+                        type=int,
+                        choices=range(49152, 60999),
+                        help='The TCP port Subiquity must listen to. It means '
+                        'TCP will be used instead of Unix domain sockets. '
+                        'Only localhost connections are accepted.')
     return parser
 
 

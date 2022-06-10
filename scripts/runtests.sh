@@ -231,6 +231,54 @@ grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: 
 
 # The OOBE doesn't exist in WSL < 20.04
 if [ "${RELEASE%.*}" -ge 20 ]; then
+    # Test TCP connectivity (system_setup only)
+    clean
+    port=50321
+    LANG=C.UTF-8 timeout --foreground 60 \
+        python3 -m system_setup.cmd.server --dry-run --tcp-port=$port &
+    subiquity_pid=$!
+    next_time=3
+    until [ $next_time -eq 0 ] || [ ! -z "$(ss -Hlt sport = $port)" ]; do
+        sleep $(( next_time-- ))
+    done
+    if [ $next_time -eq 0 ]; then
+        echo "Timeout reached before Subiquity TCP socket started listening"
+        exit 1
+    fi
+    loopback_failed=0
+    unallowed_failed=0
+    # Assert that only loopback interface is accepted.
+    interfaces=($(ip --json link show up | jq -r '.[]["ifname"] | select ( . != null )'))
+    for if in ${interfaces[@]}; do
+        for ipv in 4 6; do
+            curl_ec=0
+            timeout 10s \
+                curl -$ipv "http://localhost:$port/meta/status" --interface $if \
+                || curl_ec=$?
+            # Loopback should exit 0 on IPv4
+            if [ $if = "lo" ]; then
+                if [ $curl_ec -ne 0 -a $ipv -eq 4 ]; then
+                    loopback_failed=1
+                fi
+            # Everything else should not.
+            else
+                if [ $curl_ec -eq 0 ]; then
+                    unallowed_failed=1
+                fi
+            fi
+        done
+    done
+    kill $subiquity_pid
+    if [ $loopback_failed -ne 0 ]; then
+        echo "Loopback was expected to connect"
+        exit 1
+    fi
+    if [ $unallowed_failed -ne 0 ]; then
+        echo "Only the loopback interface should be allowed."
+        exit 1
+    fi
+
+    # Test system_setup autoinstall.
     for mode in "" "-full" "-no-shutdown"; do
         clean
         LANG=C.UTF-8 timeout --foreground 60 \

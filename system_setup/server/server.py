@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from aiohttp import web
+
 from system_setup.common.wsl_utils import is_reconfigure
 from subiquity.server.server import SubiquityServer
 from system_setup.models.system_setup import SystemSetupModel
@@ -36,6 +38,8 @@ INSTALL_MODEL_NAMES = ModelNames({
     })
 
 POSTINSTALL_MODEL_NAMES = ModelNames(set())
+
+LOCALHOST_ADDR = "127.0.0.1"
 
 
 class SystemSetupServer(SubiquityServer):
@@ -88,3 +92,13 @@ class SystemSetupServer(SubiquityServer):
     async def wait_for_cloudinit(self):
         self.cloud_init_ok = True
         return
+
+    async def start_site(self, runner: web.AppRunner):
+        port = self.opts.tcp_port
+        if port is None:
+            return await super().start_site(runner)
+
+        # Subiquity runs with root privileges, that's why we don't want
+        # outsiders to connect to it. Only localhost loopback is allowed.
+        site = web.TCPSite(runner, host=LOCALHOST_ADDR, port=port)
+        await site.start()
