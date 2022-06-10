@@ -205,3 +205,11 @@ def movable_trailing_partitions_and_gap_size(partition):
             else:
                 return (trailing_partitions, 0)
     return (trailing_partitions, 0)
+
+
+def at_offset(device, offset):
+    for pg in parts_and_gaps(device):
+        if isinstance(pg, Gap):
+            if pg.offset == offset:
+                return pg
+    return None

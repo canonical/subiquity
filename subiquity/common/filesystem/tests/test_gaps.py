@@ -59,6 +59,28 @@ class TestSplitGap(unittest.TestCase):
         self.assertEqual(gap.offset + size, new_gaps[1].offset)
 
 
+class TestAtOffset(unittest.TestCase):
+    def test_zero(self):
+        self.assertIsNone(gaps.at_offset(make_disk(), 0))
+
+    def test_match(self):
+        [gap] = gaps.parts_and_gaps(make_disk())
+        self.assertEqual(gap, gaps.at_offset(gap.device, gap.offset))
+
+    def test_not_match(self):
+        [gap] = gaps.parts_and_gaps(make_disk())
+        self.assertIsNone(gaps.at_offset(gap.device, gap.offset + 1))
+
+    def test_two_gaps(self):
+        m, d = make_model_and_disk(size=100 << 20)
+        m.storage_version = 2
+        make_partition(m, d, offset=0, size=20 << 20)
+        make_partition(m, d, offset=40 << 20, size=20 << 20)
+        [_, g1, _, g2] = gaps.parts_and_gaps(d)
+        self.assertEqual(g1, gaps.at_offset(d, 20 << 20))
+        self.assertEqual(g2, gaps.at_offset(d, 60 << 20))
+
+
 class TestDiskGaps(unittest.TestCase):
 
     def test_no_partition_gpt(self):
