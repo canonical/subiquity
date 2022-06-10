@@ -37,6 +37,28 @@ class TestGaps(unittest.TestCase):
         self.assertEqual(MiB, gap.offset)
 
 
+class TestSplitGap(unittest.TestCase):
+    def test_equal(self):
+        [gap] = gaps.parts_and_gaps(make_disk())
+        actual = gap.split(gap.size)
+        self.assertEqual((gap, None), actual)
+
+    def test_too_big(self):
+        [gap] = gaps.parts_and_gaps(make_disk())
+        with self.assertRaises(Exception):
+            gap.split(gap.size + MiB)
+
+    def test_split(self):
+        [gap] = gaps.parts_and_gaps(make_disk(size=100 << 30))
+        size = 10 << 30
+        new_gaps = gap.split(size)
+        self.assertEqual(2, len(new_gaps))
+        self.assertEqual(size, new_gaps[0].size)
+        self.assertEqual(gap.size - size, new_gaps[1].size)
+        self.assertEqual(gap.offset, new_gaps[0].offset)
+        self.assertEqual(gap.offset + size, new_gaps[1].offset)
+
+
 class TestDiskGaps(unittest.TestCase):
 
     def test_no_partition_gpt(self):
