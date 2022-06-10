@@ -209,7 +209,7 @@ def get_add_part_plan(device, *, spec, args):
     create_part_plan = CreatePartPlan(gap=None, spec=spec, args=args)
 
     if gaps.largest_gap_size(device) >= size:
-        create_part_plan.gap = gaps.largest_gap(device)
+        create_part_plan.gap = gaps.largest_gap(device).split(size)[0]
         return create_part_plan
     else:
         new_parts = [p for p in partitions if not p.preserve]

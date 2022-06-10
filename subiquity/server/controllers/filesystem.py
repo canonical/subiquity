@@ -148,18 +148,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk):
             self.add_boot_disk(disk)
         gap = gaps.largest_gap(disk)
-        self.create_partition(
-            device=disk, gap=gap, spec=dict(
-                size=sizes.get_bootfs_size(disk),
-                fstype="ext4",
-                mount='/boot'
-                ))
-        gap = gaps.largest_gap(disk)
-        part = self.create_partition(
-            device=disk, gap=gap, spec=dict(
-                size=gaps.largest_gap_size(disk),
-                fstype=None,
-                ))
+        size = sizes.get_bootfs_size(disk)
+        gap_boot, gap_rest = gap.split(size)
+        spec = dict(size=size, fstype="ext4", mount='/boot')
+        self.create_partition(device=disk, gap=gap_boot, spec=spec)
+
+        spec = dict(size=gap_rest.size, fstype=None)
+        part = self.create_partition(device=disk, gap=gap_rest, spec=spec)
         vg_name = 'ubuntu-vg'
         i = 0
         while self.model._one(type='lvm_volgroup', name=vg_name) is not None:
@@ -376,7 +371,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             'mount': data.partition.mount,
         }
 
-        self.create_partition(disk, data.gap, spec, wipe='superblock')
+        gap = gaps.at_offset(disk, data.gap.offset).split(requested_size)[0]
+        self.create_partition(disk, gap, spec, wipe='superblock')
         return await self.v2_GET()
 
     async def v2_delete_partition_POST(self, data: ModifyPartitionV2) \

@@ -220,6 +220,7 @@ class FilesystemManipulator:
                     spec['size'], gap.size)
                 spec['size'] = gap.size
 
+        gap = gap.split(spec['size'])[0]
         self.create_partition(disk, gap, spec)
 
         log.debug("Successfully added partition")
