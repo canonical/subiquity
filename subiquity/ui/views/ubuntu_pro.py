@@ -539,44 +539,74 @@ class HowToRegisterWidget(Stretchy):
 
 
 class ShowServicesWidget(Stretchy):
-    """ Widget to show the activable services for UA subscription.
-    +------------------ Activable Services -------------------+
+    """ Widget to show the activable services that are auto-enabled and the
+    ones that can be activated.
+    +------------------ Ubuntu Pro Services ------------------+
     |                                                         |
-    | List of services that are activable through your Ubuntu |
-    | Pro subscription:                                       |
+    | List of your enabled services:                          |
+    |                                                         |
     | * ...                                                   |
     | * ...                                                   |
     |                                                         |
-    | One the installation has finished, you can enable these |
-    | services using the 'ua' command-line tool.              |
+    | Other available services:                               |
     |                                                         |
-    |                          [ OK ]                         |
+    | * ...                                                   |
+    | * ...                                                   |
+    |                                                         |
+    | If you want to change the default enablements for your  |
+    | token, you can do so via the ubuntu.com/pro web         |
+    | interface. Alternatively, you can change enabled        |
+    | services using the `ua` command-line tool.              |
+    |                                                         |
+    |                       [ Continue ]                      |
     +---------------------------------------------------------+
     """
     def __init__(self, parent: UbuntuProView,
                  services: List[UbuntuProService]) -> None:
-        """ Initializes the widget by including the list of services as a
-        bullet-point list. """
+        """ Initializes the widget. """
         self.parent = parent
 
-        ok = ok_btn(label=_("OK"), on_press=self.ok)
+        ok = ok_btn(label=_("Continue"), on_press=self.ok)
+        # TODO missing a back button
 
-        title = _("Activable Services")
-        header = _("List of services that are activable through your "
-                   "Ubuntu Pro subscription:")
+        title = _("Ubuntu Pro Services")
+
+        auto_enabled = [svc for svc in services if svc.auto_enabled]
+        not_auto_enabled = [svc for svc in services if not svc.auto_enabled]
+
+        svc_rows: List[Widget] = []
+
+        if auto_enabled:
+            svc_rows.append(Text(_("List of your enabled services:")))
+            svc_rows.append(Text(""))
+            svc_rows.extend(
+                    [Text(f"* {svc.description}") for svc in auto_enabled])
+
+        if not_auto_enabled:
+            if auto_enabled:
+                # available here means activable
+                svc_rows.append(Text(""))
+                svc_rows.append(Text(_("Other available services:")))
+            else:
+                svc_rows.append(Text(_("Available services:")))
+            svc_rows.append(Text(""))
+            svc_rows.extend(
+                    [Text(f"* {svc.description}") for svc in not_auto_enabled])
 
         widgets: List[Widget] = [
-            Text(header),
             Text(""),
-            Pile([Text(f"* {svc.description}") for svc in services]),
+            Pile(svc_rows),
             Text(""),
-            Text("Once the installation has finished, you can enable these "
-                 "services using the `ua` command-line tool."),
+            Text(_("If you want to change the default enablements for your"
+                   " token, you can do so via the ubuntu.com/pro web"
+                   " interface. Alternatively you can change enabled services"
+                   " using the `ua` command-line tool once the installation"
+                   " is finished.")),
             Text(""),
             button_pile([ok]),
         ]
 
-        super().__init__(title, widgets, 2, 6)
+        super().__init__(title, widgets, stretchy_index=1, focus_index=5)
 
     def ok(self, sender) -> None:
         """ Close the overlay and submit the token. """
