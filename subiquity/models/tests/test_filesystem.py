@@ -143,7 +143,9 @@ def make_model(bootloader=None):
     return model
 
 
-def make_disk(fs_model, **kw):
+def make_disk(fs_model=None, **kw):
+    if fs_model is None:
+        fs_model = make_model()
     if 'serial' not in kw:
         kw['serial'] = 'serial%s' % len(fs_model._actions)
     if 'path' not in kw:

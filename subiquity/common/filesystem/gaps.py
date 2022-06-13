@@ -28,7 +28,8 @@ from subiquity.models.filesystem import (
     )
 
 
-@attr.s(auto_attribs=True)
+# should also set on_setattr=None with attrs 20.1.0
+@attr.s(auto_attribs=True, frozen=True)
 class Gap:
     device: object
     offset: int
@@ -40,6 +41,24 @@ class Gap:
     @property
     def id(self):
         return 'gap-' + self.device.id
+
+    def split(self, size):
+        """returns a tuple of two new gaps, split from the current gap based on
+        the supplied size.  If size is equal to the gap size, the second gap is
+        None.  The original gap is unmodified."""
+        if size > self.size:
+            raise Exception('requested size larger than gap')
+        if size == self.size:
+            return (self, None)
+        first_gap = Gap(device=self.device,
+                        offset=self.offset,
+                        size=size,
+                        in_extended=self.in_extended)
+        rest_gap = Gap(device=self.device,
+                       offset=self.offset + size,
+                       size=self.size - size,
+                       in_extended=self.in_extended)
+        return (first_gap, rest_gap)
 
 
 @functools.singledispatch
@@ -186,3 +205,11 @@ def movable_trailing_partitions_and_gap_size(partition):
             else:
                 return (trailing_partitions, 0)
     return (trailing_partitions, 0)
+
+
+def at_offset(device, offset):
+    for pg in parts_and_gaps(device):
+        if isinstance(pg, Gap):
+            if pg.offset == offset:
+                return pg
+    return None
