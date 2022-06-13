@@ -174,6 +174,7 @@ class UAInterface:
             return UbuntuProService(
                name=service["name"],
                description=service["description"],
+               auto_enabled=service["auto_enabled"] == "yes",
             )
 
         activable_services: List[UbuntuProService] = []

@@ -460,6 +460,7 @@ class UbuntuProCheckTokenStatus(enum.Enum):
 class UbuntuProService:
     name: str
     description: str
+    auto_enabled: bool
 
 
 @attr.s(auto_attribs=True)

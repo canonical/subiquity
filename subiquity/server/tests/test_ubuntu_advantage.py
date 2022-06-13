@@ -191,18 +191,22 @@ class TestUAInterface(unittest.TestCase):
         self.assertIn(UbuntuProService(
             name="esm-infra",
             description="UA Infra: Extended Security Maintenance (ESM)",
+            auto_enabled=True,
         ), services)
         self.assertIn(UbuntuProService(
             name="fips",
             description="NIST-certified core packages",
+            auto_enabled=False,
         ), services)
         self.assertNotIn(UbuntuProService(
             name="esm-apps",
             description="UA Apps: Extended Security Maintenance (ESM)",
+            auto_enabled=True,
         ), services)
         self.assertNotIn(UbuntuProService(
             name="cis",
             description="Center for Internet Security Audit Tools",
+            auto_enabled=False,
         ), services)
 
         # Test with "Z" suffix for the expiration date.
