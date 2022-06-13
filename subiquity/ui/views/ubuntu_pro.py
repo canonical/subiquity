@@ -16,7 +16,7 @@
 
 import logging
 import re
-from typing import List
+from typing import Callable, List
 
 from urwid import (
     Columns,
@@ -312,8 +312,15 @@ class UbuntuProView(BaseView):
         """ Open the loading dialog and asynchronously check if the token is
         valid. """
         def on_success(services: List[UbuntuProService]) -> None:
+            def show_services() -> None:
+                self.remove_overlay()
+                self.show_activable_services(services)
+
             self.remove_overlay()
-            self.show_activable_services(services)
+            widget = TokenAddedWidget(
+                    parent=self,
+                    on_continue=show_services)
+            self.show_stretchy_overlay(widget)
 
         def on_failure(status: UbuntuProCheckTokenStatus) -> None:
             self.remove_overlay()
@@ -387,7 +394,38 @@ class UbuntuProView(BaseView):
         """ Display an overlay with the list of services that can be enabled
         via Ubuntu Pro subscription. After the user confirms, we will
         quit the current view and move on. """
+        # TODO: replace this by a full screen.
+        # Changing the text in the title bar is what makes it difficult.
         self.show_stretchy_overlay(ShowServicesWidget(self, services))
+
+
+class TokenAddedWidget(Stretchy):
+    """ Widget that shows that the supplied token is valid and was "added".
+    +---------------- Token added successfully ---------------+
+    |                                                         |
+    | Your token has been added successfully and your         |
+    | subscription configuration will be applied at the first |
+    | boot.                                                   |
+    |                                                         |
+    |                       [ Continue ]                      |
+    +---------------------------------------------------------+
+    """
+    def __init__(self, parent: UbuntuProView,
+                 on_continue: Callable[[], None]) -> None:
+        """ Initializes the widget. """
+        self.parent = parent
+        cont = done_btn(
+                label=_("Continue"),
+                on_press=lambda unused: on_continue())
+        widgets = [
+            Text(_("Your token has been added successfully and your"
+                   " subscription configuration will be applied at the first"
+                   " boot.")),
+            Text(""),
+            button_pile([cont]),
+            ]
+        super().__init__("Token added successfully", widgets,
+                         stretchy_index=0, focus_index=2)
 
 
 class AboutProWidget(Stretchy):
