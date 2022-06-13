@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import shlex
 from unittest.mock import Mock
 
@@ -29,6 +30,7 @@ from subiquity.server.server import (
 class TestAutoinstallLoad(SubiTestCase):
     def setUp(self):
         self.tempdir = self.tmp_dir()
+        os.makedirs(self.tempdir + '/cdrom', exist_ok=True)
         opts = Mock()
         opts.dry_run = True
         opts.output_base = self.tempdir
