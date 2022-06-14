@@ -35,6 +35,21 @@ def _clean_env(env):
     return env
 
 
+def orig_environ(env):
+    if env is None:
+        env = os.environ
+    ret = env.copy()
+    for key, val in env.items():
+        if key.endswith('_ORIG'):
+            key_to_restore = key[:-len('_ORIG')]
+            if val:
+                ret[key_to_restore] = val
+            else:
+                del ret[key_to_restore]
+            del ret[key]
+    return ret
+
+
 def run_command(cmd: Sequence[str], *, input=None, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, encoding='utf-8', errors='replace',
                 env=None, **kw) -> subprocess.CompletedProcess:
