@@ -78,6 +78,10 @@ class FilesystemManipulator:
     delete_format = delete_filesystem
 
     def create_partition(self, device, gap, spec, **kw):
+        if gap.in_extended:
+            if kw.get('flag') is not None:
+                raise Exception('oh no')
+            kw['flag'] = 'logical'
         part = self.model.add_partition(
             device, size=spec["size"], offset=gap.offset, **kw)
         self.create_filesystem(part, spec)
@@ -174,7 +178,8 @@ class FilesystemManipulator:
             return False
         return True
 
-    def partition_disk_handler(self, disk, spec, *, partition=None, gap=None):
+    def partition_disk_handler(self, disk, spec,
+                               *, partition=None, gap=None, flag=None):
         log.debug('partition_disk_handler: %s %s %s %s',
                   disk, spec, partition, gap)
 
@@ -220,7 +225,7 @@ class FilesystemManipulator:
                     spec['size'], gap.size)
                 spec['size'] = gap.size
 
-        self.create_partition(disk, gap, spec)
+        self.create_partition(disk, gap, spec, flag=flag)
 
         log.debug("Successfully added partition")
 

@@ -26,6 +26,7 @@ from urwid import connect_signal, Text
 
 from subiquitycore.ui.form import (
     BooleanField,
+    ChoiceField,
     Form,
     FormField,
     simple_field,
@@ -172,6 +173,7 @@ class PartitionForm(Form):
         if max_size is None:
             self.remove_field('size')
         connect_signal(self.fstype.widget, 'select', self.select_fstype)
+        connect_signal(self.ptype.widget, 'select', self.select_ptype)
         self.form_pile = None
         self.select_fstype(None, self.fstype.widget.value)
 
@@ -202,8 +204,13 @@ class PartitionForm(Form):
         self.mount.showing_extra = False
         self.mount.validate()
 
+    def select_ptype(self, sender, is_extended):
+        self.fstype.enabled = self.mount.enabled = not is_extended
+
     name = LVNameField(_("Name: "))
     size = SizeField()
+    ptype = ChoiceField(_("Type: "), choices=[
+        (_("Primary"), True, False), (_("Extended"), True, True)])
     fstype = FSTypeField(_("Format:"))
     mount = MountField(_("Mount:"))
     use_swap = BooleanField(
@@ -422,8 +429,17 @@ class PartitionStretchy(Stretchy):
         self.form = PartitionForm(
             self.model, max_size, initial, lvm_names, partition, alignment)
 
-        if not isinstance(disk, LVM_VolGroup):
+        if isinstance(disk, LVM_VolGroup):
+            self.form.remove_field('ptype')
+        else:
             self.form.remove_field('name')
+            if disk.ptable_for_new_partition() != 'msdos' or \
+               gap is None or gap.in_extended:
+                self.form.remove_field('ptype')
+            else:
+                for p in disk.partitions():
+                    if p.flag == 'extended':
+                        self.form.ptype.enabled = False
 
         if label is not None:
             self.form.buttons.base_widget[0].set_label(label)
@@ -553,11 +569,16 @@ class PartitionStretchy(Stretchy):
                 spec['mount'] = self.partition.fs().mount().path
             else:
                 spec['mount'] = None
+        flag = None
+        if 'ptype' in spec:
+            if spec.pop('ptype'):
+                flag = 'extended'
         if isinstance(self.disk, LVM_VolGroup):
             handler = self.controller.logical_volume_handler
         else:
             handler = self.controller.partition_disk_handler
-        handler(self.disk, spec, partition=self.partition, gap=self.gap)
+        handler(
+            self.disk, spec, partition=self.partition, gap=self.gap, flag=flag)
         self.parent.refresh_model_inputs()
         self.parent.remove_overlay()
 

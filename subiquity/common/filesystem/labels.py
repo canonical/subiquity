@@ -252,7 +252,8 @@ def usage_labels(device):
 def _usage_labels_partition(partition):
     if partition.flag == "prep" or partition.flag == "bios_grub":
         return []
-    return _usage_labels_generic(partition)
+    return _usage_labels_generic(
+        partition, exclude_final_unused=partition.flag == "extended")
 
 
 @usage_labels.register(Disk)
