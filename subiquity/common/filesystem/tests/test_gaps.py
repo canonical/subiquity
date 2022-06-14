@@ -45,7 +45,7 @@ class TestSplitGap(unittest.TestCase):
 
     def test_too_big(self):
         [gap] = gaps.parts_and_gaps(make_disk())
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             gap.split(gap.size + MiB)
 
     def test_split(self):

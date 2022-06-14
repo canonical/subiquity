@@ -47,7 +47,7 @@ class Gap:
         the supplied size.  If size is equal to the gap size, the second gap is
         None.  The original gap is unmodified."""
         if size > self.size:
-            raise Exception('requested size larger than gap')
+            raise ValueError('requested size larger than gap')
         if size == self.size:
             return (self, None)
         first_gap = Gap(device=self.device,
