@@ -169,7 +169,15 @@ def _parts_and_gaps_vg(device):
     return r
 
 
-def largest_gap(device):
+@functools.singledispatch
+def largest_gap(target):
+    raise NotImplementedError(target)
+
+
+@largest_gap.register(Disk)
+@largest_gap.register(Raid)
+@largest_gap.register(LVM_VolGroup)
+def _largest_gap_disk(device):
     largest_size = 0
     largest = None
     for pg in parts_and_gaps(device):
@@ -177,6 +185,15 @@ def largest_gap(device):
             if pg.size > largest_size:
                 largest = pg
                 largest_size = pg.size
+    return largest
+
+
+@largest_gap.register(list)
+def _largest_gap_list(disks):
+    largest = None
+    for gap in (largest_gap(d) for d in disks):
+        if largest is None or (gap is not None and gap.size > largest.size):
+            largest = gap
     return largest
 
 

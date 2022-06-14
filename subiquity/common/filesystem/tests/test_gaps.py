@@ -23,6 +23,7 @@ from subiquity.models.filesystem import (
     )
 from subiquity.models.tests.test_filesystem import (
     make_disk,
+    make_model,
     make_model_and_disk,
     make_partition,
     )
@@ -359,3 +360,54 @@ class TestMovableTrailingPartitionsAndGapSize(unittest.TestCase):
         self.assertEqual(
             ([], 0),
             gaps.movable_trailing_partitions_and_gap_size(p1))
+
+
+class TestLargestGaps(unittest.TestCase):
+    def test_basic(self):
+        d = make_disk()
+        [gap] = gaps.parts_and_gaps(d)
+        self.assertEqual(gap, gaps.largest_gap(d))
+
+    def test_two_gaps(self):
+        m, d = make_model_and_disk(size=100 << 20)
+        m.storage_version = 2
+        make_partition(m, d, offset=0, size=20 << 20)
+        make_partition(m, d, offset=40 << 20, size=20 << 20)
+        [_, g1, _, g2] = gaps.parts_and_gaps(d)
+        self.assertEqual(g2, gaps.largest_gap(d))
+
+    def test_two_disks(self):
+        m = make_model()
+        m.storage_version = 2
+        d1 = make_disk(m, size=100 << 20)
+        d2 = make_disk(m, size=200 << 20)
+        [d1g1] = gaps.parts_and_gaps(d1)
+        [d2g1] = gaps.parts_and_gaps(d2)
+        self.assertEqual(d1g1, gaps.largest_gap(d1))
+        self.assertEqual(d2g1, gaps.largest_gap(d2))
+
+    def test_across_two_disks(self):
+        m = make_model()
+        m.storage_version = 2
+        d1 = make_disk(m, size=100 << 20)
+        d2 = make_disk(m, size=200 << 20)
+        [d2g1] = gaps.parts_and_gaps(d2)
+        self.assertEqual(d2g1, gaps.largest_gap([d1, d2]))
+
+    def test_across_two_disks_one_gap(self):
+        m = make_model()
+        m.storage_version = 2
+        d1 = make_disk(m, size=100 << 20)
+        d2 = make_disk(m, size=200 << 20)
+        make_partition(m, d2, offset=0, size=200 << 20)
+        [d1g1] = gaps.parts_and_gaps(d1)
+        self.assertEqual(d1g1, gaps.largest_gap([d1, d2]))
+
+    def test_across_two_disks_no_gaps(self):
+        m = make_model()
+        m.storage_version = 2
+        d1 = make_disk(m, size=100 << 20)
+        d2 = make_disk(m, size=200 << 20)
+        make_partition(m, d1, offset=0, size=100 << 20)
+        make_partition(m, d2, offset=0, size=200 << 20)
+        self.assertIsNone(gaps.largest_gap([d1, d2]))
