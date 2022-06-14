@@ -308,6 +308,81 @@ class UbuntuProView(BaseView):
                 excerpt=excerpt,
                 focus_buttons=True)
 
+    def services_screen(self, services) -> Widget:
+        """
+        +---------------------------------------------------------+
+        | List of your enabled services:                          |
+        |                                                         |
+        |   * ...                                                 |
+        |   * ...                                                 |
+        |                                                         |
+        | Other available services:                               |
+        |                                                         |
+        |   * ...                                                 |
+        |   * ...                                                 |
+        |                                                         |
+        | If you want to change the default enablements for your  |
+        | token, you can do so via the ubuntu.com/pro web         |
+        | interface. Alternatively, you can change enabled        |
+        | services using the `ua` command-line tool.              |
+        |                                                         |
+        |                       [ Continue ]                      |
+        |                       [ Back     ]                      |
+        +---------------------------------------------------------+
+        """
+        auto_enabled = [svc for svc in services if svc.auto_enabled]
+        can_be_enabled = [svc for svc in services if not svc.auto_enabled]
+
+        svc_rows: List[Widget] = []
+
+        if auto_enabled:
+            svc_rows.append(Text(_("List of your enabled services:")))
+            svc_rows.append(Text(""))
+            svc_rows.extend(
+                    [Text(f"  * {svc.description}") for svc in auto_enabled])
+
+        if can_be_enabled:
+            if auto_enabled:
+                # available here means activable
+                svc_rows.append(Text(""))
+                svc_rows.append(Text(_("Other available services:")))
+            else:
+                svc_rows.append(Text(_("Available services:")))
+            svc_rows.append(Text(""))
+            svc_rows.extend(
+                    [Text(f"  * {svc.description}") for svc in can_be_enabled])
+
+        def on_continue() -> None:
+            self.controller.next_screen()
+
+        def on_back() -> None:
+            self._w = self.upgrade_yes_no_screen()
+
+        back_button = back_btn(
+                label=_("Back"),
+                on_press=lambda unused: on_back())
+        continue_button = done_btn(
+                label=_("Continue"),
+                on_press=lambda unused: on_continue())
+
+        widgets: List[Widget] = [
+            Text(""),
+            Pile(svc_rows),
+            Text(""),
+            Text(_("If you want to change the default enablements for your"
+                   " token, you can do so via the ubuntu.com/pro web"
+                   " interface. Alternatively you can change enabled services"
+                   " using the `ua` command-line tool once the installation"
+                   " is finished.")),
+            Text(""),
+        ]
+
+        return screen(
+                ListBox(widgets),
+                buttons=[continue_button, back_button],
+                excerpt=None,
+                focus_buttons=True)
+
     def upgrade_mode_done(self, form: UpgradeModeForm) -> None:
         """ Open the loading dialog and asynchronously check if the token is
         valid. """
@@ -391,12 +466,10 @@ class UbuntuProView(BaseView):
 
     def show_activable_services(self,
                                 services: List[UbuntuProService]) -> None:
-        """ Display an overlay with the list of services that can be enabled
+        """ Display a screen with the list of services that can be enabled
         via Ubuntu Pro subscription. After the user confirms, we will
         quit the current view and move on. """
-        # TODO: replace this by a full screen.
-        # Changing the text in the title bar is what makes it difficult.
-        self.show_stretchy_overlay(ShowServicesWidget(self, services))
+        self._w = self.services_screen(services)
 
 
 class TokenAddedWidget(Stretchy):
@@ -536,82 +609,6 @@ class HowToRegisterWidget(Stretchy):
     def close(self) -> None:
         """ Close the overlay. """
         self.parent.remove_overlay()
-
-
-class ShowServicesWidget(Stretchy):
-    """ Widget to show the activable services that are auto-enabled and the
-    ones that can be activated.
-    +------------------ Ubuntu Pro Services ------------------+
-    |                                                         |
-    | List of your enabled services:                          |
-    |                                                         |
-    | * ...                                                   |
-    | * ...                                                   |
-    |                                                         |
-    | Other available services:                               |
-    |                                                         |
-    | * ...                                                   |
-    | * ...                                                   |
-    |                                                         |
-    | If you want to change the default enablements for your  |
-    | token, you can do so via the ubuntu.com/pro web         |
-    | interface. Alternatively, you can change enabled        |
-    | services using the `ua` command-line tool.              |
-    |                                                         |
-    |                       [ Continue ]                      |
-    +---------------------------------------------------------+
-    """
-    def __init__(self, parent: UbuntuProView,
-                 services: List[UbuntuProService]) -> None:
-        """ Initializes the widget. """
-        self.parent = parent
-
-        ok = ok_btn(label=_("Continue"), on_press=self.ok)
-        # TODO missing a back button
-
-        title = _("Ubuntu Pro Services")
-
-        auto_enabled = [svc for svc in services if svc.auto_enabled]
-        not_auto_enabled = [svc for svc in services if not svc.auto_enabled]
-
-        svc_rows: List[Widget] = []
-
-        if auto_enabled:
-            svc_rows.append(Text(_("List of your enabled services:")))
-            svc_rows.append(Text(""))
-            svc_rows.extend(
-                    [Text(f"* {svc.description}") for svc in auto_enabled])
-
-        if not_auto_enabled:
-            if auto_enabled:
-                # available here means activable
-                svc_rows.append(Text(""))
-                svc_rows.append(Text(_("Other available services:")))
-            else:
-                svc_rows.append(Text(_("Available services:")))
-            svc_rows.append(Text(""))
-            svc_rows.extend(
-                    [Text(f"* {svc.description}") for svc in not_auto_enabled])
-
-        widgets: List[Widget] = [
-            Text(""),
-            Pile(svc_rows),
-            Text(""),
-            Text(_("If you want to change the default enablements for your"
-                   " token, you can do so via the ubuntu.com/pro web"
-                   " interface. Alternatively you can change enabled services"
-                   " using the `ua` command-line tool once the installation"
-                   " is finished.")),
-            Text(""),
-            button_pile([ok]),
-        ]
-
-        super().__init__(title, widgets, stretchy_index=1, focus_index=5)
-
-    def ok(self, sender) -> None:
-        """ Close the overlay and submit the token. """
-        subform = self.parent.upgrade_mode_form.with_contract_token_subform
-        self.parent.controller.done(subform.value["token"])
 
 
 class ContinueAnywayWidget(Stretchy):
