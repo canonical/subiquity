@@ -23,9 +23,6 @@ from subiquity.common.filesystem.sizes import (
     scale_partitions,
     uefi_scale,
     )
-from subiquity.common.filesystem.tests.test_manipulator import make_manipulator
-from subiquity.models.filesystem import Bootloader
-from subiquity.models.tests.test_filesystem import make_disk
 
 
 class TestPartitionSizeScaling(unittest.TestCase):
@@ -59,7 +56,6 @@ class TestPartitionSizeScaling(unittest.TestCase):
         self.assertEqual([500, 500], scale_partitions(psf, 2000))
 
     def test_efi(self):
-        manipulator = make_manipulator(Bootloader.UEFI)
         tests = [
             # something large to hit maximums
             (30 << 30, uefi_scale.maximum, bootfs_scale.maximum),
@@ -67,16 +63,14 @@ class TestPartitionSizeScaling(unittest.TestCase):
             (8 << 30, uefi_scale.minimum, bootfs_scale.minimum),
         ]
         for disk_size, uefi, bootfs in tests:
-            disk = make_disk(manipulator.model, preserve=True, size=disk_size)
-            self.assertEqual(uefi, get_efi_size(disk))
-            self.assertEqual(bootfs, get_bootfs_size(disk))
+            self.assertEqual(uefi, get_efi_size(disk_size))
+            self.assertEqual(bootfs, get_bootfs_size(disk_size))
 
         # something in between for scaling
         disk_size = 20 << 30
-        disk = make_disk(manipulator.model, preserve=True, size=disk_size)
-        efi_size = get_efi_size(disk)
+        efi_size = get_efi_size(disk_size)
         self.assertTrue(uefi_scale.maximum > efi_size)
         self.assertTrue(efi_size > uefi_scale.minimum)
-        bootfs_size = get_bootfs_size(disk)
+        bootfs_size = get_bootfs_size(disk_size)
         self.assertTrue(bootfs_scale.maximum > bootfs_size)
         self.assertTrue(bootfs_size > bootfs_scale.minimum)

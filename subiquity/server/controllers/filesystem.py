@@ -148,7 +148,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk):
             self.add_boot_disk(disk)
         gap = gaps.largest_gap(disk)
-        size = sizes.get_bootfs_size(disk)
+        size = sizes.get_bootfs_size(gap.size)
         gap_boot, gap_rest = gap.split(size)
         spec = dict(size=size, fstype="ext4", mount='/boot')
         self.create_partition(device=disk, gap=gap_boot, spec=spec)

@@ -239,7 +239,8 @@ def get_boot_device_plan_uefi(device):
                 plans.append(MountBootEfiPlan(part))
             return MultiStepPlan(plans=plans)
 
-    spec = dict(size=sizes.get_efi_size(device), fstype='fat32', mount=None)
+    size = sizes.get_efi_size(device.size)
+    spec = dict(size=size, fstype='fat32', mount=None)
     if device._m._mount_for_path("/boot/efi") is None:
         spec['mount'] = '/boot/efi'
 

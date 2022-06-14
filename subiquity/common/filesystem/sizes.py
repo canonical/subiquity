@@ -45,15 +45,15 @@ rootfs_scale = PartitionScaleFactors(
         maximum=-1)
 
 
-def scale_partitions(all_factors, disk_size):
+def scale_partitions(all_factors, available_space):
     """for the list of scale factors, provide list of scaled partition size.
     Assumes at most one scale factor with maximum==-1, and
-    disk_size is at least as big as the sum of all partition minimums.
+    available_space is at least as big as the sum of all partition minimums.
     The scale factor with maximum==-1 is given all remaining disk space."""
     ret = []
     sum_priorities = sum([factor.priority for factor in all_factors])
     for cur in all_factors:
-        scaled = int((disk_size / sum_priorities) * cur.priority)
+        scaled = int((available_space / sum_priorities) * cur.priority)
         if scaled < cur.minimum:
             ret.append(cur.minimum)
         elif scaled > cur.maximum:
@@ -63,15 +63,15 @@ def scale_partitions(all_factors, disk_size):
     if -1 in ret:
         used = sum(filter(lambda x: x != -1, ret))
         idx = ret.index(-1)
-        ret[idx] = disk_size - used
+        ret[idx] = available_space - used
     return ret
 
 
-def get_efi_size(disk):
+def get_efi_size(available_space):
     all_factors = (uefi_scale, bootfs_scale, rootfs_scale)
-    return scale_partitions(all_factors, disk.size)[0]
+    return scale_partitions(all_factors, available_space)[0]
 
 
-def get_bootfs_size(disk):
+def get_bootfs_size(available_space):
     all_factors = (uefi_scale, bootfs_scale, rootfs_scale)
-    return scale_partitions(all_factors, disk.size)[1]
+    return scale_partitions(all_factors, available_space)[1]
