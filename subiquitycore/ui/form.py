@@ -111,27 +111,6 @@ class _Validator(WidgetWrap):
         self.field.validate()
 
 
-class FormField(abc.ABC):
-
-    next_index = 0
-    takes_default_style = True
-    caption_first = True
-
-    def __init__(self, caption=None, help=None):
-        self.caption = caption
-        self.help = help
-        self.index = FormField.next_index
-        FormField.next_index += 1
-
-    @abc.abstractmethod
-    def _make_widget(self, form):
-        pass
-
-    def bind(self, form):
-        widget = self._make_widget(form)
-        return BoundFormField(self, form, widget)
-
-
 class WantsToKnowFormField(object):
     """A marker class."""
     def set_bound_form_field(self, bff):
@@ -159,6 +138,10 @@ class BoundFormField(object):
             connect_signal(widget, 'change', self._change)
         if isinstance(widget, WantsToKnowFormField):
             widget.set_bound_form_field(self)
+
+    def is_in_error(self) -> bool:
+        """ Tells whether this field is in error. """
+        return self.in_error
 
     def _build_table(self):
         widget = self.widget
@@ -296,6 +279,42 @@ class BoundFormField(object):
         self._enabled = val
         for row in self._rows:
             row.enabled = val
+
+
+class BoundSubFormField(BoundFormField):
+    def is_in_error(self):
+        """ Tells whether this field is in error. We will also check if the
+        subform (if enabled) reports an error.
+        """
+        if super().is_in_error():
+            return True
+
+        if not self._enabled:
+            return False
+
+        return self.widget.form.has_validation_error()
+
+
+class FormField(abc.ABC):
+
+    next_index = 0
+    takes_default_style = True
+    caption_first = True
+    bound_field_class = BoundFormField
+
+    def __init__(self, caption=None, help=None):
+        self.caption = caption
+        self.help = help
+        self.index = FormField.next_index
+        FormField.next_index += 1
+
+    @abc.abstractmethod
+    def _make_widget(self, form):
+        pass
+
+    def bind(self, form):
+        widget = self._make_widget(form)
+        return self.bound_field_class(self, form, widget)
 
 
 def simple_field(widget_maker):
@@ -504,13 +523,12 @@ class Form(object, metaclass=MetaForm):
             focus_buttons=focus_buttons, excerpt=excerpt,
             narrow_rows=narrow_rows)
 
+    def has_validation_error(self) -> bool:
+        """ Tells if any field is in error. """
+        return any(map(lambda f: f.is_in_error(), self._fields))
+
     def validated(self):
-        in_error = False
-        for f in self._fields:
-            if f.in_error:
-                in_error = True
-                break
-        if in_error:
+        if self.has_validation_error():
             self.buttons.base_widget.contents[0][0].enabled = False
             self.buttons.base_widget.focus_position = 1
         else:
@@ -543,6 +561,7 @@ class SubFormWidget(WidgetWrap):
 class SubFormField(FormField):
 
     takes_default_style = False
+    bound_field_class = BoundSubFormField
 
     def __init__(self, form_cls, caption=None, help=None):
         super().__init__(caption=caption, help=help)
@@ -558,3 +577,8 @@ class SubForm(Form):
     def __init__(self, parent, **kw):
         self.parent = parent
         super().__init__(**kw)
+
+    def validated(self):
+        """ Propagate the validation to the parent. """
+        self.parent.validated()
+        super().validated()

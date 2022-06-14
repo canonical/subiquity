@@ -80,6 +80,7 @@ class LVMOptionsForm(SubForm):
 
     def _toggle(self, sender, val):
         self.luks_options.enabled = val
+        self.validated()
 
     encrypt = BooleanField(_("Encrypt the LVM group with LUKS"), help=NO_HELP)
     luks_options = SubFormField(LUKSOptionsForm, "", help=NO_HELP)
@@ -146,6 +147,7 @@ class GuidedChoiceForm(SubForm):
 
     def _toggle(self, sender, val):
         self.lvm_options.enabled = val
+        self.validated()
 
 
 class GuidedForm(Form):
@@ -165,6 +167,7 @@ class GuidedForm(Form):
 
     def _toggle_guided(self, sender, new_value):
         self.guided_choice.enabled = new_value
+        self.validated()
 
 
 HELP = _("""
