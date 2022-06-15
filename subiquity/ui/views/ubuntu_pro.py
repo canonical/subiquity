@@ -399,10 +399,17 @@ class UbuntuProView(BaseView):
 
         def on_failure(status: UbuntuProCheckTokenStatus) -> None:
             self.remove_overlay()
+            token_field = form.with_contract_token_subform.widget.form.token
             if status == UbuntuProCheckTokenStatus.INVALID_TOKEN:
                 self.show_invalid_token()
+                token_field.in_error = True
+                token_field.show_extra(("info_error", "Invalid token"))
+                form.validated()
             elif status == UbuntuProCheckTokenStatus.EXPIRED_TOKEN:
                 self.show_expired_token()
+                token_field.in_error = True
+                token_field.show_extra(("info_error", "Expired token"))
+                form.validated()
             elif status == UbuntuProCheckTokenStatus.UNKNOWN_ERROR:
                 self.show_unknown_error()
 
