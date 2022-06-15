@@ -163,7 +163,7 @@ class StretchyOverlay(urwid.Widget):
         if not bottom_c.cols() or not bottom_c.rows():
             return urwid.CompositeCanvas(bottom_c)
 
-        top_size, _ = self._top_size(size, focus)
+        top_size = self._top_size(size, focus)[0]
         top_c = self.top_w.render(top_size, focus)
         top_c = urwid.CompositeCanvas(top_c)
         left = (size[0] - top_size[0]) // 2

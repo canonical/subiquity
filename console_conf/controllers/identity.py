@@ -42,7 +42,7 @@ def get_core_version():
 
     version = None
     for line in shlex.split(content):
-        key, _, value = line.partition("=")
+        key, sep, value = line.partition("=")
         if key == "ID" and value != "ubuntu-core":
             return None
         if key == "VERSION_ID":
