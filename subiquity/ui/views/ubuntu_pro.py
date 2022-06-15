@@ -61,7 +61,6 @@ from subiquitycore.ui.stretchy import (
 from subiquitycore.ui.utils import (
     button_pile,
     screen,
-    SomethingFailed,
     )
 
 from subiquitycore.ui.interactive import StringEditor
@@ -447,21 +446,12 @@ class UbuntuProView(BaseView):
     def show_invalid_token(self) -> None:
         """ Display an overlay that indicates that the user-supplied token is
         invalid. """
-        self.show_stretchy_overlay(
-                SomethingFailed(self,
-                                "Invalid token.",
-                                "The Ubuntu Pro token that you provided"
-                                " is invalid. Please make sure that you typed"
-                                " your token correctly."))
+        self.show_stretchy_overlay(InvalidTokenWidget(self))
 
     def show_expired_token(self) -> None:
         """ Display an overlay that indicates that the user-supplied token has
         expired. """
-        self.show_stretchy_overlay(
-                SomethingFailed(self,
-                                "Token expired.",
-                                "The Ubuntu Pro token that you provided"
-                                " has expired. Please use a different token."))
+        self.show_stretchy_overlay(ExpiredTokenWidget(self))
 
     def show_unknown_error(self) -> None:
         """ Display an overlay that indicates that we were unable to retrieve
@@ -477,6 +467,64 @@ class UbuntuProView(BaseView):
         via Ubuntu Pro subscription. After the user confirms, we will
         quit the current view and move on. """
         self._w = self.services_screen(services)
+
+
+class ExpiredTokenWidget(Stretchy):
+    """ Widget that shows that the supplied token is expired.
+
+    +--------------------- Expired token ---------------------+
+    |                                                         |
+    | Your token has expired. Please use another token to     |
+    | continue.                                               |
+    |                                                         |
+    |                         [ Okay ]                        |
+    +---------------------------------------------------------+
+    """
+    def __init__(self, parent: BaseView) -> None:
+        """ Initializes the widget. """
+        self.parent = parent
+        cont = done_btn(label=_("Okay"), on_press=lambda unused: self.close())
+        widgets = [
+            Text(_("Your token has expired. Please use another token"
+                   " to continue.")),
+            Text(""),
+            button_pile([cont]),
+            ]
+        super().__init__("Expired token", widgets,
+                         stretchy_index=0, focus_index=2)
+
+    def close(self) -> None:
+        """ Close the overlay. """
+        self.parent.remove_overlay()
+
+
+class InvalidTokenWidget(Stretchy):
+    """ Widget that shows that the supplied token is invalid.
+
+    +--------------------- Invalid token ---------------------+
+    |                                                         |
+    | Your token could not be verified. Please ensure it is   |
+    | correct and try again.                                  |
+    |                                                         |
+    |                         [ Okay ]                        |
+    +---------------------------------------------------------+
+    """
+    def __init__(self, parent: BaseView) -> None:
+        """ Initializes the widget. """
+        self.parent = parent
+        cont = done_btn(label=_("Okay"), on_press=lambda unused: self.close())
+        widgets = [
+            Text(_("Your token could not be verified. Please ensure it is"
+                   " correct and try again.")),
+            Text(""),
+            button_pile([cont]),
+            ]
+        super().__init__("Invalid token", widgets,
+                         stretchy_index=0, focus_index=2)
+
+    def close(self) -> None:
+        """ Close the overlay. """
+        self.parent.remove_overlay()
 
 
 class TokenAddedWidget(Stretchy):
