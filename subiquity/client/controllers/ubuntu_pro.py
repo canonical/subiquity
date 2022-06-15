@@ -70,6 +70,7 @@ class UbuntuProController(SubiquityTuiController):
         async def inner() -> None:
             answer = await self.endpoint.check_token.GET(token)
             if answer.status == TokenStatus.VALID_TOKEN:
+                await self.endpoint.POST(UbuntuProInfo(token=token))
                 on_success(answer.subscription.services)
             else:
                 on_failure(answer.status)
@@ -85,6 +86,12 @@ class UbuntuProController(SubiquityTuiController):
         self.app.prev_screen()
 
     def done(self, token: str) -> None:
+        """ Submit the token and move on to the next screen. """
         self.app.next_screen(
             self.endpoint.POST(UbuntuProInfo(token=token))
         )
+
+    def next_screen(self) -> None:
+        """ Move on to the next screen. Assume the token should not be
+        submitted (or has already been submitted). """
+        self.app.next_screen()
