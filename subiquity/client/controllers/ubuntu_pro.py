@@ -16,7 +16,7 @@
 
 import asyncio
 import logging
-from typing import Optional
+from typing import Callable, List, Optional
 
 from subiquitycore.async_helpers import schedule_task
 
@@ -24,6 +24,7 @@ from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import (
     UbuntuProInfo,
     UbuntuProCheckTokenStatus as TokenStatus,
+    UbuntuProService,
     )
 from subiquity.ui.views.ubuntu_pro import UbuntuProView
 
@@ -63,22 +64,17 @@ class UbuntuProController(SubiquityTuiController):
         if "token" in self.answers:
             self.done(self.answers["token"])
 
-    def check_token(self, token: str):
+    def check_token(self, token: str,
+                    on_success: Callable[[List[UbuntuProService]], None],
+                    on_failure: Callable[[TokenStatus], None],
+                    ) -> None:
         """ Asynchronously check the token passed as an argument. """
         async def inner() -> None:
             answer = await self.endpoint.check_token.GET(token)
-            if answer.status == TokenStatus.INVALID_TOKEN:
-                if isinstance(self.ui.body, UbuntuProView):
-                    self.ui.body.show_invalid_token()
-            elif answer.status == TokenStatus.EXPIRED_TOKEN:
-                if isinstance(self.ui.body, UbuntuProView):
-                    self.ui.body.show_expired_token()
-            elif answer.status == TokenStatus.UNKNOWN_ERROR:
-                if isinstance(self.ui.body, UbuntuProView):
-                    self.ui.body.show_unknown_error()
+            if answer.status == TokenStatus.VALID_TOKEN:
+                on_success(answer.services)
             else:
-                if isinstance(self.ui.body, UbuntuProView):
-                    self.ui.body.show_activable_services(answer.services)
+                on_failure(answer.status)
 
         self._check_task = schedule_task(inner())
 
