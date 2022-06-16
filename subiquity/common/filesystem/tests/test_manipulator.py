@@ -474,7 +474,7 @@ class TestFilesystemManipulator(unittest.TestCase):
     def boot_size_for_disk(self, disk):
         bl = disk._m.bootloader
         if bl == Bootloader.UEFI:
-            return sizes.get_efi_size(disk)
+            return sizes.get_efi_size(disk.size)
         elif bl == Bootloader.PREP:
             return sizes.PREP_GRUB_SIZE_BYTES
         else:

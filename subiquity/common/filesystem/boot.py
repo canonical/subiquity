@@ -209,7 +209,7 @@ def get_add_part_plan(device, *, spec, args):
     create_part_plan = CreatePartPlan(gap=None, spec=spec, args=args)
 
     if gaps.largest_gap_size(device) >= size:
-        create_part_plan.gap = gaps.largest_gap(device)
+        create_part_plan.gap = gaps.largest_gap(device).split(size)[0]
         return create_part_plan
     else:
         new_parts = [p for p in partitions if not p.preserve]
@@ -239,7 +239,8 @@ def get_boot_device_plan_uefi(device):
                 plans.append(MountBootEfiPlan(part))
             return MultiStepPlan(plans=plans)
 
-    spec = dict(size=sizes.get_efi_size(device), fstype='fat32', mount=None)
+    size = sizes.get_efi_size(device.size)
+    spec = dict(size=size, fstype='fat32', mount=None)
     if device._m._mount_for_path("/boot/efi") is None:
         spec['mount'] = '/boot/efi'
 
