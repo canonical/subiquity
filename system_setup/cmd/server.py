@@ -46,6 +46,7 @@ def make_server_args_parser():
                         dest='tcp_port',
                         type=int,
                         choices=range(49152, 60999),
+                        metavar="[49152 to 60999]",
                         help='The TCP port Subiquity must listen to. It means '
                         'TCP will be used instead of Unix domain sockets. '
                         'Only localhost connections are accepted.')
