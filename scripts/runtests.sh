@@ -234,8 +234,7 @@ if [ "${RELEASE%.*}" -ge 20 ]; then
     # Test TCP connectivity (system_setup only)
     clean
     port=50321
-    LANG=C.UTF-8 timeout --foreground 60 \
-        python3 -m system_setup.cmd.server --dry-run --tcp-port=$port &
+    LANG=C.UTF-8 python3 -m system_setup.cmd.server --dry-run --tcp-port=$port &
     subiquity_pid=$!
     next_time=3
     until [ $next_time -eq 0 ] || [ ! -z "$(ss -Hlt sport = $port)" ]; do
@@ -268,7 +267,7 @@ if [ "${RELEASE%.*}" -ge 20 ]; then
             fi
         done
     done
-    kill $subiquity_pid
+    kill $subiquity_pid || true
     if [ $loopback_failed -ne 0 ]; then
         echo "Loopback was expected to connect"
         exit 1
