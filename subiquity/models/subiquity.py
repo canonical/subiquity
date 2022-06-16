@@ -262,7 +262,7 @@ class SubiquityModel:
                 'gecos': user.realname,
                 'passwd': user.password,
                 'shell': '/bin/bash',
-                'groups': groups,
+                'groups': ','.join(sorted(groups)),
                 'lock_passwd': False,
                 }
             if self.ssh.authorized_keys:

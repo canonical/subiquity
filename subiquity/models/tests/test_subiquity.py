@@ -196,6 +196,10 @@ class TestSubiquityModel(unittest.TestCase):
             cloud_init_config = model._cloud_init_config()
             self.assertEqual(len(cloud_init_config['users']), 2)
             self.assertEqual(cloud_init_config['users'][0]['name'], 'mainuser')
+            self.assertEqual(
+                cloud_init_config['users'][0]['groups'],
+                'adm,cdrom,dip,lxd,plugdev,sudo'
+            )
             self.assertEqual(cloud_init_config['users'][1]['name'], 'user2')
 
         with self.subTest('Secondary user only'):
