@@ -133,28 +133,26 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 "autoinstall config did not create needed bootloader "
                 "partition")
 
-    def guided_direct(self, disk):
-        self.reformat(disk)
-        gap = gaps.largest_gap(disk)
-        spec = {
-            "size": gap.size,
-            "fstype": "ext4",
-            "mount": "/",
-            }
-        self.partition_disk_handler(disk, spec, gap=gap)
-
-    def guided_lvm(self, disk, lvm_options=None):
-        self.reformat(disk)
+    def setup_disk_for_guided(self, disk):
+        self.reformat(disk, wipe='superblock-recursive')
         if DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk):
             self.add_boot_disk(disk)
-        gap = gaps.largest_gap(disk)
-        size = sizes.get_bootfs_size(gap.size)
-        gap_boot, gap_rest = gap.split(size)
-        spec = dict(size=size, fstype="ext4", mount='/boot')
+        return gaps.largest_gap(disk)
+
+    def guided_direct(self, disk):
+        gap = self.setup_disk_for_guided(disk)
+        spec = dict(fstype="ext4", mount="/")
+        self.create_partition(device=disk, gap=gap, spec=spec)
+
+    def guided_lvm(self, disk, lvm_options=None):
+        gap = self.setup_disk_for_guided(disk)
+        gap_boot, gap_rest = gap.split(sizes.get_bootfs_size(gap.size))
+        spec = dict(fstype="ext4", mount='/boot')
         self.create_partition(device=disk, gap=gap_boot, spec=spec)
 
-        spec = dict(size=gap_rest.size, fstype=None)
-        part = self.create_partition(device=disk, gap=gap_rest, spec=spec)
+        part = self.create_partition(
+                device=disk, gap=gap_rest, spec=dict(fstype=None))
+
         vg_name = 'ubuntu-vg'
         i = 0
         while self.model._one(type='lvm_volgroup', name=vg_name) is not None:

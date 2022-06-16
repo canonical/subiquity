@@ -152,20 +152,22 @@ class FilesystemManipulator:
             return
         getattr(self, 'delete_' + obj.type)(obj)
 
-    def clear(self, obj):
+    def clear(self, obj, wipe=None):
         if obj.type == "disk":
             obj.preserve = False
-        obj.wipe = 'superblock'
+        if wipe is None:
+            wipe = 'superblock'
+        obj.wipe = wipe
         for subobj in obj.fs(), obj.constructed_device():
             self.delete(subobj)
 
-    def reformat(self, disk, ptable=None):
+    def reformat(self, disk, ptable=None, wipe=None):
         disk.grub_device = False
         if ptable is not None:
             disk.ptable = ptable
         for p in list(disk.partitions()):
             self.delete_partition(p, True)
-        self.clear(disk)
+        self.clear(disk, wipe)
 
     def can_resize_partition(self, partition):
         if not partition.preserve:
