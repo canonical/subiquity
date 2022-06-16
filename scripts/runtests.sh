@@ -242,6 +242,7 @@ if [ "${RELEASE%.*}" -ge 20 ]; then
     done
     if [ $next_time -eq 0 ]; then
         echo "Timeout reached before Subiquity TCP socket started listening"
+        kill $subiquity_pid || true
         exit 1
     fi
     loopback_failed=0
