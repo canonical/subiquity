@@ -18,6 +18,7 @@
 
 import logging
 import os
+from typing import List
 
 log = logging.getLogger('subiquity.common.resources')
 
@@ -26,7 +27,7 @@ def resource_path(relative_path):
     return os.path.join(os.environ.get("SUBIQUITY_ROOT", "."), relative_path)
 
 
-def get_users_and_groups(chroot_prefix=[]):
+def get_users_and_groups(chroot_prefix=[]) -> List:
     # prevent import when calling just resource_path
     from subiquitycore.utils import run_command
 
@@ -43,5 +44,4 @@ def get_users_and_groups(chroot_prefix=[]):
     for line in cp.stdout.splitlines():
         target_groups.add(line.split(':')[0])
 
-    groups = target_groups.intersection(groups)
-    return groups
+    return list(target_groups.intersection(groups))
