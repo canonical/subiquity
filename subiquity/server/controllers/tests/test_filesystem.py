@@ -15,6 +15,8 @@
 
 from unittest import mock, TestCase
 
+from parameterized import parameterized
+
 from subiquity.server.controllers.filesystem import FilesystemController
 
 from subiquitycore.tests.util import run_coro
@@ -103,3 +105,21 @@ class TestGuided(TestCase):
         self.assertEqual(None, d1p1.mount)
         self.assertEqual('/', d1p2.mount)
         self.assertEqual(d1p1.size + d1p1.offset, d1p2.offset)
+
+
+class TestLayout(TestCase):
+    def setUp(self):
+        self.app = make_app()
+        self.app.opts.bootloader = 'UEFI'
+        self.app.report_start_event = mock.Mock()
+        self.app.report_finish_event = mock.Mock()
+        self.fsc = FilesystemController(app=self.app)
+
+    @parameterized.expand([('reformat_disk',), ('use_gap',)])
+    def test_good_modes(self, mode):
+        self.fsc.validate_layout_mode(mode)
+
+    @parameterized.expand([('resize_biggest',), ('use_free',)])
+    def test_bad_modes(self, mode):
+        with self.assertRaises(ValueError):
+            self.fsc.validate_layout_mode(mode)
