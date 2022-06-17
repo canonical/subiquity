@@ -133,28 +133,27 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 "autoinstall config did not create needed bootloader "
                 "partition")
 
-    def guided_direct(self, disk):
-        self.reformat(disk)
-        gap = gaps.largest_gap(disk)
-        spec = {
-            "size": gap.size,
-            "fstype": "ext4",
-            "mount": "/",
-            }
-        self.partition_disk_handler(disk, spec, gap=gap)
-
-    def guided_lvm(self, disk, lvm_options=None):
-        self.reformat(disk)
+    def setup_disk_for_guided(self, disk, mode):
+        if mode is None or mode == 'reformat_disk':
+            self.reformat(disk, wipe='superblock-recursive')
         if DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk):
             self.add_boot_disk(disk)
-        gap = gaps.largest_gap(disk)
-        size = sizes.get_bootfs_size(gap.size)
-        gap_boot, gap_rest = gap.split(size)
-        spec = dict(size=size, fstype="ext4", mount='/boot')
+        return gaps.largest_gap(disk)
+
+    def guided_direct(self, disk, mode=None):
+        gap = self.setup_disk_for_guided(disk, mode)
+        spec = dict(fstype="ext4", mount="/")
+        self.create_partition(device=disk, gap=gap, spec=spec)
+
+    def guided_lvm(self, disk, mode=None, lvm_options=None):
+        gap = self.setup_disk_for_guided(disk, mode)
+        gap_boot, gap_rest = gap.split(sizes.get_bootfs_size(gap.size))
+        spec = dict(fstype="ext4", mount='/boot')
         self.create_partition(device=disk, gap=gap_boot, spec=spec)
 
-        spec = dict(size=gap_rest.size, fstype=None)
-        part = self.create_partition(device=disk, gap=gap_rest, spec=spec)
+        part = self.create_partition(
+                device=disk, gap=gap_rest, spec=dict(fstype=None))
+
         vg_name = 'ubuntu-vg'
         i = 0
         while self.model._one(type='lvm_volgroup', name=vg_name) is not None:
@@ -200,7 +199,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                         'password': choice.password,
                         },
                     }
-            self.guided_lvm(disk, lvm_options)
+            self.guided_lvm(disk, lvm_options=lvm_options)
         else:
             self.guided_direct(disk)
 
@@ -461,19 +460,38 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 continue
             break
 
+    def run_guided(self, layout):
+        guided_method = getattr(self, "guided_" + layout['name'])
+        mode = layout.get('mode', 'reformat_disk')
+        self.validate_layout_mode(mode)
+
+        if mode == 'reformat_disk':
+            match = layout.get("match", {'size': 'largest'})
+            disk = self.model.disk_for_match(self.model.all_disks(), match)
+            if not disk:
+                raise Exception("autoinstall cannot configure storage "
+                                "- no disk found large enough for install")
+        elif mode == 'use_gap':
+            bootable = [d for d in self.model.all_disks()
+                        if boot.can_be_boot_device(d, with_reformatting=False)]
+            gap = gaps.largest_gap(bootable)
+            if not gap:
+                raise Exception("autoinstall cannot configure storage "
+                                "- no gap found large enough for install")
+            # This is not necessarily the exact gap to be used, as the gap size
+            # may change once add_boot_disk has sorted things out.
+            disk = gap.device
+        guided_method(disk=disk, mode=mode)
+
+    def validate_layout_mode(self, mode):
+        if mode not in ('reformat_disk', 'use_gap'):
+            raise ValueError(f'Unknown layout mode {mode}')
+
     @with_context()
     def convert_autoinstall_config(self, context=None):
         log.debug("self.ai_data = %s", self.ai_data)
         if 'layout' in self.ai_data:
-            layout = self.ai_data['layout']
-            meth = getattr(self, "guided_" + layout['name'])
-            disk = self.model.disk_for_match(
-                self.model.all_disks(),
-                layout.get("match", {'size': 'largest'}))
-            if not disk:
-                raise Exception("autoinstall cannot configure storage "
-                                "- no disk found large enough for install")
-            meth(disk)
+            self.run_guided(self.ai_data['layout'])
         elif 'config' in self.ai_data:
             self.model.apply_autoinstall_config(self.ai_data['config'])
             self.model.grub = self.ai_data.get('grub')
