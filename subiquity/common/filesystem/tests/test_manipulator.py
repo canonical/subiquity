@@ -458,6 +458,14 @@ class TestFilesystemManipulator(unittest.TestCase):
         self.assertFalse(boot.can_be_boot_device(disk))
 
     @parameterized.expand([(1,), (2,)])
+    def test_no_add_boot_BIOS_gpt_teeny_disk(self, version):
+        # Showed up in VM testing - the ISO created cloud-localds shows up as a
+        # potential install target, and weird things happen.
+        manipulator = make_manipulator(Bootloader.BIOS, version)
+        disk = make_disk(manipulator.model, ptable='gpt', size=1 << 20)
+        self.assertFalse(boot.can_be_boot_device(disk))
+
+    @parameterized.expand([(1,), (2,)])
     def test_add_boot_BIOS_msdos(self, version):
         manipulator = make_manipulator(Bootloader.BIOS, version)
         disk = make_disk(manipulator.model, preserve=True, ptable='msdos')
