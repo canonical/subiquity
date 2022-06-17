@@ -472,7 +472,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 raise Exception("autoinstall cannot configure storage "
                                 "- no disk found large enough for install")
         elif mode == 'use_gap':
-            gap = gaps.largest_gap(self.model.all_disks())
+            bootable = [d for d in self.model.all_disks()
+                        if boot.can_be_boot_device(d, with_reformatting=False)]
+            gap = gaps.largest_gap(bootable)
             if not gap:
                 raise Exception("autoinstall cannot configure storage "
                                 "- no gap found large enough for install")
