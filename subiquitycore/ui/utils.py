@@ -344,9 +344,10 @@ def rewrap(text):
 
 
 class SomethingFailed(Stretchy):
-    def __init__(self, parent, msg, stderr):
+    def __init__(self, parent, msg, stderr,
+                 *, btn_label: str = _("Close")) -> None:
         self.parent = parent
-        ok = other_btn(label=_("Close"), on_press=self.close)
+        ok = other_btn(label=btn_label, on_press=self.close)
         widgets = [
             Text(msg),
             Text(""),
