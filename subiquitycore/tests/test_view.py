@@ -16,7 +16,7 @@
 import urwid
 
 from subiquitycore.tests import SubiTestCase
-from subiquitycore.view import BaseView
+from subiquitycore.view import BaseView, OverlayNotFoundError
 from subiquitycore.ui.stretchy import Stretchy, StretchyOverlay
 from subiquitycore.ui.utils import undisabled
 
@@ -93,3 +93,20 @@ class TestBaseView(SubiTestCase):
         bv.remove_overlay()
         self.assertTrue(c.was_closed)
         self.assertEqual(self.get_stretchy_chain(bv), [b, a])
+
+    def test_remove_overlay_not_found(self):
+        bv, a, b, c = self.make_view_with_overlays()
+        bv.remove_overlay(not_found_ok=False)
+        bv.remove_overlay(not_found_ok=False)
+        bv.remove_overlay(not_found_ok=False)
+
+        # At this point, there is no more overlay.
+        with self.assertRaises(OverlayNotFoundError):
+            bv.remove_overlay(not_found_ok=False)
+
+        bv.remove_overlay(not_found_ok=True)
+
+        with self.assertRaises(OverlayNotFoundError):
+            bv.remove_overlay(stretchy=a, not_found_ok=False)
+
+        bv.remove_overlay(stretchy=a, not_found_ok=True)
