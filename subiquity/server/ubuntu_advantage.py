@@ -21,7 +21,7 @@ import contextlib
 import json
 import logging
 from subprocess import CompletedProcess
-from typing import List, Sequence, Union
+from typing import List, Sequence, Tuple, Union
 import asyncio
 
 from subiquity.common.types import (
@@ -60,6 +60,10 @@ class CheckSubscriptionError(Exception):
         super().__init__(message)
 
 
+class APIUsageError(Exception):
+    """ Exception to raise when the API call does not return valid JSON. """
+
+
 class UAInterfaceStrategy(ABC):
     """ Strategy to query information about a UA subscription. """
     @abstractmethod
@@ -73,6 +77,7 @@ class MockedUAInterfaceStrategy(UAInterfaceStrategy):
     returns is based on example files and appearance of the UA token. """
     def __init__(self, scale_factor: int = 1):
         self.scale_factor = scale_factor
+        self._user_code_count = 0
         super().__init__()
 
     async def query_info(self, token: str) -> dict:
@@ -102,11 +107,75 @@ class MockedUAInterfaceStrategy(UAInterfaceStrategy):
         with open(path, encoding="utf-8") as stream:
             return json.load(stream)
 
+    def _next_user_code(self) -> str:
+        """ Return the next user code starting with AAAAAA. """
+        alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ123456789"
+
+        count = self._user_code_count
+        self._user_code_count += 1
+
+        user_code = ""
+        # Generate a 6 characters code
+        for i in range(6):
+            user_code = alphabet[count % len(alphabet)] + user_code
+            count //= len(alphabet)
+
+        return user_code
+
+    async def magic_initiate_v1(self) -> dict:
+        """ Simulate a success response from u.pro.attach.magic.initiate.v1
+        endpoint. """
+        await asyncio.sleep(1 / self.scale_factor)
+        return {
+            "data": {
+                "attributes": {
+                    "expires_in": 200,
+                    "token": "123456789ABCDEF",
+                    "user_code": self._next_user_code(),
+                },
+                "type": "MagicAttachInitiate",
+            },
+            "errors": [],
+            "result": "success",
+            "warnings": [],
+        }
+
+    async def magic_wait_v1(self, magic_token: str) -> dict:
+        """ Simulate a timeout respnose from u.pro.attach.magic.wait.v1
+        endpoint. """
+        # Simulate a normal timeout
+        await asyncio.sleep(600 / self.scale_factor)
+        return {
+            "result": "failure",
+            "errors": [
+                {
+                    "title": "The magic attach token is invalid, has "
+                             " expired or never existed",
+                    "code": "magic-attach-token-error",
+                },
+            ],
+        }
+
+    async def magic_revoke_v1(self, magic_token: str) -> dict:
+        """ Simulate a success respnose from u.pro.attach.magic.revoke.v1
+        endpoint. """
+        await asyncio.sleep(1 / self.scale_factor)
+        return {
+            "data": {
+                "attributes": {},
+                "type": "MagicAttachRevoke",
+            },
+            "errors": [],
+            "result": "success",
+            "warnings": [],
+        }
+
 
 class UAClientUAInterfaceStrategy(UAInterfaceStrategy):
     """ Strategy that relies on UA client script to retrieve the information.
     """
     Executable = Union[str, Sequence[str]]
+    scale_factor = 1
 
     def __init__(self, executable: Executable = "ubuntu-advantage") -> None:
         """ Initialize the strategy using the path to the ubuntu-advantage
@@ -166,6 +235,40 @@ class UAClientUAInterfaceStrategy(UAInterfaceStrategy):
 
         message = "Unable to retrieve subscription information."
         raise CheckSubscriptionError(token, message=message)
+
+    async def _api_call(self,
+                        endpoint: str,
+                        params: Sequence[Tuple[str, str]]) -> dict:
+        command = list(tuple(self.executable)) + ["api", endpoint, "--args"]
+
+        for key, value in params:
+            command.append(f"{key}={value}")
+
+        proc: CompletedProcess = await utils.arun_command(
+                tuple(command), check=False)
+        try:
+            return json.loads(proc.stdout)
+        except json.JSONDecodeError:
+            log.exception("Failed to parse output of command %r", command)
+            raise APIUsageError
+
+    async def magic_initiate_v1(self) -> dict:
+        """ Call the u.pro.attach.magic.initiate.v1 endpoint. """
+        return await self._api_call(
+                endpoint="u.pro.attach.magic.initiate.v1",
+                params=[])
+
+    async def magic_wait_v1(self, magic_token: str) -> dict:
+        """ Call the u.pro.attach.magic.wait.v1 endpoint. """
+        return await self._api_call(
+                endpoint="u.pro.attach.magic.wait.v1",
+                params=[("magic_token", magic_token)])
+
+    async def magic_revoke_v1(self, magic_token: str) -> dict:
+        """ Call the u.pro.attach.magic.revoke.v1 endpoint. """
+        return await self._api_call(
+                endpoint="u.pro.attach.magic.revoke.v1",
+                params=[("magic_token", magic_token)])
 
 
 class UAInterface:
