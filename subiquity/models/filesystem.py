@@ -689,10 +689,16 @@ class Partition(_Formattable):
 
     @property
     def _number(self):
-        if self.preserve:
+        if self.number is not None:
             return self.number
-        else:
-            return self.device._partitions.index(self) + 1
+        used_nums = {part.number for part in self.device._partitions
+                     if part.number is not None}
+        possible_nums = {i for i in range(1, len(self.device._partitions) + 1)}
+        unused_nums = sorted(list(possible_nums - used_nums))
+        for part in self.device._partitions:
+            if part.number is None:
+                part.number = unused_nums.pop(0)
+        return self.number
 
     def _path(self):
         return partition_kname(self.device.path, self._number)
