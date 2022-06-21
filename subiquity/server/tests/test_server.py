@@ -23,7 +23,7 @@ from subiquity.server.server import (
     SubiquityServer,
     cloud_autoinstall_path,
     iso_autoinstall_path,
-    reload_autoinstall_path,
+    root_autoinstall_path,
 )
 
 
@@ -51,39 +51,42 @@ class TestAutoinstallLoad(SubiTestCase):
         return path
 
     def test_autoinstall_disabled(self):
-        self.create(reload_autoinstall_path, 'reload')
+        self.create(root_autoinstall_path, 'root')
         self.create(cloud_autoinstall_path, 'cloud')
         self.create(iso_autoinstall_path, 'iso')
         self.server.opts.autoinstall = ""
         self.assertIsNone(self.server.select_autoinstall())
 
-    def test_reload_wins(self):
-        self.create(reload_autoinstall_path, 'reload')
+    def test_root_wins(self):
+        root = self.create(root_autoinstall_path, 'root')
         autoinstall = self.create(self.path('arg.autoinstall.yaml'), 'arg')
         self.server.opts.autoinstall = autoinstall
         self.create(cloud_autoinstall_path, 'cloud')
-        iso = self.create(iso_autoinstall_path, 'iso')
-        self.assertEqual(iso, self.server.select_autoinstall())
-        self.assert_contents(iso, 'reload')
+        self.create(iso_autoinstall_path, 'iso')
+        self.assertEqual(root, self.server.select_autoinstall())
+        self.assert_contents(root, 'root')
 
     def test_arg_wins(self):
+        root = self.path(root_autoinstall_path)
         arg = self.create(self.path('arg.autoinstall.yaml'), 'arg')
         self.server.opts.autoinstall = arg
         self.create(cloud_autoinstall_path, 'cloud')
-        iso = self.create(iso_autoinstall_path, 'iso')
-        self.assertEqual(iso, self.server.select_autoinstall())
-        self.assert_contents(iso, 'arg')
+        self.create(iso_autoinstall_path, 'iso')
+        self.assertEqual(root, self.server.select_autoinstall())
+        self.assert_contents(root, 'arg')
 
     def test_cloud_wins(self):
+        root = self.path(root_autoinstall_path)
         self.create(cloud_autoinstall_path, 'cloud')
-        iso = self.create(iso_autoinstall_path, 'iso')
-        self.assertEqual(iso, self.server.select_autoinstall())
-        self.assert_contents(iso, 'cloud')
+        self.create(iso_autoinstall_path, 'iso')
+        self.assertEqual(root, self.server.select_autoinstall())
+        self.assert_contents(root, 'cloud')
 
     def test_iso_wins(self):
-        iso = self.create(iso_autoinstall_path, 'iso')
-        self.assertEqual(iso, self.server.select_autoinstall())
-        self.assert_contents(iso, 'iso')
+        root = self.path(root_autoinstall_path)
+        self.create(iso_autoinstall_path, 'iso')
+        self.assertEqual(root, self.server.select_autoinstall())
+        self.assert_contents(root, 'iso')
 
     def test_nobody_wins(self):
         self.assertIsNone(self.server.select_autoinstall())
@@ -96,14 +99,15 @@ class TestAutoinstallLoad(SubiTestCase):
     def test_early_commands_changes_autoinstall(self):
         self.server.controllers = Mock()
         self.server.controllers.instances = []
-        isopath = self.create(iso_autoinstall_path, '')
+        rootpath = self.path(root_autoinstall_path)
 
-        cmd = f"sed -i -e '$ a stuff: things' {isopath}"
+        cmd = f"sed -i -e '$ a stuff: things' {rootpath}"
         contents = f'''\
 version: 1
 early-commands: ["{cmd}"]
 '''
-        self.create(cloud_autoinstall_path, contents)
+        arg = self.create(self.path('arg.autoinstall.yaml'), contents)
+        self.server.opts.autoinstall = arg
 
         self.server.autoinstall = self.server.select_autoinstall()
         self.server.load_autoinstall_config(only_early=True)
