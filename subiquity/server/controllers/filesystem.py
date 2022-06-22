@@ -310,7 +310,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     def get_partition(self, disk, number):
         for p in disk.partitions():
-            if p._number == number:
+            if p.number == number:
                 return p
         raise ValueError(f'Partition {number} on {disk.id} not found')
 

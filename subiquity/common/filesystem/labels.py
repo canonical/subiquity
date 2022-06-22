@@ -181,10 +181,10 @@ def _label_partition(partition, *, short=False):
     else:
         p = ""
     if short:
-        return p + _("partition {number}").format(number=partition._number)
+        return p + _("partition {number}").format(number=partition.number)
     else:
         return p + _("partition {number} of {device}").format(
-            number=partition._number, device=label(partition.device))
+            number=partition.number, device=label(partition.device))
 
 
 @label.register(gaps.Gap)
@@ -309,7 +309,7 @@ def _for_client_disk(disk, *, min_size=0):
 def _for_client_partition(partition, *, min_size=0):
     return types.Partition(
         size=partition.size,
-        number=partition._number,
+        number=partition.number,
         wipe=partition.wipe,
         preserve=partition.preserve,
         grub_device=partition.grub_device,

@@ -176,12 +176,6 @@ def make_partition(model, device=None, *, preserve=False, size=None,
             offset = gap.offset
     partition = Partition(m=model, device=device, size=size, offset=offset,
                           preserve=preserve, **kw)
-    if preserve:
-        number = kw.get('number')
-        if number is not None:
-            partition.number = number
-        else:
-            partition.number = len(device._partitions)
     model._actions.append(partition)
     return partition
 
@@ -704,9 +698,9 @@ class TestPartitionNumbering(unittest.TestCase):
         p1 = make_partition(m, d1)
         p2 = make_partition(m, d1)
         p3 = make_partition(m, d1)
-        self.assertEqual(1, p1._number)
-        self.assertEqual(2, p2._number)
-        self.assertEqual(3, p3._number)
+        self.assertEqual(1, p1.number)
+        self.assertEqual(2, p2.number)
+        self.assertEqual(3, p3.number)
 
     def test_p1_preserved(self):
         m = make_model()
@@ -715,11 +709,11 @@ class TestPartitionNumbering(unittest.TestCase):
         p1 = make_partition(m, d1, preserve=True, number=1)
         p2 = make_partition(m, d1)
         p3 = make_partition(m, d1)
-        self.assertEqual(1, p1._number)
+        self.assertEqual(1, p1.number)
         self.assertEqual(True, p1.preserve)
-        self.assertEqual(2, p2._number)
+        self.assertEqual(2, p2.number)
         self.assertEqual(False, p2.preserve)
-        self.assertEqual(3, p3._number)
+        self.assertEqual(3, p3.number)
         self.assertEqual(False, p3.preserve)
 
     def test_p2_preserved(self):
@@ -729,23 +723,9 @@ class TestPartitionNumbering(unittest.TestCase):
         p2 = make_partition(m, d1, preserve=True, number=2)
         p1 = make_partition(m, d1)
         p3 = make_partition(m, d1)
-        self.assertEqual(1, p1._number)
-        self.assertEqual(False, p1.preserve)
-        self.assertEqual(2, p2._number)
-        self.assertEqual(True, p2.preserve)
-        self.assertEqual(3, p3._number)
-        self.assertEqual(False, p3.preserve)
-
-    def test_trigger_part_num_allocation_for_disk(self):
-        m = make_model()
-        d1 = make_disk(m, ptable='gpt')
-        p1 = make_partition(m, d1)
-        p2 = make_partition(m, d1)
-        p3 = make_partition(m, d1)
-        self.assertIsNone(p1.number)
-        self.assertIsNone(p2.number)
-        self.assertIsNone(p3.number)
-        self.assertEqual(3, p3._number)
         self.assertEqual(1, p1.number)
+        self.assertEqual(False, p1.preserve)
         self.assertEqual(2, p2.number)
+        self.assertEqual(True, p2.preserve)
         self.assertEqual(3, p3.number)
+        self.assertEqual(False, p3.preserve)

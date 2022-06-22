@@ -304,7 +304,7 @@ def _can_delete_raid_vg(device):
                 "Cannot delete {devicelabel} as partition {partnum} is part "
                 "of the {cdtype} {cdname}.").format(
                     devicelabel=labels.label(device),
-                    partnum=p._number,
+                    partnum=p.number,
                     cdtype=labels.desc(cd),
                     cdname=labels.label(cd),
                     )
