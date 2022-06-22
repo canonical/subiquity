@@ -86,7 +86,7 @@ from subiquitycore.snapd import (
 NOPROBERARG = "NOPROBER"
 
 iso_autoinstall_path = 'cdrom/autoinstall.yaml'
-reload_autoinstall_path = 'run/subiquity/reload.autoinstall.yaml'
+root_autoinstall_path = 'autoinstall.yaml'
 cloud_autoinstall_path = 'run/subiquity/cloud.autoinstall.yaml'
 
 log = logging.getLogger('subiquity.server.server')
@@ -545,10 +545,10 @@ class SubiquityServer(Application):
 
     def select_autoinstall(self):
         # precedence
-        # 1. data from before reload
+        # 1. autoinstall at root of drive
         # 2. command line argument autoinstall
         # 3. autoinstall supplied by cloud config
-        # 4. autoinstall baked into the iso at /autoinstall.yaml
+        # 4. autoinstall baked into the iso, found at /cdrom/autoinstall.yaml
 
         # if opts.autoinstall is set and empty, that means
         # autoinstall has been explicitly disabled.
@@ -559,7 +559,7 @@ class SubiquityServer(Application):
             raise Exception(
                 f'Autoinstall argument {self.opts.autoinstall} not found')
 
-        locations = (self.base_relative(reload_autoinstall_path),
+        locations = (self.base_relative(root_autoinstall_path),
                      self.opts.autoinstall,
                      self.base_relative(cloud_autoinstall_path),
                      self.base_relative(iso_autoinstall_path))
@@ -570,9 +570,9 @@ class SubiquityServer(Application):
         else:
             return None
 
-        isopath = self.base_relative(iso_autoinstall_path)
-        copy_file_if_exists(loc, isopath)
-        return isopath
+        rootpath = self.base_relative(root_autoinstall_path)
+        copy_file_if_exists(loc, rootpath)
+        return rootpath
 
     def _user_has_password(self, username):
         with open('/etc/shadow') as fp:
@@ -651,10 +651,6 @@ class SubiquityServer(Application):
                 open(stamp_file, 'w').close()
                 await asyncio.sleep(1)
         self.load_autoinstall_config(only_early=False)
-        if self.autoinstall is not None:
-            copy_file_if_exists(
-                self.autoinstall,
-                self.base_relative(reload_autoinstall_path))
         if self.autoinstall_config:
             self.interactive = bool(
                 self.autoinstall_config.get('interactive-sections'))
