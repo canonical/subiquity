@@ -25,7 +25,10 @@ from urwid import (
     Widget,
     )
 
-from subiquity.common.types import UbuntuProService
+from subiquity.common.types import (
+    UbuntuProCheckTokenStatus,
+    UbuntuProService,
+    )
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import (
     back_btn,
@@ -146,11 +149,27 @@ class UbuntuProView(BaseView):
         asynchronously check if the token is valid. """
         token: str = form.token.value
         if token:
+            def on_success(services: List[UbuntuProService]) -> None:
+                self.remove_overlay()
+                self.show_activable_services(services)
+
+            def on_failure(status: UbuntuProCheckTokenStatus) -> None:
+                self.remove_overlay()
+                if status == UbuntuProCheckTokenStatus.INVALID_TOKEN:
+                    self.show_invalid_token()
+                elif status == UbuntuProCheckTokenStatus.EXPIRED_TOKEN:
+                    self.show_expired_token()
+                elif status == UbuntuProCheckTokenStatus.UNKNOWN_ERROR:
+                    self.show_unknown_error()
+
             checking_token_overlay = CheckingUAToken(self)
             self.show_overlay(checking_token_overlay,
                               width=checking_token_overlay.width,
                               min_width=None)
-            self.controller.check_token(token)
+
+            self.controller.check_token(token,
+                                        on_success=on_success,
+                                        on_failure=on_failure)
         else:
             self.controller.done(token)
 
@@ -161,7 +180,6 @@ class UbuntuProView(BaseView):
     def show_invalid_token(self) -> None:
         """ Display an overlay that indicates that the user-supplied token is
         invalid. """
-        self.remove_overlay()
         self.show_stretchy_overlay(
                 SomethingFailed(self,
                                 "Invalid token.",
@@ -172,7 +190,6 @@ class UbuntuProView(BaseView):
     def show_expired_token(self) -> None:
         """ Display an overlay that indicates that the user-supplied token has
         expired. """
-        self.remove_overlay()
         self.show_stretchy_overlay(
                 SomethingFailed(self,
                                 "Token expired.",
@@ -185,7 +202,6 @@ class UbuntuProView(BaseView):
         network connection, temporary service unavailability, API issue ...
         The user is prompted to continue anyway or go back.
         """
-        self.remove_overlay()
         self.show_stretchy_overlay(ContinueAnywayWidget(self))
 
     def show_activable_services(self,
@@ -193,7 +209,6 @@ class UbuntuProView(BaseView):
         """ Display an overlay with the list of services that can be enabled
         via Ubuntu Pro subscription. After the user confirms, we will
         quit the current view and move on. """
-        self.remove_overlay()
         self.show_stretchy_overlay(ShowServicesWidget(self, services))
 
 
