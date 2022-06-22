@@ -154,8 +154,9 @@ def get_boot_device_plan_bios(device) -> Optional[MakeBootDevicePlan]:
     if device.ptable == 'msdos':
         return attr_plan
     pgs = gaps.parts_and_gaps(device)
-    if isinstance(pgs[0], Partition) and pgs[0].flag == "bios_grub":
-        return attr_plan
+    if len(pgs) > 0:
+        if isinstance(pgs[0], Partition) and pgs[0].flag == "bios_grub":
+            return attr_plan
 
     gap = gaps.Gap(device=device,
                    offset=sizes.BIOS_GRUB_SIZE_BYTES,
