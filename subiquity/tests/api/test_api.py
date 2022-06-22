@@ -36,7 +36,7 @@ def timeout(multiplier=1):
     def wrapper(coro):
         @wraps(coro)
         async def run(*args, **kwargs):
-            with async_timeout.timeout(default_timeout * multiplier):
+            async with async_timeout.timeout(default_timeout * multiplier):
                 return await coro(*args, **kwargs)
         return run
     return wrapper
