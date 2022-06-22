@@ -148,6 +148,7 @@ def main():
     logger.info("Starting Subiquity server revision {}".format(version))
     logger.info("Arguments passed: {}".format(sys.argv))
     logger.debug("Kernel commandline: {}".format(opts.kernel_cmdline))
+    logger.debug("Storage version: {}".format(opts.storage_version))
 
     server = SubiquityServer(opts, block_log_dir)
 

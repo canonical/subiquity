@@ -461,7 +461,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             break
 
     def run_guided(self, layout):
-        guided_method = getattr(self, "guided_" + layout['name'])
+        name = layout['name']
+        guided_method = getattr(self, "guided_" + name)
         mode = layout.get('mode', 'reformat_disk')
         self.validate_layout_mode(mode)
 
@@ -481,6 +482,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             # This is not necessarily the exact gap to be used, as the gap size
             # may change once add_boot_disk has sorted things out.
             disk = gap.device
+        log.info(f'autoinstall: running guided {name} install in mode {mode} '
+                 f'using {disk}')
         guided_method(disk=disk, mode=mode)
 
     def validate_layout_mode(self, mode):
