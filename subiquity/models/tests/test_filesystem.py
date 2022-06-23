@@ -176,8 +176,6 @@ def make_partition(model, device=None, *, preserve=False, size=None,
             offset = gap.offset
     partition = Partition(m=model, device=device, size=size, offset=offset,
                           preserve=preserve, **kw)
-    if preserve:
-        partition.number = len(device._partitions)
     model._actions.append(partition)
     return partition
 
@@ -692,3 +690,42 @@ class TestAlignmentData(unittest.TestCase):
             # information, so gaps produces numbers that are too small by 1MiB
             # for ptable != 'gpt'
             self.assertTrue(gaps_max <= align_max, f'ptable={ptable}')
+
+
+class TestPartitionNumbering(unittest.TestCase):
+    def test_basic(self):
+        m, d1 = make_model_and_disk(ptable='gpt')
+        p1 = make_partition(m, d1)
+        p2 = make_partition(m, d1)
+        p3 = make_partition(m, d1)
+        self.assertEqual(1, p1.number)
+        self.assertEqual(2, p2.number)
+        self.assertEqual(3, p3.number)
+
+    def test_p1_preserved(self):
+        m = make_model()
+        m.storage_version = 2
+        d1 = make_disk(m, ptable='gpt')
+        p1 = make_partition(m, d1, preserve=True, number=1)
+        p2 = make_partition(m, d1)
+        p3 = make_partition(m, d1)
+        self.assertEqual(1, p1.number)
+        self.assertEqual(True, p1.preserve)
+        self.assertEqual(2, p2.number)
+        self.assertEqual(False, p2.preserve)
+        self.assertEqual(3, p3.number)
+        self.assertEqual(False, p3.preserve)
+
+    def test_p2_preserved(self):
+        m = make_model()
+        m.storage_version = 2
+        d1 = make_disk(m, ptable='gpt')
+        p2 = make_partition(m, d1, preserve=True, number=2)
+        p1 = make_partition(m, d1)
+        p3 = make_partition(m, d1)
+        self.assertEqual(1, p1.number)
+        self.assertEqual(False, p1.preserve)
+        self.assertEqual(2, p2.number)
+        self.assertEqual(True, p2.preserve)
+        self.assertEqual(3, p3.number)
+        self.assertEqual(False, p3.preserve)

@@ -299,36 +299,34 @@ class TestFlow(TestAPI):
                 }
             }
             add_resp = await inst.post('/storage/v2/add_partition', data)
-            sda = first(add_resp['disks'], 'id', disk_id)
-            sda2 = first(sda['partitions'], 'number', 2)
-            self.assertEqual('ext3', sda2['format'])
+            [sda] = add_resp['disks']
+            [root] = match(sda['partitions'], mount='/')
+            self.assertEqual('ext3', root['format'])
 
             data = {
                 'disk_id': disk_id,
                 'partition': {
-                    'number': 2,
+                    'number': root['number'],
                     'format': 'ext4',
                 }
             }
             edit_resp = await inst.post('/storage/v2/edit_partition', data)
 
-            add_sda = first(add_resp['disks'], 'id', disk_id)
-            add_sda2 = first(add_sda['partitions'], 'number', 2)
+            [add_sda] = add_resp['disks']
+            [add_root] = match(add_sda['partitions'], mount='/')
 
-            edit_sda = first(edit_resp['disks'], 'id', disk_id)
-            edit_sda2 = first(edit_sda['partitions'], 'number', 2)
+            [edit_sda] = edit_resp['disks']
+            [edit_root] = match(edit_sda['partitions'], mount='/')
 
             for key in 'size', 'number', 'mount', 'boot':
-                self.assertEqual(add_sda2[key], edit_sda2[key], key)
-            self.assertEqual('ext4', edit_sda2['format'])
+                self.assertEqual(add_root[key], edit_root[key], key)
+            self.assertEqual('ext4', edit_root['format'])
 
             del_resp = await inst.post('/storage/v2/delete_partition', data)
-            sda = first(del_resp['disks'], 'id', disk_id)
-            self.assertEqual(2, len(sda['partitions']))
-
-            for type in 'Partition', 'Gap':
-                pgs = [pg for pg in sda['partitions'] if pg['$type'] == type]
-                self.assertEqual(len(pgs), 1)
+            [sda] = del_resp['disks']
+            [p, g] = sda['partitions']
+            self.assertEqual('Partition', p['$type'])
+            self.assertEqual('Gap', g['$type'])
 
             reset_resp = await inst.post('/storage/v2/reset')
             self.assertEqual(orig_resp, reset_resp)
@@ -374,8 +372,9 @@ class TestAdd(TestAPI):
 
             await inst.post('/storage/v2/reset')
 
-            # these manual steps are expected to be equivalent to just adding
-            # the single partition and getting the automatic boot partition
+            # these manual steps are expected to be mostly equivalent to just
+            # adding the single partition and getting the automatic boot
+            # partition
             resp = await inst.post(
                 '/storage/v2/add_boot_partition', disk_id=disk_id)
             sda = first(resp['disks'], 'id', disk_id)
@@ -389,6 +388,15 @@ class TestAdd(TestAPI):
                 }
             }
             manual_add = await inst.post('/storage/v2/add_partition', data)
+
+            # the only difference is the partition number assigned - when we
+            # explicitly add_boot_partition, that is the first partition
+            # created, versus when we add_partition and get a boot partition
+            # implicitly
+            for resp in single_add, manual_add:
+                for part in resp['disks'][0]['partitions']:
+                    part.pop('number')
+                    part.pop('path')
 
             self.assertEqual(single_add, manual_add)
 
@@ -978,10 +986,11 @@ class TestGap(TestAPI):
                 }
             }
             resp = await inst.post('/storage/v2/add_partition', data)
-            sda = first(resp['disks'], 'id', 'disk-sda')
-            boot = first(sda['partitions'], 'number', 1)
-            gap = sda['partitions'][2]
-            expected = (10 << 30) - boot['size'] - (4 << 30) - (2 << 20)
+            [sda] = resp['disks']
+            [boot] = match(sda['partitions'], mount='/boot/efi')
+            [p1, p2, gap] = sda['partitions']
+            self.assertEqual('Gap', gap['$type'])
+            expected = (10 << 30) - p1['size'] - p2['size'] - (2 << 20)
             self.assertEqual(expected, gap['size'])
 
     async def SKIP_test_two_gaps(self):
@@ -1040,10 +1049,10 @@ class TestRegression(TestAPI):
                 }
             }
             resp = await inst.post('/storage/v2/add_partition', data)
-            sda = first(resp['disks'], 'id', disk_id)
-            sda2 = first(sda['partitions'], 'number', 2)
-            sda2.update({'format': 'ext3', 'mount': '/bar'})
-            data['partition'] = sda2
+            [sda] = resp['disks']
+            [part] = match(sda['partitions'], mount='/foo')
+            part.update({'format': 'ext3', 'mount': '/bar'})
+            data['partition'] = part
             data.pop('gap')
             await inst.post('/storage/v2/edit_partition', data)
             # should not throw an exception complaining about boot

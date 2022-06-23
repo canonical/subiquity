@@ -115,9 +115,18 @@ def fsobj__repr(obj):
     return "{}({})".format(type(obj).__name__, ", ".join(args))
 
 
+def _do_post_inits(obj):
+    for fn in obj._post_inits:
+        fn(obj)
+
+
 def fsobj(typ):
     def wrapper(c):
-        c.__attrs_post_init__ = _set_backlinks
+        c.__attrs_post_init__ = _do_post_inits
+        c._post_inits = [_set_backlinks]
+        class_post_init = getattr(c, '__post_init__', None)
+        if class_post_init is not None:
+            c._post_inits.append(class_post_init)
         c.type = attributes.const(typ)
         c.id = attr.ib(default=None)
         c._m = attr.ib(repr=None, default=None)
@@ -675,6 +684,15 @@ class Partition(_Formattable):
     resize = attr.ib(default=None)
     partition_type = attr.ib(default=None)
 
+    def __post_init__(self):
+        if self.number is not None:
+            return
+        used_nums = {part.number for part in self.device._partitions
+                     if part.number is not None}
+        possible_nums = {i for i in range(1, len(self.device._partitions) + 1)}
+        unused_nums = sorted(list(possible_nums - used_nums))
+        self.number = unused_nums.pop(0)
+
     def available(self):
         if self.flag in ['bios_grub', 'prep'] or self.grub_device:
             return False
@@ -684,18 +702,8 @@ class Partition(_Formattable):
             return True
         return self._fs._available()
 
-    def serialize_number(self):
-        return {'number': self._number}
-
-    @property
-    def _number(self):
-        if self.preserve:
-            return self.number
-        else:
-            return self.device._partitions.index(self) + 1
-
     def _path(self):
-        return partition_kname(self.device.path, self._number)
+        return partition_kname(self.device.path, self.number)
 
     @property
     def boot(self):
@@ -1261,7 +1269,7 @@ class FilesystemModel(object):
             if obj.type == "partition":
                 ensure_partitions(obj.device)
                 for p in obj.device.partitions():
-                    if p._number < obj._number and p.id not in emitted_ids:
+                    if p.number < obj.number and p.id not in emitted_ids:
                         return False
             for dep in dependencies(obj):
                 if dep.id not in emitted_ids:
