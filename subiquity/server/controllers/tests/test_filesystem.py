@@ -13,13 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from unittest import mock, TestCase
+from unittest import mock, TestCase, IsolatedAsyncioTestCase
 
 from parameterized import parameterized
 
 from subiquity.server.controllers.filesystem import FilesystemController
 
-from subiquitycore.tests.util import run_coro
 from subiquitycore.tests.mocks import make_app
 from subiquity.common.types import Bootloader
 from subiquity.models.tests.test_filesystem import (
@@ -28,7 +27,7 @@ from subiquity.models.tests.test_filesystem import (
     )
 
 
-class TestSubiquityControllerFilesystem(TestCase):
+class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
         self.app.opts.bootloader = 'UEFI'
@@ -38,20 +37,20 @@ class TestSubiquityControllerFilesystem(TestCase):
         self.fsc = FilesystemController(app=self.app)
         self.fsc._configured = True
 
-    def test_probe_restricted(self):
-        run_coro(self.fsc._probe_once(context=None, restricted=True))
+    async def test_probe_restricted(self):
+        await self.fsc._probe_once(context=None, restricted=True)
         self.app.prober.get_storage.assert_called_with({'blockdev'})
 
-    def test_probe_os_prober_false(self):
+    async def test_probe_os_prober_false(self):
         self.app.opts.use_os_prober = False
-        run_coro(self.fsc._probe_once(context=None, restricted=False))
+        await self.fsc._probe_once(context=None, restricted=False)
         actual = self.app.prober.get_storage.call_args.args[0]
         self.assertTrue({'defaults'} <= actual)
         self.assertNotIn('os', actual)
 
-    def test_probe_os_prober_true(self):
+    async def test_probe_os_prober_true(self):
         self.app.opts.use_os_prober = True
-        run_coro(self.fsc._probe_once(context=None, restricted=False))
+        await self.fsc._probe_once(context=None, restricted=False)
         actual = self.app.prober.get_storage.call_args.args[0]
         self.assertTrue({'defaults', 'os'} <= actual)
 

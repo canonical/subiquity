@@ -20,7 +20,6 @@ from subiquity.models.timezone import TimeZoneModel
 from subiquity.server.controllers.timezone import TimeZoneController
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
-from subiquitycore.tests.util import run_coro
 
 
 class MockGeoIP:
@@ -47,7 +46,7 @@ class TestTimeZoneController(SubiTestCase):
 
     @mock.patch('subiquity.server.controllers.timezone.timedatectl_settz')
     @mock.patch('subiquity.server.controllers.timezone.timedatectl_gettz')
-    def test_good_tzs(self, tdc_gettz, tdc_settz):
+    async def test_good_tzs(self, tdc_gettz, tdc_settz):
         tdc_gettz.return_value = tz_utc
         goods = [
             # val - autoinstall value
@@ -77,7 +76,7 @@ class TestTimeZoneController(SubiTestCase):
                              self.tzc.model)
             self.assertEqual(geoip, self.tzc.model.detect_with_geoip,
                              self.tzc.model)
-            self.assertEqual(tz, run_coro(self.tzc.GET()), self.tzc.model)
+            self.assertEqual(tz, await self.tzc.GET(), self.tzc.model)
             cloudconfig = {}
             if self.tzc.model.should_set_tz:
                 cloudconfig = {'timezone': tz.timezone}
@@ -104,7 +103,7 @@ class TestTimeZoneController(SubiTestCase):
         self.assertEqual('sleep', subprocess_run.call_args.args[0][0])
 
     @mock.patch('subiquity.server.controllers.timezone.timedatectl_settz')
-    def test_get_tz_should_not_set(self, tdc_settz):
-        run_coro(self.tzc.GET())
+    async def test_get_tz_should_not_set(self, tdc_settz):
+        await self.tzc.GET()
         self.assertFalse(self.tzc.model.should_set_tz)
         tdc_settz.assert_not_called()

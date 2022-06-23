@@ -7,7 +7,6 @@ from functools import wraps
 import json
 import os
 import tempfile
-import unittest
 from unittest.mock import patch
 from urllib.parse import unquote
 
@@ -134,7 +133,7 @@ class Server(Client):
                 pass
 
 
-class TestAPI(unittest.IsolatedAsyncioTestCase, SubiTestCase):
+class TestAPI(SubiTestCase):
     class _MachineConfig(os.PathLike):
         def __init__(self, outer, path):
             self.outer = outer

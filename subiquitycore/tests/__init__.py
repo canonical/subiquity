@@ -3,10 +3,10 @@ import os
 import shutil
 import tempfile
 
-from unittest import TestCase
+from unittest import IsolatedAsyncioTestCase
 
 
-class SubiTestCase(TestCase):
+class SubiTestCase(IsolatedAsyncioTestCase):
     def tmp_dir(self, dir=None, cleanup=True):
         # return a full path to a temporary directory that will be cleaned up.
         if dir is None:

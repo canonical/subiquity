@@ -17,7 +17,6 @@ from unittest.mock import Mock, patch, AsyncMock
 
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
-from subiquitycore.tests.util import run_coro
 from subiquity.server.apt import (
     AptConfigurer,
     Mountpoint,
@@ -51,14 +50,14 @@ class TestAptConfigurer(SubiTestCase):
         expected['apt']['https_proxy'] = proxy
         self.assertEqual(expected, self.configurer.apt_config())
 
-    def test_mount_unmount(self):
+    async def test_mount_unmount(self):
         # Make sure we can unmount something that we mounted before.
         with patch.object(self.app, "command_runner",
                           create=True, new_callable=AsyncMock):
-            m = run_coro(self.configurer.mount("/dev/cdrom", "/target"))
-            run_coro(self.configurer.unmount(m))
+            m = await self.configurer.mount("/dev/cdrom", "/target")
+            await self.configurer.unmount(m)
 
-    def test_overlay(self):
+    async def test_overlay(self):
         self.configurer.install_tree = OverlayMountpoint(
                 upperdir="upperdir-install-tree",
                 lowers=["lowers1-install-tree"],
@@ -71,13 +70,10 @@ class TestAptConfigurer(SubiTestCase):
                 )
         self.source = "source"
 
-        async def coro():
-            async with self.configurer.overlay():
-                pass
-
         with patch.object(self.app, "command_runner",
                           create=True, new_callable=AsyncMock):
-            run_coro(coro())
+            async with self.configurer.overlay():
+                pass
 
 
 class TestLowerDirFor(SubiTestCase):
