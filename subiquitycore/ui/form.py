@@ -280,6 +280,18 @@ class BoundFormField(object):
         for row in self._rows:
             row.enabled = val
 
+    def use_as_confirmation(self, for_field: "BoundFormField", desc: str) \
+            -> None:
+        """ Mark this field as a confirmation field for another field.
+        This will automatically compare the value of both fields when this
+        field (a.k.a., the confirmation field) is changed. """
+        def _check_confirmation(sender, new_text):
+            if not for_field.value.startswith(new_text):
+                self.show_extra(("info_error", _(f"{desc} do not match")))
+            else:
+                self.show_extra("")
+        connect_signal(self.widget, "change", _check_confirmation)
+
 
 class BoundSubFormField(BoundFormField):
     def is_in_error(self):

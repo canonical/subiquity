@@ -27,7 +27,6 @@ from subiquitycore.ui.interactive import (
     StringEditor,
     )
 from subiquitycore.ui.form import (
-    BoundFormField,
     Form,
     simple_field,
     WantsToKnowFormField,
@@ -187,21 +186,6 @@ class IdentityForm(Form):
             return _("Passwords do not match")
 
 
-def setup_password_validation(field: BoundFormField,
-                              field_confirm: BoundFormField,
-                              desc: str) -> None:
-    """ Set up an automatic check for password vs password confirmation. """
-    def _check_password(sender, new_text):
-        password = field.value
-        if not password.startswith(new_text):
-            field_confirm.show_extra(
-                # desc is "Passwords" or "Passphrases"
-                ("info_error", _("{desc} do not match").format(desc=desc)))
-        else:
-            field_confirm.show_extra('')
-    connect_signal(field_confirm.widget, 'change', _check_password)
-
-
 class IdentityView(BaseView):
     title = _("Profile setup")
     excerpt = _("Enter the username and password you will use to log in to "
@@ -231,10 +215,11 @@ class IdentityView(BaseView):
 
         self.form = IdentityForm(controller, initial)
 
+        self.form.confirm_password.use_as_confirmation(
+                for_field=self.form.password,
+                desc=_("Passwords"))
+
         connect_signal(self.form, 'submit', self.done)
-        setup_password_validation(field=self.form.password,
-                                  field_confirm=self.form.confirm_password,
-                                  desc=_("Passwords"))
 
         super().__init__(
             screen(

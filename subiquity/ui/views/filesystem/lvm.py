@@ -48,9 +48,6 @@ from subiquity.ui.views.filesystem.compound import (
     get_possible_components,
     MultiDeviceField,
     )
-from subiquity.ui.views.identity import (
-    setup_password_validation,
-    )
 
 log = logging.getLogger('subiquity.ui.views.filesystem.lvm')
 
@@ -83,9 +80,9 @@ class VolGroupForm(CompoundDiskForm):
         self.deleted_vg_names = deleted_vg_names
         super().__init__(model, possible_components, initial)
         connect_signal(self.encrypt.widget, 'change', self._change_encrypt)
-        setup_password_validation(field=self.passphrase,
-                                  field_confirm=self.confirm_passphrase,
-                                  desc=_("Passphrases"))
+        self.confirm_passphrase.use_as_confirmation(
+                for_field=self.passphrase,
+                desc=_("Passphrases"))
         self._change_encrypt(None, self.encrypt.value)
 
     name = VGNameField(_("Name:"))
