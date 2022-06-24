@@ -64,11 +64,11 @@ class LUKSOptionsForm(SubForm):
 
     def validate_password(self):
         if len(self.password.value) < 1:
-            return _("Password must be set")
+            return _("Passphrase must be set")
 
     def validate_confirm_password(self):
         if self.password.value != self.confirm_password.value:
-            return _("Passwords do not match")
+            return _("Passphrases do not match")
 
 
 class LVMOptionsForm(SubForm):

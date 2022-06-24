@@ -191,7 +191,7 @@ def setup_password_validation(form, desc):
         password = form.password.value
         if not password.startswith(new_text):
             form.confirm_password.show_extra(
-                # desc is "passwords" or "passphrases"
+                # desc is "Passwords" or "Passphrases"
                 ("info_error", _("{desc} do not match").format(desc=desc)))
         else:
             form.confirm_password.show_extra('')
@@ -229,7 +229,7 @@ class IdentityView(BaseView):
         self.form = IdentityForm(controller, initial)
 
         connect_signal(self.form, 'submit', self.done)
-        setup_password_validation(self.form, _("passwords"))
+        setup_password_validation(self.form, _("Passwords"))
 
         super().__init__(
             screen(
