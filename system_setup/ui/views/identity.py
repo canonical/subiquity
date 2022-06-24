@@ -72,7 +72,9 @@ class WSLIdentityView(BaseView):
         self.form = WSLIdentityForm(controller, initial)
 
         connect_signal(self.form, 'submit', self.done)
-        setup_password_validation(self.form, _("passwords"))
+        setup_password_validation(field=self.form.password,
+                                  field_confirm=self.form.confirm_password,
+                                  desc=_("passwords"))
 
         super().__init__(
             screen(
