@@ -247,7 +247,7 @@ class TestFlow(TestAPI):
             resp = await inst.get('/storage/guided')
             disk_id = resp['disks'][0]['id']
             choice = {"disk_id": disk_id}
-            await inst.post('/storage/v2/guided', choice)
+            await inst.post('/storage/v2/deprecated/guided', choice)
             await inst.post('/storage/v2')
             await inst.get('/meta/status', cur='WAITING')
             await inst.post('/meta/confirm', tty='/dev/tty1')
@@ -331,7 +331,8 @@ class TestFlow(TestAPI):
             self.assertEqual(orig_resp, reset_resp)
 
             choice = {'disk_id': disk_id}
-            guided_resp = await inst.post('/storage/v2/guided', choice)
+            guided_resp = await inst.post('/storage/v2/deprecated/guided',
+                                          choice)
             post_resp = await inst.post('/storage/v2')
             # posting to the endpoint shouldn't change the answer
             self.assertEqual(guided_resp, post_resp)
@@ -342,7 +343,7 @@ class TestGuided(TestAPI):
     async def test_guided_v2(self):
         async with start_server('examples/simple.json') as inst:
             choice = {'disk_id': 'disk-sda'}
-            resp = await inst.post('/storage/v2/guided', choice)
+            resp = await inst.post('/storage/v2/deprecated/guided', choice)
             self.assertEqual(1, len(resp['disks']))
             self.assertEqual('disk-sda', resp['disks'][0]['id'])
 
@@ -772,7 +773,7 @@ class TestTodos(TestAPI):  # server indicators of required client actions
             self.assertTrue(resp['need_boot'])
 
             choice = {'disk_id': disk_id}
-            resp = await inst.post('/storage/v2/guided', choice)
+            resp = await inst.post('/storage/v2/deprecated/guided', choice)
             self.assertFalse(resp['need_root'])
             self.assertFalse(resp['need_boot'])
 

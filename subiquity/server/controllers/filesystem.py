@@ -342,7 +342,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.model.reset()
         return await self.v2_GET()
 
-    async def v2_guided_POST(self, data: GuidedChoice) -> StorageResponseV2:
+    async def v2_deprecated_guided_POST(self, data: GuidedChoice) \
+            -> StorageResponseV2:
         log.debug(data)
         self.guided(data)
         return await self.v2_GET()
