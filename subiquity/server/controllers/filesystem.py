@@ -50,7 +50,12 @@ from subiquity.common.types import (
     Bootloader,
     Disk,
     GuidedChoice,
+    GuidedChoiceV2,
     GuidedStorageResponse,
+    GuidedStorageResponseV2,
+    GuidedStorageTargetReformat,
+    GuidedStorageTargetResize,
+    GuidedStorageTargetUseGap,
     ModifyPartitionV2,
     ProbeStatus,
     ReformatDisk,
@@ -322,7 +327,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     def calculate_suggested_install_min(self):
         source_min = self.app.base_model.source.current.size
-        return sizes.calculate_suggested_install_min(source_min)
+        align = max((pa.part_align
+                     for pa in self.model._partition_alignment_data.values()))
+        return sizes.calculate_suggested_install_min(source_min, align)
 
     async def v2_GET(self) -> StorageResponseV2:
         disks = self.model._all(type='disk')
@@ -347,6 +354,43 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug(data)
         self.guided(data)
         return await self.v2_GET()
+
+    async def v2_guided_GET(self) -> GuidedStorageResponseV2:
+        """Acquire a list of possible guided storage configuration scenarios.
+        Results are sorted by the size of the space potentially available to
+        the install."""
+
+        possible = []
+        install_min = self.calculate_suggested_install_min()
+
+        for disk in self.get_guided_disks(with_reformatting=True):
+            possible.append(GuidedStorageTargetReformat(disk_id=disk.id))
+
+        for disk in self.get_guided_disks(with_reformatting=False):
+            gap = gaps.largest_gap(disk)
+            # FIXME this gap size check can mean that a disk that is
+            # accepted is ignored by use_gap
+            if gap is not None and gap.size > install_min:
+                possible.append(GuidedStorageTargetUseGap(
+                        disk_id=disk.id, gap=gap))
+
+        for disk in self.get_guided_disks(check_boot=False):
+            part_align = disk.alignment_data().part_align
+            for partition in disk.partitions():
+                vals = sizes.calculate_guided_resize(
+                        partition.estimated_min_size, partition.size,
+                        install_min, part_align=part_align)
+                if vals is not None:
+                    possible.append(
+                        GuidedStorageTargetResize.from_recommendations(
+                                partition, vals))
+        # FIXME sort at the end
+        return GuidedStorageResponseV2(possible=possible)
+
+    async def v2_guided_POST(self, data: GuidedChoiceV2) \
+            -> GuidedStorageResponseV2:
+        log.debug(data)
+        return await self.v2_guided_GET()
 
     async def v2_reformat_disk_POST(self, data: ReformatDisk) \
             -> StorageResponseV2:

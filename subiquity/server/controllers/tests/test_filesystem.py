@@ -20,10 +20,17 @@ from parameterized import parameterized
 from subiquity.server.controllers.filesystem import FilesystemController
 
 from subiquitycore.tests.mocks import make_app
-from subiquity.common.types import Bootloader
+from subiquity.common.filesystem import gaps
+from subiquity.common.types import (
+    Bootloader,
+    GuidedStorageTargetReformat,
+    GuidedStorageTargetResize,
+    GuidedStorageTargetUseGap,
+    )
 from subiquity.models.tests.test_filesystem import (
     make_disk,
     make_model,
+    make_partition,
     )
 
 
@@ -127,3 +134,82 @@ class TestLayout(TestCase):
     def test_bad_modes(self, mode):
         with self.assertRaises(ValueError):
             self.fsc.validate_layout_mode(mode)
+
+
+bootloaders = [(bl, ) for bl in list(Bootloader) if bl != Bootloader.NONE]
+
+
+class TestGuidedV2(IsolatedAsyncioTestCase):
+    def _setup(self, bootloader):
+        self.app = make_app()
+        self.app.opts.bootloader = bootloader.value
+        self.fsc = FilesystemController(app=self.app)
+        self.fsc.calculate_suggested_install_min = mock.Mock()
+        self.fsc.calculate_suggested_install_min.return_value = 1 << 30
+        self.fsc.model = self.model = make_model(bootloader)
+        self.model.storage_version = 2
+        self.fs_probe = {}
+        self.fsc.model._probe_data = {'filesystem': self.fs_probe}
+
+    @parameterized.expand(bootloaders)
+    async def test_blank_disk(self, bootloader):
+        self._setup(bootloader)
+        d = make_disk(self.model)
+        expected = [
+            GuidedStorageTargetReformat(disk_id=d.id),
+            GuidedStorageTargetUseGap(disk_id=d.id, gap=gaps.largest_gap(d)),
+        ]
+        resp = await self.fsc.v2_guided_GET()
+        self.assertEqual(expected, resp.possible)
+
+    @parameterized.expand(bootloaders)
+    async def test_used_half_disk(self, bootloader):
+        self._setup(bootloader)
+        d = make_disk(self.model)
+        p1 = make_partition(self.model, d)
+        self.fs_probe[p1._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
+        resp = await self.fsc.v2_guided_GET()
+        [reformat, use_gap, resize] = resp.possible
+        self.assertEqual(GuidedStorageTargetReformat(disk_id=d.id), reformat)
+        self.assertEqual(
+            GuidedStorageTargetUseGap(disk_id=d.id, gap=gaps.largest_gap(d)),
+            use_gap)
+        self.assertEqual(d.id, resize.disk_id)
+        self.assertEqual(p1.number, resize.partition_number)
+        self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
+
+    @parameterized.expand(bootloaders)
+    async def test_used_full_disk(self, bootloader):
+        self._setup(bootloader)
+        d = make_disk(self.model)
+        p1 = make_partition(self.model, d, size=gaps.largest_gap_size(d))
+        self.fs_probe[p1._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
+        resp = await self.fsc.v2_guided_GET()
+        [reformat, resize] = resp.possible
+        self.assertEqual(GuidedStorageTargetReformat(disk_id=d.id), reformat)
+        self.assertEqual(d.id, resize.disk_id)
+        self.assertEqual(p1.number, resize.partition_number)
+        self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
+
+    @parameterized.expand(bootloaders)
+    async def test_weighted_split(self, bootloader):
+        self._setup(bootloader)
+        d = make_disk(self.model, size=250 << 30)
+        p1 = make_partition(self.model, d, size=240 << 30)
+        # add a second, filler, partition so that there is no use_gap result
+        make_partition(self.model, d, size=9 << 30)
+        self.fs_probe[p1._path()] = {'ESTIMATED_MIN_SIZE': 40 << 30}
+        self.fsc.calculate_suggested_install_min.return_value = 10 << 30
+        resp = await self.fsc.v2_guided_GET()
+        [reformat, resize] = resp.possible
+        self.assertEqual(GuidedStorageTargetReformat(disk_id=d.id), reformat)
+        self.assertEqual(
+            GuidedStorageTargetResize(
+                disk_id=d.id,
+                partition_number=p1.number,
+                new_size=200 << 30,
+                minimum=50 << 30,
+                recommended=200 << 30,
+                maximum=230 << 30,
+                ),
+            resize)

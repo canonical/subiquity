@@ -32,7 +32,9 @@ from subiquity.common.types import (
     Disk,
     ErrorReportRef,
     GuidedChoice,
+    GuidedChoiceV2,
     GuidedStorageResponse,
+    GuidedStorageResponseV2,
     KeyboardSetting,
     KeyboardSetup,
     IdentityData,
@@ -260,6 +262,11 @@ class API:
 
             def GET() -> StorageResponseV2: ...
             def POST() -> StorageResponseV2: ...
+
+            class guided:
+                def GET() -> GuidedStorageResponseV2: ...
+                def POST(data: Payload[GuidedChoiceV2]) \
+                    -> GuidedStorageResponseV2: ...
 
             class reset:
                 def POST() -> StorageResponseV2: ...
