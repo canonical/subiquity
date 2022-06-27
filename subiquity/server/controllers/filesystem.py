@@ -24,7 +24,6 @@ from typing import List
 
 import pyudev
 
-
 from subiquitycore.async_helpers import (
     run_in_thread,
     schedule_task,
@@ -314,12 +313,17 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 return p
         raise ValueError(f'Partition {number} on {disk.id} not found')
 
+    def calculate_suggested_install_min(self):
+        source_min = self.app.base_model.source.current.size
+        return sizes.calculate_suggested_install_min(source_min)
+
     async def v2_GET(self) -> StorageResponseV2:
         disks = self.model._all(type='disk')
         return StorageResponseV2(
                 disks=[labels.for_client(d) for d in disks],
                 need_root=not self.model.is_root_mounted(),
                 need_boot=self.model.needs_bootloader_partition(),
+                install_minimum_size=self.calculate_suggested_install_min(),
                 )
 
     async def v2_POST(self) -> StorageResponseV2:

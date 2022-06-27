@@ -327,7 +327,15 @@ class StorageResponseV2:
     disks: List[Disk]
     need_root: bool  # if True, there is not yet a partition mounted at "/"
     need_boot: bool  # if True, there is not yet a boot partition
+    install_minimum_size: int
     error_report: Optional[ErrorReportRef] = None
+
+
+@attr.s(auto_attribs=True)
+class GuidedResizeValues:
+    minimum: int
+    recommended: int
+    maximum: int
 
 
 @attr.s(auto_attribs=True)
