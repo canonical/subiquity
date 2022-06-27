@@ -18,7 +18,6 @@ import unittest
 from unittest.mock import patch, AsyncMock, Mock
 
 from subiquitycore.tests.mocks import make_app
-from subiquitycore.tests.util import run_coro
 
 from subiquity.server.ubuntu_drivers import (
     UbuntuDriversInterface,
@@ -28,7 +27,7 @@ from subiquity.server.ubuntu_drivers import (
     )
 
 
-class TestUbuntuDriversInterface(unittest.TestCase):
+class TestUbuntuDriversInterface(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
 
@@ -54,11 +53,11 @@ class TestUbuntuDriversInterface(unittest.TestCase):
 
     @patch.multiple(UbuntuDriversInterface, __abstractmethods__=set())
     @patch("subiquity.server.ubuntu_drivers.run_curtin_command")
-    def test_install_drivers(self, mock_run_curtin_command):
+    async def test_install_drivers(self, mock_run_curtin_command):
         ubuntu_drivers = UbuntuDriversInterface(self.app, gpgpu=False)
-        run_coro(ubuntu_drivers.install_drivers(
+        await ubuntu_drivers.install_drivers(
             root_dir="/target",
-            context="installing third-party drivers"))
+            context="installing third-party drivers")
         mock_run_curtin_command.assert_called_once_with(
                 self.app, "installing third-party drivers",
                 "in-target", "-t", "/target",
@@ -91,18 +90,18 @@ nvidia-driver-510 linux-modules-nvidia-510-generic-hwe-20.04
                 ["nvidia-driver-470", "nvidia-driver-510"])
 
 
-class TestUbuntuDriversClientInterface(unittest.TestCase):
+class TestUbuntuDriversClientInterface(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
         self.ubuntu_drivers = UbuntuDriversClientInterface(
                 self.app, gpgpu=False)
 
-    def test_ensure_cmd_exists(self):
+    async def test_ensure_cmd_exists(self):
         with patch.object(
                 self.app, "command_runner",
                 create=True, new_callable=AsyncMock) as mock_runner:
             # On success
-            run_coro(self.ubuntu_drivers.ensure_cmd_exists("/target"))
+            await self.ubuntu_drivers.ensure_cmd_exists("/target")
             mock_runner.run.assert_called_once_with(
                     [
                         "chroot", "/target",
@@ -115,17 +114,17 @@ class TestUbuntuDriversClientInterface(unittest.TestCase):
                     cmd=["sh", "-c", "command -v ubuntu-drivers"])
 
             with self.assertRaises(CommandNotFoundError):
-                run_coro(self.ubuntu_drivers.ensure_cmd_exists("/target"))
+                await self.ubuntu_drivers.ensure_cmd_exists("/target")
 
     @patch("subiquity.server.ubuntu_drivers.run_curtin_command")
-    def test_list_drivers(self, mock_run_curtin_command):
+    async def test_list_drivers(self, mock_run_curtin_command):
         # Make sure this gets decoded as utf-8.
         mock_run_curtin_command.return_value = Mock(stdout=b"""\
 nvidia-driver-510 linux-modules-nvidia-510-generic-hwe-20.04
 """)
-        drivers = run_coro(self.ubuntu_drivers.list_drivers(
+        drivers = await self.ubuntu_drivers.list_drivers(
             root_dir="/target",
-            context="listing third-party drivers"))
+            context="listing third-party drivers")
 
         mock_run_curtin_command.assert_called_once_with(
                 self.app, "listing third-party drivers",
@@ -137,15 +136,15 @@ nvidia-driver-510 linux-modules-nvidia-510-generic-hwe-20.04
         self.assertEqual(drivers, ["nvidia-driver-510"])
 
 
-class TestUbuntuDriversRunDriversInterface(unittest.TestCase):
+class TestUbuntuDriversRunDriversInterface(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
         self.ubuntu_drivers = UbuntuDriversRunDriversInterface(
                 self.app, gpgpu=False)
 
     @patch("subiquity.server.ubuntu_drivers.arun_command")
-    def test_ensure_cmd_exists(self, mock_arun_command):
-        run_coro(self.ubuntu_drivers.ensure_cmd_exists("/target"))
+    async def test_ensure_cmd_exists(self, mock_arun_command):
+        await self.ubuntu_drivers.ensure_cmd_exists("/target")
         mock_arun_command.assert_called_once_with(
                 ["sh", "-c", "command -v ubuntu-drivers"],
                 check=True)

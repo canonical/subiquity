@@ -19,7 +19,6 @@ from unittest import mock
 import yaml
 
 from subiquitycore.pubsub import MessageHub
-from subiquitycore.tests.util import run_coro
 
 from subiquity.common.types import IdentityData
 from subiquity.models.subiquity import ModelNames, SubiquityModel
@@ -63,7 +62,7 @@ class TestModelNames(unittest.TestCase):
         self.assertEqual(model_names.all(), {'a', 'b', 'c'})
 
 
-class TestSubiquityModel(unittest.TestCase):
+class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
 
     def writtenFiles(self, config):
         for k, v in config.get('write_files', {}).items():
@@ -114,7 +113,7 @@ class TestSubiquityModel(unittest.TestCase):
             cur = cur[component]
         self.fail("config has value {} for {}".format(cur, path))
 
-    async def _test_configure(self):
+    async def test_configure(self):
         hub = MessageHub()
         model = SubiquityModel(
             'test', hub, ModelNames({'a', 'b'}), ModelNames(set()))
@@ -123,9 +122,6 @@ class TestSubiquityModel(unittest.TestCase):
         self.assertFalse(model._install_event.is_set())
         await hub.abroadcast((InstallerChannels.CONFIGURED, 'b'))
         self.assertTrue(model._install_event.is_set())
-
-    def test_configure(self):
-        run_coro(self._test_configure())
 
     def make_model(self):
         return SubiquityModel(

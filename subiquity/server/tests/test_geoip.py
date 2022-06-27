@@ -17,7 +17,6 @@ from aioresponses import aioresponses
 
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
-from subiquitycore.tests.util import run_coro
 from subiquity.server.geoip import (
     GeoIP,
     HTTPGeoIPStrategy,
@@ -48,16 +47,13 @@ empty_cc = '<Response><CountryCode></CountryCode></Response>'
 
 
 class TestGeoIP(SubiTestCase):
-    def setUp(self):
+    async def asyncSetUp(self):
         strategy = HTTPGeoIPStrategy()
         self.geoip = GeoIP(make_app(), strategy)
 
-        async def fn():
-            self.assertTrue(await self.geoip.lookup())
-
         with aioresponses() as mocked:
             mocked.get("https://geoip.ubuntu.com/lookup", body=xml)
-            run_coro(fn())
+            self.assertTrue(await self.geoip.lookup())
 
     def test_countrycode(self):
         self.assertEqual("us", self.geoip.countrycode)
@@ -71,42 +67,32 @@ class TestGeoIPBadData(SubiTestCase):
         strategy = HTTPGeoIPStrategy()
         self.geoip = GeoIP(make_app(), strategy)
 
-    def test_partial_reponse(self):
-        async def fn():
-            self.assertFalse(await self.geoip.lookup())
+    async def test_partial_reponse(self):
         with aioresponses() as mocked:
             mocked.get("https://geoip.ubuntu.com/lookup", body=partial)
-            run_coro(fn())
-
-    def test_incomplete(self):
-        async def fn():
             self.assertFalse(await self.geoip.lookup())
+
+    async def test_incomplete(self):
         with aioresponses() as mocked:
             mocked.get("https://geoip.ubuntu.com/lookup", body=incomplete)
-            run_coro(fn())
+            self.assertFalse(await self.geoip.lookup())
         self.assertIsNone(self.geoip.countrycode)
         self.assertIsNone(self.geoip.timezone)
 
-    def test_long_cc(self):
-        async def fn():
-            self.assertFalse(await self.geoip.lookup())
+    async def test_long_cc(self):
         with aioresponses() as mocked:
             mocked.get("https://geoip.ubuntu.com/lookup", body=long_cc)
-            run_coro(fn())
+            self.assertFalse(await self.geoip.lookup())
         self.assertIsNone(self.geoip.countrycode)
 
-    def test_empty_cc(self):
-        async def fn():
-            self.assertFalse(await self.geoip.lookup())
+    async def test_empty_cc(self):
         with aioresponses() as mocked:
             mocked.get("https://geoip.ubuntu.com/lookup", body=empty_cc)
-            run_coro(fn())
+            self.assertFalse(await self.geoip.lookup())
         self.assertIsNone(self.geoip.countrycode)
 
-    def test_empty_tz(self):
-        async def fn():
-            self.assertFalse(await self.geoip.lookup())
+    async def test_empty_tz(self):
         with aioresponses() as mocked:
             mocked.get("https://geoip.ubuntu.com/lookup", body=empty_tz)
-            run_coro(fn())
+            self.assertFalse(await self.geoip.lookup())
         self.assertIsNone(self.geoip.timezone)

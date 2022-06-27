@@ -1,4 +1,18 @@
-import asyncio
+# Copyright 2017-2022 Canonical, Ltd.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import unittest
 from unittest import mock
 
@@ -40,20 +54,6 @@ system_reserved = {
     'password': 'password',
     'confirm_password': 'password'
     }
-
-
-def tearDownModule() -> None:
-    # Set empty loop policy, so that subsequent get_event_loop() returns a new
-    # loop. If there is no running event loop set, that function will return
-    # the result of `get_event_loop_policy().get_event_loop()` call. If there
-    # is a policy there must be a running loop. IsolatedAsyncioTestCase
-    # closes the loop during tear down, though. It doesn't touch the policy.
-    # By having it as None, it autoinits and the next tests run smoothly.
-    # Another approach would be set a new event_loop for the current policy on
-    # test fixture tearDown, as pytest-asyncio does.
-    # Either way we would prevent failure on tests that depend on [run_coro]
-    # (subiquitycore/tests/util.py), for instance.
-    asyncio.set_event_loop_policy(None)
 
 
 class IdentityViewTests(unittest.IsolatedAsyncioTestCase):

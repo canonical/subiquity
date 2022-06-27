@@ -20,7 +20,6 @@ from aiohttp.test_utils import TestClient, TestServer
 from aiohttp import web
 
 from subiquitycore.context import Context
-from subiquitycore.tests.util import run_coro
 
 from subiquity.common.api.defs import api, Payload
 from subiquity.common.api.server import (
@@ -56,7 +55,7 @@ async def makeTestClient(api, impl, middlewares=()):
         yield client
 
 
-class TestBind(unittest.TestCase):
+class TestBind(unittest.IsolatedAsyncioTestCase):
 
     async def assertResponse(self, coro, value):
         resp = await coro
@@ -67,7 +66,7 @@ class TestBind(unittest.TestCase):
         self.assertEqual(resp.status, 200)
         self.assertEqual(await resp.json(), value)
 
-    def test_simple(self):
+    async def test_simple(self):
         @api
         class API:
             def GET() -> str: ...
@@ -76,14 +75,11 @@ class TestBind(unittest.TestCase):
             async def GET(self) -> str:
                 return 'value'
 
-        async def run():
-            async with makeTestClient(API, Impl()) as client:
-                await self.assertResponse(
-                    client.get("/"), 'value')
+        async with makeTestClient(API, Impl()) as client:
+            await self.assertResponse(
+                client.get("/"), 'value')
 
-        run_coro(run())
-
-    def test_nested(self):
+    async def test_nested(self):
         @api
         class API:
             class endpoint:
@@ -94,14 +90,11 @@ class TestBind(unittest.TestCase):
             async def nested_get(self, request, context):
                 return 'nested'
 
-        async def run():
-            async with makeTestClient(API.endpoint, Impl()) as client:
-                await self.assertResponse(
-                    client.get("/endpoint/nested"), 'nested')
+        async with makeTestClient(API.endpoint, Impl()) as client:
+            await self.assertResponse(
+                client.get("/endpoint/nested"), 'nested')
 
-        run_coro(run())
-
-    def test_args(self):
+    async def test_args(self):
         @api
         class API:
             def GET(arg: str): ...
@@ -110,14 +103,11 @@ class TestBind(unittest.TestCase):
             async def GET(self, arg: str):
                 return arg
 
-        async def run():
-            async with makeTestClient(API, Impl()) as client:
-                await self.assertResponse(
-                    client.get('/?arg="whut"'), 'whut')
+        async with makeTestClient(API, Impl()) as client:
+            await self.assertResponse(
+                client.get('/?arg="whut"'), 'whut')
 
-        run_coro(run())
-
-    def test_missing_argument(self):
+    async def test_missing_argument(self):
         @api
         class API:
             def GET(arg: str): ...
@@ -126,19 +116,16 @@ class TestBind(unittest.TestCase):
             async def GET(self, arg: str):
                 return arg
 
-        async def run():
-            async with makeTestClient(API, Impl()) as client:
-                resp = await client.get('/')
-                self.assertEqual(resp.status, 500)
-                self.assertEqual(resp.headers['x-status'], 'error')
-                self.assertEqual(resp.headers['x-error-type'], 'TypeError')
-                self.assertEqual(
-                    resp.headers['x-error-msg'],
-                    'missing required argument "arg"')
+        async with makeTestClient(API, Impl()) as client:
+            resp = await client.get('/')
+            self.assertEqual(resp.status, 500)
+            self.assertEqual(resp.headers['x-status'], 'error')
+            self.assertEqual(resp.headers['x-error-type'], 'TypeError')
+            self.assertEqual(
+                resp.headers['x-error-msg'],
+                'missing required argument "arg"')
 
-        run_coro(run())
-
-    def test_error(self):
+    async def test_error(self):
         @api
         class API:
             def GET(): ...
@@ -147,17 +134,14 @@ class TestBind(unittest.TestCase):
             async def GET(self):
                 return 1/0
 
-        async def run():
-            async with makeTestClient(API, Impl()) as client:
-                resp = await client.get('/')
-                self.assertEqual(resp.status, 500)
-                self.assertEqual(resp.headers['x-status'], 'error')
-                self.assertEqual(
-                    resp.headers['x-error-type'], 'ZeroDivisionError')
+        async with makeTestClient(API, Impl()) as client:
+            resp = await client.get('/')
+            self.assertEqual(resp.status, 500)
+            self.assertEqual(resp.headers['x-status'], 'error')
+            self.assertEqual(
+                resp.headers['x-error-type'], 'ZeroDivisionError')
 
-        run_coro(run())
-
-    def test_post(self):
+    async def test_post(self):
         @api
         class API:
             def POST(data: Payload[str]) -> str: ...
@@ -166,13 +150,10 @@ class TestBind(unittest.TestCase):
             async def POST(self, data: str) -> str:
                 return data
 
-        async def run():
-            async with makeTestClient(API, Impl()) as client:
-                await self.assertResponse(
-                    client.post("/", json='value'),
-                    'value')
-
-        run_coro(run())
+        async with makeTestClient(API, Impl()) as client:
+            await self.assertResponse(
+                client.post("/", json='value'),
+                'value')
 
     def test_missing_method(self):
         @api
@@ -201,7 +182,7 @@ class TestBind(unittest.TestCase):
             bind(app.router, API, Impl())
         self.assertEqual(cm.exception.methname, "API.GET")
 
-    def test_middleware(self):
+    async def test_middleware(self):
 
         @web.middleware
         async def middleware(request, handler):
@@ -219,16 +200,13 @@ class TestBind(unittest.TestCase):
             async def GET(self) -> str:
                 return 1/0
 
-        async def run():
-            async with makeTestClient(
-                    API, Impl(), middlewares=[middleware]) as client:
-                resp = await client.get("/")
-                self.assertEqual(
-                    resp.headers['x-error-type'], 'ZeroDivisionError')
+        async with makeTestClient(
+                API, Impl(), middlewares=[middleware]) as client:
+            resp = await client.get("/")
+            self.assertEqual(
+                resp.headers['x-error-type'], 'ZeroDivisionError')
 
-        run_coro(run())
-
-    def test_controller_for_request(self):
+    async def test_controller_for_request(self):
 
         seen_controller = None
 
@@ -249,12 +227,9 @@ class TestBind(unittest.TestCase):
 
         impl = Impl()
 
-        async def run():
-            async with makeTestClient(
-                    API.meth, impl, middlewares=[middleware]) as client:
-                resp = await client.get("/meth")
-                self.assertEqual(await resp.json(), '')
-
-        run_coro(run())
+        async with makeTestClient(
+                API.meth, impl, middlewares=[middleware]) as client:
+            resp = await client.get("/meth")
+            self.assertEqual(await resp.json(), '')
 
         self.assertIs(impl, seen_controller)

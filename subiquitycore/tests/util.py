@@ -13,13 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import random
 import string
-
-
-def run_coro(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
 
 
 def random_string():
