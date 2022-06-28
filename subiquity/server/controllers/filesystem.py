@@ -192,8 +192,19 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 mount="/",
                 ))
 
-    def guided(self, choice):
-        disk = self.model._one(id=choice.disk_id)
+    def guided(self, choice: GuidedChoiceV2):
+        self.model.guided_configuration = choice
+
+        if isinstance(choice.target, GuidedStorageTargetReformat):
+            mode = 'reformat_disk'
+        elif isinstance(choice.target, GuidedStorageTargetUseGap):
+            mode = 'use_gap'  # FIXME not the correct gap
+        elif isinstance(choice.target, GuidedStorageTargetResize):
+            mode = 'resize'  # FIXME not actually working
+        else:
+            raise Exception(f'Unknown guided target {choice.target}')
+        disk = self.model._one(id=choice.target.disk_id)
+
         if choice.use_lvm:
             lvm_options = None
             if choice.password is not None:
@@ -203,9 +214,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                         'password': choice.password,
                         },
                     }
-            self.guided_lvm(disk, lvm_options=lvm_options)
+            self.guided_lvm(disk, mode=mode, lvm_options=lvm_options)
         else:
-            self.guided_direct(disk)
+            self.guided_direct(disk, mode=mode)
 
     async def _probe_response(self, wait, resp_cls):
         if self._probe_task.task is None or not self._probe_task.task.done():
@@ -289,7 +300,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
         log.debug(data)
-        self.guided(data)
+        self.guided(GuidedChoiceV2.from_guided_choice(data))
         return self._done_response()
 
     async def reset_POST(self, context, request) -> StorageResponse:
@@ -352,7 +363,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_deprecated_guided_POST(self, data: GuidedChoice) \
             -> StorageResponseV2:
         log.debug(data)
-        self.guided(data)
+        self.guided(GuidedChoiceV2.from_guided_choice(data))
         return await self.v2_GET()
 
     async def v2_guided_GET(self) -> GuidedStorageResponseV2:
@@ -379,17 +390,21 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 vals = sizes.calculate_guided_resize(
                         partition.estimated_min_size, partition.size,
                         install_min, part_align=part_align)
-                if vals is not None:
-                    resize = GuidedStorageTargetResize.from_recommendations(
-                            partition, vals)
-                    scenarios.append((vals.install_max, resize))
+                if vals is None:
+                    continue
+                resize = GuidedStorageTargetResize.from_recommendations(
+                        partition, vals)
+                scenarios.append((vals.install_max, resize))
 
         scenarios.sort(reverse=True, key=lambda x: x[0])
-        return GuidedStorageResponseV2(possible=[s[1] for s in scenarios])
+        return GuidedStorageResponseV2(
+                configured=self.model.guided_configuration,
+                possible=[s[1] for s in scenarios])
 
     async def v2_guided_POST(self, data: GuidedChoiceV2) \
             -> GuidedStorageResponseV2:
         log.debug(data)
+        self.guided(data)
         return await self.v2_guided_GET()
 
     async def v2_reformat_disk_POST(self, data: ReformatDisk) \

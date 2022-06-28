@@ -145,7 +145,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.app.opts.bootloader = bootloader.value
         self.fsc = FilesystemController(app=self.app)
         self.fsc.calculate_suggested_install_min = mock.Mock()
-        self.fsc.calculate_suggested_install_min.return_value = 1 << 30
+        self.fsc.calculate_suggested_install_min.return_value = 10 << 30
         self.fsc.model = self.model = make_model(bootloader)
         self.model.storage_version = 2
         self.fs_probe = {}
@@ -169,14 +169,17 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         p1 = make_partition(self.model, d)
         self.fs_probe[p1._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
         resp = await self.fsc.v2_guided_GET()
-        [reformat, use_gap, resize] = resp.possible
+        reformat = resp.possible[0]
         self.assertEqual(GuidedStorageTargetReformat(disk_id=d.id), reformat)
-        self.assertEqual(
-            GuidedStorageTargetUseGap(disk_id=d.id, gap=gaps.largest_gap(d)),
-            use_gap)
-        self.assertEqual(d.id, resize.disk_id)
-        self.assertEqual(p1.number, resize.partition_number)
-        self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
+        if bootloader != Bootloader.BIOS:
+            gap = gaps.largest_gap(d)
+            self.assertEqual(
+                GuidedStorageTargetUseGap(disk_id=d.id, gap=gap),
+                resp.possible[1])
+            resize = resp.possible[2]
+            self.assertEqual(d.id, resize.disk_id)
+            self.assertEqual(p1.number, resize.partition_number)
+            self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
 
     @parameterized.expand(bootloaders)
     async def test_used_full_disk(self, bootloader):
@@ -185,11 +188,13 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         p1 = make_partition(self.model, d, size=gaps.largest_gap_size(d))
         self.fs_probe[p1._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
         resp = await self.fsc.v2_guided_GET()
-        [reformat, resize] = resp.possible
+        reformat = resp.possible[0]
         self.assertEqual(GuidedStorageTargetReformat(disk_id=d.id), reformat)
-        self.assertEqual(d.id, resize.disk_id)
-        self.assertEqual(p1.number, resize.partition_number)
-        self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
+        if bootloader != Bootloader.BIOS:
+            resize = resp.possible[1]
+            self.assertEqual(d.id, resize.disk_id)
+            self.assertEqual(p1.number, resize.partition_number)
+            self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
 
     @parameterized.expand(bootloaders)
     async def test_weighted_split(self, bootloader):
@@ -201,15 +206,17 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.fs_probe[p1._path()] = {'ESTIMATED_MIN_SIZE': 40 << 30}
         self.fsc.calculate_suggested_install_min.return_value = 10 << 30
         resp = await self.fsc.v2_guided_GET()
-        [reformat, resize] = resp.possible
+        reformat = resp.possible[0]
         self.assertEqual(GuidedStorageTargetReformat(disk_id=d.id), reformat)
-        self.assertEqual(
-            GuidedStorageTargetResize(
-                disk_id=d.id,
-                partition_number=p1.number,
-                new_size=200 << 30,
-                minimum=50 << 30,
-                recommended=200 << 30,
-                maximum=230 << 30,
-                ),
-            resize)
+        if bootloader != Bootloader.BIOS:
+            resize = resp.possible[1]
+            self.assertEqual(
+                GuidedStorageTargetResize(
+                    disk_id=d.id,
+                    partition_number=p1.number,
+                    new_size=200 << 30,
+                    minimum=50 << 30,
+                    recommended=200 << 30,
+                    maximum=230 << 30,
+                    ),
+                resize)
