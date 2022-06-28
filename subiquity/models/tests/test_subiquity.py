@@ -15,6 +15,7 @@
 
 import fnmatch
 import unittest
+from unittest import mock
 import yaml
 
 from subiquitycore.pubsub import MessageHub
@@ -27,6 +28,24 @@ from subiquity.server.server import (
     POSTINSTALL_MODEL_NAMES,
     )
 from subiquity.server.types import InstallerChannels
+
+getent_group_output = '''
+root:x:0:
+daemon:x:1:
+bin:x:2:
+sys:x:3:
+adm:x:4:syslog
+tty:x:5:syslog
+disk:x:6:
+lp:x:7:
+mail:x:8:
+news:x:9:
+uucp:x:10:
+man:x:12:
+sudo:x:27:
+ssh:x:118:
+lxd:x:132:
+'''
 
 
 class TestModelNames(unittest.TestCase):
@@ -182,7 +201,8 @@ class TestSubiquityModel(unittest.TestCase):
         config = model.render()
         self.assertNotIn('apt', config)
 
-    def test_cloud_init_user_list_merge(self):
+    @mock.patch('subiquitycore.utils.run_command')
+    def test_cloud_init_user_list_merge(self, run_cmd):
         main_user = IdentityData(
             username='mainuser',
             crypted_password='dummy_value',
@@ -193,10 +213,17 @@ class TestSubiquityModel(unittest.TestCase):
             model = self.make_model()
             model.identity.add_user(main_user)
             model.userdata = {'users': [secondary_user]}
+
+            run_cmd.return_value.stdout = getent_group_output
             cloud_init_config = model._cloud_init_config()
             self.assertEqual(len(cloud_init_config['users']), 2)
             self.assertEqual(cloud_init_config['users'][0]['name'], 'mainuser')
+            self.assertEqual(
+                cloud_init_config['users'][0]['groups'],
+                'adm,lxd,sudo'
+            )
             self.assertEqual(cloud_init_config['users'][1]['name'], 'user2')
+            run_cmd.assert_called_with(['getent', 'group'], check=True)
 
         with self.subTest('Secondary user only'):
             model = self.make_model()
