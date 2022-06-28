@@ -244,6 +244,29 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             config, self.model._probe_data['blockdev'], is_probe_data=False)
         await self.configured()
 
+    def get_guided_disks(self, with_reformatting=False):
+        disks = []
+        for raid in self.model._all(type='raid'):
+            if not boot.can_be_boot_device(
+                    raid, with_reformatting=with_reformatting):
+                continue
+            disks.append(raid)
+        for disk in self.model._all(type='disk'):
+            if not boot.can_be_boot_device(
+                    disk, with_reformatting=with_reformatting):
+                continue
+            cd = disk.constructed_device()
+            if isinstance(cd, Raid):
+                can_be_boot = False
+                for v in cd._subvolumes:
+                    if boot.can_be_boot_device(
+                            v, with_reformatting=with_reformatting):
+                        can_be_boot = True
+                if can_be_boot:
+                    continue
+            disks.append(disk)
+        return disks
+
     async def guided_GET(self, wait: bool = False) -> GuidedStorageResponse:
         probe_resp = await self._probe_response(wait, GuidedStorageResponse)
         if probe_resp is not None:
@@ -253,23 +276,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # source catalog should directly specify the minimum suitable
         # size?)
         min_size = 2*self.app.base_model.source.current.size + (1 << 30)
-        disks = []
-        for raid in self.model._all(type='raid'):
-            if not boot.can_be_boot_device(raid, with_reformatting=True):
-                continue
-            disks.append(raid)
-        for disk in self.model._all(type='disk'):
-            if not boot.can_be_boot_device(disk, with_reformatting=True):
-                continue
-            cd = disk.constructed_device()
-            if isinstance(cd, Raid):
-                can_be_boot = False
-                for v in cd._subvolumes:
-                    if boot.can_be_boot_device(v, with_reformatting=True):
-                        can_be_boot = True
-                if can_be_boot:
-                    continue
-            disks.append(disk)
+        disks = self.get_guided_disks(with_reformatting=True)
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
