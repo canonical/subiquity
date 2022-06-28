@@ -333,6 +333,7 @@ class StorageResponseV2:
 
 @attr.s(auto_attribs=True)
 class GuidedResizeValues:
+    install_max: int
     minimum: int
     recommended: int
     maximum: int

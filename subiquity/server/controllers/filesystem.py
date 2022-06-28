@@ -360,19 +360,18 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         Results are sorted by the size of the space potentially available to
         the install."""
 
-        possible = []
+        scenarios = []
         install_min = self.calculate_suggested_install_min()
 
         for disk in self.get_guided_disks(with_reformatting=True):
-            possible.append(GuidedStorageTargetReformat(disk_id=disk.id))
+            reformat = GuidedStorageTargetReformat(disk_id=disk.id)
+            scenarios.append((disk.size, reformat))
 
         for disk in self.get_guided_disks(with_reformatting=False):
             gap = gaps.largest_gap(disk)
-            # FIXME this gap size check can mean that a disk that is
-            # accepted is ignored by use_gap
-            if gap is not None and gap.size > install_min:
-                possible.append(GuidedStorageTargetUseGap(
-                        disk_id=disk.id, gap=gap))
+            if gap is not None and gap.size >= install_min:
+                use_gap = GuidedStorageTargetUseGap(disk_id=disk.id, gap=gap)
+                scenarios.append((gap.size, use_gap))
 
         for disk in self.get_guided_disks(check_boot=False):
             part_align = disk.alignment_data().part_align
@@ -381,11 +380,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                         partition.estimated_min_size, partition.size,
                         install_min, part_align=part_align)
                 if vals is not None:
-                    possible.append(
-                        GuidedStorageTargetResize.from_recommendations(
-                                partition, vals))
-        # FIXME sort at the end
-        return GuidedStorageResponseV2(possible=possible)
+                    resize = GuidedStorageTargetResize.from_recommendations(
+                            partition, vals)
+                    scenarios.append((vals.install_max, resize))
+
+        scenarios.sort(reverse=True, key=lambda x: x[0])
+        return GuidedStorageResponseV2(possible=[s[1] for s in scenarios])
 
     async def v2_guided_POST(self, data: GuidedChoiceV2) \
             -> GuidedStorageResponseV2:

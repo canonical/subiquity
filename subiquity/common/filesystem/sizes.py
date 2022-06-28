@@ -115,6 +115,7 @@ def calculate_guided_resize(part_min: int, part_size: int, install_min: int,
     raw_recommended = math.ceil(resize_window * ratio) + other_min
     recommended = align_up(raw_recommended, part_align)
     return GuidedResizeValues(
+            install_max=plausible_free_space,
             minimum=other_min, recommended=recommended, maximum=other_max)
 
 

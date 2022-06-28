@@ -97,6 +97,7 @@ class TestCalculateGuidedResize(unittest.TestCase):
         actual = calculate_guided_resize(
                 part_min=8 << 30, part_size=100 << 30, install_min=size)
         expected = GuidedResizeValues(
+                install_max=(100 << 30) - size,
                 minimum=size, recommended=50 << 30, maximum=(100 << 30) - size)
         self.assertEqual(expected, actual)
 
@@ -104,6 +105,7 @@ class TestCalculateGuidedResize(unittest.TestCase):
         actual = calculate_guided_resize(
                 part_min=40 << 30, part_size=240 << 30, install_min=10 << 30)
         expected = GuidedResizeValues(
+                install_max=190 << 30,
                 minimum=50 << 30, recommended=200 << 30, maximum=230 << 30)
         self.assertEqual(expected, actual)
 
