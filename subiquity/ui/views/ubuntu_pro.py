@@ -200,6 +200,7 @@ class UbuntuProView(BaseView):
     """ Represent the view of the Ubuntu Pro configuration. """
 
     title = _("Upgrade to Ubuntu Pro")
+    services_done_label = _("Continue")
 
     def __init__(self, controller, token: str):
         """ Initialize the view with the default value for the token. """
@@ -361,7 +362,7 @@ class UbuntuProView(BaseView):
                 label=_("Back"),
                 on_press=lambda unused: on_back())
         continue_button = done_btn(
-                label=_("Continue"),
+                label=self.__class__.services_done_label,
                 on_press=lambda unused: on_continue())
 
         widgets: List[Widget] = [
@@ -538,12 +539,15 @@ class TokenAddedWidget(Stretchy):
     |                       [ Continue ]                      |
     +---------------------------------------------------------+
     """
+    title = _("Token added successfully")
+    done_label = _("Continue")
+
     def __init__(self, parent: UbuntuProView,
                  on_continue: Callable[[], None]) -> None:
         """ Initializes the widget. """
         self.parent = parent
         cont = done_btn(
-                label=_("Continue"),
+                label=self.__class__.done_label,
                 on_press=lambda unused: on_continue())
         widgets = [
             Text(_("Your token has been added successfully and your"
@@ -552,7 +556,7 @@ class TokenAddedWidget(Stretchy):
             Text(""),
             button_pile([cont]),
             ]
-        super().__init__("Token added successfully", widgets,
+        super().__init__(self.__class__.title, widgets,
                          stretchy_index=0, focus_index=2)
 
 
