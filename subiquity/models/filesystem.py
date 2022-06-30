@@ -36,6 +36,7 @@ from subiquity.common.types import Bootloader, OsProber
 log = logging.getLogger('subiquity.models.filesystem')
 
 MiB = 1024 * 1024
+GiB = 1024 * 1024 * 1024
 
 
 def _set_backlinks(obj):
