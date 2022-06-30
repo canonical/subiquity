@@ -122,13 +122,12 @@ class UbuntuProController(SubiquityController):
     async def check_token_GET(self, token: str) \
             -> UbuntuProCheckTokenAnswer:
         """ Handle a GET request asking whether the contract token is valid or
-        not. If it is valid, we provide the list of activable services
-        associated with the subscription.
+        not. If it is valid, we provide the information about the subscription.
         """
-        services = None
+        subscription = None
         try:
-            services = await \
-                    self.ua_interface.get_activable_services(token=token)
+            subscription = await \
+                    self.ua_interface.get_subscription(token=token)
         except InvalidTokenError:
             status = UbuntuProCheckTokenStatus.INVALID_TOKEN
         except ExpiredTokenError:
@@ -138,4 +137,5 @@ class UbuntuProController(SubiquityController):
         else:
             status = UbuntuProCheckTokenStatus.VALID_TOKEN
 
-        return UbuntuProCheckTokenAnswer(status=status, services=services)
+        return UbuntuProCheckTokenAnswer(status=status,
+                                         subscription=subscription)

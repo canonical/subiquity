@@ -464,10 +464,17 @@ class UbuntuProService:
 
 
 @attr.s(auto_attribs=True)
+class UbuntuProSubscription:
+    contract_name: str
+    account_name: str
+    services: List[UbuntuProService]
+
+
+@attr.s(auto_attribs=True)
 class UbuntuProCheckTokenAnswer:
     status: UbuntuProCheckTokenStatus
 
-    services: Optional[List[UbuntuProService]]
+    subscription: Optional[UbuntuProSubscription]
 
 
 class ShutdownMode(enum.Enum):

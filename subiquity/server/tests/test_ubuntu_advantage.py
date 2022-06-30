@@ -125,30 +125,36 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
 
 class TestUAInterface(unittest.IsolatedAsyncioTestCase):
 
-    async def test_mocked_get_activable_services(self):
+    async def test_mocked_get_subscription(self):
         strategy = MockedUAInterfaceStrategy(scale_factor=1_000_000)
         interface = UAInterface(strategy)
 
         with self.assertRaises(InvalidTokenError):
-            await interface.get_activable_services(token="invalidToken")
+            await interface.get_subscription(token="invalidToken")
         # Tokens starting with "f" in dry-run mode simulate an "internal"
         # error.
         with self.assertRaises(CheckSubscriptionError):
-            await interface.get_activable_services(token="failure")
+            await interface.get_subscription(token="failure")
 
         # Tokens starting with "x" is dry-run mode simulate an expired token.
         with self.assertRaises(ExpiredTokenError):
-            await interface.get_activable_services(token="xpiredToken")
+            await interface.get_subscription(token="xpiredToken")
 
         # Other tokens are considered valid in dry-run mode.
-        await interface.get_activable_services(token="validToken")
+        await interface.get_subscription(token="validToken")
 
-    async def test_get_activable_services(self):
+    async def test_get_subscription(self):
         # We use the standard strategy but don't actually run it
         strategy = UAClientUAInterfaceStrategy()
         interface = UAInterface(strategy)
 
-        subscription = {
+        status = {
+            "account": {
+                "name": "user@domain.com",
+            },
+            "contract": {
+                "name": "UA Apps - Essential (Virtual)",
+            },
             "expires": "2035-12-31T00:00:00+00:00",
             "services": [
                 {
@@ -183,30 +189,30 @@ class TestUAInterface(unittest.IsolatedAsyncioTestCase):
                 },
             ]
         }
-        interface.get_subscription = AsyncMock(return_value=subscription)
-        services = await interface.get_activable_services(token="XXX")
+        interface.get_subscription_status = AsyncMock(return_value=status)
+        subscription = await interface.get_subscription(token="XXX")
 
         self.assertIn(UbuntuProService(
             name="esm-infra",
             description="UA Infra: Extended Security Maintenance (ESM)",
             auto_enabled=True,
-        ), services)
+        ), subscription.services)
         self.assertIn(UbuntuProService(
             name="fips",
             description="NIST-certified core packages",
             auto_enabled=False,
-        ), services)
+        ), subscription.services)
         self.assertNotIn(UbuntuProService(
             name="esm-apps",
             description="UA Apps: Extended Security Maintenance (ESM)",
             auto_enabled=True,
-        ), services)
+        ), subscription.services)
         self.assertNotIn(UbuntuProService(
             name="cis",
             description="Center for Internet Security Audit Tools",
             auto_enabled=False,
-        ), services)
+        ), subscription.services)
 
         # Test with "Z" suffix for the expiration date.
-        subscription["expires"] = "2035-12-31T00:00:00Z"
-        services = await interface.get_activable_services(token="XXX")
+        status["expires"] = "2035-12-31T00:00:00Z"
+        subscription = await interface.get_subscription(token="XXX")

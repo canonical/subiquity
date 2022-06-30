@@ -23,7 +23,10 @@ from subprocess import CalledProcessError, CompletedProcess
 from typing import List, Sequence, Union
 import asyncio
 
-from subiquity.common.types import UbuntuProService
+from subiquity.common.types import (
+    UbuntuProSubscription,
+    UbuntuProService,
+    )
 from subiquitycore import utils
 
 
@@ -144,16 +147,16 @@ class UAInterface:
     def __init__(self, strategy: UAInterfaceStrategy):
         self.strategy = strategy
 
-    async def get_subscription(self, token: str) -> dict:
+    async def get_subscription_status(self, token: str) -> dict:
         """ Return a dictionary containing the subscription information. """
         return await self.strategy.query_info(token)
 
-    async def get_activable_services(self, token: str) \
-            -> List[UbuntuProService]:
-        """ Return a list of activable services (i.e. services that are
-        entitled to the subscription and available on the current hardware).
+    async def get_subscription(self, token: str) -> UbuntuProSubscription:
+        """ Return the name of the contract, the name of the account and the
+        list of activable services (i.e. services that are entitled to the
+        subscription and available on the current hardware).
         """
-        info = await self.get_subscription(token)
+        info = await self.get_subscription_status(token)
 
         # Sometimes, a time zone offset of 0 is replaced by the letter Z. This
         # is specified in RFC 3339 but not supported by fromisoformat.
@@ -183,4 +186,8 @@ class UAInterface:
             if not is_activable_service(service):
                 continue
             activable_services.append(service_from_dict(service))
-        return activable_services
+
+        return UbuntuProSubscription(
+                account_name=info["account"]["name"],
+                contract_name=info["contract"]["name"],
+                services=activable_services)
