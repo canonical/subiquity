@@ -151,7 +151,7 @@ class UpgradeYesNoForm(Form):
     | ( )  Do this later                                      |
     |                                                         |
     |      You can always enable Ubuntu Pro later via the     |
-    |      'ua attach' command                                |
+    |      'pro attach' command.                              |
     |                                                         |
     |                       [ Continue ]                      |
     |                       [ Back     ]                      |
@@ -168,7 +168,7 @@ class UpgradeYesNoForm(Form):
     skip = RadioButtonField(
             group, _("Do this later"),
             help="\n" + _("You can always enable Ubuntu Pro later via the"
-                          " 'ua attach' command."))
+                          " 'pro attach' command."))
 
 
 class CheckingContractToken(WidgetWrap):
@@ -283,7 +283,7 @@ class UbuntuProView(BaseView):
         |                                                         |
         | (X)  Do this later                                      |
         |      You can always enable Ubuntu Pro later via the     |
-        |      'ua attach' command.                               |
+        |      'pro attach' command.                              |
         |                                                         |
         |                        [ Continue ]                     |
         |                        [ Back     ]                     |
@@ -324,7 +324,8 @@ class UbuntuProView(BaseView):
         | If you want to change the default enablements for your  |
         | token, you can do so via the ubuntu.com/pro web         |
         | interface. Alternatively, you can change enabled        |
-        | services using the `ua` command-line tool.              |
+        | services using the `pro' command-line tool once the     |
+        | installation is finished.                               |
         |                                                         |
         |                       [ Continue ]                      |
         |                       [ Back     ]                      |
@@ -372,7 +373,7 @@ class UbuntuProView(BaseView):
             Text(_("If you want to change the default enablements for your"
                    " token, you can do so via the ubuntu.com/pro web"
                    " interface. Alternatively you can change enabled services"
-                   " using the `ua` command-line tool once the installation"
+                   " using the `pro` command-line tool once the installation"
                    " is finished.")),
             Text(""),
         ]
