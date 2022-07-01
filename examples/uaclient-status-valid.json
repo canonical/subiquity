@@ -2,6 +2,12 @@
     "version": "27.4.2~21.10.1",
     "effective": null,
     "expires": "2035-12-31T00:00:00+00:00",
+    "contract": {
+        "name": "UA Apps - Essential (Virtual)"
+    },
+    "account": {
+        "name": "user@domain.com"
+    },
     "services": [
         {
             "name": "cis",

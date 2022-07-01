@@ -70,7 +70,7 @@ class UbuntuProController(SubiquityTuiController):
         async def inner() -> None:
             answer = await self.endpoint.check_token.GET(token)
             if answer.status == TokenStatus.VALID_TOKEN:
-                on_success(answer.services)
+                on_success(answer.subscription.services)
             else:
                 on_failure(answer.status)
 
