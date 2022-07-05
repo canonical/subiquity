@@ -159,13 +159,10 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
     @parameterized.expand(bootloaders)
     async def test_blank_disk(self, bootloader):
+        # blank disks should not report a UseGap case
         self._setup(bootloader)
         d = make_disk(self.model, size=(30 << 30) + (2 << 20))
-        gap = types.Gap(offset=1 << 20, size=30 << 30)
-        expected = [
-            GuidedStorageTargetReformat(disk_id=d.id),
-            GuidedStorageTargetUseGap(disk_id=d.id, gap=gap),
-        ]
+        expected = [GuidedStorageTargetReformat(disk_id=d.id)]
         resp = await self.fsc.v2_guided_GET()
         self.assertEqual(expected, resp.possible)
 

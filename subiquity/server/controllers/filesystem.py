@@ -405,6 +405,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             scenarios.append((disk.size, reformat))
 
         for disk in self.get_guided_disks(with_reformatting=False):
+            if len(disk.partitions()) < 1:
+                # On an empty disk, don't bother to offer it with UseGap, as
+                # it's basically the same as the Reformat case.
+                continue
             gap = gaps.largest_gap(disk)
             if gap is not None and gap.size >= install_min:
                 api_gap = labels.for_client(gap)
