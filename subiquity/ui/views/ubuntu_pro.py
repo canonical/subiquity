@@ -28,7 +28,7 @@ from urwid import (
 
 from subiquity.common.types import (
     UbuntuProCheckTokenStatus,
-    UbuntuProService,
+    UbuntuProSubscription,
     )
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import (
@@ -200,7 +200,7 @@ class UbuntuProView(BaseView):
     """ Represent the view of the Ubuntu Pro configuration. """
 
     title = _("Upgrade to Ubuntu Pro")
-    services_done_label = _("Continue")
+    subscription_done_label = _("Continue")
 
     def __init__(self, controller, token: str):
         """ Initialize the view with the default value for the token. """
@@ -308,9 +308,14 @@ class UbuntuProView(BaseView):
                 excerpt=excerpt,
                 focus_buttons=True)
 
-    def services_screen(self, services) -> Widget:
+    def subscription_screen(self, subscription: UbuntuProSubscription) \
+            -> Widget:
         """
         +---------------------------------------------------------+
+        | Account Connected: user@domain.com                      |
+        |             Token: C1NWcZTHLteJXGVMM6YhvHDpGrhyy7       |
+        |      Subscription: Ubuntu Pro - Physical 24/5           |
+        |                                                         |
         | List of your enabled services:                          |
         |                                                         |
         |   * ...                                                 |
@@ -331,26 +336,34 @@ class UbuntuProView(BaseView):
         |                       [ Back     ]                      |
         +---------------------------------------------------------+
         """
+        services = subscription.services
         auto_enabled = [svc for svc in services if svc.auto_enabled]
         can_be_enabled = [svc for svc in services if not svc.auto_enabled]
 
-        svc_rows: List[Widget] = []
+        rows: List[Widget] = []
+
+        rows.extend([
+            Text(_("Account Connected") + ": " + subscription.account_name),
+            Text(_("            Token") + ": " + subscription.contract_token),
+            Text(_("     Subscription") + ": " + subscription.contract_name),
+        ])
+        rows.append(Text(""))
 
         if auto_enabled:
-            svc_rows.append(Text(_("List of your enabled services:")))
-            svc_rows.append(Text(""))
-            svc_rows.extend(
+            rows.append(Text(_("List of your enabled services:")))
+            rows.append(Text(""))
+            rows.extend(
                     [Text(f"  * {svc.description}") for svc in auto_enabled])
 
         if can_be_enabled:
             if auto_enabled:
                 # available here means activable
-                svc_rows.append(Text(""))
-                svc_rows.append(Text(_("Other available services:")))
+                rows.append(Text(""))
+                rows.append(Text(_("Other available services:")))
             else:
-                svc_rows.append(Text(_("Available services:")))
-            svc_rows.append(Text(""))
-            svc_rows.extend(
+                rows.append(Text(_("Available services:")))
+            rows.append(Text(""))
+            rows.extend(
                     [Text(f"  * {svc.description}") for svc in can_be_enabled])
 
         def on_continue() -> None:
@@ -363,12 +376,12 @@ class UbuntuProView(BaseView):
                 label=_("Back"),
                 on_press=lambda unused: on_back())
         continue_button = done_btn(
-                label=self.__class__.services_done_label,
+                label=self.__class__.subscription_done_label,
                 on_press=lambda unused: on_continue())
 
         widgets: List[Widget] = [
             Text(""),
-            Pile(svc_rows),
+            Pile(rows),
             Text(""),
             Text(_("If you want to change the default enablements for your"
                    " token, you can do so via the ubuntu.com/pro web"
@@ -387,15 +400,15 @@ class UbuntuProView(BaseView):
     def upgrade_mode_done(self, form: UpgradeModeForm) -> None:
         """ Open the loading dialog and asynchronously check if the token is
         valid. """
-        def on_success(services: List[UbuntuProService]) -> None:
-            def show_services() -> None:
+        def on_success(subscription: UbuntuProSubscription) -> None:
+            def show_subscription() -> None:
                 self.remove_overlay()
-                self.show_activable_services(services)
+                self.show_subscription(subscription=subscription)
 
             self.remove_overlay()
             widget = TokenAddedWidget(
                     parent=self,
-                    on_continue=show_services)
+                    on_continue=show_subscription)
             self.show_stretchy_overlay(widget)
 
         def on_failure(status: UbuntuProCheckTokenStatus) -> None:
@@ -463,12 +476,11 @@ class UbuntuProView(BaseView):
         """
         self.show_stretchy_overlay(ContinueAnywayWidget(self))
 
-    def show_activable_services(self,
-                                services: List[UbuntuProService]) -> None:
-        """ Display a screen with the list of services that can be enabled
-        via Ubuntu Pro subscription. After the user confirms, we will
-        quit the current view and move on. """
-        self._w = self.services_screen(services)
+    def show_subscription(self, subscription: UbuntuProSubscription) -> None:
+        """ Display a screen with information about the subscription, including
+        the list of services that can be enabled.  After the user confirms, we
+        will quit the current view and move on. """
+        self._w = self.subscription_screen(subscription=subscription)
 
 
 class ExpiredTokenWidget(Stretchy):

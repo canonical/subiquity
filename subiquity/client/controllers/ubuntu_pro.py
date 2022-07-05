@@ -16,7 +16,7 @@
 
 import asyncio
 import logging
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 from urwid import Widget
 
@@ -26,7 +26,7 @@ from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import (
     UbuntuProInfo,
     UbuntuProCheckTokenStatus as TokenStatus,
-    UbuntuProService,
+    UbuntuProSubscription,
     )
 from subiquity.ui.views.ubuntu_pro import (
     UbuntuProView,
@@ -113,9 +113,9 @@ class UbuntuProController(SubiquityTuiController):
 
             click(find_button_matching(view, TokenAddedWidget.done_label))
 
-        def run_services_screen() -> None:
+        def run_subscription_screen() -> None:
             click(find_button_matching(view._w,
-                                       UbuntuProView.services_done_label))
+                                       UbuntuProView.subscription_done_label))
 
         if not self.answers["token"]:
             run_yes_no_screen(skip=True)
@@ -124,10 +124,10 @@ class UbuntuProController(SubiquityTuiController):
         run_yes_no_screen(skip=False)
         run_token_screen(self.answers["token"])
         await run_token_added_overlay()
-        run_services_screen()
+        run_subscription_screen()
 
     def check_token(self, token: str,
-                    on_success: Callable[[List[UbuntuProService]], None],
+                    on_success: Callable[[UbuntuProSubscription], None],
                     on_failure: Callable[[TokenStatus], None],
                     ) -> None:
         """ Asynchronously check the token passed as an argument. """
@@ -135,7 +135,7 @@ class UbuntuProController(SubiquityTuiController):
             answer = await self.endpoint.check_token.GET(token)
             if answer.status == TokenStatus.VALID_TOKEN:
                 await self.endpoint.POST(UbuntuProInfo(token=token))
-                on_success(answer.subscription.services)
+                on_success(answer.subscription)
             else:
                 on_failure(answer.status)
 
