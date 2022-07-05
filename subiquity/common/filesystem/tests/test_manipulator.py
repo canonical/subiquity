@@ -677,7 +677,6 @@ class TestReformat(unittest.TestCase):
 class TestCanResize(unittest.TestCase):
     def setUp(self):
         self.manipulator = make_manipulator()
-        self.manipulator.model._probe_data = {}
 
     def test_resize_unpreserved(self):
         disk = make_disk(self.manipulator.model, ptable=None)

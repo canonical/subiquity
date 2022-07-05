@@ -21,6 +21,7 @@ import attr
 
 from subiquity.common.filesystem import gaps, sizes
 from subiquity.models.filesystem import (
+    align_up,
     Disk,
     Raid,
     Bootloader,
@@ -84,19 +85,22 @@ class CreatePartPlan(MakeBootDevicePlan):
             self.gap.device, self.gap, self.spec, **self.args)
 
 
-def _no_preserve_part(inst, field, part):
-    assert not part.preserve
+def _can_resize_part(inst, field, part):
+    assert not part.preserve or inst.allow_resize_preserved
 
 
 @attr.s(auto_attribs=True)
 class ResizePlan(MakeBootDevicePlan):
     """Resize a partition."""
 
-    part: object = attr.ib(validator=_no_preserve_part)
+    part: object = attr.ib(validator=_can_resize_part)
     size_delta: int = 0
+    allow_resize_preserved: bool = False
 
     def apply(self, manipulator):
         self.part.size += self.size_delta
+        if self.part.preserve:
+            self.part.resize = True
 
 
 def _no_preserve_parts(inst, field, parts):
@@ -203,7 +207,7 @@ def get_boot_device_plan_bios(device) -> Optional[MakeBootDevicePlan]:
         ])
 
 
-def get_add_part_plan(device, *, spec, args):
+def get_add_part_plan(device, *, spec, args, resize_partition=None):
     size = spec['size']
     partitions = device.partitions()
 
@@ -212,6 +216,21 @@ def get_add_part_plan(device, *, spec, args):
     if gaps.largest_gap_size(device) >= size:
         create_part_plan.gap = gaps.largest_gap(device).split(size)[0]
         return create_part_plan
+    elif resize_partition is not None:
+        if size > resize_partition.size - resize_partition.estimated_min_size:
+            return None
+
+        offset = resize_partition.offset + resize_partition.size - size
+        create_part_plan.gap = gaps.Gap(
+                device=device, offset=offset, size=size)
+        return MultiStepPlan(plans=[
+            ResizePlan(
+                part=resize_partition,
+                size_delta=-size,
+                allow_resize_preserved=True,
+                ),
+            create_part_plan,
+            ])
     else:
         new_parts = [p for p in partitions if not p.preserve]
         if not new_parts:
@@ -232,7 +251,7 @@ def get_add_part_plan(device, *, spec, args):
             ])
 
 
-def get_boot_device_plan_uefi(device):
+def get_boot_device_plan_uefi(device, resize_partition):
     for part in device.partitions():
         if is_esp(part):
             plans = [SetAttrPlan(part, 'grub_device', True)]
@@ -240,16 +259,18 @@ def get_boot_device_plan_uefi(device):
                 plans.append(MountBootEfiPlan(part))
             return MultiStepPlan(plans=plans)
 
-    size = sizes.get_efi_size(device.size)
+    part_align = device.alignment_data().part_align
+    size = align_up(sizes.get_efi_size(device.size), part_align)
     spec = dict(size=size, fstype='fat32', mount=None)
     if device._m._mount_for_path("/boot/efi") is None:
         spec['mount'] = '/boot/efi'
 
     return get_add_part_plan(
-        device, spec=spec, args=dict(flag='boot', grub_device=True))
+        device, spec=spec, args=dict(flag='boot', grub_device=True),
+        resize_partition=resize_partition)
 
 
-def get_boot_device_plan_prep(device):
+def get_boot_device_plan_prep(device, resize_partition):
     for part in device.partitions():
         if part.flag == "prep":
             return MultiStepPlan(plans=[
@@ -260,22 +281,27 @@ def get_boot_device_plan_prep(device):
     return get_add_part_plan(
         device,
         spec=dict(size=sizes.PREP_GRUB_SIZE_BYTES, fstype=None, mount=None),
-        args=dict(flag='prep', grub_device=True, wipe='zero'))
+        args=dict(flag='prep', grub_device=True, wipe='zero'),
+        resize_partition=resize_partition)
 
 
-def get_boot_device_plan(device):
+def get_boot_device_plan(device, resize_partition=None):
     bl = device._m.bootloader
     if bl == Bootloader.BIOS:
+        # we don't attempt resize_partition with BIOS,
+        # a move might help but a resize alone won't
+        # and we don't move preserved partitions.
         return get_boot_device_plan_bios(device)
     if bl == Bootloader.UEFI:
-        return get_boot_device_plan_uefi(device)
+        return get_boot_device_plan_uefi(device, resize_partition)
     if bl == Bootloader.PREP:
-        return get_boot_device_plan_prep(device)
+        return get_boot_device_plan_prep(device, resize_partition)
     raise Exception(f'unexpected bootloader {bl} here')
 
 
 @functools.singledispatch
-def can_be_boot_device(device, *, with_reformatting=False):
+def can_be_boot_device(device, *,
+                       resize_partition=None, with_reformatting=False):
     """Can `device` be made into a boot device?
 
     If with_reformatting=True, return true if the device can be made
@@ -285,14 +311,17 @@ def can_be_boot_device(device, *, with_reformatting=False):
 
 
 @can_be_boot_device.register(Disk)
-def _can_be_boot_device_disk(disk, *, with_reformatting=False):
+def _can_be_boot_device_disk(disk, *,
+                             resize_partition=None, with_reformatting=False):
     if with_reformatting:
         return True
-    return get_boot_device_plan(disk) is not None
+    plan = get_boot_device_plan(disk, resize_partition=resize_partition)
+    return plan is not None
 
 
 @can_be_boot_device.register(Raid)
-def _can_be_boot_device_raid(raid, *, with_reformatting=False):
+def _can_be_boot_device_raid(raid, *,
+                             resize_partition=None, with_reformatting=False):
     bl = raid._m.bootloader
     if bl != Bootloader.UEFI:
         return False
@@ -300,7 +329,8 @@ def _can_be_boot_device_raid(raid, *, with_reformatting=False):
         return False
     if with_reformatting:
         return True
-    return get_boot_device_plan_uefi(raid) is not None
+    plan = get_boot_device_plan_uefi(raid, resize_partition=resize_partition)
+    return plan is not None
 
 
 @functools.singledispatch

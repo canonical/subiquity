@@ -148,7 +148,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if mode is None or mode == 'reformat_disk':
             self.reformat(disk, wipe='superblock-recursive')
         if DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk):
-            self.add_boot_disk(target)
+            self.add_boot_disk(disk)
         if gap is None:
             return disk, gaps.largest_gap(disk)
         else:
@@ -420,6 +420,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                         partition.estimated_min_size, partition.size,
                         install_min, part_align=part_align)
                 if vals is None:
+                    continue
+                if not boot.can_be_boot_device(
+                        disk, resize_partition=partition,
+                        with_reformatting=False):
                     continue
                 resize = GuidedStorageTargetResize.from_recommendations(
                         partition, vals)
