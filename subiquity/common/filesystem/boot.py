@@ -143,6 +143,14 @@ class MountBootEfiPlan(MakeBootDevicePlan):
 
 
 @attr.s(auto_attribs=True)
+class NoOpBootPlan(MakeBootDevicePlan):
+    """Do nothing, successfully"""
+
+    def apply(self, manipulator):
+        pass
+
+
+@attr.s(auto_attribs=True)
 class MultiStepPlan(MakeBootDevicePlan):
     """Execute several MakeBootDevicePlans in sequence."""
 
@@ -296,6 +304,8 @@ def get_boot_device_plan(device, resize_partition=None):
         return get_boot_device_plan_uefi(device, resize_partition)
     if bl == Bootloader.PREP:
         return get_boot_device_plan_prep(device, resize_partition)
+    if bl == Bootloader.NONE:
+        return NoOpBootPlan()
     raise Exception(f'unexpected bootloader {bl} here')
 
 

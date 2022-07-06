@@ -139,7 +139,7 @@ class TestLayout(TestCase):
 
 
 bootloaders_and_ptables = [(bl, pt)
-                           for bl in list(Bootloader) if bl != Bootloader.NONE
+                           for bl in list(Bootloader)
                            for pt in ('gpt', 'msdos', 'vtoc')]
 
 
