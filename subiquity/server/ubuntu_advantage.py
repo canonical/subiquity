@@ -17,9 +17,10 @@ helper. """
 
 from abc import ABC, abstractmethod
 from datetime import datetime as dt
+import contextlib
 import json
 import logging
-from subprocess import CalledProcessError, CompletedProcess
+from subprocess import CompletedProcess
 from typing import List, Sequence, Union
 import asyncio
 
@@ -132,20 +133,36 @@ class UAClientUAInterfaceStrategy(UAInterfaceStrategy):
             "--format", "json",
             "--simulate-with-token", token,
         )
-        try:
-            proc: CompletedProcess = await utils.arun_command(command,
-                                                              check=True)
+
+        # On error, the command will exit with status 1. When that happens, the
+        # output should still be formatted as a JSON object and we can inspect
+        # it to know the reason of the failure. This is how we figure out if
+        # the contract token was invalid.
+        proc: CompletedProcess = await utils.arun_command(command, check=False)
+        if proc.returncode == 0:
             # TODO check if we're not returning a string or a list
-            return json.loads(proc.stdout)
-        except CalledProcessError:
+            try:
+                return json.loads(proc.stdout)
+            except json.JSONDecodeError:
+                log.exception("Failed to parse output of command %r", command)
+        elif proc.returncode == 1:
+            try:
+                data = json.loads(proc.stdout)
+            except json.JSONDecodeError:
+                log.exception("Failed to parse output of command %r", command)
+            else:
+                token_invalid = False
+                with contextlib.suppress(KeyError):
+                    for error in data["errors"]:
+                        if error["message_code"] == "attach-invalid-token":
+                            token_invalid = True
+                        log.debug("error reported by u-a-c: %s: %s",
+                                  error["message_code"], error["message"])
+                if token_invalid:
+                    raise InvalidTokenError(token)
+
+        else:
             log.exception("Failed to execute command %r", command)
-            # TODO Check if the command failed because the token is invalid.
-            # Currently, ubuntu-advantage fails with the following error when
-            # the token is invalid:
-            # * Failed to connect to authentication server
-            # * Check your Internet connection and try again.
-        except json.JSONDecodeError:
-            log.exception("Failed to parse output of command %r", command)
 
         message = "Unable to retrieve subscription information."
         raise CheckSubscriptionError(token, message=message)
