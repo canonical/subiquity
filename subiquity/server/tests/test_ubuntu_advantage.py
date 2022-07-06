@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subprocess import CalledProcessError, CompletedProcess
+from subprocess import CompletedProcess
 import unittest
 from unittest.mock import patch, AsyncMock
 
@@ -87,9 +87,9 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
             mock_arun.return_value = CompletedProcess([], 0)
             mock_arun.return_value.stdout = "{}"
             await strategy.query_info(token="123456789")
-            mock_arun.assert_called_once_with(command, check=True)
+            mock_arun.assert_called_once_with(command, check=False)
 
-    async def test_query_info_failed(self):
+    async def test_query_info_unknown_error(self):
         strategy = UAClientUAInterfaceStrategy()
         command = (
             "ubuntu-advantage",
@@ -99,12 +99,42 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
         )
 
         with patch(self.arun_command_sym) as mock_arun:
-            mock_arun.side_effect = CalledProcessError(returncode=1,
-                                                       cmd=command)
+            mock_arun.return_value.returncode = 2
             mock_arun.return_value.stdout = "{}"
             with self.assertRaises(CheckSubscriptionError):
                 await strategy.query_info(token="123456789")
-            mock_arun.assert_called_once_with(command, check=True)
+            mock_arun.assert_called_once_with(command, check=False)
+
+    async def test_query_info_invalid_token(self):
+        strategy = UAClientUAInterfaceStrategy()
+        command = (
+            "ubuntu-advantage",
+            "status",
+            "--format", "json",
+            "--simulate-with-token", "123456789",
+        )
+
+        with patch(self.arun_command_sym) as mock_arun:
+            mock_arun.return_value.returncode = 1
+            mock_arun.return_value.stdout = """\
+{
+  "environment_vars": [],
+  "errors": [
+    {
+      "message": "Invalid token. See https://ubuntu.com/advantage",
+      "message_code": "attach-invalid-token",
+      "service": null,
+      "type": "system"
+    }
+  ],
+  "result": "failure",
+  "services": [],
+  "warnings": []
+}
+"""
+            with self.assertRaises(InvalidTokenError):
+                await strategy.query_info(token="123456789")
+            mock_arun.assert_called_once_with(command, check=False)
 
     async def test_query_info_invalid_json(self):
         strategy = UAClientUAInterfaceStrategy()
@@ -120,7 +150,7 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
             mock_arun.return_value.stdout = "invalid-json"
             with self.assertRaises(CheckSubscriptionError):
                 await strategy.query_info(token="123456789")
-            mock_arun.assert_called_once_with(command, check=True)
+            mock_arun.assert_called_once_with(command, check=False)
 
 
 class TestUAInterface(unittest.IsolatedAsyncioTestCase):
