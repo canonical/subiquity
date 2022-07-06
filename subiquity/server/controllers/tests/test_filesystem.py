@@ -22,7 +22,6 @@ from subiquity.server.controllers.filesystem import FilesystemController
 
 from subiquitycore.tests.mocks import make_app
 from subiquity.common.filesystem import gaps
-from subiquity.common import types
 from subiquity.common.types import (
     Bootloader,
     GuidedChoiceV2,
@@ -139,114 +138,119 @@ class TestLayout(TestCase):
             self.fsc.validate_layout_mode(mode)
 
 
-bootloaders = [(bl, ) for bl in list(Bootloader) if bl != Bootloader.NONE]
+bootloaders_and_ptables = [(bl, pt)
+                           for bl in list(Bootloader) if bl != Bootloader.NONE
+                           for pt in ('gpt', 'msdos', 'vtoc')]
 
 
 class TestGuidedV2(IsolatedAsyncioTestCase):
-    def _setup(self, bootloader):
+    def _setup(self, bootloader, ptable, fix_bios=True, **kw):
         self.app = make_app()
         self.app.opts.bootloader = bootloader.value
         self.fsc = FilesystemController(app=self.app)
         self.fsc.calculate_suggested_install_min = mock.Mock()
         self.fsc.calculate_suggested_install_min.return_value = 10 << 30
         self.fsc.model = self.model = make_model(bootloader)
+        self.disk = make_disk(self.model, ptable=ptable, **kw)
         self.model.storage_version = 2
         self.fs_probe = {}
         self.fsc.model._probe_data = {
             'blockdev': {},
             'filesystem': self.fs_probe,
             }
+        if bootloader == Bootloader.BIOS and ptable != 'msdos' and fix_bios:
+            make_partition(self.model, self.disk, preserve=True,
+                           flag='bios_grub', size=1 << 20, offset=1 << 20)
 
-    @parameterized.expand(bootloaders)
-    async def test_blank_disk(self, bootloader):
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_blank_disk(self, bootloader, ptable):
         # blank disks should not report a UseGap case
-        self._setup(bootloader)
-        d = make_disk(self.model, size=(30 << 30) + (2 << 20))
-        expected = [GuidedStorageTargetReformat(disk_id=d.id)]
+        self._setup(bootloader, ptable, fix_bios=False)
+        expected = [GuidedStorageTargetReformat(disk_id=self.disk.id)]
         resp = await self.fsc.v2_guided_GET()
         self.assertEqual(expected, resp.possible)
 
-    @parameterized.expand(bootloaders)
-    async def test_used_half_disk(self, bootloader):
-        self._setup(bootloader)
-        d = make_disk(self.model, size=(30 << 30) + (2 << 20))
-        p1 = make_partition(self.model, d, preserve=True, size=15 << 30)
-        self.fs_probe[p1._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_used_half_disk(self, bootloader, ptable):
+        self._setup(bootloader, ptable, size=100 << 30)
+        p = make_partition(self.model, self.disk, preserve=True, size=50 << 30)
+        gap_offset = p.size + p.offset
+        self.fs_probe[p._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
         resp = await self.fsc.v2_guided_GET()
+
         reformat = resp.possible.pop(0)
-        self.assertEqual(GuidedStorageTargetReformat(disk_id=d.id), reformat)
-        if bootloader != Bootloader.BIOS:
-            gap = types.Gap(offset=(15 << 30) + (1 << 20), size=15 << 30)
-            use_gap = resp.possible.pop(0)
-            self.assertEqual(
-                GuidedStorageTargetUseGap(disk_id=d.id, gap=gap),
-                use_gap)
-            resize = resp.possible.pop(0)
-            self.assertEqual(d.id, resize.disk_id)
-            self.assertEqual(p1.number, resize.partition_number)
-            self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
+        self.assertEqual(GuidedStorageTargetReformat(disk_id=self.disk.id),
+                         reformat)
+
+        use_gap = resp.possible.pop(0)
+        self.assertEqual(self.disk.id, use_gap.disk_id)
+        if gap_offset != use_gap.gap.offset:
+            breakpoint()
+        self.assertEqual(gap_offset, use_gap.gap.offset)
+
+        resize = resp.possible.pop(0)
+        self.assertEqual(self.disk.id, resize.disk_id)
+        self.assertEqual(p.number, resize.partition_number)
+        self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
         self.assertEqual(0, len(resp.possible))
 
-    @parameterized.expand(bootloaders)
-    async def test_used_full_disk(self, bootloader):
-        self._setup(bootloader)
-        d = make_disk(self.model)
-        p1 = make_partition(self.model, d, preserve=True,
-                            size=gaps.largest_gap_size(d))
-        self.fs_probe[p1._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_used_full_disk(self, bootloader, ptable):
+        self._setup(bootloader, ptable)
+        p = make_partition(self.model, self.disk, preserve=True,
+                           size=gaps.largest_gap_size(self.disk))
+        self.fs_probe[p._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
         resp = await self.fsc.v2_guided_GET()
         reformat = resp.possible.pop(0)
-        self.assertEqual(GuidedStorageTargetReformat(disk_id=d.id), reformat)
-        if bootloader != Bootloader.BIOS:
-            resize = resp.possible.pop(0)
-            self.assertEqual(d.id, resize.disk_id)
-            self.assertEqual(p1.number, resize.partition_number)
-            self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
+        self.assertEqual(GuidedStorageTargetReformat(disk_id=self.disk.id),
+                         reformat)
+
+        resize = resp.possible.pop(0)
+        self.assertEqual(self.disk.id, resize.disk_id)
+        self.assertEqual(p.number, resize.partition_number)
+        self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
         self.assertEqual(0, len(resp.possible))
 
-    @parameterized.expand(bootloaders)
-    async def test_weighted_split(self, bootloader):
-        self._setup(bootloader)
-        d = make_disk(self.model, size=250 << 30)
-        p1 = make_partition(self.model, d, preserve=True, size=240 << 30)
-        # add a second, filler, partition so that there is no use_gap result
-        make_partition(self.model, d, preserve=True, size=9 << 30)
-        self.fs_probe[p1._path()] = {'ESTIMATED_MIN_SIZE': 40 << 30}
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_weighted_split(self, bootloader, ptable):
+        self._setup(bootloader, ptable, size=250 << 30)
+        # add an extra, filler, partition so that there is no use_gap result
+        make_partition(self.model, self.disk, preserve=True, size=9 << 30)
+        p = make_partition(self.model, self.disk, preserve=True,
+                           size=240 << 30)
+        self.fs_probe[p._path()] = {'ESTIMATED_MIN_SIZE': 40 << 30}
         self.fsc.calculate_suggested_install_min.return_value = 10 << 30
         resp = await self.fsc.v2_guided_GET()
         reformat = resp.possible.pop(0)
-        self.assertEqual(GuidedStorageTargetReformat(disk_id=d.id), reformat)
-        if bootloader != Bootloader.BIOS:
-            resize = resp.possible.pop(0)
-            expected = GuidedStorageTargetResize(
-                    disk_id=d.id,
-                    partition_number=p1.number,
-                    new_size=200 << 30,
-                    minimum=50 << 30,
-                    recommended=200 << 30,
-                    maximum=230 << 30)
-            self.assertEqual(expected, resize)
+        self.assertEqual(GuidedStorageTargetReformat(disk_id=self.disk.id),
+                         reformat)
+
+        resize = resp.possible.pop(0)
+        expected = GuidedStorageTargetResize(
+                disk_id=self.disk.id,
+                partition_number=p.number,
+                new_size=200 << 30,
+                minimum=50 << 30,
+                recommended=200 << 30,
+                maximum=230 << 30)
+        self.assertEqual(expected, resize)
         self.assertEqual(0, len(resp.possible))
 
-    @parameterized.expand(bootloaders)
-    async def test_half_disk_reformat(self, bootloader):
-        self._setup(bootloader)
-        d = make_disk(self.model, ptable='gpt')
-        p = make_partition(self.model, d, preserve=True)
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_half_disk_reformat(self, bootloader, ptable):
+        self._setup(bootloader, ptable, size=100 << 30)
+        p = make_partition(self.model, self.disk, preserve=True, size=50 << 30)
         self.fs_probe[p._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
-
-        resp = await self.fsc.v2_GET()
-        [p1, g1] = resp.disks[0].partitions
 
         guided_get_resp = await self.fsc.v2_guided_GET()
         reformat = guided_get_resp.possible.pop(0)
         self.assertTrue(isinstance(reformat, GuidedStorageTargetReformat))
 
-        if bootloader != Bootloader.BIOS:
-            use_gap = guided_get_resp.possible.pop(0)
-            self.assertTrue(isinstance(use_gap, GuidedStorageTargetUseGap))
-            resize = guided_get_resp.possible.pop(0)
-            self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
+        use_gap = guided_get_resp.possible.pop(0)
+        self.assertTrue(isinstance(use_gap, GuidedStorageTargetUseGap))
+
+        resize = guided_get_resp.possible.pop(0)
+        self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
 
         data = GuidedChoiceV2(target=reformat)
         expected_config = copy.copy(data)
@@ -258,66 +262,68 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertFalse(resp.need_boot)
         self.assertEqual(0, len(guided_get_resp.possible))
 
-    @parameterized.expand(bootloaders)
-    async def test_half_disk_use_gap(self, bootloader):
-        self._setup(bootloader)
-        d = make_disk(self.model, ptable='gpt')
-        p = make_partition(self.model, d, preserve=True)
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_half_disk_use_gap(self, bootloader, ptable):
+        self._setup(bootloader, ptable, size=100 << 30)
+        p = make_partition(self.model, self.disk, preserve=True, size=50 << 30)
         self.fs_probe[p._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
 
         resp = await self.fsc.v2_GET()
-        [p1, g1] = resp.disks[0].partitions
+        [orig_p, g] = resp.disks[0].partitions[-2:]
 
         guided_get_resp = await self.fsc.v2_guided_GET()
         reformat = guided_get_resp.possible.pop(0)
         self.assertTrue(isinstance(reformat, GuidedStorageTargetReformat))
-        if bootloader != Bootloader.BIOS:
-            use_gap = guided_get_resp.possible.pop(0)
-            self.assertTrue(isinstance(use_gap, GuidedStorageTargetUseGap))
-            self.assertEqual(g1, use_gap.gap)
-            data = GuidedChoiceV2(target=use_gap)
-            expected_config = copy.copy(data)
-            resp = await self.fsc.v2_guided_POST(data=data)
-            self.assertEqual(expected_config, resp.configured)
 
-            resp = await self.fsc.v2_GET()
-            self.assertEqual(p1, resp.disks[0].partitions[0])
-            self.assertFalse(resp.need_root)
-            self.assertFalse(resp.need_boot)
+        use_gap = guided_get_resp.possible.pop(0)
+        self.assertTrue(isinstance(use_gap, GuidedStorageTargetUseGap))
+        self.assertEqual(g, use_gap.gap)
+        data = GuidedChoiceV2(target=use_gap)
+        expected_config = copy.copy(data)
+        resp = await self.fsc.v2_guided_POST(data=data)
+        self.assertEqual(expected_config, resp.configured)
 
-            resize = guided_get_resp.possible.pop(0)
-            self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
+        resize = guided_get_resp.possible.pop(0)
+        self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
+
+        resp = await self.fsc.v2_GET()
+        existing_part = [p for p in resp.disks[0].partitions
+                         if getattr(p, 'number', None) == orig_p.number][0]
+        self.assertEqual(orig_p, existing_part)
+        self.assertFalse(resp.need_root)
+        self.assertFalse(resp.need_boot)
         self.assertEqual(0, len(guided_get_resp.possible))
 
-    @parameterized.expand(bootloaders)
-    async def test_half_disk_resize(self, bootloader):
-        self._setup(bootloader)
-        d = make_disk(self.model, ptable='gpt')
-        p = make_partition(self.model, d, preserve=True)
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_half_disk_resize(self, bootloader, ptable):
+        self._setup(bootloader, ptable, size=100 << 30)
+        p = make_partition(self.model, self.disk, preserve=True, size=50 << 30)
         self.fs_probe[p._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
 
         resp = await self.fsc.v2_GET()
-        [p1, g1] = resp.disks[0].partitions
+        [orig_p, g] = resp.disks[0].partitions[-2:]
 
         guided_get_resp = await self.fsc.v2_guided_GET()
         reformat = guided_get_resp.possible.pop(0)
         self.assertTrue(isinstance(reformat, GuidedStorageTargetReformat))
-        if bootloader != Bootloader.BIOS:
-            use_gap = guided_get_resp.possible.pop(0)
-            self.assertTrue(isinstance(use_gap, GuidedStorageTargetUseGap))
 
-            resize = guided_get_resp.possible.pop(0)
-            self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
-            p1_expected = copy.copy(p1)
-            p1_expected.size = resize.new_size = 20 << 30
-            p1_expected.resize = True
-            data = GuidedChoiceV2(target=resize)
-            expected_config = copy.copy(data)
-            resp = await self.fsc.v2_guided_POST(data=data)
-            self.assertEqual(expected_config, resp.configured)
+        use_gap = guided_get_resp.possible.pop(0)
+        self.assertTrue(isinstance(use_gap, GuidedStorageTargetUseGap))
 
-            resp = await self.fsc.v2_GET()
-            self.assertEqual(p1_expected, resp.disks[0].partitions[0])
-            self.assertFalse(resp.need_root)
-            self.assertFalse(resp.need_boot)
+        resize = guided_get_resp.possible.pop(0)
+        self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
+        p_expected = copy.copy(orig_p)
+        p_expected.size = resize.new_size = 20 << 30
+        p_expected.resize = True
+        data = GuidedChoiceV2(target=resize)
+        expected_config = copy.copy(data)
+        resp = await self.fsc.v2_guided_POST(data=data)
+        self.assertEqual(expected_config, resp.configured)
+
+        resp = await self.fsc.v2_GET()
+        existing_part = [p for p in resp.disks[0].partitions
+                         if getattr(p, 'number', None) == orig_p.number][0]
+        self.assertEqual(p_expected, existing_part)
+        self.assertFalse(resp.need_root)
+        self.assertFalse(resp.need_boot)
         self.assertEqual(0, len(guided_get_resp.possible))
