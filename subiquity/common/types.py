@@ -333,9 +333,68 @@ class StorageResponseV2:
 
 @attr.s(auto_attribs=True)
 class GuidedResizeValues:
+    install_max: int
     minimum: int
     recommended: int
     maximum: int
+
+
+@attr.s(auto_attribs=True)
+class GuidedStorageTargetReformat:
+    disk_id: str
+
+
+@attr.s(auto_attribs=True)
+class GuidedStorageTargetResize:
+    disk_id: str
+    partition_number: int
+    new_size: int
+    minimum: Optional[int]
+    recommended: Optional[int]
+    maximum: Optional[int]
+
+    @staticmethod
+    def from_recommendations(part, resize_vals):
+        return GuidedStorageTargetResize(
+                disk_id=part.device.id,
+                partition_number=part.number,
+                new_size=resize_vals.recommended,
+                minimum=resize_vals.minimum,
+                recommended=resize_vals.recommended,
+                maximum=resize_vals.maximum,
+                )
+
+
+@attr.s(auto_attribs=True)
+class GuidedStorageTargetUseGap:
+    disk_id: str
+    gap: Gap
+
+
+GuidedStorageTarget = Union[GuidedStorageTargetReformat,
+                            GuidedStorageTargetResize,
+                            GuidedStorageTargetUseGap]
+
+
+@attr.s(auto_attribs=True)
+class GuidedChoiceV2:
+    target: GuidedStorageTarget
+    use_lvm: bool = False
+    password: Optional[str] = attr.ib(default=None, repr=False)
+
+    @staticmethod
+    def from_guided_choice(choice: GuidedChoice):
+        return GuidedChoiceV2(
+                target=GuidedStorageTargetReformat(disk_id=choice.disk_id),
+                use_lvm=choice.use_lvm,
+                password=choice.password,
+                )
+
+
+@attr.s(auto_attribs=True)
+class GuidedStorageResponseV2:
+    configured: Optional[GuidedChoiceV2] = None
+    possible: List[GuidedStorageTarget] = attr.Factory(list)
 
 
 @attr.s(auto_attribs=True)

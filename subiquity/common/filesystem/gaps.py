@@ -230,3 +230,14 @@ def at_offset(device, offset):
             if pg.offset == offset:
                 return pg
     return None
+
+
+def within(device, gap):
+    """Find the first gap that is contained wholly inside the supplied gap."""
+    gap_end = gap.offset + gap.size
+    for pg in parts_and_gaps(device):
+        if isinstance(pg, Gap):
+            pg_end = pg.offset + pg.size
+            if pg.offset >= gap.offset and pg_end <= gap_end:
+                return pg
+    return None

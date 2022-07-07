@@ -50,7 +50,12 @@ from subiquity.common.types import (
     Bootloader,
     Disk,
     GuidedChoice,
+    GuidedChoiceV2,
     GuidedStorageResponse,
+    GuidedStorageResponseV2,
+    GuidedStorageTargetReformat,
+    GuidedStorageTargetResize,
+    GuidedStorageTargetUseGap,
     ModifyPartitionV2,
     ProbeStatus,
     ReformatDisk,
@@ -58,6 +63,7 @@ from subiquity.common.types import (
     StorageResponseV2,
     )
 from subiquity.models.filesystem import (
+    align_up,
     align_down,
     LVM_CHUNK_SIZE,
     Raid,
@@ -132,20 +138,33 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 "autoinstall config did not create needed bootloader "
                 "partition")
 
-    def setup_disk_for_guided(self, disk, mode):
+    def setup_disk_for_guided(self, target, mode):
+        if isinstance(target, gaps.Gap):
+            disk = target.device
+            gap = target
+        else:
+            disk = target
+            gap = None
         if mode is None or mode == 'reformat_disk':
             self.reformat(disk, wipe='superblock-recursive')
         if DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk):
             self.add_boot_disk(disk)
-        return gaps.largest_gap(disk)
+        if gap is None:
+            return disk, gaps.largest_gap(disk)
+        else:
+            # find what's left of the gap after adding boot
+            gap = gaps.within(disk, gap)
+            if gap is None:
+                raise Exception(f'failed to locate gap after adding boot')
+            return disk, gap
 
-    def guided_direct(self, disk, mode=None):
-        gap = self.setup_disk_for_guided(disk, mode)
+    def guided_direct(self, target, mode=None):
+        disk, gap = self.setup_disk_for_guided(target, mode)
         spec = dict(fstype="ext4", mount="/")
         self.create_partition(device=disk, gap=gap, spec=spec)
 
-    def guided_lvm(self, disk, mode=None, lvm_options=None):
-        gap = self.setup_disk_for_guided(disk, mode)
+    def guided_lvm(self, target, mode=None, lvm_options=None):
+        disk, gap = self.setup_disk_for_guided(target, mode)
         gap_boot, gap_rest = gap.split(sizes.get_bootfs_size(gap.size))
         spec = dict(fstype="ext4", mount='/boot')
         self.create_partition(device=disk, gap=gap_boot, spec=spec)
@@ -187,8 +206,31 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 mount="/",
                 ))
 
-    def guided(self, choice):
-        disk = self.model._one(id=choice.disk_id)
+    def guided(self, choice: GuidedChoiceV2):
+        self.model.guided_configuration = choice
+
+        disk = self.model._one(id=choice.target.disk_id)
+        if isinstance(choice.target, GuidedStorageTargetReformat):
+            mode = 'reformat_disk'
+            target = disk
+        elif isinstance(choice.target, GuidedStorageTargetUseGap):
+            mode = 'use_gap'
+            target = gaps.at_offset(disk, choice.target.gap.offset)
+        elif isinstance(choice.target, GuidedStorageTargetResize):
+            partition = self.get_partition(
+                    disk, choice.target.partition_number)
+            part_align = disk.alignment_data().part_align
+            new_size = align_up(choice.target.new_size, part_align)
+            if new_size > partition.size:
+                raise Exception(f'Aligned requested size {new_size} too large')
+            gap_offset = partition.offset + new_size
+            partition.size = new_size
+            partition.resize = True
+            mode = 'use_gap'
+            target = gaps.at_offset(disk, gap_offset)
+        else:
+            raise Exception(f'Unknown guided target {choice.target}')
+
         if choice.use_lvm:
             lvm_options = None
             if choice.password is not None:
@@ -198,9 +240,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                         'password': choice.password,
                         },
                     }
-            self.guided_lvm(disk, lvm_options=lvm_options)
+            self.guided_lvm(target, mode=mode, lvm_options=lvm_options)
         else:
-            self.guided_direct(disk)
+            self.guided_direct(target, mode=mode)
 
     async def _probe_response(self, wait, resp_cls):
         if self._probe_task.task is None or not self._probe_task.task.done():
@@ -244,6 +286,29 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             config, self.model._probe_data['blockdev'], is_probe_data=False)
         await self.configured()
 
+    def get_guided_disks(self, check_boot=True, with_reformatting=False):
+        disks = []
+        for raid in self.model._all(type='raid'):
+            if check_boot and not boot.can_be_boot_device(
+                    raid, with_reformatting=with_reformatting):
+                continue
+            disks.append(raid)
+        for disk in self.model._all(type='disk'):
+            if check_boot and not boot.can_be_boot_device(
+                    disk, with_reformatting=with_reformatting):
+                continue
+            cd = disk.constructed_device()
+            if isinstance(cd, Raid):
+                can_be_boot = False
+                for v in cd._subvolumes:
+                    if check_boot and boot.can_be_boot_device(
+                            v, with_reformatting=with_reformatting):
+                        can_be_boot = True
+                if can_be_boot:
+                    continue
+            disks.append(disk)
+        return disks
+
     async def guided_GET(self, wait: bool = False) -> GuidedStorageResponse:
         probe_resp = await self._probe_response(wait, GuidedStorageResponse)
         if probe_resp is not None:
@@ -253,23 +318,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # source catalog should directly specify the minimum suitable
         # size?)
         min_size = 2*self.app.base_model.source.current.size + (1 << 30)
-        disks = []
-        for raid in self.model._all(type='raid'):
-            if not boot.can_be_boot_device(raid, with_reformatting=True):
-                continue
-            disks.append(raid)
-        for disk in self.model._all(type='disk'):
-            if not boot.can_be_boot_device(disk, with_reformatting=True):
-                continue
-            cd = disk.constructed_device()
-            if isinstance(cd, Raid):
-                can_be_boot = False
-                for v in cd._subvolumes:
-                    if boot.can_be_boot_device(v, with_reformatting=True):
-                        can_be_boot = True
-                if can_be_boot:
-                    continue
-            disks.append(disk)
+        disks = self.get_guided_disks(with_reformatting=True)
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
@@ -277,7 +326,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
         log.debug(data)
-        self.guided(data)
+        self.guided(GuidedChoiceV2.from_guided_choice(data))
         return self._done_response()
 
     async def reset_POST(self, context, request) -> StorageResponse:
@@ -315,7 +364,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     def calculate_suggested_install_min(self):
         source_min = self.app.base_model.source.current.size
-        return sizes.calculate_suggested_install_min(source_min)
+        align = max((pa.part_align
+                     for pa in self.model._partition_alignment_data.values()))
+        return sizes.calculate_suggested_install_min(source_min, align)
 
     async def v2_GET(self) -> StorageResponseV2:
         disks = self.model._all(type='disk')
@@ -335,10 +386,63 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.model.reset()
         return await self.v2_GET()
 
-    async def v2_guided_POST(self, data: GuidedChoice) -> StorageResponseV2:
+    async def v2_deprecated_guided_POST(self, data: GuidedChoice) \
+            -> StorageResponseV2:
+        log.debug(data)
+        self.guided(GuidedChoiceV2.from_guided_choice(data))
+        return await self.v2_GET()
+
+    async def v2_guided_GET(self) -> GuidedStorageResponseV2:
+        """Acquire a list of possible guided storage configuration scenarios.
+        Results are sorted by the size of the space potentially available to
+        the install."""
+
+        scenarios = []
+        install_min = self.calculate_suggested_install_min()
+
+        for disk in self.get_guided_disks(with_reformatting=True):
+            reformat = GuidedStorageTargetReformat(disk_id=disk.id)
+            scenarios.append((disk.size, reformat))
+
+        for disk in self.get_guided_disks(with_reformatting=False):
+            if len(disk.partitions()) < 1:
+                # On an empty disk, don't bother to offer it with UseGap, as
+                # it's basically the same as the Reformat case.
+                continue
+            gap = gaps.largest_gap(disk)
+            if gap is not None and gap.size >= install_min:
+                api_gap = labels.for_client(gap)
+                use_gap = GuidedStorageTargetUseGap(
+                        disk_id=disk.id,
+                        gap=api_gap)
+                scenarios.append((gap.size, use_gap))
+
+        for disk in self.get_guided_disks(check_boot=False):
+            part_align = disk.alignment_data().part_align
+            for partition in disk.partitions():
+                vals = sizes.calculate_guided_resize(
+                        partition.estimated_min_size, partition.size,
+                        install_min, part_align=part_align)
+                if vals is None:
+                    continue
+                if not boot.can_be_boot_device(
+                        disk, resize_partition=partition,
+                        with_reformatting=False):
+                    continue
+                resize = GuidedStorageTargetResize.from_recommendations(
+                        partition, vals)
+                scenarios.append((vals.install_max, resize))
+
+        scenarios.sort(reverse=True, key=lambda x: x[0])
+        return GuidedStorageResponseV2(
+                configured=self.model.guided_configuration,
+                possible=[s[1] for s in scenarios])
+
+    async def v2_guided_POST(self, data: GuidedChoiceV2) \
+            -> GuidedStorageResponseV2:
         log.debug(data)
         self.guided(data)
-        return await self.v2_GET()
+        return await self.v2_guided_GET()
 
     async def v2_reformat_disk_POST(self, data: ReformatDisk) \
             -> StorageResponseV2:
@@ -472,8 +576,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         if mode == 'reformat_disk':
             match = layout.get("match", {'size': 'largest'})
-            disk = self.model.disk_for_match(self.model.all_disks(), match)
-            if not disk:
+            target = self.model.disk_for_match(self.model.all_disks(), match)
+            if not target:
                 raise Exception("autoinstall cannot configure storage "
                                 "- no disk found large enough for install")
         elif mode == 'use_gap':
@@ -485,10 +589,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                                 "- no gap found large enough for install")
             # This is not necessarily the exact gap to be used, as the gap size
             # may change once add_boot_disk has sorted things out.
-            disk = gap.device
+            target = gap
         log.info(f'autoinstall: running guided {name} install in mode {mode} '
-                 f'using {disk}')
-        guided_method(disk=disk, mode=mode)
+                 f'using {target}')
+        guided_method(target=target, mode=mode)
 
     def validate_layout_mode(self, mode):
         if mode not in ('reformat_disk', 'use_gap'):

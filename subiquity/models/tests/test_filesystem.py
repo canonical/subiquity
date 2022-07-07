@@ -140,6 +140,7 @@ def make_model(bootloader=None):
     model = FilesystemModel()
     if bootloader is not None:
         model.bootloader = bootloader
+    model._probe_data = {}
     return model
 
 

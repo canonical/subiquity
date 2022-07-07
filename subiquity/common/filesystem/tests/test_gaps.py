@@ -82,6 +82,59 @@ class TestAtOffset(unittest.TestCase):
         self.assertEqual(g2, gaps.at_offset(d, 60 << 20))
 
 
+class TestWithin(unittest.TestCase):
+    def test_identity(self):
+        d = make_disk()
+        [gap] = gaps.parts_and_gaps(d)
+        self.assertEqual(gap, gaps.within(d, gap))
+
+    def test_front_used(self):
+        m, d = make_model_and_disk(size=200 << 20)
+        m.storage_version = 2
+        make_partition(m, d, offset=100 << 20, size=1 << 20)
+        [orig_g1, p1, orig_g2] = gaps.parts_and_gaps(d)
+        make_partition(m, d, offset=0, size=20 << 20)
+        [p1, g1, p2, g2] = gaps.parts_and_gaps(d)
+        self.assertEqual(g1, gaps.within(d, orig_g1))
+
+    def test_back_used(self):
+        m, d = make_model_and_disk(size=200 << 20)
+        m.storage_version = 2
+        make_partition(m, d, offset=100 << 20, size=1 << 20)
+        [orig_g1, p1, orig_g2] = gaps.parts_and_gaps(d)
+        make_partition(m, d, offset=80 << 20, size=20 << 20)
+        [g1, p1, p2, g2] = gaps.parts_and_gaps(d)
+        self.assertEqual(g1, gaps.within(d, orig_g1))
+
+    def test_front_and_back_used(self):
+        m, d = make_model_and_disk(size=200 << 20)
+        m.storage_version = 2
+        make_partition(m, d, offset=100 << 20, size=1 << 20)
+        [orig_g1, p1, orig_g2] = gaps.parts_and_gaps(d)
+        make_partition(m, d, offset=0, size=20 << 20)
+        make_partition(m, d, offset=80 << 20, size=20 << 20)
+        [p1, g1, p2, p3, g2] = gaps.parts_and_gaps(d)
+        self.assertEqual(g1, gaps.within(d, orig_g1))
+
+    def test_multi_gap(self):
+        m, d = make_model_and_disk(size=200 << 20)
+        m.storage_version = 2
+        make_partition(m, d, offset=100 << 20, size=1 << 20)
+        [orig_g1, p1, orig_g2] = gaps.parts_and_gaps(d)
+        make_partition(m, d, offset=20 << 20, size=20 << 20)
+        [g1, p1, g2, p2, g3] = gaps.parts_and_gaps(d)
+        self.assertEqual(g1, gaps.within(d, orig_g1))
+
+    def test_later_part_of_disk(self):
+        m, d = make_model_and_disk(size=200 << 20)
+        m.storage_version = 2
+        make_partition(m, d, offset=100 << 20, size=1 << 20)
+        [orig_g1, p1, orig_g2] = gaps.parts_and_gaps(d)
+        make_partition(m, d, offset=120 << 20, size=20 << 20)
+        [g1, p1, g2, p2, g3] = gaps.parts_and_gaps(d)
+        self.assertEqual(g2, gaps.within(d, orig_g2))
+
+
 class TestDiskGaps(unittest.TestCase):
 
     def test_no_partition_gpt(self):

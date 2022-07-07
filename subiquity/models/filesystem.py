@@ -1039,6 +1039,7 @@ class FilesystemModel(object):
             self._actions = []
         self.swap = None
         self.grub = None
+        self.guided_configuration = None
 
     def load_server_data(self, status):
         log.debug('load_server_data %s', status)

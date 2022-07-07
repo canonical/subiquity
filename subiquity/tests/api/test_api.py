@@ -1,3 +1,18 @@
+# Copyright 2021 Canonical, Ltd.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import aiohttp
 from aiohttp.client_exceptions import ClientResponseError
 import async_timeout
@@ -26,9 +41,12 @@ def first(items, key, value):
     return next(find(items, key, value))
 
 
-def match(items, **kwargs):
+def match(items, **kw):
+    typename = kw.pop('_type', None)
+    if typename is not None:
+        kw['$type'] = typename
     return [item for item in items
-            if all(item.get(k) == v for k, v in kwargs.items())]
+            if all(item.get(k) == v for k, v in kw.items())]
 
 
 def timeout(multiplier=1):
@@ -247,7 +265,7 @@ class TestFlow(TestAPI):
             resp = await inst.get('/storage/guided')
             disk_id = resp['disks'][0]['id']
             choice = {"disk_id": disk_id}
-            await inst.post('/storage/v2/guided', choice)
+            await inst.post('/storage/v2/deprecated/guided', choice)
             await inst.post('/storage/v2')
             await inst.get('/meta/status', cur='WAITING')
             await inst.post('/meta/confirm', tty='/dev/tty1')
@@ -331,7 +349,8 @@ class TestFlow(TestAPI):
             self.assertEqual(orig_resp, reset_resp)
 
             choice = {'disk_id': disk_id}
-            guided_resp = await inst.post('/storage/v2/guided', choice)
+            guided_resp = await inst.post('/storage/v2/deprecated/guided',
+                                          choice)
             post_resp = await inst.post('/storage/v2')
             # posting to the endpoint shouldn't change the answer
             self.assertEqual(guided_resp, post_resp)
@@ -339,12 +358,126 @@ class TestFlow(TestAPI):
 
 class TestGuided(TestAPI):
     @timeout()
-    async def test_guided_v2(self):
+    async def test_deprecated_guided_v2(self):
         async with start_server('examples/simple.json') as inst:
             choice = {'disk_id': 'disk-sda'}
-            resp = await inst.post('/storage/v2/guided', choice)
+            resp = await inst.post('/storage/v2/deprecated/guided', choice)
             self.assertEqual(1, len(resp['disks']))
             self.assertEqual('disk-sda', resp['disks'][0]['id'])
+
+    @timeout()
+    async def test_guided_v2_reformat(self):
+        cfg = 'examples/win10-along-ubuntu.json'
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
+            resp = await inst.get('/storage/v2/guided')
+            [reformat] = match(resp['possible'],
+                               _type='GuidedStorageTargetReformat')
+            data = {'target': reformat}
+            resp = await inst.post('/storage/v2/guided', data)
+            self.assertEqual(reformat, resp['configured']['target'])
+            resp = await inst.get('/storage/v2')
+            [p1, p2] = resp['disks'][0]['partitions']
+            expected_p1 = {
+                '$type': 'Partition',
+                'boot': True,
+                'format': 'fat32',
+                'grub_device': True,
+                'mount': '/boot/efi',
+                'number': 1,
+                'wipe': 'superblock',
+            }
+            self.assertDictSubset(expected_p1, p1)
+            expected_p2 = {
+                'number': 2,
+                'mount': '/',
+                'format': 'ext4',
+                'wipe': 'superblock',
+            }
+            self.assertDictSubset(expected_p2, p2)
+
+    @timeout()
+    async def test_guided_v2_resize(self):
+        cfg = 'examples/win10-along-ubuntu.json'
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
+            orig_resp = await inst.get('/storage/v2')
+            [orig_p1, orig_p2, orig_p3, orig_p4, orig_p5] = \
+                orig_resp['disks'][0]['partitions']
+            resp = await inst.get('/storage/v2/guided')
+            [resize_ntfs, resize_ext4] = match(
+                    resp['possible'], _type='GuidedStorageTargetResize')
+            resize_ntfs['new_size'] = 30 << 30
+            data = {'target': resize_ntfs}
+            resp = await inst.post('/storage/v2/guided', data)
+            self.assertEqual(resize_ntfs, resp['configured']['target'])
+            resp = await inst.get('/storage/v2')
+            [p1, p2, p3, p6, p4, p5] = resp['disks'][0]['partitions']
+            expected_p1 = {
+                '$type': 'Partition',
+                'boot': True,
+                'format': 'vfat',
+                'grub_device': True,
+                'mount': '/boot/efi',
+                'number': 1,
+                'size': orig_p1['size'],
+                'resize': None,
+                'wipe': None,
+            }
+            self.assertDictSubset(expected_p1, p1)
+            self.assertEqual(orig_p2, p2)
+            self.assertEqual(orig_p4, p4)
+            self.assertEqual(orig_p5, p5)
+            expected_p6 = {
+                'number': 6,
+                'mount': '/',
+                'format': 'ext4',
+            }
+            self.assertDictSubset(expected_p6, p6)
+
+    @timeout()
+    async def test_guided_v2_use_gap(self):
+        cfg = self.machineConfig('examples/win10-along-ubuntu.json')
+        with cfg.edit() as data:
+            pt = data['storage']['blockdev']['/dev/sda']['partitiontable']
+            [node] = match(pt['partitions'], node='/dev/sda5')
+            pt['partitions'].remove(node)
+            del data['storage']['blockdev']['/dev/sda5']
+            del data['storage']['filesystem']['/dev/sda5']
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
+            orig_resp = await inst.get('/storage/v2')
+            [orig_p1, orig_p2, orig_p3, orig_p4, gap] = \
+                orig_resp['disks'][0]['partitions']
+            resp = await inst.get('/storage/v2/guided')
+            [use_gap] = match(resp['possible'],
+                              _type='GuidedStorageTargetUseGap')
+            data = {'target': use_gap}
+            resp = await inst.post('/storage/v2/guided', data)
+            self.assertEqual(use_gap, resp['configured']['target'])
+            resp = await inst.get('/storage/v2')
+            [p1, p2, p3, p4, p5] = resp['disks'][0]['partitions']
+            expected_p1 = {
+                '$type': 'Partition',
+                'boot': True,
+                'format': 'vfat',
+                'grub_device': True,
+                'mount': '/boot/efi',
+                'number': 1,
+                'size': orig_p1['size'],
+                'resize': None,
+                'wipe': None,
+            }
+            self.assertDictSubset(expected_p1, p1)
+            self.assertEqual(orig_p2, p2)
+            self.assertEqual(orig_p3, p3)
+            self.assertEqual(orig_p4, p4)
+            expected_p5 = {
+                'number': 5,
+                'mount': '/',
+                'format': 'ext4',
+            }
+            self.assertDictSubset(expected_p5, p5)
 
 
 class TestAdd(TestAPI):
@@ -772,7 +905,7 @@ class TestTodos(TestAPI):  # server indicators of required client actions
             self.assertTrue(resp['need_boot'])
 
             choice = {'disk_id': disk_id}
-            resp = await inst.post('/storage/v2/guided', choice)
+            resp = await inst.post('/storage/v2/deprecated/guided', choice)
             self.assertFalse(resp['need_root'])
             self.assertFalse(resp['need_boot'])
 
