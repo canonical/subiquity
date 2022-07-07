@@ -242,7 +242,7 @@ class UbuntuProView(BaseView):
         | To upgrade to Ubuntu Pro, you can enter your token      |
         | manually.                                               |
         |                                                         |
-        | [ How to Register -> ]                                  |
+        | [ How to register -> ]                                  |
         |                                                         |
         | (X)  Add token manually                                 |
         |      Token: C123456789ABCDEF                            |
@@ -257,7 +257,7 @@ class UbuntuProView(BaseView):
                     " manually.")
 
         how_to_register_btn = menu_btn(
-                _("How to Register"),
+                _("How to register"),
                 on_press=lambda unused: self.show_how_to_register()
                 )
         bp = button_pile([how_to_register_btn])
