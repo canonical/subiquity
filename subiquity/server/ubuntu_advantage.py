@@ -216,4 +216,5 @@ class UAInterface:
         return UbuntuProSubscription(
                 account_name=info["account"]["name"],
                 contract_name=info["contract"]["name"],
+                contract_token=token,
                 services=activable_services)

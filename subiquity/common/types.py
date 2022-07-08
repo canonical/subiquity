@@ -534,6 +534,7 @@ class UbuntuProService:
 class UbuntuProSubscription:
     contract_name: str
     account_name: str
+    contract_token: str
     services: List[UbuntuProService]
 
 
