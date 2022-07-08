@@ -19,7 +19,13 @@ jobs:
       run: sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make check"
   lint:
     runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: true
+      matrix:
+        image:
+          - ubuntu-daily:focal    # match the core snap we're running against
+          - ubuntu-daily:kinetic  # latest
     steps:
     - uses: actions/checkout@v2
     - name: lint
-      run: sudo ./scripts/test-in-lxd.sh ubuntu-daily:focal "make lint"
+      run: sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make lint"
