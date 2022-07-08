@@ -155,7 +155,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             # find what's left of the gap after adding boot
             gap = gaps.within(disk, gap)
             if gap is None:
-                raise Exception(f'failed to locate gap after adding boot')
+                raise Exception('failed to locate gap after adding boot')
             return disk, gap
 
     def guided_direct(self, target, mode=None):
