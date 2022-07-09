@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import json
 import logging
 import os
 import sys
@@ -22,7 +23,7 @@ from typing import List, Optional
 
 from aiohttp import web
 
-from cloudinit import safeyaml, stages
+from cloudinit import safeyaml
 from cloudinit.config.cc_set_passwords import rand_user_password
 from cloudinit.distros import ug_util
 
@@ -88,6 +89,8 @@ NOPROBERARG = "NOPROBER"
 iso_autoinstall_path = 'cdrom/autoinstall.yaml'
 root_autoinstall_path = 'autoinstall.yaml'
 cloud_autoinstall_path = 'run/subiquity/cloud.autoinstall.yaml'
+# cloud-init emits instance-data.json every boot when detecting any datasource
+cloud_init_instance_data_path = '/run/cloud-init/instance-data-sensitive.json'
 
 log = logging.getLogger('subiquity.server.server')
 
@@ -529,13 +532,13 @@ class SubiquityServer(Application):
             self.cloud_init_ok = True
         log.debug("waited %ss for cloud-init", time.time() - ci_start)
         if "status: done" in status_txt:
-            log.debug("loading cloud config")
-            init = stages.Init()
-            init.read_cfg()
-            init.fetch(existing="trust")
-            self.cloud = init.cloudify()
-            if 'autoinstall' in self.cloud.cfg:
-                cfg = self.cloud.cfg['autoinstall']
+            log.debug(
+                "loading cloud config from %s", cloud_init_instance_data_path
+            )
+            with open(cloud_init_instance_data_path) as stream:
+                cloud_init_instance_data = json.loads(stream.read())
+            cfg = cloud_init_instance_data["merged_cfg"].get("autoinstall")
+            if cfg:
                 target = self.base_relative(cloud_autoinstall_path)
                 write_file(target, safeyaml.dumps(cfg))
         else:
