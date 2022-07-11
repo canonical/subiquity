@@ -241,3 +241,12 @@ def within(device, gap):
             if pg.offset >= gap.offset and pg_end <= gap_end:
                 return pg
     return None
+
+
+def after(device, offset):
+    """Find the first gap that is after this offset."""
+    for pg in parts_and_gaps(device):
+        if isinstance(pg, Gap):
+            if pg.offset > offset:
+                return pg
+    return None
