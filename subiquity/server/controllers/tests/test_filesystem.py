@@ -184,8 +184,6 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
         use_gap = resp.possible.pop(0)
         self.assertEqual(self.disk.id, use_gap.disk_id)
-        if gap_offset != use_gap.gap.offset:
-            breakpoint()
         self.assertEqual(gap_offset, use_gap.gap.offset)
 
         resize = resp.possible.pop(0)
