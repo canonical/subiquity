@@ -16,6 +16,7 @@
 import asyncio
 from collections import OrderedDict
 import functools
+import json
 import logging
 import os
 from typing import Set
@@ -25,7 +26,10 @@ import yaml
 from curtin.commands.install import CONFIG_BUILTIN
 from curtin.config import merge_config
 
-from subiquitycore.file_util import write_file
+from subiquitycore.file_util import (
+    generate_timestamped_header,
+    write_file,
+)
 
 from subiquity.common.resources import get_users_and_groups
 from subiquity.server.types import InstallerChannels
@@ -91,6 +95,20 @@ fe00::0 ip6-localnet
 ff00::0 ip6-mcastprefix
 ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
+"""
+
+CLOUDINIT_CLEAN_FILE_TMPL = """\
+#!/usr/bin/env python3
+# Remove live-installer config artifacts when running: sudo cloud-init clean
+{header}
+
+import os
+
+for cfg_file in {cfg_files}:
+    try:
+        os.remove(cfg_file)
+    except FileNotFoundError:
+        pass
 """
 
 
@@ -308,12 +326,25 @@ class SubiquityModel:
             ('etc/cloud/cloud.cfg.d/99-installer.cfg', config, 0o600),
             ('etc/cloud/ds-identify.cfg', 'policy: enabled\n', 0o644),
             ]
+        # Add cloud-init clean hooks to support golden-image creation.
+        cfg_files = ["/" + path for (path, _content, _cmode) in files]
+        cfg_files.extend(self.network.rendered_config_paths())
+
         if self.identity.hostname is not None:
             hostname = self.identity.hostname.strip()
             files.extend([
                 ('etc/hostname', hostname + "\n", 0o644),
                 ('etc/hosts', HOSTS_CONTENT.format(hostname=hostname), 0o644),
                 ])
+
+        files.append((
+            'etc/cloud/clean.d/99-installer',
+            CLOUDINIT_CLEAN_FILE_TMPL.format(
+                header=generate_timestamped_header(),
+                cfg_files=json.dumps(sorted(cfg_files))
+            ),
+            0o755
+        ))
         return files
 
     def configure_cloud_init(self):
