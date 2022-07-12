@@ -135,6 +135,35 @@ class TestWithin(unittest.TestCase):
         self.assertEqual(g2, gaps.within(d, orig_g2))
 
 
+class TestAfter(unittest.TestCase):
+    def test_basic(self):
+        d = make_disk()
+        [gap] = gaps.parts_and_gaps(d)
+        self.assertEqual(gap, gaps.after(d, 0))
+
+    def test_no_equals(self):
+        d = make_disk()
+        [gap] = gaps.parts_and_gaps(d)
+        self.assertIsNone(gaps.after(d, gap.offset))
+
+    def test_partition_resize_full_part(self):
+        m, d = make_model_and_disk()
+        [g1] = gaps.parts_and_gaps(d)
+        p1 = make_partition(m, d, size=g1.size)
+        p1.size //= 2
+        gap = gaps.after(d, p1.offset)
+        self.assertIsNotNone(gap)
+
+    def test_partition_resize_half_part(self):
+        m, d = make_model_and_disk()
+        make_partition(m, d)
+        [p1, g1] = gaps.parts_and_gaps(d)
+        p1.size //= 2
+        gap = gaps.after(d, p1.offset)
+        self.assertNotEqual(gap, g1)
+        self.assertTrue(gap.offset < g1.offset)
+
+
 class TestDiskGaps(unittest.TestCase):
 
     def test_no_partition_gpt(self):

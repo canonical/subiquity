@@ -479,6 +479,20 @@ class TestGuided(TestAPI):
             }
             self.assertDictSubset(expected_p5, p5)
 
+    @timeout()
+    async def test_guided_v2_resize_logical(self):
+        cfg = 'examples/threebuntu-on-msdos.json'
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
+            resp = await inst.get('/storage/v2/guided')
+            [resize] = match(
+                    resp['possible'], _type='GuidedStorageTargetResize',
+                    partition_number=6)
+            data = {'target': resize}
+            resp = await inst.post('/storage/v2/guided', data)
+            self.assertEqual(resize, resp['configured']['target'])
+            # should not throw a Gap Not Found exception
+
 
 class TestAdd(TestAPI):
     @timeout()

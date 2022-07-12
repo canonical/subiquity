@@ -223,11 +223,16 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             new_size = align_up(choice.target.new_size, part_align)
             if new_size > partition.size:
                 raise Exception(f'Aligned requested size {new_size} too large')
-            gap_offset = partition.offset + new_size
             partition.size = new_size
             partition.resize = True
             mode = 'use_gap'
-            target = gaps.at_offset(disk, gap_offset)
+            # Calculating where that gap will be can be tricky due to alignment
+            # needs and the possibility that we may be splitting a logical
+            # partition, which needs an extra 1MiB spacer.
+            target = gaps.after(disk, partition.offset)
+            if target is None:
+                pgs = gaps.parts_and_gaps(disk)
+                raise Exception(f'gap not found after resize, pgs={pgs}')
         else:
             raise Exception(f'Unknown guided target {choice.target}')
 
