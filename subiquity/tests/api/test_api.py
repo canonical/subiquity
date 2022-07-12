@@ -248,7 +248,7 @@ class TestBitlocker(TestAPI):
 
 class TestFlow(TestAPI):
     @timeout(2)
-    async def test_server_flow(self):
+    async def test_serverish_flow(self):
         async with start_server('examples/simple.json') as inst:
             await inst.post('/locale', 'en_US.UTF-8')
             keyboard = {
@@ -262,10 +262,10 @@ class TestFlow(TestAPI):
             await inst.post('/network')
             await inst.post('/proxy', '')
             await inst.post('/mirror', 'http://us.archive.ubuntu.com/ubuntu')
-            resp = await inst.get('/storage/guided')
-            disk_id = resp['disks'][0]['id']
-            choice = {"disk_id": disk_id}
-            await inst.post('/storage/v2/deprecated/guided', choice)
+
+            resp = await inst.get('/storage/v2/guided')
+            [reformat] = resp['possible']
+            await inst.post('/storage/v2/guided', {'target': reformat})
             await inst.post('/storage/v2')
             await inst.get('/meta/status', cur='WAITING')
             await inst.post('/meta/confirm', tty='/dev/tty1')
@@ -348,23 +348,17 @@ class TestFlow(TestAPI):
             reset_resp = await inst.post('/storage/v2/reset')
             self.assertEqual(orig_resp, reset_resp)
 
-            choice = {'disk_id': disk_id}
-            guided_resp = await inst.post('/storage/v2/deprecated/guided',
-                                          choice)
+            resp = await inst.get('/storage/v2/guided')
+            [reformat] = match(resp['possible'],
+                               _type='GuidedStorageTargetReformat')
+            await inst.post('/storage/v2/guided', {'target': reformat})
+            after_guided_resp = await inst.get('/storage/v2')
             post_resp = await inst.post('/storage/v2')
             # posting to the endpoint shouldn't change the answer
-            self.assertEqual(guided_resp, post_resp)
+            self.assertEqual(after_guided_resp, post_resp)
 
 
 class TestGuided(TestAPI):
-    @timeout()
-    async def test_deprecated_guided_v2(self):
-        async with start_server('examples/simple.json') as inst:
-            choice = {'disk_id': 'disk-sda'}
-            resp = await inst.post('/storage/v2/deprecated/guided', choice)
-            self.assertEqual(1, len(resp['disks']))
-            self.assertEqual('disk-sda', resp['disks'][0]['id'])
-
     @timeout()
     async def test_guided_v2_reformat(self):
         cfg = 'examples/win10-along-ubuntu.json'
@@ -373,8 +367,7 @@ class TestGuided(TestAPI):
             resp = await inst.get('/storage/v2/guided')
             [reformat] = match(resp['possible'],
                                _type='GuidedStorageTargetReformat')
-            data = {'target': reformat}
-            resp = await inst.post('/storage/v2/guided', data)
+            resp = await inst.post('/storage/v2/guided', {'target': reformat})
             self.assertEqual(reformat, resp['configured']['target'])
             resp = await inst.get('/storage/v2')
             [p1, p2] = resp['disks'][0]['partitions']
@@ -912,14 +905,15 @@ class TestTodos(TestAPI):  # server indicators of required client actions
     @timeout()
     async def test_todos_guided(self):
         async with start_server('examples/simple.json') as inst:
-            disk_id = 'disk-sda'
             resp = await inst.post('/storage/v2/reformat_disk',
-                                   {'disk_id': disk_id})
+                                   {'disk_id': 'disk-sda'})
             self.assertTrue(resp['need_root'])
             self.assertTrue(resp['need_boot'])
 
-            choice = {'disk_id': disk_id}
-            resp = await inst.post('/storage/v2/deprecated/guided', choice)
+            resp = await inst.get('/storage/v2/guided')
+            [reformat] = resp['possible']
+            await inst.post('/storage/v2/guided', {'target': reformat})
+            resp = await inst.get('/storage/v2')
             self.assertFalse(resp['need_root'])
             self.assertFalse(resp['need_boot'])
 

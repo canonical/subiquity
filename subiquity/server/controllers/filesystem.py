@@ -391,12 +391,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.model.reset()
         return await self.v2_GET()
 
-    async def v2_deprecated_guided_POST(self, data: GuidedChoice) \
-            -> StorageResponseV2:
-        log.debug(data)
-        self.guided(GuidedChoiceV2.from_guided_choice(data))
-        return await self.v2_GET()
-
     async def v2_guided_GET(self) -> GuidedStorageResponseV2:
         """Acquire a list of possible guided storage configuration scenarios.
         Results are sorted by the size of the space potentially available to
