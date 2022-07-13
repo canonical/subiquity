@@ -18,13 +18,11 @@ import asyncio
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 from typing import Dict, List, Type
-
-from curtin.commands.install import (
-    INSTALL_LOG,
-    )
+import yaml
 
 from subiquitycore.context import Context, Status
 
@@ -132,17 +130,37 @@ class _CurtinCommand:
 
 class _DryRunCurtinCommand(_CurtinCommand):
 
-    event_file = 'examples/curtin-events.json'
+    stages_mapping = {
+        tuple(): "examples/curtin-events-initial.json",  # no stage
+        ("partitioning",): "examples/curtin-events-partitioning.json",
+        ("extract",): "examples/curtin-events-extract.json",
+        ("curthooks",): "examples/curtin-events-curthooks.json",
+        ("hook",): "examples/curtin-events-hook.json",
+    }
 
     def make_command(self, command, *args, config=None):
         if command == 'install':
+            # Lookup the log file from the config if specified
+            try:
+                with open(config, mode="r") as fh:
+                    log_file = yaml.safe_load(fh)["install"]["log_file"]
+            except (TypeError, AttributeError):
+                log_file = "/dev/null"
+
+            # Check the arguments to find the stages that we are running.
+            for arg in args:
+                match_obj = re.fullmatch(r"json:stages=(\[.*\])", arg)
+                if not match_obj:
+                    continue
+                stages = json.loads(match_obj.groups()[0])
+
             return [
                 sys.executable,
                 "scripts/replay-curtin-log.py",
                 "--event-identifier", self._event_syslog_id,
-                "--output", self.opts.output_base + INSTALL_LOG,
+                "--output", log_file,
                 "--",
-                self.event_file,
+                self.stages_mapping[tuple(stages)],
                 ]
         else:
             return super().make_command(command, *args, config=config)
@@ -150,7 +168,10 @@ class _DryRunCurtinCommand(_CurtinCommand):
 
 class _FailingDryRunCurtinCommand(_DryRunCurtinCommand):
 
-    event_file = 'examples/curtin-events-fail.json'
+    stages_mapping = {
+            **_DryRunCurtinCommand.stages_mapping,
+            **{("extract",): "examples/curtin-events-fail.json"}
+    }
 
 
 async def start_curtin_command(app, context,

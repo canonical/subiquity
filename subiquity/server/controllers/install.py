@@ -13,16 +13,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import json
 import logging
 import os
+from pathlib import Path
 import re
 import shutil
+import subprocess
+import tempfile
+from typing import Any, Callable, Dict, List
 
-from curtin.commands.install import (
-    ERROR_TARFILE,
-    INSTALL_LOG,
-    )
-
+import attr
 import yaml
 
 from subiquitycore.async_helpers import (
@@ -72,6 +73,18 @@ class TracebackExtractor:
             self.traceback.append(line)
 
 
+@attr.s(auto_attribs=True)
+class CurtinInstallStep:
+    """ Represents the parameters of a single step (i.e., invocation of curtin
+    install). """
+    name: str
+    stages: List[str]
+    config_file: Path
+    log_file: Path
+    error_file: Path
+    acquire_config: Callable[["CurtinInstallStep", Path], Dict[str, Any]]
+
+
 class InstallController(SubiquityController):
 
     def __init__(self, app):
@@ -101,20 +114,37 @@ class InstallController(SubiquityController):
     def log_event(self, event):
         self.tb_extractor.feed(event['MESSAGE'])
 
-    def write_config(self):
+    def write_config(self, config_file: Path, config: Any) -> None:
+        """ Create a YAML file that represents the curtin install configuration
+        specified.  """
+        config_file.parent.mkdir(parents=True, exist_ok=True)
+        generate_config_yaml(str(config_file), config)
+
+    def acquire_generic_config(self, step: CurtinInstallStep,
+                               resume_data_file: Path) -> Dict[str, Any]:
+        """ Return a dictionary object to be used as the configuration of a
+        generic curtin install step. """
         config = self.model.render()
-        config_location = '/var/log/installer/subiquity-curtin-install.conf'
-        log_location = INSTALL_LOG
-        if self.app.opts.dry_run:
-            config_location = self.app.opts.output_base + config_location
-            log_location = self.app.opts.output_base + INSTALL_LOG
-        os.makedirs(os.path.dirname(config_location), exist_ok=True)
-        os.makedirs(os.path.dirname(log_location), exist_ok=True)
-        generate_config_yaml(config_location, config)
-        self.app.note_file_for_apport("CurtinConfig", config_location)
-        self.app.note_file_for_apport("CurtinErrors", ERROR_TARFILE)
-        self.app.note_file_for_apport("CurtinLog", log_location)
-        return config_location
+        config["install"]["log_file"] = str(step.log_file)
+        config["install"]["error_tarfile"] = str(step.error_file)
+        config["install"]["resume_data"] = str(resume_data_file)
+        return config
+
+    def acquire_initial_config(self, step: CurtinInstallStep,
+                               resume_data_file: Path) -> Dict[str, Any]:
+        """ Return a dictionary object to be used as the configuration of the
+        initial curtin install step. """
+        return {
+            "install": {
+                "target": self.model.target,
+                "unmount": "disabled",
+                "save_install_config": False,
+                "save_install_log": False,
+                "log_file": str(step.log_file),
+                "error_tarfile": str(step.error_file),
+                "resume_data": str(resume_data_file),
+            }
+        }
 
     @with_context(description="umounting /target dir")
     async def unmount_target(self, *, context, target):
@@ -131,11 +161,91 @@ class InstallController(SubiquityController):
         return await configurer.configure_for_install(context)
 
     @with_context(
+        description="executing curtin install {step.name} step")
+    async def run_curtin_install_step(
+            self, *, context, step: CurtinInstallStep, resume_data_file: Path,
+            source) -> subprocess.CompletedProcess:
+        """ Run a curtin install step. """
+
+        self.app.note_file_for_apport(
+                f"Curtin{step.name}Config", str(step.config_file))
+        self.app.note_file_for_apport(
+                f"Curtin{step.name}Errors", str(step.error_file))
+        self.app.note_file_for_apport(
+                f"Curtin{step.name}Log", str(step.log_file))
+
+        self.write_config(
+                config_file=step.config_file,
+                config=step.acquire_config(step, resume_data_file)
+                )
+
+        # Make sure the log directory exists.
+        step.log_file.parent.mkdir(parents=True, exist_ok=True)
+
+        return await run_curtin_command(
+                self.app, context,
+                "install", source,
+                "--set", f'json:stages={json.dumps(step.stages)}',
+                config=str(step.config_file),
+                private_mounts=False)
+
+    @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
     async def curtin_install(self, *, context, source):
-        await run_curtin_command(self.app, context, 'install', source,
-                                 config=self.write_config(),
-                                 private_mounts=False)
+        logs_dir_prefix = Path(
+                self.app.opts.output_base if self.app.opts.dry_run else "/")
+
+        logs_dir = logs_dir_prefix / "var/log/installer/curtin-install"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+
+        resume_data_file = Path(tempfile.mkdtemp()) / "resume-data.json"
+
+        await self.run_curtin_install_step(step=CurtinInstallStep(
+                name="initial",
+                stages=[],
+                config_file=logs_dir / "subiquity-initial.conf",
+                log_file=logs_dir / "initial.log",
+                error_file=logs_dir / "initial-error.tar",
+                acquire_config=self.acquire_initial_config,
+            ), resume_data_file=resume_data_file,
+            context=context, source=source)
+
+        generic_steps = [
+            CurtinInstallStep(
+                name="partitioning",
+                stages=["partitioning"],
+                config_file=logs_dir / "subiquity-partitioning.conf",
+                log_file=logs_dir / "partitioning.log",
+                error_file=logs_dir / "partitioning-error.tar",
+                acquire_config=self.acquire_generic_config,
+            ), CurtinInstallStep(
+                name="extract",
+                stages=["extract"],
+                config_file=logs_dir / "subiquity-extract.conf",
+                log_file=logs_dir / "extract.log",
+                error_file=logs_dir / "extract-error.tar",
+                acquire_config=self.acquire_generic_config,
+            ), CurtinInstallStep(
+                name="curthooks",
+                stages=["curthooks"],
+                config_file=logs_dir / "subiquity-curthooks.conf",
+                log_file=logs_dir / "curthooks.log",
+                error_file=logs_dir / "curthooks-error.tar",
+                acquire_config=self.acquire_generic_config,
+            ), CurtinInstallStep(
+                name="hook",
+                stages=["hook"],
+                config_file=logs_dir / "subiquity-hook.conf",
+                log_file=logs_dir / "hook.log",
+                error_file=logs_dir / "hook-error.tar",
+                acquire_config=self.acquire_generic_config,
+            ),
+        ]
+
+        for step in generic_steps:
+            await self.run_curtin_install_step(
+                    step=step, resume_data_file=resume_data_file,
+                    context=context, source=source)
 
     @with_context()
     async def install(self, *, context):

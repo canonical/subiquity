@@ -349,7 +349,7 @@ The server code proceeds in stages:
     change in the model objects which are considered 'interesting',
     see below, so it is possible to transition from here to the
     previous state.
- 4. It runs "curtin install" and waits for that to finish.
+ 4. It runs "curtin install" (in multiple steps) and waits for that to finish.
  5. It waits for the model objects that feed into the cloud-init config to be
     configured.
  6. It creates the cloud-init config for the first boot of the

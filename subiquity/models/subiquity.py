@@ -22,7 +22,6 @@ from typing import Set
 import uuid
 import yaml
 
-from curtin.commands.install import CONFIG_BUILTIN
 from curtin.config import merge_config
 
 from subiquitycore.file_util import write_file
@@ -334,15 +333,7 @@ class SubiquityModel:
             return fp.read()
 
     def render(self):
-        # Until https://bugs.launchpad.net/curtin/+bug/1876984 gets
-        # fixed, the only way to get curtin to leave the network
-        # config entirely alone is to omit the 'network' stage.
-        stages = [
-            stage for stage in CONFIG_BUILTIN['stages'] if stage != 'network'
-            ]
         config = {
-            'stages': stages,
-
             'curthooks_commands': {
                 '001-mount-cdrom': [
                     'mount', '--bind', '/cdrom', '/target/cdrom',
@@ -355,12 +346,9 @@ class SubiquityModel:
                 },
 
             'install': {
-                'target': self.target,
                 'unmount': 'disabled',
-                'save_install_config':
-                    '/var/log/installer/curtin-install-cfg.yaml',
-                'save_install_log':
-                    '/var/log/installer/curtin-install.log',
+                'save_install_config': False,
+                'save_install_log': False,
                 },
 
             'pollinate': {
