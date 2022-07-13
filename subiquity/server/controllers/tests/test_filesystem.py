@@ -78,9 +78,9 @@ class TestGuided(TestCase):
         self.app = make_app()
         self.app.opts.bootloader = bootloader.value
         self.controller = FilesystemController(self.app)
-        self.controller.model = make_model(bootloader)
-        self.controller.model._probe_data = {'blockdev': {}}
-        self.d1 = make_disk(self.controller.model, ptable=ptable)
+        self.controller.model = self.model = make_model(bootloader)
+        self.model._probe_data = {'blockdev': {}}
+        self.d1 = make_disk(self.model, ptable=ptable)
 
     @parameterized.expand(boot_expectations)
     def test_guided_direct(self, bootloader, ptable, p1mnt):
@@ -89,13 +89,14 @@ class TestGuided(TestCase):
         [d1p1, d1p2] = self.d1.partitions()
         self.assertEqual(p1mnt, d1p1.mount)
         self.assertEqual('/', d1p2.mount)
-        self.assertEqual(d1p1.size + d1p1.offset, d1p2.offset)
+        self.assertIsNone(gaps.largest_gap(self.d1))
 
     def test_guided_direct_BIOS_MSDOS(self):
         self._guided_setup(Bootloader.BIOS, 'msdos')
         self.controller.guided_direct(self.d1)
         [d1p1] = self.d1.partitions()
         self.assertEqual('/', d1p1.mount)
+        self.assertIsNone(gaps.largest_gap(self.d1))
 
     @parameterized.expand(boot_expectations)
     def test_guided_lvm(self, bootloader, ptable, p1mnt):
@@ -105,16 +106,21 @@ class TestGuided(TestCase):
         self.assertEqual(p1mnt, d1p1.mount)
         self.assertEqual('/boot', d1p2.mount)
         self.assertEqual(None, d1p3.mount)
-        self.assertEqual(d1p1.size + d1p1.offset, d1p2.offset)
-        self.assertEqual(d1p2.size + d1p2.offset, d1p3.offset)
+        [vg] = self.model._all(type='lvm_volgroup')
+        [part] = list(vg.devices)
+        self.assertEqual(d1p3, part)
+        self.assertIsNone(gaps.largest_gap(self.d1))
 
     def test_guided_lvm_BIOS_MSDOS(self):
         self._guided_setup(Bootloader.BIOS, 'msdos')
         self.controller.guided_lvm(self.d1)
         [d1p1, d1p2] = self.d1.partitions()
         self.assertEqual('/boot', d1p1.mount)
+        [vg] = self.model._all(type='lvm_volgroup')
+        [part] = list(vg.devices)
+        self.assertEqual(d1p2, part)
         self.assertEqual(None, d1p2.mount)
-        self.assertEqual(d1p1.size + d1p1.offset, d1p2.offset)
+        self.assertIsNone(gaps.largest_gap(self.d1))
 
 
 class TestLayout(TestCase):
