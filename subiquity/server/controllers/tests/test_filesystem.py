@@ -65,6 +65,15 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
 
 
 class TestGuided(TestCase):
+    boot_expectations = [
+        (Bootloader.UEFI, 'gpt', '/boot/efi'),
+        (Bootloader.UEFI, 'msdos', '/boot/efi'),
+        (Bootloader.BIOS, 'gpt', None),
+        # BIOS + msdos is different
+        (Bootloader.PREP, 'gpt', None),
+        (Bootloader.PREP, 'msdos', None),
+    ]
+
     def _guided_setup(self, bootloader, ptable):
         self.app = make_app()
         self.app.opts.bootloader = bootloader.value
@@ -73,14 +82,7 @@ class TestGuided(TestCase):
         self.controller.model._probe_data = {'blockdev': {}}
         self.d1 = make_disk(self.controller.model, ptable=ptable)
 
-    @parameterized.expand([
-            (Bootloader.UEFI, 'gpt', '/boot/efi'),
-            (Bootloader.UEFI, 'msdos', '/boot/efi'),
-            (Bootloader.BIOS, 'gpt', None),
-            # BIOS + msdos is different
-            (Bootloader.PREP, 'gpt', None),
-            (Bootloader.PREP, 'msdos', None),
-        ])
+    @parameterized.expand(boot_expectations)
     def test_guided_direct(self, bootloader, ptable, p1mnt):
         self._guided_setup(bootloader, ptable)
         self.controller.guided_direct(self.d1)
@@ -95,14 +97,7 @@ class TestGuided(TestCase):
         [d1p1] = self.d1.partitions()
         self.assertEqual('/', d1p1.mount)
 
-    @parameterized.expand([
-            (Bootloader.UEFI, 'gpt', '/boot/efi'),
-            (Bootloader.UEFI, 'msdos', '/boot/efi'),
-            (Bootloader.BIOS, 'gpt', None),
-            # BIOS + msdos is different
-            (Bootloader.PREP, 'gpt', None),
-            (Bootloader.PREP, 'msdos', None),
-        ])
+    @parameterized.expand(boot_expectations)
     def test_guided_lvm(self, bootloader, ptable, p1mnt):
         self._guided_setup(bootloader, ptable)
         self.controller.guided_lvm(self.d1)
