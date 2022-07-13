@@ -468,7 +468,7 @@ class SubiquityClient(TuiApplication):
     async def _select_initial_screen(self, index):
         endpoint_names = []
         for c in self.controllers.instances[:index]:
-            if c.endpoint_name:
+            if getattr(c, 'endpoint_name', None) is not None:
                 endpoint_names.append(c.endpoint_name)
         if endpoint_names:
             await self.client.meta.mark_configured.POST(endpoint_names)
