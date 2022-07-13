@@ -203,7 +203,7 @@ class SubiquityClient(TuiApplication):
                 cmdline.extend(['--server-pid', self.opts.server_pid])
             log.debug("restarting %r", cmdline)
 
-        os.execvp(cmdline[0], cmdline)
+        os.execvpe(cmdline[0], cmdline, env=orig_environ(os.environ))
 
     def resp_hook(self, response):
         headers = response.headers
