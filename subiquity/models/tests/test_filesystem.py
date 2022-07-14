@@ -16,6 +16,7 @@
 import unittest
 
 import attr
+from parameterized import parameterized
 
 from subiquity.models.filesystem import (
     Bootloader,
@@ -676,23 +677,6 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertTrue(disk2p1.id in rendered_ids)
 
 
-class TestAlignmentData(unittest.TestCase):
-    def test_alignment_gaps_coherence(self):
-        for ptable in 'gpt', 'msdos', 'vtoc':
-            model = make_model(Bootloader.NONE)
-            disk1 = make_disk(model, ptable=ptable)
-            gaps_max = gaps.largest_gap_size(disk1)
-
-            align_data = disk1.alignment_data()
-            align_max = (disk1.size - align_data.min_start_offset
-                         - align_data.min_end_offset)
-
-            # The alignment data currently has a better notion of end
-            # information, so gaps produces numbers that are too small by 1MiB
-            # for ptable != 'gpt'
-            self.assertTrue(gaps_max <= align_max, f'ptable={ptable}')
-
-
 class TestPartitionNumbering(unittest.TestCase):
     def test_basic(self):
         m, d1 = make_model_and_disk(ptable='gpt')
@@ -730,3 +714,12 @@ class TestPartitionNumbering(unittest.TestCase):
         self.assertEqual(True, p2.preserve)
         self.assertEqual(3, p3.number)
         self.assertEqual(False, p3.preserve)
+
+
+class TestAlignmentData(unittest.TestCase):
+    @parameterized.expand([['gpt'], ['msdos'], ['vtoc']])
+    def test_alignment_gaps_coherence(self, ptable):
+        d1 = make_disk(ptable=ptable)
+        ad = d1.alignment_data()
+        align_max = d1.size - ad.min_start_offset - ad.min_end_offset
+        self.assertEqual(gaps.largest_gap_size(d1), align_max)
