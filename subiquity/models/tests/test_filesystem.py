@@ -714,6 +714,21 @@ class TestPartitionNumbering(unittest.TestCase):
         for _ in range(3):
             self.assert_next(make_partition(m, d1, flag='logical'))
 
+    @parameterized.expand([[0], [1], [2]])
+    def test_msdos_delete_logical(self, idx_to_remove):
+        m, d1 = make_model_and_disk(ptable='msdos')
+        self.assert_next(make_partition(m, d1))
+        self.assert_next(make_partition(m, d1, flag='extended'))
+        self.cur_idx = 5
+        parts = [make_partition(m, d1, flag='logical') for _ in range(3)]
+        for p in parts:
+            self.assert_next(p)
+        to_remove = parts.pop(idx_to_remove)
+        m.remove_partition(to_remove)
+        self.cur_idx = 5
+        for p in parts:
+            self.assert_next(p)
+
     def test_msdos_no_fifth_primary(self):
         m, d1 = make_model_and_disk(ptable='msdos')
         for _ in range(4):
