@@ -688,11 +688,24 @@ class Partition(_Formattable):
     def __post_init__(self):
         if self.number is not None:
             return
-        used_nums = {part.number for part in self.device._partitions
-                     if part.number is not None}
-        possible_nums = {i for i in range(1, len(self.device._partitions) + 1)}
-        unused_nums = sorted(list(possible_nums - used_nums))
-        self.number = unused_nums.pop(0)
+
+        def is_logical(part):
+            return part.flag == 'logical'
+
+        primary_limit = self.device.alignment_data().primary_part_limit
+        used_nums = {p.number for p in self.device._partitions
+                     if p.number is not None
+                     if is_logical(p) == is_logical(self)}
+        if is_logical(self):
+            possibles = range(primary_limit + 1, 129)
+        else:
+            possibles = range(1, primary_limit + 1)
+
+        for num in possibles:
+            if num not in used_nums:
+                self.number = num
+                return
+        raise Exception('Failed to allocate partition number')
 
     def available(self):
         if self.flag in ['bios_grub', 'prep'] or self.grub_device:

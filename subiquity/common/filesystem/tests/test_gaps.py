@@ -270,7 +270,7 @@ class TestDiskGaps(unittest.TestCase):
         info = PartitionAlignmentData(
             part_align=5, min_gap_size=1, min_start_offset=0, min_end_offset=0,
             ebr_space=2, primary_part_limit=10)
-        m, d = make_model_and_disk(size=100)
+        m, d = make_model_and_disk(size=100, ptable='dos')
         p1 = make_partition(m, d, offset=0, size=50, flag='extended')
         p2 = make_partition(m, d, offset=5, size=45, flag='logical')
         self.assertEqual(
@@ -364,7 +364,7 @@ class TestMovableTrailingPartitionsAndGapSize(unittest.TestCase):
         # 0----10---20---30---40---50---60---70---80---90---100
         # #####[ p1 (extended)    ]                    #####
         # ######[ p5 (logical)    ]                    #####
-        m, d = make_model_and_disk(size=100)
+        m, d = make_model_and_disk(size=100, ptable='dos')
         make_partition(m, d, offset=10, size=40, flag='extended')
         p5 = make_partition(m, d, offset=12, size=38, flag='logical')
         self.assertEqual(
@@ -378,7 +378,7 @@ class TestMovableTrailingPartitionsAndGapSize(unittest.TestCase):
         # 0----10---20---30---40---50---60---70---80---90---100
         # #####[ p1 (extended)    ][ p2               ]#####
         # ######[ p5 (logical)    ]                    #####
-        m, d = make_model_and_disk(size=100)
+        m, d = make_model_and_disk(size=100, ptable='dos')
         make_partition(m, d, offset=10, size=40, flag='extended')
         make_partition(m, d, offset=50, size=40)
         p5 = make_partition(m, d, offset=12, size=38, flag='logical')
@@ -393,7 +393,7 @@ class TestMovableTrailingPartitionsAndGapSize(unittest.TestCase):
         # 0----10---20---30---40---50---60---70---80---90---100
         # #####[ p1 (extended)    ]                    #####
         # ######[ p5 (logical)]                        #####
-        m, d = make_model_and_disk(size=100)
+        m, d = make_model_and_disk(size=100, ptable='dos')
         make_partition(m, d, offset=10, size=40, flag='extended')
         p5 = make_partition(m, d, offset=12, size=30, flag='logical')
         self.assertEqual(
@@ -407,7 +407,7 @@ class TestMovableTrailingPartitionsAndGapSize(unittest.TestCase):
         # 0----10---20---30---40---50---60---70---80---90---100
         # #####[ p1 (extended)                        ]#####
         # ######[ p5 (logical)] [ p6 (logical)]        #####
-        m, d = make_model_and_disk(size=100)
+        m, d = make_model_and_disk(size=100, ptable='dos')
         make_partition(m, d, offset=10, size=80, flag='extended')
         p5 = make_partition(m, d, offset=12, size=30, flag='logical')
         p6 = make_partition(m, d, offset=44, size=30, flag='logical')
@@ -422,7 +422,7 @@ class TestMovableTrailingPartitionsAndGapSize(unittest.TestCase):
         # 0----10---20---30---40---50---60---70---80---90---100
         # #####[ p1 (extended)                        ]#####
         # ######[ p5 (logical)] [ p6 (logical)       ] #####
-        m, d = make_model_and_disk(size=100)
+        m, d = make_model_and_disk(size=100, ptable='dos')
         make_partition(m, d, offset=10, size=80, flag='extended')
         p5 = make_partition(m, d, offset=12, size=30, flag='logical')
         p6 = make_partition(m, d, offset=44, size=44, flag='logical')
