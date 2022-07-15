@@ -11,8 +11,15 @@ apps:
   subiquity:
     command: usr/bin/subiquity-cmd
     environment:
+      # Save original values of environment variables, we want to restore them
+      # for the debug shell (LP: #1975629) and restart (LP: #1978139)
+      PYTHONPATH_ORIG: $PYTHONPATH
+      PATH_ORIG: $PATH
+      PYTHONIOENCODING_ORIG: $PYTHONIOENCODING
       PYTHONIOENCODING: utf-8
+      SUBIQUITY_ROOT_ORIG: $SUBIQUITY_ROOT
       SUBIQUITY_ROOT: $SNAP
+      PYTHON_ORIG: $PYTHON
       PYTHON: $SNAP/usr/bin/python3.8
   probert:
     command: bin/probert
