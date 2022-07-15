@@ -31,6 +31,7 @@ from subiquitycore.async_helpers import (
 from subiquitycore.screen import is_linux_tty
 from subiquitycore.tuicontroller import Skip
 from subiquitycore.tui import TuiApplication
+from subiquitycore.utils import orig_environ
 from subiquitycore.view import BaseView
 
 from subiquity.client.controller import Confirm
@@ -202,7 +203,7 @@ class SubiquityClient(TuiApplication):
                 cmdline.extend(['--server-pid', self.opts.server_pid])
             log.debug("restarting %r", cmdline)
 
-        os.execvp(cmdline[0], cmdline)
+        os.execvpe(cmdline[0], cmdline, orig_environ(os.environ))
 
     def resp_hook(self, response):
         headers = response.headers
@@ -467,7 +468,7 @@ class SubiquityClient(TuiApplication):
     async def _select_initial_screen(self, index):
         endpoint_names = []
         for c in self.controllers.instances[:index]:
-            if c.endpoint_name:
+            if getattr(c, 'endpoint_name', None) is not None:
                 endpoint_names.append(c.endpoint_name)
         if endpoint_names:
             await self.client.meta.mark_configured.POST(endpoint_names)
@@ -544,8 +545,10 @@ class SubiquityClient(TuiApplication):
             os.system("clear")
             print(DEBUG_SHELL_INTRO)
 
+        env = orig_environ(os.environ)
+        cmd = ["bash"]
         self.run_command_in_foreground(
-            ["bash"], before_hook=_before, after_hook=after_hook, cwd='/')
+            cmd, env=env, before_hook=_before, after_hook=after_hook, cwd='/')
 
     def note_file_for_apport(self, key, path):
         self.error_reporter.note_file_for_apport(key, path)
