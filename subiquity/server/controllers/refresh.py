@@ -215,7 +215,7 @@ class RefreshController(SubiquityController):
     async def start_update(self, context):
         change = await self.app.snapd.post(
             'v2/snaps/{}'.format(self.snap_name),
-            {'action': 'refresh'})
+            {'action': 'refresh', 'ignore-running': True})
         context.description = "change id: {}".format(change)
         return change
 
