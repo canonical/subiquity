@@ -516,6 +516,9 @@ class _Device(_Formattable, ABC):
     def partitions(self):
         return self._partitions
 
+    def partitions_by_offset(self):
+        return sorted(self._partitions, key=lambda p: p.offset)
+
     @property
     def used(self):
         if self._is_entirely_used():
@@ -669,7 +672,7 @@ class Disk(_Device):
         return id.encode('utf-8').decode('unicode_escape').strip()
 
     def renumber_logical_partitions(self):
-        parts = [p for p in self._partitions if p.is_logical]
+        parts = [p for p in self.partitions_by_offset() if p.is_logical]
         primary_limit = self.alignment_data().primary_part_limit
         next_num = primary_limit + 1
         for part in parts:

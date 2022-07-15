@@ -29,6 +29,7 @@ from subiquity.models.tests.test_filesystem import (
     )
 
 from subiquity.common.filesystem import gaps
+from subiquity.common.types import GapUsable
 
 
 class TestGaps(unittest.TestCase):
@@ -293,6 +294,41 @@ class TestDiskGaps(unittest.TestCase):
                 gaps.Gap(d, 50, 50, False),
             ])
 
+    def test_unusable_gap_primaries(self):
+        info = PartitionAlignmentData(
+            part_align=10, min_gap_size=1, min_start_offset=0,
+            min_end_offset=0, primary_part_limit=1)
+        m, d = make_model_and_disk(size=100)
+        p = make_partition(m, d, offset=0, size=90)
+        g = gaps.Gap(d, offset=90, size=10,
+                     usable=GapUsable.TOO_MANY_PRIMARY_PARTS)
+        self.assertEqual(
+            gaps.find_disk_gaps_v2(d, info),
+            [p, g])
+
+    def test_usable_gap_primaries(self):
+        info = PartitionAlignmentData(
+            part_align=10, min_gap_size=1, min_start_offset=0,
+            min_end_offset=0, primary_part_limit=2)
+        m, d = make_model_and_disk(size=100)
+        p = make_partition(m, d, offset=0, size=90)
+        g = gaps.Gap(d, offset=90, size=10, usable=GapUsable.YES)
+        self.assertEqual(
+            gaps.find_disk_gaps_v2(d, info),
+            [p, g])
+
+    def test_usable_gap_extended(self):
+        info = PartitionAlignmentData(
+            part_align=10, min_gap_size=1, min_start_offset=0,
+            min_end_offset=0, primary_part_limit=1)
+        m, d = make_model_and_disk(size=100)
+        p = make_partition(m, d, offset=0, size=100, flag='extended')
+        g = gaps.Gap(d, offset=0, size=100,
+                     in_extended=True, usable=GapUsable.YES)
+        self.assertEqual(
+            gaps.find_disk_gaps_v2(d, info),
+            [p, g])
+
 
 class TestMovableTrailingPartitionsAndGapSize(unittest.TestCase):
 
@@ -449,6 +485,7 @@ class TestLargestGaps(unittest.TestCase):
         d = make_disk()
         [gap] = gaps.parts_and_gaps(d)
         self.assertEqual(gap, gaps.largest_gap(d))
+        self.assertTrue(gap.is_usable)
 
     def test_two_gaps(self):
         m, d = make_model_and_disk(size=100 << 20)
@@ -457,6 +494,8 @@ class TestLargestGaps(unittest.TestCase):
         make_partition(m, d, offset=40 << 20, size=20 << 20)
         [_, g1, _, g2] = gaps.parts_and_gaps(d)
         self.assertEqual(g2, gaps.largest_gap(d))
+        self.assertTrue(g1.is_usable)
+        self.assertTrue(g2.is_usable)
 
     def test_two_disks(self):
         m = make_model()
@@ -467,6 +506,8 @@ class TestLargestGaps(unittest.TestCase):
         [d2g1] = gaps.parts_and_gaps(d2)
         self.assertEqual(d1g1, gaps.largest_gap(d1))
         self.assertEqual(d2g1, gaps.largest_gap(d2))
+        self.assertTrue(d1g1.is_usable)
+        self.assertTrue(d2g1.is_usable)
 
     def test_across_two_disks(self):
         m = make_model()
@@ -493,3 +534,10 @@ class TestLargestGaps(unittest.TestCase):
         make_partition(m, d1, offset=0, size=100 << 20)
         make_partition(m, d2, offset=0, size=200 << 20)
         self.assertIsNone(gaps.largest_gap([d1, d2]))
+
+
+class TestUsable(unittest.TestCase):
+    def test_strings(self):
+        self.assertEqual('YES', GapUsable.YES.name)
+        self.assertEqual('TOO_MANY_PRIMARY_PARTS',
+                         GapUsable.TOO_MANY_PRIMARY_PARTS.name)

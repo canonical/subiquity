@@ -326,4 +326,4 @@ def _for_client_partition(partition, *, min_size=0):
 
 @for_client.register(gaps.Gap)
 def _for_client_gap(gap, *, min_size=0):
-    return types.Gap(offset=gap.offset, size=gap.size)
+    return types.Gap(offset=gap.offset, size=gap.size, usable=gap.usable)

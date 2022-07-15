@@ -273,10 +273,16 @@ class Partition:
     path: Optional[str] = None
 
 
+class GapUsable(enum.Enum):
+    YES = enum.auto()
+    TOO_MANY_PRIMARY_PARTS = enum.auto()
+
+
 @attr.s(auto_attribs=True)
 class Gap:
     offset: int
     size: int
+    usable: GapUsable
 
 
 @attr.s(auto_attribs=True)

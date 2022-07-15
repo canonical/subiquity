@@ -18,6 +18,7 @@ import functools
 from gettext import pgettext
 
 from subiquity.common.filesystem import boot, gaps, labels
+from subiquity.common.types import GapUsable
 from subiquity.models.filesystem import (
     Bootloader,
     Disk,
@@ -215,7 +216,11 @@ _can_partition = make_checker(DeviceAction.PARTITION)
 
 @_can_partition.register(gaps.Gap)
 def _can_partition_gap(gap):
-    return True
+    if gap.usable == GapUsable.YES:
+        return True
+    if gap.usable == GapUsable.TOO_MANY_PRIMARY_PARTS:
+        return _("Primary partition limit reached")
+    return _("Unusable space")
 
 
 _can_format = make_checker(DeviceAction.FORMAT)
