@@ -692,53 +692,69 @@ class TestPartitionNumbering(unittest.TestCase):
         for _ in range(8):
             self.assert_next(make_partition(m, d1))
 
-    def test_msdos_all_primary(self):
-        m, d1 = make_model_and_disk(ptable='msdos')
-        for _ in range(4):
+    @parameterized.expand([
+        ['msdos', 4],
+        ['vtoc', 3],
+    ])
+    def test_all_primary(self, ptable, primaries):
+        m = make_model(storage_version=2)
+        d1 = make_disk(m, ptable=ptable)
+        for _ in range(primaries):
             self.assert_next(make_partition(m, d1))
 
-    def test_msdos_one_primary(self):
-        m, d1 = make_model_and_disk(ptable='msdos')
-        self.assert_next(make_partition(m, d1))
-        self.assert_next(make_partition(m, d1, flag='extended'))
-        self.cur_idx = 5
+    @parameterized.expand([
+        ['msdos', 4],
+        ['vtoc', 3],
+    ])
+    def test_primary_and_extended(self, ptable, primaries):
+        m = make_model(storage_version=2)
+        d1 = make_disk(m, ptable=ptable, size=100 << 20)
+        for _ in range(primaries - 1):
+            self.assert_next(make_partition(m, d1, size=5 << 20))
+        self.assert_next(make_partition(m, d1, flag='extended', size=80 << 20))
         for _ in range(3):
-            self.assert_next(make_partition(m, d1, flag='logical'))
+            self.assert_next(
+                    make_partition(m, d1, flag='logical', size=10 << 20))
 
-    def test_msdos_three_primary(self):
-        m, d1 = make_model_and_disk(ptable='msdos')
-        for _ in range(3):
-            self.assert_next(make_partition(m, d1))
-        self.assert_next(
-            make_partition(m, d1, flag='extended'))
-        for _ in range(3):
-            self.assert_next(make_partition(m, d1, flag='logical'))
-
-    @parameterized.expand([[0], [1], [2]])
-    def test_msdos_delete_logical(self, idx_to_remove):
-        m, d1 = make_model_and_disk(ptable='msdos')
-        self.assert_next(make_partition(m, d1))
-        self.assert_next(make_partition(m, d1, flag='extended'))
-        self.cur_idx = 5
-        parts = [make_partition(m, d1, flag='logical') for _ in range(3)]
+    @parameterized.expand(
+        [[pt, primaries, i]
+         for pt, primaries in (('msdos', 4), ('vtoc', 3))
+         for i in range(3)]
+    )
+    def test_delete_logical(self, ptable, primaries, idx_to_remove):
+        m = make_model(storage_version=2)
+        d1 = make_disk(m, ptable=ptable, size=100 << 20)
+        self.assert_next(make_partition(m, d1, size=10 << 20))
+        self.assert_next(make_partition(m, d1, size=80 << 20, flag='extended'))
+        self.cur_idx = primaries + 1
+        parts = [make_partition(m, d1, size=10 << 20, flag='logical')
+                 for _ in range(3)]
         for p in parts:
             self.assert_next(p)
         to_remove = parts.pop(idx_to_remove)
         m.remove_partition(to_remove)
-        self.cur_idx = 5
+        self.cur_idx = primaries + 1
         for p in parts:
             self.assert_next(p)
 
-    def test_msdos_no_fifth_primary(self):
-        m, d1 = make_model_and_disk(ptable='msdos')
-        for _ in range(4):
-            self.assert_next(make_partition(m, d1))
+    @parameterized.expand([
+        [1, 'msdos', 4],
+        [1, 'vtoc', 3],
+        [2, 'msdos', 4],
+        [2, 'vtoc', 3],
+    ])
+    def test_no_extra_primary(self, sv, ptable, primaries):
+        m = make_model(storage_version=sv)
+        d1 = make_disk(m, ptable=ptable, size=100 << 30)
+        for _ in range(primaries):
+            self.assert_next(make_partition(m, d1, size=1 << 30))
         with self.assertRaises(Exception):
             make_partition(m, d1)
 
-    def test_p1_preserved(self):
+    @parameterized.expand([['gpt'], ['msdos'], ['vtoc']])
+    def test_p1_preserved(self, ptable):
         m = make_model(storage_version=2)
-        d1 = make_disk(m, ptable='gpt')
+        d1 = make_disk(m, ptable=ptable)
         p1 = make_partition(m, d1, preserve=True, number=1)
         p2 = make_partition(m, d1)
         p3 = make_partition(m, d1)
@@ -749,9 +765,10 @@ class TestPartitionNumbering(unittest.TestCase):
         self.assertEqual(3, p3.number)
         self.assertEqual(False, p3.preserve)
 
-    def test_p2_preserved(self):
+    @parameterized.expand([['gpt'], ['msdos'], ['vtoc']])
+    def test_p2_preserved(self, ptable):
         m = make_model(storage_version=2)
-        d1 = make_disk(m, ptable='gpt')
+        d1 = make_disk(m, ptable=ptable)
         p2 = make_partition(m, d1, preserve=True, number=2)
         p1 = make_partition(m, d1)
         p3 = make_partition(m, d1)
