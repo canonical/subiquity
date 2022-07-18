@@ -10,7 +10,6 @@ jobs:
       matrix:
         image:
           - ubuntu-daily:focal
-          - ubuntu-daily:impish
           - ubuntu-daily:jammy
     steps:
     - uses: actions/checkout@v2
