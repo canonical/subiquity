@@ -1101,6 +1101,22 @@ class TestPartitionTableEditing(TestAPI):
             self.assertEqual(-1, p3['estimated_min_size'])
             self.assertEqual(2 << 20, p4['estimated_min_size'])
 
+    @timeout()
+    async def test_v2_orig_config(self):
+        cfg = 'examples/win10-along-ubuntu.json'
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
+            start_resp = await inst.get('/storage/v2')
+            resp = await inst.get('/storage/v2/guided')
+            resize = match(resp['possible'],
+                           _type='GuidedStorageTargetResize')[0]
+            resize['new_size'] = 30 << 30
+            await inst.post('/storage/v2/guided', {'target': resize})
+            orig_config = await inst.get('/storage/v2/orig_config')
+            end_resp = await inst.get('/storage/v2')
+            self.assertEqual(start_resp, orig_config)
+            self.assertNotEqual(start_resp, end_resp)
+
 
 class TestGap(TestAPI):
     async def test_blank_disk_is_one_big_gap(self):

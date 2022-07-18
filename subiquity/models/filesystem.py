@@ -1041,6 +1041,16 @@ class FilesystemModel(object):
         self.grub = None
         self.guided_configuration = None
 
+    def get_orig_model(self):
+        # The purpose of this is to be able to answer arbitrary questions about
+        # the original state.  _orig_config plays a similar role, but is
+        # expressed in terms of curtin actions, which are not what we want to
+        # use on the V2 storage API.
+        orig_model = FilesystemModel(self.bootloader)
+        orig_model.target = self.target
+        orig_model.load_probe_data(self._probe_data)
+        return orig_model
+
     def load_server_data(self, status):
         log.debug('load_server_data %s', status)
         self._all_ids = set()

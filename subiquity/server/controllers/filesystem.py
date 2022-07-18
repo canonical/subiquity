@@ -373,18 +373,25 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                      for pa in self.model._partition_alignment_data.values()))
         return sizes.calculate_suggested_install_min(source_min, align)
 
-    async def v2_GET(self) -> StorageResponseV2:
-        disks = self.model._all(type='disk')
+    def get_v2_storage_response(self, model):
+        disks = model._all(type='disk')
+        minsize = self.calculate_suggested_install_min()
         return StorageResponseV2(
                 disks=[labels.for_client(d) for d in disks],
-                need_root=not self.model.is_root_mounted(),
-                need_boot=self.model.needs_bootloader_partition(),
-                install_minimum_size=self.calculate_suggested_install_min(),
+                need_root=not model.is_root_mounted(),
+                need_boot=model.needs_bootloader_partition(),
+                install_minimum_size=minsize,
                 )
+
+    async def v2_GET(self) -> StorageResponseV2:
+        return self.get_v2_storage_response(self.model)
 
     async def v2_POST(self) -> StorageResponseV2:
         await self.configured()
         return await self.v2_GET()
+
+    async def v2_orig_config_GET(self) -> StorageResponseV2:
+        return self.get_v2_storage_response(self.model.get_orig_model())
 
     async def v2_reset_POST(self) -> StorageResponseV2:
         log.info("Resetting Filesystem model")
