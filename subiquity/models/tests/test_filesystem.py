@@ -739,6 +739,32 @@ class TestPartitionNumbering(unittest.TestCase):
         for p in parts:
             self.assert_next(p)
 
+    @parameterized.expand(
+        [[pt, primaries, i]
+         for pt, primaries in (('msdos', 4), ('vtoc', 3))
+         for i in range(3)]
+    )
+    def test_out_of_offset_order(self, ptable, primaries, idx_to_remove):
+        m = make_model(storage_version=2)
+        d1 = make_disk(m, ptable=ptable, size=100 << 20)
+        self.assert_next(make_partition(m, d1, size=10 << 20))
+        self.assert_next(make_partition(m, d1, flag='extended'))
+        self.cur_idx = primaries + 1
+        parts = []
+        parts.append(make_partition(
+                m, d1, flag='logical', size=9 << 20, offset=30 << 20))
+        parts.append(make_partition(
+                m, d1, flag='logical', size=9 << 20, offset=20 << 20))
+        parts.append(make_partition(
+                m, d1, flag='logical', size=9 << 20, offset=40 << 20))
+        for p in parts:
+            self.assert_next(p)
+        to_remove = parts.pop(idx_to_remove)
+        m.remove_partition(to_remove)
+        self.cur_idx = primaries + 1
+        for p in parts:
+            self.assert_next(p)
+
     @parameterized.expand([
         [1, 'msdos', 4],
         [1, 'vtoc', 3],
