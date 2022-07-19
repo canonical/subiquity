@@ -1279,3 +1279,15 @@ class TestIdentityValidation(TestAPI):
             resp = await inst.get('/identity/validate_username',
                                   username='o#$%^&')
             self.assertEqual(resp, 'INVALID_CHARS')
+
+
+class TestKeyboard(TestAPI):
+    async def test_keyboard(self):
+        async with start_server('examples/simple.json') as inst:
+            keyboard = {
+                'layout': 'us',
+                'variant': '',
+                'toggle': None
+            }
+            resp = await inst.post('/keyboard', keyboard)
+            self.assertFalse(resp)

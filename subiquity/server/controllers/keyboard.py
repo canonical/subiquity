@@ -207,6 +207,7 @@ class KeyboardController(SubiquityController):
             cmds = [['sleep', str(1/float(scale))]]
         for cmd in cmds:
             await arun_command(cmd)
+        return not self.opts.dry_run
 
     async def GET(self) -> KeyboardSetup:
         self.keyboard_list.load_language(
@@ -215,15 +216,17 @@ class KeyboardController(SubiquityController):
             setting=for_ui(self.model.setting),
             layouts=self.keyboard_list.layouts)
 
-    async def POST(self, data: KeyboardSetting):
+    async def POST(self, data: KeyboardSetting) -> bool:
         log.debug(data)
         new = latinizable(data.layout, data.variant)
         if new is not None:
             data = KeyboardSetting(new[0], new[1], data.toggle)
+        res = False
         if data != self.model.setting:
             self.model.setting = data
-            await self.set_keyboard()
+            res = await self.set_keyboard()
         await self.configured()
+        return res
 
     async def needs_toggle_GET(self, layout_code: str,
                                variant_code: str) -> bool:
