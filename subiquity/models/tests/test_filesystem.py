@@ -170,16 +170,20 @@ def make_model_and_disk(bootloader=None, **kw):
 
 def make_partition(model, device=None, *, preserve=False, size=None,
                    offset=None, **kw):
+    flag = kw.pop('flag', None)
     if device is None:
         device = make_disk(model)
     if size is None or offset is None:
         gap = gaps.largest_gap(device)
         if size is None:
-            size = gap.size//2
+            if flag == 'extended':
+                size = gap.size
+            else:
+                size = gap.size//2
         if offset is None:
             offset = gap.offset
     partition = Partition(m=model, device=device, size=size, offset=offset,
-                          preserve=preserve, **kw)
+                          preserve=preserve, flag=flag, **kw)
     model._actions.append(partition)
     return partition
 
@@ -708,13 +712,12 @@ class TestPartitionNumbering(unittest.TestCase):
     ])
     def test_primary_and_extended(self, ptable, primaries):
         m = make_model(storage_version=2)
-        d1 = make_disk(m, ptable=ptable, size=100 << 20)
+        d1 = make_disk(m, ptable=ptable)
         for _ in range(primaries - 1):
-            self.assert_next(make_partition(m, d1, size=5 << 20))
-        self.assert_next(make_partition(m, d1, flag='extended', size=80 << 20))
+            self.assert_next(make_partition(m, d1))
+        self.assert_next(make_partition(m, d1, flag='extended'))
         for _ in range(3):
-            self.assert_next(
-                    make_partition(m, d1, flag='logical', size=10 << 20))
+            self.assert_next(make_partition(m, d1, flag='logical'))
 
     @parameterized.expand(
         [[pt, primaries, i]
@@ -723,12 +726,11 @@ class TestPartitionNumbering(unittest.TestCase):
     )
     def test_delete_logical(self, ptable, primaries, idx_to_remove):
         m = make_model(storage_version=2)
-        d1 = make_disk(m, ptable=ptable, size=100 << 20)
-        self.assert_next(make_partition(m, d1, size=10 << 20))
-        self.assert_next(make_partition(m, d1, size=80 << 20, flag='extended'))
+        d1 = make_disk(m, ptable=ptable)
+        self.assert_next(make_partition(m, d1))
+        self.assert_next(make_partition(m, d1, flag='extended'))
         self.cur_idx = primaries + 1
-        parts = [make_partition(m, d1, size=10 << 20, flag='logical')
-                 for _ in range(3)]
+        parts = [make_partition(m, d1, flag='logical') for _ in range(3)]
         for p in parts:
             self.assert_next(p)
         to_remove = parts.pop(idx_to_remove)
