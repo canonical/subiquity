@@ -215,10 +215,10 @@ class KeyboardController(SubiquityController):
             await arun_command(cmd)
 
     async def GET(self) -> KeyboardSetup:
-        self.keyboard_list.load_language(
-            self.app.base_model.locale.selected_language)
+        lang = self.app.base_model.locale.selected_language
+        self.keyboard_list.load_language(lang)
         return KeyboardSetup(
-            setting=for_ui(self.model.setting),
+            setting=for_ui(self.model.setting_for_lang(lang)),
             layouts=self.keyboard_list.layouts)
 
     async def POST(self, data: KeyboardSetting):

@@ -35,6 +35,40 @@ XKBOPTIONS="{options}"
 BACKSPACE="guess"
 """
 
+layout_for_lang = {
+    # In the same order as the Welcome screen
+    # https://salsa.debian.org/installer-team/console-setup/-/blob/master/debian/keyboard-configuration.config
+    # None values indicate that this lang should use the default setting.
+    'ast_ES.UTF-8': KeyboardSetting(layout='es', variant='ast'),
+    'id_ID.UTF-8': None,
+    'ca_ES.UTF-8': KeyboardSetting(layout='es', variant='cat'),
+    'de_DE.UTF-8': KeyboardSetting(layout='de'),
+    'en_US.UTF-8': KeyboardSetting(layout='us'),
+    'en_GB.UTF-8': KeyboardSetting(layout='gb'),
+    'es_ES.UTF-8': KeyboardSetting(layout='es'),
+    'fr_FR.UTF-8': KeyboardSetting(layout='fr', variant='latin9'),
+    'hr_HR.UTF-8': KeyboardSetting(layout='hr'),
+    'lv_LV.UTF-8': KeyboardSetting(layout='lv'),
+    'lt_LT.UTF-8': KeyboardSetting(layout='lt'),
+    'hu_HU.UTF-8': KeyboardSetting(layout='hu'),
+    'nl_NL.UTF-8': KeyboardSetting(layout='us'),
+    'nb': KeyboardSetting(layout='no'),
+    'bo_IN': KeyboardSetting(layout='us,cn', variant=',tib'),
+    'pl_PL.UTF-8': KeyboardSetting(layout='pl'),
+    'fi_FI.UTF-8': KeyboardSetting(layout='fi'),
+    'sv_SE.UTF-8': KeyboardSetting(layout='se'),
+    'kab_DZ.UTF-8': KeyboardSetting(layout='dz', variant='la'),
+    'cs_CZ.UTF-8': KeyboardSetting(layout='cz'),
+    'el_GR.UTF-8': KeyboardSetting(layout='us,gr'),
+    'be_BY.UTF-8': KeyboardSetting(layout='us,by'),
+    'ru_RU.UTF-8': KeyboardSetting(layout='us,ru'),
+    'sr_RS': KeyboardSetting(layout='rs', variant='latin'),
+    'uk_UA.UTF-8': KeyboardSetting(layout='us,ua'),
+    'he_IL.UTF-8': KeyboardSetting(layout='us,il'),
+    'oc': None,
+    'zh_CN.UTF-8': KeyboardSetting(layout='cn'),
+}
+
 
 def from_config_file(config_file):
     with open(config_file) as fp:
@@ -64,9 +98,20 @@ class KeyboardModel:
         self.config_path = os.path.join(
             root, 'etc', 'default', 'keyboard')
         if os.path.exists(self.config_path):
-            self.setting = from_config_file(self.config_path)
+            self.default_setting = from_config_file(self.config_path)
         else:
-            self.setting = KeyboardSetting(layout='us')
+            self.default_setting = layout_for_lang['en_US.UTF-8']
+        self._setting = None
+
+    @property
+    def setting(self):
+        if self._setting is None:
+            return self.default_setting
+        return self._setting
+
+    @setting.setter
+    def setting(self, value):
+        self._setting = value
 
     def render_config_file(self):
         options = ""
@@ -87,3 +132,11 @@ class KeyboardModel:
                     },
                 },
             }
+
+    def setting_for_lang(self, lang):
+        if self._setting is not None:
+            return self._setting
+        layout = layout_for_lang.get(lang, None)
+        if layout is None:
+            return self.default_setting
+        return layout

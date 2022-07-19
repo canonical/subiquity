@@ -1,0 +1,59 @@
+# Copyright 2022 Canonical, Ltd.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+from parameterized import parameterized
+
+from subiquitycore.tests import SubiTestCase
+
+from subiquity.common.types import KeyboardSetting
+from subiquity.models.keyboard import (
+    KeyboardModel,
+    layout_for_lang,
+    )
+
+
+class TestKeyboardModel(SubiTestCase):
+    def setUp(self):
+        self.model = KeyboardModel(self.tmp_dir())
+
+    def testDefaultUS(self):
+        self.assertIsNone(self.model._setting)
+        self.assertEqual('us', self.model.setting.layout)
+
+    def testSetToZZ(self):
+        val = KeyboardSetting(layout='zz')
+        self.model.setting = val
+        self.assertEqual(val, self.model.setting)
+        self.assertEqual(val, self.model._setting)
+
+    @parameterized.expand([
+        ['ast_ES.UTF-8', 'es', 'ast'],
+        ['de_DE.UTF-8', 'de', ''],
+        ['fr_FR.UTF-8', 'fr', 'latin9'],
+        ['oc', 'us', ''],
+    ])
+    def testSettingForLang(self, lang, layout, variant):
+        val = self.model.setting_for_lang(lang)
+        self.assertEqual(layout, val.layout)
+        self.assertEqual(variant, val.variant)
+
+    def testAllLangsHaveKeyboardSuggestion(self):
+        # every language in the list needs a suggestion,
+        # even if only the default
+        with open('languagelist') as fp:
+            for line in fp.readlines():
+                tokens = line.split(':')
+                locale = tokens[1]
+                self.assertIn(locale, layout_for_lang.keys())
