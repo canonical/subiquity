@@ -17,6 +17,7 @@ import logging
 from typing import Dict, Optional
 import os
 import shutil
+import sys
 
 import attr
 
@@ -204,9 +205,23 @@ class KeyboardController(SubiquityController):
             [resource_path('bin/subiquity-loadkeys')],
             ]
         if shutil.which('setxkbmap'):
-            setxkbmap = ['setxkbmap', '-layout', self.model.setting.layout]
+            command = """\
+import os
+import pwd
+import subprocess
+import sys
+
+os.seteuid(pwd.getpwnam("ubuntu").pw_uid)
+cmd = ["setxkbmap", "-layout", sys.argv[1]]
+if len(sys.argv) > 2:
+    cmd.extend(["-variant", sys.argv[2]])
+subprocess.run(cmd)
+"""
+            setxkbmap = [
+                sys.executable, '-c', command, self.model.setting.layout
+                ]
             if self.model.setting.variant:
-                setxkbmap.extend(['-variant', self.model.setting.variant])
+                setxkbmap.append(self.model.setting.variant)
             cmds.append(setxkbmap)
         if self.opts.dry_run:
             scale = os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1")
