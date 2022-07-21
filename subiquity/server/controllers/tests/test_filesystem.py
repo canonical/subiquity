@@ -171,6 +171,12 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual(expected, resp.possible)
 
     @parameterized.expand(bootloaders_and_ptables)
+    async def test_small_blank_disk(self, bootloader, ptable):
+        self._setup(bootloader, ptable, size=1 << 30)
+        resp = await self.fsc.v2_guided_GET()
+        self.assertEqual(0, len(resp.possible))
+
+    @parameterized.expand(bootloaders_and_ptables)
     async def test_used_half_disk(self, bootloader, ptable):
         self._setup(bootloader, ptable, size=100 << 30)
         p = make_partition(self.model, self.disk, preserve=True, size=50 << 30)
