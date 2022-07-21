@@ -1124,7 +1124,7 @@ class TestGap(TestAPI):
             resp = await inst.get('/storage/v2')
             sda = first(resp['disks'], 'id', 'disk-sda')
             gap = sda['partitions'][0]
-            expected = (10 << 30) - (2 << 20)
+            expected = (100 << 30) - (2 << 20)
             self.assertEqual(expected, gap['size'])
 
     async def test_gap_at_end(self):
@@ -1146,7 +1146,7 @@ class TestGap(TestAPI):
             [boot] = match(sda['partitions'], mount='/boot/efi')
             [p1, p2, gap] = sda['partitions']
             self.assertEqual('Gap', gap['$type'])
-            expected = (10 << 30) - p1['size'] - p2['size'] - (2 << 20)
+            expected = (100 << 30) - p1['size'] - p2['size'] - (2 << 20)
             self.assertEqual(expected, gap['size'])
 
     async def SKIP_test_two_gaps(self):
