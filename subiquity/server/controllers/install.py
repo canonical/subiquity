@@ -168,11 +168,11 @@ class InstallController(SubiquityController):
             await self.curtin_install(
                 context=context, source='cp://' + for_install_path)
 
-            self.app.update_state(ApplicationState.POST_WAIT)
+            self.app.update_state(ApplicationState.WAITING)
 
             await self.model.wait_postinstall()
 
-            self.app.update_state(ApplicationState.POST_RUNNING)
+            self.app.update_state(ApplicationState.RUNNING)
 
             await self.postinstall(context=context)
 

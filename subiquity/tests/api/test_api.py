@@ -290,7 +290,7 @@ class TestFlow(TestAPI):
                 "token": "a1b2c3d4e6f7g8h9I0K1",
             }
             await inst.post('/ubuntu_pro', ua_params)
-            for state in 'RUNNING', 'POST_WAIT', 'POST_RUNNING', 'UU_RUNNING':
+            for state in 'RUNNING', 'WAITING', 'RUNNING', 'UU_RUNNING':
                 await inst.get('/meta/status', cur=state)
 
     @timeout()

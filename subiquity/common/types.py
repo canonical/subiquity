@@ -56,16 +56,27 @@ class ErrorReportRef:
 
 
 class ApplicationState(enum.Enum):
+    """ Represents the state of the application at a given time. """
+
+    # States reported during the initial stages of the installation.
     STARTING_UP = enum.auto()
     CLOUD_INIT_WAIT = enum.auto()
     EARLY_COMMANDS = enum.auto()
-    WAITING = enum.auto()
+
+    # State reported once before starting destructive actions.
     NEEDS_CONFIRMATION = enum.auto()
+
+    # States reported during installation. This sequence should be expected
+    # multiple times until we reach the late stages.
+    WAITING = enum.auto()
     RUNNING = enum.auto()
-    POST_WAIT = enum.auto()
-    POST_RUNNING = enum.auto()
+
+    # States reported while unattended-upgrades is running.
+    # TODO: check if these should be dropped in favor of RUNNING.
     UU_RUNNING = enum.auto()
     UU_CANCELLING = enum.auto()
+
+    # Final state
     DONE = enum.auto()
     ERROR = enum.auto()
     EXITED = enum.auto()

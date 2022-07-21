@@ -384,9 +384,9 @@ class ConfigureController(SubiquityController):
 
             await self.model.wait_postinstall()
 
-            self.app.update_state(ApplicationState.POST_WAIT)
+            self.app.update_state(ApplicationState.WAITING)
 
-            self.app.update_state(ApplicationState.POST_RUNNING)
+            self.app.update_state(ApplicationState.RUNNING)
 
             variant = self.app.variant
             root_dir = self.model.root
