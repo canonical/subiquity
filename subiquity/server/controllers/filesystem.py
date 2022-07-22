@@ -407,8 +407,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         install_min = self.calculate_suggested_install_min()
 
         for disk in self.get_guided_disks(with_reformatting=True):
-            reformat = GuidedStorageTargetReformat(disk_id=disk.id)
-            scenarios.append((disk.size, reformat))
+            if disk.size >= install_min:
+                reformat = GuidedStorageTargetReformat(disk_id=disk.id)
+                scenarios.append((disk.size, reformat))
 
         for disk in self.get_guided_disks(with_reformatting=False):
             if len(disk.partitions()) < 1:
