@@ -405,7 +405,7 @@
                     "range": "16",
                     "removable": "0",
                     "ro": "0",
-                    "size": "10737418240",
+                    "size": "107374182400",
                     "stat": "     411        0    16968      119        0        0        0        0        0      264        0        0        0        0        0",
                     "subsystem": "block",
                     "uevent": "MAJOR=8\nMINOR=0\nDEVNAME=sda\nDEVTYPE=disk"
