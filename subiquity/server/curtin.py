@@ -139,9 +139,10 @@ class _DryRunCurtinCommand(_CurtinCommand):
             return [
                 sys.executable,
                 "scripts/replay-curtin-log.py",
+                "--event-identifier", self._event_syslog_id,
+                "--output", self.opts.output_base + INSTALL_LOG,
+                "--",
                 self.event_file,
-                self._event_syslog_id,
-                self.opts.output_base + INSTALL_LOG,
                 ]
         else:
             return super().make_command(command, *args, config=config)
