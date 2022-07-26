@@ -156,12 +156,6 @@ class ProgressView(BaseView):
         elif state == ApplicationState.RUNNING:
             self.title = _("Installing system")
             btns = [self.view_log_btn]
-        elif state == ApplicationState.POST_WAIT:
-            self.title = _("Installing system")
-            btns = [self.view_log_btn]
-        elif state == ApplicationState.POST_RUNNING:
-            self.title = _("Installing system")
-            btns = [self.view_log_btn]
         elif state == ApplicationState.UU_RUNNING:
             self.title = _("Install complete!")
             self.reboot_btn.base_widget.set_label(
