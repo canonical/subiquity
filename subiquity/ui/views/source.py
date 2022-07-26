@@ -58,7 +58,9 @@ class SourceView(BaseView):
         ns["search_drivers"] = BooleanField(
             _("Search for third-party drivers"), "\n" +
             _("This software is subject to license terms included with its "
-              "documentation. Some is proprietary."))
+              "documentation. Some is proprietary.") + " " +
+            _("Third-party drivers should not be installed on systems that "
+              "will be used for FIPS or the real-time kernel."))
         initial["search_drivers"] = search_drivers
 
         SourceForm = type(Form)('SourceForm', (Form,), ns)
