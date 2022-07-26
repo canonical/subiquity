@@ -31,7 +31,7 @@ def report(e, log_file: TextIO, event_identifier: str):
             rc = 0
         elif r == "FAIL":
             rc = 1
-    elif e['SYSLOG_IDENTIFIER'].startswith("curtin_log") and scale_factor < 10:
+    elif e['SYSLOG_IDENTIFIER'].startswith("subiquity_log") and scale_factor < 10:
         log_file.write(e['MESSAGE'] + '\n')
 
 
