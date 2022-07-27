@@ -115,11 +115,7 @@ def find_disk_gaps_v2(device, info=None):
         return v - v % info.part_align
 
     def maybe_add_gap(start, end, in_extended):
-        if in_extended:
-            usable = GapUsable.YES
-        elif isinstance(device, LVM_VolGroup):
-            usable = GapUsable.YES
-        elif primary_parts_remaining > 0:
+        if in_extended or primary_parts_remaining > 0:
             usable = GapUsable.YES
         else:
             usable = GapUsable.TOO_MANY_PRIMARY_PARTS
