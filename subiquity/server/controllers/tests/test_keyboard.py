@@ -13,10 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import os
-import tempfile
-import unittest
+
+from subiquitycore.tests import SubiTestCase
 
 from subiquity.models.keyboard import (
     KeyboardModel,
@@ -31,26 +30,17 @@ class opts:
     dry_run = True
 
 
-class TestSubiquityModel(unittest.TestCase):
+class TestSubiquityModel(SubiTestCase):
 
-    def test_write_config(self):
-        loop = asyncio.new_event_loop()
-        policy = asyncio.get_event_loop_policy()
-        watcher = asyncio.SafeChildWatcher()
-        watcher.attach_loop(loop)
-        policy.set_child_watcher(watcher)
-
-        async def t():
-            os.environ['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
-            with tempfile.TemporaryDirectory() as tmpdir:
-                new_setting = KeyboardSetting('fr', 'azerty')
-                model = KeyboardModel(tmpdir)
-                model.setting = new_setting
-                c = object.__new__(KeyboardController)
-                c.opts = opts
-                c.model = model
-                await c.set_keyboard()
-                read_setting = KeyboardModel(tmpdir).setting
-                self.assertEqual(new_setting, read_setting)
-        loop.run_until_complete(t())
-        loop.close()
+    async def test_write_config(self):
+        os.environ['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
+        new_setting = KeyboardSetting('fr', 'azerty')
+        tmpdir = self.tmp_dir()
+        model = KeyboardModel(tmpdir)
+        model.setting = new_setting
+        c = object.__new__(KeyboardController)
+        c.opts = opts
+        c.model = model
+        await c.set_keyboard()
+        read_setting = KeyboardModel(tmpdir).setting
+        self.assertEqual(new_setting, read_setting)
