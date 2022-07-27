@@ -113,7 +113,9 @@ class DriversView(BaseView):
 
         excerpt = _(
             "The following third-party drivers were found. "
-            "Do you want to install them?")
+            "Do you want to install them?") + "\n\n" + _(
+            "Third-party drivers should not be installed on systems that "
+            "will be used for FIPS or the real-time kernel.")
 
         def on_cancel(_: DriversForm) -> None:
             self.cancel()
