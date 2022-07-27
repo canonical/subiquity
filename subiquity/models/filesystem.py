@@ -800,6 +800,12 @@ class Raid(_Device):
     _subvolumes = attributes.backlink(default=attr.Factory(list))
 
     @property
+    def path(self):
+        # This is just here to make for_client(raid-with-partitions) work. It
+        # might not be very accurate.
+        return '/dev/md/' + self.name
+
+    @property
     def size(self):
         if self.preserve and self._m._probe_data:
             bd = self._m._probe_data['blockdev'].get('/dev/' + self.name)

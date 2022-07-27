@@ -18,12 +18,14 @@ import unittest
 
 from subiquity.common.filesystem.labels import (
     annotations,
+    for_client,
     usage_labels,
     )
 from subiquity.models.tests.test_filesystem import (
     make_model,
     make_model_and_disk,
     make_model_and_partition,
+    make_model_and_raid,
     make_partition,
     )
 
@@ -123,3 +125,11 @@ class TestUsageLabels(unittest.TestCase):
         self.assertEqual(
             usage_labels(partition),
             ["to be reformatted as ext4", "mounted at /"])
+
+
+class TestForClient(unittest.TestCase):
+
+    def test_for_client_raid_parts(self):
+        model, raid = make_model_and_raid()
+        make_partition(model, raid)
+        for_client(raid)
