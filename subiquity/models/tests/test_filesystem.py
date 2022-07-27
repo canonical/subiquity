@@ -16,6 +16,7 @@
 import unittest
 
 import attr
+from parameterized import parameterized
 
 from subiquity.models.filesystem import (
     Bootloader,
@@ -136,10 +137,12 @@ class FakeStorageInfo:
     raw = attr.ib(default=attr.Factory(dict))
 
 
-def make_model(bootloader=None):
+def make_model(bootloader=None, storage_version=None):
     model = FilesystemModel()
     if bootloader is not None:
         model.bootloader = bootloader
+    if storage_version is not None:
+        model.storage_version = storage_version
     model._probe_data = {}
     return model
 
@@ -167,16 +170,20 @@ def make_model_and_disk(bootloader=None, **kw):
 
 def make_partition(model, device=None, *, preserve=False, size=None,
                    offset=None, **kw):
+    flag = kw.pop('flag', None)
     if device is None:
         device = make_disk(model)
     if size is None or offset is None:
         gap = gaps.largest_gap(device)
         if size is None:
-            size = gap.size//2
+            if flag == 'extended':
+                size = gap.size
+            else:
+                size = gap.size//2
         if offset is None:
             offset = gap.offset
     partition = Partition(m=model, device=device, size=size, offset=offset,
-                          preserve=preserve, **kw)
+                          preserve=preserve, flag=flag, **kw)
     model._actions.append(partition)
     return partition
 
@@ -676,37 +683,106 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertTrue(disk2p1.id in rendered_ids)
 
 
-class TestAlignmentData(unittest.TestCase):
-    def test_alignment_gaps_coherence(self):
-        for ptable in 'gpt', 'msdos', 'vtoc':
-            model = make_model(Bootloader.NONE)
-            disk1 = make_disk(model, ptable=ptable)
-            gaps_max = gaps.largest_gap_size(disk1)
-
-            align_data = disk1.alignment_data()
-            align_max = (disk1.size - align_data.min_start_offset
-                         - align_data.min_end_offset)
-
-            # The alignment data currently has a better notion of end
-            # information, so gaps produces numbers that are too small by 1MiB
-            # for ptable != 'gpt'
-            self.assertTrue(gaps_max <= align_max, f'ptable={ptable}')
-
-
 class TestPartitionNumbering(unittest.TestCase):
-    def test_basic(self):
-        m, d1 = make_model_and_disk(ptable='gpt')
-        p1 = make_partition(m, d1)
-        p2 = make_partition(m, d1)
-        p3 = make_partition(m, d1)
-        self.assertEqual(1, p1.number)
-        self.assertEqual(2, p2.number)
-        self.assertEqual(3, p3.number)
+    def setUp(self):
+        self.cur_idx = 1
 
-    def test_p1_preserved(self):
-        m = make_model()
-        m.storage_version = 2
-        d1 = make_disk(m, ptable='gpt')
+    def assert_next(self, part):
+        self.assertEqual(self.cur_idx, part.number)
+        self.cur_idx += 1
+
+    def test_gpt(self):
+        m, d1 = make_model_and_disk(ptable='gpt')
+        for _ in range(8):
+            self.assert_next(make_partition(m, d1))
+
+    @parameterized.expand([
+        ['msdos', 4],
+        ['vtoc', 3],
+    ])
+    def test_all_primary(self, ptable, primaries):
+        m = make_model(storage_version=2)
+        d1 = make_disk(m, ptable=ptable)
+        for _ in range(primaries):
+            self.assert_next(make_partition(m, d1))
+
+    @parameterized.expand([
+        ['msdos', 4],
+        ['vtoc', 3],
+    ])
+    def test_primary_and_extended(self, ptable, primaries):
+        m = make_model(storage_version=2)
+        d1 = make_disk(m, ptable=ptable)
+        for _ in range(primaries - 1):
+            self.assert_next(make_partition(m, d1))
+        self.assert_next(make_partition(m, d1, flag='extended'))
+        for _ in range(3):
+            self.assert_next(make_partition(m, d1, flag='logical'))
+
+    @parameterized.expand(
+        [[pt, primaries, i]
+         for pt, primaries in (('msdos', 4), ('vtoc', 3))
+         for i in range(3)]
+    )
+    def test_delete_logical(self, ptable, primaries, idx_to_remove):
+        m = make_model(storage_version=2)
+        d1 = make_disk(m, ptable=ptable)
+        self.assert_next(make_partition(m, d1))
+        self.assert_next(make_partition(m, d1, flag='extended'))
+        self.cur_idx = primaries + 1
+        parts = [make_partition(m, d1, flag='logical') for _ in range(3)]
+        for p in parts:
+            self.assert_next(p)
+        to_remove = parts.pop(idx_to_remove)
+        m.remove_partition(to_remove)
+        self.cur_idx = primaries + 1
+        for p in parts:
+            self.assert_next(p)
+
+    @parameterized.expand(
+        [[pt, primaries, i]
+         for pt, primaries in (('msdos', 4), ('vtoc', 3))
+         for i in range(3)]
+    )
+    def test_out_of_offset_order(self, ptable, primaries, idx_to_remove):
+        m = make_model(storage_version=2)
+        d1 = make_disk(m, ptable=ptable, size=100 << 20)
+        self.assert_next(make_partition(m, d1, size=10 << 20))
+        self.assert_next(make_partition(m, d1, flag='extended'))
+        self.cur_idx = primaries + 1
+        parts = []
+        parts.append(make_partition(
+                m, d1, flag='logical', size=9 << 20, offset=30 << 20))
+        parts.append(make_partition(
+                m, d1, flag='logical', size=9 << 20, offset=20 << 20))
+        parts.append(make_partition(
+                m, d1, flag='logical', size=9 << 20, offset=40 << 20))
+        for p in parts:
+            self.assert_next(p)
+        to_remove = parts.pop(idx_to_remove)
+        m.remove_partition(to_remove)
+        self.cur_idx = primaries + 1
+        for p in parts:
+            self.assert_next(p)
+
+    @parameterized.expand([
+        [1, 'msdos', 4],
+        [1, 'vtoc', 3],
+        [2, 'msdos', 4],
+        [2, 'vtoc', 3],
+    ])
+    def test_no_extra_primary(self, sv, ptable, primaries):
+        m = make_model(storage_version=sv)
+        d1 = make_disk(m, ptable=ptable, size=100 << 30)
+        for _ in range(primaries):
+            self.assert_next(make_partition(m, d1, size=1 << 30))
+        with self.assertRaises(Exception):
+            make_partition(m, d1)
+
+    @parameterized.expand([['gpt'], ['msdos'], ['vtoc']])
+    def test_p1_preserved(self, ptable):
+        m = make_model(storage_version=2)
+        d1 = make_disk(m, ptable=ptable)
         p1 = make_partition(m, d1, preserve=True, number=1)
         p2 = make_partition(m, d1)
         p3 = make_partition(m, d1)
@@ -717,10 +793,10 @@ class TestPartitionNumbering(unittest.TestCase):
         self.assertEqual(3, p3.number)
         self.assertEqual(False, p3.preserve)
 
-    def test_p2_preserved(self):
-        m = make_model()
-        m.storage_version = 2
-        d1 = make_disk(m, ptable='gpt')
+    @parameterized.expand([['gpt'], ['msdos'], ['vtoc']])
+    def test_p2_preserved(self, ptable):
+        m = make_model(storage_version=2)
+        d1 = make_disk(m, ptable=ptable)
         p2 = make_partition(m, d1, preserve=True, number=2)
         p1 = make_partition(m, d1)
         p3 = make_partition(m, d1)
@@ -730,3 +806,12 @@ class TestPartitionNumbering(unittest.TestCase):
         self.assertEqual(True, p2.preserve)
         self.assertEqual(3, p3.number)
         self.assertEqual(False, p3.preserve)
+
+
+class TestAlignmentData(unittest.TestCase):
+    @parameterized.expand([['gpt'], ['msdos'], ['vtoc']])
+    def test_alignment_gaps_coherence(self, ptable):
+        d1 = make_disk(ptable=ptable)
+        ad = d1.alignment_data()
+        align_max = d1.size - ad.min_start_offset - ad.min_end_offset
+        self.assertEqual(gaps.largest_gap_size(d1), align_max)

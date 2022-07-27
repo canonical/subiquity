@@ -146,6 +146,12 @@ def _desc_lv(lv):
     return _("LVM logical volume")
 
 
+@desc.register(gaps.Gap)
+def _desc_gap(gap):
+    # This is only used in text "cannot add partition {desc}"... bit hackish.
+    return _("to gap")
+
+
 @functools.singledispatch
 def label(device, *, short=False):
     """A label that identifies `device`
@@ -326,4 +332,4 @@ def _for_client_partition(partition, *, min_size=0):
 
 @for_client.register(gaps.Gap)
 def _for_client_gap(gap, *, min_size=0):
-    return types.Gap(offset=gap.offset, size=gap.size)
+    return types.Gap(offset=gap.offset, size=gap.size, usable=gap.usable)

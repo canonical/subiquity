@@ -516,6 +516,12 @@ class _Device(_Formattable, ABC):
     def partitions(self):
         return self._partitions
 
+    def partitions_by_offset(self):
+        return sorted(self._partitions, key=lambda p: p.offset)
+
+    def partitions_by_number(self):
+        return sorted(self._partitions, key=lambda p: p.number)
+
     @property
     def used(self):
         if self._is_entirely_used():
@@ -668,6 +674,14 @@ class Disk(_Device):
             return None
         return id.encode('utf-8').decode('unicode_escape').strip()
 
+    def renumber_logical_partitions(self, removed_partition):
+        parts = [p for p in self.partitions_by_number()
+                 if p.is_logical and p.number > removed_partition.number]
+        next_num = removed_partition.number
+        for part in parts:
+            part.number = next_num
+            next_num += 1
+
 
 @fsobj("partition")
 class Partition(_Formattable):
@@ -688,11 +702,20 @@ class Partition(_Formattable):
     def __post_init__(self):
         if self.number is not None:
             return
-        used_nums = {part.number for part in self.device._partitions
-                     if part.number is not None}
-        possible_nums = {i for i in range(1, len(self.device._partitions) + 1)}
-        unused_nums = sorted(list(possible_nums - used_nums))
-        self.number = unused_nums.pop(0)
+
+        used_nums = {p.number for p in self.device._partitions
+                     if p.number is not None
+                     if p.is_logical == self.is_logical}
+        primary_limit = self.device.alignment_data().primary_part_limit
+        if self.is_logical:
+            possible_nums = range(primary_limit + 1, 129)
+        else:
+            possible_nums = range(1, primary_limit + 1)
+        for num in possible_nums:
+            if num not in used_nums:
+                self.number = num
+                return
+        raise Exception('Exceeded number of available partitions')
 
     def available(self):
         if self.flag in ['bios_grub', 'prep'] or self.grub_device:
@@ -745,6 +768,10 @@ class Partition(_Formattable):
         if not os_data:
             return None
         return OsProber(**os_data)
+
+    @property
+    def is_logical(self):
+        return self.flag == 'logical'
 
     ok_for_lvm_vg = ok_for_raid
 
@@ -1444,6 +1471,7 @@ class FilesystemModel(object):
         for p2 in movable_trailing_partitions_and_gap_size(part)[0]:
             p2.offset -= part.size
         self._remove(part)
+        part.device.renumber_logical_partitions(part)
         if len(part.device._partitions) == 0:
             part.device.ptable = None
 

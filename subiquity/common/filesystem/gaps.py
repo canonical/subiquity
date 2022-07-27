@@ -17,6 +17,7 @@ import functools
 
 import attr
 
+from subiquity.common.types import GapUsable
 from subiquity.models.filesystem import (
     align_up,
     align_down,
@@ -35,12 +36,17 @@ class Gap:
     offset: int
     size: int
     in_extended: bool = False
+    usable: str = GapUsable.YES
 
     type: str = 'gap'
 
     @property
     def id(self):
         return 'gap-' + self.device.id
+
+    @property
+    def is_usable(self):
+        return self.usable == GapUsable.YES
 
     def split(self, size):
         """returns a tuple of two new gaps, split from the current gap based on
@@ -53,11 +59,13 @@ class Gap:
         first_gap = Gap(device=self.device,
                         offset=self.offset,
                         size=size,
-                        in_extended=self.in_extended)
+                        in_extended=self.in_extended,
+                        usable=self.usable)
         rest_gap = Gap(device=self.device,
                        offset=self.offset + size,
                        size=self.size - size,
-                       in_extended=self.in_extended)
+                       in_extended=self.in_extended,
+                       usable=self.usable)
         return (first_gap, rest_gap)
 
 
@@ -66,19 +74,24 @@ def parts_and_gaps(device):
     raise NotImplementedError(device)
 
 
+def remaining_primary_partitions(device, info):
+    primaries = [p for p in device.partitions() if not p.is_logical]
+    return info.primary_part_limit - len(primaries)
+
+
 def find_disk_gaps_v1(device):
     r = []
     used = 0
-    ad = device.alignment_data()
-    used += ad.min_start_offset
+    info = device.alignment_data()
+    used += info.min_start_offset
     for p in device._partitions:
         used = align_up(used + p.size, 1 << 20)
         r.append(p)
     if device._has_preexisting_partition():
         return r
-    if device.ptable == 'vtoc' and len(device._partitions) >= 3:
+    if remaining_primary_partitions(device, info) < 1:
         return r
-    end = align_down(device.size - ad.min_end_offset, 1 << 20)
+    end = align_down(device.size - info.min_end_offset, 1 << 20)
     if end - used >= (1 << 20):
         r.append(Gap(device, used, end - used))
     return r
@@ -102,13 +115,22 @@ def find_disk_gaps_v2(device, info=None):
         return v - v % info.part_align
 
     def maybe_add_gap(start, end, in_extended):
+        if in_extended or primary_parts_remaining > 0:
+            usable = GapUsable.YES
+        else:
+            usable = GapUsable.TOO_MANY_PRIMARY_PARTS
         if end - start >= info.min_gap_size:
-            result.append(Gap(device, start, end - start, in_extended))
+            result.append(Gap(device=device,
+                              offset=start,
+                              size=end - start,
+                              in_extended=in_extended,
+                              usable=usable))
 
     prev_end = info.min_start_offset
 
-    parts = sorted(device._partitions, key=lambda p: p.offset)
+    parts = device.partitions_by_offset()
     extended_end = None
+    primary_parts_remaining = remaining_primary_partitions(device, info)
 
     for part in parts + [None]:
         if part is None:

@@ -1126,6 +1126,7 @@ class TestGap(TestAPI):
             gap = sda['partitions'][0]
             expected = (100 << 30) - (2 << 20)
             self.assertEqual(expected, gap['size'])
+            self.assertEqual('YES', gap['usable'])
 
     async def test_gap_at_end(self):
         async with start_server('examples/simple.json') as inst:
@@ -1279,3 +1280,43 @@ class TestIdentityValidation(TestAPI):
             resp = await inst.get('/identity/validate_username',
                                   username='o#$%^&')
             self.assertEqual(resp, 'INVALID_CHARS')
+
+
+class TestManyPrimaries(TestAPI):
+    @timeout()
+    async def test_create_primaries(self):
+        cfg = 'examples/simple.json'
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
+            resp = await inst.get('/storage/v2')
+            d1 = resp['disks'][0]
+
+            data = {'disk_id': d1['id'], 'ptable': 'msdos'}
+            resp = await inst.post('/storage/v2/reformat_disk', data)
+            [gap] = match(resp['disks'][0]['partitions'], _type='Gap')
+
+            for _ in range(4):
+                self.assertEqual('YES', gap['usable'])
+                data = {
+                    'disk_id': d1['id'],
+                    'gap': gap,
+                    'partition': {
+                        'size': 1 << 30,
+                        'format': 'ext4',
+                    }
+                }
+                resp = await inst.post('/storage/v2/add_partition', data)
+                [gap] = match(resp['disks'][0]['partitions'], _type='Gap')
+
+            self.assertEqual('TOO_MANY_PRIMARY_PARTS', gap['usable'])
+
+            data = {
+                'disk_id': d1['id'],
+                'gap': gap,
+                'partition': {
+                    'size': 1 << 30,
+                    'format': 'ext4',
+                }
+            }
+            with self.assertRaises(ClientResponseError):
+                await inst.post('/storage/v2/add_partition', data)
