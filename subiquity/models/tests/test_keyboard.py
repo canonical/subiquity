@@ -18,10 +18,7 @@ from parameterized import parameterized
 from subiquitycore.tests import SubiTestCase
 
 from subiquity.common.types import KeyboardSetting
-from subiquity.models.keyboard import (
-    KeyboardModel,
-    layout_for_lang,
-    )
+from subiquity.models.keyboard import KeyboardModel
 
 
 class TestKeyboardModel(SubiTestCase):
@@ -56,4 +53,16 @@ class TestKeyboardModel(SubiTestCase):
             for line in fp.readlines():
                 tokens = line.split(':')
                 locale = tokens[1]
-                self.assertIn(locale, layout_for_lang.keys())
+                self.assertIn(locale, self.model.layout_for_lang.keys())
+
+    def testLoadSuggestions(self):
+        data = self.tmp_path('kbd.yaml')
+        with open(data, 'w') as fp:
+            fp.write('''
+aa_BB.UTF-8:
+  layout: aa
+  variant: cc
+''')
+        actual = self.model.load_layout_suggestions(data)
+        expected = {'aa_BB.UTF-8': KeyboardSetting(layout='aa', variant='cc')}
+        self.assertEqual(expected, actual)
