@@ -24,6 +24,7 @@ import os
 import pathlib
 import platform
 import tempfile
+import uuid
 
 from curtin import storage_config
 from curtin.block import partition_kname
@@ -41,15 +42,7 @@ GiB = 1024 * 1024 * 1024
 
 def _set_backlinks(obj):
     if obj.id is None:
-        base = obj.type
-        i = 0
-        while True:
-            val = "%s-%s" % (base, i)
-            if val not in obj._m._all_ids:
-                break
-            i += 1
-        obj.id = val
-    obj._m._all_ids.add(obj.id)
+        obj.id = str(uuid.uuid4())
     for field in attr.fields(type(obj)):
         backlink = field.metadata.get('backlink')
         if backlink is None:
@@ -1059,7 +1052,6 @@ class FilesystemModel(object):
         self.reset()
 
     def reset(self):
-        self._all_ids = set()
         if self._probe_data is not None:
             self._orig_config = storage_config.extract_storage_config(
                 self._probe_data)["storage"]["config"]
@@ -1086,7 +1078,6 @@ class FilesystemModel(object):
 
     def load_server_data(self, status):
         log.debug('load_server_data %s', status)
-        self._all_ids = set()
         self.storage_version = status.storage_version
         self._orig_config = status.orig_config
         self._probe_data = {

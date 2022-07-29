@@ -34,7 +34,6 @@ class FilesystemViewTests(unittest.TestCase):
         model = make_model()
         model._probe_data = {}
         model._actions = []
-        model._all_ids = set()
         disk = Disk(
             m=model, serial="DISK-SERIAL", path='/dev/thing',
             info=FakeStorageInfo(size=100*(2**20), free=50*(2**20)))
