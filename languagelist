@@ -3,21 +3,26 @@ console:en_GB.UTF-8:English (UK)
 ssh:kab_DZ.UTF-8:Taqbaylit
 console:ca_ES.UTF-8:Català
 ssh:zh_CN.UTF-8:中文(简体)
+ssh:zh_TW.UTF-8:中文(繁體)
 console:hr_HR.UTF-8:Hrvatski
 console:cs_CZ.UTF-8:Čeština
+ssh:ar_EG.UTF-8:عربي
 console:ast_ES.UTF-8:Asturianu
 console:be_BY.UTF-8:Беларуская
 console:nl_NL.UTF-8:Nederlands
 console:fi_FI.UTF-8:Suomi
 console:fr_FR.UTF-8:Français
+console:gl_ES.UTF-8:Galego
 console:de_DE.UTF-8:Deutsch
 console:el_GR.UTF-8:Ελληνικά
 ssh:he_IL.UTF-8:עברית
 console:hu_HU.UTF-8:Magyar
 console:id_ID.UTF-8:Bahasa Indonesia
+ssh:ja_JP.UTF-8:日本語
 console:lv_LV.UTF-8:Latviski
 console:lt_LT.UTF-8:Lietuviškai
 console:pl_PL.UTF-8:Polski
+console:pt_PT.UTF-8:Português
 console:ru_RU.UTF-8:Русский
 console:sr_RS:Српски
 console:es_ES.UTF-8:Español

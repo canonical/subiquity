@@ -15,11 +15,17 @@ ca_ES.UTF-8:
 zh_CN.UTF-8:
   layout: "cn"
   variant: ""
+zh_TW.UTF-8:
+  layout: "cn"
+  variant: ""
 hr_HR.UTF-8:
   layout: "hr"
   variant: ""
 cs_CZ.UTF-8:
   layout: "cz"
+  variant: ""
+ar_EG.UTF-8:
+  layout: "us,ara"
   variant: ""
 ast_ES.UTF-8:
   layout: "es"
@@ -36,6 +42,9 @@ fi_FI.UTF-8:
 fr_FR.UTF-8:
   layout: "fr"
   variant: "latin9"
+gl_ES.UTF-8:
+  layout: "es"
+  variant: ""
 de_DE.UTF-8:
   layout: "de"
   variant: ""
@@ -51,6 +60,9 @@ hu_HU.UTF-8:
 id_ID.UTF-8:
   layout: "us"
   variant: ""
+ja_JP.UTF-8:
+  layout: "jp"
+  variant: ""
 lv_LV.UTF-8:
   layout: "lv"
   variant: ""
@@ -59,6 +71,9 @@ lt_LT.UTF-8:
   variant: ""
 pl_PL.UTF-8:
   layout: "pl"
+  variant: ""
+pt_PT.UTF-8:
+  layout: "pt"
   variant: ""
 ru_RU.UTF-8:
   layout: "us,ru"
