@@ -169,7 +169,10 @@ parts:
       - locales
       - python3-attr
       - python3-yaml
-    override-build: PYTHONPATH=$SNAPCRAFT_PROJECT_DIR/ $SNAPCRAFT_PROJECT_DIR/scripts/make-kbd-info.py
+    override-build: |
+      PYTHONPATH=$SNAPCRAFT_PROJECT_DIR/ $SNAPCRAFT_PROJECT_DIR/scripts/make-kbd-info.py
+      cp $SNAPCRAFT_PROJECT_DIR/kbds/keyboard-configuration.yaml \
+        $SNAPCRAFT_PART_INSTALL/kbds/keyboard-configuration.yaml
     stage:
       - kbds/
   font:
