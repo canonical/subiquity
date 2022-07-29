@@ -648,6 +648,40 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
+    def test_logical_no_esp_in_gap(self):
+        manipulator = make_manipulator(Bootloader.UEFI, storage_version=2)
+        m = manipulator.model
+        m._probe_data.setdefault('blockdev', {})
+        d1 = make_disk(m, preserve=True, ptable='msdos')
+        size = gaps.largest_gap_size(d1)
+        make_partition(m, d1, flag='extended', preserve=True, size=size)
+        size = gaps.largest_gap_size(d1) // 2
+        make_partition(m, d1, flag='logical', preserve=True, size=size)
+        self.assertTrue(gaps.largest_gap_size(d1) > sizes.uefi_scale.maximum)
+        self.assertFalse(boot.can_be_boot_device(d1))
+
+    def test_logical_no_esp_by_resize(self):
+        manipulator = make_manipulator(Bootloader.UEFI, storage_version=2)
+        m = manipulator.model
+        m._probe_data.setdefault('blockdev', {})
+        d1 = make_disk(m, preserve=True, ptable='msdos')
+        size = gaps.largest_gap_size(d1)
+        make_partition(m, d1, flag='extended', preserve=True, size=size)
+        size = gaps.largest_gap_size(d1)
+        p5 = make_partition(m, d1, flag='logical', preserve=True, size=size)
+        self.assertFalse(boot.can_be_boot_device(d1, resize_partition=p5))
+
+    def test_logical_no_esp_in_new_part(self):
+        manipulator = make_manipulator(Bootloader.UEFI, storage_version=2)
+        m = manipulator.model
+        m._probe_data.setdefault('blockdev', {})
+        d1 = make_disk(m, preserve=True, ptable='msdos')
+        size = gaps.largest_gap_size(d1)
+        make_partition(m, d1, flag='extended', size=size)
+        size = gaps.largest_gap_size(d1)
+        make_partition(m, d1, flag='logical', size=size)
+        self.assertFalse(boot.can_be_boot_device(d1))
+
 
 class TestReformat(unittest.TestCase):
     def setUp(self):
