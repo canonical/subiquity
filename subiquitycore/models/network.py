@@ -523,6 +523,13 @@ class NetworkModel(object):
 
         return config
 
+    def rendered_config_paths(self):
+        """Return a list of file paths rendered by this model."""
+        return [
+            '/' + write_file['path']
+            for write_file in self.render().get('write_files').values()
+        ]
+
     def render(self):
         return {
             'write_files': {
