@@ -17,6 +17,9 @@ import logging
 import re
 import os
 
+import yaml
+
+from subiquity.common.resources import resource_path
 from subiquity.common.types import KeyboardSetting
 
 log = logging.getLogger("subiquity.models.keyboard")
@@ -34,40 +37,6 @@ XKBOPTIONS="{options}"
 
 BACKSPACE="guess"
 """
-
-layout_for_lang = {
-    # In the same order as the Welcome screen
-    # https://salsa.debian.org/installer-team/console-setup/-/blob/master/debian/keyboard-configuration.config
-    # None values indicate that this lang should use the default setting.
-    'ast_ES.UTF-8': KeyboardSetting(layout='es', variant='ast'),
-    'id_ID.UTF-8': None,
-    'ca_ES.UTF-8': KeyboardSetting(layout='es', variant='cat'),
-    'de_DE.UTF-8': KeyboardSetting(layout='de'),
-    'en_US.UTF-8': KeyboardSetting(layout='us'),
-    'en_GB.UTF-8': KeyboardSetting(layout='gb'),
-    'es_ES.UTF-8': KeyboardSetting(layout='es'),
-    'fr_FR.UTF-8': KeyboardSetting(layout='fr', variant='latin9'),
-    'hr_HR.UTF-8': KeyboardSetting(layout='hr'),
-    'lv_LV.UTF-8': KeyboardSetting(layout='lv'),
-    'lt_LT.UTF-8': KeyboardSetting(layout='lt'),
-    'hu_HU.UTF-8': KeyboardSetting(layout='hu'),
-    'nl_NL.UTF-8': KeyboardSetting(layout='us'),
-    'nb': KeyboardSetting(layout='no'),
-    'bo_IN': KeyboardSetting(layout='us,cn', variant=',tib'),
-    'pl_PL.UTF-8': KeyboardSetting(layout='pl'),
-    'fi_FI.UTF-8': KeyboardSetting(layout='fi'),
-    'sv_SE.UTF-8': KeyboardSetting(layout='se'),
-    'kab_DZ.UTF-8': KeyboardSetting(layout='dz', variant='la'),
-    'cs_CZ.UTF-8': KeyboardSetting(layout='cz'),
-    'el_GR.UTF-8': KeyboardSetting(layout='us,gr'),
-    'be_BY.UTF-8': KeyboardSetting(layout='us,by'),
-    'ru_RU.UTF-8': KeyboardSetting(layout='us,ru'),
-    'sr_RS': KeyboardSetting(layout='rs', variant='latin'),
-    'uk_UA.UTF-8': KeyboardSetting(layout='us,ua'),
-    'he_IL.UTF-8': KeyboardSetting(layout='us,il'),
-    'oc': None,
-    'zh_CN.UTF-8': KeyboardSetting(layout='cn'),
-}
 
 
 def from_config_file(config_file):
@@ -97,10 +66,11 @@ class KeyboardModel:
     def __init__(self, root):
         self.config_path = os.path.join(
             root, 'etc', 'default', 'keyboard')
+        self.layout_for_lang = self.load_layout_suggestions()
         if os.path.exists(self.config_path):
             self.default_setting = from_config_file(self.config_path)
         else:
-            self.default_setting = layout_for_lang['en_US.UTF-8']
+            self.default_setting = self.layout_for_lang['en_US.UTF-8']
         self._setting = None
 
     @property
@@ -136,7 +106,19 @@ class KeyboardModel:
     def setting_for_lang(self, lang):
         if self._setting is not None:
             return self._setting
-        layout = layout_for_lang.get(lang, None)
+        layout = self.layout_for_lang.get(lang, None)
         if layout is None:
             return self.default_setting
         return layout
+
+    def load_layout_suggestions(self, path=None):
+        if path is None:
+            path = resource_path('kbds') + '/keyboard-configuration.yaml'
+
+        with open(path) as fp:
+            data = yaml.safe_load(fp)
+
+        ret = {}
+        for k, v in data.items():
+            ret[k] = KeyboardSetting(**v)
+        return ret
