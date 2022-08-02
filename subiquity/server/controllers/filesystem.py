@@ -153,7 +153,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             return gaps.largest_gap(disk)
         else:
             # find what's left of the gap after adding boot
-            gap = gaps.within(disk, gap)
+            gap = gap.within()
             if gap is None:
                 raise Exception('failed to locate gap after adding boot')
             return gap
