@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 from typing import Any, Optional
 import os
 
@@ -59,6 +60,9 @@ class SourceController(SubiquityController):
              "search_drivers": {
                  "type": "boolean",
              },
+             "id": {
+                 "type": "string",
+             },
          },
          "required": ["search_drivers"],
     }
@@ -71,21 +75,34 @@ class SourceController(SubiquityController):
         super().__init__(app)
         self._handler = None
         self.source_path: Optional[str] = None
+        self.ai_source_id: Optional[str] = None
 
     def make_autoinstall(self):
-        return {"search_drivers": self.model.search_drivers}
+        return {
+                "search_drivers": self.model.search_drivers,
+                "id": self.model.current.id,
+               }
 
     def load_autoinstall_data(self, data: Any) -> None:
         if data is None:
             # For some reason, the schema validator does not reject
             # "source: null" despite "type" being "object"
-            data = self.autoinstall_default
+            data = {**self.autoinstall_default, "id": None}
 
         # search_drivers is marked required so the schema validator should
         # reject any missing data.
         assert "search_drivers" in data
 
         self.model.search_drivers = data["search_drivers"]
+
+        # At this point, the model has not yet loaded the sources from the
+        # catalog. So we store the data and lean on apply_autoinstall_config.
+        self.ai_source_id = data.get("id")
+
+    async def apply_autoinstall_config(self) -> None:
+        if self.ai_source_id is None:
+            return
+        self.model.current = self.model.get_matching_source(self.ai_source_id)
 
     def start(self):
         path = '/cdrom/casper/install-sources.yaml'
@@ -129,7 +146,6 @@ class SourceController(SubiquityController):
     async def POST(self, source_id: str,
                    search_drivers: bool = False) -> None:
         self.model.search_drivers = search_drivers
-        for source in self.model.sources:
-            if source.id == source_id:
-                self.model.current = source
+        with contextlib.suppress(KeyError):
+            self.model.current = self.model.get_matching_source(source_id)
         await self.configured()

@@ -123,6 +123,9 @@
             "properties": {
                 "search_drivers": {
                     "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
                 }
             },
             "required": [

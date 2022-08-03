@@ -88,6 +88,13 @@ class SourceModel:
         if self.current is None:
             self.current = self.sources[0]
 
+    def get_matching_source(self, id_: str) -> CatalogEntry:
+        """ Return a source object that has the ID requested. """
+        for source in self.sources:
+            if source.id == id_:
+                return source
+        raise KeyError
+
     def get_source(self):
         path = os.path.join(self._dir, self.current.path)
         if self.current.preinstalled_langs:

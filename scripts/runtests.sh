@@ -225,8 +225,11 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --output-base "$tmpdir" \
     --machine-config examples/simple.json \
     --autoinstall examples/autoinstall-user-data.yaml \
-    --kernel-cmdline autoinstall
+    --kernel-cmdline autoinstall \
+    --source-catalog examples/install-sources.yaml
 validate
+python3 scripts/check-yaml-fields.py "$tmpdir"/var/log/installer/autoinstall-user-data \
+        'autoinstall.source.id="ubuntu-server-minimal"'
 grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
 
 # The OOBE doesn't exist in WSL < 20.04
