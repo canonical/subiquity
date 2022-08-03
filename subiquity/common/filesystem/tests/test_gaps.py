@@ -339,6 +339,48 @@ class TestMovableTrailingPartitionsAndGapSize(unittest.TestCase):
         p.side_effect = partial(
             gaps.find_disk_gaps_v2, info=alignment_data)
 
+    def test_largest_non_extended(self):
+        self.use_alignment_data(PartitionAlignmentData(
+            part_align=10, min_gap_size=1, min_start_offset=0,
+            min_end_offset=0, primary_part_limit=4))
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # [ p1 ]         [ p2 (extended)                      ]
+        #       [ g1    ][ g2                                 ]
+        m, d = make_model_and_disk(size=100, ptable='dos')
+        make_partition(m, d, offset=0, size=10)
+        make_partition(m, d, offset=30, size=70, flag='extended')
+        g = gaps.Gap(d, offset=10, size=20,
+                     in_extended=False, usable=GapUsable.YES)
+        self.assertEqual(g, gaps.largest_gap(d, in_extended=False))
+
+    def test_largest_yes_extended(self):
+        self.use_alignment_data(PartitionAlignmentData(
+            part_align=10, min_gap_size=1, min_start_offset=0,
+            min_end_offset=0, primary_part_limit=4))
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # [ p1 ]         [ p2 (extended)                      ]
+        #       [ g1    ][ g2                                 ]
+        m, d = make_model_and_disk(size=100, ptable='dos')
+        make_partition(m, d, offset=0, size=10)
+        make_partition(m, d, offset=30, size=70, flag='extended')
+        g = gaps.Gap(d, offset=30, size=70,
+                     in_extended=True, usable=GapUsable.YES)
+        self.assertEqual(g, gaps.largest_gap(d, in_extended=True))
+
+    def test_largest_any_extended(self):
+        self.use_alignment_data(PartitionAlignmentData(
+            part_align=10, min_gap_size=1, min_start_offset=0,
+            min_end_offset=0, primary_part_limit=4))
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # [ p1 ]         [ p2 (extended)                      ]
+        #       [ g1    ][ g2                                 ]
+        m, d = make_model_and_disk(size=100, ptable='dos')
+        make_partition(m, d, offset=0, size=10)
+        make_partition(m, d, offset=30, size=70, flag='extended')
+        g = gaps.Gap(d, offset=30, size=70,
+                     in_extended=True, usable=GapUsable.YES)
+        self.assertEqual(g, gaps.largest_gap(d))
+
     def test_no_next_gap(self):
         self.use_alignment_data(PartitionAlignmentData(
             part_align=10, min_gap_size=1, min_start_offset=10,

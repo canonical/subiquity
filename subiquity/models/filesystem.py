@@ -773,6 +773,10 @@ class Partition(_Formattable):
     def is_logical(self):
         return self.flag == 'logical'
 
+    @property
+    def is_primary(self):
+        return self.flag != 'logical' and self.flag != 'extended'
+
     ok_for_lvm_vg = ok_for_raid
 
 

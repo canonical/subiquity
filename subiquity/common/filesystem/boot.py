@@ -221,10 +221,15 @@ def get_add_part_plan(device, *, spec, args, resize_partition=None):
 
     create_part_plan = CreatePartPlan(gap=None, spec=spec, args=args)
 
-    if gaps.largest_gap_size(device) >= size:
-        create_part_plan.gap = gaps.largest_gap(device).split(size)[0]
+    # Per LP: #1796260, it is known that putting an ESP on a logical partition
+    # is a bad idea.  So avoid putting any sort of boot stuff on a logical -
+    # it's probably a bad idea for all cases.
+
+    gap = gaps.largest_gap(device, in_extended=False)
+    if gap is not None and gap.size >= size:
+        create_part_plan.gap = gap.split(size)[0]
         return create_part_plan
-    elif resize_partition is not None:
+    elif resize_partition is not None and not resize_partition.is_logical:
         if size > resize_partition.size - resize_partition.estimated_min_size:
             return None
 
@@ -240,10 +245,11 @@ def get_add_part_plan(device, *, spec, args, resize_partition=None):
             create_part_plan,
             ])
     else:
-        new_parts = [p for p in partitions if not p.preserve]
-        if not new_parts:
+        new_primaries = [p for p in partitions
+                         if not p.preserve and p.is_primary]
+        if not new_primaries:
             return None
-        largest_part = max(new_parts, key=lambda p: p.size)
+        largest_part = max(new_primaries, key=lambda p: p.size)
         if size > largest_part.size // 2:
             return None
         create_part_plan.gap = gaps.Gap(
