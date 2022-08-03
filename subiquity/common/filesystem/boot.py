@@ -246,7 +246,8 @@ def get_add_part_plan(device, *, spec, args, resize_partition=None):
             ])
     else:
         new_primaries = [p for p in partitions
-                         if not p.preserve and p.is_primary]
+                         if not p.preserve
+                         if p.flag not in ('extended', 'logical')]
         if not new_primaries:
             return None
         largest_part = max(new_primaries, key=lambda p: p.size)
