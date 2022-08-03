@@ -127,10 +127,7 @@
                 "id": {
                     "type": "string"
                 }
-            },
-            "required": [
-                "search_drivers"
-            ]
+            }
         },
         "network": {
             "oneOf": [

@@ -64,7 +64,6 @@ class SourceController(SubiquityController):
                  "type": "string",
              },
          },
-         "required": ["search_drivers"],
     }
     # Defaults to true for backward compatibility with existing autoinstall
     # configurations. Back then, then users were able to install third-party
@@ -89,11 +88,7 @@ class SourceController(SubiquityController):
             # "source: null" despite "type" being "object"
             data = {**self.autoinstall_default, "id": None}
 
-        # search_drivers is marked required so the schema validator should
-        # reject any missing data.
-        assert "search_drivers" in data
-
-        self.model.search_drivers = data["search_drivers"]
+        self.model.search_drivers = data.get("search_drivers", True)
 
         # At this point, the model has not yet loaded the sources from the
         # catalog. So we store the data and lean on apply_autoinstall_config.
