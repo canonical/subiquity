@@ -682,6 +682,20 @@ class TestFilesystemManipulator(unittest.TestCase):
         make_partition(m, d1, flag='logical', size=size)
         self.assertFalse(boot.can_be_boot_device(d1))
 
+    @parameterized.expand([[Bootloader.UEFI], [Bootloader.PREP]])
+    def test_too_many_primaries(self, bl):
+        manipulator = make_manipulator(bl, storage_version=2)
+        m = manipulator.model
+        m._probe_data.setdefault('blockdev', {})
+        d1 = make_disk(m, preserve=True, ptable='msdos', size=100 << 30)
+        tenth = 10 << 30
+        for i in range(4):
+            make_partition(m, d1, preserve=True, size=tenth)
+        gap = gaps.largest_gap(d1)
+        self.assertTrue(gap.size > sizes.uefi_scale.maximum)
+        self.assertFalse(gap.is_usable)
+        self.assertFalse(boot.can_be_boot_device(d1))
+
 
 class TestReformat(unittest.TestCase):
     def setUp(self):
