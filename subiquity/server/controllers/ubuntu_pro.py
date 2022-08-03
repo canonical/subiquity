@@ -61,6 +61,7 @@ class UbuntuProController(SubiquityController):
             },
         },
     }
+    autoinstall_default = {}
 
     def __init__(self, app) -> None:
         """ Initializer for server-side Ubuntu Pro controller. """
@@ -79,8 +80,6 @@ class UbuntuProController(SubiquityController):
 
     def load_autoinstall_data(self, data: dict) -> None:
         """ Load autoinstall data and update the model. """
-        if data is None:
-            return
         self.model.token = data.get("token", "")
 
     def make_autoinstall(self) -> dict:

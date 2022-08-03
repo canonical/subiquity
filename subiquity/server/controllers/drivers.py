@@ -60,7 +60,7 @@ class DriversController(SubiquityController):
         }
 
     def load_autoinstall_data(self, data):
-        if data is not None and "install" in data:
+        if "install" in data:
             self.model.do_install = data["install"]
 
     def start(self):
