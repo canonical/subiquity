@@ -176,10 +176,7 @@ def make_partition(model, device=None, *, preserve=False, size=None,
     if size is None or offset is None:
         gap = gaps.largest_gap(device)
         if size is None:
-            if flag == 'extended':
-                size = gap.size
-            else:
-                size = gap.size//2
+            size = gap.size//2
         if offset is None:
             offset = gap.offset
     partition = Partition(m=model, device=device, size=size, offset=offset,
@@ -715,7 +712,8 @@ class TestPartitionNumbering(unittest.TestCase):
         d1 = make_disk(m, ptable=ptable)
         for _ in range(primaries - 1):
             self.assert_next(make_partition(m, d1))
-        self.assert_next(make_partition(m, d1, flag='extended'))
+        size = gaps.largest_gap_size(d1)
+        self.assert_next(make_partition(m, d1, flag='extended', size=size))
         for _ in range(3):
             self.assert_next(make_partition(m, d1, flag='logical'))
 
@@ -728,7 +726,8 @@ class TestPartitionNumbering(unittest.TestCase):
         m = make_model(storage_version=2)
         d1 = make_disk(m, ptable=ptable)
         self.assert_next(make_partition(m, d1))
-        self.assert_next(make_partition(m, d1, flag='extended'))
+        size = gaps.largest_gap_size(d1)
+        self.assert_next(make_partition(m, d1, flag='extended', size=size))
         self.cur_idx = primaries + 1
         parts = [make_partition(m, d1, flag='logical') for _ in range(3)]
         for p in parts:
@@ -748,7 +747,8 @@ class TestPartitionNumbering(unittest.TestCase):
         m = make_model(storage_version=2)
         d1 = make_disk(m, ptable=ptable, size=100 << 20)
         self.assert_next(make_partition(m, d1, size=10 << 20))
-        self.assert_next(make_partition(m, d1, flag='extended'))
+        size = gaps.largest_gap_size(d1)
+        self.assert_next(make_partition(m, d1, flag='extended', size=size))
         self.cur_idx = primaries + 1
         parts = []
         parts.append(make_partition(
