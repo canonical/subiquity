@@ -84,8 +84,10 @@ class SourceController(SubiquityController):
 
     def load_autoinstall_data(self, data: Any) -> None:
         if data is None:
-            # For some reason, the schema validator does not reject
-            # "source: null" despite "type" being "object"
+            # NOTE: The JSON schema does not allow data to be null in this
+            # context. However, Subiquity bypasses the schema validation when
+            # a section is set to null. So in practice, we can have data = None
+            # here.
             data = {**self.autoinstall_default, "id": None}
 
         self.model.search_drivers = data.get("search_drivers", True)
