@@ -15,6 +15,7 @@
 """ Module that defines the client-side controller class for Ubuntu Pro. """
 
 import asyncio
+import contextlib
 import logging
 from typing import Callable, Optional
 
@@ -101,11 +102,10 @@ class UbuntuProController(SubiquityTuiController):
 
         async def run_token_added_overlay() -> None:
             def is_token_added_overlay(widget: Widget) -> bool:
-                try:
+                with contextlib.suppress(AttributeError):
                     if widget._text == f" {TokenAddedWidget.title} ":
                         return True
-                except AttributeError:
-                    return False
+                return False
 
             # Wait until the "Token added successfully" overlay is shown.
             while not find_with_pred(view, is_token_added_overlay):
