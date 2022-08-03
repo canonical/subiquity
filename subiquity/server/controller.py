@@ -50,6 +50,7 @@ class SubiquityController(BaseController):
     def setup_autoinstall(self):
         if not self.app.autoinstall_config:
             return
+        validate = True
         with self.context.child("load_autoinstall_data"):
             key_candidates = [self.autoinstall_key]
             if self.autoinstall_key_alias is not None:
@@ -63,8 +64,9 @@ class SubiquityController(BaseController):
                     pass
             else:
                 ai_data = self.autoinstall_default
+                validate = False
 
-            if ai_data is not None and self.autoinstall_schema is not None:
+            if validate and self.autoinstall_schema is not None:
                 jsonschema.validate(ai_data, self.autoinstall_schema)
             self.load_autoinstall_data(ai_data)
 

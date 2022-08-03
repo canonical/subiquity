@@ -76,11 +76,6 @@ class SourceController(SubiquityController):
         return {"search_drivers": self.model.search_drivers}
 
     def load_autoinstall_data(self, data: Any) -> None:
-        if data is None:
-            # For some reason, the schema validator does not reject
-            # "source: null" despite "type" being "object"
-            data = self.autoinstall_default
-
         # search_drivers is marked required so the schema validator should
         # reject any missing data.
         assert "search_drivers" in data
