@@ -13,6 +13,8 @@ late-commands:
   - echo a
 keyboard:
   layout: gb
+source:
+  id: ubuntu-server-minimal
 updates: security
 user-data:
   users:
