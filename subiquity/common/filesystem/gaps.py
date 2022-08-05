@@ -61,6 +61,8 @@ class Gap:
                         size=size,
                         in_extended=self.in_extended,
                         usable=self.usable)
+        if self.in_extended:
+            size += self.device.alignment_data().ebr_space
         rest_gap = Gap(device=self.device,
                        offset=self.offset + size,
                        size=self.size - size,

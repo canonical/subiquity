@@ -17,9 +17,13 @@ from functools import partial
 import unittest
 from unittest import mock
 
+from parameterized import parameterized
+
 from subiquity.models.filesystem import (
-    PartitionAlignmentData,
+    Disk,
     MiB,
+    PartitionAlignmentData,
+    Raid,
     )
 from subiquity.models.tests.test_filesystem import (
     make_disk,
@@ -32,6 +36,21 @@ from subiquity.common.filesystem import gaps
 from subiquity.common.types import GapUsable
 
 
+class GapTestCase(unittest.TestCase):
+    def use_alignment_data(self, alignment_data):
+        m = mock.patch('subiquity.common.filesystem.gaps.parts_and_gaps')
+        p = m.start()
+        self.addCleanup(m.stop)
+        p.side_effect = partial(
+            gaps.find_disk_gaps_v2, info=alignment_data)
+
+        for cls in Disk, Raid:
+            md = mock.patch.object(cls, 'alignment_data')
+            p = md.start()
+            self.addCleanup(md.stop)
+            p.return_value = alignment_data
+
+
 class TestGaps(unittest.TestCase):
     def test_basic(self):
         [gap] = gaps.parts_and_gaps(make_disk())
@@ -39,7 +58,7 @@ class TestGaps(unittest.TestCase):
         self.assertEqual(MiB, gap.offset)
 
 
-class TestSplitGap(unittest.TestCase):
+class TestSplitGap(GapTestCase):
     def test_equal(self):
         [gap] = gaps.parts_and_gaps(make_disk())
         actual = gap.split(gap.size)
@@ -59,6 +78,21 @@ class TestSplitGap(unittest.TestCase):
         self.assertEqual(gap.size - size, new_gaps[1].size)
         self.assertEqual(gap.offset, new_gaps[0].offset)
         self.assertEqual(gap.offset + size, new_gaps[1].offset)
+
+    @parameterized.expand([[1], [10]])
+    def test_split_in_extended(self, ebr_space):
+        self.use_alignment_data(PartitionAlignmentData(
+            part_align=1, min_gap_size=1, min_start_offset=0,
+            min_end_offset=0, primary_part_limit=4, ebr_space=ebr_space))
+
+        m = make_model(storage_version=2)
+        d = make_disk(m, size=100)
+        [gap] = gaps.parts_and_gaps(d)
+        make_partition(m, d, offset=gap.offset, size=gap.size, flag='extended')
+        [p, g] = gaps.parts_and_gaps(d)
+        self.assertTrue(g.in_extended)
+        g1, g2 = g.split(10)
+        self.assertEqual(g1.offset + g1.size + ebr_space, g2.offset)
 
 
 class TestAtOffset(unittest.TestCase):
@@ -330,14 +364,7 @@ class TestDiskGaps(unittest.TestCase):
             [p, g])
 
 
-class TestMovableTrailingPartitionsAndGapSize(unittest.TestCase):
-
-    def use_alignment_data(self, alignment_data):
-        m = mock.patch('subiquity.common.filesystem.gaps.parts_and_gaps')
-        p = m.start()
-        self.addCleanup(m.stop)
-        p.side_effect = partial(
-            gaps.find_disk_gaps_v2, info=alignment_data)
+class TestMovableTrailingPartitionsAndGapSize(GapTestCase):
 
     def test_largest_non_extended(self):
         self.use_alignment_data(PartitionAlignmentData(
