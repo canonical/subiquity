@@ -232,13 +232,6 @@ class InstallController(SubiquityController):
                 log_file=logs_dir / "curthooks.log",
                 error_file=logs_dir / "curthooks-error.tar",
                 acquire_config=self.acquire_generic_config,
-            ), CurtinInstallStep(
-                name="hook",
-                stages=["hook"],
-                config_file=logs_dir / "subiquity-hook.conf",
-                log_file=logs_dir / "hook.log",
-                error_file=logs_dir / "hook-error.tar",
-                acquire_config=self.acquire_generic_config,
             ),
         ]
 
