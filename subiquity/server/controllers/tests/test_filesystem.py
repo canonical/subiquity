@@ -36,6 +36,12 @@ from subiquity.models.tests.test_filesystem import (
     )
 
 
+bootloaders = [(bl, ) for bl in list(Bootloader)]
+bootloaders_and_ptables = [(bl, pt)
+                           for bl in list(Bootloader)
+                           for pt in ('gpt', 'msdos', 'vtoc')]
+
+
 class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
@@ -74,11 +80,13 @@ class TestGuided(TestCase):
         (Bootloader.PREP, 'msdos', None),
     ]
 
-    def _guided_setup(self, bootloader, ptable):
+    def _guided_setup(self, bootloader, ptable, storage_version=None):
         self.app = make_app()
         self.app.opts.bootloader = bootloader.value
         self.controller = FilesystemController(self.app)
-        self.controller.model = self.model = make_model(bootloader)
+        self.controller.supports_resilient_boot = True
+        self.model = make_model(bootloader, storage_version)
+        self.controller.model = self.model
         self.model._probe_data = {'blockdev': {}}
         self.d1 = make_disk(self.model, ptable=ptable)
 
@@ -122,6 +130,54 @@ class TestGuided(TestCase):
         self.assertEqual(None, d1p2.mount)
         self.assertIsNone(gaps.largest_gap(self.d1))
 
+    def _guided_side_by_side(self, bl):
+        self._guided_setup(bl, 'msdos', storage_version=2)
+        self.controller.add_boot_disk(self.d1)
+        for p in self.d1._partitions:
+            p.preserve = True
+            if bl == Bootloader.UEFI:
+                # let it pass the is_esp check
+                self.model._probe_data['blockdev'][p._path()] = {
+                    "ID_PART_ENTRY_TYPE": str(0xef)
+                }
+        # create an extended partition,
+        # and a few other partitions to make it more interesting
+        g = gaps.largest_gap(self.d1)
+        make_partition(self.model, self.d1, preserve=True,
+                       size=10 << 30, offset=g.offset)
+        g = gaps.largest_gap(self.d1)
+        make_partition(self.model, self.d1, preserve=True,
+                       flag='extended', size=g.size, offset=g.offset)
+        g = gaps.largest_gap(self.d1)
+        make_partition(self.model, self.d1, preserve=True,
+                       flag='logical', size=10 << 30, offset=g.offset)
+
+    @parameterized.expand(bootloaders)
+    def test_guided_direct_side_by_side_logical(self, bl):
+        self._guided_side_by_side(bl)
+        parts_before = self.d1._partitions.copy()
+        g = gaps.largest_gap(self.d1)
+        self.controller.guided_direct(g, mode='use_gap')
+        parts_after = gaps.parts_and_gaps(self.d1)[:-1]
+        self.assertEqual(parts_before, parts_after)
+        p6 = gaps.parts_and_gaps(self.d1)[-1]
+        self.assertEqual('/', p6.mount)
+        self.assertEqual('logical', p6.flag)
+
+    @parameterized.expand(bootloaders)
+    def test_guided_lvm_side_by_side_logical(self, bl):
+        self._guided_side_by_side(bl)
+        parts_before = self.d1._partitions.copy()
+        g = gaps.largest_gap(self.d1)
+        self.controller.guided_lvm(g, mode='use_gap')
+        parts_after = gaps.parts_and_gaps(self.d1)[:-2]
+        self.assertEqual(parts_before, parts_after)
+        p6, p7 = gaps.parts_and_gaps(self.d1)[-2:]
+        self.assertEqual('/boot', p6.mount)
+        self.assertEqual('logical', p6.flag)
+        self.assertEqual(None, p7.mount)
+        self.assertEqual('logical', p7.flag)
+
 
 class TestLayout(TestCase):
     def setUp(self):
@@ -137,11 +193,6 @@ class TestLayout(TestCase):
     def test_bad_modes(self, mode):
         with self.assertRaises(ValueError):
             self.fsc.validate_layout_mode(mode)
-
-
-bootloaders_and_ptables = [(bl, pt)
-                           for bl in list(Bootloader)
-                           for pt in ('gpt', 'msdos', 'vtoc')]
 
 
 class TestGuidedV2(IsolatedAsyncioTestCase):
