@@ -15,7 +15,7 @@
 
 from pathlib import Path
 import unittest
-from unittest.mock import ANY, Mock, patch
+from unittest.mock import ANY, Mock, mock_open, patch
 
 from subiquity.server.controllers.install import (
     InstallController,
@@ -45,10 +45,14 @@ class TestWriteConfig(unittest.IsolatedAsyncioTestCase):
                 error_file=Path("/error.tar"),
                 acquire_config=self.controller.acquire_initial_config)
 
-        await self.controller.run_curtin_install_step(
-                step=step,
-                resume_data_file=Path("/resume-data.json"),
-                source="/source")
+        with patch("subiquity.server.controllers.install.open",
+                   mock_open()) as m_open:
+            await self.controller.run_curtin_install_step(
+                    step=step,
+                    resume_data_file=Path("/resume-data.json"),
+                    source="/source")
+
+        m_open.assert_called_once_with("/logfile.log", mode="a")
 
         run_cmd.assert_called_once_with(
                 self.controller.app,
@@ -77,6 +81,7 @@ class TestWriteConfig(unittest.IsolatedAsyncioTestCase):
                 "save_install_config": False,
                 "save_install_log": False,
                 "log_file": "/logfile-initial.log",
+                "log_file_append": True,
                 "error_tarfile": "/error-initial.tar",
                 "resume_data": "/resume-data.json",
                 }
@@ -98,6 +103,7 @@ class TestWriteConfig(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(config["install"]["log_file"],
                          "/logfile-partitioning.log")
+        self.assertIs(config["install"]["log_file_append"], True)
         self.assertEqual(config["install"]["error_tarfile"],
                          "/error-partitioning.tar")
         self.assertEqual(config["install"]["resume_data"],

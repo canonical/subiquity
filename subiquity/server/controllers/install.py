@@ -126,6 +126,7 @@ class InstallController(SubiquityController):
         generic curtin install step. """
         config = self.model.render()
         config["install"]["log_file"] = str(step.log_file)
+        config["install"]["log_file_append"] = True
         config["install"]["error_tarfile"] = str(step.error_file)
         config["install"]["resume_data"] = str(resume_data_file)
         return config
@@ -141,6 +142,7 @@ class InstallController(SubiquityController):
                 "save_install_config": False,
                 "save_install_log": False,
                 "log_file": str(step.log_file),
+                "log_file_append": True,
                 "error_tarfile": str(step.error_file),
                 "resume_data": str(resume_data_file),
             }
@@ -169,10 +171,6 @@ class InstallController(SubiquityController):
 
         self.app.note_file_for_apport(
                 f"Curtin{step.name}Config", str(step.config_file))
-        self.app.note_file_for_apport(
-                f"Curtin{step.name}Errors", str(step.error_file))
-        self.app.note_file_for_apport(
-                f"Curtin{step.name}Log", str(step.log_file))
 
         self.write_config(
                 config_file=step.config_file,
@@ -181,6 +179,10 @@ class InstallController(SubiquityController):
 
         # Make sure the log directory exists.
         step.log_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Add a marker to identify the step in the log file.
+        with open(str(step.log_file), mode="a") as fh:
+            fh.write(f"\n---- [[ subiquity step {step.name} ]] ----\n")
 
         return await run_curtin_command(
                 self.app, context,
@@ -195,17 +197,25 @@ class InstallController(SubiquityController):
         logs_dir_prefix = Path(
                 self.app.opts.output_base if self.app.opts.dry_run else "/")
 
-        logs_dir = logs_dir_prefix / "var/log/installer/curtin-install"
+        logs_dir = logs_dir_prefix / "var/log/installer"
         logs_dir.mkdir(parents=True, exist_ok=True)
+
+        config_dir = logs_dir / "curtin-install"
+
+        install_log_file = logs_dir / "curtin-install.log"
+        error_file = logs_dir / "curtin-errors.tar"
+
+        self.app.note_file_for_apport("CurtinErrors", str(error_file))
+        self.app.note_file_for_apport("CurtinLog", str(install_log_file))
 
         resume_data_file = Path(tempfile.mkdtemp()) / "resume-data.json"
 
         await self.run_curtin_install_step(step=CurtinInstallStep(
                 name="initial",
                 stages=[],
-                config_file=logs_dir / "subiquity-initial.conf",
-                log_file=logs_dir / "initial.log",
-                error_file=logs_dir / "initial-error.tar",
+                config_file=config_dir / "subiquity-initial.conf",
+                log_file=install_log_file,
+                error_file=error_file,
                 acquire_config=self.acquire_initial_config,
             ), resume_data_file=resume_data_file,
             context=context, source=source)
@@ -214,23 +224,23 @@ class InstallController(SubiquityController):
             CurtinInstallStep(
                 name="partitioning",
                 stages=["partitioning"],
-                config_file=logs_dir / "subiquity-partitioning.conf",
-                log_file=logs_dir / "partitioning.log",
-                error_file=logs_dir / "partitioning-error.tar",
+                config_file=config_dir / "subiquity-partitioning.conf",
+                log_file=install_log_file,
+                error_file=error_file,
                 acquire_config=self.acquire_generic_config,
             ), CurtinInstallStep(
                 name="extract",
                 stages=["extract"],
-                config_file=logs_dir / "subiquity-extract.conf",
-                log_file=logs_dir / "extract.log",
-                error_file=logs_dir / "extract-error.tar",
+                config_file=config_dir / "subiquity-extract.conf",
+                log_file=install_log_file,
+                error_file=error_file,
                 acquire_config=self.acquire_generic_config,
             ), CurtinInstallStep(
                 name="curthooks",
                 stages=["curthooks"],
-                config_file=logs_dir / "subiquity-curthooks.conf",
-                log_file=logs_dir / "curthooks.log",
-                error_file=logs_dir / "curthooks-error.tar",
+                config_file=config_dir / "subiquity-curthooks.conf",
+                log_file=install_log_file,
+                error_file=error_file,
                 acquire_config=self.acquire_generic_config,
             ),
         ]
