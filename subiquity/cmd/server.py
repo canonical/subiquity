@@ -16,6 +16,7 @@
 import argparse
 import logging
 import os
+import pathlib
 import shlex
 import sys
 
@@ -104,6 +105,9 @@ def make_server_args_parser():
         '--storage-version', action='store', type=int)
     parser.add_argument(
         '--use-os-prober', action='store_true', default=False)
+    parser.add_argument(
+        '--postinst-hooks-dir', default='/etc/subiquity/postinst.d',
+        type=pathlib.Path)
     return parser
 
 

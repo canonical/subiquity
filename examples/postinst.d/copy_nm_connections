@@ -1,0 +1,35 @@
+#!/bin/bash
+
+prefix="$TARGET_MOUNT_POINT"/etc/NetworkManager/system-connections
+
+echo "Copying NM connections to target"
+
+mkdir --parents -- "$prefix"
+cat > "$prefix"/subiquity-test.nmconnection << EOF
+[connection]
+id=Subiquity Test
+uuid=5bbf9dda-f3a9-4967-970e-aba55c8b18f0
+type=wifi
+interface-name=wlp0s20f3
+permissions=
+
+[wifi]
+mode=infrastructure
+ssid=TestConnection-5G
+
+[wifi-security]
+auth-alg=open
+key-mgmt=wpa-psk
+psk=nCjIqJ4G
+
+[ipv4]
+dns-search=
+method=auto
+
+[ipv6]
+addr-gen-mode=stable-privacy
+dns-search=
+method=auto
+
+[proxy]
+EOF

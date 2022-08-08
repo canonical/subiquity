@@ -57,6 +57,7 @@ class CmdListController(NonInteractiveController):
             'items': {'type': 'string'},
             },
         }
+    builtin_cmds: Sequence[Command] = ()
     cmds: Sequence[Command] = ()
     cmd_check = True
     syslog_id = None
@@ -74,7 +75,7 @@ class CmdListController(NonInteractiveController):
     @with_context()
     async def run(self, context):
         env = self.env()
-        for i, cmd in enumerate(self.cmds):
+        for i, cmd in enumerate(tuple(self.builtin_cmds) + tuple(self.cmds)):
             desc = cmd.desc()
             with context.child("command_{}".format(i), desc):
                 args = cmd.as_args_list()
@@ -108,6 +109,21 @@ class LateController(CmdListController):
     def __init__(self, app):
         super().__init__(app)
         self.syslog_id = app.log_syslog_id
+
+        try:
+            hooks_dir = self.app.opts.postinst_hooks_dir
+        except AttributeError:
+            # NOTE: system_setup imports this controller ; but does not use the
+            # postinst hooks mechanism.
+            pass
+        else:
+            if hooks_dir.is_dir():
+                self.builtin_cmds = [
+                    Command(
+                        args=["run-parts", "--debug", "--", str(hooks_dir)],
+                        check=False,
+                    ),
+                ]
 
     def env(self):
         env = super().env()
