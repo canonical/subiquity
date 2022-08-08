@@ -15,7 +15,9 @@
 
 import asyncio
 import os
+from typing import List, Sequence, Union
 
+import attr
 from systemd import journal
 
 from subiquitycore.context import with_context
@@ -23,6 +25,26 @@ from subiquitycore.utils import arun_command
 
 from subiquity.common.types import ApplicationState
 from subiquity.server.controller import NonInteractiveController
+
+
+@attr.s(auto_attribs=True)
+class Command:
+    """ Represents a command, specified either as a list of arguments or as a
+    single string. """
+    args: Union[str, Sequence[str]]
+    check: bool
+
+    def desc(self) -> str:
+        """ Return a user-friendly representation of the command. """
+        if isinstance(self.args, str):
+            return self.args
+        return ' '.join(self.args)
+
+    def as_args_list(self) -> List[str]:
+        """ Return the command as a list of arguments. """
+        if isinstance(self.args, str):
+            return ['sh', '-c', self.args]
+        return list(self.args)
 
 
 class CmdListController(NonInteractiveController):
@@ -35,7 +57,7 @@ class CmdListController(NonInteractiveController):
             'items': {'type': 'string'},
             },
         }
-    cmds = ()
+    cmds: Sequence[Command] = ()
     cmd_check = True
     syslog_id = None
 
@@ -44,7 +66,7 @@ class CmdListController(NonInteractiveController):
         self.run_event = asyncio.Event()
 
     def load_autoinstall_data(self, data):
-        self.cmds = data
+        self.cmds = [Command(args=cmd, check=self.cmd_check) for cmd in data]
 
     def env(self):
         return os.environ.copy()
@@ -53,24 +75,20 @@ class CmdListController(NonInteractiveController):
     async def run(self, context):
         env = self.env()
         for i, cmd in enumerate(self.cmds):
-            if isinstance(cmd, str):
-                desc = cmd
-            else:
-                desc = ' '.join(cmd)
+            desc = cmd.desc()
             with context.child("command_{}".format(i), desc):
-                if isinstance(cmd, str):
-                    cmd = ['sh', '-c', cmd]
+                args = cmd.as_args_list()
                 if self.syslog_id:
                     journal.send(
                         "  running " + desc, SYSLOG_IDENTIFIER=self.syslog_id)
-                    cmd = [
+                    args = [
                         'systemd-cat', '--level-prefix=false',
                         '--identifier=' + self.syslog_id,
-                        ] + cmd
+                        ] + args
                 await arun_command(
-                    cmd, env=env,
+                    args, env=env,
                     stdin=None, stdout=None, stderr=None,
-                    check=self.cmd_check)
+                    check=cmd.check)
         self.run_event.set()
 
 
