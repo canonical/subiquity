@@ -372,35 +372,44 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                      for pa in self.model._partition_alignment_data.values()))
         return sizes.calculate_suggested_install_min(source_min, align)
 
-    def get_v2_storage_response(self, model):
+    async def get_v2_storage_response(self, model, wait):
+        probe_resp = await self._probe_response(wait, StorageResponseV2)
+        if probe_resp is not None:
+            return probe_resp
         disks = model._all(type='disk')
         minsize = self.calculate_suggested_install_min()
         return StorageResponseV2(
+                status=ProbeStatus.DONE,
                 disks=[labels.for_client(d) for d in disks],
                 need_root=not model.is_root_mounted(),
                 need_boot=model.needs_bootloader_partition(),
                 install_minimum_size=minsize,
                 )
 
-    async def v2_GET(self) -> StorageResponseV2:
-        return self.get_v2_storage_response(self.model)
+    async def v2_GET(self, wait: bool = False) -> StorageResponseV2:
+        return await self.get_v2_storage_response(self.model, wait)
 
     async def v2_POST(self) -> StorageResponseV2:
         await self.configured()
         return await self.v2_GET()
 
     async def v2_orig_config_GET(self) -> StorageResponseV2:
-        return self.get_v2_storage_response(self.model.get_orig_model())
+        model = self.model.get_orig_model()
+        return await self.get_v2_storage_response(model, False)
 
     async def v2_reset_POST(self) -> StorageResponseV2:
         log.info("Resetting Filesystem model")
         self.model.reset()
         return await self.v2_GET()
 
-    async def v2_guided_GET(self) -> GuidedStorageResponseV2:
+    async def v2_guided_GET(self, wait: bool = False) \
+            -> GuidedStorageResponseV2:
         """Acquire a list of possible guided storage configuration scenarios.
         Results are sorted by the size of the space potentially available to
         the install."""
+        probe_resp = await self._probe_response(wait, GuidedStorageResponseV2)
+        if probe_resp is not None:
+            return probe_resp
 
         scenarios = []
         install_min = self.calculate_suggested_install_min()
@@ -441,6 +450,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         scenarios.sort(reverse=True, key=lambda x: x[0])
         return GuidedStorageResponseV2(
+                status=ProbeStatus.DONE,
                 configured=self.model.guided_configuration,
                 possible=[s[1] for s in scenarios])
 
