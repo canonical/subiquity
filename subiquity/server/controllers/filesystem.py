@@ -138,7 +138,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 "autoinstall config did not create needed bootloader "
                 "partition")
 
-    def setup_disk_for_guided(self, target, mode):
+    def setup_gap_for_guided(self, target, mode):
         if isinstance(target, gaps.Gap):
             disk = target.device
             gap = target
@@ -150,27 +150,26 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk):
             self.add_boot_disk(disk)
         if gap is None:
-            return disk, gaps.largest_gap(disk)
+            return gaps.largest_gap(disk)
         else:
             # find what's left of the gap after adding boot
             gap = gaps.within(disk, gap)
             if gap is None:
                 raise Exception('failed to locate gap after adding boot')
-            return disk, gap
+            return gap
 
     def guided_direct(self, target, mode=None):
-        disk, gap = self.setup_disk_for_guided(target, mode)
-        spec = dict(fstype="ext4", mount="/")
-        self.create_partition(device=disk, gap=gap, spec=spec)
+        gap = self.setup_gap_for_guided(target, mode)
+        self.create_partition(
+                gap.device, gap, dict(fstype="ext4", mount="/"))
 
     def guided_lvm(self, target, mode=None, lvm_options=None):
-        disk, gap = self.setup_disk_for_guided(target, mode)
+        gap = self.setup_gap_for_guided(target, mode)
         gap_boot, gap_rest = gap.split(sizes.get_bootfs_size(gap.size))
         spec = dict(fstype="ext4", mount='/boot')
-        self.create_partition(device=disk, gap=gap_boot, spec=spec)
-
-        part = self.create_partition(
-                device=disk, gap=gap_rest, spec=dict(fstype=None))
+        device = gap.device
+        self.create_partition(device, gap_boot, spec)
+        part = self.create_partition(device, gap_rest, dict(fstype=None))
 
         vg_name = 'ubuntu-vg'
         i = 0
