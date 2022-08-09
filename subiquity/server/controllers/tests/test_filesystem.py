@@ -93,7 +93,8 @@ class TestGuided(TestCase):
     @parameterized.expand(boot_expectations)
     def test_guided_direct(self, bootloader, ptable, p1mnt):
         self._guided_setup(bootloader, ptable)
-        self.controller.guided_direct(self.d1)
+        target = GuidedStorageTargetReformat(disk_id=self.d1.id)
+        self.controller.guided(GuidedChoiceV2(target=target, use_lvm=False))
         [d1p1, d1p2] = self.d1.partitions()
         self.assertEqual(p1mnt, d1p1.mount)
         self.assertEqual('/', d1p2.mount)
@@ -101,7 +102,8 @@ class TestGuided(TestCase):
 
     def test_guided_direct_BIOS_MSDOS(self):
         self._guided_setup(Bootloader.BIOS, 'msdos')
-        self.controller.guided_direct(self.d1)
+        target = GuidedStorageTargetReformat(disk_id=self.d1.id)
+        self.controller.guided(GuidedChoiceV2(target=target, use_lvm=False))
         [d1p1] = self.d1.partitions()
         self.assertEqual('/', d1p1.mount)
         self.assertIsNone(gaps.largest_gap(self.d1))
@@ -109,7 +111,8 @@ class TestGuided(TestCase):
     @parameterized.expand(boot_expectations)
     def test_guided_lvm(self, bootloader, ptable, p1mnt):
         self._guided_setup(bootloader, ptable)
-        self.controller.guided_lvm(self.d1)
+        target = GuidedStorageTargetReformat(disk_id=self.d1.id)
+        self.controller.guided(GuidedChoiceV2(target=target, use_lvm=True))
         [d1p1, d1p2, d1p3] = self.d1.partitions()
         self.assertEqual(p1mnt, d1p1.mount)
         self.assertEqual('/boot', d1p2.mount)
@@ -121,7 +124,8 @@ class TestGuided(TestCase):
 
     def test_guided_lvm_BIOS_MSDOS(self):
         self._guided_setup(Bootloader.BIOS, 'msdos')
-        self.controller.guided_lvm(self.d1)
+        target = GuidedStorageTargetReformat(disk_id=self.d1.id)
+        self.controller.guided(GuidedChoiceV2(target=target, use_lvm=True))
         [d1p1, d1p2] = self.d1.partitions()
         self.assertEqual('/boot', d1p1.mount)
         [vg] = self.model._all(type='lvm_volgroup')
