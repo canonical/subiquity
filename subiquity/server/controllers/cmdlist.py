@@ -15,6 +15,7 @@
 
 import asyncio
 import os
+import shlex
 from typing import List, Sequence, Union
 
 import attr
@@ -38,7 +39,7 @@ class Command:
         """ Return a user-friendly representation of the command. """
         if isinstance(self.args, str):
             return self.args
-        return ' '.join(self.args)
+        return shlex.join(self.args)
 
     def as_args_list(self) -> List[str]:
         """ Return the command as a list of arguments. """
