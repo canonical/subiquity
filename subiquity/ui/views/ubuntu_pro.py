@@ -146,9 +146,9 @@ class UpgradeModeForm(Form):
 class UpgradeYesNoForm(Form):
     """ Represents a form asking if we want to upgrade to Ubuntu Pro.
     +---------------------------------------------------------+
-    | (X)  Upgrade to Ubuntu Pro                              |
+    | (X)  Enable Ubuntu Pro                                  |
     |                                                         |
-    | ( )  Do this later                                      |
+    | ( )  Skip for now                                       |
     |                                                         |
     |      You can always enable Ubuntu Pro later via the     |
     |      'pro attach' command.                              |
@@ -163,10 +163,10 @@ class UpgradeYesNoForm(Form):
     group: List[RadioButtonField] = []
 
     upgrade = RadioButtonField(
-            group, _("Upgrade to Ubuntu Pro"),
+            group, _("Enable Ubuntu Pro"),
             help=NO_HELP)
     skip = RadioButtonField(
-            group, _("Do this later"),
+            group, _("Skip for now"),
             help="\n" + _("You can always enable Ubuntu Pro later via the"
                           " 'pro attach' command."))
 
@@ -275,13 +275,16 @@ class UbuntuProView(BaseView):
     def upgrade_yes_no_screen(self) -> Widget:
         """ Return a screen that asks the user to skip or upgrade.
         +---------------------------------------------------------+
-        | Upgrade this machine to Ubuntu Pro or skip this step.   |
+        | Upgrade this machine to Ubuntu Pro for security updates |
+        | on a much wider range of packages, until 2032. Assists  |
+        | with FedRAMP, FIPS, STIG, HIPAA and other compliance or |
+        | hardening requirements.                                 |
         |                                                         |
         | [ About Ubuntu Pro -> ]                                 |
         |                                                         |
-        | ( )  Upgrade to Ubuntu Pro                              |
+        | ( )  Enable Ubuntu Pro                                  |
         |                                                         |
-        | (X)  Do this later                                      |
+        | (X)  Skip for now                                       |
         |      You can always enable Ubuntu Pro later via the     |
         |      'pro attach' command.                              |
         |                                                         |
@@ -290,7 +293,10 @@ class UbuntuProView(BaseView):
         +---------------------------------------------------------+
         """
 
-        excerpt = _("Upgrade this machine to Ubuntu Pro or skip this step.")
+        excerpt = _("Upgrade this machine to Ubuntu Pro for security updates"
+                    " on a much wider range of packages, until 2032. Assists"
+                    " with FedRAMP, FIPS, STIG, HIPAA and other compliance or"
+                    " hardening requirements.")
 
         about_pro_btn = menu_btn(
                 _("About Ubuntu Pro"),
