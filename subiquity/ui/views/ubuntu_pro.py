@@ -577,16 +577,18 @@ class AboutProWidget(Stretchy):
     """ Widget showing some information about what Ubuntu Pro offers.
     +------------------- About Ubuntu Pro --------------------+
     |                                                         |
-    | Ubuntu Pro subscription gives you access to multiple    |
-    | security & compliance services, including:              |
-    |                                                         |
-    | • Security patching for over 30.000 packages, with a    |
-    |   focus on High and Critical CVEs (extended from 2.500) |
-    | • ...                                                   |
-    | • ...                                                   |
+    | Ubuntu Pro is the same base Ubuntu, with an additional  |
+    | layer of security and compliance services and security  |
+    | patches covering a wider range of packages.             |
+    |   • Security patch coverage for CVSS critical, high and |
+    |     selected medium vulnerabilities in all 23,000       |
+    |     packages in "universe" (extended from the normal    |
+    |     2,300 "main" packages).                             |
+    |   • ...                                                 |
+    |   • ...                                                 |
     |                                                         |
     | Ubuntu Pro is free for personal use on up to 3 machines.|
-    | More information on ubuntu.com/pro                      |
+    | More information is at ubuntu.com/pro                   |
     |                                                         |
     |                       [ Continue ]                      |
     +---------------------------------------------------------+
@@ -598,16 +600,17 @@ class AboutProWidget(Stretchy):
         ok = ok_btn(label=_("Continue"), on_press=lambda unused: self.close())
 
         title = _("About Ubuntu Pro")
-        header = _("Ubuntu Pro subscription gives you access to multiple"
-                   " security & compliance services, including:")
+        header = _("Ubuntu Pro is the same base Ubuntu, with an additional"
+                   " layer of security and compliance services and security"
+                   " patches covering a wider range of packages.")
 
         services = [
-            _("Security patching for over 30.000 packages, with a focus on"
-              " High and Critical CVEs (extended from 2.500)"),
-            _("10 years of security Maintenance (extended from 5 years)"),
-            _("Kernel Livepatch service for increased uptime and security"),
-            _("Ubuntu Security Guide for hardening profiles, including CIS"
-              " and DISA-STIG"),
+            _("Security patch coverage for CVSS critical, high and selected"
+              ' medium vulnerabilities in all 23,000 packages in "universe"'
+              ' (extended from the normal 2,300 "main" packages).'),
+            _("10 years of security patch coverage (extended from 5 years)."),
+            _("Kernel Livepatch to reduce required reboots."),
+            _("Ubuntu Security Guide for CIS and DISA-STIG hardening."),
             _("FIPS 140-2 NIST-certified crypto-modules for FedRAMP"
               " compliance"),
         ]
@@ -628,11 +631,11 @@ class AboutProWidget(Stretchy):
         widgets: List[Widget] = [
             Text(header),
             Text(""),
-            Pile([itemize(svc) for svc in services]),
+            Pile([itemize(svc, marker="  •") for svc in services]),
             Text(""),
             Text(_("Ubuntu Pro is free for personal use on up to 3"
                    " machines.")),
-            Text(_("More information on ubuntu.com/pro")),
+            Text(_("More information is at ubuntu.com/pro")),
             Text(""),
             button_pile([ok]),
         ]
