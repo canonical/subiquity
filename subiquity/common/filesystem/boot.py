@@ -226,7 +226,7 @@ def get_add_part_plan(device, *, spec, args, resize_partition=None):
     # it's probably a bad idea for all cases.
 
     gap = gaps.largest_gap(device, in_extended=False)
-    if gap is not None and gap.size >= size:
+    if gap is not None and gap.size >= size and gap.is_usable:
         create_part_plan.gap = gap.split(size)[0]
         return create_part_plan
     elif resize_partition is not None and not resize_partition.is_logical:
@@ -246,7 +246,8 @@ def get_add_part_plan(device, *, spec, args, resize_partition=None):
             ])
     else:
         new_primaries = [p for p in partitions
-                         if not p.preserve and p.is_primary]
+                         if not p.preserve
+                         if p.flag not in ('extended', 'logical')]
         if not new_primaries:
             return None
         largest_part = max(new_primaries, key=lambda p: p.size)
