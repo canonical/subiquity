@@ -402,14 +402,14 @@ class TestGuided(TestAPI):
                 'grub_device': True,
                 'mount': '/boot/efi',
                 'number': 1,
-                'wipe': 'superblock',
+                'wipe': None,
             }
             self.assertDictSubset(expected_p1, p1)
             expected_p2 = {
                 'number': 2,
                 'mount': '/',
                 'format': 'ext4',
-                'wipe': 'superblock',
+                'wipe': None,
             }
             self.assertDictSubset(expected_p2, p2)
 
@@ -827,7 +827,7 @@ class TestEdit(TestAPI):
             self.assertEqual(orig_sda2, sda2)
 
             sda3 = first(sda['partitions'], 'number', 3)
-            self.assertEqual('superblock', sda3['wipe'])
+            self.assertIsNone(sda3['wipe'])
             self.assertEqual('/', sda3['mount'])
             self.assertEqual('ext4', sda3['format'])
             self.assertFalse(sda3['boot'])
@@ -1253,6 +1253,102 @@ class TestRegression(TestAPI):
                 'version': '22.04.1'
             }
             self.assertEqual(expected, nvme_p2['os'])
+
+    @timeout()
+    async def test_edit_should_trigger_wipe_when_requested(self):
+        # LP: #1983036 - a partition wipe was requested but didn't happen
+        # 1) the wipe value was ignored, as the format key was used instead
+        # 2) the format wasn't actually changed, so the partition was
+        #    considered preserve=True
+        async with start_server('examples/win10-along-ubuntu.json') as inst:
+            resp = await inst.get('/storage/v2')
+            [d1] = resp['disks']
+            [p5] = match(d1['partitions'], number=5)
+            p5.update({
+                'mount': '/',
+                'wipe': 'superblock'
+            })
+            data = {
+                'disk_id': d1['id'],
+                'partition': p5,
+            }
+            await inst.post('/storage/v2/edit_partition', data)
+
+            v1resp = await inst.get('/storage')
+            [c_p5] = match(v1resp['config'], number=5)
+            [c_p5fmt] = match(v1resp['config'], volume=c_p5['id'])
+            self.assertEqual('superblock', c_p5['wipe'])
+            self.assertFalse(c_p5fmt['preserve'])
+            self.assertTrue(c_p5['preserve'])
+
+    @timeout()
+    async def test_edit_should_leave_other_values_alone(self):
+        async with start_server('examples/win10-along-ubuntu.json') as inst:
+            async def check_preserve():
+                v1resp = await inst.get('/storage')
+                [c_p5] = match(v1resp['config'], number=5)
+                [c_p5fmt] = match(v1resp['config'], volume=c_p5['id'])
+                self.assertNotIn('wipe', c_p5)
+                self.assertTrue(c_p5fmt['preserve'])
+                self.assertTrue(c_p5['preserve'])
+
+            resp = await inst.get('/storage/v2')
+            d1 = resp['disks'][0]
+            [p5] = match(resp['disks'][0]['partitions'], number=5)
+            orig_p5 = p5.copy()
+            self.assertEqual('ext4', p5['format'])
+            self.assertIsNone(p5['mount'])
+
+            data = {'disk_id': d1['id'], 'partition': p5}
+            resp = await inst.post('/storage/v2/edit_partition', data)
+            [p5] = match(resp['disks'][0]['partitions'], number=5)
+            self.assertEqual(orig_p5, p5)
+            await check_preserve()
+
+            p5.update({'mount': '/'})
+            data = {'disk_id': d1['id'], 'partition': p5}
+            resp = await inst.post('/storage/v2/edit_partition', data)
+            [p5] = match(resp['disks'][0]['partitions'], number=5)
+            expected = orig_p5.copy()
+            expected['mount'] = '/'
+            expected['annotations'] = [
+                'existing', 'already formatted as ext4', 'mounted at /'
+            ]
+            self.assertEqual(expected, p5)
+            await check_preserve()
+
+            data = {'disk_id': d1['id'], 'partition': p5}
+            resp = await inst.post('/storage/v2/edit_partition', data)
+            [p5] = match(resp['disks'][0]['partitions'], number=5)
+            self.assertEqual(expected, p5)
+            await check_preserve()
+
+    @timeout()
+    async def test_no_change_edit(self):
+        cfg = 'examples/simple.json'
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
+            resp = await inst.get('/storage/v2')
+            [d] = resp['disks']
+            [g] = d['partitions']
+            data = {
+                "disk_id": 'disk-sda',
+                "gap": g,
+                "partition": {
+                    "size": 107372085248,
+                    "format": "ext4",
+                }
+            }
+            resp = await inst.post('/storage/v2/add_partition', data)
+            [p] = resp['disks'][0]['partitions']
+            self.assertEqual('ext4', p['format'])
+
+            orig_p = p.copy()
+
+            data = {"disk_id": 'disk-sda', "partition": p}
+            resp = await inst.post('/storage/v2/edit_partition', data)
+            [p] = resp['disks'][0]['partitions']
+            self.assertEqual(orig_p, p)
 
 
 class TestCancel(TestAPI):
