@@ -24,7 +24,7 @@ validate () {
     fi
 
     if [ "${mode}" = "install" ]; then
-        python3 scripts/validate-yaml.py $tmpdir/var/log/installer/subiquity-curtin-install.conf
+        python3 scripts/validate-yaml.py "$tmpdir"/var/log/installer/curtin-install/subiquity-partitioning.conf
         if [ ! -e $tmpdir/subiquity-client-debug.log ] || [ ! -e $tmpdir/subiquity-server-debug.log ]; then
             echo "log file not created"
             exit 1
@@ -202,7 +202,7 @@ python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/subiquity-curtin-
         apt.preferences[0].pin='"origin *ubuntu.com*"' \
         apt.preferences[1].package='"python-*"' \
         apt.preferences[1].pin-priority=-1
-python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/subiquity-curtin-install.conf \
+python3 scripts/check-yaml-fields.py "$tmpdir"/var/log/installer/curtin-install/subiquity-curthooks.conf \
         debconf_selections.subiquity='"eek"' \
         storage.config[-1].options='"errors=remount-ro"'
 python3 scripts/check-yaml-fields.py <(python3 scripts/check-yaml-fields.py $tmpdir/etc/cloud/cloud.cfg.d/99-installer.cfg datasource.None.userdata_raw) \
