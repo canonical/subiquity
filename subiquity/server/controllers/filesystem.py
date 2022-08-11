@@ -42,7 +42,12 @@ from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
-from subiquity.common.filesystem import boot, gaps, labels, sizes
+from subiquity.common.filesystem import (
+    boot,
+    gaps,
+    labels,
+    sizes,
+)
 from subiquity.common.filesystem.manipulator import (
     FilesystemManipulator,
 )
@@ -54,6 +59,7 @@ from subiquity.common.types import (
     GuidedChoiceV2,
     GuidedStorageResponse,
     GuidedStorageResponseV2,
+    GuidedStorageTarget,
     GuidedStorageTargetReformat,
     GuidedStorageTargetResize,
     GuidedStorageTargetUseGap,
@@ -66,6 +72,7 @@ from subiquity.common.types import (
 from subiquity.models.filesystem import (
     align_up,
     align_down,
+    Disk as ModelDisk,
     LVM_CHUNK_SIZE,
     Raid,
     )
@@ -185,20 +192,30 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 ))
 
     @functools.singledispatchmethod
-    def start_guided(self, target):
+    def start_guided(self, target: GuidedStorageTarget,
+                     disk: ModelDisk) -> gaps.Gap:
+        """Setup changes to the disk to prepare the gap that we will be
+        doing a guided install into."""
         raise NotImplementedError(target)
 
     @start_guided.register
-    def start_guided_reformat(self, target: GuidedStorageTargetReformat, disk):
+    def start_guided_reformat(self, target: GuidedStorageTargetReformat,
+                              disk: ModelDisk) -> gaps.Gap:
+        """Perform the reformat, and return the resulting gap."""
         self.reformat(disk, wipe='superblock-recursive')
         return gaps.largest_gap(disk)
 
     @start_guided.register
-    def start_guided_use_gap(self, target: GuidedStorageTargetUseGap, disk):
+    def start_guided_use_gap(self, target: GuidedStorageTargetUseGap,
+                             disk: ModelDisk) -> gaps.Gap:
+        """Lookup the matching model gap."""
         return gaps.at_offset(disk, target.gap.offset)
 
     @start_guided.register
-    def start_guided_resize(self, target: GuidedStorageTargetResize, disk):
+    def start_guided_resize(self, target: GuidedStorageTargetResize,
+                            disk: ModelDisk) -> gaps.Gap:
+        """Perform the resize of the target partition,
+        and return the resulting gap."""
         partition = self.get_partition(disk, target.partition_number)
         part_align = disk.alignment_data().part_align
         new_size = align_up(target.new_size, part_align)
