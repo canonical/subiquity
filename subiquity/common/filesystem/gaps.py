@@ -71,8 +71,7 @@ class Gap:
         return (first_gap, rest_gap)
 
     def within(self):
-        """Find the first gap that is contained wholly inside the supplied
-        gap."""
+        """Find the first gap that is contained wholly inside this gap."""
         gap_end = self.offset + self.size
         for pg in parts_and_gaps(self.device):
             if isinstance(pg, Gap):
