@@ -80,6 +80,9 @@ class FilesystemManipulator:
     def create_partition(self, device, gap, spec, **kw):
         flag = kw.pop('flag', None)
         if gap.in_extended:
+            if flag not in (None, 'logical'):
+                log.debug(f'overriding flag {flag} '
+                          'due to being in an extended partition')
             flag = 'logical'
         part = self.model.add_partition(
             device, size=gap.size, offset=gap.offset, flag=flag, **kw)
