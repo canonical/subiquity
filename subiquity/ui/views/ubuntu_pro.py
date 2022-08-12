@@ -95,14 +95,14 @@ class ContractTokenForm(SubForm):
     """ Represents a sub-form requesting Ubuntu Pro token.
     +---------------------------------------------------------+
     |      Token: C123456789ABCDEF                            |
-    |             This is your Ubuntu Pro token               |
+    |             From your admin, or from ubuntu.com/pro     |
     +---------------------------------------------------------+
     """
     ContractTokenField = simple_field(ContractTokenEditor)
 
     token = ContractTokenField(
             _("Token:"),
-            help=_("This is your Ubuntu Pro token"))
+            help=_("From your admin, or from ubuntu.com/pro"))
 
     def validate_token(self):
         """ Return an error if the token input does not match the expected
@@ -131,9 +131,9 @@ class UpgradeModeForm(Form):
     |      Code: 1A3-4V6                                      |
     |            Attach machine via your Ubuntu One account   |
     |                                                         |
-    | ( )  Add token manually                                 |
+    | ( )  Or add token manually                              |
     |      Token: C123456789ABCDEF                            |
-    |             This is your Ubuntu Pro token               |
+    |             From your admin, or from ubuntu.com/pro     |
     |                                                         |
     |                       [ Waiting  ]                      |
     |                       [ Back     ]                      |
@@ -151,7 +151,7 @@ class UpgradeModeForm(Form):
             UbuntuOneForm, "", help=NO_HELP)
 
     with_contract_token = RadioButtonField(
-            group, _("Add token manually"),
+            group, _("Or add token manually"),
             help=NO_HELP)
     with_contract_token_subform = SubFormField(
             ContractTokenForm, "", help=NO_HELP)
@@ -302,9 +302,9 @@ class UbuntuProView(BaseView):
         |      Code: 1A3-4V6                                      |
         |            Attach machine via your Ubuntu One account   |
         |                                                         |
-        | ( )  Add token manually                                 |
+        | ( )  Or add token manually                              |
         |      Token: C123456789ABCDEF                            |
-        |             This is your Ubuntu Pro token               |
+        |             From your admin, or from ubuntu.com/pro     |
         |                                                         |
         |                        [ Continue ]                     |
         |                        [ Back     ]                     |
