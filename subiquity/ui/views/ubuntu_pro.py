@@ -318,8 +318,6 @@ class UbuntuProView(BaseView):
             -> Widget:
         """
         +---------------------------------------------------------+
-        | Account Connected: user@domain.com                      |
-        |             Token: C1NWcZTHLteJXGVMM6YhvHDpGrhyy7       |
         |      Subscription: Ubuntu Pro - Physical 24/5           |
         |                                                         |
         | List of your enabled services:                          |
@@ -349,9 +347,7 @@ class UbuntuProView(BaseView):
         rows: List[Widget] = []
 
         rows.extend([
-            Text(_("Account Connected") + ": " + subscription.account_name),
-            Text(_("            Token") + ": " + subscription.contract_token),
-            Text(_("     Subscription") + ": " + subscription.contract_name),
+            Text(_("Subscription") + ": " + subscription.contract_name),
         ])
         rows.append(Text(""))
 
