@@ -648,11 +648,12 @@ class HowToRegisterWidget(Stretchy):
     """ Widget showing some instructions to register to Ubuntu Pro.
     +-------------------- How to register --------------------+
     |                                                         |
-    | You can register for a free Ubuntu One account and get  |
-    | a personal token for up to 3 machines.                  |
+    |_Create your Ubuntu One account with your email. Each    |
+    | Ubuntu One account gets a free personal Ubuntu Pro      |
+    | subscription for up to three machines, including        |
+    | laptops, servers or cloud virtual machines.             |
     |                                                         |
-    | To register an account, visit ubuntu.com/pro on another |
-    | device.                                                 |
+    | Visit ubuntu.com/pro to get started.                    |
     |                                                         |
     |                       [ Continue ]                      |
     +---------------------------------------------------------+
@@ -664,14 +665,15 @@ class HowToRegisterWidget(Stretchy):
         ok = ok_btn(label=_("Continue"), on_press=lambda unused: self.close())
 
         title = _("How to register")
-        header = _("You can register for a free Ubuntu One account and get a"
-                   " personal token for up to 3 machines.")
+        header = _("Create your Ubuntu One account with your email. Each"
+                   " Ubuntu One account gets a free personal Ubuntu Pro"
+                   " subscription for up to three machines, including"
+                   " laptops, servers or cloud virtual machines.")
 
         widgets: List[Widget] = [
             Text(header),
             Text(""),
-            Text("To register an account, visit ubuntu.com/pro on another"
-                 " device."),
+            Text(_("Visit ubuntu.com/pro to get started.")),
             Text(""),
             button_pile([ok]),
         ]
