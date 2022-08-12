@@ -14,10 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, Sequence
 import os
-import shutil
-import sys
+import pwd
 
 import attr
 
@@ -46,6 +45,8 @@ standard_non_latin_layouts = set(
      'mal', 'np', 'ori', 'pk', 'ru', 'scc', 'sy', 'syr', 'tel', 'th',
      'tj', 'tam', 'tib', 'ua', 'ug', 'uz')
 )
+
+default_desktop_user = 'ubuntu'
 
 
 def latinizable(layout_code, variant_code):
@@ -204,25 +205,6 @@ class KeyboardController(SubiquityController):
             ['setupcon', '--save', '--force', '--keyboard-only'],
             [resource_path('bin/subiquity-loadkeys')],
             ]
-        if shutil.which('setxkbmap'):
-            command = """\
-import os
-import pwd
-import subprocess
-import sys
-
-os.seteuid(pwd.getpwnam("ubuntu").pw_uid)
-cmd = ["setxkbmap", "-layout", sys.argv[1]]
-if len(sys.argv) > 2:
-    cmd.extend(["-variant", sys.argv[2]])
-subprocess.run(cmd)
-"""
-            setxkbmap = [
-                sys.executable, '-c', command, self.model.setting.layout
-                ]
-            if self.model.setting.variant:
-                setxkbmap.append(self.model.setting.variant)
-            cmds.append(setxkbmap)
         if self.opts.dry_run:
             scale = os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1")
             cmds = [['sleep', str(1/float(scale))]]
@@ -259,3 +241,33 @@ subprocess.run(cmd)
         if index is None:
             index = "0"
         return self.pc105_steps[index]
+
+    async def input_source_POST(self, data: KeyboardSetting,
+                                user: Optional[str] = None) -> None:
+        await self.set_input_source(data.layout, data.variant, user=user)
+
+    async def set_input_source(self, layout: str, variant: str, **kwargs):
+        xkb_value = f'{layout}+{variant}' if variant else layout
+        gsettings = [
+            'gsettings', 'set', 'org.gnome.desktop.input-sources', 'sources',
+            f"[('xkb','{xkb_value}')]"
+            ]
+        await self._run_gui_command(gsettings, **kwargs)
+
+    async def _run_gui_command(self, command: Sequence[str],
+                               user: Optional[str] = None):
+        if self.opts.dry_run:
+            scale = os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', '1')
+            cmd = ['sleep', str(1/float(scale))]
+        else:
+            passwd = pwd.getpwnam(user if user else default_desktop_user)
+            xdg_runtime_dir = f'/run/user/{passwd.pw_uid}'
+            dbus_session_bus = f'unix:path={xdg_runtime_dir}/bus'
+            cmd = [
+                'systemd-run', '--wait', f'--uid={passwd.pw_uid}',
+                f'--setenv=DISPLAY={os.environ.get("DISPLAY", ":0")}',
+                f'--setenv=XDG_RUNTIME_DIR={xdg_runtime_dir}',
+                f'--setenv=DBUS_SESSION_BUS_ADDRESS={dbus_session_bus}',
+                '--', *command
+                ]
+        return await arun_command(cmd)

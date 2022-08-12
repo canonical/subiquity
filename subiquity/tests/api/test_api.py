@@ -1320,3 +1320,11 @@ class TestManyPrimaries(TestAPI):
             }
             with self.assertRaises(ClientResponseError):
                 await inst.post('/storage/v2/add_partition', data)
+
+
+class TestKeyboard(TestAPI):
+    @timeout()
+    async def test_input_source(self):
+        async with start_server('examples/simple.json') as inst:
+            data = {'layout': 'fr', 'variant': 'latin9'}
+            await inst.post('/keyboard/input_source', data, user='foo')
