@@ -55,6 +55,7 @@ from subiquity.common.types import (
     StorageResponseV2,
     TimeZoneInfo,
     UbuntuProInfo,
+    UbuntuProResponse,
     UbuntuProCheckTokenAnswer,
     UPCSInitiateResponse,
     UPCSWaitResponse,
@@ -333,7 +334,7 @@ class API:
             def POST(data: Payload[List[str]]): ...
 
     class ubuntu_pro:
-        def GET() -> UbuntuProInfo: ...
+        def GET() -> UbuntuProResponse: ...
         def POST(data: Payload[UbuntuProInfo]) -> None: ...
 
         class skip:

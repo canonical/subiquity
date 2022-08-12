@@ -27,6 +27,7 @@ from subiquitycore.async_helpers import schedule_task
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import (
     UbuntuProInfo,
+    UbuntuProResponse,
     UbuntuProCheckTokenStatus as TokenStatus,
     UbuntuProSubscription,
     UPCSWaitStatus,
@@ -68,8 +69,10 @@ class UbuntuProController(SubiquityTuiController):
             await self.endpoint.skip.POST()
             raise Skip("Not running LTS version")
 
-        ubuntu_pro_info = await self.endpoint.GET()
-        return UbuntuProView(self, ubuntu_pro_info.token)
+        ubuntu_pro_info: UbuntuProResponse = await self.endpoint.GET()
+        return UbuntuProView(self,
+                             token=ubuntu_pro_info.token,
+                             has_network=ubuntu_pro_info.has_network)
 
     async def run_answers(self) -> None:
         """ Interact with the UI to go through the pre-attach process if

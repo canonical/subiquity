@@ -533,6 +533,13 @@ class UbuntuProInfo:
     token: str = attr.ib(repr=False)
 
 
+@attr.s(auto_attribs=True)
+class UbuntuProResponse:
+    """ Response to GET request to /ubuntu_pro """
+    token: str = attr.ib(repr=False)
+    has_network: bool
+
+
 class UbuntuProCheckTokenStatus(enum.Enum):
     VALID_TOKEN = enum.auto()
     INVALID_TOKEN = enum.auto()

@@ -24,6 +24,7 @@ from subiquity.common.types import (
     UbuntuProInfo,
     UbuntuProCheckTokenAnswer,
     UbuntuProCheckTokenStatus,
+    UbuntuProResponse,
     UPCSInitiateResponse,
     UPCSWaitStatus,
     UPCSWaitResponse,
@@ -128,9 +129,11 @@ class UbuntuProController(SubiquityController):
         """ Loads the last-known state of the model. """
         self.model.token = token
 
-    async def GET(self) -> UbuntuProInfo:
+    async def GET(self) -> UbuntuProResponse:
         """ Handle a GET request coming from the client-side controller. """
-        return UbuntuProInfo(token=self.model.token)
+        has_network = self.app.base_model.network.has_network
+        return UbuntuProResponse(token=self.model.token,
+                                 has_network=has_network)
 
     async def POST(self, data: UbuntuProInfo) -> None:
         """ Handle a POST request coming from the client-side controller and

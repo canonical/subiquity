@@ -222,6 +222,39 @@ class UpgradeYesNoForm(Form):
                           " 'pro attach' command."))
 
 
+class UpgradeYesNoFormNoNetwork(UpgradeYesNoForm):
+    """ Represents a "read-only" form that does not let the user enable Ubuntu
+    Pro because the network is unavailable.
+    +---------------------------------------------------------+
+    | ( )  Enable Ubuntu Pro                                  |
+    |                                                         |
+    | (X)  Skip Ubuntu Pro setup for now                      |
+    |                                                         |
+    |      Once you are connected to the Internet, you can    |
+    |      enable Ubuntu Pro via the 'pro attach' command.    |
+    |                                                         |
+    |                       [ Continue ]                      |
+    |                       [ Back     ]                      |
+    +---------------------------------------------------------+
+    """
+    group: List[RadioButtonField] = []
+
+    upgrade = RadioButtonField(
+            group, _("Enable Ubuntu Pro"),
+            help=NO_HELP)
+    skip = RadioButtonField(
+            group, _("Skip Ubuntu Pro setup for now"),
+            help="\n" + _("Once you are connected to the Internet, you can"
+                          " enable Ubuntu Po via the 'pro attach' command."))
+
+    def __init__(self):
+        """ Initializer that disables the relevant fields. """
+        super().__init__(initial={})
+        self.upgrade.value = False
+        self.upgrade.enabled = False
+        self.skip.value = True
+
+
 class CheckingContractToken(WidgetWrap):
     """ Widget displaying a loading animation while checking ubuntu pro
     subscription. """
@@ -253,14 +286,20 @@ class UbuntuProView(BaseView):
     title = _("Upgrade to Ubuntu Pro")
     subscription_done_label = _("Continue")
 
-    def __init__(self, controller, token: str):
+    def __init__(self, controller, token: str, has_network: bool):
         """ Initialize the view with the default value for the token. """
         self.controller = controller
 
-        self.upgrade_yes_no_form = UpgradeYesNoForm(initial={
-            "skip": not token,
-            "upgrade": bool(token),
-            })
+        self.has_network = has_network
+
+        if self.has_network:
+            self.upgrade_yes_no_form = UpgradeYesNoForm(initial={
+                "skip": not token,
+                "upgrade": bool(token),
+                })
+        else:
+            self.upgrade_yes_no_form = UpgradeYesNoFormNoNetwork()
+
         self.upgrade_mode_form = UpgradeModeForm(initial={
             "with_contract_token_subform": {"token": token},
             "with_contract_token": bool(token),
@@ -356,6 +395,8 @@ class UbuntuProView(BaseView):
                     " on a much wider range of packages, until 2032. Assists"
                     " with FedRAMP, FIPS, STIG, HIPAA and other compliance or"
                     " hardening requirements.")
+        excerpt_no_net = _("An Internet connection is required to enable"
+                           " Ubuntu Pro.")
 
         about_pro_btn = menu_btn(
                 _("About Ubuntu Pro"),
@@ -370,7 +411,7 @@ class UbuntuProView(BaseView):
         return screen(
                 ListBox(rows),
                 self.upgrade_yes_no_form.buttons,
-                excerpt=excerpt,
+                excerpt=excerpt if self.has_network else excerpt_no_net,
                 focus_buttons=True)
 
     def subscription_screen(self, subscription: UbuntuProSubscription) \
