@@ -696,6 +696,17 @@ class TestFilesystemManipulator(unittest.TestCase):
         self.assertFalse(gap.is_usable)
         self.assertFalse(boot.can_be_boot_device(d1))
 
+    def test_logical_when_in_extended(self):
+        manipulator = make_manipulator(storage_version=2)
+        m = manipulator.model
+        m._probe_data.setdefault('blockdev', {})
+        d1 = make_disk(m, preserve=True, ptable='msdos')
+        size = gaps.largest_gap_size(d1)
+        make_partition(m, d1, flag='extended', size=size)
+        gap = gaps.largest_gap(d1)
+        p = manipulator.create_partition(d1, gap, spec={}, flag='primary')
+        self.assertEqual(p.flag, 'logical')
+
 
 class TestReformat(unittest.TestCase):
     def setUp(self):
