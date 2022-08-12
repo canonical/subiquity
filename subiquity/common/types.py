@@ -341,11 +341,14 @@ class StorageResponse:
 
 @attr.s(auto_attribs=True)
 class StorageResponseV2:
-    disks: List[Disk]
-    need_root: bool  # if True, there is not yet a partition mounted at "/"
-    need_boot: bool  # if True, there is not yet a boot partition
-    install_minimum_size: int
+    status: ProbeStatus
     error_report: Optional[ErrorReportRef] = None
+    disks: List[Disk] = attr.Factory(list)
+    # if need_root == True, there is not yet a partition mounted at "/"
+    need_root: Optional[bool] = None
+    # if need_boot == True, there is not yet a boot partition
+    need_boot: Optional[bool] = None
+    install_minimum_size: Optional[int] = None
 
 
 @attr.s(auto_attribs=True)
@@ -410,6 +413,8 @@ class GuidedChoiceV2:
 
 @attr.s(auto_attribs=True)
 class GuidedStorageResponseV2:
+    status: ProbeStatus
+    error_report: Optional[ErrorReportRef] = None
     configured: Optional[GuidedChoiceV2] = None
     possible: List[GuidedStorageTarget] = attr.Factory(list)
 

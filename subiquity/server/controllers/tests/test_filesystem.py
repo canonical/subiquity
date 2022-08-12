@@ -28,6 +28,7 @@ from subiquity.common.types import (
     GuidedStorageTargetReformat,
     GuidedStorageTargetResize,
     GuidedStorageTargetUseGap,
+    ProbeStatus,
     )
 from subiquity.models.tests.test_filesystem import (
     make_disk,
@@ -210,6 +211,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             'blockdev': {},
             'filesystem': self.fs_probe,
             }
+        self.fsc._probe_task.task = mock.Mock()
         if bootloader == Bootloader.BIOS and ptable != 'msdos' and fix_bios:
             make_partition(self.model, self.disk, preserve=True,
                            flag='bios_grub', size=1 << 20, offset=1 << 20)
@@ -221,6 +223,15 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         expected = [GuidedStorageTargetReformat(disk_id=self.disk.id)]
         resp = await self.fsc.v2_guided_GET()
         self.assertEqual(expected, resp.possible)
+        self.assertEqual(ProbeStatus.DONE, resp.status)
+
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_probing(self, bootloader, ptable):
+        self._setup(bootloader, ptable, fix_bios=False)
+        self.fsc._probe_task.task = None
+        resp = await self.fsc.v2_guided_GET()
+        self.assertEqual([], resp.possible)
+        self.assertEqual(ProbeStatus.PROBING, resp.status)
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_small_blank_disk(self, bootloader, ptable):
