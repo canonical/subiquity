@@ -94,7 +94,8 @@ class TestGuided(TestCase):
     @parameterized.expand(boot_expectations)
     def test_guided_direct(self, bootloader, ptable, p1mnt):
         self._guided_setup(bootloader, ptable)
-        self.controller.guided_direct(self.d1)
+        target = GuidedStorageTargetReformat(disk_id=self.d1.id)
+        self.controller.guided(GuidedChoiceV2(target=target, use_lvm=False))
         [d1p1, d1p2] = self.d1.partitions()
         self.assertEqual(p1mnt, d1p1.mount)
         self.assertEqual('/', d1p2.mount)
@@ -102,7 +103,8 @@ class TestGuided(TestCase):
 
     def test_guided_direct_BIOS_MSDOS(self):
         self._guided_setup(Bootloader.BIOS, 'msdos')
-        self.controller.guided_direct(self.d1)
+        target = GuidedStorageTargetReformat(disk_id=self.d1.id)
+        self.controller.guided(GuidedChoiceV2(target=target, use_lvm=False))
         [d1p1] = self.d1.partitions()
         self.assertEqual('/', d1p1.mount)
         self.assertIsNone(gaps.largest_gap(self.d1))
@@ -110,7 +112,8 @@ class TestGuided(TestCase):
     @parameterized.expand(boot_expectations)
     def test_guided_lvm(self, bootloader, ptable, p1mnt):
         self._guided_setup(bootloader, ptable)
-        self.controller.guided_lvm(self.d1)
+        target = GuidedStorageTargetReformat(disk_id=self.d1.id)
+        self.controller.guided(GuidedChoiceV2(target=target, use_lvm=True))
         [d1p1, d1p2, d1p3] = self.d1.partitions()
         self.assertEqual(p1mnt, d1p1.mount)
         self.assertEqual('/boot', d1p2.mount)
@@ -122,7 +125,8 @@ class TestGuided(TestCase):
 
     def test_guided_lvm_BIOS_MSDOS(self):
         self._guided_setup(Bootloader.BIOS, 'msdos')
-        self.controller.guided_lvm(self.d1)
+        target = GuidedStorageTargetReformat(disk_id=self.d1.id)
+        self.controller.guided(GuidedChoiceV2(target=target, use_lvm=True))
         [d1p1, d1p2] = self.d1.partitions()
         self.assertEqual('/boot', d1p1.mount)
         [vg] = self.model._all(type='lvm_volgroup')
@@ -131,8 +135,8 @@ class TestGuided(TestCase):
         self.assertEqual(None, d1p2.mount)
         self.assertIsNone(gaps.largest_gap(self.d1))
 
-    def _guided_side_by_side(self, bl):
-        self._guided_setup(bl, 'msdos', storage_version=2)
+    def _guided_side_by_side(self, bl, ptable):
+        self._guided_setup(bl, ptable, storage_version=2)
         self.controller.add_boot_disk(self.d1)
         for p in self.d1._partitions:
             p.preserve = True
@@ -141,43 +145,60 @@ class TestGuided(TestCase):
                 self.model._probe_data['blockdev'][p._path()] = {
                     "ID_PART_ENTRY_TYPE": str(0xef)
                 }
-        # create an extended partition,
-        # and a few other partitions to make it more interesting
+        # Make it more interesting with other partitions.
+        # Also create the extended part if needed.
         g = gaps.largest_gap(self.d1)
         make_partition(self.model, self.d1, preserve=True,
                        size=10 << 30, offset=g.offset)
-        g = gaps.largest_gap(self.d1)
-        make_partition(self.model, self.d1, preserve=True,
-                       flag='extended', size=g.size, offset=g.offset)
-        g = gaps.largest_gap(self.d1)
-        make_partition(self.model, self.d1, preserve=True,
-                       flag='logical', size=10 << 30, offset=g.offset)
+        if ptable == 'msdos':
+            g = gaps.largest_gap(self.d1)
+            make_partition(self.model, self.d1, preserve=True,
+                           flag='extended', size=g.size, offset=g.offset)
+            g = gaps.largest_gap(self.d1)
+            make_partition(self.model, self.d1, preserve=True,
+                           flag='logical', size=10 << 30, offset=g.offset)
 
-    @parameterized.expand(bootloaders)
-    def test_guided_direct_side_by_side_logical(self, bl):
-        self._guided_side_by_side(bl)
+    @parameterized.expand(
+        [(bl, pt, flag)
+         for bl in list(Bootloader)
+         for pt, flag in (
+             ('msdos', 'logical'),
+             ('gpt', None)
+         )]
+    )
+    def test_guided_direct_side_by_side(self, bl, pt, flag):
+        self._guided_side_by_side(bl, pt)
         parts_before = self.d1._partitions.copy()
-        g = gaps.largest_gap(self.d1)
-        self.controller.guided_direct(g, mode='use_gap')
+        gap = gaps.largest_gap(self.d1)
+        target = GuidedStorageTargetUseGap(disk_id=self.d1.id, gap=gap)
+        self.controller.guided(GuidedChoiceV2(target=target, use_lvm=False))
         parts_after = gaps.parts_and_gaps(self.d1)[:-1]
         self.assertEqual(parts_before, parts_after)
-        p6 = gaps.parts_and_gaps(self.d1)[-1]
-        self.assertEqual('/', p6.mount)
-        self.assertEqual('logical', p6.flag)
+        p = gaps.parts_and_gaps(self.d1)[-1]
+        self.assertEqual('/', p.mount)
+        self.assertEqual(flag, p.flag)
 
-    @parameterized.expand(bootloaders)
-    def test_guided_lvm_side_by_side_logical(self, bl):
-        self._guided_side_by_side(bl)
+    @parameterized.expand(
+        [(bl, pt, flag)
+         for bl in list(Bootloader)
+         for pt, flag in (
+             ('msdos', 'logical'),
+             ('gpt', None)
+         )]
+    )
+    def test_guided_lvm_side_by_side(self, bl, pt, flag):
+        self._guided_side_by_side(bl, pt)
         parts_before = self.d1._partitions.copy()
-        g = gaps.largest_gap(self.d1)
-        self.controller.guided_lvm(g, mode='use_gap')
+        gap = gaps.largest_gap(self.d1)
+        target = GuidedStorageTargetUseGap(disk_id=self.d1.id, gap=gap)
+        self.controller.guided(GuidedChoiceV2(target=target, use_lvm=True))
         parts_after = gaps.parts_and_gaps(self.d1)[:-2]
         self.assertEqual(parts_before, parts_after)
-        p6, p7 = gaps.parts_and_gaps(self.d1)[-2:]
-        self.assertEqual('/boot', p6.mount)
-        self.assertEqual('logical', p6.flag)
-        self.assertEqual(None, p7.mount)
-        self.assertEqual('logical', p7.flag)
+        p_boot, p_data = gaps.parts_and_gaps(self.d1)[-2:]
+        self.assertEqual('/boot', p_boot.mount)
+        self.assertEqual(flag, p_boot.flag)
+        self.assertEqual(None, p_data.mount)
+        self.assertEqual(flag, p_data.flag)
 
 
 class TestLayout(TestCase):

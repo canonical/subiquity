@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import functools
 import glob
 import json
 import logging
@@ -41,7 +42,12 @@ from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
-from subiquity.common.filesystem import boot, gaps, labels, sizes
+from subiquity.common.filesystem import (
+    boot,
+    gaps,
+    labels,
+    sizes,
+)
 from subiquity.common.filesystem.manipulator import (
     FilesystemManipulator,
 )
@@ -53,6 +59,7 @@ from subiquity.common.types import (
     GuidedChoiceV2,
     GuidedStorageResponse,
     GuidedStorageResponseV2,
+    GuidedStorageTarget,
     GuidedStorageTargetReformat,
     GuidedStorageTargetResize,
     GuidedStorageTargetUseGap,
@@ -65,6 +72,7 @@ from subiquity.common.types import (
 from subiquity.models.filesystem import (
     align_up,
     align_down,
+    Disk as ModelDisk,
     LVM_CHUNK_SIZE,
     Raid,
     )
@@ -138,33 +146,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 "autoinstall config did not create needed bootloader "
                 "partition")
 
-    def setup_gap_for_guided(self, target, mode):
-        if isinstance(target, gaps.Gap):
-            disk = target.device
-            gap = target
-        else:
-            disk = target
-            gap = None
-        if mode is None or mode == 'reformat_disk':
-            self.reformat(disk, wipe='superblock-recursive')
-        if DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk):
-            self.add_boot_disk(disk)
-        if gap is None:
-            return gaps.largest_gap(disk)
-        else:
-            # find what's left of the gap after adding boot
-            gap = gaps.within(disk, gap)
-            if gap is None:
-                raise Exception('failed to locate gap after adding boot')
-            return gap
+    def guided_direct(self, gap):
+        spec = dict(fstype="ext4", mount="/")
+        self.create_partition(device=gap.device, gap=gap, spec=spec)
 
-    def guided_direct(self, target, mode=None):
-        gap = self.setup_gap_for_guided(target, mode)
-        self.create_partition(
-                gap.device, gap, dict(fstype="ext4", mount="/"))
-
-    def guided_lvm(self, target, mode=None, lvm_options=None):
-        gap = self.setup_gap_for_guided(target, mode)
+    def guided_lvm(self, gap, lvm_options=None):
         gap_boot, gap_rest = gap.split(sizes.get_bootfs_size(gap.size))
         spec = dict(fstype="ext4", mount='/boot')
         device = gap.device
@@ -205,48 +191,75 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 mount="/",
                 ))
 
+    @functools.singledispatchmethod
+    def start_guided(self, target: GuidedStorageTarget,
+                     disk: ModelDisk) -> gaps.Gap:
+        """Setup changes to the disk to prepare the gap that we will be
+        doing a guided install into."""
+        raise NotImplementedError(target)
+
+    @start_guided.register
+    def start_guided_reformat(self, target: GuidedStorageTargetReformat,
+                              disk: ModelDisk) -> gaps.Gap:
+        """Perform the reformat, and return the resulting gap."""
+        self.reformat(disk, wipe='superblock-recursive')
+        return gaps.largest_gap(disk)
+
+    @start_guided.register
+    def start_guided_use_gap(self, target: GuidedStorageTargetUseGap,
+                             disk: ModelDisk) -> gaps.Gap:
+        """Lookup the matching model gap."""
+        return gaps.at_offset(disk, target.gap.offset)
+
+    @start_guided.register
+    def start_guided_resize(self, target: GuidedStorageTargetResize,
+                            disk: ModelDisk) -> gaps.Gap:
+        """Perform the resize of the target partition,
+        and return the resulting gap."""
+        partition = self.get_partition(disk, target.partition_number)
+        part_align = disk.alignment_data().part_align
+        new_size = align_up(target.new_size, part_align)
+        if new_size > partition.size:
+            raise Exception(f'Aligned requested size {new_size} too large')
+        partition.size = new_size
+        partition.resize = True
+        # Calculating where that gap will be can be tricky due to alignment
+        # needs and the possibility that we may be splitting a logical
+        # partition, which needs an extra 1MiB spacer.
+        gap = gaps.after(disk, partition.offset)
+        if gap is None:
+            pgs = gaps.parts_and_gaps(disk)
+            raise Exception(f'gap not found after resize, pgs={pgs}')
+        return gap
+
+    def build_lvm_options(self, password):
+        if password is None:
+            return None
+        else:
+            return {
+                'encrypt': True,
+                'luks_options': {
+                    'password': password,
+                    },
+                }
+
     def guided(self, choice: GuidedChoiceV2):
         self.model.guided_configuration = choice
 
         disk = self.model._one(id=choice.target.disk_id)
-        if isinstance(choice.target, GuidedStorageTargetReformat):
-            mode = 'reformat_disk'
-            target = disk
-        elif isinstance(choice.target, GuidedStorageTargetUseGap):
-            mode = 'use_gap'
-            target = gaps.at_offset(disk, choice.target.gap.offset)
-        elif isinstance(choice.target, GuidedStorageTargetResize):
-            partition = self.get_partition(
-                    disk, choice.target.partition_number)
-            part_align = disk.alignment_data().part_align
-            new_size = align_up(choice.target.new_size, part_align)
-            if new_size > partition.size:
-                raise Exception(f'Aligned requested size {new_size} too large')
-            partition.size = new_size
-            partition.resize = True
-            mode = 'use_gap'
-            # Calculating where that gap will be can be tricky due to alignment
-            # needs and the possibility that we may be splitting a logical
-            # partition, which needs an extra 1MiB spacer.
-            target = gaps.after(disk, partition.offset)
-            if target is None:
-                pgs = gaps.parts_and_gaps(disk)
-                raise Exception(f'gap not found after resize, pgs={pgs}')
-        else:
-            raise Exception(f'Unknown guided target {choice.target}')
+        gap = self.start_guided(choice.target, disk)
+        if DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk):
+            self.add_boot_disk(disk)
+        # find what's left of the gap after adding boot
+        gap = gap.within()
+        if gap is None:
+            raise Exception('failed to locate gap after adding boot')
 
         if choice.use_lvm:
-            lvm_options = None
-            if choice.password is not None:
-                lvm_options = {
-                    'encrypt': True,
-                    'luks_options': {
-                        'password': choice.password,
-                        },
-                    }
-            self.guided_lvm(target, mode=mode, lvm_options=lvm_options)
+            lvm_options = self.build_lvm_options(choice.password)
+            self.guided_lvm(gap, lvm_options=lvm_options)
         else:
-            self.guided_direct(target, mode=mode)
+            self.guided_direct(gap)
 
     async def _probe_response(self, wait, resp_cls):
         if self._probe_task.task is None or not self._probe_task.task.done():
@@ -584,18 +597,15 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 continue
             break
 
-    def run_guided(self, layout):
+    def run_autoinstall_guided(self, layout):
         name = layout['name']
-        guided_method = getattr(self, "guided_" + name)
         mode = layout.get('mode', 'reformat_disk')
         self.validate_layout_mode(mode)
 
         if mode == 'reformat_disk':
             match = layout.get("match", {'size': 'largest'})
-            target = self.model.disk_for_match(self.model.all_disks(), match)
-            if not target:
-                raise Exception("autoinstall cannot configure storage "
-                                "- no disk found large enough for install")
+            disk = self.model.disk_for_match(self.model.all_disks(), match)
+            target = GuidedStorageTargetReformat(disk_id=disk.id)
         elif mode == 'use_gap':
             bootable = [d for d in self.model.all_disks()
                         if boot.can_be_boot_device(d, with_reformatting=False)]
@@ -603,12 +613,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             if not gap:
                 raise Exception("autoinstall cannot configure storage "
                                 "- no gap found large enough for install")
-            # This is not necessarily the exact gap to be used, as the gap size
-            # may change once add_boot_disk has sorted things out.
-            target = gap
+            target = GuidedStorageTargetUseGap(disk_id=gap.device.id, gap=gap)
+
         log.info(f'autoinstall: running guided {name} install in mode {mode} '
                  f'using {target}')
-        guided_method(target=target, mode=mode)
+        use_lvm = name == 'lvm'
+        self.guided(GuidedChoiceV2(target=target, use_lvm=use_lvm))
 
     def validate_layout_mode(self, mode):
         if mode not in ('reformat_disk', 'use_gap'):
@@ -618,7 +628,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     def convert_autoinstall_config(self, context=None):
         log.debug("self.ai_data = %s", self.ai_data)
         if 'layout' in self.ai_data:
-            self.run_guided(self.ai_data['layout'])
+            if 'config' in self.ai_data:
+                log.warning("The 'storage' section should not contain both "
+                            "'layout' and 'config', using 'layout'")
+            self.run_autoinstall_guided(self.ai_data['layout'])
         elif 'config' in self.ai_data:
             self.model.apply_autoinstall_config(self.ai_data['config'])
             self.model.grub = self.ai_data.get('grub')
