@@ -390,11 +390,13 @@ class UbuntuProView(BaseView):
         |                        [ Back     ]                     |
         +---------------------------------------------------------+
         """
+        security_updates_until = 2032
 
         excerpt = _("Upgrade this machine to Ubuntu Pro for security updates"
-                    " on a much wider range of packages, until 2032. Assists"
-                    " with FedRAMP, FIPS, STIG, HIPAA and other compliance or"
-                    " hardening requirements.")
+                    " on a much wider range of packages, until"
+                    f" {security_updates_until}. Assists with FedRAMP, FIPS,"
+                    " STIG, HIPAA and other compliance or hardening"
+                    " requirements.")
         excerpt_no_net = _("An Internet connection is required to enable"
                            " Ubuntu Pro.")
 
@@ -763,10 +765,14 @@ class AboutProWidget(Stretchy):
                    " layer of security and compliance services and security"
                    " patches covering a wider range of packages.")
 
+        universe_packages = 23000
+        main_packages = 2300
+
         services = [
             _("Security patch coverage for CVSS critical, high and selected"
-              ' medium vulnerabilities in all 23,000 packages in "universe"'
-              ' (extended from the normal 2,300 "main" packages).'),
+              f" medium vulnerabilities in all {universe_packages:,} packages"
+              f' in "universe" (extended from the normal {main_packages:,}'
+              ' "main" packages).'),
             _("10 years of security patch coverage (extended from 5 years)."),
             _("Kernel Livepatch to reduce required reboots."),
             _("Ubuntu Security Guide for CIS and DISA-STIG hardening."),
