@@ -4,6 +4,8 @@ early-commands:
         - ["sleep", "1"]
         - echo a
 locale: en_US
+wslsetupoptions:
+  install_language_support_packages: true
 identity:
   realname: Ubuntu
   username: ubuntu

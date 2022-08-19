@@ -151,6 +151,18 @@ class Server(Client):
                 pass
 
 
+class SystemSetupServer(Server):
+    async def spawn(self, output_base, socket, machine_config,
+                    bootloader='uefi', extra_args=None):
+        env = os.environ.copy()
+        env['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
+        cmd = ['python3', '-m', 'system_setup.cmd.server',
+               '--dry-run', '--socket', socket]
+        if extra_args is not None:
+            cmd.extend(extra_args)
+        self.proc = await astart_command(cmd, env=env)
+
+
 class TestAPI(SubiTestCase):
     class _MachineConfig(os.PathLike):
         def __init__(self, outer, path):
@@ -206,12 +218,12 @@ def tempdirs(*args, **kwargs):
 
 
 @contextlib.asynccontextmanager
-async def start_server(*args, **kwargs):
+async def start_server_factory(factory, *args, **kwargs):
     with tempfile.TemporaryDirectory() as tempdir:
         socket_path = f'{tempdir}/socket'
         conn = aiohttp.UnixConnector(path=socket_path)
         async with aiohttp.ClientSession(connector=conn) as session:
-            server = Server(session)
+            server = factory(session)
             try:
                 await server.spawn(tempdir, socket_path, *args, **kwargs)
                 await poll_for_socket_exist(socket_path)
@@ -219,6 +231,18 @@ async def start_server(*args, **kwargs):
                 yield server
             finally:
                 await server.close()
+
+
+@contextlib.asynccontextmanager
+async def start_server(*args, **kwargs):
+    async with start_server_factory(Server, *args, **kwargs) as instance:
+        yield instance
+
+
+@contextlib.asynccontextmanager
+async def start_system_setup_server(*args, **kwargs):
+    async with start_server_factory(SystemSetupServer, *args, **kwargs) as srv:
+        yield srv
 
 
 @contextlib.asynccontextmanager
@@ -1356,3 +1380,18 @@ class TestUbuntuProContractSelection(TestAPI):
             await inst.post('/ubuntu_pro/contract_selection/cancel')
             with self.assertRaises(Exception):
                 await inst.get('/ubuntu_pro/contract_selection/wait')
+
+
+class TestWSLSetupOptions(TestAPI):
+    async def test_wslsetupoptions(self):
+        async with start_system_setup_server('examples/simple.json') as inst:
+            await inst.post('/meta/client_variant', variant='wsl_setup')
+
+            payload = {'install_language_support_packages': False}
+            endpoint = '/wslsetupoptions'
+            resp = await inst.get(endpoint)
+            self.assertTrue(resp['install_language_support_packages'])
+            await inst.post(endpoint, payload)
+
+            resp = await inst.get(endpoint)
+            self.assertFalse(resp['install_language_support_packages'])

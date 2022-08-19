@@ -1,5 +1,7 @@
 Welcome:
   lang: en_US
+WSLSetupOptions:
+  install_language_support_packages: true
 WSLIdentity:
   realname: Ubuntu
   username: ubuntu
