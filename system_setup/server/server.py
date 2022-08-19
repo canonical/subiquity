@@ -31,6 +31,7 @@ INSTALL_MODEL_NAMES = ModelNames({
         "wslconfbase",
     },
     wsl_setup={
+        "wslsetupoptions",
         "identity",
     },
     wsl_configuration={
@@ -51,6 +52,7 @@ class SystemSetupServer(SubiquityServer):
         "Reporting",
         "Error",
         "WSLLocale",
+        "WSLSetupOptions",
         "WSLIdentity",
         "WSLConfigurationBase",
         "WSLConfigurationAdvanced",

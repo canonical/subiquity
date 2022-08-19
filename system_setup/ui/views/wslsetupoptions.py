@@ -18,7 +18,6 @@
 WSLSetupOptions provides user with options to customize the setup experience.
 """
 
-from gettext import install
 from urwid import (
     connect_signal,
 )
@@ -33,15 +32,6 @@ from subiquity.common.types import WSLSetupOptions
 
 
 class WSLSetupOptionsForm(Form):
-    def __init__(self, initial):
-        super().__init__(initial=initial)
-        connect_signal(self.install_language_support_packages.widget, "change",
-                       self.toggle_help)
-
-
-=======
-class WSLSetupOptionsForm(Form):
->>>>>>> 18290ac4 (Fixed help strings)
     install_language_support_packages = \
         BooleanField(_("Install packages for better language support"),
                      help=_("Not recommended for slow internet connections."))
