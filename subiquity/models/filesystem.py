@@ -1120,7 +1120,8 @@ class FilesystemModel(object):
                 _udev_val(disk, "ID_VENDOR"), match['vendor'])
 
         def match_path(disk):
-            return fnmatch.fnmatchcase(disk.path, match['path'])
+            return fnmatch.fnmatchcase(
+                _udev_val(disk, "DEVPATH"), match['path'])
 
         def match_ssd(disk):
             is_ssd = disk.info_for_display()['rotational'] == 'false'
