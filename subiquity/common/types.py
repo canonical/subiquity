@@ -621,4 +621,3 @@ class WSLConfigurationAdvanced:
 @attr.s(auto_attribs=True)
 class WSLSetupOptions:
     install_language_support_packages: bool = attr.ib(default=True)
-

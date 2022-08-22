@@ -76,4 +76,3 @@ class WSLSetupOptionsController(SubiquityController):
     async def POST(self, data: WSLSetupOptions):
         self.model.apply_settings(data)
         await self.configured()
-

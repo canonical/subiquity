@@ -37,7 +37,6 @@ class WSLSetupOptionsForm(Form):
                      help=_("Not recommended for slow internet connections."))
 
 
-
 class WSLSetupOptionsView(BaseView):
     title = _("Enhance your experience")
     excerpt = _("Adjust the following options for a more complete experience.")
@@ -63,4 +62,3 @@ class WSLSetupOptionsView(BaseView):
 
     def done(self, result):
         self.controller.done(WSLSetupOptions(**self.form.as_data()))
-

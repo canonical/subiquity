@@ -41,4 +41,3 @@ class WSLSetupOptionsModel(object):
 
     def __repr__(self):
         return "<WSL Setup Options: {}>".format(self.wslsetupoptions)
-

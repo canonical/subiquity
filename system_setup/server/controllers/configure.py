@@ -224,7 +224,7 @@ class ConfigureController(SubiquityController):
 
         cmd = []
         if self.model.wslsetupoptions.wslsetupoptions.\
-            install_language_support_packages is True:
+                install_language_support_packages is True:
             cmd = [aptCommand, "install", "-y"]
 
         else:

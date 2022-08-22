@@ -31,7 +31,7 @@ class WSLSetupOptionsController(SubiquityTuiController):
 
     def run_answers(self):
         if all(elem in self.answers for elem in
-            ['install_language_support_packages']):
+                ['install_language_support_packages']):
             configuration = WSLSetupOptions(**self.answers)
             self.done(configuration)
 
