@@ -209,7 +209,7 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
     def test_cloud_init_user_list_merge(self, run_cmd):
         main_user = IdentityData(
             username='mainuser',
-            crypted_password='dummy_value',
+            crypted_password='sample_value',
             hostname='somehost')
         secondary_user = {'name': 'user2'}
 

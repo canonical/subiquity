@@ -140,7 +140,7 @@ class TestChooserController(unittest.TestCase):
     def test_current_current_all_there_and_back(self, cv, ccsv):
         app = make_app(model=make_model())
         c = RecoveryChooserController(app)
-        # sanity
+        # confidence check
         ccsv.assert_called_with(c, c.model.current, has_more=True)
         cv.assert_called_with(c, c.model.systems)
 
@@ -183,7 +183,7 @@ class TestChooserController(unittest.TestCase):
         app = make_app(model=model)
         c = RecoveryChooserController(app)
 
-        # sanity
+        # confidence check
         self.assertIsNone(c.model.current)
 
         # we get the all-systems view now

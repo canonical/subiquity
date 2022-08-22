@@ -50,7 +50,7 @@ class TestLoggedCommandRunner(SubiTestCase):
             "PYTHON": "/snap/subiquity/x1/usr/bin/python3.8",
             "TARGET_MOUNT_POINT": "/target",
             "SNAP": "/snap/subiquity/x1",
-            "DUMMY": "should-not-be-exported",
+            "SAMPLE": "should-not-be-exported",
         }
 
         with patch.dict(os.environ, environ, clear=True):

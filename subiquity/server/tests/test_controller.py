@@ -38,21 +38,21 @@ class TestController(SubiTestCase):
         # Make sure the autoinstall_key has precedence over
         # autoinstall_key_alias if both are present.
         self.controller.app.autoinstall_config = {
-            "dummy": "some-dummy-data",
-            "dummy-alias": "some-dummy-alias-data",
+            "sample": "some-sample-data",
+            "sample-alias": "some-sample-alias-data",
         }
-        self.controller.autoinstall_key = "dummy"
-        self.controller.autoinstall_key_alias = "dummy-alias"
+        self.controller.autoinstall_key = "sample"
+        self.controller.autoinstall_key_alias = "sample-alias"
         self.controller.autoinstall_default = "default-data"
         self.controller.setup_autoinstall()
-        mock_load.assert_called_once_with("some-dummy-data")
+        mock_load.assert_called_once_with("some-sample-data")
 
         # Make sure we failover to autoinstall_key_alias if autoinstall_key is
         # not present
         mock_load.reset_mock()
         self.controller.autoinstall_key = "inexistent"
         self.controller.setup_autoinstall()
-        mock_load.assert_called_once_with("some-dummy-alias-data")
+        mock_load.assert_called_once_with("some-sample-alias-data")
 
         # Make sure we failover to autoinstall_default otherwise
         mock_load.reset_mock()
