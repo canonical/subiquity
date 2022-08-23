@@ -133,6 +133,7 @@ class SubiquityClient(TuiApplication):
         self.server_updated = None
         self.restarting = False
         self.global_overlays = []
+        self.native_language = ""
 
         try:
             self.our_tty = os.ttyname(0)

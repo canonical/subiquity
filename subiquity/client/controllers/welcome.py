@@ -37,11 +37,13 @@ class WelcomeController(SubiquityTuiController):
 
     def run_answers(self):
         if 'lang' in self.answers:
-            self.done(self.answers['lang'])
+            self.done((self.answers['lang'], ""))
 
-    def done(self, code):
+    def done(self, lang):
+        (code, native) = lang
         log.debug("WelcomeController.done %s next_screen", code)
         i18n.switch_language(code)
+        self.app.native_language = native
         self.app.next_screen(self.endpoint.POST(code))
 
     def cancel(self, sender=None):

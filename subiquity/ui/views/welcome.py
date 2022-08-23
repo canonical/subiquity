@@ -85,7 +85,7 @@ class WelcomeView(BaseView):
                 forward_btn(
                     label=native,
                     on_press=self.choose_language,
-                    user_arg=code))
+                    user_arg=(code, native)))
 
         lb = ListBox(btns)
         back = None
@@ -98,9 +98,10 @@ class WelcomeView(BaseView):
             buttons=[back] if back else None,
             excerpt=_("Use UP, DOWN and ENTER keys to select your language."))
 
-    def choose_language(self, sender, code):
+    def choose_language(self, sender, lang):
+        (code, _) = lang
         log.debug('WelcomeView %s', code)
-        self.controller.done(code)
+        self.controller.done(lang)
 
     def local_help(self):
         return _("Help choosing a language"), _(HELP)
