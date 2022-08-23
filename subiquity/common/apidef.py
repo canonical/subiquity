@@ -55,7 +55,10 @@ from subiquity.common.types import (
     StorageResponseV2,
     TimeZoneInfo,
     UbuntuProInfo,
+    UbuntuProResponse,
     UbuntuProCheckTokenAnswer,
+    UPCSInitiateResponse,
+    UPCSWaitResponse,
     UsernameValidation,
     WLANSupportInstallState,
     ZdevInfo,
@@ -335,7 +338,7 @@ class API:
             def POST(data: Payload[List[str]]): ...
 
     class ubuntu_pro:
-        def GET() -> UbuntuProInfo: ...
+        def GET() -> UbuntuProResponse: ...
         def POST(data: Payload[UbuntuProInfo]) -> None: ...
 
         class skip:
@@ -344,6 +347,16 @@ class API:
         class check_token:
             def GET(token: Payload[str]) \
                     -> UbuntuProCheckTokenAnswer: ...
+
+        class contract_selection:
+            class initiate:
+                def POST() -> UPCSInitiateResponse: ...
+
+            class wait:
+                def GET() -> UPCSWaitResponse: ...
+
+            class cancel:
+                def POST() -> None: ...
 
     class identity:
         def GET() -> IdentityData: ...

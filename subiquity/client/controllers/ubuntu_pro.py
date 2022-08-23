@@ -19,6 +19,7 @@ import contextlib
 import logging
 from typing import Callable, Optional
 
+import aiohttp
 from urwid import Widget
 
 from subiquitycore.async_helpers import schedule_task
@@ -26,8 +27,10 @@ from subiquitycore.async_helpers import schedule_task
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import (
     UbuntuProInfo,
+    UbuntuProResponse,
     UbuntuProCheckTokenStatus as TokenStatus,
     UbuntuProSubscription,
+    UPCSWaitStatus,
     )
 from subiquity.ui.views.ubuntu_pro import (
     UbuntuProView,
@@ -50,6 +53,9 @@ class UbuntuProController(SubiquityTuiController):
     def __init__(self, app) -> None:
         """ Initializer for the client-side UA controller. """
         self._check_task: Optional[asyncio.Future] = None
+        self._magic_attach_task: Optional[asyncio.Future] = None
+
+        self.cs_initiated = False
 
         super().__init__(app)
 
@@ -63,8 +69,10 @@ class UbuntuProController(SubiquityTuiController):
             await self.endpoint.skip.POST()
             raise Skip("Not running LTS version")
 
-        ubuntu_pro_info = await self.endpoint.GET()
-        return UbuntuProView(self, ubuntu_pro_info.token)
+        ubuntu_pro_info: UbuntuProResponse = await self.endpoint.GET()
+        return UbuntuProView(self,
+                             token=ubuntu_pro_info.token,
+                             has_network=ubuntu_pro_info.has_network)
 
     async def run_answers(self) -> None:
         """ Interact with the UI to go through the pre-attach process if
@@ -145,6 +153,51 @@ class UbuntuProController(SubiquityTuiController):
         """ Cancel the asynchronous token check (if started). """
         if self._check_task is not None:
             self._check_task.cancel()
+
+    def contract_selection_initiate(
+            self, on_initiated: Callable[[str, str], None]) -> None:
+        """ Initiate the contract selection asynchronously. Calls on_initiated
+        when the contract-selection has initiated. """
+        async def inner() -> None:
+            answer = await self.endpoint.contract_selection.initiate.POST()
+            self.cs_initiated = True
+            on_initiated(user_code=answer.user_code)
+        self._magic_attach_task = schedule_task(inner())
+
+    def contract_selection_wait(
+            self,
+            on_contract_selected: Callable[[str], None],
+            on_timeout: Callable[[None], None]) -> None:
+        """ Asynchronously wait for the contract selection to finish.
+        Calls on_contract_selected with the contract-token once the contract
+        gets selected
+        Otherwise, calls on_timeout if no contract got selected within the
+        allowed time frame. """
+        async def inner() -> None:
+            try:
+                answer = await self.endpoint.contract_selection.wait.GET()
+            except aiohttp.ServerDisconnectedError:
+                log.debug("contract selection was cancelled on the server end")
+            else:
+                if answer.status == UPCSWaitStatus.TIMEOUT:
+                    self.cs_initiated = False
+                    on_timeout()
+                else:
+                    on_contract_selected(answer.contract_token)
+
+        self._monitor_task = schedule_task(inner())
+
+    def contract_selection_cancel(
+            self, on_cancelled: Callable[[None], None]) -> None:
+        """ Cancel the asynchronous contract selection (if started). """
+        async def inner() -> None:
+            await self.endpoint.contract_selection.cancel.POST()
+            self.cs_initiated = False
+            on_cancelled()
+
+        if self._magic_attach_task is not None:
+            self._magic_attach_task.cancel()
+            schedule_task(inner())
 
     def cancel(self) -> None:
         self.app.prev_screen()

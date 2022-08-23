@@ -50,6 +50,7 @@ from subiquitycore.ui.form import (
     NO_HELP,
     simple_field,
     RadioButtonField,
+    ReadOnlyField,
     WantsToKnowFormField,
     )
 from subiquitycore.ui.spinner import (
@@ -61,6 +62,7 @@ from subiquitycore.ui.stretchy import (
 from subiquitycore.ui.utils import (
     button_pile,
     screen,
+    SomethingFailed,
     )
 
 from subiquitycore.ui.interactive import StringEditor
@@ -93,14 +95,14 @@ class ContractTokenForm(SubForm):
     """ Represents a sub-form requesting Ubuntu Pro token.
     +---------------------------------------------------------+
     |      Token: C123456789ABCDEF                            |
-    |             This is your Ubuntu Pro token               |
+    |             From your admin, or from ubuntu.com/pro     |
     +---------------------------------------------------------+
     """
     ContractTokenField = simple_field(ContractTokenEditor)
 
     token = ContractTokenField(
             _("Token:"),
-            help=_("This is your Ubuntu Pro token"))
+            help=_("From your admin, or from ubuntu.com/pro"))
 
     def validate_token(self):
         """ Return an error if the token input does not match the expected
@@ -109,46 +111,95 @@ class ContractTokenForm(SubForm):
             return _("Invalid token: should be between 24 and 30 characters")
 
 
-class UpgradeModeForm(Form):
-    """ Represents a form requesting the Ubuntu Pro credentials.
+class UbuntuOneForm(SubForm):
+    """ Represents a sub-form showing a user-code and requesting the user to
+    browse ubuntu.com/pro/attach.
     +---------------------------------------------------------+
-    | (X)  Add token manually                                 |
-    |      Token: C123456789ABCDEF                            |
-    |             This is your Ubuntu Pro token               |
+    |      Code: 1A3-4V6                                      |
+    |            Attach machine via your Ubuntu One account   |
+    +---------------------------------------------------------+
+    """
+    user_code = ReadOnlyField(
+            _("Code:"),
+            help=_("Attach machine via your Ubuntu One account"))
+
+
+class UpgradeModeForm(Form):
+    """ Represents a form requesting information to enable Ubuntu Pro.
+    +---------------------------------------------------------+
+    | (X)  Enter code on ubuntu.com/pro/attach                |
+    |      Code: 1A3-4V6                                      |
+    |            Attach machine via your Ubuntu One account   |
     |                                                         |
-    |                       [ Continue ]                      |
+    | ( )  Or add token manually                              |
+    |      Token: C123456789ABCDEF                            |
+    |             From your admin, or from ubuntu.com/pro     |
+    |                                                         |
+    |                       [ Waiting  ]                      |
     |                       [ Back     ]                      |
     +---------------------------------------------------------+
     """
     cancel_label = _("Back")
     ok_label = _("Continue")
+    ok_label_waiting = _("Waiting")
     group: List[RadioButtonField] = []
 
+    with_ubuntu_one = RadioButtonField(
+            group, _("Enter code on ubuntu.com/pro/attach"),
+            help=NO_HELP)
+    with_ubuntu_one_subform = SubFormField(
+            UbuntuOneForm, "", help=NO_HELP)
+
     with_contract_token = RadioButtonField(
-            group, _("Add token manually"),
+            group, _("Or add token manually"),
             help=NO_HELP)
     with_contract_token_subform = SubFormField(
             ContractTokenForm, "", help=NO_HELP)
 
     def __init__(self, initial) -> None:
-        """ Initializer that configures the callback to run when the radio is
-        checked/unchecked. Since there is a single radio for now, it can
-        only be unchecked programmatically. """
+        """ Initializer that configures the callback to run when the radios are
+        checked/unchecked. """
         super().__init__(initial)
         connect_signal(self.with_contract_token.widget,
                        'change', self._toggle_contract_token_input)
+        connect_signal(self.with_ubuntu_one.widget,
+                       'change', self._toggle_ubuntu_one_input)
+
+        if initial["with_contract_token_subform"]["token"]:
+            self._toggle_contract_token_input(None, True)
+            self._toggle_ubuntu_one_input(None, False)
+        else:
+            self._toggle_contract_token_input(None, False)
+            self._toggle_ubuntu_one_input(None, True)
+
+        # Make sure the OK button is disabled when we're using the user-code.
+        self.with_ubuntu_one_subform.widget.form.user_code.in_error = True
 
     def _toggle_contract_token_input(self, sender, new_value):
         """ Enable/disable the sub-form that requests the contract token. """
         self.with_contract_token_subform.enabled = new_value
+        if new_value:
+            self.buttons.base_widget[0].set_label(self.ok_label)
+
+    def _toggle_ubuntu_one_input(self, sender, new_value):
+        """ Enable/disable the sub-form that shows the user-code. """
+        self.with_ubuntu_one_subform.enabled = new_value
+        if new_value:
+            self.buttons.base_widget[0].set_label(self.ok_label_waiting)
+
+    def set_user_code(self, user_code: str) -> None:
+        """ Show the new value of user code in a green backgroud. """
+        value = ("user_code", user_code)
+
+        self.with_ubuntu_one_subform.widget.form.user_code.value = value
 
 
 class UpgradeYesNoForm(Form):
     """ Represents a form asking if we want to upgrade to Ubuntu Pro.
     +---------------------------------------------------------+
-    | (X)  Upgrade to Ubuntu Pro                              |
+    | (X)  Enable Ubuntu Pro                                  |
     |                                                         |
-    | ( )  Do this later                                      |
+    | ( )  Skip for now                                       |
     |                                                         |
     |      You can always enable Ubuntu Pro later via the     |
     |      'pro attach' command.                              |
@@ -163,12 +214,45 @@ class UpgradeYesNoForm(Form):
     group: List[RadioButtonField] = []
 
     upgrade = RadioButtonField(
-            group, _("Upgrade to Ubuntu Pro"),
+            group, _("Enable Ubuntu Pro"),
             help=NO_HELP)
     skip = RadioButtonField(
-            group, _("Do this later"),
+            group, _("Skip for now"),
             help="\n" + _("You can always enable Ubuntu Pro later via the"
                           " 'pro attach' command."))
+
+
+class UpgradeYesNoFormNoNetwork(UpgradeYesNoForm):
+    """ Represents a "read-only" form that does not let the user enable Ubuntu
+    Pro because the network is unavailable.
+    +---------------------------------------------------------+
+    | ( )  Enable Ubuntu Pro                                  |
+    |                                                         |
+    | (X)  Skip Ubuntu Pro setup for now                      |
+    |                                                         |
+    |      Once you are connected to the Internet, you can    |
+    |      enable Ubuntu Pro via the 'pro attach' command.    |
+    |                                                         |
+    |                       [ Continue ]                      |
+    |                       [ Back     ]                      |
+    +---------------------------------------------------------+
+    """
+    group: List[RadioButtonField] = []
+
+    upgrade = RadioButtonField(
+            group, _("Enable Ubuntu Pro"),
+            help=NO_HELP)
+    skip = RadioButtonField(
+            group, _("Skip Ubuntu Pro setup for now"),
+            help="\n" + _("Once you are connected to the Internet, you can"
+                          " enable Ubuntu Po via the 'pro attach' command."))
+
+    def __init__(self):
+        """ Initializer that disables the relevant fields. """
+        super().__init__(initial={})
+        self.upgrade.value = False
+        self.upgrade.enabled = False
+        self.skip.value = True
 
 
 class CheckingContractToken(WidgetWrap):
@@ -202,16 +286,24 @@ class UbuntuProView(BaseView):
     title = _("Upgrade to Ubuntu Pro")
     subscription_done_label = _("Continue")
 
-    def __init__(self, controller, token: str):
+    def __init__(self, controller, token: str, has_network: bool):
         """ Initialize the view with the default value for the token. """
         self.controller = controller
 
-        self.upgrade_yes_no_form = UpgradeYesNoForm(initial={
-            "skip": not token,
-            "upgrade": bool(token),
-            })
+        self.has_network = has_network
+
+        if self.has_network:
+            self.upgrade_yes_no_form = UpgradeYesNoForm(initial={
+                "skip": not token,
+                "upgrade": bool(token),
+                })
+        else:
+            self.upgrade_yes_no_form = UpgradeYesNoFormNoNetwork()
+
         self.upgrade_mode_form = UpgradeModeForm(initial={
             "with_contract_token_subform": {"token": token},
+            "with_contract_token": bool(token),
+            "with_ubuntu_one": not token,
             })
 
         def on_upgrade_yes_no_cancel(unused: UpgradeYesNoForm):
@@ -236,28 +328,34 @@ class UbuntuProView(BaseView):
         super().__init__(self.upgrade_yes_no_screen())
 
     def upgrade_mode_screen(self) -> Widget:
-        """ Return a screen that asks the user for his information (e.g.,
-        contract token).
+        """ Return a screen that asks the user to provide a contract token or
+        input a user-code on the portal.
         +---------------------------------------------------------+
-        | To upgrade to Ubuntu Pro, you can enter your token      |
-        | manually.                                               |
+        | To upgrade to Ubuntu Pro, use your existing free        |
+        | personal, or company Ubuntu One account, or provide a   |
+        | token.                                                  |
         |                                                         |
-        | [ How to Register -> ]                                  |
+        | [ How to register -> ]                                  |
         |                                                         |
-        | (X)  Add token manually                                 |
+        | (X)  Enter code on ubuntu.com/pro/attach                |
+        |      Code: 1A3-4V6                                      |
+        |            Attach machine via your Ubuntu One account   |
+        |                                                         |
+        | ( )  Or add token manually                              |
         |      Token: C123456789ABCDEF                            |
-        |             This is your Ubuntu Pro token               |
+        |             From your admin, or from ubuntu.com/pro     |
         |                                                         |
         |                        [ Continue ]                     |
         |                        [ Back     ]                     |
         +---------------------------------------------------------+
         """
 
-        excerpt = _("To upgrade to Ubuntu Pro, you can enter your token"
-                    " manually.")
+        excerpt = _("To upgrade to Ubuntu Pro, use your existing free"
+                    " personal, or company Ubuntu One account, or provide a"
+                    " token.")
 
         how_to_register_btn = menu_btn(
-                _("How to Register"),
+                _("How to register"),
                 on_press=lambda unused: self.show_how_to_register()
                 )
         bp = button_pile([how_to_register_btn])
@@ -275,13 +373,16 @@ class UbuntuProView(BaseView):
     def upgrade_yes_no_screen(self) -> Widget:
         """ Return a screen that asks the user to skip or upgrade.
         +---------------------------------------------------------+
-        | Upgrade this machine to Ubuntu Pro or skip this step.   |
+        | Upgrade this machine to Ubuntu Pro for security updates |
+        | on a much wider range of packages, until 2032. Assists  |
+        | with FedRAMP, FIPS, STIG, HIPAA and other compliance or |
+        | hardening requirements.                                 |
         |                                                         |
         | [ About Ubuntu Pro -> ]                                 |
         |                                                         |
-        | ( )  Upgrade to Ubuntu Pro                              |
+        | ( )  Enable Ubuntu Pro                                  |
         |                                                         |
-        | (X)  Do this later                                      |
+        | (X)  Skip for now                                       |
         |      You can always enable Ubuntu Pro later via the     |
         |      'pro attach' command.                              |
         |                                                         |
@@ -289,8 +390,15 @@ class UbuntuProView(BaseView):
         |                        [ Back     ]                     |
         +---------------------------------------------------------+
         """
+        security_updates_until = 2032
 
-        excerpt = _("Upgrade this machine to Ubuntu Pro or skip this step.")
+        excerpt = _("Upgrade this machine to Ubuntu Pro for security updates"
+                    " on a much wider range of packages, until"
+                    f" {security_updates_until}. Assists with FedRAMP, FIPS,"
+                    " STIG, HIPAA and other compliance or hardening"
+                    " requirements.")
+        excerpt_no_net = _("An Internet connection is required to enable"
+                           " Ubuntu Pro.")
 
         about_pro_btn = menu_btn(
                 _("About Ubuntu Pro"),
@@ -305,15 +413,13 @@ class UbuntuProView(BaseView):
         return screen(
                 ListBox(rows),
                 self.upgrade_yes_no_form.buttons,
-                excerpt=excerpt,
+                excerpt=excerpt if self.has_network else excerpt_no_net,
                 focus_buttons=True)
 
     def subscription_screen(self, subscription: UbuntuProSubscription) \
             -> Widget:
         """
         +---------------------------------------------------------+
-        | Account Connected: user@domain.com                      |
-        |             Token: C1NWcZTHLteJXGVMM6YhvHDpGrhyy7       |
         |      Subscription: Ubuntu Pro - Physical 24/5           |
         |                                                         |
         | List of your enabled services:                          |
@@ -343,9 +449,7 @@ class UbuntuProView(BaseView):
         rows: List[Widget] = []
 
         rows.extend([
-            Text(_("Account Connected") + ": " + subscription.account_name),
-            Text(_("            Token") + ": " + subscription.contract_token),
-            Text(_("     Subscription") + ": " + subscription.contract_name),
+            Text(_("Subscription") + ": " + subscription.contract_name),
         ])
         rows.append(Text(""))
 
@@ -397,19 +501,29 @@ class UbuntuProView(BaseView):
                 excerpt=None,
                 focus_buttons=True)
 
+    def contract_token_check_ok(self, subscription: UbuntuProSubscription) \
+            -> None:
+        """ Close the "checking-token" overlay and open the token added overlay
+        instead. """
+        def show_subscription() -> None:
+            self.remove_overlay()
+            self.show_subscription(subscription=subscription)
+
+        self.remove_overlay()
+        widget = TokenAddedWidget(
+                parent=self,
+                on_continue=show_subscription)
+        self.show_stretchy_overlay(widget)
+
     def upgrade_mode_done(self, form: UpgradeModeForm) -> None:
         """ Open the loading dialog and asynchronously check if the token is
         valid. """
         def on_success(subscription: UbuntuProSubscription) -> None:
-            def show_subscription() -> None:
-                self.remove_overlay()
-                self.show_subscription(subscription=subscription)
-
-            self.remove_overlay()
-            widget = TokenAddedWidget(
-                    parent=self,
-                    on_continue=show_subscription)
-            self.show_stretchy_overlay(widget)
+            def noop() -> None:
+                pass
+            if self.controller.cs_initiated:
+                self.controller.contract_selection_cancel(on_cancelled=noop)
+            self.contract_token_check_ok(subscription)
 
         def on_failure(status: UbuntuProCheckTokenStatus) -> None:
             self.remove_overlay()
@@ -437,13 +551,60 @@ class UbuntuProView(BaseView):
                                     on_success=on_success,
                                     on_failure=on_failure)
 
+    def cs_initiated(self, user_code: str) -> None:
+        """ Function to call when the contract selection has successfully
+        initiated. It will start the polling asynchronously. """
+        def reinitiate() -> None:
+            self.controller.contract_selection_initiate(
+                    on_initiated=self.cs_initiated)
+
+        self.upgrade_mode_form.set_user_code(user_code)
+        self.controller.contract_selection_wait(
+                on_contract_selected=self.on_contract_selected,
+                on_timeout=reinitiate,
+                )
+
+    def on_contract_selected(self, contract_token: str) -> None:
+        """ Function to call when the contract selection has finished
+        succesfully. """
+        checking_token_overlay = CheckingContractToken(self)
+        self.show_overlay(checking_token_overlay,
+                          width=checking_token_overlay.width,
+                          min_width=None)
+
+        def on_failure(status: UbuntuProCheckTokenStatus) -> None:
+            """ Open a message box stating that the contract-token
+            obtained via contract-selection is not valid ; and then go
+            back to the previous screen. """
+
+            log.error("contract-token obtained via contract-selection"
+                      " counld not be validated: %r", status)
+            self._w = self.upgrade_mode_screen()
+            self.show_stretchy_overlay(SomethingFailed(
+                self,
+                msg=_("Internal error"),
+                stderr=_("Could not add the contract token selected.")
+            ))
+
+        # It would be uncommon to have this call fail in production
+        # because the contract token obtained via contract-selection is
+        # expected to be valid. During testing, a mismatch in the
+        # environment used (e.g., staging in subiquity and production
+        # in u-a-c) can lead to this error though.
+        self.controller.check_token(
+                contract_token,
+                on_success=self.contract_token_check_ok,
+                on_failure=on_failure)
+
     def upgrade_yes_no_done(self, form: UpgradeYesNoForm) -> None:
         """ If skip is selected, move on to the next screen.
-        Otherwise, show the form requesting the contract token. """
+        Otherwise, show the form requesting a contract token. """
         if form.skip.value:
             self.controller.done("")
         else:
             self._w = self.upgrade_mode_screen()
+            self.controller.contract_selection_initiate(
+                    on_initiated=self.cs_initiated)
 
     def cancel(self) -> None:
         """ Called when the user presses the Back button. """
@@ -577,16 +738,18 @@ class AboutProWidget(Stretchy):
     """ Widget showing some information about what Ubuntu Pro offers.
     +------------------- About Ubuntu Pro --------------------+
     |                                                         |
-    | Ubuntu Pro subscription gives you access to multiple    |
-    | security & compliance services, including:              |
-    |                                                         |
-    | • Security patching for over 30.000 packages, with a    |
-    |   focus on High and Critical CVEs (extended from 2.500) |
-    | • ...                                                   |
-    | • ...                                                   |
+    | Ubuntu Pro is the same base Ubuntu, with an additional  |
+    | layer of security and compliance services and security  |
+    | patches covering a wider range of packages.             |
+    |   • Security patch coverage for CVSS critical, high and |
+    |     selected medium vulnerabilities in all 23,000       |
+    |     packages in "universe" (extended from the normal    |
+    |     2,300 "main" packages).                             |
+    |   • ...                                                 |
+    |   • ...                                                 |
     |                                                         |
     | Ubuntu Pro is free for personal use on up to 3 machines.|
-    | More information on ubuntu.com/pro                      |
+    | More information is at ubuntu.com/pro                   |
     |                                                         |
     |                       [ Continue ]                      |
     +---------------------------------------------------------+
@@ -598,16 +761,21 @@ class AboutProWidget(Stretchy):
         ok = ok_btn(label=_("Continue"), on_press=lambda unused: self.close())
 
         title = _("About Ubuntu Pro")
-        header = _("Ubuntu Pro subscription gives you access to multiple"
-                   " security & compliance services, including:")
+        header = _("Ubuntu Pro is the same base Ubuntu, with an additional"
+                   " layer of security and compliance services and security"
+                   " patches covering a wider range of packages.")
+
+        universe_packages = 23000
+        main_packages = 2300
 
         services = [
-            _("Security patching for over 30.000 packages, with a focus on"
-              " High and Critical CVEs (extended from 2.500)"),
-            _("10 years of security Maintenance (extended from 5 years)"),
-            _("Kernel Livepatch service for increased uptime and security"),
-            _("Ubuntu Security Guide for hardening profiles, including CIS"
-              " and DISA-STIG"),
+            _("Security patch coverage for CVSS critical, high and selected"
+              f" medium vulnerabilities in all {universe_packages:,} packages"
+              f' in "universe" (extended from the normal {main_packages:,}'
+              ' "main" packages).'),
+            _("10 years of security patch coverage (extended from 5 years)."),
+            _("Kernel Livepatch to reduce required reboots."),
+            _("Ubuntu Security Guide for CIS and DISA-STIG hardening."),
             _("FIPS 140-2 NIST-certified crypto-modules for FedRAMP"
               " compliance"),
         ]
@@ -628,11 +796,11 @@ class AboutProWidget(Stretchy):
         widgets: List[Widget] = [
             Text(header),
             Text(""),
-            Pile([itemize(svc) for svc in services]),
+            Pile([itemize(svc, marker="  •") for svc in services]),
             Text(""),
             Text(_("Ubuntu Pro is free for personal use on up to 3"
                    " machines.")),
-            Text(_("More information on ubuntu.com/pro")),
+            Text(_("More information is at ubuntu.com/pro")),
             Text(""),
             button_pile([ok]),
         ]
@@ -648,11 +816,12 @@ class HowToRegisterWidget(Stretchy):
     """ Widget showing some instructions to register to Ubuntu Pro.
     +-------------------- How to register --------------------+
     |                                                         |
-    | You can register for a free Ubuntu One account and get  |
-    | a personal token for up to 3 machines.                  |
+    |_Create your Ubuntu One account with your email. Each    |
+    | Ubuntu One account gets a free personal Ubuntu Pro      |
+    | subscription for up to three machines, including        |
+    | laptops, servers or cloud virtual machines.             |
     |                                                         |
-    | To register an account, visit ubuntu.com/pro on another |
-    | device.                                                 |
+    | Visit ubuntu.com/pro to get started.                    |
     |                                                         |
     |                       [ Continue ]                      |
     +---------------------------------------------------------+
@@ -664,14 +833,15 @@ class HowToRegisterWidget(Stretchy):
         ok = ok_btn(label=_("Continue"), on_press=lambda unused: self.close())
 
         title = _("How to register")
-        header = _("You can register for a free Ubuntu One account and get a"
-                   " personal token for up to 3 machines.")
+        header = _("Create your Ubuntu One account with your email. Each"
+                   " Ubuntu One account gets a free personal Ubuntu Pro"
+                   " subscription for up to three machines, including"
+                   " laptops, servers or cloud virtual machines.")
 
         widgets: List[Widget] = [
             Text(header),
             Text(""),
-            Text("To register an account, visit ubuntu.com/pro on another"
-                 " device."),
+            Text(_("Visit ubuntu.com/pro to get started.")),
             Text(""),
             button_pile([ok]),
         ]

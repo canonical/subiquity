@@ -152,6 +152,51 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
                 await strategy.query_info(token="123456789")
             mock_arun.assert_called_once_with(command, check=False)
 
+    async def test_api_call(self):
+        strategy = UAClientUAInterfaceStrategy()
+        with patch(self.arun_command_sym) as mock_arun:
+            mock_arun.return_value = CompletedProcess([], 0)
+            mock_arun.return_value.stdout = '{"result": "success"}'
+            result = await strategy._api_call(
+                    endpoint="u.pro.attach.magic.wait.v1",
+                    params=[("magic_token", "132456")])
+            self.assertEqual(result, {"result": "success"})
+
+        command = (
+            "ubuntu-advantage",
+            "api",
+            "u.pro.attach.magic.wait.v1",
+            "--args", "magic_token=132456",
+        )
+        mock_arun.assert_called_once_with(command, check=False)
+
+    async def test_magic_initiate_v1(self):
+        strategy = UAClientUAInterfaceStrategy()
+        with patch.object(strategy, "_api_call", return_value={}) as api_call:
+            await strategy.magic_initiate_v1()
+
+        api_call.assert_called_once_with(
+                endpoint="u.pro.attach.magic.initiate.v1",
+                params=[])
+
+    async def test_magic_wait_v1(self):
+        strategy = UAClientUAInterfaceStrategy()
+        with patch.object(strategy, "_api_call", return_value={}) as api_call:
+            await strategy.magic_wait_v1(magic_token="ABCDEF")
+
+        api_call.assert_called_once_with(
+                endpoint="u.pro.attach.magic.wait.v1",
+                params=[("magic_token", "ABCDEF")])
+
+    async def test_magic_revoke_v1(self):
+        strategy = UAClientUAInterfaceStrategy()
+        with patch.object(strategy, "_api_call", return_value={}) as api_call:
+            await strategy.magic_revoke_v1(magic_token="ABCDEF")
+
+        api_call.assert_called_once_with(
+                endpoint="u.pro.attach.magic.revoke.v1",
+                params=[("magic_token", "ABCDEF")])
+
 
 class TestUAInterface(unittest.IsolatedAsyncioTestCase):
 

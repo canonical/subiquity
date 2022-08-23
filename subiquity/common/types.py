@@ -538,11 +538,38 @@ class UbuntuProInfo:
     token: str = attr.ib(repr=False)
 
 
+@attr.s(auto_attribs=True)
+class UbuntuProResponse:
+    """ Response to GET request to /ubuntu_pro """
+    token: str = attr.ib(repr=False)
+    has_network: bool
+
+
 class UbuntuProCheckTokenStatus(enum.Enum):
     VALID_TOKEN = enum.auto()
     INVALID_TOKEN = enum.auto()
     EXPIRED_TOKEN = enum.auto()
     UNKNOWN_ERROR = enum.auto()
+
+
+@attr.s(auto_attribs=True)
+class UPCSInitiateResponse:
+    """ Response to Ubuntu Pro contract selection initiate request. """
+    user_code: str
+    validity_seconds: int
+
+
+class UPCSWaitStatus(enum.Enum):
+    SUCCESS = enum.auto()
+    TIMEOUT = enum.auto()
+
+
+@attr.s(auto_attribs=True)
+class UPCSWaitResponse:
+    """ Response to Ubuntu Pro contract selection wait request. """
+    status: UPCSWaitStatus
+
+    contract_token: Optional[str]
 
 
 @attr.s(auto_attribs=True)
