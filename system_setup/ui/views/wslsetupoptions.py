@@ -30,10 +30,12 @@ from subiquitycore.ui.utils import screen
 from subiquitycore.view import BaseView
 from subiquity.common.types import WSLSetupOptions
 
+CAPTION = _("Install packages for better {lang} language support")
+
 
 class WSLSetupOptionsForm(Form):
     install_language_support_packages = \
-        BooleanField(_("Install packages for better language support"),
+        BooleanField("",
                      help=_("Not recommended for slow internet connections."))
 
 
@@ -41,7 +43,7 @@ class WSLSetupOptionsView(BaseView):
     title = _("Enhance your experience")
     excerpt = _("Adjust the following options for a more complete experience.")
 
-    def __init__(self, controller, configuration_data):
+    def __init__(self, controller, configuration_data, cur_lang):
         self.controller = controller
 
         initial = {
@@ -49,6 +51,8 @@ class WSLSetupOptionsView(BaseView):
                 configuration_data.install_language_support_packages,
         }
         self.form = WSLSetupOptionsForm(initial=initial)
+        self.form.install_language_support_packages.caption = \
+            CAPTION.format(lang=cur_lang)
 
         connect_signal(self.form, 'submit', self.done)
         super().__init__(

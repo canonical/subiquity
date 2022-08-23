@@ -27,7 +27,10 @@ class WSLSetupOptionsController(SubiquityTuiController):
 
     async def make_ui(self):
         data = await self.endpoint.GET()
-        return WSLSetupOptionsView(self, data)
+        log.debug("%s", self.app)
+        cur_lang = self.app.native_language
+
+        return WSLSetupOptionsView(self, data, cur_lang)
 
     def run_answers(self):
         if all(elem in self.answers for elem in
