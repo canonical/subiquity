@@ -249,7 +249,7 @@ class BoundFormField(object):
             return self._help
         elif self.field.help is not None:
             if isinstance(self.field.help, str):
-                return _(self.field.help)
+                return ('info_minor', _(self.field.help))
             else:
                 return self.field.help
         else:
@@ -304,7 +304,11 @@ class FormField(abc.ABC):
 
     def __init__(self, caption=None, help=None):
         self.caption = caption
-        self.help = help
+        # Allows styling at instantiation
+        if help is None or isinstance(help, tuple) or help is NO_HELP:
+            self.help = help
+        else:
+            self.help = ('info_minor',  help)
         self.index = FormField.next_index
         FormField.next_index += 1
 
