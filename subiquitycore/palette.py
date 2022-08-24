@@ -28,7 +28,7 @@ COLORS = [
     # dark magenta
     ("brand",     (0x33, 0x33, 0x33)),
     # dark cyan
-    ("gray",      (0x66, 0x66, 0x66)),
+    ("gray",      (0x80, 0x80, 0x80)),
     # light gray
     ("fg",        (0xff, 0xff, 0xff)),
 ]
