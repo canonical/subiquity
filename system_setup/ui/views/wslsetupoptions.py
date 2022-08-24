@@ -36,7 +36,9 @@ CAPTION = _("Install packages for better {lang} language support")
 class WSLSetupOptionsForm(Form):
     install_language_support_packages = \
         BooleanField("",
-                     help=_("Not recommended for slow internet connections."))
+                     help=('info_minor',
+                           _("Not recommended for slow internet connections."))
+                     )
 
 
 class WSLSetupOptionsView(BaseView):
