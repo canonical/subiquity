@@ -764,11 +764,7 @@ class Partition(_Formattable):
 
     @property
     def os(self):
-        # This path calculation is overly simplistic and doesn't handle RAID or
-        # multipath.  Don't take it seriously.
-        path = self.device.path + str(self.number)
-
-        os_data = self._m._probe_data.get('os', {}).get(path)
+        os_data = self._m._probe_data.get('os', {}).get(self._path())
         if not os_data:
             return None
         return OsProber(**os_data)

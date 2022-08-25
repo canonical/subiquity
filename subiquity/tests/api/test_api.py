@@ -1214,6 +1214,22 @@ class TestRegression(TestAPI):
             await inst.post('/storage/v2/edit_partition', data)
             # should not throw an exception complaining about boot
 
+    @timeout()
+    async def test_osprober_knames(self):
+        cfg = 'examples/lp-1986676-missing-osprober.json'
+        async with start_server(cfg) as inst:
+            resp = await inst.get('/storage/v2')
+            [nvme] = match(resp['disks'], id='disk-nvme0n1')
+            [nvme_p2] = match(nvme['partitions'], path='/dev/nvme0n1p2')
+            expected = {
+                'long': 'Ubuntu 22.04.1 LTS',
+                'label': 'Ubuntu',
+                'type': 'linux',
+                'subpath': None,
+                'version': '22.04.1'
+            }
+            self.assertEqual(expected, nvme_p2['os'])
+
 
 class TestCancel(TestAPI):
     @timeout()
