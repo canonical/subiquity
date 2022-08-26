@@ -99,8 +99,7 @@ class WelcomeView(BaseView):
             excerpt=_("Use UP, DOWN and ENTER keys to select your language."))
 
     def choose_language(self, sender, lang):
-        (code, _) = lang
-        log.debug('WelcomeView %s', code)
+        log.debug('WelcomeView %s', lang)
         self.controller.done(lang)
 
     def local_help(self):
