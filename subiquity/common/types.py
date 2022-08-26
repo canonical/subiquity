@@ -614,3 +614,10 @@ class WSLConfigurationAdvanced:
     interop_enabled:  bool = attr.ib(default=True)
     interop_appendwindowspath: bool = attr.ib(default=True)
     systemd_enabled:  bool = attr.ib(default=False)
+
+
+# Options that affect the setup experience itself, but won't reflect in the
+# /etc/wsl.conf configuration file.
+@attr.s(auto_attribs=True)
+class WSLSetupOptions:
+    install_language_support_packages: bool = attr.ib(default=True)

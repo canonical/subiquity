@@ -196,6 +196,8 @@ class ConfigureController(SubiquityController):
                 log.error("Packages list in dry-run should never be empty.")
                 return False
 
+            log.debug('%s ignored for testing.',
+                      self.model.wslsetupoptions.wslsetupoptions)
             packs_dir = os.path.join(self.model.root,
                                      "var/cache/apt/archives/")
             os.makedirs(packs_dir, exist_ok=True)
@@ -220,7 +222,15 @@ class ConfigureController(SubiquityController):
             log.info("No missing recommended packages. Nothing to do.")
             return True
 
-        cmd = [aptCommand, "install", "-y"] + packages
+        cmd = []
+        if self.model.wslsetupoptions.wslsetupoptions.\
+                install_language_support_packages is True:
+            cmd = [aptCommand, "install", "-y"]
+
+        else:
+            cmd = ["/usr/bin/apt-mark", "install"]
+
+        cmd = cmd + packages
         acp = await arun_command(cmd, env=env)
 
         return acp.returncode == 0

@@ -26,6 +26,7 @@ from .wslconfbase import WSLConfigurationBaseController
 from .wslconfadvanced import WSLConfigurationAdvancedController
 from .configure import ConfigureController
 from .shutdown import SetupShutdownController
+from .wslsetupoptions import WSLSetupOptionsController
 
 __all__ = [
     'EarlyController',
@@ -39,4 +40,5 @@ __all__ = [
     'WSLConfigurationBaseController',
     'WSLConfigurationAdvancedController',
     'ConfigureController',
+    'WSLSetupOptionsController',
 ]

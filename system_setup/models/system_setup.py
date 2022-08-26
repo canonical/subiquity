@@ -24,6 +24,7 @@ from subiquity.server.types import InstallerChannels
 
 from .wslconfbase import WSLConfigurationBaseModel
 from .wslconfadvanced import WSLConfigurationAdvancedModel
+from .wslsetupoptions import WSLSetupOptionsModel
 
 
 log = logging.getLogger('system_setup.models.system_setup')
@@ -57,6 +58,7 @@ class SystemSetupModel(SubiquityModel):
         self.packages = []
         self.userdata = {}
         self.locale = LocaleModel(self.chroot_prefix)
+        self.wslsetupoptions = WSLSetupOptionsModel()
         self.identity = IdentityModel()
         self.network = None
         self.wslconfbase = WSLConfigurationBaseModel()

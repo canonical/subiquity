@@ -18,12 +18,14 @@ from .identity import WSLIdentityController
 from .wslconfbase import WSLConfigurationBaseController
 from .summary import SummaryController
 from .wslconfadvanced import WSLConfigurationAdvancedController
+from .wslsetupoptions import WSLSetupOptionsController
 
 from subiquity.client.controllers import WelcomeController
 
 
 __all__ = [
     'WelcomeController',
+    'WSLSetupOptionsController',
     'WSLIdentityController',
     'WSLConfigurationBaseController',
     'WSLConfigurationAdvancedController',

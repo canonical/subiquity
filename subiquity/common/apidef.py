@@ -64,6 +64,7 @@ from subiquity.common.types import (
     ZdevInfo,
     WSLConfigurationBase,
     WSLConfigurationAdvanced,
+    WSLSetupOptions,
     )
 
 
@@ -76,6 +77,7 @@ class API:
     updates = simple_endpoint(str)
     wslconfbase = simple_endpoint(WSLConfigurationBase)
     wslconfadvanced = simple_endpoint(WSLConfigurationAdvanced)
+    wslsetupoptions = simple_endpoint(WSLSetupOptions)
 
     class meta:
         class status:

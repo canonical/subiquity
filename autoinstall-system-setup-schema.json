@@ -48,6 +48,15 @@
         "locale": {
             "type": "string"
         },
+        "wslsetupoptions": {
+            "type": "object",
+            "properties": {
+                "install_language_support_packages": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false
+        },
         "identity": {
             "type": "object",
             "properties": {

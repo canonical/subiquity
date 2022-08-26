@@ -61,6 +61,7 @@ class SystemSetupClient(SubiquityClient):
 
     controllers = [
         "Welcome",
+        "WSLSetupOptions",
         "WSLIdentity",
         "WSLConfigurationBase",
         "Summary",
