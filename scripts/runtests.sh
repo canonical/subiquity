@@ -239,19 +239,17 @@ if [ "${RELEASE%.*}" -ge 20 ]; then
     port=50321
     LANG=C.UTF-8 python3 -m system_setup.cmd.server --dry-run --tcp-port=$port &
     subiquity_pid=$!
+    trap "kill $subiquity_pid" EXIT
     next_time=3
     until [ $next_time -eq 0 ] || [ ! -z "$(ss -Hlt sport = $port)" ]; do
         sleep $(( next_time-- ))
     done
     if [ $next_time -eq 0 ]; then
         echo "Timeout reached before Subiquity TCP socket started listening"
-        kill $subiquity_pid || true
         exit 1
     fi
 
     scripts/test-system-setup-loopback-only.py --port "$port" --debug
-
-    kill -- "$subiquity_pid" || true
 
     # Test system_setup autoinstall.
     for mode in "" "-full" "-no-shutdown"; do
