@@ -248,38 +248,10 @@ if [ "${RELEASE%.*}" -ge 20 ]; then
         kill $subiquity_pid || true
         exit 1
     fi
-    loopback_failed=0
-    unallowed_failed=0
-    # Assert that only loopback interface is accepted.
-    interfaces=($(ip --json link show up | jq -r '.[]["ifname"] | select ( . != null )'))
-    for if in ${interfaces[@]}; do
-        for ipv in 4 6; do
-            curl_ec=0
-            timeout 10s \
-                curl -$ipv "http://localhost:$port/meta/status" --interface $if \
-                || curl_ec=$?
-            # Loopback should exit 0 on IPv4
-            if [ $if = "lo" ]; then
-                if [ $curl_ec -ne 0 -a $ipv -eq 4 ]; then
-                    loopback_failed=1
-                fi
-            # Everything else should not.
-            else
-                if [ $curl_ec -eq 0 ]; then
-                    unallowed_failed=1
-                fi
-            fi
-        done
-    done
-    kill $subiquity_pid || true
-    if [ $loopback_failed -ne 0 ]; then
-        echo "Loopback was expected to connect"
-        exit 1
-    fi
-    if [ $unallowed_failed -ne 0 ]; then
-        echo "Only the loopback interface should be allowed."
-        exit 1
-    fi
+
+    scripts/test-system-setup-loopback-only.py --port "$port" --debug
+
+    kill -- "$subiquity_pid" || true
 
     # Test system_setup autoinstall.
     for mode in "" "-full" "-no-shutdown"; do
