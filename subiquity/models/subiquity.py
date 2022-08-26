@@ -29,6 +29,7 @@ from subiquitycore.file_util import (
     generate_timestamped_header,
     write_file,
 )
+from subiquitycore.lsb_release import lsb_release
 
 from subiquity.common.resources import get_users_and_groups
 from subiquity.server.types import InstallerChannels
@@ -109,6 +110,17 @@ for cfg_file in {cfg_files}:
     except FileNotFoundError:
         pass
 """
+
+# Emit #cloud-config write_files entry to disable cloud-init after install
+CLOUDINIT_DISABLE_AFTER_INSTALL = {
+  "path": "/etc/cloud/cloud-init.disabled",
+  "defer": True,
+  "content": (
+     "Disabled by Ubuntu live installer after first boot.\n"
+     "To re-enable cloud-init on this image run:\n"
+     "  sudo cloud-init clean --machine-id\n"
+   )
+}
 
 
 class ModelNames:
@@ -295,6 +307,10 @@ class SubiquityModel:
             if getattr(model, 'make_cloudconfig', None):
                 merge_config(config, model.make_cloudconfig())
         merge_cloud_init_config(config, self.userdata)
+        if lsb_release()['release'] not in ("20.04", "22.04"):
+            config.setdefault("write_files", []).append(
+                CLOUDINIT_DISABLE_AFTER_INSTALL
+            )
         return config
 
     async def target_packages(self):
@@ -328,6 +344,8 @@ class SubiquityModel:
         # Add cloud-init clean hooks to support golden-image creation.
         cfg_files = ["/" + path for (path, _content, _cmode) in files]
         cfg_files.extend(self.network.rendered_config_paths())
+        if lsb_release()['release'] not in ("20.04", "22.04"):
+            cfg_files.append("/etc/cloud/cloud-init.disabled")
 
         if self.identity.hostname is not None:
             hostname = self.identity.hostname.strip()
