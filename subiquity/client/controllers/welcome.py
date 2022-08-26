@@ -40,6 +40,10 @@ class WelcomeController(SubiquityTuiController):
             self.done((self.answers['lang'], ""))
 
     def done(self, lang):
+        """ Completes this controller. lang must be a tuple of strings
+        containing the language code and its native representation
+        respectively.
+        """
         (code, native) = lang
         log.debug("WelcomeController.done %s next_screen", code)
         i18n.switch_language(code)
