@@ -27,7 +27,6 @@ class WSLSetupOptionsController(SubiquityTuiController):
 
     async def make_ui(self):
         data = await self.endpoint.GET()
-        log.debug("%s", self.app)
         cur_lang = self.app.native_language
 
         return WSLSetupOptionsView(self, data, cur_lang)
