@@ -407,8 +407,17 @@ class NetworkModel(object):
 
     def __init__(self, project):
         self.devices_by_name = {}  # Maps interface names to NetworkDev
-        self.has_network = False
+        self._has_network = False
         self.project = project
+
+    @property
+    def has_network(self):
+        return self._has_network
+
+    @has_network.setter
+    def has_network(self, val):
+        log.debug('has_network %s', val)
+        self._has_network = val
 
     def parse_netplan_configs(self, netplan_root):
         self.config = netplan.Config()
