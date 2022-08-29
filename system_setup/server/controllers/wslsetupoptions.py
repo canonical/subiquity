@@ -46,12 +46,14 @@ class WSLSetupOptionsController(SubiquityController):
 
         # load the config file
         data = default_loader()
+        conf_data = WSLSetupOptions()
 
         if data:
             proc_data = \
                 {key: convert_if_bool(value) for (key, value) in data.items()}
             conf_data = WSLSetupOptions(**proc_data)
-            self.model.apply_settings(conf_data)
+
+        self.model.apply_settings(conf_data)
 
     def load_autoinstall_data(self, data):
         if data is not None:
