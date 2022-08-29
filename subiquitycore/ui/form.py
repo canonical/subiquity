@@ -305,10 +305,10 @@ class FormField(abc.ABC):
     def __init__(self, caption=None, help=None):
         self.caption = caption
         # Allows styling at instantiation
-        if help is None or isinstance(help, tuple) or help is NO_HELP:
-            self.help = help
-        else:
+        if isinstance(help, str):
             self.help = ('info_minor',  help)
+        else:
+            self.help = help
         self.index = FormField.next_index
         FormField.next_index += 1
 
