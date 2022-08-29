@@ -349,6 +349,7 @@ class TestFlow(TestAPI):
                 'partition': {
                     'number': root['number'],
                     'format': 'ext4',
+                    'wipe': 'superblock',
                 }
             }
             edit_resp = await inst.post('/storage/v2/edit_partition', data)
@@ -755,6 +756,7 @@ class TestEdit(TestAPI):
                 'partition': {
                     'number': 3,
                     'format': 'btrfs',
+                    'wipe': 'superblock',
                 }
             }
             resp = await inst.post('/storage/v2/edit_partition', data)
@@ -790,6 +792,7 @@ class TestEdit(TestAPI):
                     'number': 3,
                     'format': 'btrfs',
                     'mount': '/',
+                    'wipe': 'superblock',
                 }
             }
             resp = await inst.post('/storage/v2/edit_partition', data)
@@ -812,6 +815,7 @@ class TestEdit(TestAPI):
                     'number': 3,
                     'format': 'ext4',
                     'mount': '/',
+                    'wipe': 'superblock',
                 }
             }
             resp = await inst.post('/storage/v2/edit_partition', data)
@@ -827,7 +831,7 @@ class TestEdit(TestAPI):
             self.assertEqual(orig_sda2, sda2)
 
             sda3 = first(sda['partitions'], 'number', 3)
-            self.assertIsNone(sda3['wipe'])
+            self.assertIsNotNone(sda3['wipe'])
             self.assertEqual('/', sda3['mount'])
             self.assertEqual('ext4', sda3['format'])
             self.assertFalse(sda3['boot'])
@@ -1232,7 +1236,11 @@ class TestRegression(TestAPI):
             resp = await inst.post('/storage/v2/add_partition', data)
             [sda] = resp['disks']
             [part] = match(sda['partitions'], mount='/foo')
-            part.update({'format': 'ext3', 'mount': '/bar'})
+            part.update({
+                'format': 'ext3',
+                'mount': '/bar',
+                'wipe': 'superblock',
+            })
             data['partition'] = part
             data.pop('gap')
             await inst.post('/storage/v2/edit_partition', data)
