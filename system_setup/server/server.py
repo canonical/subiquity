@@ -31,7 +31,6 @@ INSTALL_MODEL_NAMES = ModelNames({
         "wslconfbase",
     },
     wsl_setup={
-        "wslsetupoptions",
         "identity",
     },
     wsl_configuration={
