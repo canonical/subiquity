@@ -1260,25 +1260,34 @@ class TestRegression(TestAPI):
         # 1) the wipe value was ignored, as the format key was used instead
         # 2) the format wasn't actually changed, so the partition was
         #    considered preserve=True
+        # wipe is thus used to convey intention
         async with start_server('examples/win10-along-ubuntu.json') as inst:
             resp = await inst.get('/storage/v2')
             [d1] = resp['disks']
             [p5] = match(d1['partitions'], number=5)
-            p5.update({
-                'mount': '/',
-                'wipe': 'superblock'
-            })
-            data = {
-                'disk_id': d1['id'],
-                'partition': p5,
-            }
-            await inst.post('/storage/v2/edit_partition', data)
+            p5.update(dict(mount='/home', wipe='superblock'))
+            data = dict(disk_id=d1['id'], partition=p5)
+            resp = await inst.post('/storage/v2/edit_partition', data)
 
             v1resp = await inst.get('/storage')
             [c_p5] = match(v1resp['config'], number=5)
             [c_p5fmt] = match(v1resp['config'], volume=c_p5['id'])
             self.assertEqual('superblock', c_p5['wipe'])
             self.assertFalse(c_p5fmt['preserve'])
+            self.assertTrue(c_p5['preserve'])
+
+            # then let's change our minds and not wipe it
+            [d1] = resp['disks']
+            [p5] = match(d1['partitions'], number=5)
+            p5['wipe'] = None
+            data = dict(disk_id=d1['id'], partition=p5)
+            resp = await inst.post('/storage/v2/edit_partition', data)
+
+            v1resp = await inst.get('/storage')
+            [c_p5] = match(v1resp['config'], number=5)
+            [c_p5fmt] = match(v1resp['config'], volume=c_p5['id'])
+            self.assertNotIn('wipe', c_p5)
+            self.assertTrue(c_p5fmt['preserve'])
             self.assertTrue(c_p5['preserve'])
 
     @timeout()
