@@ -95,7 +95,7 @@ class TestFilesystemManipulator(unittest.TestCase):
     def test_wipe_existing_fs(self):
         # LP: #1983036 - edit a partition to wipe it and mount it, but not
         # actually change the fs type already there
-        # example: it's ext4, wipe and make it ext4 again
+        # example: it's ext2, wipe and make it ext2 again
         manipulator, d = make_manipulator_and_disk()
         p = make_partition(manipulator.model, d, preserve=True)
         fs = make_filesystem(manipulator.model, partition=p, fstype='ext2',

@@ -1257,10 +1257,9 @@ class TestRegression(TestAPI):
     @timeout()
     async def test_edit_should_trigger_wipe_when_requested(self):
         # LP: #1983036 - a partition wipe was requested but didn't happen
-        # 1) the wipe value was ignored, as the format key was used instead
-        # 2) the format wasn't actually changed, so the partition was
-        #    considered preserve=True
-        # wipe is thus used to convey intention
+        # The old way this worked was to use changes to the 'format' value to
+        # decide if a wipe was happening or not, and now the client chooses so
+        # explicitly.
         async with start_server('examples/win10-along-ubuntu.json') as inst:
             resp = await inst.get('/storage/v2')
             [d1] = resp['disks']
