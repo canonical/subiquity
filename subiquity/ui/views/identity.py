@@ -42,7 +42,7 @@ from subiquity.common.types import IdentityData, UsernameValidation
 log = logging.getLogger("subiquity.ui.views.identity")
 
 HOSTNAME_MAXLEN = 64
-HOSTNAME_REGEX = r'[a-z0-9_][a-z0-9_-]*'
+HOSTNAME_REGEX = r'[a-z0-9][a-z0-9.-]*'
 REALNAME_MAXLEN = 160
 SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
 USERNAME_MAXLEN = 32
@@ -111,8 +111,25 @@ class UsernameEditor(StringEditor, _AsyncValidatedMixin, WantsToKnowFormField):
             return super().valid_char(ch)
 
 
+class HostnameEditor(StringEditor, _AsyncValidatedMixin, WantsToKnowFormField):
+    def __init__(self):
+        self.valid_char_pat = r'[-a-z0-9.]'
+        self.error_invalid_char = _("The only characters permitted in this "
+                                    "field are a-z, 0-9, . and -")
+        super().__init__()
+
+    def valid_char(self, ch):
+        if len(ch) == 1 and not re.match(self.valid_char_pat, ch):
+            self.bff.in_error = True
+            self.bff.show_extra(("info_error", self.error_invalid_char))
+            return False
+        else:
+            return super().valid_char(ch)
+
+
 RealnameField = simple_field(RealnameEditor)
 UsernameField = simple_field(UsernameEditor)
+HostnameField = simple_field(HostnameEditor)
 PasswordField = simple_field(PasswordEditor)
 
 
@@ -126,7 +143,7 @@ class IdentityForm(Form):
         widget.set_validation_call(self.controller.validate_username)
 
     realname = RealnameField(_("Your name:"))
-    hostname = UsernameField(
+    hostname = HostnameField(
         _("Your server's name:"),
         help=_("The name it uses when it talks to other computers."))
     username = UsernameField(_("Pick a username:"))
