@@ -48,13 +48,13 @@ class FilesystemManipulator:
         if spec.get('fstype') is None:
             # prep partitions are always wiped (and never have a filesystem)
             if getattr(volume, 'flag', None) != 'prep':
-                volume.wipe = spec.get('wipe', None)
+                volume.wipe = spec.get('wipe', volume.wipe)
             fstype = volume.original_fstype()
             if fstype is None:
                 return None
         else:
             fstype = spec['fstype']
-            volume.wipe = spec.get('wipe', None)
+            volume.wipe = spec.get('wipe', volume.wipe)
         preserve = volume.wipe is None
         fs = self.model.add_filesystem(volume, fstype, preserve)
         if isinstance(volume, Partition):
