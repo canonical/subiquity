@@ -532,7 +532,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise ValueError('edit_partition does not support changing boot')
         spec = {'mount': data.partition.mount or partition.mount}
         if data.partition.format is not None:
-            if data.partition.format != partition._fs.fstype:
+            if data.partition.format != partition.original_fstype():
                 if data.partition.wipe is None:
                     raise ValueError(
                         'changing partition format requires a wipe value')
