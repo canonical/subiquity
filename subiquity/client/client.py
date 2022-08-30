@@ -36,7 +36,7 @@ from subiquitycore.view import BaseView
 
 from subiquity.client.controller import Confirm
 from subiquity.client.keycodes import (
-    DummyKeycodesFilter,
+    NoOpKeycodesFilter,
     KeyCodesFilter,
     )
 from subiquity.common.api.client import make_client_for_conn
@@ -125,7 +125,7 @@ class SubiquityClient(TuiApplication):
         if is_linux_tty():
             self.input_filter = KeyCodesFilter()
         else:
-            self.input_filter = DummyKeycodesFilter()
+            self.input_filter = NoOpKeycodesFilter()
 
         self.help_menu = HelpMenu(self, about_msg)
         super().__init__(opts)

@@ -32,8 +32,8 @@ DISTRIB_DESCRIPTION="Ubuntu 21.10"
         """
 
         with patch(self.target, mock_open(read_data=lsb_str)) as patched:
-            distro = lsb_release(path="dummy")
-            patched.assert_called_once_with("dummy", "r")
+            distro = lsb_release(path="sample")
+            patched.assert_called_once_with("sample", "r")
             self.assertEqual(distro["id"], "Ubuntu")
             self.assertEqual(distro["release"], "21.10")
             self.assertEqual(distro["codename"], "impish")
@@ -55,4 +55,4 @@ DISTRIB_DESCRIPTION="Ubuntu 21.10"
 
     def test_lsb_release_mutually_exclusive(self):
         with self.assertRaises(ValueError):
-            lsb_release(path="dummy", dry_run=True)
+            lsb_release(path="sample", dry_run=True)

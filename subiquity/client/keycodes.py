@@ -94,8 +94,8 @@ class KeyCodesFilter:
             return keys
 
 
-class DummyKeycodesFilter:
-    # A dummy implementation of the same interface as KeyCodesFilter
+class NoOpKeycodesFilter:
+    # A do-nothing implementation of the same interface as KeyCodesFilter
     # we can use when not running in a linux tty.
 
     def enter_keycodes_mode(self):

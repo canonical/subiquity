@@ -352,8 +352,8 @@ class KeyboardForm(Form):
 
     cancel_label = _("Back")
 
-    layout = ChoiceField(_("Layout:"), choices=["dummy"])
-    variant = ChoiceField(_("Variant:"), choices=["dummy"])
+    layout = ChoiceField(_("Layout:"), choices=["placeholder"])
+    variant = ChoiceField(_("Variant:"), choices=["placeholder"])
 
 
 class KeyboardView(BaseView):

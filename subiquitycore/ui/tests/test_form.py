@@ -29,11 +29,11 @@ class TestForm(TestCase):
         """ Make sure Form.has_validation_form() returns:
         * True if any field is in error
         * False otherwise. """
-        class DummyForm(Form):
-            field1 = StringField("DummyStringOne", help="")
-            field2 = StringField("DummyStringTwo", help="")
+        class SampleForm(Form):
+            field1 = StringField("FieldOne", help="")
+            field2 = StringField("FieldTwo", help="")
 
-        form = DummyForm()
+        form = SampleForm()
 
         form.field1.in_error = False
         form.field2.in_error = False
@@ -50,15 +50,15 @@ class TestForm(TestCase):
     def test_has_validation_error_with_subform(self):
         """ Make sure Form.has_validation_form() is affected by fields from
         child forms (only if the child form is enabled). """
-        class DummySubForm(SubForm):
-            field1 = StringField("DummyString", help="")
+        class SampleSubForm(SubForm):
+            field1 = StringField("FieldString", help="")
 
-        class DummyForm(Form):
-            field1 = StringField("DummyString", help="")
-            dummy_subform = SubFormField(DummySubForm, "", help="")
+        class SampleForm(Form):
+            field1 = StringField("FieldString", help="")
+            sample_subform = SubFormField(SampleSubForm, "", help="")
 
-        form = DummyForm()
-        subform = form.dummy_subform.widget.form
+        form = SampleForm()
+        subform = form.sample_subform.widget.form
 
         form.field1.in_error = False
         subform.field1.in_error = False
@@ -79,46 +79,46 @@ class TestForm(TestCase):
         # Make sure fields in disabled subforms are ignored.
         form.field1.in_error = False
         subform.field1.in_error = True
-        form.dummy_subform.enabled = False
+        form.sample_subform.enabled = False
         self.assertFalse(form.has_validation_error())
 
     def test_has_validation_error_with_subsubform(self):
         """ Make sure enabling/disabling parent forms also acts as if sub forms
         are disabled. """
-        class DummySubSubForm(SubForm):
-            field1 = StringField("DummyString", help="")
+        class SampleSubSubForm(SubForm):
+            field1 = StringField("SampleString", help="")
 
-        class DummySubForm(SubForm):
-            dummy_subform = SubFormField(DummySubSubForm, "", help="")
+        class SampleSubForm(SubForm):
+            sample_subform = SubFormField(SampleSubSubForm, "", help="")
 
-        class DummyForm(Form):
-            dummy_subform = SubFormField(DummySubForm, "", help="")
+        class SampleForm(Form):
+            sample_subform = SubFormField(SampleSubForm, "", help="")
 
-        form = DummyForm()
-        subform = form.dummy_subform.widget.form
-        subsubform = subform.dummy_subform.widget.form
+        form = SampleForm()
+        subform = form.sample_subform.widget.form
+        subsubform = subform.sample_subform.widget.form
 
         subsubform.field1.in_error = True
         self.assertTrue(form.has_validation_error())
 
         # If subsubform is disabled, it should be ignored.
         subsubform.field1.in_error = True
-        subform.dummy_subform.enabled = False
+        subform.sample_subform.enabled = False
         self.assertFalse(form.has_validation_error())
 
         # If subform is disabled, it should also be ignored.
         subsubform.field1.in_error = True
-        subform.dummy_subform.enabled = True
-        form.dummy_subform.enabled = False
+        subform.sample_subform.enabled = True
+        form.sample_subform.enabled = False
         self.assertFalse(form.has_validation_error())
 
     def test_done_button_auto_toggle(self):
         """ Make sure calling validated() enables or disables the Done button.
         """
-        class DummyForm(Form):
-            field1 = StringField("DummyString", help="")
+        class SampleForm(Form):
+            field1 = StringField("SampleString", help="")
 
-        form = DummyForm()
+        form = SampleForm()
         done_button = form.buttons.base_widget.contents[0][0]
 
         form.field1.in_error = False
@@ -132,14 +132,14 @@ class TestForm(TestCase):
     def test_subform_validated_propagates(self):
         """ Make sure calling validated() in a subform affects the Done button
         in the parent form. """
-        class DummySubForm(SubForm):
-            field1 = StringField("DummyString", help="")
+        class SampleSubForm(SubForm):
+            field1 = StringField("SampleString", help="")
 
-        class DummyForm(Form):
-            dummy_subform = SubFormField(DummySubForm, "", help="")
+        class SampleForm(Form):
+            sample_subform = SubFormField(SampleSubForm, "", help="")
 
-        form = DummyForm()
-        subform = form.dummy_subform.widget.form
+        form = SampleForm()
+        subform = form.sample_subform.widget.form
         done_button = form.buttons.base_widget.contents[0][0]
 
         subform.field1.in_error = False
