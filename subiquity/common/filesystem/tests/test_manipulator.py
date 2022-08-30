@@ -15,6 +15,7 @@
 
 import contextlib
 import unittest
+from unittest import mock
 
 import attr
 
@@ -90,6 +91,25 @@ class TestFilesystemManipulator(unittest.TestCase):
         dm_crypts = [
             a for a in manipulator.model._actions if a.type == 'dm_crypt']
         self.assertEqual(dm_crypts, [])
+
+    def test_wipe_existing_fs(self):
+        # LP: #1983036 - edit a partition to wipe it and mount it, but not
+        # actually change the fs type already there
+        # example: it's ext2, wipe and make it ext2 again
+        manipulator, d = make_manipulator_and_disk()
+        p = make_partition(manipulator.model, d, preserve=True)
+        fs = make_filesystem(manipulator.model, partition=p, fstype='ext2',
+                             preserve=True)
+        manipulator.model._actions.append(fs)
+        manipulator.delete_filesystem(fs)
+        spec = {'wipe': 'random'}
+        with mock.patch.object(p, 'original_fstype') as original_fstype:
+            original_fstype.return_value = 'ext2'
+            fs = manipulator.create_filesystem(p, spec)
+        self.assertTrue(p.preserve)
+        self.assertEqual('random', p.wipe)
+        self.assertFalse(fs.preserve)
+        self.assertEqual('ext2', fs.fstype)
 
     def test_can_only_add_boot_once(self):
         # This is really testing model code but it's much easier to test with a
