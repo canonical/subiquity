@@ -387,8 +387,7 @@ class TestGuided(TestAPI):
     @timeout()
     async def test_guided_v2_reformat(self):
         cfg = 'examples/win10-along-ubuntu.json'
-        extra = ['--storage-version', '2']
-        async with start_server(cfg, extra_args=extra) as inst:
+        async with start_server(cfg) as inst:
             resp = await inst.get('/storage/v2/guided')
             [reformat] = match(resp['possible'],
                                _type='GuidedStorageTargetReformat')
@@ -403,16 +402,24 @@ class TestGuided(TestAPI):
                 'grub_device': True,
                 'mount': '/boot/efi',
                 'number': 1,
-                'wipe': None,
+                'preserve': False,
+                'wipe': 'superblock',
             }
             self.assertDictSubset(expected_p1, p1)
             expected_p2 = {
                 'number': 2,
                 'mount': '/',
                 'format': 'ext4',
-                'wipe': None,
+                'preserve': False,
+                'wipe': 'superblock',
             }
             self.assertDictSubset(expected_p2, p2)
+
+            v1resp = await inst.get('/storage')
+            parts = match(v1resp['config'], type='partition')
+            for p in parts:
+                self.assertFalse(p['preserve'], p)
+                self.assertEqual('superblock', p.get('wipe'), p)
 
     @timeout()
     async def test_guided_v2_resize(self):
