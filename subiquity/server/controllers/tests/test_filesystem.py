@@ -99,6 +99,8 @@ class TestGuided(TestCase):
         [d1p1, d1p2] = self.d1.partitions()
         self.assertEqual(p1mnt, d1p1.mount)
         self.assertEqual('/', d1p2.mount)
+        self.assertFalse(d1p1.preserve)
+        self.assertFalse(d1p2.preserve)
         self.assertIsNone(gaps.largest_gap(self.d1))
 
     def test_guided_direct_BIOS_MSDOS(self):
@@ -107,6 +109,7 @@ class TestGuided(TestCase):
         self.controller.guided(GuidedChoiceV2(target=target, use_lvm=False))
         [d1p1] = self.d1.partitions()
         self.assertEqual('/', d1p1.mount)
+        self.assertFalse(d1p1.preserve)
         self.assertIsNone(gaps.largest_gap(self.d1))
 
     @parameterized.expand(boot_expectations)
@@ -118,6 +121,9 @@ class TestGuided(TestCase):
         self.assertEqual(p1mnt, d1p1.mount)
         self.assertEqual('/boot', d1p2.mount)
         self.assertEqual(None, d1p3.mount)
+        self.assertFalse(d1p1.preserve)
+        self.assertFalse(d1p2.preserve)
+        self.assertFalse(d1p3.preserve)
         [vg] = self.model._all(type='lvm_volgroup')
         [part] = list(vg.devices)
         self.assertEqual(d1p3, part)
@@ -133,6 +139,8 @@ class TestGuided(TestCase):
         [part] = list(vg.devices)
         self.assertEqual(d1p2, part)
         self.assertEqual(None, d1p2.mount)
+        self.assertFalse(d1p1.preserve)
+        self.assertFalse(d1p2.preserve)
         self.assertIsNone(gaps.largest_gap(self.d1))
 
     def _guided_side_by_side(self, bl, ptable):

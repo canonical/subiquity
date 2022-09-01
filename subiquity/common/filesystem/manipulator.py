@@ -54,7 +54,11 @@ class FilesystemManipulator:
                 return None
         else:
             fstype = spec['fstype']
-            volume.wipe = spec.get('wipe', volume.wipe)
+            # partition editing routines are expected to provide the
+            # appropriate wipe value.  partition additions may not, give them a
+            # basic wipe value consistent with older behavior until we prove
+            # that everyone does so correctly.
+            volume.wipe = spec.get('wipe', 'superblock')
         preserve = volume.wipe is None
         fs = self.model.add_filesystem(volume, fstype, preserve)
         if isinstance(volume, Partition):
