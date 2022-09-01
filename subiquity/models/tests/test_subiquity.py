@@ -13,13 +13,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import fnmatch
 import json
 import unittest
 from unittest import mock
 import re
 import yaml
+
+from cloudinit.config.schema import SchemaValidationError
+try:
+    from cloudinit.config.schema import SchemaProblem
+except ImportError:
+    def SchemaProblem(x, y): return (x, y)  # TODO(drop on cloud-init 22.3 SRU)
 
 from subiquitycore.pubsub import MessageHub
 
@@ -236,6 +241,17 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(len(cloud_init_config['users']), 1)
             self.assertEqual(cloud_init_config['users'][0]['name'], 'user2')
 
+        with self.subTest('Invalid user-data raises error'):
+            model = self.make_model()
+            model.userdata = {'bootcmd': "nope"}
+            with self.assertRaises(SchemaValidationError) as ctx:
+                model._cloud_init_config()
+            expected_error = (
+                "Cloud config schema errors: bootcmd: 'nope' is not of type"
+                " 'array'"
+            )
+            self.assertEqual(expected_error, str(ctx.exception))
+
     @mock.patch('subiquity.models.subiquity.lsb_release')
     @mock.patch('subiquitycore.file_util.datetime.datetime')
     def test_cloud_init_files_emits_datasource_config_and_clean_script(
@@ -297,3 +313,69 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
                     self.assertIsNotNone(expected_files[cpath].match(content))
                 else:
                     self.assertEqual(expected_files[cpath], content)
+
+    def test_validatecloudconfig_schema(self):
+        model = self.make_model()
+        with self.subTest('Valid cloud-config does not error'):
+            model.validate_cloudconfig_schema(
+                data={"ssh_import_id": ["chad.smith"]},
+                data_source="autoinstall.user-data"
+            )
+
+        # Create our own subclass for focal as schema_deprecations
+        # was not yet defined.
+        class SchemaDeprecation(SchemaValidationError):
+            schema_deprecations = ()
+
+            def __init__(self, schema_errors=(), schema_deprecations=()):
+                super().__init__(schema_errors)
+                self.schema_deprecations = schema_deprecations
+
+        problem = SchemaProblem(
+            "bogus",
+            "'bogus' is deprecated, use 'notbogus' instead"
+        )
+        with self.subTest('Deprecated cloud-config warns'):
+            with unittest.mock.patch(
+                "subiquity.models.subiquity.validate_cloudconfig_schema"
+            ) as validate:
+                validate.side_effect = SchemaDeprecation(
+                    schema_deprecations=(problem,)
+                )
+                with self.assertLogs(
+                    "subiquity.models.subiquity", level="INFO"
+                ) as logs:
+                    model.validate_cloudconfig_schema(
+                        data={"bogus": True},
+                        data_source="autoinstall.user-data"
+                    )
+            expected = (
+                "WARNING:subiquity.models.subiquity:The cloud-init"
+                " configuration for autoinstall.user-data contains deprecated"
+                " values:\n'bogus' is deprecated, use 'notbogus' instead"
+            )
+            self.assertEqual(logs.output, [expected])
+
+        with self.subTest('Invalid cloud-config schema errors'):
+            with self.assertRaises(SchemaValidationError) as ctx:
+                model.validate_cloudconfig_schema(
+                    data={"bootcmd": "nope"}, data_source="system info"
+                )
+            expected_error = (
+                "Cloud config schema errors: bootcmd: 'nope' is not of"
+                " type 'array'"
+            )
+            self.assertEqual(expected_error, str(ctx.exception))
+
+        with self.subTest('Prefix autoinstall.user-data cloud-config errors'):
+            with self.assertRaises(SchemaValidationError) as ctx:
+                model.validate_cloudconfig_schema(
+                    data={"bootcmd": "nope"},
+                    data_source="autoinstall.user-data"
+                )
+            expected_error = (
+                "Cloud config schema errors:"
+                " autoinstall.user-data.bootcmd: 'nope' is not of"
+                " type 'array'"
+            )
+            self.assertEqual(expected_error, str(ctx.exception))

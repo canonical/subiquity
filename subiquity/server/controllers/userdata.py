@@ -13,7 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 from subiquity.server.controller import NonInteractiveController
+
+log = logging.getLogger("subiquity.server.controllers.userdata")
 
 
 class UserdataController(NonInteractiveController):
@@ -27,6 +31,10 @@ class UserdataController(NonInteractiveController):
 
     def load_autoinstall_data(self, data):
         self.model.clear()
+        if data:
+            self.app.base_model.validate_cloudconfig_schema(
+                data=data, data_source="autoinstall.user-data",
+            )
         self.model.update(data)
 
     def make_autoinstall(self):
