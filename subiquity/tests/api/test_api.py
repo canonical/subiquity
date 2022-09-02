@@ -157,7 +157,7 @@ class SystemSetupServer(Server):
         env = os.environ.copy()
         env['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
         cmd = ['python3', '-m', 'system_setup.cmd.server',
-               '--dry-run', '--socket', socket]
+               '--dry-run', '--socket', socket, '--output-base', output_base]
         if extra_args is not None:
             cmd.extend(extra_args)
         self.proc = await astart_command(cmd, env=env)
