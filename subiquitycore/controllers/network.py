@@ -104,7 +104,6 @@ network:
          name: "en*"
        addresses:
          - 10.0.2.15/24
-       gateway4: 10.0.2.2
        nameservers:
          addresses:
            - 8.8.8.8
@@ -112,6 +111,9 @@ network:
          search:
            - foo
            - bar
+       routes:
+         - to: default
+           via: 10.0.2.2
     "all-eth":
        match:
          name: "eth*"
@@ -357,11 +359,13 @@ class BaseNetworkController(BaseController):
         dev = self.model.get_netdev_by_name(dev_name)
         dev.remove_ip_networks_for_version(ip_version)
         dev.config.setdefault('addresses', []).extend(static_config.addresses)
-        gwkey = 'gateway{v}'.format(v=ip_version)
         if static_config.gateway:
-            dev.config[gwkey] = static_config.gateway
+            dev.config['routes'] = [{
+                'to': 'default',
+                'via': static_config.gateway
+            }]
         else:
-            dev.config.pop(gwkey, None)
+            dev.remove_routes(ip_version)
         ns = dev.config.setdefault('nameservers', {})
         ns.setdefault('addresses', []).extend(static_config.nameservers)
         ns.setdefault('search', []).extend(static_config.searchdomains)
