@@ -166,7 +166,7 @@ class UbuntuProController(SubiquityTuiController):
         async def inner() -> None:
             answer = await self.endpoint.contract_selection.initiate.POST()
             self.cs_initiated = True
-            on_initiated(user_code=answer.user_code)
+            on_initiated(answer.user_code)
         self._magic_attach_task = schedule_task(inner())
 
     def contract_selection_wait(
