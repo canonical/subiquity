@@ -160,7 +160,7 @@ class UbuntuProController(SubiquityTuiController):
             self._check_task.cancel()
 
     def contract_selection_initiate(
-            self, on_initiated: Callable[[str, str], None]) -> None:
+            self, on_initiated: Callable[[str], None]) -> None:
         """ Initiate the contract selection asynchronously. Calls on_initiated
         when the contract-selection has initiated. """
         async def inner() -> None:
@@ -172,7 +172,7 @@ class UbuntuProController(SubiquityTuiController):
     def contract_selection_wait(
             self,
             on_contract_selected: Callable[[str], None],
-            on_timeout: Callable[[None], None]) -> None:
+            on_timeout: Callable[[], None]) -> None:
         """ Asynchronously wait for the contract selection to finish.
         Calls on_contract_selected with the contract-token once the contract
         gets selected
@@ -193,7 +193,7 @@ class UbuntuProController(SubiquityTuiController):
         self._monitor_task = schedule_task(inner())
 
     def contract_selection_cancel(
-            self, on_cancelled: Callable[[None], None]) -> None:
+            self, on_cancelled: Callable[[], None]) -> None:
         """ Cancel the asynchronous contract selection (if started). """
         async def inner() -> None:
             await self.endpoint.contract_selection.cancel.POST()
