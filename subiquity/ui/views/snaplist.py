@@ -390,10 +390,13 @@ class SnapListView(BaseView):
         self.show_main_screen()
 
     def offer_retry(self):
+        def try_again_pressed(unused) -> None:
+            self.wait_load()
+
         self._w = screen(
             [Text(_("Sorry, loading snaps from the store failed."))],
             [
-                other_btn(label=_("Try again"), on_press=self.wait_load),
+                other_btn(label=_("Try again"), on_press=try_again_pressed),
                 ok_btn(label=_("Continue"), on_press=self.done),
             ])
 
