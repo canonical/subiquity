@@ -16,6 +16,10 @@
 import logging
 from typing import List
 
+from subiquitycore.tuicontroller import (
+    Skip,
+    )
+
 from subiquity.client.controller import (
     SubiquityTuiController,
     )
@@ -37,7 +41,8 @@ class SnapListController(SubiquityTuiController):
         if data.status == SnapCheckState.FAILED:
             # If loading snaps failed or network is disabled, skip the screen.
             log.debug('snaplist GET failed, mark done')
-            self.done([])
+            await self.endpoint.POST([])
+            raise Skip
         return SnapListView(self, data)
 
     def run_answers(self):
