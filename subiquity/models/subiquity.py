@@ -387,12 +387,6 @@ class SubiquityModel:
                 '001-mount-cdrom': [
                     'mount', '--bind', '/cdrom', '/target/cdrom',
                     ],
-                # The below command must be run after updating
-                # etc/default/keyboard on the target so that the initramfs uses
-                # the keyboard mapping selected by the user.  See LP #1894009
-                '002-setupcon-save-only': [
-                    'curtin', 'in-target', '--', 'setupcon', '--save-only',
-                    ],
                 },
 
             'grub': {
