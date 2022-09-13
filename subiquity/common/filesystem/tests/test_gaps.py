@@ -21,15 +21,20 @@ from parameterized import parameterized
 
 from subiquity.models.filesystem import (
     Disk,
+    LVM_CHUNK_SIZE,
+    LVM_OVERHEAD,
     MiB,
     PartitionAlignmentData,
     Raid,
     )
 from subiquity.models.tests.test_filesystem import (
     make_disk,
+    make_lv,
     make_model,
     make_model_and_disk,
+    make_model_and_lv,
     make_partition,
+    make_vg,
     )
 
 from subiquity.common.filesystem import gaps
@@ -449,6 +454,20 @@ class TestMovableTrailingPartitionsAndGapSize(GapTestCase):
             ([p2], 30),
             gaps.movable_trailing_partitions_and_gap_size(p1))
 
+    def test_two_trailing_movable_partitions_and_gap(self):
+        self.use_alignment_data(PartitionAlignmentData(
+            part_align=10, min_gap_size=1, min_start_offset=10,
+            min_end_offset=10, primary_part_limit=10))
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # #####[ p1               ][ p2 ][ p3 ]        #####
+        m, d = make_model_and_disk(size=100)
+        p1 = make_partition(m, d, offset=10, size=40)
+        p2 = make_partition(m, d, offset=50, size=10)
+        p3 = make_partition(m, d, offset=60, size=10)
+        self.assertEqual(
+            ([p2, p3], 20),
+            gaps.movable_trailing_partitions_and_gap_size(p1))
+
     def test_one_trailing_movable_partition_and_no_gap(self):
         self.use_alignment_data(PartitionAlignmentData(
             part_align=10, min_gap_size=1, min_start_offset=10,
@@ -547,6 +566,21 @@ class TestMovableTrailingPartitionsAndGapSize(GapTestCase):
         self.assertEqual(
             ([], 0),
             gaps.movable_trailing_partitions_and_gap_size(p1))
+
+    def test_trailing_lvm_logical_volume_no_gap(self):
+        model, lv = make_model_and_lv()
+        self.assertEqual(
+            ([], 0),
+            gaps.movable_trailing_partitions_and_gap_size(lv))
+
+    def test_trailing_lvm_logical_volume_with_gap(self):
+        model, disk = make_model_and_disk(
+                size=100 * LVM_CHUNK_SIZE + LVM_OVERHEAD)
+        vg = make_vg(model, pvs={disk})
+        lv = make_lv(model, vg=vg, size=40 * LVM_CHUNK_SIZE)
+        self.assertEqual(
+            ([], LVM_CHUNK_SIZE * 60),
+            gaps.movable_trailing_partitions_and_gap_size(lv))
 
 
 class TestLargestGaps(unittest.TestCase):
