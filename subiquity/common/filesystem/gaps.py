@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import functools
+from typing import Tuple, List
 
 import attr
 
@@ -23,6 +24,7 @@ from subiquity.models.filesystem import (
     align_down,
     Disk,
     LVM_CHUNK_SIZE,
+    LVM_LogicalVolume,
     LVM_VolGroup,
     Partition,
     Raid,
@@ -240,7 +242,22 @@ def largest_gap_size(device, in_extended=None):
     return 0
 
 
+@functools.singledispatch
 def movable_trailing_partitions_and_gap_size(partition):
+    """ For a given partition (or LVM logical volume), return the total,
+    potentially available, free space immediately following the partition.
+    By potentially available, we mean that to claim that much free space, some
+    other partitions might need to be moved.
+    The return value is a tuple that has two values:
+     * the list of partitions that would need to be moved
+     * the total potentially available free space
+    """
+    raise NotImplementedError
+
+
+@movable_trailing_partitions_and_gap_size.register
+def _movable_trailing_partitions_and_gap_size_partition(partition: Partition) \
+        -> Tuple[List[Partition], int]:
     pgs = parts_and_gaps(partition.device)
     part_idx = pgs.index(partition)
     trailing_partitions = []
@@ -258,6 +275,15 @@ def movable_trailing_partitions_and_gap_size(partition):
             else:
                 return (trailing_partitions, 0)
     return (trailing_partitions, 0)
+
+
+@movable_trailing_partitions_and_gap_size.register
+def _movable_trailing_partitions_and_gap_size_lvm(volume: LVM_LogicalVolume) \
+        -> Tuple[List[LVM_LogicalVolume], int]:
+    # In a Volume Group, there is no need to move partitions around, one can
+    # always use the remaining space.
+
+    return ([], largest_gap_size(volume.volgroup))
 
 
 def at_offset(device, offset):
