@@ -72,12 +72,6 @@ class TracebackExtractor:
             self.traceback.append(line)
 
 
-class InstallStep(Protocol):
-
-    async def run(self, *, context) -> None:
-        pass
-
-
 @attr.s(auto_attribs=True)
 class CurtinInstallStep:
     """Represents the parameters of a single invocation of curtin install."""
