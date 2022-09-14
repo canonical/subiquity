@@ -438,12 +438,6 @@ class SubiquityModel:
 
     def render(self):
         config = {
-            'curthooks_commands': {
-                '001-mount-cdrom': [
-                    'mount', '--bind', '/cdrom', '/target/cdrom',
-                    ],
-                },
-
             'grub': {
                 'terminal': 'unmodified',
                 'probe_additional_os': True
