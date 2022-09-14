@@ -278,6 +278,11 @@ class AptConfigurer:
 
         await self.cleanup()
 
+    async def setup_target(self):
+        # Call this after the rootfs has been extracted to the real target
+        # system but before any configuration is applied to it.
+        await self.mount('/cdrom', '/target/cdrom', options='bind')
+
 
 class DryRunAptConfigurer(AptConfigurer):
 

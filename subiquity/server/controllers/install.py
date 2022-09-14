@@ -194,6 +194,10 @@ class InstallController(SubiquityController):
         configurer = await mirror.wait_config()
         return await configurer.configure_for_install(context)
 
+    async def setup_target(self, context):
+        mirror = self.app.controllers.Mirror
+        await mirror.apt_configurer.setup_target()
+
     @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
     async def curtin_install(self, *, context, source):
@@ -235,19 +239,20 @@ class InstallController(SubiquityController):
             make_curtin_step(
                 name="partitioning", stages=["partitioning"],
                 acquire_config=self.acquire_generic_config,
-            ),
+            ).run,
             make_curtin_step(
                 name="extract", stages=["extract"],
                 acquire_config=self.acquire_generic_config,
-            ),
+            ).run,
+            self.setup_target,
             make_curtin_step(
                 name="curthooks", stages=["curthooks"],
                 acquire_config=self.acquire_generic_config,
-            ),
+            ).run,
         ]
 
         for step in generic_steps:
-            await step.run(context=context)
+            await step(context=context)
 
     @with_context()
     async def install(self, *, context):
