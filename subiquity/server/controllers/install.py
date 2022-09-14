@@ -19,9 +19,8 @@ import os
 from pathlib import Path
 import re
 import shutil
-import subprocess
 import tempfile
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Protocol
 
 import attr
 import yaml
@@ -73,16 +72,49 @@ class TracebackExtractor:
             self.traceback.append(line)
 
 
+class InstallStep(Protocol):
+
+    async def run(self, *, context) -> None:
+        pass
+
+
 @attr.s(auto_attribs=True)
 class CurtinInstallStep:
-    """ Represents the parameters of a single step (i.e., invocation of curtin
-    install). """
+    """Represents the parameters of a single invocation of curtin install."""
+    controller: "InstallController"
     name: str
     stages: List[str]
     config_file: Path
     log_file: Path
     error_file: Path
-    acquire_config: Callable[["CurtinInstallStep", Path], Dict[str, Any]]
+    resume_data_file: Path
+    source: str
+    acquire_config: Callable[["CurtinInstallStep"], Dict[str, Any]]
+
+    @with_context(
+        description="executing curtin install {self.name} step")
+    async def run(self, context):
+        """ Run a curtin install step. """
+
+        self.controller.app.note_file_for_apport(
+                f"Curtin{self.name}Config", str(self.config_file))
+
+        self.controller.write_config(
+                config_file=self.config_file,
+                config=self.acquire_config(self)
+                )
+
+        # Make sure the log directory exists.
+        self.log_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Add a marker to identify the step in the log file.
+        with open(str(self.log_file), mode="a") as fh:
+            fh.write(f"\n---- [[ subiquity step {self.name} ]] ----\n")
+
+        await run_curtin_command(
+            self.controller.app, context, "install", self.source,
+            "--set", f'json:stages={json.dumps(self.stages)}',
+            config=str(self.config_file), private_mounts=False)
 
 
 class InstallController(SubiquityController):
@@ -120,19 +152,19 @@ class InstallController(SubiquityController):
         config_file.parent.mkdir(parents=True, exist_ok=True)
         generate_config_yaml(str(config_file), config)
 
-    def acquire_generic_config(self, step: CurtinInstallStep,
-                               resume_data_file: Path) -> Dict[str, Any]:
+    def acquire_generic_config(self,
+                               step: CurtinInstallStep) -> Dict[str, Any]:
         """ Return a dictionary object to be used as the configuration of a
         generic curtin install step. """
         config = self.model.render()
         config["install"]["log_file"] = str(step.log_file)
         config["install"]["log_file_append"] = True
         config["install"]["error_tarfile"] = str(step.error_file)
-        config["install"]["resume_data"] = str(resume_data_file)
+        config["install"]["resume_data"] = str(step.resume_data_file)
         return config
 
-    def acquire_initial_config(self, step: CurtinInstallStep,
-                               resume_data_file: Path) -> Dict[str, Any]:
+    def acquire_initial_config(self,
+                               step: CurtinInstallStep) -> Dict[str, Any]:
         """ Return a dictionary object to be used as the configuration of the
         initial curtin install step. """
         return {
@@ -144,7 +176,7 @@ class InstallController(SubiquityController):
                 "log_file": str(step.log_file),
                 "log_file_append": True,
                 "error_tarfile": str(step.error_file),
-                "resume_data": str(resume_data_file),
+                "resume_data": str(step.resume_data_file),
             }
         }
 
@@ -161,35 +193,6 @@ class InstallController(SubiquityController):
         mirror = self.app.controllers.Mirror
         configurer = await mirror.wait_config()
         return await configurer.configure_for_install(context)
-
-    @with_context(
-        description="executing curtin install {step.name} step")
-    async def run_curtin_install_step(
-            self, *, context, step: CurtinInstallStep, resume_data_file: Path,
-            source) -> subprocess.CompletedProcess:
-        """ Run a curtin install step. """
-
-        self.app.note_file_for_apport(
-                f"Curtin{step.name}Config", str(step.config_file))
-
-        self.write_config(
-                config_file=step.config_file,
-                config=step.acquire_config(step, resume_data_file)
-                )
-
-        # Make sure the log directory exists.
-        step.log_file.parent.mkdir(parents=True, exist_ok=True)
-
-        # Add a marker to identify the step in the log file.
-        with open(str(step.log_file), mode="a") as fh:
-            fh.write(f"\n---- [[ subiquity step {step.name} ]] ----\n")
-
-        return await run_curtin_command(
-                self.app, context,
-                "install", source,
-                "--set", f'json:stages={json.dumps(step.stages)}',
-                config=str(step.config_file),
-                private_mounts=False)
 
     @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
@@ -210,45 +213,41 @@ class InstallController(SubiquityController):
 
         resume_data_file = Path(tempfile.mkdtemp()) / "resume-data.json"
 
-        await self.run_curtin_install_step(step=CurtinInstallStep(
-                name="initial",
-                stages=[],
-                config_file=config_dir / "subiquity-initial.conf",
+        def make_curtin_step(name, stages, acquire_config):
+            return CurtinInstallStep(
+                controller=self,
+                name=name,
+                stages=stages,
+                config_file=config_dir / f"subiquity-{name}.conf",
                 log_file=install_log_file,
                 error_file=error_file,
-                acquire_config=self.acquire_initial_config,
-            ), resume_data_file=resume_data_file,
-            context=context, source=source)
+                resume_data_file=resume_data_file,
+                source=source,
+                acquire_config=acquire_config,
+            )
+
+        await make_curtin_step(
+            "initial",
+            stages=[],
+            acquire_config=self.acquire_initial_config).run(context=context)
 
         generic_steps = [
-            CurtinInstallStep(
-                name="partitioning",
-                stages=["partitioning"],
-                config_file=config_dir / "subiquity-partitioning.conf",
-                log_file=install_log_file,
-                error_file=error_file,
+            make_curtin_step(
+                name="partitioning", stages=["partitioning"],
                 acquire_config=self.acquire_generic_config,
-            ), CurtinInstallStep(
-                name="extract",
-                stages=["extract"],
-                config_file=config_dir / "subiquity-extract.conf",
-                log_file=install_log_file,
-                error_file=error_file,
+            ),
+            make_curtin_step(
+                name="extract", stages=["extract"],
                 acquire_config=self.acquire_generic_config,
-            ), CurtinInstallStep(
-                name="curthooks",
-                stages=["curthooks"],
-                config_file=config_dir / "subiquity-curthooks.conf",
-                log_file=install_log_file,
-                error_file=error_file,
+            ),
+            make_curtin_step(
+                name="curthooks", stages=["curthooks"],
                 acquire_config=self.acquire_generic_config,
             ),
         ]
 
         for step in generic_steps:
-            await self.run_curtin_install_step(
-                    step=step, resume_data_file=resume_data_file,
-                    context=context, source=source)
+            await step.run(context=context)
 
     @with_context()
     async def install(self, *, context):

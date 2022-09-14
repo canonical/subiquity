@@ -38,19 +38,19 @@ class TestWriteConfig(unittest.IsolatedAsyncioTestCase):
     @patch("subiquity.server.controllers.install.run_curtin_command")
     async def test_run_curtin_install_step(self, run_cmd):
         step = CurtinInstallStep(
-                name="MyStep",
-                stages=["partitioning", "extract"],
-                config_file=Path("/config.yaml"),
-                log_file=Path("/logfile.log"),
-                error_file=Path("/error.tar"),
-                acquire_config=self.controller.acquire_initial_config)
+            controller=self.controller,
+            name="MyStep",
+            stages=["partitioning", "extract"],
+            config_file=Path("/config.yaml"),
+            log_file=Path("/logfile.log"),
+            error_file=Path("/error.tar"),
+            resume_data_file=Path("/resume-data.json"),
+            source="/source",
+            acquire_config=self.controller.acquire_initial_config)
 
         with patch("subiquity.server.controllers.install.open",
                    mock_open()) as m_open:
-            await self.controller.run_curtin_install_step(
-                    step=step,
-                    resume_data_file=Path("/resume-data.json"),
-                    source="/source")
+            await step.run(context=step.controller.context)
 
         m_open.assert_called_once_with("/logfile.log", mode="a")
 
@@ -64,15 +64,17 @@ class TestWriteConfig(unittest.IsolatedAsyncioTestCase):
 
     def test_acquire_initial_config(self):
         step = CurtinInstallStep(
-                name="initial",
-                stages=["initial"],
-                config_file=Path("/config-initial.yaml"),
-                log_file=Path("/logfile-initial.log"),
-                error_file=Path("/error-initial.tar"),
-                acquire_config=self.controller.acquire_initial_config)
+            controller=self.controller,
+            name="initial",
+            stages=["initial"],
+            config_file=Path("/config-initial.yaml"),
+            log_file=Path("/logfile-initial.log"),
+            error_file=Path("/error-initial.tar"),
+            resume_data_file=Path("/resume-data.json"),
+            source="/source",
+            acquire_config=self.controller.acquire_initial_config)
 
-        config = self.controller.acquire_initial_config(
-                step=step, resume_data_file=Path("/resume-data.json"))
+        config = self.controller.acquire_initial_config(step=step)
 
         self.assertDictEqual(config, {
             "install": {
@@ -89,17 +91,19 @@ class TestWriteConfig(unittest.IsolatedAsyncioTestCase):
 
     def test_acquire_generic_config(self):
         step = CurtinInstallStep(
-                name="partitioning",
-                stages=["partitioning"],
-                config_file=Path("/config-partitioning.yaml"),
-                log_file=Path("/logfile-partitioning.log"),
-                error_file=Path("/error-partitioning.tar"),
-                acquire_config=self.controller.acquire_initial_config)
+            controller=self.controller,
+            name="partitioning",
+            stages=["partitioning"],
+            config_file=Path("/config-partitioning.yaml"),
+            log_file=Path("/logfile-partitioning.log"),
+            error_file=Path("/error-partitioning.tar"),
+            resume_data_file=Path("/resume-data.json"),
+            source="/source",
+            acquire_config=self.controller.acquire_initial_config)
 
         with patch.object(self.controller.model, "render",
                           return_value={"install": {}}):
-            config = self.controller.acquire_generic_config(
-                    step=step, resume_data_file=Path("/resume-data.json"))
+            config = self.controller.acquire_generic_config(step=step)
 
         self.assertEqual(config["install"]["log_file"],
                          "/logfile-partitioning.log")
