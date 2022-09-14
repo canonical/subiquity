@@ -20,7 +20,7 @@ from pathlib import Path
 import re
 import shutil
 import tempfile
-from typing import Any, Callable, Dict, List, Protocol
+from typing import Any, Callable, Dict, List
 
 import attr
 import yaml
