@@ -224,12 +224,12 @@ class InstallController(SubiquityController):
                 acquire_config=acquire_config,
             )
 
-        await make_curtin_step(
-            "initial",
-            stages=[],
-            acquire_config=self.acquire_initial_config).run(context=context)
-
         generic_steps = [
+            make_curtin_step(
+                "initial",
+                stages=[],
+                acquire_config=self.acquire_initial_config
+            ).run,
             make_curtin_step(
                 name="partitioning", stages=["partitioning"],
                 acquire_config=self.acquire_generic_config,
