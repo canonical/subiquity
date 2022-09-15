@@ -56,11 +56,11 @@ config_adv_default = {
 }
 
 conf_type_to_file = {
-    "wsl": "/etc/wsl.conf",
+    "wsl": "etc/wsl.conf",
 }
 
 
-def wsl_config_loader(config_ref, id):
+def wsl_config_loader(pathname, config_ref, id):
     """
     Loads the configuration from the given file type,
     section and reference config.
@@ -70,9 +70,6 @@ def wsl_config_loader(config_ref, id):
     return the data loaded
     """
     data = {}
-    pathname = conf_type_to_file[id]
-    if not os.path.exists(pathname):
-        return data
     config = ConfigParser()
     config.read(pathname)
     for conf_sec in config:
@@ -97,15 +94,19 @@ def wsl_config_loader(config_ref, id):
     return data
 
 
-def default_loader(is_advanced=False):
+def default_loader(root_dir, is_advanced=False):
     """
     This will load the default WSL config for the given type.
 
     :param is_advanced: boolean, True if it is WSLConfigurationAdvanced,
                         else is WSLConfigurationBase
     """
+    id = "wsl"
+    pathname = os.path.join(root_dir, conf_type_to_file[id])
+    if not os.path.exists(pathname):
+        return {}
     conf_ref = config_adv_default if is_advanced else config_base_default
-    data = wsl_config_loader(conf_ref, "wsl")
+    data = wsl_config_loader(pathname, conf_ref, id)
     return data
 
 
@@ -134,7 +135,7 @@ def wsl_config_update(config_class, root_dir):
         config.BasicInterpolation = None
 
         os.makedirs(os.path.join(root_dir, "etc"), exist_ok=True)
-        conf_file = os.path.join(root_dir, conf_type_to_file[config_type][1:])
+        conf_file = os.path.join(root_dir, conf_type_to_file[config_type])
 
         config.read(conf_file)
 

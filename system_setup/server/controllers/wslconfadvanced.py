@@ -49,7 +49,8 @@ class WSLConfigurationAdvancedController(SubiquityController):
         super().__init__(app)
 
         # load the config file
-        data = default_loader(is_advanced=True)
+        root_dir = self.app.base_model.root
+        data = default_loader(root_dir, is_advanced=True)
 
         if data:
             proc_data = \

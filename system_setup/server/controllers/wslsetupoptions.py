@@ -45,7 +45,8 @@ class WSLSetupOptionsController(SubiquityController):
         super().__init__(app)
 
         # load the config file
-        data = default_loader()
+        root_dir = self.app.base_model.root
+        data = default_loader(root_dir)
         conf_data = WSLSetupOptions()
 
         if data:
