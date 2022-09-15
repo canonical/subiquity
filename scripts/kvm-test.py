@@ -133,8 +133,6 @@ packages from a cache.
 
 See 'cfg' in script for expected layout of iso files,
 which can be managed with ~/.kvm-test.yaml''')
-parser.add_argument('-a', '--autoinstall', default=False,
-                    action='store_true', help='use autoinstall')
 parser.add_argument('-b', '--base', default=False, action='store_true',
                     help='use base iso')
 parser.add_argument('--basesnap', default=None, action='store',
@@ -147,9 +145,6 @@ parser.add_argument('-c', '--channel', action='store',
                     help='build iso with snap from channel')
 parser.add_argument('-d', '--disksize', default='12G', action='store',
                     help='size of disk to create (12G default)')
-parser.add_argument('-f', '--autoinstall-file', action='store',
-                    type=argparse.FileType(),
-                    help='load autoinstall from file')
 parser.add_argument('-i', '--img', action='store', help='use this img')
 parser.add_argument('-n', '--nets', action='store', default=1, type=int,
                     help='''number of network interfaces.
@@ -191,7 +186,22 @@ parser.add_argument('--install', default=False, action='store_true',
                     iso, use a base iso, or reuse previous test iso''')
 parser.add_argument('--boot', default=False, action='store_true',
                     help='boot test image')
+parser.add_argument('--force-autoinstall', default=None,
+                    action='store_true', dest="autoinstall",
+                    help='pass autoinstall on the kernel command line')
+parser.add_argument('--force-no-autoinstall', default=None,
+                    action='store_false', dest="autoinstall",
+                    help='do not pass autoinstall on the kernel command line')
 
+
+cc_group = parser.add_mutually_exclusive_group()
+cc_group.add_argument('--cloud-config', action='store',
+                      type=argparse.FileType(),
+                      help='specify the cloud-config file to use (it may'
+                           ' contain an autoinstall section or not)')
+cc_group.add_argument('--cloud-config-default',
+                      action="store_true",
+                      help='use hardcoded cloud-config template')
 
 def parse_args():
     ctx = Context(parser.parse_args())
@@ -468,11 +478,20 @@ def install(ctx):
             kvm.append('-nographic')
             appends.append('console=ttyS0')
 
-        if ctx.args.autoinstall or ctx.args.autoinstall_file:
-            if ctx.args.autoinstall_file:
-                ctx.cloudconfig = ctx.args.autoinstall_file.read()
+        if ctx.args.cloud_config is not None or ctx.args.cloud_config_default:
+            if ctx.args.cloud_config is not None:
+                ctx.cloudconfig = ctx.args.cloud_config.read()
             kvm.extend(drive(create_seed(ctx.cloudconfig, tempdir), 'raw'))
-            appends.append('autoinstall')
+            if ctx.args.autoinstall is None:
+                # Let's inspect the yaml and check if there is an autoinstall
+                # section.
+                autoinstall = "autoinstall" in yaml.safe_load(ctx.cloudconfig)
+            else:
+                autoinstall = ctx.args.autoinstall
+
+            if autoinstall:
+                appends.append('autoinstall')
+
 
         if ctx.args.update:
             appends.append('subiquity-channel=' + ctx.args.update)
