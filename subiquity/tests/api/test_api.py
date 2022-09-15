@@ -158,6 +158,13 @@ class SystemSetupServer(Server):
         env['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
         cmd = ['python3', '-m', 'system_setup.cmd.server',
                '--dry-run', '--socket', socket, '--output-base', output_base]
+        root = os.path.abspath(output_base)
+        conffile = os.path.join(root, "etc/wsl.conf")
+        os.makedirs(os.path.dirname(conffile), exist_ok=True)
+        # The server should crash in the presence of a non-empty conf file.
+        with open(conffile, "w+") as f:
+            f.write("[automount]\noptions=metadata")
+
         if extra_args is not None:
             cmd.extend(extra_args)
         self.proc = await astart_command(cmd, env=env)
