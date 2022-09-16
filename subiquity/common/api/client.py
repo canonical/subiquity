@@ -32,7 +32,7 @@ def _wrap(make_request, path, meth, serializer, serialize_query_args):
             payload_ann = param.annotation.__args__[0]
     r_ann = sig.return_annotation
 
-    async def impl(*args, **kw):
+    async def impl(self, *args, **kw):
         args = sig.bind(*args, **kw)
         query_args = {}
         data = None
@@ -51,21 +51,30 @@ def _wrap(make_request, path, meth, serializer, serialize_query_args):
     return impl
 
 
-def make_client(endpoint_cls, make_request, serializer=None):
+def client_init(self, path_args=None):
+    if path_args is None:
+        path_args = {}
+    self.path_args = path_args
+
+
+def make_client_cls(endpoint_cls, make_request, serializer=None):
     if serializer is None:
         serializer = Serializer()
 
-    class C:
-        pass
+    ns = {'__init__': client_init}
 
     for k, v in endpoint_cls.__dict__.items():
         if isinstance(v, type):
-            setattr(C, k, make_client(v, make_request, serializer))
+            ns[k] = make_client(v, make_request, serializer)
         elif callable(v):
-            setattr(C, k, _wrap(
-                make_request, endpoint_cls.fullpath, v, serializer,
-                endpoint_cls.serialize_query_args))
-    return C
+            ns[k] = _wrap(make_request, endpoint_cls.fullpath, v, serializer,
+                          endpoint_cls.serialize_query_args)
+
+    return type('ClientFor({})'.format(endpoint_cls.__name__), (object,), ns)
+
+
+def make_client(endpoint_cls, make_request, serializer=None, path_args=None):
+    return make_client_cls(endpoint_cls, make_request, serializer)(path_args)
 
 
 def make_client_for_conn(
