@@ -19,7 +19,7 @@ import string
 import typing
 import unittest
 
-from subiquity.common.serialize import Serializer
+from subiquity.common.serialize import named_field, Serializer
 
 
 @attr.s(auto_attribs=True)
@@ -183,6 +183,17 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
         serialized = serializer.serialize(Data, data)
         serialized['foobar'] = 'baz'
         self.assertEqual(serializer.deserialize(Data, serialized), data)
+
+    def test_override_field_name(self):
+
+        @attr.s(auto_attribs=True)
+        class Object:
+            x: int
+            y: int = named_field("field-y")
+            z: int = named_field("field-z", 0)
+
+        self.assertSerialization(
+            Object, Object(1, 2), {"x": 1, "field-y": 2, "field-z": 0})
 
 
 class TestCompactSerializer(CommonSerializerTests, unittest.TestCase):

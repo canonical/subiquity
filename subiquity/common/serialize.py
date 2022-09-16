@@ -21,6 +21,15 @@ import typing
 
 import attr
 
+
+def named_field(name, default=attr.NOTHING):
+    return attr.ib(metadata={'name': name}, default=default)
+
+
+def _field_name(field):
+    return field.metadata.get('name', field.name)
+
+
 # This is basically a half-assed version of # https://pypi.org/project/cattrs/
 # but that's not packaged and this is enough for our needs.
 
@@ -128,7 +137,8 @@ class Serializer:
     def _serialize_field(self, field, value, path):
         path = f'{path}.{field.name}'
         return {
-            field.name: self.serialize(field.type, value, field.metadata, path)
+            _field_name(field): self.serialize(
+                field.type, value, field.metadata, path)
             }
 
     def _serialize_attr(self, annotation, value, metadata, path):
@@ -177,7 +187,8 @@ class Serializer:
             1/0
 
     def _deserialize_field(self, field, value, path):
-        path = f'{path}.{field.name}'
+        name = _field_name(field)
+        path = f'{path}.{name}'
         return {
             field.name: self.deserialize(
                 field.type, value, field.metadata, path)
@@ -193,7 +204,9 @@ class Serializer:
             return annotation(*args)
         else:
             args = {}
-            fields = {field.name: field for field in attr.fields(annotation)}
+            fields = {
+                _field_name(field): field for field in attr.fields(annotation)
+                }
             for key in value.keys():
                 if key not in fields and (
                         key == '$type' or self.ignore_unknown_fields):
