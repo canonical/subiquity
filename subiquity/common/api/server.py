@@ -72,6 +72,13 @@ def _make_handler(controller, definition, implementation, serializer,
 
     check_def_params = []
 
+    for param_name in definition.__path_params__:
+        check_def_params.append(
+            inspect.Parameter(
+                param_name,
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                annotation=str))
+
     for param_name, param in def_params.items():
         if param_name in ('request', 'context'):
             raise Exception(
@@ -118,6 +125,8 @@ def _make_handler(controller, definition, implementation, serializer,
                         raise TypeError(
                             'missing required argument "{}"'.format(arg))
                     args[arg] = v
+                for param_name in definition.__path_params__:
+                    args[param_name] = request.match_info[param_name]
                 if 'context' in impl_params:
                     args['context'] = context
                 if 'request' in impl_params:

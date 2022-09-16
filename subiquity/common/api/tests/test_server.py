@@ -21,7 +21,7 @@ from aiohttp import web
 
 from subiquitycore.context import Context
 
-from subiquity.common.api.defs import api, Payload
+from subiquity.common.api.defs import api, path_parameter, Payload
 from subiquity.common.api.server import (
     bind,
     controller_for_request,
@@ -264,3 +264,18 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
                 client.get('/meth?arg=whut'), 'whut')
             await self.assertResponse(
                 client.get('/meth/more?arg="whut"'), 'whut')
+
+    async def test_path_parameters(self):
+        @api
+        class API:
+            @path_parameter
+            class param:
+                def GET(arg: int): ...
+
+        class Impl(ControllerBase):
+            async def param_GET(self, param: str, arg: int):
+                return param + str(arg)
+
+        async with makeTestClient(API, Impl()) as client:
+            await self.assertResponse(
+                client.get('/value?arg=2'), 'value2')

@@ -17,7 +17,12 @@ import contextlib
 import unittest
 
 from subiquity.common.api.client import make_client
-from subiquity.common.api.defs import api, InvalidQueryArgs, Payload
+from subiquity.common.api.defs import (
+    api,
+    InvalidQueryArgs,
+    path_parameter,
+    Payload,
+    )
 
 
 def extract(c):
@@ -89,6 +94,26 @@ class TestClient(unittest.TestCase):
         r = extract(client.GET(arg='v'))
         self.assertEqual(r, '"v"')
         self.assertEqual(requests, [("GET", '/', {'arg': '"v"'}, None)])
+
+    def test_path_params(self):
+
+        @api
+        class API:
+            @path_parameter
+            class param:
+                def GET(arg: str) -> str: ...
+
+        @contextlib.asynccontextmanager
+        async def make_request(method, path, *, params, json):
+            requests.append((method, path, params, json))
+            yield FakeResponse(params['arg'])
+
+        client = make_client(API, make_request)
+
+        requests = []
+        r = extract(client['foo'].GET(arg='v'))
+        self.assertEqual(r, '"v"')
+        self.assertEqual(requests, [("GET", '/foo', {'arg': '"v"'}, None)])
 
     def test_serialize_query_args(self):
         @api

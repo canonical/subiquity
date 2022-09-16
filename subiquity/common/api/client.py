@@ -45,10 +45,22 @@ def _wrap(make_request, path, meth, serializer, serialize_query_args):
                         meth_params[arg_name].annotation, value)
                 query_args[arg_name] = value
         async with make_request(
-                meth.__name__, path, json=data, params=query_args) as resp:
+                meth.__name__, path.format(**self.path_args),
+                json=data, params=query_args) as resp:
             resp.raise_for_status()
             return serializer.deserialize(r_ann, await resp.json())
     return impl
+
+
+def make_getitem(endpoint_cls, make_request, serializer):
+    cls = make_client_cls(endpoint_cls, make_request, serializer)
+
+    def gi(self, item):
+        new_args = self.path_args.copy()
+        new_args[endpoint_cls.__shortname__] = item
+        return cls(new_args)
+
+    return gi
 
 
 def client_init(self, path_args=None):
@@ -65,7 +77,10 @@ def make_client_cls(endpoint_cls, make_request, serializer=None):
 
     for k, v in endpoint_cls.__dict__.items():
         if isinstance(v, type):
-            ns[k] = make_client(v, make_request, serializer)
+            if getattr(v, '__parameter__', False):
+                ns['__getitem__'] = make_getitem(v, make_request, serializer)
+            else:
+                ns[k] = make_client(v, make_request, serializer)
         elif callable(v):
             ns[k] = _wrap(make_request, endpoint_cls.fullpath, v, serializer,
                           endpoint_cls.serialize_query_args)
