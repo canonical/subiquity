@@ -208,6 +208,31 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
         self.assertSerialization(
             Object, Object(1, 2), {"x": 1, "field-y": 2, "field-z": 0})
 
+    def test_embedding(self):
+
+        @attr.s(auto_attribs=True)
+        class Base1:
+            x: str
+
+        @attr.s(auto_attribs=True)
+        class Base2:
+            b: Base1
+
+        @attr.s(auto_attribs=True)
+        class Derived1(Base1):
+            y: int
+
+        @attr.s(auto_attribs=True)
+        @attr.s(auto_attribs=True)
+        class Derived2(Base2):
+            b: Derived1
+            c: int
+
+        self.assertSerialization(
+            Derived2,
+            Derived2(b=Derived1(x="a", y=1), c=2),
+            {"b": {"x": "a", "y": 1}, "c": 2})
+
 
 class TestCompactSerializer(CommonSerializerTests, unittest.TestCase):
 
