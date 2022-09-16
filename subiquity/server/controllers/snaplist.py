@@ -170,13 +170,11 @@ class SnapListController(SubiquityController):
 
     async def GET(self, wait: bool = False) -> SnapListResponse:
         if self.loader.failed or not self.app.base_model.network.has_network:
-            await self.configured()
             return SnapListResponse(status=SnapCheckState.FAILED)
         if not self.loader.snap_list_fetched and not wait:
             return SnapListResponse(status=SnapCheckState.LOADING)
         await self.loader.get_snap_list_task().wait()
         if self.loader.failed or not self.app.base_model.network.has_network:
-            await self.configured()
             return SnapListResponse(status=SnapCheckState.FAILED)
         return SnapListResponse(
             status=SnapCheckState.DONE,
