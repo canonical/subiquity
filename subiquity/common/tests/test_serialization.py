@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import attr
+import enum
 import random
 import string
 import typing
@@ -53,6 +54,10 @@ class OptionalAndDefault:
     optional_int: typing.Optional[int]
     int_default: int = 3
     optional_int_default: typing.Optional[int] = 4
+
+
+class MyEnum(enum.Enum):
+    name = "value"
 
 
 class CommonSerializerTests:
@@ -124,6 +129,14 @@ class CommonSerializerTests:
         ann = typing.Union[Data, Container]
         self.assertRoundtrips(ann, Data.make_random())
         self.assertRoundtrips(ann, Container.make_random())
+
+    def test_enums(self):
+        self.assertSerialization(MyEnum, MyEnum.name, "name")
+
+    def test_enums_by_value(self):
+        self.serializer = type(self.serializer)(
+            compact=self.serializer.compact, serialize_enums_by="value")
+        self.assertSerialization(MyEnum, MyEnum.name, "value")
 
 
 class TestSerializer(CommonSerializerTests, unittest.TestCase):

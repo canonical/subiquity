@@ -36,9 +36,12 @@ def _field_name(field):
 
 class Serializer:
 
-    def __init__(self, *, compact=False, ignore_unknown_fields=False):
+    def __init__(self, *, compact=False, ignore_unknown_fields=False,
+                 serialize_enums_by="name"):
         self.compact = compact
         self.ignore_unknown_fields = ignore_unknown_fields
+        assert serialize_enums_by in ("value", "name")
+        self.serialize_enums_by = serialize_enums_by
         self.typing_walkers = {
             typing.Union: self._walk_Union,
             list: self._walk_List,
@@ -156,6 +159,9 @@ class Serializer:
                     field, getattr(value, field.name), path))
             return r
 
+    def _serialize_enum(self, annotation, value):
+        return getattr(value, self.serialize_enums_by)
+
     def serialize(self, annotation, value, metadata=None, path=''):
         if annotation is None:
             assert value is None
@@ -170,7 +176,7 @@ class Serializer:
             return self.typing_walkers[origin](
                 self.serialize, args, value, metadata, path, True)
         if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
-            return value.name
+            return self._serialize_enum(annotation, value)
         try:
             serializer = self.type_serializers[annotation]
         except KeyError:
@@ -220,6 +226,12 @@ class Serializer:
                     fields[key], value[key], path))
             return annotation(**args)
 
+    def _deserialize_enum(self, annotation, value):
+        if self.serialize_enums_by == "name":
+            return getattr(annotation, value)
+        else:
+            return annotation(value)
+
     def deserialize(self, annotation, value, metadata=None, path=''):
         if annotation is None:
             assert value is None
@@ -234,7 +246,7 @@ class Serializer:
             return self.typing_walkers[origin](
                 self.deserialize, args, value, metadata, path, False)
         if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
-            return getattr(annotation, value)
+            return self._deserialize_enum(annotation, value)
         return self.type_deserializers[annotation](
             annotation, value, metadata, path)
 
