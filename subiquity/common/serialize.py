@@ -27,8 +27,9 @@ import attr
 
 class Serializer:
 
-    def __init__(self, *, compact=False):
+    def __init__(self, *, compact=False, ignore_unknown_fields=False):
         self.compact = compact
+        self.ignore_unknown_fields = ignore_unknown_fields
         self.typing_walkers = {
             typing.Union: self._walk_Union,
             list: self._walk_List,
@@ -194,7 +195,8 @@ class Serializer:
             args = {}
             fields = {field.name: field for field in attr.fields(annotation)}
             for key in value.keys():
-                if key not in fields and key == '$type':
+                if key not in fields and (
+                        key == '$type' or self.ignore_unknown_fields):
                     # Union types can contain a '$type' field that is not
                     # actually one of the keys.  This happens if a object is
                     # serialized as part of a Union, sent to an API caller,

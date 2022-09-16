@@ -169,6 +169,21 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
         expected = Data(field1='1', field2=2)
         self.assertDeserializesTo(Data, data, expected)
 
+    def test_reject_unknown_fields_by_default(self):
+        serializer = Serializer()
+        data = Data.make_random()
+        serialized = serializer.serialize(Data, data)
+        serialized['foobar'] = 'baz'
+        with self.assertRaises(KeyError):
+            serializer.deserialize(Data, serialized)
+
+    def test_ignore_unknown_fields(self):
+        serializer = Serializer(ignore_unknown_fields=True)
+        data = Data.make_random()
+        serialized = serializer.serialize(Data, data)
+        serialized['foobar'] = 'baz'
+        self.assertEqual(serializer.deserialize(Data, serialized), data)
+
 
 class TestCompactSerializer(CommonSerializerTests, unittest.TestCase):
 
