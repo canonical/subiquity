@@ -57,7 +57,8 @@ def trim(text):
         return text
 
 
-def _make_handler(controller, definition, implementation, serializer):
+def _make_handler(controller, definition, implementation, serializer,
+                  serialize_query_args):
     def_sig = inspect.signature(definition)
     def_ret_ann = def_sig.return_annotation
     def_params = def_sig.parameters
@@ -108,7 +109,9 @@ def _make_handler(controller, definition, implementation, serializer):
                         data_annotation, await request.text())
                 for arg, ann, default in query_args_anns:
                     if arg in request.query:
-                        v = serializer.from_json(ann, request.query[arg])
+                        v = request.query[arg]
+                        if serialize_query_args:
+                            v = serializer.from_json(ann, v)
                     elif default != inspect._empty:
                         v = default
                     else:
@@ -164,7 +167,9 @@ def bind(router, endpoint, controller, serializer=None, _depth=None):
             router.add_route(
                 method=method,
                 path=endpoint.fullpath,
-                handler=_make_handler(controller, v, impl, serializer))
+                handler=_make_handler(
+                    controller, v, impl, serializer,
+                    endpoint.serialize_query_args))
 
 
 async def make_server_at_path(socket_path, endpoint, controller, **kw):

@@ -22,7 +22,7 @@ from subiquity.common.serialize import Serializer
 from .defs import Payload
 
 
-def _wrap(make_request, path, meth, serializer):
+def _wrap(make_request, path, meth, serializer, serialize_query_args):
     sig = inspect.signature(meth)
     meth_params = sig.parameters
     payload_arg = None
@@ -40,8 +40,10 @@ def _wrap(make_request, path, meth, serializer):
             if arg_name == payload_arg:
                 data = serializer.serialize(payload_ann, value)
             else:
-                query_args[arg_name] = serializer.to_json(
+                if serialize_query_args:
+                    value = serializer.to_json(
                         meth_params[arg_name].annotation, value)
+                query_args[arg_name] = value
         async with make_request(
                 meth.__name__, path, json=data, params=query_args) as resp:
             resp.raise_for_status()
@@ -61,7 +63,8 @@ def make_client(endpoint_cls, make_request, serializer=None):
             setattr(C, k, make_client(v, make_request, serializer))
         elif callable(v):
             setattr(C, k, _wrap(
-                make_request, endpoint_cls.fullpath, v, serializer))
+                make_request, endpoint_cls.fullpath, v, serializer,
+                endpoint_cls.serialize_query_args))
     return C
 
 

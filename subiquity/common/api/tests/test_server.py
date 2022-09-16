@@ -233,3 +233,34 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(await resp.json(), '')
 
         self.assertIs(impl, seen_controller)
+
+    async def test_serialize_query_args(self):
+        @api
+        class API:
+            serialize_query_args = False
+            def GET(arg: str) -> str: ...
+
+            class meth:
+                def GET(arg: str) -> str: ...
+
+                class more:
+                    serialize_query_args = True
+                    def GET(arg: str) -> str: ...
+
+        class Impl(ControllerBase):
+            async def GET(self, arg: str) -> str:
+                return arg
+
+            async def meth_GET(self, arg: str) -> str:
+                return arg
+
+            async def meth_more_GET(self, arg: str) -> str:
+                return arg
+
+        async with makeTestClient(API, Impl()) as client:
+            await self.assertResponse(
+                client.get('/?arg=whut'), 'whut')
+            await self.assertResponse(
+                client.get('/meth?arg=whut'), 'whut')
+            await self.assertResponse(
+                client.get('/meth/more?arg="whut"'), 'whut')
