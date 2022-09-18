@@ -66,6 +66,7 @@ class SnapdSnapInfoLoader:
             task = self.tasks[None] = \
                     SingleInstanceTask(self._load_list, propagate_errors=False)
             task.start_sync()
+            await task.wait()
             self.pending_snaps = self.model.get_snap_list()
             log.debug("fetched list of %s snaps", len(self.pending_snaps))
             while self.pending_snaps:
