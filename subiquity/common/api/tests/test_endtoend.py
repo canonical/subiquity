@@ -124,10 +124,10 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
     async def test_defaults(self):
         @api
         class API:
-            def GET(arg1: str, arg2: str = "arg2") -> str: ...
+            def GET(arg1: str = "arg1", arg2: str = "arg2") -> str: ...
 
         class Impl(ControllerBase):
-            async def GET(self, arg1: str, arg2: str = "arg2") -> str:
+            async def GET(self, arg1: str = "arg1", arg2: str = "arg2") -> str:
                 return '{}+{}'.format(arg1, arg2)
 
         async with makeE2EClient(API, Impl()) as client:
@@ -135,6 +135,8 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
                 await client.GET(arg1="A", arg2="B"), 'A+B')
             self.assertEqual(
                 await client.GET(arg1="A"), 'A+arg2')
+            self.assertEqual(
+                await client.GET(arg2="B"), 'arg1+B')
 
     async def test_post(self):
         @api
