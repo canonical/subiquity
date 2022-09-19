@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import requests
 import unittest
 from unittest.mock import AsyncMock, Mock
@@ -44,18 +43,16 @@ class TestSnapdSnapInfoLoader(unittest.IsolatedAsyncioTestCase):
     async def test_list_task_failed(self):
         self.app.snapd.get.side_effect = requests.exceptions.RequestException
         self.loader.start()
-        # TODO remove
-        await asyncio.sleep(.1)
+        await self.loader.load_list_task_created.wait()
         with self.assertRaises(SnapListFetchError):
-            await self.loader.get_snap_list_task().wait()
+            await self.loader.get_snap_list_task()
         self.assertFalse(self.loader.fetch_list_completed())
         self.assertTrue(self.loader.fetch_list_failed())
 
     async def test_list_task_completed(self):
         self.app.snapd.get.return_value = {"result": []}
         self.loader.start()
-        # TODO remove
-        await asyncio.sleep(.1)
-        await self.loader.get_snap_list_task().wait()
+        await self.loader.load_list_task_created.wait()
+        await self.loader.get_snap_list_task()
         self.assertTrue(self.loader.fetch_list_completed())
         self.assertFalse(self.loader.fetch_list_failed())
