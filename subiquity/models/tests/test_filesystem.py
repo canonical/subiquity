@@ -205,10 +205,13 @@ def make_model_and_raid(bootloader=None):
     return model, make_raid(model)
 
 
-def make_vg(model):
+def make_vg(model, pvs=None):
     name = 'vg%s' % len(model._actions)
-    return model.add_volgroup(
-        name, {make_disk(model)})
+
+    if pvs is None:
+        pvs = {make_disk(model)}
+
+    return model.add_volgroup(name, pvs)
 
 
 def make_model_and_vg(bootloader=None):
@@ -216,15 +219,17 @@ def make_model_and_vg(bootloader=None):
     return model, make_vg(model)
 
 
-def make_lv(model):
-    vg = make_vg(model)
+def make_lv(model, vg=None, size=None):
+    if vg is None:
+        vg = make_vg(model)
     name = 'lv%s' % len(model._actions)
-    return model.add_logical_volume(vg, name, gaps.largest_gap_size(vg))
+    size = gaps.largest_gap_size(vg) if size is None else size
+    return model.add_logical_volume(vg, name, size)
 
 
-def make_model_and_lv(bootloader=None):
+def make_model_and_lv(bootloader=None, lv_size=None):
     model = make_model(bootloader)
-    return model, make_lv(model)
+    return model, make_lv(model, size=lv_size)
 
 
 class TestFilesystemModel(unittest.TestCase):
