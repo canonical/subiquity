@@ -22,9 +22,6 @@ from subiquity.common.apidef import API
 from subiquity.common.types import WSLSetupOptions
 from subiquity.server.controller import SubiquityController
 
-from system_setup.common.wsl_conf import default_loader
-from system_setup.common.wsl_utils import convert_if_bool
-
 log = logging.getLogger('system_setup.server.controllers.wslsetupoptions')
 
 
@@ -40,20 +37,6 @@ class WSLSetupOptionsController(SubiquityController):
             },
         'additionalProperties': False,
         }
-
-    def __init__(self, app):
-        super().__init__(app)
-
-        # load the config file
-        data = default_loader()
-        conf_data = WSLSetupOptions()
-
-        if data:
-            proc_data = \
-                {key: convert_if_bool(value) for (key, value) in data.items()}
-            conf_data = WSLSetupOptions(**proc_data)
-
-        self.model.apply_settings(conf_data)
 
     def load_autoinstall_data(self, data):
         if data is not None:
