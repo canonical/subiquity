@@ -264,7 +264,7 @@ class AptConfigurer:
 
         await self.unmount(
                 Mountpoint(mountpoint=target_mnt.p('cdrom')),
-                remove=False)
+                remove=True)
         os.rmdir(target_mnt.p('cdrom'))
 
         await _restore_dir('etc/apt')
