@@ -20,7 +20,11 @@ import string
 import typing
 import unittest
 
-from subiquity.common.serialize import named_field, Serializer
+from subiquity.common.serialize import (
+    named_field,
+    Serializer,
+    SerializationError,
+    )
 
 
 @attr.s(auto_attribs=True)
@@ -232,6 +236,23 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
             Derived2,
             Derived2(b=Derived1(x="a", y=1), c=2),
             {"b": {"x": "a", "y": 1}, "c": 2})
+
+    def test_error_paths(self):
+        with self.assertRaises(SerializationError) as catcher:
+            self.serializer.serialize(str, 1)
+        self.assertEqual(catcher.exception.path, '')
+
+        @attr.s(auto_attribs=True)
+        class Type:
+            field1: str = named_field('field-1')
+            field2: int
+
+        with self.assertRaises(SerializationError) as catcher:
+            self.serializer.serialize(Type, Data(2, 3))
+        self.assertEqual(catcher.exception.path, '.field1')
+        with self.assertRaises(SerializationError) as catcher:
+            self.serializer.deserialize(Type, {'field-1': 1, 'field2': 2})
+        self.assertEqual(catcher.exception.path, "['field-1']")
 
 
 class TestCompactSerializer(CommonSerializerTests, unittest.TestCase):

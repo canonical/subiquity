@@ -30,6 +30,45 @@ def _field_name(field):
     return field.metadata.get('name', field.name)
 
 
+class SerializationError(Exception):
+    def __init__(self, obj, path, message):
+        self.obj = obj
+        self.path = path
+        self.message = message
+
+    def __str__(self):
+        p = self.path
+        if not p:
+            p = 'top-level'
+        return f"processing {self.obj}: at {p}, {self.message}"
+
+
+@attr.s(auto_attribs=True)
+class SerializationContext:
+    obj: typing.Any
+    cur: typing.Any
+    path: str
+    metadata: typing.Optional[typing.Dict]
+    serializing: bool
+
+    @classmethod
+    def new(cls, obj, *, serializing):
+        return SerializationContext(obj, obj, '', {}, serializing)
+
+    def child(self, path, cur, metadata=None):
+        if metadata is None:
+            metadata = self.metadata
+        return attr.evolve(
+            self, path=self.path + path, cur=cur, metadata=metadata)
+
+    def error(self, message):
+        raise SerializationError(self.obj, self.path, message)
+
+    def assert_type(self, typ):
+        if type(self.cur) is not typ:
+            self.error("{!r} is not a {}".format(self.cur, typ))
+
+
 # This is basically a half-assed version of # https://pypi.org/project/cattrs/
 # but that's not packaged and this is enough for our needs.
 
@@ -59,161 +98,143 @@ class Serializer:
         self.type_serializers[datetime.datetime] = self._serialize_datetime
         self.type_deserializers[datetime.datetime] = self._deserialize_datetime
 
-    def _scalar(self, annotation, value, metadata, path):
-        assert type(value) is annotation, "at {}, {!r} is not a {}".format(
-            path, value, annotation)
-        return value
+    def _scalar(self, annotation, context):
+        context.assert_type(annotation)
+        return context.cur
 
-    def _walk_Union(self, meth, args, value, metadata, path, serializing):
+    def _walk_Union(self, meth, args, context):
         NoneType = type(None)
         if NoneType in args:
             args = [a for a in args if a is not NoneType]
             if len(args) == 1:
                 # I.e. Optional[thing]
-                if value is None:
-                    return value
-                return meth(args[0], value, metadata, path)
+                if context.cur is None:
+                    return context.cur
+                return meth(args[0], context)
         if all(attr.has(a) for a in args):
-            if serializing:
+            if context.serializing:
                 for a in args:
-                    if isinstance(value, a):
-                        r = meth(a, value, metadata, path)
+                    if isinstance(context.cur, a):
+                        r = meth(a, context)
                         if self.compact:
                             r.insert(0, a.__name__)
                         else:
                             r['$type'] = a.__name__
                         return r
-                raise Exception(
-                    f"at {path}, type of {value} not found in {args}")
+                context.error(f"type of {context.cur} not found in {args}")
             else:
                 if self.compact:
-                    n = value.pop(0)
+                    n = context.cur.pop(0)
                 else:
-                    n = value.pop('$type')
+                    n = context.cur.pop('$type')
                 for a in args:
                     if a.__name__ == n:
-                        return meth(a, value, metadata, path)
-                raise Exception(f"at {path}, type {n} not found in {args}")
-        raise Exception(f"at {path}, cannot serialize Union[{args}]")
+                        return meth(a, context)
+                context.error(f"type {n} not found in {args}")
+        raise context.error(f"cannot serialize Union[{args}]")
 
-    def _walk_List(self, meth, args, value, metadata, path, serializing):
+    def _walk_List(self, meth, args, context):
         return [
-            meth(args[0], v, metadata, f'{path}[{i}]')
-            for i, v in enumerate(value)
+            meth(args[0], context.child(f'[{i}]', v))
+            for i, v in enumerate(context.cur)
             ]
 
-    def _walk_Dict(self, meth, args, value, m, p, serializing):
+    def _walk_Dict(self, meth, args, context):
         k_ann, v_ann = args
-        if k_ann is str:
-            return {
-                meth(k_ann, k, m, f'{p}/{k}'): meth(v_ann, v, m, f'{p}[{k}]')
-                for k, v in value.items()
-                }
-        elif serializing:
-            return [
-                [meth(k_ann, k, m, f'{p}/{k}'), meth(v_ann, v, m, f'{p}[{k}]')]
-                for k, v in value.items()
-                ]
+        if not context.serializing and k_ann is not str:
+            input_items = context.cur
         else:
-            return dict([
-                (meth(k_ann, k, m, f'{p}/{k}'), meth(v_ann, v, m, f'{p}[{k}]'))
-                for k, v in value
-                ])
+            input_items = context.cur.items()
+        output_items = [[
+            meth(k_ann, context.child(f'/{k}', k)),
+            meth(v_ann, context.child(f'[{k}]', v))
+            ] for k, v in input_items]
+        if context.serializing and k_ann is not str:
+            return output_items
+        return dict(output_items)
 
-    def _serialize_dict(self, annotation, value, metadata, path):
-        assert type(value) is annotation, "at {}, {} is not a {}".format(
-            path, value, annotation)
-        for k in value:
-            if not isinstance(k, str):
-                raise Exception(
-                    f"at {path}, dict must have only string keys, found {k!r}")
-        return value
+    def _serialize_dict(self, annotation, context):
+        context.assert_type(annotation)
+        for k in context.cur:
+            context.child(f'/{k}', k).assert_type(str)
+        return context.cur
 
-    def _serialize_datetime(self, annotation, value, metadata, path):
-        assert type(value) is annotation, "at {}, {} is not a {}".format(
-            path, value, annotation)
-        if metadata is not None and 'time_fmt' in metadata:
-            return value.strftime(metadata['time_fmt'])
+    def _serialize_datetime(self, annotation, context):
+        context.assert_type(annotation)
+        fmt = context.metadata.get('time_fmt')
+        if fmt is not None:
+            return context.cur.strftime(fmt)
         else:
-            return str(value)
+            return str(context.cur)
 
-    def _serialize_field(self, field, value, path):
-        path = f'{path}.{field.name}'
-        return {
-            _field_name(field): self.serialize(
-                field.type, value, field.metadata, path)
-            }
-
-    def _serialize_attr(self, annotation, value, metadata, path):
+    def _serialize_attr(self, annotation, context):
+        serialized = []
+        for field in attr.fields(annotation):
+            serialized.append((
+                _field_name(field),
+                self._serialize(
+                    field.type,
+                    context.child(
+                        f'.{field.name}',
+                        getattr(context.cur, field.name),
+                        field.metadata)),
+                ))
         if self.compact:
-            r = []
-            for field in attr.fields(annotation):
-                r.append(self.serialize(
-                    field.type, getattr(value, field.name), field.metadata,
-                    f'{path}.{field.name}'))
-            return r
+            return [s[1] for s in serialized]
         else:
-            r = {}
-            for field in attr.fields(annotation):
-                r.update(self._serialize_field(
-                    field, getattr(value, field.name), path))
-            return r
+            return dict(serialized)
 
-    def _serialize_enum(self, annotation, value):
-        return getattr(value, self.serialize_enums_by)
+    def _serialize_enum(self, annotation, context):
+        return getattr(context.cur, self.serialize_enums_by)
 
-    def serialize(self, annotation, value, metadata=None, path=''):
+    def _serialize(self, annotation, context):
         if annotation is None:
-            assert value is None
+            context.assert_type(type(None))
             return None
         if annotation is inspect.Signature.empty:
-            return value
+            return context.cur
         if attr.has(annotation):
-            return self._serialize_attr(annotation, value, metadata, path)
+            return self._serialize_attr(annotation, context)
         origin = getattr(annotation, '__origin__', None)
         if origin is not None:
             args = annotation.__args__
-            return self.typing_walkers[origin](
-                self.serialize, args, value, metadata, path, True)
+            return self.typing_walkers[origin](self._serialize, args, context)
         if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
-            return self._serialize_enum(annotation, value)
+            return self._serialize_enum(annotation, context)
         try:
             serializer = self.type_serializers[annotation]
         except KeyError:
-            raise Exception(
-                f"do not know how to handle {annotation} at {path}")
+            context.error(f"do not know how to handle {annotation}")
         else:
-            return serializer(annotation, value, metadata, path)
+            return serializer(annotation, context)
 
-    def _deserialize_datetime(self, annotation, value, metadata, path):
-        assert type(value) is str, f'at {path}'
-        if metadata is not None and 'time_fmt' in metadata:
-            return datetime.datetime.strptime(value, metadata['time_fmt'])
-        else:
-            1/0
+    def serialize(self, annotation, value):
+        context = SerializationContext.new(value, serializing=True)
+        return self._serialize(annotation, context)
 
-    def _deserialize_field(self, field, value, path):
-        name = _field_name(field)
-        path = f'{path}.{name}'
-        return {
-            field.name: self.deserialize(
-                field.type, value, field.metadata, path)
-            }
+    def _deserialize_datetime(self, annotation, context):
+        context.assert_type(annotation)
+        fmt = context.metadata.get('time_fmt')
+        if fmt is None:
+            context.error("cannot serialize datetime without format")
+        return datetime.datetime.strptime(context.cur, fmt)
 
-    def _deserialize_attr(self, annotation, value, metadata, path):
+    def _deserialize_attr(self, annotation, context):
         if self.compact:
+            context.assert_type(list)
             args = []
-            for field, v in zip(attr.fields(annotation), value):
-                args.append(self.deserialize(
-                    field.type, v, field.metadata,
-                    f'{path}.{field.name}'))
+            for field, value in zip(attr.fields(annotation), context.cur):
+                args.append(self._deserialize(
+                    field.type,
+                    context.child(f'[{field.name!r}]', value, field.metadata)))
             return annotation(*args)
         else:
+            context.assert_type(dict)
             args = {}
             fields = {
                 _field_name(field): field for field in attr.fields(annotation)
                 }
-            for key in value.keys():
+            for key, value in context.cur.items():
                 if key not in fields and (
                         key == '$type' or self.ignore_unknown_fields):
                     # Union types can contain a '$type' field that is not
@@ -222,33 +243,37 @@ class Serializer:
                     # then received back on a different endpoint that isn't a
                     # Union.
                     continue
-                args.update(self._deserialize_field(
-                    fields[key], value[key], path))
+                field = fields[key]
+                args[field.name] = self._deserialize(
+                    field.type,
+                    context.child(f'[{key!r}]', value, field.metadata))
             return annotation(**args)
 
-    def _deserialize_enum(self, annotation, value):
+    def _deserialize_enum(self, annotation, context):
         if self.serialize_enums_by == "name":
-            return getattr(annotation, value)
+            return getattr(annotation, context.cur)
         else:
-            return annotation(value)
+            return annotation(context.cur)
 
-    def deserialize(self, annotation, value, metadata=None, path=''):
+    def _deserialize(self, annotation, context):
         if annotation is None:
-            assert value is None
+            context.assert_type(type(None))
             return None
         if annotation is inspect.Signature.empty:
-            return value
+            return context.cur
         if attr.has(annotation):
-            return self._deserialize_attr(annotation, value, metadata, path)
+            return self._deserialize_attr(annotation, context)
         origin = getattr(annotation, '__origin__', None)
         if origin is not None:
-            args = annotation.__args__
             return self.typing_walkers[origin](
-                self.deserialize, args, value, metadata, path, False)
+                self._deserialize, annotation.__args__, context)
         if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
-            return self._deserialize_enum(annotation, value)
-        return self.type_deserializers[annotation](
-            annotation, value, metadata, path)
+            return self._deserialize_enum(annotation, context)
+        return self.type_deserializers[annotation](annotation, context)
+
+    def deserialize(self, annotation, value):
+        context = SerializationContext.new(value, serializing=False)
+        return self._deserialize(annotation, context)
 
     def to_json(self, annotation, value):
         return json.dumps(self.serialize(annotation, value))
