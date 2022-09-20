@@ -391,7 +391,7 @@ class NetworkDev(object):
 
     def remove_ip_networks_for_version(self, version):
         self.config.pop('dhcp{v}'.format(v=version), None)
-        self.config.pop('gateway{v}'.format(v=version), None)
+        self.remove_routes(version)
         addrs = []
         for ip in self.config.get('addresses', []):
             if addr_version(ip) != version:
@@ -400,6 +400,14 @@ class NetworkDev(object):
             self.config['addresses'] = addrs
         else:
             self.config.pop('addresses', None)
+
+    def remove_routes(self, version):
+        routes = [route for route in self.config.get('routes', [])
+                  if addr_version(route['via']) != version]
+        if routes:
+            self.config['routes'] = routes
+        else:
+            self.config.pop('routes', None)
 
 
 class NetworkModel(object):
