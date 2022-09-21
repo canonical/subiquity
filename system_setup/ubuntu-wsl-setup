@@ -6,6 +6,17 @@
 
 START=$(date +%s.%N)
 
+function exit_if_not_wsl2() {
+    # WSLInterop ensures we are under WSL (either 1 or 2).
+    # config.gz ensures we have a kernel. WSL 1 does not have one.
+    # grep'ing /proc/version for 'WSL2' would work, but users can change that
+    # when compiling their own kernel.
+    if ! [[ -f "/proc/sys/fs/binfmt_misc/WSLInterop" && -f "/proc/config.gz" ]]; then
+        echo "WSL 2 not detected. Exiting."
+        exit 125
+    fi
+}
+
 # ensure_dir_exists calls `mkdir -p` if the given path is not a directory.
 # This speeds up execution time by avoiding unnecessary calls to mkdir.
 #
@@ -26,6 +37,9 @@ function wait_for_async_execs() {
     wait "$pid" && continue || echo "ERROR: ${PIDS[$pid]} exited abnormally with status $?"
   done
 }
+
+# Proceed only if in WSL 2:
+exit_if_not_wsl2
 
 # shellcheck source=/dev/null
 source "$SNAP_USER_DATA/.last_revision" 2>/dev/null || true
