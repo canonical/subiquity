@@ -21,7 +21,7 @@ from aiohttp import web
 
 from subiquitycore.context import Context
 
-from subiquity.common.api.defs import api, Payload
+from subiquity.common.api.defs import api, path_parameter, Payload
 from subiquity.common.api.server import (
     bind,
     controller_for_request,
@@ -233,3 +233,49 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(await resp.json(), '')
 
         self.assertIs(impl, seen_controller)
+
+    async def test_serialize_query_args(self):
+        @api
+        class API:
+            serialize_query_args = False
+            def GET(arg: str) -> str: ...
+
+            class meth:
+                def GET(arg: str) -> str: ...
+
+                class more:
+                    serialize_query_args = True
+                    def GET(arg: str) -> str: ...
+
+        class Impl(ControllerBase):
+            async def GET(self, arg: str) -> str:
+                return arg
+
+            async def meth_GET(self, arg: str) -> str:
+                return arg
+
+            async def meth_more_GET(self, arg: str) -> str:
+                return arg
+
+        async with makeTestClient(API, Impl()) as client:
+            await self.assertResponse(
+                client.get('/?arg=whut'), 'whut')
+            await self.assertResponse(
+                client.get('/meth?arg=whut'), 'whut')
+            await self.assertResponse(
+                client.get('/meth/more?arg="whut"'), 'whut')
+
+    async def test_path_parameters(self):
+        @api
+        class API:
+            @path_parameter
+            class param:
+                def GET(arg: int): ...
+
+        class Impl(ControllerBase):
+            async def param_GET(self, param: str, arg: int):
+                return param + str(arg)
+
+        async with makeTestClient(API, Impl()) as client:
+            await self.assertResponse(
+                client.get('/value?arg=2'), 'value2')

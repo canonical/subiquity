@@ -13,18 +13,70 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import inspect
 import typing
 
 
-def api(cls, prefix=(), foo=None):
-    cls.fullpath = '/' + '/'.join(prefix)
-    cls.fullname = prefix
+class InvalidAPIDefinition(Exception):
+    pass
+
+
+class InvalidQueryArgs(InvalidAPIDefinition):
+    def __init__(self, callable, param):
+        self.callable = callable
+        self.param = param
+
+    def __str__(self):
+        return (f"{self.callable.__qualname__} does not serialize query "
+                f"arguments but has non-str parameter '{self.param}'")
+
+
+class MultiplePathParameters(InvalidAPIDefinition):
+    def __init__(self, cls, param1, param2):
+        self.cls = cls
+        self.param1 = param1
+        self.param2 = param2
+
+    def __str__(self):
+        return (f"{self.cls.__name__} has multiple path parameters "
+                f"{self.param1!r} and {self.param2!r}")
+
+
+def api(cls, prefix_names=(), prefix_path=(), path_params=(),
+        serialize_query_args=True):
+    if hasattr(cls, 'serialize_query_args'):
+        serialize_query_args = cls.serialize_query_args
+    else:
+        cls.serialize_query_args = serialize_query_args
+    cls.fullpath = '/' + '/'.join(prefix_path)
+    cls.fullname = prefix_names
+    seen_path_param = None
     for k, v in cls.__dict__.items():
         if isinstance(v, type):
+            v.__shortname__ = k
             v.__name__ = cls.__name__ + '.' + k
-            api(v, prefix + (k,))
+            path_part = k
+            path_param = ()
+            if getattr(v, '__parameter__', False):
+                if seen_path_param:
+                    raise MultiplePathParameters(cls, seen_path_param, k)
+                seen_path_param = k
+                path_part = '{' + path_part + '}'
+                path_param = (k,)
+            api(
+                v,
+                prefix_names + (k,),
+                prefix_path + (path_part,),
+                path_params + path_param,
+                serialize_query_args)
         if callable(v):
             v.__qualname__ = cls.__name__ + '.' + k
+            if not cls.serialize_query_args:
+                params = inspect.signature(v).parameters
+                for param_name, param in params.items():
+                    if param.annotation is not str:
+                        raise InvalidQueryArgs(v, param)
+            v.__path_params__ = path_params
     return cls
 
 
@@ -33,6 +85,11 @@ T = typing.TypeVar("T")
 
 class Payload(typing.Generic[T]):
     pass
+
+
+def path_parameter(cls):
+    cls.__parameter__ = True
+    return cls
 
 
 def simple_endpoint(typ):

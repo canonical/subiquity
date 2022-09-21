@@ -17,7 +17,12 @@ import contextlib
 import unittest
 
 from subiquity.common.api.client import make_client
-from subiquity.common.api.defs import api, Payload
+from subiquity.common.api.defs import (
+    api,
+    InvalidQueryArgs,
+    path_parameter,
+    Payload,
+    )
 
 
 def extract(c):
@@ -89,3 +94,59 @@ class TestClient(unittest.TestCase):
         r = extract(client.GET(arg='v'))
         self.assertEqual(r, '"v"')
         self.assertEqual(requests, [("GET", '/', {'arg': '"v"'}, None)])
+
+    def test_path_params(self):
+
+        @api
+        class API:
+            @path_parameter
+            class param:
+                def GET(arg: str) -> str: ...
+
+        @contextlib.asynccontextmanager
+        async def make_request(method, path, *, params, json):
+            requests.append((method, path, params, json))
+            yield FakeResponse(params['arg'])
+
+        client = make_client(API, make_request)
+
+        requests = []
+        r = extract(client['foo'].GET(arg='v'))
+        self.assertEqual(r, '"v"')
+        self.assertEqual(requests, [("GET", '/foo', {'arg': '"v"'}, None)])
+
+    def test_serialize_query_args(self):
+        @api
+        class API:
+            serialize_query_args = False
+            def GET(arg: str) -> str: ...
+
+            class meth:
+                def GET(arg: str) -> str: ...
+
+                class more:
+                    serialize_query_args = True
+                    def GET(arg: str) -> str: ...
+
+        @contextlib.asynccontextmanager
+        async def make_request(method, path, *, params, json):
+            requests.append((method, path, params, json))
+            yield FakeResponse(params['arg'])
+
+        client = make_client(API, make_request)
+
+        requests = []
+        extract(client.GET(arg='v'))
+        extract(client.meth.GET(arg='v'))
+        extract(client.meth.more.GET(arg='v'))
+        self.assertEqual(requests, [
+            ("GET", '/', {'arg': 'v'}, None),
+            ("GET", '/meth', {'arg': 'v'}, None),
+            ("GET", '/meth/more', {'arg': '"v"'}, None)])
+
+        class API2:
+            serialize_query_args = False
+            def GET(arg: int) -> str: ...
+
+        with self.assertRaises(InvalidQueryArgs):
+            api(API2)

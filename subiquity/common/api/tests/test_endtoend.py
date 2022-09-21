@@ -22,7 +22,12 @@ import aiohttp
 from aiohttp import web
 
 from subiquity.common.api.client import make_client
-from subiquity.common.api.defs import api, Payload
+from subiquity.common.api.defs import (
+    api,
+    MultiplePathParameters,
+    path_parameter,
+    Payload,
+    )
 
 from .test_server import (
     makeTestClient,
@@ -85,13 +90,44 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(
                 await client.GET(arg1="A", arg2="B"), 'A+B')
 
+    async def test_path_args(self):
+        @api
+        class API:
+            @path_parameter
+            class param1:
+                @path_parameter
+                class param2:
+                    def GET(arg1: str, arg2: str) -> str: ...
+
+        class Impl(ControllerBase):
+            async def param1_param2_GET(self, param1: str, param2: str,
+                                        arg1: str, arg2: str) -> str:
+                return '{}+{}+{}+{}'.format(param1, param2, arg1, arg2)
+
+        async with makeE2EClient(API, Impl()) as client:
+            self.assertEqual(
+                await client["1"]["2"].GET(arg1="A", arg2="B"), '1+2+A+B')
+
+    def test_only_one_path_parameter(self):
+        class API:
+            @path_parameter
+            class param1:
+                def GET(arg: str) -> str: ...
+
+            @path_parameter
+            class param2:
+                def GET(arg: str) -> str: ...
+
+        with self.assertRaises(MultiplePathParameters):
+            api(API)
+
     async def test_defaults(self):
         @api
         class API:
-            def GET(arg1: str, arg2: str = "arg2") -> str: ...
+            def GET(arg1: str = "arg1", arg2: str = "arg2") -> str: ...
 
         class Impl(ControllerBase):
-            async def GET(self, arg1: str, arg2: str = "arg2") -> str:
+            async def GET(self, arg1: str = "arg1", arg2: str = "arg2") -> str:
                 return '{}+{}'.format(arg1, arg2)
 
         async with makeE2EClient(API, Impl()) as client:
@@ -99,6 +135,8 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
                 await client.GET(arg1="A", arg2="B"), 'A+B')
             self.assertEqual(
                 await client.GET(arg1="A"), 'A+arg2')
+            self.assertEqual(
+                await client.GET(arg2="B"), 'arg1+B')
 
     async def test_post(self):
         @api
