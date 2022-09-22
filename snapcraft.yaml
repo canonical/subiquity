@@ -159,9 +159,15 @@ parts:
       echo "get passwd/user-default-groups" | \
         debconf-communicate user-setup | \
         cut -d ' ' -f 2- > $SNAPCRAFT_PART_INSTALL/users-and-groups
-      cp /usr/lib/user-setup/reserved-usernames $SNAPCRAFT_PART_INSTALL/
     stage:
       - users-and-groups
+  user-setup:
+    plugin: nil
+    source: https://git.launchpad.net/ubuntu/+source/user-setup
+    source-type: git
+    override-build:
+      cp -a reserved-usernames $SNAPCRAFT_PART_INSTALL/
+    stage:
       - reserved-usernames
   keyboard-data:
     plugin: nil
