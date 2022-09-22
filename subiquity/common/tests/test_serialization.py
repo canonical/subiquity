@@ -14,12 +14,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import attr
+import enum
 import random
 import string
 import typing
 import unittest
 
-from subiquity.common.serialize import Serializer
+from subiquity.common.serialize import (
+    named_field,
+    Serializer,
+    SerializationError,
+    )
 
 
 @attr.s(auto_attribs=True)
@@ -53,6 +58,10 @@ class OptionalAndDefault:
     optional_int: typing.Optional[int]
     int_default: int = 3
     optional_int_default: typing.Optional[int] = 4
+
+
+class MyEnum(enum.Enum):
+    name = "value"
 
 
 class CommonSerializerTests:
@@ -125,6 +134,14 @@ class CommonSerializerTests:
         self.assertRoundtrips(ann, Data.make_random())
         self.assertRoundtrips(ann, Container.make_random())
 
+    def test_enums(self):
+        self.assertSerialization(MyEnum, MyEnum.name, "name")
+
+    def test_enums_by_value(self):
+        self.serializer = type(self.serializer)(
+            compact=self.serializer.compact, serialize_enums_by="value")
+        self.assertSerialization(MyEnum, MyEnum.name, "value")
+
 
 class TestSerializer(CommonSerializerTests, unittest.TestCase):
 
@@ -168,6 +185,74 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
         }
         expected = Data(field1='1', field2=2)
         self.assertDeserializesTo(Data, data, expected)
+
+    def test_reject_unknown_fields_by_default(self):
+        serializer = Serializer()
+        data = Data.make_random()
+        serialized = serializer.serialize(Data, data)
+        serialized['foobar'] = 'baz'
+        with self.assertRaises(KeyError):
+            serializer.deserialize(Data, serialized)
+
+    def test_ignore_unknown_fields(self):
+        serializer = Serializer(ignore_unknown_fields=True)
+        data = Data.make_random()
+        serialized = serializer.serialize(Data, data)
+        serialized['foobar'] = 'baz'
+        self.assertEqual(serializer.deserialize(Data, serialized), data)
+
+    def test_override_field_name(self):
+
+        @attr.s(auto_attribs=True)
+        class Object:
+            x: int
+            y: int = named_field("field-y")
+            z: int = named_field("field-z", 0)
+
+        self.assertSerialization(
+            Object, Object(1, 2), {"x": 1, "field-y": 2, "field-z": 0})
+
+    def test_embedding(self):
+
+        @attr.s(auto_attribs=True)
+        class Base1:
+            x: str
+
+        @attr.s(auto_attribs=True)
+        class Base2:
+            b: Base1
+
+        @attr.s(auto_attribs=True)
+        class Derived1(Base1):
+            y: int
+
+        @attr.s(auto_attribs=True)
+        @attr.s(auto_attribs=True)
+        class Derived2(Base2):
+            b: Derived1
+            c: int
+
+        self.assertSerialization(
+            Derived2,
+            Derived2(b=Derived1(x="a", y=1), c=2),
+            {"b": {"x": "a", "y": 1}, "c": 2})
+
+    def test_error_paths(self):
+        with self.assertRaises(SerializationError) as catcher:
+            self.serializer.serialize(str, 1)
+        self.assertEqual(catcher.exception.path, '')
+
+        @attr.s(auto_attribs=True)
+        class Type:
+            field1: str = named_field('field-1')
+            field2: int
+
+        with self.assertRaises(SerializationError) as catcher:
+            self.serializer.serialize(Type, Data(2, 3))
+        self.assertEqual(catcher.exception.path, '.field1')
+        with self.assertRaises(SerializationError) as catcher:
+            self.serializer.deserialize(Type, {'field-1': 1, 'field2': 2})
+        self.assertEqual(catcher.exception.path, "['field-1']")
 
 
 class TestCompactSerializer(CommonSerializerTests, unittest.TestCase):
