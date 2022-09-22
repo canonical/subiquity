@@ -213,7 +213,6 @@ class Serializer:
         return self._serialize(annotation, context)
 
     def _deserialize_datetime(self, annotation, context):
-        context.assert_type(annotation)
         fmt = context.metadata.get('time_fmt')
         if fmt is None:
             context.error("cannot serialize datetime without format")
