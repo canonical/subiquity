@@ -111,6 +111,7 @@ render
 saned
 sbuild
 scanner
+sgx
 slocate
 ssh
 sshd
