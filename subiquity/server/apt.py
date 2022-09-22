@@ -262,11 +262,6 @@ class AptConfigurer:
                 'cp', '-aT', self.configured_tree.p(dir), target_mnt.p(dir),
                 ])
 
-        await self.unmount(
-                Mountpoint(mountpoint=target_mnt.p('cdrom')),
-                remove=True)
-        os.rmdir(target_mnt.p('cdrom'))
-
         await _restore_dir('etc/apt')
 
         if self.app.base_model.network.has_network:
@@ -277,11 +272,14 @@ class AptConfigurer:
             await _restore_dir('var/lib/apt/lists')
 
         await self.cleanup()
+        os.rmdir(target_mnt.p('cdrom'))
 
-    async def setup_target(self):
+    async def setup_target(self, context, target: str):
         # Call this after the rootfs has been extracted to the real target
         # system but before any configuration is applied to it.
-        await self.mount('/cdrom', '/target/cdrom', options='bind')
+        target_mnt = Mountpoint(mountpoint=target)
+        await self.mount(
+            '/cdrom', target_mnt.p('cdrom'), options='bind')
 
 
 class DryRunAptConfigurer(AptConfigurer):
