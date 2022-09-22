@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import attr
+import datetime
 import enum
 import random
 import string
@@ -146,6 +147,13 @@ class CommonSerializerTests:
 class TestSerializer(CommonSerializerTests, unittest.TestCase):
 
     serializer = Serializer()
+
+    def test_datetime(self):
+        @attr.s
+        class C:
+            d: datetime.datetime = attr.ib(metadata={'time_fmt': '%Y-%m-%d'})
+        c = C(datetime.datetime(2022, 1, 1))
+        self.assertSerialization(C, c, {"d": "2022-01-01"})
 
     def test_serialize_attr(self):
         data = Data.make_random()
