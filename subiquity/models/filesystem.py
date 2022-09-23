@@ -16,6 +16,7 @@
 from abc import ABC, abstractmethod
 import attr
 import collections
+import copy
 import fnmatch
 import itertools
 import logging
@@ -38,6 +39,11 @@ log = logging.getLogger('subiquity.models.filesystem')
 
 MiB = 1024 * 1024
 GiB = 1024 * 1024 * 1024
+
+
+class NotFinalPartitionError(Exception):
+    """ Exception to raise when guessing the size of a partition that is not
+    the last one. """
 
 
 def _set_backlinks(obj):
@@ -170,6 +176,13 @@ def reverse_dependencies(obj):
             yield from v
         elif v is not None:
             yield v
+
+
+def is_logical_partition(obj):
+    try:
+        return obj.is_logical
+    except AttributeError:
+        return False
 
 
 @attr.s(eq=False)
@@ -1180,17 +1193,30 @@ class FilesystemModel(object):
         self._actions = self._actions_from_config(
             ai_config, self._probe_data['blockdev'], is_probe_data=False)
         for p in self._all(type="partition") + self._all(type="lvm_partition"):
+            # NOTE For logical partitions (DOS), the parent is set to the disk,
+            # not the extended partition.
             [parent] = list(dependencies(p))
             if isinstance(p.size, int):
                 if p.size < 0:
-                    if p is not parent.partitions()[-1]:
-                        raise Exception(
+                    if p.flag == "extended":
+                        # For extended partitions, we use this filter to create
+                        # a temporary copy of the disk that excludes all
+                        # logical partitions.
+                        def filter_(x): return not is_logical_partition(x)
+                    else:
+                        def filter_(x): return True
+                    filtered_parent = copy.copy(parent)
+                    filtered_parent._partitions = list(filter(
+                        filter_, parent.partitions()))
+                    if p is not filtered_parent.partitions()[-1]:
+                        raise NotFinalPartitionError(
                             "{} has negative size but is not final partition "
                             "of {}".format(p, parent))
+
                     from subiquity.common.filesystem.gaps import (
                         largest_gap_size,
                         )
-                    p.size = largest_gap_size(parent)
+                    p.size = largest_gap_size(filtered_parent)
             elif isinstance(p.size, str):
                 if p.size.endswith("%"):
                     percentage = int(p.size[:-1])
