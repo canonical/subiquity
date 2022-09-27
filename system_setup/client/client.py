@@ -34,7 +34,7 @@ The installer will guide you through installing {description}.
 The installer only requires the up and down arrow keys, space (or
 return) and the occasional bit of typing.
 
-This is version {snap_version} of the installer.
+This is revision {snap_revision} of the installer.
 """)
 
 
@@ -44,7 +44,7 @@ def _about_msg(msg, dry_run):
     info.update({
         'id': newId,
         'description': info["description"].replace(info["id"], newId),
-        'snap_version': os.environ.get("SNAP_VERSION", "SNAP_VERSION")
+        'snap_revision': os.environ.get("SNAP_REVISION", "SNAP_REVISION")
         })
     return msg.format(**info)
 
