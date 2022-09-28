@@ -32,7 +32,7 @@ from subiquitycore.ui.container import Columns, ListBox
 from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.utils import button_pile, Color, screen
 
-from subiquity.common.types import RefreshCheckState
+from subiquity.common.types import RefreshCheckState, TaskStatus
 
 log = logging.getLogger('subiquity.ui.views.refresh')
 
@@ -77,20 +77,20 @@ class TaskProgress(WidgetWrap):
         super().__init__(cols)
 
     def update(self, task):
-        progress = task['progress']
-        done = progress['done']
-        total = progress['total']
+        progress = task.progress
+        done = progress.done
+        total = progress.total
         if total > 1:
             if self.mode == "spinning":
                 bar = TaskProgressBar()
                 self._w = bar
             else:
                 bar = self._w
-            bar.label = task['summary']
+            bar.label = task.summary
             bar.done = total
             bar.current = done
         else:
-            self.label.set_text(task['summary'])
+            self.label.set_text(task.summary)
             self.spinner.spin()
 
 
@@ -253,13 +253,17 @@ class RefreshView(BaseView):
             return
         while True:
             change = await self.controller.get_progress(change_id)
-            if change['status'] == 'Done':
+            if change.status == TaskStatus.DONE:
                 # Clearly if we got here we didn't get restarted by
                 # snapd/systemctl (dry-run mode or logged in via SSH)
                 self.controller.app.restart(remove_last_screen=False)
                 return
-            if change['status'] not in ['Do', 'Doing']:
-                self.update_failed(change.get('err', "Unknown error"))
+            if change.status not in (TaskStatus.DO, TaskStatus.DOING):
+                if change.err:
+                    err = change.err
+                else:
+                    err = "Unknown error"
+                self.update_failed(err)
                 return
             self.update_progress(change)
             await asyncio.sleep(0.1)
@@ -284,14 +288,14 @@ class RefreshView(BaseView):
         self._w = screen(rows, buttons, excerpt=_(self.update_failed_excerpt))
 
     def update_progress(self, change):
-        for task in change['tasks']:
-            tid = task['id']
-            if task['status'] == "Done":
+        for task in change.tasks:
+            tid = task.id
+            if task.status == TaskStatus.DONE:
                 bar = self.task_to_bar.get(tid)
                 if bar is not None:
                     self.lb_tasks.base_widget.body.remove(bar)
                     del self.task_to_bar[tid]
-            if task['status'] == "Doing":
+            if task.status == TaskStatus.DOING:
                 if tid not in self.task_to_bar:
                     self.task_to_bar[tid] = bar = TaskProgress()
                     self.lb_tasks.base_widget.body.append(bar)
