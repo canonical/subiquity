@@ -23,7 +23,6 @@ import math
 import os
 import pathlib
 import platform
-import random
 import tempfile
 
 from curtin import storage_config
@@ -43,15 +42,12 @@ GiB = 1024 * 1024 * 1024
 def _set_backlinks(obj):
     if obj.id is None:
         base = obj.type
-        num = len(obj._m._all_ids) + 1
+        i = 0
         while True:
-            # Create a semireadable id.
-            # The number on the end is not particularly meaningful,
-            # notably on a partition it is (usually) not the partition number.
-            rand = random.randint(0, 16**2 - 1)
-            val = f'{base}-{rand:02x}-{num}'
+            val = "%s-%s" % (base, i)
             if val not in obj._m._all_ids:
                 break
+            i += 1
         obj.id = val
     obj._m._all_ids.add(obj.id)
     for field in attr.fields(type(obj)):
