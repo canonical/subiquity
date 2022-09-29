@@ -84,7 +84,8 @@ class MirrorController(SubiquityController):
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, 'source'), self.on_source)
         self.cc_event = asyncio.Event()
-        self.configured_once = False
+        self.configured_event = asyncio.Event()
+        self.source_configured_event = asyncio.Event()
         self._apt_config_key = None
         self._apply_apt_config_task = SingleInstanceTask(
             self._apply_apt_config)
@@ -113,8 +114,8 @@ class MirrorController(SubiquityController):
         self.cc_event.set()
 
     def on_source(self):
-        if self.configured_once:
-            self._apply_apt_config_task.start_sync()
+        self._apply_apt_config_task.start_sync()
+        self.source_configured_event.set()
 
     def serialize(self):
         return self.model.get_mirror()
@@ -129,10 +130,13 @@ class MirrorController(SubiquityController):
 
     async def configured(self):
         await super().configured()
-        self.configured_once = True
         self._apply_apt_config_task.start_sync()
+        self.configured_event.set()
 
     async def _apply_apt_config(self):
+        await asyncio.gather(self.configured_event.wait(),
+                             self.source_configured_event.wait())
+
         # if self.apt_configurer is not None:
         # FIXME disabled until we can sort out umount
         # await self.apt_configurer.cleanup()

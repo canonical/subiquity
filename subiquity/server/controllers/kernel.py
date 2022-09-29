@@ -13,11 +13,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 
 from subiquitycore.lsb_release import lsb_release
 
 from subiquity.server.controller import NonInteractiveController
+
+log = logging.getLogger("subiquity.server.controllers.kernel")
 
 
 class KernelController(NonInteractiveController):
@@ -43,14 +46,27 @@ class KernelController(NonInteractiveController):
     }
 
     def start(self):
-        mp_file = os.path.join(
+        if self.model.metapkg_name is not None:
+            # if we have set the desired kernel already, use that.
+            return
+        # the ISO may have been configured to tell us what kernel to use
+        # /run is the historical location, but a bit harder to craft an ISO to
+        # have it there as it needs to be populated at runtime.
+        run_mp_file = os.path.join(
             self.app.base_model.root,
             "run/kernel-meta-package")
-        if os.path.exists(mp_file):
-            with open(mp_file) as fp:
-                kernel_package = fp.read().strip()
-            self.model.metapkg_name = kernel_package
-        elif self.model.metapkg_name is None:
+        etc_mp_file = os.path.join(
+            self.app.base_model.root,
+            "etc/subiquity/kernel-meta-package")
+        for mp_file in (run_mp_file, etc_mp_file):
+            if os.path.exists(mp_file):
+                with open(mp_file) as fp:
+                    kernel_package = fp.read().strip()
+                self.model.metapkg_name = kernel_package
+                log.debug(f'Using kernel {kernel_package} due to {mp_file}')
+                break
+        else:
+            log.debug('Using default kernel linux-generic')
             self.model.metapkg_name = 'linux-generic'
 
     def load_autoinstall_data(self, data):
@@ -62,18 +78,16 @@ class KernelController(NonInteractiveController):
             if flavor is None or flavor == 'generic':
                 package = 'linux-generic'
             else:
-                if flavor is None:
-                    package = 'generic'
-                else:
-                    if flavor == 'hwe':
-                        flavor = 'generic-hwe'
-                    # Should check this package exists really but
-                    # that's a bit tricky until we get cleverer about
-                    # the apt config in general.
-                    dry_run: bool = self.app.opts.dry_run
-                    package = 'linux-{flavor}-{release}'.format(
-                        flavor=flavor,
-                        release=lsb_release(dry_run=dry_run)['release'])
+                if flavor == 'hwe':
+                    flavor = 'generic-hwe'
+                # Should check this package exists really but
+                # that's a bit tricky until we get cleverer about
+                # the apt config in general.
+                dry_run: bool = self.app.opts.dry_run
+                package = 'linux-{flavor}-{release}'.format(
+                    flavor=flavor,
+                    release=lsb_release(dry_run=dry_run)['release'])
+        log.debug(f'Using kernel {package} due to autoinstall')
         self.model.metapkg_name = package
 
     def make_autoinstall(self):

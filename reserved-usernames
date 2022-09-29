@@ -1,4 +1,4 @@
-# Static users from base-passwd/passwd.master (3.5.11).
+# Static users from base-passwd/passwd.master (3.5.41).
 root
 daemon
 bin
@@ -18,7 +18,7 @@ irc
 gnats
 nobody
 
-# Other static groups from base-passwd/group.master (3.5.11).
+# Other static groups from base-passwd/group.master (3.5.41).
 adm
 tty
 disk
@@ -43,7 +43,7 @@ staff
 users
 nogroup
 
-# Reserved usernames listed in base-passwd/README (3.5.11).
+# Reserved usernames listed in base-passwd/README (3.5.41).
 netplan
 ftn
 mysql
@@ -59,6 +59,17 @@ qmailp
 asterisk
 vpopmail
 vchkpw
+slurm
+hacluster
+haclient
+grsec-tpe
+grsec-sock-all
+grsec-sock-clt
+grsec-sock-srv
+grsec-proc
+ceph
+opensrf
+libvirt-qemu
 
 # Ubuntu creates the admin group and adds the first user to it in order to
 # grant them sudo privileges.
@@ -75,6 +86,7 @@ cupsys
 dcc
 dhcp
 dictd
+dnsmasq
 dovecot
 fetchmail
 firebird
@@ -84,8 +96,10 @@ gdm
 haldaemon
 hplilp
 identd
+input
 jwhois
 klog
+kvm
 lpadmin
 maas
 messagebus
@@ -93,9 +107,11 @@ mythtv
 netdev
 powerdev
 radvd
+render
 saned
 sbuild
 scanner
+sgx
 slocate
 ssh
 sshd

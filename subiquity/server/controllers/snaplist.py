@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 from typing import List
 
@@ -22,7 +23,6 @@ import requests.exceptions
 
 from subiquitycore.async_helpers import (
     schedule_task,
-    SingleInstanceTask,
     )
 from subiquitycore.context import with_context
 
@@ -42,6 +42,10 @@ from subiquity.server.types import InstallerChannels
 log = logging.getLogger('subiquity.server.controllers.snaplist')
 
 
+class SnapListFetchError(Exception):
+    """ Exception to raise when the list of snaps could not be fetched. """
+
+
 class SnapdSnapInfoLoader:
 
     def __init__(self, model, snapd, store_section, context):
@@ -50,12 +54,34 @@ class SnapdSnapInfoLoader:
         self.context = context
 
         self.main_task = None
-        self.snap_list_fetched = False
-        self.failed = False
 
         self.snapd = snapd
         self.pending_snaps = []
         self.tasks = {}  # {snap:task}
+
+        self.load_list_task_created = asyncio.Event()
+
+    def _fetch_list_ended(self) -> bool:
+        """ Tells whether the snap list fetch task has ended without being
+        cancelled. """
+        if None not in self.tasks:
+            return False
+        task = self.get_snap_list_task()
+        if task.cancelled():
+            return False
+        return task.done()
+
+    def fetch_list_completed(self) -> bool:
+        """ Tells whether the snap list fetch task has completed. """
+        if not self._fetch_list_ended():
+            return False
+        return not self.get_snap_list_task().exception()
+
+    def fetch_list_failed(self) -> bool:
+        """ Tells whether the snap list fetch task has failed. """
+        if not self._fetch_list_ended():
+            return False
+        return bool(self.get_snap_list_task().exception())
 
     def start(self):
         log.debug("loading list of snaps")
@@ -64,8 +90,13 @@ class SnapdSnapInfoLoader:
     async def _start(self):
         with self.context:
             task = self.tasks[None] = \
-                    SingleInstanceTask(self._load_list, propagate_errors=False)
-            task.start_sync()
+                    asyncio.create_task(self._load_list())
+            self.load_list_task_created.set()
+            try:
+                await task
+            except SnapListFetchError:
+                log.exception("loading list of snaps failed")
+                return
             self.pending_snaps = self.model.get_snap_list()
             log.debug("fetched list of %s snaps", len(self.pending_snaps))
             while self.pending_snaps:
@@ -80,11 +111,8 @@ class SnapdSnapInfoLoader:
             result = await self.snapd.get(
                 'v2/find', section=self.store_section)
         except requests.exceptions.RequestException:
-            log.exception("loading list of snaps failed")
-            self.failed = True
-            return
+            raise SnapListFetchError
         self.model.load_find_data(result)
-        self.snap_list_fetched = True
 
     def stop(self):
         if self.main_task is not None:
@@ -158,7 +186,7 @@ class SnapListController(SubiquityController):
             return
         # If the loader managed to load the list of snaps, the
         # network must basically be working.
-        if self.loader.snap_list_fetched:
+        if self.loader.fetch_list_completed():
             return
         else:
             self.loader.stop()
@@ -169,15 +197,22 @@ class SnapListController(SubiquityController):
         return [attr.asdict(sel) for sel in self.model.selections]
 
     async def GET(self, wait: bool = False) -> SnapListResponse:
-        if self.loader.failed or not self.app.base_model.network.has_network:
-            await self.configured()
+        if self.loader.fetch_list_failed() \
+                or not self.app.base_model.network.has_network:
             return SnapListResponse(status=SnapCheckState.FAILED)
-        if not self.loader.snap_list_fetched and not wait:
+        if not self.loader.fetch_list_completed() and not wait:
             return SnapListResponse(status=SnapCheckState.LOADING)
-        await self.loader.get_snap_list_task().wait()
-        if self.loader.failed or not self.app.base_model.network.has_network:
-            await self.configured()
-            return SnapListResponse(status=SnapCheckState.FAILED)
+        # Let's wait for the task to be completed.
+        # If the loader gets restarted, the cancellation should be absorbed.
+        while True:
+            await self.loader.load_list_task_created.wait()
+            try:
+                await asyncio.shield(self.loader.get_snap_list_task())
+                break
+            except SnapListFetchError:
+                return SnapListResponse(status=SnapCheckState.FAILED)
+            except asyncio.CancelledError:
+                log.warn("load list snaps task was cancelled, retrying...")
         return SnapListResponse(
             status=SnapCheckState.DONE,
             snaps=self.model.get_snap_list(),
