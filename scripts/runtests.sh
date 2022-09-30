@@ -7,6 +7,7 @@ export PYTHONTRACEMALLOC=3
 RELEASE=$(lsb_release -rs)
 
 tmpdir=$(mktemp -d)
+subiquity_pid=""
 
 validate () {
     mode="install"
@@ -127,13 +128,18 @@ clean () {
 
 on_exit () {
     ec=$?
-    set +x  # show PASS/FAIL in the last lines of output
+    set +xe  # show PASS/FAIL in the last lines of output
     if [[ $ec = 0 ]] ; then
         echo 'Runtests all PASSED'
     else
         echo 'Runtests FAILURE'
         echo "Output from the last run is at $tmpdir"
     fi
+
+    if [ -n "$subiquity_pid" ] ; then
+        kill "$subiquity_pid"
+    fi
+
     exit $ec
 }
 
@@ -141,6 +147,7 @@ trap on_exit EXIT
 tty=$(tty) || tty=/dev/console
 
 export SUBIQUITY_REPLAY_TIMESCALE=100
+
 for answers in examples/answers*.yaml; do
     if echo $answers|grep -vq system-setup; then
         config=$(sed -n 's/^#machine-config: \(.*\)/\1/p' $answers || true)
@@ -239,7 +246,6 @@ if [ "${RELEASE%.*}" -ge 20 ]; then
     port=50321
     LANG=C.UTF-8 python3 -m system_setup.cmd.server --dry-run --tcp-port=$port &
     subiquity_pid=$!
-    trap "kill $subiquity_pid" EXIT
     next_time=3
     until [ $next_time -eq 0 ] || [ ! -z "$(ss -Hlt sport = $port)" ]; do
         sleep $(( next_time-- ))
