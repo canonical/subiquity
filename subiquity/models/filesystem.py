@@ -1216,7 +1216,9 @@ class FilesystemModel(object):
                     from subiquity.common.filesystem.gaps import (
                         largest_gap_size,
                         )
-                    p.size = largest_gap_size(filtered_parent)
+                    p.size = largest_gap_size(
+                            filtered_parent,
+                            in_extended=is_logical_partition(p))
             elif isinstance(p.size, str):
                 if p.size.endswith("%"):
                     percentage = int(p.size[:-1])
