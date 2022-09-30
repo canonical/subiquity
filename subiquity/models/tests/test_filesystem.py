@@ -635,13 +635,111 @@ class TestAutoInstallConfig(unittest.TestCase):
                 'flag': 'logical',
                 # p1 (extended) offset + ebr_space
                 'offset': start_offset + dehumanize_size('40M') + ebr_space,
-
             },
             ])
         extended = model._one(type="partition", id="part1")
         self.assertEqual(
                 extended.size,
                 disk.available_for_partitions - dehumanize_size('40M'))
+
+    def test_logical_partition_remaining_size(self):
+        model = make_model(bootloader=Bootloader.BIOS, storage_version=2)
+        disk = make_disk(model, serial='aaaa', size=dehumanize_size("100M"),
+                         ptable='msdos')
+        ebr_space = disk.alignment_data().ebr_space
+        start_offset = disk.alignment_data().min_start_offset
+
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+            },
+            {
+                'type': 'partition',
+                'id': 'part0',
+                'device': 'disk0',
+                'size': dehumanize_size('40M'),
+                'flag': 'extended',
+                'offset': start_offset,
+            },
+            {
+                'type': 'partition',
+                'number': 5,
+                'id': 'part5',
+                'device': 'disk0',
+                'size': -1,
+                'flag': 'logical',
+                # p0 (extended) offset + ebr_space
+                'offset': start_offset + ebr_space,
+            },
+            ])
+        extended = model._one(type="partition", id="part0")
+        logical = model._one(type="partition", id="part5")
+        # At this point, there should be one large gap outside the extended
+        # partition and one smaller one inside the extended partition.
+        # Make sure our logical partition picks up the smaller one.
+        self.assertEqual(logical.size, extended.size - ebr_space)
+
+    def test_partition_remaining_size_in_extended_and_logical(self):
+        model = make_model(bootloader=Bootloader.BIOS, storage_version=2)
+        disk = make_disk(model, serial='aaaa', size=dehumanize_size("100M"),
+                         ptable='msdos')
+        ebr_space = disk.alignment_data().ebr_space
+        start_offset = disk.alignment_data().min_start_offset
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+            },
+            {
+                'type': 'partition',
+                'id': 'part0',
+                'device': 'disk0',
+                'size': dehumanize_size('40M'),
+                'offset': start_offset,
+            },
+            {
+                'type': 'partition',
+                'id': 'part1',
+                'device': 'disk0',
+                'size': -1,
+                'flag': 'extended',
+                # p0 offset + size of p0
+                'offset': start_offset + dehumanize_size('40M'),
+            },
+            {
+                'type': 'partition',
+                'number': 5,
+                'id': 'part5',
+                'device': 'disk0',
+                'size': dehumanize_size('10M'),
+                'flag': 'logical',
+                # p1 offset + ebr_space
+                'offset': start_offset + dehumanize_size('40M') + ebr_space,
+            },
+            {
+                'type': 'partition',
+                'number': 6,
+                'id': 'part6',
+                'device': 'disk0',
+                'size': -1,
+                'flag': 'logical',
+                # p5 offset + p5 size + ebr_space
+                'offset': start_offset + dehumanize_size('40M') + ebr_space \
+                        + dehumanize_size('10M') + ebr_space
+            },
+            ])
+        extended = model._one(type="partition", id="part1")
+        p5 = model._one(type="partition", id="part5")
+        p6 = model._one(type="partition", id="part6")
+        self.assertEqual(
+                extended.size,
+                disk.available_for_partitions - dehumanize_size('40M'))
+        self.assertEqual(
+                p6.size,
+                extended.size - p5.size - 2 * ebr_space)
 
     def test_lv_percent(self):
         model = make_model()
