@@ -599,10 +599,7 @@ class TestAutoInstallConfig(unittest.TestCase):
 
     def test_extended_partition_remaining_size(self):
         model = make_model(bootloader=Bootloader.BIOS, storage_version=2)
-        disk = make_disk(model, serial='aaaa', size=dehumanize_size("100M"),
-                         ptable='msdos')
-        ebr_space = disk.alignment_data().ebr_space
-        start_offset = disk.alignment_data().min_start_offset
+        make_disk(model, serial='aaaa', size=dehumanize_size("100M"))
 
         fake_up_blockdata(model)
         model.apply_autoinstall_config([
@@ -616,7 +613,6 @@ class TestAutoInstallConfig(unittest.TestCase):
                 'id': 'part0',
                 'device': 'disk0',
                 'size': dehumanize_size('40M'),
-                'offset': start_offset,
             },
             {
                 'type': 'partition',
@@ -624,8 +620,6 @@ class TestAutoInstallConfig(unittest.TestCase):
                 'device': 'disk0',
                 'size': -1,
                 'flag': 'extended',
-                # p0 offset + p0 size
-                'offset': start_offset + dehumanize_size('40M'),
             },
             {
                 'type': 'partition',
@@ -634,8 +628,6 @@ class TestAutoInstallConfig(unittest.TestCase):
                 'device': 'disk0',
                 'size': dehumanize_size('10M'),
                 'flag': 'logical',
-                # p1 (extended) offset + ebr_space
-                'offset': start_offset + dehumanize_size('40M') + ebr_space,
             },
             ])
         extended = model._one(type="partition", id="part1")
@@ -654,10 +646,7 @@ class TestAutoInstallConfig(unittest.TestCase):
 
     def test_logical_partition_remaining_size(self):
         model = make_model(bootloader=Bootloader.BIOS, storage_version=2)
-        disk = make_disk(model, serial='aaaa', size=dehumanize_size("100M"),
-                         ptable='msdos')
-        ebr_space = disk.alignment_data().ebr_space
-        start_offset = disk.alignment_data().min_start_offset
+        make_disk(model, serial='aaaa', size=dehumanize_size("100M"))
 
         fake_up_blockdata(model)
         model.apply_autoinstall_config([
@@ -672,7 +661,6 @@ class TestAutoInstallConfig(unittest.TestCase):
                 'device': 'disk0',
                 'size': dehumanize_size('40M'),
                 'flag': 'extended',
-                'offset': start_offset,
             },
             {
                 'type': 'partition',
@@ -681,8 +669,6 @@ class TestAutoInstallConfig(unittest.TestCase):
                 'device': 'disk0',
                 'size': -1,
                 'flag': 'logical',
-                # p0 (extended) offset + ebr_space
-                'offset': start_offset + ebr_space,
             },
             ])
         disk = model._one(type="disk")
@@ -705,6 +691,8 @@ class TestAutoInstallConfig(unittest.TestCase):
         # partition and a smaller one inside the extended partition.
         # Make sure our logical partition picks up the smaller one.
 
+        self.assertEqual(extended.offset, 2048 * 512)
+        self.assertEqual(logical.offset, 4096 * 512)
         # FIXME https://launchpad.net/bugs/1991929
         # The partition lacks 1MiB at the end
         # self.assertEqual(logical.size, extended.size - ebr_space)
@@ -712,10 +700,7 @@ class TestAutoInstallConfig(unittest.TestCase):
 
     def test_partition_remaining_size_in_extended_and_logical(self):
         model = make_model(bootloader=Bootloader.BIOS, storage_version=2)
-        disk = make_disk(model, serial='aaaa', size=dehumanize_size("100M"),
-                         ptable='msdos')
-        ebr_space = disk.alignment_data().ebr_space
-        start_offset = disk.alignment_data().min_start_offset
+        make_disk(model, serial='aaaa', size=dehumanize_size("100M"))
         fake_up_blockdata(model)
         model.apply_autoinstall_config([
             {
@@ -728,7 +713,6 @@ class TestAutoInstallConfig(unittest.TestCase):
                 'id': 'part0',
                 'device': 'disk0',
                 'size': dehumanize_size('40M'),
-                'offset': start_offset,
             },
             {
                 'type': 'partition',
@@ -736,8 +720,6 @@ class TestAutoInstallConfig(unittest.TestCase):
                 'device': 'disk0',
                 'size': -1,
                 'flag': 'extended',
-                # p0 offset + size of p0
-                'offset': start_offset + dehumanize_size('40M'),
             },
             {
                 'type': 'partition',
@@ -746,8 +728,6 @@ class TestAutoInstallConfig(unittest.TestCase):
                 'device': 'disk0',
                 'size': dehumanize_size('10M'),
                 'flag': 'logical',
-                # p1 offset + ebr_space
-                'offset': start_offset + dehumanize_size('40M') + ebr_space,
             },
             {
                 'type': 'partition',
@@ -756,12 +736,10 @@ class TestAutoInstallConfig(unittest.TestCase):
                 'device': 'disk0',
                 'size': -1,
                 'flag': 'logical',
-                # p5 offset + p5 size + ebr_space
-                'offset': start_offset + dehumanize_size('40M') + ebr_space \
-                        + dehumanize_size('10M') + ebr_space
             },
             ])
         extended = model._one(type="partition", id="part1")
+        p5 = model._one(type="partition", id="part5")
         p6 = model._one(type="partition", id="part6")
         # Disk test.img: 100 MiB, 104857600 bytes, 204800 sectors
         # Units: sectors of 1 * 512 = 512 bytes
@@ -776,7 +754,10 @@ class TestAutoInstallConfig(unittest.TestCase):
         # test.img5        86016 106495   20480  10M 83 Linux
         # test.img6       108544 204799   96256  47M 83 Linux
 
+        self.assertEqual(extended.offset, 83968 * 512)
         self.assertEqual(extended.size, 120832 * 512)
+        self.assertEqual(p5.offset, 86016 * 512)
+        self.assertEqual(p6.offset, 108544 * 512)
         # FIXME https://launchpad.net/bugs/1991929
         # the partition lacks 1MiB at the end
         # self.assertEqual(p6.size, 96256 * 512)
