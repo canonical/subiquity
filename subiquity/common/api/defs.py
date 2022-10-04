@@ -74,7 +74,9 @@ def api(cls, prefix_names=(), prefix_path=(), path_params=(),
             if not cls.serialize_query_args:
                 params = inspect.signature(v).parameters
                 for param_name, param in params.items():
-                    if param.annotation is not str:
+                    if param.annotation is not str and \
+                       getattr(param.annotation, '__origin__', None) is not \
+                       Payload:
                         raise InvalidQueryArgs(v, param)
             v.__path_params__ = path_params
     return cls
