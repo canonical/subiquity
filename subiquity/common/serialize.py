@@ -191,7 +191,7 @@ class Serializer:
         if annotation is None:
             context.assert_type(type(None))
             return None
-        if annotation is inspect.Signature.empty:
+        if annotation is inspect.Signature.empty or annotation is typing.Any:
             return context.cur
         if attr.has(annotation):
             return self._serialize_attr(annotation, context)
@@ -258,7 +258,7 @@ class Serializer:
         if annotation is None:
             context.assert_type(type(None))
             return None
-        if annotation is inspect.Signature.empty:
+        if annotation is inspect.Signature.empty or annotation is typing.Any:
             return context.cur
         if attr.has(annotation):
             return self._deserialize_attr(annotation, context)
