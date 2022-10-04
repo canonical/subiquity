@@ -1169,6 +1169,50 @@ class FilesystemModel(object):
             return candidates[0]
         return None
 
+    def assign_omitted_offsets(self):
+        """ For disks that use storage_version 2, assign offsets to partitions
+        that do not already have one. """
+        for disk in self._all(type="disk"):
+            if disk._m.storage_version != 2:
+                continue
+
+            info = disk.alignment_data()
+
+            def au(v):  # au == "align up"
+                r = v % info.part_align
+                if r:
+                    return v + info.part_align - r
+                else:
+                    return v
+
+            def ad(v):  # ad == "align down"
+                return v - v % info.part_align
+
+            primary_parts = list(filter(
+                lambda x: not is_logical_partition(x),
+                disk.partitions()))
+            logical_parts = list(filter(
+                lambda x: is_logical_partition(x),
+                disk.partitions()))
+
+            prev_end = info.min_start_offset
+            for part in primary_parts:
+                if part.offset is None:
+                    part.offset = au(prev_end)
+                prev_end = part.offset + part.size
+
+            if not logical_parts:
+                return
+
+            extended_part = next(
+                    filter(lambda x: x.flag == "extended", disk.partitions()))
+
+            prev_end = extended_part.offset
+            for part in logical_parts:
+                if part.offset is None:
+                    part.offset = au(prev_end + info.ebr_space)
+                prev_end = part.offset + part.size
+
     def apply_autoinstall_config(self, ai_config):
         disks = self.all_disks()
         for action in ai_config:
@@ -1194,6 +1238,9 @@ class FilesystemModel(object):
                 action['serial'] = disk.serial
         self._actions = self._actions_from_config(
             ai_config, self._probe_data['blockdev'], is_probe_data=False)
+
+        self.assign_omitted_offsets()
+
         for p in self._all(type="partition") + self._all(type="lvm_partition"):
             # NOTE For logical partitions (DOS), the parent is set to the disk,
             # not the extended partition.
