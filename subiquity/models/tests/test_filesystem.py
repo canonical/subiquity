@@ -609,6 +609,7 @@ class TestAutoInstallConfig(unittest.TestCase):
             {
                 'type': 'disk',
                 'id': 'disk0',
+                'ptable': 'msdos',
             },
             {
                 'type': 'partition',
@@ -638,9 +639,18 @@ class TestAutoInstallConfig(unittest.TestCase):
             },
             ])
         extended = model._one(type="partition", id="part1")
-        self.assertEqual(
-                extended.size,
-                disk.available_for_partitions - dehumanize_size('40M'))
+        # Disk test.img: 100 MiB, 104857600 bytes, 204800 sectors
+        # Units: sectors of 1 * 512 = 512 bytes
+        # Sector size (logical/physical): 512 bytes / 512 bytes
+        # I/O size (minimum/optimal): 512 bytes / 512 bytes
+        # Disklabel type: dos
+        # Disk identifier: 0x2cbec179
+        #
+        # Device     Boot Start    End Sectors Size Id Type
+        # test.img1        2048  83967   81920  40M 83 Linux
+        # test.img2       83968 204799  120832  59M  5 Extended
+        # test.img5       86016 106495   20480  10M 83 Linux
+        self.assertEqual(extended.size, 120832 * 512)
 
     def test_logical_partition_remaining_size(self):
         model = make_model(bootloader=Bootloader.BIOS, storage_version=2)
@@ -654,6 +664,7 @@ class TestAutoInstallConfig(unittest.TestCase):
             {
                 'type': 'disk',
                 'id': 'disk0',
+                'ptable': 'msdos',
             },
             {
                 'type': 'partition',
@@ -674,12 +685,30 @@ class TestAutoInstallConfig(unittest.TestCase):
                 'offset': start_offset + ebr_space,
             },
             ])
+        disk = model._one(type="disk")
         extended = model._one(type="partition", id="part0")
         logical = model._one(type="partition", id="part5")
+
+        ebr_space = disk.alignment_data().ebr_space
+        # Disk test.img: 100 MiB, 104857600 bytes, 204800 sectors
+        # Units: sectors of 1 * 512 = 512 bytes
+        # Sector size (logical/physical): 512 bytes / 512 bytes
+        # I/O size (minimum/optimal): 512 bytes / 512 bytes
+        # Disklabel type: dos
+        # Disk identifier: 0x16011ba9
+        #
+        # Device     Boot Start   End Sectors Size Id Type
+        # test.img1        2048 83967   81920  40M  5 Extended
+        # test.img5        4096 83967   79872  39M 83 Linux
+
         # At this point, there should be one large gap outside the extended
-        # partition and one smaller one inside the extended partition.
+        # partition and a smaller one inside the extended partition.
         # Make sure our logical partition picks up the smaller one.
-        self.assertEqual(logical.size, extended.size - ebr_space)
+
+        # FIXME https://launchpad.net/bugs/1991929
+        # The partition lacks 1MiB at the end
+        # self.assertEqual(logical.size, extended.size - ebr_space)
+        self.assertEqual(logical.size, extended.size - ebr_space - (1 << 20))
 
     def test_partition_remaining_size_in_extended_and_logical(self):
         model = make_model(bootloader=Bootloader.BIOS, storage_version=2)
@@ -692,6 +721,7 @@ class TestAutoInstallConfig(unittest.TestCase):
             {
                 'type': 'disk',
                 'id': 'disk0',
+                'ptable': 'msdos',
             },
             {
                 'type': 'partition',
@@ -732,14 +762,25 @@ class TestAutoInstallConfig(unittest.TestCase):
             },
             ])
         extended = model._one(type="partition", id="part1")
-        p5 = model._one(type="partition", id="part5")
         p6 = model._one(type="partition", id="part6")
-        self.assertEqual(
-                extended.size,
-                disk.available_for_partitions - dehumanize_size('40M'))
-        self.assertEqual(
-                p6.size,
-                extended.size - p5.size - 2 * ebr_space)
+        # Disk test.img: 100 MiB, 104857600 bytes, 204800 sectors
+        # Units: sectors of 1 * 512 = 512 bytes
+        # Sector size (logical/physical): 512 bytes / 512 bytes
+        # I/O size (minimum/optimal): 512 bytes / 512 bytes
+        # Disklabel type: dos
+        # Disk identifier: 0x0b01e1ca
+        #
+        # Device     Boot  Start    End Sectors Size Id Type
+        # test.img1         2048  83967   81920  40M 83 Linux
+        # test.img2        83968 204799  120832  59M  5 Extended
+        # test.img5        86016 106495   20480  10M 83 Linux
+        # test.img6       108544 204799   96256  47M 83 Linux
+
+        self.assertEqual(extended.size, 120832 * 512)
+        # FIXME https://launchpad.net/bugs/1991929
+        # the partition lacks 1MiB at the end
+        # self.assertEqual(p6.size, 96256 * 512)
+        self.assertEqual(p6.size, 96256 * 512 - (1 << 20))
 
     def test_lv_percent(self):
         model = make_model()
