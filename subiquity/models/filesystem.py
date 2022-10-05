@@ -552,7 +552,7 @@ class _Device(_Formattable, ABC):
 
     @property
     def available_for_partitions(self):
-        return align_down(self.size, 1 << 20) - GPT_OVERHEAD
+        raise NotImplementedError
 
     def available(self):
         # A _Device is available if:
@@ -604,6 +604,12 @@ class Disk(_Device):
     device_id = attr.ib(default=None)
 
     _info = attr.ib(default=None)
+
+    @property
+    def available_for_partitions(self):
+        margin_before = self.alignment_data().min_start_offset
+        margin_after = self.alignment_data().min_end_offset
+        return align_down(self.size, 1 << 20) - margin_before - margin_after
 
     def alignment_data(self):
         ptable = self.ptable_for_new_partition()
