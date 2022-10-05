@@ -27,7 +27,6 @@ from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
 from subiquity.common.types import (
-    Change,
     RefreshCheckState,
     RefreshStatus,
     )
@@ -37,12 +36,6 @@ from subiquity.common.snap import (
     )
 from subiquity.server.controller import (
     SubiquityController,
-    )
-from subiquity.server.snapdapi import (
-    SnapAction,
-    SnapActionRequest,
-    TaskStatus,
-    post_and_wait,
     )
 from subiquity.server.types import InstallerChannels
 
@@ -106,34 +99,33 @@ class RefreshController(SubiquityController):
         change_id = await self.start_update(context=context)
         while True:
             change = await self.get_progress(change_id)
-            if change.status not in [
-                    TaskStatus.DO, TaskStatus.DOING, TaskStatus.DONE]:
-                raise Exception(f"update failed: {change.status}")
+            if change['status'] not in ['Do', 'Doing', 'Done']:
+                raise Exception(f"update failed: {change['status']}")
             await asyncio.sleep(0.1)
 
     @with_context()
     async def configure_snapd(self, context):
         with context.child("get_details") as subcontext:
             try:
-                r = await self.app.snapdapi.v2.snaps[self.snap_name].GET()
+                r = await self.app.snapd.get(
+                    'v2/snaps/{snap_name}'.format(
+                        snap_name=self.snap_name))
             except requests.exceptions.RequestException:
                 log.exception("getting snap details")
                 return
-            self.status.current_snap_version = r.version
+            self.status.current_snap_version = r['result']['version']
             for k in 'channel', 'revision', 'version':
                 self.app.note_data_for_apport(
-                    "Snap" + k.title(), getattr(r, k))
+                    "Snap" + k.title(), r['result'][k])
             subcontext.description = "current version of snap is: %r" % (
                 self.status.current_snap_version)
         channel = self.get_refresh_channel()
         desc = "switching {} to {}".format(self.snap_name, channel)
         with context.child("switching", desc) as subcontext:
             try:
-                await post_and_wait(
-                    self.app.snapdapi,
-                    self.app.snapdapi.v2.snaps[self.snap_name].POST,
-                    SnapActionRequest(
-                        action=SnapAction.SWITCH, channel=channel))
+                await self.app.snapd.post_and_wait(
+                    'v2/snaps/{}'.format(self.snap_name),
+                    {'action': 'switch', 'channel': channel})
             except requests.exceptions.RequestException:
                 log.exception("switching channels")
                 return
@@ -180,17 +172,17 @@ class RefreshController(SubiquityController):
             self.status.availability = RefreshCheckState.UNAVAILABLE
             return
         try:
-            result = await self.app.snapdapi.v2.find.GET(select='refresh')
+            result = await self.app.snapd.get('v2/find', select='refresh')
         except requests.exceptions.RequestException:
             log.exception("checking for snap update failed")
             context.description = "checking for snap update failed"
             self.status.availability = RefreshCheckState.UNKNOWN
             return
         log.debug("check_for_update received %s", result)
-        for snap in result:
-            if snap.name != self.snap_name:
+        for snap in result["result"]:
+            if snap["name"] != self.snap_name:
                 continue
-            self.status.new_snap_version = snap.version
+            self.status.new_snap_version = snap["version"]
             # In certain circumstances, the version of the snap that is
             # reported by snapd is older than the one currently running. In
             # this scenario, we do not want to suggest an update that would
@@ -221,14 +213,16 @@ class RefreshController(SubiquityController):
 
     @with_context()
     async def start_update(self, context):
-        change_id = await self.app.snapdapi.v2.snaps[self.snap_name].POST(
-            SnapActionRequest(action=SnapAction.REFRESH, ignore_running=True))
-        context.description = "change id: {}".format(change_id)
-        return change_id
+        change = await self.app.snapd.post(
+            'v2/snaps/{}'.format(self.snap_name),
+            {'action': 'refresh', 'ignore-running': True})
+        context.description = "change id: {}".format(change)
+        return change
 
-    async def get_progress(self, change_id: str) -> Change:
-        change = await self.app.snapdapi.v2.changes[change_id].GET()
-        if change.status == TaskStatus.DONE:
+    async def get_progress(self, change):
+        result = await self.app.snapd.get('v2/changes/{}'.format(change))
+        change = result['result']
+        if change['status'] == 'Done':
             # Clearly if we got here we didn't get restarted by
             # snapd/systemctl (dry-run mode)
             self.app.restart()
@@ -242,5 +236,5 @@ class RefreshController(SubiquityController):
     async def POST(self, context) -> str:
         return await self.start_update(context=context)
 
-    async def progress_GET(self, change_id: str) -> Change:
+    async def progress_GET(self, change_id: str) -> dict:
         return await self.get_progress(change_id)

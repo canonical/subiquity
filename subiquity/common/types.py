@@ -20,7 +20,7 @@
 import datetime
 import enum
 import shlex
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import attr
 
@@ -621,42 +621,3 @@ class WSLConfigurationAdvanced:
 @attr.s(auto_attribs=True)
 class WSLSetupOptions:
     install_language_support_packages: bool = attr.ib(default=True)
-
-
-class TaskStatus(enum.Enum):
-    DO = "Do"
-    DOING = "Doing"
-    DONE = "Done"
-    ABORT = "Abort"
-    UNDO = "Undo"
-    UNDOING = "Undoing"
-    HOLD = "Hold"
-    ERROR = "Error"
-
-
-@attr.s(auto_attribs=True)
-class TaskProgress:
-    label: str = ''
-    done: int = 0
-    total: int = 0
-
-
-@attr.s(auto_attribs=True)
-class Task:
-    id: str
-    kind: str
-    summary: str
-    status: TaskStatus
-    progress: TaskProgress = TaskProgress()
-
-
-@attr.s(auto_attribs=True)
-class Change:
-    id: str
-    kind: str
-    summary: str
-    status: TaskStatus
-    tasks: List[Task]
-    ready: bool
-    err: Optional[str] = None
-    data: Any = None

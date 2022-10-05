@@ -152,8 +152,7 @@ class FakeSnapdConnection:
             "Don't know how to fake POST response to {}".format((path, args)))
 
     def get(self, path, **args):
-        if 'change' not in path:
-            time.sleep(1/self.scale_factor)
+        time.sleep(1/self.scale_factor)
         filename = path.replace('/', '-')
         if args:
             filename += '-' + urlencode(sorted(args.items()))
@@ -185,10 +184,10 @@ class AsyncSnapd:
         response = await run_in_thread(
             partial(self.connection.post, path, body, **args))
         response.raise_for_status()
-        return response.json()
+        return response.json()['change']
 
     async def post_and_wait(self, path, body, **args):
-        change = (await self.post(path, body, **args))['change']
+        change = await self.post(path, body, **args)
         change_path = 'v2/changes/{}'.format(change)
         while True:
             result = await self.get(change_path)
