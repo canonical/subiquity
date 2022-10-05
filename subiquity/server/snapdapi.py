@@ -18,7 +18,7 @@ import asyncio
 import contextlib
 import enum
 import logging
-from typing import List
+from typing import List, Optional
 
 from subiquity.common.api.client import make_client
 from subiquity.common.api.defs import api, path_parameter, Payload
@@ -60,10 +60,10 @@ class Snap:
     id: str
     name: str
     status: SnapStatus
-    publisher: Publisher
     version: str
     revision: str
     channel: str
+    publisher: Optional[Publisher] = None
 
 
 class SnapAction(enum.Enum):
