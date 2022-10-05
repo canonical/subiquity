@@ -16,6 +16,7 @@
 import attr
 import datetime
 import enum
+import inspect
 import random
 import string
 import typing
@@ -142,6 +143,11 @@ class CommonSerializerTests:
         self.serializer = type(self.serializer)(
             compact=self.serializer.compact, serialize_enums_by="value")
         self.assertSerialization(MyEnum, MyEnum.name, "value")
+
+    def test_serialize_any(self):
+        o = object()
+        self.assertSerialization(typing.Any, o, o)
+        self.assertSerialization(inspect.Signature.empty, o, o)
 
 
 class TestSerializer(CommonSerializerTests, unittest.TestCase):

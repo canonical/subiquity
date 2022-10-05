@@ -122,7 +122,7 @@ class TestClient(unittest.TestCase):
             def GET(arg: str) -> str: ...
 
             class meth:
-                def GET(arg: str) -> str: ...
+                def GET(arg: str, payload: Payload[int]) -> str: ...
 
                 class more:
                     serialize_query_args = True
@@ -137,11 +137,11 @@ class TestClient(unittest.TestCase):
 
         requests = []
         extract(client.GET(arg='v'))
-        extract(client.meth.GET(arg='v'))
+        extract(client.meth.GET(arg='v', payload=1))
         extract(client.meth.more.GET(arg='v'))
         self.assertEqual(requests, [
             ("GET", '/', {'arg': 'v'}, None),
-            ("GET", '/meth', {'arg': 'v'}, None),
+            ("GET", '/meth', {'arg': 'v'}, 1),
             ("GET", '/meth/more', {'arg': '"v"'}, None)])
 
         class API2:
