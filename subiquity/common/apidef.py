@@ -29,6 +29,7 @@ from subiquity.common.types import (
     AnyStep,
     ApplicationState,
     ApplicationStatus,
+    Change,
     Disk,
     ErrorReportRef,
     GuidedChoice,
@@ -138,7 +139,7 @@ class API:
             """Start the update and return the change id."""
 
         class progress:
-            def GET(change_id: str) -> dict: ...
+            def GET(change_id: str) -> Change: ...
 
     class keyboard:
         def GET() -> KeyboardSetup: ...
