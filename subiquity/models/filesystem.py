@@ -711,6 +711,7 @@ class Partition(_Formattable):
     offset = attr.ib(default=None)
     resize = attr.ib(default=None)
     partition_type = attr.ib(default=None)
+    path = attr.ib(default=None)
 
     def __post_init__(self):
         if self.number is not None:
@@ -805,6 +806,7 @@ class Raid(_Device):
     wipe = attr.ib(default=None)
     ptable = attributes.ptable()
     metadata = attr.ib(default=None)
+    path = attr.ib(default=None)
     container = attributes.ref(backlink="_subvolumes", default=None)  # Raid
     _subvolumes = attributes.backlink(default=attr.Factory(list))
 
@@ -891,6 +893,7 @@ class LVM_LogicalVolume(_Formattable):
     wipe = attr.ib(default=None)
 
     preserve = attr.ib(default=False)
+    path = attr.ib(default=None)
 
     def serialize_size(self):
         if self.size is None:
@@ -921,6 +924,7 @@ class DM_Crypt:
     volume = attributes.ref(backlink="_constructed_device")  # _Formattable
     key = attr.ib(metadata={'redact': True}, default=None)
     keyfile = attr.ib(default=None)
+    path = attr.ib(default=None)
 
     def serialize_key(self):
         if self.key and not self.keyfile:
