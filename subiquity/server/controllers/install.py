@@ -190,7 +190,7 @@ class InstallController(SubiquityController):
 
     async def setup_target(self, context):
         mirror = self.app.controllers.Mirror
-        await mirror.apt_configurer.setup_target()
+        await mirror.apt_configurer.setup_target(context, self.tpath())
 
     @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
