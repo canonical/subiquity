@@ -757,6 +757,102 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertEqual(p6.offset, 108544 * 512)
         self.assertEqual(p6.size, 96256 * 512)
 
+    def test_partition_remaining_size_in_extended_and_logical_multiple(self):
+        model = make_model(bootloader=Bootloader.BIOS, storage_version=2)
+        make_disk(model, serial='aaaa', size=dehumanize_size("20G"))
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+                'ptable': 'msdos',
+            },
+            {
+                'type': 'partition',
+                'flag': 'boot',
+                'device': 'disk0',
+                'size': dehumanize_size('1G'),
+                'id': 'partition-boot',
+            },
+            {
+                'type': 'partition',
+                'device': 'disk0',
+                'size': dehumanize_size('6G'),
+                'id': 'partition-root',
+            },
+            {
+                'type': 'partition',
+                'device': 'disk0',
+                'size': dehumanize_size('100M'),
+                'id': 'partition-swap',
+            },
+            {
+                'type': 'partition',
+                'device': 'disk0',
+                'size': -1,
+                'flag': 'extended',
+                'id': 'partition-extended',
+            },
+            {
+                'type': 'partition',
+                'device': 'disk0',
+                'size': dehumanize_size('1G'),
+                'flag': 'logical',
+                'id': 'partition-tmp',
+            },
+            {
+                'type': 'partition',
+                'device': 'disk0',
+                'size': dehumanize_size('2G'),
+                'flag': 'logical',
+                'id': 'partition-var',
+            },
+            {
+                'type': 'partition',
+                'device': 'disk0',
+                'size': -1,
+                'flag': 'logical',
+                'id': 'partition-home',
+            }
+            ])
+        p_boot = model._one(type="partition", id="partition-boot")
+        p_root = model._one(type="partition", id="partition-root")
+        p_swap = model._one(type="partition", id="partition-swap")
+        p_extended = model._one(type="partition", id="partition-extended")
+        p_tmp = model._one(type="partition", id="partition-tmp")
+        p_var = model._one(type="partition", id="partition-var")
+        p_home = model._one(type="partition", id="partition-home")
+
+        # Disk test.img: 20 GiB, 21474836480 bytes, 41943040 sectors
+        # Units: sectors of 1 * 512 = 512 bytes
+        # Sector size (logical/physical): 512 bytes / 512 bytes
+        # I/O size (minimum/optimal): 512 bytes / 512 bytes
+        # Disklabel type: dos
+        # Disk identifier: 0xfbc457e5
+        #
+        # Device     Boot    Start      End  Sectors  Size Id Type
+        # test.img1           2048  2099199  2097152    1G 83 Linux
+        # test.img2        2099200 14682111 12582912    6G 83 Linux
+        # test.img3       14682112 14886911   204800  100M 82 Linux swap ...
+        # test.img4       14886912 41943039 27056128 12,9G  5 Extended
+        # test.img5       14888960 16986111  2097152    1G 83 Linux
+        # test.img6       16988160 21182463  4194304    2G 83 Linux
+        # test.img7       21184512 41943039 20758528  9,9G 83 Linux
+        self.assertEqual(p_boot.offset, 2048 * 512)
+        self.assertEqual(p_boot.size, 2097152 * 512)
+        self.assertEqual(p_root.offset, 2099200 * 512)
+        self.assertEqual(p_root.size, 12582912 * 512)
+        self.assertEqual(p_swap.offset, 14682112 * 512)
+        self.assertEqual(p_swap.size, 204800 * 512)
+        self.assertEqual(p_extended.offset, 14886912 * 512)
+        self.assertEqual(p_extended.size, 27056128 * 512)
+        self.assertEqual(p_tmp.offset, 14888960 * 512)
+        self.assertEqual(p_tmp.size, 2097152 * 512)
+        self.assertEqual(p_var.offset, 16988160 * 512)
+        self.assertEqual(p_var.size, 4194304 * 512)
+        self.assertEqual(p_home.offset, 21184512 * 512)
+        self.assertEqual(p_home.size, 20758528 * 512)
+
     def test_lv_percent(self):
         model = make_model()
         make_disk(model, serial='aaaa', size=dehumanize_size("100M"))
