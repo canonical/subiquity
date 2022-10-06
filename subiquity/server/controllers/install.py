@@ -115,8 +115,6 @@ class CurtinInstallStep:
 class CurtinPartitioningStep(CurtinInstallStep):
     device_map_path: Path
 
-    @with_context(
-        description="executing curtin install {self.name} step")
     async def run(self, context):
         await super().run(context=context)
         with open(self.device_map_path) as fp:
