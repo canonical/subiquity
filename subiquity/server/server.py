@@ -76,6 +76,7 @@ from subiquity.server.geoip import (
     )
 from subiquity.server.errors import ErrorController
 from subiquity.server.runner import get_command_runner
+from subiquity.server.snapdapi import make_api_client
 from subiquity.server.types import InstallerChannels
 from subiquitycore.snapd import (
     AsyncSnapd,
@@ -313,9 +314,11 @@ class SubiquityServer(Application):
                     "examples", "snaps"),
                 self.scale_factor, opts.output_base)
             self.snapd = AsyncSnapd(connection)
+            self.snapdapi = make_api_client(self.snapd)
         elif os.path.exists(self.snapd_socket_path):
             connection = SnapdConnection(self.root, self.snapd_socket_path)
             self.snapd = AsyncSnapd(connection)
+            self.snapdapi = make_api_client(self.snapd)
         else:
             log.info("no snapd socket found. Snap support is disabled")
             self.snapd = None
