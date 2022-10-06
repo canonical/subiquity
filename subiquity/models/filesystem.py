@@ -1262,6 +1262,10 @@ class FilesystemModel(object):
                             "{} has negative size but is not final partition "
                             "of {}".format(p, parent))
 
+                    # Exclude the current partition itself so that its
+                    # incomplete size is not used as is.
+                    filtered_parent._partitions.remove(p)
+
                     from subiquity.common.filesystem.gaps import (
                         largest_gap_size,
                         )
