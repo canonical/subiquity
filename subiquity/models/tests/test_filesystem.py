@@ -693,10 +693,7 @@ class TestAutoInstallConfig(unittest.TestCase):
 
         self.assertEqual(extended.offset, 2048 * 512)
         self.assertEqual(logical.offset, 4096 * 512)
-        # FIXME https://launchpad.net/bugs/1991929
-        # The partition lacks 1MiB at the end
-        # self.assertEqual(logical.size, extended.size - ebr_space)
-        self.assertEqual(logical.size, extended.size - ebr_space - (1 << 20))
+        self.assertEqual(logical.size, extended.size - ebr_space)
 
     def test_partition_remaining_size_in_extended_and_logical(self):
         model = make_model(bootloader=Bootloader.BIOS, storage_version=2)
@@ -758,10 +755,7 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertEqual(extended.size, 120832 * 512)
         self.assertEqual(p5.offset, 86016 * 512)
         self.assertEqual(p6.offset, 108544 * 512)
-        # FIXME https://launchpad.net/bugs/1991929
-        # the partition lacks 1MiB at the end
-        # self.assertEqual(p6.size, 96256 * 512)
-        self.assertEqual(p6.size, 96256 * 512 - (1 << 20))
+        self.assertEqual(p6.size, 96256 * 512)
 
     def test_lv_percent(self):
         model = make_model()
