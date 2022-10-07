@@ -120,7 +120,10 @@ class IdentityViewTests(unittest.IsolatedAsyncioTestCase):
             crypted_password=CRYPTED)
         view.controller.done.assert_called_once_with(expected)
 
-    def test_can_tab_to_done_when_valid(self):
+    async def test_can_tab_to_done_when_valid(self):
+        # NOTE: this test needs a running event loop because the username field
+        # triggers the creation of an asyncio task upon losing focus.
+        #
         # Urwid doesn't distinguish very well between widgets that are
         # not currently selectable and widgets that can never be
         # selectable. The "button pile" of the identity view is
