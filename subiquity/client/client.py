@@ -140,23 +140,11 @@ class SubiquityClient(TuiApplication):
         except OSError:
             self.our_tty = "not a tty"
 
-        self.conn = aiohttp.UnixConnector(self.opts.socket)
-
         self.in_make_view_cvar = contextvars.ContextVar(
             'in_make_view', default=False)
 
-        def header_func():
-            if self.in_make_view_cvar.get():
-                return {'x-make-view-request': 'yes'}
-            else:
-                return None
-
-        self.client = make_client_for_conn(API, self.conn, self.resp_hook,
-                                           header_func=header_func)
-
         self.error_reporter = ErrorReporter(
-            self.context.child("ErrorReporter"), self.opts.dry_run, self.root,
-            self.client)
+            self.context.child("ErrorReporter"), self.opts.dry_run, self.root)
 
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
@@ -325,6 +313,18 @@ class SubiquityClient(TuiApplication):
         return status
 
     async def start(self):
+        conn = aiohttp.UnixConnector(self.opts.socket)
+
+        def header_func():
+            if self.in_make_view_cvar.get():
+                return {'x-make-view-request': 'yes'}
+            else:
+                return None
+
+        self.client = make_client_for_conn(API, conn, self.resp_hook,
+                                           header_func=header_func)
+        self.error_reporter.client = self.client
+
         status = await self.connect()
         self.interactive = status.interactive
         if self.interactive:
