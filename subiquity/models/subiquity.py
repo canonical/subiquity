@@ -268,7 +268,7 @@ class SubiquityModel:
 
     async def wait_confirmation(self):
         if self._confirmation_task is None:
-            self._confirmation_task = asyncio.get_running_loop().create_task(
+            self._confirmation_task = asyncio.create_task(
                 self._confirmation.wait())
         try:
             await self._confirmation_task

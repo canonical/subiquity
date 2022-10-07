@@ -174,7 +174,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
                 _bg_add_info()
                 context.description = "written to " + self.path
         else:
-            self._info_task = asyncio.get_running_loop().create_task(add_info())
+            self._info_task = asyncio.create_task(add_info())
 
     async def load(self):
         with self._context.child("load"):
