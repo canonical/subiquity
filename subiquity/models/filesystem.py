@@ -26,6 +26,8 @@ import pathlib
 import platform
 import tempfile
 
+import more_itertools
+
 from curtin import storage_config
 from curtin.block import partition_kname
 from curtin.util import human2bytes
@@ -1188,11 +1190,9 @@ class FilesystemModel(object):
             def ad(v):  # ad == "align down"
                 return v - v % info.part_align
 
-            primary_parts = list(filter(
-                lambda x: not is_logical_partition(x),
-                disk.partitions()))
-            logical_parts = list(filter(
-                lambda x: is_logical_partition(x),
+            # Extended is considered a primary partition too.
+            primary_parts, logical_parts = map(list, more_itertools.partition(
+                is_logical_partition,
                 disk.partitions()))
 
             prev_end = info.min_start_offset
