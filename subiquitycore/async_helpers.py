@@ -29,7 +29,7 @@ def _done(fut):
 
 
 def schedule_task(coro, propagate_errors=True):
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     if asyncio.iscoroutine(coro):
         task = asyncio.Task(coro)
     else:
@@ -41,7 +41,7 @@ def schedule_task(coro, propagate_errors=True):
 
 
 async def run_in_thread(func, *args):
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     try:
         return await loop.run_in_executor(None, func, *args)
     except concurrent.futures.CancelledError:

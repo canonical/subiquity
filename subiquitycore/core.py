@@ -70,7 +70,7 @@ class Application:
             os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1"))
         self.updated = os.path.exists(self.state_path('updating'))
         self.hub = MessageHub()
-        self.aio_loop = asyncio.get_event_loop()
+        self.aio_loop = asyncio.new_event_loop()
         self.aio_loop.set_exception_handler(self._exception_handler)
         self.load_controllers(self.controllers)
         self.context = Context.new(self)

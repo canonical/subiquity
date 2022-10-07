@@ -104,7 +104,7 @@ class _CurtinCommand:
 
     async def start(self, context, **opts):
         self._fd = journald_listen(
-            asyncio.get_event_loop(), [self._event_syslog_id], self._event)
+            asyncio.get_running_loop(), [self._event_syslog_id], self._event)
         # Yield to the event loop before starting curtin to avoid missing the
         # first couple of events.
         await asyncio.sleep(0)
@@ -120,7 +120,7 @@ class _CurtinCommand:
             waited += 0.1
             log.debug("waited %s seconds for events to drain", waited)
         self._event_contexts.pop('', None)
-        asyncio.get_event_loop().remove_reader(self._fd)
+        asyncio.get_running_loop().remove_reader(self._fd)
         return result
 
     async def run(self, context):
