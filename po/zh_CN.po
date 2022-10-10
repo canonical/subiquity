@@ -8,15 +8,15 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-04-12 09:48+1200\n"
-"PO-Revision-Date: 2021-12-27 04:47+0000\n"
-"Last-Translator: Yulin Yang <yylteam@icloud.com>\n"
+"PO-Revision-Date: 2022-08-14 03:12+0000\n"
+"Last-Translator: Yulin Yang <yylteam@hotmail.com>\n"
 "Language-Team: Chinese (Simplified) <zh_CN@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2022-08-15 06:56+0000\n"
+"X-Generator: Launchpad (build 70fcfda0dab878e9072e0f29b48d0ec714e91034)\n"
 "Language: \n"
 
 #: ../subiquity/client/client.py:72
@@ -262,12 +262,12 @@ msgstr "{device}的分区"
 
 #: ../subiquity/common/filesystem/labels.py:134
 msgid "software"
-msgstr ""
+msgstr "软件"
 
 #: ../subiquity/common/filesystem/labels.py:135
 #, python-brace-format
 msgid "{type} RAID {level}"
-msgstr ""
+msgstr "{type} RAID {level}"
 
 #: ../subiquity/common/filesystem/labels.py:141
 msgid "LVM volume group"
@@ -339,7 +339,7 @@ msgstr "已使用"
 #: ../subiquity/common/filesystem/labels.py:260
 #, python-brace-format
 msgid "container for {devices}"
-msgstr ""
+msgstr "{devices} 的容器"
 
 #: ../subiquity/common/types.py:39
 msgid "Block device probe failure"
@@ -671,19 +671,19 @@ msgstr "禁用"
 msgid ""
 "A wifi device was detected but the necessary support packages were not\n"
 "available.\n"
-msgstr ""
+msgstr "检测到 wifi 设备，但没有必要的支持包。\n"
 
 #: ../subiquitycore/ui/views/network.py:217
 msgid "Wifi support packages are being installed.\n"
-msgstr ""
+msgstr "正在安装 Wifi 支持包。\n"
 
 #: ../subiquitycore/ui/views/network.py:220
 msgid "Wifi support packages failed to install. Please check the logs.\n"
-msgstr ""
+msgstr "Wifi 支持包安装失败。请检查日志。\n"
 
 #: ../subiquitycore/ui/views/network.py:223
 msgid "Wifi support packages will be installed in the target system.\n"
-msgstr ""
+msgstr "Wifi 支持包将安装在目标系统中。\n"
 
 #: ../subiquitycore/ui/views/network.py:230
 msgid "Network connections"
@@ -742,7 +742,7 @@ msgstr "10"
 
 #: ../subiquity/models/filesystem.py:177
 msgid "Container"
-msgstr ""
+msgstr "容器"
 
 #. Attempting to convert input to a size
 #: ../subiquity/models/filesystem.py:212
@@ -1039,8 +1039,7 @@ msgstr[0] "它包含{n}个分区"
 #, python-brace-format
 msgid "It contains 1 volume."
 msgid_plural "It contains {n} volumes."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "它包含 {n} 个卷"
 
 #: ../subiquity/ui/views/filesystem/delete.py:91
 msgid "It is not formatted or mounted."
@@ -1136,7 +1135,7 @@ msgstr "从{device}删除"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:333
 msgid "Create Logical Volume"
-msgstr ""
+msgstr "创建逻辑卷"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:335
 #, python-brace-format
@@ -2522,16 +2521,16 @@ msgstr "导入用户名："
 
 #: ../subiquity/ui/views/ssh.py:74
 msgid "GitHub Username:"
-msgstr ""
+msgstr "GitHub 用户名："
 
 #: ../subiquity/ui/views/ssh.py:75
 msgid "Enter your GitHub username."
-msgstr ""
+msgstr "输入您的 GitHub 用户名。"
 
 #: ../subiquity/ui/views/ssh.py:77
 msgid ""
 "A GitHub username may only contain alphanumeric characters or hyphens."
-msgstr ""
+msgstr "GitHub 用户名只能包含字母数字字符或连字符。"
 
 #: ../subiquity/ui/views/ssh.py:81
 msgid "Launchpad Username:"
@@ -2553,7 +2552,7 @@ msgstr "导入SSH标识："
 
 #: ../subiquity/ui/views/ssh.py:99
 msgid "from GitHub"
-msgstr ""
+msgstr "来自 GitHub"
 
 #: ../subiquity/ui/views/ssh.py:100
 msgid "from Launchpad"
@@ -2561,7 +2560,7 @@ msgstr "来自Launchpad"
 
 #: ../subiquity/ui/views/ssh.py:102
 msgid "You can import your SSH keys from GitHub or Launchpad."
-msgstr ""
+msgstr "您可以从 GitHub 或 Launchpad 导入 SSH 密钥。"
 
 #: ../subiquity/ui/views/ssh.py:106
 msgid "Allow password authentication over SSH"
@@ -2586,7 +2585,7 @@ msgstr "Launchpad用户名必须以字母或数字开头。所有字母必须小
 msgid ""
 "A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
-msgstr ""
+msgstr "GitHub 用户名只能包含字母数字字符或单个连字符，不能以连字符开头或结尾。"
 
 #: ../subiquity/ui/views/ssh.py:161
 msgid "Fetching SSH keys..."
