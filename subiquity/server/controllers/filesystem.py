@@ -146,6 +146,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 "autoinstall config did not create needed bootloader "
                 "partition")
 
+    def update_devices(self, device_map):
+        for action in self.model._actions:
+            path = device_map.get(action.id)
+            if path is not None:
+                log.debug("recording path %r for device %s", path, action.id)
+                action.path = path
+
     def guided_direct(self, gap):
         spec = dict(fstype="ext4", mount="/")
         self.create_partition(device=gap.device, gap=gap, spec=spec)

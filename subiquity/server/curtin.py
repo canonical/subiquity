@@ -153,14 +153,19 @@ class _DryRunCurtinCommand(_CurtinCommand):
                     continue
                 stages = json.loads(match_obj.groups()[0])
 
-            return [
+            cmd = [
                 sys.executable,
                 "scripts/replay-curtin-log.py",
                 "--event-identifier", self._event_syslog_id,
                 "--output", log_file,
+                ]
+            if config:
+                cmd.extend(['--config', config])
+            cmd.extend([
                 "--",
                 self.stages_mapping[tuple(stages)],
-                ]
+                ])
+            return cmd
         else:
             return super().make_command(command, *args, config=config)
 

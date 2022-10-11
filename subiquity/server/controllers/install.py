@@ -111,6 +111,18 @@ class CurtinInstallStep:
             config=str(self.config_file), private_mounts=False)
 
 
+@attr.s(auto_attribs=True)
+class CurtinPartitioningStep(CurtinInstallStep):
+    device_map_path: Path
+
+    async def run(self, context):
+        await super().run(context=context)
+        with open(self.device_map_path) as fp:
+            device_map = json.load(fp)
+        fs = self.controller.app.controllers.Filesystem
+        fs.update_devices(device_map)
+
+
 class InstallController(SubiquityController):
 
     def __init__(self, app):
@@ -174,6 +186,13 @@ class InstallController(SubiquityController):
             }
         }
 
+    def acquire_filesystem_config(self, step: CurtinPartitioningStep,
+                                  ) -> Dict[str, Any]:
+        cfg = self.acquire_initial_config(step)
+        cfg.update(self.model.filesystem.render())
+        cfg['storage']['device_map_path'] = str(step.device_map_path)
+        return cfg
+
     @with_context(description="umounting /target dir")
     async def unmount_target(self, *, context, target):
         await run_curtin_command(self.app, context, 'unmount', '-t', target,
@@ -211,8 +230,9 @@ class InstallController(SubiquityController):
 
         resume_data_file = Path(tempfile.mkdtemp()) / "resume-data.json"
 
-        def make_curtin_step(name, stages, acquire_config):
-            return CurtinInstallStep(
+        def make_curtin_step(name, stages, acquire_config, *,
+                             cls=CurtinInstallStep, **kw):
+            return cls(
                 controller=self,
                 name=name,
                 stages=stages,
@@ -222,6 +242,7 @@ class InstallController(SubiquityController):
                 resume_data_file=resume_data_file,
                 source=source,
                 acquire_config=acquire_config,
+                **kw,
             )
 
         generic_steps = [
@@ -232,7 +253,9 @@ class InstallController(SubiquityController):
             ).run,
             make_curtin_step(
                 name="partitioning", stages=["partitioning"],
-                acquire_config=self.acquire_generic_config,
+                acquire_config=self.acquire_filesystem_config,
+                cls=CurtinPartitioningStep,
+                device_map_path=logs_dir / "device-map.json",
             ).run,
             make_curtin_step(
                 name="extract", stages=["extract"],
