@@ -158,9 +158,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.create_partition(device=gap.device, gap=gap, spec=spec)
 
     def guided_lvm(self, gap, lvm_options=None):
-        gap_boot, gap_rest = gap.split(sizes.get_bootfs_size(gap.size))
-        spec = dict(fstype="ext4", mount='/boot')
         device = gap.device
+        part_align = device.alignment_data().part_align
+        bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
+        gap_boot, gap_rest = gap.split(bootfs_size)
+        spec = dict(fstype="ext4", mount='/boot')
         self.create_partition(device, gap_boot, spec)
         part = self.create_partition(device, gap_rest, dict(fstype=None))
 
