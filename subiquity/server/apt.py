@@ -251,7 +251,10 @@ class AptConfigurer:
         for m in reversed(self._mounts):
             await self.unmount(m, remove=False)
         for d in self._tdirs:
-            shutil.rmtree(d)
+            try:
+                shutil.rmtree(d)
+            except OSError as ose:
+                log.warning(f'failed to rmtree {d}: {ose}')
 
     async def deconfigure(self, context, target: str) -> None:
         target_mnt = Mountpoint(mountpoint=target)
@@ -272,7 +275,11 @@ class AptConfigurer:
             await _restore_dir('var/lib/apt/lists')
 
         await self.cleanup()
-        os.rmdir(target_mnt.p('cdrom'))
+        try:
+            d = target_mnt.p('cdrom')
+            os.rmdir(d)
+        except OSError as ose:
+            log.warning(f'failed to rmdir {d}: {ose}')
 
     async def setup_target(self, context, target: str):
         # Call this after the rootfs has been extracted to the real target
