@@ -423,3 +423,36 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertFalse(resp.need_root)
         self.assertFalse(resp.need_boot)
         self.assertEqual(0, len(guided_get_resp.possible))
+
+    @parameterized.expand([
+        [10], [20], [25], [30], [50], [100], [250],
+        [1000], [1024],
+    ])
+    async def test_lvm_20G_bad_offset(self, disk_size):
+        disk_size = disk_size << 30
+        self._setup(Bootloader.BIOS, 'gpt', size=disk_size)
+
+        guided_get_resp = await self.fsc.v2_guided_GET()
+
+        reformat = guided_get_resp.possible.pop(0)
+        self.assertTrue(isinstance(reformat, GuidedStorageTargetReformat))
+
+        data = GuidedChoiceV2(target=reformat, use_lvm=True)
+
+        expected_config = copy.copy(data)
+        resp = await self.fsc.v2_guided_POST(data=data)
+        self.assertEqual(expected_config, resp.configured)
+
+        resp = await self.fsc.v2_GET()
+        parts = resp.disks[0].partitions
+
+        for p in parts:
+            self.assertEqual(0, p.offset % (1 << 20), p)
+            self.assertEqual(0, p.size % (1 << 20), p)
+
+        for i in range(len(parts) - 1):
+            self.assertEqual(
+                    parts[i + 1].offset, parts[i].offset + parts[i].size)
+        self.assertEqual(
+                disk_size - (1 << 20), parts[-1].offset + parts[-1].size,
+                disk_size)
