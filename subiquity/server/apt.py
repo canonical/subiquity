@@ -251,7 +251,10 @@ class AptConfigurer:
         for m in reversed(self._mounts):
             await self.unmount(m, remove=False)
         for d in self._tdirs:
-            shutil.rmtree(d)
+            try:
+                shutil.rmtree(d)
+            except OSError as ose:
+                log.warning(f'failed to rmtree {d}: {ose}')
 
     async def deconfigure(self, context, target: str) -> None:
         target_mnt = Mountpoint(mountpoint=target)
@@ -265,7 +268,11 @@ class AptConfigurer:
         await self.unmount(
                 Mountpoint(mountpoint=target_mnt.p('cdrom')),
                 remove=False)
-        os.rmdir(target_mnt.p('cdrom'))
+        try:
+            d = target_mnt.p('cdrom')
+            os.rmdir(d)
+        except OSError as ose:
+            log.warning(f'failed to rmdir {d}: {ose}')
 
         await _restore_dir('etc/apt')
 
