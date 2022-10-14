@@ -64,7 +64,7 @@ parts:
     plugin: python
     source-type: git
     source: https://git.launchpad.net/curtin
-    source-commit: 9a28853b92436e89654604c6f2a5ca2aa7e40e68
+    source-commit: 1fc717df52ec15f616d26fff3c10bff181599b30
     build-packages:
       - shared-mime-info
       - zlib1g-dev
@@ -166,8 +166,7 @@ parts:
     plugin: nil
     source: https://git.launchpad.net/ubuntu/+source/user-setup
     source-type: git
-    override-build:
-      cp -a reserved-usernames $SNAPCRAFT_PART_INSTALL/
+    override-build: cp -a reserved-usernames $SNAPCRAFT_PART_INSTALL/
     stage:
       - reserved-usernames
   keyboard-data:
