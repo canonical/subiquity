@@ -117,6 +117,7 @@ parts:
       - libsystemd0
       - iso-codes
       - lsb-release
+      - language-selector-common
       - ssh-import-id
       - libpython3.8-minimal
       - libpython3.8-stdlib
