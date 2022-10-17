@@ -18,6 +18,7 @@ import functools
 import logging
 import os
 import shutil
+import subprocess
 import tempfile
 from typing import List, Optional, Union
 
@@ -32,6 +33,10 @@ from subiquitycore.utils import arun_command
 from subiquity.server.curtin import run_curtin_command
 
 log = logging.getLogger('subiquity.server.apt')
+
+
+class OverlayCleanupError(Exception):
+    """ Exception to raise when an overlay could not be cleaned up. """
 
 
 class _MountBase:
@@ -245,7 +250,10 @@ class AptConfigurer:
             # Mountpoint object and (thanks to attr.s) make sure that it
             # compares equal to the one we discarded earlier.
             # But really, there should be better ways to handle this.
-            await self.unmount(Mountpoint(mountpoint=overlay.mountpoint))
+            try:
+                await self.unmount(Mountpoint(mountpoint=overlay.mountpoint))
+            except subprocess.CalledProcessError as exc:
+                raise OverlayCleanupError from exc
 
     async def cleanup(self):
         for m in reversed(self._mounts):
