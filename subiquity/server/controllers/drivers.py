@@ -21,6 +21,7 @@ from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
 from subiquity.common.types import DriversPayload, DriversResponse
+from subiquity.server.apt import OverlayCleanupError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
 from subiquity.server.ubuntu_drivers import (
@@ -83,16 +84,19 @@ class DriversController(SubiquityController):
             await self.configured()
             return
         apt = self.app.controllers.Mirror.apt_configurer
-        async with apt.overlay() as d:
-            try:
-                # Make sure ubuntu-drivers is available.
-                await self.ubuntu_drivers.ensure_cmd_exists(d.mountpoint)
-            except CommandNotFoundError:
-                self.drivers = []
-            else:
-                self.drivers = await self.ubuntu_drivers.list_drivers(
-                    root_dir=d.mountpoint,
-                    context=context)
+        try:
+            async with apt.overlay() as d:
+                try:
+                    # Make sure ubuntu-drivers is available.
+                    await self.ubuntu_drivers.ensure_cmd_exists(d.mountpoint)
+                except CommandNotFoundError:
+                    self.drivers = []
+                else:
+                    self.drivers = await self.ubuntu_drivers.list_drivers(
+                        root_dir=d.mountpoint,
+                        context=context)
+        except OverlayCleanupError:
+            log.exception("Failed to cleanup overlay. Continuing anyway.")
         log.debug("Available drivers to install: %s", self.drivers)
         if not self.drivers:
             await self.configured()
