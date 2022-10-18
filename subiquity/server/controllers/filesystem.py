@@ -291,10 +291,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             dasd=self.model._probe_data.get('dasd', {}),
             storage_version=self.model.storage_version)
 
-    async def GET(self, wait: bool = False) -> StorageResponse:
-        probe_resp = await self._probe_response(wait, StorageResponse)
-        if probe_resp is not None:
-            return probe_resp
+    async def GET(self, wait: bool = False, use_cached_result: bool = False) \
+            -> StorageResponse:
+        if not use_cached_result:
+            probe_resp = await self._probe_response(wait, StorageResponse)
+            if probe_resp is not None:
+                return probe_resp
         return self._done_response()
 
     async def POST(self, config: list):

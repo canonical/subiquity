@@ -251,7 +251,9 @@ class API:
                     -> StorageResponse:
                 pass
 
-        def GET(wait: bool = False) -> StorageResponse: ...
+        def GET(wait: bool = False, use_cached_result: bool = False) \
+            -> StorageResponse: ...
+
         def POST(config: Payload[list]): ...
 
         class reset:
