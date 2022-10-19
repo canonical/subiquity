@@ -2,12 +2,12 @@
 
 The intent of this page is to provide simple instructions to perform an autoinstall in a VM on your machine on s390x.
 
-This page is just a slightly adapted page of https://discourse.ubuntu.com/t/draft-automated-server-install-quickstart/16614 mapped to s390x.
+This page is just a slightly adapted page of [the autoinstall quickstart page](/t/draft-automated-server-install-quickstart/16614) mapped to s390x.
 
 ## Download an ISO
 
 At the time of writing (just before focal release), the best place to go is here:
-http://cdimage.ubuntu.com/ubuntu/releases/20.04/release/
+<http://cdimage.ubuntu.com/ubuntu/releases/20.04/release/>
 
 <pre><code>wget http://cdimage.ubuntu.com/ubuntu/releases/20.04/release/ubuntu-20.04-live-server-s390x.iso -P ~/Downloads</code></pre>
 
