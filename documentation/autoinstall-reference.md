@@ -6,7 +6,7 @@ The autoinstall file is YAML. At top level it must be a mapping containing the k
 
 ## Schema
 
-Autoinstall configs [are validated against a JSON schema](/t/draft-automated-server-install-schema/16615) before they are used.
+Autoinstall configs [are validated against a JSON schema](autoinstall-schema.md) before they are used.
 
 <a name="commandlist"></a>
 

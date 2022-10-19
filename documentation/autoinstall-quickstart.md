@@ -2,7 +2,7 @@
 
 The intent of this page is to provide simple instructions to perform an autoinstall in a VM on your machine.
 
-This page assumes you are on the amd64 architecture. There is a version for [s390x](/t/draft-automated-server-install-quickstart-s390x/16616) too.
+This page assumes you are on the amd64 architecture. There is a version for [s390x](autoinstall-quickstart-s390x.md) too.
 
 ## Providing the autoinstall data over the network
 

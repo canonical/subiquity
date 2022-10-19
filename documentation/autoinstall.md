@@ -33,7 +33,7 @@ Even if a fully noninteractive autoinstall config is found, the server installer
 
 ## Quick start
 
-So you just want to try it out? Well we have [the page for you](/t/draft-automated-server-install-quickstart/16614).
+So you just want to try it out? Well we have [the page for you](autoinstall-quickstart.md).
 
 ## Creating an autoinstall config
 
@@ -45,7 +45,7 @@ If you have a preseed file already, the [autoinstall-generator](https://snapcraf
 
 # The structure of an autoinstall config
 
-The autoinstall config has [full documentation](/t/draft-automated-server-install-reference/16613).
+The autoinstall config has [full documentation](autoinstall-reference.md).
 
 Technically speaking the config is not defined as a textual format, but cloud-init config is usually provided as YAML so that is the syntax the documentation uses.
 
@@ -59,18 +59,18 @@ A minimal config is:
 
 Here is an example file that shows off most features:
 
-<pre><code><a href="/t/draft-automated-server-install-reference/16613#version">version</a>: 1
-<a href="/t/draft-automated-server-install-reference/16613#reporting">reporting</a>:
+<pre><code><a href="autoinstall-reference.md#version">version</a>: 1
+<a href="autoinstall-reference.md#reporting">reporting</a>:
     hook:
         type: webhook
         endpoint: http://example.com/endpoint/path
-<a href="/t/draft-automated-server-install-reference/16613#early-commands">early-commands</a>:
+<a href="autoinstall-reference.md#early-commands">early-commands</a>:
     - ping -c1 198.162.1.1
-<a href="/t/draft-automated-server-install-reference/16613#locale">locale</a>: en_US
-<a href="/t/draft-automated-server-install-reference/16613#keyboard">keyboard</a>:
+<a href="autoinstall-reference.md#locale">locale</a>: en_US
+<a href="autoinstall-reference.md#keyboard">keyboard</a>:
     layout: gb
     variant: dvorak
-<a href="/t/draft-automated-server-install-reference/16613#network">network</a>:
+<a href="autoinstall-reference.md#network">network</a>:
     network:
         version: 2
         ethernets:
@@ -87,8 +87,8 @@ Here is an example file that shows off most features:
                 parameters:
                     mode: active-backup
                     primary: enp3s0
-<a href="/t/draft-automated-server-install-reference/16613#proxy">proxy</a>: http://squid.internal:3128/
-<a href="/t/draft-automated-server-install-reference/16613#apt">apt</a>:
+<a href="autoinstall-reference.md#proxy">proxy</a>: http://squid.internal:3128/
+<a href="autoinstall-reference.md#apt">apt</a>:
     primary:
         - arches: [default]
           uri: http://repo.internal/
@@ -96,32 +96,32 @@ Here is an example file that shows off most features:
         my-ppa.list:
             source: "deb http://ppa.launchpad.net/curtin-dev/test-archive/ubuntu $RELEASE main"
             keyid: B59D 5F15 97A5 04B7 E230  6DCA 0620 BBCF 0368 3F77
-<a href="/t/draft-automated-server-install-reference/16613#storage">storage</a>:
+<a href="autoinstall-reference.md#storage">storage</a>:
     layout:
         name: lvm
-<a href="/t/draft-automated-server-install-reference/16613#identity">identity</a>:
+<a href="autoinstall-reference.md#identity">identity</a>:
     hostname: hostname
     username: username
     password: $crypted_pass
-<a href="/t/draft-automated-server-install-reference/16613#ssh">ssh</a>:
+<a href="autoinstall-reference.md#ssh">ssh</a>:
     install-server: yes
     authorized-keys:
       - $key
     allow-pw: no
-<a href="/t/draft-automated-server-install-reference/16613#snaps">snaps</a>:
+<a href="autoinstall-reference.md#snaps">snaps</a>:
     - name: go
       channel: 1.14/stable
       classic: true
-<a href="/t/draft-automated-server-install-reference/16613#debconf-selections">debconf-selections</a>: |
+<a href="autoinstall-reference.md#debconf-selections">debconf-selections</a>: |
     bind9      bind9/run-resolvconf    boolean false
-<a href="/t/draft-automated-server-install-reference/16613#packages">packages</a>:
+<a href="autoinstall-reference.md#packages">packages</a>:
     - libreoffice
     - dns-server^
-<a href="/t/draft-automated-server-install-reference/16613#user-data">user-data</a>:
+<a href="autoinstall-reference.md#user-data">user-data</a>:
     disable_root: false
-<a href="/t/draft-automated-server-install-reference/16613#late-commands">late-commands</a>:
+<a href="autoinstall-reference.md#late-commands">late-commands</a>:
     - sed -ie 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=30/' /target/etc/default/grub
-<a href="/t/draft-automated-server-install-reference/16613#error-commands">error-commands</a>:
+<a href="autoinstall-reference.md#error-commands">error-commands</a>:
     - tar c /var/log/installer | nc 192.168.0.1 1000
 </code></pre>
 
@@ -129,7 +129,7 @@ Many keys and values correspond straightforwardly to questions the installer ask
 
 # Error handling
 
-Progress through the installer is reported via the [`reporting`](/t/draft-automated-server-install-reference/16613#reporting) system, including errors. In addition, when a fatal error occurs, the [`error-commands`](/t/draft-automated-server-install-reference/16613#error-commands) are executed and the traceback printed to the console. The server then just waits.
+Progress through the installer is reported via the [`reporting`](autoinstall-reference.md#reporting) system, including errors. In addition, when a fatal error occurs, the [`error-commands`](autoinstall-reference.md#error-commands) are executed and the traceback printed to the console. The server then just waits.
 
 # Possible future directions
 

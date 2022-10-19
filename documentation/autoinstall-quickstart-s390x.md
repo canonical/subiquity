@@ -2,7 +2,7 @@
 
 The intent of this page is to provide simple instructions to perform an autoinstall in a VM on your machine on s390x.
 
-This page is just a slightly adapted page of [the autoinstall quickstart page](/t/draft-automated-server-install-quickstart/16614) mapped to s390x.
+This page is just a slightly adapted page of [the autoinstall quickstart page](autoinstall-quickstart.md) mapped to s390x.
 
 ## Download an ISO
 
