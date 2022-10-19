@@ -9,6 +9,7 @@ The autoinstall file is YAML. At top level it must be a mapping containing the k
 Autoinstall configs [are validated against a JSON schema](/t/draft-automated-server-install-schema/16615) before they are used.
 
 <a name="commandlist"></a>
+
 ## Command lists
 
 Several config keys are lists of commands to be executed. Each command can be a string (in which case it is executed via "sh -c") or a list, in which case it is executed directly. Any command exiting with a non-zero return code is considered an error and aborts the install (except for error-commands, where it is ignored).
@@ -16,6 +17,7 @@ Several config keys are lists of commands to be executed. Each command can be a 
 ## Top-level keys
 
 <a name="version"></a>
+
 ### version
 
 **type:** integer
@@ -24,6 +26,7 @@ Several config keys are lists of commands to be executed. Each command can be a 
 A future-proofing config file version field. Currently this must be "1".
 
 <a name="interactive-sections"></a>
+
 ### interactive-sections
 
 **type:** list of strings
@@ -47,6 +50,7 @@ Not all config keys correspond to screens in the UI. This documentation indicate
 If there are any interactive sections at all, the [reporting](#reporting) key is ignored.
 
 <a name="early-commands"></a>
+
 ### early-commands
 
 **type:** [command list](#commandlist)
@@ -56,6 +60,7 @@ If there are any interactive sections at all, the [reporting](#reporting) key is
 A list of shell commands to invoke as soon as the installer starts, in particular before probing for block and network devices. The autoinstall config is available at `/autoinstall.yaml` (irrespective of how it was provided) and the file will be re-read after the `early-commands` have run to allow them to alter the config if necessary.
 
 <a name="locale"></a>
+
 ### locale
 
 **type:** string
@@ -65,6 +70,7 @@ A list of shell commands to invoke as soon as the installer starts, in particula
 The locale to configure for the installed system.
 
 <a name="refresh-installer"></a>
+
 ### refresh-installer
 
 **type:** mapping
@@ -90,6 +96,7 @@ Whether to update or not.
 The channel to check for updates.
 
 <a name="keyboard"></a>
+
 ### keyboard
 
 **type:** mapping, see below
@@ -126,6 +133,7 @@ Corresponds to the value of `grp:` option from the `XKBOPTIONS` setting. Accepta
 The version of subiquity released with 20.04 GA does not accept `null` for this field due to a bug.
 
 <a name="network"></a>
+
 ### network
 
 **type:** netplan-format mapping, see below
@@ -154,6 +162,7 @@ Note that thanks to a bug, the version of subiquity released with 20.04 GA force
 Later versions support this syntax too for compatibility but if you can assume a newer version you should use the former.
 
 <a name="proxy"></a>
+
 ### proxy
 
 **type:** URL or `null`
@@ -163,6 +172,7 @@ Later versions support this syntax too for compatibility but if you can assume a
 The proxy to configure both during installation and for apt and for snapd in the target system.
 
 <a name="apt"></a>
+
 ### apt
 
 **type:** mapping
@@ -203,6 +213,7 @@ To add a ppa:
                 source: ppa:curtin-dev/test-archive
 
 <a name="storage"></a>
+
 ### storage
 
 **type:** mapping, see below
@@ -314,6 +325,7 @@ The size of a partition or logical volume in curtin is specified as a number of 
    size: -1</code></pre>
 
 <a name="identity"></a>
+
 ### identity
 
 **type:** mapping, see below
@@ -341,6 +353,7 @@ The hostname for the system.
 The password for the new user, crypted. This is required for use with sudo, even if SSH access is configured.
 
 <a name="ssh"></a>
+
 ### ssh
 
 **type:** mapping, see below
@@ -369,6 +382,7 @@ A list of SSH public keys to install in the initial user's account.
 **default:** `true` if `authorized_keys` is empty, `false` otherwise
 
 <a name="snaps"></a>
+
 ### snaps
 
 **type:** list
@@ -383,6 +397,7 @@ A list of snaps to install. Each snap is represented as a mapping with required 
       classic: false</code></pre>
 
 <a name="debconf-selections"></a>
+
 ### debconf-selections
 
 **type:** string
@@ -392,6 +407,7 @@ A list of snaps to install. Each snap is represented as a mapping with required 
 The installer will update the target with debconf set-selection values. Users will need to be familiar with the package debconf options.
 
 <a name="packages"></a>
+
 ### packages
 
 **type:** list
@@ -401,6 +417,7 @@ The installer will update the target with debconf set-selection values. Users wi
 A list of packages to install into the target system. More precisely, a list of strings to pass to "`apt-get install`", so this includes things like task selection (`dns-server^`) and installing particular versions of a package (`my-package=1-1`).
 
 <a name="late-commands"></a>
+
 ### late-commands
 
 **type:** [command list](#commandlist)
@@ -410,6 +427,7 @@ A list of packages to install into the target system. More precisely, a list of 
 Shell commands to run after the install has completed successfully and any updates and packages installed, just before the system reboots. They are run in the installer environment with the installed system mounted at `/target`. You can run `curtin in-target -- $shell_command` (with the version of subiquity released with 20.04 GA you need to specify this as `curtin in-target --target=/target -- $shell_command`) to run in the target system (similar to how plain `in-target` can be used in `d-i preseed/late_command`).
 
 <a name="error-commands"></a>
+
 ### error-commands
 
 **type:** [command list](#commandlist)
@@ -419,6 +437,7 @@ Shell commands to run after the install has completed successfully and any updat
 Shell commands to run after the install has failed. They are run in the installer environment, and the target system (or as much of it as the installer managed to configure) will be mounted at /target. Logs will be available at `/var/log/installer` in the live session.
 
 <a name="reporting"></a>
+
 ### reporting
 
 **type:** mapping
@@ -472,6 +491,7 @@ Report to a curtin-style webhook:
   level: INFO</code></pre>
 
 <a name="user-data"></a>
+
 ### user-data
 
 **type:** mapping
