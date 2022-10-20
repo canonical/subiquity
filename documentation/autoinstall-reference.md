@@ -398,6 +398,21 @@ A list of SSH public keys to install in the initial user's account.
 **type:** boolean
 **default:** `true` if `authorized_keys` is empty, `false` otherwise
 
+<a name="drivers"></a>
+
+### drivers
+
+**type:** mapping, see below
+**default:** see below
+**can be interactive:** yes
+
+#### install
+
+**type:** boolean
+**default:** `false`
+
+Whether to install the available third-party drivers.
+
 <a name="snaps"></a>
 
 ### snaps
