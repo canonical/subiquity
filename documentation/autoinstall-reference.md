@@ -461,6 +461,14 @@ The installer will update the target with debconf set-selection values. Users wi
 
 A list of packages to install into the target system. More precisely, a list of strings to pass to "`apt-get install`", so this includes things like task selection (`dns-server^`) and installing particular versions of a package (`my-package=1-1`).
 
+### timezone
+
+**type:** string
+**default:** no timezone
+**can be interactive:** no
+
+The timezone to configure on the system. The special value "geoip" can be used to query the timezone automatically over the network.
+
 <a name="late-commands"></a>
 
 ### late-commands
