@@ -369,6 +369,19 @@ The hostname for the system.
 
 The password for the new user, crypted. This is required for use with sudo, even if SSH access is configured.
 
+### ubuntu-pro
+
+**type:** mapping, see below
+**default:** see below
+**can be interactive:** yes
+
+#### token
+
+**type:** string
+**default:** no token
+
+A contract token to attach to an existing Ubuntu Pro subscription.
+
 <a name="ssh"></a>
 
 ### ssh
