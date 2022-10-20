@@ -43,7 +43,7 @@ A list of config keys to still show in the UI. So for example:
 
 Would stop on the network screen and allow the user to change the defaults. If a value is provided for an interactive section it is used as the default.
 
-You can use the special section name of "*" to indicate that the installer should ask all the usual questions -- in this case, the `autoinstall.yaml` file is not really an "autoinstall" file at all, instead just a way to change the defaults in the UI.
+You can use the special section name of "\*" to indicate that the installer should ask all the usual questions -- in this case, the `autoinstall.yaml` file is not really an "autoinstall" file at all, instead just a way to change the defaults in the UI.
 
 Not all config keys correspond to screens in the UI. This documentation indicates if a given section can be interactive or not.
 
@@ -137,10 +137,10 @@ The version of subiquity released with 20.04 GA does not accept `null` for this 
 ### network
 
 **type:** netplan-format mapping, see below
-**default:** DHCP on interfaces named eth* or en*
+**default:** DHCP on interfaces named eth\* or en\*
 **can be interactive:** yes
 
-[netplan](https://netplan.io/reference) formatted network configuration. This will be applied during installation as well as in the installed system. The default is to interpret the config for the install media, which runs DHCPv4 on any interface with a name matching "eth*" or "en*" but then disables any interface that does not receive an address.
+[netplan](https://netplan.io/reference) formatted network configuration. This will be applied during installation as well as in the installed system. The default is to interpret the config for the install media, which runs DHCPv4 on any interface with a name matching "eth\*" or "en\*" but then disables any interface that does not receive an address.
 
 For example, to run dhcp6 on a particular NIC:
 
