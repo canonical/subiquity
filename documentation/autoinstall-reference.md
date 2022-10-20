@@ -461,6 +461,26 @@ The installer will update the target with debconf set-selection values. Users wi
 
 A list of packages to install into the target system. More precisely, a list of strings to pass to "`apt-get install`", so this includes things like task selection (`dns-server^`) and installing particular versions of a package (`my-package=1-1`).
 
+### kernel
+
+**type:** mapping (mutually exclusive), see below
+**default:** default kernel
+**can be interactive:** no
+
+Which kernel gets installed. Either the name of the package or the name of the flavor must be specified.
+
+#### package
+
+**type:** string
+
+The name of the package, e.g., `linux-image-5.13.0-40-generic`
+
+#### flavor
+
+**type:** string
+
+The flavor of the kernel, e.g., `generic` or `hwe`.
+
 ### timezone
 
 **type:** string
