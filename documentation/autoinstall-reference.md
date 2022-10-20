@@ -84,14 +84,14 @@ The mapping contains keys:
 #### update
 
 **type:** boolean
-**default**: `no`
+**default:** `no`
 
 Whether to update or not.
 
 #### channel
 
 **type:** string
-**default**: `"stable/ubuntu-$REL"`
+**default:** `"stable/ubuntu-$REL"`
 
 The channel to check for updates.
 
@@ -112,21 +112,21 @@ The mapping contains keys:
 #### layout
 
 **type:** string
-**default**: `"us"`
+**default:** `"us"`
 
 Corresponds to the `XKBLAYOUT` setting.
 
 #### variant
 
 **type:** string
-**default**: `""`
+**default:** `""`
 
 Corresponds to the `XKBVARIANT` setting.
 
 #### toggle
 
 **type:** string or null
-**default**: `null`
+**default:** `null`
 
 Corresponds to the value of `grp:` option from the `XKBOPTIONS` setting. Acceptable values are (but note that the installer does not validate these): `caps_toggle`, `toggle`, `rctrl_toggle`, `rshift_toggle`, `rwin_toggle`, `menu_toggle`, `alt_shift_toggle`, `ctrl_shift_toggle`, `ctrl_alt_toggle`, `alt_caps_toggle`, `lctrl_lshift_toggle`, `lalt_toggle`, `lctrl_toggle`, `lshift_toggle`, `lwin_toggle`, `sclk_toggle`
 
