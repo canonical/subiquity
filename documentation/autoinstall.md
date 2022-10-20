@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The server installer for 20.04 supports a new mode of operation: automated installation, autoinstallation for short. You might also know this feature as unattended or handsoff or preseeded installation.
+Since version 20.04, the server installer supports the automated installation mode, autoinstallation for short. You might also know this feature as unattended or handsoff or preseeded installation.
 
 Autoinstallation lets you answer all those configuration questions ahead of time with an *autoinstall config* and lets the installation process run without any interaction.
 
