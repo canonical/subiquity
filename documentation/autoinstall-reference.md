@@ -473,12 +473,25 @@ The timezone to configure on the system. The special value "geoip" can be used t
 
 **type:** string (enumeration)
 **default:** `security`
+**can be interactive:** no
 
 The type of updates that will be downloaded and installed after the system install.
 Supported values are:
 
  * `security` -> download and install updates from the -security pocket
  * `all` -> also download and install updates from the -updates pocket
+
+### shutdown
+
+**type:** string (enumeration)
+**default:** do nothing
+**can be interactive:** no
+
+Request the system to shutdown or reboot automatically after the installation has finished.
+Supported values are:
+
+ * `reboot`
+ * `shutdown`
 
 <a name="late-commands"></a>
 
