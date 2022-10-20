@@ -12,6 +12,7 @@ libnl-route-3-dev
 libsystemd-dev
 lsb-release
 os-prober
+pandoc
 pep8
 pkg-config
 python3-aiohttp
