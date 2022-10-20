@@ -469,6 +469,17 @@ A list of packages to install into the target system. More precisely, a list of 
 
 The timezone to configure on the system. The special value "geoip" can be used to query the timezone automatically over the network.
 
+### updates
+
+**type:** string (enumeration)
+**default:** `security`
+
+The type of updates that will be downloaded and installed after the system install.
+Supported values are:
+
+ * `security` -> download and install updates from the -security pocket
+ * `all` -> also download and install updates from the -updates pocket
+
 <a name="late-commands"></a>
 
 ### late-commands
