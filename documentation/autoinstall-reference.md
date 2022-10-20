@@ -132,6 +132,23 @@ Corresponds to the value of `grp:` option from the `XKBOPTIONS` setting. Accepta
 
 The version of subiquity released with 20.04 GA does not accept `null` for this field due to a bug.
 
+### source
+**type:** mapping, see below
+**default:** see below
+**can be interactive:** yes
+
+#### search_drivers
+**type:** boolean
+**default:** `true`
+
+Whether the installer should search for available third-party drivers. When set to `false`, it disables the drivers screen and [section](#drivers).
+
+#### id
+**type:** string
+**default:** identifier of the first available source.
+
+Identifier of the source to install (e.g., `"ubuntu-server-minimized"`).
+
 <a name="network"></a>
 
 ### network
