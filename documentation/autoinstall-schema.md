@@ -25,7 +25,7 @@ The [JSON schema](https://json-schema.org/) for autoinstall data is as follows:
     "properties": {
         "version": {
             "type": "integer",
-            "minumum": 1,
+            "minimum": 1,
             "maximum": 1
         },
         "early-commands": {
@@ -94,6 +94,31 @@ The [JSON schema](https://json-schema.org/) for autoinstall data is as follows:
             },
             "additionalProperties": false
         },
+        "kernel": {
+            "type": "object",
+            "properties": {
+                "package": {
+                    "type": "string"
+                },
+                "flavor": {
+                    "type": "string"
+                }
+            },
+            "oneOf": [
+                {
+                    "type": "object",
+                    "required": [
+                        "package"
+                    ]
+                },
+                {
+                    "type": "object",
+                    "required": [
+                        "flavor"
+                    ]
+                }
+            ]
+        },
         "keyboard": {
             "type": "object",
             "properties": {
@@ -114,6 +139,17 @@ The [JSON schema](https://json-schema.org/) for autoinstall data is as follows:
                 "layout"
             ],
             "additionalProperties": false
+        },
+        "source": {
+            "type": "object",
+            "properties": {
+                "search_drivers": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
         },
         "network": {
             "oneOf": [
@@ -257,6 +293,32 @@ The [JSON schema](https://json-schema.org/) for autoinstall data is as follows:
                 }
             ]
         },
+        "ubuntu-pro": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "minLength": 24,
+                    "maxLength": 30,
+                    "pattern": "^C[1-9A-HJ-NP-Za-km-z]+$",
+                    "description": "A valid token starts with a C and is followed by 23 to 29 Base58 characters.\nSee https://pkg.go.dev/github.com/btcsuite/btcutil/base58#CheckEncode"
+                }
+            }
+        },
+        "ubuntu-advantage": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "minLength": 24,
+                    "maxLength": 30,
+                    "pattern": "^C[1-9A-HJ-NP-Za-km-z]+$",
+                    "description": "A valid token starts with a C and is followed by 23 to 29 Base58 characters.\nSee https://pkg.go.dev/github.com/btcsuite/btcutil/base58#CheckEncode"
+                }
+            },
+            "deprecated": true,
+            "description": "Compatibility only - use ubuntu-pro instead"
+        },
         "proxy": {
             "type": [
                 "string",
@@ -278,6 +340,41 @@ The [JSON schema](https://json-schema.org/) for autoinstall data is as follows:
                 },
                 "sources": {
                     "type": "object"
+                },
+                "disable_components": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "universe",
+                            "multiverse",
+                            "restricted",
+                            "contrib",
+                            "non-free"
+                        ]
+                    }
+                },
+                "preferences": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "package": {
+                                "type": "string"
+                            },
+                            "pin": {
+                                "type": "string"
+                            },
+                            "pin-priority": {
+                                "type": "integer"
+                            }
+                        },
+                        "required": [
+                            "package",
+                            "pin",
+                            "pin-priority"
+                        ]
+                    }
                 }
             }
         },
@@ -345,6 +442,24 @@ The [JSON schema](https://json-schema.org/) for autoinstall data is as follows:
                 "additionalProperties": false
             }
         },
+        "drivers": {
+            "type": "object",
+            "properties": {
+                "install": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "timezone": {
+            "type": "string"
+        },
+        "updates": {
+            "type": "string",
+            "enum": [
+                "security",
+                "all"
+            ]
+        },
         "late-commands": {
             "type": "array",
             "items": {
@@ -356,6 +471,13 @@ The [JSON schema](https://json-schema.org/) for autoinstall data is as follows:
                     "type": "string"
                 }
             }
+        },
+        "shutdown": {
+            "type": "string",
+            "enum": [
+                "reboot",
+                "poweroff"
+            ]
         }
     },
     "required": [

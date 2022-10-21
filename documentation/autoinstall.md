@@ -120,7 +120,7 @@ Here is an example file that shows off most features:
 <a href="autoinstall-reference.md#user-data">user-data</a>:
     disable_root: false
 <a href="autoinstall-reference.md#late-commands">late-commands</a>:
-    - sed -ie 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=30/' /target/etc/default/grub
+    - sed -ie 's/GRUB_TIMEOUT=.\*/GRUB_TIMEOUT=30/' /target/etc/default/grub
 <a href="autoinstall-reference.md#error-commands">error-commands</a>:
     - tar c /var/log/installer | nc 192.168.0.1 1000
 </code></pre>

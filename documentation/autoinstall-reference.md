@@ -43,7 +43,7 @@ A list of config keys to still show in the UI. So for example:
 
 Would stop on the network screen and allow the user to change the defaults. If a value is provided for an interactive section it is used as the default.
 
-You can use the special section name of "*" to indicate that the installer should ask all the usual questions -- in this case, the `autoinstall.yaml` file is not really an "autoinstall" file at all, instead just a way to change the defaults in the UI.
+You can use the special section name of "\*" to indicate that the installer should ask all the usual questions -- in this case, the `autoinstall.yaml` file is not really an "autoinstall" file at all, instead just a way to change the defaults in the UI.
 
 Not all config keys correspond to screens in the UI. This documentation indicates if a given section can be interactive or not.
 
@@ -84,14 +84,14 @@ The mapping contains keys:
 #### update
 
 **type:** boolean
-**default**: `no`
+**default:** `no`
 
 Whether to update or not.
 
 #### channel
 
 **type:** string
-**default**: `"stable/ubuntu-$REL"`
+**default:** `"stable/ubuntu-$REL"`
 
 The channel to check for updates.
 
@@ -112,35 +112,52 @@ The mapping contains keys:
 #### layout
 
 **type:** string
-**default**: `"us"`
+**default:** `"us"`
 
 Corresponds to the `XKBLAYOUT` setting.
 
 #### variant
 
 **type:** string
-**default**: `""`
+**default:** `""`
 
 Corresponds to the `XKBVARIANT` setting.
 
 #### toggle
 
 **type:** string or null
-**default**: `null`
+**default:** `null`
 
 Corresponds to the value of `grp:` option from the `XKBOPTIONS` setting. Acceptable values are (but note that the installer does not validate these): `caps_toggle`, `toggle`, `rctrl_toggle`, `rshift_toggle`, `rwin_toggle`, `menu_toggle`, `alt_shift_toggle`, `ctrl_shift_toggle`, `ctrl_alt_toggle`, `alt_caps_toggle`, `lctrl_lshift_toggle`, `lalt_toggle`, `lctrl_toggle`, `lshift_toggle`, `lwin_toggle`, `sclk_toggle`
 
 The version of subiquity released with 20.04 GA does not accept `null` for this field due to a bug.
+
+### source
+**type:** mapping, see below
+**default:** see below
+**can be interactive:** yes
+
+#### search_drivers
+**type:** boolean
+**default:** `true`
+
+Whether the installer should search for available third-party drivers. When set to `false`, it disables the drivers screen and [section](#drivers).
+
+#### id
+**type:** string
+**default:** identifier of the first available source.
+
+Identifier of the source to install (e.g., `"ubuntu-server-minimized"`).
 
 <a name="network"></a>
 
 ### network
 
 **type:** netplan-format mapping, see below
-**default:** DHCP on interfaces named eth* or en*
+**default:** DHCP on interfaces named eth\* or en\*
 **can be interactive:** yes
 
-[netplan](https://netplan.io/reference) formatted network configuration. This will be applied during installation as well as in the installed system. The default is to interpret the config for the install media, which runs DHCPv4 on any interface with a name matching "eth*" or "en*" but then disables any interface that does not receive an address.
+[netplan](https://netplan.io/reference) formatted network configuration. This will be applied during installation as well as in the installed system. The default is to interpret the config for the install media, which runs DHCPv4 on any interface with a name matching "eth\*" or "en\*" but then disables any interface that does not receive an address.
 
 For example, to run dhcp6 on a particular NIC:
 
@@ -352,6 +369,19 @@ The hostname for the system.
 
 The password for the new user, crypted. This is required for use with sudo, even if SSH access is configured.
 
+### ubuntu-pro
+
+**type:** mapping, see below
+**default:** see below
+**can be interactive:** yes
+
+#### token
+
+**type:** string
+**default:** no token
+
+A contract token to attach to an existing Ubuntu Pro subscription.
+
 <a name="ssh"></a>
 
 ### ssh
@@ -380,6 +410,21 @@ A list of SSH public keys to install in the initial user's account.
 
 **type:** boolean
 **default:** `true` if `authorized_keys` is empty, `false` otherwise
+
+<a name="drivers"></a>
+
+### drivers
+
+**type:** mapping, see below
+**default:** see below
+**can be interactive:** yes
+
+#### install
+
+**type:** boolean
+**default:** `false`
+
+Whether to install the available third-party drivers.
 
 <a name="snaps"></a>
 
@@ -415,6 +460,58 @@ The installer will update the target with debconf set-selection values. Users wi
 **can be interactive:** no
 
 A list of packages to install into the target system. More precisely, a list of strings to pass to "`apt-get install`", so this includes things like task selection (`dns-server^`) and installing particular versions of a package (`my-package=1-1`).
+
+### kernel
+
+**type:** mapping (mutually exclusive), see below
+**default:** default kernel
+**can be interactive:** no
+
+Which kernel gets installed. Either the name of the package or the name of the flavor must be specified.
+
+#### package
+
+**type:** string
+
+The name of the package, e.g., `linux-image-5.13.0-40-generic`
+
+#### flavor
+
+**type:** string
+
+The flavor of the kernel, e.g., `generic` or `hwe`.
+
+### timezone
+
+**type:** string
+**default:** no timezone
+**can be interactive:** no
+
+The timezone to configure on the system. The special value "geoip" can be used to query the timezone automatically over the network.
+
+### updates
+
+**type:** string (enumeration)
+**default:** `security`
+**can be interactive:** no
+
+The type of updates that will be downloaded and installed after the system install.
+Supported values are:
+
+ * `security` -> download and install updates from the -security pocket
+ * `all` -> also download and install updates from the -updates pocket
+
+### shutdown
+
+**type:** string (enumeration)
+**default:** do nothing
+**can be interactive:** no
+
+Request the system to shutdown or reboot automatically after the installation has finished.
+Supported values are:
+
+ * `reboot`
+ * `shutdown`
 
 <a name="late-commands"></a>
 
