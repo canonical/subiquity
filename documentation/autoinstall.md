@@ -141,15 +141,15 @@ Note that Autoinstall is processed by Subiquity (not Cloud-init), so please dire
 
 ## The installation environment
 
-At install time, the live-server environment is just that, a live but ephemeral copy of Ubuntu Server.  This means that Cloud-init is present and running in that environment, and existing methods of interacting with Cloud-init can affect the live-server.  For example, if a cloud-config is presented to the live-server containing [`ssh_import_id`](https://cloudinit.readthedocs.io/en/latest/topics/modules.html?highlight=ssh#ssh-import-id), then ssh keys will be added to the authorized_keys list for the installation environment.
+At install time, the live-server environment is just that, a live but ephemeral copy of Ubuntu Server.  This means that Cloud-init is present and running in that environment, and existing methods of interacting with Cloud-init can be used to configure the live-server ephemeral environment.  For example, any #cloud-config user-data keys are presented to the live-server containing [`ssh_import_id`](https://cloudinit.readthedocs.io/en/latest/topics/modules.html?highlight=ssh#ssh-import-id), then ssh keys will be added to the authorized_keys list for the ephemeral environment.
 
 ## First boot configuation of the target system
 
-Autoinstall data may optionally contain a [user-data](autoinstall-reference.md#user-data) section, which is cloud-config data that is configuring the target system.
+Autoinstall data may optionally contain a [user-data](autoinstall-reference.md#user-data) sub-section, which is cloud-config data that is used to configure the target system on first boot.
 
 Subiquity itself delegates some configuration items to Cloud-init, and these items are processed on first boot.
 
-Starting with Ubuntu 22.10, once Cloud-init has performed this first boot configuration, it will disable itself.
+Starting with Ubuntu 22.10, once Cloud-init has performed this first boot configuration, it will disable itself as cloud-init completes configuration in the target system on first boot.
 
 # Possible future directions
 
