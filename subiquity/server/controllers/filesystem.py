@@ -368,14 +368,23 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # size?)
         min_size = 2*self.app.base_model.source.current.size + (1 << 30)
         disks = self.get_guided_disks(with_reformatting=True)
+        se = None
+        if self._system is not None:
+            se = self._system.storage_encryption
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
-            disks=[labels.for_client(d, min_size=min_size) for d in disks])
+            disks=[labels.for_client(d, min_size=min_size) for d in disks],
+            storage_encryption=se)
 
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
         log.debug(data)
-        self.guided(GuidedChoiceV2.from_guided_choice(data))
+        if self._system is not None:
+            # Here is where we will apply the gadget info from the
+            # system to the disk!
+            await self.configured()
+        else:
+            self.guided(GuidedChoiceV2.from_guided_choice(data))
         return self._done_response()
 
     async def reset_POST(self, context, request) -> StorageResponse:

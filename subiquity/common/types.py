@@ -355,6 +355,7 @@ class GuidedStorageResponse:
     status: ProbeStatus
     error_report: Optional[ErrorReportRef] = None
     disks: Optional[List[Disk]] = None
+    storage_encryption: Optional[StorageSafety] = None
 
 
 @attr.s(auto_attribs=True)
