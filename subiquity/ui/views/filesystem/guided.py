@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from typing import Optional
 
 from urwid import (
     connect_signal,
@@ -48,6 +49,9 @@ from subiquity.common.types import (
     Gap,
     GuidedChoice,
     Partition,
+    StorageEncryption,
+    StorageEncryptionSupport,
+    StorageSafety,
 )
 from subiquity.models.filesystem import humanize_size
 
@@ -121,6 +125,7 @@ class GuidedChoiceForm(SubForm):
     disk = ChoiceField(caption=NO_CAPTION, help=NO_HELP, choices=["x"])
     use_lvm = BooleanField(_("Set up this disk as an LVM group"), help=NO_HELP)
     lvm_options = SubFormField(LVMOptionsForm, "", help=NO_HELP)
+    use_tpm = BooleanField(_("Use TPM backed encryption"))
 
     def __init__(self, parent):
         super().__init__(parent, initial={'use_lvm': True})
@@ -144,6 +149,50 @@ class GuidedChoiceForm(SubForm):
         self.disk.widget.index = initial
         connect_signal(self.use_lvm.widget, 'change', self._toggle)
         self.lvm_options.enabled = self.use_lvm.value
+        se = parent.storage_encryption
+        if se is not None:
+            self.remove_field('use_lvm')
+            self.remove_field('lvm_options')
+            if se.support == StorageEncryptionSupport.DISABLED:
+                self.use_tpm.value = False
+                self.use_tpm.enabled = False
+                self.use_tpm.help = _(
+                    "The model being installed does not support TPM "
+                    "backed full-disk encryption")
+            elif se.support == StorageEncryptionSupport.AVAILABLE:
+                if se.storage_safety == StorageSafety.ENCRYPTED:
+                    self.use_tpm.value = True
+                    self.use_tpm.enabled = False
+                    self.use_tpm.help = _(
+                        "The model being installed requires TPM backed "
+                        "full-disk encryption")
+                elif se.storage_safety == StorageSafety.PREFER_ENCRYPTED:
+                    self.use_tpm.value = True
+                    self.use_tpm.help = _(
+                        "The model being installed prefers but does not "
+                        "require TPM backed full-disk encryption")
+                elif se.storage_safety == StorageSafety.PREFER_UNENCRYPTED:
+                    self.use_tpm.value = False
+                    self.use_tpm.help = _(
+                        "The model being installed does not prefer but allows "
+                        "TPM backed full-disk encryption")
+            elif se.support == StorageEncryptionSupport.UNAVAILABLE:
+                self.use_tpm.enabled = False
+                self.use_tpm.value = False
+                if se.storage_safety == StorageSafety.PREFER_ENCRYPTED:
+                    self.use_tpm.help = _(
+                        "The model being installed prefers but does not "
+                        "require TPM backed full-disk encryption and it is "
+                        "not available on this device")
+                elif se.storage_safety == StorageSafety.PREFER_UNENCRYPTED:
+                    self.use_tpm.help = _(
+                        "The model being installed does not prefer TPM "
+                        "backed full-disk encryption and it is not available "
+                        "on this device.")
+            # elif se.support == StorageEncryptionSupport.DEFECTIVE:
+            #     handled in controller code
+        else:
+            self.remove_field('use_tpm')
 
     def _toggle(self, sender, val):
         self.lvm_options.enabled = val
@@ -160,8 +209,9 @@ class GuidedForm(Form):
 
     cancel_label = _("Back")
 
-    def __init__(self, disks):
+    def __init__(self, disks, storage_encryption):
         self.disks = disks
+        self.storage_encryption = storage_encryption
         super().__init__()
         connect_signal(self.guided.widget, 'change', self._toggle_guided)
 
@@ -218,17 +268,29 @@ class GuidedDiskSelectionView(BaseView):
 
     def __init__(self, controller, disks):
         self.controller = controller
+        self.storage_encryption: Optional[StorageEncryption] = \
+            controller.storage_encryption
 
         if disks:
             if any(disk.ok_for_guided for disk in disks):
-                self.form = GuidedForm(disks=disks)
+                self.form = GuidedForm(
+                    disks=disks,
+                    storage_encryption=self.storage_encryption)
+
+                if self.storage_encryption is not None:
+                    self.form = self.form.guided_choice.widget.form
+                    excerpt = _(
+                        "Choose a disk to install this core boot classic "
+                        "system to:")
+                else:
+                    excerpt = _(subtitle)
 
                 connect_signal(self.form, 'submit', self.done)
                 connect_signal(self.form, 'cancel', self.cancel)
 
                 super().__init__(
                     self.form.as_screen(
-                        focus_buttons=False, excerpt=_(subtitle)))
+                        focus_buttons=False, excerpt=_(excerpt)))
             else:
                 super().__init__(
                     screen(
@@ -246,7 +308,11 @@ class GuidedDiskSelectionView(BaseView):
     def done(self, sender):
         results = sender.as_data()
         choice = None
-        if results['guided']:
+        if self.storage_encryption is not None:
+            choice = GuidedChoice(
+                disk_id=results['disk'].id,
+                use_tpm=results['use_tpm'])
+        elif results['guided']:
             choice = GuidedChoice(
                 disk_id=results['guided_choice']['disk'].id,
                 use_lvm=results['guided_choice']['use_lvm'])

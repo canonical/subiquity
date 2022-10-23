@@ -320,6 +320,7 @@ class GuidedChoice:
     disk_id: str
     use_lvm: bool = False
     password: Optional[str] = attr.ib(default=None, repr=False)
+    use_tpm: bool = False
 
 
 class StorageEncryptionSupport(enum.Enum):
