@@ -50,7 +50,7 @@ python3 -m http.server 3003</code></pre>
 
 ### Run the install!
 
-<pre><code>kvm -no-reboot -m 1024 \
+<pre><code>kvm -no-reboot -m 2048 \
     -drive file=image.img,format=raw,cache=none,if=virtio \
     -cdrom ~/Downloads/ubuntu-22.10-live-server-amd64.iso \
     -kernel /mnt/casper/vmlinuz \
@@ -61,7 +61,7 @@ This will boot, download the config from the server set up in the previous step 
 
 ### Boot the installed system
 
-<pre><code>kvm -no-reboot -m 1024 \
+<pre><code>kvm -no-reboot -m 2048 \
     -drive file=image.img,format=raw,cache=none,if=virtio</code></pre>
 
 This will boot into the freshly installed system and you should be able to log in as ubuntu/ubuntu.
@@ -102,7 +102,7 @@ cloud-localds ~/seed.iso user-data meta-data</code></pre>
 
 ### Run the install!
 
-<pre><code>kvm -no-reboot -m 1024 \
+<pre><code>kvm -no-reboot -m 2048 \
     -drive file=image.img,format=raw,cache=none,if=virtio \
     -drive file=~/seed.iso,format=raw,cache=none,if=virtio \
     -cdrom ~/Downloads/ubuntu-22.10-live-server-amd64.iso</code></pre>
@@ -115,7 +115,7 @@ The whole process should take about 5 minutes.
 
 ### Boot the installed system
 
-<pre><code>kvm -no-reboot -m 1024 \
+<pre><code>kvm -no-reboot -m 2048 \
     -drive file=image.img,format=raw,cache=none,if=virtio</code></pre>
 
 This will boot into the freshly installed system and you should be able to log in as ubuntu/ubuntu.
