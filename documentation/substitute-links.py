@@ -7,8 +7,8 @@ discourse_substitutions = [
     ("autoinstall.md", "/t/automated-server-installs/16612"),
     ("autoinstall-reference.md", "/t/automated-server-install-reference/16613"),
     ("autoinstall-quickstart.md", "/t/automated-server-install-quickstart/16614"),
-    ("autoinstall-schema.md", "t/automated-server-install-schema/16615"),
-    ("autoinstall-quickstart-s390x.md", "t/automated-server-install-schema/16616"),
+    ("autoinstall-schema.md", "/t/automated-server-install-schema/16615"),
+    ("autoinstall-quickstart-s390x.md", "/t/automated-server-install-schema/16616"),
 ]
 md_to_html_substitutions = [
     ("autoinstall.md", "autoinstall.html"),
