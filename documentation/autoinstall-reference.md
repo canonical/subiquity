@@ -504,7 +504,7 @@ Supported values are:
 ### shutdown
 
 **type:** string (enumeration)
-**default:** do nothing
+**default:** `reboot`
 **can be interactive:** no
 
 Request the system to shutdown or reboot automatically after the installation has finished.

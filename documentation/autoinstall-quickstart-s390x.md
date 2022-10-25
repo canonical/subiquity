@@ -6,15 +6,15 @@ This page is just a slightly adapted page of [the autoinstall quickstart page](a
 
 ## Download an ISO
 
-At the time of writing (just before focal release), the best place to go is here:
-<http://cdimage.ubuntu.com/ubuntu/releases/20.04/release/>
+At the time of writing (just after the kinetic release), the best place to go is here:
+<https://cdimage.ubuntu.com/ubuntu/releases/22.10/release/>
 
-<pre><code>wget http://cdimage.ubuntu.com/ubuntu/releases/20.04/release/ubuntu-20.04-live-server-s390x.iso -P ~/Downloads</code></pre>
+<pre><code>wget https://cdimage.ubuntu.com/ubuntu/releases/22.10/release/ubuntu-22.10-live-server-s390x.iso -P ~/Downloads</code></pre>
 
 ## Mount the ISO
 
 <pre><code>mkdir -p ~/iso
-sudo mount -r ~/Downloads/ubuntu-20.04-live-server-s390x.iso ~/iso</code></pre>
+sudo mount -r ~/Downloads/ubuntu-22.10-live-server-s390x.iso ~/iso</code></pre>
 
 ## Write your autoinstall config
 
@@ -74,7 +74,7 @@ You may need to add the default user to the kvm group:  <<BR>>
 
 <pre><code>kvm -no-reboot -name auto-inst-test -nographic -m 2048 \
     -drive file=disk-image.qcow2,format=qcow2,cache=none,if=virtio \
-    -cdrom ~/Downloads/ubuntu-20.04-live-server-s390x.iso \
+    -cdrom ~/Downloads/ubuntu-22.10-live-server-s390x.iso \
     -kernel ~/iso/boot/kernel.ubuntu \
     -initrd ~/iso/boot/initrd.ubuntu \
     -append 'autoinstall ds=nocloud-net;s=http://_gateway:3003/ console=ttysclp0'</code></pre>
