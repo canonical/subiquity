@@ -1398,7 +1398,7 @@ class FilesystemModel(object):
         if self.swap is not None:
             config['swap'] = self.swap
         elif not self._should_add_swapfile():
-            config['swap'] = {'swap': 0}
+            config['swap'] = {'size': 0}
         if self.grub is not None:
             config['grub'] = self.grub
         return config
