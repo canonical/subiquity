@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+from unittest import mock
 
 import attr
 from parameterized import parameterized
@@ -995,3 +996,11 @@ class TestAlignmentData(unittest.TestCase):
         ad = d1.alignment_data()
         align_max = d1.size - ad.min_start_offset - ad.min_end_offset
         self.assertEqual(gaps.largest_gap_size(d1), align_max)
+
+
+class TestSwap(unittest.TestCase):
+    def test_basic(self):
+        m = make_model()
+        with mock.patch.object(m, '_should_add_swapfile', return_value=False):
+            cfg = m.render()
+            self.assertEqual({'size': 0}, cfg['swap'])
