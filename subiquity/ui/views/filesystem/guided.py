@@ -16,6 +16,8 @@
 import logging
 from typing import Optional
 
+import attr
+
 from urwid import (
     connect_signal,
     Text,
@@ -120,6 +122,50 @@ def summarize_device(disk):
     return rows
 
 
+@attr.s(auto_attribs=True)
+class TPMChoice:
+    enabled: bool
+    default: bool
+    help: str
+
+
+choices = {
+    StorageEncryptionSupport.DISABLED: {
+        safety: TPMChoice(
+            enabled=False, default=False,
+            help=_("The model being installed does not support TPM backed "
+                   "full-disk encryption")) for safety in StorageSafety
+            },
+    StorageEncryptionSupport.AVAILABLE: {
+        StorageSafety.ENCRYPTED: TPMChoice(
+            enabled=False, default=True,
+            help=_("The model being installed requires TPM backed full-disk "
+                   "encryption")),
+        StorageSafety.PREFER_ENCRYPTED: TPMChoice(
+            enabled=True, default=True,
+            help=_("The model being installed prefers but does not require "
+                   "TPM backed full-disk encryption")),
+        StorageSafety.PREFER_UNENCRYPTED: TPMChoice(
+            enabled=True, default=False,
+            help=_("The model being installed does not prefer but allows TPM "
+                   "backed full-disk encryption")),
+            },
+    StorageEncryptionSupport.UNAVAILABLE: {
+        StorageSafety.PREFER_ENCRYPTED: TPMChoice(
+            enabled=False, default=False,
+            help=_("The model being installed prefers but does not require "
+                   "TPM backed full-disk encryption and it is not available "
+                   "on this device")),
+        StorageSafety.PREFER_UNENCRYPTED: TPMChoice(
+            enabled=False, default=False,
+            help=_("The model being installed does not prefer TPM backed "
+                   "full-disk encryption and it is not available on this "
+                   "device.")),
+            },
+    # StorageEncryptionSupport.DEFECTIVE: handled in controller code
+}
+
+
 class GuidedChoiceForm(SubForm):
 
     disk = ChoiceField(caption=NO_CAPTION, help=NO_HELP, choices=["x"])
@@ -153,44 +199,10 @@ class GuidedChoiceForm(SubForm):
         if se is not None:
             self.remove_field('use_lvm')
             self.remove_field('lvm_options')
-            if se.support == StorageEncryptionSupport.DISABLED:
-                self.use_tpm.value = False
-                self.use_tpm.enabled = False
-                self.use_tpm.help = _(
-                    "The model being installed does not support TPM "
-                    "backed full-disk encryption")
-            elif se.support == StorageEncryptionSupport.AVAILABLE:
-                if se.storage_safety == StorageSafety.ENCRYPTED:
-                    self.use_tpm.value = True
-                    self.use_tpm.enabled = False
-                    self.use_tpm.help = _(
-                        "The model being installed requires TPM backed "
-                        "full-disk encryption")
-                elif se.storage_safety == StorageSafety.PREFER_ENCRYPTED:
-                    self.use_tpm.value = True
-                    self.use_tpm.help = _(
-                        "The model being installed prefers but does not "
-                        "require TPM backed full-disk encryption")
-                elif se.storage_safety == StorageSafety.PREFER_UNENCRYPTED:
-                    self.use_tpm.value = False
-                    self.use_tpm.help = _(
-                        "The model being installed does not prefer but allows "
-                        "TPM backed full-disk encryption")
-            elif se.support == StorageEncryptionSupport.UNAVAILABLE:
-                self.use_tpm.enabled = False
-                self.use_tpm.value = False
-                if se.storage_safety == StorageSafety.PREFER_ENCRYPTED:
-                    self.use_tpm.help = _(
-                        "The model being installed prefers but does not "
-                        "require TPM backed full-disk encryption and it is "
-                        "not available on this device")
-                elif se.storage_safety == StorageSafety.PREFER_UNENCRYPTED:
-                    self.use_tpm.help = _(
-                        "The model being installed does not prefer TPM "
-                        "backed full-disk encryption and it is not available "
-                        "on this device.")
-            # elif se.support == StorageEncryptionSupport.DEFECTIVE:
-            #     handled in controller code
+            choice = choices[se.support][se.storage_safety]
+            self.use_tpm.enabled = choice.enabled
+            self.use_tpm.value = choice.default
+            self.use_tpm.help = choice.help
         else:
             self.remove_field('use_tpm')
 
