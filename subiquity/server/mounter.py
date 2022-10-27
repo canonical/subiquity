@@ -167,6 +167,9 @@ class DryRunMounter(Mounter):
         # element.
         # - on second invocation, the lowers list contains the
         # OverlayMountPoint returned by the first invocation.
+        #
+        # This is all very specific to the use of setup_overlay in
+        # AptConfigurer. It would be nice to fix that somehow.
         lowerdir = lowers[0]
         if isinstance(lowerdir, OverlayMountpoint):
             source = lowerdir.lowers[0]
