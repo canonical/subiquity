@@ -38,6 +38,7 @@ from subiquity.ui.views import (
     GuidedDiskSelectionView,
     )
 from subiquity.ui.views.filesystem.probing import (
+    DefectiveEncryptionError,
     SlowProbing,
     ProbingFailed,
     )
@@ -92,7 +93,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
     def make_guided_ui(self, status):
         se = self.storage_encryption = status.storage_encryption
         if se is not None and se.support == StorageEncryptionSupport.DEFECTIVE:
-            1/0  # should show an error page here
+            return DefectiveEncryptionError(self)
         if status.status == ProbeStatus.FAILED:
             self.app.show_error_report(status.error_report)
             return ProbingFailed(self, status.error_report)
