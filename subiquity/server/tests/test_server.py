@@ -28,7 +28,7 @@ from subiquity.server.server import (
 
 
 class TestAutoinstallLoad(SubiTestCase):
-    def setUp(self):
+    async def asyncSetUp(self):
         self.tempdir = self.tmp_dir()
         os.makedirs(self.tempdir + '/cdrom', exist_ok=True)
         opts = Mock()

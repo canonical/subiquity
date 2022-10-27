@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import asyncio
 import logging
 import os
 import fcntl
@@ -79,7 +80,7 @@ def make_client_args_parser():
 AUTO_ANSWERS_FILE = "/subiquity_config/answers.yaml"
 
 
-def main():
+async def main():
     setup_environment()
     # setup_environment sets $APPORT_DATA_DIR which must be set before
     # apport is imported, which is done by this import:
@@ -147,8 +148,8 @@ def main():
     subiquity_interface.note_file_for_apport(
         "InstallerLogInfo", logfiles['info'])
 
-    subiquity_interface.run()
+    await subiquity_interface.run()
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(asyncio.run(main()))

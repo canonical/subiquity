@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import asyncio
 import sys
 import os
 import logging
@@ -68,7 +69,7 @@ def parse_options(argv):
 LOGDIR = "/var/log/console-conf/"
 
 
-def main():
+async def main():
     opts = parse_options(sys.argv[1:])
     global LOGDIR
     if opts.dry_run:
@@ -87,7 +88,7 @@ def main():
     else:
         interface = ConsoleConf(opts)
 
-    interface.run()
+    await interface.run()
 
 
 def restore_std_streams_from(from_file):
@@ -104,4 +105,4 @@ def restore_std_streams_from(from_file):
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(asyncio.run(main()))

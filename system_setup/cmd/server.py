@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import asyncio
 import logging
 import os
 import sys
@@ -53,7 +54,7 @@ def make_server_args_parser():
     return parser
 
 
-def main():
+async def main():
     print('starting server')
     setup_environment()
     # setup_environment sets $APPORT_DATA_DIR which must be set before
@@ -103,8 +104,8 @@ def main():
     server.note_file_for_apport(
         "InstallerServerLogInfo", logfiles['info'])
 
-    server.run()
+    await server.run()
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(asyncio.run(main()))

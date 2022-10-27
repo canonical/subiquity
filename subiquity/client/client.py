@@ -402,9 +402,9 @@ class SubiquityClient(TuiApplication):
     def extra_urwid_loop_args(self):
         return dict(input_filter=self.input_filter.filter)
 
-    def run(self):
+    async def run(self):
         try:
-            super().run()
+            await super().run()
         except Exception:
             print("generating crash report")
             try:

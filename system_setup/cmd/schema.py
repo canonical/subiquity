@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import json
 import sys
 
@@ -37,11 +38,11 @@ def make_app():
     return app
 
 
-def main():
+async def main():
     schema = make_schema(make_app())
     jsonschema.validate({"version": 1}, schema)
     print(json.dumps(schema, indent=4))
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(asyncio.run(main()))
