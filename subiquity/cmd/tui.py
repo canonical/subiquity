@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import asyncio
 import logging
 import os
 import fcntl
@@ -140,14 +141,15 @@ def main():
             opts.answers.close()
             opts.answers = None
 
-    subiquity_interface = SubiquityClient(opts)
+    async def run_with_loop():
+        subiquity_interface = SubiquityClient(opts)
+        subiquity_interface.note_file_for_apport(
+            "InstallerLog", logfiles['debug'])
+        subiquity_interface.note_file_for_apport(
+            "InstallerLogInfo", logfiles['info'])
+        await subiquity_interface.run()
 
-    subiquity_interface.note_file_for_apport(
-        "InstallerLog", logfiles['debug'])
-    subiquity_interface.note_file_for_apport(
-        "InstallerLogInfo", logfiles['info'])
-
-    subiquity_interface.run()
+    asyncio.run(run_with_loop())
 
 
 if __name__ == '__main__':

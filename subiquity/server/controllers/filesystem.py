@@ -669,11 +669,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         await self._probe_task.start()
 
     def start_listening_udev(self):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         loop.add_reader(self._monitor.fileno(), self._udev_event)
 
     def stop_listening_udev(self):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         loop.remove_reader(self._monitor.fileno())
 
     def _udev_event(self):
@@ -681,7 +681,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if cp.returncode != 0:
             log.debug("waiting 0.1 to let udev event queue settle")
             self.stop_listening_udev()
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             loop.call_later(0.1, self.start_listening_udev)
             return
         # Drain the udev events in the queue -- if we stopped listening to

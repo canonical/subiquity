@@ -374,11 +374,11 @@ class TuiApplication(Application):
         if start_urwid:
             self.start_urwid()
 
-    def run(self):
+    async def run(self):
         if self.opts.scripts:
             self.run_scripts(self.opts.scripts)
         try:
-            super().run()
+            await super().run()
         finally:
             if self.urwid_loop is not None:
                 self.urwid_loop.stop()

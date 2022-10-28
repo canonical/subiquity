@@ -62,7 +62,7 @@ class Upload(metaclass=urwid.MetaSignals):
     def start(self):
         self.pipe_r, self.pipe_w = os.pipe()
         fcntl.fcntl(self.pipe_r, fcntl.F_SETFL, os.O_NONBLOCK)
-        asyncio.get_event_loop().add_reader(self.pipe_r, self._progress)
+        asyncio.get_running_loop().add_reader(self.pipe_r, self._progress)
 
     def _progress(self):
         os.read(self.pipe_r, 4096)
@@ -75,7 +75,7 @@ class Upload(metaclass=urwid.MetaSignals):
         os.write(self.pipe_w, b'x')
 
     def stop(self):
-        asyncio.get_event_loop().remove_reader(self.pipe_r)
+        asyncio.get_running_loop().remove_reader(self.pipe_r)
         os.close(self.pipe_w)
         os.close(self.pipe_r)
 
@@ -174,7 +174,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
                 _bg_add_info()
                 context.description = "written to " + self.path
         else:
-            self._info_task = asyncio.get_event_loop().create_task(add_info())
+            self._info_task = asyncio.create_task(add_info())
 
     async def load(self):
         with self._context.child("load"):
@@ -432,7 +432,7 @@ class ErrorReporter(object):
         if report is not None:
             return report
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         await self.client.errors.wait.GET(error_ref)
 

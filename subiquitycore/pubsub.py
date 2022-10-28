@@ -36,5 +36,4 @@ class MessageHub:
                 await v
 
     def broadcast(self, channel, *args, **kwargs):
-        loop = asyncio.get_event_loop()
-        return loop.create_task(self.abroadcast(channel, *args, **kwargs))
+        return asyncio.create_task(self.abroadcast(channel, *args, **kwargs))

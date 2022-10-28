@@ -162,7 +162,7 @@ class BaseNetworkController(BaseController):
     def stop_watching(self):
         if not self._watching:
             return
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         for fd in self._observer_fds:
             loop.remove_reader(fd)
         self._watching = False
@@ -170,7 +170,7 @@ class BaseNetworkController(BaseController):
     def start_watching(self):
         if self._watching:
             return
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         for fd in self._observer_fds:
             loop.add_reader(fd, self._data_ready, fd)
         self._watching = True
@@ -180,7 +180,7 @@ class BaseNetworkController(BaseController):
         if cp.returncode != 0:
             log.debug("waiting 0.1 to let udev event queue settle")
             self.stop_watching()
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             loop.call_later(0.1, self.start_watching)
             return
         self.observer.data_ready(fd)

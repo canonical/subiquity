@@ -70,10 +70,11 @@ class Application:
             os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1"))
         self.updated = os.path.exists(self.state_path('updating'))
         self.hub = MessageHub()
-        self.aio_loop = asyncio.get_event_loop()
+        self.aio_loop = asyncio.get_running_loop()
         self.aio_loop.set_exception_handler(self._exception_handler)
         self.load_controllers(self.controllers)
         self.context = Context.new(self)
+        self.exit_event = asyncio.Event()
 
     def load_controllers(self, controllers):
         """ Load the corresponding list of controllers
@@ -86,7 +87,7 @@ class Application:
     def _exception_handler(self, loop, context):
         exc = context.get('exception')
         if exc:
-            loop.stop()
+            self.exit_event.set()
             self._exc = exc
         else:
             loop.default_exception_handler(context)
@@ -114,7 +115,7 @@ class Application:
 # EventLoop -------------------------------------------------------------------
 
     def exit(self):
-        self.aio_loop.stop()
+        self.exit_event.set()
 
     def start_controllers(self):
         log.debug("starting controllers")
@@ -126,10 +127,10 @@ class Application:
         self.controllers.load_all()
         self.start_controllers()
 
-    def run(self):
+    async def run(self):
         self.base_model = self.make_model()
         self.aio_loop.create_task(self.start())
-        self.aio_loop.run_forever()
+        await self.exit_event.wait()
         if self._exc:
             exc, self._exc = self._exc, None
             raise exc

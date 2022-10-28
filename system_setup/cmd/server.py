@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import asyncio
 import logging
 import os
 import sys
@@ -96,14 +97,15 @@ def main():
                          .format(prefillFile))
             opts.prefill = None
 
-    server = SystemSetupServer(opts, block_log_dir)
+    async def run_with_loop():
+        server = SystemSetupServer(opts, block_log_dir)
+        server.note_file_for_apport(
+            "InstallerServerLog", logfiles['debug'])
+        server.note_file_for_apport(
+            "InstallerServerLogInfo", logfiles['info'])
+        await server.run()
 
-    server.note_file_for_apport(
-        "InstallerServerLog", logfiles['debug'])
-    server.note_file_for_apport(
-        "InstallerServerLogInfo", logfiles['info'])
-
-    server.run()
+    asyncio.run(run_with_loop())
 
 
 if __name__ == '__main__':
