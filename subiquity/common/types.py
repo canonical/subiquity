@@ -347,8 +347,10 @@ class EncryptionType(enum.Enum):
 class StorageEncryption:
     support: StorageEncryptionSupport
     storage_safety: StorageSafety = named_field('storage-safety')
-    encryption_type: EncryptionType = named_field('encryption-type')
-    unavailable_reason: str = named_field('unavailable-reason')
+    encryption_type: EncryptionType = named_field(
+        'encryption-type', default=EncryptionType.NONE)
+    unavailable_reason: str = named_field(
+        'unavailable-reason', default='')
 
 
 @attr.s(auto_attribs=True)
@@ -356,7 +358,7 @@ class GuidedStorageResponse:
     status: ProbeStatus
     error_report: Optional[ErrorReportRef] = None
     disks: Optional[List[Disk]] = None
-    storage_encryption: Optional[StorageSafety] = None
+    storage_encryption: Optional[StorageEncryption] = None
 
 
 @attr.s(auto_attribs=True)

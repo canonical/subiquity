@@ -1,0 +1,11 @@
+- description:
+    en: This test source has encryption support set to "unavailable"
+  id: ubuntu-server-minimal
+  locale_support: none
+  name:
+    en: TPM encryption unavailable.
+  path: foo.squashfs
+  size: 530485248
+  type: fsimage
+  variant: server
+  snapd_system_label: classic

@@ -199,10 +199,10 @@ class GuidedChoiceForm(SubForm):
         if se is not None:
             self.remove_field('use_lvm')
             self.remove_field('lvm_options')
-            choice = choices[se.support][se.storage_safety]
-            self.use_tpm.enabled = choice.enabled
-            self.use_tpm.value = choice.default
-            self.use_tpm.help = choice.help
+            self.tpm_choice = choices[se.support][se.storage_safety]
+            self.use_tpm.enabled = self.tpm_choice.enabled
+            self.use_tpm.value = self.tpm_choice.default
+            self.use_tpm.help = self.tpm_choice.help
         else:
             self.remove_field('use_tpm')
 
@@ -323,7 +323,7 @@ class GuidedDiskSelectionView(BaseView):
         if self.storage_encryption is not None:
             choice = GuidedChoice(
                 disk_id=results['disk'].id,
-                use_tpm=results['use_tpm'])
+                use_tpm=results.get('use_tpm', sender.tpm_choice.default))
         elif results['guided']:
             choice = GuidedChoice(
                 disk_id=results['guided_choice']['disk'].id,
