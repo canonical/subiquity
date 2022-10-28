@@ -114,8 +114,8 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
                 value['lvm_options'] = {
                     'encrypt': True,
                     'luks_options': {
-                        'password': passphrase,
-                        'confirm_password': passphrase,
+                        'passphrase': passphrase,
+                        'confirm_passphrase': passphrase,
                         }
                     }
             self.ui.body.form.guided_choice.value = value

@@ -59,15 +59,15 @@ subtitle = _("Configure a guided storage layout, or create a custom one:")
 
 class LUKSOptionsForm(SubForm):
 
-    password = PasswordField(_("Passphrase:"))
-    confirm_password = PasswordField(_("Confirm passphrase:"))
+    passphrase = PasswordField(_("Passphrase:"))
+    confirm_passphrase = PasswordField(_("Confirm passphrase:"))
 
-    def validate_password(self):
-        if len(self.password.value) < 1:
+    def validate_passphrase(self):
+        if len(self.passphrase.value) < 1:
             return _("Passphrase must be set")
 
-    def validate_confirm_password(self):
-        if self.password.value != self.confirm_password.value:
+    def validate_confirm_passphrase(self):
+        if self.passphrase.value != self.confirm_passphrase.value:
             return _("Passphrases do not match")
 
 
@@ -185,7 +185,7 @@ can easily be enlarged with standard LVM command line tools (or on the
 next screen).
 
 You can also choose to encrypt LVM volume group. This will require
-setting a password, that one will need to type on every boot before
+setting a passphrase, that one will need to type on every boot before
 the system boots.
 
 If you do not choose to use LVM, a single partition is created covering the
@@ -252,7 +252,7 @@ class GuidedDiskSelectionView(BaseView):
                 use_lvm=results['guided_choice']['use_lvm'])
             opts = results['guided_choice'].get('lvm_options', {})
             if opts.get('encrypt', False):
-                choice.password = opts['luks_options']['password']
+                choice.password = opts['luks_options']['passphrase']
         self.controller.guided_choice(choice)
 
     def manual(self, sender):

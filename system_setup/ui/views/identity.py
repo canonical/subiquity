@@ -23,7 +23,6 @@ from subiquity.common.types import IdentityData
 from subiquity.ui.views.identity import (
     IdentityForm,
     IdentityView,
-    setup_password_validation,
     )
 from subiquitycore.ui.utils import screen
 from subiquitycore.utils import crypt_password
@@ -72,7 +71,9 @@ class WSLIdentityView(BaseView):
         self.form = WSLIdentityForm(controller, initial)
 
         connect_signal(self.form, 'submit', self.done)
-        setup_password_validation(self.form, _("passwords"))
+        self.form.confirm_password.use_as_confirmation(
+                for_field=self.form.password,
+                desc=_("Passwords"))
 
         super().__init__(
             screen(

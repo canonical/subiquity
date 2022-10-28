@@ -48,9 +48,6 @@ from subiquity.ui.views.filesystem.compound import (
     get_possible_components,
     MultiDeviceField,
     )
-from subiquity.ui.views.identity import (
-    setup_password_validation,
-    )
 
 log = logging.getLogger('subiquity.ui.views.filesystem.lvm')
 
@@ -83,22 +80,24 @@ class VolGroupForm(CompoundDiskForm):
         self.deleted_vg_names = deleted_vg_names
         super().__init__(model, possible_components, initial)
         connect_signal(self.encrypt.widget, 'change', self._change_encrypt)
-        setup_password_validation(self, _("Passphrases"))
+        self.confirm_passphrase.use_as_confirmation(
+                for_field=self.passphrase,
+                desc=_("Passphrases"))
         self._change_encrypt(None, self.encrypt.value)
 
     name = VGNameField(_("Name:"))
     devices = MultiDeviceField(_("Devices:"))
     size = ReadOnlyField(_("Size:"))
     encrypt = BooleanField(_("Create encrypted volume"))
-    password = PasswordField(_("Passphrase:"))
-    confirm_password = PasswordField(_("Confirm passphrase:"))
+    passphrase = PasswordField(_("Passphrase:"))
+    confirm_passphrase = PasswordField(_("Confirm passphrase:"))
 
     def _change_encrypt(self, sender, new_value):
-        self.password.enabled = new_value
-        self.confirm_password.enabled = new_value
+        self.passphrase.enabled = new_value
+        self.confirm_passphrase.enabled = new_value
         if not new_value:
-            self.password.validate()
-            self.confirm_password.validate()
+            self.passphrase.validate()
+            self.confirm_passphrase.validate()
 
     def validate_devices(self):
         if len(self.devices.value) < 1:
@@ -119,13 +118,13 @@ class VolGroupForm(CompoundDiskForm):
                 return _("{name} is not a valid name for a volume "
                          "group").format(name=v)
 
-    def validate_password(self):
-        if self.encrypt.value and len(self.password.value) < 1:
+    def validate_passphrase(self):
+        if self.encrypt.value and len(self.passphrase.value) < 1:
             return _("Passphrase must be set")
 
-    def validate_confirm_password(self):
+    def validate_confirm_passphrase(self):
         if self.encrypt.value and \
-          self.password.value != self.confirm_password.value:
+          self.passphrase.value != self.confirm_passphrase.value:
             return _("Passphrases do not match")
 
 
@@ -167,8 +166,8 @@ class VolGroupStretchy(Stretchy):
                 'devices': devices,
                 'name': existing.name,
                 'encrypt': bool(key),
-                'password': key,
-                'confirm_password': key,
+                'passphrase': key,
+                'confirm_passphrase': key,
                 }
 
         possible_components = get_possible_components(
@@ -205,11 +204,11 @@ class VolGroupStretchy(Stretchy):
         del result['size']
         mdc = self.form.devices.widget
         result['devices'] = mdc.active_devices
-        if 'confirm_password' in result:
-            del result['confirm_password']
+        if 'confirm_passphrase' in result:
+            del result['confirm_passphrase']
         safe_result = result.copy()
-        if 'password' in safe_result:
-            safe_result['password'] = '<REDACTED>'
+        if 'passphrase' in safe_result:
+            safe_result['passphrase'] = '<REDACTED>'
         log.debug("vg_done: {}".format(safe_result))
         self.parent.controller.volgroup_handler(self.existing, result)
         self.parent.refresh_model_inputs()

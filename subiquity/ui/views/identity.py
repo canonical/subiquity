@@ -186,19 +186,6 @@ class IdentityForm(Form):
             return _("Passwords do not match")
 
 
-def setup_password_validation(form, desc):
-    def _check_password(sender, new_text):
-        password = form.password.value
-        if not password.startswith(new_text):
-            form.confirm_password.show_extra(
-                # desc is "Passwords" or "Passphrases"
-                ("info_error", _("{desc} do not match").format(desc=desc)))
-        else:
-            form.confirm_password.show_extra('')
-    connect_signal(
-        form.confirm_password.widget, 'change', _check_password)
-
-
 class IdentityView(BaseView):
     title = _("Profile setup")
     excerpt = _("Enter the username and password you will use to log in to "
@@ -228,8 +215,11 @@ class IdentityView(BaseView):
 
         self.form = IdentityForm(controller, initial)
 
+        self.form.confirm_password.use_as_confirmation(
+                for_field=self.form.password,
+                desc=_("Passwords"))
+
         connect_signal(self.form, 'submit', self.done)
-        setup_password_validation(self.form, _("Passwords"))
 
         super().__init__(
             screen(

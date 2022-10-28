@@ -40,8 +40,8 @@ Filesystem:
           - [disk index 0, part 1]
           - [disk index 0, part 2]
         encrypt: true
-        password: "passw0rd"
-        confirm_password: "passw0rd"
+        passphrase: "passw0rd"
+        confirm_passphrase: "passw0rd"
     - obj: [volgroup name vg-1]
       action: EDIT
       data:
@@ -50,8 +50,8 @@ Filesystem:
       action: EDIT
       data:
         encrypt: true
-        password: "passw0rd"
-        confirm_password: "passw0rd"
+        passphrase: "passw0rd"
+        confirm_passphrase: "passw0rd"
     - obj: [volgroup name vg-1]
       action: CREATE_LV
       data:

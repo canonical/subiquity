@@ -69,14 +69,14 @@ class LVMViewTests(unittest.TestCase):
             'name': 'vg1',
             'devices': {part1: 'active', part2: 'active'},
             'encrypt': True,
-            'password': 'passw0rd',
-            'confirm_password': 'passw0rd',
+            'passphrase': 'passw0rd',
+            'confirm_passphrase': 'passw0rd',
             }
         expected_data = {
             'name': 'vg1',
             'devices': {part1, part2},
             'encrypt': True,
-            'password': 'passw0rd',
+            'passphrase': 'passw0rd',
             }
         view_helpers.enter_data(stretchy.form, form_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)
