@@ -424,10 +424,26 @@ class SubiquityClient(TuiApplication):
                 signal.pause()
         finally:
             if self.opts.server_pid:
-                print('killing server {}'.format(self.opts.server_pid))
+                # If we signal the server with a SIGINT, it will write a
+                # KeyboardInterrupt exception trace to its standard error
+                # stream. Integration tests do not appreciate that. Let's leave
+                # the server up to a second to exit, and then we signal it.
                 pid = int(self.opts.server_pid)
-                os.kill(pid, 2)
-                os.waitpid(pid, 0)
+
+                print(f'giving the server [{pid}] up to a second to exit')
+                for unused in range(10):
+                    try:
+                        if os.waitpid(pid, os.WNOHANG) != (0, 0):
+                            break
+                    except ChildProcessError:
+                        # If we attached to an existing server process,
+                        # waitpid will fail.
+                        pass
+                    await asyncio.sleep(.1)
+                else:
+                    print('killing server {}'.format(pid))
+                    os.kill(pid, 2)
+                    os.waitpid(pid, 0)
 
     async def confirm_install(self):
         await self.client.meta.confirm.POST(self.our_tty)
