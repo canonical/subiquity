@@ -13,9 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import sys
 
 if __name__ == '__main__':
     from system_setup.cmd.tui import main
-    sys.exit(asyncio.run(main()))
+    sys.exit(main())

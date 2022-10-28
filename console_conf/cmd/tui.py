@@ -69,7 +69,7 @@ def parse_options(argv):
 LOGDIR = "/var/log/console-conf/"
 
 
-async def main():
+def main():
     opts = parse_options(sys.argv[1:])
     global LOGDIR
     if opts.dry_run:
@@ -79,16 +79,19 @@ async def main():
     logger.info("Starting console-conf v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
 
-    if opts.chooser_systems:
-        # when running as a chooser, the stdin/stdout streams are set up by the
-        # process that runs us, attempt to restore the tty in/out by looking at
-        # stderr
-        chooser_input, chooser_output = restore_std_streams_from(sys.stderr)
-        interface = RecoveryChooser(opts, chooser_input, chooser_output)
-    else:
-        interface = ConsoleConf(opts)
+    async def run_with_loop():
+        if opts.chooser_systems:
+            # when running as a chooser, the stdin/stdout streams are set up by
+            # the process that runs us, attempt to restore the tty in/out by
+            # looking at stderr
+            chooser_input, chooser_output = restore_std_streams_from(
+                    sys.stderr)
+            interface = RecoveryChooser(opts, chooser_input, chooser_output)
+        else:
+            interface = ConsoleConf(opts)
+        await interface.run()
 
-    await interface.run()
+    asyncio.run(run_with_loop())
 
 
 def restore_std_streams_from(from_file):
@@ -105,4 +108,4 @@ def restore_std_streams_from(from_file):
 
 
 if __name__ == '__main__':
-    sys.exit(asyncio.run(main()))
+    sys.exit(main())

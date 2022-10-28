@@ -59,11 +59,14 @@ def make_app():
     return app
 
 
-async def main():
-    schema = make_schema(make_app())
-    jsonschema.validate({"version": 1}, schema)
-    print(json.dumps(schema, indent=4))
+def main():
+    async def run_with_loop():
+        schema = make_schema(make_app())
+        jsonschema.validate({"version": 1}, schema)
+        print(json.dumps(schema, indent=4))
+
+    asyncio.run(run_with_loop())
 
 
 if __name__ == '__main__':
-    sys.exit(asyncio.run(main()))
+    sys.exit(main())

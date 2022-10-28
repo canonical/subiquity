@@ -66,7 +66,7 @@ def make_client_args_parser():
 AUTO_ANSWERS_FILE = "/subiquity_config/answers.yaml"
 
 
-async def main():
+def main():
     setup_environment()
     # setup_environment sets $APPORT_DATA_DIR which must be set before
     # apport is imported, which is done by this import:
@@ -147,15 +147,16 @@ async def main():
             opts.answers.close()
             opts.answers = None
 
-    subiquity_interface = SystemSetupClient(opts)
+    async def run_with_loop():
+        subiquity_interface = SystemSetupClient(opts)
+        subiquity_interface.note_file_for_apport(
+            "InstallerLog", logfiles['debug'])
+        subiquity_interface.note_file_for_apport(
+            "InstallerLogInfo", logfiles['info'])
+        await subiquity_interface.run()
 
-    subiquity_interface.note_file_for_apport(
-        "InstallerLog", logfiles['debug'])
-    subiquity_interface.note_file_for_apport(
-        "InstallerLogInfo", logfiles['info'])
-
-    await subiquity_interface.run()
+    asyncio.run(run_with_loop())
 
 
 if __name__ == '__main__':
-    sys.exit(asyncio.run(main()))
+    sys.exit(main())

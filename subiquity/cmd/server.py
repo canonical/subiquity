@@ -112,7 +112,7 @@ def make_server_args_parser():
     return parser
 
 
-async def main():
+def main():
     print('starting server')
     setup_environment()
     # setup_environment sets $APPORT_DATA_DIR which must be set before
@@ -155,15 +155,16 @@ async def main():
     logger.debug("Kernel commandline: {}".format(opts.kernel_cmdline))
     logger.debug("Storage version: {}".format(opts.storage_version))
 
-    server = SubiquityServer(opts, block_log_dir)
+    async def run_with_loop():
+        server = SubiquityServer(opts, block_log_dir)
+        server.note_file_for_apport(
+            "InstallerServerLog", logfiles['debug'])
+        server.note_file_for_apport(
+            "InstallerServerLogInfo", logfiles['info'])
+        await server.run()
 
-    server.note_file_for_apport(
-        "InstallerServerLog", logfiles['debug'])
-    server.note_file_for_apport(
-        "InstallerServerLogInfo", logfiles['info'])
-
-    await server.run()
+    asyncio.run(run_with_loop())
 
 
 if __name__ == '__main__':
-    sys.exit(asyncio.run(main()))
+    sys.exit(main())
