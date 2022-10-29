@@ -49,6 +49,7 @@ from subiquity.common.types import (
     ApplicationState,
     ErrorReportKind,
     ErrorReportRef,
+    ShutdownMode,
     )
 from subiquity.journald import journald_listen
 from subiquity.ui.frame import SubiquityUI
@@ -219,6 +220,28 @@ class SubiquityClient(TuiApplication):
             raise Abort(report.ref())
         return response
 
+    async def noninteractive_confirmation_shutdown(self):
+        await asyncio.sleep(1)
+        reboot = _('reboot')
+        poweroff = _('poweroff')
+        answer = None
+        print(_("The install is complete."))
+        print()
+        prompt = "\n\n{} ({}|{})".format(
+            _("Shutdown the system?"), reboot, poweroff)
+        while answer not in (reboot, poweroff):
+            print(prompt)
+            answer = await run_in_thread(input)
+            if answer == reboot:
+                mode = ShutdownMode('reboot')
+            elif answer == poweroff:
+                mode = ShutdownMode('poweroff')
+            try:
+                await self.client.shutdown.POST(mode=mode, immediate=True)
+            except aiohttp.client_exceptions.ServerDisconnectedError:
+                # In this case, this is a good thing
+                pass
+
     async def noninteractive_confirmation(self):
         await asyncio.sleep(1)
         yes = _('yes')
@@ -255,6 +278,10 @@ class SubiquityClient(TuiApplication):
         confirm_task = None
         while True:
             app_state = app_status.state
+            if app_state == ApplicationState.DONE:
+                mode = await self.client.shutdown.GET()
+                if ShutdownMode(mode) == ShutdownMode.WAIT:
+                    await self.noninteractive_confirmation_shutdown()
             if app_state == ApplicationState.NEEDS_CONFIRMATION:
                 if confirm_task is None:
                     confirm_task = self.aio_loop.create_task(

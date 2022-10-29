@@ -30,6 +30,11 @@ class WSLShutdownMode(enum.Enum):
 
 class SetupShutdownController(ShutdownController):
 
+    autoinstall_schema = {
+        'type': 'string',
+        'enum': ['reboot', 'poweroff'],
+    }
+
     def __init__(self, app):
         # This isn't the most beautiful way, but the shutdown controller
         # depends on Install, override with our configure one.
@@ -60,6 +65,8 @@ class SetupShutdownController(ShutdownController):
         elif self.mode == ShutdownMode.POWEROFF:
             log.debug("Setting launcher for shut down")
             launcher_status += ["action=shutdown"]
+        else:
+            raise Exception(f"Unknown Shutdown Mode {self.mode}")
 
         default_uid = self.app.controllers.Install.get_default_uid()
         if default_uid is not None and default_uid != 0:

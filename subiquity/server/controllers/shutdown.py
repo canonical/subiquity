@@ -40,7 +40,7 @@ class ShutdownController(SubiquityController):
     autoinstall_key = 'shutdown'
     autoinstall_schema = {
         'type': 'string',
-        'enum': ['reboot', 'poweroff']
+        'enum': [m.value for m in ShutdownMode],
     }
 
     def __init__(self, app):
@@ -56,10 +56,11 @@ class ShutdownController(SubiquityController):
         self.mode = ShutdownMode.REBOOT
 
     def load_autoinstall_data(self, data):
-        if data == 'reboot':
-            self.mode = ShutdownMode.REBOOT
-        elif data == 'poweroff':
-            self.mode = ShutdownMode.POWEROFF
+        if data is not None:
+            self.mode = ShutdownMode(data)
+
+    async def GET(self) -> ShutdownMode:
+        return self.mode
 
     async def POST(self, mode: ShutdownMode, immediate: bool = False):
         self.mode = mode
@@ -70,7 +71,9 @@ class ShutdownController(SubiquityController):
         await self.shuttingdown_event.wait()
 
     def interactive(self):
-        return self.app.interactive
+        # Under normal conditions there is no matching client controller.
+        # When we're DONE, the client may be inquiring about shutdown state.
+        return True
 
     def start(self):
         self.app.aio_loop.create_task(self._wait_install())
@@ -115,6 +118,11 @@ class ShutdownController(SubiquityController):
 
     @with_context(description='mode={self.mode.name}')
     def shutdown(self, context):
+        if self.mode == ShutdownMode.WAIT:
+            log.debug('Not shutting down yet due to shutdown mode "wait"')
+            self.server_reboot_event.clear()
+            self.app.aio_loop.create_task(self._run())
+            return
         self.shuttingdown_event.set()
         if self.opts.dry_run:
             self.app.exit()
