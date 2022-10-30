@@ -1172,12 +1172,12 @@ class FilesystemModel(object):
         return None
 
     def assign_omitted_offsets(self):
-        """ For disks that use storage_version 2, assign offsets to partitions
-        that do not already have one. """
-        for disk in self._all(type="disk"):
-            if disk._m.storage_version != 2:
-                continue
+        """ Assign offsets to partitions that do not already have one.
+        This method does nothing for storage version 1. """
+        if self.storage_version != 2:
+            return
 
+        for disk in self._all(type="disk"):
             info = disk.alignment_data()
 
             def au(v):  # au == "align up"
