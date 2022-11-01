@@ -96,7 +96,7 @@ class DefectiveEncryptionError(BaseView):
 
     title = _("Encryption requirements not met")
 
-    def __init__(self, controller, error_ref):
+    def __init__(self, controller):
         self.controller = controller
         super().__init__(screen([
             Text(rewrap(_(defective_text))),
