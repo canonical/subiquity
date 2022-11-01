@@ -23,7 +23,11 @@ from subiquitycore.view import BaseView
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.filesystem import gaps
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
-from subiquity.common.types import ProbeStatus
+from subiquity.common.types import (
+    ProbeStatus,
+    StorageEncryption,
+    StorageEncryptionSupport,
+    )
 from subiquity.models.filesystem import (
     Bootloader,
     FilesystemModel,
@@ -34,6 +38,7 @@ from subiquity.ui.views import (
     GuidedDiskSelectionView,
     )
 from subiquity.ui.views.filesystem.probing import (
+    DefectiveEncryptionError,
     SlowProbing,
     ProbingFailed,
     )
@@ -50,9 +55,11 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         super().__init__(app)
         self.model = None
         self.answers.setdefault('guided', False)
+        self.answers.setdefault('tpm-default', False)
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
         self.current_view: Optional[BaseView] = None
+        self.storage_encryption: Optional[StorageEncryption] = None
 
     async def make_ui(self) -> Callable[[], BaseView]:
         def get_current_view() -> BaseView:
@@ -85,6 +92,9 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
                       self.ui.body)
 
     def make_guided_ui(self, status):
+        se = self.storage_encryption = status.storage_encryption
+        if se is not None and se.support == StorageEncryptionSupport.DEFECTIVE:
+            return DefectiveEncryptionError(self)
         if status.status == ProbeStatus.FAILED:
             self.app.show_error_report(status.error_report)
             return ProbingFailed(self, status.error_report)
@@ -97,6 +107,9 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         while not isinstance(self.ui.body, GuidedDiskSelectionView):
             await asyncio.sleep(0.1)
 
+        if self.answers['tpm-default']:
+            self.ui.body.done(self.ui.body.form)
+            await self.app.confirm_install()
         if self.answers['guided']:
             if 'guided-index' in self.answers:
                 disk = self.ui.body.form.disks[self.answers['guided-index']]
@@ -236,6 +249,9 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             raise Exception("could not process action {}".format(action))
 
     async def _guided_choice(self, choice):
+        if self.storage_encryption is not None:
+            self.app.next_screen(self.endpoint.guided.POST(choice))
+            return
         # FIXME It would seem natural here to pass the wait=true flag to the
         # below HTTP calls, especially because we wrap the coroutine in
         # wait_with_progress.

@@ -241,6 +241,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             'filesystem': self.fs_probe,
             }
         self.fsc._probe_task.task = mock.Mock()
+        self.fsc._get_system_task.task = mock.Mock()
         if bootloader == Bootloader.BIOS and ptable != 'msdos' and fix_bios:
             make_partition(self.model, self.disk, preserve=True,
                            flag='bios_grub', size=1 << 20, offset=1 << 20)

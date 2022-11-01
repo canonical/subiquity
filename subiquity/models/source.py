@@ -35,6 +35,7 @@ class CatalogEntry:
     default: bool = False
     locale_support: str = attr.ib(default="locale-only")
     preinstalled_langs: typing.List[str] = attr.ib(default=attr.Factory(list))
+    snapd_system_label: typing.Optional[str] = None
 
 
 fake_entries = {

@@ -106,7 +106,7 @@ validate () {
                 exit 1
             fi
             for f in $tmpdir/var/cache/apt/archives/*.log ; do
-                if ! [ -s $f ]; then  
+                if ! [ -s $f ]; then
                     echo "apt failed for package $f"
                     exit 1
                 fi
@@ -151,8 +151,12 @@ export SUBIQUITY_REPLAY_TIMESCALE=100
 for answers in examples/answers*.yaml; do
     if echo $answers|grep -vq system-setup; then
         config=$(sed -n 's/^#machine-config: \(.*\)/\1/p' $answers || true)
+        catalog=$(sed -n 's/^#source-catalog: \(.*\)/\1/p' $answers || true)
         if [ -z "$config" ]; then
             config=examples/simple.json
+        fi
+        if [ -z "$catalog" ]; then
+            catalog=examples/install-sources.yaml
         fi
         serial=$(sed -n 's/^#serial/x/p' $answers || true)
         opts=()
@@ -169,8 +173,12 @@ for answers in examples/answers*.yaml; do
             --machine-config "$config" \
             --bootloader uefi \
             --snaps-from-examples \
-            --source-catalog examples/install-sources.yaml
-        validate
+            --source-catalog $catalog
+        if [ "$answers" = examples/answers-tpm.yaml ]; then
+            validate skip
+        else
+            validate install
+        fi
         grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
     else
         # The OOBE doesn't exist in WSL < 20.04

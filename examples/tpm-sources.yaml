@@ -1,0 +1,56 @@
+- description:
+    en: This test source has encryption support set to "unavailable"
+  id: src-unavailable
+  locale_support: none
+  name:
+    en: TPM encryption unavailable.
+  path: foo.squashfs
+  size: 530485248
+  type: fsimage
+  variant: server
+  snapd_system_label: unavailable
+- description:
+    en: This test source has encryption support set to "prefer-encrypted" (and encryption available)
+  id: src-prefer-encrypted
+  locale_support: none
+  name:
+    en: TPM encryption preferred.
+  path: foo.squashfs
+  size: 530485248
+  type: fsimage
+  variant: server
+  snapd_system_label: prefer-encrypted
+  default: true
+- description:
+    en: This test source has encryption support set to "prefer-unencrypted" (and encryption available)
+  id: src-prefer-unencrypted
+  locale_support: none
+  name:
+    en: TPM encryption not preferred.
+  path: foo.squashfs
+  size: 530485248
+  type: fsimage
+  variant: server
+  snapd_system_label: prefer-unencrypted
+- description:
+    en: This test source has the invalid combination of encryption reqired and unavailable.
+  id: src-defective
+  locale_support: none
+  name:
+    en: TPM encryption defective.
+  path: foo.squashfs
+  size: 530485248
+  type: fsimage
+  variant: server
+  snapd_system_label: defective
+- description:
+    en: This test source requires TPM backed full disk encryption.
+  id: src-mandatory
+  locale_support: none
+  name:
+    en: TPM encryption required.
+  path: foo.squashfs
+  size: 530485248
+  type: fsimage
+  variant: server
+  snapd_system_label: mandatory

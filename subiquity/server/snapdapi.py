@@ -18,12 +18,12 @@ import asyncio
 import contextlib
 import enum
 import logging
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from subiquity.common.api.client import make_client
 from subiquity.common.api.defs import api, path_parameter, Payload
 from subiquity.common.serialize import named_field, Serializer
-from subiquity.common.types import Change, TaskStatus
+from subiquity.common.types import Change, StorageEncryption, TaskStatus
 
 import attr
 
@@ -91,6 +91,109 @@ class Response:
     status: str
 
 
+class Role(enum.Enum):
+
+    NONE = ''
+    MBR = 'mbr'
+    SYSTEM_BOOT = 'system-boot'
+    SYSTEM_BOOT_IMAGE = 'system-boot-image'
+    SYSTEM_BOOT_SELECT = 'system-boot-select'
+    SYSTEM_DATA = 'system-data'
+    SYSTEM_RECOVERY_SELECT = 'system-recovery-select'
+    SYSTEM_SAVE = 'system-save'
+    SYSTEM_SEED = 'system-seed'
+
+
+@attr.s(auto_attribs=True)
+class RelativeOffset:
+    relative_to: str = named_field('relative-to')
+    offset: int
+
+
+@attr.s(auto_attribs=True)
+class VolumeContent:
+    source: str = ''
+    target: str = ''
+    image: str = ''
+    offset: Optional[int] = None
+    offset_write: Optional[RelativeOffset] = named_field('offset-write', None)
+    size: int = 0
+    unpack: bool = False
+
+
+@attr.s(auto_attribs=True)
+class VolumeUpdate:
+    edition: int = 0
+    preserve: Optional[List[str]] = None
+
+
+@attr.s(auto_attribs=True)
+class VolumeStructure:
+    name: str = ''
+    label: str = named_field('filesystem-label', '')
+    offset: Optional[int] = None
+    offset_write: Optional[RelativeOffset] = named_field('offset-write', None)
+    size: int = 0
+    type: str = ''
+    role: Role = Role.NONE
+    id: Optional[str] = None
+    filesystem: str = ''
+    content: Optional[List[VolumeContent]] = None
+    update: VolumeUpdate = attr.Factory(VolumeUpdate)
+
+
+@attr.s(auto_attribs=True)
+class Volume:
+    schema: str = ''
+    bootloader: str = ''
+    id: str = ''
+    structure: Optional[List[VolumeStructure]] = None
+
+
+@attr.s(auto_attribs=True)
+class OnVolumeStructure(VolumeStructure):
+    device: Optional[str] = None
+
+    @classmethod
+    def from_volume_structure(cls, vs: VolumeStructure):
+        return cls(**attr.asdict(vs, recurse=False))
+
+
+@attr.s(auto_attribs=True)
+class OnVolume(Volume):
+    structure: Optional[List[OnVolumeStructure]] = None
+
+    @classmethod
+    def from_volume(cls, v: Volume):
+        return cls(structure=[
+            OnVolumeStructure.from_volume_structure(vs)
+            for vs in v.structure])
+
+
+@attr.s(auto_attribs=True)
+class SystemDetails:
+    current: bool = False
+    volumes: Dict[str, Volume] = attr.Factory(dict)
+    storage_encryption: Optional[StorageEncryption] = named_field(
+        'storage-encryption', default=None)
+
+
+class SystemAction(enum.Enum):
+    INSTALL = 'install'
+
+
+class SystemActionStep(enum.Enum):
+    SETUP_STORAGE_ENCRYPTION = 'setup-storage-encryption'
+    FINISH = 'finish'
+
+
+@attr.s(auto_attribs=True)
+class SystemActionRequest:
+    action: SystemAction
+    step: SystemActionStep
+    on_volumes: Dict[str, OnVolume] = named_field('on-volumes')
+
+
 @api
 class SnapdAPI:
     serialize_query_args = False
@@ -109,6 +212,12 @@ class SnapdAPI:
 
         class find:
             def GET(name: str = '', select: str = '') -> List[Snap]: ...
+
+        class systems:
+            @path_parameter
+            class label:
+                def GET() -> SystemDetails: ...
+                def POST(action: Payload[SystemActionRequest]) -> ChangeID: ...
 
 
 class _FakeResponse:

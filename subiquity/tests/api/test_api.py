@@ -243,6 +243,15 @@ async def start_server_factory(factory, *args, **kwargs):
 @contextlib.asynccontextmanager
 async def start_server(*args, **kwargs):
     async with start_server_factory(Server, *args, **kwargs) as instance:
+        sources = await instance.get('/source')
+        await instance.post(
+            '/source', source_id=sources['sources'][0]['id'])
+        while True:
+            resp = await instance.get('/storage/v2')
+            print(resp)
+            if resp['status'] != 'PROBING':
+                break
+            await asyncio.sleep(0.5)
         yield instance
 
 

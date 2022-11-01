@@ -185,6 +185,7 @@ class Serializer:
             return dict(serialized)
 
     def _serialize_enum(self, annotation, context):
+        context.assert_type(annotation)
         return getattr(context.cur, self.serialize_enums_by)
 
     def _serialize(self, annotation, context):

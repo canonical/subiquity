@@ -27,6 +27,7 @@ from subiquitycore.ui.spinner import (
     )
 from subiquitycore.ui.utils import (
     button_pile,
+    rewrap,
     screen,
     )
 from subiquitycore.view import BaseView
@@ -83,3 +84,25 @@ class ProbingFailed(BaseView):
 
     def show_error(self, sender=None):
         self.controller.app.show_error_report(self.error_ref)
+
+
+defective_text = _("""
+The model being installed requires TPM-backed encryption but this
+system does not support it.
+""")
+
+
+class DefectiveEncryptionError(BaseView):
+
+    title = _("Encryption requirements not met")
+
+    def __init__(self, controller):
+        self.controller = controller
+        super().__init__(screen([
+            Text(rewrap(_(defective_text))),
+            Text(""),
+            ],
+            [other_btn(_("Back"), on_press=self.cancel)]))
+
+    def cancel(self, result=None):
+        self.controller.cancel()

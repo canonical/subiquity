@@ -79,6 +79,7 @@ from subiquity.models.filesystem import (
 from subiquity.server.controller import (
     SubiquityController,
     )
+from subiquity.server.types import InstallerChannels
 
 
 log = logging.getLogger("subiquity.server.controllers.filesystem")
@@ -109,7 +110,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self._probe_once, propagate_errors=False)
         self._probe_task = SingleInstanceTask(
             self._probe, propagate_errors=False, cancel_restart=False)
+        self._get_system_task = SingleInstanceTask(self._get_system)
         self.supports_resilient_boot = False
+        self.app.hub.subscribe(
+            (InstallerChannels.CONFIGURED, 'source'),
+            self._get_system_task.start_sync)
+        self._system = None
 
     def load_autoinstall_data(self, data):
         log.debug("load_autoinstall_data %s", data)
@@ -130,10 +136,19 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         await super().configured()
         self.stop_listening_udev()
 
+    async def _get_system(self):
+        label = self.app.base_model.source.current.snapd_system_label
+        if label is None:
+            self._system = None
+            return
+        self._system = await self.app.snapdapi.v2.systems[label].GET()
+        log.debug("got system %s", self._system)
+
     @with_context()
     async def apply_autoinstall_config(self, context=None):
         await self._start_task
         await self._probe_task.wait()
+        await self._get_system_task.wait()
         if False in self._errors:
             raise self._errors[False][0]
         if True in self._errors:
@@ -281,6 +296,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             return resp_cls(
                 status=ProbeStatus.FAILED,
                 error_report=self._errors[True][1].ref())
+        if self._get_system_task.task is None or \
+           not self._get_system_task.task.done():
+            if wait:
+                await self._get_system_task.wait()
+            else:
+                return resp_cls(status=ProbeStatus.PROBING)
         return None
 
     def full_probe_error(self):
@@ -347,14 +368,23 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # size?)
         min_size = 2*self.app.base_model.source.current.size + (1 << 30)
         disks = self.get_guided_disks(with_reformatting=True)
+        se = None
+        if self._system is not None:
+            se = self._system.storage_encryption
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
-            disks=[labels.for_client(d, min_size=min_size) for d in disks])
+            disks=[labels.for_client(d, min_size=min_size) for d in disks],
+            storage_encryption=se)
 
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
         log.debug(data)
-        self.guided(GuidedChoiceV2.from_guided_choice(data))
+        if self._system is not None:
+            # Here is where we will apply the gadget info from the
+            # system to the disk!
+            await self.configured()
+        else:
+            self.guided(GuidedChoiceV2.from_guided_choice(data))
         return self._done_response()
 
     async def reset_POST(self, context, request) -> StorageResponse:
