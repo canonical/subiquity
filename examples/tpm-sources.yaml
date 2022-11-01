@@ -43,3 +43,14 @@
   type: fsimage
   variant: server
   snapd_system_label: defective
+- description:
+    en: This test source requires TPM backed full disk encryption.
+  id: src-mandatory
+  locale_support: none
+  name:
+    en: TPM encryption required.
+  path: foo.squashfs
+  size: 530485248
+  type: fsimage
+  variant: server
+  snapd_system_label: mandatory

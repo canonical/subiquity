@@ -55,6 +55,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         super().__init__(app)
         self.model = None
         self.answers.setdefault('guided', False)
+        self.answers.setdefault('tpm-default', False)
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
         self.current_view: Optional[BaseView] = None
@@ -106,6 +107,9 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         while not isinstance(self.ui.body, GuidedDiskSelectionView):
             await asyncio.sleep(0.1)
 
+        if self.answers['tpm-default']:
+            self.ui.body.done(self.ui.body.form)
+            await self.app.confirm_install()
         if self.answers['guided']:
             if 'guided-index' in self.answers:
                 disk = self.ui.body.form.disks[self.answers['guided-index']]
