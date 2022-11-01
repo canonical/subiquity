@@ -166,4 +166,6 @@ async def post_and_wait(client, meth, *args, **kw):
         result = await client.v2.changes[change_id].GET()
         if result.status == TaskStatus.DONE:
             return result.data
+        elif result.status == TaskStatus.ERROR:
+            raise aiohttp.ClientError(result.err)
         await asyncio.sleep(0.1)
