@@ -252,7 +252,7 @@ def make_api_client(async_snapd):
             content = await async_snapd.get(path[1:], **params)
         else:
             content = await async_snapd.post(path[1:], json, **params)
-        response = serializer.deserialize(Response, content)
+        response = snapd_serializer.deserialize(Response, content)
         if response.type == ResponseType.SYNC:
             content = content['result']
         elif response.type == ResponseType.ASYNC:
@@ -261,10 +261,11 @@ def make_api_client(async_snapd):
             yield _FakeError()
         yield _FakeResponse(content)
 
-    serializer = Serializer(
-        ignore_unknown_fields=True, serialize_enums_by='value')
+    return make_client(SnapdAPI, make_request, serializer=snapd_serializer)
 
-    return make_client(SnapdAPI, make_request, serializer=serializer)
+
+snapd_serializer = Serializer(
+    ignore_unknown_fields=True, serialize_enums_by='value')
 
 
 async def post_and_wait(client, meth, *args, **kw):

@@ -23,6 +23,8 @@ import platform
 import select
 from typing import List
 
+from curtin.storage_config import ptable_uuid_to_flag_entry
+
 import pyudev
 
 from subiquitycore.async_helpers import (
@@ -80,6 +82,7 @@ from subiquity.models.filesystem import (
 from subiquity.server.controller import (
     SubiquityController,
     )
+from subiquity.server import snapdapi
 from subiquity.server.types import InstallerChannels
 
 
@@ -409,11 +412,59 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             core_boot_classic_error=self._core_boot_classic_error,
             storage_encryption=se)
 
+    def _add_structure(self, *, disk: Disk, next_offset: int, is_last: bool,
+                       structure: snapdapi.VolumeStructure):
+        ptype = structure.type.split(',', 1)[1].upper()
+        if structure.offset is not None:
+            offset = structure.offset
+        else:
+            offset = next_offset
+        if structure.role == snapdapi.Role.SYSTEM_DATA and is_last:
+            size = gaps.largest_gap(disk).size
+        else:
+            size = structure.size
+        next_offset = offset + size
+        flag = ptable_uuid_to_flag_entry(ptype)[0]
+        part = self.model.add_partition(
+            disk, offset=offset, size=size, flag=flag,
+            partition_name=structure.name)
+        if structure.filesystem:
+            part.wipe = 'superblock'
+            fs = self.model.add_filesystem(
+                part, structure.filesystem, label=structure.label)
+            if structure.role == snapdapi.Role.SYSTEM_DATA:
+                self.model.add_mount(fs, '/')
+            elif structure.role == snapdapi.Role.SYSTEM_BOOT:
+                self.model.add_mount(fs, '/boot')
+            elif flag == 'boot':
+                self.model.add_mount(fs, '/boot/efi')
+        return part
+
+    def apply_system(self, disk_id):
+        disk = self.model._one(id=disk_id)
+        if len(self._system.volumes) != 1:
+            raise Exception("multiple volumes not supported")
+        self.reformat(disk)
+        [volume] = self._system.volumes.values()
+
+        next_offset = disk.alignment_data().min_start_offset
+        for structure in volume.structure:
+            if structure.role == snapdapi.Role.MBR:
+                continue
+            if ',' not in structure.type:
+                continue
+            part = self._add_structure(
+                disk=disk,
+                next_offset=next_offset,
+                is_last=structure == volume.structure[-1],
+                structure=structure)
+            next_offset = part.offset + part.size
+        disk._partitions.sort(key=lambda p: p.number)
+
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
         log.debug(data)
         if self._system is not None:
-            # Here is where we will apply the gadget info from the
-            # system to the disk!
+            self.apply_system(data.disk_id)
             await self.configured()
         else:
             self.guided(GuidedChoiceV2.from_guided_choice(data))

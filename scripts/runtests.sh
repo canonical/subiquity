@@ -174,11 +174,7 @@ for answers in examples/answers*.yaml; do
             --bootloader uefi \
             --snaps-from-examples \
             --source-catalog $catalog
-        if [ "$answers" = examples/answers-tpm.yaml ]; then
-            validate skip
-        else
-            validate install
-        fi
+        validate install
         grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
     else
         # The OOBE doesn't exist in WSL < 20.04

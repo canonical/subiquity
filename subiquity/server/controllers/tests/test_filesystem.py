@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import json
 from unittest import mock, TestCase, IsolatedAsyncioTestCase
 
 from parameterized import parameterized
@@ -35,7 +36,7 @@ from subiquity.models.tests.test_filesystem import (
     make_model,
     make_partition,
     )
-
+from subiquity.server import snapdapi
 
 bootloaders = [(bl, ) for bl in list(Bootloader)]
 bootloaders_and_ptables = [(bl, pt)
@@ -457,3 +458,63 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual(
                 disk_size - (1 << 20), parts[-1].offset + parts[-1].size,
                 disk_size)
+
+
+class TestApplySystem(TestCase):
+
+    def setUp(self):
+        self.app = make_app()
+        self.app.opts.bootloader = 'UEFI'
+        self.app.report_start_event = mock.Mock()
+        self.app.report_finish_event = mock.Mock()
+        self.app.prober = mock.Mock()
+        self.fsc = FilesystemController(app=self.app)
+        self.fsc._configured = True
+        self.fsc.model = make_model(Bootloader.UEFI)
+
+    def test_add_structure(self):
+        disk = make_disk(self.fsc.model)
+        part = self.fsc._add_structure(
+            disk=disk,
+            next_offset=disk.alignment_data().min_start_offset,
+            is_last=False,
+            structure=snapdapi.VolumeStructure(
+                name='ptname',
+                type="83,0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+                label='label',
+                size=1 << 20,
+                role=snapdapi.Role.SYSTEM_DATA,
+                filesystem='ext4'))
+        self.assertEqual(part.offset, disk.alignment_data().min_start_offset)
+        self.assertEqual(part.partition_name, 'ptname')
+        self.assertEqual(part.size, 1 << 20)
+        self.assertEqual(part.fs().fstype, 'ext4')
+        self.assertEqual(part.fs().mount().path, '/')
+        self.assertEqual(part.wipe, 'superblock')
+
+    def test_add_structure_no_fs(self):
+        disk = make_disk(self.fsc.model)
+        part = self.fsc._add_structure(
+            disk=disk,
+            next_offset=disk.alignment_data().min_start_offset,
+            is_last=False,
+            structure=snapdapi.VolumeStructure(
+                type="83,0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+                size=1 << 20,
+                filesystem=None))
+        self.assertEqual(part.size, 1 << 20)
+        self.assertEqual(part.fs(), None)
+        self.assertEqual(part.wipe, None)
+
+    def test_from_sample_data(self):
+        self.fsc.model = model = make_model(Bootloader.UEFI)
+        disk = make_disk(model)
+        with open('examples/snaps/v2-systems-unavailable.json') as fp:
+            self.fsc._system = snapdapi.snapd_serializer.deserialize(
+                snapdapi.SystemDetails, json.load(fp)['result'])
+        self.fsc.apply_system(disk.id)
+        self.assertEqual(
+            len(self.fsc._system.volumes['pc'].structure) - 1,
+            len(disk.partitions()))
+        mounts = {m.path for m in model._all(type='mount')}
+        self.assertEqual(mounts, {'/', '/boot', '/boot/efi'})
