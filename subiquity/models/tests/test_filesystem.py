@@ -20,6 +20,7 @@ import attr
 from parameterized import parameterized
 
 from subiquity.models.filesystem import (
+    ActionRenderMode,
     Bootloader,
     dehumanize_size,
     Disk,
@@ -931,6 +932,55 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertTrue(disk1p1.id in rendered_ids)
         self.assertTrue(disk2.id not in rendered_ids)
         self.assertTrue(disk2p1.id not in rendered_ids)
+
+    def test_render_all_does_include_unreferenced(self):
+        model = make_model(Bootloader.NONE)
+        disk1 = make_disk(model, preserve=True)
+        disk2 = make_disk(model, preserve=True)
+        disk1p1 = make_partition(model, disk1, preserve=True)
+        disk2p1 = make_partition(model, disk2, preserve=True)
+        fs = model.add_filesystem(disk1p1, 'ext4')
+        model.add_mount(fs, '/')
+        rendered_ids = {
+            action['id']
+            for action in model._render_actions(ActionRenderMode.ALL)
+            }
+        self.assertTrue(disk1.id in rendered_ids)
+        self.assertTrue(disk1p1.id in rendered_ids)
+        self.assertTrue(disk2.id in rendered_ids)
+        self.assertTrue(disk2p1.id in rendered_ids)
+
+    def test_render_devices_skips_format_mount(self):
+        model = make_model(Bootloader.NONE)
+        disk1 = make_disk(model, preserve=True)
+        disk1p1 = make_partition(model, disk1, preserve=True)
+        fs = model.add_filesystem(disk1p1, 'ext4')
+        mnt = model.add_mount(fs, '/')
+        rendered_ids = {
+            action['id']
+            for action in model._render_actions(ActionRenderMode.DEVICES)
+            }
+        self.assertTrue(disk1.id in rendered_ids)
+        self.assertTrue(disk1p1.id in rendered_ids)
+        self.assertTrue(fs.id not in rendered_ids)
+        self.assertTrue(mnt.id not in rendered_ids)
+
+    def test_render_format_mount(self):
+        model = make_model(Bootloader.NONE)
+        disk1 = make_disk(model, preserve=True)
+        disk1p1 = make_partition(model, disk1, preserve=True)
+        disk1p1.path = '/dev/vda1'
+        fs = model.add_filesystem(disk1p1, 'ext4')
+        mnt = model.add_mount(fs, '/')
+        actions = model._render_actions(ActionRenderMode.FORMAT_MOUNT)
+        rendered_by_id = {action['id']: action for action in actions}
+        self.assertTrue(disk1.id not in rendered_by_id)
+        self.assertTrue(disk1p1.id not in rendered_by_id)
+        self.assertTrue(fs.id in rendered_by_id)
+        self.assertTrue(mnt.id in rendered_by_id)
+        vol_id = rendered_by_id[fs.id]['volume']
+        self.assertEqual(rendered_by_id[vol_id]['type'], 'device')
+        self.assertEqual(rendered_by_id[vol_id]['path'], '/dev/vda1')
 
     def test_render_includes_all_partitions(self):
         model = make_model(Bootloader.NONE)

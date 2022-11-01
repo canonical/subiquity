@@ -73,6 +73,7 @@ from subiquity.common.types import (
     StorageResponseV2,
     )
 from subiquity.models.filesystem import (
+    ActionRenderMode,
     align_up,
     align_down,
     _Device,
@@ -370,7 +371,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             bootloader=self.model.bootloader,
             error_report=self.full_probe_error(),
             orig_config=self.model._orig_config,
-            config=self.model._render_actions(include_all=True),
+            config=self.model._render_actions(mode=ActionRenderMode.ALL),
             blockdev=self.model._probe_data['blockdev'],
             dasd=self.model._probe_data.get('dasd', {}),
             storage_version=self.model.storage_version)

@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 import attr
 import collections
 import copy
+import enum
 import fnmatch
 import itertools
 import logging
@@ -1025,6 +1026,25 @@ class PartitionAlignmentData:
     ebr_space: int = 0
 
 
+class ActionRenderMode(enum.Enum):
+    # The default for FilesystemModel.render() is to render actions
+    # for devices that have changes, but not e.g. a hard drive that
+    # will be untouched by the installation process.
+    DEFAULT = enum.auto()
+    # ALL means render actions for all model objects. This is used to
+    # send information to the client.
+    ALL = enum.auto()
+    # DEVICES means to just render actions for setting up block
+    # devices, e.g. partitioning disks and assembling RAIDs but not
+    # any format or mount actions.
+    DEVICES = enum.auto()
+    # FORMAT_MOUNT means to just render actions to format and mount
+    # the block devices. References to block devices will be replaced
+    # by "type: device" actions that just refer to the block devices
+    # by path.
+    FORMAT_MOUNT = enum.auto()
+
+
 class FilesystemModel(object):
 
     target = None
@@ -1371,7 +1391,8 @@ class FilesystemModel(object):
 
         return objs
 
-    def _render_actions(self, include_all=False):
+    def _render_actions(self,
+                        mode: ActionRenderMode = ActionRenderMode.DEFAULT):
         # The curtin storage config has the constraint that an action must be
         # preceded by all the things that it depends on.  We handle this by
         # repeatedly iterating over all actions and checking if we can emit
@@ -1425,9 +1446,11 @@ class FilesystemModel(object):
         mountpoints = {m.path: m.id for m in self.all_mounts()}
         log.debug('mountpoints %s', mountpoints)
 
-        work = [
-            a for a in self._actions
-            if not getattr(a, 'preserve', False) or include_all
+        if mode == ActionRenderMode.ALL:
+            work = list(self._actions)
+        else:
+            work = [
+                a for a in self._actions if not getattr(a, 'preserve', False)
             ]
 
         while work:
@@ -1444,13 +1467,29 @@ class FilesystemModel(object):
                 raise Exception("\n".join(msg))
             work = next_work
 
+        if mode == ActionRenderMode.DEVICES:
+            r = [act for act in r if act['type'] not in ('format', 'mount')]
+        if mode == ActionRenderMode.FORMAT_MOUNT:
+            r = [act for act in r if act['type'] in ('format', 'mount')]
+            devices = []
+            for act in r:
+                if act['type'] == 'format':
+                    device = {
+                        'type': 'device',
+                        'id': 'synth-device-{}'.format(len(devices)),
+                        'path': self._one(id=act['volume']).path,
+                        }
+                    devices.append(device)
+                    act['volume'] = device['id']
+            r = devices + r
+
         return r
 
-    def render(self):
+    def render(self, mode: ActionRenderMode = ActionRenderMode.DEFAULT):
         config = {
             'storage': {
                 'version': self.storage_version,
-                'config': self._render_actions(),
+                'config': self._render_actions(mode=mode),
                 },
             }
         if self.swap is not None:
