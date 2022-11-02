@@ -1556,7 +1556,7 @@ class FilesystemModel(object):
     def remove_dm_crypt(self, dm_crypt):
         self._remove(dm_crypt)
 
-    def add_filesystem(self, volume, fstype, preserve=False, label=False):
+    def add_filesystem(self, volume, fstype, preserve=False, label=None):
         log.debug("adding %s to %s", fstype, volume)
         if not volume.available:
             if not isinstance(volume, Partition):
