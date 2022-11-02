@@ -54,3 +54,14 @@
   type: fsimage
   variant: server
   snapd_system_label: mandatory
+- description:
+    en: This test source has encryption support set to "prefer-encrypted" (and encryption available) and will fail to complete installation.
+  id: src-finish-fail
+  locale_support: none
+  name:
+    en: Fail at finish installation step
+  path: foo.squashfs
+  size: 530485248
+  type: fsimage
+  variant: server
+  snapd_system_label: finish-fail

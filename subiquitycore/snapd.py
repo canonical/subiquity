@@ -145,9 +145,13 @@ class FakeSnapdConnection:
         if path == "v2/snaps/subiquity" and body['action'] == 'switch':
             change = "8"
         if path.startswith('v2/systems/') and body['action'] == 'install':
+            system = path.split('/')[2]
             step = body['step']
             if step == 'finish':
-                change = "5"
+                if system == 'finish-fail':
+                    change = "15"
+                else:
+                    change = "5"
         if change is not None:
             return _FakeMemoryResponse({
                 "type": "async",
