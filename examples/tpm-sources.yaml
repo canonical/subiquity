@@ -3,7 +3,7 @@
   id: src-unavailable
   locale_support: none
   name:
-    en: TPM encryption unavailable.
+    en: TPM encryption unavailable
   path: foo.squashfs
   size: 530485248
   type: fsimage
@@ -14,7 +14,7 @@
   id: src-prefer-encrypted
   locale_support: none
   name:
-    en: TPM encryption preferred.
+    en: TPM encryption preferred
   path: foo.squashfs
   size: 530485248
   type: fsimage
@@ -26,7 +26,7 @@
   id: src-prefer-unencrypted
   locale_support: none
   name:
-    en: TPM encryption not preferred.
+    en: TPM encryption not preferred
   path: foo.squashfs
   size: 530485248
   type: fsimage
@@ -37,7 +37,7 @@
   id: src-defective
   locale_support: none
   name:
-    en: TPM encryption defective.
+    en: TPM encryption defective
   path: foo.squashfs
   size: 530485248
   type: fsimage
@@ -48,7 +48,7 @@
   id: src-mandatory
   locale_support: none
   name:
-    en: TPM encryption required.
+    en: TPM encryption required
   path: foo.squashfs
   size: 530485248
   type: fsimage
