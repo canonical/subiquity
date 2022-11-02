@@ -26,6 +26,8 @@ import pathlib
 import platform
 import tempfile
 
+import more_itertools
+
 from curtin import storage_config
 from curtin.block import partition_kname
 from curtin.util import human2bytes
@@ -552,7 +554,7 @@ class _Device(_Formattable, ABC):
 
     @property
     def available_for_partitions(self):
-        return align_down(self.size, 1 << 20) - GPT_OVERHEAD
+        raise NotImplementedError
 
     def available(self):
         # A _Device is available if:
@@ -604,6 +606,12 @@ class Disk(_Device):
     device_id = attr.ib(default=None)
 
     _info = attr.ib(default=None)
+
+    @property
+    def available_for_partitions(self):
+        margin_before = self.alignment_data().min_start_offset
+        margin_after = self.alignment_data().min_end_offset
+        return align_down(self.size, 1 << 20) - margin_before - margin_after
 
     def alignment_data(self):
         ptable = self.ptable_for_new_partition()
@@ -1167,6 +1175,48 @@ class FilesystemModel(object):
             return candidates[0]
         return None
 
+    def assign_omitted_offsets(self):
+        """ Assign offsets to partitions that do not already have one.
+        This method does nothing for storage version 1. """
+        if self.storage_version != 2:
+            return
+
+        for disk in self._all(type="disk"):
+            info = disk.alignment_data()
+
+            def au(v):  # au == "align up"
+                r = v % info.part_align
+                if r:
+                    return v + info.part_align - r
+                else:
+                    return v
+
+            def ad(v):  # ad == "align down"
+                return v - v % info.part_align
+
+            # Extended is considered a primary partition too.
+            primary_parts, logical_parts = map(list, more_itertools.partition(
+                is_logical_partition,
+                disk.partitions()))
+
+            prev_end = info.min_start_offset
+            for part in primary_parts:
+                if part.offset is None:
+                    part.offset = au(prev_end)
+                prev_end = part.offset + part.size
+
+            if not logical_parts:
+                return
+
+            extended_part = next(
+                    filter(lambda x: x.flag == "extended", disk.partitions()))
+
+            prev_end = extended_part.offset
+            for part in logical_parts:
+                if part.offset is None:
+                    part.offset = au(prev_end + info.ebr_space)
+                prev_end = part.offset + part.size
+
     def apply_autoinstall_config(self, ai_config):
         disks = self.all_disks()
         for action in ai_config:
@@ -1192,6 +1242,9 @@ class FilesystemModel(object):
                 action['serial'] = disk.serial
         self._actions = self._actions_from_config(
             ai_config, self._probe_data['blockdev'], is_probe_data=False)
+
+        self.assign_omitted_offsets()
+
         for p in self._all(type="partition") + self._all(type="lvm_partition"):
             # NOTE For logical partitions (DOS), the parent is set to the disk,
             # not the extended partition.
@@ -1212,6 +1265,10 @@ class FilesystemModel(object):
                         raise NotFinalPartitionError(
                             "{} has negative size but is not final partition "
                             "of {}".format(p, parent))
+
+                    # Exclude the current partition itself so that its
+                    # incomplete size is not used as is.
+                    filtered_parent._partitions.remove(p)
 
                     from subiquity.common.filesystem.gaps import (
                         largest_gap_size,
