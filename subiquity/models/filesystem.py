@@ -719,6 +719,7 @@ class Partition(_Formattable):
     offset = attr.ib(default=None)
     resize = attr.ib(default=None)
     partition_type = attr.ib(default=None)
+    partition_name = attr.ib(default=None)
     path = attr.ib(default=None)
 
     def __post_init__(self):
@@ -1533,7 +1534,7 @@ class FilesystemModel(object):
         self._actions.remove(obj)
 
     def add_partition(self, device, *, size, offset, flag="", wipe=None,
-                      grub_device=None):
+                      grub_device=None, partition_name=None):
         from subiquity.common.filesystem import boot
         real_size = align_up(size)
         log.debug("add_partition: rounded size from %s to %s", size, real_size)
@@ -1541,7 +1542,8 @@ class FilesystemModel(object):
             raise Exception("%s is already formatted" % (device,))
         p = Partition(
             m=self, device=device, size=real_size, flag=flag, wipe=wipe,
-            grub_device=grub_device, offset=offset)
+            grub_device=grub_device, offset=offset,
+            partition_name=partition_name)
         if boot.is_bootloader_partition(p):
             device._partitions.insert(0, device._partitions.pop())
         device.ptable = device.ptable_for_new_partition()
@@ -1611,7 +1613,7 @@ class FilesystemModel(object):
     def remove_dm_crypt(self, dm_crypt):
         self._remove(dm_crypt)
 
-    def add_filesystem(self, volume, fstype, preserve=False):
+    def add_filesystem(self, volume, fstype, preserve=False, label=None):
         log.debug("adding %s to %s", fstype, volume)
         if not volume.available:
             if not isinstance(volume, Partition):
@@ -1621,7 +1623,8 @@ class FilesystemModel(object):
         if volume._fs is not None:
             raise Exception(f"{volume} is already formatted")
         fs = Filesystem(
-            m=self, volume=volume, fstype=fstype, preserve=preserve)
+            m=self, volume=volume, fstype=fstype, preserve=preserve,
+            label=label)
         self._actions.append(fs)
         return fs
 
