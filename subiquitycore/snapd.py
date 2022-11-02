@@ -141,10 +141,17 @@ class FakeSnapdConnection:
                 "status-code": 200,
                 "status": "OK",
                 })
+        change = None
         if path == "v2/snaps/subiquity" and body['action'] == 'switch':
+            change = "8"
+        if path.startswith('v2/systems/') and body['action'] == 'install':
+            step = body['step']
+            if step == 'finish':
+                change = "5"
+        if change is not None:
             return _FakeMemoryResponse({
                 "type": "async",
-                "change": "8",
+                "change": change,
                 "status-code": 200,
                 "status": "Accepted",
                 })

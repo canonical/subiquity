@@ -254,6 +254,7 @@ class InstallController(SubiquityController):
             ).run,
             ]
         if self.model.source.current.snapd_system_label:
+            fs_controller = self.app.controllers.Filesystem
             steps.extend([
                 make_curtin_step(
                     name="partitioning", stages=["partitioning"],
@@ -265,6 +266,7 @@ class InstallController(SubiquityController):
                     name="extract", stages=["extract"],
                     acquire_config=self.acquire_generic_config,
                     ).run,
+                fs_controller.finish_install,
                 self.setup_target,
                 ])
         else:

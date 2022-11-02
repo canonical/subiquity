@@ -481,6 +481,32 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 is_last=structure == volume.structure[-1])
         disk._partitions.sort(key=lambda p: p.number)
 
+    def _on_volumes(self) -> Dict[str, snapdapi.OnVolume]:
+        # Return a value suitable for use as the 'on-volumes' part of a
+        # SystemActionRequest.
+        #
+        # This must be run after curtin partitioning, which will result in a
+        # call to update_devices which will have set .path on all block
+        # devices.
+        [(key, volume)] = self._system.volumes.items()
+        on_volume = snapdapi.OnVolume.from_volume(volume)
+        for on_volume_structure in on_volume.structure:
+            role = on_volume_structure.role
+            if role in self._role_to_device:
+                on_volume.device = self._role_to_device[role].path
+        return {key: on_volume}
+
+    @with_context(description="making system bootable")
+    async def finish_install(self, context):
+        label = self.app.base_model.source.current.snapd_system_label
+        await snapdapi.post_and_wait(
+            self.app.snapdapi,
+            self.app.snapdapi.v2.systems[label].POST,
+            snapdapi.SystemActionRequest(
+                action=snapdapi.SystemAction.INSTALL,
+                step=snapdapi.SystemActionStep.FINISH,
+                on_volumes=self._on_volumes()))
+
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
         log.debug(data)
         if self._system is not None:
