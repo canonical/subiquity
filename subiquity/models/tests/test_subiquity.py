@@ -56,7 +56,7 @@ uucp:x:10:
 man:x:12:
 sudo:x:27:
 ssh:x:118:
-lxd:x:132:
+users:x:100:
 '''
 
 
@@ -229,7 +229,7 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(cloud_init_config['users'][0]['name'], 'mainuser')
             self.assertEqual(
                 cloud_init_config['users'][0]['groups'],
-                'adm,lxd,sudo'
+                'adm,sudo,users'
             )
             self.assertEqual(cloud_init_config['users'][1]['name'], 'user2')
             run_cmd.assert_called_with(['getent', 'group'], check=True)
