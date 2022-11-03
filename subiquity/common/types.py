@@ -543,6 +543,11 @@ class DriversResponse:
 
 
 @attr.s(auto_attribs=True)
+class CodecsData:
+    install: bool
+
+
+@attr.s(auto_attribs=True)
 class DriversPayload:
     install: bool
 

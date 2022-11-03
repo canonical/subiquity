@@ -420,6 +420,14 @@
                 "additionalProperties": false
             }
         },
+        "codecs": {
+            "type": "object",
+            "properties": {
+                "install": {
+                    "type": "boolean"
+                }
+            }
+        },
         "drivers": {
             "type": "object",
             "properties": {

@@ -442,6 +442,14 @@ The [JSON schema](https://json-schema.org/) for autoinstall data is as follows:
                 "additionalProperties": false
             }
         },
+        "codecs": {
+            "type": "object",
+            "properties": {
+                "install": {
+                    "type": "boolean"
+                }
+            }
+        },
         "drivers": {
             "type": "object",
             "properties": {

@@ -44,6 +44,7 @@ from subiquity.common.types import (
     ReformatDisk,
     RefreshStatus,
     ShutdownMode,
+    CodecsData,
     DriversResponse,
     DriversPayload,
     SnapInfo,
@@ -315,6 +316,10 @@ class API:
                 """
                 def POST(data: Payload[ModifyPartitionV2]) \
                     -> StorageResponseV2: ...
+
+    class codecs:
+        def GET() -> CodecsData: ...
+        def POST(data: Payload[CodecsData]) -> None: ...
 
     class drivers:
         def GET(wait: bool = False) -> DriversResponse: ...
