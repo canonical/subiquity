@@ -507,11 +507,11 @@ Supported values are:
 **default:** `reboot`
 **can be interactive:** no
 
-Request the system to shutdown or reboot automatically after the installation has finished.
+Request the system to poweroff or reboot automatically after the installation has finished.
 Supported values are:
 
  * `reboot`
- * `shutdown`
+ * `poweroff`
 
 <a name="late-commands"></a>
 
