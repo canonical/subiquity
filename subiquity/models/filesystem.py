@@ -959,6 +959,19 @@ class DM_Crypt:
         return self.volume.size - LUKS_OVERHEAD
 
 
+@fsobj("device")
+class ArbitraryDevice(_Device):
+    ptable = attr.ib(default=None)
+    path = attr.ib(default=None)
+
+    @property
+    def size(self):
+        return 0
+
+    ok_for_raid = False
+    ok_for_lvm_vg = False
+
+
 @fsobj("format")
 class Filesystem:
     fstype = attr.ib()

@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import functools
 import json
 import logging
 import os
@@ -39,6 +40,7 @@ from subiquity.common.types import (
 from subiquity.journald import (
     journald_listen,
     )
+from subiquity.models.filesystem import ActionRenderMode
 from subiquity.server.controller import (
     SubiquityController,
     )
@@ -187,10 +189,12 @@ class InstallController(SubiquityController):
             }
         }
 
-    def acquire_filesystem_config(self, step: CurtinPartitioningStep,
-                                  ) -> Dict[str, Any]:
+    def acquire_filesystem_config(
+            self, step: CurtinPartitioningStep,
+            mode: ActionRenderMode = ActionRenderMode.DEFAULT
+            ) -> Dict[str, Any]:
         cfg = self.acquire_initial_config(step)
-        cfg.update(self.model.filesystem.render())
+        cfg.update(self.model.filesystem.render(mode=mode))
         cfg['storage']['device_map_path'] = str(step.device_map_path)
         return cfg
 
@@ -255,10 +259,24 @@ class InstallController(SubiquityController):
             ]
         if self.model.source.current.snapd_system_label:
             fs_controller = self.app.controllers.Filesystem
-            steps.extend([
+            steps.append(
                 make_curtin_step(
                     name="partitioning", stages=["partitioning"],
-                    acquire_config=self.acquire_filesystem_config,
+                    acquire_config=functools.partial(
+                        self.acquire_filesystem_config,
+                        mode=ActionRenderMode.DEVICES),
+                    cls=CurtinPartitioningStep,
+                    device_map_path=logs_dir / "device-map.json",
+                    ).run,
+                )
+            if fs_controller.use_tpm:
+                steps.append(fs_controller.setup_encryption)
+            steps.extend([
+                make_curtin_step(
+                    name="formatting", stages=["partitioning"],
+                    acquire_config=functools.partial(
+                        self.acquire_filesystem_config,
+                        mode=ActionRenderMode.FORMAT_MOUNT),
                     cls=CurtinPartitioningStep,
                     device_map_path=logs_dir / "device-map.json",
                     ).run,

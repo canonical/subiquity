@@ -538,6 +538,22 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.assertEqual(set(mounts.keys()), {'/', '/boot', '/boot/efi'})
         device_map = {p.id: random_string() for p in disk.partitions()}
         self.fsc.update_devices(device_map)
+
+        with mock.patch.object(snapdapi, "post_and_wait",
+                               new_callable=mock.AsyncMock) as mocked:
+            mocked.return_value = {
+                'encrypted-devices': {
+                    snapdapi.Role.SYSTEM_DATA: 'enc-system-data',
+                    },
+                }
+            await self.fsc.setup_encryption(context=self.fsc.context)
+
+        # setup_encryption mutates the filesystem model objects to
+        # reference the newly created encrypted objects so re-read the
+        # mount to device mapping.
+        mounts = {m.path: m.device.volume for m in model._all(type='mount')}
+        self.assertEqual(mounts['/'].path, 'enc-system-data')
+
         with mock.patch.object(snapdapi, "post_and_wait",
                                new_callable=mock.AsyncMock) as mocked:
             await self.fsc.finish_install(context=self.fsc.context)

@@ -152,6 +152,8 @@ class FakeSnapdConnection:
                     change = "15"
                 else:
                     change = "5"
+            elif step == 'setup-storage-encryption':
+                change = "6"
         if change is not None:
             return _FakeMemoryResponse({
                 "type": "async",
