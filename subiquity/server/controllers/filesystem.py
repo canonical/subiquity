@@ -21,7 +21,7 @@ import logging
 import os
 import platform
 import select
-from typing import List
+from typing import Dict, List, Optional
 
 from curtin.storage_config import ptable_uuid_to_flag_entry
 
@@ -75,6 +75,7 @@ from subiquity.common.types import (
 from subiquity.models.filesystem import (
     align_up,
     align_down,
+    _Device,
     Disk as ModelDisk,
     LVM_CHUNK_SIZE,
     Raid,
@@ -136,9 +137,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, 'source'),
             self._get_system_task.start_sync)
-        self._system = None
-        self._core_boot_classic_error = ''
-        self._system_mounter = None
+        self._system: Optional[snapdapi.SystemDetails] = None
+        self._core_boot_classic_error: str = ''
+        self._system_mounter: Optional[Mounter] = None
+        self._role_to_device: Dict[snapdapi.Role: _Device] = {}
 
     def load_autoinstall_data(self, data):
         log.debug("load_autoinstall_data %s", data)
@@ -465,6 +467,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 self.model.add_mount(fs, '/boot')
             elif flag == 'boot':
                 self.model.add_mount(fs, '/boot/efi')
+        self._role_to_device[structure.role] = part
 
     def apply_system(self, disk_id):
         disk = self.model._one(id=disk_id)
