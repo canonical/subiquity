@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -eux
+
+NORMAL_DIR="${1}"
+EARLY_DIR="${2}"
+LATE_DIR="${3}"
+
+for tty in $(cat /sys/class/tty/console/active); do
+    case "${tty}" in
+      tty[0-9]*)
+      ;;
+      *)
+        mkdir -p "${NORMAL_DIR}/getty.target.wants"
+        ln -sf /usr/lib/systemd/system/serial-console-conf@.service "${NORMAL_DIR}/getty.target.wants/serial-console-conf@${tty}.service"
+
+      ;;
+    esac
+done

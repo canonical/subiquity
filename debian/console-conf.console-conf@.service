@@ -13,12 +13,11 @@ ConditionPathExists=/dev/tty0
 ConditionPathExists=|!/var/lib/console-conf/complete
 ConditionPathExists=|/run/snapd-recovery-chooser-triggered
 StartLimitInterval=0
+Conflicts=getty@%i.service
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity
-ExecStartPre=/bin/systemctl stop getty@%I
 ExecStart=/sbin/agetty -i -n --noclear -l /usr/share/subiquity/console-conf-wrapper %I $TERM
-ExecStopPost=/bin/systemctl start getty@%I
 Type=idle
 Restart=always
 RestartSec=0
@@ -36,3 +35,7 @@ SendSIGHUP=yes
 #StandardInput=tty-force
 #StandardOutput=tty
 #StandardError=tty
+
+[Install]
+WantedBy=getty.target
+DefaultInstance=tty1
