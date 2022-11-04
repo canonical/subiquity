@@ -405,6 +405,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         se = None
         if self._system is not None:
             se = self._system.storage_encryption
+            for _, offset, size in self._offsets_and_sizes_for_system():
+                min_size = offset + size
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
@@ -412,19 +414,25 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             core_boot_classic_error=self._core_boot_classic_error,
             storage_encryption=se)
 
-    def _add_structure(self, *, disk: Disk, next_offset: int, is_last: bool,
-                       structure: snapdapi.VolumeStructure):
-        ptype = structure.type.split(',', 1)[1].upper()
-        if structure.offset is not None:
-            offset = structure.offset
-        else:
-            offset = next_offset
+    def _offsets_and_sizes_for_system(self):
+        offset = self.model._partition_alignment_data['gpt'].min_start_offset
+        [volume] = self._system.volumes.values()
+        for structure in volume.structure:
+            if structure.role == snapdapi.Role.MBR:
+                continue
+            if ',' not in structure.type:
+                continue
+            if structure.offset is not None:
+                offset = structure.offset
+            yield (structure, offset, structure.size)
+            offset = offset + structure.size
+
+    def _add_structure(self, *, disk: Disk, offset: int, size: int,
+                       is_last: bool, structure: snapdapi.VolumeStructure):
+        print(size)
         if structure.role == snapdapi.Role.SYSTEM_DATA and is_last:
             size = gaps.largest_gap(disk).size
-        else:
-            size = structure.size
-        next_offset = offset + size
-        flag = ptable_uuid_to_flag_entry(ptype)[0]
+        flag = ptable_uuid_to_flag_entry(structure.gpt_part_uuid())[0]
         part = self.model.add_partition(
             disk, offset=offset, size=size, flag=flag,
             partition_name=structure.name)
@@ -438,27 +446,17 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 self.model.add_mount(fs, '/boot')
             elif flag == 'boot':
                 self.model.add_mount(fs, '/boot/efi')
-        return part
 
     def apply_system(self, disk_id):
         disk = self.model._one(id=disk_id)
-        if len(self._system.volumes) != 1:
-            raise Exception("multiple volumes not supported")
         self.reformat(disk)
+
         [volume] = self._system.volumes.values()
 
-        next_offset = disk.alignment_data().min_start_offset
-        for structure in volume.structure:
-            if structure.role == snapdapi.Role.MBR:
-                continue
-            if ',' not in structure.type:
-                continue
-            part = self._add_structure(
-                disk=disk,
-                next_offset=next_offset,
-                is_last=structure == volume.structure[-1],
-                structure=structure)
-            next_offset = part.offset + part.size
+        for structure, offset, size in self._offsets_and_sizes_for_system():
+            self._add_structure(
+                disk=disk, offset=offset, size=size, structure=structure,
+                is_last=structure == volume.structure[-1])
         disk._partitions.sort(key=lambda p: p.number)
 
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:

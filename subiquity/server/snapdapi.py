@@ -141,6 +141,9 @@ class VolumeStructure:
     content: Optional[List[VolumeContent]] = None
     update: VolumeUpdate = attr.Factory(VolumeUpdate)
 
+    def gpt_part_uuid(self):
+        return self.type.split(',', 1)[1].upper()
+
 
 @attr.s(auto_attribs=True)
 class Volume:

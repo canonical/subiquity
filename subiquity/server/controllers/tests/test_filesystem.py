@@ -474,9 +474,10 @@ class TestApplySystem(TestCase):
 
     def test_add_structure(self):
         disk = make_disk(self.fsc.model)
-        part = self.fsc._add_structure(
+        self.fsc._add_structure(
             disk=disk,
-            next_offset=disk.alignment_data().min_start_offset,
+            offset=100,
+            size=2 << 20,
             is_last=False,
             structure=snapdapi.VolumeStructure(
                 name='ptname',
@@ -485,24 +486,28 @@ class TestApplySystem(TestCase):
                 size=1 << 20,
                 role=snapdapi.Role.SYSTEM_DATA,
                 filesystem='ext4'))
-        self.assertEqual(part.offset, disk.alignment_data().min_start_offset)
+        [part] = disk.partitions()
+        self.assertEqual(part.offset, 100)
         self.assertEqual(part.partition_name, 'ptname')
-        self.assertEqual(part.size, 1 << 20)
+        self.assertEqual(part.flag, 'linux')
+        self.assertEqual(part.size, 2 << 20)
         self.assertEqual(part.fs().fstype, 'ext4')
         self.assertEqual(part.fs().mount().path, '/')
         self.assertEqual(part.wipe, 'superblock')
 
     def test_add_structure_no_fs(self):
         disk = make_disk(self.fsc.model)
-        part = self.fsc._add_structure(
+        self.fsc._add_structure(
             disk=disk,
-            next_offset=disk.alignment_data().min_start_offset,
+            offset=100,
+            size=2 << 20,
             is_last=False,
             structure=snapdapi.VolumeStructure(
                 type="83,0FC63DAF-8483-4772-8E79-3D69D8477DE4",
                 size=1 << 20,
                 filesystem=None))
-        self.assertEqual(part.size, 1 << 20)
+        [part] = disk.partitions()
+        self.assertEqual(part.size, 2 << 20)
         self.assertEqual(part.fs(), None)
         self.assertEqual(part.wipe, None)
 
