@@ -11,12 +11,11 @@ After=core18.start-snapd.service core.start-snapd.service
 After=snapd.recovery-chooser-trigger.service
 ConditionPathExists=!/var/lib/console-conf/complete
 StartLimitInterval=0
+Conflicts=serial-getty@%i.service
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity
-ExecStartPre=/bin/systemctl stop serial-getty@%I
 ExecStart=/sbin/agetty -i -n --keep-baud -l /usr/share/subiquity/console-conf-wrapper --login-options "--serial" 115200,38400,9600 %I $TERM
-ExecStopPost=/bin/systemctl start serial-getty@%I
 Type=idle
 Restart=always
 RestartSec=0
