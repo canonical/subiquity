@@ -358,6 +358,7 @@ class GuidedStorageResponse:
     status: ProbeStatus
     error_report: Optional[ErrorReportRef] = None
     disks: Optional[List[Disk]] = None
+    core_boot_classic_error: str = ''
     storage_encryption: Optional[StorageEncryption] = None
 
 

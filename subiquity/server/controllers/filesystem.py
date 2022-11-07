@@ -23,6 +23,8 @@ import platform
 import select
 from typing import List
 
+from curtin.storage_config import ptable_uuid_to_flag_entry
+
 import pyudev
 
 from subiquitycore.async_helpers import (
@@ -66,6 +68,7 @@ from subiquity.common.types import (
     ModifyPartitionV2,
     ProbeStatus,
     ReformatDisk,
+    StorageEncryptionSupport,
     StorageResponse,
     StorageResponseV2,
     )
@@ -79,11 +82,28 @@ from subiquity.models.filesystem import (
 from subiquity.server.controller import (
     SubiquityController,
     )
+from subiquity.server import snapdapi
 from subiquity.server.types import InstallerChannels
 
 
 log = logging.getLogger("subiquity.server.controllers.filesystem")
 block_discover_log = logging.getLogger('block-discover')
+
+
+system_defective_encryption_text = _("""
+The model being installed requires TPM-backed encryption but this
+system does not support it.
+""")
+
+system_multiple_volumes_text = _("""
+The model being installed defines multiple volumes, which is not currently
+supported.
+""")
+
+system_non_gpt_text = _("""
+The model being installed defines a volume with a partition table type other
+than GPT, which is not currently supported.
+""")
 
 
 class FilesystemController(SubiquityController, FilesystemManipulator):
@@ -116,6 +136,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             (InstallerChannels.CONFIGURED, 'source'),
             self._get_system_task.start_sync)
         self._system = None
+        self._core_boot_classic_error = ''
 
     def load_autoinstall_data(self, data):
         log.debug("load_autoinstall_data %s", data)
@@ -141,8 +162,21 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if label is None:
             self._system = None
             return
-        self._system = await self.app.snapdapi.v2.systems[label].GET()
-        log.debug("got system %s", self._system)
+        system = await self.app.snapdapi.v2.systems[label].GET()
+        log.debug("got system %s", system)
+        if len(system.volumes) == 0:
+            # This means the system does not define a gadget or kernel
+            # so isn't a core boot classic system.
+            return
+        self._system = system
+        if len(system.volumes) > 1:
+            self._core_boot_classic_error = system_multiple_volumes_text
+        [volume] = system.volumes.values()
+        if volume.schema != 'gpt':
+            self._core_boot_classic_error = system_non_gpt_text
+        if system.storage_encryption.support == \
+           StorageEncryptionSupport.DEFECTIVE:
+            self._core_boot_classic_error = system_defective_encryption_text
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
@@ -371,17 +405,65 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         se = None
         if self._system is not None:
             se = self._system.storage_encryption
+            offsets_and_sizes = list(self._offsets_and_sizes_for_system())
+            _structure, last_offset, last_size = offsets_and_sizes[-1]
+            min_size = last_offset + last_size
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
             disks=[labels.for_client(d, min_size=min_size) for d in disks],
+            core_boot_classic_error=self._core_boot_classic_error,
             storage_encryption=se)
+
+    def _offsets_and_sizes_for_system(self):
+        offset = self.model._partition_alignment_data['gpt'].min_start_offset
+        [volume] = self._system.volumes.values()
+        for structure in volume.structure:
+            if structure.role == snapdapi.Role.MBR:
+                continue
+            if ',' not in structure.type:
+                continue
+            if structure.offset is not None:
+                offset = structure.offset
+            yield (structure, offset, structure.size)
+            offset = offset + structure.size
+
+    def _add_structure(self, *, disk: Disk, offset: int, size: int,
+                       is_last: bool, structure: snapdapi.VolumeStructure):
+        print(size)
+        if structure.role == snapdapi.Role.SYSTEM_DATA and is_last:
+            size = gaps.largest_gap(disk).size
+        flag = ptable_uuid_to_flag_entry(structure.gpt_part_uuid())[0]
+        part = self.model.add_partition(
+            disk, offset=offset, size=size, flag=flag,
+            partition_name=structure.name)
+        if structure.filesystem:
+            part.wipe = 'superblock'
+            fs = self.model.add_filesystem(
+                part, structure.filesystem, label=structure.label)
+            if structure.role == snapdapi.Role.SYSTEM_DATA:
+                self.model.add_mount(fs, '/')
+            elif structure.role == snapdapi.Role.SYSTEM_BOOT:
+                self.model.add_mount(fs, '/boot')
+            elif flag == 'boot':
+                self.model.add_mount(fs, '/boot/efi')
+
+    def apply_system(self, disk_id):
+        disk = self.model._one(id=disk_id)
+        self.reformat(disk)
+
+        [volume] = self._system.volumes.values()
+
+        for structure, offset, size in self._offsets_and_sizes_for_system():
+            self._add_structure(
+                disk=disk, offset=offset, size=size, structure=structure,
+                is_last=structure == volume.structure[-1])
+        disk._partitions.sort(key=lambda p: p.number)
 
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
         log.debug(data)
         if self._system is not None:
-            # Here is where we will apply the gadget info from the
-            # system to the disk!
+            self.apply_system(data.disk_id)
             await self.configured()
         else:
             self.guided(GuidedChoiceV2.from_guided_choice(data))

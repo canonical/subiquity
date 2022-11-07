@@ -86,20 +86,14 @@ class ProbingFailed(BaseView):
         self.controller.app.show_error_report(self.error_ref)
 
 
-defective_text = _("""
-The model being installed requires TPM-backed encryption but this
-system does not support it.
-""")
+class CoreBootClassicError(BaseView):
 
+    title = _("Cannot install core boot classic system")
 
-class DefectiveEncryptionError(BaseView):
-
-    title = _("Encryption requirements not met")
-
-    def __init__(self, controller):
+    def __init__(self, controller, msg):
         self.controller = controller
         super().__init__(screen([
-            Text(rewrap(_(defective_text))),
+            Text(rewrap(_(msg))),
             Text(""),
             ],
             [other_btn(_("Back"), on_press=self.cancel)]))
