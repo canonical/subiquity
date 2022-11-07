@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 import os
 import shutil
@@ -117,7 +118,7 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
     def end_ui(self):
         if self.view is not None:
             self.view = None
-            self.app.aio_loop.create_task(self.unsubscribe())
+            asyncio.create_task(self.unsubscribe())
 
     def cancel(self):
         self.app.prev_screen()
@@ -127,36 +128,36 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
 
     def set_static_config(self, dev_name: str, ip_version: int,
                           static_config: StaticConfig) -> None:
-        self.app.aio_loop.create_task(
+        asyncio.create_task(
             self.endpoint.set_static_config.POST(
                 dev_name, ip_version, static_config))
 
     def enable_dhcp(self, dev_name, ip_version: int) -> None:
-        self.app.aio_loop.create_task(
+        asyncio.create_task(
             self.endpoint.enable_dhcp.POST(dev_name, ip_version))
 
     def disable_network(self, dev_name: str, ip_version: int) -> None:
-        self.app.aio_loop.create_task(
+        asyncio.create_task(
             self.endpoint.disable.POST(dev_name, ip_version))
 
     def add_vlan(self, dev_name: str, vlan_id: int):
-        self.app.aio_loop.create_task(
+        asyncio.create_task(
             self.endpoint.vlan.PUT(dev_name, vlan_id))
 
     def set_wlan(self, dev_name: str, wlan: WLANConfig) -> None:
-        self.app.aio_loop.create_task(
+        asyncio.create_task(
             self.endpoint.set_wlan.POST(dev_name, wlan))
 
     def start_scan(self, dev_name: str) -> None:
-        self.app.aio_loop.create_task(
+        asyncio.create_task(
             self.endpoint.start_scan.POST(dev_name))
 
     def delete_link(self, dev_name: str):
-        self.app.aio_loop.create_task(self.endpoint.delete.POST(dev_name))
+        asyncio.create_task(self.endpoint.delete.POST(dev_name))
 
     def add_or_update_bond(self, existing_name: Optional[str],
                            new_name: str, new_info: BondConfig) -> None:
-        self.app.aio_loop.create_task(
+        asyncio.create_task(
             self.endpoint.add_or_edit_bond.POST(
                 existing_name, new_name, new_info))
 

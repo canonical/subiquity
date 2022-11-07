@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import json
 import logging
 import os
@@ -139,12 +140,12 @@ class InstallController(SubiquityController):
     def stop_uu(self):
         if self.app.state == ApplicationState.UU_RUNNING:
             self.app.update_state(ApplicationState.UU_CANCELLING)
-            self.app.aio_loop.create_task(self.stop_unattended_upgrades())
+            asyncio.create_task(self.stop_unattended_upgrades())
 
     def start(self):
         journald_listen(
             self.app.aio_loop, [self.app.log_syslog_id], self.log_event)
-        self.install_task = self.app.aio_loop.create_task(self.install())
+        self.install_task = asyncio.create_task(self.install())
 
     def tpath(self, *path):
         return os.path.join(self.model.target, *path)

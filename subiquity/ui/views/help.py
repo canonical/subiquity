@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 import os
 
@@ -409,7 +410,7 @@ class HelpMenu(PopUpLauncher):
 
     def _open(self, sender):
         log.debug("open help menu")
-        self.app.aio_loop.create_task(self._get_ssh_info())
+        asyncio.create_task(self._get_ssh_info())
 
     def create_pop_up(self):
         self._menu = OpenHelpMenu(self)

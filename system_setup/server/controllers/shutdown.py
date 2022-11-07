@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import enum
 import os
 import logging
@@ -39,8 +40,8 @@ class SetupShutdownController(ShutdownController):
         self.mode = WSLShutdownMode.COMPLETE  # allow the complete mode
 
     def start(self):
-        self.app.aio_loop.create_task(self._wait_install())
-        self.app.aio_loop.create_task(self._run())
+        asyncio.create_task(self._wait_install())
+        asyncio.create_task(self._run())
 
     async def _wait_install(self):
         await self.app.controllers.Install.install_task

@@ -12,6 +12,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import asyncio
 import os
 import shutil
 import logging
@@ -38,7 +40,7 @@ class ConfigureController(SubiquityController):
         self.model = app.base_model
 
     def start(self):
-        self.install_task = self.app.aio_loop.create_task(self.configure())
+        self.install_task = asyncio.create_task(self.configure())
 
     def __locale_gen_cmd(self) -> Tuple[str, bool]:
         """ Return a tuple of the locale-gen command path and True for

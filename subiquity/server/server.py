@@ -432,7 +432,7 @@ class SubiquityServer(Application):
             self.update_state(ApplicationState.ERROR)
         if not self.running_error_commands:
             self.running_error_commands = True
-            self.aio_loop.create_task(self._run_error_cmds(report))
+            asyncio.create_task(self._run_error_cmds(report))
 
     @web.middleware
     async def middleware(self, request, handler):

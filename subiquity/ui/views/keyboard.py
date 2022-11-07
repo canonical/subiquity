@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import locale
 import logging
 
@@ -258,7 +259,7 @@ class Detector:
 
     def do_step(self, step_index):
         self.abort()
-        self.keyboard_view.controller.app.aio_loop.create_task(
+        asyncio.create_task(
             self._do_step(step_index))
 
     async def _do_step(self, step_index):
@@ -422,7 +423,7 @@ class KeyboardView(BaseView):
         layout = data['layout']
         variant = data.get('variant', layout.variants[0])
         setting = KeyboardSetting(layout=layout.code, variant=variant.code)
-        self.controller.app.aio_loop.create_task(self._check_toggle(setting))
+        asyncio.create_task(self._check_toggle(setting))
 
     async def _apply(self, setting):
         await self.controller.app.wait_with_text_dialog(
@@ -430,7 +431,7 @@ class KeyboardView(BaseView):
         self.controller.done()
 
     def really_done(self, setting):
-        self.controller.app.aio_loop.create_task(self._apply(setting))
+        asyncio.create_task(self._apply(setting))
 
     def cancel(self, result=None):
         self.controller.cancel()

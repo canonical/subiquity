@@ -129,7 +129,7 @@ class Application:
 
     async def run(self):
         self.base_model = self.make_model()
-        self.aio_loop.create_task(self.start())
+        asyncio.create_task(self.start())
         await self.exit_event.wait()
         if self._exc:
             exc, self._exc = self._exc, None

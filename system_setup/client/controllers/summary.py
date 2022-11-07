@@ -28,7 +28,7 @@ class SummaryController(SubiquityTuiController):
         self.summary_view = None
 
     def start(self):
-        self.app.aio_loop.create_task(self._wait_status())
+        asyncio.create_task(self._wait_status())
 
     def cancel(self):
         self.app.cancel()
@@ -37,7 +37,7 @@ class SummaryController(SubiquityTuiController):
         pass
 
     def click_reboot(self):
-        self.app.aio_loop.create_task(self.send_reboot_and_wait())
+        asyncio.create_task(self.send_reboot_and_wait())
 
     async def send_reboot_and_wait(self):
         try:

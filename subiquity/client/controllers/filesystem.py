@@ -67,7 +67,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
 
         status = await self.endpoint.guided.GET()
         if status.status == ProbeStatus.PROBING:
-            self.app.aio_loop.create_task(self._wait_for_probing())
+            asyncio.create_task(self._wait_for_probing())
             self.current_view = SlowProbing(self)
         else:
             self.current_view = self.make_guided_ui(status)
@@ -273,18 +273,18 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         self.ui.set_body(FilesystemView(self.model, self))
 
     def guided_choice(self, choice):
-        self.app.aio_loop.create_task(self._guided_choice(choice))
+        asyncio.create_task(self._guided_choice(choice))
 
     async def _guided(self):
         self.ui.set_body((await self.make_ui())())
 
     def guided(self):
-        self.app.aio_loop.create_task(self._guided())
+        asyncio.create_task(self._guided())
 
     def reset(self, refresh_view):
         log.info("Resetting Filesystem model")
         self.app.ui.block_input = True
-        self.app.aio_loop.create_task(self._reset(refresh_view))
+        asyncio.create_task(self._reset(refresh_view))
 
     async def _reset(self, refresh_view):
         status = await self.endpoint.reset.POST()

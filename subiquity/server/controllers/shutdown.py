@@ -73,8 +73,8 @@ class ShutdownController(SubiquityController):
         return self.app.interactive
 
     def start(self):
-        self.app.aio_loop.create_task(self._wait_install())
-        self.app.aio_loop.create_task(self._run())
+        asyncio.create_task(self._wait_install())
+        asyncio.create_task(self._run())
 
     async def _wait_install(self):
         await self.app.controllers.Install.install_task

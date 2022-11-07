@@ -19,6 +19,7 @@ Provides network device listings and extended network information
 
 """
 
+import asyncio
 import logging
 
 from urwid import (
@@ -297,7 +298,7 @@ class NetworkView(BaseView):
         self.show_stretchy_overlay(stretchy)
 
     def _action_INFO(self, name, dev_info):
-        self.controller.app.aio_loop.create_task(
+        asyncio.create_task(
             self._show_INFO(dev_info.name))
     _action_INFO.opens_dialog = True
 
