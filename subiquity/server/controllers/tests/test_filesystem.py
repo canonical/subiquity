@@ -518,8 +518,13 @@ class TestApplySystem(TestCase):
             self.fsc._system = snapdapi.snapd_serializer.deserialize(
                 snapdapi.SystemDetails, json.load(fp)['result'])
         self.fsc.apply_system(disk.id)
+        partition_count = len([
+            structure
+            for structure in self.fsc._system.volumes['pc'].structure
+            if structure.role != snapdapi.Role.MBR
+            ])
         self.assertEqual(
-            len(self.fsc._system.volumes['pc'].structure) - 1,
+            partition_count,
             len(disk.partitions()))
         mounts = {m.path for m in model._all(type='mount')}
         self.assertEqual(mounts, {'/', '/boot', '/boot/efi'})

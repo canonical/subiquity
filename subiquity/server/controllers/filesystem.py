@@ -405,8 +405,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         se = None
         if self._system is not None:
             se = self._system.storage_encryption
-            for _, offset, size in self._offsets_and_sizes_for_system():
-                min_size = offset + size
+            offsets_and_sizes = list(self._offsets_and_sizes_for_system())
+            _structure, last_offset, last_size = offsets_and_sizes[-1]
+            min_size = last_offset + last_size
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
