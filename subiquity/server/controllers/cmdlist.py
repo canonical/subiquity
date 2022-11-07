@@ -132,7 +132,7 @@ class LateController(CmdListController):
         return env
 
     def start(self):
-        self.app.aio_loop.create_task(self._run())
+        asyncio.create_task(self._run())
 
     async def _run(self):
         Install = self.app.controllers.Install

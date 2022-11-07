@@ -171,7 +171,7 @@ class SubiquityClient(TuiApplication):
                 "killing foreground process %s before restarting",
                 self.fg_proc)
             self.restarting = True
-            self.aio_loop.create_task(
+            asyncio.create_task(
                 self._kill_fg_proc(remove_last_screen, restart_server))
             return
         if remove_last_screen:
@@ -179,7 +179,7 @@ class SubiquityClient(TuiApplication):
         if restart_server:
             self.restarting = True
             self.ui.block_input = True
-            self.aio_loop.create_task(self._restart_server())
+            asyncio.create_task(self._restart_server())
             return
         if self.urwid_loop is not None:
             self.urwid_loop.stop()
@@ -257,7 +257,7 @@ class SubiquityClient(TuiApplication):
             app_state = app_status.state
             if app_state == ApplicationState.NEEDS_CONFIRMATION:
                 if confirm_task is None:
-                    confirm_task = self.aio_loop.create_task(
+                    confirm_task = asyncio.create_task(
                         self.noninteractive_confirmation())
             elif confirm_task is not None:
                 confirm_task.cancel()
@@ -288,7 +288,7 @@ class SubiquityClient(TuiApplication):
                     await asyncio.sleep(0.5)
 
         async def spinning_wait(message, task):
-            spinner = self.aio_loop.create_task(spin(message))
+            spinner = asyncio.create_task(spin(message))
             try:
                 return await task
             finally:
@@ -385,7 +385,7 @@ class SubiquityClient(TuiApplication):
                 [status.event_syslog_id],
                 self.subiquity_event_noninteractive,
                 seek=True)
-            self.aio_loop.create_task(
+            asyncio.create_task(
                 self.noninteractive_watch_app_state(status))
 
     def _exception_handler(self, loop, context):
@@ -480,7 +480,7 @@ class SubiquityClient(TuiApplication):
             for i, controller in enumerate(self.controllers.instances):
                 if controller.name == last_screen:
                     index = i
-        self.aio_loop.create_task(self._select_initial_screen(index))
+        asyncio.create_task(self._select_initial_screen(index))
 
     async def _select_initial_screen(self, index):
         endpoint_names = []
@@ -530,7 +530,7 @@ class SubiquityClient(TuiApplication):
         finally:
             self.in_make_view_cvar.reset(tok)
         if new.answers:
-            self.aio_loop.create_task(self._start_answers_for_view(new, view))
+            asyncio.create_task(self._start_answers_for_view(new, view))
         with open(self.state_path('last-screen'), 'w') as fp:
             fp.write(new.name)
         return view
@@ -561,7 +561,7 @@ class SubiquityClient(TuiApplication):
         elif key == 'ctrl u':
             1/0
         elif key == 'ctrl b':
-            self.aio_loop.create_task(self.client.dry_run.crash.GET())
+            asyncio.create_task(self.client.dry_run.crash.GET())
         else:
             super().unhandled_input(key)
 

@@ -18,6 +18,7 @@
 Provides device activation and configuration on s390x
 
 """
+import asyncio
 import logging
 
 from urwid import (
@@ -83,7 +84,7 @@ class ZdevList(WidgetWrap):
         self.update(new_zdevinfos)
 
     def zdev_action(self, sender, action, zdevinfo):
-        self.parent.controller.app.aio_loop.create_task(
+        asyncio.create_task(
             self._zdev_action(action, zdevinfo))
 
     def update(self, zdevinfos):

@@ -144,12 +144,12 @@ class ErrorReportStretchy(Stretchy):
         self.report = app.error_reporter.get(ref)
         self.pending = None
         if self.report is None:
-            self.app.aio_loop.create_task(self._wait())
+            asyncio.create_task(self._wait())
         else:
             connect_signal(self.report, 'changed', self._report_changed)
             self.report.mark_seen()
         self.interrupting = interrupting
-        self.min_wait = self.app.aio_loop.create_task(asyncio.sleep(0.1))
+        self.min_wait = asyncio.create_task(asyncio.sleep(0.1))
 
         self.btns = {
             'cancel': other_btn(
@@ -268,15 +268,15 @@ class ErrorReportStretchy(Stretchy):
     def _report_changed(self):
         if self.pending:
             self.pending.cancel()
-        self.pending = self.app.aio_loop.create_task(asyncio.sleep(0.1))
-        self.change_task = self.app.aio_loop.create_task(
+        self.pending = asyncio.create_task(asyncio.sleep(0.1))
+        self.change_task = asyncio.create_task(
             self._report_changed_())
 
     async def _report_changed_(self):
         await self.pending
         self.pending = None
         await self.min_wait
-        self.min_wait = self.app.aio_loop.create_task(asyncio.sleep(1))
+        self.min_wait = asyncio.create_task(asyncio.sleep(1))
         if self.report:
             self.error_ref = self.report.ref()
         self.pile.contents[:] = [

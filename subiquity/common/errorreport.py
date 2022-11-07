@@ -442,6 +442,6 @@ class ErrorReporter(object):
         self.reports.insert(0, report)
         self._reports_by_base[error_ref.base] = report
 
-        loop.call_soon(loop.create_task, report.load())
+        loop.call_soon(asyncio.create_task, report.load())
 
         return report

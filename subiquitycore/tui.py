@@ -157,7 +157,7 @@ class TuiApplication(Application):
         def _show():
             self.ui.block_input = False
             nonlocal min_show_task
-            min_show_task = self.aio_loop.create_task(
+            min_show_task = asyncio.create_task(
                 asyncio.sleep(MIN_SHOW_PROGRESS_TIME))
             show()
 
@@ -190,7 +190,7 @@ class TuiApplication(Application):
 
                 async def w():
                     return await orig
-                awaitable = task_to_cancel = self.aio_loop.create_task(w())
+                awaitable = task_to_cancel = asyncio.create_task(w())
             else:
                 task_to_cancel = None
 
@@ -247,10 +247,10 @@ class TuiApplication(Application):
             self.ui.set_body(view)
 
     def next_screen(self, coro=None):
-        self.aio_loop.create_task(self.move_screen(1, coro))
+        asyncio.create_task(self.move_screen(1, coro))
 
     def prev_screen(self):
-        self.aio_loop.create_task(self.move_screen(-1, None))
+        asyncio.create_task(self.move_screen(-1, None))
 
     def select_initial_screen(self):
         self.next_screen()

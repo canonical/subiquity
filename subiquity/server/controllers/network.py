@@ -118,7 +118,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
         log.debug('maybe_start_install_wpasupplicant')
         if self.install_wpasupplicant_task is not None:
             return
-        self.install_wpasupplicant_task = self.app.aio_loop.create_task(
+        self.install_wpasupplicant_task = asyncio.create_task(
             self._install_wpasupplicant())
 
     def wlan_support_install_state(self):
@@ -302,7 +302,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
         client = make_client_for_conn(NetEventAPI, conn)
         lock = asyncio.Lock()
         self.clients[socket_path] = (client, conn, lock)
-        self.app.aio_loop.create_task(
+        asyncio.create_task(
             self._call_client(
                 client, conn, lock, "route_watch",
                 self.network_event_receiver.default_routes))
@@ -329,7 +329,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
     def _call_clients(self, meth_name, *args):
         for client, conn, lock in self.clients.values():
             log.debug('creating _call_client task %s %s', conn.path, meth_name)
-            self.app.aio_loop.create_task(
+            asyncio.create_task(
                 self._call_client(client, conn, lock, meth_name, *args))
 
     def apply_starting(self):

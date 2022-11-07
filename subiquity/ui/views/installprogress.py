@@ -13,7 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
+
 from urwid import (
     LineBox,
     Text,
@@ -264,7 +266,7 @@ class InstallConfirmation(Stretchy):
             self.app.ui.body.hide_continue()
         self.app.remove_global_overlay(self)
         if self.app.controllers.Progress.showing:
-            self.app.aio_loop.create_task(self.app.confirm_install())
+            asyncio.create_task(self.app.confirm_install())
         else:
             self.app.next_screen(self.app.confirm_install())
 
