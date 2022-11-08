@@ -411,6 +411,23 @@ A list of SSH public keys to install in the initial user's account.
 **type:** boolean
 **default:** `true` if `authorized_keys` is empty, `false` otherwise
 
+<a name="codecs"></a>
+
+### codecs
+
+**type:** mapping, see below
+**default:** see below
+**can be interactive:** no
+
+Configure whether common restricted packages (including codecs) from [multiverse] should be installed.
+
+#### install
+
+**type:** boolean
+**default:** `false`
+
+Whether to install the ubuntu-restricted-addons package.
+
 <a name="drivers"></a>
 
 ### drivers

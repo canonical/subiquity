@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .cmdlist import EarlyController, LateController, ErrorController
+from .codecs import CodecsController
 from .debconf import DebconfController
 from .drivers import DriversController
 from .filesystem import FilesystemController
@@ -39,6 +40,7 @@ from .userdata import UserdataController
 from .zdev import ZdevController
 
 __all__ = [
+    'CodecsController',
     'DebconfController',
     'DriversController',
     'EarlyController',
