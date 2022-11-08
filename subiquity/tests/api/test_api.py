@@ -303,7 +303,7 @@ class TestFlow(TestAPI):
             await inst.post('/proxy', '')
             await inst.post('/mirror', 'http://us.archive.ubuntu.com/ubuntu')
 
-            resp = await inst.get('/storage/v2/guided')
+            resp = await inst.get('/storage/v2/guided?wait=true')
             [reformat] = resp['possible']
             await inst.post('/storage/v2/guided', {'target': reformat})
             await inst.post('/storage/v2')
