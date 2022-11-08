@@ -244,6 +244,7 @@ class SubiquityServer(Application):
         "Locale",
         "Refresh",
         "Kernel",
+        "Integrity",
         "Keyboard",
         "Zdev",
         "Source",

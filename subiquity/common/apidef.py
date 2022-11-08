@@ -29,6 +29,7 @@ from subiquity.common.types import (
     AnyStep,
     ApplicationState,
     ApplicationStatus,
+    CasperMd5Results,
     Change,
     Disk,
     ErrorReportRef,
@@ -381,6 +382,9 @@ class API:
 
         class fetch_id:
             def GET(user_id: str) -> SSHFetchIdResponse: ...
+
+    class integrity:
+        def GET() -> CasperMd5Results: ...
 
 
 class LinkAction(enum.Enum):
