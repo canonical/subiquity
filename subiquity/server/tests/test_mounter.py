@@ -13,7 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from unittest.mock import AsyncMock, Mock, patch
+import os
+from unittest.mock import AsyncMock, call, Mock, patch
 
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
@@ -38,6 +39,78 @@ class TestMounter(SubiTestCase):
                           create=True, new_callable=AsyncMock):
             m = await mounter.mount("/dev/cdrom", "/target")
             await mounter.unmount(m)
+
+    async def test_bind_mount_tree(self):
+        mounter = Mounter(self.app)
+        # bind_mount_tree bind-mounts files and directories from src
+        # that are not already present into dst
+        src = self.tmp_dir()
+        dst = self.tmp_dir()
+
+        def touch(*paths):
+            for p in paths:
+                if p.endswith('/'):
+                    os.mkdir(p)
+                else:
+                    with open(p, 'w'):
+                        pass
+
+        # Create the following situation:
+
+        # src/                    dst/
+        #     both-dir/               both-dir/
+        #         both-file               both-file
+        #                                 only-dst-file
+        #         only-src-file
+        #                             only-dst-dir/
+        #                                 file
+        #     only-src-dir/
+        #         file
+        #     only-src-file
+
+        # We expect (only) these bind-mounts:
+        #
+        #   * src/both-dir/only-src-file -> dst/both-dir/only-src-file
+        #   * src/only-src-dir           -> dst/only-src-dir
+        #   * src/only-src-file          -> dst/only-src-file
+
+        touch(f'{src}/only-src-file')
+        touch(f'{dst}/only-dst-file')
+        touch(f'{src}/both-file', f'{dst}/both-file')
+        touch(f'{src}/only-src-dir/', f'{src}/only-src-dir/file')
+        touch(f'{dst}/only-dst-dir/', f'{dst}/only-dst-dir/file')
+        touch(f'{src}/both-dir/', f'{dst}/both-dir/')
+        touch(f'{src}/both-dir/only-src-file', f'{src}/both-dir/both-file')
+        touch(f'{dst}/both-dir/only-dst-file', f'{dst}/both-dir/both-file')
+
+        with patch.object(mounter, "mount", new_callable=AsyncMock) as mocked:
+            await mounter.bind_mount_tree(src, dst)
+        mocked.assert_has_calls([
+            call(
+                f'{src}/only-src-file',
+                f'{dst}/only-src-file',
+                options='bind'),
+            call(
+                f'{src}/only-src-dir',
+                f'{dst}/only-src-dir',
+                options='bind'),
+            call(
+                f'{src}/both-dir/only-src-file',
+                f'{dst}/both-dir/only-src-file',
+                options='bind'),
+            ], any_order=True)
+        self.assertEqual(mocked.call_count, 3)
+
+    async def test_bind_mount_tree_no_target(self):
+        mounter = Mounter(self.app)
+        # check bind_mount_tree behaviour when the passed dst does not
+        # exist.
+        src = self.tmp_dir()
+        dst = os.path.join(self.tmp_dir(), 'dst')
+
+        with patch.object(mounter, "mount", new_callable=AsyncMock) as mocked:
+            await mounter.bind_mount_tree(src, dst)
+        mocked.assert_called_once_with(src, dst, options='bind')
 
 
 class TestLowerDirFor(SubiTestCase):

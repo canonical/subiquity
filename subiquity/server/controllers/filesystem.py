@@ -83,6 +83,7 @@ from subiquity.server.controller import (
     SubiquityController,
     )
 from subiquity.server import snapdapi
+from subiquity.server.mounter import Mounter
 from subiquity.server.types import InstallerChannels
 
 
@@ -137,6 +138,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self._get_system_task.start_sync)
         self._system = None
         self._core_boot_classic_error = ''
+        self._system_mounter = None
 
     def load_autoinstall_data(self, data):
         log.debug("load_autoinstall_data %s", data)
@@ -157,7 +159,22 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         await super().configured()
         self.stop_listening_udev()
 
+    async def _mount_system(self):
+        source_path = self.app.controllers.Source.source_path
+        cur_systems_dir = '/var/lib/snapd/seed/systems'
+        source_systems_dir = os.path.join(source_path, cur_systems_dir[1:])
+        self._system_mounter = Mounter(self.app)
+        await self._system_mounter.bind_mount_tree(
+            source_systems_dir, cur_systems_dir)
+
+    async def _unmount_system(self):
+        if self._system_mounter is not None:
+            await self._system_mounter.cleanup()
+            self._system_mounter = None
+
     async def _get_system(self):
+        await self._unmount_system()
+        await self._mount_system()
         label = self.app.base_model.source.current.snapd_system_label
         if label is None:
             self._system = None
@@ -167,6 +184,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if len(system.volumes) == 0:
             # This means the system does not define a gadget or kernel
             # so isn't a core boot classic system.
+            await self._unmount_system()
             return
         self._system = system
         if len(system.volumes) > 1:
