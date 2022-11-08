@@ -450,7 +450,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     def _add_structure(self, *, disk: Disk, offset: int, size: int,
                        is_last: bool, structure: snapdapi.VolumeStructure):
-        print(size)
         if structure.role == snapdapi.Role.SYSTEM_DATA and is_last:
             size = gaps.largest_gap(disk).size
         flag = ptable_uuid_to_flag_entry(structure.gpt_part_uuid())[0]
@@ -493,7 +492,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         for on_volume_structure in on_volume.structure:
             role = on_volume_structure.role
             if role in self._role_to_device:
-                on_volume.device = self._role_to_device[role].path
+                on_volume_structure.device = self._role_to_device[role].path
         return {key: on_volume}
 
     @with_context(description="making system bootable")

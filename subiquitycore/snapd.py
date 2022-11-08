@@ -181,6 +181,15 @@ class FakeSnapdConnection:
             "Don't know how to fake GET response to {}".format((path, args)))
 
 
+def get_fake_connection(scale_factor=1000, output_base=None):
+    proj_dir = os.path.dirname(os.path.dirname(__file__))
+    if output_base is None:
+        output_base = os.path.join(proj_dir, ".subiquity")
+    return FakeSnapdConnection(
+        os.path.join(proj_dir, "examples", "snaps"),
+        scale_factor, output_base)
+
+
 class AsyncSnapd:
 
     def __init__(self, connection):
