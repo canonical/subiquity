@@ -21,7 +21,7 @@ import logging
 import os
 import platform
 import select
-from typing import List
+from typing import Dict, List, Optional
 
 from curtin.storage_config import ptable_uuid_to_flag_entry
 
@@ -75,6 +75,7 @@ from subiquity.common.types import (
 from subiquity.models.filesystem import (
     align_up,
     align_down,
+    _Device,
     Disk as ModelDisk,
     LVM_CHUNK_SIZE,
     Raid,
@@ -136,9 +137,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, 'source'),
             self._get_system_task.start_sync)
-        self._system = None
-        self._core_boot_classic_error = ''
-        self._system_mounter = None
+        self._system: Optional[snapdapi.SystemDetails] = None
+        self._core_boot_classic_error: str = ''
+        self._system_mounter: Optional[Mounter] = None
+        self._role_to_device: Dict[snapdapi.Role: _Device] = {}
 
     def load_autoinstall_data(self, data):
         log.debug("load_autoinstall_data %s", data)
@@ -448,7 +450,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     def _add_structure(self, *, disk: Disk, offset: int, size: int,
                        is_last: bool, structure: snapdapi.VolumeStructure):
-        print(size)
         if structure.role == snapdapi.Role.SYSTEM_DATA and is_last:
             size = gaps.largest_gap(disk).size
         flag = ptable_uuid_to_flag_entry(structure.gpt_part_uuid())[0]
@@ -465,6 +466,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 self.model.add_mount(fs, '/boot')
             elif flag == 'boot':
                 self.model.add_mount(fs, '/boot/efi')
+        self._role_to_device[structure.role] = part
 
     def apply_system(self, disk_id):
         disk = self.model._one(id=disk_id)
@@ -477,6 +479,32 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 disk=disk, offset=offset, size=size, structure=structure,
                 is_last=structure == volume.structure[-1])
         disk._partitions.sort(key=lambda p: p.number)
+
+    def _on_volumes(self) -> Dict[str, snapdapi.OnVolume]:
+        # Return a value suitable for use as the 'on-volumes' part of a
+        # SystemActionRequest.
+        #
+        # This must be run after curtin partitioning, which will result in a
+        # call to update_devices which will have set .path on all block
+        # devices.
+        [(key, volume)] = self._system.volumes.items()
+        on_volume = snapdapi.OnVolume.from_volume(volume)
+        for on_volume_structure in on_volume.structure:
+            role = on_volume_structure.role
+            if role in self._role_to_device:
+                on_volume_structure.device = self._role_to_device[role].path
+        return {key: on_volume}
+
+    @with_context(description="making system bootable")
+    async def finish_install(self, context):
+        label = self.app.base_model.source.current.snapd_system_label
+        await snapdapi.post_and_wait(
+            self.app.snapdapi,
+            self.app.snapdapi.v2.systems[label].POST,
+            snapdapi.SystemActionRequest(
+                action=snapdapi.SystemAction.INSTALL,
+                step=snapdapi.SystemActionStep.FINISH,
+                on_volumes=self._on_volumes()))
 
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
         log.debug(data)

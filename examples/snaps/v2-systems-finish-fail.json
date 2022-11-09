@@ -3,7 +3,7 @@
   "status-code": 200,
   "status": "OK",
   "result": {
-    "label": "mandatory",
+    "label": "finish-fail",
     "model": {
       "architecture": "amd64",
       "authority-id": "9XoOBkC2zdzx5CVZdl0ZVYuLpCo15ww0",
@@ -227,7 +227,7 @@
     },
     "storage-encryption": {
       "support": "available",
-      "storage-safety": "encrypted",
+      "storage-safety": "prefer-encrypted",
       "encryption-type": "cryptsetup"
     }
   }

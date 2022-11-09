@@ -141,10 +141,21 @@ class FakeSnapdConnection:
                 "status-code": 200,
                 "status": "OK",
                 })
+        change = None
         if path == "v2/snaps/subiquity" and body['action'] == 'switch':
+            change = "8"
+        if path.startswith('v2/systems/') and body['action'] == 'install':
+            system = path.split('/')[2]
+            step = body['step']
+            if step == 'finish':
+                if system == 'finish-fail':
+                    change = "15"
+                else:
+                    change = "5"
+        if change is not None:
             return _FakeMemoryResponse({
                 "type": "async",
-                "change": "8",
+                "change": change,
                 "status-code": 200,
                 "status": "Accepted",
                 })
@@ -168,6 +179,15 @@ class FakeSnapdConnection:
             return rs.next()
         raise Exception(
             "Don't know how to fake GET response to {}".format((path, args)))
+
+
+def get_fake_connection(scale_factor=1000, output_base=None):
+    proj_dir = os.path.dirname(os.path.dirname(__file__))
+    if output_base is None:
+        output_base = os.path.join(proj_dir, ".subiquity")
+    return FakeSnapdConnection(
+        os.path.join(proj_dir, "examples", "snaps"),
+        scale_factor, output_base)
 
 
 class AsyncSnapd:

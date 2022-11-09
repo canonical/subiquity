@@ -246,30 +246,49 @@ class InstallController(SubiquityController):
                 **kw,
             )
 
-        generic_steps = [
+        steps = [
             make_curtin_step(
                 "initial",
                 stages=[],
                 acquire_config=self.acquire_initial_config
             ).run,
-            make_curtin_step(
-                name="partitioning", stages=["partitioning"],
-                acquire_config=self.acquire_filesystem_config,
-                cls=CurtinPartitioningStep,
-                device_map_path=logs_dir / "device-map.json",
-            ).run,
-            make_curtin_step(
-                name="extract", stages=["extract"],
-                acquire_config=self.acquire_generic_config,
-            ).run,
-            self.setup_target,
-            make_curtin_step(
-                name="curthooks", stages=["curthooks"],
-                acquire_config=self.acquire_generic_config,
-            ).run,
-        ]
+            ]
+        if self.model.source.current.snapd_system_label:
+            fs_controller = self.app.controllers.Filesystem
+            steps.extend([
+                make_curtin_step(
+                    name="partitioning", stages=["partitioning"],
+                    acquire_config=self.acquire_filesystem_config,
+                    cls=CurtinPartitioningStep,
+                    device_map_path=logs_dir / "device-map.json",
+                    ).run,
+                make_curtin_step(
+                    name="extract", stages=["extract"],
+                    acquire_config=self.acquire_generic_config,
+                    ).run,
+                fs_controller.finish_install,
+                self.setup_target,
+                ])
+        else:
+            steps.extend([
+                make_curtin_step(
+                    name="partitioning", stages=["partitioning"],
+                    acquire_config=self.acquire_filesystem_config,
+                    cls=CurtinPartitioningStep,
+                    device_map_path=logs_dir / "device-map.json",
+                    ).run,
+                make_curtin_step(
+                    name="extract", stages=["extract"],
+                    acquire_config=self.acquire_generic_config,
+                    ).run,
+                self.setup_target,
+                make_curtin_step(
+                        name="curthooks", stages=["curthooks"],
+                        acquire_config=self.acquire_generic_config,
+                    ).run,
+                ])
 
-        for step in generic_steps:
+        for step in steps:
             await step(context=context)
 
     @with_context()

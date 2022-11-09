@@ -80,7 +80,7 @@ from subiquity.server.snapdapi import make_api_client
 from subiquity.server.types import InstallerChannels
 from subiquitycore.snapd import (
     AsyncSnapd,
-    FakeSnapdConnection,
+    get_fake_connection,
     SnapdConnection,
     )
 
@@ -307,12 +307,7 @@ class SubiquityServer(Application):
             self.prober = Prober(opts.machine_config, self.debug_flags)
         self.kernel_cmdline = opts.kernel_cmdline
         if opts.snaps_from_examples:
-            connection = FakeSnapdConnection(
-                os.path.join(
-                    os.path.dirname(
-                        os.path.dirname(
-                            os.path.dirname(__file__))),
-                    "examples", "snaps"),
+            connection = get_fake_connection(
                 self.scale_factor, opts.output_base)
             self.snapd = AsyncSnapd(connection)
             self.snapdapi = make_api_client(self.snapd)

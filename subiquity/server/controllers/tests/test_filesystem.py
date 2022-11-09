@@ -14,14 +14,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-import json
 from unittest import mock, TestCase, IsolatedAsyncioTestCase
 
 from parameterized import parameterized
 
-from subiquity.server.controllers.filesystem import FilesystemController
-
+from subiquitycore.snapd import AsyncSnapd, get_fake_connection
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.util import random_string
+
 from subiquity.common.filesystem import gaps
 from subiquity.common.types import (
     Bootloader,
@@ -37,6 +37,7 @@ from subiquity.models.tests.test_filesystem import (
     make_partition,
     )
 from subiquity.server import snapdapi
+from subiquity.server.controllers.filesystem import FilesystemController
 
 bootloaders = [(bl, ) for bl in list(Bootloader)]
 bootloaders_and_ptables = [(bl, pt)
@@ -460,14 +461,17 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
                 disk_size)
 
 
-class TestApplySystem(TestCase):
+class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
 
     def setUp(self):
         self.app = make_app()
+        self.app.command_runner = mock.AsyncMock()
         self.app.opts.bootloader = 'UEFI'
         self.app.report_start_event = mock.Mock()
         self.app.report_finish_event = mock.Mock()
         self.app.prober = mock.Mock()
+        self.app.snapdapi = snapdapi.make_api_client(
+            AsyncSnapd(get_fake_connection()))
         self.fsc = FilesystemController(app=self.app)
         self.fsc._configured = True
         self.fsc.model = make_model(Bootloader.UEFI)
@@ -511,12 +515,16 @@ class TestApplySystem(TestCase):
         self.assertEqual(part.fs(), None)
         self.assertEqual(part.wipe, None)
 
-    def test_from_sample_data(self):
+    async def test_from_sample_data(self):
+        # calling this a unit test is definitely questionable. but it
+        # runs much more quickly than the integration test!
         self.fsc.model = model = make_model(Bootloader.UEFI)
         disk = make_disk(model)
-        with open('examples/snaps/v2-systems-unavailable.json') as fp:
-            self.fsc._system = snapdapi.snapd_serializer.deserialize(
-                snapdapi.SystemDetails, json.load(fp)['result'])
+        self.app.base_model.source.current.snapd_system_label = \
+            'prefer-encrypted'
+        self.app.controllers.Source.source_path = ''
+        await self.fsc._get_system_task.start()
+        await self.fsc._get_system_task.wait()
         self.fsc.apply_system(disk.id)
         partition_count = len([
             structure
@@ -526,5 +534,28 @@ class TestApplySystem(TestCase):
         self.assertEqual(
             partition_count,
             len(disk.partitions()))
-        mounts = {m.path for m in model._all(type='mount')}
-        self.assertEqual(mounts, {'/', '/boot', '/boot/efi'})
+        mounts = {m.path: m.device.volume for m in model._all(type='mount')}
+        self.assertEqual(set(mounts.keys()), {'/', '/boot', '/boot/efi'})
+        device_map = {p.id: random_string() for p in disk.partitions()}
+        self.fsc.update_devices(device_map)
+        with mock.patch.object(snapdapi, "post_and_wait",
+                               new_callable=mock.AsyncMock) as mocked:
+            await self.fsc.finish_install(context=self.fsc.context)
+        mocked.assert_called_once()
+        [call] = mocked.mock_calls
+        request = call.args[2]
+        self.assertEqual(request.action, snapdapi.SystemAction.INSTALL)
+        self.assertEqual(request.step, snapdapi.SystemActionStep.FINISH)
+        [on_volume] = request.on_volumes.values()
+        role_to_path = {}
+        for s in on_volume.structure:
+            if s.role in [snapdapi.Role.SYSTEM_DATA,
+                          snapdapi.Role.SYSTEM_BOOT,
+                          snapdapi.Role.SYSTEM_SEED]:
+                role_to_path[s.role] = s.device
+        expected_role_to_path = {
+            snapdapi.Role.SYSTEM_DATA: mounts['/'].path,
+            snapdapi.Role.SYSTEM_BOOT: mounts['/boot'].path,
+            snapdapi.Role.SYSTEM_SEED: mounts['/boot/efi'].path,
+            }
+        self.assertEqual(expected_role_to_path, role_to_path)
