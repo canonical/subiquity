@@ -158,6 +158,23 @@ class Mounter:
             await self.unmount(m, remove=False)
         self.tmpfiles.cleanup()
 
+    async def bind_mount_tree(self, src, dst):
+        """bind-mount files and directories from src that are not already
+        present into dst"""
+        if not os.path.exists(dst):
+            await self.mount(src, dst, options='bind')
+            return
+        for src_dirpath, dirnames, filenames in os.walk(src):
+            dst_dirpath = src_dirpath.replace(src, dst)
+            for name in dirnames + filenames:
+                dst_path = os.path.join(dst_dirpath, name)
+                if os.path.exists(dst_path):
+                    continue
+                src_path = os.path.join(src_dirpath, name)
+                await self.mount(src_path, dst_path, options='bind')
+                if name in dirnames:
+                    dirnames.remove(name)
+
 
 class DryRunMounter(Mounter):
 
