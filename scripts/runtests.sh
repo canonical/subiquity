@@ -25,14 +25,14 @@ validate () {
     fi
 
     if [ "${mode}" = "install" ]; then
-        cfgs=
+        cfgs=()
         for stage in partitioning formatting; do
             cfg="$tmpdir"/var/log/installer/curtin-install/subiquity-$stage.conf
-            if [ -e $cfg ]; then
-                cfgs="$cfgs $cfg"
+            if [ -e "$cfg" ]; then
+                cfgs+=("$cfg")
             fi
         done
-        python3 scripts/validate-yaml.py $cfgs
+        python3 scripts/validate-yaml.py "${cfgs[@]}"
         if [ ! -e $tmpdir/subiquity-client-debug.log ] || [ ! -e $tmpdir/subiquity-server-debug.log ]; then
             echo "log file not created"
             exit 1
