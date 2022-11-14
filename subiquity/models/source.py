@@ -38,35 +38,23 @@ class CatalogEntry:
     snapd_system_label: typing.Optional[str] = None
 
 
-fake_entries = {
-    'server': CatalogEntry(
-        variant='server',
-        id='synthesized',
-        name={'en': 'Ubuntu Server'},
-        description={'en': 'the default'},
-        path='/media/filesystem',
-        type='cp',
-        default=True,
-        size=2 << 30,
-        locale_support="locale-only"),
-    'desktop': CatalogEntry(
-        variant='desktop',
-        id='synthesized',
-        name={'en': 'Ubuntu Desktop'},
-        description={'en': 'the default'},
-        path='/media/filesystem',
-        type='cp',
-        default=True,
-        size=5 << 30,
-        locale_support="langpack"),
-    }
+legacy_server_entry = CatalogEntry(
+    variant='server',
+    id='synthesized',
+    name={'en': 'Ubuntu Server'},
+    description={'en': 'the default'},
+    path='/media/filesystem',
+    type='cp',
+    default=True,
+    size=2 << 30,
+    locale_support="locale-only")
 
 
 class SourceModel:
 
     def __init__(self):
         self._dir = '/cdrom/casper'
-        self.current = fake_entries['server']
+        self.current = legacy_server_entry
         self.sources = [self.current]
         self.lang = None
         self.search_drivers = False
