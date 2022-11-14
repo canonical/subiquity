@@ -73,6 +73,8 @@ from subiquity.common.types import (
     StorageResponseV2,
     )
 from subiquity.models.filesystem import (
+    ActionRenderMode,
+    ArbitraryDevice,
     align_up,
     align_down,
     _Device,
@@ -141,6 +143,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._core_boot_classic_error: str = ''
         self._system_mounter: Optional[Mounter] = None
         self._role_to_device: Dict[snapdapi.Role: _Device] = {}
+        self.use_tpm: bool = False
 
     def load_autoinstall_data(self, data):
         log.debug("load_autoinstall_data %s", data)
@@ -370,7 +373,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             bootloader=self.model.bootloader,
             error_report=self.full_probe_error(),
             orig_config=self.model._orig_config,
-            config=self.model._render_actions(include_all=True),
+            config=self.model._render_actions(mode=ActionRenderMode.ALL),
             blockdev=self.model._probe_data['blockdev'],
             dasd=self.model._probe_data.get('dasd', {}),
             storage_version=self.model.storage_version)
@@ -495,6 +498,27 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 on_volume_structure.device = self._role_to_device[role].path
         return {key: on_volume}
 
+    @with_context(description="configuring TPM-backed full disk encryption")
+    async def setup_encryption(self, context):
+        label = self.app.base_model.source.current.snapd_system_label
+        result = await snapdapi.post_and_wait(
+            self.app.snapdapi,
+            self.app.snapdapi.v2.systems[label].POST,
+            snapdapi.SystemActionRequest(
+                action=snapdapi.SystemAction.INSTALL,
+                step=snapdapi.SystemActionStep.SETUP_STORAGE_ENCRYPTION,
+                on_volumes=self._on_volumes()))
+        role_to_encrypted_device = result['encrypted-devices']
+        for role, enc_path in role_to_encrypted_device.items():
+            role = snapdapi.Role(role)
+            arb_device = ArbitraryDevice(m=self.model, path=enc_path)
+            self.model._actions.append(arb_device)
+            part = self._role_to_device[role]
+            for fs in self.model._all(type='format'):
+                if fs.volume == part:
+                    fs.volume = arb_device
+            self._role_to_device[role] = arb_device
+
     @with_context(description="making system bootable")
     async def finish_install(self, context):
         label = self.app.base_model.source.current.snapd_system_label
@@ -509,6 +533,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
         log.debug(data)
         if self._system is not None:
+            self.use_tpm = data.use_tpm
             self.apply_system(data.disk_id)
             await self.configured()
         else:

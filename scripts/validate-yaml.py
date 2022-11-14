@@ -75,13 +75,17 @@ class StorageChecker:
         assert '/' in self.path_to_mount
 
 
-config = yaml.safe_load(open(sys.argv[1]))
 
 
 def main():
     storage_checker = StorageChecker()
 
-    for action in config['storage']['config']:
+    actions = []
+    for path in sys.argv[1:]:
+        config = yaml.safe_load(open(path))
+        actions.extend(config['storage']['config'])
+
+    for action in actions:
         try:
             storage_checker.check(action)
         except Exception:
