@@ -14,8 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import enum
 import logging
 import os
+from typing import Tuple
 
 import requests.exceptions
 
@@ -24,6 +26,7 @@ from subiquitycore.async_helpers import (
     SingleInstanceTask,
     )
 from subiquitycore.context import with_context
+from subiquitycore.lsb_release import lsb_release
 
 from subiquity.common.apidef import API
 from subiquity.common.types import (
@@ -48,6 +51,13 @@ from subiquity.server.types import InstallerChannels
 
 
 log = logging.getLogger('subiquity.server.controllers.refresh')
+
+
+class SnapChannelSource(enum.Enum):
+    CMDLINE = enum.auto()
+    AUTOINSTALL = enum.auto()
+    DISK_INFO_FILE = enum.auto()
+    NOT_FOUND = enum.auto()
 
 
 class RefreshController(SubiquityController):
@@ -113,19 +123,35 @@ class RefreshController(SubiquityController):
 
     @with_context()
     async def configure_snapd(self, context):
+        # Fetch information about snap from snapd. If the snap channel
+        # to follow has been set on the kernel command line or
+        # autoinstall data, switch to that. If the snap channel being
+        # followed looks like the usual stable/ubuntu-XX.YY, look in
+        # the .disk/info file to see if this is point release media
+        # and switch to stable/ubuntu-XX.YY.Z if it is.
         with context.child("get_details") as subcontext:
             try:
-                r = await self.app.snapdapi.v2.snaps[self.snap_name].GET()
+                snap = await self.app.snapdapi.v2.snaps[self.snap_name].GET()
             except requests.exceptions.RequestException:
                 log.exception("getting snap details")
                 return
-            self.status.current_snap_version = r.version
+            self.status.current_snap_version = snap.version
             for k in 'channel', 'revision', 'version':
                 self.app.note_data_for_apport(
-                    "Snap" + k.title(), getattr(r, k))
+                    "Snap" + k.title(), getattr(snap, k))
             subcontext.description = "current version of snap is: %r" % (
                 self.status.current_snap_version)
-        channel = self.get_refresh_channel()
+        (channel, source) = self.get_refresh_channel()
+        if source == SnapChannelSource.NOT_FOUND:
+            log.debug("no refresh channel found")
+            return
+        info = lsb_release(dry_run=self.app.opts.dry_run)
+        expected_channel = 'stable/ubuntu-' + info['release']
+        if source == SnapChannelSource.DISK_INFO_FILE \
+           and snap.channel != expected_channel:
+            log.debug(f"snap tracking {expected_channel}, not resetting based "
+                      "on .disk/info")
+            return
         desc = "switching {} to {}".format(self.snap_name, channel)
         with context.child("switching", desc) as subcontext:
             try:
@@ -139,15 +165,15 @@ class RefreshController(SubiquityController):
                 return
             subcontext.description = "switched to " + channel
 
-    def get_refresh_channel(self):
+    def get_refresh_channel(self) -> Tuple[str, SnapChannelSource]:
         """Return the channel we should refresh subiquity to."""
         channel = self.app.kernel_cmdline.get('subiquity-channel')
         if channel is not None:
             log.debug(
                 "get_refresh_channel: found %s on kernel cmdline", channel)
-            return channel
+            return (channel, SnapChannelSource.CMDLINE)
         if 'channel' in self.ai_data:
-            return self.ai_data['channel']
+            return (self.ai_data['channel'], SnapChannelSource.AUTOINSTALL)
 
         info_file = '/cdrom/.disk/info'
         try:
@@ -160,12 +186,12 @@ class RefreshController(SubiquityController):
             else:
                 log.debug(
                     "get_refresh_channel: failed to find .disk/info file")
-                return
+                return (None, SnapChannelSource.NOT_FOUND)
         else:
             with fp:
                 info = fp.read()
         release = info.split()[1]
-        return 'stable/ubuntu-' + release
+        return ('stable/ubuntu-' + release, SnapChannelSource.DISK_INFO_FILE)
 
     def snapd_network_changed(self):
         if self.active and \
