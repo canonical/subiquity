@@ -257,8 +257,8 @@ class InstallController(SubiquityController):
                 acquire_config=self.acquire_initial_config
             ).run,
             ]
-        if self.model.source.current.snapd_system_label:
-            fs_controller = self.app.controllers.Filesystem
+        fs_controller = self.app.controllers.Filesystem
+        if fs_controller.is_core_boot_classic():
             steps.append(
                 make_curtin_step(
                     name="partitioning", stages=["partitioning"],
@@ -305,6 +305,10 @@ class InstallController(SubiquityController):
                         acquire_config=self.acquire_generic_config,
                     ).run,
                 ])
+            # If the current source has a snapd_system_label here we should
+            # really write recovery_system={snapd_system_label} to
+            # {target}/var/lib/snapd/modeenv to get snapd to pick it up on
+            # first boot. But not needed for now.
 
         for step in steps:
             await step(context=context)

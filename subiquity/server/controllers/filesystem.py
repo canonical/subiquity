@@ -145,6 +145,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._role_to_device: Dict[snapdapi.Role: _Device] = {}
         self.use_tpm: bool = False
 
+    def is_core_boot_classic(self):
+        return self._system is not None
+
     def load_autoinstall_data(self, data):
         log.debug("load_autoinstall_data %s", data)
         if data is None:
@@ -180,24 +183,29 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def _get_system(self):
         await self._unmount_system()
         await self._mount_system()
+        self._system = None
         label = self.app.base_model.source.current.snapd_system_label
-        if label is None:
+        if label is not None:
+            self._system = await self.app.snapdapi.v2.systems[label].GET()
+            log.debug("got system %s", self._system)
+            if len(self._system.volumes) == 0:
+                # This means the system does not define a gadget or kernel and
+                # so isn't a core boot classic system.
+                self._system = None
+        if self._system is None:
+            await self._unmount_system()
+            self.model.storage_version = self.opts.storage_version
             self._system = None
             return
-        system = await self.app.snapdapi.v2.systems[label].GET()
-        log.debug("got system %s", system)
-        if len(system.volumes) == 0:
-            # This means the system does not define a gadget or kernel
-            # so isn't a core boot classic system.
-            await self._unmount_system()
-            return
-        self._system = system
-        if len(system.volumes) > 1:
+        # Formatting for a core boot classic system relies on some curtin
+        # features that are only available with v2 partitioning.
+        self.model.storage_version = 2
+        if len(self._system.volumes) > 1:
             self._core_boot_classic_error = system_multiple_volumes_text
-        [volume] = system.volumes.values()
+        [volume] = self._system.volumes.values()
         if volume.schema != 'gpt':
             self._core_boot_classic_error = system_non_gpt_text
-        if system.storage_encryption.support == \
+        if self._system.storage_encryption.support == \
            StorageEncryptionSupport.DEFECTIVE:
             self._core_boot_classic_error = system_defective_encryption_text
 

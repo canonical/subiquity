@@ -525,6 +525,9 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.app.controllers.Source.source_path = ''
         await self.fsc._get_system_task.start()
         await self.fsc._get_system_task.wait()
+
+        self.assertEqual(model.storage_version, 2)
+
         self.fsc.apply_system(disk.id)
         partition_count = len([
             structure
