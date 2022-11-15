@@ -7,7 +7,7 @@
   path: foo.squashfs
   size: 530485248
   type: fsimage
-  variant: server
+  variant: desktop
   snapd_system_label: unavailable
 - description:
     en: This test source has encryption support set to "prefer-encrypted" (and encryption available)
@@ -18,7 +18,7 @@
   path: foo.squashfs
   size: 530485248
   type: fsimage
-  variant: server
+  variant: desktop
   snapd_system_label: prefer-encrypted
   default: true
 - description:
@@ -30,7 +30,7 @@
   path: foo.squashfs
   size: 530485248
   type: fsimage
-  variant: server
+  variant: desktop
   snapd_system_label: prefer-unencrypted
 - description:
     en: This test source has the invalid combination of encryption reqired and unavailable.
@@ -41,7 +41,7 @@
   path: foo.squashfs
   size: 530485248
   type: fsimage
-  variant: server
+  variant: desktop
   snapd_system_label: defective
 - description:
     en: This test source requires TPM backed full disk encryption.
@@ -52,7 +52,7 @@
   path: foo.squashfs
   size: 530485248
   type: fsimage
-  variant: server
+  variant: desktop
   snapd_system_label: mandatory
 - description:
     en: This test source has encryption support set to "prefer-encrypted" (and encryption available) and will fail to complete installation.
@@ -63,5 +63,5 @@
   path: foo.squashfs
   size: 530485248
   type: fsimage
-  variant: server
+  variant: desktop
   snapd_system_label: finish-fail

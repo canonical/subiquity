@@ -51,6 +51,7 @@ from subiquity.common.types import (
     ErrorReportRef,
     )
 from subiquity.journald import journald_listen
+from subiquity.server.server import POSTINSTALL_MODEL_NAMES
 from subiquity.ui.frame import SubiquityUI
 from subiquity.ui.views.error import ErrorReportStretchy
 from subiquity.ui.views.help import HelpMenu, ssh_help_texts
@@ -446,6 +447,25 @@ class SubiquityClient(TuiApplication):
                     os.waitpid(pid, 0)
 
     async def confirm_install(self):
+        source_selection = await self.client.source.GET()
+        current = None
+        for source in source_selection.sources:
+            if source.id == source_selection.current_id:
+                current = source
+                break
+        if current is not None and current.variant != 'server':
+            # If using server to install desktop, mark the controllers
+            # the TUI client does not currently have interfaces for as
+            # configured.
+            needed = POSTINSTALL_MODEL_NAMES.for_variant(current.variant)
+            for c in self.controllers.instances:
+                if getattr(c, 'endpoint_name', None) is not None:
+                    needed.discard(c.endpoint_name)
+            if needed:
+                log.info(
+                    "marking additional endpoints as configured: %s",
+                    needed)
+                await self.client.meta.mark_configured.POST(list(needed))
         await self.client.meta.confirm.POST(self.our_tty)
 
     def add_global_overlay(self, overlay):
