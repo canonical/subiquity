@@ -476,44 +476,85 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.fsc._configured = True
         self.fsc.model = make_model(Bootloader.UEFI)
 
-    def test_add_structure(self):
+    def _details_for_structures(self, structures):
+        return snapdapi.SystemDetails(
+            volumes={'pc': snapdapi.Volume(schema='gpt', structure=structures)}
+            )
+
+    def test_apply_system(self):
         disk = make_disk(self.fsc.model)
-        self.fsc._add_structure(
-            disk=disk,
-            offset=100,
-            size=2 << 20,
-            is_last=False,
-            structure=snapdapi.VolumeStructure(
-                name='ptname',
+        self.fsc._system = self._details_for_structures([
+            snapdapi.VolumeStructure(
                 type="83,0FC63DAF-8483-4772-8E79-3D69D8477DE4",
-                label='label',
-                size=1 << 20,
-                role=snapdapi.Role.SYSTEM_DATA,
-                filesystem='ext4'))
+                offset=1 << 20,
+                size=1 << 30,
+                filesystem='ext4'),
+            ])
+        self.fsc.apply_system(disk.id)
         [part] = disk.partitions()
-        self.assertEqual(part.offset, 100)
+        self.assertEqual(part.offset, 1 << 20)
+        self.assertEqual(part.size, 1 << 30)
+        self.assertEqual(part.fs().fstype, 'ext4')
+
+    def test_apply_system_reuse(self):
+        disk = make_disk(self.fsc.model)
+        # Add a partition that matches one in the volume structure
+        reused_part = make_partition(
+            self.fsc.model, disk, offset=1 << 20, size=1 << 30, preserve=True)
+        # And one that does not.
+        make_partition(
+            self.fsc.model, disk, offset=2 << 30, size=1 << 30, preserve=True)
+        self.fsc._system = self._details_for_structures([
+            snapdapi.VolumeStructure(
+                type="0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+                offset=1 << 20,
+                size=1 << 30,
+                filesystem='ext4'),
+            ])
+        self.fsc.apply_system(disk.id)
+        [part] = disk.partitions()
+        self.assertEqual(reused_part, part)
+        self.assertEqual(reused_part.wipe, 'superblock')
+        self.assertEqual(part.fs().fstype, 'ext4')
+
+    def test_apply_system_reuse_no_format(self):
+        disk = make_disk(self.fsc.model)
+        existing_part = make_partition(
+            self.fsc.model, disk, offset=1 << 20, size=1 << 30, preserve=True)
+        self.fsc._system = self._details_for_structures([
+            snapdapi.VolumeStructure(
+                type="0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+                offset=1 << 20,
+                size=1 << 30,
+                filesystem=None),
+            ])
+        self.fsc.apply_system(disk.id)
+        [part] = disk.partitions()
+        self.assertEqual(existing_part, part)
+        self.assertEqual(existing_part.wipe, None)
+
+    def test_apply_system_system_data(self):
+        disk = make_disk(self.fsc.model)
+        self.fsc._system = self._details_for_structures([
+            snapdapi.VolumeStructure(
+                type="0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+                offset=2 << 20,
+                name='ptname',
+                size=2 << 30,
+                role=snapdapi.Role.SYSTEM_DATA,
+                filesystem='ext4'),
+            ])
+        self.fsc.apply_system(disk.id)
+        [part] = disk.partitions()
+        self.assertEqual(part.offset, 2 << 20)
         self.assertEqual(part.partition_name, 'ptname')
         self.assertEqual(part.flag, 'linux')
-        self.assertEqual(part.size, 2 << 20)
+        self.assertEqual(
+            part.size,
+            disk.size - (2 << 20) - disk.alignment_data().min_end_offset)
         self.assertEqual(part.fs().fstype, 'ext4')
         self.assertEqual(part.fs().mount().path, '/')
         self.assertEqual(part.wipe, 'superblock')
-
-    def test_add_structure_no_fs(self):
-        disk = make_disk(self.fsc.model)
-        self.fsc._add_structure(
-            disk=disk,
-            offset=100,
-            size=2 << 20,
-            is_last=False,
-            structure=snapdapi.VolumeStructure(
-                type="83,0FC63DAF-8483-4772-8E79-3D69D8477DE4",
-                size=1 << 20,
-                filesystem=None))
-        [part] = disk.partitions()
-        self.assertEqual(part.size, 2 << 20)
-        self.assertEqual(part.fs(), None)
-        self.assertEqual(part.wipe, None)
 
     async def test_from_sample_data(self):
         # calling this a unit test is definitely questionable. but it

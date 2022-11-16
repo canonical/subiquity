@@ -142,7 +142,10 @@ class VolumeStructure:
     update: VolumeUpdate = attr.Factory(VolumeUpdate)
 
     def gpt_part_uuid(self):
-        return self.type.split(',', 1)[1].upper()
+        if ',' in self.type:
+            return self.type.split(',', 1)[1].upper()
+        else:
+            return self.type
 
 
 @attr.s(auto_attribs=True)
