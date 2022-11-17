@@ -107,8 +107,8 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             await asyncio.sleep(0.1)
 
         if self.answers['tpm-default']:
-            self.ui.body.done(self.ui.body.form)
             await self.app.confirm_install()
+            self.ui.body.done(self.ui.body.form)
         if self.answers['guided']:
             if 'guided-index' in self.answers:
                 disk = self.ui.body.form.disks[self.answers['guided-index']]
