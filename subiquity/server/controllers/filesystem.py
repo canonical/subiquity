@@ -496,6 +496,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 part.partition_name = structure.name
             if structure.filesystem:
                 part.wipe = 'superblock'
+                self.delete_filesystem(part.fs())
                 fs = self.model.add_filesystem(
                     part, structure.filesystem, label=structure.label)
                 if structure.role == snapdapi.Role.SYSTEM_DATA:

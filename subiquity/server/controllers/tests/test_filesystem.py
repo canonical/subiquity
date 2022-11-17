@@ -501,6 +501,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         # Add a partition that matches one in the volume structure
         reused_part = make_partition(
             self.fsc.model, disk, offset=1 << 20, size=1 << 30, preserve=True)
+        self.fsc.model.add_filesystem(reused_part, 'ext4')
         # And one that does not.
         make_partition(
             self.fsc.model, disk, offset=2 << 30, size=1 << 30, preserve=True)
