@@ -452,43 +452,61 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         for structure in volume.structure:
             if structure.role == snapdapi.Role.MBR:
                 continue
-            if ',' not in structure.type:
-                continue
             if structure.offset is not None:
                 offset = structure.offset
             yield (structure, offset, structure.size)
             offset = offset + structure.size
 
-    def _add_structure(self, *, disk: Disk, offset: int, size: int,
-                       is_last: bool, structure: snapdapi.VolumeStructure):
-        if structure.role == snapdapi.Role.SYSTEM_DATA and is_last:
-            size = gaps.largest_gap(disk).size
-        flag = ptable_uuid_to_flag_entry(structure.gpt_part_uuid())[0]
-        part = self.model.add_partition(
-            disk, offset=offset, size=size, flag=flag,
-            partition_name=structure.name)
-        if structure.filesystem:
-            part.wipe = 'superblock'
-            fs = self.model.add_filesystem(
-                part, structure.filesystem, label=structure.label)
-            if structure.role == snapdapi.Role.SYSTEM_DATA:
-                self.model.add_mount(fs, '/')
-            elif structure.role == snapdapi.Role.SYSTEM_BOOT:
-                self.model.add_mount(fs, '/boot')
-            elif flag == 'boot':
-                self.model.add_mount(fs, '/boot/efi')
-        self._role_to_device[structure.role] = part
-
     def apply_system(self, disk_id):
         disk = self.model._one(id=disk_id)
-        self.reformat(disk)
 
         [volume] = self._system.volumes.values()
 
+        preserved_parts = set()
+
+        if volume.schema != disk.ptable:
+            self.reformat(disk)
+            disk.ptable = volume.schema
+            parts_by_offset_size = {}
+        else:
+            parts_by_offset_size = {
+                (part.offset, part.size): part for part in disk.partitions()
+                }
+
+            for _struct, offset, size in self._offsets_and_sizes_for_system():
+                if (offset, size) in parts_by_offset_size:
+                    preserved_parts.add(parts_by_offset_size[(offset, size)])
+
+            for part in disk.partitions():
+                if part not in preserved_parts:
+                    self.delete_partition(part)
+                    del parts_by_offset_size[(part.offset, part.size)]
+
         for structure, offset, size in self._offsets_and_sizes_for_system():
-            self._add_structure(
-                disk=disk, offset=offset, size=size, structure=structure,
-                is_last=structure == volume.structure[-1])
+            if (offset, size) in parts_by_offset_size:
+                part = parts_by_offset_size[(offset, size)]
+            else:
+                if structure.role == snapdapi.Role.SYSTEM_DATA and \
+                   structure == volume.structure[-1]:
+                    gap = gaps.largest_gap(disk)
+                    size = gap.size - (offset - gap.offset)
+                part = self.model.add_partition(disk, offset=offset, size=size)
+            part.flag = ptable_uuid_to_flag_entry(structure.gpt_part_uuid())[0]
+            if structure.name:
+                part.partition_name = structure.name
+            if structure.filesystem:
+                part.wipe = 'superblock'
+                self.delete_filesystem(part.fs())
+                fs = self.model.add_filesystem(
+                    part, structure.filesystem, label=structure.label)
+                if structure.role == snapdapi.Role.SYSTEM_DATA:
+                    self.model.add_mount(fs, '/')
+                elif structure.role == snapdapi.Role.SYSTEM_BOOT:
+                    self.model.add_mount(fs, '/boot')
+                elif part.flag == 'boot':
+                    self.model.add_mount(fs, '/boot/efi')
+            self._role_to_device[structure.role] = part
+
         disk._partitions.sort(key=lambda p: p.number)
 
     def _on_volumes(self) -> Dict[str, snapdapi.OnVolume]:
@@ -525,7 +543,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             for fs in self.model._all(type='format'):
                 if fs.volume == part:
                     fs.volume = arb_device
-            self._role_to_device[role] = arb_device
 
     @with_context(description="making system bootable")
     async def finish_install(self, context):
