@@ -543,7 +543,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             for fs in self.model._all(type='format'):
                 if fs.volume == part:
                     fs.volume = arb_device
-            self._role_to_device[role] = arb_device
 
     @with_context(description="making system bootable")
     async def finish_install(self, context):

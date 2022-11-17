@@ -607,16 +607,3 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         request = call.args[2]
         self.assertEqual(request.action, snapdapi.SystemAction.INSTALL)
         self.assertEqual(request.step, snapdapi.SystemActionStep.FINISH)
-        [on_volume] = request.on_volumes.values()
-        role_to_path = {}
-        for s in on_volume.structure:
-            if s.role in [snapdapi.Role.SYSTEM_DATA,
-                          snapdapi.Role.SYSTEM_BOOT,
-                          snapdapi.Role.SYSTEM_SEED]:
-                role_to_path[s.role] = s.device
-        expected_role_to_path = {
-            snapdapi.Role.SYSTEM_DATA: mounts['/'].path,
-            snapdapi.Role.SYSTEM_BOOT: mounts['/boot'].path,
-            snapdapi.Role.SYSTEM_SEED: mounts['/boot/efi'].path,
-            }
-        self.assertEqual(expected_role_to_path, role_to_path)
