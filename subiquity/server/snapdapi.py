@@ -102,6 +102,7 @@ class Role(enum.Enum):
     SYSTEM_RECOVERY_SELECT = 'system-recovery-select'
     SYSTEM_SAVE = 'system-save'
     SYSTEM_SEED = 'system-seed'
+    SYSTEM_SEED_NULL = 'system-seed-null'
 
 
 @attr.s(auto_attribs=True)
