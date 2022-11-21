@@ -107,13 +107,14 @@ class SSHController(SubiquityTuiController):
                 "# ssh-import-id {}".format(ssh_import_id),
                 "").strip().splitlines()
 
+            authorized_keys = [key for key in key_material.splitlines() if key]
             if 'ssh-import-id' in self.app.answers.get("Identity", {}):
-                ssh_data.authorized_keys = key_material.splitlines()
+                ssh_data.authorized_keys = authorized_keys
                 self.done(ssh_data)
             else:
                 if isinstance(self.ui.body, SSHView):
                     self.ui.body.confirm_ssh_keys(
-                        ssh_data, ssh_import_id, key_material, fingerprints)
+                        ssh_data, ssh_import_id, authorized_keys, fingerprints)
                 else:
                     log.debug("ui.body of unexpected instance: %s",
                               type(self.ui.body).__name__)
