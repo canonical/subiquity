@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 import subprocess
 from typing import List
 
@@ -77,8 +78,13 @@ class SSHController(SubiquityController):
         identities: List[SSHIdentity] = []
 
         import_command = ('ssh-import-id', '--output', '-', '--', user_id)
+        env = None
+        if self.app.base_model.proxy.proxy:
+            env = os.environ.copy()
+            env["https_proxy"] = self.app.base_model.proxy.proxy
+
         try:
-            cp = await arun_command(import_command, check=True)
+            cp = await arun_command(import_command, check=True, env=env)
         except subprocess.CalledProcessError as e:
             log.exception("ssh-import-id failed. stderr: %s", e.stderr)
             return SSHFetchIdResponse(status=SSHFetchIdStatus.IMPORT_ERROR,
