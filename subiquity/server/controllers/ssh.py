@@ -91,25 +91,23 @@ class SSHController(SubiquityController):
                                       identities=None, error=e.stderr)
         keys_material: str = cp.stdout.replace('\r', '').strip()
 
-        # ssh-keygen supports multiple keys at once.
+        # ssh-keygen supports multiple keys at once, but it is simpler to
+        # associate each key with its resulting fingerprint if we call
+        # ssh-keygen multiple times.
         fingerprint_command = ('ssh-keygen', '-l', '-f', '-')
-        try:
-            cp = await arun_command(fingerprint_command, check=True,
-                                    input=keys_material)
-        except subprocess.CalledProcessError as e:
-            log.exception("ssh-import-id failed. stderr: %s", e.stderr)
-            return SSHFetchIdResponse(
-                    tatus=SSHFetchIdStatus.FINGERPRINT_ERROR,
-                    identities=None, error=e.stderr)
+        for key_material in (mat for mat in keys_material.splitlines() if mat):
+            try:
+                cp = await arun_command(fingerprint_command, check=True,
+                                        input=key_material)
+            except subprocess.CalledProcessError as e:
+                log.exception("ssh-import-id failed. stderr: %s", e.stderr)
+                return SSHFetchIdResponse(
+                        tatus=SSHFetchIdStatus.FINGERPRINT_ERROR,
+                        identities=None, error=e.stderr)
 
-        fingerprints: str = cp.stdout.replace(
+            fingerprint: str = cp.stdout.replace(
                 f'# ssh-import-id {user_id}', '').strip()
 
-        zipped = zip(
-                [mat for mat in keys_material.splitlines() if mat],
-                fingerprints.splitlines())
-
-        for key_material, fingerprint in zipped:
             key_type, key, key_comment = key_material.split(' ', maxsplit=2)
             identities.append(SSHIdentity(
                 key_type=key_type, key=key, key_comment=key_comment,
