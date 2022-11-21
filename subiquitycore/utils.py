@@ -102,7 +102,8 @@ async def arun_command(cmd: Sequence[str], *,
     # .communicate() forces returncode to be set to a value
     assert(proc.returncode is not None)
     if check and proc.returncode != 0:
-        raise subprocess.CalledProcessError(proc.returncode, cmd)
+        raise subprocess.CalledProcessError(proc.returncode, cmd,
+                                            stdout, stderr)
     else:
         return subprocess.CompletedProcess(
             cmd, proc.returncode, stdout, stderr)
