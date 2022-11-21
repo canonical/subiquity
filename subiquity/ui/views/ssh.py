@@ -15,6 +15,7 @@
 
 import logging
 import re
+from typing import List
 
 from urwid import (
     connect_signal,
@@ -177,10 +178,11 @@ class FetchingSSHKeys(WidgetWrap):
 
 
 class ConfirmSSHKeys(Stretchy):
-    def __init__(self, parent, ssh_data, key_material, fingerprints):
+    def __init__(self, parent, ssh_data, authorized_keys: List[str],
+                 fingerprints: List[str]):
         self.parent = parent
         self.ssh_data = ssh_data
-        self.key_material = key_material
+        self.authorized_keys: List[str] = authorized_keys
 
         ok = ok_btn(label=_("Yes"), on_press=self.ok)
         cancel = cancel_btn(label=_("No"), on_press=self.cancel)
@@ -211,7 +213,7 @@ class ConfirmSSHKeys(Stretchy):
         self.parent.remove_overlay()
 
     def ok(self, sender):
-        self.ssh_data.authorized_keys = self.key_material.splitlines()
+        self.ssh_data.authorized_keys = self.authorized_keys
         self.parent.controller.done(self.ssh_data)
 
 
@@ -288,10 +290,11 @@ class SSHView(BaseView):
     def cancel(self, result=None):
         self.controller.cancel()
 
-    def confirm_ssh_keys(self, ssh_data, ssh_import_id, ssh_key, fingerprints):
+    def confirm_ssh_keys(self, ssh_data, ssh_import_id,
+                         authorized_keys: List[str], fingerprints):
         self.remove_overlay()
         self.show_stretchy_overlay(
-            ConfirmSSHKeys(self, ssh_data, ssh_key, fingerprints))
+            ConfirmSSHKeys(self, ssh_data, authorized_keys, fingerprints))
 
     def fetching_ssh_keys_failed(self, msg, stderr):
         self.remove_overlay()
