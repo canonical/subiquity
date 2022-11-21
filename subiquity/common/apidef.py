@@ -50,6 +50,7 @@ from subiquity.common.types import (
     SnapSelection,
     SourceSelectionAndSetting,
     SSHData,
+    SSHFetchIdResponse,
     LiveSessionSSHInfo,
     StorageResponse,
     StorageResponseV2,
@@ -73,7 +74,6 @@ class API:
     """The API offered by the subiquity installer process."""
     locale = simple_endpoint(str)
     proxy = simple_endpoint(str)
-    ssh = simple_endpoint(SSHData)
     updates = simple_endpoint(str)
     wslconfbase = simple_endpoint(WSLConfigurationBase)
     wslconfadvanced = simple_endpoint(WSLConfigurationAdvanced)
@@ -368,6 +368,13 @@ class API:
 
         class validate_username:
             def GET(username: str) -> UsernameValidation: ...
+
+    class ssh:
+        def GET() -> SSHData: ...
+        def POST(data: Payload[SSHData]) -> None: ...
+
+        class fetch_id:
+            def GET(user_id: str) -> SSHFetchIdResponse: ...
 
 
 class LinkAction(enum.Enum):

@@ -52,7 +52,7 @@ from subiquitycore.ui.utils import (
     SomethingFailed,
     )
 
-from subiquity.common.types import SSHData
+from subiquity.common.types import SSHData, SSHIdentity
 from subiquity.ui.views.identity import (
     UsernameField,
     )
@@ -178,16 +178,15 @@ class FetchingSSHKeys(WidgetWrap):
 
 
 class ConfirmSSHKeys(Stretchy):
-    def __init__(self, parent, ssh_data, authorized_keys: List[str],
-                 fingerprints: List[str]):
+    def __init__(self, parent, ssh_data, identities: List[SSHIdentity]):
         self.parent = parent
         self.ssh_data = ssh_data
-        self.authorized_keys: List[str] = authorized_keys
+        self.identities: List[SSHIdentity] = identities
 
         ok = ok_btn(label=_("Yes"), on_press=self.ok)
         cancel = cancel_btn(label=_("No"), on_press=self.cancel)
 
-        if len(fingerprints) > 1:
+        if len(identities) > 1:
             title = _("Confirm SSH keys")
             header = _("Keys with the following fingerprints were fetched. "
                        "Do you want to use them?")
@@ -196,8 +195,8 @@ class ConfirmSSHKeys(Stretchy):
             header = _("A key with the following fingerprint was fetched. "
                        "Do you want to use it?")
 
-        fingerprints = Pile([Text(fingerprint)
-                             for fingerprint in fingerprints])
+        fingerprints = Pile([Text(identity.key_fingerprint)
+                             for identity in identities])
 
         super().__init__(
             title,
@@ -213,7 +212,8 @@ class ConfirmSSHKeys(Stretchy):
         self.parent.remove_overlay()
 
     def ok(self, sender):
-        self.ssh_data.authorized_keys = self.authorized_keys
+        self.ssh_data.authorized_keys = \
+                [id_.to_authorized_key() for id_ in self.identities]
         self.parent.controller.done(self.ssh_data)
 
 
@@ -291,10 +291,10 @@ class SSHView(BaseView):
         self.controller.cancel()
 
     def confirm_ssh_keys(self, ssh_data, ssh_import_id,
-                         authorized_keys: List[str], fingerprints):
+                         identities: List[SSHIdentity]):
         self.remove_overlay()
         self.show_stretchy_overlay(
-            ConfirmSSHKeys(self, ssh_data, authorized_keys, fingerprints))
+            ConfirmSSHKeys(self, ssh_data, identities))
 
     def fetching_ssh_keys_failed(self, msg, stderr):
         self.remove_overlay()

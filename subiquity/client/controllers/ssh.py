@@ -14,14 +14,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import subprocess
 
 from subiquitycore.async_helpers import schedule_task
 from subiquitycore.context import with_context
-from subiquitycore import utils
 
 from subiquity.client.controller import SubiquityTuiController
-from subiquity.common.types import SSHData
+from subiquity.common.types import (
+    SSHData,
+    SSHFetchIdResponse,
+    SSHFetchIdStatus,
+    )
 from subiquity.ui.views.ssh import SSHView
 
 log = logging.getLogger('subiquity.client.controllers.ssh')
@@ -73,48 +75,36 @@ class SSHController(SubiquityTuiController):
             return
         self._fetch_task.cancel()
 
-    async def run_cmd_checked(self, cmd, *, failmsg, **kw):
-        cp = await utils.arun_command(cmd, **kw)
-        if cp.returncode != 0:
-            if isinstance(self.ui.body, SSHView):
-                self.ui.body.fetching_ssh_keys_failed(failmsg, cp.stderr)
-            raise subprocess.CalledProcessError(cp.returncode, cmd)
-        return cp
-
     @with_context(
         name="ssh_import_id", description="{ssh_import_id}")
     async def _fetch_ssh_keys(self, *, context, ssh_import_id, ssh_data):
         with self.context.child("ssh_import_id", ssh_import_id):
-            try:
-                cp = await self.run_cmd_checked(
-                    ['ssh-import-id', '-o-', ssh_import_id],
-                    failmsg=_("Importing keys failed:"))
-            except subprocess.CalledProcessError:
-                return
-            key_material = cp.stdout.replace('\r', '').strip()
+            response: SSHFetchIdResponse = await \
+                    self.endpoint.fetch_id.GET(ssh_import_id)
 
-            try:
-                cp = await self.run_cmd_checked(
-                    ['ssh-keygen', '-lf-'],
-                    failmsg=_(
-                        "ssh-keygen failed to show fingerprint of downloaded "
-                        "keys:"),
-                    input=key_material)
-            except subprocess.CalledProcessError:
+            if response.status == SSHFetchIdStatus.IMPORT_ERROR:
+                if isinstance(self.ui.body, SSHView):
+                    self.ui.body.fetching_ssh_keys_failed(
+                            _("Importing keys failed:"), response.error)
+                return
+            elif response.status == SSHFetchIdStatus.FINGERPRINT_ERROR:
+                if isinstance(self.ui.body, SSHView):
+                    self.ui.body.fetching_ssh_keys_failed(
+                            _("ssh-keygen failed to show fingerprint of"
+                              " downloaded keys:"),
+                            response.error)
                 return
 
-            fingerprints = cp.stdout.replace(
-                "# ssh-import-id {}".format(ssh_import_id),
-                "").strip().splitlines()
+            identities = response.identities
 
-            authorized_keys = [key for key in key_material.splitlines() if key]
             if 'ssh-import-id' in self.app.answers.get("Identity", {}):
-                ssh_data.authorized_keys = authorized_keys
+                ssh_data.authorized_keys = \
+                        [id_.to_authorized_key() for id_ in identities]
                 self.done(ssh_data)
             else:
                 if isinstance(self.ui.body, SSHView):
                     self.ui.body.confirm_ssh_keys(
-                        ssh_data, ssh_import_id, authorized_keys, fingerprints)
+                        ssh_data, ssh_import_id, identities)
                 else:
                     log.debug("ui.body of unexpected instance: %s",
                               type(self.ui.body).__name__)
