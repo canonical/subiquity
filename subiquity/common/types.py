@@ -496,6 +496,31 @@ class SSHData:
     authorized_keys: List[str] = attr.Factory(list)
 
 
+@attr.s(auto_attribs=True)
+class SSHIdentity:
+    """ Represents a SSH identity (public key + fingerprint). """
+    key_type: str
+    key: str
+    key_comment: str
+    key_fingerprint: str
+
+    def to_authorized_key(self):
+        return f"{self.key_type} {self.key} {self.key_comment}"
+
+
+class SSHFetchIdStatus(enum.Enum):
+    OK = enum.auto()
+    IMPORT_ERROR = enum.auto()
+    FINGERPRINT_ERROR = enum.auto()
+
+
+@attr.s(auto_attribs=True)
+class SSHFetchIdResponse:
+    status: SSHFetchIdStatus
+    identities: Optional[List[SSHIdentity]]
+    error: Optional[str]
+
+
 class SnapCheckState(enum.Enum):
     FAILED = enum.auto()
     LOADING = enum.auto()
