@@ -526,8 +526,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         [(key, volume)] = self._system.volumes.items()
         on_volume = snapdapi.OnVolume.from_volume(volume)
         for structure, on_volume_structure in zip(volume.structure, on_volume.structure):
-            role = on_volume_structure.role
-            if role in self._role_to_device:
+            if structure in self._structure_to_device:
                 on_volume_structure.device = self._structure_to_device[structure].path
         log.debug("_on_volumes: %s", on_volume)
         return {key: on_volume}
