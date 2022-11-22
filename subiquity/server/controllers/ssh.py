@@ -31,6 +31,13 @@ from subiquity.server.controller import SubiquityController
 log = logging.getLogger('subiquity.server.controllers.ssh')
 
 
+class SSHFetchError(Exception):
+    def __init__(self, status: SSHFetchIdStatus, reason: str) -> None:
+        self.reason = reason
+        self.status = status
+        super().__init__()
+
+
 class SSHController(SubiquityController):
 
     endpoint = API.ssh
@@ -74,44 +81,57 @@ class SSHController(SubiquityController):
         self.model.pwauth = data.allow_pw
         await self.configured()
 
-    async def fetch_id_GET(self, user_id: str) -> SSHFetchIdResponse:
-        identities: List[SSHIdentity] = []
-
-        import_command = ('ssh-import-id', '--output', '-', '--', user_id)
+    async def fetch_keys_for_id(self, user_id: str) -> List[str]:
+        cmd = ('ssh-import-id', '--output', '-', '--', user_id)
         env = None
         if self.app.base_model.proxy.proxy:
             env = os.environ.copy()
             env["https_proxy"] = self.app.base_model.proxy.proxy
 
         try:
-            cp = await arun_command(import_command, check=True, env=env)
-        except subprocess.CalledProcessError as e:
-            log.exception("ssh-import-id failed. stderr: %s", e.stderr)
-            return SSHFetchIdResponse(status=SSHFetchIdStatus.IMPORT_ERROR,
-                                      identities=None, error=e.stderr)
+            cp = await arun_command(cmd, check=True, env=env)
+        except subprocess.CalledProcessError as exc:
+            log.exception("ssh-import-id failed. stderr: %s", exc.stderr)
+            raise SSHFetchError(status=SSHFetchIdStatus.IMPORT_ERROR,
+                                reason=exc.stderr)
         keys_material: str = cp.stdout.replace('\r', '').strip()
+        return [mat for mat in keys_material.splitlines() if mat]
+
+    async def gen_fingerprint_for_key(self, key: str) -> str:
+        """ For a given key, generate the fingerprint. """
 
         # ssh-keygen supports multiple keys at once, but it is simpler to
         # associate each key with its resulting fingerprint if we call
         # ssh-keygen multiple times.
-        fingerprint_command = ('ssh-keygen', '-l', '-f', '-')
-        for key_material in (mat for mat in keys_material.splitlines() if mat):
-            try:
-                cp = await arun_command(fingerprint_command, check=True,
-                                        input=key_material)
-            except subprocess.CalledProcessError as e:
-                log.exception("ssh-import-id failed. stderr: %s", e.stderr)
-                return SSHFetchIdResponse(
-                        tatus=SSHFetchIdStatus.FINGERPRINT_ERROR,
-                        identities=None, error=e.stderr)
+        cmd = ('ssh-keygen', '-l', '-f', '-')
+        try:
+            cp = await arun_command(cmd, check=True, input=key)
+        except subprocess.CalledProcessError as exc:
+            log.exception("ssh-import-id failed. stderr: %s", exc.stderr)
+            raise SSHFetchError(status=SSHFetchIdStatus.FINGERPRINT_ERROR,
+                                reason=exc.stderr)
+        return cp.stdout.strip()
 
-            fingerprint: str = cp.stdout.replace(
-                f'# ssh-import-id {user_id}', '').strip()
+    async def fetch_id_GET(self, user_id: str) -> SSHFetchIdResponse:
+        identities: List[SSHIdentity] = []
 
-            key_type, key, key_comment = key_material.split(' ', maxsplit=2)
-            identities.append(SSHIdentity(
-                key_type=key_type, key=key, key_comment=key_comment,
-                key_fingerprint=fingerprint
-            ))
-        return SSHFetchIdResponse(status=SSHFetchIdStatus.OK,
-                                  identities=identities, error=None)
+        try:
+            for key_material in await self.fetch_keys_for_id(user_id):
+                fingerprint = await self.gen_fingerprint_for_key(key_material)
+
+                fingerprint = fingerprint.replace(
+                        f'# ssh-import-id {user_id}', ''
+                        ).strip()
+
+                key_type, key, key_comment = key_material.split(
+                        ' ', maxsplit=2)
+                identities.append(SSHIdentity(
+                    key_type=key_type, key=key, key_comment=key_comment,
+                    key_fingerprint=fingerprint
+                ))
+            return SSHFetchIdResponse(status=SSHFetchIdStatus.OK,
+                                      identities=identities, error=None)
+
+        except SSHFetchError as exc:
+            return SSHFetchIdResponse(status=exc.status,
+                                      identities=None, error=exc.reason)
