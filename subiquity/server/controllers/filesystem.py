@@ -143,6 +143,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._core_boot_classic_error: str = ''
         self._system_mounter: Optional[Mounter] = None
         self._role_to_device: Dict[snapdapi.Role: _Device] = {}
+        self._structure_to_device: Dict[snapdapi.VolumeStructure: _Device] = {}
         self.use_tpm: bool = False
 
     def is_core_boot_classic(self):
@@ -511,6 +512,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     self.model.add_mount(fs, '/boot/efi')
             if structure.role != snapdapi.Role.NONE:
                 self._role_to_device[structure.role] = part
+            self._structure_to_device[structure] = part
 
         disk._partitions.sort(key=lambda p: p.number)
 
@@ -523,10 +525,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # devices.
         [(key, volume)] = self._system.volumes.items()
         on_volume = snapdapi.OnVolume.from_volume(volume)
-        for on_volume_structure in on_volume.structure:
+        for structure, on_volume_structure in zip(volume.structure, on_volume.structure):
             role = on_volume_structure.role
             if role in self._role_to_device:
-                on_volume_structure.device = self._role_to_device[role].path
+                on_volume_structure.device = self._structure_to_device[structure].path
         log.debug("_on_volumes: %s", on_volume)
         return {key: on_volume}
 

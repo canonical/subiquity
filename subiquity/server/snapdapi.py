@@ -128,7 +128,7 @@ class VolumeUpdate:
     preserve: Optional[List[str]] = None
 
 
-@attr.s(auto_attribs=True)
+@attr.s(auto_attribs=True, eq=False)
 class VolumeStructure:
     name: str = ''
     label: str = named_field('filesystem-label', '')
