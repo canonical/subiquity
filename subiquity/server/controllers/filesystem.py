@@ -509,7 +509,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     self.model.add_mount(fs, '/boot')
                 elif part.flag == 'boot':
                     self.model.add_mount(fs, '/boot/efi')
-            self._role_to_device[structure.role] = part
+            if structure.role != snapdapi.Role.NONE:
+                self._role_to_device[structure.role] = part
 
         disk._partitions.sort(key=lambda p: p.number)
 
