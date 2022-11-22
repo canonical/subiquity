@@ -526,6 +526,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             role = on_volume_structure.role
             if role in self._role_to_device:
                 on_volume_structure.device = self._role_to_device[role].path
+        log.debug("_on_volumes: %s", on_volume)
         return {key: on_volume}
 
     @with_context(description="configuring TPM-backed full disk encryption")
