@@ -477,7 +477,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if (offset, size) in parts_by_offset_size:
                     preserved_parts.add(parts_by_offset_size[(offset, size)])
 
-            for part in disk.partitions():
+            for part in list(disk.partitions()):
                 if part not in preserved_parts:
                     self.delete_partition(part)
                     del parts_by_offset_size[(part.offset, part.size)]

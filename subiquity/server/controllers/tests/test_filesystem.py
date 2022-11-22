@@ -502,9 +502,11 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         reused_part = make_partition(
             self.fsc.model, disk, offset=1 << 20, size=1 << 30, preserve=True)
         self.fsc.model.add_filesystem(reused_part, 'ext4')
-        # And one that does not.
+        # And two that do not.
         make_partition(
             self.fsc.model, disk, offset=2 << 30, size=1 << 30, preserve=True)
+        make_partition(
+            self.fsc.model, disk, offset=3 << 30, size=1 << 30, preserve=True)
         self.fsc._system = self._details_for_structures([
             snapdapi.VolumeStructure(
                 type="0FC63DAF-8483-4772-8E79-3D69D8477DE4",
