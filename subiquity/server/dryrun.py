@@ -34,6 +34,9 @@ class DRConfig:
     All variables here should have default values ; to indicate the behavior we
     want by default in dry-run mode. """
 
+    # Tells whether "$source"/var/lib/snapd/seed/systems exists on the source.
+    systems_dir_exists: bool = False
+
     @classmethod
     def load(cls, stream):
         data = yaml.safe_load(stream)
