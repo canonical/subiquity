@@ -284,6 +284,7 @@ class InstallController(SubiquityController):
                     name="extract", stages=["extract"],
                     acquire_config=self.acquire_generic_config,
                     ).run,
+                self.create_core_boot_classic_fstab,
                 fs_controller.finish_install,
                 self.setup_target,
                 ])
@@ -312,6 +313,11 @@ class InstallController(SubiquityController):
 
         for step in steps:
             await step(context=context)
+
+    @with_context("creating fstab")
+    async def create_core_boot_classic_fstab(self, *, context):
+        with open(self.tpath('etc/fstab'), 'w') as fp:
+            fp.write("/run/mnt/ubuntu-boot/EFI/ubuntu /boot/grub none bind\n")
 
     @with_context()
     async def install(self, *, context):
