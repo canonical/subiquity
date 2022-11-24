@@ -68,6 +68,7 @@ from subiquity.models.subiquity import (
     ModelNames,
     SubiquityModel,
     )
+from subiquity.server.dryrun import DRConfig
 from subiquity.server.controller import SubiquityController
 from subiquity.server.geoip import (
     GeoIP,
@@ -274,6 +275,7 @@ class SubiquityServer(Application):
 
     def __init__(self, opts, block_log_dir):
         super().__init__(opts)
+        self.dr_cfg: Optional[DRConfig] = None
         self.set_source_variant(self.supported_variants[0])
         self.block_log_dir = block_log_dir
         self.cloud = None

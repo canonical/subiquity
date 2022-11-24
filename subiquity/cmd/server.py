@@ -62,6 +62,7 @@ def make_server_args_parser():
     parser.add_argument('--dry-run', action='store_true',
                         dest='dry_run',
                         help='menu-only, do not call installer function')
+    parser.add_argument('--dry-run-config', type=argparse.FileType())
     parser.add_argument('--socket')
     parser.add_argument('--machine-config', metavar='CONFIG',
                         dest='machine_config',
@@ -118,6 +119,7 @@ def main():
     # setup_environment sets $APPORT_DATA_DIR which must be set before
     # apport is imported, which is done by this import:
     from subiquity.server.server import SubiquityServer
+    from subiquity.server.dryrun import DRConfig
     parser = make_server_args_parser()
     opts = parser.parse_args(sys.argv[1:])
     if opts.storage_version is None:
@@ -125,9 +127,16 @@ def main():
             'subiquity-storage-version', 1))
     logdir = LOGDIR
     if opts.dry_run:
+        if opts.dry_run_config:
+            dr_cfg = DRConfig.load(opts.dry_run_config)
+        else:
+            dr_cfg = DRConfig()
+
         if opts.snaps_from_examples is None:
             opts.snaps_from_examples = True
         logdir = opts.output_base
+    else:
+        dr_cfg = None
     if opts.socket is None:
         if opts.dry_run:
             opts.socket = opts.output_base + '/socket'
@@ -157,6 +166,7 @@ def main():
 
     async def run_with_loop():
         server = SubiquityServer(opts, block_log_dir)
+        server.dr_cfg = dr_cfg
         server.note_file_for_apport(
             "InstallerServerLog", logfiles['debug'])
         server.note_file_for_apport(
