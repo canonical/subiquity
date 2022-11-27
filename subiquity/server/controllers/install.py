@@ -162,7 +162,8 @@ class InstallController(SubiquityController):
         generate_config_yaml(str(config_file), config)
 
     def acquire_generic_config(self,
-                               step: CurtinInstallStep) -> Dict[str, Any]:
+                               step: CurtinInstallStep,
+                               **kw) -> Dict[str, Any]:
         """ Return a dictionary object to be used as the configuration of a
         generic curtin install step. """
         config = self.model.render()
@@ -170,6 +171,7 @@ class InstallController(SubiquityController):
         config["install"]["log_file_append"] = True
         config["install"]["error_tarfile"] = str(step.error_file)
         config["install"]["resume_data"] = str(step.resume_data_file)
+        config.update(kw)
         return config
 
     def acquire_initial_config(self,
@@ -287,6 +289,12 @@ class InstallController(SubiquityController):
                 self.create_core_boot_classic_fstab,
                 fs_controller.finish_install,
                 self.setup_target,
+                make_curtin_step(
+                        name="swap", stages=["swap"],
+                        acquire_config=functools.partial(
+                            self.acquire_generic_config,
+                            swap_commands={'subiquity': ['curtin', 'swap']}),
+                    ).run,
                 ])
         else:
             steps.extend([
