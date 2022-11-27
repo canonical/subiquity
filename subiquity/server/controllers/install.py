@@ -293,7 +293,12 @@ class InstallController(SubiquityController):
                         name="swap", stages=["swap"],
                         acquire_config=functools.partial(
                             self.acquire_generic_config,
-                            swap_commands={'subiquity': ['curtin', 'swap']}),
+                            swap_commands={
+                                'subiquity': [
+                                    'curtin', 'swap',
+                                    '--fstab', self.tpath('etc/fstab'),
+                                    ],
+                                }),
                     ).run,
                 ])
         else:
