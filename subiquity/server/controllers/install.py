@@ -287,8 +287,6 @@ class InstallController(SubiquityController):
                     acquire_config=self.acquire_generic_config,
                     ).run,
                 self.create_core_boot_classic_fstab,
-                fs_controller.finish_install,
-                self.setup_target,
                 make_curtin_step(
                         name="swap", stages=["swap"],
                         acquire_config=functools.partial(
@@ -300,6 +298,8 @@ class InstallController(SubiquityController):
                                     ],
                                 }),
                     ).run,
+                fs_controller.finish_install,
+                self.setup_target,
                 ])
         else:
             steps.extend([
