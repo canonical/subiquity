@@ -602,9 +602,18 @@ class UbuntuProView(BaseView):
         if form.skip.value:
             self.controller.done("")
         else:
+            def initiate() -> None:
+                self.controller.contract_selection_initiate(
+                        on_initiated=self.cs_initiated)
+
             self._w = self.upgrade_mode_screen()
-            self.controller.contract_selection_initiate(
-                    on_initiated=self.cs_initiated)
+            if self.controller.cs_initiated:
+                # Cancel the existing contract selection before initiating a
+                # new one.
+                self.controller.contract_selection_cancel(
+                        on_cancelled=initiate)
+            else:
+                initiate()
 
     def cancel(self) -> None:
         """ Called when the user presses the Back button. """
