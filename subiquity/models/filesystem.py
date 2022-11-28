@@ -1588,12 +1588,10 @@ class FilesystemModel(object):
     def add_partition(self, device, *, size, offset, flag="", wipe=None,
                       grub_device=None, partition_name=None):
         from subiquity.common.filesystem import boot
-        real_size = align_up(size)
-        log.debug("add_partition: rounded size from %s to %s", size, real_size)
         if device._fs is not None:
             raise Exception("%s is already formatted" % (device,))
         p = Partition(
-            m=self, device=device, size=real_size, flag=flag, wipe=wipe,
+            m=self, device=device, size=size, flag=flag, wipe=wipe,
             grub_device=grub_device, offset=offset,
             partition_name=partition_name)
         if boot.is_bootloader_partition(p):
