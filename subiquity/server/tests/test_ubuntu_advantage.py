@@ -15,7 +15,7 @@
 
 from subprocess import CompletedProcess
 import unittest
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch, AsyncMock, ANY
 
 from subiquity.common.types import UbuntuProService
 from subiquity.server.ubuntu_advantage import (
@@ -87,7 +87,7 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
             mock_arun.return_value = CompletedProcess([], 0)
             mock_arun.return_value.stdout = "{}"
             await strategy.query_info(token="123456789")
-            mock_arun.assert_called_once_with(command, check=False)
+            mock_arun.assert_called_once_with(command, check=False, env=ANY)
 
     async def test_query_info_unknown_error(self):
         strategy = UAClientUAInterfaceStrategy()
@@ -103,7 +103,7 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
             mock_arun.return_value.stdout = "{}"
             with self.assertRaises(CheckSubscriptionError):
                 await strategy.query_info(token="123456789")
-            mock_arun.assert_called_once_with(command, check=False)
+            mock_arun.assert_called_once_with(command, check=False, env=ANY)
 
     async def test_query_info_invalid_token(self):
         strategy = UAClientUAInterfaceStrategy()
@@ -134,7 +134,7 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
 """
             with self.assertRaises(InvalidTokenError):
                 await strategy.query_info(token="123456789")
-            mock_arun.assert_called_once_with(command, check=False)
+            mock_arun.assert_called_once_with(command, check=False, env=ANY)
 
     async def test_query_info_invalid_json(self):
         strategy = UAClientUAInterfaceStrategy()
@@ -150,7 +150,7 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
             mock_arun.return_value.stdout = "invalid-json"
             with self.assertRaises(CheckSubscriptionError):
                 await strategy.query_info(token="123456789")
-            mock_arun.assert_called_once_with(command, check=False)
+            mock_arun.assert_called_once_with(command, check=False, env=ANY)
 
     async def test_api_call(self):
         strategy = UAClientUAInterfaceStrategy()
@@ -168,7 +168,7 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
             "u.pro.attach.magic.wait.v1",
             "--args", "magic_token=132456",
         )
-        mock_arun.assert_called_once_with(command, check=False)
+        mock_arun.assert_called_once_with(command, check=False, env=ANY)
 
     async def test_magic_initiate_v1(self):
         strategy = UAClientUAInterfaceStrategy()
