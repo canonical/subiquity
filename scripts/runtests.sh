@@ -159,6 +159,7 @@ for answers in examples/answers*.yaml; do
     if echo $answers|grep -vq system-setup; then
         config=$(sed -n 's/^#machine-config: \(.*\)/\1/p' $answers || true)
         catalog=$(sed -n 's/^#source-catalog: \(.*\)/\1/p' $answers || true)
+        dr_config=$(sed -n 's/^#dr-config: \(.*\)/\1/p' "$answers" || true)
         if [ -z "$config" ]; then
             config=examples/simple.json
         fi
@@ -169,6 +170,9 @@ for answers in examples/answers*.yaml; do
         opts=()
         if [ -n "$serial" ]; then
             opts+=(--serial)
+        fi
+        if [ -n "$dr_config" ]; then
+            opts+=(--dry-run-config "$dr_config")
         fi
         # The --foreground is important to avoid subiquity getting SIGTTOU-ed.
         LANG=C.UTF-8 timeout --foreground 60 \

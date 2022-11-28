@@ -19,6 +19,7 @@ import glob
 import json
 import logging
 import os
+import pathlib
 import platform
 import select
 from typing import Dict, List, Optional
@@ -110,6 +111,10 @@ than GPT, which is not currently supported.
 """)
 
 
+class NoSnapdSystemsOnSource(Exception):
+    pass
+
+
 class FilesystemController(SubiquityController, FilesystemManipulator):
 
     endpoint = API.storage
@@ -171,6 +176,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         source_path = self.app.controllers.Source.source_path
         cur_systems_dir = '/var/lib/snapd/seed/systems'
         source_systems_dir = os.path.join(source_path, cur_systems_dir[1:])
+        if self.app.opts.dry_run:
+            systems_dir_exists = self.app.dr_cfg.systems_dir_exists
+        else:
+            systems_dir_exists = pathlib.Path(source_systems_dir).is_dir()
+        if not systems_dir_exists:
+            raise NoSnapdSystemsOnSource
         self._system_mounter = Mounter(self.app)
         await self._system_mounter.bind_mount_tree(
             source_systems_dir, cur_systems_dir)
@@ -182,7 +193,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def _get_system(self):
         await self._unmount_system()
-        await self._mount_system()
+        try:
+            await self._mount_system()
+        except NoSnapdSystemsOnSource:
+            return
         self._system = None
         label = self.app.base_model.source.current.snapd_system_label
         if label is not None:

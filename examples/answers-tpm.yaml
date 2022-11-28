@@ -1,4 +1,5 @@
 #source-catalog: examples/tpm-sources.yaml
+#dr-config: examples/tpm-dr-config.yaml
 Source:
   source: src-prefer-encrypted
 Serial:

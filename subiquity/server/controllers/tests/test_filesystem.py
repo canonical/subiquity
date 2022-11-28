@@ -38,6 +38,7 @@ from subiquity.models.tests.test_filesystem import (
     )
 from subiquity.server import snapdapi
 from subiquity.server.controllers.filesystem import FilesystemController
+from subiquity.server.dryrun import DRConfig
 
 bootloaders = [(bl, ) for bl in list(Bootloader)]
 bootloaders_and_ptables = [(bl, pt)
@@ -472,6 +473,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.app.prober = mock.Mock()
         self.app.snapdapi = snapdapi.make_api_client(
             AsyncSnapd(get_fake_connection()))
+        self.app.dr_cfg = DRConfig()
         self.fsc = FilesystemController(app=self.app)
         self.fsc._configured = True
         self.fsc.model = make_model(Bootloader.UEFI)
@@ -565,6 +567,9 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.app.base_model.source.current.snapd_system_label = \
             'prefer-encrypted'
         self.app.controllers.Source.source_path = ''
+
+        self.app.dr_cfg.systems_dir_exists = True
+
         await self.fsc._get_system_task.start()
         await self.fsc._get_system_task.wait()
 
