@@ -18,12 +18,15 @@ import unittest
 from subiquity.server.controllers.ubuntu_pro import (
     UbuntuProController,
 )
+from subiquity.server.dryrun import DRConfig
 from subiquitycore.tests.mocks import make_app
 
 
 class TestUbuntuProController(unittest.TestCase):
     def setUp(self):
-        self.controller = UbuntuProController(make_app())
+        app = make_app()
+        app.dr_cfg = DRConfig()
+        self.controller = UbuntuProController(app)
 
     def test_serialize(self):
         self.controller.model.token = "1a2b3C"

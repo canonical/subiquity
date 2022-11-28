@@ -34,6 +34,13 @@ class DRConfig:
     All variables here should have default values ; to indicate the behavior we
     want by default in dry-run mode. """
 
+    # Tells whether we should run /usr/bin/ubuntu-advantage instead of using
+    # Mock objects.
+    pro_magic_attach_run_locally: bool = False
+    # When running /usr/bin/ubuntu-advantage locally, do not use the production
+    # ua-contrats.
+    pro_ua_contracts_url: str = "https://contracts.staging.canonical.com"
+
     @classmethod
     def load(cls, stream):
         data = yaml.safe_load(stream)
