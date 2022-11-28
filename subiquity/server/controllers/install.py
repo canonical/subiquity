@@ -287,17 +287,17 @@ class InstallController(SubiquityController):
                     acquire_config=self.acquire_generic_config,
                     ).run,
                 self.create_core_boot_classic_fstab,
-                make_curtin_step(
-                        name="swap", stages=["swap"],
-                        acquire_config=functools.partial(
-                            self.acquire_generic_config,
-                            swap_commands={
-                                'subiquity': [
-                                    'curtin', 'swap',
-                                    '--fstab', self.tpath('etc/fstab'),
-                                    ],
-                                }),
-                    ).run,
+                # make_curtin_step(
+                #         name="swap", stages=["swap"],
+                #         acquire_config=functools.partial(
+                #             self.acquire_generic_config,
+                #             swap_commands={
+                #                 'subiquity': [
+                #                     'curtin', 'swap',
+                #                     '--fstab', self.tpath('etc/fstab'),
+                #                     ],
+                #                 }),
+                #     ).run,
                 fs_controller.finish_install,
                 self.setup_target,
                 ])
