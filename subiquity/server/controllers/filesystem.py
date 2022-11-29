@@ -208,6 +208,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if self._system.storage_encryption.support == \
            StorageEncryptionSupport.DEFECTIVE:
             self._core_boot_classic_error = system_defective_encryption_text
+        if self._system.storage_encryption.support == \
+           StorageEncryptionSupport.UNAVAILABLE:
+            log.debug(
+                "storage encryption unavailable: %r",
+                self._system.storage_encryption.unavailable_reason)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):

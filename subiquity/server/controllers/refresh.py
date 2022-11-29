@@ -149,7 +149,7 @@ class RefreshController(SubiquityController):
         expected_channel = 'stable/ubuntu-' + info['release']
         if source == SnapChannelSource.DISK_INFO_FILE \
            and snap.channel != expected_channel:
-            log.debug(f"snap tracking {expected_channel}, not resetting based "
+            log.debug(f"snap tracking {snap.channel}, not resetting based "
                       "on .disk/info")
             return
         desc = "switching {} to {}".format(self.snap_name, channel)
