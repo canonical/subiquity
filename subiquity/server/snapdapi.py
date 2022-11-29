@@ -91,7 +91,7 @@ class Response:
     status: str
 
 
-class Role(enum.Enum):
+class Role:
 
     NONE = ''
     MBR = 'mbr'
@@ -102,6 +102,7 @@ class Role(enum.Enum):
     SYSTEM_RECOVERY_SELECT = 'system-recovery-select'
     SYSTEM_SAVE = 'system-save'
     SYSTEM_SEED = 'system-seed'
+    SYSTEM_SEED_NULL = 'system-seed-null'
 
 
 @attr.s(auto_attribs=True)
@@ -135,7 +136,7 @@ class VolumeStructure:
     offset_write: Optional[RelativeOffset] = named_field('offset-write', None)
     size: int = 0
     type: str = ''
-    role: Role = Role.NONE
+    role: str = Role.NONE
     id: Optional[str] = None
     filesystem: str = ''
     content: Optional[List[VolumeContent]] = None
