@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import random
 import unittest
 from unittest import mock
 
@@ -27,6 +28,9 @@ from subiquity.common.filesystem.sizes import (
     uefi_scale,
     )
 from subiquity.common.types import GuidedResizeValues
+from subiquity.models.filesystem import (
+    MiB,
+    )
 
 
 class TestPartitionSizeScaling(unittest.TestCase):
@@ -108,6 +112,25 @@ class TestCalculateGuidedResize(unittest.TestCase):
                 install_max=190 << 30,
                 minimum=50 << 30, recommended=200 << 30, maximum=230 << 30)
         self.assertEqual(expected, actual)
+
+    def test_unaligned_size(self):
+
+        def assertAligned(val):
+            if val % MiB != 0:
+                self.fail(
+                    "val of %s not aligned (%s) with delta %s" % (
+                        val, val % MiB, delta))
+
+        for i in range(1000):
+            delta = random.randrange(MiB)
+            actual = calculate_guided_resize(
+                part_min=40 << 30,
+                part_size=(240 << 30) + delta,
+                install_min=10 << 30)
+            assertAligned(actual.install_max)
+            assertAligned(actual.minimum)
+            assertAligned(actual.recommended)
+            assertAligned(actual.maximum)
 
 
 class TestCalculateInstallMin(unittest.TestCase):

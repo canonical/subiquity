@@ -510,7 +510,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                    structure == volume.structure[-1]:
                     gap = gaps.largest_gap(disk)
                     size = gap.size - (offset - gap.offset)
-                part = self.model.add_partition(disk, offset=offset, size=size)
+                part = self.model.add_partition(
+                    disk, offset=offset, size=size, check_alignment=False)
 
             type_uuid = structure.gpt_part_type_uuid()
             if type_uuid:

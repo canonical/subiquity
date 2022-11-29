@@ -1586,14 +1586,19 @@ class FilesystemModel(object):
         self._actions.remove(obj)
 
     def add_partition(self, device, *, size, offset, flag="", wipe=None,
-                      grub_device=None, partition_name=None):
+                      grub_device=None, partition_name=None,
+                      check_alignment=True):
+        align = device.alignment_data().part_align
+        if check_alignment:
+            if offset % align != 0 or size % align != 0:
+                raise Exception(
+                    "size %s or offset %s not aligned to %s",
+                    size, offset, align)
         from subiquity.common.filesystem import boot
-        real_size = align_up(size)
-        log.debug("add_partition: rounded size from %s to %s", size, real_size)
         if device._fs is not None:
             raise Exception("%s is already formatted" % (device,))
         p = Partition(
-            m=self, device=device, size=real_size, flag=flag, wipe=wipe,
+            m=self, device=device, size=size, flag=flag, wipe=wipe,
             grub_device=grub_device, offset=offset,
             partition_name=partition_name)
         if boot.is_bootloader_partition(p):

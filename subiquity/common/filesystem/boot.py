@@ -171,7 +171,7 @@ def get_boot_device_plan_bios(device) -> Optional[MakeBootDevicePlan]:
             return attr_plan
 
     gap = gaps.Gap(device=device,
-                   offset=sizes.BIOS_GRUB_SIZE_BYTES,
+                   offset=device.alignment_data().min_start_offset,
                    size=sizes.BIOS_GRUB_SIZE_BYTES)
     create_part_plan = CreatePartPlan(
         gap=gap,

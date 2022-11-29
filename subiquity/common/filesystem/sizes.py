@@ -101,6 +101,8 @@ def calculate_guided_resize(part_min: int, part_size: int, install_min: int,
     if part_min < 0:
         return None
 
+    part_size = align_up(part_size, part_align)
+
     other_room_to_grow = max(2 * GiB, math.ceil(.25 * part_min))
     padded_other_min = part_min + other_room_to_grow
     other_min = min(align_up(padded_other_min, part_align), part_size)
