@@ -479,15 +479,17 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.fsc._configured = True
         self.fsc.model = make_model(Bootloader.UEFI)
 
-    def _details_for_structures(self, structures):
-        return snapdapi.SystemDetails(
+    def _add_details_for_structures(self, structures):
+        system = self.fsc._system = snapdapi.SystemDetails(
             volumes={'pc': snapdapi.Volume(schema='gpt', structure=structures)}
             )
+        [volume] = system.volumes.values()
+        self.fsc._on_volume = snapdapi.OnVolume.from_volume(volume)
 
     def test_apply_system(self):
         disk = make_disk(self.fsc.model)
         arbitrary_uuid = str(uuid.uuid4())
-        self.fsc._system = self._details_for_structures([
+        self._add_details_for_structures([
             snapdapi.VolumeStructure(
                 type="83,0FC63DAF-8483-4772-8E79-3D69D8477DE4",
                 offset=1 << 20,
@@ -524,7 +526,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
             self.fsc.model, disk, offset=2 << 30, size=1 << 30, preserve=True)
         make_partition(
             self.fsc.model, disk, offset=3 << 30, size=1 << 30, preserve=True)
-        self.fsc._system = self._details_for_structures([
+        self._add_details_for_structures([
             snapdapi.VolumeStructure(
                 type="0FC63DAF-8483-4772-8E79-3D69D8477DE4",
                 offset=1 << 20,
@@ -541,7 +543,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         disk = make_disk(self.fsc.model)
         existing_part = make_partition(
             self.fsc.model, disk, offset=1 << 20, size=1 << 30, preserve=True)
-        self.fsc._system = self._details_for_structures([
+        self._add_details_for_structures([
             snapdapi.VolumeStructure(
                 type="0FC63DAF-8483-4772-8E79-3D69D8477DE4",
                 offset=1 << 20,
@@ -555,7 +557,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
 
     def test_apply_system_system_data(self):
         disk = make_disk(self.fsc.model)
-        self.fsc._system = self._details_for_structures([
+        self._add_details_for_structures([
             snapdapi.VolumeStructure(
                 type="0FC63DAF-8483-4772-8E79-3D69D8477DE4",
                 offset=2 << 20,

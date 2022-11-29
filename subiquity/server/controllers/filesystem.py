@@ -145,9 +145,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             (InstallerChannels.CONFIGURED, 'source'),
             self._get_system_task.start_sync)
         self._system: Optional[snapdapi.SystemDetails] = None
+        self._on_volume: Optional[snapdapi.OnVolume] = None
         self._core_boot_classic_error: str = ''
         self._system_mounter: Optional[Mounter] = None
         self._role_to_device: Dict[str: _Device] = {}
+        self._device_to_structure: Dict[_Device: snapdapi.OnVolume] = {}
         self.use_tpm: bool = False
 
     def is_core_boot_classic(self):
@@ -217,6 +219,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if len(self._system.volumes) > 1:
             self._core_boot_classic_error = system_multiple_volumes_text
         [volume] = self._system.volumes.values()
+        self._on_volume = snapdapi.OnVolume.from_volume(volume)
         if volume.schema != 'gpt':
             self._core_boot_classic_error = system_non_gpt_text
         if self._system.storage_encryption.support == \
@@ -251,6 +254,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             if path is not None:
                 log.debug("recording path %r for device %s", path, action.id)
                 action.path = path
+                if action in self._device_to_structure:
+                    self._device_to_structure[action].device = path
 
     def guided_direct(self, gap):
         spec = dict(fstype="ext4", mount="/")
@@ -467,8 +472,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     def _offsets_and_sizes_for_system(self):
         offset = self.model._partition_alignment_data['gpt'].min_start_offset
-        [volume] = self._system.volumes.values()
-        for structure in volume.structure:
+        for structure in self._on_volume.structure:
             if structure.role == snapdapi.Role.MBR:
                 continue
             if structure.offset is not None:
@@ -479,11 +483,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     def apply_system(self, disk_id):
         disk = self.model._one(id=disk_id)
 
-        [volume] = self._system.volumes.values()
-
         preserved_parts = set()
 
-        if volume.schema != disk.ptable:
+        if self._on_volume.schema != disk.ptable:
+            disk.ptable = self._on_volume.schema
             parts_by_offset_size = {}
         else:
             parts_by_offset_size = {
@@ -500,14 +503,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     del parts_by_offset_size[(part.offset, part.size)]
 
         if not preserved_parts:
-            self.reformat(disk, volume.schema)
+            self.reformat(disk, self._on_volume.schema)
 
         for structure, offset, size in self._offsets_and_sizes_for_system():
             if (offset, size) in parts_by_offset_size:
                 part = parts_by_offset_size[(offset, size)]
             else:
                 if structure.role == snapdapi.Role.SYSTEM_DATA and \
-                   structure == volume.structure[-1]:
+                   structure == self._on_volume.structure[-1]:
                     gap = gaps.largest_gap(disk)
                     size = gap.size - (offset - gap.offset)
                 part = self.model.add_partition(
@@ -531,7 +534,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 elif part.flag == 'boot':
                     part.grub_device = True
                     self.model.add_mount(fs, '/boot/efi')
-            self._role_to_device[structure.role] = part
+            if structure.role != snapdapi.Role.NONE:
+                self._role_to_device[structure.role] = part
+            self._device_to_structure[part] = structure
 
         disk._partitions.sort(key=lambda p: p.number)
 
@@ -542,13 +547,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # This must be run after curtin partitioning, which will result in a
         # call to update_devices which will have set .path on all block
         # devices.
-        [(key, volume)] = self._system.volumes.items()
-        on_volume = snapdapi.OnVolume.from_volume(volume)
-        for on_volume_structure in on_volume.structure:
-            role = on_volume_structure.role
-            if role in self._role_to_device:
-                on_volume_structure.device = self._role_to_device[role].path
-        return {key: on_volume}
+        [key] = self._system.volumes.keys()
+        return {key: self._on_volume}
 
     @with_context(description="configuring TPM-backed full disk encryption")
     async def setup_encryption(self, context):
