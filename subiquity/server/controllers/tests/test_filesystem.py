@@ -15,6 +15,7 @@
 
 import copy
 from unittest import mock, TestCase, IsolatedAsyncioTestCase
+import uuid
 
 from parameterized import parameterized
 
@@ -485,18 +486,32 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
 
     def test_apply_system(self):
         disk = make_disk(self.fsc.model)
+        arbitrary_uuid = str(uuid.uuid4())
         self.fsc._system = self._details_for_structures([
             snapdapi.VolumeStructure(
                 type="83,0FC63DAF-8483-4772-8E79-3D69D8477DE4",
                 offset=1 << 20,
                 size=1 << 30,
+                filesystem='ext4',
+                name='one'),
+            snapdapi.VolumeStructure(
+                type=arbitrary_uuid,
+                offset=2 << 30,
+                size=1 << 30,
                 filesystem='ext4'),
             ])
         self.fsc.apply_system(disk.id)
-        [part] = disk.partitions()
-        self.assertEqual(part.offset, 1 << 20)
-        self.assertEqual(part.size, 1 << 30)
-        self.assertEqual(part.fs().fstype, 'ext4')
+        [part1, part2] = disk.partitions()
+        self.assertEqual(part1.offset, 1 << 20)
+        self.assertEqual(part1.size, 1 << 30)
+        self.assertEqual(part1.fs().fstype, 'ext4')
+        self.assertEqual(part1.flag, 'linux')
+        self.assertEqual(part1.partition_name, 'one')
+        self.assertEqual(
+            part1.partition_type, '0FC63DAF-8483-4772-8E79-3D69D8477DE4')
+        self.assertEqual(part2.flag, None)
+        self.assertEqual(
+            part2.partition_type, arbitrary_uuid)
 
     def test_apply_system_reuse(self):
         disk = make_disk(self.fsc.model)
@@ -504,9 +519,11 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         reused_part = make_partition(
             self.fsc.model, disk, offset=1 << 20, size=1 << 30, preserve=True)
         self.fsc.model.add_filesystem(reused_part, 'ext4')
-        # And one that does not.
+        # And two that do not.
         make_partition(
             self.fsc.model, disk, offset=2 << 30, size=1 << 30, preserve=True)
+        make_partition(
+            self.fsc.model, disk, offset=3 << 30, size=1 << 30, preserve=True)
         self.fsc._system = self._details_for_structures([
             snapdapi.VolumeStructure(
                 type="0FC63DAF-8483-4772-8E79-3D69D8477DE4",

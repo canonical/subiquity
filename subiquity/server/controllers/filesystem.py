@@ -484,8 +484,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         preserved_parts = set()
 
         if volume.schema != disk.ptable:
-            self.reformat(disk)
-            disk.ptable = volume.schema
             parts_by_offset_size = {}
         else:
             parts_by_offset_size = {
@@ -496,10 +494,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if (offset, size) in parts_by_offset_size:
                     preserved_parts.add(parts_by_offset_size[(offset, size)])
 
-            for part in disk.partitions():
+            for part in list(disk.partitions()):
                 if part not in preserved_parts:
                     self.delete_partition(part)
                     del parts_by_offset_size[(part.offset, part.size)]
+
+        if not preserved_parts:
+            self.reformat(disk, volume.schema)
 
         for structure, offset, size in self._offsets_and_sizes_for_system():
             if (offset, size) in parts_by_offset_size:
@@ -510,7 +511,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     gap = gaps.largest_gap(disk)
                     size = gap.size - (offset - gap.offset)
                 part = self.model.add_partition(disk, offset=offset, size=size)
-            part.flag = ptable_uuid_to_flag_entry(structure.gpt_part_uuid())[0]
+
+            type_uuid = structure.gpt_part_type_uuid()
+            if type_uuid:
+                part.partition_type = type_uuid
+                part.flag = ptable_uuid_to_flag_entry(type_uuid)[0]
             if structure.name:
                 part.partition_name = structure.name
             if structure.filesystem:
@@ -523,6 +528,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 elif structure.role == snapdapi.Role.SYSTEM_BOOT:
                     self.model.add_mount(fs, '/boot')
                 elif part.flag == 'boot':
+                    part.grub_device = True
                     self.model.add_mount(fs, '/boot/efi')
             self._role_to_device[structure.role] = part
 
