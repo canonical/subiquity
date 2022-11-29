@@ -142,7 +142,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._system: Optional[snapdapi.SystemDetails] = None
         self._core_boot_classic_error: str = ''
         self._system_mounter: Optional[Mounter] = None
-        self._role_to_device: Dict[snapdapi.Role: _Device] = {}
+        self._role_to_device: Dict[str: _Device] = {}
         self.use_tpm: bool = False
 
     def is_core_boot_classic(self):
@@ -536,7 +536,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 on_volumes=self._on_volumes()))
         role_to_encrypted_device = result['encrypted-devices']
         for role, enc_path in role_to_encrypted_device.items():
-            role = snapdapi.Role(role)
             arb_device = ArbitraryDevice(m=self.model, path=enc_path)
             self.model._actions.append(arb_device)
             part = self._role_to_device[role]
