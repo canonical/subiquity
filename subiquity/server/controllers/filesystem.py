@@ -201,6 +201,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if self._system.storage_encryption.support == \
            StorageEncryptionSupport.DEFECTIVE:
             self._core_boot_classic_error = system_defective_encryption_text
+        if self._system.storage_encryption.support == \
+           StorageEncryptionSupport.UNAVAILABLE:
+            log.debug(
+                "storage encryption unavailable: %r",
+                self._system.storage_encryption.unavailable_reason)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
@@ -851,6 +856,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if safety == StorageSafety.ENCRYPTED:
                     self.use_tpm = True
                 elif safety == StorageSafety.PREFER_ENCRYPTED:
+                    log.debug('setting use_tpm to %r', encrypted)
                     self.use_tpm = (
                         support == StorageEncryptionSupport.AVAILABLE)
                 else:
@@ -860,6 +866,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     if not encrypted:
                         raise Exception(
                             "cannot install this model unencrypted")
+                log.debug('setting use_tpm to %r', encrypted)
                 self.use_tpm = bool(encrypted)
             match = layout.get("match", {'size': 'largest'})
             disk = self.model.disk_for_match(self.model.all_disks(), match)
