@@ -171,6 +171,21 @@ class SnapListController(SubiquityController):
         self.loader = self._make_loader()
         self.app.hub.subscribe(InstallerChannels.SNAPD_NETWORK_CHANGE,
                                self.snapd_network_changed)
+        self.app.hub.subscribe(
+            (InstallerChannels.CONFIGURED, 'filesystem'),
+            self._confirmed)
+        self._active = True
+
+    async def _confirmed(self):
+        if self.app.base_model.source.current.variant == 'desktop':
+            await self.configured()
+            self._active = False
+            self.loader.stop()
+
+    def interactive(self):
+        if super().interactive():
+            return self._active
+        return False
 
     def load_autoinstall_data(self, ai_data):
         to_install = []
