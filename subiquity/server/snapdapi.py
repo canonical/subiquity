@@ -172,9 +172,10 @@ class OnVolume(Volume):
 
     @classmethod
     def from_volume(cls, v: Volume):
-        return cls(structure=[
-            OnVolumeStructure.from_volume_structure(vs)
-            for vs in v.structure])
+        kw = attr.asdict(v, recurse=False)
+        kw['structure'] = [
+            OnVolumeStructure.from_volume_structure(vs) for vs in v.structure]
+        return cls(**kw)
 
 
 @attr.s(auto_attribs=True)
