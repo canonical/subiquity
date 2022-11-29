@@ -72,6 +72,7 @@ from subiquity.common.types import (
     StorageEncryptionSupport,
     StorageResponse,
     StorageResponseV2,
+    StorageSafety,
     )
 from subiquity.models.filesystem import (
     ActionRenderMode,
@@ -155,15 +156,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     def load_autoinstall_data(self, data):
         log.debug("load_autoinstall_data %s", data)
-        if data is None:
-            if not self.interactive():
-                data = {
-                    'layout': {
-                        'name': 'lvm',
-                        },
-                    }
-            else:
-                data = {}
         log.debug("self.ai_data = %s", data)
         self.ai_data = data
 
@@ -237,6 +229,21 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise self._errors[False][0]
         if True in self._errors:
             raise self._errors[True][0]
+        if self._core_boot_classic_error:
+            raise Exception(self._core_boot_classic_error)
+        if self.ai_data is None:
+            if self._system is not None:
+                self.ai_data = {
+                    'layout': {
+                        'name': 'hybrid',
+                        },
+                    }
+            else:
+                self.ai_data = {
+                    'layout': {
+                        'name': 'lvm',
+                        },
+                    }
         self.convert_autoinstall_config(context=context)
         if not self.model.is_root_mounted():
             raise Exception("autoinstall config did not mount root")
@@ -847,6 +854,40 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     def run_autoinstall_guided(self, layout):
         name = layout['name']
+
+        if name == 'hybrid':
+            if self._system is None:
+                raise Exception(
+                    "can only use name: hybrid when installing core boot "
+                    "classic")
+            encrypted = layout.get('encrypted', None)
+            safety = self._system.storage_encryption.storage_safety
+            support = self._system.storage_encryption.support
+            if encrypted is None:
+                if safety == StorageSafety.ENCRYPTED:
+                    self.use_tpm = True
+                elif safety == StorageSafety.PREFER_ENCRYPTED:
+                    log.debug('setting use_tpm to %r', encrypted)
+                    self.use_tpm = (
+                        support == StorageEncryptionSupport.AVAILABLE)
+                else:
+                    self.use_tpm = False
+            else:
+                if safety == StorageSafety.ENCRYPTED:
+                    if not encrypted:
+                        raise Exception(
+                            "cannot install this model unencrypted")
+                log.debug('setting use_tpm to %r', encrypted)
+                self.use_tpm = bool(encrypted)
+            match = layout.get("match", {'size': 'largest'})
+            disk = self.model.disk_for_match(self.model.all_disks(), match)
+            self.apply_system(disk.id)
+            return
+        elif self._system is not None:
+            raise Exception(
+                "must use name: hybrid when installing core boot "
+                "classic")
+
         mode = layout.get('mode', 'reformat_disk')
         self.validate_layout_mode(mode)
 
@@ -881,6 +922,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                             "'layout' and 'config', using 'layout'")
             self.run_autoinstall_guided(self.ai_data['layout'])
         elif 'config' in self.ai_data:
+            if self._system is not None:
+                raise Exception(
+                    "must not use config: when installing core boot classic")
             self.model.apply_autoinstall_config(self.ai_data['config'])
             self.model.grub = self.ai_data.get('grub')
             self.model.swap = self.ai_data.get('swap')
