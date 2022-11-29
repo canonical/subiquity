@@ -266,7 +266,7 @@ class InstallController(SubiquityController):
                         self.acquire_filesystem_config,
                         mode=ActionRenderMode.DEVICES),
                     cls=CurtinPartitioningStep,
-                    device_map_path=logs_dir / "device-map.json",
+                    device_map_path=logs_dir / "device-map-partition.json",
                     ).run,
                 )
             if fs_controller.use_tpm:
@@ -278,7 +278,7 @@ class InstallController(SubiquityController):
                         self.acquire_filesystem_config,
                         mode=ActionRenderMode.FORMAT_MOUNT),
                     cls=CurtinPartitioningStep,
-                    device_map_path=logs_dir / "device-map.json",
+                    device_map_path=logs_dir / "device-map-format.json",
                     ).run,
                 make_curtin_step(
                     name="extract", stages=["extract"],
