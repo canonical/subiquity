@@ -135,6 +135,7 @@ class _DryRunCurtinCommand(_CurtinCommand):
         ("partitioning",): "examples/curtin-events-partitioning.json",
         ("extract",): "examples/curtin-events-extract.json",
         ("curthooks",): "examples/curtin-events-curthooks.json",
+        ("swap",): "examples/curtin-events-curthooks.json",  # hack
     }
 
     def make_command(self, command, *args, config=None):
