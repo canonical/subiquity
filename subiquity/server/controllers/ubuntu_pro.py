@@ -90,7 +90,15 @@ class UbuntuProController(SubiquityController):
         """ Initializer for server-side Ubuntu Pro controller. """
         strategy: UAInterfaceStrategy
         if app.opts.dry_run:
-            strategy = MockedUAInterfaceStrategy(scale_factor=app.scale_factor)
+            contracts_url = app.dr_cfg.pro_ua_contracts_url
+            if app.dr_cfg.pro_magic_attach_run_locally:
+                executable = "/usr/bin/ubuntu-advantage"
+                strategy = UAClientUAInterfaceStrategy(executable=executable)
+                strategy.load_default_uaclient_config()
+                strategy.uaclient_config["contract_url"] = contracts_url
+            else:
+                strategy = MockedUAInterfaceStrategy(
+                        scale_factor=app.scale_factor)
         else:
             # Make sure we execute `$PYTHON "$SNAP/usr/bin/ubuntu-advantage"`.
             executable = (

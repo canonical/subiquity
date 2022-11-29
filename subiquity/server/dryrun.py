@@ -36,6 +36,12 @@ class DRConfig:
 
     # Tells whether "$source"/var/lib/snapd/seed/systems exists on the source.
     systems_dir_exists: bool = False
+    # Tells whether we should run /usr/bin/ubuntu-advantage instead of using
+    # Mock objects.
+    pro_magic_attach_run_locally: bool = False
+    # When running /usr/bin/ubuntu-advantage locally, do not use the production
+    # ua-contrats.
+    pro_ua_contracts_url: str = "https://contracts.staging.canonical.com"
 
     @classmethod
     def load(cls, stream):
