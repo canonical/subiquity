@@ -28,7 +28,11 @@ def host_key_fingerprints():
 
     Returns a sequence of (key-type, fingerprint) pairs.
     """
-    config = run_command(['sshd', '-T'])
+    try:
+        config = run_command(['sshd', '-T'])
+    except FileNotFoundError:
+        log.debug("sshd not found")
+        return []
     if config.returncode != 0:
         log.debug("sshd -T failed %r", config.stderr)
         return []
