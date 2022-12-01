@@ -326,6 +326,7 @@ class TestFlow(TestAPI):
             }
             await inst.post('/ssh', ssh)
             await inst.post('/snaplist', [])
+            await inst.post('/drivers', {'install': False})
             ua_params = {
                 "token": "a1b2c3d4e6f7g8h9I0K1",
             }

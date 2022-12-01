@@ -81,7 +81,6 @@ class DriversController(SubiquityController):
         # the source screen to enable/disable the "search drivers" checkbox.
         if not self.app.controllers.Source.model.search_drivers:
             self.drivers = []
-            await self.configured()
             return
         apt = self.app.controllers.Mirror.apt_configurer
         try:
@@ -98,8 +97,6 @@ class DriversController(SubiquityController):
         except OverlayCleanupError:
             log.exception("Failed to cleanup overlay. Continuing anyway.")
         log.debug("Available drivers to install: %s", self.drivers)
-        if not self.drivers:
-            await self.configured()
 
     async def GET(self, wait: bool = False) -> DriversResponse:
         local_only = not self.app.base_model.network.has_network
