@@ -232,7 +232,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if self._core_boot_classic_error:
             raise Exception(self._core_boot_classic_error)
         if self.ai_data is None:
-            if self._system is not None:
+            if self.is_core_boot_classic():
                 self.ai_data = {
                     'layout': {
                         'name': 'hybrid',
@@ -460,7 +460,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         min_size = 2*self.app.base_model.source.current.size + (1 << 30)
         disks = self.get_guided_disks(with_reformatting=True)
         se = None
-        if self._system is not None:
+        if self.is_core_boot_classic():
             se = self._system.storage_encryption
             offsets_and_sizes = list(self._offsets_and_sizes_for_system())
             _structure, last_offset, last_size = offsets_and_sizes[-1]
@@ -589,7 +589,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
         log.debug(data)
-        if self._system is not None:
+        if self.is_core_boot_classic():
             self.use_tpm = data.use_tpm
             self.apply_system(data.disk_id)
             await self.configured()
@@ -856,15 +856,21 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         name = layout['name']
 
         if name == 'hybrid':
-            if self._system is None:
+            if not self.is_core_boot_classic():
                 raise Exception(
                     "can only use name: hybrid when installing core boot "
                     "classic")
+            if 'mode' in layout:
+                raise Exception(
+                    "cannot use 'mode' when installing core boot classic")
             encrypted = layout.get('encrypted', None)
             safety = self._system.storage_encryption.storage_safety
             support = self._system.storage_encryption.support
             if encrypted is None:
                 if safety == StorageSafety.ENCRYPTED:
+                    # In this case we know encryption is available (because if
+                    # it isn't, support would be DEFECTIVE and that would have
+                    # triggered an error already)
                     self.use_tpm = True
                 elif safety == StorageSafety.PREFER_ENCRYPTED:
                     log.debug('setting use_tpm to %r', encrypted)
@@ -883,7 +889,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             disk = self.model.disk_for_match(self.model.all_disks(), match)
             self.apply_system(disk.id)
             return
-        elif self._system is not None:
+        elif self.is_core_boot_classic():
             raise Exception(
                 "must use name: hybrid when installing core boot "
                 "classic")
@@ -922,7 +928,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                             "'layout' and 'config', using 'layout'")
             self.run_autoinstall_guided(self.ai_data['layout'])
         elif 'config' in self.ai_data:
-            if self._system is not None:
+            if self.is_core_boot_classic():
                 raise Exception(
                     "must not use config: when installing core boot classic")
             self.model.apply_autoinstall_config(self.ai_data['config'])
