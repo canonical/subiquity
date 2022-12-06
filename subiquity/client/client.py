@@ -297,10 +297,7 @@ class SubiquityClient(TuiApplication):
                 p('\x08 \n')
 
         status = await spinning_wait("connecting", self._status_get())
-        journald_listen(
-            self.aio_loop,
-            [status.echo_syslog_id],
-            lambda e: print(e['MESSAGE']))
+        journald_listen([status.echo_syslog_id], lambda e: print(e['MESSAGE']))
         if status.state == ApplicationState.STARTING_UP:
             status = await spinning_wait(
                 "starting up", self._status_get(cur=status.state))
@@ -357,11 +354,9 @@ class SubiquityClient(TuiApplication):
             # the progress page
             if hasattr(self.controllers, "Progress"):
                 journald_listen(
-                    self.aio_loop,
                     [status.event_syslog_id],
                     self.controllers.Progress.event)
                 journald_listen(
-                    self.aio_loop,
                     [status.log_syslog_id],
                     self.controllers.Progress.log_line)
             if not status.cloud_init_ok:
@@ -382,7 +377,6 @@ class SubiquityClient(TuiApplication):
                 # prompting for confirmation will be confusing.
                 os.system('stty sane')
             journald_listen(
-                self.aio_loop,
                 [status.event_syslog_id],
                 self.subiquity_event_noninteractive,
                 seek=True)

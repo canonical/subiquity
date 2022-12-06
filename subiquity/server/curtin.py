@@ -103,8 +103,7 @@ class _CurtinCommand:
         return cmd
 
     async def start(self, context, **opts):
-        self._fd = journald_listen(
-            asyncio.get_running_loop(), [self._event_syslog_id], self._event)
+        self._fd = journald_listen([self._event_syslog_id], self._event)
         # Yield to the event loop before starting curtin to avoid missing the
         # first couple of events.
         await asyncio.sleep(0)

@@ -145,8 +145,7 @@ class InstallController(SubiquityController):
             asyncio.create_task(self.stop_unattended_upgrades())
 
     def start(self):
-        journald_listen(
-            self.app.aio_loop, [self.app.log_syslog_id], self.log_event)
+        journald_listen([self.app.log_syslog_id], self.log_event)
         self.install_task = asyncio.create_task(self.install())
 
     def tpath(self, *path):

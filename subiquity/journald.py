@@ -19,7 +19,7 @@ import contextlib
 from systemd import journal
 
 
-def journald_listen(loop, identifiers, callback, seek=False):
+def journald_listen(identifiers, callback, seek=False):
     reader = journal.Reader()
     args = []
     for identifier in identifiers:
@@ -37,6 +37,7 @@ def journald_listen(loop, identifiers, callback, seek=False):
             return
         for event in reader:
             callback(event)
+    loop = asyncio.get_running_loop()
     loop.add_reader(reader.fileno(), watch)
     return reader.fileno()
 
@@ -44,12 +45,12 @@ def journald_listen(loop, identifiers, callback, seek=False):
 @contextlib.contextmanager
 def journald_subscriptions(ids_callbacks, seek=False):
     fds = set()
-    loop = asyncio.get_running_loop()
     for ids, callback in ids_callbacks:
-        fds.add(journald_listen(loop, ids, callback, seek=seek))
+        fds.add(journald_listen(ids, callback, seek=seek))
     try:
         yield
     finally:
+        loop = asyncio.get_running_loop()
         for fd in fds:
             loop.remove_reader(fd)
 
