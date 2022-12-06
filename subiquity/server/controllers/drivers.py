@@ -52,8 +52,12 @@ class DriversController(SubiquityController):
 
     def __init__(self, app) -> None:
         super().__init__(app)
-        self.ubuntu_drivers: UbuntuDriversInterface = \
-            get_ubuntu_drivers_interface(app)
+        self.ubuntu_drivers: Optional[UbuntuDriversInterface] = None
+
+        self._list_drivers_task: Optional[asyncio.Task] = None
+        self.list_drivers_done_event = asyncio.Event()
+
+        self.drivers: List[str] = []
 
     def make_autoinstall(self):
         return {
@@ -69,7 +73,24 @@ class DriversController(SubiquityController):
         self.app.hub.subscribe(
             InstallerChannels.APT_CONFIGURED,
             self._wait_apt.set)
-        self._drivers_task = asyncio.create_task(self._list_drivers())
+        self.app.hub.subscribe(
+            (InstallerChannels.CONFIGURED, "source"),
+            self.restart_querying_drivers_list)
+
+    def restart_querying_drivers_list(self):
+        """ Start querying the list of available drivers. This method can be
+        invoked multiple times so we need to stop ongoing operations if the
+        variant changes. """
+
+        self.ubuntu_drivers = get_ubuntu_drivers_interface(self.app)
+
+        self.drivers = []
+        self.list_drivers_done_event.clear()
+        if self._list_drivers_task is not None:
+            self._list_drivers_task.cancel()
+
+        log.debug("source variant has been set. Querying list of drivers.")
+        self._list_drivers_task = asyncio.create_task(self._list_drivers())
 
     @with_context()
     async def _list_drivers(self, context):
@@ -81,7 +102,7 @@ class DriversController(SubiquityController):
         # the source screen to enable/disable the "search drivers" checkbox.
         if not self.app.controllers.Source.model.search_drivers:
             self.drivers = []
-            await self.configured()
+            self.list_drivers_done_event.set()
             return
         apt = self.app.controllers.Mirror.apt_configurer
         try:
@@ -97,14 +118,13 @@ class DriversController(SubiquityController):
                         context=context)
         except OverlayCleanupError:
             log.exception("Failed to cleanup overlay. Continuing anyway.")
+        self.list_drivers_done_event.set()
         log.debug("Available drivers to install: %s", self.drivers)
-        if not self.drivers:
-            await self.configured()
 
     async def GET(self, wait: bool = False) -> DriversResponse:
         local_only = not self.app.base_model.network.has_network
         if wait:
-            await asyncio.shield(self._drivers_task)
+            await self.list_drivers_done_event.wait()
 
         search_drivers = self.app.controllers.Source.model.search_drivers
 

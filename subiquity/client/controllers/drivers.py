@@ -34,6 +34,7 @@ class DriversController(SubiquityTuiController):
         response: DriversResponse = await self.endpoint.GET()
 
         if not response.search_drivers:
+            await self.endpoint.POST(DriversPayload(install=False))
             raise Skip
 
         return DriversView(self, response.drivers,

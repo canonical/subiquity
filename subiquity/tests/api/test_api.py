@@ -326,6 +326,7 @@ class TestFlow(TestAPI):
             }
             await inst.post('/ssh', ssh)
             await inst.post('/snaplist', [])
+            await inst.post('/drivers', {'install': False})
             ua_params = {
                 "token": "a1b2c3d4e6f7g8h9I0K1",
             }
@@ -1413,6 +1414,33 @@ class TestCancel(TestAPI):
                 # should not raise ServerDisconnectedError
                 resp = await inst.get('/drivers', wait=True)
                 self.assertEqual(['nvidia-driver-470-server'], resp['drivers'])
+
+
+class TestDrivers(TestAPI):
+    async def _test_source(self, source_id, expected_driver):
+        with patch.dict(os.environ, {'SUBIQUITY_DEBUG': 'has-drivers'}):
+            cfg = 'examples/simple.json'
+            extra = ['--source-catalog', 'examples/mixed-sources.yaml']
+            async with start_server(cfg, extra_args=extra) as inst:
+                await inst.post('/source', source_id=source_id,
+                                search_drivers=True)
+
+                names = ['locale', 'keyboard', 'source', 'network', 'proxy',
+                         'mirror', 'storage']
+                await inst.post('/meta/mark_configured', endpoint_names=names)
+                await inst.get('/meta/status', cur='WAITING')
+                await inst.post('/meta/confirm', tty='/dev/tty1')
+                await inst.get('/meta/status', cur='NEEDS_CONFIRMATION')
+
+                resp = await inst.get('/drivers', wait=True)
+                self.assertEqual([expected_driver], resp['drivers'])
+
+    async def test_server_source(self):
+        await self._test_source('ubuntu-server-minimal',
+                                'nvidia-driver-470-server')
+
+    async def test_desktop_source(self):
+        await self._test_source('ubuntu-desktop', 'nvidia-driver-510')
 
 
 class TestSource(TestAPI):
