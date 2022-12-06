@@ -17,9 +17,9 @@ import json
 import logging
 
 from subiquitycore.async_helpers import schedule_task
-from subiquitycore.utils import astart_command
 from subiquity.common.apidef import API
 from subiquity.common.types import CasperMd5Results
+from subiquity.journald import journald_get_first_match
 from subiquity.server.controller import SubiquityController
 
 
@@ -46,21 +46,9 @@ class IntegrityController(SubiquityController):
         return self.result
 
     async def wait_casper_md5check(self):
-        if self.app.opts.dry_run:
-            return
-        proc = await astart_command([
-            'journalctl',
-            '--follow',
-            '--output', 'json',
-            '_PID=1',
-            'UNIT=casper-md5check.service',
-        ])
-        while True:
-            jsonbytes = await proc.stdout.readline()
-            data = json.loads(jsonbytes.decode('utf-8'))
-            if data.get('JOB_RESULT') == 'done':
-                break
-        proc.terminate()
+        if not self.app.opts.dry_run:
+            await journald_get_first_match(
+                'systemd', 'UNIT=casper-md5check.service', 'JOB_RESULT=done')
 
     async def get_md5check_results(self):
         if self.app.opts.dry_run:
