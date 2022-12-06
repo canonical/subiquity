@@ -20,6 +20,7 @@ from .drivers import DriversController
 from .filesystem import FilesystemController
 from .identity import IdentityController
 from .install import InstallController
+from .integrity import IntegrityController
 from .keyboard import KeyboardController
 from .kernel import KernelController
 from .locale import LocaleController
@@ -47,6 +48,7 @@ __all__ = [
     'ErrorController',
     'FilesystemController',
     'IdentityController',
+    'IntegrityController',
     'InstallController',
     'KernelController',
     'KeyboardController',

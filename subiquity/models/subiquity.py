@@ -50,6 +50,7 @@ from .codecs import CodecsModel
 from .drivers import DriversModel
 from .filesystem import FilesystemModel
 from .identity import IdentityModel
+from .integrity import IntegrityModel
 from .kernel import KernelModel
 from .keyboard import KeyboardModel
 from .locale import LocaleModel
@@ -179,6 +180,7 @@ class SubiquityModel:
         self.drivers = DriversModel()
         self.filesystem = FilesystemModel()
         self.identity = IdentityModel()
+        self.integrity = IntegrityModel()
         self.kernel = KernelModel()
         self.keyboard = KeyboardModel(self.root)
         self.locale = LocaleModel(self.chroot_prefix)

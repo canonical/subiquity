@@ -725,3 +725,10 @@ class Change:
     ready: bool
     err: Optional[str] = None
     data: Any = None
+
+
+class CasperMd5Results(enum.Enum):
+    UNKNOWN = 'unknown'
+    FAIL = 'fail'
+    PASS = 'pass'
+    SKIP = 'skip'

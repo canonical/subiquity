@@ -51,6 +51,8 @@ from subiquity.common.errorreport import (
     ErrorReportState,
     )
 
+from subiquity.common.types import CasperMd5Results
+
 
 log = logging.getLogger('subiquity.ui.views.error')
 
@@ -135,12 +137,19 @@ submit_text = _("""
 If you want to help improve the installer, you can send an error report.
 """)
 
+integrity_check_fail_text = _("""
+The install media checksum verification failed.  It's possible that this crash
+is related to that checksum failure.  Consider verifying the install media and
+retrying the install.
+""")
+
 
 class ErrorReportStretchy(Stretchy):
 
     def __init__(self, app, ref, interrupting=True):
         self.app = app
         self.error_ref = ref
+        self.integrity_check_result = None
         self.report = app.error_reporter.get(ref)
         self.pending = None
         if self.report is None:
@@ -248,6 +257,10 @@ class ErrorReportStretchy(Stretchy):
                     Text(""),
                     self.spinner])
 
+        if self.integrity_check_result == CasperMd5Results.FAIL:
+            widgets.append(Text(""))
+            widgets.append(Text(rewrap(_(integrity_check_fail_text))))
+
         if self.report and self.report.uploader:
             widgets.extend([Text(""), btns['cancel']])
         elif self.interrupting:
@@ -279,6 +292,7 @@ class ErrorReportStretchy(Stretchy):
         self.min_wait = asyncio.create_task(asyncio.sleep(1))
         if self.report:
             self.error_ref = self.report.ref()
+        self.integrity_check_result = await self.app.client.integrity.GET()
         self.pile.contents[:] = [
             (w, self.pile.options('pack')) for w in self._pile_elements()]
         if self.pile.selectable():
