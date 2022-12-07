@@ -169,11 +169,10 @@ class SnapListController(SubiquityController):
     def __init__(self, app):
         super().__init__(app)
         self.loader = self._make_loader()
-        self.app.hub.subscribe(InstallerChannels.SNAPD_NETWORK_CHANGE,
-                               self.snapd_network_changed)
         self.app.hub.subscribe(
-            (InstallerChannels.CONFIGURED, 'filesystem'),
-            self._confirmed)
+            InstallerChannels.SNAPD_NETWORK_CHANGE, self.snapd_network_changed)
+        self.app.hub.subscribe(
+            InstallerChannels.INSTALL_CONFIRMED, self._confirmed)
         self._active = True
 
     async def _confirmed(self):
