@@ -100,7 +100,7 @@ class ProgressView(BaseView):
     def event_start(self, context_id, context_parent_id, message):
         self.event_finish(context_parent_id)
         walker = self.event_listbox.base_widget.body
-        spinner = Spinner(self.controller.app.aio_loop)
+        spinner = Spinner()
         spinner.start()
         new_line = Columns([
             ('pack', Text(message)),

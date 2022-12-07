@@ -366,7 +366,7 @@ class SnapListView(BaseView):
             self.loaded(data)
 
     def wait_load(self):
-        spinner = Spinner(self.controller.app.aio_loop, style='dots')
+        spinner = Spinner(style='dots')
         spinner.start()
         self._w = screen(
             [spinner], [ok_btn(label=_("Continue"), on_press=self.done)],

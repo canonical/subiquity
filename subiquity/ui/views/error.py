@@ -181,7 +181,7 @@ class ErrorReportStretchy(Stretchy):
         for n, b in self.btns.items():
             self.btns[n] = Padding(b, width=w, align='center')
 
-        self.spinner = Spinner(app.aio_loop, style='dots')
+        self.spinner = Spinner(style='dots')
         self.pile = Pile([])
         self.pile.contents[:] = [
             (w, self.pile.options('pack')) for w in self._pile_elements()]
