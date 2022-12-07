@@ -196,8 +196,7 @@ class TuiApplication(Application):
 
         def show_load():
             nonlocal ld
-            ld = LoadingDialog(
-                self.ui.body, self.aio_loop, message, task_to_cancel)
+            ld = LoadingDialog(self.ui.body, message, task_to_cancel)
             self.ui.body.show_overlay(ld, width=ld.width)
 
         def hide_load():

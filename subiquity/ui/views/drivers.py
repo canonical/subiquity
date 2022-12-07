@@ -91,7 +91,7 @@ class DriversView(BaseView):
     def make_waiting(self, install: bool) -> None:
         """ Change the view into a spinner and start waiting for drivers
         asynchronously. """
-        self.spinner = Spinner(self.controller.app.aio_loop, style='dots')
+        self.spinner = Spinner(style='dots')
         self.spinner.start()
 
         if self.local_only:

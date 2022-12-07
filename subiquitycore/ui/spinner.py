@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+
 from urwid import (
     Text,
     )
@@ -32,28 +34,28 @@ styles = {
 
 
 class Spinner(Text):
-    def __init__(self, aio_loop=None, style='spin', align='center'):
-        self.aio_loop = aio_loop
+    def __init__(self, style='spin', align='center'):
         self.spin_index = 0
         self.spin_text = styles[style]['texts']
         self.rate = styles[style]['rate']
         super().__init__('', align=align)
-        self.handle = None
+        self._spin_task = None
 
     def spin(self):
         self.spin_index = (self.spin_index + 1) % len(self.spin_text)
         self.set_text(self.spin_text[self.spin_index])
 
-    def _advance(self):
-        self.spin()
-        self.handle = self.aio_loop.call_later(self.rate, self._advance)
+    async def _spin(self):
+        while True:
+            self.spin()
+            await asyncio.sleep(self.rate)
 
     def start(self):
         self.stop()
-        self._advance()
+        self._spin_task = asyncio.create_task(self._spin())
 
     def stop(self):
         self.set_text('')
-        if self.handle is not None:
-            self.handle.cancel()
-            self.handle = None
+        if self._spin_task is not None:
+            self._spin_task.cancel()
+            self._spin_task = None

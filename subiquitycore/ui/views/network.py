@@ -168,8 +168,7 @@ class NetworkDeviceTable(WidgetWrap):
                     address_info.extend(
                         [(label, Text(addr)) for addr in addrs])
                 elif dhcp_status.state == DHCPState.PENDING:
-                    s = Spinner(
-                        self.parent.controller.app.aio_loop, align='left')
+                    s = Spinner(align='left')
                     s.rate = 0.3
                     s.start()
                     address_info.append((label, s))
@@ -339,7 +338,7 @@ class NetworkView(BaseView):
             )
 
     def show_apply_spinner(self):
-        s = Spinner(self.controller.app.aio_loop)
+        s = Spinner()
         s.start()
         c = TablePile([
             TableRow([
