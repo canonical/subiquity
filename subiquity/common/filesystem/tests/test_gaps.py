@@ -91,7 +91,7 @@ class TestSplitGap(GapTestCase):
             min_end_offset=0, primary_part_limit=4, ebr_space=ebr_space))
 
         m = make_model(storage_version=2)
-        d = make_disk(m, size=100)
+        d = make_disk(m, size=100, ptable='dos')
         [gap] = gaps.parts_and_gaps(d)
         make_partition(m, d, offset=gap.offset, size=gap.size, flag='extended')
         [p, g] = gaps.parts_and_gaps(d)
@@ -360,7 +360,7 @@ class TestDiskGaps(unittest.TestCase):
         info = PartitionAlignmentData(
             part_align=10, min_gap_size=1, min_start_offset=0,
             min_end_offset=0, primary_part_limit=1)
-        m, d = make_model_and_disk(size=100)
+        m, d = make_model_and_disk(size=100, ptable='dos')
         p = make_partition(m, d, offset=0, size=100, flag='extended')
         g = gaps.Gap(d, offset=0, size=100,
                      in_extended=True, usable=GapUsable.YES)
