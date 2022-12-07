@@ -31,11 +31,6 @@ from .common import (
 from .server import make_server_args_parser
 
 
-class ClickAction(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        namespace.scripts.append("c(" + repr(values) + ")")
-
-
 def make_client_args_parser():
     parser = argparse.ArgumentParser(
         description='Subiquity - Ubiquity for Servers',
@@ -63,12 +58,6 @@ def make_client_args_parser():
                         help='Run the installer in unicode mode.')
     parser.add_argument('--screens', action='append', dest='screens',
                         default=[])
-    parser.add_argument('--script', metavar="SCRIPT", action='append',
-                        dest='scripts', default=[],
-                        help=('Execute SCRIPT in a namespace containing view '
-                              'helpers and "ui"'))
-    parser.add_argument('--click', metavar="PAT", action=ClickAction,
-                        help='Synthesize a click on a button matching PAT')
     parser.add_argument('--answers')
     parser.add_argument('--server-pid')
     parser.add_argument('--output-base', action='store', dest='output_base',
