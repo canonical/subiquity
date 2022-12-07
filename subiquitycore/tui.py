@@ -154,7 +154,8 @@ class TuiApplication(Application):
         """
         min_show_task = None
 
-        def _show():
+        async def _show():
+            await asyncio.sleep(MAX_BLOCK_TIME)
             self.ui.block_input = False
             nonlocal min_show_task
             min_show_task = asyncio.create_task(
@@ -162,7 +163,7 @@ class TuiApplication(Application):
             show()
 
         self.ui.block_input = True
-        show_handle = self.aio_loop.call_later(MAX_BLOCK_TIME, _show)
+        show_task = asyncio.create_task(_show())
         try:
             result = await awaitable
         finally:
@@ -172,7 +173,7 @@ class TuiApplication(Application):
                     hide()
             else:
                 self.ui.block_input = False
-                show_handle.cancel()
+                show_task.cancel()
 
         return result
 
@@ -296,7 +297,7 @@ class TuiApplication(Application):
             self.ui, screen=screen,
             handle_mouse=False, pop_ups=True,
             unhandled_input=self.unhandled_input,
-            event_loop=urwid.AsyncioEventLoop(loop=self.aio_loop),
+            event_loop=urwid.AsyncioEventLoop(loop=asyncio.get_running_loop()),
             **self.extra_urwid_loop_args()
             )
         extend_dec_special_charmap()
