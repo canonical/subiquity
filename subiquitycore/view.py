@@ -83,7 +83,7 @@ class BaseView(WidgetWrap):
         self._w = StretchyOverlay(disabled(self._w), stretchy)
 
     def remove_overlay(self, stretchy=None,
-                       *, not_found_ok=True) -> None:
+                       *, not_found_ok=False) -> None:
         """ Remove (frontmost) overlay from the view. """
         if stretchy is not None:
             one_above = None
