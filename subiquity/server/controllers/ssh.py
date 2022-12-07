@@ -59,8 +59,7 @@ class SSHController(SubiquityController):
     def __init__(self, app):
         super().__init__(app)
         self.app.hub.subscribe(
-            (InstallerChannels.CONFIGURED, 'filesystem'),
-            self._confirmed)
+            InstallerChannels.INSTALL_CONFIRMED, self._confirmed)
         self._active = True
 
     async def _confirmed(self):

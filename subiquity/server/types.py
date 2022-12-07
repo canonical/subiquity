@@ -15,10 +15,31 @@
 
 from subiquitycore.pubsub import CoreChannels
 
+# This module defines constants to be used with "hub.{a,}broadcast" to
+# allow controllers to find out when various things have happened.
+
 
 class InstallerChannels(CoreChannels):
+    # This message is sent when a value is provided for the http proxy
+    # setting.
     NETWORK_PROXY_SET = 'network-proxy-set'
+    # This message is sent there has been a network change that might affect
+    # snapd's ability to talk to the network.
     SNAPD_NETWORK_CHANGE = 'snapd-network-change'
+    # This message is send when results from the geoip service are received.
     GEOIP = 'geoip'
+    # (CONFIGURED, $model_name) is sent when a model is marked
+    # configured. Note that this can happen several times for each controller
+    # (at least in theory) if the users goes back to a screen and makes a
+    # different choice.
     CONFIGURED = 'configured'
+    # This message is sent when apt has been configured in the overlay that
+    # will be used as the source for the install step of the
+    # installation. Currently this is only done once, but this might change in
+    # the future.
     APT_CONFIGURED = 'apt-configured'
+    # This message is sent when the user has confirmed that the install has
+    # been confirmed. Once this has happened one can be sure that all the
+    # models in the "install" side of the install/postinstall divide will not
+    # be reconfigured.
+    INSTALL_CONFIRMED = 'install-confirmed'

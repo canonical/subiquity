@@ -287,6 +287,7 @@ class SubiquityModel:
 
     def confirm(self):
         self._confirmation.set()
+        self.hub.broadcast(InstallerChannels.INSTALL_CONFIRMED)
 
     def validate_cloudconfig_schema(self, data: dict, data_source: str):
         """Validate data config adheres to strict cloud-config schema
