@@ -581,6 +581,14 @@ class _Device(_Formattable, ABC):
     def _has_preexisting_partition(self):
         return any(p.preserve for p in self._partitions)
 
+    def renumber_logical_partitions(self, removed_partition):
+        parts = [p for p in self.partitions_by_number()
+                 if p.is_logical and p.number > removed_partition.number]
+        next_num = removed_partition.number
+        for part in parts:
+            part.number = next_num
+            next_num += 1
+
 
 @fsobj("dasd")
 class Dasd:
@@ -694,14 +702,6 @@ class Disk(_Device):
         if id is None:
             return None
         return id.encode('utf-8').decode('unicode_escape').strip()
-
-    def renumber_logical_partitions(self, removed_partition):
-        parts = [p for p in self.partitions_by_number()
-                 if p.is_logical and p.number > removed_partition.number]
-        next_num = removed_partition.number
-        for part in parts:
-            part.number = next_num
-            next_num += 1
 
 
 @fsobj("partition")
