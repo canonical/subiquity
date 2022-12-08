@@ -228,7 +228,9 @@ class RefreshView(BaseView):
             if self.controller.answers['update']:
                 self.update()
             else:
-                self.controller.app.aio_loop.call_soon(self.skip_update)
+                async def skip():
+                    self.skip_update()
+                self._skip_task = asyncio.create_task(skip())
 
     def update(self, sender=None):
         self.spinner.stop()

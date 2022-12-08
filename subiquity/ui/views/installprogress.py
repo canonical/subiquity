@@ -289,7 +289,7 @@ class InstallRunning(Stretchy):
         self.btn = Toggleable(other_btn(
                 _("Switch to a shell"), on_press=self._debug_shell))
         self.btn.enabled = False
-        self.app.aio_loop.call_later(0.5, self._enable)
+        self._enable_task = asyncio.create_task(self._enable())
         widgets = [
             Text(rewrap(_(running_text).format(tty=tty))),
             Text(''),
@@ -301,7 +301,8 @@ class InstallRunning(Stretchy):
             stretchy_index=0,
             focus_index=2)
 
-    def _enable(self):
+    async def _enable(self):
+        await asyncio.sleep(0.5)
         self.btn.enabled = True
 
     def _debug_shell(self, sender):

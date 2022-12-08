@@ -13,7 +13,6 @@ class IdentityViewTests(unittest.TestCase):
     def make_view(self):
         controller = mock.create_autospec(spec=ProgressController)
         controller.app = mock.Mock()
-        controller.app.aio_loop = None
         return ProgressView(controller)
 
     def test_initial_focus(self):
