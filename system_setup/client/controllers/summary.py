@@ -9,9 +9,6 @@ from subiquity.common.types import (
     ApplicationState,
     ShutdownMode
     )
-from subiquity.ui.views.installprogress import (
-    InstallRunning,
-    )
 
 from system_setup.ui.views.summary import SummaryView
 
@@ -48,7 +45,6 @@ class SummaryController(SubiquityTuiController):
 
     @with_context()
     async def _wait_status(self, context):
-        install_running = None
         while True:
             try:
                 app_status = await self.app.client.meta.status.GET(
