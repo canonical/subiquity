@@ -9,9 +9,6 @@ from subiquity.common.types import (
     ApplicationState,
     ShutdownMode
     )
-from subiquity.ui.views.installprogress import (
-    InstallRunning,
-    )
 
 from system_setup.ui.views.summary import SummaryView
 
@@ -48,7 +45,6 @@ class SummaryController(SubiquityTuiController):
 
     @with_context()
     async def _wait_status(self, context):
-        install_running = None
         while True:
             try:
                 app_status = await self.app.client.meta.status.GET(
@@ -66,16 +62,6 @@ class SummaryController(SubiquityTuiController):
                     if self.summary_view:
                         self.ui.set_body(self.summary_view)
                     self.app.show_error_report(self.crash_report_ref)
-
-            if self.app_state == ApplicationState.RUNNING:
-                if app_status.confirming_tty != self.app.our_tty:
-                    install_running = InstallRunning(
-                        self.app, app_status.confirming_tty)
-                    self.app.add_global_overlay(install_running)
-            else:
-                if install_running is not None:
-                    self.app.remove_global_overlay(install_running)
-                    install_running = None
 
             if self.app_state == ApplicationState.DONE:
                 if self.answers.get('reboot', False):
