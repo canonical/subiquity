@@ -152,23 +152,18 @@ parts:
       bin/subiquity-server: usr/bin/subiquity-server
       bin/subiquity-cmd: usr/bin/subiquity-cmd
       $SNAPCRAFT_PART_BUILD/system_setup/ubuntu-wsl-setup: bin/ubuntu-wsl-setup
-  users-and-groups:
-    plugin: nil
-    build-packages:
-      - user-setup
-    override-build: |
-      echo "get passwd/user-default-groups" | \
-        debconf-communicate user-setup | \
-        cut -d ' ' -f 2- > $SNAPCRAFT_PART_INSTALL/users-and-groups
-    stage:
-      - users-and-groups
   user-setup:
     plugin: nil
     source: https://git.launchpad.net/ubuntu/+source/user-setup
     source-type: git
-    override-build: cp -a reserved-usernames $SNAPCRAFT_PART_INSTALL/
+    override-build: |
+      cp -a reserved-usernames $SNAPCRAFT_PART_INSTALL/
+      grep passwd/user-default-groups debian/user-setup-udeb.templates -A3 \
+        | awk -F ': ' '/Default:/ {print $2}' \
+        > $SNAPCRAFT_PART_INSTALL/users-and-groups
     stage:
       - reserved-usernames
+      - users-and-groups
   keyboard-data:
     plugin: nil
     build-packages:
