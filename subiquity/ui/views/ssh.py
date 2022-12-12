@@ -297,5 +297,7 @@ class SSHView(BaseView):
             ConfirmSSHKeys(self, ssh_data, identities))
 
     def fetching_ssh_keys_failed(self, msg, stderr):
-        self.remove_overlay()
+        # FIXME in answers-based runs, the overlay does not exist so we pass
+        # not_found_ok=True.
+        self.remove_overlay(not_found_ok=True)
         self.show_stretchy_overlay(SomethingFailed(self, msg, stderr))

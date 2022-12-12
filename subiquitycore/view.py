@@ -38,6 +38,10 @@ from subiquitycore.ui.utils import disabled, undisabled
 log = logging.getLogger('subiquitycore.view')
 
 
+class OverlayNotFoundError(Exception):
+    """ Exception to raise when trying to remove a non-existent overlay. """
+
+
 class BaseView(WidgetWrap):
 
     def local_help(self):
@@ -78,7 +82,9 @@ class BaseView(WidgetWrap):
         stretchy.opened()
         self._w = StretchyOverlay(disabled(self._w), stretchy)
 
-    def remove_overlay(self, stretchy=None):
+    def remove_overlay(self, stretchy=None,
+                       *, not_found_ok=False) -> None:
+        """ Remove (frontmost) overlay from the view. """
         if stretchy is not None:
             one_above = None
             cur = self._w
@@ -94,11 +100,21 @@ class BaseView(WidgetWrap):
                     return
                 one_above = cur
                 cur = undisabled(cur.bottom_w)
+            else:
+                if not not_found_ok:
+                    raise OverlayNotFoundError
         else:
+            try:
+                behind_overlay = self._w.bottom_w
+            except AttributeError:
+                if not_found_ok:
+                    return
+                raise OverlayNotFoundError
+
             if isinstance(self._w, StretchyOverlay):
                 emit_signal(self._w.stretchy, 'closed')
                 self._w.stretchy.closed()
-            self._w = undisabled(self._w.bottom_w)
+            self._w = undisabled(behind_overlay)
 
     def cancel(self):
         pass
@@ -106,10 +122,9 @@ class BaseView(WidgetWrap):
     def keypress(self, size, key):
         key = super().keypress(size, key)
         if key == 'esc':
-            if hasattr(self._w, 'bottom_w'):
-                self.remove_overlay()
-                return None
-            else:
+            try:
+                self.remove_overlay(not_found_ok=False)
+            except OverlayNotFoundError:
                 self.cancel()
                 return None
         return key
