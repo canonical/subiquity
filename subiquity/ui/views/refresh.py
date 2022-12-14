@@ -238,13 +238,11 @@ class RefreshView(BaseView):
         self.lb_tasks = ListBox([])
         self.task_to_bar = {}
 
-        buttons = [
-            other_btn(_("Cancel update"), on_press=self.check_state_available),
-            ]
-
         self.controller.ui.set_header(_(self.progress_title))
-        self._w = screen(
-            self.lb_tasks, buttons, excerpt=_(self.progress_excerpt))
+        # TODO Cancellation of an ongoing self-refresh is not currently
+        # implemented on the server side. Let's include a cancel button when we
+        # have an API for it.
+        self._w = screen(self.lb_tasks, [], excerpt=_(self.progress_excerpt))
         schedule_task(self._update())
 
     async def _update(self):
