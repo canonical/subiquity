@@ -121,6 +121,14 @@ parts:
       - ssh-import-id
       - ubuntu-advantage-tools
 
+    stage:
+      - "*"
+      - "-usr/lib/python2.7/"
+
+    override-prime: |
+      snapcraftctl prime
+      "./usr/bin/python3" -m compileall -q .
+
     organize:
       bin/subiquity-tui: usr/bin/subiquity
       bin/subiquity-service: usr/bin/subiquity-service
