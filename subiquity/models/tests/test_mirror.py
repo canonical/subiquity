@@ -18,8 +18,37 @@ import unittest
 from curtin.config import merge_config
 
 from subiquity.models.mirror import (
+    countrify_uri,
     MirrorModel,
     )
+
+
+class TestCountrifyUrl(unittest.TestCase):
+    def test_official_archive(self):
+        self.assertEqual(
+                countrify_uri(
+                    "http://archive.ubuntu.com/ubuntu",
+                    cc="fr"),
+                "http://fr.archive.ubuntu.com/ubuntu")
+
+        self.assertEqual(
+                countrify_uri(
+                    "http://archive.ubuntu.com/ubuntu",
+                    cc="us"),
+                "http://us.archive.ubuntu.com/ubuntu")
+
+    def test_ports_archive(self):
+        self.assertEqual(
+                countrify_uri(
+                    "http://ports.ubuntu.com/ubuntu-ports",
+                    cc="fr"),
+                "http://fr.ports.ubuntu.com/ubuntu-ports")
+
+        self.assertEqual(
+                countrify_uri(
+                    "http://ports.ubuntu.com/ubuntu-ports",
+                    cc="us"),
+                "http://us.ports.ubuntu.com/ubuntu-ports")
 
 
 class TestMirrorModel(unittest.TestCase):

@@ -46,6 +46,13 @@ DEFAULT = {
 }
 
 
+def countrify_uri(uri: str, cc: str) -> str:
+    """ Return a URL where the host is prefixed with a country code. """
+    parsed = parse.urlparse(uri)
+    new = parsed._replace(netloc=cc + '.' + parsed.netloc)
+    return parse.urlunparse(new)
+
+
 class MirrorModel(object):
 
     def __init__(self):
@@ -63,9 +70,7 @@ class MirrorModel(object):
         if not self.mirror_is_default():
             return
         uri = self.get_mirror()
-        parsed = parse.urlparse(uri)
-        new = parsed._replace(netloc=cc + '.' + parsed.netloc)
-        self.set_mirror(parse.urlunparse(new))
+        self.set_mirror(countrify_uri(uri, cc=cc))
 
     def get_mirror(self):
         return get_mirror(self.config, "primary", self.architecture)
