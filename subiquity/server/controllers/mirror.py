@@ -18,8 +18,6 @@ import copy
 import logging
 from typing import List
 
-from curtin.config import merge_config
-
 from subiquitycore.async_helpers import SingleInstanceTask
 from subiquitycore.context import with_context
 
@@ -95,7 +93,7 @@ class MirrorController(SubiquityController):
         if data is None:
             return
         geoip = data.pop('geoip', True)
-        merge_config(self.model.config, data)
+        self.model.load_autoinstall_data(data)
         self.geoip_enabled = geoip and self.model.mirror_is_default()
 
     @with_context()
@@ -157,8 +155,8 @@ class MirrorController(SubiquityController):
         await self.configured()
 
     async def disable_components_GET(self) -> List[str]:
-        return self.model.config.get('disable_components', [])
+        return sorted(self.model.disabled_components)
 
     async def disable_components_POST(self, data: List[str]):
         log.debug(data)
-        self.model.config['disable_components'] = data
+        self.model.disabled_components = set(data)

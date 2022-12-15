@@ -15,8 +15,6 @@
 
 import unittest
 
-from curtin.config import merge_config
-
 from subiquity.models.mirror import (
     countrify_uri,
     MirrorModel,
@@ -80,7 +78,7 @@ class TestMirrorModel(unittest.TestCase):
     def test_from_autoinstall(self):
         # autoinstall loads to the config directly
         data = {'disable_components': ['non-free']}
-        merge_config(self.model.config, data)
+        self.model.load_autoinstall_data(data)
         config = self.model.get_apt_config()
         self.assertEqual(['non-free'], config['disable_components'])
 
@@ -93,7 +91,7 @@ class TestMirrorModel(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_disable_remove(self):
-        self.model.config['disable_components'] = ['a', 'b', 'things']
+        self.model.disabled_components = set(['a', 'b', 'things'])
         to_remove = ['things', 'stuff']
         expected = ['a', 'b']
         self.model.disable_components(to_remove, add=False)

@@ -15,6 +15,7 @@
 
 import copy
 import logging
+from typing import Set
 from urllib import parse
 
 from curtin.commands.apt_config import (
@@ -22,6 +23,8 @@ from curtin.commands.apt_config import (
     get_mirror,
     PRIMARY_ARCHES,
     )
+from curtin.config import merge_config
+
 try:
     from curtin.distro import get_architecture
 except ImportError:
@@ -31,7 +34,6 @@ log = logging.getLogger('subiquity.models.mirror')
 
 
 DEFAULT = {
-    "disable_components": [],
     "preserve_sources_list": False,
     "primary": [
         {
@@ -57,11 +59,20 @@ class MirrorModel(object):
 
     def __init__(self):
         self.config = copy.deepcopy(DEFAULT)
+        self.disabled_components: Set[str] = set()
+
         self.architecture = get_architecture()
         self.default_mirror = self.get_mirror()
 
+    def load_autoinstall_data(self, data):
+        if "disable_components" in data:
+            self.disabled_components = set(data.pop("disable_components"))
+        merge_config(self.config, data)
+
     def get_apt_config(self):
-        return copy.deepcopy(self.config)
+        config = copy.deepcopy(self.config)
+        config["disable_components"] = sorted(self.disabled_components)
+        return config
 
     def mirror_is_default(self):
         return self.get_mirror() == self.default_mirror
@@ -80,14 +91,14 @@ class MirrorModel(object):
             self.config, "primary", self.architecture)
         config["uri"] = mirror
 
-    def disable_components(self, comps, add):
-        dc = set(self.config.get('disable_components', []))
+    def disable_components(self, comps, add: bool) -> None:
+        """ Add (or remove) a component (e.g., multiverse) from the list of
+        disabled components. """
         comps = set(comps)
         if add:
-            dc |= comps
+            self.disabled_components |= comps
         else:
-            dc -= comps
-        self.config['disable_components'] = list(dc)
+            self.disabled_components -= comps
 
     def render(self):
         return {}
