@@ -2,6 +2,7 @@ build-essential
 cloud-init
 curl
 fuseiso
+gettext
 git
 isolinux
 jq

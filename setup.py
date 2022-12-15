@@ -22,17 +22,29 @@ subiquity
 Ubuntu Server Installer
 """
 
-import distutils.cmd
-import distutils.command.build
-import distutils.spawn
 import glob
 import os
+import subprocess
 import sys
 
-from setuptools import setup, find_packages
+from setuptools import (
+    Command,
+    find_packages,
+    setup,
+)
+
+# any remaining distutils must be imported after setuptools
+# https://github.com/pypa/setuptools/issues/2591 discusses build.build and
+# alternatives
+import distutils.command.build
 
 
-class build_i18n(distutils.cmd.Command):
+def spawn(cmd):
+    print(' '.join(cmd))
+    subprocess.run(cmd, check=True)
+
+
+class build_i18n(Command):
 
     user_options = []
 
@@ -53,7 +65,7 @@ class build_i18n(distutils.cmd.Command):
                     out_fp.write('../' + line)
 
         os.chdir('po')
-        distutils.spawn.spawn([
+        spawn([
             'xgettext',
             '--directory=.',
             '--add-comments',
