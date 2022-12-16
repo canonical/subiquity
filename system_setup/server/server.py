@@ -28,12 +28,12 @@ log = logging.getLogger('system_setup.server.server')
 
 INSTALL_MODEL_NAMES = ModelNames({
         "locale",
-        "wslconfbase",
     },
     wsl_setup={
         "identity",
     },
     wsl_configuration={
+        "wslconfbase",
         "wslconfadvanced",
     })
 
