@@ -21,15 +21,12 @@ from subiquity.server.apt import (
     AptConfigurer,
     OverlayMountpoint,
 )
-from subiquity.models.mirror import MirrorModel, DEFAULT
+from subiquity.models.mirror import MirrorModel
 from subiquity.models.proxy import ProxyModel
 
 
 class TestAptConfigurer(SubiTestCase):
     def setUp(self):
-        self.base_config = {'apt': DEFAULT}
-        self.base_config['apt']['disable_components'] = []
-
         self.model = Mock()
         self.model.mirror = MirrorModel()
         self.model.proxy = ProxyModel()
@@ -37,16 +34,17 @@ class TestAptConfigurer(SubiTestCase):
         self.configurer = AptConfigurer(self.app, AsyncMock(), '')
 
     def test_apt_config_noproxy(self):
-        expected = self.base_config
-        self.assertEqual(expected, self.configurer.apt_config())
+        config = self.configurer.apt_config()
+        self.assertNotIn("http_proxy", config["apt"])
+        self.assertNotIn("https_proxy", config["apt"])
 
     def test_apt_config_proxy(self):
         proxy = 'http://apt-cacher-ng:3142'
         self.model.proxy.proxy = proxy
-        expected = self.base_config
-        expected['apt']['http_proxy'] = proxy
-        expected['apt']['https_proxy'] = proxy
-        self.assertEqual(expected, self.configurer.apt_config())
+
+        config = self.configurer.apt_config()
+        self.assertEqual(proxy, config["apt"]["http_proxy"])
+        self.assertEqual(proxy, config["apt"]["https_proxy"])
 
     async def test_overlay(self):
         self.configurer.install_tree = OverlayMountpoint(
