@@ -15,7 +15,7 @@
 
 import copy
 import logging
-from typing import Set
+from typing import Any, List, Set
 from urllib import parse
 
 from curtin.commands.apt_config import (
@@ -35,16 +35,6 @@ log = logging.getLogger('subiquity.models.mirror')
 
 DEFAULT = {
     "preserve_sources_list": False,
-    "primary": [
-        {
-            "arches": PRIMARY_ARCHES,
-            "uri": "http://archive.ubuntu.com/ubuntu",
-        },
-        {
-            "arches": ["default"],
-            "uri": "http://ports.ubuntu.com/ubuntu-ports",
-        },
-        ],
 }
 
 
@@ -60,6 +50,15 @@ class MirrorModel(object):
     def __init__(self):
         self.config = copy.deepcopy(DEFAULT)
         self.disabled_components: Set[str] = set()
+        self.primary: List[Any] = [
+            {
+                "arches": PRIMARY_ARCHES,
+                "uri": "http://archive.ubuntu.com/ubuntu",
+            }, {
+                "arches": ["default"],
+                "uri": "http://ports.ubuntu.com/ubuntu-ports",
+            },
+        ]
 
         self.architecture = get_architecture()
         self.default_mirror = self.get_mirror()
@@ -67,10 +66,13 @@ class MirrorModel(object):
     def load_autoinstall_data(self, data):
         if "disable_components" in data:
             self.disabled_components = set(data.pop("disable_components"))
+        if "primary" in data:
+            self.primary = data.pop("primary")
         merge_config(self.config, data)
 
     def get_apt_config(self):
         config = copy.deepcopy(self.config)
+        config["primary"] = copy.deepcopy(self.primary)
         config["disable_components"] = sorted(self.disabled_components)
         return config
 
@@ -84,11 +86,13 @@ class MirrorModel(object):
         self.set_mirror(countrify_uri(uri, cc=cc))
 
     def get_mirror(self):
-        return get_mirror(self.config, "primary", self.architecture)
+        config = copy.deepcopy(self.config)
+        config["primary"] = self.primary
+        return get_mirror(config, "primary", self.architecture)
 
     def set_mirror(self, mirror):
         config = get_arch_mirrorconfig(
-            self.config, "primary", self.architecture)
+            {"primary": self.primary}, "primary", self.architecture)
         config["uri"] = mirror
 
     def disable_components(self, comps, add: bool) -> None:
