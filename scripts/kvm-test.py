@@ -14,6 +14,7 @@ import contextlib
 import copy
 import dataclasses
 import enum
+from itertools import zip_longest
 import os
 from pathlib import Path
 import shlex
@@ -114,7 +115,7 @@ class Context:
 
         self.iso = self.rundir / f'{self.release}-test.iso'
         self.vmstate = self.rundir / self.hostname
-        self.target = self.vmstate / f'{self.hostname}.img'
+        self.targets = [self.vmstate / f'{self.hostname}{idx}.img' for idx in range(self.args.disk_count)]
         self.ovmf = {
                 'CODE': self.vmstate / f'{self.hostname}_OVMF_CODE_4M_ms.fd',
                 'VARS': self.vmstate / f'{self.hostname}_OVMF_VARS_4M_ms.fd'
@@ -198,11 +199,18 @@ boot_group.add_argument('--secure-boot', action='store_true', default=False,
 
 parser.add_argument('-c', '--channel', action='store',
                     help='build iso with snap from channel')
-disk_group = parser.add_mutually_exclusive_group()
-disk_group.add_argument('-d', '--disksize', help='size of disk to create')
-disk_group.add_argument('--no-disk', action='store_true', help='attach no local storage')
-parser.add_argument('--disk-interface', help='type of interface for the disk',
+
+parser.add_argument('--disk-count', type=int, dest='disk_count',
+                    default=1, help='how many local disks should we have')
+parser.add_argument('--one-disk', action='store_const', const=1,
+                    dest='disk_count', help='attach one local disk')
+parser.add_argument('--no-disk', action='store_const', const=0,
+                    dest='disk_count', help='attach no local storage')
+
+parser.add_argument('--disk-interface', help='type of interface for the disk(s)',
                     choices=('nvme', 'virtio', 'scsi-multipath'), default='virtio')
+parser.add_argument('-d', '--disksize', action='append', dest='disks_sizes', default=[],
+                    help='size of disk to create (12G default) (repeat to specify size of extra disks)')
 parser.add_argument('-i', '--img', action='store', help='use this img')
 parser.add_argument('-n', '--nets', action='store', default=1, type=int,
                     help='''number of network interfaces.
@@ -570,6 +578,10 @@ def get_initrd(mntdir):
     raise Exception('initrd not found')
 
 
+def create_disk(path: Path, size: str):
+    run(['qemu-img', 'create', '-f', 'qcow2', str(path), size])
+
+
 def install(ctx):
     boot_opts = ["order=d"]
     if ctx.vmstate.exists():
@@ -627,24 +639,29 @@ the ESC button when the QEMU window opens. Then select "Device Manager" and \
             if ctx.args.update:
                 appends.append('subiquity-channel=' + ctx.args.update)
 
-            if not ctx.args.no_disk:
+            if ctx.targets:
                 match ctx.args.disk_interface:
                     case 'virtio':
-                        kvm.extend(drive(ctx.target, if_='virtio'))
+                        for idx, target in enumerate(ctx.targets):
+                            kvm.extend(drive(target, id_=f'disk{idx}', if_='virtio'))
                     case 'nvme':
-                        kvm.extend(drive(ctx.target, id_='localdisk0', if_="none"))
-                        kvm.extend(('-device', 'nvme,drive=localdisk0,serial=deadbeef'))
+                        for idx, target in enumerate(ctx.targets):
+                            kvm.extend(drive(target, id_=f'localdisk{idx}', if_="none"))
+                            kvm.extend(('-device', f'nvme,drive=localdisk{idx},serial=deadbeef{idx}'))
                     case 'scsi-multipath':
                         kvm.extend(("-device", "virtio-scsi-pci,id=scsi"))
-                        kvm.extend(drive(ctx.target, id_="mdisk0", if_="none", file_locking=False))
-                        kvm.extend(("-device", "scsi-hd,drive=mdisk0,serial=MPIO"))
-                        kvm.extend(drive(ctx.target, id_="mdisk1", if_="none", file_locking=False))
-                        kvm.extend(("-device", "scsi-hd,drive=mdisk1,serial=MPIO"))
+                        for idx, target in enumerate(ctx.targets):
+                            kvm.extend(drive(target, id_=f"mdisk{idx}0", if_="none", file_locking=False))
+                            kvm.extend(("-device", f"scsi-hd,drive=mdisk{idx}0,serial=MPIO{idx}"))
+                            kvm.extend(drive(target, id_=f"mdisk{idx}1", if_="none", file_locking=False))
+                            kvm.extend(("-device", f"scsi-hd,drive=mdisk{idx}1,serial=MPIO{idx}"))
                     case interface:
                         raise ValueError('unsupported disk interface', interface)
-                if not os.path.exists(ctx.target):
-                    disksize = ctx.args.disksize or ctx.default_disk_size
-                    run(f'qemu-img create -f qcow2 {ctx.target} {disksize}')
+                for target, disksize in zip_longest(ctx.targets, ctx.args.disks_sizes):
+                    if target is None:
+                        break
+                    if not target.exists():
+                        create_disk(target, disksize if disksize is not None else ctx.default_disk_size)
 
             if ctx.args.cloud_config is not None or ctx.args.cloud_config_default:
                 if ctx.args.cloud_config is not None:
@@ -693,12 +710,11 @@ def tpm_emulator(ctx: Context):
 
 
 def boot(ctx):
-    target = ctx.target
-    if ctx.args.img:
-        target = ctx.args.img
-
     with kvm_prepare_common(ctx) as kvm:
-        kvm.extend(drive(target))
+        if ctx.args.img:
+            kvm.extend(drive(ctx.args.img))
+        elif ctx.args.targets:
+            kvm.extend(drive(ctx.targets[0]))
         if ctx.args.secureboot:
             if not ctx.ovmf["VARS"].exists():
                 raise Exception(f"Couldn't find firmware variables file {str(ctx.ovmf['VARS'])!r}")
