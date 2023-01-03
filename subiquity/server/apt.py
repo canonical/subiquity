@@ -13,9 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import contextlib
 import logging
 import os
+import pathlib
 import shutil
 import subprocess
 from typing import Optional
@@ -24,6 +26,7 @@ from curtin.config import merge_config
 
 from subiquitycore.file_util import write_file, generate_config_yaml
 from subiquitycore.lsb_release import lsb_release
+from subiquitycore.utils import astart_command
 
 from subiquity.server.curtin import run_curtin_command
 from subiquity.server.mounter import (
@@ -35,6 +38,11 @@ from subiquity.server.mounter import (
     )
 
 log = logging.getLogger('subiquity.server.apt')
+
+
+class AptConfigCheckError(Exception):
+    """ Error to raise when apt-get update fails with the currently applied
+    configuration. """
 
 
 class AptConfigurer:
@@ -98,6 +106,49 @@ class AptConfigurer:
         await run_curtin_command(
             self.app, context, 'apt-config', '-t', self.configured_tree.p(),
             config=config_location, private_mounts=True)
+
+    async def run_apt_config_check(self):
+        assert self.configured_tree is not None
+
+        pfx = pathlib.Path(self.configured_tree.p())
+
+        apt_dirs = {
+            "Etc::SourceList": pfx / "etc/apt/sources.list",
+            "Etc::SourceParts": pfx / "etc/apt/sources.list.d",
+            "Etc::Main": pfx / "etc/apt/apt.conf",
+            "Etc::Parts": pfx / "etc/apt/apt.conf.d",
+            "Etc::Preferences": pfx / "etc/apt/preferences",
+            "Etc::PreferencesParts": pfx / "etc/apt/preferences.d",
+            "Cache::Archives": pfx / "var/lib/apt/archives",
+            "State::Lists": pfx / "var/lib/apt/lists",
+            "Cache::PkgCache": None,
+            "Cache::SrcPkgCache": None,
+        }
+
+        apt_cmd = ["apt-get", "update", "-oAPT::Update::Error-Mode=any"]
+
+        for key, path in apt_dirs.items():
+            value = "" if path is None else str(path)
+            apt_cmd.append(f"-oDir::{key}={str(value)}")
+
+        proc = await astart_command(apt_cmd, stderr=subprocess.STDOUT)
+
+        async def _reader():
+            while not proc.stdout.at_eof():
+                try:
+                    line = await proc.stdout.readline()
+                except asyncio.IncompleteReadError as e:
+                    line = e.partial
+                    if not line:
+                        return
+                # TODO Do something else than logging
+                log.debug(line.decode('utf-8'))
+
+        reader = asyncio.create_task(_reader())
+        unused, returncode = await asyncio.gather(reader, proc.wait())
+
+        if returncode != 0:
+            raise AptConfigCheckError
 
     async def configure_for_install(self, context):
         assert self.configured_tree is not None

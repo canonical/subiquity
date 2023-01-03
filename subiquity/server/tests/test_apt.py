@@ -13,16 +13,43 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import subprocess
 from unittest.mock import Mock, patch, AsyncMock
 
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.utils import astart_command
 from subiquity.server.apt import (
     AptConfigurer,
+    AptConfigCheckError,
     OverlayMountpoint,
 )
 from subiquity.models.mirror import MirrorModel
 from subiquity.models.proxy import ProxyModel
+
+
+APT_UPDATE_SUCCESS = """\
+Hit:1 http://mirror focal InRelease
+Get:2 http://mirror focal-updates InRelease [109 kB]
+Get:3 http://mirror focal-backports InRelease [99,9 kB]
+Get:4 http://mirror focal-security InRelease [109 kB]
+Get:5 http://mirror focal-updates/main amd64 DEP-11 Metadata [22,5 kB]
+Get:6 http://mirror focal-updates/universe amd64 DEP-11 Metadata [33,6 kB]
+"""
+
+APT_UPDATE_FAILURE = """\
+Err:1 http://bad-mirror focal-updates InRelease
+  Could not resolve 'arcive.ubuntu.com'
+Hit:2 http://mirror focal InRelease
+Hit:3 http://security.ubuntu.com/ubuntu focal-security InRelease
+Hit:4 http://mirror focal-updates InRelease
+Hit:5 http://mirror focal-backports InRelease
+Reading package lists... Done
+E: Failed to fetch http://bad-mirror/dists/focal-updates/InRelease \
+Could not resolve 'bad-mirror'
+E: Some index files failed to download. \
+They have been ignored, or old ones used instead.
+"""
 
 
 class TestAptConfigurer(SubiTestCase):
@@ -32,6 +59,8 @@ class TestAptConfigurer(SubiTestCase):
         self.model.proxy = ProxyModel()
         self.app = make_app(self.model)
         self.configurer = AptConfigurer(self.app, AsyncMock(), '')
+
+        self.astart_sym = "subiquity.server.apt.astart_command"
 
     def test_apt_config_noproxy(self):
         config = self.configurer.apt_config()
@@ -63,3 +92,33 @@ class TestAptConfigurer(SubiTestCase):
                           create=True, new_callable=AsyncMock):
             async with self.configurer.overlay():
                 pass
+
+    async def test_run_apt_config_check(self):
+        self.configurer.configured_tree = OverlayMountpoint(
+                upperdir="upperdir-install-tree",
+                lowers=["lowers1-install-tree"],
+                mountpoint="mountpoint-install-tree",
+                )
+
+        async def astart_success(cmd, **kwargs):
+            """ Simulates apt-get update behaving normally. """
+            proc = await astart_command(["sh", "-c", "cat"],
+                                        **kwargs, stdin=subprocess.PIPE)
+            proc.stdin.write(APT_UPDATE_SUCCESS.encode("utf-8"))
+            proc.stdin.write_eof()
+            return proc
+
+        async def astart_failure(cmd, **kwargs):
+            """ Simulates apt-get update failing. """
+            proc = await astart_command(["sh", "-c", "cat; exit 1"],
+                                        **kwargs, stdin=subprocess.PIPE)
+            proc.stdin.write(APT_UPDATE_FAILURE.encode("utf-8"))
+            proc.stdin.write_eof()
+            return proc
+
+        with patch(self.astart_sym, side_effect=astart_success):
+            await self.configurer.run_apt_config_check()
+
+        with patch(self.astart_sym, side_effect=astart_failure):
+            with self.assertRaises(AptConfigCheckError):
+                await self.configurer.run_apt_config_check()
