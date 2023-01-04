@@ -15,6 +15,7 @@
 
 import asyncio
 import contextlib
+import io
 import logging
 import os
 import pathlib
@@ -107,7 +108,7 @@ class AptConfigurer:
             self.app, context, 'apt-config', '-t', self.configured_tree.p(),
             config=config_location, private_mounts=True)
 
-    async def run_apt_config_check(self):
+    async def run_apt_config_check(self, output: io.StringIO):
         assert self.configured_tree is not None
 
         pfx = pathlib.Path(self.configured_tree.p())
@@ -141,8 +142,7 @@ class AptConfigurer:
                     line = e.partial
                     if not line:
                         return
-                # TODO Do something else than logging
-                log.debug(line.decode('utf-8'))
+                output.write(line.decode("utf-8"))
 
         reader = asyncio.create_task(_reader())
         unused, returncode = await asyncio.gather(reader, proc.wait())

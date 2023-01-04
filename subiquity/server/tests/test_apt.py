@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import io
 import subprocess
 from unittest.mock import Mock, patch, AsyncMock
 
@@ -116,9 +117,12 @@ class TestAptConfigurer(SubiTestCase):
             proc.stdin.write_eof()
             return proc
 
+        output = io.StringIO()
         with patch(self.astart_sym, side_effect=astart_success):
-            await self.configurer.run_apt_config_check()
+            await self.configurer.run_apt_config_check(output)
+            self.assertEqual(output.getvalue(), APT_UPDATE_SUCCESS)
 
+        output = io.StringIO()
         with patch(self.astart_sym, side_effect=astart_failure):
             with self.assertRaises(AptConfigCheckError):
-                await self.configurer.run_apt_config_check()
+                await self.configurer.run_apt_config_check(output)
