@@ -126,6 +126,15 @@ class AptConfigurer:
             "Cache::SrcPkgCache": None,
         }
 
+        # Need to ensure the "partial" directory exists.
+        partial_dir = apt_dirs["State::Lists"] / "partial"
+        partial_dir.mkdir(
+                parents=True, exist_ok=True)
+        try:
+            shutil.chown(partial_dir, user="_apt")
+        except (PermissionError, LookupError) as exc:
+            log.warning("could to set owner of file %s: %r", partial_dir, exc)
+
         apt_cmd = ["apt-get", "update", "-oAPT::Update::Error-Mode=any"]
 
         for key, path in apt_dirs.items():
