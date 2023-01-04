@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """ Module that defines the view class for Ubuntu Pro configuration. """
 
+import asyncio
 import logging
 import re
 from typing import Callable, List
@@ -324,6 +325,9 @@ class UbuntuProView(BaseView):
                        'submit', self.upgrade_mode_done)
         connect_signal(self.upgrade_mode_form,
                        'cancel', on_upgrade_mode_cancel)
+
+        # Throwaway tasks
+        self.tasks: List[asyncio.Task] = []
 
         super().__init__(self.upgrade_yes_no_screen())
 
@@ -644,7 +648,19 @@ class UbuntuProView(BaseView):
         network connection, temporary service unavailability, API issue ...
         The user is prompted to continue anyway or go back.
         """
-        self.show_stretchy_overlay(ContinueAnywayWidget(self))
+        question = _("Unable to check your subscription information."
+                     " Do you want to go back or continue anyway?")
+
+        async def confirm_continue_anyway() -> None:
+            confirmed = await self.ask_confirmation(
+                    title=_("Unknown error"), question=question,
+                    cancel_label=_("Back"), confirm_label=_("Continue anyway"))
+
+            if confirmed:
+                subform = self.upgrade_mode_form.with_contract_token_subform
+                self.controller.done(subform.value["token"])
+
+        self.tasks.append(asyncio.create_task(confirm_continue_anyway()))
 
     def show_subscription(self, subscription: UbuntuProSubscription) -> None:
         """ Display a screen with information about the subscription, including
@@ -860,39 +876,3 @@ class HowToRegisterWidget(Stretchy):
     def close(self) -> None:
         """ Close the overlay. """
         self.parent.remove_overlay()
-
-
-class ContinueAnywayWidget(Stretchy):
-    """ Widget that requests the user if he wants to go back or continue
-    anyway.
-    +--------------------- Unknown error ---------------------+
-    |                                                         |
-    | Unable to check your subscription information. Do you   |
-    | want to go back or continue anyway?                     |
-    |                                                         |
-    |                   [ Back            ]                   |
-    |                   [ Continue anyway ]                   |
-    +---------------------------------------------------------+
-    """
-    def __init__(self, parent: UbuntuProView) -> None:
-        """ Initializes the widget by showing two buttons, one to go back and
-        one to move forward anyway. """
-        self.parent = parent
-        back = back_btn(label=_("Back"), on_press=self.back)
-        cont = done_btn(label=_("Continue anyway"), on_press=self.cont)
-        widgets = [
-            Text("Unable to check your subscription information."
-                 " Do you want to go back or continue anyway?"),
-            Text(""),
-            button_pile([back, cont]),
-            ]
-        super().__init__("Unknown error", widgets, 0, 2)
-
-    def back(self, sender) -> None:
-        """ Close the overlay. """
-        self.parent.remove_overlay()
-
-    def cont(self, sender) -> None:
-        """ Move on to the next screen. """
-        subform = self.parent.upgrade_mode_form.with_contract_token_subform
-        self.parent.controller.done(subform.value["token"])
