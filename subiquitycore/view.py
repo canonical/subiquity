@@ -18,6 +18,7 @@
 Contains some default key navigations
 """
 
+import asyncio
 import logging
 
 from urwid import (
@@ -31,6 +32,8 @@ from subiquitycore.ui.container import (
     Pile,
     WidgetWrap,
     )
+
+from subiquitycore.ui.confirmation import ConfirmationOverlay
 from subiquitycore.ui.stretchy import StretchyOverlay
 from subiquitycore.ui.utils import disabled, undisabled
 
@@ -81,6 +84,37 @@ class BaseView(WidgetWrap):
         emit_signal(stretchy, 'opened')
         stretchy.opened()
         self._w = StretchyOverlay(disabled(self._w), stretchy)
+
+    async def ask_confirmation(self, title: str, question: str,
+                               confirm_label: str, cancel_label: str) -> bool:
+        """ Open a confirmation dialog using a strechy overlay.
+        If the user selects the "yes" button, the function returns True.
+        If the user selects the "no" button or closes the dialog, the function
+        returns False.
+        """
+        confirm_queue = asyncio.Queue(maxsize=1)
+
+        def on_confirm():
+            confirm_queue.put_nowait(True)
+
+        def on_cancel():
+            confirm_queue.put_nowait(False)
+
+        stretchy = ConfirmationOverlay(title=title, question=question,
+                                       confirm_label=confirm_label,
+                                       cancel_label=cancel_label,
+                                       on_confirm=on_confirm,
+                                       on_cancel=on_cancel)
+
+        self.show_stretchy_overlay(stretchy)
+
+        confirmed = await confirm_queue.get()
+        # The callback might have been called as the result of the overlay
+        # getting closed (when ESC is pressed). Therefore, the overlay may or
+        # may not still be opened.
+        self.remove_overlay(stretchy, not_found_ok=True)
+
+        return confirmed
 
     def remove_overlay(self, stretchy=None,
                        *, not_found_ok=False) -> None:
