@@ -114,7 +114,7 @@ async def astart_command(cmd: Sequence[str], *, stdout=subprocess.PIPE,
                          env=None, **kw) -> asyncio.subprocess.Process:
     log.debug("astart_command called: %s", cmd)
     return await asyncio.create_subprocess_exec(
-        *cmd, stdout=stdout, stderr=stderr,
+        *cmd, stdout=stdout, stderr=stderr, stdin=stdin,
         env=_clean_env(env), **kw)
 
 
