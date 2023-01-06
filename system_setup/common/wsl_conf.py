@@ -120,12 +120,14 @@ def wsl_config_update(config_class, root_dir):
     """
     temp_conf_default = {}
     temp_confname = config_class.__str__()
-    if temp_confname.startswith("WSLConfigurationBase"):
+    if temp_confname.startswith("None"):
+        return
+    elif temp_confname.startswith("WSLConfigurationBase"):
         temp_conf_default = config_base_default
     elif temp_confname.startswith("WSLConfigurationAdvanced"):
         temp_conf_default = config_adv_default
     else:
-        raise TypeError("Invalid type name.")
+        raise TypeError("Invalid type: {}".format(config_class))
 
     # update the config file
     for config_type in temp_conf_default:

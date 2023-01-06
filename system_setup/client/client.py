@@ -63,7 +63,6 @@ class SystemSetupClient(SubiquityClient):
         "Welcome",
         "WSLSetupOptions",
         "WSLIdentity",
-        "WSLConfigurationBase",
         "Summary",
     ]
 
