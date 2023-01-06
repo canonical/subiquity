@@ -177,6 +177,10 @@ class MirrorController(SubiquityController):
         self.model.set_mirror(data)
         await self.configured()
 
+    async def candidate_POST(self, url: str) -> None:
+        log.debug(url)
+        self.model.set_mirror(url)
+
     async def disable_components_GET(self) -> List[str]:
         return sorted(self.model.disabled_components)
 
