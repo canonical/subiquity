@@ -201,8 +201,6 @@ class MirrorView(BaseView):
                 ])
         elif check_state.status == MirrorCheckStatus.RUNNING:
             self.output_wrap._w = self.output_box
-        else:
-            self.output_wrap._w = ListBox([Text("")])
 
         if check_state.status == MirrorCheckStatus.RUNNING:
             asyncio.create_task(cb())
