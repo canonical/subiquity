@@ -155,12 +155,12 @@ choices = {
             enabled=False, default=False,
             help=_("The model being installed prefers but does not require "
                    "TPM backed full-disk encryption and it is not available "
-                   "on this device")),
+                   "on this device (the reason given was \"{reason}\")")),
         StorageSafety.PREFER_UNENCRYPTED: TPMChoice(
             enabled=False, default=False,
             help=_("The model being installed does not prefer TPM backed "
                    "full-disk encryption and it is not available on this "
-                   "device.")),
+                   "device (the reason given was \"{reason}\").")),
             },
     # StorageEncryptionSupport.DEFECTIVE: handled in controller code
 }
@@ -202,7 +202,8 @@ class GuidedChoiceForm(SubForm):
             self.tpm_choice = choices[se.support][se.storage_safety]
             self.use_tpm.enabled = self.tpm_choice.enabled
             self.use_tpm.value = self.tpm_choice.default
-            self.use_tpm.help = self.tpm_choice.help
+            self.use_tpm.help = self.tpm_choice.help.format(
+                reason=se.unavailable_reason)
         else:
             self.remove_field('use_tpm')
 
