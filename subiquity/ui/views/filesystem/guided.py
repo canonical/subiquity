@@ -155,9 +155,10 @@ choices = {
             enabled=False, default=False,
             help=_("The model being installed prefers but does not require "
                    "TPM backed full-disk encryption and it is not available "
-                   "on this device (the reason given was \"{reason}\")")),
+                   "on this device (the reason given was \"{reason}\").")),
         StorageSafety.PREFER_UNENCRYPTED: TPMChoice(
             enabled=False, default=False,
+            # for translators: 'reason' is the reason FDE is unavailable.
             help=_("The model being installed does not prefer TPM backed "
                    "full-disk encryption and it is not available on this "
                    "device (the reason given was \"{reason}\").")),
