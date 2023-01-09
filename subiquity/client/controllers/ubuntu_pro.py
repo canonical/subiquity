@@ -69,12 +69,6 @@ class UbuntuProController(SubiquityTuiController):
             await self.endpoint.skip.POST()
             raise Skip("Not running LTS version")
 
-        # TODO remove these three lines when all dependencies for Ubuntu Pro
-        # are available in focal-updates.
-        if not self.app.opts.dry_run:
-            await self.endpoint.skip.POST()
-            raise Skip("Skipping Ubuntu Pro for now")
-
         ubuntu_pro_info: UbuntuProResponse = await self.endpoint.GET()
         return UbuntuProView(self,
                              token=ubuntu_pro_info.token,
