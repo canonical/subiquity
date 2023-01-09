@@ -57,103 +57,80 @@ apps:
 
 parts:
   curtin:
+    plugin: nil
+
+    source: https://git.launchpad.net/curtin
+    source-type: git
+    source-commit: b08eecd68cf5f1bccf4255b3d00a77af51c159f7
+
     override-pull: |
       snapcraftctl pull
       PACKAGED_VERSION="$(git describe --long --abbrev=9 --match=[0-9][0-9]*)"
       sed -e "s,@@PACKAGED_VERSION@@,$PACKAGED_VERSION,g" -i curtin/version.py
-    plugin: python
-    source-type: git
-    source: https://git.launchpad.net/curtin
-    source-commit: b08eecd68cf5f1bccf4255b3d00a77af51c159f7
+    override-build: &pyinstall |
+      # We install without dependencies because all dependencies come from
+      # archive packages.
+      pip3 install --prefix=$SNAPCRAFT_PART_INSTALL --no-dependencies .
+
     build-packages:
-      - shared-mime-info
-      - zlib1g-dev
-    python-packages:
-      - pyyaml==5.3.1
-      - oauthlib
-      - pyrsistent
-      - wheel
-      - setuptools
-      - pip
-      - urwid
-      - requests
-      - requests-unixsocket
+      - python3-pip
+
     organize:
       lib/python*/site-packages/usr/lib/curtin: usr/lib/
-    stage:
-      - '*'
-      - -lib/python*/site-packages/_yaml.*.so
-      - -lib/python*/site-packages/setuptools
-      - -lib/python*/site-packages/pip
-      - -lib/python*/site-packages/pkg_resources
-      - -lib/python*/site-packages/jsonschema
-      - -lib/python*/site-packages/wheel*
-      - -lib/python*/site-packages/probert
-      - -bin/activate*
-      - -bin/python
-      - -bin/python3*
-      - -lib/python3.8/site-packages/__pycache__/six.cpython*
-      - -lib/python3.8/site-packages/pip-*.dist-info/RECORD
-      - -lib/python3.8/site-packages/wheel-*.dist-info/RECORD
-      - -lib/python3.8/site-packages/_distutils_hack
+
   subiquity:
-    plugin: python
-    build-packages:
-      - gettext
-      - libsystemd-dev
-      - lsb-release
-      - pkg-config
-      - python3-yaml
-      - python3-attr
-      - python3-systemd
-      - python3-aiohttp
-      - python3-yarl
-      - python3-urwid
-      - python3-bson
-      - python3-requests-unixsocket
-      - python3-requests
-    stage-packages:
-      - cloud-init
-      - libsystemd0
-      - iso-codes
-      - lsb-release
-      - ssh-import-id
-      - libpython3.8-minimal
-      - libpython3.8-stdlib
-      - libpython3-stdlib
-      - ntfs-3g
-      - python3.8-minimal
-      - python3-minimal
-      - python3-yaml
-      - python3-apport
-      - python3-attr
-      - python3-systemd
-      - python3-aiohttp
-      - python3-jsonschema
-      - python3-yarl
-      - python3-urwid
-      - python3-bson
-      - python3-requests-unixsocket
-      - python3-requests
-      - python3-pyudev
-      - ubuntu-advantage-tools
-    stage:
-      - '*'
-      - -bin/python
-      - -bin/python3
-      - -lib/python3.8/site-packages/jsonschema
+    plugin: nil
+
     source: .
     source-type: git
-    build-environment:
-      - PATH: /usr/bin:$PATH
+
+    override-build: *pyinstall
+
+    build-packages:
+      - gettext
+      - lsb-release
+      - python3-pip
+
+    stage-packages:
+      # This list includes the dependencies for curtin and probert as well,
+      # there doesn't seem to be any real benefit to listing them separately.
+      - cloud-init
+      - iso-codes
+      - libpython3-stdlib
+      - libpython3.8-minimal
+      - libpython3.8-stdlib
+      - libsystemd0
+      - lsb-release
+      - ntfs-3g
+      - python3-aiohttp
+      - python3-apport
+      - python3-attr
+      - python3-bson
+      - python3-jsonschema
+      - python3-minimal
+      - python3-oauthlib
+      - python3-pyrsistent
+      - python3-pyudev
+      - python3-requests
+      - python3-requests-unixsocket
+      - python3-systemd
+      - python3-urwid
+      - python3-yaml
+      - python3-yarl
+      - python3.8-minimal
+      - ssh-import-id
+      - ubuntu-advantage-tools
+
     organize:
       bin/subiquity-tui: usr/bin/subiquity
       bin/subiquity-service: usr/bin/subiquity-service
       bin/subiquity-server: usr/bin/subiquity-server
       bin/subiquity-cmd: usr/bin/subiquity-cmd
       $SNAPCRAFT_PART_BUILD/system_setup/ubuntu-wsl-setup: bin/ubuntu-wsl-setup
+
   users-and-groups:
     plugin: nil
+
     build-packages:
       - user-setup
     override-build: |
@@ -162,15 +139,20 @@ parts:
         cut -d ' ' -f 2- > $SNAPCRAFT_PART_INSTALL/users-and-groups
     stage:
       - users-and-groups
+
   user-setup:
     plugin: nil
+
     source: https://git.launchpad.net/ubuntu/+source/user-setup
     source-type: git
+
     override-build: cp -a reserved-usernames $SNAPCRAFT_PART_INSTALL/
     stage:
       - reserved-usernames
+
   keyboard-data:
     plugin: nil
+
     build-packages:
       - console-setup
       - locales
@@ -182,16 +164,21 @@ parts:
         $SNAPCRAFT_PART_INSTALL/kbds/keyboard-configuration.yaml
     stage:
       - kbds/
+
   font:
     plugin: dump
-    source: ./
+
+    source: .
     source-type: git
+
     organize:
       font/subiquity.psf: subiquity.psf
     stage:
       - subiquity.psf
+
   languagelists:
     plugin: nil
+
     build-packages:
       - localechooser-data
     override-build: |
@@ -200,38 +187,35 @@ parts:
         apt-get -y install --reinstall iso-codes
       } || true
       $SNAPCRAFT_PROJECT_DIR/scripts/make-language-lists $SNAPCRAFT_PROJECT_DIR/po > $SNAPCRAFT_PART_INSTALL/languagelist
+
     stage:
       - languagelist
 
   probert:
-    plugin: python
+    plugin: nil
+
+    source: https://github.com/canonical/probert.git
+    source-type: git
+    source-commit: 31778895be3002422e9e8758d42940f290dc70af
+
+    override-build: *pyinstall
+
     build-packages:
-      - python-setuptools
       - build-essential
       - libnl-3-dev
       - libnl-genl-3-dev
       - libnl-route-3-dev
-    source: https://github.com/canonical/probert.git
-    source-type: git
-    source-commit: 31778895be3002422e9e8758d42940f290dc70af
-    requirements: [requirements.txt]
-    stage:
-      - '*'
-      - -bin/python
-      - -bin/python3*
-      - -bin/activate*
-      - -lib/python3.8/site-packages/_distutils_hack
-      - -lib/python3.8/site-packages/pip*
-      - -lib/python3.8/site-packages/pkg_resources
-      - -lib/python3.8/site-packages/setuptools
-      - -lib/python3.8/site-packages/wheel*
-      - -lib/python3.8/site-packages/jsonschema
+      - pkg-config
+      - python3-dev
+      - python3-pip
 
   os-prober:
     plugin: nil
+
     source-type: git
     source: https://github.com/dbungert/os-prober
     source-commit: 80d6a3157a814278af4f96da91f9ab7218e20fdc
+
     build-packages:
       - build-essential
       - debhelper
