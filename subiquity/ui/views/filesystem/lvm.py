@@ -206,9 +206,15 @@ class VolGroupStretchy(Stretchy):
         result['devices'] = mdc.active_devices
         if 'confirm_passphrase' in result:
             del result['confirm_passphrase']
+        # NOTE volgroup_handler expects the passphrase to be named "password".
+        # Since the function is also used by the server, we cannot simply
+        # change what it expects without making modifications to the server
+        # too.
+        if 'passphrase' in result:
+            result['password'] = result.pop('passphrase')
         safe_result = result.copy()
-        if 'passphrase' in safe_result:
-            safe_result['passphrase'] = '<REDACTED>'
+        if 'password' in safe_result:
+            safe_result['password'] = '<REDACTED>'
         log.debug("vg_done: {}".format(safe_result))
         self.parent.controller.volgroup_handler(self.existing, result)
         self.parent.refresh_model_inputs()
