@@ -157,15 +157,27 @@ class VolGroupStretchy(Stretchy):
             label = _('Save')
             devices = {}
             key = ""
+            encrypt = False
             for d in existing.devices:
                 if d.type == "dm_crypt":
-                    key = d.key
+                    encrypt = True
+                    # If the DM_Crypt object was created using information
+                    # sent by the server (this happens when the passphrase was
+                    # provided in the Guided Storage screen), it will not
+                    # contain a key but a path to a keyfile (d.keyfile). The
+                    # client may not have permission to read the keyfile so it
+                    # seems simpler to just present an empty passphrase field
+                    # and ask the user to fill the passphrase again if they
+                    # want to make adjustments to the VG.
+                    # TODO make this more user friendly.
+                    if d.key is not None:
+                        key = d.key
                     d = d.volume
                 devices[d] = 'active'
             initial = {
                 'devices': devices,
                 'name': existing.name,
-                'encrypt': bool(key),
+                'encrypt': encrypt,
                 'passphrase': key,
                 'confirm_passphrase': key,
                 }
