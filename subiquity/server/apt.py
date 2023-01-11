@@ -108,7 +108,13 @@ class AptConfigurer:
             self.app, context, 'apt-config', '-t', self.configured_tree.p(),
             config=config_location, private_mounts=True)
 
-    async def run_apt_config_check(self, output: io.StringIO):
+    async def run_apt_config_check(self, output: io.StringIO) -> None:
+        """ Run apt-get update (with various options limiting the amount of
+        data donwloaded) in the overlay where the apt configuration was
+        previously deployed. The output of apt-get (stdout + stderr) will be
+        written to the output parameter.
+        Raises a AptConfigCheckError exception if the apt-get command exited
+        with non-zero. """
         assert self.configured_tree is not None
 
         pfx = pathlib.Path(self.configured_tree.p())
@@ -135,11 +141,29 @@ class AptConfigurer:
         except (PermissionError, LookupError) as exc:
             log.warning("could to set owner of file %s: %r", partial_dir, exc)
 
+        disabled_downloads = [
+                "deb::Packages",
+                "deb::Translations",
+                "deb::DEP-11",
+                "deb::Contents-deb",
+                "deb::Contents-udeb",
+                "deb::Contents-deb-legacy",
+                "deb::DEP-11-icons",
+                "deb::DEP-11-icons-small",
+                "deb::DEP-11-icons-large",
+                "deb::DEP-11-icons-large-hidpi",
+                ]
+
         apt_cmd = ["apt-get", "update", "-oAPT::Update::Error-Mode=any"]
 
         for key, path in apt_dirs.items():
             value = "" if path is None else str(path)
             apt_cmd.append(f"-oDir::{key}={str(value)}")
+
+        for target in disabled_downloads:
+            apt_cmd.append(
+                    f"-oAcquire::IndexTargets::{target}::DefaultEnabled=false")
+
 
         proc = await astart_command(apt_cmd, stderr=subprocess.STDOUT)
 
