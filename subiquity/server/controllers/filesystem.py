@@ -98,7 +98,7 @@ block_discover_log = logging.getLogger('block-discover')
 
 system_defective_encryption_text = _("""
 The model being installed requires TPM-backed encryption but this
-system does not support it.
+system does not support it (the reason given was "{unavailable_reason}").
 """)
 
 system_multiple_volumes_text = _("""
@@ -214,14 +214,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._on_volume = snapdapi.OnVolume.from_volume(volume)
         if volume.schema != 'gpt':
             self._core_boot_classic_error = system_non_gpt_text
-        if self._system.storage_encryption.support == \
-           StorageEncryptionSupport.DEFECTIVE:
-            self._core_boot_classic_error = system_defective_encryption_text
-        if self._system.storage_encryption.support == \
-           StorageEncryptionSupport.UNAVAILABLE:
+        se = self._system.storage_encryption
+        if se.support == StorageEncryptionSupport.DEFECTIVE:
+            self._core_boot_classic_error = \
+              system_defective_encryption_text.format(
+                  unavailable_reason=se.unavailable_reason)
+        if se.support == StorageEncryptionSupport.UNAVAILABLE:
             log.debug(
-                "storage encryption unavailable: %r",
-                self._system.storage_encryption.unavailable_reason)
+                "storage encryption unavailable: %r", se.unavailable_reason)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
