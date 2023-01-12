@@ -76,8 +76,7 @@ class LVMViewTests(unittest.TestCase):
             'name': 'vg1',
             'devices': {part1, part2},
             'encrypt': True,
-            # volgroup_handler expects the passphrase to be called "password".
-            'password': 'passw0rd',
+            'passphrase': 'passw0rd',
             }
         view_helpers.enter_data(stretchy.form, form_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)

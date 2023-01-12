@@ -82,7 +82,7 @@ class TestFilesystemManipulator(unittest.TestCase):
     def test_delete_encrypted_vg(self):
         manipulator, disk = make_manipulator_and_disk()
         spec = {
-            'password': 'passw0rd',
+            'passphrase': 'passw0rd',
             'devices': {disk},
             'name': 'vg0',
             }
