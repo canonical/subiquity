@@ -742,5 +742,6 @@ class MirrorCheckStatus(enum.Enum):
 
 @attr.s(auto_attribs=True)
 class MirrorCheckResponse:
+    url: str
     status: MirrorCheckStatus
     output: str

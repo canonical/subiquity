@@ -45,6 +45,7 @@ class MirrorCheckNotStartedError(Exception):
 class MirrorCheck:
     task: asyncio.Task
     output: io.StringIO
+    uri: str
 
 
 class MirrorController(SubiquityController):
@@ -194,13 +195,13 @@ class MirrorController(SubiquityController):
             assert False
         output = io.StringIO()
         self.mirror_check = MirrorCheck(
+                uri=self.model.get_mirror(),
                 task=asyncio.create_task(self.run_mirror_testing(output)),
                 output=output)
 
-    async def check_mirror_progress_GET(self) -> MirrorCheckResponse:
+    async def check_mirror_progress_GET(self) -> Optional[MirrorCheckResponse]:
         if self.mirror_check is None:
-            # TODO
-            assert False
+            return None
         if self.mirror_check.task.done():
             if self.mirror_check.task.exception():
                 status = MirrorCheckStatus.FAILED
@@ -210,6 +211,7 @@ class MirrorController(SubiquityController):
             status = MirrorCheckStatus.RUNNING
 
         return MirrorCheckResponse(
+                url=self.mirror_check.uri,
                 status=status,
                 output=self.mirror_check.output.getvalue())
 

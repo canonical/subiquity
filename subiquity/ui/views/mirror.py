@@ -18,6 +18,8 @@ Select the Ubuntu archive mirror.
 """
 import asyncio
 import logging
+from typing import Optional
+
 from urwid import (
     connect_signal,
     LineBox,
@@ -132,7 +134,7 @@ class MirrorView(BaseView):
     excerpt = _("If you use an alternative mirror for Ubuntu, enter its "
                 "details here.")
 
-    def __init__(self, controller, mirror):
+    def __init__(self, controller, mirror, check: Optional[MirrorCheckStatus]):
         self.controller = controller
 
         self.form = MirrorForm(initial={'url': mirror})
@@ -151,7 +153,10 @@ class MirrorView(BaseView):
             on_press=lambda sender: self.check_url(
                 self.form.url.value, True))])
 
-        #self.update_status(check_state)
+        if check is not None:
+            self.update_status(check)
+        else:
+            self.last_status = None
 
         rows = [
             ('pack', Text(_(self.excerpt))),
@@ -221,6 +226,7 @@ class MirrorView(BaseView):
             self.show_stretchy_overlay(
                 ConfirmUncheckedMirror(self, self.last_status))
         else:
+            # TODO: handle scenario where check hasn't started yet.
             self.controller.done(result.url.value)
 
     def cancel(self, result=None):
