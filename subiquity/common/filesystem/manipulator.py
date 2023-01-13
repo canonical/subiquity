@@ -123,7 +123,7 @@ class FilesystemManipulator:
 
     def create_volgroup(self, spec):
         devices = set()
-        key = spec.get('password')
+        key = spec.get('passphrase')
         for device in spec['devices']:
             self.clear(device)
             if key:
@@ -277,7 +277,7 @@ class FilesystemManipulator:
 
     def volgroup_handler(self, existing, spec):
         if existing is not None:
-            key = spec.get('password')
+            key = spec.get('passphrase')
             for d in existing.devices:
                 if d.type == "dm_crypt":
                     self.model.remove_dm_crypt(d)

@@ -284,7 +284,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             vg_name = 'ubuntu-vg-{}'.format(i)
         spec = dict(name=vg_name, devices=set([part]))
         if lvm_options and lvm_options['encrypt']:
-            spec['password'] = lvm_options['luks_options']['password']
+            spec['passphrase'] = lvm_options['luks_options']['passphrase']
         vg = self.create_volgroup(spec)
         # There's no point using LVM and unconditionally filling the
         # VG with a single LV, but we should use more of a smaller
@@ -352,14 +352,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise Exception(f'gap not found after resize, pgs={pgs}')
         return gap
 
-    def build_lvm_options(self, password):
-        if password is None:
+    def build_lvm_options(self, passphrase):
+        if passphrase is None:
             return None
         else:
             return {
                 'encrypt': True,
                 'luks_options': {
-                    'password': password,
+                    'passphrase': passphrase,
                     },
                 }
 
