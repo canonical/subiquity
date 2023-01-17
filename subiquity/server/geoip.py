@@ -35,10 +35,6 @@ class CheckState(enum.IntEnum):
     DONE = enum.auto()
 
 
-class LookupError(Exception):
-    """ Error to raise when retrieving the GeoIP information. """
-
-
 class GeoIPStrategy(ABC):
     """ Base class for strategies (e.g. HTTP or dry-run) to retrieve the GeoIP
     information. """
@@ -76,13 +72,10 @@ class HTTPGeoIPStrategy(GeoIPStrategy):
     geoip.ubuntu.com service. """
     async def get_response(self) -> str:
         url = "https://geoip.ubuntu.com/lookup"
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
-                    response.raise_for_status()
-                    return await response.text()
-        except aiohttp.ClientError as e:
-            raise LookupError from e
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                response.raise_for_status()
+                return await response.text()
 
 
 class GeoIP:
@@ -115,13 +108,13 @@ class GeoIP:
     async def _lookup(self):
         try:
             self.response_text = await self.strategy.get_response()
-        except LookupError:
-            log.exception("geoip lookup failed")
+        except aiohttp.ClientError as le:
+            log.warn("geoip lookup failed: %r", le)
             return False
         try:
             self.element = ElementTree.fromstring(self.response_text)
         except ElementTree.ParseError:
-            log.exception("parsing %r failed", self.response_text)
+            log.debug("parsing response failed: %r", self.response_text)
             return False
 
         changed = False
