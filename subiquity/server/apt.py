@@ -15,10 +15,13 @@
 
 import asyncio
 import contextlib
+import enum
 import io
 import logging
 import os
 import pathlib
+import random
+import re
 import shutil
 import subprocess
 from typing import Optional
@@ -164,7 +167,6 @@ class AptConfigurer:
             apt_cmd.append(
                     f"-oAcquire::IndexTargets::{target}::DefaultEnabled=false")
 
-
         proc = await astart_command(apt_cmd, stderr=subprocess.STDOUT)
 
         async def _reader():
@@ -274,6 +276,12 @@ class AptConfigurer:
 
 
 class DryRunAptConfigurer(AptConfigurer):
+    class MirrorCheckStrategy(enum.Enum):
+        SUCCESS = "success"
+        FAILURE = "failure"
+        RANDOM = "random"
+
+        RUN_ON_HOST = "run-on-host"
 
     @contextlib.asynccontextmanager
     async def overlay(self):
@@ -281,6 +289,96 @@ class DryRunAptConfigurer(AptConfigurer):
 
     async def deconfigure(self, context, target):
         await self.cleanup()
+
+    def get_mirror_check_strategy(self, url: str) -> "MirrorCheckStrategy":
+        """ For a given mirror URL, return the strategy that we should use to
+        perform mirror checking. """
+        for known in self.app.dr_cfg.apt_mirrors_known:
+            if "url" in known:
+                if known["url"] != url:
+                    continue
+            elif "pattern" in known:
+                if not re.search(known["pattern"], url):
+                    continue
+            else:
+                assert False
+
+            return self.MirrorCheckStrategy(known["strategy"])
+
+        return self.MirrorCheckStrategy(
+                self.app.dr_cfg.apt_mirror_check_default_strategy)
+
+    async def apt_config_check_failure(self, output: io.StringIO) -> None:
+        """ Pretend that the execution of the apt-get update command results in
+        a failure. """
+        url = self.app.base_model.mirror.get_mirror()
+        release = lsb_release(dry_run=True)["codename"]
+        host = url.split("/")[2]
+
+        output.write(f"""\
+Ign:1 {url} {release} InRelease
+Ign:2 {url} {release}-updates InRelease
+Ign:3 {url} {release}-backports InRelease
+Ign:4 {url} {release}-security InRelease
+Ign:2 {url} {release} InRelease
+Ign:3 {url} {release}-updates InRelease
+Err:1 {url} kinetic InRelease
+ Temporary failure resolving '{host}'
+Err:2 {url} kinetic-updates InRelease
+ Temporary failure resolving '{host}'
+Err:3 {url} kinetic-backports InRelease
+ Temporary failure resolving '{host}'
+Err:4 {url} kinetic-security InRelease
+ Temporary failure resolving '{host}'
+Reading package lists...
+E: Failed to fetch {url}/dists/{release}/InRelease\
+  Temporary failure resolving '{host}'
+E: Failed to fetch {url}/dists/{release}-updates/InRelease\
+  Temporary failure resolving '{host}'
+E: Failed to fetch {url}/dists/{release}-backports/InRelease\
+  Temporary failure resolving '{host}'
+E: Failed to fetch {url}/dists/{release}-security/InRelease\
+  Temporary failure resolving '{host}'
+E: Some index files failed to download. They have been ignored,
+ or old ones used instead.
+""")
+        raise AptConfigCheckError
+
+    async def apt_config_check_success(self, output: io.StringIO) -> None:
+        """ Pretend that the execution of the apt-get update command results in
+        a success. """
+        url = self.app.base_model.mirror.get_mirror()
+        release = lsb_release(dry_run=True)["codename"]
+
+        output.write(f"""\
+Get:1 {url} {release} InRelease [267 kB]
+Get:2 {url} {release}-updates InRelease [109 kB]
+Get:3 {url} {release}-backports InRelease [99.9 kB]
+Get:4 {url} {release}-security InRelease [109 kB]
+Fetched 585 kB in 1s (1057 kB/s)
+Reading package lists...
+""")
+
+    async def run_apt_config_check(self, output: io.StringIO) -> None:
+        """ Dry-run implementation of the Apt config check.
+        The strategy used is based on the URL of the primary mirror. The
+        apt-get command can either run on the host or be faked entirely. """
+        assert self.configured_tree is not None
+
+        failure = self.apt_config_check_failure
+        success = self.apt_config_check_success
+
+        strategies = {
+            self.MirrorCheckStrategy.RUN_ON_HOST: super().run_apt_config_check,
+            self.MirrorCheckStrategy.FAILURE: failure,
+            self.MirrorCheckStrategy.SUCCESS: success,
+            self.MirrorCheckStrategy.RANDOM: random.choice([failure, success]),
+        }
+        mirror_url = self.app.base_model.mirror.get_mirror()
+
+        strategy = strategies[self.get_mirror_check_strategy(mirror_url)]
+
+        await strategy(output)
 
 
 def get_apt_configurer(app, source: str):

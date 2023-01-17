@@ -22,9 +22,11 @@ from subiquitycore.tests.mocks import make_app
 from subiquitycore.utils import astart_command
 from subiquity.server.apt import (
     AptConfigurer,
+    DryRunAptConfigurer,
     AptConfigCheckError,
     OverlayMountpoint,
 )
+from subiquity.server.dryrun import DRConfig
 from subiquity.models.mirror import MirrorModel
 from subiquity.models.proxy import ProxyModel
 
@@ -124,5 +126,69 @@ class TestAptConfigurer(SubiTestCase):
 
         output = io.StringIO()
         with patch(self.astart_sym, side_effect=astart_failure):
+            with self.assertRaises(AptConfigCheckError):
+                await self.configurer.run_apt_config_check(output)
+
+
+class TestDRAptConfigurer(SubiTestCase):
+    def setUp(self):
+        self.model = Mock()
+        self.model.mirror = MirrorModel()
+        self.app = make_app(self.model)
+        self.app.dr_cfg = DRConfig()
+        self.app.dr_cfg.apt_mirror_check_default_strategy = "failure"
+        self.app.dr_cfg.apt_mirrors_known = [
+            {"url": "http://success", "strategy": "success"},
+            {"url": "http://failure", "strategy": "failure"},
+            {"url": "http://run-on-host", "strategy": "run-on-host"},
+            {"pattern": "/random$", "strategy": "random"},
+        ]
+        self.configurer = DryRunAptConfigurer(self.app, AsyncMock(), '')
+        self.configurer.configured_tree = OverlayMountpoint(
+                upperdir="upperdir-install-tree",
+                lowers=["lowers1-install-tree"],
+                mountpoint="mountpoint-install-tree",
+                )
+
+    def test_get_mirror_check_strategy(self):
+        Strategy = DryRunAptConfigurer.MirrorCheckStrategy
+        self.assertEqual(
+                Strategy.SUCCESS,
+                self.configurer.get_mirror_check_strategy("http://success"))
+        self.assertEqual(
+                Strategy.FAILURE,
+                self.configurer.get_mirror_check_strategy("http://failure"))
+        self.assertEqual(Strategy.RUN_ON_HOST,
+                         self.configurer.get_mirror_check_strategy(
+                             "http://run-on-host"))
+        self.assertEqual(Strategy.RANDOM,
+                         self.configurer.get_mirror_check_strategy(
+                             "http://mirror/random"))
+        self.assertEqual(
+                Strategy.FAILURE,
+                self.configurer.get_mirror_check_strategy("http://default"))
+
+    async def test_run_apt_config_check_success(self):
+        output = io.StringIO()
+        self.app.dr_cfg.apt_mirror_check_default_strategy = "success"
+        self.model.mirror.set_mirror("http://default")
+        await self.configurer.run_apt_config_check(output)
+
+    async def test_run_apt_config_check_failed(self):
+        output = io.StringIO()
+        self.app.dr_cfg.apt_mirror_check_default_strategy = "failure"
+        self.model.mirror.set_mirror("http://default")
+        with self.assertRaises(AptConfigCheckError):
+            await self.configurer.run_apt_config_check(output)
+
+    async def test_run_apt_config_check_random(self):
+        output = io.StringIO()
+        self.app.dr_cfg.apt_mirror_check_default_strategy = "random"
+        self.model.mirror.set_mirror("http://default")
+        with patch("subiquity.server.apt.random.choice",
+                   return_value=self.configurer.apt_config_check_success):
+            await self.configurer.run_apt_config_check(output)
+        with patch("subiquity.server.apt.random.choice",
+                   return_value=self.configurer.apt_config_check_failure):
             with self.assertRaises(AptConfigCheckError):
                 await self.configurer.run_apt_config_check(output)
