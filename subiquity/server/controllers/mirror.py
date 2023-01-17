@@ -189,10 +189,12 @@ class MirrorController(SubiquityController):
         log.debug(data)
         self.model.disabled_components = set(data)
 
-    async def check_mirror_start_POST(self) -> None:
+    async def check_mirror_start_POST(self, cancel_ongoing: bool = False) -> None:
         if self.mirror_check is not None and not self.mirror_check.task.done():
-            # TODO
-            assert False
+            if cancel_ongoing:
+                await self.check_mirror_abort_POST()
+            else:
+                assert False
         output = io.StringIO()
         self.mirror_check = MirrorCheck(
                 uri=self.model.get_mirror(),
