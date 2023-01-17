@@ -18,7 +18,7 @@ Select the Ubuntu archive mirror.
 """
 import asyncio
 import logging
-from typing import Optional
+from typing import Callable, Optional
 
 from urwid import (
     connect_signal,
@@ -104,15 +104,15 @@ class ConfirmUncheckedMirror(Stretchy):
 
 class MirrorForm(Form):
 
-    controller = None
+    on_validate: Optional[Callable[[str], None]] = None
 
     cancel_label = _("Back")
 
     url = URLField(_("Mirror address:"), help=mirror_help)
 
     def validate_url(self):
-        if self.controller is not None:
-            self.controller.check_url(self.url.value)
+        if self.on_validate is not None:
+            self.on_validate(self.url.value)
 
 
 MIRROR_CHECK_STATUS_TEXTS = {
@@ -171,20 +171,29 @@ class MirrorView(BaseView):
             ('pack', Text("")),
             ]
 
-        self.form.controller = self
+        self.form.on_validate = self.on_url_changed
 
         pile = Pile(rows)
         pile.focus_position = len(rows) - 2
         super().__init__(Padding(
             pile, align='center', width=("relative", 79), min_width=76))
 
+    def on_url_changed(self, url: str) -> None:
+        async def inner():
+            status = await self.controller.endpoint.check_mirror.progress.GET()
+            if status is None:
+                await self._check_url(url)
+            elif status.url != url:
+                await self._check_url(url, cancel_ongoing=True)
+        asyncio.create_task(inner())
+
     def check_url(self, url, retry=False):
         asyncio.create_task(self._check_url(url, retry))
 
-    async def _check_url(self, url, retry=False):
+    async def _check_url(self, url, cancel_ongoing=False, retry=False):
         # TODO do something with retry?
         await self.controller.endpoint.candidate.POST(url)
-        await self.controller.endpoint.check_mirror.start.POST()
+        await self.controller.endpoint.check_mirror.start.POST(True)
         state = await self.controller.endpoint.check_mirror.progress.GET()
         self.update_status(state)
 
