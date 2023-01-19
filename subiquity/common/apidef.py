@@ -172,6 +172,9 @@ class API:
         def GET() -> NetworkStatus: ...
         def POST() -> None: ...
 
+        class has_network:
+            def GET() -> bool: ...
+
         class global_addresses:
             def GET() -> List[str]:
                 """Return the global IP addresses the system currently has."""
