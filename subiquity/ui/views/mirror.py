@@ -87,13 +87,17 @@ class MirrorForm(Form):
             self.on_validate(self.url.value)
 
 
+# Dictionary of status messages to display, indexed with a tuple containing:
+#  * a boolean stating if network is available
+#  * the status of the mirror check (or None if it hasn't started yet)
 MIRROR_CHECK_STATUS_TEXTS = {
-    None: _("""\
-The mirror location cannot be checked because no network has been configured.
-"""),
-    MirrorCheckStatus.RUNNING: _("The mirror location is being tested."),
-    MirrorCheckStatus.OK: _("This mirror location passed tests."),
-    MirrorCheckStatus.FAILED: _("""\
+    (False, None): _("The mirror location cannot be checked because no network"
+                     " has been configured."),
+    (True, None): _("The mirror location has not yet started."),
+    (True, MirrorCheckStatus.RUNNING): _("The mirror location is being"
+                                         " tested."),
+    (True, MirrorCheckStatus.OK): _("This mirror location passed tests."),
+    (True, MirrorCheckStatus.FAILED): _("""\
 This mirror location does not seem to work. The output below may help
 explain the problem. You can try again once the issue has been fixed
 (common problems are network issues or the system clock being wrong).
@@ -106,7 +110,8 @@ class MirrorView(BaseView):
     excerpt = _("If you use an alternative mirror for Ubuntu, enter its "
                 "details here.")
 
-    def __init__(self, controller, mirror, check: Optional[MirrorCheckStatus]):
+    def __init__(self, controller, mirror,
+                 check: Optional[MirrorCheckStatus], has_network: bool):
         self.controller = controller
 
         self.form = MirrorForm(initial={'url': mirror})
@@ -125,9 +130,12 @@ class MirrorView(BaseView):
             on_press=lambda sender: self.check_url(
                 self.form.url.value, True))])
 
+        self.has_network = has_network
         if check is not None:
             self.update_status(check)
         else:
+            self.status_text.set_text(rewrap(_(
+                MIRROR_CHECK_STATUS_TEXTS[self.has_network, None])))
             self.last_status = None
 
         rows = [
@@ -159,7 +167,9 @@ class MirrorView(BaseView):
                 await self._check_url(url)
             elif status.url != url:
                 await self._check_url(url, cancel_ongoing=True)
-        asyncio.create_task(inner())
+
+        if self.has_network:
+            asyncio.create_task(inner())
 
     def check_url(self, url, retry=False):
         asyncio.create_task(self._check_url(url, retry))
@@ -173,7 +183,7 @@ class MirrorView(BaseView):
 
     def update_status(self, check_state: MirrorCheckResponse):
         self.status_text.set_text(rewrap(_(
-            MIRROR_CHECK_STATUS_TEXTS[check_state.status])))
+            MIRROR_CHECK_STATUS_TEXTS[self.has_network, check_state.status])))
         self.output_text.set_text(check_state.output)
 
         async def cb():
@@ -212,7 +222,7 @@ class MirrorView(BaseView):
             if confirmed:
                 self.controller.done(result.url.value)
         log.debug("User input: {}".format(result.as_data()))
-        if self.last_status in [
+        if self.has_network and self.last_status in [
                 MirrorCheckStatus.RUNNING, MirrorCheckStatus.FAILED, None]:
             self.tasks.append(asyncio.create_task(confirm_continue_anyway()))
         else:

@@ -125,6 +125,10 @@ class MirrorController(SubiquityController):
             except asyncio.TimeoutError:
                 pass
 
+        if not self.app.base_model.network.has_network:
+            log.debug("Skipping mirror check since network is not available.")
+            return
+
         async def try_mirror_checking_once() -> None:
             """ Try mirror checking and log result. """
             output = io.StringIO()

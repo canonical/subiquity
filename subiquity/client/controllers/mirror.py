@@ -29,8 +29,12 @@ class MirrorController(SubiquityTuiController):
 
     async def make_ui(self):
         mirror = await self.endpoint.GET()
-        check = await self.endpoint.check_mirror.progress.GET()
-        return MirrorView(self, mirror, check=check)
+        has_network = await self.app.client.network.has_network.GET()
+        if has_network:
+            check = await self.endpoint.check_mirror.progress.GET()
+        else:
+            check = None
+        return MirrorView(self, mirror, check=check, has_network=has_network)
 
     async def run_answers(self):
         async def wait_mirror_check() -> None:
