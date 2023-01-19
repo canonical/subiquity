@@ -18,7 +18,7 @@ Select the Ubuntu archive mirror.
 """
 import asyncio
 import logging
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 
 from urwid import (
     connect_signal,
@@ -28,8 +28,6 @@ from urwid import (
     )
 
 from subiquitycore.ui.buttons import (
-    danger_btn,
-    done_btn,
     other_btn,
     )
 from subiquitycore.ui.container import (
@@ -42,7 +40,6 @@ from subiquitycore.ui.form import (
     URLField,
 )
 from subiquitycore.ui.spinner import Spinner
-from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.table import TableRow, TablePile
 from subiquitycore.ui.utils import button_pile, rewrap
 from subiquitycore.view import BaseView
@@ -73,33 +70,14 @@ The check of the mirror URL failed. You can continue but it is very likely that
 the installation will fail.
 """),
         ),
+    None: (
+        _("Mirror has not run"),
+        _("""\
+The check of the mirror has not yet started. You can continue but there is a
+chance that the installation will fail.
+"""),
+        ),
     }
-
-
-class ConfirmUncheckedMirror(Stretchy):
-
-    def __init__(self, parent, status):
-        self.parent = parent
-        title, explanation = MIRROR_CHECK_CONFIRMATION_TEXTS[status]
-        if status == MirrorCheckStatus.RUNNING:
-            ok_btn = done_btn
-        else:
-            ok_btn = danger_btn
-        buttons = button_pile([
-            ok_btn("OK", on_press=self._ok),
-            other_btn("Cancel", on_press=self._close),
-            ])
-        super().__init__(
-            title,
-            [Text(rewrap(explanation)), Text(""), buttons],
-            0, 2)
-
-    def _close(self, sender=None):
-        self.parent.remove_overlay()
-
-    def _ok(self, sender=None):
-        self.parent.controller.done(
-            self.parent.form.url.value)
 
 
 class MirrorForm(Form):
@@ -173,6 +151,8 @@ class MirrorView(BaseView):
 
         self.form.on_validate = self.on_url_changed
 
+        self.tasks: List[asyncio.Task] = []  # Throwaway tasks
+
         pile = Pile(rows)
         pile.focus_position = len(rows) - 2
         super().__init__(Padding(
@@ -229,13 +209,19 @@ class MirrorView(BaseView):
         self.last_status = check_state.status
 
     def done(self, result):
+        async def confirm_continue_anyway() -> None:
+            title, question = MIRROR_CHECK_CONFIRMATION_TEXTS[self.last_status]
+            confirmed = await self.ask_confirmation(
+                    title=title, question=question,
+                    confirm_label=_("Continue"), cancel_label=_("Cancel"))
+
+            if confirmed:
+                self.controller.done(result.url.value)
         log.debug("User input: {}".format(result.as_data()))
         if self.last_status in [
-                MirrorCheckStatus.RUNNING, MirrorCheckStatus.FAILED]:
-            self.show_stretchy_overlay(
-                ConfirmUncheckedMirror(self, self.last_status))
+                MirrorCheckStatus.RUNNING, MirrorCheckStatus.FAILED, None]:
+            self.tasks.append(asyncio.create_task(confirm_continue_anyway()))
         else:
-            # TODO: handle scenario where check hasn't started yet.
             self.controller.done(result.url.value)
 
     def cancel(self, result=None):
