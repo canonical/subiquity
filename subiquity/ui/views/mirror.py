@@ -177,7 +177,7 @@ class MirrorView(BaseView):
         self.output_text.set_text(check_state.output)
 
         async def cb():
-            await asyncio.sleep(1)
+            await asyncio.sleep(1 / self.controller.app.scale_factor)
             status = await self.controller.endpoint.check_mirror.progress.GET()
             self.update_status(status)
 
