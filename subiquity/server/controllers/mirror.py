@@ -29,7 +29,7 @@ from subiquity.common.types import (
     MirrorCheckResponse,
     MirrorCheckStatus,
     )
-from subiquity.server.apt import get_apt_configurer
+from subiquity.server.apt import get_apt_configurer, AptConfigCheckError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
 
@@ -118,13 +118,35 @@ class MirrorController(SubiquityController):
 
     @with_context()
     async def apply_autoinstall_config(self, context):
-        if not self.geoip_enabled:
-            return
+        if self.geoip_enabled:
+            try:
+                with context.child('waiting'):
+                    await asyncio.wait_for(self.cc_event.wait(), 10)
+            except asyncio.TimeoutError:
+                pass
+
+        async def try_mirror_checking_once() -> None:
+            """ Try mirror checking and log result. """
+            output = io.StringIO()
+            try:
+                await self.run_mirror_testing(output)
+            except AptConfigCheckError:
+                log.warn("Mirror checking failed")
+                raise
+            else:
+                log.debug("Mirror checking successful")
+            finally:
+                log.debug("APT output follows")
+                for line in output.getvalue().splitlines():
+                    log.debug("%s", line)
+
         try:
-            with context.child('waiting'):
-                await asyncio.wait_for(self.cc_event.wait(), 10)
-        except asyncio.TimeoutError:
-            pass
+            await try_mirror_checking_once()
+        except AptConfigCheckError:
+            log.debug("Retrying in 10 seconds...")
+            await asyncio.sleep(10)
+            # If the test fails a second time, consider it fatal.
+            await try_mirror_checking_once()
 
     def on_geoip(self):
         if self.geoip_enabled:
