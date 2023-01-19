@@ -58,24 +58,18 @@ mirror_help = _(
 MIRROR_CHECK_CONFIRMATION_TEXTS = {
     MirrorCheckStatus.RUNNING: (
         _("Mirror check still running"),
-        _("""\
-The check of the mirror URL is still running. You can continue but there is a
-chance that the installation will fail.
-"""),
+        _("The check of the mirror URL is still running. You can continue but"
+          " there is a chance that the installation will fail."),
         ),
     MirrorCheckStatus.FAILED: (
         _("Mirror check failed"),
-        _("""\
-The check of the mirror URL failed. You can continue but it is very likely that
-the installation will fail.
-"""),
+        _("The check of the mirror URL failed. You can continue but it is very"
+          " likely that the installation will fail."),
         ),
     None: (
-        _("Mirror has not run"),
-        _("""\
-The check of the mirror has not yet started. You can continue but there is a
-chance that the installation will fail.
-"""),
+        _("Mirror check has not run"),
+        _("The check of the mirror has not yet started. You can continue but"
+          " there is a chance that the installation will fail."),
         ),
     }
 
