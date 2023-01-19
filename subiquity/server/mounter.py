@@ -197,13 +197,6 @@ class DryRunMounter(Mounter):
         await arun_command([
             'cp', '-aT', f'{source}/etc/apt', f'{target}/etc/apt',
             ], check=True)
-        if os.path.isdir(f'{target}/etc/apt/sources.list.d'):
-            shutil.rmtree(f'{target}/etc/apt/sources.list.d')
-        await arun_command([
-            'cp', '-aT',
-            f'{source}/etc/apt/sources.list.d',
-            f'{target}/etc/apt/sources.list.d',
-            ], check=True)
         return OverlayMountpoint(
             lowers=[source],
             mountpoint=target,
