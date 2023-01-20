@@ -128,8 +128,7 @@ class MirrorView(BaseView):
         self.output_wrap = WidgetWrap(self.output_box)
         self.retry_btns = button_pile([other_btn(
             _("Try again now"),
-            on_press=lambda sender: self.check_url(
-                self.form.url.value, True))])
+            on_press=lambda sender: self.check_url(self.form.url.value))])
 
         self.has_network = has_network
         if check is not None:
@@ -170,11 +169,10 @@ class MirrorView(BaseView):
         if self.has_network:
             async_helpers.run_bg_task(inner())
 
-    def check_url(self, url, retry=False):
-        async_helpers.run_bg_task(self._check_url(url, retry))
+    def check_url(self, url):
+        async_helpers.run_bg_task(self._check_url(url))
 
-    async def _check_url(self, url, cancel_ongoing=False, retry=False):
-        # TODO do something with retry?
+    async def _check_url(self, url, cancel_ongoing=False):
         await self.controller.endpoint.candidate.POST(url)
         await self.controller.endpoint.check_mirror.start.POST(True)
         state = await self.controller.endpoint.check_mirror.progress.GET()
