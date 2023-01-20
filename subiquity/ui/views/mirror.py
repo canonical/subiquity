@@ -18,7 +18,7 @@ Select the Ubuntu archive mirror.
 """
 import asyncio
 import logging
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 from urwid import (
     connect_signal,
@@ -27,6 +27,7 @@ from urwid import (
     Text,
     )
 
+import subiquitycore.async_helpers as async_helpers
 from subiquitycore.ui.buttons import (
     other_btn,
     )
@@ -153,8 +154,6 @@ class MirrorView(BaseView):
 
         self.form.on_validate = self.on_url_changed
 
-        self.tasks: List[asyncio.Task] = []  # Throwaway tasks
-
         pile = Pile(rows)
         pile.focus_position = len(rows) - 2
         super().__init__(Padding(
@@ -169,10 +168,10 @@ class MirrorView(BaseView):
                 await self._check_url(url, cancel_ongoing=True)
 
         if self.has_network:
-            asyncio.create_task(inner())
+            async_helpers.run_bg_task(inner())
 
     def check_url(self, url, retry=False):
-        asyncio.create_task(self._check_url(url, retry))
+        async_helpers.run_bg_task(self._check_url(url, retry))
 
     async def _check_url(self, url, cancel_ongoing=False, retry=False):
         # TODO do something with retry?
@@ -201,7 +200,7 @@ class MirrorView(BaseView):
             self.output_wrap._w = self.output_box
 
         if check_state.status == MirrorCheckStatus.RUNNING:
-            asyncio.create_task(cb())
+            async_helpers.run_bg_task(cb())
             self.status_spinner.start()
             self.status_wrap._w = TablePile([
                 TableRow([self.status_text, self.status_spinner]),
@@ -224,7 +223,7 @@ class MirrorView(BaseView):
         log.debug("User input: {}".format(result.as_data()))
         if self.has_network and self.last_status in [
                 MirrorCheckStatus.RUNNING, MirrorCheckStatus.FAILED, None]:
-            self.tasks.append(asyncio.create_task(confirm_continue_anyway()))
+            async_helpers.run_bg_task(confirm_continue_anyway())
         else:
             self.controller.done(result.url.value)
 
