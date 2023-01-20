@@ -225,7 +225,7 @@ class SnapListController(SubiquityController):
             except SnapListFetchError:
                 return SnapListResponse(status=SnapCheckState.FAILED)
             except asyncio.CancelledError:
-                log.warn("load list snaps task was cancelled, retrying...")
+                log.warning("load list snaps task was cancelled, retrying...")
             else:
                 break
         return SnapListResponse(
