@@ -24,7 +24,9 @@ import random
 import re
 import shutil
 import subprocess
-from typing import Optional
+from typing import List, Optional
+
+import apt_pkg
 
 from curtin.config import merge_config
 
@@ -47,6 +49,23 @@ log = logging.getLogger('subiquity.server.apt')
 class AptConfigCheckError(Exception):
     """ Error to raise when apt-get update fails with the currently applied
     configuration. """
+
+
+def get_index_targets() -> List[str]:
+    """ Return the identifier of the data files that would be downloaded during
+    apt-get update.
+    NOTE: this uses the default configuration files from the host so this might
+    slightly differ from what we would have in the overlay.
+    Maybe we should run the following command in the overlay instead:
+      $ apt-get indextargets --format '$(IDENTIFIER)' | sort -u
+    """
+    if "APT" not in apt_pkg.config:
+        apt_pkg.init_config()
+    targets = apt_pkg.config.keys("Acquire::IndexTargets")
+    # Only return "top-level" identifiers such as:
+    # Acquire::IndexTargets::deb::Contents-deb
+    # Acquire::IndexTargets::deb-src::Sources
+    return [key for key in targets if key.count("::") == 3]
 
 
 class AptConfigurer:
@@ -144,28 +163,15 @@ class AptConfigurer:
         except (PermissionError, LookupError) as exc:
             log.warning("could to set owner of file %s: %r", partial_dir, exc)
 
-        disabled_downloads = [
-                "deb::Packages",
-                "deb::Translations",
-                "deb::DEP-11",
-                "deb::Contents-deb",
-                "deb::Contents-udeb",
-                "deb::Contents-deb-legacy",
-                "deb::DEP-11-icons",
-                "deb::DEP-11-icons-small",
-                "deb::DEP-11-icons-large",
-                "deb::DEP-11-icons-large-hidpi",
-                ]
-
         apt_cmd = ["apt-get", "update", "-oAPT::Update::Error-Mode=any"]
 
         for key, path in apt_dirs.items():
             value = "" if path is None else str(path)
             apt_cmd.append(f"-oDir::{key}={str(value)}")
 
-        for target in disabled_downloads:
+        for target in get_index_targets():
             apt_cmd.append(
-                    f"-oAcquire::IndexTargets::{target}::DefaultEnabled=false")
+                    f"-o{target}::DefaultEnabled=false")
 
         proc = await astart_command(apt_cmd, stderr=subprocess.STDOUT)
 
