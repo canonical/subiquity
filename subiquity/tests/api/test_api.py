@@ -88,7 +88,9 @@ class Client:
     async def post(self, query, data=None, **kwargs):
         return await self.request('POST', query, data, **kwargs)
 
-    async def request(self, method, query, data=None, **kwargs):
+    async def request(self, method, query,
+                      data=None, full_response=False, headers=None,
+                      **kwargs):
         """send a GET or POST to the test instance
         args:
             method: 'GET' or 'POST'
@@ -96,6 +98,8 @@ class Client:
 
         keyword arguments:
             data: body of request
+            full_response: if True, change the return value to a tuple of
+                           (response content, raw response object)
             headers: dict of custom headers to include in request
             all other keyword arguments are turned into query arguments
 
@@ -103,9 +107,8 @@ class Client:
             get('/meta/status?cur="WAITING"')
 
         returns:
-            python data of response content
+            python data of response content (see also full_response arg)
         """
-        headers = kwargs.pop('headers', None)
         params = {k: self.dumps(v) for k, v in kwargs.items()}
         data = self.dumps(data)
         async with self.session.request(method, f'http://a{query}',
@@ -117,6 +120,8 @@ class Client:
             if 400 <= resp.status:
                 print(content)
                 resp.raise_for_status()
+            if full_response:
+                return (self.loads(content), resp)
             return self.loads(content)
 
     async def poll_startup(self):
@@ -1593,16 +1598,25 @@ class TestAutoinstallServer(TestAPI):
             '--source-catalog', 'examples/install-sources.yaml',
         ]
         async with start_server(cfg, extra_args=extra) as inst:
-            view_request_unspecified = await inst.get('/locale')
+            view_request_unspecified, resp = await inst.get(
+                    '/locale',
+                    full_response=True)
             self.assertEqual('en_US.UTF-8', view_request_unspecified)
+            self.assertEqual('ok', resp.headers['x-status'])
 
-            view_request_no = await inst.get(
-                    '/locale', headers={'x-make-view-request': 'no'})
+            view_request_no, resp = await inst.get(
+                    '/locale',
+                    headers={'x-make-view-request': 'no'},
+                    full_response=True)
             self.assertEqual('en_US.UTF-8', view_request_no)
+            self.assertEqual('ok', resp.headers['x-status'])
 
-            view_request_yes = await inst.get(
-                    '/locale', headers={'x-make-view-request': 'yes'})
+            view_request_yes, resp = await inst.get(
+                    '/locale',
+                    headers={'x-make-view-request': 'yes'},
+                    full_response=True)
             self.assertIsNone(view_request_yes)
+            self.assertEqual('skip', resp.headers['x-status'])
 
 
 class TestWSLSetupOptions(TestAPI):
