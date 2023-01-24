@@ -1,0 +1,5 @@
+version: 1
+identity:
+    hostname: ai-test
+    password: "$y$j9T$UdY22v4Kexn/AZcIzBSUc0$2DnuvWDSwoDCFPlbk1ghZeT2qFrEBKY1bpFQoexHdw7"
+    username: ubuntu

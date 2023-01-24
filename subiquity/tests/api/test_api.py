@@ -89,10 +89,28 @@ class Client:
         return await self.request('POST', query, data, **kwargs)
 
     async def request(self, method, query, data=None, **kwargs):
+        """send a GET or POST to the test instance
+        args:
+            method: 'GET' or 'POST'
+            query: endpoint, such as '/locale'
+
+        keyword arguments:
+            data: body of request
+            headers: dict of custom headers to include in request
+            all other keyword arguments are turned into query arguments
+
+            get('/meta/status', cur='WAITING') is equivalent to
+            get('/meta/status?cur="WAITING"')
+
+        returns:
+            python data of response content
+        """
+        headers = kwargs.pop('headers', None)
         params = {k: self.dumps(v) for k, v in kwargs.items()}
         data = self.dumps(data)
         async with self.session.request(method, f'http://a{query}',
-                                        data=data, params=params) as resp:
+                                        data=data, params=params,
+                                        headers=headers) as resp:
             print(unquote(str(resp.url)))
             content = await resp.content.read()
             content = content.decode()
@@ -149,6 +167,9 @@ class Server(Client):
                 self.proc.kill()
             except ProcessLookupError:
                 pass
+            # https://github.com/python/cpython/issues/88050
+            # fixed in python 3.11
+            self.proc._transport.close()
 
 
 class SystemSetupServer(Server):
@@ -244,6 +265,8 @@ async def start_server_factory(factory, *args, **kwargs):
 async def start_server(*args, **kwargs):
     async with start_server_factory(Server, *args, **kwargs) as instance:
         sources = await instance.get('/source')
+        if sources is None:
+            raise Exception('unexpected /source response')
         await instance.post(
             '/source', source_id=sources['sources'][0]['id'])
         while True:
@@ -1559,6 +1582,27 @@ class TestUbuntuProContractSelection(TestAPI):
             await inst.post('/ubuntu_pro/contract_selection/cancel')
             with self.assertRaises(Exception):
                 await inst.get('/ubuntu_pro/contract_selection/wait')
+
+
+class TestAutoinstallServer(TestAPI):
+    @timeout(2)
+    async def test_make_view_requests(self):
+        cfg = 'examples/simple.json'
+        extra = [
+            '--autoinstall', 'examples/autoinstall-short.yaml',
+            '--source-catalog', 'examples/install-sources.yaml',
+        ]
+        async with start_server(cfg, extra_args=extra) as inst:
+            view_request_unspecified = await inst.get('/locale')
+            self.assertEqual('en_US.UTF-8', view_request_unspecified)
+
+            view_request_no = await inst.get(
+                    '/locale', headers={'x-make-view-request': 'no'})
+            self.assertEqual('en_US.UTF-8', view_request_no)
+
+            view_request_yes = await inst.get(
+                    '/locale', headers={'x-make-view-request': 'yes'})
+            self.assertIsNone(view_request_yes)
 
 
 class TestWSLSetupOptions(TestAPI):
