@@ -432,12 +432,13 @@ class SubiquityServer(Application):
         override_status = None
         controller = await controller_for_request(request)
         if isinstance(controller, SubiquityController):
-            if not controller.interactive():
-                override_status = 'skip'
-            elif (self.state == ApplicationState.NEEDS_CONFIRMATION and
-                  request.headers.get('x-make-view-request') == 'yes'):
-                if self.base_model.is_postinstall_only(controller.model_name):
-                    override_status = 'confirm'
+            if request.headers.get('x-make-view-request') == 'yes':
+                if not controller.interactive():
+                    override_status = 'skip'
+                elif self.state == ApplicationState.NEEDS_CONFIRMATION:
+                    if self.base_model.is_postinstall_only(
+                            controller.model_name):
+                        override_status = 'confirm'
         if override_status is not None:
             resp = web.Response(headers={'x-status': override_status})
         else:
