@@ -143,8 +143,9 @@ choices = {
                    "encryption")),
         StorageSafety.PREFER_ENCRYPTED: TPMChoice(
             enabled=True, default=True,
-            help=_("The model being installed prefers but does not require "
-                   "TPM backed full-disk encryption")),
+            help=_("The entire disk will be encrypted and protected by the "
+                   "TPM. If this option is deselected, the disk will be "
+                   "unencrypted and without any protection.")),
         StorageSafety.PREFER_UNENCRYPTED: TPMChoice(
             enabled=True, default=False,
             help=_("The model being installed does not prefer but allows TPM "
@@ -172,7 +173,7 @@ class GuidedChoiceForm(SubForm):
     disk = ChoiceField(caption=NO_CAPTION, help=NO_HELP, choices=["x"])
     use_lvm = BooleanField(_("Set up this disk as an LVM group"), help=NO_HELP)
     lvm_options = SubFormField(LVMOptionsForm, "", help=NO_HELP)
-    use_tpm = BooleanField(_("Use TPM backed encryption"))
+    use_tpm = BooleanField(_("Full disk encryption with TPM"))
 
     def __init__(self, parent):
         super().__init__(parent, initial={'use_lvm': True})
