@@ -109,7 +109,7 @@ class GeoIP:
         try:
             self.response_text = await self.strategy.get_response()
         except aiohttp.ClientError as le:
-            log.warn("geoip lookup failed: %r", le)
+            log.warning("geoip lookup failed: %r", le)
             return False
         try:
             self.element = ElementTree.fromstring(self.response_text)
