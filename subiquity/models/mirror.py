@@ -37,6 +37,8 @@ DEFAULT = {
     "preserve_sources_list": False,
 }
 
+PrimarySectionConfig = List[Any]
+
 
 def countrify_uri(uri: str, cc: str) -> str:
     """ Return a URL where the host is prefixed with a country code. """
@@ -50,7 +52,7 @@ class MirrorModel(object):
     def __init__(self):
         self.config = copy.deepcopy(DEFAULT)
         self.disabled_components: Set[str] = set()
-        self.primary: List[Any] = [
+        self.primary_elected: PrimarySectionConfig = [
             {
                 "arches": PRIMARY_ARCHES,
                 "uri": "http://archive.ubuntu.com/ubuntu",
@@ -58,6 +60,9 @@ class MirrorModel(object):
                 "arches": ["default"],
                 "uri": "http://ports.ubuntu.com/ubuntu-ports",
             },
+        ]
+        self.primary_candidates: List[PrimarySectionConfig] = [
+            self.primary_elected,
         ]
 
         self.architecture = get_architecture()
@@ -67,12 +72,14 @@ class MirrorModel(object):
         if "disable_components" in data:
             self.disabled_components = set(data.pop("disable_components"))
         if "primary" in data:
-            self.primary = data.pop("primary")
+            self.primary_candidates = [data.pop("primary")]
+            # TODO do not mark primary elected.
+            self.primary_elected = self.primary_candidates[0]
         merge_config(self.config, data)
 
     def get_apt_config(self):
         config = copy.deepcopy(self.config)
-        config["primary"] = copy.deepcopy(self.primary)
+        config["primary"] = copy.deepcopy(self.primary_elected)
         config["disable_components"] = sorted(self.disabled_components)
         return config
 
@@ -87,12 +94,12 @@ class MirrorModel(object):
 
     def get_mirror(self):
         config = copy.deepcopy(self.config)
-        config["primary"] = self.primary
+        config["primary"] = self.primary_elected
         return get_mirror(config, "primary", self.architecture)
 
     def set_mirror(self, mirror):
         config = get_arch_mirrorconfig(
-            {"primary": self.primary}, "primary", self.architecture)
+            {"primary": self.primary_elected}, "primary", self.architecture)
         config["uri"] = mirror
 
     def disable_components(self, comps, add: bool) -> None:
