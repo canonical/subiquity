@@ -129,41 +129,43 @@ class TPMChoice:
     help: str
 
 
+help_texts = {
+    StorageEncryptionSupport.DISABLED:
+        _("TPM backed full-disk encryption has been disabled."),
+    StorageEncryptionSupport.AVAILABLE:
+        _("The entire disk will be encrypted and protected by the "
+          "TPM. If this option is deselected, the disk will be "
+          "unencrypted and without any protection."),
+    StorageEncryptionSupport.UNAVAILABLE:
+        # for translators: 'reason' is the reason FDE is unavailable.
+        _("TPM backed full-disk encryption is not available "
+          "on this device (the reason given was \"{reason}\")."),
+}
+
 choices = {
     StorageEncryptionSupport.DISABLED: {
         safety: TPMChoice(
             enabled=False, default=False,
-            help=_("The model being installed does not support TPM backed "
-                   "full-disk encryption")) for safety in StorageSafety
-            },
+            help=help_texts[StorageEncryptionSupport.DISABLED])
+        for safety in StorageSafety
+        },
     StorageEncryptionSupport.AVAILABLE: {
         StorageSafety.ENCRYPTED: TPMChoice(
             enabled=False, default=True,
-            help=_("The model being installed requires TPM backed full-disk "
-                   "encryption")),
+            help=help_texts[StorageEncryptionSupport.AVAILABLE]),
         StorageSafety.PREFER_ENCRYPTED: TPMChoice(
             enabled=True, default=True,
-            help=_("The entire disk will be encrypted and protected by the "
-                   "TPM. If this option is deselected, the disk will be "
-                   "unencrypted and without any protection.")),
+            help=help_texts[StorageEncryptionSupport.AVAILABLE]),
         StorageSafety.PREFER_UNENCRYPTED: TPMChoice(
             enabled=True, default=False,
-            help=_("The model being installed does not prefer but allows TPM "
-                   "backed full-disk encryption")),
-            },
+            help=help_texts[StorageEncryptionSupport.AVAILABLE]),
+        },
     StorageEncryptionSupport.UNAVAILABLE: {
-        StorageSafety.PREFER_ENCRYPTED: TPMChoice(
+        safety: TPMChoice(
             enabled=False, default=False,
-            help=_("The model being installed prefers but does not require "
-                   "TPM backed full-disk encryption and it is not available "
-                   "on this device (the reason given was \"{reason}\").")),
-        StorageSafety.PREFER_UNENCRYPTED: TPMChoice(
-            enabled=False, default=False,
-            # for translators: 'reason' is the reason FDE is unavailable.
-            help=_("The model being installed does not prefer TPM backed "
-                   "full-disk encryption and it is not available on this "
-                   "device (the reason given was \"{reason}\").")),
-            },
+            help=help_texts[StorageEncryptionSupport.UNAVAILABLE])
+        for safety in StorageSafety
+        },
     # StorageEncryptionSupport.DEFECTIVE: handled in controller code
 }
 
