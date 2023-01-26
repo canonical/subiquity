@@ -67,6 +67,8 @@ class TestAptConfigurer(SubiTestCase):
         self.astart_sym = "subiquity.server.apt.astart_command"
 
     def test_apt_config_noproxy(self):
+        self.model.mirror.primary_staged = \
+            self.model.mirror.primary_candidates[0]
         config = self.configurer.apt_config(elected=False)
         self.assertNotIn("http_proxy", config["apt"])
         self.assertNotIn("https_proxy", config["apt"])
@@ -75,6 +77,8 @@ class TestAptConfigurer(SubiTestCase):
         proxy = 'http://apt-cacher-ng:3142'
         self.model.proxy.proxy = proxy
 
+        self.model.mirror.primary_staged = \
+            self.model.mirror.primary_candidates[0]
         config = self.configurer.apt_config(elected=False)
         self.assertEqual(proxy, config["apt"]["http_proxy"])
         self.assertEqual(proxy, config["apt"]["https_proxy"])

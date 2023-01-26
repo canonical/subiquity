@@ -15,7 +15,7 @@
 
 import copy
 import logging
-from typing import Any, Dict, Iterator, List, Set
+from typing import Any, Dict, List, Optional, Set
 from urllib import parse
 
 from curtin.commands.apt_config import (
@@ -65,10 +65,7 @@ class MirrorModel(object):
             self.primary_elected,
         ]
 
-        self.iter_primary_candidate: Iterator[PrimarySectionConfig] = \
-            iter(self.primary_candidates)
-        self.primary_staged: PrimarySectionConfig = \
-            next(self.iter_primary_candidate)
+        self.primary_staged: Optional[PrimarySectionConfig] = None
 
         self.architecture = get_architecture()
         self.default_mirror = self.get_mirror()
@@ -91,6 +88,8 @@ class MirrorModel(object):
         return config
 
     def get_apt_config_staged(self) -> Dict[str, Any]:
+        assert self.primary_staged is not None
+
         config = self._get_apt_config_common()
         config["primary"] = self.primary_staged
         return config

@@ -35,6 +35,11 @@ from subiquity.server.types import InstallerChannels
 log = logging.getLogger('subiquity.server.controllers.mirror')
 
 
+class NoUsableMirrorError(Exception):
+    """ Exception to be raised when none of the candidate mirrors passed the
+    test. """
+
+
 class MirrorCheckNotStartedError(Exception):
     """ Exception to be raised when trying to cancel a mirror
     check that was not started. """
@@ -143,13 +148,31 @@ class MirrorController(SubiquityController):
             log.debug("Skipping mirror check since network is not available.")
             return
 
-        try:
-            await self.try_mirror_checking_once()
-        except AptConfigCheckError:
-            log.debug("Retrying in 10 seconds...")
+        # Try each mirror one after another.
+        for idx, candidate in enumerate(self.model.primary_candidates):
+            if idx != 0:
+                # Sleep before testing the next candidate..
+                log.debug("Will check next candiate mirror after 10 seconds.")
+                await asyncio.sleep(10)
+            self.model.primary_staged = candidate
+            try:
+                await self.try_mirror_checking_once()
+            except AptConfigCheckError:
+                log.debug("Retrying in 10 seconds...")
+            else:
+                break
             await asyncio.sleep(10)
-            # If the test fails a second time, consider it fatal.
-            await self.try_mirror_checking_once()
+            # If the test fails a second time, give up on this mirror.
+            try:
+                await self.try_mirror_checking_once()
+            except AptConfigCheckError:
+                log.debug("Mirror is not usable.")
+            else:
+                break
+        else:
+            raise NoUsableMirrorError
+
+        self.model.primary_elected = candidate
 
     def on_geoip(self):
         if self.geoip_enabled:

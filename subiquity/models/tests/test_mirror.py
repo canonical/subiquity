@@ -72,20 +72,20 @@ class TestMirrorModel(unittest.TestCase):
         self.assertEqual(self.model.get_mirror(), "http://mymirror.invalid/")
 
     def test_default_disable_components(self):
-        config = self.model.get_apt_config_staged()
+        config = self.model.get_apt_config_elected()
         self.assertEqual([], config['disable_components'])
 
     def test_from_autoinstall(self):
         # autoinstall loads to the config directly
         data = {'disable_components': ['non-free']}
         self.model.load_autoinstall_data(data)
-        config = self.model.get_apt_config_staged()
+        config = self.model.get_apt_config_elected()
         self.assertEqual(['non-free'], config['disable_components'])
 
     def test_disable_add(self):
         expected = ['things', 'stuff']
         self.model.disable_components(expected.copy(), add=True)
-        actual = self.model.get_apt_config_staged()['disable_components']
+        actual = self.model.get_apt_config_elected()['disable_components']
         actual.sort()
         expected.sort()
         self.assertEqual(expected, actual)
@@ -95,7 +95,7 @@ class TestMirrorModel(unittest.TestCase):
         to_remove = ['things', 'stuff']
         expected = ['a', 'b']
         self.model.disable_components(to_remove, add=False)
-        actual = self.model.get_apt_config_staged()['disable_components']
+        actual = self.model.get_apt_config_elected()['disable_components']
         actual.sort()
         expected.sort()
         self.assertEqual(expected, actual)
