@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import List, TypedDict
 import yaml
 
 import attr
@@ -26,6 +27,15 @@ class DryRunController:
 
     async def crash_GET(self) -> None:
         1/0
+
+
+class KnownMirror(TypedDict, total=False):
+    """ Dictionary type hints for a known mirror. Either url or pattern should
+    be specified. """
+    url: str
+    pattern: str
+
+    strategy: str
 
 
 @attr.s(auto_attribs=True)
@@ -42,6 +52,18 @@ class DRConfig:
     # When running /usr/bin/ubuntu-advantage locally, do not use the production
     # ua-contrats.
     pro_ua_contracts_url: str = "https://contracts.staging.canonical.com"
+
+    apt_mirror_check_default_strategy: str = "run-on-host"
+    apt_mirrors_known: List[KnownMirror] = [
+            {"pattern": r"https?://archive\.ubuntu\.com/ubuntu/?",
+             "strategy": "success"},
+            {"pattern": r"https?://[a-z]{2,}\.archive\.ubuntu\.com/ubuntu/?",
+             "strategy": "success"},
+            {"pattern": r"/success/?$", "strategy": "success"},
+            {"pattern": r"/rand(om)?/?$", "strategy": "random"},
+            {"pattern": r"/host/?$", "strategy": "run-on-host"},
+            {"pattern": r"/fail(ed)?/?$", "strategy": "failure"},
+    ]
 
     @classmethod
     def load(cls, stream):

@@ -40,6 +40,20 @@ def schedule_task(coro, propagate_errors=True):
     return task
 
 
+# Collection of tasks that we want to fire and forget.
+# Keeping a reference to all background tasks ensures that the tasks don't get
+# garbage collected before they are done.
+# https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task
+background_tasks = set()
+
+
+def run_bg_task(coro, *args, **kwargs) -> None:
+    """ Run a background task in a fire-and-forget style. """
+    task = asyncio.create_task(coro, *args, **kwargs)
+    background_tasks.add(task)
+    task.add_done_callback(background_tasks.discard)
+
+
 async def run_in_thread(func, *args):
     loop = asyncio.get_running_loop()
     try:

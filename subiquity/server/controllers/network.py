@@ -406,3 +406,6 @@ class NetworkController(BaseNetworkController, SubiquityController):
 
     async def info_GET(self, dev_name: str) -> str:
         return await self.get_info_for_netdev(dev_name)
+
+    async def has_network_GET(self) -> bool:
+        return self.model.has_network

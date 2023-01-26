@@ -13,17 +13,26 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import contextlib
+import enum
+import io
 import logging
 import os
+import pathlib
+import random
+import re
 import shutil
 import subprocess
-from typing import Optional
+from typing import List, Optional
+
+import apt_pkg
 
 from curtin.config import merge_config
 
 from subiquitycore.file_util import write_file, generate_config_yaml
 from subiquitycore.lsb_release import lsb_release
+from subiquitycore.utils import astart_command
 
 from subiquity.server.curtin import run_curtin_command
 from subiquity.server.mounter import (
@@ -35,6 +44,28 @@ from subiquity.server.mounter import (
     )
 
 log = logging.getLogger('subiquity.server.apt')
+
+
+class AptConfigCheckError(Exception):
+    """ Error to raise when apt-get update fails with the currently applied
+    configuration. """
+
+
+def get_index_targets() -> List[str]:
+    """ Return the identifier of the data files that would be downloaded during
+    apt-get update.
+    NOTE: this uses the default configuration files from the host so this might
+    slightly differ from what we would have in the overlay.
+    Maybe we should run the following command in the overlay instead:
+      $ apt-get indextargets --format '$(IDENTIFIER)' | sort -u
+    """
+    if "APT" not in apt_pkg.config:
+        apt_pkg.init_config()
+    targets = apt_pkg.config.keys("Acquire::IndexTargets")
+    # Only return "top-level" identifiers such as:
+    # Acquire::IndexTargets::deb::Contents-deb
+    # Acquire::IndexTargets::deb-src::Sources
+    return [key for key in targets if key.count("::") == 3]
 
 
 class AptConfigurer:
@@ -98,6 +129,67 @@ class AptConfigurer:
         await run_curtin_command(
             self.app, context, 'apt-config', '-t', self.configured_tree.p(),
             config=config_location, private_mounts=True)
+
+    async def run_apt_config_check(self, output: io.StringIO) -> None:
+        """ Run apt-get update (with various options limiting the amount of
+        data donwloaded) in the overlay where the apt configuration was
+        previously deployed. The output of apt-get (stdout + stderr) will be
+        written to the output parameter.
+        Raises a AptConfigCheckError exception if the apt-get command exited
+        with non-zero. """
+        assert self.configured_tree is not None
+
+        pfx = pathlib.Path(self.configured_tree.p())
+
+        apt_dirs = {
+            "Etc::SourceList": pfx / "etc/apt/sources.list",
+            "Etc::SourceParts": pfx / "etc/apt/sources.list.d",
+            "Etc::Main": pfx / "etc/apt/apt.conf",
+            "Etc::Parts": pfx / "etc/apt/apt.conf.d",
+            "Etc::Preferences": pfx / "etc/apt/preferences",
+            "Etc::PreferencesParts": pfx / "etc/apt/preferences.d",
+            "Cache::Archives": pfx / "var/lib/apt/archives",
+            "State::Lists": pfx / "var/lib/apt/lists",
+            "Cache::PkgCache": None,
+            "Cache::SrcPkgCache": None,
+        }
+
+        # Need to ensure the "partial" directory exists.
+        partial_dir = apt_dirs["State::Lists"] / "partial"
+        partial_dir.mkdir(
+                parents=True, exist_ok=True)
+        try:
+            shutil.chown(partial_dir, user="_apt")
+        except (PermissionError, LookupError) as exc:
+            log.warning("could to set owner of file %s: %r", partial_dir, exc)
+
+        apt_cmd = ["apt-get", "update", "-oAPT::Update::Error-Mode=any"]
+
+        for key, path in apt_dirs.items():
+            value = "" if path is None else str(path)
+            apt_cmd.append(f"-oDir::{key}={str(value)}")
+
+        for target in get_index_targets():
+            apt_cmd.append(
+                    f"-o{target}::DefaultEnabled=false")
+
+        proc = await astart_command(apt_cmd, stderr=subprocess.STDOUT)
+
+        async def _reader():
+            while not proc.stdout.at_eof():
+                try:
+                    line = await proc.stdout.readline()
+                except asyncio.IncompleteReadError as e:
+                    line = e.partial
+                    if not line:
+                        return
+                output.write(line.decode("utf-8"))
+
+        reader = asyncio.create_task(_reader())
+        unused, returncode = await asyncio.gather(reader, proc.wait())
+
+        if returncode != 0:
+            raise AptConfigCheckError
 
     async def configure_for_install(self, context):
         assert self.configured_tree is not None
@@ -190,6 +282,12 @@ class AptConfigurer:
 
 
 class DryRunAptConfigurer(AptConfigurer):
+    class MirrorCheckStrategy(enum.Enum):
+        SUCCESS = "success"
+        FAILURE = "failure"
+        RANDOM = "random"
+
+        RUN_ON_HOST = "run-on-host"
 
     @contextlib.asynccontextmanager
     async def overlay(self):
@@ -197,6 +295,96 @@ class DryRunAptConfigurer(AptConfigurer):
 
     async def deconfigure(self, context, target):
         await self.cleanup()
+
+    def get_mirror_check_strategy(self, url: str) -> "MirrorCheckStrategy":
+        """ For a given mirror URL, return the strategy that we should use to
+        perform mirror checking. """
+        for known in self.app.dr_cfg.apt_mirrors_known:
+            if "url" in known:
+                if known["url"] != url:
+                    continue
+            elif "pattern" in known:
+                if not re.search(known["pattern"], url):
+                    continue
+            else:
+                assert False
+
+            return self.MirrorCheckStrategy(known["strategy"])
+
+        return self.MirrorCheckStrategy(
+                self.app.dr_cfg.apt_mirror_check_default_strategy)
+
+    async def apt_config_check_failure(self, output: io.StringIO) -> None:
+        """ Pretend that the execution of the apt-get update command results in
+        a failure. """
+        url = self.app.base_model.mirror.get_mirror()
+        release = lsb_release(dry_run=True)["codename"]
+        host = url.split("/")[2]
+
+        output.write(f"""\
+Ign:1 {url} {release} InRelease
+Ign:2 {url} {release}-updates InRelease
+Ign:3 {url} {release}-backports InRelease
+Ign:4 {url} {release}-security InRelease
+Ign:2 {url} {release} InRelease
+Ign:3 {url} {release}-updates InRelease
+Err:1 {url} kinetic InRelease
+ Temporary failure resolving '{host}'
+Err:2 {url} kinetic-updates InRelease
+ Temporary failure resolving '{host}'
+Err:3 {url} kinetic-backports InRelease
+ Temporary failure resolving '{host}'
+Err:4 {url} kinetic-security InRelease
+ Temporary failure resolving '{host}'
+Reading package lists...
+E: Failed to fetch {url}/dists/{release}/InRelease\
+  Temporary failure resolving '{host}'
+E: Failed to fetch {url}/dists/{release}-updates/InRelease\
+  Temporary failure resolving '{host}'
+E: Failed to fetch {url}/dists/{release}-backports/InRelease\
+  Temporary failure resolving '{host}'
+E: Failed to fetch {url}/dists/{release}-security/InRelease\
+  Temporary failure resolving '{host}'
+E: Some index files failed to download. They have been ignored,
+ or old ones used instead.
+""")
+        raise AptConfigCheckError
+
+    async def apt_config_check_success(self, output: io.StringIO) -> None:
+        """ Pretend that the execution of the apt-get update command results in
+        a success. """
+        url = self.app.base_model.mirror.get_mirror()
+        release = lsb_release(dry_run=True)["codename"]
+
+        output.write(f"""\
+Get:1 {url} {release} InRelease [267 kB]
+Get:2 {url} {release}-updates InRelease [109 kB]
+Get:3 {url} {release}-backports InRelease [99.9 kB]
+Get:4 {url} {release}-security InRelease [109 kB]
+Fetched 585 kB in 1s (1057 kB/s)
+Reading package lists...
+""")
+
+    async def run_apt_config_check(self, output: io.StringIO) -> None:
+        """ Dry-run implementation of the Apt config check.
+        The strategy used is based on the URL of the primary mirror. The
+        apt-get command can either run on the host or be faked entirely. """
+        assert self.configured_tree is not None
+
+        failure = self.apt_config_check_failure
+        success = self.apt_config_check_success
+
+        strategies = {
+            self.MirrorCheckStrategy.RUN_ON_HOST: super().run_apt_config_check,
+            self.MirrorCheckStrategy.FAILURE: failure,
+            self.MirrorCheckStrategy.SUCCESS: success,
+            self.MirrorCheckStrategy.RANDOM: random.choice([failure, success]),
+        }
+        mirror_url = self.app.base_model.mirror.get_mirror()
+
+        strategy = strategies[self.get_mirror_check_strategy(mirror_url)]
+
+        await strategy(output)
 
 
 def get_apt_configurer(app, source: str):

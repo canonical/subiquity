@@ -13,8 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 
+from subiquity.common.types import MirrorCheckStatus
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.ui.views.mirror import MirrorView
 
@@ -27,13 +29,29 @@ class MirrorController(SubiquityTuiController):
 
     async def make_ui(self):
         mirror = await self.endpoint.GET()
-        return MirrorView(self, mirror)
+        has_network = await self.app.client.network.has_network.GET()
+        if has_network:
+            check = await self.endpoint.check_mirror.progress.GET()
+        else:
+            check = None
+        return MirrorView(self, mirror, check=check, has_network=has_network)
 
-    def run_answers(self):
+    async def run_answers(self):
+        async def wait_mirror_check() -> None:
+            """ Wait until the mirror check has finished running. """
+            while True:
+                last_status = self.app.ui.body.last_status
+                if last_status not in [None, MirrorCheckStatus.RUNNING]:
+                    return
+                await asyncio.sleep(.1)
+
         if 'mirror' in self.answers:
-            self.done(self.answers['mirror'])
+            self.app.ui.body.form.url.value = self.answers['mirror']
+            await wait_mirror_check()
+            self.app.ui.body.form._click_done(None)
         elif 'country-code' in self.answers \
              or 'accept-default' in self.answers:
+            await wait_mirror_check()
             self.app.ui.body.form._click_done(None)
 
     def cancel(self):

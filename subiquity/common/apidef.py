@@ -41,6 +41,7 @@ from subiquity.common.types import (
     KeyboardSetup,
     IdentityData,
     NetworkStatus,
+    MirrorCheckResponse,
     ModifyPartitionV2,
     ReformatDisk,
     RefreshStatus,
@@ -170,6 +171,9 @@ class API:
     class network:
         def GET() -> NetworkStatus: ...
         def POST() -> None: ...
+
+        class has_network:
+            def GET() -> bool: ...
 
         class global_addresses:
             def GET() -> List[str]:
@@ -344,9 +348,22 @@ class API:
         def GET() -> str: ...
         def POST(data: Payload[str]): ...
 
+        class candidate:
+            def POST(url: Payload[str]) -> None: ...
+
         class disable_components:
             def GET() -> List[str]: ...
             def POST(data: Payload[List[str]]): ...
+
+        class check_mirror:
+            class start:
+                def POST(cancel_ongoing: bool = False) -> None: ...
+
+            class progress:
+                def GET() -> Optional[MirrorCheckResponse]: ...
+
+            class abort:
+                def POST() -> None: ...
 
     class ubuntu_pro:
         def GET() -> UbuntuProResponse: ...

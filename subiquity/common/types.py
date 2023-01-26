@@ -732,3 +732,16 @@ class CasperMd5Results(enum.Enum):
     FAIL = 'fail'
     PASS = 'pass'
     SKIP = 'skip'
+
+
+class MirrorCheckStatus(enum.Enum):
+    OK = "OK"
+    RUNNING = "RUNNING"
+    FAILED = "FAILED"
+
+
+@attr.s(auto_attribs=True)
+class MirrorCheckResponse:
+    url: str
+    status: MirrorCheckStatus
+    output: str

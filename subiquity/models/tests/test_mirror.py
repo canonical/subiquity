@@ -15,11 +15,38 @@
 
 import unittest
 
-from curtin.config import merge_config
-
 from subiquity.models.mirror import (
+    countrify_uri,
     MirrorModel,
     )
+
+
+class TestCountrifyUrl(unittest.TestCase):
+    def test_official_archive(self):
+        self.assertEqual(
+                countrify_uri(
+                    "http://archive.ubuntu.com/ubuntu",
+                    cc="fr"),
+                "http://fr.archive.ubuntu.com/ubuntu")
+
+        self.assertEqual(
+                countrify_uri(
+                    "http://archive.ubuntu.com/ubuntu",
+                    cc="us"),
+                "http://us.archive.ubuntu.com/ubuntu")
+
+    def test_ports_archive(self):
+        self.assertEqual(
+                countrify_uri(
+                    "http://ports.ubuntu.com/ubuntu-ports",
+                    cc="fr"),
+                "http://fr.ports.ubuntu.com/ubuntu-ports")
+
+        self.assertEqual(
+                countrify_uri(
+                    "http://ports.ubuntu.com/ubuntu-ports",
+                    cc="us"),
+                "http://us.ports.ubuntu.com/ubuntu-ports")
 
 
 class TestMirrorModel(unittest.TestCase):
@@ -51,7 +78,7 @@ class TestMirrorModel(unittest.TestCase):
     def test_from_autoinstall(self):
         # autoinstall loads to the config directly
         data = {'disable_components': ['non-free']}
-        merge_config(self.model.config, data)
+        self.model.load_autoinstall_data(data)
         config = self.model.get_apt_config()
         self.assertEqual(['non-free'], config['disable_components'])
 
@@ -64,7 +91,7 @@ class TestMirrorModel(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_disable_remove(self):
-        self.model.config['disable_components'] = ['a', 'b', 'things']
+        self.model.disabled_components = set(['a', 'b', 'things'])
         to_remove = ['things', 'stuff']
         expected = ['a', 'b']
         self.model.disable_components(to_remove, add=False)
