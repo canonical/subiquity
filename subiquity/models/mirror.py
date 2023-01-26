@@ -15,7 +15,7 @@
 
 import copy
 import logging
-from typing import Any, List, Set
+from typing import Any, Dict, Iterator, List, Set
 from urllib import parse
 
 from curtin.commands.apt_config import (
@@ -65,6 +65,11 @@ class MirrorModel(object):
             self.primary_elected,
         ]
 
+        self.iter_primary_candidate: Iterator[PrimarySectionConfig] = \
+            iter(self.primary_candidates)
+        self.primary_staged: PrimarySectionConfig = \
+            next(self.iter_primary_candidate)
+
         self.architecture = get_architecture()
         self.default_mirror = self.get_mirror()
 
@@ -77,10 +82,22 @@ class MirrorModel(object):
             self.primary_elected = self.primary_candidates[0]
         merge_config(self.config, data)
 
-    def get_apt_config(self):
+    def _get_apt_config_common(self) -> Dict[str, Any]:
+        assert "disable_components" not in self.config
+        assert "primary" not in self.config
+
         config = copy.deepcopy(self.config)
-        config["primary"] = copy.deepcopy(self.primary_elected)
         config["disable_components"] = sorted(self.disabled_components)
+        return config
+
+    def get_apt_config_staged(self) -> Dict[str, Any]:
+        config = self._get_apt_config_common()
+        config["primary"] = self.primary_staged
+        return config
+
+    def get_apt_config_elected(self) -> Dict[str, Any]:
+        config = self._get_apt_config_common()
+        config["primary"] = self.primary_elected
         return config
 
     def mirror_is_default(self):
@@ -115,4 +132,6 @@ class MirrorModel(object):
         return {}
 
     def make_autoinstall(self):
-        return self.get_apt_config()
+        config = self._get_apt_config_common()
+        config["primary"] = self.primary_elected
+        return config

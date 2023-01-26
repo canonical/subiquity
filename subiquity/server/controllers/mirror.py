@@ -184,11 +184,11 @@ class MirrorController(SubiquityController):
     async def _promote_mirror(self):
         await asyncio.gather(self.source_configured_event.wait(),
                              self.configured_event.wait())
-        await self.apt_configurer.apply_apt_config(self.context)
+        await self.apt_configurer.apply_apt_config(self.context, elected=True)
 
     async def run_mirror_testing(self, output: io.StringIO) -> None:
         await self.source_configured_event.wait()
-        await self.apt_configurer.apply_apt_config(self.context)
+        await self.apt_configurer.apply_apt_config(self.context, elected=False)
         await self.apt_configurer.run_apt_config_check(output)
 
     async def wait_config(self):

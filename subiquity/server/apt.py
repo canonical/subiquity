@@ -112,18 +112,23 @@ class AptConfigurer:
         self.install_tree: Optional[OverlayMountpoint] = None
         self.install_mount = None
 
-    def apt_config(self):
+    def apt_config(self, elected: bool):
         cfg = {}
-        merge_config(cfg, self.app.base_model.mirror.get_apt_config())
+        if elected:
+            merge_config(cfg,
+                         self.app.base_model.mirror.get_apt_config_elected())
+        else:
+            merge_config(cfg,
+                         self.app.base_model.mirror.get_apt_config_staged())
         merge_config(cfg, self.app.base_model.proxy.get_apt_config())
         return {'apt': cfg}
 
-    async def apply_apt_config(self, context):
+    async def apply_apt_config(self, context, elected: bool):
         self.configured_tree = await self.mounter.setup_overlay([self.source])
 
         config_location = os.path.join(
             self.app.root, 'var/log/installer/subiquity-curtin-apt.conf')
-        generate_config_yaml(config_location, self.apt_config())
+        generate_config_yaml(config_location, self.apt_config(elected))
         self.app.note_data_for_apport("CurtinAptConfig", config_location)
 
         await run_curtin_command(
