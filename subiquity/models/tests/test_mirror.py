@@ -17,9 +17,10 @@ import unittest
 
 from subiquity.models.mirror import (
     countrify_uri,
-    DEFAULT_PRIMARY_SECTION,
+    LEGACY_DEFAULT_PRIMARY_SECTION,
     MirrorModel,
-    PrimarySection,
+    LegacyPrimarySection,
+    PrimaryEntry,
     )
 
 
@@ -51,27 +52,67 @@ class TestCountrifyUrl(unittest.TestCase):
                 "http://us.ports.ubuntu.com/ubuntu-ports")
 
 
-class TestPrimarySection(unittest.TestCase):
+class TestPrimaryEntry(unittest.TestCase):
+    def test_initializer(self):
+        model = MirrorModel()
+
+        entry = PrimaryEntry(parent=model)
+        self.assertEqual(entry.parent, model)
+        self.assertIsNone(entry.uri, None)
+        self.assertIsNone(entry.arches, None)
+
+        entry = PrimaryEntry("http://mirror", ["amd64"], parent=model)
+        self.assertEqual(entry.parent, model)
+        self.assertEqual(entry.uri, "http://mirror")
+        self.assertEqual(entry.arches, ["amd64"])
+
+        entry = PrimaryEntry(uri="http://mirror", arches=[], parent=model)
+        self.assertEqual(entry.parent, model)
+        self.assertEqual(entry.uri, "http://mirror")
+        self.assertEqual(entry.arches, [])
+
+    def test_from_config(self):
+        model = MirrorModel()
+
+        entry = PrimaryEntry.from_config("country-mirror", parent=model)
+        self.assertEqual(entry, PrimaryEntry(parent=model))
+
+        with self.assertRaises(ValueError):
+            entry = PrimaryEntry.from_config({}, parent=model)
+
+        entry = PrimaryEntry.from_config(
+                {"uri": "http://mirror"}, parent=model)
+        self.assertEqual(entry, PrimaryEntry(
+            uri="http://mirror", parent=model))
+
+        entry = PrimaryEntry.from_config(
+                {"uri": "http://mirror", "arches": ["amd64"]}, parent=model)
+        self.assertEqual(entry, PrimaryEntry(
+            uri="http://mirror", arches=["amd64"], parent=model))
+
+
+class TestLegacyPrimarySection(unittest.TestCase):
     def setUp(self):
         self.model = MirrorModel()
 
     def test_initializer(self):
-        primary = PrimarySection([], parent=self.model)
+        primary = LegacyPrimarySection([], parent=self.model)
         self.assertEqual(primary.config, [])
         self.assertEqual(primary.parent, self.model)
 
     def test_new_from_default(self):
-        primary = PrimarySection.new_from_default(parent=self.model)
-        self.assertEqual(primary.config, DEFAULT_PRIMARY_SECTION)
+        primary = LegacyPrimarySection.new_from_default(parent=self.model)
+        self.assertEqual(primary.config, LEGACY_DEFAULT_PRIMARY_SECTION)
 
     def test_get_uri(self):
         self.model.architecture = "amd64"
-        primary = PrimarySection([{"uri": "http://myurl", "arches": "amd64"}],
-                                 parent=self.model)
+        primary = LegacyPrimarySection(
+                [{"uri": "http://myurl", "arches": "amd64"}],
+                parent=self.model)
         self.assertEqual(primary.uri, "http://myurl")
 
     def test_set_uri(self):
-        primary = PrimarySection.new_from_default(parent=self.model)
+        primary = LegacyPrimarySection.new_from_default(parent=self.model)
         primary.uri = "http://mymirror.invalid/"
         self.assertEqual(primary.uri, "http://mymirror.invalid/")
 
@@ -132,7 +173,7 @@ class TestMirrorModel(unittest.TestCase):
         primary = [{"arches": "amd64", "uri": "http://mirror"}]
         self.model.disabled_components = set(["non-free"])
         self.model.primary_candidates = \
-            [PrimarySection(primary, parent=self.model)]
+            [LegacyPrimarySection(primary, parent=self.model)]
         self.model.primary_elected = self.model.primary_candidates[0]
         cfg = self.model.make_autoinstall()
         self.assertEqual(cfg["disable_components"], ["non-free"])
