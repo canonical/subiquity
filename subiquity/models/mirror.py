@@ -33,11 +33,48 @@ except ImportError:
 log = logging.getLogger('subiquity.models.mirror')
 
 
+DEFAULT_PRIMARY_SECTION = [
+    {
+        "arches": PRIMARY_ARCHES,
+        "uri": "http://archive.ubuntu.com/ubuntu",
+    }, {
+        "arches": ["default"],
+        "uri": "http://ports.ubuntu.com/ubuntu-ports",
+    },
+]
+
+
 DEFAULT = {
     "preserve_sources_list": False,
 }
 
+
 PrimarySectionConfig = List[Any]
+
+
+class PrimarySection:
+    """ Helper to manage a primary autoinstall section. """
+    def __init__(self, config: List[Any], *, parent: "MirrorModel") -> None:
+        self.parent = parent
+        self.config = config
+
+    def get_mirror(self) -> str:
+        config = copy.deepcopy(self.parent.config)
+        config["primary"] = self.config
+        return get_mirror(config, "primary", self.parent.architecture)
+
+    def set_mirror(self, uri: str) -> None:
+        config = get_arch_mirrorconfig(
+                {"primary": self.config},
+                "primary", self.parent.architecture)
+        config["uri"] = uri
+
+    def mirror_is_default(self) -> bool:
+        return self.get_mirror() == self.parent.default_mirror
+
+    @classmethod
+    def new_from_default(cls, parent: "MirrorModel") -> "PrimarySection":
+        return cls(copy.deepcopy(DEFAULT_PRIMARY_SECTION), parent=parent)
 
 
 def countrify_uri(uri: str, cc: str) -> str:
@@ -52,15 +89,8 @@ class MirrorModel(object):
     def __init__(self):
         self.config = copy.deepcopy(DEFAULT)
         self.disabled_components: Set[str] = set()
-        self.primary_elected: PrimarySectionConfig = [
-            {
-                "arches": PRIMARY_ARCHES,
-                "uri": "http://archive.ubuntu.com/ubuntu",
-            }, {
-                "arches": ["default"],
-                "uri": "http://ports.ubuntu.com/ubuntu-ports",
-            },
-        ]
+        self.primary_elected: PrimarySectionConfig = \
+            copy.deepcopy(DEFAULT_PRIMARY_SECTION)
         self.primary_candidates: List[PrimarySectionConfig] = [
             self.primary_elected,
         ]

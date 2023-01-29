@@ -17,7 +17,9 @@ import unittest
 
 from subiquity.models.mirror import (
     countrify_uri,
+    DEFAULT_PRIMARY_SECTION,
     MirrorModel,
+    PrimarySection,
     )
 
 
@@ -47,6 +49,31 @@ class TestCountrifyUrl(unittest.TestCase):
                     "http://ports.ubuntu.com/ubuntu-ports",
                     cc="us"),
                 "http://us.ports.ubuntu.com/ubuntu-ports")
+
+
+class TestPrimarySection(unittest.TestCase):
+    def setUp(self):
+        self.model = MirrorModel()
+
+    def test_initializer(self):
+        primary = PrimarySection([], parent=self.model)
+        self.assertEqual(primary.config, [])
+        self.assertEqual(primary.parent, self.model)
+
+    def test_new_from_default(self):
+        primary = PrimarySection.new_from_default(parent=self.model)
+        self.assertEqual(primary.config, DEFAULT_PRIMARY_SECTION)
+
+    def test_get_mirror(self):
+        self.model.architecture = "amd64"
+        primary = PrimarySection([{"uri": "http://myurl", "arches": "amd64"}],
+                                 parent=self.model)
+        self.assertEqual(primary.get_mirror(), "http://myurl")
+
+    def test_set_mirror(self):
+        primary = PrimarySection.new_from_default(parent=self.model)
+        primary.set_mirror("http://mymirror.invalid/")
+        self.assertEqual(primary.get_mirror(), "http://mymirror.invalid/")
 
 
 class TestMirrorModel(unittest.TestCase):
