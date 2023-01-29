@@ -109,6 +109,7 @@ parts:
       - python3-jsonschema
       - python3-minimal
       - python3-oauthlib
+      - python3-pkg-resources
       - python3-pyrsistent
       - python3-pyudev
       - python3-requests
