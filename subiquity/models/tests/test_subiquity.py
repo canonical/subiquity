@@ -206,7 +206,7 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
     def test_mirror(self):
         model = self.make_model()
         mirror_val = 'http://my-mirror'
-        model.mirror.set_mirror(mirror_val)
+        model.mirror.assign_primary_elected(mirror_val)
         config = model.render()
         self.assertNotIn('apt', config)
 

@@ -118,7 +118,7 @@ class MirrorController(SubiquityController):
             return
         geoip = data.pop('geoip', True)
         self.model.load_autoinstall_data(data)
-        self.geoip_enabled = geoip and self.model.mirror_is_default()
+        self.geoip_enabled = geoip and self.model.wants_geoip()
 
     async def try_mirror_checking_once(self) -> None:
         """ Try mirror checking and log result. """
@@ -189,10 +189,15 @@ class MirrorController(SubiquityController):
         self.source_configured_event.set()
 
     def serialize(self):
-        return self.model.get_mirror()
+        # TODO what to do with the candidates?
+        if self.model.primary_elected is not None:
+            return self.model.primary_elected.get_mirror()
+        return None
 
     def deserialize(self, data):
-        self.model.set_mirror(data)
+        # TODO what to do with the candidates?
+        if data is not None:
+            self.model.assign_primary_elected(data)
 
     def make_autoinstall(self):
         config = self.model.make_autoinstall()
@@ -219,16 +224,20 @@ class MirrorController(SubiquityController):
         return self.apt_configurer
 
     async def GET(self) -> str:
-        return self.model.get_mirror()
+        # TODO farfetched
+        if self.model.primary_elected is not None:
+            return self.model.primary_elected.get_mirror()
+        return self.model.primary_candidates[0].get_mirror()
 
     async def POST(self, data: str):
         log.debug(data)
-        self.model.set_mirror(data)
+        self.model.assign_primary_elected(data)
         await self.configured()
 
     async def candidate_POST(self, url: str) -> None:
         log.debug(url)
-        self.model.set_mirror(url)
+        self.model.replace_primary_candidates([url])
+        self.model.primary_staged = self.model.primary_candidates[0]
 
     async def disable_components_GET(self) -> List[str]:
         return sorted(self.model.disabled_components)
@@ -246,7 +255,7 @@ class MirrorController(SubiquityController):
                 assert False
         output = io.StringIO()
         self.mirror_check = MirrorCheck(
-                uri=self.model.get_mirror(),
+                uri=self.model.primary_staged.get_mirror(),
                 task=asyncio.create_task(self.run_mirror_testing(output)),
                 output=output)
 

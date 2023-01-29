@@ -139,6 +139,8 @@ class TestDRAptConfigurer(SubiTestCase):
     def setUp(self):
         self.model = Mock()
         self.model.mirror = MirrorModel()
+        self.candidate = self.model.mirror.primary_candidates[0]
+        self.model.mirror.primary_staged = self.candidate
         self.app = make_app(self.model)
         self.app.dr_cfg = DRConfig()
         self.app.dr_cfg.apt_mirror_check_default_strategy = "failure"
@@ -176,20 +178,20 @@ class TestDRAptConfigurer(SubiTestCase):
     async def test_run_apt_config_check_success(self):
         output = io.StringIO()
         self.app.dr_cfg.apt_mirror_check_default_strategy = "success"
-        self.model.mirror.set_mirror("http://default")
+        self.candidate.set_mirror("http://default")
         await self.configurer.run_apt_config_check(output)
 
     async def test_run_apt_config_check_failed(self):
         output = io.StringIO()
         self.app.dr_cfg.apt_mirror_check_default_strategy = "failure"
-        self.model.mirror.set_mirror("http://default")
+        self.candidate.set_mirror("http://default")
         with self.assertRaises(AptConfigCheckError):
             await self.configurer.run_apt_config_check(output)
 
     async def test_run_apt_config_check_random(self):
         output = io.StringIO()
         self.app.dr_cfg.apt_mirror_check_default_strategy = "random"
-        self.model.mirror.set_mirror("http://default")
+        self.candidate.set_mirror("http://default")
         with patch("subiquity.server.apt.random.choice",
                    return_value=self.configurer.apt_config_check_success):
             await self.configurer.run_apt_config_check(output)

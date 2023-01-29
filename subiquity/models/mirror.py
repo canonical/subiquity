@@ -49,9 +49,6 @@ DEFAULT = {
 }
 
 
-PrimarySectionConfig = List[Any]
-
-
 class PrimarySection:
     """ Helper to manage a primary autoinstall section. """
     def __init__(self, config: List[Any], *, parent: "MirrorModel") -> None:
@@ -89,22 +86,24 @@ class MirrorModel(object):
     def __init__(self):
         self.config = copy.deepcopy(DEFAULT)
         self.disabled_components: Set[str] = set()
-        self.primary_elected: PrimarySectionConfig = \
-            copy.deepcopy(DEFAULT_PRIMARY_SECTION)
-        self.primary_candidates: List[PrimarySectionConfig] = [
+        self.primary_elected = PrimarySection.new_from_default(parent=self)
+        self.primary_candidates: List[PrimarySection] = [
             self.primary_elected,
         ]
 
-        self.primary_staged: Optional[PrimarySectionConfig] = None
+        self.primary_staged: Optional[PrimarySection] = None
 
         self.architecture = get_architecture()
-        self.default_mirror = self.get_mirror()
+        self.default_mirror = self.primary_candidates[0].get_mirror()
 
     def load_autoinstall_data(self, data):
         if "disable_components" in data:
             self.disabled_components = set(data.pop("disable_components"))
         if "primary" in data:
-            self.primary_candidates = [data.pop("primary")]
+            # TODO support multiple candidates.
+            self.primary_candidates = [
+                    PrimarySection(data.pop("primary"), parent=self)
+                    ]
             # TODO do not mark primary elected.
             self.primary_elected = self.primary_candidates[0]
         merge_config(self.config, data)
@@ -121,32 +120,20 @@ class MirrorModel(object):
         assert self.primary_staged is not None
 
         config = self._get_apt_config_common()
-        config["primary"] = self.primary_staged
+        config["primary"] = self.primary_staged.config
         return config
 
     def get_apt_config_elected(self) -> Dict[str, Any]:
         config = self._get_apt_config_common()
-        config["primary"] = self.primary_elected
+        config["primary"] = self.primary_elected.config
         return config
 
-    def mirror_is_default(self):
-        return self.get_mirror() == self.default_mirror
-
     def set_country(self, cc):
-        if not self.mirror_is_default():
-            return
-        uri = self.get_mirror()
-        self.set_mirror(countrify_uri(uri, cc=cc))
-
-    def get_mirror(self):
-        config = copy.deepcopy(self.config)
-        config["primary"] = self.primary_elected
-        return get_mirror(config, "primary", self.architecture)
-
-    def set_mirror(self, mirror):
-        config = get_arch_mirrorconfig(
-            {"primary": self.primary_elected}, "primary", self.architecture)
-        config["uri"] = mirror
+        """ Set the URI of country-mirror candidates. """
+        for candidate in self.primary_candidates:
+            if candidate.mirror_is_default():
+                uri = candidate.get_mirror()
+                candidate.set_mirror(countrify_uri(uri, cc=cc))
 
     def disable_components(self, comps, add: bool) -> None:
         """ Add (or remove) a component (e.g., multiverse) from the list of
@@ -157,10 +144,30 @@ class MirrorModel(object):
         else:
             self.disabled_components -= comps
 
+    def replace_primary_candidates(self, uris: List[str]) -> None:
+        self.primary_candidates.clear()
+        for uri in uris:
+            section = PrimarySection.new_from_default(parent=self)
+            section.set_mirror(uri)
+            self.primary_candidates.append(section)
+        # NOTE: this is sometimes useful but it can be troublesome as well.
+        self.primary_staged = None
+
+    def assign_primary_elected(self, uri: str) -> None:
+        self.primary_elected = PrimarySection.new_from_default(parent=self)
+        self.primary_elected.set_mirror(uri)
+
+    def wants_geoip(self) -> bool:
+        """ Tell whether geoip results would be useful. """
+        for candidate in self.primary_candidates:
+            if candidate.is_default_mirror():
+                return True
+        return False
+
     def render(self):
         return {}
 
     def make_autoinstall(self):
         config = self._get_apt_config_common()
-        config["primary"] = self.primary_elected
+        config["primary"] = self.primary_elected.config
         return config

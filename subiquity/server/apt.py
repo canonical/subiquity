@@ -325,7 +325,7 @@ class DryRunAptConfigurer(AptConfigurer):
     async def apt_config_check_failure(self, output: io.StringIO) -> None:
         """ Pretend that the execution of the apt-get update command results in
         a failure. """
-        url = self.app.base_model.mirror.get_mirror()
+        url = self.app.base_model.mirror.primary_staged.get_mirror()
         release = lsb_release(dry_run=True)["codename"]
         host = url.split("/")[2]
 
@@ -361,7 +361,7 @@ E: Some index files failed to download. They have been ignored,
     async def apt_config_check_success(self, output: io.StringIO) -> None:
         """ Pretend that the execution of the apt-get update command results in
         a success. """
-        url = self.app.base_model.mirror.get_mirror()
+        url = self.app.base_model.mirror.primary_staged.get_mirror()
         release = lsb_release(dry_run=True)["codename"]
 
         output.write(f"""\
@@ -388,7 +388,7 @@ Reading package lists...
             self.MirrorCheckStrategy.SUCCESS: success,
             self.MirrorCheckStrategy.RANDOM: random.choice([failure, success]),
         }
-        mirror_url = self.app.base_model.mirror.get_mirror()
+        mirror_url = self.app.base_model.mirror.primary_staged.get_mirror()
 
         strategy = strategies[self.get_mirror_check_strategy(mirror_url)]
 

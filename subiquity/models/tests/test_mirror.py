@@ -83,20 +83,17 @@ class TestMirrorModel(unittest.TestCase):
     def test_set_country(self):
         self.model.set_country("CC")
         self.assertIn(
-            self.model.get_mirror(),
+            self.model.primary_candidates[0].get_mirror(),
             [
                 "http://CC.archive.ubuntu.com/ubuntu",
                 "http://CC.ports.ubuntu.com/ubuntu-ports",
             ])
 
-    def test_set_mirror(self):
-        self.model.set_mirror("http://mymirror.invalid/")
-        self.assertEqual(self.model.get_mirror(), "http://mymirror.invalid/")
-
     def test_set_country_after_set_mirror(self):
-        self.model.set_mirror("http://mymirror.invalid/")
+        candidate = self.model.primary_candidates[0]
+        candidate.set_mirror("http://mymirror.invalid/")
         self.model.set_country("CC")
-        self.assertEqual(self.model.get_mirror(), "http://mymirror.invalid/")
+        self.assertEqual(candidate.get_mirror(), "http://mymirror.invalid/")
 
     def test_default_disable_components(self):
         config = self.model.get_apt_config_elected()
@@ -130,8 +127,28 @@ class TestMirrorModel(unittest.TestCase):
     def test_make_autoinstall(self):
         primary = [{"arches": "amd64", "uri": "http://mirror"}]
         self.model.disabled_components = set(["non-free"])
-        self.model.primary_candidates = [primary]
-        self.model.primary_elected = primary
+        self.model.primary_candidates = \
+            [PrimarySection(primary, parent=self.model)]
+        self.model.primary_elected = self.model.primary_candidates[0]
         cfg = self.model.make_autoinstall()
         self.assertEqual(cfg["disable_components"], ["non-free"])
         self.assertEqual(cfg["primary"], primary)
+
+    def test_replace_primary_candidates(self):
+        self.model.replace_primary_candidates(["http://single-valid"])
+        self.assertEqual(len(self.model.primary_candidates), 1)
+        self.assertEqual(self.model.primary_candidates[0].get_mirror(),
+                         "http://single-valid")
+
+        self.model.replace_primary_candidates(
+                ["http://valid1", "http://valid2"])
+        self.assertEqual(len(self.model.primary_candidates), 2)
+        self.assertEqual(self.model.primary_candidates[0].get_mirror(),
+                         "http://valid1")
+        self.assertEqual(self.model.primary_candidates[1].get_mirror(),
+                         "http://valid2")
+
+    def test_assign_primary_elected(self):
+        self.model.assign_primary_elected("http://mymirror.valid")
+        self.assertEqual(self.model.primary_elected.get_mirror(),
+                         "http://mymirror.valid")
