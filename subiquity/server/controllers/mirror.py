@@ -233,7 +233,7 @@ class MirrorController(SubiquityController):
             return None
         if self.mirror_check.task.done():
             if self.mirror_check.task.exception():
-                log.warning("Mirror check failed: %s",
+                log.warning("Mirror check failed: %r",
                             self.mirror_check.task.exception())
                 status = MirrorCheckStatus.FAILED
             else:
