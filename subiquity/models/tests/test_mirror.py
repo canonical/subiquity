@@ -64,16 +64,16 @@ class TestPrimarySection(unittest.TestCase):
         primary = PrimarySection.new_from_default(parent=self.model)
         self.assertEqual(primary.config, DEFAULT_PRIMARY_SECTION)
 
-    def test_get_mirror(self):
+    def test_get_uri(self):
         self.model.architecture = "amd64"
         primary = PrimarySection([{"uri": "http://myurl", "arches": "amd64"}],
                                  parent=self.model)
-        self.assertEqual(primary.get_mirror(), "http://myurl")
+        self.assertEqual(primary.uri, "http://myurl")
 
-    def test_set_mirror(self):
+    def test_set_uri(self):
         primary = PrimarySection.new_from_default(parent=self.model)
-        primary.set_mirror("http://mymirror.invalid/")
-        self.assertEqual(primary.get_mirror(), "http://mymirror.invalid/")
+        primary.uri = "http://mymirror.invalid/"
+        self.assertEqual(primary.uri, "http://mymirror.invalid/")
 
 
 class TestMirrorModel(unittest.TestCase):
@@ -85,17 +85,17 @@ class TestMirrorModel(unittest.TestCase):
     def test_set_country(self):
         self.model.set_country("CC")
         self.assertIn(
-            self.candidate.get_mirror(),
+            self.candidate.uri,
             [
                 "http://CC.archive.ubuntu.com/ubuntu",
                 "http://CC.ports.ubuntu.com/ubuntu-ports",
             ])
 
-    def test_set_country_after_set_mirror(self):
+    def test_set_country_after_set_uri(self):
         candidate = self.model.primary_candidates[0]
-        candidate.set_mirror("http://mymirror.invalid/")
+        candidate.uri = "http://mymirror.invalid/"
         self.model.set_country("CC")
-        self.assertEqual(candidate.get_mirror(), "http://mymirror.invalid/")
+        self.assertEqual(candidate.uri, "http://mymirror.invalid/")
 
     def test_default_disable_components(self):
         config = self.model.get_apt_config_staged()
@@ -141,18 +141,18 @@ class TestMirrorModel(unittest.TestCase):
     def test_replace_primary_candidates(self):
         self.model.replace_primary_candidates(["http://single-valid"])
         self.assertEqual(len(self.model.primary_candidates), 1)
-        self.assertEqual(self.model.primary_candidates[0].get_mirror(),
+        self.assertEqual(self.model.primary_candidates[0].uri,
                          "http://single-valid")
 
         self.model.replace_primary_candidates(
                 ["http://valid1", "http://valid2"])
         self.assertEqual(len(self.model.primary_candidates), 2)
-        self.assertEqual(self.model.primary_candidates[0].get_mirror(),
+        self.assertEqual(self.model.primary_candidates[0].uri,
                          "http://valid1")
-        self.assertEqual(self.model.primary_candidates[1].get_mirror(),
+        self.assertEqual(self.model.primary_candidates[1].uri,
                          "http://valid2")
 
     def test_assign_primary_elected(self):
         self.model.assign_primary_elected("http://mymirror.valid")
-        self.assertEqual(self.model.primary_elected.get_mirror(),
+        self.assertEqual(self.model.primary_elected.uri,
                          "http://mymirror.valid")

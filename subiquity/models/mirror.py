@@ -55,19 +55,21 @@ class PrimarySection:
         self.parent = parent
         self.config = config
 
-    def get_mirror(self) -> str:
+    @property
+    def uri(self) -> str:
         config = copy.deepcopy(self.parent.config)
         config["primary"] = self.config
         return get_mirror(config, "primary", self.parent.architecture)
 
-    def set_mirror(self, uri: str) -> None:
+    @uri.setter
+    def uri(self, uri: str) -> None:
         config = get_arch_mirrorconfig(
                 {"primary": self.config},
                 "primary", self.parent.architecture)
         config["uri"] = uri
 
     def mirror_is_default(self) -> bool:
-        return self.get_mirror() == self.parent.default_mirror
+        return self.uri == self.parent.default_mirror
 
     @classmethod
     def new_from_default(cls, parent: "MirrorModel") -> "PrimarySection":
@@ -94,7 +96,7 @@ class MirrorModel(object):
         self.primary_staged: Optional[PrimarySection] = None
 
         self.architecture = get_architecture()
-        self.default_mirror = self.primary_candidates[0].get_mirror()
+        self.default_mirror = self.primary_candidates[0].uri
 
     def load_autoinstall_data(self, data):
         if "disable_components" in data:
@@ -132,8 +134,8 @@ class MirrorModel(object):
         """ Set the URI of country-mirror candidates. """
         for candidate in self.primary_candidates:
             if candidate.mirror_is_default():
-                uri = candidate.get_mirror()
-                candidate.set_mirror(countrify_uri(uri, cc=cc))
+                uri = candidate.uri
+                candidate.uri = countrify_uri(uri, cc=cc)
 
     def disable_components(self, comps, add: bool) -> None:
         """ Add (or remove) a component (e.g., multiverse) from the list of
@@ -148,14 +150,14 @@ class MirrorModel(object):
         self.primary_candidates.clear()
         for uri in uris:
             section = PrimarySection.new_from_default(parent=self)
-            section.set_mirror(uri)
+            section.uri = uri
             self.primary_candidates.append(section)
         # NOTE: this is sometimes useful but it can be troublesome as well.
         self.primary_staged = None
 
     def assign_primary_elected(self, uri: str) -> None:
         self.primary_elected = PrimarySection.new_from_default(parent=self)
-        self.primary_elected.set_mirror(uri)
+        self.primary_elected.uri = uri
 
     def wants_geoip(self) -> bool:
         """ Tell whether geoip results would be useful. """

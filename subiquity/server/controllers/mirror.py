@@ -191,7 +191,7 @@ class MirrorController(SubiquityController):
     def serialize(self):
         # TODO what to do with the candidates?
         if self.model.primary_elected is not None:
-            return self.model.primary_elected.get_mirror()
+            return self.model.primary_elected.uri
         return None
 
     def deserialize(self, data):
@@ -226,8 +226,8 @@ class MirrorController(SubiquityController):
     async def GET(self) -> str:
         # TODO farfetched
         if self.model.primary_elected is not None:
-            return self.model.primary_elected.get_mirror()
-        return self.model.primary_candidates[0].get_mirror()
+            return self.model.primary_elected.uri
+        return self.model.primary_candidates[0].uri
 
     async def POST(self, data: str):
         log.debug(data)
@@ -255,7 +255,7 @@ class MirrorController(SubiquityController):
                 assert False
         output = io.StringIO()
         self.mirror_check = MirrorCheck(
-                uri=self.model.primary_staged.get_mirror(),
+                uri=self.model.primary_staged.uri,
                 task=asyncio.create_task(self.run_mirror_testing(output)),
                 output=output)
 
