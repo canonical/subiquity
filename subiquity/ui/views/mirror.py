@@ -112,7 +112,7 @@ class MirrorView(BaseView):
                 "details here.")
 
     def __init__(self, controller, mirror,
-                 check: Optional[MirrorCheckStatus], has_network: bool):
+                 check: Optional[MirrorCheckResponse], has_network: bool):
         self.controller = controller
 
         self.form = MirrorForm(initial={'url': mirror})
@@ -136,7 +136,7 @@ class MirrorView(BaseView):
         else:
             self.status_text.set_text(rewrap(_(
                 MIRROR_CHECK_STATUS_TEXTS[self.has_network, None])))
-            self.last_status = None
+            self.last_status: Optional[MirrorCheckStatus] = None
 
         rows = [
             ('pack', Text(_(self.excerpt))),
