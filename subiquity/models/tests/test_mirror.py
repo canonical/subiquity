@@ -79,11 +79,13 @@ class TestPrimarySection(unittest.TestCase):
 class TestMirrorModel(unittest.TestCase):
     def setUp(self):
         self.model = MirrorModel()
+        self.candidate = self.model.primary_candidates[0]
+        self.model.primary_staged = self.candidate
 
     def test_set_country(self):
         self.model.set_country("CC")
         self.assertIn(
-            self.model.primary_candidates[0].get_mirror(),
+            self.candidate.get_mirror(),
             [
                 "http://CC.archive.ubuntu.com/ubuntu",
                 "http://CC.ports.ubuntu.com/ubuntu-ports",
@@ -96,20 +98,22 @@ class TestMirrorModel(unittest.TestCase):
         self.assertEqual(candidate.get_mirror(), "http://mymirror.invalid/")
 
     def test_default_disable_components(self):
-        config = self.model.get_apt_config_elected()
+        config = self.model.get_apt_config_staged()
         self.assertEqual([], config['disable_components'])
 
     def test_from_autoinstall(self):
         # autoinstall loads to the config directly
         data = {'disable_components': ['non-free']}
         self.model.load_autoinstall_data(data)
-        config = self.model.get_apt_config_elected()
+        self.candidate = self.model.primary_candidates[0]
+        self.model.primary_staged = self.candidate
+        config = self.model.get_apt_config_staged()
         self.assertEqual(['non-free'], config['disable_components'])
 
     def test_disable_add(self):
         expected = ['things', 'stuff']
         self.model.disable_components(expected.copy(), add=True)
-        actual = self.model.get_apt_config_elected()['disable_components']
+        actual = self.model.get_apt_config_staged()['disable_components']
         actual.sort()
         expected.sort()
         self.assertEqual(expected, actual)
@@ -119,7 +123,7 @@ class TestMirrorModel(unittest.TestCase):
         to_remove = ['things', 'stuff']
         expected = ['a', 'b']
         self.model.disable_components(to_remove, add=False)
-        actual = self.model.get_apt_config_elected()['disable_components']
+        actual = self.model.get_apt_config_staged()['disable_components']
         actual.sort()
         expected.sort()
         self.assertEqual(expected, actual)

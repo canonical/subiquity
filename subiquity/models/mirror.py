@@ -86,9 +86,9 @@ class MirrorModel(object):
     def __init__(self):
         self.config = copy.deepcopy(DEFAULT)
         self.disabled_components: Set[str] = set()
-        self.primary_elected = PrimarySection.new_from_default(parent=self)
+        self.primary_elected: Optional[PrimarySection] = None
         self.primary_candidates: List[PrimarySection] = [
-            self.primary_elected,
+            PrimarySection.new_from_default(parent=self),
         ]
 
         self.primary_staged: Optional[PrimarySection] = None
@@ -104,8 +104,6 @@ class MirrorModel(object):
             self.primary_candidates = [
                     PrimarySection(data.pop("primary"), parent=self)
                     ]
-            # TODO do not mark primary elected.
-            self.primary_elected = self.primary_candidates[0]
         merge_config(self.config, data)
 
     def _get_apt_config_common(self) -> Dict[str, Any]:
@@ -124,6 +122,8 @@ class MirrorModel(object):
         return config
 
     def get_apt_config_elected(self) -> Dict[str, Any]:
+        assert self.primary_elected is not None
+
         config = self._get_apt_config_common()
         config["primary"] = self.primary_elected.config
         return config
@@ -169,5 +169,9 @@ class MirrorModel(object):
 
     def make_autoinstall(self):
         config = self._get_apt_config_common()
-        config["primary"] = self.primary_elected.config
+        if self.primary_elected is not None:
+            config["primary"] = self.primary_elected.config
+        else:
+            # In an offline autoinstall, there is no elected mirror.
+            config["primary"] = self.primary_candidates[0].config
         return config

@@ -52,6 +52,8 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
 
     def test_make_autoinstall(self):
         self.controller.model = MirrorModel()
+        self.controller.model.primary_elected = \
+            self.controller.model.primary_candidates[0]
         config = self.controller.make_autoinstall()
         self.assertIn("disable_components", config.keys())
         self.assertIn("primary", config.keys())
