@@ -13,7 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import unittest
+from unittest import mock
 
 from subiquity.models.mirror import (
     countrify_uri,
@@ -120,44 +122,114 @@ class TestLegacyPrimarySection(unittest.TestCase):
 class TestMirrorModel(unittest.TestCase):
     def setUp(self):
         self.model = MirrorModel()
-        self.candidate = self.model.primary_candidates[0]
+        self.candidate = self.model.primary_candidates[1]
         self.candidate.stage()
+
+        self.model_legacy = MirrorModel()
+        self.model_legacy.legacy_primary = True
+        self.model_legacy.primary_candidates = [
+            LegacyPrimarySection(copy.deepcopy(
+                LEGACY_DEFAULT_PRIMARY_SECTION), parent=self.model_legacy),
+        ]
+        self.candidate_legacy = self.model_legacy.primary_candidates[0]
+        self.model_legacy.primary_staged = self.candidate_legacy
+
+    def test_initializer(self):
+        model = MirrorModel()
+        self.assertFalse(model.legacy_primary)
+        self.assertIsNone(model.primary_staged)
 
     def test_set_country(self):
-        self.model.set_country("CC")
-        self.assertIn(
-            self.candidate.uri,
-            [
-                "http://CC.archive.ubuntu.com/ubuntu",
-                "http://CC.ports.ubuntu.com/ubuntu-ports",
-            ])
+        def do_test(model):
+            country_mirror_candidates = list(model.country_mirror_candidates())
+            self.assertEqual(len(country_mirror_candidates), 1)
+            model.set_country("CC")
+            for country_mirror_candidate in country_mirror_candidates:
+                self.assertIn(
+                    country_mirror_candidate.uri,
+                    [
+                        "http://CC.archive.ubuntu.com/ubuntu",
+                        "http://CC.ports.ubuntu.com/ubuntu-ports",
+                    ])
+
+        do_test(self.model)
+        do_test(self.model_legacy)
 
     def test_set_country_after_set_uri(self):
-        candidate = self.model.primary_candidates[0]
-        candidate.uri = "http://mymirror.invalid/"
-        self.model.set_country("CC")
-        self.assertEqual(candidate.uri, "http://mymirror.invalid/")
+        def do_test(model):
+            for candidate in model.primary_candidates:
+                candidate.uri = "http://mymirror.invalid/"
+            model.set_country("CC")
+            for candidate in model.primary_candidates:
+                self.assertEqual(candidate.uri, "http://mymirror.invalid/")
+
+        do_test(self.model)
+        do_test(self.model_legacy)
 
     def test_default_disable_components(self):
-        config = self.model.get_apt_config_staged()
-        self.assertEqual([], config['disable_components'])
+        def do_test(model, candidate):
+            config = model.get_apt_config_staged()
+            self.assertEqual([], config['disable_components'])
 
-    def test_from_autoinstall(self):
+        # The candidate[0] is a country-mirror, skip it.
+        candidate = self.model.primary_candidates[1]
+        candidate.stage()
+        do_test(self.model, candidate)
+        do_test(self.model_legacy, self.candidate_legacy)
+
+    def test_from_autoinstall_no_primary(self):
         # autoinstall loads to the config directly
+        model = MirrorModel()
         data = {'disable_components': ['non-free']}
-        self.model.load_autoinstall_data(data)
-        self.candidate = self.model.primary_candidates[0]
-        self.candidate.stage()
-        config = self.model.get_apt_config_staged()
-        self.assertEqual(['non-free'], config['disable_components'])
+        model.load_autoinstall_data(data)
+        self.assertTrue(model.legacy_primary)
+        model.primary_candidates[0].stage()
+        self.assertEqual(set(['non-free']), model.disabled_components)
+
+        model = MirrorModel()
+        data = {"version": 1}
+        model.load_autoinstall_data(data)
+        self.assertTrue(model.legacy_primary)
+        self.assertEqual(model.primary_candidates,
+                         [LegacyPrimarySection.new_from_default(parent=model)])
+
+        data = {"version": 2}
+        model.load_autoinstall_data(data)
+        self.assertFalse(model.legacy_primary)
+        self.assertEqual(model.primary_candidates,
+                         model._default_primary_entries())
+
+    def test_from_autoinstall_modern(self):
+        data = {
+            "version": 2,
+            "primary": [
+                "country-mirror",
+                {
+                    "uri": "http://mirror",
+                },
+            ]
+        }
+        model = MirrorModel()
+        model.load_autoinstall_data(data)
+        self.assertEqual(model.primary_candidates, [
+            PrimaryEntry(parent=model),
+            PrimaryEntry(uri="http://mirror", parent=model),
+        ])
 
     def test_disable_add(self):
-        expected = ['things', 'stuff']
-        self.model.disable_components(expected.copy(), add=True)
-        actual = self.model.get_apt_config_staged()['disable_components']
-        actual.sort()
-        expected.sort()
-        self.assertEqual(expected, actual)
+        def do_test(model, candidate):
+            expected = ['things', 'stuff']
+            model.disable_components(expected.copy(), add=True)
+            actual = model.get_apt_config_staged()['disable_components']
+            actual.sort()
+            expected.sort()
+            self.assertEqual(expected, actual)
+
+        # The candidate[0] is a country-mirror, skip it.
+        candidate = self.model.primary_candidates[1]
+        candidate.stage()
+        do_test(self.model, candidate)
+        do_test(self.model_legacy, self.candidate_legacy)
 
     def test_disable_remove(self):
         self.model.disabled_components = set(['a', 'b', 'things'])
@@ -169,15 +241,17 @@ class TestMirrorModel(unittest.TestCase):
         expected.sort()
         self.assertEqual(expected, actual)
 
-    def test_make_autoinstall(self):
+    def test_make_autoinstall_legacy_primary(self):
         primary = [{"arches": "amd64", "uri": "http://mirror"}]
         self.model.disabled_components = set(["non-free"])
+        self.model.legacy_primary = True
         self.model.primary_candidates = \
             [LegacyPrimarySection(primary, parent=self.model)]
         self.model.primary_candidates[0].elect()
         cfg = self.model.make_autoinstall()
         self.assertEqual(cfg["disable_components"], ["non-free"])
         self.assertEqual(cfg["primary"], primary)
+        self.assertEqual(cfg["version"], 1)
 
     def test_replace_primary_candidates(self):
         self.model.replace_primary_candidates(["http://single-valid"])
@@ -197,3 +271,15 @@ class TestMirrorModel(unittest.TestCase):
         self.model.assign_primary_elected("http://mymirror.valid")
         self.assertEqual(self.model.primary_elected.uri,
                          "http://mymirror.valid")
+
+    def test_wants_geoip(self):
+        country_mirror_candidates = mock.patch.object(
+                self.model, "country_mirror_candidates", return_value=iter([]))
+        with country_mirror_candidates:
+            self.assertFalse(self.model.wants_geoip())
+
+        country_mirror_candidates = mock.patch.object(
+                self.model, "country_mirror_candidates",
+                return_value=iter([PrimaryEntry(parent=self.model)]))
+        with country_mirror_candidates:
+            self.assertTrue(self.model.wants_geoip())

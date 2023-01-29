@@ -15,7 +15,7 @@
 
 import copy
 import logging
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Set
 from urllib import parse
 
 import attr
@@ -135,25 +135,52 @@ class MirrorModel(object):
 
     def __init__(self):
         self.config = copy.deepcopy(DEFAULT)
+        self.legacy_primary = False
         self.disabled_components: Set[str] = set()
-        self.primary_elected: Optional[LegacyPrimarySection] = None
-        self.primary_candidates: List[LegacyPrimarySection] = [
-            LegacyPrimarySection.new_from_default(parent=self),
-        ]
+        self.primary_elected: Optional[PrimaryElement] = None
+        self.primary_candidates: List[PrimaryElement] = \
+            self._default_primary_entries()
 
-        self.primary_staged: Optional[LegacyPrimarySection] = None
+        self.primary_staged: Optional[PrimaryElement] = None
 
         self.architecture = get_architecture()
-        self.default_mirror = self.primary_candidates[0].uri
+        # Only useful for legacy primary sections
+        self.default_mirror = \
+            LegacyPrimarySection.new_from_default(parent=self).uri
+
+    def _default_primary_entries(self) -> List[PrimaryEntry]:
+        return [
+            PrimaryEntry(parent=self),  # Country mirror
+            PrimaryEntry(uri=DEFAULT_SUPPORTED_ARCHES_URI, parent=self),
+            # TODO arches
+            PrimaryEntry(uri=DEFAULT_PORTS_ARCHES_URI, arches=[], parent=self),
+        ]
+
+    def get_default_primary_candidates(
+            self, legacy: Optional[bool] = None) -> Sequence[PrimaryElement]:
+        want_legacy = legacy if legacy is not None else self.legacy_primary
+        if want_legacy:
+            return [LegacyPrimarySection.new_from_default(parent=self)]
+        else:
+            return self._default_primary_entries()
 
     def load_autoinstall_data(self, data):
+        self.legacy_primary = data.pop("version", 1) < 2
         if "disable_components" in data:
             self.disabled_components = set(data.pop("disable_components"))
         if "primary" in data:
-            # TODO support multiple candidates.
-            self.primary_candidates = [
-                    LegacyPrimarySection(data.pop("primary"), parent=self)
-                    ]
+            if self.legacy_primary:
+                # Legacy sections only support a single candidate
+                self.primary_candidates = \
+                    [LegacyPrimarySection(data.pop("primary"), parent=self)]
+            else:
+                self.primary_candidates = []
+                for section in data.pop("primary"):
+                    entry = PrimaryEntry.from_config(section, parent=self)
+                    self.primary_candidates.append(entry)
+        else:
+            self.primary_candidates = self.get_default_primary_candidates()
+
         merge_config(self.config, data)
 
     def _get_apt_config_common(self) -> Dict[str, Any]:
@@ -180,9 +207,14 @@ class MirrorModel(object):
 
     def set_country(self, cc):
         """ Set the URI of country-mirror candidates. """
-        for candidate in self.primary_candidates:
-            if candidate.mirror_is_default():
-                uri = candidate.uri
+        for candidate in self.country_mirror_candidates():
+            if self.legacy_primary:
+                candidate.uri = countrify_uri(candidate.uri, cc=cc)
+            else:
+                if self.architecture in PRIMARY_ARCHES:
+                    uri = DEFAULT_SUPPORTED_ARCHES_URI
+                else:
+                    uri = DEFAULT_PORTS_ARCHES_URI
                 candidate.uri = countrify_uri(uri, cc=cc)
 
     def disable_components(self, comps, add: bool) -> None:
@@ -197,31 +229,47 @@ class MirrorModel(object):
     def replace_primary_candidates(self, uris: List[str]) -> None:
         self.primary_candidates.clear()
         for uri in uris:
-            section = LegacyPrimarySection.new_from_default(parent=self)
-            section.uri = uri
-            self.primary_candidates.append(section)
+            if self.legacy_primary:
+                element = LegacyPrimarySection.new_from_default(parent=self)
+                element.uri = uri
+            else:
+                element = PrimaryEntry(uri=uri, parent=self)
+            self.primary_candidates.append(element)
         # NOTE: this is sometimes useful but it can be troublesome as well.
         self.primary_staged = None
 
     def assign_primary_elected(self, uri: str) -> None:
-        LegacyPrimarySection.new_from_default(parent=self).elect()
-        self.primary_elected.uri = uri
+        if self.legacy_primary:
+            LegacyPrimarySection.new_from_default(parent=self).elect()
+            self.primary_elected.uri = uri
+        else:
+            PrimaryEntry(uri=uri, parent=self).elect()
 
     def wants_geoip(self) -> bool:
         """ Tell whether geoip results would be useful. """
+        return next(self.country_mirror_candidates(), None) is not None
+
+    def country_mirror_candidates(self) -> Iterator[PrimaryElement]:
         for candidate in self.primary_candidates:
-            if candidate.is_default_mirror():
-                return True
-        return False
+            if self.legacy_primary and candidate.mirror_is_default():
+                yield candidate
+            elif not self.legacy_primary and candidate.uri is None:
+                yield candidate
 
     def render(self):
         return {}
 
     def make_autoinstall(self):
         config = self._get_apt_config_common()
-        if self.primary_elected is not None:
-            config["primary"] = self.primary_elected.config
+        config["version"] = 1 if self.legacy_primary else 2
+        if self.legacy_primary:
+            # Only one candidate is supported
+            if self.primary_elected is not None:
+                config["primary"] = self.primary_elected.config
+            else:
+                # In an offline autoinstall, there is no elected mirror.
+                config["primary"] = self.primary_candidates[0].config
         else:
-            # In an offline autoinstall, there is no elected mirror.
-            config["primary"] = self.primary_candidates[0].config
+            # TODO: This is wrong and needs to be updated.
+            config["primary"] = self.primary_candidates
         return config
