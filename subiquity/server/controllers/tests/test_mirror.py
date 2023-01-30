@@ -15,7 +15,10 @@
 
 import jsonschema
 import unittest
+from unittest import mock
 
+from subiquitycore.tests.mocks import make_app
+from subiquity.models.mirror import MirrorModel
 from subiquity.server.controllers.mirror import MirrorController
 
 
@@ -36,3 +39,17 @@ class TestMirrorSchema(unittest.TestCase):
     def test_no_disable_random_junk(self):
         with self.assertRaises(jsonschema.ValidationError):
             self.validate({'disable_components': ['not-a-component']})
+
+
+class TestMirrorController(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        app = make_app()
+        self.controller = MirrorController(app)
+        self.controller.apt_configurer = mock.AsyncMock()
+
+    def test_make_autoinstall(self):
+        self.controller.model = MirrorModel()
+        config = self.controller.make_autoinstall()
+        self.assertIn("disable_components", config.keys())
+        self.assertIn("primary", config.keys())
+        self.assertIn("geoip", config.keys())

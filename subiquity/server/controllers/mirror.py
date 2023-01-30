@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import copy
 import io
 import logging
 from typing import List, Optional
@@ -173,9 +172,9 @@ class MirrorController(SubiquityController):
         self.model.set_mirror(data)
 
     def make_autoinstall(self):
-        r = copy.deepcopy(self.model.config)
-        r['geoip'] = self.geoip_enabled
-        return r
+        config = self.model.make_autoinstall()
+        config['geoip'] = self.geoip_enabled
+        return config
 
     async def configured(self):
         await super().configured()

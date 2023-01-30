@@ -99,3 +99,11 @@ class TestMirrorModel(unittest.TestCase):
         actual.sort()
         expected.sort()
         self.assertEqual(expected, actual)
+
+    def test_make_autoinstall(self):
+        primary = [{"arches": "amd64", "uri": "http://mirror"}]
+        self.model.disabled_components = set(["non-free"])
+        self.model.primary = primary
+        cfg = self.model.make_autoinstall()
+        self.assertEqual(cfg["disable_components"], ["non-free"])
+        self.assertEqual(cfg["primary"], primary)
