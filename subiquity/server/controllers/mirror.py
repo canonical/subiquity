@@ -115,6 +115,21 @@ class MirrorController(SubiquityController):
         self.model.load_autoinstall_data(data)
         self.geoip_enabled = geoip and self.model.mirror_is_default()
 
+    async def try_mirror_checking_once(self) -> None:
+        """ Try mirror checking and log result. """
+        output = io.StringIO()
+        try:
+            await self.run_mirror_testing(output)
+        except AptConfigCheckError:
+            log.warning("Mirror checking failed")
+            raise
+        else:
+            log.debug("Mirror checking successful")
+        finally:
+            log.debug("APT output follows")
+            for line in output.getvalue().splitlines():
+                log.debug("%s", line)
+
     @with_context()
     async def apply_autoinstall_config(self, context):
         if self.geoip_enabled:
@@ -128,28 +143,13 @@ class MirrorController(SubiquityController):
             log.debug("Skipping mirror check since network is not available.")
             return
 
-        async def try_mirror_checking_once() -> None:
-            """ Try mirror checking and log result. """
-            output = io.StringIO()
-            try:
-                await self.run_mirror_testing(output)
-            except AptConfigCheckError:
-                log.warn("Mirror checking failed")
-                raise
-            else:
-                log.debug("Mirror checking successful")
-            finally:
-                log.debug("APT output follows")
-                for line in output.getvalue().splitlines():
-                    log.debug("%s", line)
-
         try:
-            await try_mirror_checking_once()
+            await self.try_mirror_checking_once()
         except AptConfigCheckError:
             log.debug("Retrying in 10 seconds...")
             await asyncio.sleep(10)
             # If the test fails a second time, consider it fatal.
-            await try_mirror_checking_once()
+            await self.try_mirror_checking_once()
 
     def on_geoip(self):
         if self.geoip_enabled:
