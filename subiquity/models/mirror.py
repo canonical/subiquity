@@ -23,6 +23,7 @@ import attr
 from curtin.commands.apt_config import (
     get_arch_mirrorconfig,
     get_mirror,
+    PORTS_ARCHES,
     PRIMARY_ARCHES,
     )
 from curtin.config import merge_config
@@ -68,6 +69,8 @@ class PrimaryEntry(PrimaryElement):
     # If the uri is None, it indicates a country-mirror that has not yet been
     # resolved.
     uri: Optional[str] = None
+    # When arches is None, it is assumed that the mirror is compatible with the
+    # current CPU architecture.
     arches: Optional[List[str]] = None
 
     @classmethod
@@ -81,10 +84,9 @@ class PrimaryEntry(PrimaryElement):
     @property
     def config(self) -> List[Dict[str, Any]]:
         assert self.uri is not None
-        arches = []
-        if self.arches is None:
-            arches = [self.parent.architecture]
-        return [{"uri": self.uri, "arches": arches}]
+        # Do not bother passing specific arches to curtin, we are passing a
+        # single URI anyway.
+        return [{"uri": self.uri, "arches": ["default"]}]
 
     def supports_arch(self, arch: str) -> bool:
         """ Tells whether the mirror claims to support the architecture
@@ -151,9 +153,10 @@ class MirrorModel(object):
     def _default_primary_entries(self) -> List[PrimaryEntry]:
         return [
             PrimaryEntry(parent=self),  # Country mirror
-            PrimaryEntry(uri=DEFAULT_SUPPORTED_ARCHES_URI, parent=self),
-            # TODO arches
-            PrimaryEntry(uri=DEFAULT_PORTS_ARCHES_URI, arches=[], parent=self),
+            PrimaryEntry(uri=DEFAULT_SUPPORTED_ARCHES_URI,
+                         arches=PRIMARY_ARCHES, parent=self),
+            PrimaryEntry(uri=DEFAULT_PORTS_ARCHES_URI,
+                         arches=PORTS_ARCHES, parent=self),
         ]
 
     def get_default_primary_candidates(
@@ -254,6 +257,15 @@ class MirrorModel(object):
             if self.legacy_primary and candidate.mirror_is_default():
                 yield candidate
             elif not self.legacy_primary and candidate.uri is None:
+                yield candidate
+
+    def compatible_primary_candidates(self) -> Iterator[PrimaryElement]:
+        for candidate in self.primary_candidates:
+            if self.legacy_primary:
+                yield candidate
+            elif candidate.arches is None:
+                yield candidate
+            elif self.architecture in candidate.arches:
                 yield candidate
 
     def render(self):

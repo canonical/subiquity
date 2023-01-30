@@ -149,7 +149,8 @@ class MirrorController(SubiquityController):
             return
 
         # Try each mirror one after another.
-        for idx, candidate in enumerate(self.model.primary_candidates):
+        compatibles = self.model.compatible_primary_candidates()
+        for idx, candidate in enumerate(compatibles):
             if idx != 0:
                 # Sleep before testing the next candidate..
                 log.debug("Will check next candiate mirror after 10 seconds.")
