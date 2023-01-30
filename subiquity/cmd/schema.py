@@ -21,6 +21,7 @@ import sys
 import jsonschema
 
 from subiquity.cmd.server import make_server_args_parser
+from subiquity.server.dryrun import DRConfig
 from subiquity.server.server import SubiquityServer
 
 
@@ -53,6 +54,9 @@ def make_app():
     parser = make_server_args_parser()
     opts, unknown = parser.parse_known_args(['--dry-run'])
     app = SubiquityServer(opts, '')
+    # This is needed because the ubuntu-pro server controller accesses dr_cfg
+    # in the initializer.
+    app.dr_cfg = DRConfig()
     app.base_model = app.make_model()
     app.controllers.load_all()
     return app

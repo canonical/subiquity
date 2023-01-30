@@ -20,8 +20,11 @@ from datetime import datetime as dt
 import contextlib
 import json
 import logging
+import os
 from subprocess import CompletedProcess
+import tempfile
 from typing import List, Sequence, Tuple, Union
+import yaml
 import asyncio
 
 from subiquity.common.types import (
@@ -185,7 +188,26 @@ class UAClientUAInterfaceStrategy(UAInterfaceStrategy):
         """
         self.executable: List[str] = \
             [executable] if isinstance(executable, str) else list(executable)
+        self.uaclient_config = None
         super().__init__()
+
+    def load_default_uaclient_config(self) -> None:
+        with open("/etc/ubuntu-advantage/uaclient.conf") as fh:
+            self.uaclient_config = yaml.safe_load(fh)
+
+    @contextlib.contextmanager
+    def uaclient_config_file(self) -> str:
+        """ Yields a path to a file that contains the uaclient configuration.
+        """
+        try:
+            if self.uaclient_config is None:
+                yield "/etc/ubuntu-advantage/uaclient.conf"
+            else:
+                with tempfile.NamedTemporaryFile(mode="w") as fh:
+                    yaml.dump(self.uaclient_config, fh)
+                    yield fh.name
+        finally:
+            pass
 
     async def query_info(self, token: str) -> dict:
         """ Return the subscription info associated with the supplied
@@ -203,11 +225,15 @@ class UAClientUAInterfaceStrategy(UAInterfaceStrategy):
             "--simulate-with-token", token,
         )
 
-        # On error, the command will exit with status 1. When that happens, the
-        # output should still be formatted as a JSON object and we can inspect
-        # it to know the reason of the failure. This is how we figure out if
-        # the contract token was invalid.
-        proc: CompletedProcess = await utils.arun_command(command, check=False)
+        with self.uaclient_config_file() as config_file:
+            env = os.environ.copy()
+            env["UA_CONFIG_FILE"] = config_file
+            # On error, the command will exit with status 1. When that happens,
+            # the output should still be formatted as a JSON object and we can
+            # inspect it to know the reason of the failure. This is how we
+            # figure out if the contract token was invalid.
+            proc: CompletedProcess = await utils.arun_command(
+                    command, check=False, env=env)
         if proc.returncode == 0:
             # TODO check if we're not returning a string or a list
             try:
@@ -244,8 +270,11 @@ class UAClientUAInterfaceStrategy(UAInterfaceStrategy):
         for key, value in params:
             command.append(f"{key}={value}")
 
-        proc: CompletedProcess = await utils.arun_command(
-                tuple(command), check=False)
+        with self.uaclient_config_file() as config_file:
+            env = os.environ.copy()
+            env["UA_CONFIG_FILE"] = config_file
+            proc: CompletedProcess = await utils.arun_command(
+                    tuple(command), check=False, env=env)
         try:
             return json.loads(proc.stdout)
         except json.JSONDecodeError:
