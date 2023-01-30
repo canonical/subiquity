@@ -154,7 +154,7 @@ class MirrorController(SubiquityController):
                 # Sleep before testing the next candidate..
                 log.debug("Will check next candiate mirror after 10 seconds.")
                 await asyncio.sleep(10)
-            self.model.primary_staged = candidate
+            candidate.stage()
             try:
                 await self.try_mirror_checking_once()
             except AptConfigCheckError:
@@ -172,7 +172,7 @@ class MirrorController(SubiquityController):
         else:
             raise NoUsableMirrorError
 
-        self.model.primary_elected = candidate
+        candidate.elect()
 
     def on_geoip(self):
         if self.geoip_enabled:
@@ -237,7 +237,7 @@ class MirrorController(SubiquityController):
     async def candidate_POST(self, url: str) -> None:
         log.debug(url)
         self.model.replace_primary_candidates([url])
-        self.model.primary_staged = self.model.primary_candidates[0]
+        self.model.primary_candidates[0].stage()
 
     async def disable_components_GET(self) -> List[str]:
         return sorted(self.model.disabled_components)

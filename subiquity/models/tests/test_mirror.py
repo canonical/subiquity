@@ -121,7 +121,7 @@ class TestMirrorModel(unittest.TestCase):
     def setUp(self):
         self.model = MirrorModel()
         self.candidate = self.model.primary_candidates[0]
-        self.model.primary_staged = self.candidate
+        self.candidate.stage()
 
     def test_set_country(self):
         self.model.set_country("CC")
@@ -147,7 +147,7 @@ class TestMirrorModel(unittest.TestCase):
         data = {'disable_components': ['non-free']}
         self.model.load_autoinstall_data(data)
         self.candidate = self.model.primary_candidates[0]
-        self.model.primary_staged = self.candidate
+        self.candidate.stage()
         config = self.model.get_apt_config_staged()
         self.assertEqual(['non-free'], config['disable_components'])
 
@@ -174,7 +174,7 @@ class TestMirrorModel(unittest.TestCase):
         self.model.disabled_components = set(["non-free"])
         self.model.primary_candidates = \
             [LegacyPrimarySection(primary, parent=self.model)]
-        self.model.primary_elected = self.model.primary_candidates[0]
+        self.model.primary_candidates[0].elect()
         cfg = self.model.make_autoinstall()
         self.assertEqual(cfg["disable_components"], ["non-free"])
         self.assertEqual(cfg["primary"], primary)

@@ -56,6 +56,12 @@ DEFAULT = {
 class PrimaryElement:
     parent: "MirrorModel" = attr.ib(kw_only=True)
 
+    def stage(self) -> None:
+        self.parent.primary_staged = self
+
+    def elect(self) -> None:
+        self.parent.primary_elected = self
+
 
 @attr.s(auto_attribs=True)
 class PrimaryEntry(PrimaryElement):
@@ -198,8 +204,7 @@ class MirrorModel(object):
         self.primary_staged = None
 
     def assign_primary_elected(self, uri: str) -> None:
-        self.primary_elected = \
-            LegacyPrimarySection.new_from_default(parent=self)
+        LegacyPrimarySection.new_from_default(parent=self).elect()
         self.primary_elected.uri = uri
 
     def wants_geoip(self) -> bool:
