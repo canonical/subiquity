@@ -5,7 +5,16 @@ export PYTHONPATH=$SNAP/lib/python3.8/site-packages
 if [ -n "$1" ]; then
    port=$1
 fi
+
+# Stops some dmesg from overwriting the TUI.
 /bin/dmesg -n 1
+
+# Stop the systemd service completion messages from doing the same.
+# The systemd(1) manpage documents SIGRTMIN+21 as a method to set
+# show_status=0.  Without this, ongoing services such as the casper-md5check
+# can result in service status message being written on top of the TUI.
+/bin/kill "-SIGRTMIN+21" 1
+
 if [ "$port" = "tty1" ]; then
 	$SNAP/bin/subiquity-loadkeys
 	setfont $SNAP/subiquity.psf
