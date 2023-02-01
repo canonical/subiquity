@@ -173,7 +173,10 @@ class AptConfigurer:
             apt_cmd.append(
                     f"-o{target}::DefaultEnabled=false")
 
-        proc = await astart_command(apt_cmd, stderr=subprocess.STDOUT)
+        env = os.environ.copy()
+        env["LANG"] = self.app.base_model.locale.selected_language
+        proc = await astart_command(apt_cmd, stderr=subprocess.STDOUT,
+                                    clean_locale=False, env=env)
 
         async def _reader():
             while not proc.stdout.at_eof():
