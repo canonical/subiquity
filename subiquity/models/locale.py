@@ -13,9 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import locale
 import logging
+import subprocess
 
-from subiquitycore.utils import split_cmd_output
+from subiquitycore.utils import arun_command, split_cmd_output
 
 log = logging.getLogger('subiquity.models.locale')
 
@@ -34,6 +36,23 @@ class LocaleModel:
 
     def switch_language(self, code):
         self.selected_language = code
+
+    async def gen_localedef(self) -> None:
+        language, charmap = locale.normalize(self.selected_language).split(".")
+        cmd = [
+            "localedef",
+            "-f", charmap,
+            "-i", language,
+            "--",
+            f"{language}.{charmap}",
+        ]
+        await arun_command(cmd, check=True)
+
+    async def try_gen_localedef(self) -> None:
+        try:
+            await self.gen_localedef()
+        except subprocess.CalledProcessError as exc:
+            log.warning("Could not generate locale: %r", exc)
 
     def __repr__(self):
         return "<Selected: {}>".format(self.selected_language)
