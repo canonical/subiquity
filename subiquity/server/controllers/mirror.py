@@ -229,6 +229,12 @@ class MirrorController(SubiquityController):
     async def _promote_mirror(self):
         await asyncio.gather(self.source_configured_event.wait(),
                              self.configured_event.wait())
+        if self.model.primary_elected is None:
+            # NOTE: In practice, this should only happen if the mirror was
+            # marked configured using a POST to mark_configured ; which is not
+            # recommended. Clients should do a POST request to /mirror with
+            # null as the body instead.
+            await self.find_and_elect_candidate_mirror(self.context)
         await self.apt_configurer.apply_apt_config(self.context, elected=True)
 
     async def run_mirror_testing(self, output: io.StringIO) -> None:
