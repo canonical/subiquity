@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import aiohttp
 from aioresponses import aioresponses
 
 from subiquitycore.tests import SubiTestCase
@@ -94,5 +95,12 @@ class TestGeoIPBadData(SubiTestCase):
     async def test_empty_tz(self):
         with aioresponses() as mocked:
             mocked.get("https://geoip.ubuntu.com/lookup", body=empty_tz)
+            self.assertFalse(await self.geoip.lookup())
+        self.assertIsNone(self.geoip.timezone)
+
+    async def test_lookup_error(self):
+        with aioresponses() as mocked:
+            mocked.get("https://geoip.ubuntu.com/lookup",
+                       exception=aiohttp.ClientError('lookup failure'))
             self.assertFalse(await self.geoip.lookup())
         self.assertIsNone(self.geoip.timezone)
