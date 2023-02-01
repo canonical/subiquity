@@ -167,6 +167,9 @@ class MirrorController(SubiquityController):
                 # Sleep before testing the next candidate..
                 log.debug("Will check next candiate mirror after 10 seconds.")
                 await asyncio.sleep(10)
+            if candidate.uri is None:
+                log.debug("Skipping unresolved country mirror")
+                continue
             candidate.stage()
             try:
                 await self.try_mirror_checking_once()
@@ -250,7 +253,14 @@ class MirrorController(SubiquityController):
         # TODO farfetched
         if self.model.primary_elected is not None:
             return self.model.primary_elected.uri
-        return self.model.primary_candidates[0].uri
+        for candidate in self.model.compatible_primary_candidates():
+            if candidate.uri is None:
+                # Country mirror that has not yet been resolved.
+                continue
+            return candidate.uri
+        # We should always have at least one candidate, albeit
+        # archive.ubuntu.com, with a URI.
+        assert False
 
     async def POST(self, url: Optional[str]) -> None:
         if url is not None:
