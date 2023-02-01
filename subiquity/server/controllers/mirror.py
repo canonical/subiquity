@@ -101,12 +101,20 @@ class MirrorController(SubiquityController):
     def __init__(self, app):
         super().__init__(app)
         self.geoip_enabled = True
-        self.app.hub.subscribe(InstallerChannels.GEOIP, self.on_geoip)
-        self.app.hub.subscribe(
-            (InstallerChannels.CONFIGURED, 'source'), self.on_source)
         self.cc_event = asyncio.Event()
         self.configured_event = asyncio.Event()
         self.source_configured_event = asyncio.Event()
+        self.network_configured_event = asyncio.Event()
+        self.proxy_configured_event = asyncio.Event()
+        self.app.hub.subscribe(InstallerChannels.GEOIP, self.on_geoip)
+        self.app.hub.subscribe(
+            (InstallerChannels.CONFIGURED, 'source'), self.on_source)
+        self.app.hub.subscribe(
+            (InstallerChannels.CONFIGURED, 'network'),
+            self.network_configured_event.set)
+        self.app.hub.subscribe(
+            (InstallerChannels.CONFIGURED, 'proxy'),
+            self.proxy_configured_event.set)
         self._apt_config_key = None
         self._apply_apt_config_task = SingleInstanceTask(
             self._promote_mirror)
@@ -135,8 +143,12 @@ class MirrorController(SubiquityController):
             for line in output.getvalue().splitlines():
                 log.debug("%s", line)
 
-    @with_context()
-    async def apply_autoinstall_config(self, context):
+    async def find_and_elect_candidate_mirror(self, context):
+        # Ensure we block until the proxy and network models have been
+        # configured. This is particularly important in partially-automated
+        # installs.
+        await self.network_configured_event.wait()
+        await self.proxy_configured_event.wait()
         if self.geoip_enabled:
             try:
                 with context.child('waiting'):
@@ -174,6 +186,10 @@ class MirrorController(SubiquityController):
             raise NoUsableMirrorError
 
         candidate.elect()
+
+    @with_context()
+    async def apply_autoinstall_config(self, context):
+        await self.find_and_elect_candidate_mirror(context)
 
     def on_geoip(self):
         if self.geoip_enabled:
@@ -230,9 +246,14 @@ class MirrorController(SubiquityController):
             return self.model.primary_elected.uri
         return self.model.primary_candidates[0].uri
 
-    async def POST(self, data: str):
-        log.debug(data)
-        self.model.assign_primary_elected(data)
+    async def POST(self, url: Optional[str]) -> None:
+        if url is not None:
+            self.model.assign_primary_elected(url)
+        else:
+            # TODO If we want the ability to fallback to an offline install, we
+            # probably need to catch NoUsableMirrorError and inform the client
+            # somehow.
+            await self.find_and_elect_candidate_mirror(self.context)
         await self.configured()
 
     async def candidate_POST(self, url: str) -> None:
