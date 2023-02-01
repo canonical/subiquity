@@ -96,20 +96,21 @@ log = logging.getLogger("subiquity.server.controllers.filesystem")
 block_discover_log = logging.getLogger('block-discover')
 
 
-system_defective_encryption_text = _("""
-The model being installed requires TPM-backed encryption but this
-system does not support it (the reason given was "{unavailable_reason}").
-""")
+# for translators: 'reason' is the reason FDE is unavailable.
+system_defective_encryption_text = _(
+    "TPM backed full-disk encryption is not available "
+    "on this device (the reason given was \"{reason}\")."
+)
 
-system_multiple_volumes_text = _("""
-The model being installed defines multiple volumes, which is not currently
-supported.
-""")
+system_multiple_volumes_text = _(
+    "TPM backed full-disk encryption is not yet supported when "
+    "the target spans multiple volumes."
+)
 
-system_non_gpt_text = _("""
-The model being installed defines a volume with a partition table type other
-than GPT, which is not currently supported.
-""")
+system_non_gpt_text = _(
+    "TPM backed full-disk encryption is only supported with a target volume "
+    "partition table of GPT."
+)
 
 
 class NoSnapdSystemsOnSource(Exception):
@@ -218,7 +219,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if se.support == StorageEncryptionSupport.DEFECTIVE:
             self._core_boot_classic_error = \
               system_defective_encryption_text.format(
-                  unavailable_reason=se.unavailable_reason)
+                  reason=se.unavailable_reason)
         if se.support == StorageEncryptionSupport.UNAVAILABLE:
             log.debug(
                 "storage encryption unavailable: %r", se.unavailable_reason)
