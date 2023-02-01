@@ -106,3 +106,6 @@ class MirrorModel(object):
 
     def render(self):
         return {}
+
+    def make_autoinstall(self):
+        return self.get_apt_config()
