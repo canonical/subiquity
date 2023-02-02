@@ -109,6 +109,7 @@ class SourceController(SubiquityController):
             return
         with open(path) as fp:
             self.model.load_from_file(fp)
+        self.app.set_source_variant(self.model.current.variant)
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, 'locale'), self._set_locale)
 
@@ -138,6 +139,7 @@ class SourceController(SubiquityController):
         else:
             self.source_path = self._handler.setup()
         await super().configured()
+        self.app.set_source_variant(self.model.current.variant)
         self.app.base_model.set_source_variant(self.model.current.variant)
 
     async def POST(self, source_id: str,
