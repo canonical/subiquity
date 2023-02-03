@@ -745,3 +745,21 @@ class MirrorCheckResponse:
     url: str
     status: MirrorCheckStatus
     output: str
+
+
+@attr.s(auto_attribs=True)
+class ADConnectionInfo:
+    admin_name: str = ""
+    domain_name: str = ""
+    password: str = attr.ib(repr=False, default="")
+
+
+class ADValidationResult(enum.Enum):
+    OK = enum.auto()
+    ADMIN_NAME_BAD_FIRST_CHAR = enum.auto()
+    ADMIN_NAME_BAD_CHARS = enum.auto()
+    DCNAME_BAD_CHARS = enum.auto()
+    DCNAME_BAD_HYPHEN = enum.auto()
+    DCNAME_BAD_DOTS = enum.auto()
+    DCNAME_BAD_LENGTH = enum.auto()
+    PASSWORD_EMPTY = enum.auto()
