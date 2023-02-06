@@ -17,7 +17,6 @@ apt-get install \
     -o APT::Get::Always-Include-Phased-Updates=true \
     -y --no-install-recommends \
     $(cat apt-deps.txt)
-pip3 install -r requirements.txt
 
 make gitdeps
 
