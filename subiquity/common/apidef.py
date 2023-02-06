@@ -25,6 +25,8 @@ from subiquitycore.models.network import (
 
 from subiquity.common.api.defs import api, Payload, simple_endpoint
 from subiquity.common.types import (
+    ADValidationResult,
+    ADConnectionInfo,
     AddPartitionV2,
     AnyStep,
     ApplicationState,
@@ -402,6 +404,11 @@ class API:
 
     class integrity:
         def GET() -> CasperMd5Results: ...
+
+    class active_directory:
+        def GET() -> Optional[ADConnectionInfo]: ...
+        def POST(data: Payload[ADConnectionInfo]) \
+            -> List[ADValidationResult]: ...
 
 
 class LinkAction(enum.Enum):
