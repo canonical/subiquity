@@ -17,6 +17,7 @@ import asyncio
 import logging
 import os
 
+from subiquitycore import async_helpers as async_helpers
 from subiquity.common.apidef import API
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
@@ -65,5 +66,7 @@ class LocaleController(SubiquityController):
         return self.model.selected_language
 
     async def POST(self, data: str):
+        log.debug(data)
         self.model.switch_language(data)
+        async_helpers.run_bg_task(self.model.try_gen_localedef())
         await self.configured()

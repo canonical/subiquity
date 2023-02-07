@@ -24,13 +24,13 @@ from typing import List, Sequence
 log = logging.getLogger("subiquitycore.utils")
 
 
-def _clean_env(env):
+def _clean_env(env, *, locale=True):
     if env is None:
         env = os.environ.copy()
     else:
         env = env.copy()
-    # Do we always want to do this?
-    env['LC_ALL'] = 'C'
+    if locale:
+        env['LC_ALL'] = 'C'
     # Maaaybe want to remove SNAP here too.
     return env
 
@@ -52,7 +52,8 @@ def orig_environ(env):
 
 def run_command(cmd: Sequence[str], *, input=None, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, encoding='utf-8', errors='replace',
-                env=None, **kw) -> subprocess.CompletedProcess:
+                env=None, clean_locale=True,
+                **kw) -> subprocess.CompletedProcess:
     """A wrapper around subprocess.run with logging and different defaults.
 
     We never ever want a subprocess to inherit our file descriptors!
@@ -64,7 +65,7 @@ def run_command(cmd: Sequence[str], *, input=None, stdout=subprocess.PIPE,
     log.debug("run_command called: %s", cmd)
     try:
         cp = subprocess.run(cmd, input=input, stdout=stdout, stderr=stderr,
-                            env=_clean_env(env), **kw)
+                            env=_clean_env(env, locale=clean_locale), **kw)
         if encoding:
             if isinstance(cp.stdout, bytes):
                 cp.stdout = cp.stdout.decode(encoding)
@@ -81,7 +82,7 @@ def run_command(cmd: Sequence[str], *, input=None, stdout=subprocess.PIPE,
 async def arun_command(cmd: Sequence[str], *,
                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                        encoding='utf-8', input=None, errors='replace',
-                       env=None, check=False, **kw) \
+                       env=None, clean_locale=True, check=False, **kw) \
                        -> subprocess.CompletedProcess:
     if input is None:
         if 'stdin' not in kw:
@@ -91,7 +92,8 @@ async def arun_command(cmd: Sequence[str], *,
         input = input.encode(encoding)
     log.debug("arun_command called: %s", cmd)
     proc = await asyncio.create_subprocess_exec(
-        *cmd, stdout=stdout, stderr=stderr, env=_clean_env(env), **kw)
+        *cmd, stdout=stdout, stderr=stderr,
+        env=_clean_env(env, locale=clean_locale), **kw)
     stdout, stderr = await proc.communicate(input=input)
     if encoding:
         if stdout is not None:
@@ -111,11 +113,12 @@ async def arun_command(cmd: Sequence[str], *,
 
 async def astart_command(cmd: Sequence[str], *, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE, stdin=subprocess.DEVNULL,
-                         env=None, **kw) -> asyncio.subprocess.Process:
+                         env=None, clean_locale=True,
+                         **kw) -> asyncio.subprocess.Process:
     log.debug("astart_command called: %s", cmd)
     return await asyncio.create_subprocess_exec(
         *cmd, stdout=stdout, stderr=stderr, stdin=stdin,
-        env=_clean_env(env), **kw)
+        env=_clean_env(env, locale=clean_locale), **kw)
 
 
 async def split_cmd_output(cmd: Sequence[str], split_on: str) -> List[str]:
@@ -126,14 +129,14 @@ async def split_cmd_output(cmd: Sequence[str], split_on: str) -> List[str]:
 def start_command(cmd: Sequence[str], *,
                   stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                   stderr=subprocess.PIPE, encoding='utf-8', errors='replace',
-                  env=None, **kw) -> subprocess.Popen:
+                  env=None, clean_locale=True, **kw) -> subprocess.Popen:
     """A wrapper around subprocess.Popen with logging and different defaults.
 
     We never ever want a subprocess to inherit our file descriptors!
     """
     log.debug('start_command called: %s', cmd)
     return subprocess.Popen(cmd, stdin=stdin, stdout=stdout, stderr=stderr,
-                            env=_clean_env(env), **kw)
+                            env=_clean_env(env, locale=clean_locale), **kw)
 
 
 # FIXME: replace with passlib and update package deps

@@ -60,6 +60,7 @@ class TestAptConfigurer(SubiTestCase):
         self.model = Mock()
         self.model.mirror = MirrorModel()
         self.model.proxy = ProxyModel()
+        self.model.locale.selected_language = "en_US.UTF-8"
         self.app = make_app(self.model)
         self.configurer = AptConfigurer(self.app, AsyncMock(), '')
 
