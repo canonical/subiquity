@@ -407,6 +407,11 @@ class API:
 
     class active_directory:
         def GET() -> Optional[ADConnectionInfo]: ...
+        # POST must validate the payload before configuring the controller,
+        # which may contain several errors as described in [ADValidationResult]
+        # simultaneously - such as invalid chars on the admin name and DC name
+        # starting with a hyphen or a dot. Thus this must returns a List
+        # of errors [ADValidationResult.OK] on success.
         def POST(data: Payload[ADConnectionInfo]) \
             -> List[ADValidationResult]: ...
 
