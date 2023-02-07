@@ -27,6 +27,8 @@ from subiquity.common.apidef import API
 from subiquity.common.types import (
     MirrorCheckResponse,
     MirrorCheckStatus,
+    MirrorGet,
+    MirrorPost,
     )
 from subiquity.server.apt import get_apt_configurer, AptConfigCheckError
 from subiquity.server.controller import SubiquityController
@@ -250,33 +252,55 @@ class MirrorController(SubiquityController):
         await self._apply_apt_config_task.wait()
         return self.apt_configurer
 
-    async def GET(self) -> str:
-        # TODO farfetched
+    async def GET(self) -> MirrorGet:
+        elected: Optional[str] = None
+        staged: Optional[str] = None
         if self.model.primary_elected is not None:
-            return self.model.primary_elected.uri
-        for candidate in self.model.compatible_primary_candidates():
-            if candidate.uri is None:
-                # Country mirror that has not yet been resolved.
-                continue
-            return candidate.uri
-        # We should always have at least one candidate, albeit
-        # archive.ubuntu.com, with a URI.
-        assert False
+            elected = self.model.primary_elected.uri
+        if self.model.primary_staged is not None:
+            staged = self.model.primary_staged.uri
 
-    async def POST(self, url: Optional[str]) -> None:
-        if url is not None:
-            self.model.assign_primary_elected(url)
-        else:
+        compatibles = self.model.compatible_primary_candidates()
+        # Skip the country-mirrors if they have not been resolved yet.
+        candidates = [c.uri for c in compatibles if c.uri is not None]
+        return MirrorGet(elected=elected, candidates=candidates, staged=staged)
+
+    async def POST(self, data: Optional[MirrorPost]) -> None:
+        log.debug(data)
+        if data is None:
             # TODO If we want the ability to fallback to an offline install, we
             # probably need to catch NoUsableMirrorError and inform the client
             # somehow.
             await self.find_and_elect_candidate_mirror(self.context)
-        await self.configured()
+            await self.configured()
+            return
 
-    async def candidate_POST(self, url: str) -> None:
-        log.debug(url)
-        self.model.replace_primary_candidates([url])
-        self.model.primary_candidates[0].stage()
+        if data.candidates is not None:
+            if not data.candidates:
+                raise ValueError("cannot specify an empty list of candidates")
+            self.model.replace_primary_candidates(data.candidates)
+
+        if data.staged is not None:
+            self.model.create_primary_candidate(data.staged).stage()
+
+        if data.elected is not None:
+            self.model.assign_primary_elected(data.elected)
+
+            # NOTE we could also do this unconditionally when generating the
+            # autoinstall configuration. But doing it here gives the user the
+            # ability to use a mirror for one install without it ending up in
+            # the autoinstall config. Is it worth it though?
+            def ensure_elected_in_candidates():
+                if any(map(lambda c: c.uri == data.elected,
+                           self.model.primary_candidates)):
+                    return
+                self.model.primary_candidates.insert(
+                        0, self.model.primary_elected)
+
+            if data.candidates is None:
+                ensure_elected_in_candidates()
+
+            await self.configured()
 
     async def disable_components_GET(self) -> List[str]:
         return sorted(self.model.disabled_components)
