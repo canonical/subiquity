@@ -1635,6 +1635,7 @@ class TestWSLSetupOptions(TestAPI):
 
 
 class TestActiveDirectory(TestAPI):
+    @timeout()
     async def test_ad(self):
         async with start_server('examples/simple.json') as instance:
             endpoint = '/active_directory'
@@ -1649,4 +1650,4 @@ class TestActiveDirectory(TestAPI):
                 'password': 'u'
             }
             result = await instance.post(endpoint, ad_dict)
-            self.assertIn('OK', result)
+            self.assertEqual(['OK'], result)
