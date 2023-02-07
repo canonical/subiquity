@@ -30,4 +30,7 @@ class ADModel:
     async def target_packages(self):
         # NOTE Those packages must be present in the target system to allow
         # joining to a domain.
-        return ["adcli", "realmd", "sssd"] if self.do_join else []
+        if self.do_join is True:
+            return ["adcli", "realmd", "sssd"]
+
+        return []
