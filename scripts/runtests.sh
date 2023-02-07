@@ -261,7 +261,7 @@ if [ "${RELEASE%.*}" -ge 20 ]; then
     port=50321
     LANG=C.UTF-8 python3 -m system_setup.cmd.server --dry-run --tcp-port=$port &
     subiquity_pid=$!
-    next_time=3
+    next_time=10
     until [ $next_time -eq 0 ] || [ ! -z "$(ss -Hlt sport = $port)" ]; do
         sleep $(( next_time-- ))
     done
