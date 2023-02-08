@@ -18,7 +18,12 @@ import re
 from typing import List, Optional, Set
 
 from subiquity.common.apidef import API
-from subiquity.common.types import ADConnectionInfo, ADValidationResult
+from subiquity.common.types import (
+    ADConnectionInfo,
+    AdAdminNameValidation,
+    AdDomainNameValidation,
+    AdPasswordValidation
+)
 from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger('subiquity.server.controllers.ad')
@@ -38,94 +43,124 @@ class ADController(SubiquityController):
         """Returns the currently configured AD settings"""
         return self.model.conn_info
 
-    async def POST(self, data: ADConnectionInfo) -> List[ADValidationResult]:
+    async def POST(self, data: ADConnectionInfo) -> None:
         """ Configures this controller with the supplied info.
-            Returns a list of errors if the info submitted is invalid or
-            [ADValidationResult.OK] on success. """
-        result = set()
-        result |= check_domain_name(data.domain_name)
-        result |= check_admin_user_name(data.admin_name)
-        result |= check_password(data.password)
-
-        if len(result) > 0:
-            return list(result)
-
+            Clients are required to validate the info before POST'ing """
         self.model.conn_info = data
         await self.configured()
-        return [ADValidationResult.OK]
+
+    async def check_admin_name_GET(self, admin_name: str) \
+            -> List[AdAdminNameValidation]:
+        result = AdValidators.admin_user_name(admin_name)
+        return list(result)
+
+    async def check_domain_name_GET(self, domain_name: str) \
+            -> List[AdDomainNameValidation]:
+        result = AdValidators.domain_name(domain_name)
+        return list(result)
+
+    async def check_password_GET(self, password: str) -> AdPasswordValidation:
+        return AdValidators.password(password)
 
 
-# Helper out-of-class functions:
+# Helper out-of-class functions grouped.
+class AdValidators:
+    """ Groups functions that validates the AD info supplied by users. """
+    @staticmethod
+    def admin_user_name(name) -> Set[AdAdminNameValidation]:
+        """ Validates the supplied admin name against known patterns.
+            Returns a set of the errors detected. """
+        result = set()
 
-def check_admin_user_name(name) -> Set[ADValidationResult]:
-    """ Validates the supplied admin name.
-        Returns a set of the possible errors. """
-    result = set()
-
-    if len(name) == 0:
-        log.debug("admin name is empty")
-        return {ADValidationResult.ADMIN_NAME_EMPTY}
+        if len(name) == 0:
+            log.debug("admin name is empty")
+            return {AdAdminNameValidation.EMPTY}
 
 # Ubiquity checks the admin name in two steps:
 # 1. validate the first char against '[a-zA-Z]'
 # 2. check the entire string against r'^[-a-zA-Z0-9_]+$'
-    if not re.match('[a-zA-Z]', name[0]):
-        result.add(ADValidationResult.ADMIN_NAME_BAD_FIRST_CHAR)
+        if not re.match('[a-zA-Z]', name[0]):
+            result.add(AdAdminNameValidation.INVALID_FIRST_CHAR)
 
-    if len(name) == 1:
-        return result
+        if len(name) == 1:
+            return result
 
-    regex = re.compile(ADMIN_RE)
-    if not regex.match(name[1:]):
-        log.debug('<%s>: domain admin name contains invalid characters',
-                  name)
-        result.add(ADValidationResult.ADMIN_NAME_BAD_CHARS)
+        regex = re.compile(ADMIN_RE)
+        if not regex.match(name[1:]):
+            log.debug('<%s>: domain admin name contains invalid characters',
+                      name)
+            result.add(AdAdminNameValidation.INVALID_CHARS)
 
-    return result
+        if len(result) > 0:
+            return result
 
+        return {AdAdminNameValidation.OK}
 
-def check_password(value: str) -> Set[ADValidationResult]:
-    """ Validates that the password is not empty. """
-    result = set()
+    @staticmethod
+    def password(value: str) -> AdPasswordValidation:
+        """ Validates that the password is not empty. """
 
-    if len(value) < 1:
-        result.add(ADValidationResult.PASSWORD_EMPTY)
+        if len(value) < 1:
+            return AdPasswordValidation.EMPTY
 
-    return result
+        return AdPasswordValidation.OK
 
+    @staticmethod
+    def domain_name(name: str) -> Set[AdDomainNameValidation]:
+        """ Check the correctness of a proposed host name.
 
-def check_domain_name(name: str) -> Set[ADValidationResult]:
-    """ Check the correctness of a proposed host name.
+        Returns a set of the possible errors:
+            - OK = self explanatory. Should be the only result then.
+            - EMPTY = Self explanatory. Should be the only result then.
+            - TOO_LONG = Self explanatory.
+            - INVALID_CHARS = Found characters not matching the expected regex.
+            - START_DOT = Starts with a dot (.)
+            - END_DOT = Ends with a dot (.)
+            - START_HYPHEN = Starts with an hyphen (-).
+            - END_HYPHEN = Ends with a hyphen (-).
+            - MULTIPLE_DOTS = Contains multiple sequenced dots (..)
+        """
+        result = set()
 
-    Returns a set of the possible errors:
-        - C{DCNAME_BAD_LENGTH} wrong length.
-        - C{DCNAME_BAD_CHARS} contains invalid characters.
-        - C{DCNAME_BAD_HYPHEN} starts or ends with a hyphen.
-        - C{DCNAME_BAD_DOTS} contains consecutive/initial/final dots."""
+        if len(name) < 1:
+            log.debug("%s is empty", FIELD)
+            result.add(AdDomainNameValidation.EMPTY)
+            return result
 
-    result = set()
+        if len(name) > 63:
+            log.debug("<%s>: %s too long", name, FIELD)
+            result.add(AdDomainNameValidation.TOO_LONG)
 
-    if len(name) < 1 or len(name) > 63:
-        log.debug("<%s>: %s too long or too short", name, FIELD)
-        result.add(ADValidationResult.DCNAME_BAD_LENGTH)
+        if name.startswith('-'):
+            log.debug("<%s>: %s cannot start with hyphens (-)",
+                      name, FIELD)
+            result.add(AdDomainNameValidation.START_HYPHEN)
 
-    if name.startswith('-') or name.endswith('-'):
-        log.debug("<%s>: %s cannot start nor end with hyphens (-)",
-                  name, FIELD)
-        result.add(ADValidationResult.DCNAME_BAD_HYPHEN)
+        if name.endswith('-'):
+            log.debug("<%s>: %s cannot end with hyphens (-)",
+                      name, FIELD)
+            result.add(AdDomainNameValidation.END_HYPHEN)
 
-    if '..' in name:
-        log.debug('<%s>: %s cannot contain double dots (..)', name, FIELD)
-        result.add(ADValidationResult.DCNAME_BAD_DOTS)
+        if '..' in name:
+            log.debug('<%s>: %s cannot contain double dots (..)', name, FIELD)
+            result.add(AdDomainNameValidation.MULTIPLE_DOTS)
 
-    if name.startswith('.') or name.endswith('.'):
-        log.debug('<%s>: %s cannot start nor end with dots (.)',
-                  name, FIELD)
-        result.add(ADValidationResult.DCNAME_BAD_DOTS)
+        if name.startswith('.'):
+            log.debug('<%s>: %s cannot start with dots (.)',
+                      name, FIELD)
+            result.add(AdDomainNameValidation.START_DOT)
 
-    regex = re.compile(DC_RE)
-    if not regex.search(name):
-        result.add(ADValidationResult.DCNAME_BAD_CHARS)
-        log.debug('<%s>: %s contain invalid characters', name, FIELD)
+        if name.endswith('.'):
+            log.debug('<%s>: %s cannot end with dots (.)',
+                      name, FIELD)
+            result.add(AdDomainNameValidation.END_DOT)
 
-    return result
+        regex = re.compile(DC_RE)
+        if not regex.search(name):
+            result.add(AdDomainNameValidation.INVALID_CHARS)
+            log.debug('<%s>: %s contain invalid characters', name, FIELD)
+
+        if len(result) > 0:
+            return result
+
+        return {AdDomainNameValidation.OK}

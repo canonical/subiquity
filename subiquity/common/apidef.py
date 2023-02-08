@@ -25,8 +25,10 @@ from subiquitycore.models.network import (
 
 from subiquity.common.api.defs import api, Payload, simple_endpoint
 from subiquity.common.types import (
-    ADValidationResult,
     ADConnectionInfo,
+    AdAdminNameValidation,
+    AdDomainNameValidation,
+    AdPasswordValidation,
     AddPartitionV2,
     AnyStep,
     ApplicationState,
@@ -413,7 +415,16 @@ class API:
         # starting with a hyphen or a dot. Thus this must returns a List
         # of errors [ADValidationResult.OK] on success.
         def POST(data: Payload[ADConnectionInfo]) \
-            -> List[ADValidationResult]: ...
+            -> None: ...
+
+        class check_domain_name:
+            def GET(domain_name: str) -> List[AdDomainNameValidation]: ...
+
+        class check_admin_name:
+            def GET(admin_name: str) -> List[AdAdminNameValidation]: ...
+
+        class check_password:
+            def GET(password: str) -> AdPasswordValidation: ...
 
 
 class LinkAction(enum.Enum):
