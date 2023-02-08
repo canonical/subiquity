@@ -1423,6 +1423,31 @@ class TestRegression(TestAPI):
             [p] = resp['disks'][0]['partitions']
             self.assertEqual(orig_p, p)
 
+    @timeout()
+    async def test_can_create_unformatted_partition(self):
+        '''We want to offer the same list of fstypes for Subiquity and U-D-I,
+           but the list is different today.  Verify that unformatted partitions
+           may be created.'''
+        cfg = 'examples/simple.json'
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
+            resp = await inst.get('/storage/v2')
+            [d] = resp['disks']
+            [g] = d['partitions']
+            data = {
+                'disk_id': 'disk-sda',
+                'gap': g,
+                'partition': {
+                    'size': -1,
+                    'format': None,
+                }
+            }
+            resp = await inst.post('/storage/v2/add_partition', data)
+            [p] = resp['disks'][0]['partitions']
+            self.assertIsNone(p['format'])
+            v1resp = await inst.get('/storage')
+            self.assertEqual([], match(v1resp['config'], type='format'))
+
 
 class TestCancel(TestAPI):
     @timeout()

@@ -742,8 +742,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_add_partition_POST(self, data: AddPartitionV2) \
             -> StorageResponseV2:
         log.debug(data)
-        if data.partition.format is None:
-            raise ValueError('add_partition must supply format')
         if data.partition.boot is not None:
             raise ValueError('add_partition does not support changing boot')
         disk = self.model._one(id=data.disk_id)
