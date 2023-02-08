@@ -304,6 +304,7 @@ class API:
                    adding a partion when there is not yet a boot partition can
                    result in the boot partition being added automatically - see
                    add_boot_partition for more control over this.
+                   format=None means an unformatted partition
                 """
                 def POST(data: Payload[AddPartitionV2]) \
                     -> StorageResponseV2: ...
