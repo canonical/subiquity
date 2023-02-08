@@ -60,6 +60,7 @@ class MirrorController(SubiquityController):
     autoinstall_schema = {  # This is obviously incomplete.
         'type': 'object',
         'properties': {
+            'version': {'type': 'integer'},
             'preserve_sources_list': {'type': 'boolean'},
             'primary': {'type': 'array'},
             'geoip':  {'type': 'boolean'},

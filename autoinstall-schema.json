@@ -307,6 +307,9 @@
         "apt": {
             "type": "object",
             "properties": {
+                "version": {
+                    "type": "integer"
+                },
                 "preserve_sources_list": {
                     "type": "boolean"
                 },
