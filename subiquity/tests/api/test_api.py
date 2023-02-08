@@ -1007,6 +1007,7 @@ class TestInfo(TestAPI):
             sda = first(resp['disks'], 'id', disk_id)
             self.assertEqual('/dev/sda', sda['path'])
 
+    @timeout()
     async def test_model_and_vendor(self):
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
@@ -1015,6 +1016,7 @@ class TestInfo(TestAPI):
             self.assertEqual('QEMU HARDDISK', sda['model'])
             self.assertEqual('ATA', sda['vendor'])
 
+    @timeout()
     async def test_no_vendor(self):
         async with start_server('examples/many-nics-and-disks.json') as inst:
             disk_id = 'disk-sda'
@@ -1199,6 +1201,7 @@ class TestPartitionTableEditing(TestAPI):
 
 
 class TestGap(TestAPI):
+    @timeout()
     async def test_blank_disk_is_one_big_gap(self):
         async with start_server('examples/simple.json') as inst:
             resp = await inst.get('/storage/v2')
@@ -1208,6 +1211,7 @@ class TestGap(TestAPI):
             self.assertEqual(expected, gap['size'])
             self.assertEqual('YES', gap['usable'])
 
+    @timeout()
     async def test_gap_at_end(self):
         async with start_server('examples/simple.json') as inst:
             resp = await inst.get('/storage/v2')
@@ -1230,6 +1234,7 @@ class TestGap(TestAPI):
             expected = (100 << 30) - p1['size'] - p2['size'] - (2 << 20)
             self.assertEqual(expected, gap['size'])
 
+    @timeout()
     async def SKIP_test_two_gaps(self):
         async with start_server('examples/simple.json') as inst:
             disk_id = 'disk-sda'
@@ -1463,15 +1468,18 @@ class TestDrivers(TestAPI):
                 resp = await inst.get('/drivers', wait=True)
                 self.assertEqual([expected_driver], resp['drivers'])
 
+    @timeout()
     async def test_server_source(self):
         await self._test_source('ubuntu-server-minimal',
                                 'nvidia-driver-470-server')
 
+    @timeout()
     async def test_desktop_source(self):
         await self._test_source('ubuntu-desktop', 'nvidia-driver-510')
 
 
 class TestSource(TestAPI):
+    @timeout()
     async def test_optional_search_drivers(self):
         async with start_server('examples/simple.json') as inst:
             await inst.post('/source', source_id='ubuntu-server')
@@ -1490,6 +1498,7 @@ class TestSource(TestAPI):
 
 
 class TestIdentityValidation(TestAPI):
+    @timeout()
     async def test_username_validation(self):
         async with start_server('examples/simple.json') as inst:
             resp = await inst.get('/identity/validate_username',
@@ -1620,6 +1629,7 @@ class TestAutoinstallServer(TestAPI):
 
 
 class TestWSLSetupOptions(TestAPI):
+    @timeout()
     async def test_wslsetupoptions(self):
         async with start_system_setup_server('examples/simple.json') as inst:
             await inst.post('/meta/client_variant', variant='wsl_setup')
