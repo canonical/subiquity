@@ -13,9 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import abc
 import copy
 import logging
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Set
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, Union
 from urllib import parse
 
 import attr
@@ -54,7 +55,7 @@ DEFAULT = {
 
 
 @attr.s(auto_attribs=True)
-class PrimaryElement:
+class PrimaryElement(abc.ABC):
     parent: "MirrorModel" = attr.ib(kw_only=True)
 
     def stage(self) -> None:
@@ -62,6 +63,10 @@ class PrimaryElement:
 
     def elect(self) -> None:
         self.parent.primary_elected = self
+
+    @abc.abstractmethod
+    def serialize_for_ai(self) -> Any:
+        """ Serialize the element for autoinstall. """
 
 
 @attr.s(auto_attribs=True)
@@ -95,6 +100,15 @@ class PrimaryEntry(PrimaryElement):
             return True
         return arch in self.arches
 
+    def serialize_for_ai(self) -> Union[str, Dict[str, Any]]:
+        # TODO also do it for already resolved ones
+        if self.uri is None:
+            return "country-mirror"
+        ret: Dict[str, Any] = {"uri": self.uri}
+        if self.arches is not None:
+            ret["arches"] = self.arches
+        return ret
+
 
 class LegacyPrimarySection(PrimaryElement):
     """ Helper to manage a apt->primary autoinstall section.
@@ -124,6 +138,9 @@ class LegacyPrimarySection(PrimaryElement):
     def new_from_default(cls, parent: "MirrorModel") -> "LegacyPrimarySection":
         return cls(copy.deepcopy(LEGACY_DEFAULT_PRIMARY_SECTION),
                    parent=parent)
+
+    def serialize_for_ai(self) -> List[Any]:
+        return self.config
 
 
 def countrify_uri(uri: str, cc: str) -> str:
@@ -277,11 +294,13 @@ class MirrorModel(object):
         if self.legacy_primary:
             # Only one candidate is supported
             if self.primary_elected is not None:
-                config["primary"] = self.primary_elected.config
+                to_serialize = self.primary_elected
             else:
                 # In an offline autoinstall, there is no elected mirror.
-                config["primary"] = self.primary_candidates[0].config
+                to_serialize = self.primary_candidates[0]
+            config["primary"] = to_serialize.serialize_for_ai()
         else:
-            # TODO: This is wrong and needs to be updated.
-            config["primary"] = self.primary_candidates
+            config["primary"] = \
+                [c.serialize_for_ai() for c in self.primary_candidates]
+
         return config

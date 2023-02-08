@@ -241,6 +241,26 @@ class TestMirrorModel(unittest.TestCase):
         expected.sort()
         self.assertEqual(expected, actual)
 
+    def test_make_autoinstall_primary(self):
+        expected_primary = [
+            "country-mirror",
+            {"uri": "http://mirror.local/ubuntu"},
+            {"uri": "http://amd64.mirror.local/ubuntu", "arches": ["amd64"]},
+        ]
+        self.model.disabled_components = set(["non-free"])
+        self.model.legacy_primary = False
+        self.model.primary_candidates = [
+            PrimaryEntry(uri=None, arches=None, parent=self.model),
+            PrimaryEntry(uri="http://mirror.local/ubuntu",
+                         arches=None, parent=self.model),
+            PrimaryEntry(uri="http://amd64.mirror.local/ubuntu",
+                         arches=["amd64"], parent=self.model),
+        ]
+        cfg = self.model.make_autoinstall()
+        self.assertEqual(cfg["disable_components"], ["non-free"])
+        self.assertEqual(cfg["primary"], expected_primary)
+        self.assertEqual(cfg["version"], 2)
+
     def test_make_autoinstall_legacy_primary(self):
         primary = [{"arches": "amd64", "uri": "http://mirror"}]
         self.model.disabled_components = set(["non-free"])
