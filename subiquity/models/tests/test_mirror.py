@@ -77,7 +77,8 @@ class TestPrimaryEntry(unittest.TestCase):
         model = MirrorModel()
 
         entry = PrimaryEntry.from_config("country-mirror", parent=model)
-        self.assertEqual(entry, PrimaryEntry(parent=model))
+        self.assertEqual(entry, PrimaryEntry(parent=model,
+                                             country_mirror=True))
 
         with self.assertRaises(ValueError):
             entry = PrimaryEntry.from_config({}, parent=model)
@@ -155,16 +156,12 @@ class TestMirrorModel(unittest.TestCase):
         do_test(self.model)
         do_test(self.model_legacy)
 
-    def test_set_country_after_set_uri(self):
-        def do_test(model):
-            for candidate in model.primary_candidates:
-                candidate.uri = "http://mymirror.invalid/"
-            model.set_country("CC")
-            for candidate in model.primary_candidates:
-                self.assertEqual(candidate.uri, "http://mymirror.invalid/")
-
-        do_test(self.model)
-        do_test(self.model_legacy)
+    def test_set_country_after_set_uri_legacy(self):
+        for candidate in self.model_legacy.primary_candidates:
+            candidate.uri = "http://mymirror.invalid/"
+        self.model_legacy.set_country("CC")
+        for candidate in self.model_legacy.primary_candidates:
+            self.assertEqual(candidate.uri, "http://mymirror.invalid/")
 
     def test_default_disable_components(self):
         def do_test(model, candidate):
@@ -212,7 +209,7 @@ class TestMirrorModel(unittest.TestCase):
         model = MirrorModel()
         model.load_autoinstall_data(data)
         self.assertEqual(model.primary_candidates, [
-            PrimaryEntry(parent=model),
+            PrimaryEntry(parent=model, country_mirror=True),
             PrimaryEntry(uri="http://mirror", parent=model),
         ])
 
@@ -250,7 +247,8 @@ class TestMirrorModel(unittest.TestCase):
         self.model.disabled_components = set(["non-free"])
         self.model.legacy_primary = False
         self.model.primary_candidates = [
-            PrimaryEntry(uri=None, arches=None, parent=self.model),
+            PrimaryEntry(uri=None, arches=None,
+                         country_mirror=True, parent=self.model),
             PrimaryEntry(uri="http://mirror.local/ubuntu",
                          arches=None, parent=self.model),
             PrimaryEntry(uri="http://amd64.mirror.local/ubuntu",

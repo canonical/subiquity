@@ -71,17 +71,17 @@ class PrimaryElement(abc.ABC):
 
 @attr.s(auto_attribs=True)
 class PrimaryEntry(PrimaryElement):
-    # If the uri is None, it indicates a country-mirror that has not yet been
-    # resolved.
+    # Having uri set to None is only valid for a country mirror.
     uri: Optional[str] = None
     # When arches is None, it is assumed that the mirror is compatible with the
     # current CPU architecture.
     arches: Optional[List[str]] = None
+    country_mirror: bool = attr.ib(kw_only=True, default=False)
 
     @classmethod
     def from_config(cls, config: Any, parent: "MirrorModel") -> "PrimaryEntry":
         if config == "country-mirror":
-            return cls(parent=parent)
+            return cls(parent=parent, country_mirror=True)
         if config.get("uri", None) is None:
             raise ValueError("uri is mandatory")
         return cls(**config, parent=parent)
@@ -101,8 +101,7 @@ class PrimaryEntry(PrimaryElement):
         return arch in self.arches
 
     def serialize_for_ai(self) -> Union[str, Dict[str, Any]]:
-        # TODO also do it for already resolved ones
-        if self.uri is None:
+        if self.country_mirror:
             return "country-mirror"
         ret: Dict[str, Any] = {"uri": self.uri}
         if self.arches is not None:
@@ -169,7 +168,7 @@ class MirrorModel(object):
 
     def _default_primary_entries(self) -> List[PrimaryEntry]:
         return [
-            PrimaryEntry(parent=self),  # Country mirror
+            PrimaryEntry(parent=self, country_mirror=True),
             PrimaryEntry(uri=DEFAULT_SUPPORTED_ARCHES_URI,
                          arches=PRIMARY_ARCHES, parent=self),
             PrimaryEntry(uri=DEFAULT_PORTS_ARCHES_URI,
@@ -246,13 +245,17 @@ class MirrorModel(object):
         else:
             self.disabled_components -= comps
 
-    def create_primary_candidate(self, uri: Optional[str]) -> PrimaryElement:
+    def create_primary_candidate(
+            self, uri: Optional[str],
+            country_mirror: bool = False) -> PrimaryElement:
+
         if self.legacy_primary:
             element = LegacyPrimarySection.new_from_default(parent=self)
             element.uri = uri
             return element
 
-        return PrimaryEntry(uri=uri, parent=self)
+        return PrimaryEntry(uri=uri, country_mirror=country_mirror,
+                            parent=self)
 
     def wants_geoip(self) -> bool:
         """ Tell whether geoip results would be useful. """
@@ -262,7 +265,7 @@ class MirrorModel(object):
         for candidate in self.primary_candidates:
             if self.legacy_primary and candidate.mirror_is_default():
                 yield candidate
-            elif not self.legacy_primary and candidate.uri is None:
+            elif not self.legacy_primary and candidate.country_mirror:
                 yield candidate
 
     def compatible_primary_candidates(self) -> Iterator[PrimaryElement]:
