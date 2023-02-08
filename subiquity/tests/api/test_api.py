@@ -1632,3 +1632,22 @@ class TestWSLSetupOptions(TestAPI):
 
             resp = await inst.get(endpoint)
             self.assertFalse(resp['install_language_support_packages'])
+
+
+class TestActiveDirectory(TestAPI):
+    @timeout()
+    async def test_ad(self):
+        async with start_server('examples/simple.json') as instance:
+            endpoint = '/active_directory'
+            ad_dict = await instance.get(endpoint)
+            # Starts empty
+            self.assertIsNone(ad_dict)
+
+            # POST succeeds
+            ad_dict = {
+                'domain_name': 'ubuntu.com',
+                'admin_name': 'u',
+                'password': 'u'
+            }
+            result = await instance.post(endpoint, ad_dict)
+            self.assertEqual(['OK'], result)

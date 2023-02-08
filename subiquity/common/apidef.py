@@ -25,6 +25,8 @@ from subiquitycore.models.network import (
 
 from subiquity.common.api.defs import api, Payload, simple_endpoint
 from subiquity.common.types import (
+    ADValidationResult,
+    ADConnectionInfo,
     AddPartitionV2,
     AnyStep,
     ApplicationState,
@@ -402,6 +404,16 @@ class API:
 
     class integrity:
         def GET() -> CasperMd5Results: ...
+
+    class active_directory:
+        def GET() -> Optional[ADConnectionInfo]: ...
+        # POST must validate the payload before configuring the controller,
+        # which may contain several errors as described in [ADValidationResult]
+        # simultaneously - such as invalid chars on the admin name and DC name
+        # starting with a hyphen or a dot. Thus this must returns a List
+        # of errors [ADValidationResult.OK] on success.
+        def POST(data: Payload[ADConnectionInfo]) \
+            -> List[ADValidationResult]: ...
 
 
 class LinkAction(enum.Enum):

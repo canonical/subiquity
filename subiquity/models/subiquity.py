@@ -46,6 +46,7 @@ from subiquitycore.lsb_release import lsb_release
 from subiquity.common.resources import get_users_and_groups
 from subiquity.server.types import InstallerChannels
 
+from .ad import ADModel
 from .codecs import CodecsModel
 from .drivers import DriversModel
 from .filesystem import FilesystemModel
@@ -175,6 +176,7 @@ class SubiquityModel:
             self.target = root
             self.chroot_prefix = []
 
+        self.ad = ADModel()
         self.codecs = CodecsModel()
         self.debconf_selections = DebconfSelectionsModel()
         self.drivers = DriversModel()
