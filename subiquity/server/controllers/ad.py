@@ -42,9 +42,10 @@ class ADController(SubiquityController):
         """ Configures this controller with the supplied info.
             Returns a list of errors if the info submitted is invalid or
             [ADValidationResult.OK] on success. """
-        result = check_domain_name(data.domain_name) | \
-            check_admin_user_name(data.admin_name) | \
-            check_password(data.password)
+        result = set()
+        result |= check_domain_name(data.domain_name)
+        result |= check_admin_user_name(data.admin_name)
+        result |= check_password(data.password)
 
         if len(result) > 0:
             return list(result)
