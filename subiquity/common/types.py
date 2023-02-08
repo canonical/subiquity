@@ -756,6 +756,7 @@ class ADConnectionInfo:
 
 class ADValidationResult(enum.Enum):
     OK = enum.auto()
+    ADMIN_NAME_EMPTY = enum.auto()
     ADMIN_NAME_BAD_FIRST_CHAR = enum.auto()
     ADMIN_NAME_BAD_CHARS = enum.auto()
     DCNAME_BAD_CHARS = enum.auto()
