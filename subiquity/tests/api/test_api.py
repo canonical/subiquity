@@ -1651,3 +1651,59 @@ class TestActiveDirectory(TestAPI):
             }
             result = await instance.post(endpoint, ad_dict)
             self.assertEqual(['OK'], result)
+
+            ad_dict = {
+                'domain_name': 'ubuntu.com',
+                'admin_name': 'u',
+            }
+            # Rejects empty password.
+            result = await instance.post('/active_directory', ad_dict)
+            self.assertIn('PASSWORD_EMPTY', result)
+
+            # Rejects invalid domain controller names.
+            ad_dict = {
+                'domain_name': '..ubuntu.com',
+                'admin_name': 'ubuntu',
+                'password': 'u',
+            }
+            result = await instance.post('/active_directory', ad_dict)
+            self.assertIn('DCNAME_BAD_DOTS', result)
+
+            ad_dict['domain_name'] = '-ubuntu.com-'
+            result = await instance.post('/active_directory', ad_dict)
+            self.assertIn('DCNAME_BAD_HYPHEN', result)
+
+            ad_dict['domain_name'] = '.ubuntu.com.'
+            result = await instance.post('/active_directory', ad_dict)
+            self.assertIn('DCNAME_BAD_DOTS', result)
+
+            ad_dict['domain_name'] = 'ubuntu_pro.com'
+            result = await instance.post('/active_directory', ad_dict)
+            self.assertIn('DCNAME_BAD_CHARS', result)
+
+            # Rejects invalid usernames.
+            ad_dict = {
+                'domain_name': 'ubuntu.com',
+                'password': 'u',
+            }
+            ad_dict['admin_name'] = 'ubuntu.pro'
+            result = await instance.post('/active_directory', ad_dict)
+            self.assertIn('ADMIN_NAME_BAD_CHARS', result)
+
+            ad_dict['admin_name'] = '-ubuntu'
+            result = await instance.post('/active_directory', ad_dict)
+            self.assertIn('ADMIN_NAME_BAD_FIRST_CHAR', result)
+
+            ad_dict['admin_name'] = '-ubuntu.pro'
+            result = await instance.post('/active_directory', ad_dict)
+            self.assertIn('ADMIN_NAME_BAD_CHARS', result)
+            self.assertIn('ADMIN_NAME_BAD_FIRST_CHAR', result)
+
+            ad_dict['admin_name'] = ''
+            result = await instance.post('/active_directory', ad_dict)
+            self.assertEqual(['ADMIN_NAME_EMPTY'], result)
+
+            # Notice that lowercase is not required.
+            ad_dict['admin_name'] = 'Ubuntu'
+            result = await instance.post('/active_directory', ad_dict)
+            self.assertEqual(['OK'], result)
