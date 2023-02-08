@@ -15,6 +15,7 @@
 
 import abc
 import asyncio
+import contextlib
 import logging
 import os
 import subprocess
@@ -294,10 +295,15 @@ class BaseNetworkController(BaseController):
                 if os.path.exists('/lib/netplan/generate'):
                     # If netplan appears to be installed, run generate to
                     # at least test that what we wrote is acceptable to
-                    # netplan.
+                    # netplan but clear the SNAP environment variable to
+                    # avoid that netplan thinks its running in a snap and
+                    # tries to call netplan over the system bus.
+                    env = os.environ.copy()
+                    with contextlib.suppress(KeyError):
+                        del env['SNAP']
                     await arun_command(
                         ['netplan', 'generate', '--root', self.root],
-                        check=True)
+                        check=True, env=env)
             else:
                 if devs_to_down or devs_to_delete:
                     try:
