@@ -656,8 +656,7 @@ class TestAdd(TestAPI):
             }
             resp = await inst.post('/storage/v2/add_partition', data)
             [sda] = match(resp['disks'], id=disk_id)
-            [sda1] = match(sda['partitions'], number=1)
-            [sda2] = match(sda['partitions'], number=2)
+            [sda1, sda2] = sda['partitions']
             self.assertEqual(gap['size'], sda1['size'] + sda2['size'])
 
     @timeout()
@@ -683,16 +682,12 @@ class TestAdd(TestAPI):
     async def test_v2_multi_disk_multi_boot(self):
         async with start_server('examples/many-nics-and-disks.json') as inst:
             resp = await inst.get('/storage/v2')
-            [vda] = match(resp['disks'], id='disk-vda')
-            [vdb] = match(resp['disks'], id='disk-vdb')
-            await inst.post('/storage/v2/reformat_disk',
-                            {'disk_id': vda['id']})
-            await inst.post('/storage/v2/reformat_disk',
-                            {'disk_id': vdb['id']})
-            await inst.post('/storage/v2/add_boot_partition',
-                            disk_id=vda['id'])
-            await inst.post('/storage/v2/add_boot_partition',
-                            disk_id=vdb['id'])
+            [d1] = match(resp['disks'], id='disk-vda')
+            [d2] = match(resp['disks'], id='disk-vdb')
+            await inst.post('/storage/v2/reformat_disk', {'disk_id': d1['id']})
+            await inst.post('/storage/v2/reformat_disk', {'disk_id': d2['id']})
+            await inst.post('/storage/v2/add_boot_partition', disk_id=d1['id'])
+            await inst.post('/storage/v2/add_boot_partition', disk_id=d2['id'])
             # should allow both disks to get a boot partition with no Exception
 
 
@@ -850,6 +845,7 @@ class TestEdit(TestAPI):
             disk_id = 'disk-sda'
             resp = await inst.get('/storage/v2')
             [orig_sda] = match(resp['disks'], id=disk_id)
+            [_, orig_sda2, _, orig_sda4] = orig_sda['partitions']
 
             data = {
                 'disk_id': disk_id,
@@ -862,24 +858,19 @@ class TestEdit(TestAPI):
             }
             resp = await inst.post('/storage/v2/edit_partition', data)
             [sda] = match(resp['disks'], id=disk_id)
-            [sda1] = match(sda['partitions'], number=1)
+            [sda1, sda2, sda3, sda4] = sda['partitions']
             self.assertIsNone(sda1['wipe'])
             self.assertEqual('/boot/efi', sda1['mount'])
             self.assertEqual('vfat', sda1['format'])
             self.assertTrue(sda1['boot'])
 
-            [sda2] = match(sda['partitions'], number=2)
-            [orig_sda2] = match(orig_sda['partitions'], number=2)
             self.assertEqual(orig_sda2, sda2)
 
-            [sda3] = match(sda['partitions'], number=3)
             self.assertIsNotNone(sda3['wipe'])
             self.assertEqual('/', sda3['mount'])
             self.assertEqual('ext4', sda3['format'])
             self.assertFalse(sda3['boot'])
 
-            [sda4] = match(sda['partitions'], number=4)
-            [orig_sda4] = match(orig_sda['partitions'], number=4)
             self.assertEqual(orig_sda4, sda4)
 
 
