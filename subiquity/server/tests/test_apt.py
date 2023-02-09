@@ -59,7 +59,7 @@ class TestAptConfigurer(SubiTestCase):
     def setUp(self):
         self.model = Mock()
         self.model.mirror = MirrorModel()
-        self.model.mirror.assign_primary_elected("http://mymirror")
+        self.model.mirror.create_primary_candidate("http://mymirror").elect()
         self.model.proxy = ProxyModel()
         self.model.locale.selected_language = "en_US.UTF-8"
         self.app = make_app(self.model)

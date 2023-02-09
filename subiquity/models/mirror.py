@@ -254,17 +254,6 @@ class MirrorModel(object):
 
         return PrimaryEntry(uri=uri, parent=self)
 
-    def replace_primary_candidates(self, uris: List[str]) -> None:
-        self.primary_candidates = \
-            [self.create_primary_candidate(uri) for uri in uris]
-
-    def assign_primary_elected(self, uri: str) -> None:
-        if self.legacy_primary:
-            LegacyPrimarySection.new_from_default(parent=self).elect()
-            self.primary_elected.uri = uri
-        else:
-            PrimaryEntry(uri=uri, parent=self).elect()
-
     def wants_geoip(self) -> bool:
         """ Tell whether geoip results would be useful. """
         return next(self.country_mirror_candidates(), None) is not None

@@ -273,24 +273,15 @@ class TestMirrorModel(unittest.TestCase):
         self.assertEqual(cfg["primary"], primary)
         self.assertEqual(cfg["version"], 1)
 
-    def test_replace_primary_candidates(self):
-        self.model.replace_primary_candidates(["http://single-valid"])
-        self.assertEqual(len(self.model.primary_candidates), 1)
-        self.assertEqual(self.model.primary_candidates[0].uri,
-                         "http://single-valid")
-
-        self.model.replace_primary_candidates(
-                ["http://valid1", "http://valid2"])
-        self.assertEqual(len(self.model.primary_candidates), 2)
-        self.assertEqual(self.model.primary_candidates[0].uri,
-                         "http://valid1")
-        self.assertEqual(self.model.primary_candidates[1].uri,
-                         "http://valid2")
-
-    def test_assign_primary_elected(self):
-        self.model.assign_primary_elected("http://mymirror.valid")
-        self.assertEqual(self.model.primary_elected.uri,
-                         "http://mymirror.valid")
+    def test_create_primary_candidate(self):
+        self.model.legacy_primary = False
+        candidate = self.model.create_primary_candidate(
+                "http://mymirror.valid")
+        self.assertEqual(candidate.uri, "http://mymirror.valid")
+        self.model.legacy_primary = True
+        candidate = self.model.create_primary_candidate(
+                "http://mymirror.valid")
+        self.assertEqual(candidate.uri, "http://mymirror.valid")
 
     def test_wants_geoip(self):
         country_mirror_candidates = mock.patch.object(

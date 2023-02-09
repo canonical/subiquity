@@ -220,7 +220,7 @@ class MirrorController(SubiquityController):
     def deserialize(self, data):
         # TODO what to do with the candidates?
         if data is not None:
-            self.model.assign_primary_elected(data)
+            self.model.create_primary_candidate(data).elect()
 
     def make_autoinstall(self):
         config = self.model.make_autoinstall()
@@ -278,13 +278,15 @@ class MirrorController(SubiquityController):
         if data.candidates is not None:
             if not data.candidates:
                 raise ValueError("cannot specify an empty list of candidates")
-            self.model.replace_primary_candidates(data.candidates)
+            uris = data.candidates
+            self.model.primary_candidates = \
+                [self.model.create_primary_candidate(uri) for uri in uris]
 
         if data.staged is not None:
             self.model.create_primary_candidate(data.staged).stage()
 
         if data.elected is not None:
-            self.model.assign_primary_elected(data.elected)
+            self.model.create_primary_candidate(data.elected).elect()
 
             # NOTE we could also do this unconditionally when generating the
             # autoinstall configuration. But doing it here gives the user the
