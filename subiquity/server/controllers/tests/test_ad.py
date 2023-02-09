@@ -76,7 +76,7 @@ class TestADValidation(TestCase):
         self.assertEqual({AdAdminNameValidation.EMPTY}, result)
 
         admin = 'ubuntu.pro'
-        result =AdValidators.admin_user_name(admin)
+        result = AdValidators.admin_user_name(admin)
         self.assertEqual({AdAdminNameValidation.INVALID_CHARS}, result)
 
         admin = '-ubuntu'
