@@ -76,9 +76,9 @@ class AdValidators:
             log.debug("admin name is empty")
             return {AdAdminNameValidation.EMPTY}
 
-# Ubiquity checks the admin name in two steps:
-# 1. validate the first char against '[a-zA-Z]'
-# 2. check the entire string against r'^[-a-zA-Z0-9_]+$'
+        # Ubiquity checks the admin name in two steps:
+        # 1. validate the first char against '[a-zA-Z]'
+        # 2. check the entire string against r'^[-a-zA-Z0-9_]+$'
         if not re.match('[a-zA-Z]', name[0]):
             result.add(AdAdminNameValidation.INVALID_FIRST_CHAR)
 
