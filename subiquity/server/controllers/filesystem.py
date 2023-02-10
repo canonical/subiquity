@@ -1241,7 +1241,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 raise Exception(
                     "must not use config: when installing core boot classic")
             self.model.apply_autoinstall_config(self.ai_data['config'])
-            self.model.swap = self.ai_data.get('swap')
+        self.model.swap = self.ai_data.get('swap')
         self.model.grub = self.ai_data.get('grub')
 
     def start(self):

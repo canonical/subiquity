@@ -154,6 +154,20 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertEqual(self.fsc.queued_probe_data, {})
         load.assert_not_called()
 
+    @parameterized.expand(((0,), ('1G',)))
+    async def test_layout_plus_swap(self, swapsize):
+        self.fsc.model = model = make_model(Bootloader.UEFI)
+        self.fsc.run_autoinstall_guided = mock.AsyncMock()
+
+        self.fsc.ai_data = {
+            'layout': {'name': 'direct'},
+            'swap': {'size': swapsize}
+        }
+
+        await self.fsc.convert_autoinstall_config()
+        curtin_cfg = model.render()
+        self.assertEqual(swapsize, curtin_cfg['swap']['size'])
+
     @mock.patch('subiquity.server.controllers.filesystem.open',
                 mock.mock_open())
     async def test_probe_once_unlocked_probe_data(self):
