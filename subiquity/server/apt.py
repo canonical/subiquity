@@ -114,13 +114,8 @@ class AptConfigurer:
 
     def apt_config(self, final: bool):
         cfg = {}
-        if final:
-            merge_config(cfg,
-                         self.app.base_model.mirror.get_apt_config_elected())
-        else:
-            merge_config(cfg,
-                         self.app.base_model.mirror.get_apt_config_staged())
-        merge_config(cfg, self.app.base_model.proxy.get_apt_config())
+        for model in self.app.base_model.mirror, self.app.base_model.proxy:
+            merge_config(cfg, model.get_apt_config(final=final))
         return {'apt': cfg}
 
     async def apply_apt_config(self, context, final: bool):

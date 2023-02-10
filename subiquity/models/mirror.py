@@ -210,19 +210,24 @@ class MirrorModel(object):
         config["disable_components"] = sorted(self.disabled_components)
         return config
 
+    def _get_apt_config_using_candidate(
+            self, candidate: PrimaryElement) -> Dict[str, Any]:
+        config = self._get_apt_config_common()
+        config["primary"] = candidate.config
+        return config
+
     def get_apt_config_staged(self) -> Dict[str, Any]:
         assert self.primary_staged is not None
-
-        config = self._get_apt_config_common()
-        config["primary"] = self.primary_staged.config
-        return config
+        return self._get_apt_config_using_candidate(self.primary_staged)
 
     def get_apt_config_elected(self) -> Dict[str, Any]:
         assert self.primary_elected is not None
+        return self._get_apt_config_using_candidate(self.primary_elected)
 
-        config = self._get_apt_config_common()
-        config["primary"] = self.primary_elected.config
-        return config
+    def get_apt_config(self, final: bool) -> Dict[str, Any]:
+        if not final:
+            return self.get_apt_config_staged()
+        return self.get_apt_config_elected()
 
     def set_country(self, cc):
         """ Set the URI of country-mirror candidates. """
