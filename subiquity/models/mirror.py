@@ -15,6 +15,7 @@
 
 import abc
 import copy
+import contextlib
 import logging
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, Union
 from urllib import parse
@@ -224,10 +225,28 @@ class MirrorModel(object):
         assert self.primary_elected is not None
         return self._get_apt_config_using_candidate(self.primary_elected)
 
-    def get_apt_config(self, final: bool) -> Dict[str, Any]:
+    def get_apt_config(
+            self, final: bool, has_network: bool) -> Dict[str, Any]:
         if not final:
             return self.get_apt_config_staged()
-        return self.get_apt_config_elected()
+        if has_network:
+            return self.get_apt_config_elected()
+        # We want the final configuration but have no network. In this scenario
+        # it is possible that we do not have an elected primary mirror.
+        if self.primary_elected is not None:
+            return self.get_apt_config_elected()
+        # Look for the first compatible candidate with a URI.
+        # There is no guarantee that it will be a working mirror since we have
+        # not tested it. But it is fine because it will not be used during the
+        # install. It will be placed in etc/apt/sources.list of the target
+        # system.
+        with contextlib.suppress(StopIteration):
+            candidate = next(filter(lambda c: c.uri is not None,
+                                    self.compatible_primary_candidates()))
+            return self._get_apt_config_using_candidate(candidate)
+        # Our last resort is to include no primary section. Curtin will use
+        # its own internal values.
+        return self._get_apt_config_common()
 
     def set_country(self, cc):
         """ Set the URI of country-mirror candidates. """
