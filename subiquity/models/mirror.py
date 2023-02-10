@@ -12,6 +12,61 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+""" This model mainly manages the mirror selection but also covers all the
+settings that can be found under the 'apt' autoinstall section.
+Some settings are handled by Subiquity but others are directly forwarded to
+curtin.
+
+There are a few notions worth explaining related to mirror selection:
+
+primary
+-------
+ * a "primary mirror" (or a "primary archive") is what curtin historically
+ considers as the main repository where it can download Debian packages.
+ Surprisingly, there is no notion of "secondary mirror". Instead there is the
+ "security archive" where we download the packages from the -security pocket.
+
+candidates
+----------
+ * a given install can have multiple primary candidate mirrors organized in a
+ list. Providing multiple candidates increases the likelihood of having one
+ tested successfully.
+ When the process of mirror selection is run automatically, the candidates will
+ be tested one after another until one passes the test. The one passing is then
+ marked "elected".
+
+staged
+------
+ * a primary mirror candidate can be "staged" or "staged for testing". The
+ staged mirror is the one that will be used if subiquity decides to trigger a
+ test of the apt configuration (a.k.a., mirror testing).
+
+elected
+-------
+ * if a primary mirror candidate is marked "elected", then it is used when
+ subiquity requests the final apt configuration. This means it will be used
+ as the primary mirror during the install (only if we are online), and will
+ end up in etc/apt/sources.list in the target system.
+
+primary section
+---------------
+ * the "primary section" is what corresponds to the whole 'apt->primary'
+ autoinstall section. Today we support two formats for this
+ section:
+   * the legacy format, inherited from curtin, where the whole section denotes
+   a single primary candidate. This format cannot be used to specify multiple
+   candidates.
+   * the more modern format where the primary section is split into multiple
+   "entries", each denoting a primary candidate.
+
+primary entry
+-------------
+ * represents a fragment of the 'apt->primary' autoinstall section. Each entry
+ can be used as a primary candidate.
+ * in the legacy format, the primary entry corresponds to the whole primary
+ section.
+ * in the new format, multiple primary entries make the primary section.
+"""
 
 import abc
 import copy
@@ -56,7 +111,10 @@ DEFAULT = {
 
 
 @attr.s(auto_attribs=True)
-class PrimaryElement(abc.ABC):
+class BasePrimaryEntry(abc.ABC):
+    """ Base class to represent an entry from the 'apt->primary' autoinstall
+    section. A BasePrimaryEntry is expected to have a URI and therefore can be
+    used as a primary candidate. """
     parent: "MirrorModel" = attr.ib(kw_only=True)
 
     def stage(self) -> None:
@@ -67,11 +125,14 @@ class PrimaryElement(abc.ABC):
 
     @abc.abstractmethod
     def serialize_for_ai(self) -> Any:
-        """ Serialize the element for autoinstall. """
+        """ Serialize the entry for autoinstall. """
 
 
 @attr.s(auto_attribs=True)
-class PrimaryEntry(PrimaryElement):
+class PrimaryEntry(BasePrimaryEntry):
+    """ Represents a single primary mirror candidate; which can be converted
+    to/from an entry of the 'apt->primary' autoinstall section in the modern
+    format. """
     # Having uri set to None is only valid for a country mirror.
     uri: Optional[str] = None
     # When arches is None, it is assumed that the mirror is compatible with the
@@ -110,10 +171,11 @@ class PrimaryEntry(PrimaryElement):
         return ret
 
 
-class LegacyPrimarySection(PrimaryElement):
-    """ Helper to manage a apt->primary autoinstall section.
-    The format is the same as the format expected by curtin, no more, no less.
-    """
+class LegacyPrimaryEntry(BasePrimaryEntry):
+    """ Represents a single primary mirror candidate; which can be converted
+    to/from the whole 'apt->primary' autoinstall section (legacy format).
+    The format is defined by curtin, so we make use of curtin to access
+    the elements. """
     def __init__(self, config: List[Any], *, parent: "MirrorModel") -> None:
         self.config = config
         super().__init__(parent=parent)
@@ -135,7 +197,7 @@ class LegacyPrimarySection(PrimaryElement):
         return self.uri == self.parent.default_mirror
 
     @classmethod
-    def new_from_default(cls, parent: "MirrorModel") -> "LegacyPrimarySection":
+    def new_from_default(cls, parent: "MirrorModel") -> "LegacyPrimaryEntry":
         return cls(copy.deepcopy(LEGACY_DEFAULT_PRIMARY_SECTION),
                    parent=parent)
 
@@ -156,16 +218,16 @@ class MirrorModel(object):
         self.config = copy.deepcopy(DEFAULT)
         self.legacy_primary = False
         self.disabled_components: Set[str] = set()
-        self.primary_elected: Optional[PrimaryElement] = None
-        self.primary_candidates: List[PrimaryElement] = \
+        self.primary_elected: Optional[BasePrimaryEntry] = None
+        self.primary_candidates: List[BasePrimaryEntry] = \
             self._default_primary_entries()
 
-        self.primary_staged: Optional[PrimaryElement] = None
+        self.primary_staged: Optional[BasePrimaryEntry] = None
 
         self.architecture = get_architecture()
         # Only useful for legacy primary sections
         self.default_mirror = \
-            LegacyPrimarySection.new_from_default(parent=self).uri
+            LegacyPrimaryEntry.new_from_default(parent=self).uri
 
     def _default_primary_entries(self) -> List[PrimaryEntry]:
         return [
@@ -177,10 +239,10 @@ class MirrorModel(object):
         ]
 
     def get_default_primary_candidates(
-            self, legacy: Optional[bool] = None) -> Sequence[PrimaryElement]:
+            self, legacy: Optional[bool] = None) -> Sequence[BasePrimaryEntry]:
         want_legacy = legacy if legacy is not None else self.legacy_primary
         if want_legacy:
-            return [LegacyPrimarySection.new_from_default(parent=self)]
+            return [LegacyPrimaryEntry.new_from_default(parent=self)]
         else:
             return self._default_primary_entries()
 
@@ -192,7 +254,7 @@ class MirrorModel(object):
             if self.legacy_primary:
                 # Legacy sections only support a single candidate
                 self.primary_candidates = \
-                    [LegacyPrimarySection(data.pop("primary"), parent=self)]
+                    [LegacyPrimaryEntry(data.pop("primary"), parent=self)]
             else:
                 self.primary_candidates = []
                 for section in data.pop("primary"):
@@ -212,7 +274,7 @@ class MirrorModel(object):
         return config
 
     def _get_apt_config_using_candidate(
-            self, candidate: PrimaryElement) -> Dict[str, Any]:
+            self, candidate: BasePrimaryEntry) -> Dict[str, Any]:
         config = self._get_apt_config_common()
         config["primary"] = candidate.config
         return config
@@ -271,12 +333,12 @@ class MirrorModel(object):
 
     def create_primary_candidate(
             self, uri: Optional[str],
-            country_mirror: bool = False) -> PrimaryElement:
+            country_mirror: bool = False) -> BasePrimaryEntry:
 
         if self.legacy_primary:
-            element = LegacyPrimarySection.new_from_default(parent=self)
-            element.uri = uri
-            return element
+            entry = LegacyPrimaryEntry.new_from_default(parent=self)
+            entry.uri = uri
+            return entry
 
         return PrimaryEntry(uri=uri, country_mirror=country_mirror,
                             parent=self)
@@ -285,14 +347,14 @@ class MirrorModel(object):
         """ Tell whether geoip results would be useful. """
         return next(self.country_mirror_candidates(), None) is not None
 
-    def country_mirror_candidates(self) -> Iterator[PrimaryElement]:
+    def country_mirror_candidates(self) -> Iterator[BasePrimaryEntry]:
         for candidate in self.primary_candidates:
             if self.legacy_primary and candidate.mirror_is_default():
                 yield candidate
             elif not self.legacy_primary and candidate.country_mirror:
                 yield candidate
 
-    def compatible_primary_candidates(self) -> Iterator[PrimaryElement]:
+    def compatible_primary_candidates(self) -> Iterator[BasePrimaryEntry]:
         for candidate in self.primary_candidates:
             if self.legacy_primary:
                 yield candidate

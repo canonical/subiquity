@@ -21,7 +21,7 @@ from subiquity.models.mirror import (
     countrify_uri,
     LEGACY_DEFAULT_PRIMARY_SECTION,
     MirrorModel,
-    LegacyPrimarySection,
+    LegacyPrimaryEntry,
     PrimaryEntry,
     )
 
@@ -94,28 +94,28 @@ class TestPrimaryEntry(unittest.TestCase):
             uri="http://mirror", arches=["amd64"], parent=model))
 
 
-class TestLegacyPrimarySection(unittest.TestCase):
+class TestLegacyPrimaryEntry(unittest.TestCase):
     def setUp(self):
         self.model = MirrorModel()
 
     def test_initializer(self):
-        primary = LegacyPrimarySection([], parent=self.model)
+        primary = LegacyPrimaryEntry([], parent=self.model)
         self.assertEqual(primary.config, [])
         self.assertEqual(primary.parent, self.model)
 
     def test_new_from_default(self):
-        primary = LegacyPrimarySection.new_from_default(parent=self.model)
+        primary = LegacyPrimaryEntry.new_from_default(parent=self.model)
         self.assertEqual(primary.config, LEGACY_DEFAULT_PRIMARY_SECTION)
 
     def test_get_uri(self):
         self.model.architecture = "amd64"
-        primary = LegacyPrimarySection(
+        primary = LegacyPrimaryEntry(
                 [{"uri": "http://myurl", "arches": "amd64"}],
                 parent=self.model)
         self.assertEqual(primary.uri, "http://myurl")
 
     def test_set_uri(self):
-        primary = LegacyPrimarySection.new_from_default(parent=self.model)
+        primary = LegacyPrimaryEntry.new_from_default(parent=self.model)
         primary.uri = "http://mymirror.invalid/"
         self.assertEqual(primary.uri, "http://mymirror.invalid/")
 
@@ -129,7 +129,7 @@ class TestMirrorModel(unittest.TestCase):
         self.model_legacy = MirrorModel()
         self.model_legacy.legacy_primary = True
         self.model_legacy.primary_candidates = [
-            LegacyPrimarySection(copy.deepcopy(
+            LegacyPrimaryEntry(copy.deepcopy(
                 LEGACY_DEFAULT_PRIMARY_SECTION), parent=self.model_legacy),
         ]
         self.candidate_legacy = self.model_legacy.primary_candidates[0]
@@ -188,7 +188,7 @@ class TestMirrorModel(unittest.TestCase):
         model.load_autoinstall_data(data)
         self.assertTrue(model.legacy_primary)
         self.assertEqual(model.primary_candidates,
-                         [LegacyPrimarySection.new_from_default(parent=model)])
+                         [LegacyPrimaryEntry.new_from_default(parent=model)])
 
         data = {"version": 2}
         model.load_autoinstall_data(data)
@@ -264,7 +264,7 @@ class TestMirrorModel(unittest.TestCase):
         self.model.disabled_components = set(["non-free"])
         self.model.legacy_primary = True
         self.model.primary_candidates = \
-            [LegacyPrimarySection(primary, parent=self.model)]
+            [LegacyPrimaryEntry(primary, parent=self.model)]
         self.model.primary_candidates[0].elect()
         cfg = self.model.make_autoinstall()
         self.assertEqual(cfg["disable_components"], ["non-free"])
