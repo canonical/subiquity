@@ -78,15 +78,17 @@ class AdValidators:
 
         # Ubiquity checks the admin name in two steps:
         # 1. validate the first char against '[a-zA-Z]'
-        # 2. check the entire string against r'^[-a-zA-Z0-9_]+$'
-        if not re.match('[a-zA-Z]', name[0]):
+        # 2. check the entire string against r'[-a-zA-Z0-9_]+$'
+        # Because re.match always "interprets" the regex as if contains "^"
+        # we don't need to specify name[0]
+        if not re.match('[a-zA-Z]', name):
             result.add(AdAdminNameValidation.INVALID_FIRST_CHAR)
 
         if len(name) == 1:
             return result
 
         regex = re.compile(ADMIN_RE)
-        if not regex.match(name[1:]):
+        if not regex.search(name[1:]):
             log.debug('<%s>: domain admin name contains invalid characters',
                       name)
             result.add(AdAdminNameValidation.INVALID_CHARS)
