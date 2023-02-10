@@ -91,7 +91,7 @@ class AdValidators:
                       name)
             result.add(AdAdminNameValidation.INVALID_CHARS)
 
-        if len(result) > 0:
+        if result:
             return result
 
         return {AdAdminNameValidation.OK}
@@ -100,7 +100,7 @@ class AdValidators:
     def password(value: str) -> AdPasswordValidation:
         """ Validates that the password is not empty. """
 
-        if len(value) < 1:
+        if not value:
             return AdPasswordValidation.EMPTY
 
         return AdPasswordValidation.OK
@@ -158,9 +158,9 @@ class AdValidators:
         regex = re.compile(DC_RE)
         if not regex.search(name):
             result.add(AdDomainNameValidation.INVALID_CHARS)
-            log.debug('<%s>: %s contain invalid characters', name, FIELD)
+            log.debug('<%s>: %s contains invalid characters', name, FIELD)
 
-        if len(result) > 0:
+        if result:
             return result
 
         return {AdDomainNameValidation.OK}
