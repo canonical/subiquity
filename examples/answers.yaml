@@ -23,7 +23,9 @@ Identity:
   hostname: ubuntu-server
   # ubuntu
   password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
-  ssh-import-id: lp:mwhudson
+  # We have a specific dry-run behaviour for heracles, making the call to
+  # ssh-import-id succeed unconditionally.
+  ssh-import-id: lp:heracles
 UbuntuPro:
   token: ""
 SnapList:
