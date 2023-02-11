@@ -46,7 +46,10 @@ class TestTimeZoneController(SubiTestCase):
 
     @mock.patch('subiquity.server.controllers.timezone.timedatectl_settz')
     @mock.patch('subiquity.server.controllers.timezone.timedatectl_gettz')
-    async def test_good_tzs(self, tdc_gettz, tdc_settz):
+    @mock.patch('subiquity.server.controllers.timezone.generate_possible_tzs')
+    async def test_good_tzs(self, generate_possible_tzs, tdc_gettz, tdc_settz):
+        generate_possible_tzs.return_value = \
+            ['', 'geoip', 'Pacific/Auckland', 'America/Denver']
         tdc_gettz.return_value = tz_utc
         goods = [
             # val - autoinstall value
