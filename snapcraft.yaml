@@ -64,7 +64,7 @@ parts:
     plugin: python
     source-type: git
     source: https://git.launchpad.net/curtin
-    source-commit: b08eecd68cf5f1bccf4255b3d00a77af51c159f7
+    source-commit: c56c51aaeca81ffbbda493eafd63b7ca3d6b4873
     build-packages:
       - shared-mime-info
       - zlib1g-dev
@@ -212,7 +212,7 @@ parts:
       - libnl-route-3-dev
     source: https://github.com/canonical/probert.git
     source-type: git
-    source-commit: d759d2cea51bd1f98ebf9dd12e5ea40e503dd6bc
+    source-commit: 630e33cc4c310d2191e8e5fce916c422c1e300fb
     requirements: [requirements.txt]
     stage:
       - "*"
