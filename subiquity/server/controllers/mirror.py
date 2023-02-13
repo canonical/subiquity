@@ -166,6 +166,7 @@ class MirrorController(SubiquityController):
         # Try each mirror one after another.
         compatibles = self.model.compatible_primary_candidates()
         for idx, candidate in enumerate(compatibles):
+            log.debug("Iterating over %s", candidate.serialize_for_ai())
             if idx != 0:
                 # Sleep before testing the next candidate..
                 log.debug("Will check next candiate mirror after 10 seconds.")
