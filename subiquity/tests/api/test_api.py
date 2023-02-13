@@ -1667,10 +1667,10 @@ class TestActiveDirectory(TestAPI):
 
             # Rejects invalid usernames.
             result = await instance.get(endpoint + '/check_admin_name',
-                                        admin_name='ubuntu.pro')
-            self.assertIn('INVALID_CHARS', result)
+                                        admin_name='ubuntu;pro')
+            self.assertEqual('INVALID_CHARS', result)
 
             # Notice that lowercase is not required.
             result = await instance.get(endpoint + '/check_admin_name',
-                                        admin_name='Ubuntu')
-            self.assertEqual(['OK'], result)
+                                        admin_name='$Ubuntu')
+            self.assertEqual('OK', result)

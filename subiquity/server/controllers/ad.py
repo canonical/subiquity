@@ -29,7 +29,11 @@ from subiquity.server.controller import SubiquityController
 log = logging.getLogger('subiquity.server.controllers.ad')
 
 DC_RE = r'^[a-zA-Z0-9.-]+$'
-ADMIN_RE = r'^[-a-zA-Z0-9_]+$'
+# Validation has changed since Ubiquity. See the following links on why:
+# https://bugs.launchpad.net/ubuntu-mate/+bug/1985971
+# https://github.com/canonical/subiquity/pull/1553#discussion_r1103063195
+# https://learn.microsoft.com/en-us/windows/win32/adschema/a-samaccountname
+AD_ACCOUNT_FORBIDDEN_CHARS = re.escape(r'@"/\[]:;|=,+*?<>')
 FIELD = "Domain Controller name"
 
 
@@ -50,9 +54,8 @@ class ADController(SubiquityController):
         await self.configured()
 
     async def check_admin_name_GET(self, admin_name: str) \
-            -> List[AdAdminNameValidation]:
-        result = AdValidators.admin_user_name(admin_name)
-        return list(result)
+            -> AdAdminNameValidation:
+        return AdValidators.admin_user_name(admin_name)
 
     async def check_domain_name_GET(self, domain_name: str) \
             -> List[AdDomainNameValidation]:
@@ -67,36 +70,21 @@ class ADController(SubiquityController):
 class AdValidators:
     """ Groups functions that validates the AD info supplied by users. """
     @staticmethod
-    def admin_user_name(name) -> Set[AdAdminNameValidation]:
-        """ Validates the supplied admin name against known patterns.
-            Returns a set of the errors detected. """
-        result = set()
+    def admin_user_name(name) -> AdAdminNameValidation:
+        """ Validates the supplied admin name against known patterns. """
 
         if len(name) == 0:
             log.debug("admin name is empty")
-            return {AdAdminNameValidation.EMPTY}
+            return AdAdminNameValidation.EMPTY
 
-        # Ubiquity checks the admin name in two steps:
-        # 1. validate the first char against '[a-zA-Z]'
-        # 2. check the entire string against r'[-a-zA-Z0-9_]+$'
-        # Because re.match always "interprets" the regex as if contains "^"
-        # we don't need to specify name[0]
-        if not re.match('[a-zA-Z]', name):
-            result.add(AdAdminNameValidation.INVALID_FIRST_CHAR)
-
-        if len(name) == 1:
-            return result
-
-        regex = re.compile(ADMIN_RE)
-        if not regex.search(name[1:]):
+        # Triggers error if any of the forbidden chars is present.
+        regex = re.compile(f"[{AD_ACCOUNT_FORBIDDEN_CHARS}]")
+        if regex.search(name):
             log.debug('<%s>: domain admin name contains invalid characters',
                       name)
-            result.add(AdAdminNameValidation.INVALID_CHARS)
+            return AdAdminNameValidation.INVALID_CHARS
 
-        if result:
-            return result
-
-        return {AdAdminNameValidation.OK}
+        return AdAdminNameValidation.OK
 
     @staticmethod
     def password(value: str) -> AdPasswordValidation:

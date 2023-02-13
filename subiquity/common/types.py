@@ -757,7 +757,6 @@ class ADConnectionInfo:
 class AdAdminNameValidation(enum.Enum):
     OK = enum.auto()
     EMPTY = enum.auto()
-    INVALID_FIRST_CHAR = enum.auto()
     INVALID_CHARS = enum.auto()
 
 

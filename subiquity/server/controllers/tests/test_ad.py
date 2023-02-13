@@ -73,23 +73,49 @@ class TestADValidation(TestCase):
     def test_username(self):
         admin = ''
         result = AdValidators.admin_user_name(admin)
-        self.assertEqual({AdAdminNameValidation.EMPTY}, result)
+        self.assertEqual(AdAdminNameValidation.EMPTY, result)
 
-        admin = 'ubuntu.pro'
+        admin = 'ubuntu;pro'
         result = AdValidators.admin_user_name(admin)
-        self.assertEqual({AdAdminNameValidation.INVALID_CHARS}, result)
+        self.assertEqual(AdAdminNameValidation.INVALID_CHARS, result)
 
-        admin = '-ubuntu'
+        admin = 'ubuntu:pro'
         result = AdValidators.admin_user_name(admin)
-        self.assertEqual({AdAdminNameValidation.INVALID_FIRST_CHAR},
-                         result)
+        self.assertEqual(AdAdminNameValidation.INVALID_CHARS, result)
 
-        admin = '_ubuntu.pro'
+        admin = '=ubuntu'
         result = AdValidators.admin_user_name(admin)
-        self.assertEqual({AdAdminNameValidation.INVALID_FIRST_CHAR,
-                         AdAdminNameValidation.INVALID_CHARS}, result)
+        self.assertEqual(AdAdminNameValidation.INVALID_CHARS, result)
+
+        admin = 'ubuntu@pro'
+        result = AdValidators.admin_user_name(admin)
+        self.assertEqual(AdAdminNameValidation.INVALID_CHARS, result)
+
+        admin = 'ubuntu+pro'
+        result = AdValidators.admin_user_name(admin)
+        self.assertEqual(AdAdminNameValidation.INVALID_CHARS, result)
+
+        admin = 'ubuntu\\'
+        result = AdValidators.admin_user_name(admin)
+        self.assertEqual(AdAdminNameValidation.INVALID_CHARS, result)
+
+        admin = 'ubuntu\"pro'
+        result = AdValidators.admin_user_name(admin)
+        self.assertEqual(AdAdminNameValidation.INVALID_CHARS, result)
+
+        admin = 'ubuntu[pro'
+        result = AdValidators.admin_user_name(admin)
+        self.assertEqual(AdAdminNameValidation.INVALID_CHARS, result)
+
+        admin = 'ubuntu>'
+        result = AdValidators.admin_user_name(admin)
+        self.assertEqual(AdAdminNameValidation.INVALID_CHARS, result)
+
+        admin = 'ubuntu*pro'
+        result = AdValidators.admin_user_name(admin)
+        self.assertEqual(AdAdminNameValidation.INVALID_CHARS, result)
 
         # Notice that lowercase is not required.
-        admin = 'Ubuntu'
+        admin = r'$Ubuntu{}'
         result = AdValidators.admin_user_name(admin)
-        self.assertEqual({AdAdminNameValidation.OK}, result)
+        self.assertEqual(AdAdminNameValidation.OK, result)
