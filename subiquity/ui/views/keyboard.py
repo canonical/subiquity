@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import locale
 import logging
 
@@ -24,6 +23,7 @@ from urwid import (
     Padding as UrwidPadding
     )
 
+from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.ui.buttons import (
     cancel_btn,
     ok_btn,
@@ -259,8 +259,7 @@ class Detector:
 
     def do_step(self, step_index):
         self.abort()
-        asyncio.create_task(
-            self._do_step(step_index))
+        run_bg_task(self._do_step(step_index))
 
     async def _do_step(self, step_index):
         log.debug("moving to step %s", step_index)
@@ -423,7 +422,7 @@ class KeyboardView(BaseView):
         layout = data['layout']
         variant = data.get('variant', layout.variants[0])
         setting = KeyboardSetting(layout=layout.code, variant=variant.code)
-        asyncio.create_task(self._check_toggle(setting))
+        run_bg_task(self._check_toggle(setting))
 
     async def _apply(self, setting):
         await self.controller.app.wait_with_text_dialog(
@@ -431,7 +430,7 @@ class KeyboardView(BaseView):
         self.controller.done()
 
     def really_done(self, setting):
-        asyncio.create_task(self._apply(setting))
+        run_bg_task(self._apply(setting))
 
     def cancel(self, result=None):
         self.controller.cancel()

@@ -13,11 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import enum
 import os
 import logging
 
+from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.context import with_context
 from subiquity.common.types import ShutdownMode
 from subiquity.server.controllers import ShutdownController
@@ -40,8 +40,8 @@ class SetupShutdownController(ShutdownController):
         self.mode = WSLShutdownMode.COMPLETE  # allow the complete mode
 
     def start(self):
-        asyncio.create_task(self._wait_install())
-        asyncio.create_task(self._run())
+        run_bg_task(self._wait_install())
+        run_bg_task(self._run())
 
     async def _wait_install(self):
         await self.app.controllers.Install.install_task

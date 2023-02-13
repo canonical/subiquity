@@ -89,8 +89,7 @@ class SnapdSnapInfoLoader:
 
     async def _start(self):
         with self.context:
-            task = self.tasks[None] = \
-                    asyncio.create_task(self._load_list())
+            task = self.tasks[None] = asyncio.create_task(self._load_list())
             self.load_list_task_created.set()
             try:
                 await task

@@ -23,6 +23,7 @@ from subiquitycore.file_util import (
     open_perms,
     set_log_perms,
 )
+from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command, run_command
 
@@ -73,8 +74,8 @@ class ShutdownController(SubiquityController):
         return self.app.interactive
 
     def start(self):
-        asyncio.create_task(self._wait_install())
-        asyncio.create_task(self._run())
+        run_bg_task(self._wait_install())
+        run_bg_task(self._run())
 
     async def _wait_install(self):
         await self.app.controllers.Install.install_task

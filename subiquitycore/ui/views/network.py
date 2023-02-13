@@ -19,7 +19,6 @@ Provides network device listings and extended network information
 
 """
 
-import asyncio
 import logging
 
 from urwid import (
@@ -27,6 +26,7 @@ from urwid import (
     Text,
     )
 
+from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.models.network import (
     DHCPState,
     NetDevAction,
@@ -297,7 +297,7 @@ class NetworkView(BaseView):
         self.show_stretchy_overlay(stretchy)
 
     def _action_INFO(self, name, dev_info):
-        asyncio.create_task(
+        run_bg_task(
             self._show_INFO(dev_info.name))
     _action_INFO.opens_dialog = True
 

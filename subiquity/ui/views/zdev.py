@@ -18,7 +18,6 @@
 Provides device activation and configuration on s390x
 
 """
-import asyncio
 import logging
 
 from urwid import (
@@ -26,6 +25,7 @@ from urwid import (
     Text,
     )
 
+from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.ui.actionmenu import (
     ActionMenu,
     )
@@ -84,8 +84,7 @@ class ZdevList(WidgetWrap):
         self.update(new_zdevinfos)
 
     def zdev_action(self, sender, action, zdevinfo):
-        asyncio.create_task(
-            self._zdev_action(action, zdevinfo))
+        run_bg_task(self._zdev_action(action, zdevinfo))
 
     def update(self, zdevinfos):
         rows = [TableRow([

@@ -21,6 +21,7 @@ from urwid import (
     Text,
     )
 
+from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import (
     cancel_btn,
@@ -266,7 +267,7 @@ class InstallConfirmation(Stretchy):
             self.app.ui.body.hide_continue()
         self.app.remove_global_overlay(self)
         if self.app.controllers.Progress.showing:
-            asyncio.create_task(self.app.confirm_install())
+            run_bg_task(self.app.confirm_install())
         else:
             self.app.next_screen(self.app.confirm_install())
 

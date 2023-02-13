@@ -16,7 +16,6 @@
 """ Module defining the view for third-party drivers installation.
 
 """
-import asyncio
 from enum import auto, Enum
 import logging
 from typing import List, Optional
@@ -26,6 +25,7 @@ from urwid import (
     Text,
     )
 
+from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.ui.buttons import back_btn, ok_btn
 from subiquitycore.ui.form import (
     Form,
@@ -111,7 +111,7 @@ class DriversView(BaseView):
                 _("Back"),
                 on_press=lambda sender: self.cancel())
         self._w = screen(rows, [self.back_btn])
-        asyncio.create_task(self._wait(install))
+        run_bg_task(self._wait(install))
         self.status = DriversViewStatus.WAITING
 
     async def _wait(self, install: bool) -> None:

@@ -24,6 +24,7 @@ from urwid import (
     Text,
     )
 
+from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.ui.buttons import other_btn
 from subiquitycore.ui.container import (
     Pile,
@@ -153,7 +154,7 @@ class ErrorReportStretchy(Stretchy):
         self.report = app.error_reporter.get(ref)
         self.pending = None
         if self.report is None:
-            asyncio.create_task(self._wait())
+            run_bg_task(self._wait())
         else:
             connect_signal(self.report, 'changed', self._report_changed)
             self.report.mark_seen()
