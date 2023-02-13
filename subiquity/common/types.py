@@ -755,23 +755,23 @@ class ADConnectionInfo:
 
 
 class AdAdminNameValidation(enum.Enum):
-    OK = enum.auto()
-    EMPTY = enum.auto()
-    INVALID_CHARS = enum.auto()
+    OK = 'OK'
+    EMPTY = 'Empty'
+    INVALID_CHARS = 'Contains invalid characters'
 
 
 class AdDomainNameValidation(enum.Enum):
-    OK = enum.auto()
-    EMPTY = enum.auto()
-    TOO_LONG = enum.auto()
-    INVALID_CHARS = enum.auto()
-    START_DOT = enum.auto()
-    END_DOT = enum.auto()
-    START_HYPHEN = enum.auto()
-    END_HYPHEN = enum.auto()
-    MULTIPLE_DOTS = enum.auto()
+    OK = 'OK'
+    EMPTY = 'Empty'
+    TOO_LONG = 'Too long'
+    INVALID_CHARS = 'Contains invalid characters'
+    START_DOT = 'Starts with a dot'
+    END_DOT = 'Ends with a dot'
+    START_HYPHEN = 'Starts with a hyphen'
+    END_HYPHEN = 'Ends with a hyphen'
+    MULTIPLE_DOTS = 'Contains multiple dots'
 
 
 class AdPasswordValidation(enum.Enum):
-    OK = enum.auto()
-    EMPTY = enum.auto()
+    OK = 'OK'
+    EMPTY = 'Empty'
