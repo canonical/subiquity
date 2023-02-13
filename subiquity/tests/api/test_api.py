@@ -1656,21 +1656,21 @@ class TestActiveDirectory(TestAPI):
 
             # Rejects empty password.
             result = await instance.get(endpoint+'/check_password',
-                                        password='')
+                                        data='')
             self.assertEqual('EMPTY', result)
 
             # Rejects invalid domain controller names.
             result = await instance.get(endpoint + '/check_domain_name',
-                                        domain_name='..ubuntu.com')
+                                        data='..ubuntu.com')
 
             self.assertIn('MULTIPLE_DOTS', result)
 
             # Rejects invalid usernames.
             result = await instance.get(endpoint + '/check_admin_name',
-                                        admin_name='ubuntu;pro')
+                                        data='ubuntu;pro')
             self.assertEqual('INVALID_CHARS', result)
 
             # Notice that lowercase is not required.
             result = await instance.get(endpoint + '/check_admin_name',
-                                        admin_name='$Ubuntu')
+                                        data='$Ubuntu')
             self.assertEqual('OK', result)
