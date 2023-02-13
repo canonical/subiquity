@@ -30,7 +30,9 @@ from subiquity.common.types import (
     MirrorGet,
     MirrorPost,
     MirrorPostResponse,
+    MirrorSelectionFallback,
     )
+from subiquity.models.mirror import filter_candidates
 from subiquity.server.apt import get_apt_configurer, AptConfigCheckError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
@@ -122,7 +124,11 @@ class MirrorController(SubiquityController):
                         "pin-priority",
                     ],
                 }
-            }
+            },
+            "fallback": {
+                "type": "string",
+                "enum": [fb.value for fb in MirrorSelectionFallback],
+            },
         }
     }
     model_name = "mirror"
@@ -220,9 +226,54 @@ class MirrorController(SubiquityController):
 
         candidate.elect()
 
+    async def apply_fallback(self):
+        fallback = self.model.fallback
+
+        if fallback == MirrorSelectionFallback.ABORT:
+            log.error("aborting the install since no primary mirror is"
+                      " usable")
+            # TODO there is no guarantee that raising this exception will
+            # actually abort the install. If this is raised from a request
+            # handler, for instance, it will just return a HTTP 500 error. For
+            # now, this is acceptable since we do not call apply_fallback from
+            # request handlers.
+            raise RuntimeError("aborting install since no mirror is usable")
+        elif fallback == MirrorSelectionFallback.OFFLINE_INSTALL:
+            log.warning("reverting to an offline install since no primary"
+                        " mirror is usable")
+            self.app.base_model.network.force_offline = True
+        elif fallback == MirrorSelectionFallback.CONTINUE_ANYWAY:
+            log.warning("continuing the install despite no usable mirror")
+            # Pick a candidate that is supposedly compatible and that has a
+            # URI. If it does not work, well that's too bad.
+            filters = [
+                lambda c: c.uri is not None,
+                lambda c: c.supports_arch(self.model.architecture),
+            ]
+            try:
+                candidate = next(filter_candidates(
+                    self.model.primary_candidates, filters=filters))
+            except StopIteration:
+                candidate = next(filter_candidates(
+                    self.model.get_default_primary_candidates(),
+                    filters=filters))
+            log.warning("deciding to elect primary mirror %s",
+                        candidate.serialize_for_ai())
+            candidate.elect()
+        else:
+            raise RuntimeError(f"invalid fallback value: {fallback}")
+
+    async def run_mirror_selection_or_fallback(self, context):
+        """ Perform the mirror selection and apply the configured fallback
+        method if no mirror is usable. """
+        try:
+            await self.find_and_elect_candidate_mirror(context=context)
+        except NoUsableMirrorError:
+            await self.apply_fallback()
+
     @with_context()
     async def apply_autoinstall_config(self, context):
-        await self.find_and_elect_candidate_mirror(context)
+        await self.run_mirror_selection_or_fallback(context)
 
     def on_geoip(self):
         if self.geoip_enabled:
@@ -267,7 +318,7 @@ class MirrorController(SubiquityController):
             # marked configured using a POST to mark_configured ; which is not
             # recommended. Clients should do a POST request to /mirror with
             # null as the body instead.
-            await self.find_and_elect_candidate_mirror(self.context)
+            await self.run_mirror_selection_or_fallback(self.context)
         await self.apt_configurer.apply_apt_config(self.context, final=True)
 
     async def run_mirror_testing(self, output: io.StringIO) -> None:
@@ -338,7 +389,7 @@ class MirrorController(SubiquityController):
                 ensure_elected_in_candidates()
 
             await self.configured()
-            return MirrorPostResponse.OK
+        return MirrorPostResponse.OK
 
     async def disable_components_GET(self) -> List[str]:
         return sorted(self.model.disabled_components)
@@ -383,3 +434,9 @@ class MirrorController(SubiquityController):
             raise MirrorCheckNotStartedError
         self.mirror_check.task.cancel()
         self.mirror_check = None
+
+    async def fallback_GET(self) -> MirrorSelectionFallback:
+        return self.model.fallback
+
+    async def fallback_POST(self, data: MirrorSelectionFallback):
+        self.model.fallback = data

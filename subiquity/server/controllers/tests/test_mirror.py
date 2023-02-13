@@ -20,6 +20,7 @@ import unittest
 from unittest import mock
 
 from subiquitycore.tests.mocks import make_app
+from subiquity.common.types import MirrorSelectionFallback
 from subiquity.models.mirror import MirrorModel
 from subiquity.server.apt import AptConfigCheckError
 from subiquity.server.controllers.mirror import MirrorController
@@ -59,6 +60,7 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
         self.assertIn("disable_components", config.keys())
         self.assertIn("mirror-selection", config.keys())
         self.assertIn("geoip", config.keys())
+        self.assertIn("fallback", config.keys())
         self.assertNotIn("primary", config.keys())
 
     def test_make_autoinstall_legacy(self):
@@ -71,6 +73,7 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
         self.assertIn("disable_components", config.keys())
         self.assertIn("primary", config.keys())
         self.assertIn("geoip", config.keys())
+        self.assertIn("fallback", config.keys())
         self.assertNotIn("mirror-selection", config.keys())
 
     async def test_run_mirror_testing(self):
@@ -209,3 +212,33 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
         await self.controller.find_and_elect_candidate_mirror(
                 self.controller.app.context)
         self.assertIsNone(self.controller.model.primary_elected)
+
+    async def test_apply_fallback(self):
+        model = self.controller.model = MirrorModel()
+        app = self.controller.app
+
+        model.fallback = MirrorSelectionFallback.ABORT
+        with self.assertRaises(RuntimeError):
+            await self.controller.apply_fallback()
+
+        model.fallback = MirrorSelectionFallback.OFFLINE_INSTALL
+        app.base_model.network.force_offline = False
+        await self.controller.apply_fallback()
+        self.assertTrue(app.base_model.network.force_offline)
+
+        model.fallback = MirrorSelectionFallback.CONTINUE_ANYWAY
+        app.base_model.network.force_offline = False
+        await self.controller.apply_fallback()
+        self.assertFalse(app.base_model.network.force_offline)
+
+    async def test_run_mirror_selection_or_fallback(self):
+        controller = self.controller
+
+        with mock.patch.object(controller, "apply_fallback") as mock_fallback:
+            with mock.patch.object(controller,
+                                   "find_and_elect_candidate_mirror",
+                                   side_effect=[None, NoUsableMirrorError]):
+                await controller.run_mirror_selection_or_fallback(context=None)
+                mock_fallback.assert_not_called()
+                await controller.run_mirror_selection_or_fallback(context=None)
+                mock_fallback.assert_called_once()

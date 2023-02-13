@@ -408,6 +408,14 @@ The [JSON schema](https://json-schema.org/) for autoinstall data is as follows:
                             "pin-priority"
                         ]
                     }
+                },
+                "fallback": {
+                    "type": "string",
+                    "enum": [
+                        "abort",
+                        "continue-anyway",
+                        "offline-install"
+                    ]
                 }
             }
         },

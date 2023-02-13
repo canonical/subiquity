@@ -83,6 +83,8 @@ from urllib import parse
 
 import attr
 
+from subiquity.common.types import MirrorSelectionFallback
+
 from curtin.commands.apt_config import (
     get_arch_mirrorconfig,
     get_mirror,
@@ -255,6 +257,9 @@ class MirrorModel(object):
         self.default_mirror = \
             LegacyPrimaryEntry.new_from_default(parent=self).uri
 
+        # What to do if automatic mirror-selection fails.
+        self.fallback = MirrorSelectionFallback.ABORT
+
     def _default_primary_entries(self) -> List[PrimaryEntry]:
         return [
             PrimaryEntry(parent=self, country_mirror=True),
@@ -294,12 +299,15 @@ class MirrorModel(object):
                     entry = PrimaryEntry.from_config(section, parent=self)
                     primary_candidates.append(entry)
         self.primary_candidates = primary_candidates
+        if "fallback" in data:
+            self.fallback = MirrorSelectionFallback(data.pop("fallback"))
 
         merge_config(self.config, data)
 
     def _get_apt_config_common(self) -> Dict[str, Any]:
         assert "disable_components" not in self.config
         assert "primary" not in self.config
+        assert "fallback" not in self.config
 
         config = copy.deepcopy(self.config)
         config["disable_components"] = sorted(self.disabled_components)
@@ -415,5 +423,6 @@ class MirrorModel(object):
         else:
             primary = [c.serialize_for_ai() for c in self.primary_candidates]
             config["mirror-selection"] = {"primary": primary}
+        config["fallback"] = self.fallback.value
 
         return config

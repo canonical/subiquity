@@ -201,6 +201,7 @@ Apt configuration, used both during the install and once booted into the target 
 This section historically used the same format as curtin, [which is documented here](https://curtin.readthedocs.io/en/latest/topics/apt_source.html). Nonetheless, some key differences with the format supported by curtin have been introduced:
 
  * Subiquity supports an alternative format for the `primary` section, allowing to configure a list of candidate primary mirrors. During installation, subiquity will automatically test the specified mirrors and select the first one that seems usable. This new behavior is only activated when the `primary` section is wrapped in the `mirror-selection` section.
+ * The `fallback` key controls what subiquity should do if no primary mirror is usable.
  * The `geoip` key controls whether a geoip lookup is done to determine the correct country mirror.
 
 The default is:
@@ -214,6 +215,7 @@ The default is:
                   uri: "http://archive.ubuntu.com/ubuntu"
                 - arches: [s390x, arm64, armhf, powerpc, ppc64el, riscv64]
                   uri: "http://ports.ubuntu.com/ubuntu-ports"
+        fallback: abort
         geoip: true
 
 #### mirror-selection
@@ -228,6 +230,17 @@ In the new format, the `primary` section expects a list of mirrors, which can be
  * a mapping with the following keys:
    * `uri`: the URI of the mirror to use, e.g., "http://fr.archive.ubuntu.com/ubuntu"
    * `arches`: an optional list of architectures supported by the mirror. By default, this list contains the current CPU architecture.
+
+#### fallback
+**type:** string (enumeration)
+**default:** abort
+
+Controls what subiquity should do if no primary mirror is usable.
+Supported values are:
+
+ * `abort` -> abort the installation
+ * `offline-install` -> revert to an offline installation
+ * `continue-anyway` -> attempt to install the system anyway (not recommended, the installation will certainly fail)
 
 #### geoip
 **type:** boolean

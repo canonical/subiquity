@@ -766,6 +766,12 @@ class MirrorGet:
     staged: Optional[str]
 
 
+class MirrorSelectionFallback(enum.Enum):
+    ABORT = 'abort'
+    CONTINUE_ANYWAY = 'continue-anyway'
+    OFFLINE_INSTALL = 'offline-install'
+
+
 @attr.s(auto_attribs=True)
 class ADConnectionInfo:
     admin_name: str = ""
