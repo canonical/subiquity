@@ -784,6 +784,7 @@ class AdDomainNameValidation(enum.Enum):
     START_HYPHEN = 'Starts with a hyphen'
     END_HYPHEN = 'Ends with a hyphen'
     MULTIPLE_DOTS = 'Contains multiple dots'
+    REALM_NOT_FOUND = 'Could not find the domain controller'
 
 
 class AdPasswordValidation(enum.Enum):

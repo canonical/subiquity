@@ -1682,6 +1682,11 @@ class TestActiveDirectory(TestAPI):
 
             self.assertIn('MULTIPLE_DOTS', result)
 
+            # Leverages the stub ping strategy
+            result = await instance.get(endpoint + '/check_domain_name',
+                                        data='rockbuntu.com')
+            self.assertIn('REALM_NOT_FOUND', result)
+
             # Rejects invalid usernames.
             result = await instance.get(endpoint + '/check_admin_name',
                                         data='ubuntu;pro')

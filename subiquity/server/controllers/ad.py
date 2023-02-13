@@ -16,6 +16,7 @@
 import logging
 import re
 from typing import List, Optional, Set
+from subiquitycore.utils import arun_command
 
 from subiquity.common.apidef import API
 from subiquity.common.types import (
@@ -37,11 +38,44 @@ AD_ACCOUNT_FORBIDDEN_CHARS = r'@"/\[]:;|=,+*?<>'
 FIELD = "Domain Controller name"
 
 
+class DcPingStrategy:
+    # Consider staging in the snap for future proof.
+    cmd = "/usr/sbin/realm"
+    arg = "discover"
+
+    async def ping(self, address: str) -> AdDomainNameValidation:
+        cp = await arun_command([self.cmd, self.arg, address], env={})
+        if cp.returncode:
+            return AdDomainNameValidation.REALM_NOT_FOUND
+
+        return AdDomainNameValidation.OK
+
+
+class StubDcPingStrategy(DcPingStrategy):
+    """ For testing purpose. This class doesn't talk to the network.
+        Instead its response follows the following rule:
+
+        - addresses starting with "r" return REALM_NOT_FOUND;
+        - addresses starting with any other letter return OK. """
+    async def ping(self, address: str) -> AdDomainNameValidation:
+        if address[0] == 'r':
+            return AdDomainNameValidation.REALM_NOT_FOUND
+
+        return AdDomainNameValidation.OK
+
+
 class ADController(SubiquityController):
     """ Implements the server part of the Active Directory feature. """
     model_name = "ad"
     endpoint = API.active_directory
     # No auto install key and schema for now due password handling uncertainty.
+
+    def __init__(self, app):
+        super().__init__(app)
+        if self.app.opts.dry_run:
+            self.ping_strgy = StubDcPingStrategy()
+        else:
+            self.ping_strgy = DcPingStrategy()
 
     async def GET(self) -> Optional[ADConnectionInfo]:
         """Returns the currently configured AD settings"""
@@ -60,6 +94,11 @@ class ADController(SubiquityController):
     async def check_domain_name_GET(self, domain_name: str) \
             -> List[AdDomainNameValidation]:
         result = AdValidators.domain_name(domain_name)
+        if AdDomainNameValidation.OK in result:
+            ping = await AdValidators.ping_domain_controller(domain_name,
+                                                             self.ping_strgy)
+            return [ping]
+
         return list(result)
 
     async def check_password_GET(self, password: str) -> AdPasswordValidation:
@@ -154,3 +193,14 @@ class AdValidators:
             return result
 
         return {AdDomainNameValidation.OK}
+
+    @staticmethod
+    async def ping_domain_controller(name: str, strategy: DcPingStrategy) \
+            -> AdDomainNameValidation:
+        """ Attempts to find the specified DC in the network.
+            Returns either OK, EMPTY or REALM_NOT_FOUND. """
+
+        if not name:
+            return AdDomainNameValidation.EMPTY
+
+        return await strategy.ping(name)
