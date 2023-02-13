@@ -151,6 +151,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._system_mounter: Optional[Mounter] = None
         self._role_to_device: Dict[str: _Device] = {}
         self._device_to_structure: Dict[_Device: snapdapi.OnVolume] = {}
+        self.autoinstall_applied: Optional[asyncio.Event] = None
         self.use_tpm: bool = False
 
     def is_core_boot_classic(self):
@@ -254,6 +255,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise Exception(
                 "autoinstall config did not create needed bootloader "
                 "partition")
+        self.autoinstall_applied.set()
 
     def update_devices(self, device_map):
         for action in self.model._actions:
@@ -943,6 +945,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def _start(self):
         context = pyudev.Context()
+        self.autoinstall_applied = asyncio.Event()
         self._monitor = pyudev.Monitor.from_netlink(context)
         self._monitor.filter_by(subsystem='block')
         self._monitor.enable_receiving()
@@ -988,3 +991,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if 'swap' in rendered:
             r['swap'] = rendered['swap']
         return r
+
+    async def autoinstall_applied_GET(self, wait: bool = False) -> bool:
+        if wait:
+            await self.autoinstall_applied.wait()
+        return self.autoinstall_applied.is_set()

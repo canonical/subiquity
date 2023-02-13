@@ -274,6 +274,11 @@ class API:
         class has_bitlocker:
             def GET() -> List[Disk]: ...
 
+        class autoinstall_applied:
+            def GET(wait: bool = False) -> bool:
+                """Poll or wait for storage autoinstall to be applied to the
+                model."""
+
         class v2:
             def GET(wait: bool = False) -> StorageResponseV2: ...
             def POST() -> StorageResponseV2: ...

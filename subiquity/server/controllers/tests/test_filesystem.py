@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import copy
 from unittest import mock, TestCase, IsolatedAsyncioTestCase
 import uuid
@@ -56,6 +57,9 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.app.prober = mock.Mock()
         self.fsc = FilesystemController(app=self.app)
         self.fsc._configured = True
+        # _start() would do this normally, but the rest of what _start() does
+        # is going to need mocking out.
+        self.fsc.autoinstall_applied = asyncio.Event()
 
     async def test_probe_restricted(self):
         await self.fsc._probe_once(context=None, restricted=True)
@@ -73,6 +77,36 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         await self.fsc._probe_once(context=None, restricted=False)
         actual = self.app.prober.get_storage.call_args.args[0]
         self.assertTrue({'defaults', 'os'} <= actual)
+
+    async def test_apply_autoinstall_poll(self):
+        self.fsc.model = model = make_model(Bootloader.UEFI)
+        model.is_root_mounted = mock.Mock(return_value=True)
+        model.needs_bootloader_partition = mock.Mock(return_value=False)
+        self.fsc._start_task = mock.AsyncMock()()
+        self.fsc._probe_task = mock.AsyncMock()
+        self.fsc._get_system_task = mock.AsyncMock()
+
+        self.fsc.load_autoinstall_data({})
+        await self.fsc.apply_autoinstall_config()
+        self.assertTrue(await self.fsc.autoinstall_applied_GET(False))
+
+    async def test_apply_autoinstall_uncalled_poll(self):
+        self.assertFalse(await self.fsc.autoinstall_applied_GET(False))
+
+    async def test_apply_autoinstall_wait(self):
+        self.fsc.model = model = make_model(Bootloader.UEFI)
+        model.is_root_mounted = mock.Mock(return_value=True)
+        model.needs_bootloader_partition = mock.Mock(return_value=False)
+        self.fsc._start_task = mock.AsyncMock()()
+        self.fsc._probe_task = mock.AsyncMock()
+        self.fsc._get_system_task = mock.AsyncMock()
+
+        async def longpoll():
+            self.assertTrue(await self.fsc.autoinstall_applied_GET(True))
+        task = asyncio.create_task(longpoll())
+        self.fsc.load_autoinstall_data({})
+        await self.fsc.apply_autoinstall_config()
+        await asyncio.wait_for(task, timeout=1)
 
 
 class TestGuided(TestCase):
