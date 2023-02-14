@@ -18,6 +18,7 @@ import logging
 
 import aiohttp
 
+from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.context import with_context
 
 from subiquity.client.controller import SubiquityTuiController
@@ -61,10 +62,10 @@ class ProgressController(SubiquityTuiController):
         pass
 
     def start(self):
-        asyncio.create_task(self._wait_status())
+        run_bg_task(self._wait_status())
 
     def click_reboot(self):
-        asyncio.create_task(self.send_reboot_and_wait())
+        run_bg_task(self.send_reboot_and_wait())
 
     async def send_reboot_and_wait(self):
         try:

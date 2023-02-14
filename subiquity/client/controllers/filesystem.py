@@ -17,6 +17,7 @@ import asyncio
 import logging
 from typing import Callable, Optional
 
+from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.lsb_release import lsb_release
 from subiquitycore.view import BaseView
 
@@ -67,7 +68,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
 
         status = await self.endpoint.guided.GET()
         if status.status == ProbeStatus.PROBING:
-            asyncio.create_task(self._wait_for_probing())
+            run_bg_task(self._wait_for_probing())
             self.current_view = SlowProbing(self)
         else:
             self.current_view = self.make_guided_ui(status)
@@ -273,18 +274,18 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         self.ui.set_body(FilesystemView(self.model, self))
 
     def guided_choice(self, choice):
-        asyncio.create_task(self._guided_choice(choice))
+        run_bg_task(self._guided_choice(choice))
 
     async def _guided(self):
         self.ui.set_body((await self.make_ui())())
 
     def guided(self):
-        asyncio.create_task(self._guided())
+        run_bg_task(self._guided())
 
     def reset(self, refresh_view):
         log.info("Resetting Filesystem model")
         self.app.ui.block_input = True
-        asyncio.create_task(self._reset(refresh_view))
+        run_bg_task(self._reset(refresh_view))
 
     async def _reset(self, refresh_view):
         status = await self.endpoint.reset.POST()

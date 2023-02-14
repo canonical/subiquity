@@ -28,6 +28,7 @@ import attr
 import yaml
 
 from subiquitycore.async_helpers import (
+    run_bg_task,
     run_in_thread,
     )
 from subiquitycore.context import with_context
@@ -142,7 +143,7 @@ class InstallController(SubiquityController):
     def stop_uu(self):
         if self.app.state == ApplicationState.UU_RUNNING:
             self.app.update_state(ApplicationState.UU_CANCELLING)
-            asyncio.create_task(self.stop_unattended_upgrades())
+            run_bg_task(self.stop_unattended_upgrades())
 
     def start(self):
         journald_listen([self.app.log_syslog_id], self.log_event)

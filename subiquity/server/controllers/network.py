@@ -22,7 +22,10 @@ import aiohttp
 
 import apt
 
-from subiquitycore.async_helpers import schedule_task
+from subiquitycore.async_helpers import (
+    run_bg_task,
+    schedule_task,
+    )
 from subiquitycore.context import with_context
 from subiquitycore.controllers.network import BaseNetworkController
 from subiquitycore.models.network import (
@@ -302,7 +305,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
         client = make_client_for_conn(NetEventAPI, conn)
         lock = asyncio.Lock()
         self.clients[socket_path] = (client, conn, lock)
-        asyncio.create_task(
+        run_bg_task(
             self._call_client(
                 client, conn, lock, "route_watch",
                 self.network_event_receiver.default_routes))
@@ -329,7 +332,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
     def _call_clients(self, meth_name, *args):
         for client, conn, lock in self.clients.values():
             log.debug('creating _call_client task %s %s', conn.path, meth_name)
-            asyncio.create_task(
+            run_bg_task(
                 self._call_client(client, conn, lock, meth_name, *args))
 
     def apply_starting(self):

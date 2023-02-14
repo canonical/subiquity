@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import logging
 import os
 
@@ -45,7 +44,7 @@ class LocaleController(SubiquityController):
             self.model.selected_language = os.environ.get("LANG") \
                 or self.autoinstall_default
 
-        asyncio.create_task(self.configured())
+        async_helpers.run_bg_task(self.configured())
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, 'source'), self._set_source)
 

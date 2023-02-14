@@ -26,6 +26,7 @@ from typing import Callable, Dict, List, Optional, Union
 import aiohttp
 
 from subiquitycore.async_helpers import (
+    run_bg_task,
     run_in_thread,
     )
 from subiquitycore.screen import is_linux_tty
@@ -172,7 +173,7 @@ class SubiquityClient(TuiApplication):
                 "killing foreground process %s before restarting",
                 self.fg_proc)
             self.restarting = True
-            asyncio.create_task(
+            run_bg_task(
                 self._kill_fg_proc(remove_last_screen, restart_server))
             return
         if remove_last_screen:
@@ -180,7 +181,7 @@ class SubiquityClient(TuiApplication):
         if restart_server:
             self.restarting = True
             self.ui.block_input = True
-            asyncio.create_task(self._restart_server())
+            run_bg_task(self._restart_server())
             return
         if self.urwid_loop is not None:
             self.urwid_loop.stop()
@@ -380,7 +381,7 @@ class SubiquityClient(TuiApplication):
                 [status.event_syslog_id],
                 self.subiquity_event_noninteractive,
                 seek=True)
-            asyncio.create_task(
+            run_bg_task(
                 self.noninteractive_watch_app_state(status))
 
     def _exception_handler(self, loop, context):
@@ -494,7 +495,7 @@ class SubiquityClient(TuiApplication):
             for i, controller in enumerate(self.controllers.instances):
                 if controller.name == last_screen:
                     index = i
-        asyncio.create_task(self._select_initial_screen(index))
+        run_bg_task(self._select_initial_screen(index))
 
     async def _select_initial_screen(self, index):
         endpoint_names = []
@@ -544,7 +545,7 @@ class SubiquityClient(TuiApplication):
         finally:
             self.in_make_view_cvar.reset(tok)
         if new.answers:
-            asyncio.create_task(self._start_answers_for_view(new, view))
+            run_bg_task(self._start_answers_for_view(new, view))
         with open(self.state_path('last-screen'), 'w') as fp:
             fp.write(new.name)
         return view
@@ -575,7 +576,7 @@ class SubiquityClient(TuiApplication):
         elif key == 'ctrl u':
             1/0
         elif key == 'ctrl b':
-            asyncio.create_task(self.client.dry_run.crash.GET())
+            run_bg_task(self.client.dry_run.crash.GET())
         else:
             super().unhandled_input(key)
 

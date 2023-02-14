@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import logging
 import os
 
@@ -25,6 +24,7 @@ from urwid import (
     Text,
     )
 
+from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.lsb_release import lsb_release
 from subiquitycore.ssh import summarize_host_keys
 from subiquitycore.ui.buttons import (
@@ -410,7 +410,7 @@ class HelpMenu(PopUpLauncher):
 
     def _open(self, sender):
         log.debug("open help menu")
-        asyncio.create_task(self._get_ssh_info())
+        run_bg_task(self._get_ssh_info())
 
     def create_pop_up(self):
         self._menu = OpenHelpMenu(self)

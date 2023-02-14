@@ -24,7 +24,10 @@ import urwid
 
 import yaml
 
-from subiquitycore.async_helpers import schedule_task
+from subiquitycore.async_helpers import (
+    run_bg_task,
+    schedule_task,
+    )
 from subiquitycore.core import Application
 from subiquitycore.palette import (
     PALETTE_COLOR,
@@ -247,10 +250,10 @@ class TuiApplication(Application):
             self.ui.set_body(view)
 
     def next_screen(self, coro=None):
-        asyncio.create_task(self.move_screen(1, coro))
+        run_bg_task(self.move_screen(1, coro))
 
     def prev_screen(self):
-        asyncio.create_task(self.move_screen(-1, None))
+        run_bg_task(self.move_screen(-1, None))
 
     def select_initial_screen(self):
         self.next_screen()

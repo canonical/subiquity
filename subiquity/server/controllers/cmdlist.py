@@ -21,6 +21,7 @@ from typing import List, Sequence, Union
 import attr
 from systemd import journal
 
+from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command
 
@@ -132,7 +133,7 @@ class LateController(CmdListController):
         return env
 
     def start(self):
-        asyncio.create_task(self._run())
+        run_bg_task(self._run())
 
     async def _run(self):
         Install = self.app.controllers.Install

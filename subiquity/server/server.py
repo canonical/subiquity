@@ -32,7 +32,10 @@ from systemd import journal
 
 import yaml
 
-from subiquitycore.async_helpers import run_in_thread
+from subiquitycore.async_helpers import (
+    run_bg_task,
+    run_in_thread,
+    )
 from subiquitycore.context import with_context
 from subiquitycore.core import Application
 from subiquitycore.file_util import (
@@ -426,7 +429,7 @@ class SubiquityServer(Application):
             self.update_state(ApplicationState.ERROR)
         if not self.running_error_commands:
             self.running_error_commands = True
-            asyncio.create_task(self._run_error_cmds(report))
+            run_bg_task(self._run_error_cmds(report))
 
     @web.middleware
     async def middleware(self, request, handler):
