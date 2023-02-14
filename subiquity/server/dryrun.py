@@ -38,6 +38,12 @@ class KnownMirror(TypedDict, total=False):
     strategy: str
 
 
+class SSHImport(TypedDict, total=True):
+    """ Dictionary type hints for a SSH key import. """
+    strategy: str
+    username: str
+
+
 @attr.s(auto_attribs=True)
 class DRConfig:
     """ Configuration for dry-run-only executions.
@@ -63,6 +69,12 @@ class DRConfig:
             {"pattern": r"/rand(om)?/?$", "strategy": "random"},
             {"pattern": r"/host/?$", "strategy": "run-on-host"},
             {"pattern": r"/fail(ed)?/?$", "strategy": "failure"},
+    ]
+
+    ssh_import_default_strategy: str = "run-on-host"
+    ssh_imports: List[SSHImport] = [
+        {"username": "heracles", "strategy": "success"},
+        {"username": "sisyphus", "strategy": "failure"},
     ]
 
     @classmethod
