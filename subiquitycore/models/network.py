@@ -417,10 +417,11 @@ class NetworkModel(object):
         self.devices_by_name = {}  # Maps interface names to NetworkDev
         self._has_network = False
         self.project = project
+        self.force_offline = False
 
     @property
     def has_network(self):
-        return self._has_network
+        return self._has_network and not self.force_offline
 
     @has_network.setter
     def has_network(self, val):
