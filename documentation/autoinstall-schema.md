@@ -335,6 +335,39 @@ The [JSON schema](https://json-schema.org/) for autoinstall data is as follows:
                 "primary": {
                     "type": "array"
                 },
+                "mirror-selection": {
+                    "type": "object",
+                    "properties": {
+                        "primary": {
+                            "type": "array",
+                            "items": {
+                                "anyOf": [
+                                    {
+                                        "type": "string",
+                                        "const": "country-mirror"
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "uri": {
+                                                "type": "string"
+                                            },
+                                            "arches": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        "required": [
+                                            "uri"
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
                 "geoip": {
                     "type": "boolean"
                 },

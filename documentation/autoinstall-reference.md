@@ -198,29 +198,53 @@ The proxy to configure both during installation and for apt and for snapd in the
 
 Apt configuration, used both during the install and once booted into the target system.
 
-This uses the same format as curtin which is documented at https://curtin.readthedocs.io/en/latest/topics/apt_source.html, with one extension: the `geoip` key controls whether a geoip lookup is done.
+This section historically used the same format as curtin, [which is documented here](https://curtin.readthedocs.io/en/latest/topics/apt_source.html). Nonetheless, some key differences with the format supported by curtin have been introduced:
+
+ * Subiquity supports an alternative format for the `primary` section, allowing to configure a list of candidate primary mirrors. During installation, subiquity will automatically test the specified mirrors and select the first one that seems usable. This new behavior is only activated when the `primary` section is wrapped in the `mirror-selection` section.
+ * The `geoip` key controls whether a geoip lookup is done to determine the correct country mirror.
 
 The default is:
 
     apt:
         preserve_sources_list: false
-        primary:
-            - arches: [i386, amd64]
-              uri: "http://archive.ubuntu.com/ubuntu"
-            - arches: [default]
-              uri: "http://ports.ubuntu.com/ubuntu-ports"
+        mirror-selection:
+            primary:
+                - country-mirror
+                - arches: [i386, amd64]
+                  uri: "http://archive.ubuntu.com/ubuntu"
+                - arches: [s390x, arm64, armhf, powerpc, ppc64el, riscv64]
+                  uri: "http://ports.ubuntu.com/ubuntu-ports"
         geoip: true
 
-If geoip is true and the mirror to be used is the default, a request is made to `https://geoip.ubuntu.com/lookup` and the mirror uri to be used changed to be `http://CC.archive.ubuntu.com/ubuntu` where `CC` is the country code returned by the lookup (or similar for ports). If this section is not interactive, the request is timed out after 10 seconds.
+#### mirror-selection
+if the `primary` section is contained within the `mirror-selection` section, the automatic mirror selection is enabled. This is the default in new installations.
 
-Any supplied config is merged with the default rather than replacing it.
+#### primary (when placed inside the `mirror-selection` section):
+**type:** custom, see below
 
-If you just want to set a mirror, use a config like this:
+In the new format, the `primary` section expects a list of mirrors, which can be expressed in two different ways:
+
+ * the special value `country-mirror`
+ * a mapping with the following keys:
+   * `uri`: the URI of the mirror to use, e.g., "http://fr.archive.ubuntu.com/ubuntu"
+   * `arches`: an optional list of architectures supported by the mirror. By default, this list contains the current CPU architecture.
+
+#### geoip
+**type:** boolean
+**default:**: `true`
+
+If geoip is true and one of the candidate primary mirrors has the special value `country-mirror`, a request is made to `https://geoip.ubuntu.com/lookup`. Subiquity then sets the mirror uri to `http://CC.archive.ubuntu.com/ubuntu` (or similar for ports) where `CC` is the country code returned by the lookup. If this section is not interactive, the request is timed out after 10 seconds.
+
+If the legacy behavior (i.e., without mirror-selection) is in use, the geoip request is made if the mirror to be used is the default, and its uri ends up getting replaced by the proper country mirror uri.
+
+If you just want to specify a mirror, you can use a configuration like this:
 
     apt:
-        primary:
-            - arches: [default]
-              uri: YOUR_MIRROR_GOES_HERE
+        mirror-selection:
+            primary:
+                - uri: YOUR_MIRROR_GOES_HERE
+                - country-mirror
+                - uri: http://archive.ubuntu.com/ubuntu
 
 To add a ppa:
 
