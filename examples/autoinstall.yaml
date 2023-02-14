@@ -16,11 +16,11 @@ network:
       dhcp6: yes
 debconf-selections: eek
 apt:
-  version: 2
-  primary:
-    - uri: http://mymirror.local/repository/Apt/ubuntu/
-    - country-mirror
-    - uri: http://archive.ubuntu.com/ubuntu
+  mirror-selection:
+    primary:
+      - uri: http://mymirror.local/repository/Apt/ubuntu/
+      - country-mirror
+      - uri: http://archive.ubuntu.com/ubuntu
   disable_components:
     - non-free
     - restricted

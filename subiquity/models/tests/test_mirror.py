@@ -179,32 +179,22 @@ class TestMirrorModel(unittest.TestCase):
         model = MirrorModel()
         data = {'disable_components': ['non-free']}
         model.load_autoinstall_data(data)
-        self.assertTrue(model.legacy_primary)
+        self.assertFalse(model.legacy_primary)
         model.primary_candidates[0].stage()
         self.assertEqual(set(['non-free']), model.disabled_components)
-
-        model = MirrorModel()
-        data = {"version": 1}
-        model.load_autoinstall_data(data)
-        self.assertTrue(model.legacy_primary)
-        self.assertEqual(model.primary_candidates,
-                         [LegacyPrimaryEntry.new_from_default(parent=model)])
-
-        data = {"version": 2}
-        model.load_autoinstall_data(data)
-        self.assertFalse(model.legacy_primary)
         self.assertEqual(model.primary_candidates,
                          model._default_primary_entries())
 
     def test_from_autoinstall_modern(self):
         data = {
-            "version": 2,
-            "primary": [
-                "country-mirror",
-                {
-                    "uri": "http://mirror",
-                },
-            ]
+            "mirror-selection": {
+                "primary": [
+                    "country-mirror",
+                    {
+                        "uri": "http://mirror",
+                    },
+                ],
+            }
         }
         model = MirrorModel()
         model.load_autoinstall_data(data)
@@ -256,8 +246,7 @@ class TestMirrorModel(unittest.TestCase):
         ]
         cfg = self.model.make_autoinstall()
         self.assertEqual(cfg["disable_components"], ["non-free"])
-        self.assertEqual(cfg["primary"], expected_primary)
-        self.assertEqual(cfg["version"], 2)
+        self.assertEqual(cfg["mirror-selection"]["primary"], expected_primary)
 
     def test_make_autoinstall_legacy_primary(self):
         primary = [{"arches": "amd64", "uri": "http://mirror"}]
@@ -269,7 +258,6 @@ class TestMirrorModel(unittest.TestCase):
         cfg = self.model.make_autoinstall()
         self.assertEqual(cfg["disable_components"], ["non-free"])
         self.assertEqual(cfg["primary"], primary)
-        self.assertEqual(cfg["version"], 1)
 
     def test_create_primary_candidate(self):
         self.model.legacy_primary = False

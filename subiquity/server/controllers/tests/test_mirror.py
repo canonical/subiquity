@@ -57,8 +57,21 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
         self.controller.model.primary_candidates[0].elect()
         config = self.controller.make_autoinstall()
         self.assertIn("disable_components", config.keys())
+        self.assertIn("mirror-selection", config.keys())
+        self.assertIn("geoip", config.keys())
+        self.assertNotIn("primary", config.keys())
+
+    def test_make_autoinstall_legacy(self):
+        self.controller.model = MirrorModel()
+        self.controller.model.legacy_primary = True
+        self.controller.model.primary_candidates = \
+            self.controller.model.get_default_primary_candidates()
+        self.controller.model.primary_candidates[0].elect()
+        config = self.controller.make_autoinstall()
+        self.assertIn("disable_components", config.keys())
         self.assertIn("primary", config.keys())
         self.assertIn("geoip", config.keys())
+        self.assertNotIn("mirror-selection", config.keys())
 
     async def test_run_mirror_testing(self):
         def fake_mirror_check_success(output):

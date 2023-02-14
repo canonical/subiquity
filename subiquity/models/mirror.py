@@ -50,18 +50,21 @@ elected
 
 primary section
 ---------------
- * the "primary section" is what corresponds to the whole 'apt->primary'
- autoinstall section. Today we support two formats for this
- section:
-   * the legacy format, inherited from curtin, where the whole section denotes
-   a single primary candidate. This format cannot be used to specify multiple
+ * the "primary section" contains the different candidates for mirror
+ selection. Today we support two different formats for this section, and the
+ position of the primary section is what determines which format is used.
+   * the legacy format, inherited from curtin, where the primary section is a
+   direct child of the 'apt' section. In this format, the whole section denotes
+   a single primary candidate so it cannot be used to specify multiple
    candidates.
-   * the more modern format where the primary section is split into multiple
-   "entries", each denoting a primary candidate.
+   * the more modern format where the primary section is a child of the
+   'mirror-selection' key (which itself is a child of 'apt'). In this format,
+   the section is split into multiple "entries", each denoting a primary
+   candidate.
 
 primary entry
 -------------
- * represents a fragment of the 'apt->primary' autoinstall section. Each entry
+ * represents a fragment of the 'primary' autoinstall section. Each entry
  can be used as a primary candidate.
  * in the legacy format, the primary entry corresponds to the whole primary
  section.
@@ -112,7 +115,7 @@ DEFAULT = {
 
 @attr.s(auto_attribs=True)
 class BasePrimaryEntry(abc.ABC):
-    """ Base class to represent an entry from the 'apt->primary' autoinstall
+    """ Base class to represent an entry from the 'primary' autoinstall
     section. A BasePrimaryEntry is expected to have a URI and therefore can be
     used as a primary candidate. """
     parent: "MirrorModel" = attr.ib(kw_only=True)
@@ -131,8 +134,8 @@ class BasePrimaryEntry(abc.ABC):
 @attr.s(auto_attribs=True)
 class PrimaryEntry(BasePrimaryEntry):
     """ Represents a single primary mirror candidate; which can be converted
-    to/from an entry of the 'apt->primary' autoinstall section in the modern
-    format. """
+    to/from an entry of the 'apt->mirror-selection->primary' autoinstall
+    section. """
     # Having uri set to None is only valid for a country mirror.
     uri: Optional[str] = None
     # When arches is None, it is assumed that the mirror is compatible with the
@@ -247,21 +250,27 @@ class MirrorModel(object):
             return self._default_primary_entries()
 
     def load_autoinstall_data(self, data):
-        self.legacy_primary = data.pop("version", 1) < 2
         if "disable_components" in data:
             self.disabled_components = set(data.pop("disable_components"))
+
+        if "primary" in data and "mirror-selection" in data:
+            raise ValueError("apt->primary and apt->mirror-selection are"
+                             " mutually exclusive.")
+        self.legacy_primary = "primary" in data
+
+        primary_candidates = self.get_default_primary_candidates()
         if "primary" in data:
-            if self.legacy_primary:
-                # Legacy sections only support a single candidate
-                self.primary_candidates = \
-                    [LegacyPrimaryEntry(data.pop("primary"), parent=self)]
-            else:
-                self.primary_candidates = []
-                for section in data.pop("primary"):
+            # Legacy sections only support a single candidate
+            primary_candidates = \
+                [LegacyPrimaryEntry(data.pop("primary"), parent=self)]
+        if "mirror-selection" in data:
+            mirror_selection = data.pop("mirror-selection")
+            if "primary" in mirror_selection:
+                primary_candidates = []
+                for section in mirror_selection["primary"]:
                     entry = PrimaryEntry.from_config(section, parent=self)
-                    self.primary_candidates.append(entry)
-        else:
-            self.primary_candidates = self.get_default_primary_candidates()
+                    primary_candidates.append(entry)
+        self.primary_candidates = primary_candidates
 
         merge_config(self.config, data)
 
@@ -368,7 +377,6 @@ class MirrorModel(object):
 
     def make_autoinstall(self):
         config = self._get_apt_config_common()
-        config["version"] = 1 if self.legacy_primary else 2
         if self.legacy_primary:
             # Only one candidate is supported
             if self.primary_elected is not None:
@@ -378,7 +386,7 @@ class MirrorModel(object):
                 to_serialize = self.primary_candidates[0]
             config["primary"] = to_serialize.serialize_for_ai()
         else:
-            config["primary"] = \
-                [c.serialize_for_ai() for c in self.primary_candidates]
+            primary = [c.serialize_for_ai() for c in self.primary_candidates]
+            config["mirror-selection"] = {"primary": primary}
 
         return config

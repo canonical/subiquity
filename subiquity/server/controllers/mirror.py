@@ -62,9 +62,34 @@ class MirrorController(SubiquityController):
     autoinstall_schema = {  # This is obviously incomplete.
         'type': 'object',
         'properties': {
-            'version': {'type': 'integer'},
             'preserve_sources_list': {'type': 'boolean'},
-            'primary': {'type': 'array'},
+            'primary': {'type': 'array'},  # Legacy format defined by curtin.
+            'mirror-selection': {
+                'type': 'object',
+                'properties': {
+                    'primary': {
+                        'type': 'array',
+                        'items': {
+                            'anyOf': [
+                                {
+                                    'type': 'string',
+                                    'const': 'country-mirror',
+                                }, {
+                                    'type': 'object',
+                                    'properties': {
+                                        'uri': {'type': 'string'},
+                                        'arches': {
+                                            'type': 'array',
+                                            'items': {'type': 'string'},
+                                        },
+                                    },
+                                    'required': ['uri'],
+                                },
+                            ],
+                        },
+                    },
+                },
+            },
             'geoip':  {'type': 'boolean'},
             'sources': {'type': 'object'},
             'disable_components': {
