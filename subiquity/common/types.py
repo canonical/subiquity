@@ -754,6 +754,11 @@ class MirrorPost:
     staged: Optional[str] = None
 
 
+class MirrorPostResponse(enum.Enum):
+    OK = "ok"
+    NO_USABLE_MIRROR = "no-usable-mirror"
+
+
 @attr.s(auto_attribs=True)
 class MirrorGet:
     elected: Optional[str]

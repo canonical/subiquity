@@ -45,6 +45,7 @@ from subiquity.common.types import (
     NetworkStatus,
     MirrorGet,
     MirrorPost,
+    MirrorPostResponse,
     MirrorCheckResponse,
     ModifyPartitionV2,
     ReformatDisk,
@@ -351,7 +352,9 @@ class API:
 
     class mirror:
         def GET() -> MirrorGet: ...
-        def POST(data: Payload[Optional[MirrorPost]]) -> None: ...
+
+        def POST(data: Payload[Optional[MirrorPost]]) \
+            -> MirrorPostResponse: ...
 
         class disable_components:
             def GET() -> List[str]: ...

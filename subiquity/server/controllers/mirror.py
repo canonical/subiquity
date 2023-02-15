@@ -29,6 +29,7 @@ from subiquity.common.types import (
     MirrorCheckStatus,
     MirrorGet,
     MirrorPost,
+    MirrorPostResponse,
     )
 from subiquity.server.apt import get_apt_configurer, AptConfigCheckError
 from subiquity.server.controller import SubiquityController
@@ -291,15 +292,23 @@ class MirrorController(SubiquityController):
         candidates = [c.uri for c in compatibles if c.uri is not None]
         return MirrorGet(elected=elected, candidates=candidates, staged=staged)
 
-    async def POST(self, data: Optional[MirrorPost]) -> None:
+    async def POST(self, data: Optional[MirrorPost]) -> MirrorPostResponse:
         log.debug(data)
         if data is None:
-            # TODO If we want the ability to fallback to an offline install, we
-            # probably need to catch NoUsableMirrorError and inform the client
-            # somehow.
-            await self.find_and_elect_candidate_mirror(self.context)
-            await self.configured()
-            return
+            # If this call fails with NoUsableMirrorError, we do not
+            # automatically apply the fallback method. Instead, we let the
+            # client know that they need to adjust something. Disabling the
+            # network would be one way to do it. The client can also consider
+            # this a fatal error and give up on the install.
+            try:
+                await self.find_and_elect_candidate_mirror(self.context)
+            except NoUsableMirrorError:
+                log.warning("found no usable mirror, expecting the client to"
+                            " give up or to adjust the settings and retry")
+                return MirrorPostResponse.NO_USABLE_MIRROR
+            else:
+                await self.configured()
+                return MirrorPostResponse.OK
 
         if data.candidates is not None:
             if not data.candidates:
@@ -329,6 +338,7 @@ class MirrorController(SubiquityController):
                 ensure_elected_in_candidates()
 
             await self.configured()
+            return MirrorPostResponse.OK
 
     async def disable_components_GET(self) -> List[str]:
         return sorted(self.model.disabled_components)
