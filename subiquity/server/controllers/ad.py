@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 import re
 from typing import List, Optional, Set
 from subiquitycore.utils import arun_command
@@ -43,6 +44,9 @@ class DcPingStrategy:
     cmd = "/usr/sbin/realm"
     arg = "discover"
 
+    def has_support(self) -> bool:
+        return os.access(self.cmd, os.X_OK)
+
     async def ping(self, address: str) -> AdDomainNameValidation:
         cp = await arun_command([self.cmd, self.arg, address], env={})
         if cp.returncode:
@@ -62,6 +66,9 @@ class StubDcPingStrategy(DcPingStrategy):
             return AdDomainNameValidation.REALM_NOT_FOUND
 
         return AdDomainNameValidation.OK
+
+    def has_support(self) -> bool:
+        return True
 
 
 class ADController(SubiquityController):
@@ -103,6 +110,13 @@ class ADController(SubiquityController):
 
     async def check_password_GET(self, password: str) -> AdPasswordValidation:
         return AdValidators.password(password)
+
+    async def has_support_GET(self) -> bool:
+        """ Returns True if the executables required
+            to configure AD are present in the live system."""
+        return self.ping_strgy.has_support()
+
+    # async def discover_domain_controller(self) -> str:
 
 
 # Helper out-of-class functions grouped.
