@@ -59,6 +59,7 @@ class TestAptConfigurer(SubiTestCase):
     def setUp(self):
         self.model = Mock()
         self.model.mirror = MirrorModel()
+        self.model.mirror.create_primary_candidate("http://mymirror").elect()
         self.model.proxy = ProxyModel()
         self.model.locale.selected_language = "en_US.UTF-8"
         self.app = make_app(self.model)
@@ -67,7 +68,7 @@ class TestAptConfigurer(SubiTestCase):
         self.astart_sym = "subiquity.server.apt.astart_command"
 
     def test_apt_config_noproxy(self):
-        config = self.configurer.apt_config()
+        config = self.configurer.apt_config(final=True)
         self.assertNotIn("http_proxy", config["apt"])
         self.assertNotIn("https_proxy", config["apt"])
 
@@ -75,7 +76,7 @@ class TestAptConfigurer(SubiTestCase):
         proxy = 'http://apt-cacher-ng:3142'
         self.model.proxy.proxy = proxy
 
-        config = self.configurer.apt_config()
+        config = self.configurer.apt_config(final=True)
         self.assertEqual(proxy, config["apt"]["http_proxy"])
         self.assertEqual(proxy, config["apt"]["https_proxy"])
 
@@ -135,6 +136,8 @@ class TestDRAptConfigurer(SubiTestCase):
     def setUp(self):
         self.model = Mock()
         self.model.mirror = MirrorModel()
+        self.candidate = self.model.mirror.primary_candidates[0]
+        self.candidate.stage()
         self.app = make_app(self.model)
         self.app.dr_cfg = DRConfig()
         self.app.dr_cfg.apt_mirror_check_default_strategy = "failure"
@@ -172,20 +175,20 @@ class TestDRAptConfigurer(SubiTestCase):
     async def test_run_apt_config_check_success(self):
         output = io.StringIO()
         self.app.dr_cfg.apt_mirror_check_default_strategy = "success"
-        self.model.mirror.set_mirror("http://default")
+        self.candidate.uri = "http://default"
         await self.configurer.run_apt_config_check(output)
 
     async def test_run_apt_config_check_failed(self):
         output = io.StringIO()
         self.app.dr_cfg.apt_mirror_check_default_strategy = "failure"
-        self.model.mirror.set_mirror("http://default")
+        self.candidate.uri = "http://default"
         with self.assertRaises(AptConfigCheckError):
             await self.configurer.run_apt_config_check(output)
 
     async def test_run_apt_config_check_random(self):
         output = io.StringIO()
         self.app.dr_cfg.apt_mirror_check_default_strategy = "random"
-        self.model.mirror.set_mirror("http://default")
+        self.candidate.uri = "http://default"
         with patch("subiquity.server.apt.random.choice",
                    return_value=self.configurer.apt_config_check_success):
             await self.configurer.run_apt_config_check(output)

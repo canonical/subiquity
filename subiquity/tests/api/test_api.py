@@ -319,7 +319,8 @@ class TestFlow(TestAPI):
                             source_id='ubuntu-server', search_drivers=True)
             await inst.post('/network')
             await inst.post('/proxy', '')
-            await inst.post('/mirror', 'http://us.archive.ubuntu.com/ubuntu')
+            await inst.post('/mirror',
+                            {'elected': 'http://us.archive.ubuntu.com/ubuntu'})
 
             resp = await inst.get('/storage/v2/guided?wait=true')
             [reformat] = resp['possible']

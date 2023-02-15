@@ -112,18 +112,20 @@ class AptConfigurer:
         self.install_tree: Optional[OverlayMountpoint] = None
         self.install_mount = None
 
-    def apt_config(self):
+    def apt_config(self, final: bool):
         cfg = {}
-        merge_config(cfg, self.app.base_model.mirror.get_apt_config())
-        merge_config(cfg, self.app.base_model.proxy.get_apt_config())
+        has_network = self.app.base_model.network.has_network
+        for model in self.app.base_model.mirror, self.app.base_model.proxy:
+            merge_config(cfg, model.get_apt_config(
+                final=final, has_network=has_network))
         return {'apt': cfg}
 
-    async def apply_apt_config(self, context):
+    async def apply_apt_config(self, context, final: bool):
         self.configured_tree = await self.mounter.setup_overlay([self.source])
 
         config_location = os.path.join(
             self.app.root, 'var/log/installer/subiquity-curtin-apt.conf')
-        generate_config_yaml(config_location, self.apt_config())
+        generate_config_yaml(config_location, self.apt_config(final))
         self.app.note_data_for_apport("CurtinAptConfig", config_location)
 
         await run_curtin_command(
@@ -320,7 +322,7 @@ class DryRunAptConfigurer(AptConfigurer):
     async def apt_config_check_failure(self, output: io.StringIO) -> None:
         """ Pretend that the execution of the apt-get update command results in
         a failure. """
-        url = self.app.base_model.mirror.get_mirror()
+        url = self.app.base_model.mirror.primary_staged.uri
         release = lsb_release(dry_run=True)["codename"]
         host = url.split("/")[2]
 
@@ -356,7 +358,7 @@ E: Some index files failed to download. They have been ignored,
     async def apt_config_check_success(self, output: io.StringIO) -> None:
         """ Pretend that the execution of the apt-get update command results in
         a success. """
-        url = self.app.base_model.mirror.get_mirror()
+        url = self.app.base_model.mirror.primary_staged.uri
         release = lsb_release(dry_run=True)["codename"]
 
         output.write(f"""\
@@ -383,7 +385,7 @@ Reading package lists...
             self.MirrorCheckStrategy.SUCCESS: success,
             self.MirrorCheckStrategy.RANDOM: random.choice([failure, success]),
         }
-        mirror_url = self.app.base_model.mirror.get_mirror()
+        mirror_url = self.app.base_model.mirror.primary_staged.uri
 
         strategy = strategies[self.get_mirror_check_strategy(mirror_url)]
 

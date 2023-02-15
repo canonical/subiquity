@@ -748,6 +748,20 @@ class MirrorCheckResponse:
 
 
 @attr.s(auto_attribs=True)
+class MirrorPost:
+    elected: Optional[str] = None
+    candidates: Optional[List[str]] = None
+    staged: Optional[str] = None
+
+
+@attr.s(auto_attribs=True)
+class MirrorGet:
+    elected: Optional[str]
+    candidates: List[str]
+    staged: Optional[str]
+
+
+@attr.s(auto_attribs=True)
 class ADConnectionInfo:
     admin_name: str = ""
     domain_name: str = ""

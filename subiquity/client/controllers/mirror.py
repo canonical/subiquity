@@ -16,7 +16,11 @@
 import asyncio
 import logging
 
-from subiquity.common.types import MirrorCheckStatus
+from subiquity.common.types import (
+    MirrorCheckStatus,
+    MirrorGet,
+    MirrorPost,
+    )
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.ui.views.mirror import MirrorView
 
@@ -28,13 +32,24 @@ class MirrorController(SubiquityTuiController):
     endpoint_name = 'mirror'
 
     async def make_ui(self):
-        mirror = await self.endpoint.GET()
+        mirror_response: MirrorGet = await self.endpoint.GET()
+        # We could do all sort of things with the list of candidate mirrors in
+        # the UI ; like suggesting the next mirror automatically if the first
+        # candidate fails. For now, we keep things simple.
+        if mirror_response.elected is not None:
+            url = mirror_response.elected
+        elif mirror_response.staged:
+            url = mirror_response.staged
+        else:
+            # Just in case there is no candidate at all.
+            # In practise, it should seldom happen.
+            url = next(iter(mirror_response.candidates), "")
         has_network = await self.app.client.network.has_network.GET()
         if has_network:
             check = await self.endpoint.check_mirror.progress.GET()
         else:
             check = None
-        return MirrorView(self, mirror, check=check, has_network=has_network)
+        return MirrorView(self, url, check=check, has_network=has_network)
 
     async def run_answers(self):
         async def wait_mirror_check() -> None:
@@ -59,4 +74,5 @@ class MirrorController(SubiquityTuiController):
 
     def done(self, mirror):
         log.debug("MirrorController.done next_screen mirror=%s", mirror)
-        self.app.next_screen(self.endpoint.POST(mirror))
+        self.app.next_screen(self.endpoint.POST(
+            MirrorPost(elected=mirror)))

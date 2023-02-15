@@ -46,6 +46,7 @@ from subiquitycore.ui.utils import button_pile, rewrap
 from subiquitycore.view import BaseView
 
 from subiquity.common.types import (
+    MirrorPost,
     MirrorCheckResponse,
     MirrorCheckStatus,
     )
@@ -173,7 +174,8 @@ class MirrorView(BaseView):
         async_helpers.run_bg_task(self._check_url(url))
 
     async def _check_url(self, url, cancel_ongoing=False):
-        await self.controller.endpoint.candidate.POST(url)
+        await self.controller.endpoint.POST(
+                MirrorPost(staged=url))
         await self.controller.endpoint.check_mirror.start.POST(True)
         state = await self.controller.endpoint.check_mirror.progress.GET()
         self.update_status(state)

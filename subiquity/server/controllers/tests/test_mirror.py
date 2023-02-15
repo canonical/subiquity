@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import io
 import jsonschema
 import unittest
@@ -23,6 +24,7 @@ from subiquity.models.mirror import MirrorModel
 from subiquity.server.apt import AptConfigCheckError
 from subiquity.server.controllers.mirror import MirrorController
 from subiquity.server.controllers.mirror import log as MirrorLogger
+from subiquity.server.controllers.mirror import NoUsableMirrorError
 
 
 class TestMirrorSchema(unittest.TestCase):
@@ -52,10 +54,24 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
 
     def test_make_autoinstall(self):
         self.controller.model = MirrorModel()
+        self.controller.model.primary_candidates[0].elect()
+        config = self.controller.make_autoinstall()
+        self.assertIn("disable_components", config.keys())
+        self.assertIn("mirror-selection", config.keys())
+        self.assertIn("geoip", config.keys())
+        self.assertNotIn("primary", config.keys())
+
+    def test_make_autoinstall_legacy(self):
+        self.controller.model = MirrorModel()
+        self.controller.model.legacy_primary = True
+        self.controller.model.primary_candidates = \
+            self.controller.model.get_default_primary_candidates()
+        self.controller.model.primary_candidates[0].elect()
         config = self.controller.make_autoinstall()
         self.assertIn("disable_components", config.keys())
         self.assertIn("primary", config.keys())
         self.assertIn("geoip", config.keys())
+        self.assertNotIn("mirror-selection", config.keys())
 
     async def test_run_mirror_testing(self):
         def fake_mirror_check_success(output):
@@ -105,3 +121,91 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
                       [record.msg for record in debug.records])
         self.assertIn("APT output follows",
                       [record.msg for record in debug.records])
+
+    @mock.patch("subiquity.server.controllers.mirror.asyncio.sleep")
+    async def test_find_and_elect_candidate_mirror(self, mock_sleep):
+        self.controller.app.context.child = contextlib.nullcontext
+        self.controller.app.base_model.network.has_network = True
+        self.controller.model = MirrorModel()
+        self.controller.network_configured_event.set()
+        self.controller.proxy_configured_event.set()
+        self.controller.cc_event.set()
+
+        # Test with no candidate
+        self.controller.model.primary_elected = None
+        self.controller.model.primary_candidates = []
+        with self.assertRaises(NoUsableMirrorError):
+            await self.controller.find_and_elect_candidate_mirror(
+                    self.controller.app.context)
+        self.assertIsNone(self.controller.model.primary_elected)
+
+        # Test one succeeding candidate
+        self.controller.model.primary_elected = None
+        self.controller.model.primary_candidates = \
+            [self.controller.model.create_primary_candidate("http://mirror")]
+        with mock.patch.object(self.controller, "try_mirror_checking_once"):
+            await self.controller.find_and_elect_candidate_mirror(
+                    self.controller.app.context)
+        self.assertEqual(self.controller.model.primary_elected.uri,
+                         "http://mirror")
+
+        # Test one succeeding candidate, on second try
+        self.controller.model.primary_elected = None
+        self.controller.model.primary_candidates = \
+            [self.controller.model.create_primary_candidate("http://mirror")]
+        with mock.patch.object(self.controller, "try_mirror_checking_once",
+                               side_effect=(AptConfigCheckError, None)):
+            await self.controller.find_and_elect_candidate_mirror(
+                    self.controller.app.context)
+        self.assertEqual(self.controller.model.primary_elected.uri,
+                         "http://mirror")
+
+        # Test with a single candidate, failing twice
+        self.controller.model.primary_elected = None
+        self.controller.model.primary_candidates = \
+            [self.controller.model.create_primary_candidate("http://mirror")]
+        with mock.patch.object(self.controller, "try_mirror_checking_once",
+                               side_effect=AptConfigCheckError):
+            with self.assertRaises(NoUsableMirrorError):
+                await self.controller.find_and_elect_candidate_mirror(
+                        self.controller.app.context)
+        self.assertIsNone(self.controller.model.primary_elected)
+
+        # Test with one candidate failing twice, then one succeeding
+        self.controller.model.primary_elected = None
+        self.controller.model.primary_candidates = [
+            self.controller.model.create_primary_candidate("http://failed"),
+            self.controller.model.create_primary_candidate("http://success"),
+        ]
+        with mock.patch.object(
+                self.controller, "try_mirror_checking_once",
+                side_effect=(AptConfigCheckError, AptConfigCheckError, None)):
+            await self.controller.find_and_elect_candidate_mirror(
+                    self.controller.app.context)
+        self.assertEqual(self.controller.model.primary_elected.uri,
+                         "http://success")
+
+        # Test with an unresolved country mirror
+        self.controller.model.primary_elected = None
+        self.controller.model.primary_candidates = [
+            self.controller.model.create_primary_candidate(
+                uri=None, country_mirror=True),
+            self.controller.model.create_primary_candidate("http://success"),
+        ]
+        with mock.patch.object(self.controller, "try_mirror_checking_once"):
+            await self.controller.find_and_elect_candidate_mirror(
+                    self.controller.app.context)
+        self.assertEqual(self.controller.model.primary_elected.uri,
+                         "http://success")
+
+    async def test_find_and_elect_candidate_mirror_no_network(self):
+        self.controller.app.context.child = contextlib.nullcontext
+        self.controller.app.base_model.network.has_network = False
+        self.controller.model = MirrorModel()
+        self.controller.network_configured_event.set()
+        self.controller.proxy_configured_event.set()
+        self.controller.cc_event.set()
+
+        await self.controller.find_and_elect_candidate_mirror(
+                self.controller.app.context)
+        self.assertIsNone(self.controller.model.primary_elected)

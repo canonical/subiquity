@@ -27,12 +27,19 @@ from subiquity.common.apidef import API
 from subiquity.common.types import (
     MirrorCheckResponse,
     MirrorCheckStatus,
+    MirrorGet,
+    MirrorPost,
     )
 from subiquity.server.apt import get_apt_configurer, AptConfigCheckError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
 
 log = logging.getLogger('subiquity.server.controllers.mirror')
+
+
+class NoUsableMirrorError(Exception):
+    """ Exception to be raised when none of the candidate mirrors passed the
+    test. """
 
 
 class MirrorCheckNotStartedError(Exception):
@@ -56,7 +63,33 @@ class MirrorController(SubiquityController):
         'type': 'object',
         'properties': {
             'preserve_sources_list': {'type': 'boolean'},
-            'primary': {'type': 'array'},
+            'primary': {'type': 'array'},  # Legacy format defined by curtin.
+            'mirror-selection': {
+                'type': 'object',
+                'properties': {
+                    'primary': {
+                        'type': 'array',
+                        'items': {
+                            'anyOf': [
+                                {
+                                    'type': 'string',
+                                    'const': 'country-mirror',
+                                }, {
+                                    'type': 'object',
+                                    'properties': {
+                                        'uri': {'type': 'string'},
+                                        'arches': {
+                                            'type': 'array',
+                                            'items': {'type': 'string'},
+                                        },
+                                    },
+                                    'required': ['uri'],
+                                },
+                            ],
+                        },
+                    },
+                },
+            },
             'geoip':  {'type': 'boolean'},
             'sources': {'type': 'object'},
             'disable_components': {
@@ -96,12 +129,20 @@ class MirrorController(SubiquityController):
     def __init__(self, app):
         super().__init__(app)
         self.geoip_enabled = True
-        self.app.hub.subscribe(InstallerChannels.GEOIP, self.on_geoip)
-        self.app.hub.subscribe(
-            (InstallerChannels.CONFIGURED, 'source'), self.on_source)
         self.cc_event = asyncio.Event()
         self.configured_event = asyncio.Event()
         self.source_configured_event = asyncio.Event()
+        self.network_configured_event = asyncio.Event()
+        self.proxy_configured_event = asyncio.Event()
+        self.app.hub.subscribe(InstallerChannels.GEOIP, self.on_geoip)
+        self.app.hub.subscribe(
+            (InstallerChannels.CONFIGURED, 'source'), self.on_source)
+        self.app.hub.subscribe(
+            (InstallerChannels.CONFIGURED, 'network'),
+            self.network_configured_event.set)
+        self.app.hub.subscribe(
+            (InstallerChannels.CONFIGURED, 'proxy'),
+            self.proxy_configured_event.set)
         self._apt_config_key = None
         self._apply_apt_config_task = SingleInstanceTask(
             self._promote_mirror)
@@ -113,7 +154,7 @@ class MirrorController(SubiquityController):
             return
         geoip = data.pop('geoip', True)
         self.model.load_autoinstall_data(data)
-        self.geoip_enabled = geoip and self.model.mirror_is_default()
+        self.geoip_enabled = geoip and self.model.wants_geoip()
 
     async def try_mirror_checking_once(self) -> None:
         """ Try mirror checking and log result. """
@@ -130,8 +171,12 @@ class MirrorController(SubiquityController):
             for line in output.getvalue().splitlines():
                 log.debug("%s", line)
 
-    @with_context()
-    async def apply_autoinstall_config(self, context):
+    async def find_and_elect_candidate_mirror(self, context):
+        # Ensure we block until the proxy and network models have been
+        # configured. This is particularly important in partially-automated
+        # installs.
+        await self.network_configured_event.wait()
+        await self.proxy_configured_event.wait()
         if self.geoip_enabled:
             try:
                 with context.child('waiting'):
@@ -143,13 +188,40 @@ class MirrorController(SubiquityController):
             log.debug("Skipping mirror check since network is not available.")
             return
 
-        try:
-            await self.try_mirror_checking_once()
-        except AptConfigCheckError:
-            log.debug("Retrying in 10 seconds...")
+        # Try each mirror one after another.
+        compatibles = self.model.compatible_primary_candidates()
+        for idx, candidate in enumerate(compatibles):
+            log.debug("Iterating over %s", candidate.serialize_for_ai())
+            if idx != 0:
+                # Sleep before testing the next candidate..
+                log.debug("Will check next candiate mirror after 10 seconds.")
+                await asyncio.sleep(10)
+            if candidate.uri is None:
+                log.debug("Skipping unresolved country mirror")
+                continue
+            candidate.stage()
+            try:
+                await self.try_mirror_checking_once()
+            except AptConfigCheckError:
+                log.debug("Retrying in 10 seconds...")
+            else:
+                break
             await asyncio.sleep(10)
-            # If the test fails a second time, consider it fatal.
-            await self.try_mirror_checking_once()
+            # If the test fails a second time, give up on this mirror.
+            try:
+                await self.try_mirror_checking_once()
+            except AptConfigCheckError:
+                log.debug("Mirror is not usable.")
+            else:
+                break
+        else:
+            raise NoUsableMirrorError
+
+        candidate.elect()
+
+    @with_context()
+    async def apply_autoinstall_config(self, context):
+        await self.find_and_elect_candidate_mirror(context)
 
     def on_geoip(self):
         if self.geoip_enabled:
@@ -166,10 +238,15 @@ class MirrorController(SubiquityController):
         self.source_configured_event.set()
 
     def serialize(self):
-        return self.model.get_mirror()
+        # TODO what to do with the candidates?
+        if self.model.primary_elected is not None:
+            return self.model.primary_elected.uri
+        return None
 
     def deserialize(self, data):
-        self.model.set_mirror(data)
+        # TODO what to do with the candidates?
+        if data is not None:
+            self.model.create_primary_candidate(data).elect()
 
     def make_autoinstall(self):
         config = self.model.make_autoinstall()
@@ -184,28 +261,74 @@ class MirrorController(SubiquityController):
     async def _promote_mirror(self):
         await asyncio.gather(self.source_configured_event.wait(),
                              self.configured_event.wait())
-        await self.apt_configurer.apply_apt_config(self.context)
+        if self.model.primary_elected is None:
+            # NOTE: In practice, this should only happen if the mirror was
+            # marked configured using a POST to mark_configured ; which is not
+            # recommended. Clients should do a POST request to /mirror with
+            # null as the body instead.
+            await self.find_and_elect_candidate_mirror(self.context)
+        await self.apt_configurer.apply_apt_config(self.context, final=True)
 
     async def run_mirror_testing(self, output: io.StringIO) -> None:
         await self.source_configured_event.wait()
-        await self.apt_configurer.apply_apt_config(self.context)
+        await self.apt_configurer.apply_apt_config(self.context, final=False)
         await self.apt_configurer.run_apt_config_check(output)
 
     async def wait_config(self):
         await self._apply_apt_config_task.wait()
         return self.apt_configurer
 
-    async def GET(self) -> str:
-        return self.model.get_mirror()
+    async def GET(self) -> MirrorGet:
+        elected: Optional[str] = None
+        staged: Optional[str] = None
+        if self.model.primary_elected is not None:
+            elected = self.model.primary_elected.uri
+        if self.model.primary_staged is not None:
+            staged = self.model.primary_staged.uri
 
-    async def POST(self, data: str):
+        compatibles = self.model.compatible_primary_candidates()
+        # Skip the country-mirrors if they have not been resolved yet.
+        candidates = [c.uri for c in compatibles if c.uri is not None]
+        return MirrorGet(elected=elected, candidates=candidates, staged=staged)
+
+    async def POST(self, data: Optional[MirrorPost]) -> None:
         log.debug(data)
-        self.model.set_mirror(data)
-        await self.configured()
+        if data is None:
+            # TODO If we want the ability to fallback to an offline install, we
+            # probably need to catch NoUsableMirrorError and inform the client
+            # somehow.
+            await self.find_and_elect_candidate_mirror(self.context)
+            await self.configured()
+            return
 
-    async def candidate_POST(self, url: str) -> None:
-        log.debug(url)
-        self.model.set_mirror(url)
+        if data.candidates is not None:
+            if not data.candidates:
+                raise ValueError("cannot specify an empty list of candidates")
+            uris = data.candidates
+            self.model.primary_candidates = \
+                [self.model.create_primary_candidate(uri) for uri in uris]
+
+        if data.staged is not None:
+            self.model.create_primary_candidate(data.staged).stage()
+
+        if data.elected is not None:
+            self.model.create_primary_candidate(data.elected).elect()
+
+            # NOTE we could also do this unconditionally when generating the
+            # autoinstall configuration. But doing it here gives the user the
+            # ability to use a mirror for one install without it ending up in
+            # the autoinstall config. Is it worth it though?
+            def ensure_elected_in_candidates():
+                if any(map(lambda c: c.uri == data.elected,
+                           self.model.primary_candidates)):
+                    return
+                self.model.primary_candidates.insert(
+                        0, self.model.primary_elected)
+
+            if data.candidates is None:
+                ensure_elected_in_candidates()
+
+            await self.configured()
 
     async def disable_components_GET(self) -> List[str]:
         return sorted(self.model.disabled_components)
@@ -223,7 +346,7 @@ class MirrorController(SubiquityController):
                 assert False
         output = io.StringIO()
         self.mirror_check = MirrorCheck(
-                uri=self.model.get_mirror(),
+                uri=self.model.primary_staged.uri,
                 task=asyncio.create_task(self.run_mirror_testing(output)),
                 output=output)
 

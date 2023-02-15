@@ -32,7 +32,7 @@ class ProxyModel(object):
     def proxy_systemd_dropin(self):
         return dropin_template.format(proxy=self.proxy)
 
-    def get_apt_config(self):
+    def get_apt_config(self, final: bool, has_network: bool):
         if self.proxy:
             return {
                 'http_proxy': self.proxy,
