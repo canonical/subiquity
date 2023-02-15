@@ -32,6 +32,7 @@ python3-nose
 python3-parameterized
 python3-pip
 python3-pyflakes
+python3-pyroute2
 python3-pytest
 python3-pytest-xdist
 python3-pyudev

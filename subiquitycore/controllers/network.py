@@ -21,6 +21,7 @@ import os
 import subprocess
 from typing import Optional
 
+import pyroute2
 import yaml
 
 from probert.network import IFF_UP, NetworkEventReceiver
@@ -56,7 +57,7 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
     def __init__(self, controller):
         self.controller = controller
         self.model = controller.model
-        self.default_routes = set()
+        self.has_default_route = False
 
     def new_link(self, ifindex, link):
         netdev = self.model.new_link(ifindex, link)
@@ -65,9 +66,8 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
 
     def del_link(self, ifindex):
         netdev = self.model.del_link(ifindex)
-        if ifindex in self.default_routes:
-            self.default_routes.remove(ifindex)
-            self.controller.update_default_routes(self.default_routes)
+        self.probe_default_routes()
+        self.controller.update_has_default_route(self.has_default_route)
         if netdev is not None:
             self.controller.del_link(netdev)
 
@@ -76,9 +76,9 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
         if netdev is None:
             return
         flags = getattr(netdev.info, "flags", 0)
-        if not (flags & IFF_UP) and ifindex in self.default_routes:
-            self.default_routes.remove(ifindex)
-            self.controller.update_default_routes(self.default_routes)
+        if not (flags & IFF_UP):
+            self.probe_default_routes()
+            self.controller.update_has_default_route(self.has_default_route)
         self.controller.update_link(netdev)
 
     def route_change(self, action, data):
@@ -87,13 +87,31 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
             return
         if data['table'] != 254:
             return
-        ifindex = data['ifindex']
-        if action == "NEW" or action == "CHANGE":
-            self.default_routes.add(ifindex)
-        elif action == "DEL" and ifindex in self.default_routes:
-            self.default_routes.remove(ifindex)
-        log.debug('default routes %s', self.default_routes)
-        self.controller.update_default_routes(self.default_routes)
+        self.probe_default_routes()
+        self.controller.update_has_default_route(self.has_default_route)
+
+    def _default_route_exists(self, routes):
+        return any(route['table'] == 254 and not route['dst']
+                   for route in routes)
+
+    def probe_default_routes(self):
+        with pyroute2.NDB() as ndb:
+            self.has_default_route = self._default_route_exists(ndb.routes)
+        log.debug('default routes %s', self.has_default_route)
+
+    @staticmethod
+    def create(controller: BaseController, dry_run: bool) \
+            -> "SubiquityNetworkEventReceiver":
+        if dry_run:
+            return DryRunSubiquityNetworkEventReceiver(controller)
+        else:
+            return SubiquityNetworkEventReceiver(controller)
+
+
+class DryRunSubiquityNetworkEventReceiver(SubiquityNetworkEventReceiver):
+    def probe_default_routes(self):
+        self.has_default_route = True
+        log.debug('dryrun default routes %s', self.has_default_route)
 
 
 default_netplan = '''
@@ -149,7 +167,8 @@ class BaseNetworkController(BaseController):
         self.parse_netplan_configs()
 
         self._watching = False
-        self.network_event_receiver = SubiquityNetworkEventReceiver(self)
+        self.network_event_receiver = \
+            SubiquityNetworkEventReceiver.create(self, self.opts.dry_run)
 
     def parse_netplan_configs(self):
         self.model.parse_netplan_configs(self.root)
@@ -485,8 +504,8 @@ class BaseNetworkController(BaseController):
         pass
 
     @abc.abstractmethod
-    def update_default_routes(self, routes):
-        if routes:
+    def update_has_default_route(self, has_default_route):
+        if has_default_route:
             self.app.hub.broadcast(CoreChannels.NETWORK_UP)
 
     @abc.abstractmethod
@@ -612,8 +631,8 @@ class NetworkController(BaseNetworkController, TuiController,
         if not self.view_shown:
             self.apply_config(silent=True)
             self.view_shown = True
-        self.view.update_default_routes(
-            self.network_event_receiver.default_routes)
+        self.view.update_has_default_route(
+            self.network_event_receiver.has_default_route)
         return self.view
 
     def end_ui(self):
@@ -621,8 +640,7 @@ class NetworkController(BaseNetworkController, TuiController,
 
     def done(self):
         log.debug("NetworkController.done next_screen")
-        self.model.has_network = bool(
-            self.network_event_receiver.default_routes)
+        self.model.has_network = self.network_event_receiver.has_default_route
         self.app.next_screen()
 
     def cancel(self):
@@ -643,10 +661,10 @@ class NetworkController(BaseNetworkController, TuiController,
         if self.view is not None:
             self.view.show_network_error(stage)
 
-    def update_default_routes(self, routes):
-        super().update_default_routes(routes)
+    def update_has_default_route(self, has_default_route):
+        super().update_has_default_route(has_default_route)
         if self.view:
-            self.view.update_default_routes(routes)
+            self.view.update_has_default_route(has_default_route)
 
     def new_link(self, netdev):
         super().new_link(netdev)
