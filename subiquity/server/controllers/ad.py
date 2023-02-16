@@ -33,7 +33,7 @@ DC_RE = r'^[a-zA-Z0-9.-]+$'
 # https://bugs.launchpad.net/ubuntu-mate/+bug/1985971
 # https://github.com/canonical/subiquity/pull/1553#discussion_r1103063195
 # https://learn.microsoft.com/en-us/windows/win32/adschema/a-samaccountname
-AD_ACCOUNT_FORBIDDEN_CHARS = re.escape(r'@"/\[]:;|=,+*?<>')
+AD_ACCOUNT_FORBIDDEN_CHARS = r'@"/\[]:;|=,+*?<>'
 FIELD = "Domain Controller name"
 
 
@@ -78,7 +78,7 @@ class AdValidators:
             return AdAdminNameValidation.EMPTY
 
         # Triggers error if any of the forbidden chars is present.
-        regex = re.compile(f"[{AD_ACCOUNT_FORBIDDEN_CHARS}]")
+        regex = re.compile(f"[{re.escape(AD_ACCOUNT_FORBIDDEN_CHARS)}]")
         if regex.search(name):
             log.debug('<%s>: domain admin name contains invalid characters',
                       name)
