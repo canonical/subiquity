@@ -29,6 +29,7 @@ from subiquity.server.apt import (
 from subiquity.server.dryrun import DRConfig
 from subiquity.models.mirror import MirrorModel
 from subiquity.models.proxy import ProxyModel
+from subiquity.models.subiquity import DebconfSelectionsModel
 
 
 APT_UPDATE_SUCCESS = """\
@@ -61,6 +62,7 @@ class TestAptConfigurer(SubiTestCase):
         self.model.mirror = MirrorModel()
         self.model.mirror.create_primary_candidate("http://mymirror").elect()
         self.model.proxy = ProxyModel()
+        self.model.debconf_selections = DebconfSelectionsModel()
         self.model.locale.selected_language = "en_US.UTF-8"
         self.app = make_app(self.model)
         self.configurer = AptConfigurer(self.app, AsyncMock(), '')

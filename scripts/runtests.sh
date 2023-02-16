@@ -223,9 +223,9 @@ python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/subiquity-curtin-
         apt.preferences[0].pin-priority=200 \
         apt.preferences[0].pin='"origin *ubuntu.com*"' \
         apt.preferences[1].package='"python-*"' \
-        apt.preferences[1].pin-priority=-1
+        apt.preferences[1].pin-priority=-1 \
+        apt.debconf_selections.subiquity='"eek"'
 python3 scripts/check-yaml-fields.py "$tmpdir"/var/log/installer/curtin-install/subiquity-curthooks.conf \
-        debconf_selections.subiquity='"eek"' \
         storage.config[-1].options='"errors=remount-ro"'
 python3 scripts/check-yaml-fields.py <(python3 scripts/check-yaml-fields.py $tmpdir/etc/cloud/cloud.cfg.d/99-installer.cfg datasource.None.userdata_raw) \
         locale='"en_GB.UTF-8"' \
