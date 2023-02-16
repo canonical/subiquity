@@ -768,12 +768,24 @@ class ADConnectionInfo:
     password: str = attr.ib(repr=False, default="")
 
 
-class ADValidationResult(enum.Enum):
-    OK = enum.auto()
-    ADMIN_NAME_BAD_FIRST_CHAR = enum.auto()
-    ADMIN_NAME_BAD_CHARS = enum.auto()
-    DCNAME_BAD_CHARS = enum.auto()
-    DCNAME_BAD_HYPHEN = enum.auto()
-    DCNAME_BAD_DOTS = enum.auto()
-    DCNAME_BAD_LENGTH = enum.auto()
-    PASSWORD_EMPTY = enum.auto()
+class AdAdminNameValidation(enum.Enum):
+    OK = 'OK'
+    EMPTY = 'Empty'
+    INVALID_CHARS = 'Contains invalid characters'
+
+
+class AdDomainNameValidation(enum.Enum):
+    OK = 'OK'
+    EMPTY = 'Empty'
+    TOO_LONG = 'Too long'
+    INVALID_CHARS = 'Contains invalid characters'
+    START_DOT = 'Starts with a dot'
+    END_DOT = 'Ends with a dot'
+    START_HYPHEN = 'Starts with a hyphen'
+    END_HYPHEN = 'Ends with a hyphen'
+    MULTIPLE_DOTS = 'Contains multiple dots'
+
+
+class AdPasswordValidation(enum.Enum):
+    OK = 'OK'
+    EMPTY = 'Empty'

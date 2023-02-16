@@ -1654,17 +1654,40 @@ class TestWSLSetupOptions(TestAPI):
 class TestActiveDirectory(TestAPI):
     @timeout()
     async def test_ad(self):
+        # Few tests to assert that the controller is properly wired.
+        # Exhaustive validation test cases are in the unit tests.
         async with start_server('examples/simple.json') as instance:
             endpoint = '/active_directory'
             ad_dict = await instance.get(endpoint)
             # Starts empty
             self.assertIsNone(ad_dict)
 
-            # POST succeeds
+            # Post works by "returning None"
             ad_dict = {
+                'admin_name': 'Ubuntu',
                 'domain_name': 'ubuntu.com',
-                'admin_name': 'u',
-                'password': 'u'
+                'password': 'u',
             }
             result = await instance.post(endpoint, ad_dict)
-            self.assertEqual(['OK'], result)
+            self.assertIsNone(result)
+
+            # Rejects empty password.
+            result = await instance.get(endpoint+'/check_password',
+                                        data='')
+            self.assertEqual('EMPTY', result)
+
+            # Rejects invalid domain controller names.
+            result = await instance.get(endpoint + '/check_domain_name',
+                                        data='..ubuntu.com')
+
+            self.assertIn('MULTIPLE_DOTS', result)
+
+            # Rejects invalid usernames.
+            result = await instance.get(endpoint + '/check_admin_name',
+                                        data='ubuntu;pro')
+            self.assertEqual('INVALID_CHARS', result)
+
+            # Notice that lowercase is not required.
+            result = await instance.get(endpoint + '/check_admin_name',
+                                        data='$Ubuntu')
+            self.assertEqual('OK', result)
