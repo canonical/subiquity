@@ -45,8 +45,10 @@ from subiquity.common.types import (
     KeyboardSetup,
     IdentityData,
     NetworkStatus,
+    MirrorSelectionFallback,
     MirrorGet,
     MirrorPost,
+    MirrorPostResponse,
     MirrorCheckResponse,
     ModifyPartitionV2,
     ReformatDisk,
@@ -353,7 +355,9 @@ class API:
 
     class mirror:
         def GET() -> MirrorGet: ...
-        def POST(data: Payload[Optional[MirrorPost]]) -> None: ...
+
+        def POST(data: Payload[Optional[MirrorPost]]) \
+            -> MirrorPostResponse: ...
 
         class disable_components:
             def GET() -> List[str]: ...
@@ -368,6 +372,8 @@ class API:
 
             class abort:
                 def POST() -> None: ...
+
+        fallback = simple_endpoint(MirrorSelectionFallback)
 
     class ubuntu_pro:
         def GET() -> UbuntuProResponse: ...

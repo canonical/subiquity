@@ -754,11 +754,22 @@ class MirrorPost:
     staged: Optional[str] = None
 
 
+class MirrorPostResponse(enum.Enum):
+    OK = "ok"
+    NO_USABLE_MIRROR = "no-usable-mirror"
+
+
 @attr.s(auto_attribs=True)
 class MirrorGet:
     elected: Optional[str]
     candidates: List[str]
     staged: Optional[str]
+
+
+class MirrorSelectionFallback(enum.Enum):
+    ABORT = 'abort'
+    CONTINUE_ANYWAY = 'continue-anyway'
+    OFFLINE_INSTALL = 'offline-install'
 
 
 @attr.s(auto_attribs=True)

@@ -21,6 +21,7 @@ from subiquity.models.mirror import (
     countrify_uri,
     LEGACY_DEFAULT_PRIMARY_SECTION,
     MirrorModel,
+    MirrorSelectionFallback,
     LegacyPrimaryEntry,
     PrimaryEntry,
     )
@@ -177,7 +178,10 @@ class TestMirrorModel(unittest.TestCase):
     def test_from_autoinstall_no_primary(self):
         # autoinstall loads to the config directly
         model = MirrorModel()
-        data = {'disable_components': ['non-free']}
+        data = {
+            'disable_components': ['non-free'],
+            'fallback': 'offline-install',
+        }
         model.load_autoinstall_data(data)
         self.assertFalse(model.legacy_primary)
         model.primary_candidates[0].stage()
@@ -236,6 +240,7 @@ class TestMirrorModel(unittest.TestCase):
         ]
         self.model.disabled_components = set(["non-free"])
         self.model.legacy_primary = False
+        self.model.fallback = MirrorSelectionFallback.OFFLINE_INSTALL
         self.model.primary_candidates = [
             PrimaryEntry(uri=None, arches=None,
                          country_mirror=True, parent=self.model),
@@ -246,17 +251,20 @@ class TestMirrorModel(unittest.TestCase):
         ]
         cfg = self.model.make_autoinstall()
         self.assertEqual(cfg["disable_components"], ["non-free"])
+        self.assertEqual(cfg["fallback"], "offline-install")
         self.assertEqual(cfg["mirror-selection"]["primary"], expected_primary)
 
     def test_make_autoinstall_legacy_primary(self):
         primary = [{"arches": "amd64", "uri": "http://mirror"}]
         self.model.disabled_components = set(["non-free"])
+        self.model.fallback = MirrorSelectionFallback.ABORT
         self.model.legacy_primary = True
         self.model.primary_candidates = \
             [LegacyPrimaryEntry(primary, parent=self.model)]
         self.model.primary_candidates[0].elect()
         cfg = self.model.make_autoinstall()
         self.assertEqual(cfg["disable_components"], ["non-free"])
+        self.assertEqual(cfg["fallback"], "abort")
         self.assertEqual(cfg["primary"], primary)
 
     def test_create_primary_candidate(self):

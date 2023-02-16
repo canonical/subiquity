@@ -75,10 +75,15 @@ import abc
 import copy
 import contextlib
 import logging
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, Union
+from typing import (
+    Any, Callable, Dict, Iterator, List,
+    Optional, Sequence, Set, Union,
+    )
 from urllib import parse
 
 import attr
+
+from subiquity.common.types import MirrorSelectionFallback
 
 from curtin.commands.apt_config import (
     get_arch_mirrorconfig,
@@ -130,6 +135,11 @@ class BasePrimaryEntry(abc.ABC):
     def serialize_for_ai(self) -> Any:
         """ Serialize the entry for autoinstall. """
 
+    @abc.abstractmethod
+    def supports_arch(self, arch: str) -> bool:
+        """ Tells whether the mirror claims to support the architecture
+        specified. """
+
 
 @attr.s(auto_attribs=True)
 class PrimaryEntry(BasePrimaryEntry):
@@ -159,8 +169,6 @@ class PrimaryEntry(BasePrimaryEntry):
         return [{"uri": self.uri, "arches": ["default"]}]
 
     def supports_arch(self, arch: str) -> bool:
-        """ Tells whether the mirror claims to support the architecture
-        specified. """
         if self.arches is None:
             return True
         return arch in self.arches
@@ -207,12 +215,29 @@ class LegacyPrimaryEntry(BasePrimaryEntry):
     def serialize_for_ai(self) -> List[Any]:
         return self.config
 
+    def supports_arch(self, arch: str) -> bool:
+        # Curtin will always find a mirror ; albeit with the ["default"]
+        # architectures.
+        return True
+
 
 def countrify_uri(uri: str, cc: str) -> str:
     """ Return a URL where the host is prefixed with a country code. """
     parsed = parse.urlparse(uri)
     new = parsed._replace(netloc=cc + '.' + parsed.netloc)
     return parse.urlunparse(new)
+
+
+CandidateFilter = Callable[[BasePrimaryEntry], bool]
+
+
+def filter_candidates(candidates: List[BasePrimaryEntry],
+                      *, filters: Sequence[CandidateFilter]) \
+                              -> Iterator[BasePrimaryEntry]:
+    candidates_iter = iter(candidates)
+    for filt in filters:
+        candidates_iter = filter(filt, candidates_iter)
+    return candidates_iter
 
 
 class MirrorModel(object):
@@ -231,6 +256,9 @@ class MirrorModel(object):
         # Only useful for legacy primary sections
         self.default_mirror = \
             LegacyPrimaryEntry.new_from_default(parent=self).uri
+
+        # What to do if automatic mirror-selection fails.
+        self.fallback = MirrorSelectionFallback.ABORT
 
     def _default_primary_entries(self) -> List[PrimaryEntry]:
         return [
@@ -271,12 +299,15 @@ class MirrorModel(object):
                     entry = PrimaryEntry.from_config(section, parent=self)
                     primary_candidates.append(entry)
         self.primary_candidates = primary_candidates
+        if "fallback" in data:
+            self.fallback = MirrorSelectionFallback(data.pop("fallback"))
 
         merge_config(self.config, data)
 
     def _get_apt_config_common(self) -> Dict[str, Any]:
         assert "disable_components" not in self.config
         assert "primary" not in self.config
+        assert "fallback" not in self.config
 
         config = copy.deepcopy(self.config)
         config["disable_components"] = sorted(self.disabled_components)
@@ -312,8 +343,12 @@ class MirrorModel(object):
         # install. It will be placed in etc/apt/sources.list of the target
         # system.
         with contextlib.suppress(StopIteration):
-            candidate = next(filter(lambda c: c.uri is not None,
-                                    self.compatible_primary_candidates()))
+            filters = [
+                lambda c: c.uri is not None,
+                lambda c: c.supports_arch(self.architecture),
+            ]
+            candidate = next(filter_candidates(self.primary_candidates,
+                                               filters=filters))
             return self._get_apt_config_using_candidate(candidate)
         # Our last resort is to include no primary section. Curtin will use
         # its own internal values.
@@ -357,20 +392,20 @@ class MirrorModel(object):
         return next(self.country_mirror_candidates(), None) is not None
 
     def country_mirror_candidates(self) -> Iterator[BasePrimaryEntry]:
-        for candidate in self.primary_candidates:
+        def filt(candidate):
             if self.legacy_primary and candidate.mirror_is_default():
-                yield candidate
+                return True
             elif not self.legacy_primary and candidate.country_mirror:
-                yield candidate
+                return True
+            return False
+
+        return filter_candidates(self.primary_candidates, filters=[filt])
 
     def compatible_primary_candidates(self) -> Iterator[BasePrimaryEntry]:
-        for candidate in self.primary_candidates:
-            if self.legacy_primary:
-                yield candidate
-            elif candidate.arches is None:
-                yield candidate
-            elif self.architecture in candidate.arches:
-                yield candidate
+        def filt(candidate):
+            return candidate.supports_arch(self.architecture)
+
+        return filter_candidates(self.primary_candidates, filters=[filt])
 
     def render(self):
         return {}
@@ -388,5 +423,6 @@ class MirrorModel(object):
         else:
             primary = [c.serialize_for_ai() for c in self.primary_candidates]
             config["mirror-selection"] = {"primary": primary}
+        config["fallback"] = self.fallback.value
 
         return config
