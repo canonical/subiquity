@@ -1659,8 +1659,8 @@ class TestActiveDirectory(TestAPI):
         async with start_server('examples/simple.json') as instance:
             endpoint = '/active_directory'
             ad_dict = await instance.get(endpoint)
-            # Starts empty
-            self.assertIsNone(ad_dict)
+            # Starts with the detected domain.
+            self.assertEqual('ubuntu.com', ad_dict['domain_name'])
 
             # Post works by "returning None"
             ad_dict = {
