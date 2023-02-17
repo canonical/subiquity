@@ -24,6 +24,7 @@ import random
 import re
 import shutil
 import subprocess
+import tempfile
 from typing import List, Optional
 
 import apt_pkg
@@ -148,6 +149,8 @@ class AptConfigurer:
 
         pfx = pathlib.Path(self.configured_tree.p())
 
+        apt_config = apt_pkg.Configuration()
+
         apt_dirs = {
             "Etc::SourceList": pfx / "etc/apt/sources.list",
             "Etc::SourceParts": pfx / "etc/apt/sources.list.d",
@@ -174,29 +177,32 @@ class AptConfigurer:
 
         for key, path in apt_dirs.items():
             value = "" if path is None else str(path)
-            apt_cmd.append(f"-oDir::{key}={str(value)}")
+            apt_config[f"Dir::{key}"] = str(value)
 
         for target in get_index_targets():
-            apt_cmd.append(
-                    f"-o{target}::DefaultEnabled=false")
+            apt_cmd.append(f"-o{target}::DefaultEnabled=false")
 
         env = os.environ.copy()
         env["LANG"] = self.app.base_model.locale.selected_language
-        proc = await astart_command(apt_cmd, stderr=subprocess.STDOUT,
-                                    clean_locale=False, env=env)
+        with tempfile.NamedTemporaryFile(mode="w+") as config_file:
+            env["APT_CONFIG"] = config_file.name
+            config_file.write(apt_config.dump())
+            config_file.flush()
+            proc = await astart_command(apt_cmd, stderr=subprocess.STDOUT,
+                                        clean_locale=False, env=env)
 
-        async def _reader():
-            while not proc.stdout.at_eof():
-                try:
-                    line = await proc.stdout.readline()
-                except asyncio.IncompleteReadError as e:
-                    line = e.partial
-                    if not line:
-                        return
-                output.write(line.decode("utf-8"))
+            async def _reader():
+                while not proc.stdout.at_eof():
+                    try:
+                        line = await proc.stdout.readline()
+                    except asyncio.IncompleteReadError as e:
+                        line = e.partial
+                        if not line:
+                            return
+                    output.write(line.decode("utf-8"))
 
-        reader = asyncio.create_task(_reader())
-        unused, returncode = await asyncio.gather(reader, proc.wait())
+            reader = asyncio.create_task(_reader())
+            unused, returncode = await asyncio.gather(reader, proc.wait())
 
         if returncode != 0:
             raise AptConfigCheckError
