@@ -14,21 +14,65 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import logging
+from socket import gethostname
+from subiquitycore.utils import arun_command
+from subiquity.server.curtin import run_curtin_command
 from subiquity.common.types import (
     ADConnectionInfo,
     AdJoinResult,
 )
+
+log = logging.getLogger('subiquity.server.ad_joiner')
 
 
 class AdJoinStrategy():
     cmd = "/usr/sbin/realm"
     args = ["join"]
 
-    async def do_join(self, info: ADConnectionInfo) -> AdJoinResult:
-        # Now what?
-        # TODO: Join.
+    def __init__(self, app):
+        self.app = app
+
+    async def do_join(self, info: ADConnectionInfo, hostname: str, context) \
+            -> AdJoinResult:
+        """ This method changes the hostname and perform a real AD join, thus
+            should only run in a live session. """
         result = AdJoinResult.JOIN_ERROR
-        return await asyncio.sleep(3, result=result)
+        hostname_current = gethostname()
+        # Set hostname for AD to determine FQDN (no FQDN option in realm join,
+        # only adcli, which only understands the live system, but not chroot)
+        cp = await arun_command(['hostname', hostname])
+        if cp.returncode:
+            log.info("Failed to set live session hostname for adcli")
+            return result
+
+        root_dir = self.app.root
+        cp = await run_curtin_command(
+            self.app, context, "in-target", "-t", root_dir,
+            "--", "realm", "join", "--install", root_dir, "--user",
+            info.admin_name, "--computer-name", hostname, "--unattended",
+            info.domain_name, private_mounts=True, input=info.password,
+            timeout=60)
+
+        if not cp.returncode:
+            # Restoring the live session hostname.
+            # Enable pam_mkhomedir
+            cp = await run_curtin_command(self.app, context, "in-target",
+                                          "-t", root_dir, "--",
+                                          "pam-auth-update", "--package",
+                                          "--enable", "mkhomedir",
+                                          private_mounts=True)
+
+            if cp.returncode:
+                result = AdJoinResult.PAM_ERROR
+            else:
+                result = AdJoinResult.OK
+
+        cp = await arun_command(['hostname', hostname_current])
+        if cp.returncode:
+            log.info("Failed to restore live session hostname")
+
+        return result
 
 
 class StubStrategy(AdJoinStrategy):
@@ -50,24 +94,24 @@ class StubStrategy(AdJoinStrategy):
 
 
 class AdJoiner():
-    def __init__(self, dry_run: bool):
+    def __init__(self, app):
         self._result = AdJoinResult.UNKNOWN
-        self.join_task = None
-        if dry_run:
-            self.strategy = StubStrategy()
+        self._completion_event = asyncio.Event()
+        if app.opts.dry_run:
+            self.strategy = StubStrategy(app)
         else:
-            self.strategy = AdJoinStrategy()
+            self.strategy = AdJoinStrategy(app)
 
-    async def join_domain(self, info: ADConnectionInfo) -> AdJoinResult:
-        self.join_task = asyncio.create_task(self.async_join(info))
-        self._result = await self.join_task
+    async def join_domain(self, info: ADConnectionInfo, hostname: str,
+                          context) -> AdJoinResult:
+        if hostname:
+            self._result = await self.strategy.do_join(info, hostname, context)
+        else:
+            self._result = AdJoinResult.EMPTY_HOSTNAME
+
+        self._completion_event.set()
         return self._result
 
-    async def async_join(self, info: ADConnectionInfo) -> AdJoinResult:
-        return await self.strategy.do_join(info)
-
     async def join_result(self):
-        if self.join_task is None:
-            return AdJoinResult.UNKNOWN
-
-        return await self.join_task
+        await self._completion_event.wait()
+        return self._result

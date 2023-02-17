@@ -97,7 +97,7 @@ class ADController(SubiquityController):
 
     def __init__(self, app):
         super().__init__(app)
-        self.ad_joiner = None
+        self.ad_joiner = AdJoiner(self.app)
         self.join_result = AdJoinResult.UNKNOWN
         if self.app.opts.dry_run:
             self.ping_strgy = StubDcPingStrategy()
@@ -146,21 +146,19 @@ class ADController(SubiquityController):
         return self.ping_strgy.has_support()
 
     async def join_result_GET(self, wait: bool = True) -> AdJoinResult:
-        # Enables testing the API without the need for the install controller
-        if self.app.opts.dry_run and self.ad_joiner is None:
-            await self.join_domain()
-
-        if wait and self.ad_joiner:
+        """ If [wait] is True, this method blocks until an attempt to
+            join a domain completes. Otherwise returns the current known state.
+            Most likely it will be AdJoinResult.UNKNOWN. """
+        if wait:
             self.join_result = await self.ad_joiner.join_result()
 
         return self.join_result
 
-    async def join_domain(self) -> None:
-        """To be called from the install controller if joining was requested"""
-        if self.ad_joiner is None:
-            self.ad_joiner = AdJoiner(self.app.opts.dry_run)
-
-        await self.ad_joiner.join_domain(self.model.conn_info)
+    async def join_domain(self, hostname: str, context) -> None:
+        """ To be called from the install controller if the user requested
+        joining an AD domain """
+        await self.ad_joiner.join_domain(self.model.conn_info, hostname,
+                                         context)
 
 
 # Helper out-of-class functions grouped.
