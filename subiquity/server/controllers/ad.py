@@ -158,7 +158,7 @@ class ADController(SubiquityController):
     async def join_domain(self) -> None:
         """To be called from the install controller if joining was requested"""
         if self.ad_joiner is None:
-            self.ad_joiner = AdJoiner()
+            self.ad_joiner = AdJoiner(self.app.opts.dry_run)
 
         await self.ad_joiner.join_domain(self.model.conn_info)
 
