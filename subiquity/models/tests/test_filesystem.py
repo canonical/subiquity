@@ -17,7 +17,8 @@ import unittest
 from unittest import mock
 
 import attr
-from parameterized import parameterized
+
+from subiquitycore.tests.parameterized import parameterized
 
 from subiquity.models.filesystem import (
     ActionRenderMode,

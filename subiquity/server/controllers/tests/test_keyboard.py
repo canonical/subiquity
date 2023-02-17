@@ -17,10 +17,10 @@ import os
 import unittest
 
 from unittest.mock import Mock, patch
-from parameterized import parameterized
 
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.parameterized import parameterized
 
 from subiquity.models.keyboard import (
     KeyboardModel,
