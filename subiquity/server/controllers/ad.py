@@ -25,8 +25,10 @@ from subiquity.common.types import (
     ADConnectionInfo,
     AdAdminNameValidation,
     AdDomainNameValidation,
+    AdJoinResult,
     AdPasswordValidation
 )
+from subiquity.server.ad_joiner import AdJoiner
 from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger('subiquity.server.controllers.ad')
@@ -95,6 +97,8 @@ class ADController(SubiquityController):
 
     def __init__(self, app):
         super().__init__(app)
+        self.ad_joiner = None
+        self.join_result = AdJoinResult.UNKNOWN
         if self.app.opts.dry_run:
             self.ping_strgy = StubDcPingStrategy()
         else:
@@ -140,6 +144,23 @@ class ADController(SubiquityController):
         """ Returns True if the executables required
             to configure AD are present in the live system."""
         return self.ping_strgy.has_support()
+
+    async def join_result_GET(self, wait: bool = True) -> AdJoinResult:
+        # Enables testing the API without the need for the install controller
+        if self.app.opts.dry_run and self.ad_joiner is None:
+            await self.join_domain()
+
+        if wait and self.ad_joiner:
+            self.join_result = await self.ad_joiner.join_result()
+
+        return self.join_result
+
+    async def join_domain(self) -> None:
+        """To be called from the install controller if joining was requested"""
+        if self.ad_joiner is None:
+            self.ad_joiner = AdJoiner()
+
+        await self.ad_joiner.join_domain(self.model.conn_info)
 
 
 # Helper out-of-class functions grouped.

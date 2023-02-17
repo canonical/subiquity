@@ -406,6 +406,8 @@ class InstallController(SubiquityController):
             policy = self.model.updates.updates
             await self.run_unattended_upgrades(context=context, policy=policy)
         await self.restore_apt_config(context=context)
+        if self.model.ad.do_join:
+            await self.app.controllers.Ad.join_domain()
 
     @with_context(description="configuring cloud-init")
     async def configure_cloud_init(self, context):

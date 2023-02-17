@@ -1696,3 +1696,6 @@ class TestActiveDirectory(TestAPI):
             result = await instance.post(endpoint + '/check_admin_name',
                                          data='$Ubuntu')
             self.assertEqual('OK', result)
+            # Attempts to join with the info supplied above.
+            join_result = await instance.get(endpoint + '/join_result')
+            self.assertEqual('JOIN_ERROR', join_result)
