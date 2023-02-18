@@ -13,12 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import logging
 import os
 import re
 from typing import List, Optional, Set
 from subiquitycore.utils import arun_command
+from subiquitycore.async_helpers import run_bg_task
 
 from subiquity.common.apidef import API
 from subiquity.common.types import (
@@ -102,7 +102,7 @@ class ADController(SubiquityController):
 
     def start(self):
         if self.ping_strgy.has_support():
-            asyncio.create_task(self._try_discover_domain())
+            run_bg_task(self._try_discover_domain())
 
     async def _try_discover_domain(self):
         discovered_domain = await self.ping_strgy.discover()
