@@ -27,6 +27,16 @@ class ADModel:
         self.do_join = False
         self.conn_info: Optional[ADConnectionInfo] = None
 
+    def set_domain(self, domain: str):
+        if not domain:
+            return
+
+        if self.conn_info:
+            self.conn_info.domain_name = domain
+
+        else:
+            self.conn_info = ADConnectionInfo(domain_name=domain)
+
     async def target_packages(self):
         # NOTE Those packages must be present in the target system to allow
         # joining to a domain.

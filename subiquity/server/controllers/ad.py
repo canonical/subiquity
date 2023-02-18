@@ -14,9 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 import re
 from typing import List, Optional, Set
 from subiquitycore.utils import arun_command
+from subiquitycore.async_helpers import run_bg_task
 
 from subiquity.common.apidef import API
 from subiquity.common.types import (
@@ -43,12 +45,27 @@ class DcPingStrategy:
     cmd = "/usr/sbin/realm"
     arg = "discover"
 
+    def has_support(self) -> bool:
+        return os.access(self.cmd, os.X_OK)
+
     async def ping(self, address: str) -> AdDomainNameValidation:
         cp = await arun_command([self.cmd, self.arg, address], env={})
         if cp.returncode:
             return AdDomainNameValidation.REALM_NOT_FOUND
 
         return AdDomainNameValidation.OK
+
+    async def discover(self) -> str:
+        """ Attempts to discover a domain through the network.
+            Returns the domain or an empty string on error. """
+        cp = await arun_command([self.cmd, self.arg], env={})
+        discovered = ""
+        if cp.returncode == 0:
+            # A typical output looks like:
+            # 'creative.com\n  type: kerberos\n  realm-name: CREATIVE.COM\n...'
+            discovered = cp.stdout.split('\n')[0].strip()
+
+        return discovered
 
 
 class StubDcPingStrategy(DcPingStrategy):
@@ -63,6 +80,12 @@ class StubDcPingStrategy(DcPingStrategy):
 
         return AdDomainNameValidation.OK
 
+    async def discover(self) -> str:
+        return "ubuntu.com"
+
+    def has_support(self) -> bool:
+        return True
+
 
 class ADController(SubiquityController):
     """ Implements the server part of the Active Directory feature. """
@@ -76,6 +99,15 @@ class ADController(SubiquityController):
             self.ping_strgy = StubDcPingStrategy()
         else:
             self.ping_strgy = DcPingStrategy()
+
+    def start(self):
+        if self.ping_strgy.has_support():
+            run_bg_task(self._try_discover_domain())
+
+    async def _try_discover_domain(self):
+        discovered_domain = await self.ping_strgy.discover()
+        if discovered_domain:
+            self.model.set_domain(discovered_domain)
 
     async def GET(self) -> Optional[ADConnectionInfo]:
         """Returns the currently configured AD settings"""
@@ -103,6 +135,11 @@ class ADController(SubiquityController):
 
     async def check_password_GET(self, password: str) -> AdPasswordValidation:
         return AdValidators.password(password)
+
+    async def has_support_GET(self) -> bool:
+        """ Returns True if the executables required
+            to configure AD are present in the live system."""
+        return self.ping_strgy.has_support()
 
 
 # Helper out-of-class functions grouped.

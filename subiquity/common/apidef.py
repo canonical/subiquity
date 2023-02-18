@@ -418,6 +418,12 @@ class API:
         # POST expects input validated by the check methods below:
         def POST(data: Payload[ADConnectionInfo]) -> None: ...
 
+        class has_support:
+            """ Whether the live system supports Active Directory or not.
+                Network status is not considered.
+                Clients should call this before showing the AD page. """
+            def GET() -> bool: ...
+
         class check_domain_name:
             def GET(domain_name: Payload[str]) \
                 -> List[AdDomainNameValidation]: ...
