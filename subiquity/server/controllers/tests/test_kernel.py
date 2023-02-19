@@ -16,7 +16,7 @@
 import os
 import os.path
 
-from parameterized import parameterized
+from subiquitycore.tests.parameterized import parameterized
 
 from subiquity.models.kernel import KernelModel
 from subiquity.server.controllers.kernel import KernelController

@@ -17,7 +17,7 @@ import copy
 from unittest import mock, TestCase, IsolatedAsyncioTestCase
 import uuid
 
-from parameterized import parameterized
+from subiquitycore.tests.parameterized import parameterized
 
 from subiquitycore.snapd import AsyncSnapd, get_fake_connection
 from subiquitycore.tests.mocks import make_app

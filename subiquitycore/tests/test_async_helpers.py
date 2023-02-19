@@ -17,12 +17,12 @@ import asyncio
 import unittest
 from unittest.mock import AsyncMock
 
-from parameterized import parameterized
-
 from subiquitycore.async_helpers import (
     SingleInstanceTask,
     TaskAlreadyRunningError,
 )
+
+from subiquitycore.tests.parameterized import parameterized
 
 
 class TestSingleInstanceTask(unittest.IsolatedAsyncioTestCase):

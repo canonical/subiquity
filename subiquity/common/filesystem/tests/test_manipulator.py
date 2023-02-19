@@ -19,7 +19,7 @@ from unittest import mock
 
 import attr
 
-from parameterized import parameterized
+from subiquitycore.tests.parameterized import parameterized
 
 from subiquity.common.filesystem.actions import (
     DeviceAction,
