@@ -93,13 +93,9 @@ class SourceController(SubiquityController):
         self.model.search_drivers = data.get("search_drivers", True)
 
         # At this point, the model has not yet loaded the sources from the
-        # catalog. So we store the data and lean on apply_autoinstall_config.
+        # catalog. So we store the ID and lean on self.start to select the
+        # current source accordingly.
         self.ai_source_id = data.get("id")
-
-    async def apply_autoinstall_config(self) -> None:
-        if self.ai_source_id is None:
-            return
-        self.model.current = self.model.get_matching_source(self.ai_source_id)
 
     def start(self):
         path = '/cdrom/casper/install-sources.yaml'
@@ -109,6 +105,10 @@ class SourceController(SubiquityController):
             return
         with open(path) as fp:
             self.model.load_from_file(fp)
+        # Assign the current source if hinted by autoinstall.
+        if self.ai_source_id is not None:
+            self.model.current = self.model.get_matching_source(
+                    self.ai_source_id)
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, 'locale'), self._set_locale)
 
