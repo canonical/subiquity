@@ -119,11 +119,11 @@ class ADController(SubiquityController):
         self.model.conn_info = data
         await self.configured()
 
-    async def check_admin_name_GET(self, admin_name: str) \
+    async def check_admin_name_POST(self, admin_name: str) \
             -> AdAdminNameValidation:
         return AdValidators.admin_user_name(admin_name)
 
-    async def check_domain_name_GET(self, domain_name: str) \
+    async def check_domain_name_POST(self, domain_name: str) \
             -> List[AdDomainNameValidation]:
         result = AdValidators.domain_name(domain_name)
         if AdDomainNameValidation.OK in result:
@@ -133,7 +133,7 @@ class ADController(SubiquityController):
 
         return list(result)
 
-    async def check_password_GET(self, password: str) -> AdPasswordValidation:
+    async def check_password_POST(self, password: str) -> AdPasswordValidation:
         return AdValidators.password(password)
 
     async def has_support_GET(self) -> bool:

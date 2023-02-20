@@ -1672,27 +1672,27 @@ class TestActiveDirectory(TestAPI):
             self.assertIsNone(result)
 
             # Rejects empty password.
-            result = await instance.get(endpoint+'/check_password',
-                                        data='')
+            result = await instance.post(endpoint+'/check_password',
+                                         data='')
             self.assertEqual('EMPTY', result)
 
             # Rejects invalid domain controller names.
-            result = await instance.get(endpoint + '/check_domain_name',
-                                        data='..ubuntu.com')
+            result = await instance.post(endpoint + '/check_domain_name',
+                                         data='..ubuntu.com')
 
             self.assertIn('MULTIPLE_DOTS', result)
 
             # Leverages the stub ping strategy
-            result = await instance.get(endpoint + '/check_domain_name',
-                                        data='rockbuntu.com')
+            result = await instance.post(endpoint + '/check_domain_name',
+                                         data='rockbuntu.com')
             self.assertIn('REALM_NOT_FOUND', result)
 
             # Rejects invalid usernames.
-            result = await instance.get(endpoint + '/check_admin_name',
-                                        data='ubuntu;pro')
+            result = await instance.post(endpoint + '/check_admin_name',
+                                         data='ubuntu;pro')
             self.assertEqual('INVALID_CHARS', result)
 
             # Notice that lowercase is not required.
-            result = await instance.get(endpoint + '/check_admin_name',
-                                        data='$Ubuntu')
+            result = await instance.post(endpoint + '/check_admin_name',
+                                         data='$Ubuntu')
             self.assertEqual('OK', result)
