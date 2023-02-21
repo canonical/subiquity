@@ -91,8 +91,17 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
         self.controller.update_has_default_route(self.has_default_route)
 
     def _default_route_exists(self, routes):
-        return any(route['table'] == 254 and not route['dst']
-                   for route in routes)
+        for route in routes:
+            if int(route['table']) != 254:
+                continue
+            if route['dst']:
+                continue
+            if int(route['priority']) >= 20000:
+                # network manager probes routes by creating one at 20000 +
+                # the real metric, but those aren't necessarily valid.
+                continue
+            return True
+        return False
 
     def probe_default_routes(self):
         with pyroute2.NDB() as ndb:
