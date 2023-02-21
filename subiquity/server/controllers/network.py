@@ -246,8 +246,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
             self.apply_config(context)
         with context.child("wait_for_apply"):
             await self.apply_config_task.wait()
-        self.model.has_network = bool(
-            self.network_event_receiver.default_routes)
+        self.model.has_network = self.network_event_receiver.has_default_route
 
     async def _apply_config(self, *, context=None, silent=False):
         try:
@@ -284,8 +283,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
             wlan_support_install_state=self.wlan_support_install_state())
 
     async def configured(self):
-        self.model.has_network = bool(
-            self.network_event_receiver.default_routes)
+        self.model.has_network = self.network_event_receiver.has_default_route
         self.model.needs_wpasupplicant = (
             self.wlan_support_install_state() == WLANSupportInstallState.DONE)
         await super().configured()
@@ -308,7 +306,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
         run_bg_task(
             self._call_client(
                 client, conn, lock, "route_watch",
-                self.network_event_receiver.default_routes))
+                self.network_event_receiver.has_default_route))
 
     async def subscription_DELETE(self, socket_path: str) -> None:
         if socket_path not in self.clients:
@@ -347,9 +345,9 @@ class NetworkController(BaseNetworkController, SubiquityController):
         super().apply_error(stage)
         self._call_clients("apply_error", stage)
 
-    def update_default_routes(self, routes):
-        super().update_default_routes(routes)
-        self._call_clients("route_watch", routes)
+    def update_has_default_route(self, has_default_route):
+        super().update_has_default_route(has_default_route)
+        self._call_clients("route_watch", has_default_route)
 
     def _send_update(self, act, dev):
         with self.context.child(

@@ -17,7 +17,7 @@ import logging
 import os
 import shutil
 import tempfile
-from typing import List, Optional
+from typing import Optional
 
 from aiohttp import web
 
@@ -74,9 +74,9 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
         if act == LinkAction.DEL:
             self.view.del_link(info)
 
-    async def route_watch_POST(self, routes: List[int]) -> None:
+    async def route_watch_POST(self, has_default_route: bool) -> None:
         if self.view is not None:
-            self.view.update_default_routes(routes)
+            self.view.update_has_default_route(has_default_route)
 
     async def apply_starting_POST(self) -> None:
         if self.view is not None:
