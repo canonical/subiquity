@@ -28,7 +28,7 @@ log = logging.getLogger('subiquity.server.ad_joiner')
 
 class AdJoinStrategy():
     realm = "/usr/sbin/realm"
-    pam = "/usr/sbin/path-auth-update"
+    pam = "/usr/sbin/pam-auth-update"
 
     def __init__(self, app):
         self.app = app
