@@ -1704,5 +1704,12 @@ class TestActiveDirectory(TestAPI):
             }
             result = await instance.post(endpoint, ad_dict)
             self.assertIsNone(result)
-            join_result = await instance.get(endpoint + '/join_result')
-            self.assertEqual('JOIN_ERROR', join_result)
+            join_result_ep = endpoint + '/join_result'
+            # Without wait this shouldn't block but the result is unknown until
+            # the install controller runs.
+            join_result = await instance.get(join_result_ep, wait=False)
+            self.assertEqual('UNKNOWN', join_result)
+            # And without the installer controller running, a blocking call
+            # should timeout since joining never happens.
+            with self.assertRaises(asyncio.exceptions.CancelledError):
+                join_result = await instance.get(join_result_ep, wait=True)
