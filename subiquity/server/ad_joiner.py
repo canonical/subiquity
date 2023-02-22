@@ -27,8 +27,8 @@ log = logging.getLogger('subiquity.server.ad_joiner')
 
 
 class AdJoinStrategy():
-    cmd = "/usr/sbin/realm"
-    args = ["join"]
+    realm = "/usr/sbin/realm"
+    pam = "/usr/sbin/path-auth-update"
 
     def __init__(self, app):
         self.app = app
@@ -49,7 +49,7 @@ class AdJoinStrategy():
         root_dir = self.app.root
         cp = await run_curtin_command(
             self.app, context, "in-target", "-t", root_dir,
-            "--", "realm", "join", "--install", root_dir, "--user",
+            "--", self.realm, "join", "--install", root_dir, "--user",
             info.admin_name, "--computer-name", hostname, "--unattended",
             info.domain_name, private_mounts=True, input=info.password,
             timeout=60)
@@ -59,7 +59,7 @@ class AdJoinStrategy():
             # Enable pam_mkhomedir
             cp = await run_curtin_command(self.app, context, "in-target",
                                           "-t", root_dir, "--",
-                                          "pam-auth-update", "--package",
+                                          self.pam, "--package",
                                           "--enable", "mkhomedir",
                                           private_mounts=True)
 
