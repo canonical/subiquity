@@ -426,10 +426,18 @@ class InstallController(SubiquityController):
         name="install_{package}",
         description="installing {package}")
     async def install_package(self, *, context, package):
-        await run_curtin_command(
-            self.app, context, 'system-install', '-t', self.tpath(),
-            '--', package,
-            private_mounts=False)
+        with context.child('retrieving', f'retrieving {package}'):
+            await run_curtin_command(
+                self.app, context, 'system-install', '-t', self.tpath(),
+                '--download-only',
+                '--', package,
+                private_mounts=False)
+        with context.child('unpacking', f'unpacking {package}'):
+            await run_curtin_command(
+                self.app, context, 'system-install', '-t', self.tpath(),
+                '--assume-downloaded',
+                '--', package,
+                private_mounts=False)
 
     @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):
