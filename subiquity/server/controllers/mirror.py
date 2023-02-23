@@ -202,7 +202,7 @@ class MirrorController(SubiquityController):
             if idx != 0:
                 # Sleep before testing the next candidate..
                 log.debug("Will check next candiate mirror after 10 seconds.")
-                await asyncio.sleep(10)
+                await asyncio.sleep(10 / self.app.scale_factor)
             if candidate.uri is None:
                 log.debug("Skipping unresolved country mirror")
                 continue
@@ -213,7 +213,7 @@ class MirrorController(SubiquityController):
                 log.debug("Retrying in 10 seconds...")
             else:
                 break
-            await asyncio.sleep(10)
+            await asyncio.sleep(10 / self.app.scale_factor)
             # If the test fails a second time, give up on this mirror.
             try:
                 await self.try_mirror_checking_once()
