@@ -55,7 +55,6 @@ class AdJoinStrategy():
             timeout=60)
 
         if not cp.returncode:
-            # Restoring the live session hostname.
             # Enable pam_mkhomedir
             cp = await run_curtin_command(self.app, context, "in-target",
                                           "-t", root_dir, "--",
@@ -68,6 +67,7 @@ class AdJoinStrategy():
             else:
                 result = AdJoinResult.OK
 
+        # Restoring the live session hostname.
         cp = await arun_command(['hostname', hostname_current])
         if cp.returncode:
             log.info("Failed to restore live session hostname")
