@@ -215,6 +215,7 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --machine-config examples/existing-partitions.json \
     --bootloader bios \
     --autoinstall examples/autoinstall.yaml \
+    --dry-run-config examples/dr-config-apt-local-mirror.yaml \
     --kernel-cmdline autoinstall \
     --source-catalog examples/install-sources.yaml
 validate

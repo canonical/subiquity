@@ -1,0 +1,7 @@
+apt_mirrors_known:
+  - url: http://mymirror.local/repository/Apt/ubuntu/
+    strategy: failure
+  - pattern: 'https?://[a-z]{2,}\.archive\.ubuntu\.com/ubuntu/?'
+    strategy: success
+  - url: http://archive.ubuntu.com/ubuntu
+    strategy: failure
