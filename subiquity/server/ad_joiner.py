@@ -14,9 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+from contextlib import contextmanager
 import logging
 from socket import gethostname
-from subiquitycore.utils import arun_command
+from subiquitycore.utils import run_command
 from subiquity.server.curtin import run_curtin_command
 from subiquity.common.types import (
     ADConnectionInfo,
@@ -24,6 +25,19 @@ from subiquity.common.types import (
 )
 
 log = logging.getLogger('subiquity.server.ad_joiner')
+
+
+@contextmanager
+def hostname_context(hostname: str):
+    """ Temporarily adjusts the host name to [hostname] and restores it
+        back in the end of the caller scope. """
+    hostname_current = gethostname()
+    hostname_process = run_command(['hostname', hostname])
+    yield hostname_process
+    # Restoring the live session hostname.
+    hostname_process = run_command(['hostname', hostname_current])
+    if hostname_process.returncode:
+        log.info("Failed to restore live session hostname")
 
 
 class AdJoinStrategy():
@@ -37,42 +51,35 @@ class AdJoinStrategy():
             -> AdJoinResult:
         """ This method changes the hostname and perform a real AD join, thus
             should only run in a live session. """
-        result = AdJoinResult.JOIN_ERROR
-        hostname_current = gethostname()
         # Set hostname for AD to determine FQDN (no FQDN option in realm join,
         # only adcli, which only understands the live system, but not chroot)
-        cp = await arun_command(['hostname', hostname])
-        if cp.returncode:
-            log.info("Failed to set live session hostname for adcli")
-            return result
+        with hostname_context(hostname) as host_process:
+            if host_process.returncode:
+                log.info("Failed to set live session hostname for adcli")
+                return AdJoinResult.JOIN_ERROR
 
-        root_dir = self.app.root
-        cp = await run_curtin_command(
-            self.app, context, "in-target", "-t", root_dir,
-            "--", self.realm, "join", "--install", root_dir, "--user",
-            info.admin_name, "--computer-name", hostname, "--unattended",
-            info.domain_name, private_mounts=True, input=info.password,
-            timeout=60)
+            root_dir = self.app.root
+            cp = await run_curtin_command(
+                self.app, context, "in-target", "-t", root_dir,
+                "--", self.realm, "join", "--install", root_dir, "--user",
+                info.admin_name, "--computer-name", hostname, "--unattended",
+                info.domain_name, private_mounts=True, input=info.password,
+                timeout=60)
 
-        if not cp.returncode:
-            # Enable pam_mkhomedir
-            cp = await run_curtin_command(self.app, context, "in-target",
-                                          "-t", root_dir, "--",
-                                          self.pam, "--package",
-                                          "--enable", "mkhomedir",
-                                          private_mounts=True)
+            if not cp.returncode:
+                # Enable pam_mkhomedir
+                cp = await run_curtin_command(self.app, context, "in-target",
+                                              "-t", root_dir, "--",
+                                              self.pam, "--package",
+                                              "--enable", "mkhomedir",
+                                              private_mounts=True)
 
-            if cp.returncode:
-                result = AdJoinResult.PAM_ERROR
+                if cp.returncode:
+                    return AdJoinResult.PAM_ERROR
             else:
-                result = AdJoinResult.OK
+                return AdJoinResult.OK
 
-        # Restoring the live session hostname.
-        cp = await arun_command(['hostname', hostname_current])
-        if cp.returncode:
-            log.info("Failed to restore live session hostname")
-
-        return result
+        return AdJoinResult.JOIN_ERROR
 
 
 class StubStrategy(AdJoinStrategy):
