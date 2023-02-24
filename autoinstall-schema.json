@@ -461,6 +461,18 @@
                 "additionalProperties": false
             }
         },
+        "ad": {
+            "type": "object",
+            "properties": {
+                "admin_name": {
+                    "type": "string"
+                },
+                "domain_name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
         "codecs": {
             "type": "object",
             "properties": {

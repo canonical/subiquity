@@ -91,9 +91,49 @@ class StubDcPingStrategy(DcPingStrategy):
 
 class ADController(SubiquityController):
     """ Implements the server part of the Active Directory feature. """
-    model_name = "ad"
     endpoint = API.active_directory
     # No auto install key and schema for now due password handling uncertainty.
+    autoinstall_key = model_name = "ad"
+    autoinstall_schema = {
+        'type': 'object',
+        'properties': {
+            'admin_name': {
+                'type': 'string',
+            },
+            'domain_name': {
+                'type': 'string',
+            },
+        },
+        'additionalProperties': False,
+    }
+    autoinstall_default = {"admin_name": '', 'domain_name': ''}
+
+    def serialize(self):
+        info = self.model.conn_info
+        if info is None:
+            return None
+
+        return {'admin_name': info.admin_name, 'domain_name': info.domain_name}
+
+    def deserialize(self, state):
+        if state is None:
+            return
+        if 'admin_name' in state and 'domain_name' in state:
+            info = ADConnectionInfo(admin_name=state['admin_name'],
+                                    domain_name=state['domain_name'])
+            self.model.set(info)
+
+    def make_autoinstall(self):
+        return self.serialize()
+
+    def load_autoinstall_data(self, data):
+        self.deserialize(data)
+        self.model.do_join = False
+
+    def interactive(self):
+        # Since we don't accept the domain admin password in the autoinstall
+        # file, this cannot be non-interactive.
+        return True
 
     def __init__(self, app):
         super().__init__(app)
