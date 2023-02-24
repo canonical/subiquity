@@ -1711,5 +1711,6 @@ class TestActiveDirectory(TestAPI):
             self.assertEqual('UNKNOWN', join_result)
             # And without the installer controller running, a blocking call
             # should timeout since joining never happens.
-            with self.assertRaises(asyncio.exceptions.CancelledError):
-                join_result = await instance.get(join_result_ep, wait=True)
+            with self.assertRaises(asyncio.exceptions.TimeoutError):
+                join_result = instance.get(join_result_ep, wait=True)
+                await asyncio.wait_for(join_result, timeout=1.5)
