@@ -64,7 +64,7 @@ class AdJoinStrategy():
                                      "--user", info.admin_name,
                                      "--computer-name", hostname,
                                      "--unattended", info.domain_name],
-                                    input=info.password, timeout=60)
+                                    input=info.password)
 
             if not cp.returncode:
                 # Enable pam_mkhomedir
