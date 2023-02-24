@@ -66,22 +66,42 @@ class AdJoinStrategy():
                                      "--unattended", info.domain_name],
                                     input=info.password)
 
-            if not cp.returncode:
-                # Enable pam_mkhomedir
-                try:
-                    cp = await run_curtin_command(self.app, context,
-                                                  "in-target", "-t", root_dir,
-                                                  "--", self.pam, "--package",
-                                                  "--enable", "mkhomedir",
-                                                  private_mounts=False)
+            if cp.returncode:
+                # Try again without the computer name. Lab tests shown more
+                # success in this setup, but I'm still not sure if we should
+                # drop the computer name attempt, since that's the way Ubiquity
+                # has been doing for ages.
+                log.debug("Joining operation failed:")
+                log.debug(cp.stderr)
+                log.debug(cp.stdout)
+                log.debug("Trying again without overriding the computer name:")
+                cp = await arun_command([self.realm, "join", "--install",
+                                         root_dir, "--user", info.admin_name,
+                                         "--unattended", info.domain_name],
+                                        input=info.password)
 
-                    return AdJoinResult.OK
-                except CalledProcessError:
-                    # The app command runner doesn't give us output in case of
-                    # failure in the wait() method, which is called by
-                    # run_curtin_command
-                    log.info("Failed to update pam-auth")
-                    return AdJoinResult.PAM_ERROR
+                if cp.returncode:
+                    log.debug("Joining operation failed:")
+                    log.debug(cp.stderr)
+                    log.debug(cp.stdout)
+                    return AdJoinResult.JOIN_ERROR
+
+            # Enable pam_mkhomedir
+            try:
+                # The function raises if the process fail.
+                await run_curtin_command(self.app, context,
+                                         "in-target", "-t", root_dir,
+                                         "--", self.pam, "--package",
+                                         "--enable", "mkhomedir",
+                                         private_mounts=False)
+
+                return AdJoinResult.OK
+            except CalledProcessError:
+                # The app command runner doesn't give us output in case of
+                # failure in the wait() method, which is called by
+                # run_curtin_command
+                log.info("Failed to update pam-auth")
+                return AdJoinResult.PAM_ERROR
 
         return AdJoinResult.JOIN_ERROR
 
