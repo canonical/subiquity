@@ -17,7 +17,8 @@ import asyncio
 from contextlib import contextmanager
 import logging
 from socket import gethostname
-from subiquitycore.utils import run_command
+from subprocess import CalledProcessError
+from subiquitycore.utils import arun_command, run_command
 from subiquity.server.curtin import run_curtin_command
 from subiquity.common.types import (
     ADConnectionInfo,
@@ -59,25 +60,28 @@ class AdJoinStrategy():
                 return AdJoinResult.JOIN_ERROR
 
             root_dir = self.app.root
-            cp = await run_curtin_command(
-                self.app, context, "in-target", "-t", root_dir,
-                "--", self.realm, "join", "--install", root_dir, "--user",
-                info.admin_name, "--computer-name", hostname, "--unattended",
-                info.domain_name, private_mounts=True, input=info.password,
-                timeout=60)
+            cp = await arun_command([self.realm, "join", "--install", root_dir,
+                                     "--user", info.admin_name,
+                                     "--computer-name", hostname,
+                                     "--unattended", info.domain_name],
+                                    input=info.password, timeout=60)
 
             if not cp.returncode:
                 # Enable pam_mkhomedir
-                cp = await run_curtin_command(self.app, context, "in-target",
-                                              "-t", root_dir, "--",
-                                              self.pam, "--package",
-                                              "--enable", "mkhomedir",
-                                              private_mounts=True)
+                try:
+                    cp = await run_curtin_command(self.app, context,
+                                                  "in-target", "-t", root_dir,
+                                                  "--", self.pam, "--package",
+                                                  "--enable", "mkhomedir",
+                                                  private_mounts=False)
 
-                if cp.returncode:
+                    return AdJoinResult.OK
+                except CalledProcessError:
+                    # The app command runner doesn't give us output in case of
+                    # failure in the wait() method, which is called by
+                    # run_curtin_command
+                    log.info("Failed to update pam-auth")
                     return AdJoinResult.PAM_ERROR
-            else:
-                return AdJoinResult.OK
 
         return AdJoinResult.JOIN_ERROR
 
