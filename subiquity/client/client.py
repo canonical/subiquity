@@ -461,6 +461,8 @@ class SubiquityClient(TuiApplication):
                     "marking additional endpoints as configured: %s",
                     needed)
                 await self.client.meta.mark_configured.POST(list(needed))
+        # TODO: remove this when TUI gets an Active Directory screen:
+        await self.client.meta.mark_configured.POST(['active_directory'])
         await self.client.meta.confirm.POST(self.our_tty)
 
     def add_global_overlay(self, overlay):
