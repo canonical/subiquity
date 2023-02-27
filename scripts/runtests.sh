@@ -2,7 +2,6 @@
 set -eux
 
 export PYTHONPATH=$PWD:$PWD/probert:$PWD/curtin
-export PYTHONTRACEMALLOC=3
 
 RELEASE=$(lsb_release -rs)
 
