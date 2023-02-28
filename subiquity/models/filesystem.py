@@ -688,7 +688,9 @@ class Disk(_Device):
             return False
         return True
 
-    ok_for_lvm_vg = ok_for_raid
+    @property
+    def ok_for_lvm_vg(self):
+        return self.ok_for_raid and self.size > LVM_OVERHEAD
 
     @property
     def model(self):
@@ -783,6 +785,10 @@ class Partition(_Formattable):
         return True
 
     @property
+    def ok_for_lvm_vg(self):
+        return self.ok_for_raid and self.size > LVM_OVERHEAD
+
+    @property
     def os(self):
         os_data = self._m._probe_data.get('os', {}).get(self._path())
         if not os_data:
@@ -792,8 +798,6 @@ class Partition(_Formattable):
     @property
     def is_logical(self):
         return self.flag == 'logical'
-
-    ok_for_lvm_vg = ok_for_raid
 
 
 @fsobj("raid")
@@ -866,7 +870,9 @@ class Raid(_Device):
             return False
         return True
 
-    ok_for_lvm_vg = ok_for_raid
+    @property
+    def ok_for_lvm_vg(self):
+        return self.ok_for_raid and self.size > LVM_OVERHEAD
 
     # What is a device that makes up this device referred to as?
     component_name = "component"
