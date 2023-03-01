@@ -28,6 +28,7 @@ from subiquity.common.types import (
     ADConnectionInfo,
     AdAdminNameValidation,
     AdDomainNameValidation,
+    AdJoinResult,
     AdPasswordValidation,
     AddPartitionV2,
     AnyStep,
@@ -433,6 +434,9 @@ class API:
 
         class check_password:
             def POST(password: Payload[str]) -> AdPasswordValidation: ...
+
+        class join_result:
+            def GET(wait: bool = True) -> AdJoinResult: ...
 
 
 class LinkAction(enum.Enum):

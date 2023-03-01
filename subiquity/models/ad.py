@@ -27,6 +27,10 @@ class ADModel:
         self.do_join = False
         self.conn_info: Optional[ADConnectionInfo] = None
 
+    def set(self, info: ADConnectionInfo):
+        self.conn_info = info
+        self.do_join = True
+
     def set_domain(self, domain: str):
         if not domain:
             return

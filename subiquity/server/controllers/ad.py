@@ -25,8 +25,10 @@ from subiquity.common.types import (
     ADConnectionInfo,
     AdAdminNameValidation,
     AdDomainNameValidation,
+    AdJoinResult,
     AdPasswordValidation
 )
+from subiquity.server.ad_joiner import AdJoiner
 from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger('subiquity.server.controllers.ad')
@@ -95,6 +97,8 @@ class ADController(SubiquityController):
 
     def __init__(self, app):
         super().__init__(app)
+        self.ad_joiner = AdJoiner(self.app)
+        self.join_result = AdJoinResult.UNKNOWN
         if self.app.opts.dry_run:
             self.ping_strgy = StubDcPingStrategy()
         else:
@@ -116,7 +120,7 @@ class ADController(SubiquityController):
     async def POST(self, data: ADConnectionInfo) -> None:
         """ Configures this controller with the supplied info.
             Clients are required to validate the info before POST'ing """
-        self.model.conn_info = data
+        self.model.set(data)
         await self.configured()
 
     async def check_admin_name_POST(self, admin_name: str) \
@@ -140,6 +144,22 @@ class ADController(SubiquityController):
         """ Returns True if the executables required
             to configure AD are present in the live system."""
         return self.ping_strgy.has_support()
+
+    async def join_result_GET(self, wait: bool = True) -> AdJoinResult:
+        """ If [wait] is True and the model is set for joining, this method
+            blocks until an attempt to join a domain completes.
+            Otherwise returns the current known state.
+            Most likely it will be AdJoinResult.UNKNOWN. """
+        if wait and self.model.do_join:
+            self.join_result = await self.ad_joiner.join_result()
+
+        return self.join_result
+
+    async def join_domain(self, hostname: str, context) -> None:
+        """ To be called from the install controller if the user requested
+        joining an AD domain """
+        await self.ad_joiner.join_domain(self.model.conn_info, hostname,
+                                         context)
 
 
 # Helper out-of-class functions grouped.

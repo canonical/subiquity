@@ -801,3 +801,11 @@ class AdDomainNameValidation(enum.Enum):
 class AdPasswordValidation(enum.Enum):
     OK = 'OK'
     EMPTY = 'Empty'
+
+
+class AdJoinResult(enum.Enum):
+    OK = 'OK'
+    JOIN_ERROR = 'Failed to join'
+    EMPTY_HOSTNAME = 'Target hostname cannot be empty'
+    PAM_ERROR = 'Failed to update pam-auth'
+    UNKNOWN = "Didn't attempt to join yet"

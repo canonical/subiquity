@@ -1696,3 +1696,21 @@ class TestActiveDirectory(TestAPI):
             result = await instance.post(endpoint + '/check_admin_name',
                                          data='$Ubuntu')
             self.assertEqual('OK', result)
+            # Attempts to join with the info supplied above.
+            ad_dict = {
+                'admin_name': 'Ubuntu',
+                'domain_name': 'jubuntu.com',
+                'password': 'u',
+            }
+            result = await instance.post(endpoint, ad_dict)
+            self.assertIsNone(result)
+            join_result_ep = endpoint + '/join_result'
+            # Without wait this shouldn't block but the result is unknown until
+            # the install controller runs.
+            join_result = await instance.get(join_result_ep, wait=False)
+            self.assertEqual('UNKNOWN', join_result)
+            # And without the installer controller running, a blocking call
+            # should timeout since joining never happens.
+            with self.assertRaises(asyncio.exceptions.TimeoutError):
+                join_result = instance.get(join_result_ep, wait=True)
+                await asyncio.wait_for(join_result, timeout=1.5)
