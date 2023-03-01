@@ -292,7 +292,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # VG with a single LV, but we should use more of a smaller
         # disk to avoid the user running into out of space errors
         # earlier than they probably expect to.
-        if vg.size < 10 * (1 << 30):
+        if vg.size < 10 * (1 << 30) or \
+           (lvm_options and lvm_options['use_all_space']):
             # Use all of a small (<10G) disk.
             lv_size = vg.size
         elif vg.size < 20 * (1 << 30):
@@ -354,16 +355,20 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise Exception(f'gap not found after resize, pgs={pgs}')
         return gap
 
-    def build_lvm_options(self, passphrase):
+    def build_lvm_options(self, passphrase, use_all_space):
+        lvm_options = {'use_all_space': use_all_space}
         if passphrase is None:
-            return None
+            lvm_options.update({
+                'encrypt': False,
+                })
         else:
-            return {
+            lvm_options.update({
                 'encrypt': True,
                 'luks_options': {
                     'passphrase': passphrase,
                     },
-                }
+                })
+        return lvm_options
 
     def guided(self, choice: GuidedChoiceV2):
         self.model.guided_configuration = choice
@@ -378,7 +383,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise Exception('failed to locate gap after adding boot')
 
         if choice.use_lvm:
-            lvm_options = self.build_lvm_options(choice.password)
+            lvm_options = self.build_lvm_options(choice.password,
+                                                 choice.use_all_space)
             self.guided_lvm(gap, lvm_options=lvm_options)
         else:
             self.guided_direct(gap)
@@ -912,10 +918,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         log.info(f'autoinstall: running guided {name} install in mode {mode} '
                  f'using {target}')
-        use_lvm = name == 'lvm'
+        use_lvm = name in {'lvm', 'lvm_use_all_space'}
+        use_all_space = name == 'lvm_use_all_space'
         password = layout.get('password', None)
         self.guided(GuidedChoiceV2(target=target, use_lvm=use_lvm,
-                                   password=password))
+                                   password=password,
+                                   use_all_space=use_all_space))
 
     def validate_layout_mode(self, mode):
         if mode not in ('reformat_disk', 'use_gap'):

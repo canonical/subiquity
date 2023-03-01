@@ -436,6 +436,7 @@ class GuidedChoiceV2:
     target: GuidedStorageTarget
     use_lvm: bool = False
     password: Optional[str] = attr.ib(default=None, repr=False)
+    use_all_space: bool = False
 
     @staticmethod
     def from_guided_choice(choice: GuidedChoice):
@@ -443,6 +444,7 @@ class GuidedChoiceV2:
                 target=GuidedStorageTargetReformat(disk_id=choice.disk_id),
                 use_lvm=choice.use_lvm,
                 password=choice.password,
+                use_all_space=False,
                 )
 
 

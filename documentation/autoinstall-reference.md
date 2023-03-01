@@ -278,11 +278,14 @@ Storage configuration is a complex topic and the description of the desired conf
 
 #### Supported layouts
 
-The two supported layouts at the time of writing are "lvm" and "direct".
+The supported layouts at the time of writing are "lvm", "lvm_use_all_space" and "direct".
 
     storage:
       layout:
         name: lvm
+    storage:
+      layout:
+        name: lvm_use_all_space
     storage:
       layout:
         name: direct
@@ -302,7 +305,16 @@ By default these will install to the largest disk in a system, but you can suppl
 
 (you can just say "`match: {}`" to match an arbitrary disk)
 
-When using the "lvm" layout, LUKS encryption can be enabled by supplying a password.
+The default "lvm" layout will size the root filesystem's LV depending on the size of the disk:
+
+ * Less than 10 GB: use all remaining space for root filesystem
+ * Between 10-20 GB: 10 GB root filesystem
+ * Between 20-200 GB: use half of remaining space for root filesystem
+ * Greater than 200 GB: 100 GB root filesystem
+
+The "lvm_use_all_space" layout will use all free space for the root filesystem regardless of its size.
+
+When using the "lvm" or "lvm_use_all_space" layouts, LUKS encryption can be enabled by supplying a password.
 
     storage:
       layout:
