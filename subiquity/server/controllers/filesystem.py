@@ -912,7 +912,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.info(f'autoinstall: running guided {name} install in mode {mode} '
                  f'using {target}')
         use_lvm = name == 'lvm'
-        self.guided(GuidedChoiceV2(target=target, use_lvm=use_lvm))
+        password = layout.get('password', None)
+        self.guided(GuidedChoiceV2(target=target, use_lvm=use_lvm,
+                                   password=password))
 
     def validate_layout_mode(self, mode):
         if mode not in ('reformat_disk', 'use_gap'):
