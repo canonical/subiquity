@@ -115,7 +115,12 @@ class AptConfigurer:
     def apt_config(self, final: bool):
         cfg = {}
         has_network = self.app.base_model.network.has_network
-        for model in self.app.base_model.mirror, self.app.base_model.proxy:
+        models = [
+            self.app.base_model.mirror,
+            self.app.base_model.proxy,
+            self.app.base_model.debconf_selections,
+        ]
+        for model in models:
             merge_config(cfg, model.get_apt_config(
                 final=final, has_network=has_network))
         return {'apt': cfg}

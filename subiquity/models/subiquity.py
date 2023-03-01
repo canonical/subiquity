@@ -19,7 +19,7 @@ import functools
 import json
 import logging
 import os
-from typing import Set
+from typing import Any, Dict, Set
 import uuid
 import yaml
 
@@ -159,6 +159,10 @@ class DebconfSelectionsModel:
         self.selections = ''
 
     def render(self):
+        return {}
+
+    def get_apt_config(
+            self, final: bool, has_network: bool) -> Dict[str, Any]:
         return {'debconf_selections': {'subiquity': self.selections}}
 
 
