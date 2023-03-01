@@ -385,6 +385,8 @@ A match spec supports the following keys:
 
  * `model: foo`: matches a disk where ID_VENDOR=foo in udev, supporting globbing
  * `path: foo`: matches a disk based on path (e.g. `/dev/sdc`), supporting globbing (the globbing support distinguishes this from specifying path: foo directly in the disk action)
+ * `id_path: foo`: matches a disk where ID_PATH=foo in udev, supporting globbing
+ * `devpath: foo`: matches a disk where DEVPATH=foo in udev, supporting globbing
  * `serial: foo`: matches a disk where ID_SERIAL=foo in udev, supporting globbing (the globbing support distinguishes this from specifying serial: foo directly in the disk action)
  * `ssd: yes|no`: matches a disk that is or is not an SSD (vs a rotating drive)
  * `size: largest|smallest`: take the largest or smallest disk rather than an arbitrary one if there are multiple matches (support for `smallest` added in version 20.06.1)

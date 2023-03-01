@@ -495,6 +495,42 @@ class TestAutoInstallConfig(unittest.TestCase):
         new_disk = model._one(type="disk", id="disk0")
         self.assertEqual(new_disk.serial, d1.serial)
 
+    def test_id_path_glob(self):
+        model = make_model()
+        d1 = make_disk(model, serial='aaaa')
+        d2 = make_disk(model, serial='bbbb')
+        fake_up_blockdata_disk(d1, ID_PATH='pci-0000:00:00.0-nvme-aaa')
+        fake_up_blockdata_disk(d2, ID_PATH='pci-0000:00:00.0-nvme-bbb')
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+                'match': {
+                    'id_path': '*aaa',
+                    },
+            },
+            ])
+        new_disk = model._one(type="disk", id="disk0")
+        self.assertEqual(new_disk.serial, d1.serial)
+
+    def test_devpath_glob(self):
+        model = make_model()
+        d1 = make_disk(model, serial='aaaa')
+        d2 = make_disk(model, serial='bbbb')
+        fake_up_blockdata_disk(d1, DEVPATH='/devices/pci0000:00/aaa')
+        fake_up_blockdata_disk(d2, DEVPATH='/devices/pci0000:00/bbb')
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+                'match': {
+                    'devpath': '*aaa',
+                    },
+            },
+            ])
+        new_disk = model._one(type="disk", id="disk0")
+        self.assertEqual(new_disk.serial, d1.serial)
+
     def test_no_matching_disk(self):
         model = make_model()
         make_disk(model, serial='bbbb')
