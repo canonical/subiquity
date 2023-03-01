@@ -34,11 +34,13 @@ def hostname_context(hostname: str):
         back in the end of the caller scope. """
     hostname_current = gethostname()
     hostname_process = run_command(['hostname', hostname])
-    yield hostname_process
-    # Restoring the live session hostname.
-    hostname_process = run_command(['hostname', hostname_current])
-    if hostname_process.returncode:
-        log.info("Failed to restore live session hostname")
+    try:
+        yield hostname_process
+    finally:
+        # Restoring the live session hostname.
+        hostname_process = run_command(['hostname', hostname_current])
+        if hostname_process.returncode:
+            log.info("Failed to restore live session hostname")
 
 
 class AdJoinStrategy():
