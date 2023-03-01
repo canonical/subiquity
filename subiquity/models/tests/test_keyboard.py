@@ -29,11 +29,21 @@ class TestKeyboardModel(SubiTestCase):
         self.assertIsNone(self.model._setting)
         self.assertEqual('us', self.model.setting.layout)
 
-    def testSetToZZ(self):
-        val = KeyboardSetting(layout='zz')
-        self.model.setting = val
-        self.assertEqual(val, self.model.setting)
-        self.assertEqual(val, self.model._setting)
+    @parameterized.expand((['zz'], ['en']))
+    def testSetToInvalidLayout(self, layout):
+        initial = self.model.setting
+        val = KeyboardSetting(layout=layout)
+        with self.assertRaises(ValueError):
+            self.model.setting = val
+        self.assertEqual(initial, self.model.setting)
+
+    @parameterized.expand((['zz']))
+    def testSetToInvalidVariant(self, variant):
+        initial = self.model.setting
+        val = KeyboardSetting(layout='us', variant=variant)
+        with self.assertRaises(ValueError):
+            self.model.setting = val
+        self.assertEqual(initial, self.model.setting)
 
     @parameterized.expand([
         ['ast_ES.UTF-8', 'es', 'ast'],
