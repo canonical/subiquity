@@ -19,16 +19,16 @@ from unittest import (
 )
 from subiquity.common.types import (
     AdAdminNameValidation,
-    ADConnectionInfo,
+    AdConnectionInfo,
     AdDomainNameValidation,
     AdJoinResult,
     AdPasswordValidation,
 )
 from subiquity.server.controllers.ad import (
-    ADController,
+    AdController,
     AdValidators,
 )
-from subiquity.models.ad import ADModel
+from subiquity.models.ad import AdModel
 from subiquitycore.tests.mocks import make_app
 
 
@@ -134,8 +134,8 @@ class TestADValidation(TestCase):
 class TestAdJoin(IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
-        self.controller = ADController(self.app)
-        self.controller.model = ADModel()
+        self.controller = AdController(self.app)
+        self.controller.model = AdModel()
 
     async def test_never_join(self):
         # Calling join_result_GET has no effect if the model is not set.
@@ -143,8 +143,8 @@ class TestAdJoin(IsolatedAsyncioTestCase):
         self.assertEqual(result, AdJoinResult.UNKNOWN)
 
     async def test_join_Unknown(self):
-        # Result remains UNKNOWN while ADController.join_domain is not called.
-        self.controller.model.set(ADConnectionInfo(domain_name='ubuntu.com',
+        # Result remains UNKNOWN while AdController.join_domain is not called.
+        self.controller.model.set(AdConnectionInfo(domain_name='ubuntu.com',
                                                    admin_name='Helper',
                                                    password='1234'))
 
@@ -153,7 +153,7 @@ class TestAdJoin(IsolatedAsyncioTestCase):
 
     async def test_join_OK(self):
         # The equivalent of a successful POST
-        self.controller.model.set(ADConnectionInfo(domain_name='ubuntu.com',
+        self.controller.model.set(AdConnectionInfo(domain_name='ubuntu.com',
                                                    admin_name='Helper',
                                                    password='1234'))
         # Mimics a client requesting the join result. Blocking by default.
@@ -163,7 +163,7 @@ class TestAdJoin(IsolatedAsyncioTestCase):
         self.assertEqual(await result, AdJoinResult.OK)
 
     async def test_join_Join_Error(self):
-        self.controller.model.set(ADConnectionInfo(domain_name='jubuntu.com',
+        self.controller.model.set(AdConnectionInfo(domain_name='jubuntu.com',
                                                    admin_name='Helper',
                                                    password='1234'))
         await self.controller.join_domain('this', 'AD Join')
@@ -171,7 +171,7 @@ class TestAdJoin(IsolatedAsyncioTestCase):
         self.assertEqual(result, AdJoinResult.JOIN_ERROR)
 
     async def test_join_Pam_Error(self):
-        self.controller.model.set(ADConnectionInfo(domain_name='pubuntu.com',
+        self.controller.model.set(AdConnectionInfo(domain_name='pubuntu.com',
                                                    admin_name='Helper',
                                                    password='1234'))
         await self.controller.join_domain('this', 'AD Join')

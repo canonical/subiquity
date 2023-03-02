@@ -8,7 +8,7 @@ import logging
 import re
 import os
 from typing import List
-from subiquity.models.ad import ADModel
+from subiquity.models.ad import AdModel
 
 
 class FailedTestCase(Exception):
@@ -18,7 +18,7 @@ class FailedTestCase(Exception):
 async def target_packages() -> List[str]:
     """ Returns the list of packages the AD Model wants to install in the
         target system."""
-    model = ADModel()
+    model = AdModel()
     model.do_join = True
     return await model.target_packages()
 

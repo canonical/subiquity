@@ -22,7 +22,7 @@ from subiquitycore.async_helpers import run_bg_task
 
 from subiquity.common.apidef import API
 from subiquity.common.types import (
-    ADConnectionInfo,
+    AdConnectionInfo,
     AdAdminNameValidation,
     AdDomainNameValidation,
     AdJoinResult,
@@ -89,7 +89,7 @@ class StubDcPingStrategy(DcPingStrategy):
         return True
 
 
-class ADController(SubiquityController):
+class AdController(SubiquityController):
     """ Implements the server part of the Active Directory feature. """
     endpoint = API.active_directory
     # No auto install key and schema for now due password handling uncertainty.
@@ -119,7 +119,7 @@ class ADController(SubiquityController):
         if state is None:
             return
         if 'admin_name' in state and 'domain_name' in state:
-            info = ADConnectionInfo(admin_name=state['admin_name'],
+            info = AdConnectionInfo(admin_name=state['admin_name'],
                                     domain_name=state['domain_name'])
             self.model.set(info)
 
@@ -153,11 +153,11 @@ class ADController(SubiquityController):
         if discovered_domain:
             self.model.set_domain(discovered_domain)
 
-    async def GET(self) -> Optional[ADConnectionInfo]:
+    async def GET(self) -> Optional[AdConnectionInfo]:
         """Returns the currently configured AD settings"""
         return self.model.conn_info
 
-    async def POST(self, data: ADConnectionInfo) -> None:
+    async def POST(self, data: AdConnectionInfo) -> None:
         """ Configures this controller with the supplied info.
             Clients are required to validate the info before POST'ing """
         self.model.set(data)

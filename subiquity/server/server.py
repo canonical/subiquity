@@ -259,7 +259,7 @@ class SubiquityServer(Application):
         "Identity",
         "SSH",
         "SnapList",
-        "AD",
+        "Ad",
         "Codecs",
         "Drivers",
         "TimeZone",

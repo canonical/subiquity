@@ -25,7 +25,7 @@ from subiquitycore.models.network import (
 
 from subiquity.common.api.defs import api, Payload, simple_endpoint
 from subiquity.common.types import (
-    ADConnectionInfo,
+    AdConnectionInfo,
     AdAdminNameValidation,
     AdDomainNameValidation,
     AdJoinResult,
@@ -415,9 +415,9 @@ class API:
         def GET() -> CasperMd5Results: ...
 
     class active_directory:
-        def GET() -> Optional[ADConnectionInfo]: ...
+        def GET() -> Optional[AdConnectionInfo]: ...
         # POST expects input validated by the check methods below:
-        def POST(data: Payload[ADConnectionInfo]) -> None: ...
+        def POST(data: Payload[AdConnectionInfo]) -> None: ...
 
         class has_support:
             """ Whether the live system supports Active Directory or not.
