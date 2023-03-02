@@ -152,12 +152,7 @@ class AptConfigurer:
         apt_config = apt_pkg.Configuration()
 
         apt_dirs = {
-            "Etc::SourceList": pfx / "etc/apt/sources.list",
-            "Etc::SourceParts": pfx / "etc/apt/sources.list.d",
-            "Etc::Main": pfx / "etc/apt/apt.conf",
-            "Etc::Parts": pfx / "etc/apt/apt.conf.d",
-            "Etc::Preferences": pfx / "etc/apt/preferences",
-            "Etc::PreferencesParts": pfx / "etc/apt/preferences.d",
+            "Etc": pfx / "etc/apt",
             "Cache::Archives": pfx / "var/lib/apt/archives",
             "State::Lists": pfx / "var/lib/apt/lists",
             "Cache::PkgCache": None,
