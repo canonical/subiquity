@@ -263,6 +263,7 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --autoinstall examples/autoinstall-ad.yaml \
     --kernel-cmdline autoinstall \
     --source-catalog examples/install-sources.yaml
+validate
 python3 scripts/test-ad-setup.py --tmpdir="$tmpdir" --debug
 
 # The OOBE doesn't exist in WSL < 20.04

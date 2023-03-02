@@ -1,34 +1,4 @@
 version: 1
-early-commands:
-  - echo a
-  - sleep 1
-  - echo a
-locale: en_GB.UTF-8
-refresh-installer:
-  update: yes
-  channel: edge
-network:
-  version: 2
-  ethernets:
-    all-eth:
-      match:
-        name: "en*"
-      dhcp6: yes
-debconf-selections: eek
-apt:
-  mirror-selection:
-    primary:
-      - uri: http://mymirror.local/repository/Apt/ubuntu/
-      - country-mirror
-      - uri: http://archive.ubuntu.com/ubuntu
-  disable_components:
-    - non-free
-    - restricted
-  preferences:
-    - {package: "python3-*", pin: "origin *ubuntu.com*", pin-priority: 200}
-    - {package: "python-*", pin: "origin *ubuntu.com*", pin-priority: -1}
-keyboard:
-  layout: gb
 active_directory:
   admin_name: '$ubuntu'
   domain_name: 'ad.ubuntu.com'
@@ -37,8 +7,3 @@ identity:
   username: ubuntu
   password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
   hostname: ubuntu
-updates: all
-timezone: Pacific/Guam
-ubuntu-pro:
-  # Token that passes the basic format checking but is invalid (i.e. contains more than 16 bytes of random data)
-  token: C1NWcZTHLteJXGVMM6YhvHDpGrhyy7
