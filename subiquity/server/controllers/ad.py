@@ -93,7 +93,7 @@ class AdController(SubiquityController):
     """ Implements the server part of the Active Directory feature. """
     endpoint = API.active_directory
     # No auto install key and schema for now due password handling uncertainty.
-    autoinstall_key = model_name = "ad"
+    autoinstall_key = model_name = "active_directory"
     autoinstall_schema = {
         'type': 'object',
         'properties': {

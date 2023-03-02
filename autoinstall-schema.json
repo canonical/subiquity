@@ -461,7 +461,7 @@
                 "additionalProperties": false
             }
         },
-        "ad": {
+        "active_directory": {
             "type": "object",
             "properties": {
                 "admin_name": {

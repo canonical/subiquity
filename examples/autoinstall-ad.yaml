@@ -29,7 +29,7 @@ apt:
     - {package: "python-*", pin: "origin *ubuntu.com*", pin-priority: -1}
 keyboard:
   layout: gb
-ad:
+active_directory:
   admin_name: '$ubuntu'
   domain_name: 'ad.ubuntu.com'
 identity:

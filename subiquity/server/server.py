@@ -215,7 +215,7 @@ POSTINSTALL_MODEL_NAMES = ModelNames({
     "ubuntu_pro",
     "userdata",
     },
-    desktop={"timezone", "codecs", "ad"})
+    desktop={"timezone", "codecs", "active_directory"})
 
 
 class SubiquityServer(Application):

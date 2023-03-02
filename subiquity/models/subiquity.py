@@ -180,7 +180,7 @@ class SubiquityModel:
             self.target = root
             self.chroot_prefix = []
 
-        self.ad = AdModel()
+        self.active_directory = AdModel()
         self.codecs = CodecsModel()
         self.debconf_selections = DebconfSelectionsModel()
         self.drivers = DriversModel()
