@@ -46,8 +46,8 @@ class TestLoggedCommandRunner(SubiTestCase):
         runner = LoggedCommandRunner(ident="my-id", use_systemd_user=False)
         environ = {
             "PATH": "/snap/subiquity/x1/bin",
-            "PYTHONPATH": "/usr/lib/python3.8/site-packages",
-            "PYTHON": "/snap/subiquity/x1/usr/bin/python3.8",
+            "PYTHONPATH": "/usr/lib/python3.10/site-packages",
+            "PYTHON": "/snap/subiquity/x1/usr/bin/python3.10",
             "TARGET_MOUNT_POINT": "/target",
             "SNAP": "/snap/subiquity/x1",
             "SAMPLE": "should-not-be-exported",
@@ -64,8 +64,8 @@ class TestLoggedCommandRunner(SubiTestCase):
             "--property", "SyslogIdentifier=my-id",
             "--property", "PrivateMounts=yes",
             "--setenv", "PATH=/snap/subiquity/x1/bin",
-            "--setenv", "PYTHONPATH=/usr/lib/python3.8/site-packages",
-            "--setenv", "PYTHON=/snap/subiquity/x1/usr/bin/python3.8",
+            "--setenv", "PYTHONPATH=/usr/lib/python3.10/site-packages",
+            "--setenv", "PYTHON=/snap/subiquity/x1/usr/bin/python3.10",
             "--setenv", "TARGET_MOUNT_POINT=/target",
             "--setenv", "SNAP=/snap/subiquity/x1",
             "--",
@@ -76,7 +76,7 @@ class TestLoggedCommandRunner(SubiTestCase):
         runner = LoggedCommandRunner(ident="my-id", use_systemd_user=True)
         # Make sure unset variables are ignored
         environ = {
-            "PYTHONPATH": "/usr/lib/python3.8/site-packages",
+            "PYTHONPATH": "/usr/lib/python3.10/site-packages",
         }
         with patch.dict(os.environ, environ, clear=True):
             cmd = runner._forge_systemd_cmd(
@@ -89,7 +89,7 @@ class TestLoggedCommandRunner(SubiTestCase):
             "--property", "SyslogIdentifier=my-id",
             "--user",
             "--pipe",
-            "--setenv", "PYTHONPATH=/usr/lib/python3.8/site-packages",
+            "--setenv", "PYTHONPATH=/usr/lib/python3.10/site-packages",
             "--",
             "/bin/ls", "/root",
         ]

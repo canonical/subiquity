@@ -1,5 +1,5 @@
 name: subiquity
-base: core20
+base: core22
 version: git
 summary: Ubuntu installer
 description: The Ubuntu server installer
@@ -21,7 +21,7 @@ apps:
       SUBIQUITY_ROOT_ORIG: $SUBIQUITY_ROOT
       SUBIQUITY_ROOT: $SNAP
       PYTHON_ORIG: $PYTHON
-      PYTHON: $SNAP/usr/bin/python3.8
+      PYTHON: $SNAP/usr/bin/python3.10
   probert:
     command: bin/probert
   subiquity-server:
@@ -31,8 +31,8 @@ apps:
     environment:
       PYTHONIOENCODING: utf-8
       SUBIQUITY_ROOT: $SNAP
-      PYTHON: $SNAP/usr/bin/python3.8
-      PY3OR2_PYTHON: $SNAP/usr/bin/python3.8
+      PYTHON: $SNAP/usr/bin/python3.10
+      PY3OR2_PYTHON: $SNAP/usr/bin/python3.10
       PATH: $PATH:$SNAP/bin:$SNAP/sbin
   subiquity-service:
     command: usr/bin/subiquity-service
@@ -48,7 +48,7 @@ apps:
       SUBIQUITY_ROOT_ORIG: $SUBIQUITY_ROOT
       SUBIQUITY_ROOT: $SNAP
       PYTHON_ORIG: $PYTHON
-      PYTHON: $SNAP/usr/bin/python3.8
+      PYTHON: $SNAP/usr/bin/python3.10
   os-prober:
     command: usr/bin/os-prober
     environment:
@@ -64,13 +64,19 @@ parts:
     source-commit: b1f4da3bec92356e8ef389c1c581cfdcd1b36c42
 
     override-pull: |
-      snapcraftctl pull
+      craftctl default
       PACKAGED_VERSION="$(git describe --long --abbrev=9 --match=[0-9][0-9]*)"
       sed -e "s,@@PACKAGED_VERSION@@,$PACKAGED_VERSION,g" -i curtin/version.py
     override-build: &pyinstall |
       # We install without dependencies because all dependencies come from
       # archive packages.
-      pip3 install --prefix=$SNAPCRAFT_PART_INSTALL --no-dependencies .
+      # XXX: On core22, running `pip3 install --prefix xxx` does not do the
+      # right thing. The package ends up installed in xxx/local and the modules
+      # get installed to dist-packages instead of site-packages.
+      # See https://discuss.python.org/t/18240
+      # As a workaround, we use a fake user install to get the package
+      # installed in the expected place.
+      PYTHONUSERBASE="$CRAFT_PART_INSTALL" pip3 install --user --no-dependencies .
 
     build-packages:
       - python3-pip
@@ -97,8 +103,8 @@ parts:
       - cloud-init
       - iso-codes
       - libpython3-stdlib
-      - libpython3.8-minimal
-      - libpython3.8-stdlib
+      - libpython3.10-minimal
+      - libpython3.10-stdlib
       - libsystemd0
       - lsb-release
       - ntfs-3g
@@ -119,7 +125,7 @@ parts:
       - python3-urwid
       - python3-yaml
       - python3-yarl
-      - python3.8-minimal
+      - python3.10-minimal
       - ssh-import-id
       - ubuntu-advantage-tools
 
@@ -128,7 +134,10 @@ parts:
       bin/subiquity-service: usr/bin/subiquity-service
       bin/subiquity-server: usr/bin/subiquity-server
       bin/subiquity-cmd: usr/bin/subiquity-cmd
-      $SNAPCRAFT_PART_BUILD/system_setup/ubuntu-wsl-setup: bin/ubuntu-wsl-setup
+      $CRAFT_PART_BUILD/system_setup/ubuntu-wsl-setup: bin/ubuntu-wsl-setup
+
+    build-attributes:
+      - enable-patchelf
 
   users-and-groups:
     plugin: nil
@@ -138,7 +147,7 @@ parts:
     override-build: |
       echo "get passwd/user-default-groups" | \
         debconf-communicate user-setup | \
-        cut -d ' ' -f 2- > $SNAPCRAFT_PART_INSTALL/users-and-groups
+        cut -d ' ' -f 2- > $CRAFT_PART_INSTALL/users-and-groups
     stage:
       - users-and-groups
 
@@ -148,7 +157,7 @@ parts:
     source: https://git.launchpad.net/ubuntu/+source/user-setup
     source-type: git
 
-    override-build: cp -a reserved-usernames $SNAPCRAFT_PART_INSTALL/
+    override-build: cp -a reserved-usernames $CRAFT_PART_INSTALL/
     stage:
       - reserved-usernames
 
@@ -161,9 +170,9 @@ parts:
       - python3-attr
       - python3-yaml
     override-build: |
-      PYTHONPATH=$SNAPCRAFT_PROJECT_DIR/ $SNAPCRAFT_PROJECT_DIR/scripts/make-kbd-info.py
-      cp $SNAPCRAFT_PROJECT_DIR/kbds/keyboard-configuration.yaml \
-        $SNAPCRAFT_PART_INSTALL/kbds/keyboard-configuration.yaml
+      PYTHONPATH=$CRAFT_PROJECT_DIR/ $CRAFT_PROJECT_DIR/scripts/make-kbd-info.py
+      cp $CRAFT_PROJECT_DIR/kbds/keyboard-configuration.yaml \
+        $CRAFT_PART_INSTALL/kbds/keyboard-configuration.yaml
     stage:
       - kbds/
 
@@ -188,7 +197,7 @@ parts:
         sed -i 's/^path-exclude.*LC_MESSAGES.*/#\0/g' /etc/dpkg/dpkg.cfg.d/excludes
         apt-get -y install --reinstall iso-codes
       } || true
-      $SNAPCRAFT_PROJECT_DIR/scripts/make-language-lists $SNAPCRAFT_PROJECT_DIR/po > $SNAPCRAFT_PART_INSTALL/languagelist
+      $CRAFT_PROJECT_DIR/scripts/make-language-lists $CRAFT_PROJECT_DIR/po > $CRAFT_PART_INSTALL/languagelist
 
     stage:
       - languagelist
@@ -211,6 +220,9 @@ parts:
       - python3-dev
       - python3-pip
 
+    build-attributes:
+      - enable-patchelf
+
   os-prober:
     plugin: nil
 
@@ -225,4 +237,7 @@ parts:
     override-build: |
       ./debian/rules build
       fakeroot ./debian/rules install
-      cp -a debian/os-prober/{usr,var} $SNAPCRAFT_PART_INSTALL
+      cp -a debian/os-prober/{usr,var} $CRAFT_PART_INSTALL
+
+    build-attributes:
+      - enable-patchelf
