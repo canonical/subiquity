@@ -70,7 +70,9 @@ class SSHController(SubiquityController):
 
     async def GET(self) -> SSHData:
         return SSHData(
-            install_server=self.model.install_server, allow_pw=self.model.pwauth
+            install_server=self.model.install_server,
+            allow_pw=self.model.pwauth,
+            authorized_keys=self.model.authorized_keys,
         )
 
     async def POST(self, data: SSHData) -> None:

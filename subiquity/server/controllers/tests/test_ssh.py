@@ -29,6 +29,24 @@ class TestSSHController(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.controller = SSHController(make_app())
 
+    async def test_GET(self):
+        model = self.controller.model
+
+        model.pwauth = False
+        model.authorized_keys = [
+            "ssh-rsa AAAAAAAAAAAAAAAAAAAAAAAAA # ssh-import-id lp:subiquity",
+        ]
+        model.install_server = True
+
+        data = await self.controller.GET()
+
+        self.assertFalse(data.allow_pw)
+        self.assertTrue(data.install_server)
+        self.assertIn(
+            "ssh-rsa AAAAAAAAAAAAAAAAAAAAAAAAA # ssh-import-id lp:subiquity",
+            data.authorized_keys,
+        )
+
     async def test_fetch_id_GET_ok(self):
         key = "ssh-rsa AAAAA[..] user@host # ssh-import-id lp:user"
         mock_fetch_keys = mock.patch.object(
