@@ -61,7 +61,7 @@ parts:
 
     source: https://git.launchpad.net/curtin
     source-type: git
-    source-commit: cc23249707a2773ecb1f10b17de35fff4620de9a
+    source-commit: b1f4da3bec92356e8ef389c1c581cfdcd1b36c42
 
     override-pull: |
       snapcraftctl pull

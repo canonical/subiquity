@@ -21,6 +21,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import subprocess
 import tempfile
 from typing import Any, Callable, Dict, List
 
@@ -426,10 +427,32 @@ class InstallController(SubiquityController):
         name="install_{package}",
         description="installing {package}")
     async def install_package(self, *, context, package):
-        await run_curtin_command(
-            self.app, context, 'system-install', '-t', self.tpath(),
-            '--', package,
-            private_mounts=False)
+        """ Attempt to download the package up-to three times, then install it.
+        """
+        for attempt, attempts_remaining in enumerate(reversed(range(3))):
+            try:
+                with context.child('retrieving', f'retrieving {package}'):
+                    await run_curtin_command(
+                        self.app, context, 'system-install', '-t',
+                        self.tpath(),
+                        '--download-only',
+                        '--', package,
+                        private_mounts=False)
+            except subprocess.CalledProcessError:
+                log.error(f"failed to download package {package}")
+                if attempts_remaining > 0:
+                    await asyncio.sleep(1 + attempt * 3)
+                else:
+                    raise
+            else:
+                break
+
+        with context.child('unpacking', f'unpacking {package}'):
+            await run_curtin_command(
+                self.app, context, 'system-install', '-t', self.tpath(),
+                '--assume-downloaded',
+                '--', package,
+                private_mounts=False)
 
     @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):

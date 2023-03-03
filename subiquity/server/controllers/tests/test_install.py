@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pathlib import Path
+import subprocess
 import unittest
 from unittest.mock import ANY, Mock, mock_open, patch
 
@@ -112,3 +113,31 @@ class TestWriteConfig(unittest.IsolatedAsyncioTestCase):
                          "/error-partitioning.tar")
         self.assertEqual(config["install"]["resume_data"],
                          "/resume-data.json")
+
+
+class TestInstallController(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.controller = InstallController(make_app())
+        self.controller.app.report_start_event = Mock()
+        self.controller.app.report_finish_event = Mock()
+        self.controller.model.target = "/target"
+
+    @patch("asyncio.sleep")
+    async def test_install_package(self, m_sleep):
+        run_curtin = "subiquity.server.controllers.install.run_curtin_command"
+        error = subprocess.CalledProcessError(
+                returncode=1, cmd="curtin system-install git")
+
+        with patch(run_curtin):
+            await self.controller.install_package(package="git")
+            m_sleep.assert_not_called()
+
+        m_sleep.reset_mock()
+        with patch(run_curtin, side_effect=(error, None, None)):
+            await self.controller.install_package(package="git")
+            m_sleep.assert_called_once()
+
+        m_sleep.reset_mock()
+        with patch(run_curtin, side_effect=(error, error, error, error)):
+            with self.assertRaises(subprocess.CalledProcessError):
+                await self.controller.install_package(package="git")
