@@ -495,10 +495,10 @@ class FilesystemView(BaseView):
         return TablePile(rows)
 
     def _build_buttons(self):
-        self.done = Toggleable(done_btn(_("Done"), on_press=self.done))
+        self.done_btn = Toggleable(done_btn(_("Done"), on_press=self.done))
 
         return [
-            self.done,
+            self.done_btn,
             reset_btn(_("Reset"), on_press=self.reset),
             back_btn(_("Back"), on_press=self.cancel),
             ]
@@ -524,7 +524,7 @@ class FilesystemView(BaseView):
         # This is an awful hack, actual thinking required:
         self.lb.base_widget._select_first_selectable()
         can_install = self.model.can_install()
-        self.done.enabled = can_install
+        self.done_btn.enabled = can_install
         if self.showing_guidance:
             del self.frame.contents[0]
         guidance = self._guidance()
