@@ -93,34 +93,35 @@ class AdController(SubiquityController):
     """ Implements the server part of the Active Directory feature. """
     endpoint = API.active_directory
     # No auto install key and schema for now due password handling uncertainty.
-    autoinstall_key = model_name = "active_directory"
+    autoinstall_key = "active-directory"
+    model_name = "active_directory"
     autoinstall_schema = {
         'type': 'object',
         'properties': {
-            'admin_name': {
+            'admin-name': {
                 'type': 'string',
             },
-            'domain_name': {
+            'domain-name': {
                 'type': 'string',
             },
         },
         'additionalProperties': False,
     }
-    autoinstall_default = {"admin_name": '', 'domain_name': ''}
+    autoinstall_default = {"admin-name": '', 'domain-name': ''}
 
     def make_autoinstall(self):
         info = self.model.conn_info
         if info is None:
             return None
 
-        return {'admin_name': info.admin_name, 'domain_name': info.domain_name}
+        return {'admin-name': info.admin_name, 'domain-name': info.domain_name}
 
     def load_autoinstall_data(self, data):
         if data is None:
             return
-        if 'admin_name' in data and 'domain_name' in data:
-            info = AdConnectionInfo(admin_name=data['admin_name'],
-                                    domain_name=data['domain_name'])
+        if 'admin-name' in data and 'domain-name' in data:
+            info = AdConnectionInfo(admin_name=data['admin-name'],
+                                    domain_name=data['domain-name'])
             self.model.set(info)
             self.model.do_join = False
 

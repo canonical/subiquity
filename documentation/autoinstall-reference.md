@@ -406,7 +406,7 @@ The hostname for the system.
 
 The password for the new user, crypted. This is required for use with sudo, even if SSH access is configured.
 
-### active_directory
+### active-directory
 
 **type:** mapping, see below
 **default:** no default
@@ -416,11 +416,11 @@ Accepts data required to join the target system in an Active Directory domain.
 
 A mapping that can contain keys, all of which take string values:
 
-#### admin_name
+#### admin-name
 
 A domain account name with privilege to perform the join operation. That account's password will be requested during runtime.
 
-#### domain_name
+#### domain-name
 
 The Active Directory domain to join.
 

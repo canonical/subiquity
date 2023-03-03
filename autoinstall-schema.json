@@ -461,13 +461,13 @@
                 "additionalProperties": false
             }
         },
-        "active_directory": {
+        "active-directory": {
             "type": "object",
             "properties": {
-                "admin_name": {
+                "admin-name": {
                     "type": "string"
                 },
-                "domain_name": {
+                "domain-name": {
                     "type": "string"
                 }
             },
