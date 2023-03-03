@@ -37,7 +37,11 @@ validate () {
             exit 1
         fi
         python3 scripts/validate-autoinstall-user-data.py < $tmpdir/var/log/installer/autoinstall-user-data
-        if grep passw0rd $tmpdir/subiquity-client-debug.log $tmpdir/subiquity-server-debug.log | grep -v "Loaded answers" | grep -v "answers_action"; then
+        if grep passw0rd \
+                $tmpdir/subiquity-client-debug.log \
+                $tmpdir/subiquity-server-debug.log \
+                $tmpdir/var/log/installer/autoinstall-user-data \
+                | grep -v "Loaded answers" | grep -v "answers_action"; then
             echo "password leaked into log file"
             exit 1
         fi
@@ -239,6 +243,17 @@ grep -q 'finish: subiquity/Install/install/postinstall/install_package2: SUCCESS
 grep -q 'switching subiquity to edge' $tmpdir/subiquity-server-debug.log
 grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing all updates' \
     $tmpdir/subiquity-server-debug.log
+
+clean
+LANG=C.UTF-8 timeout --foreground 60 \
+    python3 -m subiquity.cmd.tui \
+    --dry-run \
+    --output-base "$tmpdir" \
+    --machine-config examples/simple.json \
+    --autoinstall examples/autoinstall-lvm-password.yaml \
+    --kernel-cmdline autoinstall \
+    --source-catalog examples/install-sources.yaml
+validate
 
 clean
 LANG=C.UTF-8 timeout --foreground 60 \
