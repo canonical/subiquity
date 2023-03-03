@@ -21,12 +21,21 @@ from urwid import LineBox, Text, connect_signal
 
 from subiquity.common.types import SSHData, SSHIdentity
 from subiquity.ui.views.identity import UsernameField
+from subiquitycore.ui.actionmenu import Action, ActionMenu
 from subiquitycore.ui.buttons import cancel_btn, menu_btn, ok_btn
 from subiquitycore.ui.container import ListBox, Pile, WidgetWrap
 from subiquitycore.ui.form import BooleanField, ChoiceField, Form, Toggleable
 from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.stretchy import Stretchy
-from subiquitycore.ui.utils import SomethingFailed, button_pile, screen
+from subiquitycore.ui.table import ColSpec, TablePile, TableRow
+from subiquitycore.ui.utils import (
+    Color,
+    Padding,
+    SomethingFailed,
+    button_pile,
+    make_action_menu_row,
+    screen,
+)
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquity.ui.views.ssh")
@@ -222,6 +231,7 @@ class ConfirmSSHKeys(Stretchy):
     def ok(self, sender):
         for identity in self.identities:
             self.parent.add_key_to_table(identity.to_authorized_key())
+        self.parent.refresh_keys_table()
 
         self.parent.remove_overlay()
 
@@ -253,9 +263,22 @@ class SSHView(BaseView):
         bp = button_pile([self._import_key_btn])
         bp.align = "left"
 
+        colspecs = {
+            0: ColSpec(rpad=1),
+            1: ColSpec(can_shrink=True),
+            2: ColSpec(rpad=1),
+            3: ColSpec(rpad=1),
+        }
+        self.keys_table = TablePile([], colspecs=colspecs)
+        self.refresh_keys_table()
+
         rows = self.form.as_rows() + [
             Text(""),
             bp,
+            Text(""),
+            Text(_("AUTHORIZED KEYS")),
+            Text(""),
+            self.keys_table,
         ]
 
         connect_signal(self.form, "submit", self.done)
@@ -306,6 +329,62 @@ class SSHView(BaseView):
             self.form.pwauth.value = False
             if self.form.install_server:
                 self.form.pwauth.enabled = True
+
+    def remove_key_from_table(self, key: str) -> None:
+        """Remove the specified key from the list of authorized keys. When
+        removing the last one, we also re-enable password authentication (and
+        disable the checkbox)."""
+        self.keys.remove(key)
+        if not self.keys:
+            self.form.pwauth.value = True
+            self.form.pwauth.enabled = False
+
+    def refresh_keys_table(self):
+        rows: List[TableRow] = []
+
+        if not self.keys:
+            rows = [
+                TableRow(
+                    [
+                        (
+                            4,
+                            Padding.push_2(
+                                Color.info_minor(Text(_("No authorized key")))
+                            ),
+                        )
+                    ]
+                )
+            ]
+        for key in self.keys:
+            menu = ActionMenu(
+                [
+                    Action(
+                        label=_("Delete"),
+                        enabled=True,
+                        value=(None,),
+                        opens_dialog=False,
+                    ),
+                ]
+            )
+
+            rows.append(
+                make_action_menu_row(
+                    [
+                        Text("["),
+                        Text(key, wrap="ellipsis"),
+                        menu,
+                        Text("]"),
+                    ],
+                    menu,
+                )
+            )
+            connect_signal(menu, "action", self._action, key)
+
+        self.keys_table.set_contents(rows)
+
+    def _action(self, sender, value, key):
+        self.remove_key_from_table(key)
+        self.refresh_keys_table()
 
     def _toggle_server(self, sender, installed: bool):
         self._import_key_btn.enabled = installed
