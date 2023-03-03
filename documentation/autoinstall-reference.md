@@ -302,6 +302,13 @@ By default these will install to the largest disk in a system, but you can suppl
 
 (you can just say "`match: {}`" to match an arbitrary disk)
 
+When using the "lvm" layout, LUKS encryption can be enabled by supplying a password.
+
+    storage:
+      layout:
+        name: lvm
+        password: LUKS_PASSPHRASE
+
 The default is to use the lvm layout.
 
 #### action-based config

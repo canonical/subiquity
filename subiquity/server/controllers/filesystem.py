@@ -158,8 +158,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return self._system is not None
 
     def load_autoinstall_data(self, data):
-        log.debug("load_autoinstall_data %s", data)
-        log.debug("self.ai_data = %s", data)
+        # Log disabled to prevent LUKS password leak
+        # log.debug("load_autoinstall_data %s", data)
+        # log.debug("self.ai_data = %s", data)
         self.ai_data = data
 
     async def configured(self):
@@ -912,7 +913,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.info(f'autoinstall: running guided {name} install in mode {mode} '
                  f'using {target}')
         use_lvm = name == 'lvm'
-        self.guided(GuidedChoiceV2(target=target, use_lvm=use_lvm))
+        password = layout.get('password', None)
+        self.guided(GuidedChoiceV2(target=target, use_lvm=use_lvm,
+                                   password=password))
 
     def validate_layout_mode(self, mode):
         if mode not in ('reformat_disk', 'use_gap'):
@@ -920,7 +923,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     @with_context()
     def convert_autoinstall_config(self, context=None):
-        log.debug("self.ai_data = %s", self.ai_data)
+        # Log disabled to prevent LUKS password leak
+        # log.debug("self.ai_data = %s", self.ai_data)
         if 'layout' in self.ai_data:
             if 'config' in self.ai_data:
                 log.warning("The 'storage' section should not contain both "
