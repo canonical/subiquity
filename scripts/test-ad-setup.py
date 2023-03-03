@@ -45,7 +45,7 @@ async def main() -> None:
         for line in lines:
             for pack in packages_lookup:
                 find_line = find_start.format(pack) + log_status.format(pack)
-                pack_found = re.search(find_line, line) is None
+                pack_found = re.search(find_line, line) is not None
                 if pack_found:
                     packages_lookup[pack] = True
 
