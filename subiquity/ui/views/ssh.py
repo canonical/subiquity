@@ -21,9 +21,9 @@ from urwid import LineBox, Text, connect_signal
 
 from subiquity.common.types import SSHData, SSHIdentity
 from subiquity.ui.views.identity import UsernameField
-from subiquitycore.ui.buttons import cancel_btn, ok_btn
+from subiquitycore.ui.buttons import cancel_btn, menu_btn, ok_btn
 from subiquitycore.ui.container import ListBox, Pile, WidgetWrap
-from subiquitycore.ui.form import BooleanField, ChoiceField, Form
+from subiquitycore.ui.form import BooleanField, ChoiceField, Form, Toggleable
 from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.utils import SomethingFailed, button_pile, screen
@@ -33,15 +33,9 @@ log = logging.getLogger("subiquity.ui.views.ssh")
 
 
 SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
+IMPORT_KEY_LABEL = _("Import SSH key")
 
 _ssh_import_data = {
-    None: {
-        "caption": _("Import Username:"),
-        "help": "",
-        "valid_char": ".",
-        "error_invalid_char": "",
-        "regex": ".*",
-    },
     "gh": {
         "caption": _("GitHub Username:"),
         "help": _("Enter your GitHub username."),
@@ -63,39 +57,17 @@ _ssh_import_data = {
 }
 
 
-class SSHForm(Form):
-    install_server = BooleanField(_("Install OpenSSH server"))
-
+class SSHImportForm(Form):
     ssh_import_id = ChoiceField(
         _("Import SSH identity:"),
         choices=[
-            (_("No"), True, None),
             (_("from GitHub"), True, "gh"),
             (_("from Launchpad"), True, "lp"),
         ],
         help=_("You can import your SSH keys from GitHub or Launchpad."),
     )
 
-    import_username = UsernameField(_ssh_import_data[None]["caption"])
-
-    pwauth = BooleanField(_("Allow password authentication over SSH"))
-
-    cancel_label = _("Back")
-
-    def __init__(self, initial):
-        super().__init__(initial=initial)
-        connect_signal(self.install_server.widget, "change", self._toggle_server)
-        self._toggle_server(None, self.install_server.value)
-
-    def _toggle_server(self, sender, new_value):
-        if new_value:
-            self.ssh_import_id.enabled = True
-            self.import_username.enabled = self.ssh_import_id.value is not None
-            self.pwauth.enabled = self.ssh_import_id.value is not None
-        else:
-            self.ssh_import_id.enabled = False
-            self.import_username.enabled = False
-            self.pwauth.enabled = False
+    import_username = UsernameField(_ssh_import_data["gh"]["caption"])
 
     # validation of the import username does not read from
     # ssh_import_id.value because it is sometimes done from the
@@ -106,8 +78,6 @@ class SSHForm(Form):
     ssh_import_id_value = None
 
     def validate_import_username(self):
-        if self.ssh_import_id_value is None:
-            return
         username = self.import_username.value
         if len(username) == 0:
             return _("This field must not be blank.")
@@ -130,6 +100,57 @@ class SSHForm(Form):
                     "characters or single hyphens, and cannot begin or "
                     "end with a hyphen."
                 )
+
+
+class SSHImportStretchy(Stretchy):
+    def __init__(self, parent):
+        self.parent = parent
+        self.form = SSHImportForm(initial={})
+
+        connect_signal(self.form, "submit", lambda unused: self.done())
+        connect_signal(self.form, "cancel", lambda unused: self.cancel())
+        connect_signal(
+            self.form.ssh_import_id.widget, "select", self._import_service_selected
+        )
+
+        self._import_service_selected(
+            sender=None, service=self.form.ssh_import_id.widget.value
+        )
+
+        rows = self.form.as_rows()
+        title = _("Import SSH key")
+        super().__init__(title, [Pile(rows), Text(""), self.form.buttons], 0, 0)
+
+    def cancel(self):
+        self.parent.remove_overlay(self)
+
+    def done(self):
+        ssh_import_id = (
+            self.form.ssh_import_id.value + ":" + self.form.import_username.value
+        )
+        fsk = FetchingSSHKeys(self.parent)
+        self.parent.remove_overlay(self)
+        self.parent.show_overlay(fsk, width=fsk.width, min_width=None)
+        self.parent.controller.fetch_ssh_keys(ssh_import_id=ssh_import_id)
+
+    def _import_service_selected(self, sender, service: str):
+        iu = self.form.import_username
+        data = _ssh_import_data[service]
+        iu.help = _(data["help"])
+        iu.caption = _(data["caption"])
+        iu.widget.valid_char_pat = data["valid_char"]
+        iu.widget.error_invalid_char = _(data["error_invalid_char"])
+        self.form.ssh_import_id_value = service
+        if iu.value != "":
+            iu.validate()
+
+
+class SSHForm(Form):
+    install_server = BooleanField(_("Install OpenSSH server"))
+
+    pwauth = BooleanField(_("Allow password authentication over SSH"))
+
+    cancel_label = _("Back")
 
 
 class FetchingSSHKeys(WidgetWrap):
@@ -155,14 +176,13 @@ class FetchingSSHKeys(WidgetWrap):
         )
 
     def cancel(self, sender):
-        self.parent.controller._fetch_cancel()
         self.parent.remove_overlay()
+        self.parent.controller._fetch_cancel()
 
 
 class ConfirmSSHKeys(Stretchy):
-    def __init__(self, parent, ssh_data, identities: List[SSHIdentity]):
+    def __init__(self, parent, identities: List[SSHIdentity]):
         self.parent = parent
-        self.ssh_data = ssh_data
         self.identities: List[SSHIdentity] = identities
 
         ok = ok_btn(label=_("Yes"), on_press=self.ok)
@@ -200,10 +220,10 @@ class ConfirmSSHKeys(Stretchy):
         self.parent.remove_overlay()
 
     def ok(self, sender):
-        self.ssh_data.authorized_keys = [
-            id_.to_authorized_key() for id_ in self.identities
-        ]
-        self.parent.controller.done(self.ssh_data)
+        for identity in self.identities:
+            self.parent.add_key_to_table(identity.to_authorized_key())
+
+        self.parent.remove_overlay()
 
 
 class SSHView(BaseView):
@@ -222,76 +242,75 @@ class SSHView(BaseView):
         }
 
         self.form = SSHForm(initial=initial)
+        self.keys = ssh_data.authorized_keys
 
-        connect_signal(
-            self.form.ssh_import_id.widget, "select", self._select_ssh_import_id
+        self._import_key_btn = Toggleable(
+            menu_btn(
+                label=IMPORT_KEY_LABEL,
+                on_press=lambda unused: self.show_import_key_overlay(),
+            )
         )
+        bp = button_pile([self._import_key_btn])
+        bp.align = "left"
+
+        rows = self.form.as_rows() + [
+            Text(""),
+            bp,
+        ]
 
         connect_signal(self.form, "submit", self.done)
         connect_signal(self.form, "cancel", self.cancel)
+        connect_signal(self.form.install_server.widget, "change", self._toggle_server)
 
-        self.form_rows = ListBox(self.form.as_rows())
+        self._toggle_server(None, self.form.install_server.value)
+
         super().__init__(
             screen(
-                self.form_rows,
+                ListBox(rows),
                 self.form.buttons,
                 excerpt=_(self.excerpt),
                 focus_buttons=False,
             )
         )
 
-    def _select_ssh_import_id(self, sender, val):
-        iu = self.form.import_username
-        data = _ssh_import_data[val]
-        iu.help = _(data["help"])
-        iu.caption = _(data["caption"])
-        iu.widget.valid_char_pat = data["valid_char"]
-        iu.widget.error_invalid_char = _(data["error_invalid_char"])
-        iu.enabled = val is not None
-        self.form.pwauth.enabled = val is not None
-        # The logic here is a little tortured but the idea is that if
-        # the users switches from not importing a key to importing
-        # one, untick pwauth (but don't fiddle with the users choice
-        # if just switching between import sources), and conversely if
-        # the user is not importing a key then the box has to be
-        # ticked (and disabled).
-        if (val is None) != (self.form.ssh_import_id.value is None):
-            self.form.pwauth.value = val is None
-        if val is not None:
-            self.form_rows.base_widget.body.focus += 2
-        self.form.ssh_import_id_value = val
-        if iu.value != "" or val is None:
-            iu.validate()
-
     def done(self, sender):
         log.debug("User input: {}".format(self.form.as_data()))
         ssh_data = SSHData(
             install_server=self.form.install_server.value,
             allow_pw=self.form.pwauth.value,
+            authorized_keys=self.keys,
         )
 
-        # if user specifed a value, allow user to validate fingerprint
-        if self.form.ssh_import_id.value:
-            ssh_import_id = (
-                self.form.ssh_import_id.value + ":" + self.form.import_username.value
-            )
-            fsk = FetchingSSHKeys(self)
-            self.show_overlay(fsk, width=fsk.width, min_width=None)
-            self.controller.fetch_ssh_keys(
-                ssh_import_id=ssh_import_id, ssh_data=ssh_data
-            )
-        else:
-            self.controller.done(ssh_data)
+        self.controller.done(ssh_data)
 
     def cancel(self, result=None):
         self.controller.cancel()
 
-    def confirm_ssh_keys(self, ssh_data, ssh_import_id, identities: List[SSHIdentity]):
+    def show_import_key_overlay(self):
+        self.show_stretchy_overlay(SSHImportStretchy(self))
+
+    def confirm_ssh_keys(self, ssh_import_id, identities: List[SSHIdentity]):
         self.remove_overlay()
-        self.show_stretchy_overlay(ConfirmSSHKeys(self, ssh_data, identities))
+        self.show_stretchy_overlay(ConfirmSSHKeys(self, identities))
 
     def fetching_ssh_keys_failed(self, msg, stderr):
-        # FIXME in answers-based runs, the overlay does not exist so we pass
-        # not_found_ok=True.
-        self.remove_overlay(not_found_ok=True)
+        self.remove_overlay()
         self.show_stretchy_overlay(SomethingFailed(self, msg, stderr))
+
+    def add_key_to_table(self, key: str) -> None:
+        """Add the specified key to the list of authorized keys. When adding
+        the first one, we also disable password authentication (but give the
+        user the ability to re-enable it)"""
+        self.keys.append(key)
+        if len(self.keys) == 1:
+            self.form.pwauth.value = False
+            if self.form.install_server:
+                self.form.pwauth.enabled = True
+
+    def _toggle_server(self, sender, installed: bool):
+        self._import_key_btn.enabled = installed
+
+        if installed:
+            self.form.pwauth.enabled = bool(self.keys)
+        else:
+            self.form.pwauth.enabled = False
