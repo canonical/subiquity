@@ -168,7 +168,13 @@ class AptConfigurer:
         except (PermissionError, LookupError) as exc:
             log.warning("could to set owner of file %s: %r", partial_dir, exc)
 
-        apt_cmd = ["apt-get", "update", "-oAPT::Update::Error-Mode=any"]
+        apt_cmd = [
+            "apt-get", "update",
+            "-oAPT::Update::Error-Mode=any",
+            # Workaround because the default sandbox user (i.e., _apt) does not
+            # have access to the overlay.
+            "-oAPT::Sandbox::User=root",
+        ]
 
         for key, path in apt_dirs.items():
             value = "" if path is None else str(path)
