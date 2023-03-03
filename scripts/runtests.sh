@@ -262,7 +262,7 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --machine-config examples/simple.json \
     --autoinstall examples/autoinstall-ad.yaml \
     --kernel-cmdline autoinstall \
-    --source-catalog examples/install-sources.yaml
+    --source-catalog examples/mixed-sources.yaml
 validate
 python3 scripts/test-ad-setup.py --tmpdir="$tmpdir" --debug
 

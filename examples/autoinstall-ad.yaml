@@ -1,7 +1,7 @@
 version: 1
-active_directory:
-  admin_name: '$ubuntu'
-  domain_name: 'ad.ubuntu.com'
+active-directory:
+  admin-name: '$ubuntu'
+  domain-name: 'ad.ubuntu.com'
 identity:
   realname: ''
   username: ubuntu
