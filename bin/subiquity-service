@@ -1,6 +1,6 @@
 #!/bin/sh
 port=tty1
-export PYTHONPATH=$SNAP/lib/python3.8/site-packages
+export PYTHONPATH=$SNAP/lib/python3.10/site-packages
 
 if [ -n "$1" ]; then
    port=$1
