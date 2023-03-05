@@ -262,7 +262,17 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --machine-config examples/simple.json \
     --autoinstall examples/autoinstall-ad.yaml \
     --kernel-cmdline autoinstall \
-    --source-catalog examples/mixed-sources.yaml
+    --source-catalog examples/mixed-sources.yaml &
+sub_pid=$!
+until [[ -S "$tmpdir/socket" || $(ps -p "$sub_pid" > /dev/null ) == 1 ]]
+do
+    sleep 1
+done
+curl --unix-socket "$tmpdir/socket" -X POST 'http://localhost/meta/client_variant?variant=%22desktop%22'
+ad_info=$(curl --unix-socket "$tmpdir/socket" -X GET 'http://localhost/active_directory' | jq '.password="PassWord"')
+# User and domain name (but not passwd) should come from the autoinstall file.
+curl --unix-socket "$tmpdir/socket" -X POST -d "${ad_info}" 'http://localhost/active_directory'
+wait $sub_pid
 validate
 python3 scripts/test-ad-setup.py --tmpdir="$tmpdir" --debug
 
