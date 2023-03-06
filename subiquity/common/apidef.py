@@ -426,8 +426,15 @@ class API:
             def GET() -> bool: ...
 
         class check_domain_name:
+            """ Applies basic validation to the candidate domain name,
+                without calling the domain network. """
             def POST(domain_name: Payload[str]) \
                 -> List[AdDomainNameValidation]: ...
+
+        class ping_domain_controller:
+            """ Attempts to contact the controller of the provided domain. """
+            def POST(domain_name: Payload[str]) \
+                -> AdDomainNameValidation: ...
 
         class check_admin_name:
             def POST(admin_name: Payload[str]) -> AdAdminNameValidation: ...

@@ -1682,11 +1682,6 @@ class TestActiveDirectory(TestAPI):
 
             self.assertIn('MULTIPLE_DOTS', result)
 
-            # Leverages the stub ping strategy
-            result = await instance.post(endpoint + '/check_domain_name',
-                                         data='rockbuntu.com')
-            self.assertIn('REALM_NOT_FOUND', result)
-
             # Rejects invalid usernames.
             result = await instance.post(endpoint + '/check_admin_name',
                                          data='ubuntu;pro')
@@ -1696,6 +1691,12 @@ class TestActiveDirectory(TestAPI):
             result = await instance.post(endpoint + '/check_admin_name',
                                          data='$Ubuntu')
             self.assertEqual('OK', result)
+
+            # Leverages the stub ping strategy
+            result = await instance.post(endpoint + '/ping_domain_controller',
+                                         data='rockbuntu.com')
+            self.assertEqual('REALM_NOT_FOUND', result)
+
             # Attempts to join with the info supplied above.
             ad_dict = {
                 'admin_name': 'Ubuntu',

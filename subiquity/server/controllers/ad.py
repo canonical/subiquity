@@ -130,12 +130,12 @@ class ADController(SubiquityController):
     async def check_domain_name_POST(self, domain_name: str) \
             -> List[AdDomainNameValidation]:
         result = AdValidators.domain_name(domain_name)
-        if AdDomainNameValidation.OK in result:
-            ping = await AdValidators.ping_domain_controller(domain_name,
-                                                             self.ping_strgy)
-            return [ping]
-
         return list(result)
+
+    async def ping_domain_controller_POST(self, domain_name: str) \
+            -> AdDomainNameValidation:
+        return await AdValidators.ping_domain_controller(domain_name,
+                                                         self.ping_strgy)
 
     async def check_password_POST(self, password: str) -> AdPasswordValidation:
         return AdValidators.password(password)
