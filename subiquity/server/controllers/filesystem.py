@@ -433,7 +433,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             config, self.model._probe_data['blockdev'], is_probe_data=False)
         await self.configured()
 
-    def get_guided_disks(self, check_boot=True, with_reformatting=False):
+    def potential_boot_disks(self, check_boot=True, with_reformatting=False):
         disks = []
         for raid in self.model._all(type='raid'):
             if check_boot and not boot.can_be_boot_device(
@@ -465,7 +465,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # source catalog should directly specify the minimum suitable
         # size?)
         min_size = 2*self.app.base_model.source.current.size + (1 << 30)
-        disks = self.get_guided_disks(with_reformatting=True)
+        disks = self.potential_boot_disks(with_reformatting=True)
         se = None
         if self.is_core_boot_classic():
             se = self._system.storage_encryption
@@ -680,12 +680,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         scenarios = []
         install_min = self.calculate_suggested_install_min()
 
-        for disk in self.get_guided_disks(with_reformatting=True):
+        for disk in self.potential_boot_disks(with_reformatting=True):
             if disk.size >= install_min:
                 reformat = GuidedStorageTargetReformat(disk_id=disk.id)
                 scenarios.append((disk.size, reformat))
 
-        for disk in self.get_guided_disks(with_reformatting=False):
+        for disk in self.potential_boot_disks(with_reformatting=False):
             if len(disk.partitions()) < 1:
                 # On an empty disk, don't bother to offer it with UseGap, as
                 # it's basically the same as the Reformat case.
@@ -698,7 +698,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                         gap=api_gap)
                 scenarios.append((gap.size, use_gap))
 
-        for disk in self.get_guided_disks(check_boot=False):
+        for disk in self.potential_boot_disks(check_boot=False):
             part_align = disk.alignment_data().part_align
             for partition in disk.partitions():
                 vals = sizes.calculate_guided_resize(
@@ -732,8 +732,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return await self.v2_GET()
 
     async def v2_potential_boot_disks_GET(self) -> List[str]:
-        disks = self.get_guided_disks(check_boot=True,
-                                      with_reformatting=False)
+        disks = self.potential_boot_disks(check_boot=True,
+                                          with_reformatting=False)
         return [disk.id for disk in disks]
 
     async def v2_add_boot_partition_POST(self, disk_id: str) \
