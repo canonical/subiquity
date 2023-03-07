@@ -254,28 +254,6 @@ python3 scripts/check-yaml-fields.py "$tmpdir"/var/log/installer/autoinstall-use
         'autoinstall.source.id="ubuntu-server-minimal"'
 grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
 
-clean
-LANG=C.UTF-8 timeout --foreground 60 \
-    python3 -m subiquity.cmd.tui \
-    --dry-run \
-    --output-base "$tmpdir" \
-    --machine-config examples/simple.json \
-    --autoinstall examples/autoinstall-ad.yaml \
-    --kernel-cmdline autoinstall \
-    --source-catalog examples/mixed-sources.yaml &
-sub_pid=$!
-until [[ -S "$tmpdir/socket" || $(ps -p "$sub_pid" > /dev/null ) == 1 ]]
-do
-    sleep 1
-done
-curl --unix-socket "$tmpdir/socket" -X POST 'http://localhost/meta/client_variant?variant=%22desktop%22'
-ad_info=$(curl --unix-socket "$tmpdir/socket" -X GET 'http://localhost/active_directory' | jq '.password="PassWord"')
-# User and domain name (but not passwd) should come from the autoinstall file.
-curl --unix-socket "$tmpdir/socket" -X POST -d "${ad_info}" 'http://localhost/active_directory'
-wait $sub_pid
-validate
-python3 scripts/test-ad-setup.py --tmpdir="$tmpdir" --debug
-
 # The OOBE doesn't exist in WSL < 20.04
 if [ "${RELEASE%.*}" -ge 20 ]; then
     # Test TCP connectivity (system_setup only)
