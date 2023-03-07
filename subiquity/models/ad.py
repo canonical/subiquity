@@ -16,18 +16,18 @@
 import logging
 from typing import Optional
 
-from subiquity.common.types import ADConnectionInfo
+from subiquity.common.types import AdConnectionInfo
 
 log = logging.getLogger('subiquity.models.ad')
 
 
-class ADModel:
+class AdModel:
     """ Models the Active Directory feature """
     def __init__(self) -> None:
         self.do_join = False
-        self.conn_info: Optional[ADConnectionInfo] = None
+        self.conn_info: Optional[AdConnectionInfo] = None
 
-    def set(self, info: ADConnectionInfo):
+    def set(self, info: AdConnectionInfo):
         self.conn_info = info
         self.do_join = True
 
@@ -39,7 +39,7 @@ class ADModel:
             self.conn_info.domain_name = domain
 
         else:
-            self.conn_info = ADConnectionInfo(domain_name=domain)
+            self.conn_info = AdConnectionInfo(domain_name=domain)
 
     async def target_packages(self):
         # NOTE Those packages must be present in the target system to allow

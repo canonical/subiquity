@@ -21,7 +21,7 @@ from subprocess import CalledProcessError
 from subiquitycore.utils import arun_command, run_command
 from subiquity.server.curtin import run_curtin_command
 from subiquity.common.types import (
-    ADConnectionInfo,
+    AdConnectionInfo,
     AdJoinResult,
 )
 
@@ -50,7 +50,7 @@ class AdJoinStrategy():
     def __init__(self, app):
         self.app = app
 
-    async def do_join(self, info: ADConnectionInfo, hostname: str, context) \
+    async def do_join(self, info: AdConnectionInfo, hostname: str, context) \
             -> AdJoinResult:
         """ This method changes the hostname and perform a real AD join, thus
             should only run in a live session. """
@@ -109,7 +109,7 @@ class AdJoinStrategy():
 
 
 class StubStrategy(AdJoinStrategy):
-    async def do_join(self, info: ADConnectionInfo, hostname: str, context) \
+    async def do_join(self, info: AdConnectionInfo, hostname: str, context) \
             -> AdJoinResult:
         """ Enables testing without real join. The result depends on the
             domain name initial character, such that if it is:
@@ -135,7 +135,7 @@ class AdJoiner():
         else:
             self.strategy = AdJoinStrategy(app)
 
-    async def join_domain(self, info: ADConnectionInfo, hostname: str,
+    async def join_domain(self, info: AdConnectionInfo, hostname: str,
                           context) -> AdJoinResult:
         if hostname:
             self._result = await self.strategy.do_join(info, hostname, context)

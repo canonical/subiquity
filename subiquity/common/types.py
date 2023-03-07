@@ -773,7 +773,7 @@ class MirrorSelectionFallback(enum.Enum):
 
 
 @attr.s(auto_attribs=True)
-class ADConnectionInfo:
+class AdConnectionInfo:
     admin_name: str = ""
     domain_name: str = ""
     password: str = attr.ib(repr=False, default="")

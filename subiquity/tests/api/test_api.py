@@ -21,7 +21,9 @@ import contextlib
 from functools import wraps
 import json
 import os
+import re
 import tempfile
+from typing import Dict, List, Optional
 from unittest.mock import patch
 from urllib.parse import unquote
 
@@ -150,6 +152,10 @@ class Server(Client):
         if extra_args is not None:
             cmd.extend(extra_args)
         self.proc = await astart_command(cmd, env=env)
+        self._output_base = output_base
+
+    def output_base(self) -> Optional[str]:
+        return self._output_base
 
     async def close(self):
         try:
@@ -1715,3 +1721,73 @@ class TestActiveDirectory(TestAPI):
             with self.assertRaises(asyncio.exceptions.TimeoutError):
                 join_result = instance.get(join_result_ep, wait=True)
                 await asyncio.wait_for(join_result, timeout=1.5)
+
+    # Helper method
+    @staticmethod
+    async def target_packages() -> List[str]:
+        """ Returns the list of packages the AD Model wants to install in the
+            target system."""
+        from subiquity.models.ad import AdModel
+        model = AdModel()
+        model.do_join = True
+        return await model.target_packages()
+
+    async def packages_lookup(self, log_dir: str) -> Dict[str, bool]:
+        """ Returns a dictionary mapping the additional packages expected
+            to be installed in the target system and whether they were
+            referred to or not in the server log. """
+        expected_packages = await self.target_packages()
+        packages_lookup = {p: False for p in expected_packages}
+        log_path = os.path.join(log_dir, "subiquity-server-debug.log")
+        find_start = \
+            'finish: subiquity/Install/install/postinstall/install_{}:'
+        log_status = ' SUCCESS: installing {}'
+
+        with open(log_path, encoding="utf-8") as f:
+            lines = f.readlines()
+            for line in lines:
+                for pack in packages_lookup:
+                    find_line = find_start.format(pack) + \
+                                log_status.format(pack)
+                    pack_found = re.search(find_line, line) is not None
+                    if pack_found:
+                        packages_lookup[pack] = True
+
+        return packages_lookup
+
+    @timeout()
+    async def test_ad_autoinstall(self):
+        cfg = 'examples/simple.json'
+        extra = [
+            '--autoinstall', 'examples/autoinstall-ad.yaml',
+            '--source-catalog', 'examples/mixed-sources.yaml',
+            '--kernel-cmdline', 'autoinstall',
+        ]
+        try:
+            async with start_server(cfg, extra_args=extra) as inst:
+                endpoint = '/active_directory'
+                logdir = inst.output_base()
+                self.assertIsNotNone(logdir)
+                await inst.post('/meta/client_variant', variant='desktop')
+                ad_info = await inst.get(endpoint)
+                self.assertIsNotNone(ad_info['admin_name'])
+                self.assertIsNotNone(ad_info['domain_name'])
+                self.assertEqual('', ad_info['password'])
+                ad_info['password'] = 'passw0rd'
+
+                # This should be enough to configure AD controller and cause it
+                # to install packages into and try joining the target system.
+                await inst.post(endpoint, ad_info)
+                # Now this shouldn't hang or timeout
+                join_result = await inst.get(endpoint + '/join_result',
+                                             wait=True)
+                self.assertEqual('OK', join_result)
+                packages = await self.packages_lookup(logdir)
+                for k, v in packages.items():
+                    print(f"Checking package {k}")
+                    self.assertTrue(v, f"package {k} not found in the target")
+
+        # By the time we reach here the server already exited and the context
+        # manager will fail to POST /shutdown.
+        except aiohttp.client_exceptions.ClientOSError:
+            pass

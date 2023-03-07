@@ -22,7 +22,7 @@ from subiquitycore.async_helpers import run_bg_task
 
 from subiquity.common.apidef import API
 from subiquity.common.types import (
-    ADConnectionInfo,
+    AdConnectionInfo,
     AdAdminNameValidation,
     AdDomainNameValidation,
     AdJoinResult,
@@ -89,11 +89,46 @@ class StubDcPingStrategy(DcPingStrategy):
         return True
 
 
-class ADController(SubiquityController):
+class AdController(SubiquityController):
     """ Implements the server part of the Active Directory feature. """
-    model_name = "ad"
     endpoint = API.active_directory
     # No auto install key and schema for now due password handling uncertainty.
+    autoinstall_key = "active-directory"
+    model_name = "active_directory"
+    autoinstall_schema = {
+        'type': 'object',
+        'properties': {
+            'admin-name': {
+                'type': 'string',
+            },
+            'domain-name': {
+                'type': 'string',
+            },
+        },
+        'additionalProperties': False,
+    }
+    autoinstall_default = {"admin-name": '', 'domain-name': ''}
+
+    def make_autoinstall(self):
+        info = self.model.conn_info
+        if info is None:
+            return None
+
+        return {'admin-name': info.admin_name, 'domain-name': info.domain_name}
+
+    def load_autoinstall_data(self, data):
+        if data is None:
+            return
+        if 'admin-name' in data and 'domain-name' in data:
+            info = AdConnectionInfo(admin_name=data['admin-name'],
+                                    domain_name=data['domain-name'])
+            self.model.set(info)
+            self.model.do_join = False
+
+    def interactive(self):
+        # Since we don't accept the domain admin password in the autoinstall
+        # file, this cannot be non-interactive.
+        return True
 
     def __init__(self, app):
         super().__init__(app)
@@ -113,11 +148,11 @@ class ADController(SubiquityController):
         if discovered_domain:
             self.model.set_domain(discovered_domain)
 
-    async def GET(self) -> Optional[ADConnectionInfo]:
+    async def GET(self) -> Optional[AdConnectionInfo]:
         """Returns the currently configured AD settings"""
         return self.model.conn_info
 
-    async def POST(self, data: ADConnectionInfo) -> None:
+    async def POST(self, data: AdConnectionInfo) -> None:
         """ Configures this controller with the supplied info.
             Clients are required to validate the info before POST'ing """
         self.model.set(data)

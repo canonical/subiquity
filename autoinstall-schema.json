@@ -461,6 +461,18 @@
                 "additionalProperties": false
             }
         },
+        "active-directory": {
+            "type": "object",
+            "properties": {
+                "admin-name": {
+                    "type": "string"
+                },
+                "domain-name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
         "codecs": {
             "type": "object",
             "properties": {

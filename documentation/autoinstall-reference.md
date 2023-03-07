@@ -313,7 +313,7 @@ The default is to use the lvm layout.
 
 #### action-based config
 
-For full flexibility, the installer allows storage configuration to be done using a syntax which is a superset of that supported by curtin, described at https://curtin.readthedocs.io/en/latest/topics/storage.html. 
+For full flexibility, the installer allows storage configuration to be done using a syntax which is a superset of that supported by curtin, described at https://curtin.readthedocs.io/en/latest/topics/storage.html.
 
 If the "layout" feature is used to configure the disks, the "config" section will not be used.
 
@@ -329,7 +329,7 @@ As well as putting the list of actions under the 'config' key, the [grub](https:
             - type: partition
               ...
 
-The extensions to the curtin syntax are around disk selection and partition/logical volume sizing. 
+The extensions to the curtin syntax are around disk selection and partition/logical volume sizing.
 
 ##### Disk selection extensions
 
@@ -412,6 +412,24 @@ The hostname for the system.
 #### password
 
 The password for the new user, crypted. This is required for use with sudo, even if SSH access is configured.
+
+### active-directory
+
+**type:** mapping, see below
+**default:** no default
+**can be interactive:** yes
+
+Accepts data required to join the target system in an Active Directory domain.
+
+A mapping that can contain keys, all of which take string values:
+
+#### admin-name
+
+A domain account name with privilege to perform the join operation. That account's password will be requested during runtime.
+
+#### domain-name
+
+The Active Directory domain to join.
 
 ### ubuntu-pro
 

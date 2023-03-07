@@ -407,13 +407,13 @@ class InstallController(SubiquityController):
             policy = self.model.updates.updates
             await self.run_unattended_upgrades(context=context, policy=policy)
         await self.restore_apt_config(context=context)
-        if self.model.ad.do_join:
+        if self.model.active_directory.do_join:
             hostname = self.model.identity.hostname
             if not hostname:
                 with open(self.tpath('etc/hostname'), 'r') as f:
                     hostname = f.read().strip()
 
-            await self.app.controllers.AD.join_domain(hostname, context)
+            await self.app.controllers.Ad.join_domain(hostname, context)
 
     @with_context(description="configuring cloud-init")
     async def configure_cloud_init(self, context):
