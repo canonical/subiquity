@@ -463,6 +463,50 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
                 disk_size)
 
 
+class TestManualBoot(IsolatedAsyncioTestCase):
+    def _setup(self, bootloader, ptable, **kw):
+        self.app = make_app()
+        self.app.opts.bootloader = bootloader.value
+        self.fsc = FilesystemController(app=self.app)
+        self.fsc.model = self.model = make_model(bootloader)
+
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_get_boot_disks_only(self, bootloader, ptable):
+        self._setup(bootloader, ptable)
+        disk = make_disk(self.model)
+        self.assertEqual([disk.id],
+                         await self.fsc.v2_potential_boot_disks_GET())
+
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_get_boot_disks_none(self, bootloader, ptable):
+        self._setup(bootloader, ptable)
+        self.assertEqual([], await self.fsc.v2_potential_boot_disks_GET())
+
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_get_boot_disks_all(self, bootloader, ptable):
+        self._setup(bootloader, ptable)
+        d1 = make_disk(self.model)
+        d2 = make_disk(self.model)
+        self.assertEqual(set([d1.id, d2.id]),
+                         set(await self.fsc.v2_potential_boot_disks_GET()))
+
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_get_boot_disks_some(self, bootloader, ptable):
+        self._setup(bootloader, ptable)
+        d1 = make_disk(self.model)
+        d2 = make_disk(self.model)
+        make_partition(self.model, d1,
+                       size=gaps.largest_gap_size(d1),
+                       preserve=True)
+        if bootloader == Bootloader.NONE:
+            # NONE will always pass the boot check, even on a full disk
+            expected = set([d1.id, d2.id])
+        else:
+            expected = set([d2.id])
+        self.assertEqual(expected,
+                         set(await self.fsc.v2_potential_boot_disks_GET()))
+
+
 class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
 
     def setUp(self):
