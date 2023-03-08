@@ -20,8 +20,8 @@ import json
 import logging
 import os
 import pathlib
-import platform
 import select
+import time
 from typing import Dict, List, Optional
 
 from curtin.storage_config import ptable_uuid_to_flag_entry
@@ -823,22 +823,18 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     @with_context()
     async def _probe(self, *, context=None):
         self._errors = {}
-        for (restricted, kind) in [
-                (False, ErrorReportKind.BLOCK_PROBE_FAIL),
-                (True,  ErrorReportKind.DISK_PROBE_FAIL),
+        for (restricted, kind, short_label) in [
+                (False, ErrorReportKind.BLOCK_PROBE_FAIL, "block"),
+                (True,  ErrorReportKind.DISK_PROBE_FAIL, "disk"),
                 ]:
             try:
+                start = time.time()
                 await self._probe_once_task.start(
                     context=context, restricted=restricted)
                 # We wait on the task directly here, not
                 # self._probe_once_task.wait as if _probe_once_task
                 # gets cancelled, we should be cancelled too.
-                if platform.machine() == 'riscv64':
-                    # block probing is taking much longer on RISC-V - but why?
-                    timeout = 60.0
-                else:
-                    timeout = 15.0
-                await asyncio.wait_for(self._probe_once_task.task, timeout)
+                await asyncio.wait_for(self._probe_once_task.task, 90.0)
             except asyncio.CancelledError:
                 # asyncio.CancelledError is a subclass of Exception in
                 # Python 3.6 (sadface)
@@ -850,6 +846,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if report is not None:
                     self._errors[restricted] = (exc, report)
                 continue
+            finally:
+                elapsed = time.time() - start
+                log.debug(f'{short_label} probing took {elapsed:.1f} seconds')
             break
 
     def run_autoinstall_guided(self, layout):
