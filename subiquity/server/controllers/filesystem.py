@@ -429,8 +429,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def POST(self, config: list):
         log.debug(config)
-        self.model._actions = self.model._actions_from_config(
-            config, self.model._probe_data['blockdev'], is_probe_data=False)
+        self.model._actions, self.model._exclusions = \
+            self.model._actions_from_config(
+                config, self.model._probe_data['blockdev'],
+                is_probe_data=False)
         await self.configured()
 
     def get_guided_disks(self, check_boot=True, with_reformatting=False):
@@ -454,7 +456,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if can_be_boot:
                     continue
             disks.append(disk)
-        return disks
+        return [d for d in disks if d not in self._exclusions]
 
     async def guided_GET(self, wait: bool = False) -> GuidedStorageResponse:
         probe_resp = await self._probe_response(wait, GuidedStorageResponse)
@@ -642,7 +644,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         probe_resp = await self._probe_response(wait, StorageResponseV2)
         if probe_resp is not None:
             return probe_resp
-        disks = model._all(type='disk')
+        disks = [
+            d for d in model._all(type='disk') if d not in model._exclusions
+            ]
         minsize = self.calculate_suggested_install_min()
         return StorageResponseV2(
                 status=ProbeStatus.DONE,
