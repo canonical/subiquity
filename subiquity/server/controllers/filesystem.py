@@ -456,7 +456,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if can_be_boot:
                     continue
             disks.append(disk)
-        return [d for d in disks if d not in self._exclusions]
+        return [d for d in disks if d not in self.model._exclusions]
 
     async def guided_GET(self, wait: bool = False) -> GuidedStorageResponse:
         probe_resp = await self._probe_response(wait, GuidedStorageResponse)
