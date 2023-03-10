@@ -413,6 +413,20 @@ The hostname for the system.
 
 The password for the new user, crypted. This is required for use with sudo, even if SSH access is configured.
 
+The crypted password string must conform to what [passwd](https://manpages.ubuntu.com/manpages/jammy/en/man1/passwd.1.html) expects.  Depending on the special characters in the password hash, quoting may be required, so it's safest to just always include the quotes around the hash.
+
+Several tools can generate the crypted password, such as `mkpasswd` from the `whois` package, or `openssl passwd`.
+
+Example:
+
+```yaml
+identity:
+  realname: 'Ubuntu User'
+  username: ubuntu
+  password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
+  hostname: ubuntu
+```
+
 ### active-directory
 
 **type:** mapping, see below
