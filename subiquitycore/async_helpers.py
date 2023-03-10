@@ -113,3 +113,8 @@ class SingleInstanceTask:
                 return await self.task
             except asyncio.CancelledError:
                 pass
+
+    def done(self):
+        if self.task is None:
+            return False
+        return self.task.done()
