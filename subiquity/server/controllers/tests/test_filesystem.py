@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import copy
 from unittest import mock, IsolatedAsyncioTestCase
 import uuid
@@ -73,6 +74,22 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         await self.fsc._probe_once(context=None, restricted=False)
         actual = self.app.prober.get_storage.call_args.args[0]
         self.assertTrue({'defaults', 'os'} <= actual)
+
+
+class TestLP2009797(IsolatedAsyncioTestCase):
+    # LP: #2009797 - calling v2_GET, or anything method on
+    # FilesystemController with a wait parameter I assume,
+    # before the controller has fully started results in
+    # an AttributeError crash
+    def setUp(self):
+        self.app = make_app()
+        self.app.opts.bootloader = 'UEFI'
+        self.fsc = FilesystemController(app=self.app)
+
+    async def test_startup_not_started(self):
+        coro = self.fsc._probe_response(True, None)
+        with self.assertRaises(asyncio.TimeoutError):
+            await asyncio.wait_for(coro, timeout=.1)
 
 
 class TestGuided(IsolatedAsyncioTestCase):

@@ -153,6 +153,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._role_to_device: Dict[str: _Device] = {}
         self._device_to_structure: Dict[_Device: snapdapi.OnVolume] = {}
         self.use_tpm: bool = False
+        self._start_event = asyncio.Event()
 
     def is_core_boot_classic(self):
         return self._system is not None
@@ -227,7 +228,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
-        await self._start_task
+        await self.wait_start()
         await self._probe_task.wait()
         await self._get_system_task.wait()
         if False in self._errors:
@@ -386,7 +387,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def _probe_response(self, wait, resp_cls):
         if not self._probe_task.done():
             if wait:
-                await self._start_task
+                await self.wait_start()
                 await self._probe_task.wait()
             else:
                 return resp_cls(status=ProbeStatus.PROBING)
@@ -948,6 +949,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             release = lsb_release(dry_run=self.app.opts.dry_run)['release']
             self.supports_resilient_boot = release >= '20.04'
         self._start_task = schedule_task(self._start())
+        self._start_event.set()
 
     async def _start(self):
         context = pyudev.Context()
@@ -956,6 +958,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._monitor.enable_receiving()
         self.start_listening_udev()
         await self._probe_task.start()
+
+    async def wait_start(self):
+        # if a client asks for filesystem information early, it can end up
+        # waiting for a _start_task that hasn't even been created yet.
+        await self._start_event.wait()
+        await self._start_task
 
     def start_listening_udev(self):
         loop = asyncio.get_running_loop()
