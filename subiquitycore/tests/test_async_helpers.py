@@ -56,10 +56,13 @@ class TestSITWait(unittest.IsolatedAsyncioTestCase):
         sit = SingleInstanceTask(fn)
         await sit.start()
         await asyncio.wait_for(sit.wait(), timeout=1.0)
+        self.assertTrue(sit.done())
 
     async def test_wait_not_started(self):
         async def fn():
             self.fail('not supposed to be called')
         sit = SingleInstanceTask(fn)
+        self.assertFalse(sit.done())
         with self.assertRaises(asyncio.TimeoutError):
             await asyncio.wait_for(sit.wait(), timeout=0.1)
+        self.assertFalse(sit.done())
