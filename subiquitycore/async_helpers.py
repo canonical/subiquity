@@ -73,6 +73,7 @@ class SingleInstanceTask:
     def __init__(self, func, propagate_errors=True, cancel_restart=True):
         self.func = func
         self.propagate_errors = propagate_errors
+        self.task_created = asyncio.Event()
         self.task = None
         # if True, allow subsequent start calls to cancel a running task
         # raises TaskAlreadyRunningError if we skip starting the task.
@@ -102,9 +103,11 @@ class SingleInstanceTask:
             self.task = asyncio.Task(coro)
         else:
             self.task = coro
+        self.task_created.set()
         return schedule_task(self._start(old))
 
     async def wait(self):
+        await self.task_created.wait()
         while True:
             try:
                 return await self.task

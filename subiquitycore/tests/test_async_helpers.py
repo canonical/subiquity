@@ -45,3 +45,21 @@ class TestSingleInstanceTask(unittest.IsolatedAsyncioTestCase):
         sit.task.cancel()
         self.assertEqual(expected_call_count, mock_fn.call_count)
         self.assertEqual(cancel_restart, restarted)
+
+
+# previously, wait() may or may not have been safe to call, depending
+# on if the task had actually been created yet.
+class TestSITWait(unittest.IsolatedAsyncioTestCase):
+    async def test_wait_started(self):
+        async def fn():
+            pass
+        sit = SingleInstanceTask(fn)
+        await sit.start()
+        await asyncio.wait_for(sit.wait(), timeout=1.0)
+
+    async def test_wait_not_started(self):
+        async def fn():
+            self.fail('not supposed to be called')
+        sit = SingleInstanceTask(fn)
+        with self.assertRaises(asyncio.TimeoutError):
+            await asyncio.wait_for(sit.wait(), timeout=0.1)
