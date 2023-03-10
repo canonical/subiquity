@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-from unittest import mock, TestCase, IsolatedAsyncioTestCase
+from unittest import mock, IsolatedAsyncioTestCase
 import uuid
 
 from subiquitycore.tests.parameterized import parameterized
@@ -75,7 +75,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertTrue({'defaults', 'os'} <= actual)
 
 
-class TestGuided(TestCase):
+class TestGuided(IsolatedAsyncioTestCase):
     boot_expectations = [
         (Bootloader.UEFI, 'gpt', '/boot/efi'),
         (Bootloader.UEFI, 'msdos', '/boot/efi'),
@@ -96,7 +96,7 @@ class TestGuided(TestCase):
         self.d1 = make_disk(self.model, ptable=ptable)
 
     @parameterized.expand(boot_expectations)
-    def test_guided_direct(self, bootloader, ptable, p1mnt):
+    async def test_guided_direct(self, bootloader, ptable, p1mnt):
         self._guided_setup(bootloader, ptable)
         target = GuidedStorageTargetReformat(disk_id=self.d1.id)
         self.controller.guided(GuidedChoiceV2(target=target, use_lvm=False))
@@ -107,7 +107,7 @@ class TestGuided(TestCase):
         self.assertFalse(d1p2.preserve)
         self.assertIsNone(gaps.largest_gap(self.d1))
 
-    def test_guided_direct_BIOS_MSDOS(self):
+    async def test_guided_direct_BIOS_MSDOS(self):
         self._guided_setup(Bootloader.BIOS, 'msdos')
         target = GuidedStorageTargetReformat(disk_id=self.d1.id)
         self.controller.guided(GuidedChoiceV2(target=target, use_lvm=False))
@@ -117,7 +117,7 @@ class TestGuided(TestCase):
         self.assertIsNone(gaps.largest_gap(self.d1))
 
     @parameterized.expand(boot_expectations)
-    def test_guided_lvm(self, bootloader, ptable, p1mnt):
+    async def test_guided_lvm(self, bootloader, ptable, p1mnt):
         self._guided_setup(bootloader, ptable)
         target = GuidedStorageTargetReformat(disk_id=self.d1.id)
         self.controller.guided(GuidedChoiceV2(target=target, use_lvm=True))
@@ -133,7 +133,7 @@ class TestGuided(TestCase):
         self.assertEqual(d1p3, part)
         self.assertIsNone(gaps.largest_gap(self.d1))
 
-    def test_guided_lvm_BIOS_MSDOS(self):
+    async def test_guided_lvm_BIOS_MSDOS(self):
         self._guided_setup(Bootloader.BIOS, 'msdos')
         target = GuidedStorageTargetReformat(disk_id=self.d1.id)
         self.controller.guided(GuidedChoiceV2(target=target, use_lvm=True))
@@ -178,7 +178,7 @@ class TestGuided(TestCase):
              ('gpt', None)
          )]
     )
-    def test_guided_direct_side_by_side(self, bl, pt, flag):
+    async def test_guided_direct_side_by_side(self, bl, pt, flag):
         self._guided_side_by_side(bl, pt)
         parts_before = self.d1._partitions.copy()
         gap = gaps.largest_gap(self.d1)
@@ -198,7 +198,7 @@ class TestGuided(TestCase):
              ('gpt', None)
          )]
     )
-    def test_guided_lvm_side_by_side(self, bl, pt, flag):
+    async def test_guided_lvm_side_by_side(self, bl, pt, flag):
         self._guided_side_by_side(bl, pt)
         parts_before = self.d1._partitions.copy()
         gap = gaps.largest_gap(self.d1)
@@ -213,18 +213,18 @@ class TestGuided(TestCase):
         self.assertEqual(flag, p_data.flag)
 
 
-class TestLayout(TestCase):
+class TestLayout(IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
         self.app.opts.bootloader = None
         self.fsc = FilesystemController(app=self.app)
 
     @parameterized.expand([('reformat_disk',), ('use_gap',)])
-    def test_good_modes(self, mode):
+    async def test_good_modes(self, mode):
         self.fsc.validate_layout_mode(mode)
 
     @parameterized.expand([('resize_biggest',), ('use_free',)])
-    def test_bad_modes(self, mode):
+    async def test_bad_modes(self, mode):
         with self.assertRaises(ValueError):
             self.fsc.validate_layout_mode(mode)
 
