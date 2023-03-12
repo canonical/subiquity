@@ -174,8 +174,10 @@ for answers in examples/answers*.yaml; do
             opts+=(--dry-run-config "$dr_config")
         fi
         # The --foreground is important to avoid subiquity getting SIGTTOU-ed.
-        LANG=C.UTF-8 timeout --foreground 60 \
-            python3 -m subiquity.cmd.tui < "$tty" \
+        ./scripts/background-runner -l $tmpdir/tui.log \
+            env LANG=C.UTF-8 \
+            timeout --foreground 60 \
+            python3 -m subiquity.cmd.tui \
             --dry-run \
             --output-base "$tmpdir" \
             --answers "$answers" \
@@ -196,8 +198,10 @@ for answers in examples/answers*.yaml; do
                 reconf_settings="true"
                 validate_subtype="answers-reconf"
             fi
-            DRYRUN_RECONFIG="$reconf_settings" LANG=C.UTF-8 timeout --foreground 60 \
-                python3 -m system_setup.cmd.tui < "$tty" \
+            ./scripts/background-runner -l $tmpdir/tui.log \
+                env DRYRUN_RECONFIG="$reconf_settings" LANG=C.UTF-8 \
+                timeout --foreground 60 \
+                python3 -m system_setup.cmd.tui \
                 --dry-run \
                 --answers "$answers" \
                 --output-base "$tmpdir"
@@ -207,7 +211,9 @@ for answers in examples/answers*.yaml; do
     clean
 done
 
-LANG=C.UTF-8 timeout --foreground 60 \
+./scripts/background-runner -l $tmpdir/tui.log \
+    env LANG=C.UTF-8 \
+    timeout --foreground 60 \
     python3 -m subiquity.cmd.tui \
     --dry-run \
     --output-base "$tmpdir" \
@@ -241,7 +247,9 @@ grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: 
     $tmpdir/subiquity-server-debug.log
 
 clean
-LANG=C.UTF-8 timeout --foreground 60 \
+./scripts/background-runner -l $tmpdir/tui.log \
+    env LANG=C.UTF-8 \
+    timeout --foreground 60 \
     python3 -m subiquity.cmd.tui \
     --dry-run \
     --output-base "$tmpdir" \
@@ -275,7 +283,9 @@ if [ "${RELEASE%.*}" -ge 20 ]; then
     # Test system_setup autoinstall.
     for mode in "" "-full" "-no-shutdown"; do
         clean
-        LANG=C.UTF-8 timeout --foreground 60 \
+        ./scripts/background-runner -l $tmpdir/tui.log \
+            env LANG=C.UTF-8 \
+            timeout --foreground 60 \
             python3 -m system_setup.cmd.tui \
             --dry-run \
             --output-base "$tmpdir" \

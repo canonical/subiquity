@@ -1,0 +1,11 @@
+#!/bin/sh -u
+
+# Take a filename argument. The rest of the arguments are a program to run.
+# Save the exit code of that program to the filename arg.
+
+exitfile="$1"
+shift
+"$@"
+ec=$?
+echo $ec > "$exitfile"
+exit $ec
