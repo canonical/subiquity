@@ -384,7 +384,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self.guided_direct(gap)
 
     async def _probe_response(self, wait, resp_cls):
-        if self._probe_task.task is None or not self._probe_task.task.done():
+        if not self._probe_task.done():
             if wait:
                 await self._start_task
                 await self._probe_task.wait()
@@ -394,8 +394,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             return resp_cls(
                 status=ProbeStatus.FAILED,
                 error_report=self._errors[True][1].ref())
-        if self._get_system_task.task is None or \
-           not self._get_system_task.task.done():
+        if not self._get_system_task.done():
             if wait:
                 await self._get_system_task.wait()
             else:
