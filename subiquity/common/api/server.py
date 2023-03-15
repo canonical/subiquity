@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import inspect
+import logging
 import os
 import traceback
 
@@ -22,6 +23,8 @@ from aiohttp import web
 from subiquity.common.serialize import Serializer
 
 from .defs import Payload
+
+log = logging.getLogger('subiquity.common.api.server')
 
 
 class BindError(Exception):
@@ -131,6 +134,18 @@ def _make_handler(controller, definition, implementation, serializer,
                     args['context'] = context
                 if 'request' in impl_params:
                     args['request'] = request
+                if not getattr(
+                        definition, 'allowed_before_start', False):
+                    # Most endpoints should not be responding to requests
+                    # before the controllers have started, that's just bound to
+                    # be a big pool of timing bugs that we want nothing to do
+                    # with.  A few chosen methods should be safe, so allow
+                    # those to opt-in.  Everybody else blocks until the
+                    # controllers complete their start().
+                    if not controller.app.controllers_have_started.is_set():
+                        log.debug(f'{request.path} waiting on start')
+                        await controller.app.controllers_have_started.wait()
+                        log.debug(f'{request.path} resuming')
                 result = await implementation(**args)
                 resp = web.json_response(
                     serializer.serialize(def_ret_ann, result),

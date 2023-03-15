@@ -76,6 +76,7 @@ class Application:
         self.load_controllers(self.controllers)
         self.context = Context.new(self)
         self.exit_event = asyncio.Event()
+        self.controllers_have_started = asyncio.Event()
 
     def load_controllers(self, controllers):
         """ Load the corresponding list of controllers
@@ -123,6 +124,7 @@ class Application:
         for controller in self.controllers.instances:
             controller.start()
         log.debug("controllers started")
+        self.controllers_have_started.set()
 
     async def start(self):
         self.controllers.load_all()

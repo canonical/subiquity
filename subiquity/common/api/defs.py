@@ -99,3 +99,11 @@ def simple_endpoint(typ):
         def GET() -> typ: ...
         def POST(data: Payload[typ]): ...
     return endpoint
+
+
+def allowed_before_start(fun):
+    """An endpoint may mark themselves as allowed_before_start if they should
+    be made usable prior to the controllers starting.  Most endpoints don't
+    want this."""
+    fun.allowed_before_start = True
+    return fun
