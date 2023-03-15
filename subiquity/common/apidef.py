@@ -23,7 +23,12 @@ from subiquitycore.models.network import (
     WLANConfig,
     )
 
-from subiquity.common.api.defs import api, Payload, simple_endpoint
+from subiquity.common.api.defs import (
+    allowed_before_start,
+    api,
+    Payload,
+    simple_endpoint,
+    )
 from subiquity.common.types import (
     AdConnectionInfo,
     AdAdminNameValidation,
@@ -94,8 +99,9 @@ class API:
 
     class meta:
         class status:
+            @allowed_before_start
             def GET(cur: Optional[ApplicationState] = None) \
-              -> ApplicationStatus:
+                    -> ApplicationStatus:
                 """Get the installer state."""
 
         class mark_configured:

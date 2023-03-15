@@ -15,13 +15,19 @@
 
 import contextlib
 import unittest
+from unittest import mock
 
 from aiohttp.test_utils import TestClient, TestServer
 from aiohttp import web
 
 from subiquitycore.context import Context
 
-from subiquity.common.api.defs import api, path_parameter, Payload
+from subiquity.common.api.defs import (
+    allowed_before_start,
+    api,
+    path_parameter,
+    Payload,
+    )
 from subiquity.common.api.server import (
     bind,
     controller_for_request,
@@ -45,6 +51,8 @@ class ControllerBase:
 
     def __init__(self):
         self.context = Context.new(TestApp())
+        self.app = mock.Mock()
+        self.app.controllers_have_started = mock.MagicMock(return_value=True)
 
 
 @contextlib.asynccontextmanager
@@ -279,3 +287,46 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
         async with makeTestClient(API, Impl()) as client:
             await self.assertResponse(
                 client.get('/value?arg=2'), 'value2')
+
+    async def test_early_connect_ok(self):
+        @api
+        class API:
+            class can_be_used_early:
+                @allowed_before_start
+                def GET(): ...
+
+        class Impl(ControllerBase):
+            def __init__(self):
+                super().__init__()
+                self.app.controllers_have_started = mock.AsyncMock()
+                self.app.controllers_have_started.is_set = mock.Mock(
+                        return_value=False)
+
+            async def can_be_used_early_GET(self):
+                pass
+
+        impl = Impl()
+        async with makeTestClient(API, impl) as client:
+            await client.get('/can_be_used_early')
+            impl.app.controllers_have_started.wait.assert_not_called()
+
+    async def test_early_connect_wait(self):
+        @api
+        class API:
+            class must_not_be_used_early:
+                def GET(): ...
+
+        class Impl(ControllerBase):
+            def __init__(self):
+                super().__init__()
+                self.app.controllers_have_started = mock.AsyncMock()
+                self.app.controllers_have_started.is_set = mock.Mock(
+                        return_value=False)
+
+            async def must_not_be_used_early_GET(self):
+                pass
+
+        impl = Impl()
+        async with makeTestClient(API, impl) as client:
+            await client.get('/must_not_be_used_early')
+            impl.app.controllers_have_started.wait.assert_called_once()
