@@ -1124,13 +1124,14 @@ class FilesystemModel(object):
         if self._probe_data is not None:
             self._orig_config = storage_config.extract_storage_config(
                 self._probe_data)["storage"]["config"]
-            self._actions = self._actions_from_config(
+            self._actions, self._exclusions = self._actions_from_config(
                 self._orig_config,
                 self._probe_data['blockdev'],
                 is_probe_data=True)
         else:
             self._orig_config = []
             self._actions = []
+            self._exclusions = set()
         self.swap = None
         self.grub = None
         self.guided_configuration = None
@@ -1154,9 +1155,10 @@ class FilesystemModel(object):
             'blockdev': status.blockdev,
             'dasd': status.dasd,
             }
-        self._actions = self._actions_from_config(
+        self._actions, self._exclusions = self._actions_from_config(
             status.config,
-            status.blockdev)
+            status.blockdev,
+            is_probe_data=False)
 
     def _make_matchers(self, match):
         matchers = []
@@ -1280,7 +1282,7 @@ class FilesystemModel(object):
                 disks.remove(disk)
                 action['path'] = disk.path
                 action['serial'] = disk.serial
-        self._actions = self._actions_from_config(
+        self._actions, self._exclusions = self._actions_from_config(
             ai_config, self._probe_data['blockdev'], is_probe_data=False)
 
         self.assign_omitted_offsets()
@@ -1324,7 +1326,7 @@ class FilesystemModel(object):
                 else:
                     p.size = dehumanize_size(p.size)
 
-    def _actions_from_config(self, config, blockdevs, is_probe_data=False):
+    def _actions_from_config(self, config, blockdevs, *, is_probe_data):
         """Convert curtin storage config into action instances.
 
         curtin represents storage "actions" as defined in
@@ -1399,8 +1401,6 @@ class FilesystemModel(object):
 
         log.debug("exclusions %s", {e.id for e in exclusions})
 
-        objs = [o for o in objs if o not in exclusions]
-
         if is_probe_data:
             for o in objs:
                 if o.type == "partition" and o.flag == "swap":
@@ -1408,7 +1408,7 @@ class FilesystemModel(object):
                         objs.append(Filesystem(
                             m=self, fstype="swap", volume=o, preserve=True))
 
-        return objs
+        return objs, exclusions
 
     def _render_actions(self,
                         mode: ActionRenderMode = ActionRenderMode.DEFAULT):
@@ -1466,7 +1466,7 @@ class FilesystemModel(object):
         log.debug('mountpoints %s', mountpoints)
 
         if mode == ActionRenderMode.ALL:
-            work = list(self._actions)
+            work = [a for a in self._actions if a not in self._exclusions]
         else:
             work = [
                 a for a in self._actions if not getattr(a, 'preserve', False)
