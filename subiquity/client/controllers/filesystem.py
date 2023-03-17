@@ -241,7 +241,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
                     clean_suffix='vg'):
                 pass
         elif action['action'] == 'done':
-            if not self.ui.body.done.enabled:
+            if not self.ui.body.done_btn.enabled:
                 raise Exception("answers did not provide complete fs config")
             await self.app.confirm_install()
             self.finish()
