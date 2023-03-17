@@ -344,11 +344,11 @@ PATH="${PATH}:${SNAP_CORE_DIR}/usr/sbin:${SNAP_CORE_DIR}/usr/bin:${SNAP_CORE_DIR
 
 # configure python environment
 export PYTHONIOENCODING=utf-8
-PYTHONPATH=$SNAP/lib/python3.8/site-packages
+PYTHONPATH=$SNAP/lib/python3.10/site-packages
 PYTHONPATH=$SNAP/usr/lib/python3/site-packages:$PYTHONPATH
 PYTHONPATH=$SNAP/usr/lib/python3/dist-packages:$PYTHONPATH
 export PYTHONPATH
-export PYTHON=$SNAP/usr/bin/python3.8
+export PYTHON=$SNAP/usr/bin/python3.10
 export SNAP_PYTHON=$PYTHON
 # ensure curtin points at PYTHON
 export PY3OR2_PYTHON=$PYTHON

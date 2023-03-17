@@ -23,7 +23,7 @@ jobs:
       fail-fast: true
       matrix:
         image:
-          - ubuntu-daily:focal    # match the core snap we're running against
+          - ubuntu-daily:jammy    # match the core snap we're running against
           - ubuntu-daily:lunar    # latest
     steps:
     - uses: actions/checkout@v2

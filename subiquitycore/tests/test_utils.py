@@ -49,11 +49,11 @@ class TestOrigEnviron(SubiTestCase):
             'SUBIQUITY_ROOT_ORIG': '',
             'SUBIQUITY_ROOT': snap,
             'PYTHON_ORIG': '',
-            'PYTHON': f'{snap}/usr/bin/python3.8',
+            'PYTHON': f'{snap}/usr/bin/python3.10',
             'PYTHONPATH_ORIG': '',
             'PYTHONPATH': f'{snap}/stuff/things',
             'PY3OR2_PYTHON_ORIG': '',
-            'PY3OR2_PYTHON': f'{snap}/usr/bin/python3.8',
+            'PY3OR2_PYTHON': f'{snap}/usr/bin/python3.10',
             'PATH_ORIG': '/usr/bin:/bin',
             'PATH': '/usr/bin:/bin:/snap/bin'
         }
