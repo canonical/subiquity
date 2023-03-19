@@ -386,6 +386,12 @@ class StorageResponseV2:
     install_minimum_size: Optional[int] = None
 
 
+class GuidedCapability(enum.Enum):
+    DIRECT = enum.auto()
+    LVM = enum.auto()
+    LVM_LUKS = enum.auto()
+
+
 @attr.s(auto_attribs=True)
 class GuidedResizeValues:
     install_max: int
@@ -397,6 +403,7 @@ class GuidedResizeValues:
 @attr.s(auto_attribs=True)
 class GuidedStorageTargetReformat:
     disk_id: str
+    capabilities: List[GuidedCapability]
 
 
 @attr.s(auto_attribs=True)
@@ -407,9 +414,10 @@ class GuidedStorageTargetResize:
     minimum: Optional[int]
     recommended: Optional[int]
     maximum: Optional[int]
+    capabilities: List[GuidedCapability]
 
     @staticmethod
-    def from_recommendations(part, resize_vals):
+    def from_recommendations(part, resize_vals, capabilities):
         return GuidedStorageTargetResize(
                 disk_id=part.device.id,
                 partition_number=part.number,
@@ -417,6 +425,7 @@ class GuidedStorageTargetResize:
                 minimum=resize_vals.minimum,
                 recommended=resize_vals.recommended,
                 maximum=resize_vals.maximum,
+                capabilities=capabilities,
                 )
 
 
@@ -424,6 +433,7 @@ class GuidedStorageTargetResize:
 class GuidedStorageTargetUseGap:
     disk_id: str
     gap: Gap
+    capabilities: List[GuidedCapability]
 
 
 GuidedStorageTarget = Union[GuidedStorageTargetReformat,
@@ -434,14 +444,22 @@ GuidedStorageTarget = Union[GuidedStorageTargetReformat,
 @attr.s(auto_attribs=True)
 class GuidedChoiceV2:
     target: GuidedStorageTarget
-    use_lvm: bool = False
+    capability: GuidedCapability
     password: Optional[str] = attr.ib(default=None, repr=False)
 
     @staticmethod
     def from_guided_choice(choice: GuidedChoice):
+        if choice.use_lvm:
+            if choice.password is not None:
+                capability = GuidedCapability.LVM_LUKS
+            else:
+                capability = GuidedCapability.LVM
+        else:
+            capability = GuidedCapability.DIRECT
         return GuidedChoiceV2(
-                target=GuidedStorageTargetReformat(disk_id=choice.disk_id),
-                use_lvm=choice.use_lvm,
+                target=GuidedStorageTargetReformat(
+                    disk_id=choice.disk_id, capabilities=[capability]),
+                capability=capability,
                 password=choice.password,
                 )
 
