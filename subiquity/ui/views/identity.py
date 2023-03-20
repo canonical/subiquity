@@ -42,7 +42,7 @@ from subiquity.common.types import IdentityData, UsernameValidation
 log = logging.getLogger("subiquity.ui.views.identity")
 
 HOSTNAME_MAXLEN = 64
-HOSTNAME_REGEX = r'[a-z0-9_][a-z0-9_-]*'
+HOSTNAME_REGEX = r'[a-zA-Z0-9_][a-zA-Z0-9_-]*'
 REALNAME_MAXLEN = 160
 SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
 USERNAME_MAXLEN = 32
