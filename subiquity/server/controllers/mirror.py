@@ -280,12 +280,11 @@ class MirrorController(SubiquityController):
             self.model.set_country(self.app.geoip.countrycode)
         self.cc_event.set()
 
-    def on_source(self):
-        # FIXME disabled until we can sort out umount
-        # if self.apt_configurer is not None:
-        #     await self.apt_configurer.cleanup()
+    async def on_source(self):
+        if self.apt_configurer is not None:
+            await self.apt_configurer.cleanup()
         self.apt_configurer = get_apt_configurer(
-            self.app, self.app.controllers.Source.source_path)
+            self.app, self.app.controllers.Source.get_handler())
         self._apply_apt_config_task.start_sync()
         self.source_configured_event.set()
 
