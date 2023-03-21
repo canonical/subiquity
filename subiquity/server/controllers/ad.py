@@ -128,7 +128,11 @@ class AdController(SubiquityController):
     def interactive(self):
         # Since we don't accept the domain admin password in the autoinstall
         # file, this cannot be non-interactive.
-        return True
+
+        # HACK: the interactive behavior is causing some autoinstalls with
+        # desktop to block.
+        # return True
+        return False
 
     def __init__(self, app):
         super().__init__(app)
