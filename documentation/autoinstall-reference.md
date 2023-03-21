@@ -345,6 +345,8 @@ A match spec supports the following keys:
  * `ssd: yes|no`: matches a disk that is or is not an SSD (vs a rotating drive)
  * `size: largest|smallest`: take the largest or smallest disk rather than an arbitrary one if there are multiple matches (support for `smallest` added in version 20.06.1)
 
+A special sort of key is `install-media: yes`, which will take the disk the installer was loaded from (the `ssd` and `size` selectors will never return this disk). If installing to the install media, care obviously needs to be take to not overwrite the installer itself!
+
 So for example, to match an arbitrary disk it is simply:
 
      - type: disk
