@@ -364,7 +364,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
             if state == WLANSupportInstallState.INSTALLING:
                 self.pending_wlan_devices.add(dev)
                 return
-            elif state in [WLANSupportInstallState.FAILED.
+            elif state in [WLANSupportInstallState.FAILED,
                            WLANSupportInstallState.NOT_AVAILABLE]:
                 return
             # WLANSupportInstallState.DONE falls through
