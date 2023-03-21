@@ -134,7 +134,7 @@ parts:
       bin/subiquity-service: usr/bin/subiquity-service
       bin/subiquity-server: usr/bin/subiquity-server
       bin/subiquity-cmd: usr/bin/subiquity-cmd
-      $CRAFT_PART_BUILD/system_setup/ubuntu-wsl-setup: bin/ubuntu-wsl-setup
+      $CRAFT_PROJECT_DIR/system_setup/ubuntu-wsl-setup: bin/ubuntu-wsl-setup
 
     build-attributes:
       - enable-patchelf
