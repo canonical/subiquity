@@ -60,6 +60,27 @@ def trim(text):
         return text
 
 
+async def check_controllers_started(definition, controller, request):
+    if not hasattr(controller, 'app'):
+        return
+
+    if getattr(definition, 'allowed_before_start', False):
+        return
+
+    # Most endpoints should not be responding to requests
+    # before the controllers have started, that's just bound to
+    # be a big pool of timing bugs that we want nothing to do
+    # with.  A few chosen methods should be safe, so allow
+    # those to opt-in.  Everybody else blocks until the
+    # controllers complete their start().
+    if controller.app.controllers_have_started.is_set():
+        return
+
+    log.debug(f'{request.path} waiting on start')
+    await controller.app.controllers_have_started.wait()
+    log.debug(f'{request.path} resuming')
+
+
 def _make_handler(controller, definition, implementation, serializer,
                   serialize_query_args):
     def_sig = inspect.signature(definition)
@@ -134,18 +155,8 @@ def _make_handler(controller, definition, implementation, serializer,
                     args['context'] = context
                 if 'request' in impl_params:
                     args['request'] = request
-                if not getattr(
-                        definition, 'allowed_before_start', False):
-                    # Most endpoints should not be responding to requests
-                    # before the controllers have started, that's just bound to
-                    # be a big pool of timing bugs that we want nothing to do
-                    # with.  A few chosen methods should be safe, so allow
-                    # those to opt-in.  Everybody else blocks until the
-                    # controllers complete their start().
-                    if not controller.app.controllers_have_started.is_set():
-                        log.debug(f'{request.path} waiting on start')
-                        await controller.app.controllers_have_started.wait()
-                        log.debug(f'{request.path} resuming')
+                await check_controllers_started(
+                        definition, controller, request)
                 result = await implementation(**args)
                 resp = web.json_response(
                     serializer.serialize(def_ret_ann, result),
