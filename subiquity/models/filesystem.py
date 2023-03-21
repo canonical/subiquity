@@ -1185,6 +1185,12 @@ class FilesystemModel(object):
             is_ssd = disk.info_for_display()['rotational'] == 'false'
             return is_ssd == match['ssd']
 
+        def match_install_media(disk):
+            return disk in self._exclusions
+
+        if match.get('install-media', False):
+            matchers.append(match_install_media)
+
         if 'serial' in match:
             matchers.append(match_serial)
         if 'model' in match:
@@ -1209,6 +1215,8 @@ class FilesystemModel(object):
                     break
             else:
                 candidates.append(candidate)
+        if 'size' in match or 'ssd' in match:
+            candidates = [c for c in candidates if c not in self._exclusions]
         if match.get('size') == 'smallest':
             candidates.sort(key=lambda d: d.size)
         if match.get('size') == 'largest':
