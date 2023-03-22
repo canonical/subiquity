@@ -20,7 +20,7 @@ jobs:
   lint:
     runs-on: ubuntu-20.04
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         image:
           - ubuntu-daily:jammy    # match the core snap we're running against
