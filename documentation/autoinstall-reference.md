@@ -311,6 +311,8 @@ When using the "lvm" layout, LUKS encryption can be enabled by supplying a passw
 
 The default is to use the lvm layout.
 
+WARNING: Conveying the LUKS passphrase in autoinstall carries risk that this passphrase will be leaked.  This includes the possibility that software defects may mean that the passphrase is logged, or that the passphrase is captured from the autoinstall in transit.  It is strongly recommended to treat this passphrase as a temporary measure until it can be changed, such as with the `cryptsetup luksChangeKey` command.
+
 #### action-based config
 
 For full flexibility, the installer allows storage configuration to be done using a syntax which is a superset of that supported by curtin, described at https://curtin.readthedocs.io/en/latest/topics/storage.html.
