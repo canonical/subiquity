@@ -54,8 +54,8 @@ class RecoveryChooser(TuiApplication):
     ]
 
     def __init__(self, opts, chooser_input, chooser_output):
-        """Takes the options and raw input/output streams for communicating with the
-        chooser parent process.
+        """Takes the options and raw input/output streams for communicating
+        with the chooser parent process.
         """
         self._chooser_output = chooser_output
         # make_model is used by super()'s constructor, but we need to use the
