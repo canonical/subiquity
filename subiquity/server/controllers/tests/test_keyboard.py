@@ -74,7 +74,8 @@ class TestInputSource(unittest.IsolatedAsyncioTestCase):
                 ]
             cmd = [
                 'systemd-run', '--wait', '--uid=99',
-                '--setenv=DISPLAY=:0', '--setenv=XDG_RUNTIME_DIR=/run/user/99',
+                f'--setenv=DISPLAY={os.environ.get("DISPLAY", ":0")}',
+                '--setenv=XDG_RUNTIME_DIR=/run/user/99',
                 '--setenv=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/99/bus',
                 '--', *gsettings
                 ]
