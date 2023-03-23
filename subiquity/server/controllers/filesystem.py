@@ -70,6 +70,7 @@ from subiquity.common.types import (
     ModifyPartitionV2,
     ProbeStatus,
     ReformatDisk,
+    StorageEncryption,
     StorageEncryptionSupport,
     StorageResponse,
     StorageResponseV2,
@@ -477,18 +478,26 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # size?)
         min_size = 2*self.app.base_model.source.current.size + (1 << 30)
         disks = self.potential_boot_disks(with_reformatting=True)
-        se = None
+        capabilities, core_boot_capabilities = self.get_capabilities()
+        encryption_unavailable_reason = ''
         if self.is_core_boot_classic():
-            se = self._system.storage_encryption
             offsets_and_sizes = list(self._offsets_and_sizes_for_system())
             _structure, last_offset, last_size = offsets_and_sizes[-1]
             min_size = last_offset + last_size
+            capabilities = core_boot_capabilities
+            se: StorageEncryption = self._system.storage_encryption
+            if se.support == StorageEncryptionSupport.DISABLED:
+                encryption_unavailable_reason = _(
+                    "TPM backed full-disk encryption has been disabled")
+            else:
+                encryption_unavailable_reason = se.unavailable_reason
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
             disks=[labels.for_client(d, min_size=min_size) for d in disks],
             core_boot_classic_error=self._core_boot_classic_error,
-            storage_encryption=se)
+            encryption_unavailable_reason=encryption_unavailable_reason,
+            capabilities=capabilities)
 
     def _offsets_and_sizes_for_system(self):
         offset = self.model._partition_alignment_data['gpt'].min_start_offset
@@ -601,7 +610,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
         log.debug(data)
         self.guided(GuidedChoiceV2.from_guided_choice(data))
-        if self.is_core_boot_classic():
+        if data.capability.is_core_boot():
             await self.configured()
         return self._done_response()
 

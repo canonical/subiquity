@@ -335,9 +335,8 @@ class GuidedCapability(enum.Enum):
 @attr.s(auto_attribs=True)
 class GuidedChoice:
     disk_id: str
-    use_lvm: bool = False
+    capability: GuidedCapability = GuidedCapability.DIRECT
     password: Optional[str] = attr.ib(default=None, repr=False)
-    use_tpm: bool = False
 
 
 class StorageEncryptionSupport(enum.Enum):
@@ -376,7 +375,8 @@ class GuidedStorageResponse:
     error_report: Optional[ErrorReportRef] = None
     disks: Optional[List[Disk]] = None
     core_boot_classic_error: str = ''
-    storage_encryption: Optional[StorageEncryption] = None
+    encryption_unavailable_reason: str = ''
+    capabilities: List[GuidedCapability] = attr.Factory(list)
 
 
 @attr.s(auto_attribs=True)
@@ -460,17 +460,10 @@ class GuidedChoiceV2:
 
     @staticmethod
     def from_guided_choice(choice: GuidedChoice):
-        if choice.use_lvm:
-            if choice.password is not None:
-                capability = GuidedCapability.LVM_LUKS
-            else:
-                capability = GuidedCapability.LVM
-        else:
-            capability = GuidedCapability.DIRECT
         return GuidedChoiceV2(
                 target=GuidedStorageTargetReformat(
-                    disk_id=choice.disk_id, capabilities=[capability]),
-                capability=capability,
+                    disk_id=choice.disk_id, capabilities=[choice.capability]),
+                capability=choice.capability,
                 password=choice.password,
                 )
 

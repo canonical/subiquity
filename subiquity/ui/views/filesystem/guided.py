@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import Optional
 
 import attr
 
@@ -49,11 +48,9 @@ from subiquitycore.view import BaseView
 
 from subiquity.common.types import (
     Gap,
+    GuidedCapability,
     GuidedChoice,
     Partition,
-    StorageEncryption,
-    StorageEncryptionSupport,
-    StorageSafety,
 )
 from subiquity.models.filesystem import humanize_size
 
@@ -130,8 +127,6 @@ class TPMChoice:
 
 
 tpm_help_texts = {
-    "DISABLED":
-        _("TPM backed full-disk encryption has been disabled."),
     "AVAILABLE_CAN_BE_DESELECTED":
         _("The entire disk will be encrypted and protected by the "
           "TPM. If this option is deselected, the disk will be "
@@ -145,30 +140,18 @@ tpm_help_texts = {
 }
 
 choices = {
-    StorageEncryptionSupport.DISABLED: {
-        safety: TPMChoice(
-            enabled=False, default=False,
-            help=tpm_help_texts['DISABLED'])
-        for safety in StorageSafety
-        },
-    StorageEncryptionSupport.AVAILABLE: {
-        StorageSafety.ENCRYPTED: TPMChoice(
-            enabled=False, default=True,
-            help=tpm_help_texts['AVAILABLE_CANNOT_BE_DESELECTED']),
-        StorageSafety.PREFER_ENCRYPTED: TPMChoice(
-            enabled=True, default=True,
-            help=tpm_help_texts['AVAILABLE_CAN_BE_DESELECTED']),
-        StorageSafety.PREFER_UNENCRYPTED: TPMChoice(
-            enabled=True, default=False,
-            help=tpm_help_texts['AVAILABLE_CAN_BE_DESELECTED']),
-        },
-    StorageEncryptionSupport.UNAVAILABLE: {
-        safety: TPMChoice(
-            enabled=False, default=False,
-            help=tpm_help_texts['UNAVAILABLE'])
-        for safety in StorageSafety
-        },
-    # StorageEncryptionSupport.DEFECTIVE: handled in controller code
+    GuidedCapability.CORE_BOOT_ENCRYPTED: TPMChoice(
+        enabled=False, default=True,
+        help=tpm_help_texts['AVAILABLE_CANNOT_BE_DESELECTED']),
+    GuidedCapability.CORE_BOOT_UNENCRYPTED: TPMChoice(
+        enabled=False, default=False,
+        help=tpm_help_texts['UNAVAILABLE']),
+    GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED: TPMChoice(
+        enabled=True, default=True,
+        help=tpm_help_texts['AVAILABLE_CAN_BE_DESELECTED']),
+    GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED: TPMChoice(
+        enabled=True, default=False,
+        help=tpm_help_texts['AVAILABLE_CAN_BE_DESELECTED']),
 }
 
 
@@ -201,15 +184,15 @@ class GuidedChoiceForm(SubForm):
         self.disk.widget.index = initial
         connect_signal(self.use_lvm.widget, 'change', self._toggle)
         self.lvm_options.enabled = self.use_lvm.value
-        se = parent.storage_encryption
-        if se is not None:
+        if parent.core_boot_capability is not None:
             self.remove_field('use_lvm')
             self.remove_field('lvm_options')
-            self.tpm_choice = choices[se.support][se.storage_safety]
+            self.tpm_choice = choices[parent.core_boot_capability]
             self.use_tpm.enabled = self.tpm_choice.enabled
             self.use_tpm.value = self.tpm_choice.default
+            self.use_tpm.help = self.tpm_choice.help
             self.use_tpm.help = self.tpm_choice.help.format(
-                reason=se.unavailable_reason)
+                reason=parent.encryption_unavailable_reason)
         else:
             self.remove_field('use_tpm')
 
@@ -228,9 +211,11 @@ class GuidedForm(Form):
 
     cancel_label = _("Back")
 
-    def __init__(self, disks, storage_encryption):
+    def __init__(self, disks, core_boot_capability,
+                 encryption_unavailable_reason):
         self.disks = disks
-        self.storage_encryption = storage_encryption
+        self.core_boot_capability = core_boot_capability
+        self.encryption_unavailable_reason = encryption_unavailable_reason
         super().__init__()
         connect_signal(self.guided.widget, 'change', self._toggle_guided)
 
@@ -287,16 +272,16 @@ class GuidedDiskSelectionView(BaseView):
 
     def __init__(self, controller, disks):
         self.controller = controller
-        self.storage_encryption: Optional[StorageEncryption] = \
-            controller.storage_encryption
 
         if disks:
             if any(disk.ok_for_guided for disk in disks):
+                reason = controller.encryption_unavailable_reason
                 self.form = GuidedForm(
                     disks=disks,
-                    storage_encryption=self.storage_encryption)
+                    core_boot_capability=self.controller.core_boot_capability,
+                    encryption_unavailable_reason=reason)
 
-                if self.storage_encryption is not None:
+                if self.controller.core_boot_capability is not None:
                     self.form = self.form.guided_choice.widget.form
                     excerpt = _(
                         "Choose a disk to install this core boot classic "
@@ -327,17 +312,27 @@ class GuidedDiskSelectionView(BaseView):
     def done(self, sender):
         results = sender.as_data()
         choice = None
-        if self.storage_encryption is not None:
+        if self.controller.core_boot_capability is not None:
+            if results.get('use_tpm', sender.tpm_choice.default):
+                capability = GuidedCapability.CORE_BOOT_ENCRYPTED
+            else:
+                capability = GuidedCapability.CORE_BOOT_UNENCRYPTED
             choice = GuidedChoice(
-                disk_id=results['disk'].id,
-                use_tpm=results.get('use_tpm', sender.tpm_choice.default))
+                disk_id=results['disk'].id, capability=capability)
         elif results['guided']:
+            password = None
+            if results['guided_choice']['use_lvm']:
+                opts = results['guided_choice'].get('lvm_options', {})
+                if opts.get('encrypt', False):
+                    capability = GuidedCapability.LVM_LUKS
+                    password = opts['luks_options']['passphrase']
+                else:
+                    capability = GuidedCapability.LVM
+            else:
+                capability = GuidedCapability.DIRECT
             choice = GuidedChoice(
                 disk_id=results['guided_choice']['disk'].id,
-                use_lvm=results['guided_choice']['use_lvm'])
-            opts = results['guided_choice'].get('lvm_options', {})
-            if opts.get('encrypt', False):
-                choice.password = opts['luks_options']['passphrase']
+                capability=capability, password=password)
         self.controller.guided_choice(choice)
 
     def manual(self, sender):
