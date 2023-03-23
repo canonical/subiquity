@@ -79,7 +79,7 @@ class LoggedCommandRunner:
             -> subprocess.CompletedProcess:
         stdout, stderr = await proc.communicate()
         # .communicate() forces returncode to be set to a value
-        assert(proc.returncode is not None)
+        assert proc.returncode is not None
         if proc.returncode != 0:
             raise subprocess.CalledProcessError(proc.returncode, proc.args)
         else:
