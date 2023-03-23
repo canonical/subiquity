@@ -330,7 +330,12 @@ class TestFlow(TestAPI):
 
             resp = await inst.get('/storage/v2/guided?wait=true')
             [reformat] = resp['possible']
-            await inst.post('/storage/v2/guided', {'target': reformat})
+            await inst.post(
+                '/storage/v2/guided',
+                {
+                    'target': reformat,
+                    'capability': reformat['capabilities'][0],
+                })
             await inst.post('/storage/v2')
             await inst.get('/meta/status', cur='WAITING')
             await inst.post('/meta/confirm', tty='/dev/tty1')
@@ -418,7 +423,11 @@ class TestFlow(TestAPI):
             resp = await inst.get('/storage/v2/guided')
             [reformat] = match(resp['possible'],
                                _type='GuidedStorageTargetReformat')
-            await inst.post('/storage/v2/guided', {'target': reformat})
+            data = {
+                'target': reformat,
+                'capability': reformat['capabilities'][0],
+                }
+            await inst.post('/storage/v2/guided', data)
             after_guided_resp = await inst.get('/storage/v2')
             post_resp = await inst.post('/storage/v2')
             # posting to the endpoint shouldn't change the answer
@@ -433,7 +442,12 @@ class TestGuided(TestAPI):
             resp = await inst.get('/storage/v2/guided')
             [reformat] = match(resp['possible'],
                                _type='GuidedStorageTargetReformat')
-            resp = await inst.post('/storage/v2/guided', {'target': reformat})
+            resp = await inst.post(
+                '/storage/v2/guided',
+                {
+                    'target': reformat,
+                    'capability': reformat['capabilities'][0],
+                })
             self.assertEqual(reformat, resp['configured']['target'])
             resp = await inst.get('/storage/v2')
             [p1, p2] = resp['disks'][0]['partitions']
@@ -475,7 +489,10 @@ class TestGuided(TestAPI):
             [resize_ntfs, resize_ext4] = match(
                     resp['possible'], _type='GuidedStorageTargetResize')
             resize_ntfs['new_size'] = 30 << 30
-            data = {'target': resize_ntfs}
+            data = {
+                'target': resize_ntfs,
+                'capability': resize_ntfs['capabilities'][0],
+                }
             resp = await inst.post('/storage/v2/guided', data)
             self.assertEqual(resize_ntfs, resp['configured']['target'])
             resp = await inst.get('/storage/v2')
@@ -519,7 +536,10 @@ class TestGuided(TestAPI):
             resp = await inst.get('/storage/v2/guided')
             [use_gap] = match(resp['possible'],
                               _type='GuidedStorageTargetUseGap')
-            data = {'target': use_gap}
+            data = {
+                'target': use_gap,
+                'capability': use_gap['capabilities'][0],
+                }
             resp = await inst.post('/storage/v2/guided', data)
             self.assertEqual(use_gap, resp['configured']['target'])
             resp = await inst.get('/storage/v2')
@@ -555,7 +575,10 @@ class TestGuided(TestAPI):
             [resize] = match(
                     resp['possible'], _type='GuidedStorageTargetResize',
                     partition_number=6)
-            data = {'target': resize}
+            data = {
+                'target': resize,
+                'capability': resize['capabilities'][0],
+                }
             resp = await inst.post('/storage/v2/guided', data)
             self.assertEqual(resize, resp['configured']['target'])
             # should not throw a Gap Not Found exception
@@ -980,7 +1003,11 @@ class TestTodos(TestAPI):  # server indicators of required client actions
 
             resp = await inst.get('/storage/v2/guided')
             [reformat] = resp['possible']
-            await inst.post('/storage/v2/guided', {'target': reformat})
+            data = {
+                'target': reformat,
+                'capability': reformat['capabilities'][0],
+                }
+            await inst.post('/storage/v2/guided', data)
             resp = await inst.get('/storage/v2')
             self.assertFalse(resp['need_root'])
             self.assertFalse(resp['need_boot'])
@@ -1181,7 +1208,11 @@ class TestPartitionTableEditing(TestAPI):
             resize = match(resp['possible'],
                            _type='GuidedStorageTargetResize')[0]
             resize['new_size'] = 30 << 30
-            await inst.post('/storage/v2/guided', {'target': resize})
+            data = {
+                'target': resize,
+                'capability': resize['capabilities'][0],
+                }
+            await inst.post('/storage/v2/guided', data)
             orig_config = await inst.get('/storage/v2/orig_config')
             end_resp = await inst.get('/storage/v2')
             self.assertEqual(start_resp, orig_config)
