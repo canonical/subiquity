@@ -563,7 +563,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         [volume] = system.volumes.values()
         self.fsc._on_volume = snapdapi.OnVolume.from_volume(volume)
 
-    def test_apply_system(self):
+    def test_guided_core_boot(self):
         disk = make_disk(self.fsc.model)
         arbitrary_uuid = str(uuid.uuid4())
         self._add_details_for_structures([
@@ -579,7 +579,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 size=1 << 30,
                 filesystem='ext4'),
             ])
-        self.fsc.apply_system(disk.id)
+        self.fsc.guided_core_boot(disk)
         [part1, part2] = disk.partitions()
         self.assertEqual(part1.offset, 1 << 20)
         self.assertEqual(part1.size, 1 << 30)
@@ -592,7 +592,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.assertEqual(
             part2.partition_type, arbitrary_uuid)
 
-    def test_apply_system_reuse(self):
+    def test_guided_core_boot_reuse(self):
         disk = make_disk(self.fsc.model)
         # Add a partition that matches one in the volume structure
         reused_part = make_partition(
@@ -610,13 +610,13 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 size=1 << 30,
                 filesystem='ext4'),
             ])
-        self.fsc.apply_system(disk.id)
+        self.fsc.guided_core_boot(disk)
         [part] = disk.partitions()
         self.assertEqual(reused_part, part)
         self.assertEqual(reused_part.wipe, 'superblock')
         self.assertEqual(part.fs().fstype, 'ext4')
 
-    def test_apply_system_reuse_no_format(self):
+    def test_guided_core_boot_reuse_no_format(self):
         disk = make_disk(self.fsc.model)
         existing_part = make_partition(
             self.fsc.model, disk, offset=1 << 20, size=1 << 30, preserve=True)
@@ -627,12 +627,12 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 size=1 << 30,
                 filesystem=None),
             ])
-        self.fsc.apply_system(disk.id)
+        self.fsc.guided_core_boot(disk)
         [part] = disk.partitions()
         self.assertEqual(existing_part, part)
         self.assertEqual(existing_part.wipe, None)
 
-    def test_apply_system_system_data(self):
+    def test_guided_core_boot_system_data(self):
         disk = make_disk(self.fsc.model)
         self._add_details_for_structures([
             snapdapi.VolumeStructure(
@@ -643,7 +643,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 role=snapdapi.Role.SYSTEM_DATA,
                 filesystem='ext4'),
             ])
-        self.fsc.apply_system(disk.id)
+        self.fsc.guided_core_boot(disk)
         [part] = disk.partitions()
         self.assertEqual(part.offset, 2 << 20)
         self.assertEqual(part.partition_name, 'ptname')
@@ -662,16 +662,24 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         disk = make_disk(model)
         self.app.base_model.source.current.snapd_system_label = \
             'prefer-encrypted'
+        self.app.base_model.source.current.size = 1
         self.app.controllers.Source.source_path = ''
 
         self.app.dr_cfg.systems_dir_exists = True
 
         await self.fsc._get_system_task.start()
-        await self.fsc._get_system_task.wait()
+        self.fsc.start()
+
+        response = await self.fsc.v2_guided_GET(wait=True)
+
+        self.assertEqual(len(response.possible), 1)
+        choice = GuidedChoiceV2(
+            target=response.possible[0],
+            capability=GuidedCapability.CORE_BOOT_ENCRYPTED)
+        await self.fsc.v2_guided_POST(choice)
 
         self.assertEqual(model.storage_version, 2)
 
-        self.fsc.apply_system(disk.id)
         partition_count = len([
             structure
             for structure in self.fsc._system.volumes['pc'].structure

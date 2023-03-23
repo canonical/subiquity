@@ -23,7 +23,7 @@ from typing import Dict, List, Optional
 from subiquity.common.api.client import make_client
 from subiquity.common.api.defs import api, path_parameter, Payload
 from subiquity.common.serialize import named_field, Serializer
-from subiquity.common.types import Change, StorageEncryption, TaskStatus
+from subiquity.common.types import Change, TaskStatus
 
 import attr
 
@@ -176,6 +176,36 @@ class OnVolume(Volume):
         kw['structure'] = [
             OnVolumeStructure.from_volume_structure(vs) for vs in v.structure]
         return cls(**kw)
+
+
+class StorageEncryptionSupport(enum.Enum):
+    DISABLED = 'disabled'
+    AVAILABLE = 'available'
+    UNAVAILABLE = 'unavailable'
+    DEFECTIVE = 'defective'
+
+
+class StorageSafety(enum.Enum):
+    UNSET = 'unset'
+    ENCRYPTED = 'encrypted'
+    PREFER_ENCRYPTED = 'prefer-encrypted'
+    PREFER_UNENCRYPTED = 'prefer-unencrypted'
+
+
+class EncryptionType(enum.Enum):
+    NONE = ''
+    CRYPTSETUP = 'cryptsetup'
+    DEVICE_SETUP_HOOK = 'device-setup-hook'
+
+
+@attr.s(auto_attribs=True)
+class StorageEncryption:
+    support: StorageEncryptionSupport
+    storage_safety: StorageSafety = named_field('storage-safety')
+    encryption_type: EncryptionType = named_field(
+        'encryption-type', default=EncryptionType.NONE)
+    unavailable_reason: str = named_field(
+        'unavailable-reason', default='')
 
 
 @attr.s(auto_attribs=True)

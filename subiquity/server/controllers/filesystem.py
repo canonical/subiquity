@@ -70,10 +70,8 @@ from subiquity.common.types import (
     ModifyPartitionV2,
     ProbeStatus,
     ReformatDisk,
-    StorageEncryptionSupport,
     StorageResponse,
     StorageResponseV2,
-    StorageSafety,
     )
 from subiquity.models.filesystem import (
     ActionRenderMode,
@@ -90,6 +88,11 @@ from subiquity.server.controller import (
     )
 from subiquity.server import snapdapi
 from subiquity.server.mounter import Mounter
+from subiquity.server.snapdapi import (
+    StorageEncryption,
+    StorageEncryptionSupport,
+    StorageSafety,
+    )
 from subiquity.server.types import InstallerChannels
 
 
@@ -367,6 +370,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.model.guided_configuration = choice
 
         disk = self.model._one(id=choice.target.disk_id)
+
+        if choice.capability.is_core_boot():
+            assert isinstance(choice.target, GuidedStorageTargetReformat)
+            self.use_tpm = (
+                choice.capability == GuidedCapability.CORE_BOOT_ENCRYPTED)
+            self.guided_core_boot(disk)
+            return
+
         gap = self.start_guided(choice.target, disk)
         if DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk):
             self.add_boot_disk(disk)
@@ -469,18 +480,26 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # size?)
         min_size = 2*self.app.base_model.source.current.size + (1 << 30)
         disks = self.potential_boot_disks(with_reformatting=True)
-        se = None
+        capabilities, core_boot_capabilities = self.get_capabilities()
+        encryption_unavailable_reason = ''
         if self.is_core_boot_classic():
-            se = self._system.storage_encryption
             offsets_and_sizes = list(self._offsets_and_sizes_for_system())
             _structure, last_offset, last_size = offsets_and_sizes[-1]
             min_size = last_offset + last_size
+            capabilities = core_boot_capabilities
+            se: StorageEncryption = self._system.storage_encryption
+            if se.support == StorageEncryptionSupport.DISABLED:
+                encryption_unavailable_reason = _(
+                    "TPM backed full-disk encryption has been disabled")
+            else:
+                encryption_unavailable_reason = se.unavailable_reason
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
             disks=[labels.for_client(d, min_size=min_size) for d in disks],
             core_boot_classic_error=self._core_boot_classic_error,
-            storage_encryption=se)
+            encryption_unavailable_reason=encryption_unavailable_reason,
+            capabilities=capabilities)
 
     def _offsets_and_sizes_for_system(self):
         offset = self.model._partition_alignment_data['gpt'].min_start_offset
@@ -492,9 +511,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             yield (structure, offset, structure.size)
             offset = offset + structure.size
 
-    def apply_system(self, disk_id):
-        disk = self.model._one(id=disk_id)
-
+    def guided_core_boot(self, disk: Disk):
         preserved_parts = set()
 
         if self._on_volume.schema != disk.ptable:
@@ -594,12 +611,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
         log.debug(data)
-        if self.is_core_boot_classic():
-            self.use_tpm = data.use_tpm
-            self.apply_system(data.disk_id)
+        self.guided(GuidedChoiceV2.from_guided_choice(data))
+        if data.capability.is_core_boot():
             await self.configured()
-        else:
-            self.guided(GuidedChoiceV2.from_guided_choice(data))
         return self._done_response()
 
     async def reset_POST(self, context, request) -> StorageResponse:
@@ -673,6 +687,36 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.model.reset()
         return await self.v2_GET()
 
+    def get_capabilities(self):
+        if self.is_core_boot_classic():
+            classic_capabilities = []
+            safety = self._system.storage_encryption.storage_safety
+            support = self._system.storage_encryption.support
+            if support == StorageEncryptionSupport.DISABLED:
+                core_boot_capabilities = [
+                    GuidedCapability.CORE_BOOT_UNENCRYPTED]
+            elif support == StorageEncryptionSupport.UNAVAILABLE:
+                core_boot_capabilities = [
+                    GuidedCapability.CORE_BOOT_UNENCRYPTED]
+            else:
+                if safety == StorageSafety.ENCRYPTED:
+                    core_boot_capabilities = [
+                        GuidedCapability.CORE_BOOT_ENCRYPTED]
+                elif safety == StorageSafety.PREFER_ENCRYPTED:
+                    core_boot_capabilities = [
+                        GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED]
+                elif safety == StorageSafety.PREFER_UNENCRYPTED:
+                    core_boot_capabilities = [
+                        GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED]
+        else:
+            core_boot_capabilities = []
+            classic_capabilities = [
+                GuidedCapability.DIRECT,
+                GuidedCapability.LVM,
+                GuidedCapability.LVM_LUKS
+            ]
+        return classic_capabilities, core_boot_capabilities
+
     async def v2_guided_GET(self, wait: bool = False) \
             -> GuidedStorageResponseV2:
         """Acquire a list of possible guided storage configuration scenarios.
@@ -685,16 +729,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         scenarios = []
         install_min = self.calculate_suggested_install_min()
 
-        capabilities = [
-            GuidedCapability.DIRECT,
-            GuidedCapability.LVM,
-            GuidedCapability.LVM_LUKS
-            ]
+        classic_capabilities, core_boot_capabilities = self.get_capabilities()
 
         for disk in self.potential_boot_disks(with_reformatting=True):
             if disk.size >= install_min:
                 reformat = GuidedStorageTargetReformat(
-                    disk_id=disk.id, capabilities=capabilities)
+                    disk_id=disk.id,
+                    capabilities=core_boot_capabilities + classic_capabilities)
                 scenarios.append((disk.size, reformat))
 
         for disk in self.potential_boot_disks(with_reformatting=False):
@@ -706,7 +747,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             if gap is not None and gap.size >= install_min:
                 api_gap = labels.for_client(gap)
                 use_gap = GuidedStorageTargetUseGap(
-                    disk_id=disk.id, gap=api_gap, capabilities=capabilities)
+                    disk_id=disk.id, gap=api_gap,
+                    capabilities=classic_capabilities)
                 scenarios.append((gap.size, use_gap))
 
         for disk in self.potential_boot_disks(check_boot=False):
@@ -722,7 +764,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                         with_reformatting=False):
                     continue
                 resize = GuidedStorageTargetResize.from_recommendations(
-                    partition, vals, capabilities=capabilities)
+                    partition, vals, capabilities=classic_capabilities)
                 scenarios.append((vals.install_max, resize))
 
         scenarios.sort(reverse=True, key=lambda x: x[0])
@@ -902,7 +944,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 self.use_tpm = bool(encrypted)
             match = layout.get("match", {'size': 'largest'})
             disk = self.model.disk_for_match(self.model.all_disks(), match)
-            self.apply_system(disk.id)
+            self.guided_core_boot(disk)
             return
         elif self.is_core_boot_classic():
             raise Exception(

@@ -26,8 +26,6 @@ import attr
 
 from subiquitycore.models.network import NetDevInfo
 
-from subiquity.common.serialize import named_field
-
 
 class ErrorReportState(enum.Enum):
     INCOMPLETE = enum.auto()
@@ -315,42 +313,28 @@ class Disk:
     vendor: Optional[str] = None
 
 
+class GuidedCapability(enum.Enum):
+    DIRECT = enum.auto()
+    LVM = enum.auto()
+    LVM_LUKS = enum.auto()
+    CORE_BOOT_ENCRYPTED = enum.auto()
+    CORE_BOOT_UNENCRYPTED = enum.auto()
+    # These two are not valid as GuidedChoiceV2.capability:
+    CORE_BOOT_PREFER_ENCRYPTED = enum.auto()
+    CORE_BOOT_PREFER_UNENCRYPTED = enum.auto()
+
+    def is_core_boot(self) -> bool:
+        return self in [GuidedCapability.CORE_BOOT_ENCRYPTED,
+                        GuidedCapability.CORE_BOOT_UNENCRYPTED,
+                        GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+                        GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED]
+
+
 @attr.s(auto_attribs=True)
 class GuidedChoice:
     disk_id: str
-    use_lvm: bool = False
+    capability: GuidedCapability = GuidedCapability.DIRECT
     password: Optional[str] = attr.ib(default=None, repr=False)
-    use_tpm: bool = False
-
-
-class StorageEncryptionSupport(enum.Enum):
-    DISABLED = 'disabled'
-    AVAILABLE = 'available'
-    UNAVAILABLE = 'unavailable'
-    DEFECTIVE = 'defective'
-
-
-class StorageSafety(enum.Enum):
-    UNSET = 'unset'
-    ENCRYPTED = 'encrypted'
-    PREFER_ENCRYPTED = 'prefer-encrypted'
-    PREFER_UNENCRYPTED = 'prefer-unencrypted'
-
-
-class EncryptionType(enum.Enum):
-    NONE = ''
-    CRYPTSETUP = 'cryptsetup'
-    DEVICE_SETUP_HOOK = 'device-setup-hook'
-
-
-@attr.s(auto_attribs=True)
-class StorageEncryption:
-    support: StorageEncryptionSupport
-    storage_safety: StorageSafety = named_field('storage-safety')
-    encryption_type: EncryptionType = named_field(
-        'encryption-type', default=EncryptionType.NONE)
-    unavailable_reason: str = named_field(
-        'unavailable-reason', default='')
 
 
 @attr.s(auto_attribs=True)
@@ -359,7 +343,8 @@ class GuidedStorageResponse:
     error_report: Optional[ErrorReportRef] = None
     disks: Optional[List[Disk]] = None
     core_boot_classic_error: str = ''
-    storage_encryption: Optional[StorageEncryption] = None
+    encryption_unavailable_reason: str = ''
+    capabilities: List[GuidedCapability] = attr.Factory(list)
 
 
 @attr.s(auto_attribs=True)
@@ -384,12 +369,6 @@ class StorageResponseV2:
     # if need_boot == True, there is not yet a boot partition
     need_boot: Optional[bool] = None
     install_minimum_size: Optional[int] = None
-
-
-class GuidedCapability(enum.Enum):
-    DIRECT = enum.auto()
-    LVM = enum.auto()
-    LVM_LUKS = enum.auto()
 
 
 @attr.s(auto_attribs=True)
@@ -449,17 +428,10 @@ class GuidedChoiceV2:
 
     @staticmethod
     def from_guided_choice(choice: GuidedChoice):
-        if choice.use_lvm:
-            if choice.password is not None:
-                capability = GuidedCapability.LVM_LUKS
-            else:
-                capability = GuidedCapability.LVM
-        else:
-            capability = GuidedCapability.DIRECT
         return GuidedChoiceV2(
                 target=GuidedStorageTargetReformat(
-                    disk_id=choice.disk_id, capabilities=[capability]),
-                capability=capability,
+                    disk_id=choice.disk_id, capabilities=[choice.capability]),
+                capability=choice.capability,
                 password=choice.password,
                 )
 

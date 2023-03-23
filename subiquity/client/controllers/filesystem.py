@@ -26,7 +26,7 @@ from subiquity.common.filesystem import gaps
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.common.types import (
     ProbeStatus,
-    StorageEncryption,
+    GuidedCapability,
     )
 from subiquity.models.filesystem import (
     Bootloader,
@@ -59,7 +59,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
         self.current_view: Optional[BaseView] = None
-        self.storage_encryption: Optional[StorageEncryption] = None
+        self.core_boot_capability: Optional[GuidedCapability] = None
 
     async def make_ui(self) -> Callable[[], BaseView]:
         def get_current_view() -> BaseView:
@@ -97,7 +97,17 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         if status.status == ProbeStatus.FAILED:
             self.app.show_error_report(status.error_report)
             return ProbingFailed(self, status.error_report)
-        self.storage_encryption = status.storage_encryption
+
+        for capability in status.capabilities:
+            if capability.is_core_boot():
+                assert len(status.capabilities) == 1
+                self.core_boot_capability = status.capabilities[0]
+                break
+        else:
+            self.core_boot_capability = None
+
+        self.encryption_unavailable_reason = \
+            status.encryption_unavailable_reason
         if status.error_report:
             self.app.show_error_report(status.error_report)
         return GuidedDiskSelectionView(self, status.disks)
@@ -249,7 +259,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             raise Exception("could not process action {}".format(action))
 
     async def _guided_choice(self, choice):
-        if self.storage_encryption is not None:
+        if self.core_boot_capability is not None:
             self.app.next_screen(self.endpoint.guided.POST(choice))
             return
         # FIXME It would seem natural here to pass the wait=true flag to the
