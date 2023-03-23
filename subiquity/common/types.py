@@ -315,6 +315,23 @@ class Disk:
     vendor: Optional[str] = None
 
 
+class GuidedCapability(enum.Enum):
+    DIRECT = enum.auto()
+    LVM = enum.auto()
+    LVM_LUKS = enum.auto()
+    CORE_BOOT_ENCRYPTED = enum.auto()
+    CORE_BOOT_UNENCRYPTED = enum.auto()
+    # These two are not valid as GuidedChoiceV2.capability:
+    CORE_BOOT_PREFER_ENCRYPTED = enum.auto()
+    CORE_BOOT_PREFER_UNENCRYPTED = enum.auto()
+
+    def is_core_boot(self) -> bool:
+        return self in [GuidedCapability.CORE_BOOT_ENCRYPTED,
+                        GuidedCapability.CORE_BOOT_UNENCRYPTED,
+                        GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+                        GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED]
+
+
 @attr.s(auto_attribs=True)
 class GuidedChoice:
     disk_id: str
@@ -384,12 +401,6 @@ class StorageResponseV2:
     # if need_boot == True, there is not yet a boot partition
     need_boot: Optional[bool] = None
     install_minimum_size: Optional[int] = None
-
-
-class GuidedCapability(enum.Enum):
-    DIRECT = enum.auto()
-    LVM = enum.auto()
-    LVM_LUKS = enum.auto()
 
 
 @attr.s(auto_attribs=True)
