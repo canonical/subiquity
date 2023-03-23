@@ -26,8 +26,6 @@ import attr
 
 from subiquitycore.models.network import NetDevInfo
 
-from subiquity.common.serialize import named_field
-
 
 class ErrorReportState(enum.Enum):
     INCOMPLETE = enum.auto()
@@ -337,36 +335,6 @@ class GuidedChoice:
     disk_id: str
     capability: GuidedCapability = GuidedCapability.DIRECT
     password: Optional[str] = attr.ib(default=None, repr=False)
-
-
-class StorageEncryptionSupport(enum.Enum):
-    DISABLED = 'disabled'
-    AVAILABLE = 'available'
-    UNAVAILABLE = 'unavailable'
-    DEFECTIVE = 'defective'
-
-
-class StorageSafety(enum.Enum):
-    UNSET = 'unset'
-    ENCRYPTED = 'encrypted'
-    PREFER_ENCRYPTED = 'prefer-encrypted'
-    PREFER_UNENCRYPTED = 'prefer-unencrypted'
-
-
-class EncryptionType(enum.Enum):
-    NONE = ''
-    CRYPTSETUP = 'cryptsetup'
-    DEVICE_SETUP_HOOK = 'device-setup-hook'
-
-
-@attr.s(auto_attribs=True)
-class StorageEncryption:
-    support: StorageEncryptionSupport
-    storage_safety: StorageSafety = named_field('storage-safety')
-    encryption_type: EncryptionType = named_field(
-        'encryption-type', default=EncryptionType.NONE)
-    unavailable_reason: str = named_field(
-        'unavailable-reason', default='')
 
 
 @attr.s(auto_attribs=True)

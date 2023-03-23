@@ -70,11 +70,8 @@ from subiquity.common.types import (
     ModifyPartitionV2,
     ProbeStatus,
     ReformatDisk,
-    StorageEncryption,
-    StorageEncryptionSupport,
     StorageResponse,
     StorageResponseV2,
-    StorageSafety,
     )
 from subiquity.models.filesystem import (
     ActionRenderMode,
@@ -91,6 +88,11 @@ from subiquity.server.controller import (
     )
 from subiquity.server import snapdapi
 from subiquity.server.mounter import Mounter
+from subiquity.server.snapdapi import (
+    StorageEncryption,
+    StorageEncryptionSupport,
+    StorageSafety,
+    )
 from subiquity.server.types import InstallerChannels
 
 
