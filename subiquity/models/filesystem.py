@@ -820,15 +820,21 @@ class Raid(_Device):
     wipe = attr.ib(default=None)
     ptable = attributes.ptable()
     metadata = attr.ib(default=None)
-    path = attr.ib(default=None)
+    _path = attr.ib(default=None)
     container = attributes.ref(backlink="_subvolumes", default=None)  # Raid
     _subvolumes = attributes.backlink(default=attr.Factory(list))
 
     @property
     def path(self):
+        if self._path is not None:
+            return self._path
         # This is just here to make for_client(raid-with-partitions) work. It
         # might not be very accurate.
         return '/dev/md/' + self.name
+
+    @path.setter
+    def path(self, value):
+        self._path = value
 
     @property
     def size(self):
