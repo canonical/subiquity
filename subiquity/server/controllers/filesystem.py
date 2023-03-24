@@ -259,7 +259,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                         'name': 'lvm',
                         },
                     }
-        self.convert_autoinstall_config(context=context)
+        await self.convert_autoinstall_config(context=context)
         if not self.model.is_root_mounted():
             raise Exception("autoinstall config did not mount root")
         if self.model.needs_bootloader_partition():
@@ -372,7 +372,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 },
             }
 
-    def guided(self, choice: GuidedChoiceV2):
+    async def guided(self, choice: GuidedChoiceV2):
         self.model.guided_configuration = choice
 
         disk = self.model._one(id=choice.target.disk_id)
@@ -381,7 +381,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             assert isinstance(choice.target, GuidedStorageTargetReformat)
             self.use_tpm = (
                 choice.capability == GuidedCapability.CORE_BOOT_ENCRYPTED)
-            self.guided_core_boot(disk)
+            await self.guided_core_boot(disk)
             return
 
         gap = self.start_guided(choice.target, disk)
@@ -517,7 +517,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             yield (structure, offset, structure.size)
             offset = offset + structure.size
 
-    def guided_core_boot(self, disk: Disk):
+    async def guided_core_boot(self, disk: Disk):
         preserved_parts = set()
 
         if self._on_volume.schema != disk.ptable:
@@ -617,7 +617,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
         log.debug(data)
-        self.guided(GuidedChoiceV2.from_guided_choice(data))
+        await self.guided(GuidedChoiceV2.from_guided_choice(data))
         if data.capability.is_core_boot():
             await self.configured()
         return self._done_response()
@@ -782,7 +782,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_guided_POST(self, data: GuidedChoiceV2) \
             -> GuidedStorageResponseV2:
         log.debug(data)
-        self.guided(data)
+        await self.guided(data)
         return await self.v2_guided_GET()
 
     async def v2_reformat_disk_POST(self, data: ReformatDisk) \
@@ -915,7 +915,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 log.debug(f'{short_label} probing took {elapsed:.1f} seconds')
             break
 
-    def run_autoinstall_guided(self, layout):
+    async def run_autoinstall_guided(self, layout):
         name = layout['name']
 
         if name == 'hybrid':
@@ -950,7 +950,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 self.use_tpm = bool(encrypted)
             match = layout.get("match", {'size': 'largest'})
             disk = self.model.disk_for_match(self.model.all_disks(), match)
-            self.guided_core_boot(disk)
+            await self.guided_core_boot(disk)
             return
         elif self.is_core_boot_classic():
             raise Exception(
@@ -986,22 +986,22 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         else:
             capability = GuidedCapability.DIRECT
         password = layout.get('password', None)
-        self.guided(GuidedChoiceV2(target=target, capability=capability,
-                                   password=password))
+        await self.guided(GuidedChoiceV2(target=target, capability=capability,
+                                         password=password))
 
     def validate_layout_mode(self, mode):
         if mode not in ('reformat_disk', 'use_gap'):
             raise ValueError(f'Unknown layout mode {mode}')
 
     @with_context()
-    def convert_autoinstall_config(self, context=None):
+    async def convert_autoinstall_config(self, context=None):
         # Log disabled to prevent LUKS password leak
         # log.debug("self.ai_data = %s", self.ai_data)
         if 'layout' in self.ai_data:
             if 'config' in self.ai_data:
                 log.warning("The 'storage' section should not contain both "
                             "'layout' and 'config', using 'layout'")
-            self.run_autoinstall_guided(self.ai_data['layout'])
+            await self.run_autoinstall_guided(self.ai_data['layout'])
         elif 'config' in self.ai_data:
             if self.is_core_boot_classic():
                 raise Exception(
