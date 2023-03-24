@@ -174,7 +174,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         await super().configured()
         self.stop_listening_udev()
 
-    async def _mount_system(self):
+    async def _mount_systems_dir(self):
         self._source_handler = self.app.controllers.Source.get_handler()
         source_path = self._source_handler.setup()
         cur_systems_dir = '/var/lib/snapd/seed/systems'
@@ -189,7 +189,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         await self._system_mounter.bind_mount_tree(
             source_systems_dir, cur_systems_dir)
 
-    async def _unmount_system(self):
+    async def _unmount_systems_dir(self):
         if self._system_mounter is not None:
             await self._system_mounter.cleanup()
             self._system_mounter = None
@@ -197,36 +197,26 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self._source_handler.cleanup()
             self._source_handler = None
 
-    async def _get_system(self):
-        await self._unmount_system()
+    async def _probe_system(self, label):
         try:
-            await self._mount_system()
+            await self._mount_systems_dir()
         except NoSnapdSystemsOnSource:
-            return
-        self._system = None
-        label = self.app.base_model.source.current.snapd_system_label
-        if label is not None:
-            self._system = await self.app.snapdapi.v2.systems[label].GET()
-            log.debug("got system %s", self._system)
-            if len(self._system.volumes) == 0:
-                # This means the system does not define a gadget or kernel and
-                # so isn't a core boot classic system.
-                self._system = None
-        if self._system is None:
-            await self._unmount_system()
-            self.model.storage_version = self.opts.storage_version
-            self._system = None
-            return
-        # Formatting for a core boot classic system relies on some curtin
-        # features that are only available with v2 partitioning.
-        self.model.storage_version = 2
-        if len(self._system.volumes) > 1:
+            return None
+        try:
+            system = await self.app.snapdapi.v2.systems[label].GET()
+        finally:
+            await self._unmount_systems_dir()
+        log.debug("got system %s", system)
+        if len(system.volumes) == 0:
+            # This means the system does not define a gadget or kernel and
+            # so isn't a core boot classic system.
+            return None
+        if len(system.volumes) > 1:
             self._core_boot_classic_error = system_multiple_volumes_text
-        [volume] = self._system.volumes.values()
-        self._on_volume = snapdapi.OnVolume.from_volume(volume)
+        [volume] = system.volumes.values()
         if volume.schema != 'gpt':
             self._core_boot_classic_error = system_non_gpt_text
-        se = self._system.storage_encryption
+        se = system.storage_encryption
         if se.support == StorageEncryptionSupport.DEFECTIVE:
             self._core_boot_classic_error = \
               system_defective_encryption_text.format(
@@ -234,6 +224,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if se.support == StorageEncryptionSupport.UNAVAILABLE:
             log.debug(
                 "storage encryption unavailable: %r", se.unavailable_reason)
+        return system
+
+    async def _get_system(self):
+        self._system = None
+        label = self.app.base_model.source.current.snapd_system_label
+        if label is None:
+            return
+        self._system = await self._probe_system(label)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
@@ -489,7 +487,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         capabilities, core_boot_capabilities = self.get_capabilities()
         encryption_unavailable_reason = ''
         if self.is_core_boot_classic():
-            offsets_and_sizes = list(self._offsets_and_sizes_for_system())
+            [volume] = self._system.volumes.values()
+            offsets_and_sizes = list(
+                self._offsets_and_sizes_for_volume(volume))
             _structure, last_offset, last_size = offsets_and_sizes[-1]
             min_size = last_offset + last_size
             capabilities = core_boot_capabilities
@@ -507,9 +507,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             encryption_unavailable_reason=encryption_unavailable_reason,
             capabilities=capabilities)
 
-    def _offsets_and_sizes_for_system(self):
+    def _offsets_and_sizes_for_volume(self, volume):
         offset = self.model._partition_alignment_data['gpt'].min_start_offset
-        for structure in self._on_volume.structure:
+        for structure in volume.structure:
             if structure.role == snapdapi.Role.MBR:
                 continue
             if structure.offset is not None:
@@ -518,6 +518,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             offset = offset + structure.size
 
     async def guided_core_boot(self, disk: Disk):
+        # Formatting for a core boot classic system relies on some curtin
+        # features that are only available with v2 partitioning.
+        await self._mount_systems_dir()
+        self.model.storage_version = 2
+        [volume] = self._system.volumes.values()
+        self._on_volume = snapdapi.OnVolume.from_volume(volume)
+
         preserved_parts = set()
 
         if self._on_volume.schema != disk.ptable:
@@ -528,7 +535,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 (part.offset, part.size): part for part in disk.partitions()
                 }
 
-            for _struct, offset, size in self._offsets_and_sizes_for_system():
+            for _struct, offset, size in self._offsets_and_sizes_for_volume(
+                    self._on_volume):
                 if (offset, size) in parts_by_offset_size:
                     preserved_parts.add(parts_by_offset_size[(offset, size)])
 
@@ -540,7 +548,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if not preserved_parts:
             self.reformat(disk, self._on_volume.schema)
 
-        for structure, offset, size in self._offsets_and_sizes_for_system():
+        for structure, offset, size in self._offsets_and_sizes_for_volume(
+                self._on_volume):
             if (offset, size) in parts_by_offset_size:
                 part = parts_by_offset_size[(offset, size)]
             else:
