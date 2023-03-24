@@ -217,7 +217,7 @@ class InstallController(SubiquityController):
 
     async def setup_target(self, context):
         mirror = self.app.controllers.Mirror
-        await mirror.apt_configurer.setup_target(context, self.tpath())
+        await mirror.final_apt_configurer.setup_target(context, self.tpath())
 
     @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
@@ -456,7 +456,7 @@ class InstallController(SubiquityController):
 
     @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):
-        configurer = self.app.controllers.Mirror.apt_configurer
+        configurer = self.app.controllers.Mirror.final_apt_configurer
         await configurer.deconfigure(context, self.tpath())
 
     @with_context(description="downloading and installing {policy} updates")

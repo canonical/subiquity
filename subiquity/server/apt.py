@@ -106,10 +106,11 @@ class AptConfigurer:
     #    system, or if it is not, just copy /var/lib/apt/lists from the
     #    'configured_tree' overlay.
 
-    def __init__(self, app, mounter: Mounter, handler: AbstractSourceHandler):
+    def __init__(self, app, mounter: Mounter,
+                 source_handler: AbstractSourceHandler):
         self.app = app
         self.mounter = mounter
-        self.source_handler: str = handler
+        self.source_handler: AbstractSourceHandler = source_handler
         self._source_path: Optional[str] = None
         self.configured_tree: Optional[OverlayMountpoint] = None
         self.install_tree: Optional[OverlayMountpoint] = None

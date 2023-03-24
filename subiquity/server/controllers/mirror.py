@@ -153,7 +153,8 @@ class MirrorController(SubiquityController):
             (InstallerChannels.CONFIGURED, 'proxy'),
             self.proxy_configured_event.set)
         self._apt_config_key = None
-        self.apt_configurer: Optional[AptConfigurer] = None
+        self.test_apt_configurer: Optional[AptConfigurer] = None
+        self.final_apt_configurer: Optional[AptConfigurer] = None
         self.mirror_check: Optional[MirrorCheck] = None
 
     def load_autoinstall_data(self, data):
@@ -281,7 +282,7 @@ class MirrorController(SubiquityController):
         self.cc_event.set()
 
     async def on_source(self):
-        self.apt_configurer = get_apt_configurer(
+        self.test_apt_configurer = get_apt_configurer(
             self.app, self.app.controllers.Source.get_handler())
         self.source_configured_event.set()
 
@@ -313,8 +314,9 @@ class MirrorController(SubiquityController):
 
     async def run_mirror_testing(self, output: io.StringIO) -> None:
         await self.source_configured_event.wait()
-        await self.apt_configurer.apply_apt_config(self.context, final=False)
-        await self.apt_configurer.run_apt_config_check(output)
+        await self.test_apt_configurer.apply_apt_config(
+            self.context, final=False)
+        await self.test_apt_configurer.run_apt_config_check(output)
 
     async def wait_config(self) -> AptConfigurer:
         self.final_apt_configurer = get_apt_configurer(
