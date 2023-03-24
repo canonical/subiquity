@@ -154,11 +154,16 @@ class ConfigureController(SubiquityController):
         # ever by just '.'. On the other hand in dry-run we want it pointing to
         # '/' if not properly set.
         snap_dir = snap_dir if snap_dir != '.' else '/'
-        data_dir = os.path.join(snap_dir, "usr/share/language-selector")
+        data_dir_base = "usr/share/language-selector"
+        data_dir = os.path.join(snap_dir, data_dir_base)
         if not os.path.exists(data_dir):
-            log.error("Misconfigured snap environment pointed L-S-C data dir"
-                      " to %s", data_dir)
-            return None
+            log.error("Language selector data dir %s seems not to be part"
+                      " of the snap.", data_dir)
+            # Try seeded L-S-C
+            data_dir = os.path.join(self.model.root, data_dir_base)
+            if not os.path.exists(data_dir):
+                log.error("Cannot find language selector data directory.")
+                return None
 
         cp = await arun_command([clsCommand, "-d", data_dir, "-l", clsLang])
         if cp.returncode != 0:
