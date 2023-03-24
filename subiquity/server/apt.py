@@ -30,6 +30,7 @@ from typing import List, Optional
 import apt_pkg
 
 from curtin.config import merge_config
+from curtin.commands.extract import AbstractSourceHandler
 
 from subiquitycore.file_util import write_file, generate_config_yaml
 from subiquitycore.lsb_release import lsb_release
@@ -105,13 +106,21 @@ class AptConfigurer:
     #    system, or if it is not, just copy /var/lib/apt/lists from the
     #    'configured_tree' overlay.
 
-    def __init__(self, app, mounter: Mounter, source: str):
+    def __init__(self, app, mounter: Mounter,
+                 source_handler: AbstractSourceHandler):
         self.app = app
         self.mounter = mounter
-        self.source: str = source
+        self.source_handler: AbstractSourceHandler = source_handler
+        self._source_path: Optional[str] = None
         self.configured_tree: Optional[OverlayMountpoint] = None
         self.install_tree: Optional[OverlayMountpoint] = None
         self.install_mount = None
+
+    @property
+    def source_path(self):
+        if self._source_path is None:
+            self._source_path = self.source_handler.setup()
+        return self._source_path
 
     def apt_config(self, final: bool):
         cfg = {}
@@ -127,7 +136,8 @@ class AptConfigurer:
         return {'apt': cfg}
 
     async def apply_apt_config(self, context, final: bool):
-        self.configured_tree = await self.mounter.setup_overlay([self.source])
+        self.configured_tree = await self.mounter.setup_overlay(
+            [self.source_path])
 
         config_location = os.path.join(
             self.app.root, 'var/log/installer/subiquity-curtin-apt.conf')
@@ -245,7 +255,7 @@ class AptConfigurer:
         overlay = await self.mounter.setup_overlay([
                 self.install_tree.upperdir,
                 self.configured_tree.upperdir,
-                self.source
+                self.source_path,
             ])
         try:
             yield overlay
@@ -263,7 +273,11 @@ class AptConfigurer:
                 raise OverlayCleanupError from exc
 
     async def cleanup(self):
-        await self.mounter.cleanup()
+        # FIXME disabled until we can sort out umount
+        # await self.mounter.cleanup()
+        if self._source_path is not None:
+            self.source_handler.cleanup()
+            self._source_path = None
 
     async def deconfigure(self, context, target: str) -> None:
         target_mnt = Mountpoint(mountpoint=target)

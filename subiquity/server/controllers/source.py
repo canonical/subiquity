@@ -17,7 +17,11 @@ import contextlib
 from typing import Any, Optional
 import os
 
-from curtin.commands.extract import get_handler_for_source
+from curtin.commands.extract import (
+    AbstractSourceHandler,
+    get_handler_for_source,
+    TrivialSourceHandler,
+    )
 from curtin.util import sanitize_source
 
 from subiquity.common.apidef import API
@@ -128,15 +132,14 @@ class SourceController(SubiquityController):
             self.model.current.id,
             search_drivers=self.model.search_drivers)
 
-    async def configured(self):
-        if self._handler is not None:
-            self._handler.cleanup()
-        self._handler = get_handler_for_source(
+    def get_handler(self) -> AbstractSourceHandler:
+        handler = get_handler_for_source(
             sanitize_source(self.model.get_source()))
         if self.app.opts.dry_run:
-            self.source_path = '/'
-        else:
-            self.source_path = self._handler.setup()
+            handler = TrivialSourceHandler('/')
+        return handler
+
+    async def configured(self):
         await super().configured()
         self.app.base_model.set_source_variant(self.model.current.variant)
 

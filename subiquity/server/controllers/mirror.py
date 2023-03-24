@@ -20,7 +20,6 @@ from typing import List, Optional
 
 import attr
 
-from subiquitycore.async_helpers import SingleInstanceTask
 from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
@@ -33,7 +32,11 @@ from subiquity.common.types import (
     MirrorSelectionFallback,
     )
 from subiquity.models.mirror import filter_candidates
-from subiquity.server.apt import get_apt_configurer, AptConfigCheckError
+from subiquity.server.apt import (
+    AptConfigCheckError,
+    AptConfigurer,
+    get_apt_configurer,
+    )
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
 
@@ -137,7 +140,6 @@ class MirrorController(SubiquityController):
         super().__init__(app)
         self.geoip_enabled = True
         self.cc_event = asyncio.Event()
-        self.configured_event = asyncio.Event()
         self.source_configured_event = asyncio.Event()
         self.network_configured_event = asyncio.Event()
         self.proxy_configured_event = asyncio.Event()
@@ -151,9 +153,8 @@ class MirrorController(SubiquityController):
             (InstallerChannels.CONFIGURED, 'proxy'),
             self.proxy_configured_event.set)
         self._apt_config_key = None
-        self._apply_apt_config_task = SingleInstanceTask(
-            self._promote_mirror)
-        self.apt_configurer = None
+        self.test_apt_configurer: Optional[AptConfigurer] = None
+        self.final_apt_configurer: Optional[AptConfigurer] = None
         self.mirror_check: Optional[MirrorCheck] = None
 
     def load_autoinstall_data(self, data):
@@ -280,13 +281,9 @@ class MirrorController(SubiquityController):
             self.model.set_country(self.app.geoip.countrycode)
         self.cc_event.set()
 
-    def on_source(self):
-        # FIXME disabled until we can sort out umount
-        # if self.apt_configurer is not None:
-        #     await self.apt_configurer.cleanup()
-        self.apt_configurer = get_apt_configurer(
-            self.app, self.app.controllers.Source.source_path)
-        self._apply_apt_config_task.start_sync()
+    async def on_source(self):
+        self.test_apt_configurer = get_apt_configurer(
+            self.app, self.app.controllers.Source.get_handler())
         self.source_configured_event.set()
 
     def serialize(self):
@@ -305,30 +302,27 @@ class MirrorController(SubiquityController):
         config['geoip'] = self.geoip_enabled
         return config
 
-    async def configured(self):
-        await super().configured()
-        self._apply_apt_config_task.start_sync()
-        self.configured_event.set()
-
     async def _promote_mirror(self):
-        await asyncio.gather(self.source_configured_event.wait(),
-                             self.configured_event.wait())
         if self.model.primary_elected is None:
             # NOTE: In practice, this should only happen if the mirror was
             # marked configured using a POST to mark_configured ; which is not
             # recommended. Clients should do a POST request to /mirror with
             # null as the body instead.
             await self.run_mirror_selection_or_fallback(self.context)
-        await self.apt_configurer.apply_apt_config(self.context, final=True)
+        await self.final_apt_configurer.apply_apt_config(
+            self.context, final=True)
 
     async def run_mirror_testing(self, output: io.StringIO) -> None:
         await self.source_configured_event.wait()
-        await self.apt_configurer.apply_apt_config(self.context, final=False)
-        await self.apt_configurer.run_apt_config_check(output)
+        await self.test_apt_configurer.apply_apt_config(
+            self.context, final=False)
+        await self.test_apt_configurer.run_apt_config_check(output)
 
-    async def wait_config(self):
-        await self._apply_apt_config_task.wait()
-        return self.apt_configurer
+    async def wait_config(self) -> AptConfigurer:
+        self.final_apt_configurer = get_apt_configurer(
+            self.app, self.app.controllers.Source.get_handler())
+        await self._promote_mirror()
+        return self.final_apt_configurer
 
     async def GET(self) -> MirrorGet:
         elected: Optional[str] = None

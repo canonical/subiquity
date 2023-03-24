@@ -17,6 +17,8 @@ import copy
 from unittest import mock, IsolatedAsyncioTestCase
 import uuid
 
+from curtin.commands.extract import TrivialSourceHandler
+
 from subiquitycore.tests.parameterized import parameterized
 
 from subiquitycore.snapd import AsyncSnapd, get_fake_connection
@@ -664,6 +666,8 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
             'prefer-encrypted'
         self.app.base_model.source.current.size = 1
         self.app.controllers.Source.source_path = ''
+        self.app.controllers.Source.get_handler.return_value = \
+            TrivialSourceHandler('')
 
         self.app.dr_cfg.systems_dir_exists = True
 

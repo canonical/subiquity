@@ -104,7 +104,7 @@ class DriversController(SubiquityController):
             self.drivers = []
             self.list_drivers_done_event.set()
             return
-        apt = self.app.controllers.Mirror.apt_configurer
+        apt = self.app.controllers.Mirror.final_apt_configurer
         try:
             async with apt.overlay() as d:
                 try:

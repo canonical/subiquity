@@ -17,6 +17,8 @@ import io
 import subprocess
 from unittest.mock import Mock, patch, AsyncMock
 
+from curtin.commands.extract import TrivialSourceHandler
+
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.utils import astart_command
@@ -65,7 +67,8 @@ class TestAptConfigurer(SubiTestCase):
         self.model.debconf_selections = DebconfSelectionsModel()
         self.model.locale.selected_language = "en_US.UTF-8"
         self.app = make_app(self.model)
-        self.configurer = AptConfigurer(self.app, AsyncMock(), '')
+        self.configurer = AptConfigurer(
+            self.app, AsyncMock(), TrivialSourceHandler(''))
 
         self.astart_sym = "subiquity.server.apt.astart_command"
 

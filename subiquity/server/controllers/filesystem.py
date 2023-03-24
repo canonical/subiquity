@@ -24,6 +24,7 @@ import select
 import time
 from typing import Dict, List, Optional
 
+from curtin.commands.extract import AbstractSourceHandler
 from curtin.storage_config import ptable_uuid_to_flag_entry
 
 import pyudev
@@ -153,6 +154,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._system: Optional[snapdapi.SystemDetails] = None
         self._on_volume: Optional[snapdapi.OnVolume] = None
         self._core_boot_classic_error: str = ''
+        self._source_handler: Optional[AbstractSourceHandler] = None
         self._system_mounter: Optional[Mounter] = None
         self._role_to_device: Dict[str: _Device] = {}
         self._device_to_structure: Dict[_Device: snapdapi.OnVolume] = {}
@@ -173,7 +175,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.stop_listening_udev()
 
     async def _mount_system(self):
-        source_path = self.app.controllers.Source.source_path
+        self._source_handler = self.app.controllers.Source.get_handler()
+        source_path = self._source_handler.setup()
         cur_systems_dir = '/var/lib/snapd/seed/systems'
         source_systems_dir = os.path.join(source_path, cur_systems_dir[1:])
         if self.app.opts.dry_run:
@@ -190,6 +193,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if self._system_mounter is not None:
             await self._system_mounter.cleanup()
             self._system_mounter = None
+        if self._source_handler is not None:
+            self._source_handler.cleanup()
+            self._source_handler = None
 
     async def _get_system(self):
         await self._unmount_system()

@@ -51,7 +51,7 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         app = make_app()
         self.controller = MirrorController(app)
-        self.controller.apt_configurer = mock.AsyncMock()
+        self.controller.test_apt_configurer = mock.AsyncMock()
 
     def test_make_autoinstall(self):
         self.controller.model = MirrorModel()
@@ -89,7 +89,7 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
                 self.controller.source_configured_event, "wait")
 
         mock_run_apt_config_check = mock.patch.object(
-                self.controller.apt_configurer, "run_apt_config_check",
+                self.controller.test_apt_configurer, "run_apt_config_check",
                 side_effect=fake_mirror_check_success)
         with mock_source_configured, mock_run_apt_config_check:
             await self.controller.run_mirror_testing(output)
@@ -97,7 +97,7 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
 
         output = io.StringIO()
         mock_run_apt_config_check = mock.patch.object(
-                self.controller.apt_configurer, "run_apt_config_check",
+                self.controller.test_apt_configurer, "run_apt_config_check",
                 side_effect=fake_mirror_check_failure)
         with mock_source_configured, mock_run_apt_config_check:
             with self.assertRaises(AptConfigCheckError):
