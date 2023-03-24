@@ -20,7 +20,16 @@ import yaml
 
 import attr
 
+from subiquity.common.serialize import Serializer
+
 log = logging.getLogger('subiquity.models.source')
+
+
+@attr.s(auto_attribs=True)
+class CatalogEntryVariation:
+    path: str
+    size: int
+    snapd_system_label: typing.Optional[str] = None
 
 
 @attr.s(auto_attribs=True)
@@ -34,8 +43,16 @@ class CatalogEntry:
     type: str
     default: bool = False
     locale_support: str = attr.ib(default="locale-only")
-    preinstalled_langs: typing.List[str] = attr.ib(default=attr.Factory(list))
+    preinstalled_langs: typing.List[str] = attr.Factory(list)
     snapd_system_label: typing.Optional[str] = None
+    variations: typing.Dict[str, CatalogEntryVariation] = attr.Factory(dict)
+
+    def __attrs_post_init__(self):
+        if not self.variations:
+            self.variations['default'] = CatalogEntryVariation(
+                path=self.path,
+                size=self.size,
+                snapd_system_label=self.snapd_system_label)
 
 
 legacy_server_entry = CatalogEntry(
@@ -47,7 +64,12 @@ legacy_server_entry = CatalogEntry(
     type='cp',
     default=True,
     size=2 << 30,
-    locale_support="locale-only")
+    locale_support="locale-only",
+    variations={
+        'default': CatalogEntryVariation(
+            path='/media/filesystem',
+            size=2 << 30),
+    })
 
 
 class SourceModel:
@@ -63,16 +85,12 @@ class SourceModel:
         self._dir = os.path.dirname(fp.name)
         self.sources = []
         self.current = None
-        entries = yaml.safe_load(fp)
-        for entry in entries:
-            kw = {}
-            for field in attr.fields(CatalogEntry):
-                if field.name in entry:
-                    kw[field.name] = entry[field.name]
-            c = CatalogEntry(**kw)
-            self.sources.append(c)
-            if c.default:
-                self.current = c
+        self.sources = Serializer(ignore_unknown_fields=True).deserialize(
+            typing.List[CatalogEntry],
+            yaml.safe_load(fp))
+        for entry in self.sources:
+            if entry.default:
+                self.current = entry
         log.debug("loaded %d sources from %r", len(self.sources), fp.name)
         if self.current is None:
             self.current = self.sources[0]
@@ -84,8 +102,11 @@ class SourceModel:
                 return source
         raise KeyError
 
-    def get_source(self):
-        path = os.path.join(self._dir, self.current.path)
+    def get_source(self,
+                   variation: typing.Optional[CatalogEntryVariation] = None):
+        if variation is None:
+            variation = next(iter(self.current.variations.values()))
+        path = os.path.join(self._dir, variation.path)
         if self.current.preinstalled_langs:
             base, ext = os.path.splitext(path)
             if self.lang in self.current.preinstalled_langs:
