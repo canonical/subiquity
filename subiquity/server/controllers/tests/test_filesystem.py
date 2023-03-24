@@ -110,7 +110,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self._guided_setup(bootloader, ptable)
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, capabilities=default_capabilities)
-        self.controller.guided(
+        await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.DIRECT))
         [d1p1, d1p2] = self.d1.partitions()
         self.assertEqual(p1mnt, d1p1.mount)
@@ -123,7 +123,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self._guided_setup(Bootloader.BIOS, 'msdos')
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, capabilities=default_capabilities)
-        self.controller.guided(
+        await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.DIRECT))
         [d1p1] = self.d1.partitions()
         self.assertEqual('/', d1p1.mount)
@@ -135,7 +135,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self._guided_setup(bootloader, ptable)
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, capabilities=default_capabilities)
-        self.controller.guided(GuidedChoiceV2(
+        await self.controller.guided(GuidedChoiceV2(
             target=target, capability=GuidedCapability.LVM))
         [d1p1, d1p2, d1p3] = self.d1.partitions()
         self.assertEqual(p1mnt, d1p1.mount)
@@ -153,7 +153,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self._guided_setup(Bootloader.BIOS, 'msdos')
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, capabilities=default_capabilities)
-        self.controller.guided(
+        await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.LVM))
         [d1p1, d1p2] = self.d1.partitions()
         self.assertEqual('/boot', d1p1.mount)
@@ -202,7 +202,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         gap = gaps.largest_gap(self.d1)
         target = GuidedStorageTargetUseGap(
             disk_id=self.d1.id, gap=gap, capabilities=default_capabilities)
-        self.controller.guided(
+        await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.DIRECT))
         parts_after = gaps.parts_and_gaps(self.d1)[:-1]
         self.assertEqual(parts_before, parts_after)
@@ -224,7 +224,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         gap = gaps.largest_gap(self.d1)
         target = GuidedStorageTargetUseGap(
             disk_id=self.d1.id, gap=gap, capabilities=default_capabilities)
-        self.controller.guided(
+        await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.LVM))
         parts_after = gaps.parts_and_gaps(self.d1)[:-2]
         self.assertEqual(parts_before, parts_after)
@@ -565,7 +565,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         [volume] = system.volumes.values()
         self.fsc._on_volume = snapdapi.OnVolume.from_volume(volume)
 
-    def test_guided_core_boot(self):
+    async def test_guided_core_boot(self):
         disk = make_disk(self.fsc.model)
         arbitrary_uuid = str(uuid.uuid4())
         self._add_details_for_structures([
@@ -581,7 +581,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 size=1 << 30,
                 filesystem='ext4'),
             ])
-        self.fsc.guided_core_boot(disk)
+        await self.fsc.guided_core_boot(disk)
         [part1, part2] = disk.partitions()
         self.assertEqual(part1.offset, 1 << 20)
         self.assertEqual(part1.size, 1 << 30)
@@ -594,7 +594,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.assertEqual(
             part2.partition_type, arbitrary_uuid)
 
-    def test_guided_core_boot_reuse(self):
+    async def test_guided_core_boot_reuse(self):
         disk = make_disk(self.fsc.model)
         # Add a partition that matches one in the volume structure
         reused_part = make_partition(
@@ -612,13 +612,13 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 size=1 << 30,
                 filesystem='ext4'),
             ])
-        self.fsc.guided_core_boot(disk)
+        await self.fsc.guided_core_boot(disk)
         [part] = disk.partitions()
         self.assertEqual(reused_part, part)
         self.assertEqual(reused_part.wipe, 'superblock')
         self.assertEqual(part.fs().fstype, 'ext4')
 
-    def test_guided_core_boot_reuse_no_format(self):
+    async def test_guided_core_boot_reuse_no_format(self):
         disk = make_disk(self.fsc.model)
         existing_part = make_partition(
             self.fsc.model, disk, offset=1 << 20, size=1 << 30, preserve=True)
@@ -629,12 +629,12 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 size=1 << 30,
                 filesystem=None),
             ])
-        self.fsc.guided_core_boot(disk)
+        await self.fsc.guided_core_boot(disk)
         [part] = disk.partitions()
         self.assertEqual(existing_part, part)
         self.assertEqual(existing_part.wipe, None)
 
-    def test_guided_core_boot_system_data(self):
+    async def test_guided_core_boot_system_data(self):
         disk = make_disk(self.fsc.model)
         self._add_details_for_structures([
             snapdapi.VolumeStructure(
@@ -645,7 +645,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 role=snapdapi.Role.SYSTEM_DATA,
                 filesystem='ext4'),
             ])
-        self.fsc.guided_core_boot(disk)
+        await self.fsc.guided_core_boot(disk)
         [part] = disk.partitions()
         self.assertEqual(part.offset, 2 << 20)
         self.assertEqual(part.partition_name, 'ptname')
