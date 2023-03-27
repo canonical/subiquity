@@ -271,7 +271,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             'filesystem': self.fs_probe,
             }
         self.fsc._probe_task.task = mock.Mock()
-        self.fsc._get_system_task.task = mock.Mock()
+        self.fsc._examine_systems_task.task = mock.Mock()
         if bootloader == Bootloader.BIOS and ptable != 'msdos' and fix_bios:
             make_partition(self.model, self.disk, preserve=True,
                            flag='bios_grub', size=1 << 20, offset=1 << 20)
@@ -551,7 +551,7 @@ class TestManualBoot(IsolatedAsyncioTestCase):
         self.fsc.model = self.model = make_model(bootloader)
         self.model.storage_version = 2
         self.fsc._probe_task.task = mock.Mock()
-        self.fsc._get_system_task.task = mock.Mock()
+        self.fsc._examine_systems_task.task = mock.Mock()
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_get_boot_disks_only(self, bootloader, ptable):
@@ -719,7 +719,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
 
         self.app.dr_cfg.systems_dir_exists = True
 
-        await self.fsc._get_system_task.start()
+        await self.fsc._examine_systems_task.start()
         self.fsc.start()
 
         response = await self.fsc.v2_guided_GET(wait=True)

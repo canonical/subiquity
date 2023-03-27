@@ -147,11 +147,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self._probe_once, propagate_errors=False)
         self._probe_task = SingleInstanceTask(
             self._probe, propagate_errors=False, cancel_restart=False)
-        self._get_system_task = SingleInstanceTask(self._get_system)
+        self._examine_systems_task = SingleInstanceTask(self._examine_systems)
         self.supports_resilient_boot = False
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, 'source'),
-            self._get_system_task.start_sync)
+            self._examine_systems_task.start_sync)
         self._system: Optional[snapdapi.SystemDetails] = None
         self._on_volume: Optional[snapdapi.OnVolume] = None
         self._core_boot_classic_error: str = ''
@@ -198,7 +198,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self._source_handler.cleanup()
             self._source_handler = None
 
-    async def _probe_system(self, label):
+    async def _examine_system(self, label):
         try:
             await self._mount_systems_dir()
         except NoSnapdSystemsOnSource:
@@ -227,18 +227,18 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 "storage encryption unavailable: %r", se.unavailable_reason)
         return system
 
-    async def _get_system(self):
+    async def _examine_systems(self):
         self._system = None
         label = self.app.base_model.source.current.snapd_system_label
         if label is None:
             return
-        self._system = await self._probe_system(label)
+        self._system = await self._examine_system(label)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
         await self._start_task
         await self._probe_task.wait()
-        await self._get_system_task.wait()
+        await self._examine_systems_task.wait()
         if False in self._errors:
             raise self._errors[False][0]
         if True in self._errors:
@@ -392,9 +392,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             return resp_cls(
                 status=ProbeStatus.FAILED,
                 error_report=self._errors[True][1].ref())
-        if not self._get_system_task.done():
+        if not self._examine_systems_task.done():
             if wait:
-                await self._get_system_task.wait()
+                await self._examine_systems_task.wait()
             else:
                 return resp_cls(status=ProbeStatus.PROBING)
         return None
