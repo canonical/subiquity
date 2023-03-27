@@ -29,7 +29,6 @@ from subiquity.common.types import (
     SourceSelection,
     SourceSelectionAndSetting,
     )
-from subiquity.models.source import CatalogEntryVariation
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
 
@@ -134,10 +133,10 @@ class SourceController(SubiquityController):
             self.model.current.id,
             search_drivers=self.model.search_drivers)
 
-    def get_handler(self, variation: Optional[CatalogEntryVariation] = None) \
+    def get_handler(self, variation_name: Optional[str] = None) \
             -> AbstractSourceHandler:
         handler = get_handler_for_source(
-            sanitize_source(self.model.get_source(variation)))
+            sanitize_source(self.model.get_source(variation_name)))
         if self.app.opts.dry_run:
             handler = TrivialSourceHandler('/')
         return handler
