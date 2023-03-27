@@ -22,7 +22,7 @@ import os
 import pathlib
 import select
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 import attr
 
@@ -128,7 +128,7 @@ class NoSnapdSystemsOnSource(Exception):
 @attr.s(auto_attribs=True)
 class VariationInfo:
     label: Optional[str]
-    capabilities: List[GuidedCapability]
+    capabilities: Set[GuidedCapability]
     error: Optional[str] = None
     encryption_unavailable_reason: str = ''
     min_size: Optional[int] = None
@@ -145,11 +145,11 @@ class VariationInfo:
         return cls(
             label=None,
             min_size=min_size,
-            capabilities=[
+            capabilities={
                 GuidedCapability.DIRECT,
                 GuidedCapability.LVM,
                 GuidedCapability.LVM_LUKS
-            ])
+            })
 
 
 class FilesystemController(SubiquityController, FilesystemManipulator):
@@ -181,9 +181,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, 'source'),
             self._examine_systems_task.start_sync)
+        self._variation_info: Dict[str, VariationInfo] = {}
         self._info: Optional[VariationInfo] = None
         self._on_volume: Optional[snapdapi.OnVolume] = None
-        self._core_boot_classic_error: str = ''
         self._source_handler: Optional[AbstractSourceHandler] = None
         self._system_mounter: Optional[Mounter] = None
         self._role_to_device: Dict[str: _Device] = {}
@@ -269,42 +269,45 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if se.support == StorageEncryptionSupport.DISABLED:
             info.encryption_unavailable_reason = _(
                 "TPM backed full-disk encryption has been disabled")
-            info.capabilities = [
-                GuidedCapability.CORE_BOOT_UNENCRYPTED]
+            info.capabilities = {
+                GuidedCapability.CORE_BOOT_UNENCRYPTED}
         elif se.support == StorageEncryptionSupport.UNAVAILABLE:
             log.debug(
                 "storage encryption unavailable: %r", se.unavailable_reason)
             info.encryption_unavailable_reason = se.unavailable_reason
-            info.capabilities = [
-                GuidedCapability.CORE_BOOT_UNENCRYPTED]
+            info.capabilities = {
+                GuidedCapability.CORE_BOOT_UNENCRYPTED}
         else:
             if se.storage_safety == StorageSafety.ENCRYPTED:
-                info.capabilities = [
-                    GuidedCapability.CORE_BOOT_ENCRYPTED]
+                info.capabilities = {
+                    GuidedCapability.CORE_BOOT_ENCRYPTED}
             elif se.storage_safety == StorageSafety.PREFER_ENCRYPTED:
-                info.capabilities = [
-                    GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED]
+                info.capabilities = {
+                    GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED}
             elif se.storage_safety == StorageSafety.PREFER_UNENCRYPTED:
-                info.capabilities = [
-                    GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED]
+                info.capabilities = {
+                    GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED}
 
         return info
 
     async def _examine_systems(self):
-        system = None
-        label = self.app.base_model.source.current.snapd_system_label
-        if label is not None:
-            system = await self._get_system(label)
-        log.debug("got system %s", system)
-        if system is not None and len(system.volumes) > 0:
-            self._info = self.info_for_system(label, system)
-        else:
-            # This calculation is pretty much a hack and we should
-            # actually think about it at some point (like: maybe the
-            # source catalog should directly specify the minimum suitable
-            # size?)
-            min_size = 2*self.app.base_model.source.current.size + (1 << 30)
-            self._info = VariationInfo.classic(min_size)
+        catalog_entry = self.app.base_model.source.current
+        for name, variation in catalog_entry.variations.items():
+            system = None
+            label = variation.snapd_system_label
+            if label is not None:
+                system = await self._get_system(label)
+            log.debug("got system %s for variation %s", system, name)
+            if system is not None and len(system.volumes) > 0:
+                self._variation_info[name] = self.info_for_system(
+                    label, system)
+            else:
+                # This calculation is pretty much a hack and we should
+                # actually think about it at some point (like: maybe the
+                # source catalog should directly specify the minimum suitable
+                # size?)
+                min_size = 2*variation.size + (1 << 30)
+                self._variation_info[name] = VariationInfo.classic(min_size)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
@@ -315,19 +318,20 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise self._errors[False][0]
         if True in self._errors:
             raise self._errors[True][0]
-        if self._core_boot_classic_error:
-            raise Exception(self._core_boot_classic_error)
         if self.ai_data is None:
-            if self.is_core_boot_classic():
+            # If there are any classic variations, we default that.
+            if any(not variation.is_core_boot_classic()
+                   for variation in self._variation_info.values()
+                   if variation.is_valid()):
                 self.ai_data = {
                     'layout': {
-                        'name': 'hybrid',
+                        'name': 'lvm',
                         },
                     }
             else:
                 self.ai_data = {
                     'layout': {
-                        'name': 'lvm',
+                        'name': 'hybrid',
                         },
                     }
         await self.convert_autoinstall_config(context=context)
@@ -426,13 +430,36 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise Exception(f'gap not found after resize, pgs={pgs}')
         return gap
 
+    def set_info_for_capability(self, capability: GuidedCapability):
+        d = {
+            GuidedCapability.CORE_BOOT_ENCRYPTED: {
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
+                },
+            GuidedCapability.CORE_BOOT_UNENCRYPTED: {
+                GuidedCapability.CORE_BOOT_UNENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
+                },
+            }
+        for info in self._variation_info.values():
+            if not info.is_valid():
+                continue
+            if d.get(capability, {capability}) & info.capabilities:
+                self._info = info
+                return
+        raise Exception(
+            "could not find variation for {}".format(capability))
+
     async def guided(self, choice: GuidedChoiceV2):
         self.model.guided_configuration = choice
 
+        self.set_info_for_capability(choice.capability)
+
         disk = self.model._one(id=choice.target.disk_id)
 
-        if choice.capability.is_core_boot():
-            assert self._info.is_core_boot_classic()
+        if self.is_core_boot_classic():
             assert isinstance(choice.target, GuidedStorageTargetReformat)
             self.use_tpm = (
                 choice.capability == GuidedCapability.CORE_BOOT_ENCRYPTED)
@@ -533,16 +560,17 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if probe_resp is not None:
             return probe_resp
         disks = self.potential_boot_disks(with_reformatting=True)
-        info = self._info
+        assert len(self._variation_info) == 1
+        [info] = self._variation_info.items()
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
             disks=[
                 labels.for_client(d, min_size=info.min_size) for d in disks
                 ],
-            core_boot_classic_error=self._core_boot_classic_error,
+            core_boot_classic_error=info.error,
             encryption_unavailable_reason=info.encryption_unavailable_reason,
-            capabilities=info.capabilities)
+            capabilities=list(info.capabilities))
 
     def _offsets_and_sizes_for_volume(self, volume):
         offset = self.model._partition_alignment_data['gpt'].min_start_offset
@@ -702,7 +730,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         raise ValueError(f'Partition {number} on {disk.id} not found')
 
     def calculate_suggested_install_min(self):
-        source_min = self.app.base_model.source.current.size
+        catalog_entry = self.app.base_model.source.current
+        source_min = max(
+            variation.size
+            for variation in catalog_entry.variations.values()
+            )
         align = max((pa.part_align
                      for pa in self.model._partition_alignment_data.values()))
         return sizes.calculate_suggested_install_min(source_min, align)
@@ -740,10 +772,17 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return await self.v2_GET()
 
     def get_available_capabilities(self):
-        if self._info.is_core_boot_classic():
-            return [], self._info.capabilities
-        else:
-            return self._info.capabilities, []
+        classic_capabilities = set()
+        core_boot_capabilities = set()
+        for info in self._variation_info.values():
+            if not info.is_valid():
+                continue
+            if info.is_core_boot_classic():
+                core_boot_capabilities.update(info.capabilities)
+            else:
+                classic_capabilities.update(info.capabilities)
+        return sorted(classic_capabilities, key=lambda x: x.name), \
+            sorted(core_boot_capabilities, key=lambda x: x.name)
 
     async def v2_guided_GET(self, wait: bool = False) \
             -> GuidedStorageResponseV2:
@@ -939,7 +978,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         sizing_policy = None
 
         if name == 'hybrid':
-            if not self.is_core_boot_classic():
+            # this check is conceptually unnecessary but results in a
+            # much cleaner error message...
+            for variation in self._variation_info.values():
+                if not variation.is_valid():
+                    continue
+                if variation.is_core_boot_classic():
+                    break
+            else:
                 raise Exception(
                     "can only use name: hybrid when installing core boot "
                     "classic")
@@ -957,19 +1003,26 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             elif encrypted:
                 capability = GC.CORE_BOOT_ENCRYPTED
             else:
-                if self._info.capabilities == [
-                        GuidedCapability.CORE_BOOT_ENCRYPTED] and \
+                if self._info.capabilities == {
+                        GuidedCapability.CORE_BOOT_ENCRYPTED} and \
                    not encrypted:
                     raise Exception("cannot install this model unencrypted")
                 capability = GC.CORE_BOOT_UNENCRYPTED
             match = layout.get("match", {'size': 'largest'})
             disk = self.model.disk_for_match(self.model.all_disks(), match)
             mode = 'reformat_disk'
-        elif self.is_core_boot_classic():
-            raise Exception(
-                "must use name: hybrid when installing core boot "
-                "classic")
         else:
+            # this check is conceptually unnecessary but results in a
+            # much cleaner error message...
+            for variation in self._variation_info.values():
+                if not variation.is_valid():
+                    continue
+                if not variation.is_core_boot_classic():
+                    break
+            else:
+                raise Exception(
+                    "must use name: hybrid when installing core boot "
+                    "classic")
             mode = layout.get('mode', 'reformat_disk')
             self.validate_layout_mode(mode)
             password = layout.get('password', None)
@@ -1018,7 +1071,16 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                             "'layout' and 'config', using 'layout'")
             await self.run_autoinstall_guided(self.ai_data['layout'])
         elif 'config' in self.ai_data:
-            if self.is_core_boot_classic():
+            # XXX in principle should there be a way to influence the
+            # variation chosen here? Not with current use cases for
+            # variations anyway.
+            for variation in self._variation_info.values():
+                if not variation.is_valid():
+                    continue
+                if not variation.is_core_boot_classic():
+                    self._info = variation
+                    break
+            else:
                 raise Exception(
                     "must not use config: when installing core boot classic")
             self.model.apply_autoinstall_config(self.ai_data['config'])
