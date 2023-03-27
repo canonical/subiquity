@@ -935,6 +935,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def run_autoinstall_guided(self, layout):
         name = layout['name']
+        password = None
+        sizing_policy = None
 
         if name == 'hybrid':
             if not self.is_core_boot_classic():
@@ -962,19 +964,24 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 capability = GC.CORE_BOOT_UNENCRYPTED
             match = layout.get("match", {'size': 'largest'})
             disk = self.model.disk_for_match(self.model.all_disks(), match)
-            target = GuidedStorageTargetReformat(
-                disk_id=disk.id, capabilities=[])
-            await self.guided(
-                GuidedChoiceV2(target=target, capability=capability,
-                               password=None))
-            return
+            mode = 'reformat_disk'
         elif self.is_core_boot_classic():
             raise Exception(
                 "must use name: hybrid when installing core boot "
                 "classic")
-
-        mode = layout.get('mode', 'reformat_disk')
-        self.validate_layout_mode(mode)
+        else:
+            mode = layout.get('mode', 'reformat_disk')
+            self.validate_layout_mode(mode)
+            password = layout.get('password', None)
+            if name == 'lvm':
+                sizing_policy = SizingPolicy.from_string(
+                        layout.get('sizing-policy', None))
+                if password is not None:
+                    capability = GuidedCapability.LVM_LUKS
+                else:
+                    capability = GuidedCapability.LVM
+            else:
+                capability = GuidedCapability.DIRECT
 
         if mode == 'reformat_disk':
             match = layout.get("match", {'size': 'largest'})
@@ -991,19 +998,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             target = GuidedStorageTargetUseGap(
                 disk_id=gap.device.id, gap=gap, capabilities=[])
 
-        log.info(f'autoinstall: running guided {name} install in mode {mode} '
-                 f'using {target}')
-        password = layout.get('password', None)
-        if name == 'lvm':
-            if password is not None:
-                capability = GuidedCapability.LVM_LUKS
-            else:
-                capability = GuidedCapability.LVM
-        else:
-            capability = GuidedCapability.DIRECT
-        password = layout.get('password', None)
-        sizing_policy = SizingPolicy.from_string(
-                layout.get('sizing-policy', None))
+        log.info(f'autoinstall: running guided {capability} install in '
+                 f'mode {mode} using {target}')
         await self.guided(
                 GuidedChoiceV2(target=target, capability=capability,
                                password=password, sizing_policy=sizing_policy))
