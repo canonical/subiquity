@@ -632,6 +632,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
 
     def _add_details_for_structures(self, structures):
         self.fsc._info = VariationInfo(
+            name='foo',
             label='system',
             capabilities=[],
             system=snapdapi.SystemDetails(
