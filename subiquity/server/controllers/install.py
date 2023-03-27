@@ -212,7 +212,8 @@ class InstallController(SubiquityController):
         description="configuring apt", level="INFO", childlevel="DEBUG")
     async def configure_apt(self, *, context):
         mirror = self.app.controllers.Mirror
-        configurer = await mirror.wait_config()
+        fsc = self.app.controllers.Filesystem
+        configurer = await mirror.wait_config(fsc._info.name)
         return await configurer.configure_for_install(context)
 
     async def setup_target(self, context):

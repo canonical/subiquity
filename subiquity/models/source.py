@@ -102,10 +102,11 @@ class SourceModel:
                 return source
         raise KeyError
 
-    def get_source(self,
-                   variation: typing.Optional[CatalogEntryVariation] = None):
-        if variation is None:
+    def get_source(self, variation_name: typing.Optional[str] = None):
+        if variation_name is None:
             variation = next(iter(self.current.variations.values()))
+        else:
+            variation = self.current.variations[variation_name]
         path = os.path.join(self._dir, variation.path)
         if self.current.preinstalled_langs:
             base, ext = os.path.splitext(path)
