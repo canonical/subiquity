@@ -129,7 +129,7 @@ class NoSnapdSystemsOnSource(Exception):
 class VariationInfo:
     label: Optional[str]
     capabilities: Set[GuidedCapability]
-    error: Optional[str] = None
+    error: str = ''
     encryption_unavailable_reason: str = ''
     min_size: Optional[int] = None
     system: Optional[SystemDetails] = None
@@ -138,7 +138,7 @@ class VariationInfo:
         return self.label is not None
 
     def is_valid(self) -> bool:
-        return self.error is None
+        return self.error == ''
 
     @classmethod
     def classic(cls, min_size: int):
@@ -561,7 +561,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             return probe_resp
         disks = self.potential_boot_disks(with_reformatting=True)
         assert len(self._variation_info) == 1
-        [info] = self._variation_info.items()
+        [info] = self._variation_info.values()
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
