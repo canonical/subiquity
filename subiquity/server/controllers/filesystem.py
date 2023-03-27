@@ -24,6 +24,8 @@ import select
 import time
 from typing import Dict, List, Optional
 
+import attr
+
 from curtin.commands.extract import AbstractSourceHandler
 from curtin.storage_config import ptable_uuid_to_flag_entry
 
@@ -91,9 +93,9 @@ from subiquity.server.controller import (
 from subiquity.server import snapdapi
 from subiquity.server.mounter import Mounter
 from subiquity.server.snapdapi import (
-    StorageEncryption,
     StorageEncryptionSupport,
     StorageSafety,
+    SystemDetails,
     )
 from subiquity.server.types import InstallerChannels
 
@@ -121,6 +123,33 @@ system_non_gpt_text = _(
 
 class NoSnapdSystemsOnSource(Exception):
     pass
+
+
+@attr.s(auto_attribs=True)
+class VariationInfo:
+    label: Optional[str]
+    capabilities: List[GuidedCapability]
+    error: Optional[str] = None
+    encryption_unavailable_reason: str = ''
+    min_size: Optional[int] = None
+    system: Optional[SystemDetails] = None
+
+    def is_core_boot_classic(self) -> bool:
+        return self.label is not None
+
+    def is_valid(self) -> bool:
+        return self.error is None
+
+    @classmethod
+    def classic(cls, min_size: int):
+        return cls(
+            label=None,
+            min_size=min_size,
+            capabilities=[
+                GuidedCapability.DIRECT,
+                GuidedCapability.LVM,
+                GuidedCapability.LVM_LUKS
+            ])
 
 
 class FilesystemController(SubiquityController, FilesystemManipulator):
@@ -152,7 +181,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, 'source'),
             self._examine_systems_task.start_sync)
-        self._system: Optional[snapdapi.SystemDetails] = None
+        self._info: Optional[VariationInfo] = None
         self._on_volume: Optional[snapdapi.OnVolume] = None
         self._core_boot_classic_error: str = ''
         self._source_handler: Optional[AbstractSourceHandler] = None
@@ -162,7 +191,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.use_tpm: bool = False
 
     def is_core_boot_classic(self):
-        return self._system is not None
+        return self._info.is_core_boot_classic()
 
     def load_autoinstall_data(self, data):
         # Log disabled to prevent LUKS password leak
@@ -198,7 +227,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self._source_handler.cleanup()
             self._source_handler = None
 
-    async def _examine_system(self, label):
+    async def _get_system(self, label):
         try:
             await self._mount_systems_dir()
         except NoSnapdSystemsOnSource:
@@ -208,31 +237,74 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         finally:
             await self._unmount_systems_dir()
         log.debug("got system %s", system)
-        if len(system.volumes) == 0:
-            # This means the system does not define a gadget or kernel and
-            # so isn't a core boot classic system.
-            return None
-        if len(system.volumes) > 1:
-            self._core_boot_classic_error = system_multiple_volumes_text
-        [volume] = system.volumes.values()
-        if volume.schema != 'gpt':
-            self._core_boot_classic_error = system_non_gpt_text
-        se = system.storage_encryption
-        if se.support == StorageEncryptionSupport.DEFECTIVE:
-            self._core_boot_classic_error = \
-              system_defective_encryption_text.format(
-                  reason=se.unavailable_reason)
-        if se.support == StorageEncryptionSupport.UNAVAILABLE:
-            log.debug(
-                "storage encryption unavailable: %r", se.unavailable_reason)
         return system
 
+    def info_for_system(self, label: str, system: SystemDetails):
+        info = VariationInfo(
+            label=label,
+            capabilities=[],
+            system=system,
+            )
+
+        if len(system.volumes) > 1:
+            info.error = system_multiple_volumes_text
+            return info
+
+        [volume] = system.volumes.values()
+        if volume.schema != 'gpt':
+            info.error = system_non_gpt_text
+            return info
+
+        se = system.storage_encryption
+        if se.support == StorageEncryptionSupport.DEFECTIVE:
+            info.error = system_defective_encryption_text.format(
+                  reason=se.unavailable_reason)
+            return info
+
+        offsets_and_sizes = list(
+            self._offsets_and_sizes_for_volume(volume))
+        _structure, last_offset, last_size = offsets_and_sizes[-1]
+        info.min_size = last_offset + last_size
+
+        if se.support == StorageEncryptionSupport.DISABLED:
+            info.encryption_unavailable_reason = _(
+                "TPM backed full-disk encryption has been disabled")
+            info.capabilities = [
+                GuidedCapability.CORE_BOOT_UNENCRYPTED]
+        elif se.support == StorageEncryptionSupport.UNAVAILABLE:
+            log.debug(
+                "storage encryption unavailable: %r", se.unavailable_reason)
+            info.encryption_unavailable_reason = se.unavailable_reason
+            info.capabilities = [
+                GuidedCapability.CORE_BOOT_UNENCRYPTED]
+        else:
+            if se.storage_safety == StorageSafety.ENCRYPTED:
+                info.capabilities = [
+                    GuidedCapability.CORE_BOOT_ENCRYPTED]
+            elif se.storage_safety == StorageSafety.PREFER_ENCRYPTED:
+                info.capabilities = [
+                    GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED]
+            elif se.storage_safety == StorageSafety.PREFER_UNENCRYPTED:
+                info.capabilities = [
+                    GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED]
+
+        return info
+
     async def _examine_systems(self):
-        self._system = None
+        system = None
         label = self.app.base_model.source.current.snapd_system_label
-        if label is None:
-            return
-        self._system = await self._examine_system(label)
+        if label is not None:
+            system = await self._get_system(label)
+        log.debug("got system %s", system)
+        if system is not None and len(system.volumes) > 0:
+            self._info = self.info_for_system(label, system)
+        else:
+            # This calculation is pretty much a hack and we should
+            # actually think about it at some point (like: maybe the
+            # source catalog should directly specify the minimum suitable
+            # size?)
+            min_size = 2*self.app.base_model.source.current.size + (1 << 30)
+            self._info = VariationInfo.classic(min_size)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
@@ -360,6 +432,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         disk = self.model._one(id=choice.target.disk_id)
 
         if choice.capability.is_core_boot():
+            assert self._info.is_core_boot_classic()
             assert isinstance(choice.target, GuidedStorageTargetReformat)
             self.use_tpm = (
                 choice.capability == GuidedCapability.CORE_BOOT_ENCRYPTED)
@@ -459,34 +532,17 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         probe_resp = await self._probe_response(wait, GuidedStorageResponse)
         if probe_resp is not None:
             return probe_resp
-        # This calculation is pretty much a hack and we should
-        # actually think about it at some point (like: maybe the
-        # source catalog should directly specify the minimum suitable
-        # size?)
-        min_size = 2*self.app.base_model.source.current.size + (1 << 30)
         disks = self.potential_boot_disks(with_reformatting=True)
-        capabilities, core_boot_capabilities = self.get_capabilities()
-        encryption_unavailable_reason = ''
-        if self.is_core_boot_classic():
-            [volume] = self._system.volumes.values()
-            offsets_and_sizes = list(
-                self._offsets_and_sizes_for_volume(volume))
-            _structure, last_offset, last_size = offsets_and_sizes[-1]
-            min_size = last_offset + last_size
-            capabilities = core_boot_capabilities
-            se: StorageEncryption = self._system.storage_encryption
-            if se.support == StorageEncryptionSupport.DISABLED:
-                encryption_unavailable_reason = _(
-                    "TPM backed full-disk encryption has been disabled")
-            else:
-                encryption_unavailable_reason = se.unavailable_reason
+        info = self._info
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
-            disks=[labels.for_client(d, min_size=min_size) for d in disks],
+            disks=[
+                labels.for_client(d, min_size=info.min_size) for d in disks
+                ],
             core_boot_classic_error=self._core_boot_classic_error,
-            encryption_unavailable_reason=encryption_unavailable_reason,
-            capabilities=capabilities)
+            encryption_unavailable_reason=info.encryption_unavailable_reason,
+            capabilities=info.capabilities)
 
     def _offsets_and_sizes_for_volume(self, volume):
         offset = self.model._partition_alignment_data['gpt'].min_start_offset
@@ -503,7 +559,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # features that are only available with v2 partitioning.
         await self._mount_systems_dir()
         self.model.storage_version = 2
-        [volume] = self._system.volumes.values()
+        [volume] = self._info.system.volumes.values()
         self._on_volume = snapdapi.OnVolume.from_volume(volume)
 
         preserved_parts = set()
@@ -572,7 +628,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # This must be run after curtin partitioning, which will result in a
         # call to update_devices which will have set .path on all block
         # devices.
-        [key] = self._system.volumes.keys()
+        [key] = self._info.system.volumes.keys()
         return {key: self._on_volume}
 
     @with_context(description="configuring TPM-backed full disk encryption")
@@ -683,35 +739,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.model.reset()
         return await self.v2_GET()
 
-    def get_capabilities(self):
-        if self.is_core_boot_classic():
-            classic_capabilities = []
-            safety = self._system.storage_encryption.storage_safety
-            support = self._system.storage_encryption.support
-            if support == StorageEncryptionSupport.DISABLED:
-                core_boot_capabilities = [
-                    GuidedCapability.CORE_BOOT_UNENCRYPTED]
-            elif support == StorageEncryptionSupport.UNAVAILABLE:
-                core_boot_capabilities = [
-                    GuidedCapability.CORE_BOOT_UNENCRYPTED]
-            else:
-                if safety == StorageSafety.ENCRYPTED:
-                    core_boot_capabilities = [
-                        GuidedCapability.CORE_BOOT_ENCRYPTED]
-                elif safety == StorageSafety.PREFER_ENCRYPTED:
-                    core_boot_capabilities = [
-                        GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED]
-                elif safety == StorageSafety.PREFER_UNENCRYPTED:
-                    core_boot_capabilities = [
-                        GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED]
+    def get_available_capabilities(self):
+        if self._info.is_core_boot_classic():
+            return [], self._info.capabilities
         else:
-            core_boot_capabilities = []
-            classic_capabilities = [
-                GuidedCapability.DIRECT,
-                GuidedCapability.LVM,
-                GuidedCapability.LVM_LUKS
-            ]
-        return classic_capabilities, core_boot_capabilities
+            return self._info.capabilities, []
 
     async def v2_guided_GET(self, wait: bool = False) \
             -> GuidedStorageResponseV2:
@@ -725,7 +757,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         scenarios = []
         install_min = self.calculate_suggested_install_min()
 
-        classic_capabilities, core_boot_capabilities = self.get_capabilities()
+        classic_capabilities, core_boot_capabilities = \
+            self.get_available_capabilities()
 
         for disk in self.potential_boot_disks(with_reformatting=True):
             if disk.size >= install_min:
@@ -912,30 +945,28 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 raise Exception(
                     "cannot use 'mode' when installing core boot classic")
             encrypted = layout.get('encrypted', None)
-            safety = self._system.storage_encryption.storage_safety
-            support = self._system.storage_encryption.support
+            GC = GuidedCapability
             if encrypted is None:
-                if safety == StorageSafety.ENCRYPTED:
-                    # In this case we know encryption is available (because if
-                    # it isn't, support would be DEFECTIVE and that would have
-                    # triggered an error already)
-                    self.use_tpm = True
-                elif safety == StorageSafety.PREFER_ENCRYPTED:
-                    log.debug('setting use_tpm to %r', encrypted)
-                    self.use_tpm = (
-                        support == StorageEncryptionSupport.AVAILABLE)
+                if GC.CORE_BOOT_ENCRYPTED in self._info.capabilities or \
+                   GC.CORE_BOOT_PREFER_ENCRYPTED in self._info.capabilities:
+                    capability = GC.CORE_BOOT_ENCRYPTED
                 else:
-                    self.use_tpm = False
+                    capability = GC.CORE_BOOT_UNENCRYPTED
+            elif encrypted:
+                capability = GC.CORE_BOOT_ENCRYPTED
             else:
-                if safety == StorageSafety.ENCRYPTED:
-                    if not encrypted:
-                        raise Exception(
-                            "cannot install this model unencrypted")
-                log.debug('setting use_tpm to %r', encrypted)
-                self.use_tpm = bool(encrypted)
+                if self._info.capabilities == [
+                        GuidedCapability.CORE_BOOT_ENCRYPTED] and \
+                   not encrypted:
+                    raise Exception("cannot install this model unencrypted")
+                capability = GC.CORE_BOOT_UNENCRYPTED
             match = layout.get("match", {'size': 'largest'})
             disk = self.model.disk_for_match(self.model.all_disks(), match)
-            await self.guided_core_boot(disk)
+            target = GuidedStorageTargetReformat(
+                disk_id=disk.id, capabilities=[])
+            await self.guided(
+                GuidedChoiceV2(target=target, capability=capability,
+                               password=None))
             return
         elif self.is_core_boot_classic():
             raise Exception(

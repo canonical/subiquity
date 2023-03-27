@@ -44,7 +44,10 @@ from subiquity.models.tests.test_filesystem import (
     make_partition,
     )
 from subiquity.server import snapdapi
-from subiquity.server.controllers.filesystem import FilesystemController
+from subiquity.server.controllers.filesystem import (
+    FilesystemController,
+    VariationInfo,
+    )
 from subiquity.server.dryrun import DRConfig
 
 bootloaders = [(bl, ) for bl in list(Bootloader)]
@@ -99,11 +102,17 @@ class TestGuided(IsolatedAsyncioTestCase):
         (Bootloader.PREP, 'msdos', None),
     ]
 
-    def _guided_setup(self, bootloader, ptable, storage_version=None):
+    async def _guided_setup(self, bootloader, ptable, storage_version=None):
         self.app = make_app()
         self.app.opts.bootloader = bootloader.value
         self.controller = FilesystemController(self.app)
         self.controller.supports_resilient_boot = True
+        self.controller._examine_systems_task.start_sync()
+        self.app.dr_cfg = DRConfig()
+        self.app.base_model.source.current.size = 1
+        self.app.controllers.Source.get_handler.return_value = \
+            TrivialSourceHandler('')
+        await self.controller._examine_systems_task.wait()
         self.model = make_model(bootloader, storage_version)
         self.controller.model = self.model
         self.model._probe_data = {'blockdev': {}}
@@ -111,7 +120,7 @@ class TestGuided(IsolatedAsyncioTestCase):
 
     @parameterized.expand(boot_expectations)
     async def test_guided_direct(self, bootloader, ptable, p1mnt):
-        self._guided_setup(bootloader, ptable)
+        await self._guided_setup(bootloader, ptable)
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, capabilities=default_capabilities)
         await self.controller.guided(
@@ -124,7 +133,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertIsNone(gaps.largest_gap(self.d1))
 
     async def test_guided_direct_BIOS_MSDOS(self):
-        self._guided_setup(Bootloader.BIOS, 'msdos')
+        await self._guided_setup(Bootloader.BIOS, 'msdos')
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, capabilities=default_capabilities)
         await self.controller.guided(
@@ -136,7 +145,7 @@ class TestGuided(IsolatedAsyncioTestCase):
 
     @parameterized.expand(boot_expectations)
     async def test_guided_lvm(self, bootloader, ptable, p1mnt):
-        self._guided_setup(bootloader, ptable)
+        await self._guided_setup(bootloader, ptable)
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, capabilities=default_capabilities)
         await self.controller.guided(GuidedChoiceV2(
@@ -154,7 +163,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertIsNone(gaps.largest_gap(self.d1))
 
     async def test_guided_lvm_BIOS_MSDOS(self):
-        self._guided_setup(Bootloader.BIOS, 'msdos')
+        await self._guided_setup(Bootloader.BIOS, 'msdos')
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, capabilities=default_capabilities)
         await self.controller.guided(
@@ -169,8 +178,8 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertFalse(d1p2.preserve)
         self.assertIsNone(gaps.largest_gap(self.d1))
 
-    def _guided_side_by_side(self, bl, ptable):
-        self._guided_setup(bl, ptable, storage_version=2)
+    async def _guided_side_by_side(self, bl, ptable):
+        await self._guided_setup(bl, ptable, storage_version=2)
         self.controller.add_boot_disk(self.d1)
         for p in self.d1._partitions:
             p.preserve = True
@@ -201,7 +210,7 @@ class TestGuided(IsolatedAsyncioTestCase):
          )]
     )
     async def test_guided_direct_side_by_side(self, bl, pt, flag):
-        self._guided_side_by_side(bl, pt)
+        await self._guided_side_by_side(bl, pt)
         parts_before = self.d1._partitions.copy()
         gap = gaps.largest_gap(self.d1)
         target = GuidedStorageTargetUseGap(
@@ -223,7 +232,7 @@ class TestGuided(IsolatedAsyncioTestCase):
          )]
     )
     async def test_guided_lvm_side_by_side(self, bl, pt, flag):
-        self._guided_side_by_side(bl, pt)
+        await self._guided_side_by_side(bl, pt)
         parts_before = self.d1._partitions.copy()
         gap = gaps.largest_gap(self.d1)
         target = GuidedStorageTargetUseGap(
@@ -256,13 +265,19 @@ class TestLayout(IsolatedAsyncioTestCase):
 
 
 class TestGuidedV2(IsolatedAsyncioTestCase):
-    def _setup(self, bootloader, ptable, fix_bios=True, **kw):
+    async def _setup(self, bootloader, ptable, fix_bios=True, **kw):
         self.app = make_app()
         self.app.opts.bootloader = bootloader.value
         self.fsc = FilesystemController(app=self.app)
         self.fsc.calculate_suggested_install_min = mock.Mock()
         self.fsc.calculate_suggested_install_min.return_value = 10 << 30
         self.fsc.model = self.model = make_model(bootloader)
+        self.fsc._examine_systems_task.start_sync()
+        self.app.dr_cfg = DRConfig()
+        self.app.base_model.source.current.size = 1
+        self.app.controllers.Source.get_handler.return_value = \
+            TrivialSourceHandler('')
+        await self.fsc._examine_systems_task.wait()
         self.disk = make_disk(self.model, ptable=ptable, **kw)
         self.model.storage_version = 2
         self.fs_probe = {}
@@ -279,7 +294,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
     @parameterized.expand(bootloaders_and_ptables)
     async def test_blank_disk(self, bootloader, ptable):
         # blank disks should not report a UseGap case
-        self._setup(bootloader, ptable, fix_bios=False)
+        await self._setup(bootloader, ptable, fix_bios=False)
         expected = [
             GuidedStorageTargetReformat(
                 disk_id=self.disk.id, capabilities=default_capabilities),
@@ -290,7 +305,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_probing(self, bootloader, ptable):
-        self._setup(bootloader, ptable, fix_bios=False)
+        await self._setup(bootloader, ptable, fix_bios=False)
         self.fsc._probe_task.task = None
         resp = await self.fsc.v2_guided_GET()
         self.assertEqual([], resp.possible)
@@ -298,13 +313,13 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_small_blank_disk(self, bootloader, ptable):
-        self._setup(bootloader, ptable, size=1 << 30)
+        await self._setup(bootloader, ptable, size=1 << 30)
         resp = await self.fsc.v2_guided_GET()
         self.assertEqual(0, len(resp.possible))
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_used_half_disk(self, bootloader, ptable):
-        self._setup(bootloader, ptable, size=100 << 30)
+        await self._setup(bootloader, ptable, size=100 << 30)
         p = make_partition(self.model, self.disk, preserve=True, size=50 << 30)
         gap_offset = p.size + p.offset
         self.fs_probe[p._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
@@ -328,7 +343,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_used_full_disk(self, bootloader, ptable):
-        self._setup(bootloader, ptable)
+        await self._setup(bootloader, ptable)
         p = make_partition(self.model, self.disk, preserve=True,
                            size=gaps.largest_gap_size(self.disk))
         self.fs_probe[p._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
@@ -347,7 +362,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_weighted_split(self, bootloader, ptable):
-        self._setup(bootloader, ptable, size=250 << 30)
+        await self._setup(bootloader, ptable, size=250 << 30)
         # add an extra, filler, partition so that there is no use_gap result
         make_partition(self.model, self.disk, preserve=True, size=9 << 30)
         p = make_partition(self.model, self.disk, preserve=True,
@@ -375,7 +390,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_half_disk_reformat(self, bootloader, ptable):
-        self._setup(bootloader, ptable, size=100 << 30)
+        await self._setup(bootloader, ptable, size=100 << 30)
         p = make_partition(self.model, self.disk, preserve=True, size=50 << 30)
         self.fs_probe[p._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
 
@@ -402,7 +417,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_half_disk_use_gap(self, bootloader, ptable):
-        self._setup(bootloader, ptable, size=100 << 30)
+        await self._setup(bootloader, ptable, size=100 << 30)
         p = make_partition(self.model, self.disk, preserve=True, size=50 << 30)
         self.fs_probe[p._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
 
@@ -435,7 +450,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_half_disk_resize(self, bootloader, ptable):
-        self._setup(bootloader, ptable, size=100 << 30)
+        await self._setup(bootloader, ptable, size=100 << 30)
         p = make_partition(self.model, self.disk, preserve=True, size=50 << 30)
         self.fs_probe[p._path()] = {'ESTIMATED_MIN_SIZE': 1 << 20}
 
@@ -474,7 +489,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
     ])
     async def test_lvm_20G_bad_offset(self, disk_size):
         disk_size = disk_size << 30
-        self._setup(Bootloader.BIOS, 'gpt', size=disk_size)
+        await self._setup(Bootloader.BIOS, 'gpt', size=disk_size)
 
         guided_get_resp = await self.fsc.v2_guided_GET()
 
@@ -502,7 +517,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
                 disk_size)
 
     async def _sizing_setup(self, bootloader, ptable, disk_size, policy):
-        self._setup(bootloader, ptable, size=disk_size)
+        await self._setup(bootloader, ptable, size=disk_size)
 
         resp = await self.fsc.v2_guided_GET()
         reformat = [target for target in resp.possible
@@ -609,11 +624,15 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.fsc.model = make_model(Bootloader.UEFI)
 
     def _add_details_for_structures(self, structures):
-        system = self.fsc._system = snapdapi.SystemDetails(
-            volumes={'pc': snapdapi.Volume(schema='gpt', structure=structures)}
+        self.fsc._info = VariationInfo(
+            label='system',
+            capabilities=[],
+            system=snapdapi.SystemDetails(
+                volumes={
+                    'pc': snapdapi.Volume(schema='gpt', structure=structures),
+                    }
+                )
             )
-        [volume] = system.volumes.values()
-        self.fsc._on_volume = snapdapi.OnVolume.from_volume(volume)
 
     async def test_guided_core_boot(self):
         disk = make_disk(self.fsc.model)
@@ -734,7 +753,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
 
         partition_count = len([
             structure
-            for structure in self.fsc._system.volumes['pc'].structure
+            for structure in self.fsc._info.system.volumes['pc'].structure
             if structure.role != snapdapi.Role.MBR
             ])
         self.assertEqual(
