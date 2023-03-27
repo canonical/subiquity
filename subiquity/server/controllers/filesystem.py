@@ -201,6 +201,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def configured(self):
         self._configured = True
+        if self._info is None:
+            self.set_info_for_capability(GuidedCapability.DIRECT)
         await super().configured()
         self.stop_listening_udev()
 
