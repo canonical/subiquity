@@ -61,7 +61,7 @@ class AdJoinStrategy():
                 log.info("Failed to set live session hostname for adcli")
                 return AdJoinResult.JOIN_ERROR
 
-            root_dir = self.app.root
+            root_dir = self.app.base_model.target
             cp = await arun_command([self.realm, "join", "--install", root_dir,
                                      "--user", info.admin_name,
                                      "--computer-name", hostname,
