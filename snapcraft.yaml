@@ -84,6 +84,15 @@ parts:
     organize:
       lib/python*/site-packages/usr/lib/curtin: usr/lib/
 
+  ubuntu-wsl-setup:
+    plugin: nil
+    source: .
+    source-type: git
+
+    override-build: |
+      mkdir -p $CRAFT_PART_INSTALL/bin
+      cp system_setup/ubuntu-wsl-setup $CRAFT_PART_INSTALL/bin/ubuntu-wsl-setup
+
   subiquity:
     plugin: nil
 
@@ -134,7 +143,6 @@ parts:
       bin/subiquity-service: usr/bin/subiquity-service
       bin/subiquity-server: usr/bin/subiquity-server
       bin/subiquity-cmd: usr/bin/subiquity-cmd
-      $CRAFT_PROJECT_DIR/system_setup/ubuntu-wsl-setup: bin/ubuntu-wsl-setup
 
     build-attributes:
       - enable-patchelf
