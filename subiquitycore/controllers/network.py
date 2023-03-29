@@ -46,6 +46,7 @@ from subiquitycore.ui.views.network import (
     )
 from subiquitycore.utils import (
     arun_command,
+    orig_environ,
     run_command,
     )
 
@@ -358,9 +359,13 @@ class BaseNetworkController(BaseController):
                          'systemd-networkd.service',
                          'systemd-networkd.socket'],
                         check=True)
+                env = orig_environ(None)
                 try:
-                    await arun_command(['netplan', 'apply'], check=True)
-                except subprocess.CalledProcessError:
+                    await arun_command(['netplan', 'apply'],
+                                       env=env, check=True)
+                except subprocess.CalledProcessError as cpe:
+                    log.debug('CalledProcessError: '
+                              f'stdout[{cpe.stdout}] stderr[{cpe.stderr}]')
                     error("apply")
                     raise
                 if devs_to_down or devs_to_delete:
