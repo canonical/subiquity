@@ -413,7 +413,7 @@ class InstallController(SubiquityController):
                 with open(self.tpath('etc/hostname'), 'r') as f:
                     hostname = f.read().strip()
 
-            await self.app.controllers.Ad.join_domain(hostname, context)
+            await self.app.controllers.Ad.join_domain(hostname)
 
     @with_context(description="configuring cloud-init")
     async def configure_cloud_init(self, context):

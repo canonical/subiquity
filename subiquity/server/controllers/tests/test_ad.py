@@ -159,14 +159,14 @@ class TestAdJoin(IsolatedAsyncioTestCase):
         # Mimics a client requesting the join result. Blocking by default.
         result = self.controller.join_result_GET()
         # Mimics a calling from the install controller.
-        await self.controller.join_domain('this', 'AD Join')
+        await self.controller.join_domain('this')
         self.assertEqual(await result, AdJoinResult.OK)
 
     async def test_join_Join_Error(self):
         self.controller.model.set(AdConnectionInfo(domain_name='jubuntu.com',
                                                    admin_name='Helper',
                                                    password='1234'))
-        await self.controller.join_domain('this', 'AD Join')
+        await self.controller.join_domain('this')
         result = await self.controller.join_result_GET(wait=True)
         self.assertEqual(result, AdJoinResult.JOIN_ERROR)
 
@@ -174,6 +174,6 @@ class TestAdJoin(IsolatedAsyncioTestCase):
         self.controller.model.set(AdConnectionInfo(domain_name='pubuntu.com',
                                                    admin_name='Helper',
                                                    password='1234'))
-        await self.controller.join_domain('this', 'AD Join')
+        await self.controller.join_domain('this')
         result = await self.controller.join_result_GET(wait=True)
         self.assertEqual(result, AdJoinResult.PAM_ERROR)

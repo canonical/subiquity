@@ -194,11 +194,10 @@ class AdController(SubiquityController):
 
         return self.join_result
 
-    async def join_domain(self, hostname: str, context) -> None:
+    async def join_domain(self, hostname: str) -> None:
         """ To be called from the install controller if the user requested
         joining an AD domain """
-        await self.ad_joiner.join_domain(self.model.conn_info, hostname,
-                                         context)
+        await self.ad_joiner.join_domain(self.model.conn_info, hostname)
 
 
 # Helper out-of-class functions grouped.
