@@ -58,8 +58,8 @@ class ChooserBaseView(BaseView):
 
 
 def by_preferred_action_type(action):
-    """Order action entries by having the 'run' mode first, then 'recover', then
-    'install', the rest is ordered alphabetically."""
+    """Order action entries by having the 'run' mode first, then 'recover',
+    then 'install', the rest is ordered alphabetically."""
     priority = {"run": 0, "recover": 1, "install": 2}
     return (priority.get(action.mode, 100), action.title.lower())
 

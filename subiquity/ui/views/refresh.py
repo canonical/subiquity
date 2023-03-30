@@ -103,7 +103,7 @@ def exc_message(exc):
         message = result.get("result", {}).get("message")
     if message is not None:
         return message
-    return"Unknown error: {}".format(exc)
+    return "Unknown error: {}".format(exc)
 
 
 class RefreshView(BaseView):

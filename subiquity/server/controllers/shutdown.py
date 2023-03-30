@@ -100,6 +100,18 @@ class ShutdownController(SubiquityController):
         if self.opts.dry_run:
             os.makedirs(target_logs, exist_ok=True)
         else:
+            # Preserve ephemeral boot cloud-init logs if applicable
+            cloudinit_logs = [
+               cloudinit_log
+               for cloudinit_log in (
+                    "/var/log/cloud-init.log",
+                    "/var/log/cloud-init-output.log"
+               )
+               if os.path.exists(cloudinit_log)
+            ]
+            if cloudinit_logs:
+                await arun_command(
+                    ['cp', '-a'] + cloudinit_logs + ['/var/log/installer'])
             await arun_command(
                 ['cp', '-aT', '/var/log/installer', target_logs])
             # Close the permissions from group writes on the target.
