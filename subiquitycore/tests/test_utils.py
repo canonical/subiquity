@@ -40,10 +40,16 @@ class TestOrigEnviron(SubiTestCase):
         expected = {}
         self.assertEqual(expected, orig_environ(env))
 
+    def test_no_ld_library_path(self):
+        env = {'LD_LIBRARY_PATH': 'a'}
+        expected = {}
+        self.assertEqual(expected, orig_environ(env))
+
     def test_practical(self):
         snap = '/snap/subiquity/1234'
         env = {
             'TERM': 'linux',
+            'LD_LIBRARY_PATH': '/var/lib/snapd/lib/gl',
             'PYTHONIOENCODING_ORIG': '',
             'PYTHONIOENCODING': 'utf-8',
             'SUBIQUITY_ROOT_ORIG': '',
