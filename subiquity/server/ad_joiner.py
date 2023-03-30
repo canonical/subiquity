@@ -19,6 +19,7 @@ import logging
 import os
 from socket import gethostname
 from subprocess import CalledProcessError
+from typing import Dict
 from subiquitycore.utils import arun_command, run_command
 from subiquity.common.types import (
     AdConnectionInfo,
@@ -28,14 +29,15 @@ from subiquity.common.types import (
 log = logging.getLogger('subiquity.server.ad_joiner')
 
 
-def debconf_disconnect():
-    """Disconnect from debconf. This is only to be used as a subprocess
-    preexec_fn helper."""
-    os.environ['DEBIAN_FRONTEND'] = 'noninteractive'
-    if 'DEBIAN_HAS_FRONTEND' in os.environ:
-        del os.environ['DEBIAN_HAS_FRONTEND']
-    if 'DEBCONF_USE_CDEBCONF' in os.environ:
-        del os.environ['DEBCONF_USE_CDEBCONF']
+def debconf_disconnect_env(env: Dict[str, str]):
+    """Returns an environment variable dictionary to be passed in child
+       processes requiring disconnection from debconf. """
+    env['DEBIAN_FRONTEND'] = 'noninteractive'
+    if 'DEBIAN_HAS_FRONTEND' in env:
+        del env['DEBIAN_HAS_FRONTEND']
+    if 'DEBCONF_USE_CDEBCONF' in env:
+        del env['DEBCONF_USE_CDEBCONF']
+    return env
 
 
 @contextmanager
@@ -108,9 +110,10 @@ class AdJoinStrategy():
 
             # Enable pam_mkhomedir
             try:
+                env = debconf_disconnect_env(os.environ.copy())
                 await arun_command(["chroot", root_dir, self.pam,
                                     "--package", "--enable", "mkhomedir"],
-                                   preexec_fn=debconf_disconnect, check=True)
+                                   env=env, check=True)
 
                 return AdJoinResult.OK
             except CalledProcessError:
