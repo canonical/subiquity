@@ -18,6 +18,7 @@ import fcntl
 import json
 import logging
 import os
+import re
 import sys
 import time
 import traceback
@@ -138,6 +139,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             if not self.reporter.dry_run:
                 self.pr.add_hooks_info(None)
                 apport.hookutils.attach_hardware(self.pr)
+            self.pr['Syslog'] = apport.hookutils.recent_syslog(re.compile('.'))
             # Because apport-cli will in general be run on a different
             # machine, we make some slightly obscure alterations to the report
             # to make this go better.
