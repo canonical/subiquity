@@ -48,7 +48,7 @@ def joining_context(hostname: str, root_dir: str):
         hostname_process = run_command(['hostname', hostname_current])
         if hostname_process.returncode:
             log.info("Failed to restore live session hostname")
-        for bind in binds:
+        for bind in reversed(binds):
             bound_dir = os.path.join(root_dir, bind[1:])
             if bound_dir != bind:
                 run_command(["umount", "-f", bound_dir])
