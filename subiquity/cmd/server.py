@@ -159,10 +159,11 @@ def main():
 
     logger = logging.getLogger('subiquity')
     version = os.environ.get("SNAP_REVISION", "unknown")
-    logger.info("Starting Subiquity server revision {}".format(version))
-    logger.info("Arguments passed: {}".format(sys.argv))
-    logger.debug("Kernel commandline: {}".format(opts.kernel_cmdline))
-    logger.debug("Storage version: {}".format(opts.storage_version))
+    snap = os.environ.get("SNAP", "unknown")
+    logger.info(f"Starting Subiquity server revision {version} of snap {snap}")
+    logger.info(f"Arguments passed: {sys.argv}")
+    logger.debug(f"Kernel commandline: {opts.kernel_cmdline}")
+    logger.debug(f"Environment: {os.environ}")
 
     async def run_with_loop():
         server = SubiquityServer(opts, block_log_dir)

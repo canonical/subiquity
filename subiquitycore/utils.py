@@ -36,6 +36,8 @@ def _clean_env(env, *, locale=True):
 
 
 def orig_environ(env):
+    """Generate an environment dict that is suitable for use for running
+    programs that live outside the snap."""
     if env is None:
         env = os.environ
     ret = env.copy()
@@ -47,6 +49,7 @@ def orig_environ(env):
             else:
                 del ret[key_to_restore]
             del ret[key]
+    ret.pop('LD_LIBRARY_PATH', None)
     return ret
 
 

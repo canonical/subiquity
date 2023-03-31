@@ -113,8 +113,10 @@ def main():
 
     logger = logging.getLogger('subiquity')
     version = os.environ.get("SNAP_REVISION", "unknown")
-    logger.info("Starting Subiquity revision {}".format(version))
-    logger.info("Arguments passed: {}".format(sys.argv))
+    snap = os.environ.get("SNAP", "unknown")
+    logger.info(f"Starting Subiquity TUI revision {version} of snap {snap}")
+    logger.info(f"Arguments passed: {sys.argv}")
+    logger.debug(f"Environment: {os.environ}")
 
     if opts.answers is None and os.path.exists(AUTO_ANSWERS_FILE):
         logger.debug("Autoloading answers from %s", AUTO_ANSWERS_FILE)
