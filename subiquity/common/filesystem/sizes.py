@@ -149,3 +149,21 @@ def calculate_suggested_install_min(source_min: int,
     room_for_swap = swap.suggested_swapsize()
     total = source_min + room_for_boot + room_to_grow + room_for_swap
     return align_up(total, part_align)
+
+
+# Scale the usage of the vg to leave room for snapshots and such. We should
+# use more of a smaller disk to avoid the user running into out of space errors
+# earlier than they probably expect to.
+def scaled_rootfs_size(available: int):
+    if available < 10 * (1 << 30):
+        # Use all of a small (<10G) disk.
+        return available
+    elif available < 20 * (1 << 30):
+        # Use 10G of a smallish (<20G) disk.
+        return 10 * (1 << 30)
+    elif available < 200 * (1 << 30):
+        # Use half of a larger (<200G) disk.
+        return available // 2
+    else:
+        # Use at most 100G of a large disk.
+        return 100 * (1 << 30)
