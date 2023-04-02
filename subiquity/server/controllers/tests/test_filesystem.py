@@ -23,6 +23,7 @@ from subiquitycore.tests.parameterized import parameterized
 
 from subiquitycore.snapd import AsyncSnapd, get_fake_connection
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.utils import matching_dicts
 from subiquitycore.tests.util import random_string
 
 from subiquity.common.filesystem import gaps
@@ -34,7 +35,9 @@ from subiquity.common.types import (
     GuidedStorageTargetResize,
     GuidedStorageTargetUseGap,
     ProbeStatus,
+    SizingPolicy,
     )
+from subiquity.models.filesystem import dehumanize_size
 from subiquity.models.tests.test_filesystem import (
     make_disk,
     make_model,
@@ -496,6 +499,45 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual(
                 disk_size - (1 << 20), parts[-1].offset + parts[-1].size,
                 disk_size)
+
+    async def _sizing_setup(self, bootloader, ptable, disk_size, policy):
+        self._setup(bootloader, ptable, size=disk_size)
+
+        resp = await self.fsc.v2_guided_GET()
+        reformat = [target for target in resp.possible
+                    if isinstance(target, GuidedStorageTargetReformat)][0]
+        data = GuidedChoiceV2(target=reformat,
+                              capability=GuidedCapability.LVM,
+                              sizing_policy=policy)
+        await self.fsc.v2_guided_POST(data=data)
+        resp = await self.fsc.GET()
+
+        [vg] = matching_dicts(resp.config, type='lvm_volgroup')
+        [part_id] = vg['devices']
+        [part] = matching_dicts(resp.config, id=part_id)
+        part_size = part['size']  # already an int
+        [lvm_partition] = matching_dicts(resp.config, type='lvm_partition')
+        size = dehumanize_size(lvm_partition['size'])
+        return size, part_size
+
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_scaled_disk(self, bootloader, ptable):
+        size, part_size = await self._sizing_setup(
+                bootloader, ptable, 50 << 30, SizingPolicy.SCALED)
+        # expected to be about half, differing by boot and ptable types
+        self.assertLess(20 << 30, size)
+        self.assertLess(size, 30 << 30)
+
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_unscaled_disk(self, bootloader, ptable):
+        size, part_size = await self._sizing_setup(
+                bootloader, ptable, 50 << 30, SizingPolicy.ALL)
+        # there is some subtle differences in sizing depending on
+        # ptable/bootloader and how the rounding goes
+        self.assertLess(part_size - (5 << 20), size)
+        self.assertLess(size, part_size)
+        # but we should using most of the disk, minus boot partition(s)
+        self.assertLess(45 << 30, size)
 
 
 class TestManualBoot(IsolatedAsyncioTestCase):

@@ -323,6 +323,10 @@ class GuidedCapability(enum.Enum):
     CORE_BOOT_PREFER_ENCRYPTED = enum.auto()
     CORE_BOOT_PREFER_UNENCRYPTED = enum.auto()
 
+    def is_lvm(self) -> bool:
+        return self in [GuidedCapability.LVM,
+                        GuidedCapability.LVM_LUKS]
+
     def is_core_boot(self) -> bool:
         return self in [GuidedCapability.CORE_BOOT_ENCRYPTED,
                         GuidedCapability.CORE_BOOT_UNENCRYPTED,
@@ -369,6 +373,11 @@ class StorageResponseV2:
     # if need_boot == True, there is not yet a boot partition
     need_boot: Optional[bool] = None
     install_minimum_size: Optional[int] = None
+
+
+class SizingPolicy(enum.Enum):
+    SCALED = enum.auto()
+    ALL = enum.auto()
 
 
 @attr.s(auto_attribs=True)
@@ -425,6 +434,8 @@ class GuidedChoiceV2:
     target: GuidedStorageTarget
     capability: GuidedCapability
     password: Optional[str] = attr.ib(default=None, repr=False)
+    sizing_policy: Optional[SizingPolicy] = \
+        attr.ib(default=SizingPolicy.SCALED)
 
     @staticmethod
     def from_guided_choice(choice: GuidedChoice):
@@ -433,6 +444,7 @@ class GuidedChoiceV2:
                     disk_id=choice.disk_id, capabilities=[choice.capability]),
                 capability=choice.capability,
                 password=choice.password,
+                sizing_policy=SizingPolicy.SCALED,
                 )
 
 

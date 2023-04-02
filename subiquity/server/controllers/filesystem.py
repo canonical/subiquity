@@ -71,6 +71,7 @@ from subiquity.common.types import (
     ModifyPartitionV2,
     ProbeStatus,
     ReformatDisk,
+    SizingPolicy,
     StorageResponse,
     StorageResponseV2,
     )
@@ -278,7 +279,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         spec = dict(fstype="ext4", mount="/")
         self.create_partition(device=gap.device, gap=gap, spec=spec)
 
-    def guided_lvm(self, gap, lvm_options=None):
+    def guided_lvm(self, gap, choice: GuidedChoiceV2):
         device = gap.device
         part_align = device.alignment_data().part_align
         bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
@@ -293,11 +294,17 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             i += 1
             vg_name = 'ubuntu-vg-{}'.format(i)
         spec = dict(name=vg_name, devices=set([part]))
-        if lvm_options and lvm_options['encrypt']:
-            spec['passphrase'] = lvm_options['luks_options']['passphrase']
+        if choice.password is not None:
+            spec['passphrase'] = choice.password
         vg = self.create_volgroup(spec)
-        lv_size = sizes.scaled_rootfs_size(vg.size)
-        lv_size = align_down(lv_size, LVM_CHUNK_SIZE)
+        if choice.sizing_policy == SizingPolicy.SCALED:
+            lv_size = sizes.scaled_rootfs_size(vg.size)
+            lv_size = align_down(lv_size, LVM_CHUNK_SIZE)
+        elif choice.sizing_policy == SizingPolicy.ALL:
+            lv_size = vg.size
+        else:
+            raise Exception(f'Unhandled size policy {choice.sizing_policy}')
+        log.debug(f'lv_size {lv_size} for {choice.sizing_policy}')
         self.create_logical_volume(
             vg=vg, spec=dict(
                 size=lv_size,
@@ -347,14 +354,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise Exception(f'gap not found after resize, pgs={pgs}')
         return gap
 
-    def build_lvm_options(self, passphrase):
-        return {
-            'encrypt': True,
-            'luks_options': {
-                'passphrase': passphrase,
-                },
-            }
-
     async def guided(self, choice: GuidedChoiceV2):
         self.model.guided_configuration = choice
 
@@ -375,11 +374,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if gap is None:
             raise Exception('failed to locate gap after adding boot')
 
-        if choice.capability == GuidedCapability.LVM:
-            self.guided_lvm(gap, lvm_options=None)
-        elif choice.capability == GuidedCapability.LVM_LUKS:
-            lvm_options = self.build_lvm_options(choice.password)
-            self.guided_lvm(gap, lvm_options=lvm_options)
+        if choice.capability.is_lvm():
+            self.guided_lvm(gap, choice)
         elif choice.capability == GuidedCapability.DIRECT:
             self.guided_direct(gap)
         else:
