@@ -386,6 +386,11 @@ class StorageResponseV2:
     install_minimum_size: Optional[int] = None
 
 
+class SizingPolicy(enum.Enum):
+    SCALED = enum.auto()
+    ALL = enum.auto()
+
+
 @attr.s(auto_attribs=True)
 class GuidedResizeValues:
     install_max: int
@@ -436,6 +441,8 @@ class GuidedChoiceV2:
     target: GuidedStorageTarget
     use_lvm: bool = False
     password: Optional[str] = attr.ib(default=None, repr=False)
+    sizing_policy: Optional[SizingPolicy] = \
+        attr.ib(default=SizingPolicy.SCALED)
 
     @staticmethod
     def from_guided_choice(choice: GuidedChoice):
@@ -443,6 +450,7 @@ class GuidedChoiceV2:
                 target=GuidedStorageTargetReformat(disk_id=choice.disk_id),
                 use_lvm=choice.use_lvm,
                 password=choice.password,
+                sizing_policy=SizingPolicy.SCALED,
                 )
 
 
