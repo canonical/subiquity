@@ -176,3 +176,10 @@ def disable_subiquity():
                  "snap.subiquity.subiquity-service.service",
                  "serial-subiquity@*.service"])
     return
+
+
+def matching_dicts(items, **kw):
+    """Given an input sequence of dictionaries, return a list of dicts where
+    the supplied keyword arguments all match those items."""
+    return [item for item in items
+            if all(item.get(k) == v for k, v in kw.items())]
