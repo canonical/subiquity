@@ -28,7 +28,10 @@ from unittest.mock import patch
 from urllib.parse import unquote
 
 from subiquitycore.tests import SubiTestCase
-from subiquitycore.utils import astart_command
+from subiquitycore.utils import (
+    astart_command,
+    matching_dicts,
+    )
 
 default_timeout = 10
 
@@ -37,8 +40,7 @@ def match(items, **kw):
     typename = kw.pop('_type', None)
     if typename is not None:
         kw['$type'] = typename
-    return [item for item in items
-            if all(item.get(k) == v for k, v in kw.items())]
+    return matching_dicts(items, **kw)
 
 
 def timeout(multiplier=1):
