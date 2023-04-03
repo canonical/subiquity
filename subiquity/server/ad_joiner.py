@@ -16,6 +16,7 @@
 import asyncio
 from contextlib import contextmanager
 import logging
+import os
 from socket import gethostname
 from subprocess import CalledProcessError
 from subiquitycore.utils import arun_command, run_command
@@ -29,18 +30,28 @@ log = logging.getLogger('subiquity.server.ad_joiner')
 
 
 @contextmanager
-def hostname_context(hostname: str):
-    """ Temporarily adjusts the host name to [hostname] and restores it
-        back in the end of the caller scope. """
+def joining_context(hostname: str, root_dir: str):
+    """ Temporarily adjusts the host name to [hostname] and bind-mounts
+        interesting system directories in preparation for running realm
+        in target's [root_dir], undoing it all on exit. """
     hostname_current = gethostname()
-    hostname_process = run_command(['hostname', hostname])
+    binds = ("/proc", "/sys", "/dev", "/run")
     try:
+        hostname_process = run_command(['hostname', hostname])
+        for bind in binds:
+            bound_dir = os.path.join(root_dir, bind[1:])
+            if bound_dir != bind:
+                run_command(["mount", "--bind", bind, bound_dir])
         yield hostname_process
     finally:
         # Restoring the live session hostname.
         hostname_process = run_command(['hostname', hostname_current])
         if hostname_process.returncode:
             log.info("Failed to restore live session hostname")
+        for bind in reversed(binds):
+            bound_dir = os.path.join(root_dir, bind[1:])
+            if bound_dir != bind:
+                run_command(["umount", "-f", bound_dir])
 
 
 class AdJoinStrategy():
@@ -54,14 +65,14 @@ class AdJoinStrategy():
             -> AdJoinResult:
         """ This method changes the hostname and perform a real AD join, thus
             should only run in a live session. """
+        root_dir = self.app.base_model.target
         # Set hostname for AD to determine FQDN (no FQDN option in realm join,
         # only adcli, which only understands the live system, but not chroot)
-        with hostname_context(hostname) as host_process:
+        with joining_context(hostname, root_dir) as host_process:
             if host_process.returncode:
                 log.info("Failed to set live session hostname for adcli")
                 return AdJoinResult.JOIN_ERROR
 
-            root_dir = self.app.root
             cp = await arun_command([self.realm, "join", "--install", root_dir,
                                      "--user", info.admin_name,
                                      "--computer-name", hostname,
