@@ -976,8 +976,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         else:
             capability = GuidedCapability.DIRECT
         password = layout.get('password', None)
-        await self.guided(GuidedChoiceV2(target=target, capability=capability,
-                                         password=password))
+        sizing_policy = SizingPolicy.from_string(
+                layout.get('sizing-policy', None))
+        await self.guided(
+                GuidedChoiceV2(target=target, capability=capability,
+                               password=password, sizing_policy=sizing_policy))
 
     def validate_layout_mode(self, mode):
         if mode not in ('reformat_disk', 'use_gap'):

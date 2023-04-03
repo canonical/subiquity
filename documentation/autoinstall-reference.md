@@ -311,6 +311,24 @@ When using the "lvm" layout, LUKS encryption can be enabled by supplying a passw
 
 The default is to use the lvm layout.
 
+#### sizing-policy
+
+The lvm layout will, by default, attempt to leave room for snapshots and further expansion.  A sizing-policy key may be supplied to control this behavior.
+
+**type:** string (enumeration)
+**default:** scaled
+
+Supported values are:
+
+ * `scaled` -> adjust space allocated to the root LV based on space available to the VG
+ * `all` -> allocate all remaining VG space to the root LV
+
+The scaling system is currently as follows:
+ * Less than 10 GiB: use all remaining space for root filesystem
+ * Between 10-20 GiB: 10 GiB root filesystem
+ * Between 20-200 GiB: use half of remaining space for root filesystem
+ * Greater than 200 GiB: 100 GiB root filesystem
+
 #### action-based config
 
 For full flexibility, the installer allows storage configuration to be done using a syntax which is a superset of that supported by curtin, described at https://curtin.readthedocs.io/en/latest/topics/storage.html.
