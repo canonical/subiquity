@@ -19,7 +19,7 @@ import logging
 import os
 import random
 import subprocess
-from typing import List, Sequence
+from typing import Any, Dict, List, Sequence
 
 log = logging.getLogger("subiquitycore.utils")
 
@@ -178,8 +178,8 @@ def disable_subiquity():
     return
 
 
-def matching_dicts(items, **kw):
+def matching_dicts(items: Sequence[Dict[Any, Any]], **criteria):
     """Given an input sequence of dictionaries, return a list of dicts where
     the supplied keyword arguments all match those items."""
     return [item for item in items
-            if all(item.get(k) == v for k, v in kw.items())]
+            if all(k in item and item[k] == v for k, v in criteria.items())]
