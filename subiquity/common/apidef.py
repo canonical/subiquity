@@ -306,16 +306,10 @@ class API:
                 def POST(data: Payload[ReformatDisk]) \
                     -> StorageResponseV2: ...
 
-            class potential_boot_disks:
-                """Obtain the list of disks which can be made bootable.
-                This list can be empty if there are no disks or if none of them
-                are plausible sources of a boot disk."""
-                def GET() -> List[str]: ...
-
             class add_boot_partition:
                 """Mark a given disk as bootable, which may cause a partition
                 to be added to the disk.  It is an error to call this for a
-                disk not in the list from potential_boot_disks."""
+                disk for which can_be_boot_device is False."""
                 def POST(disk_id: str) -> StorageResponseV2: ...
 
             class add_partition:
