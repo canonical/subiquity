@@ -780,11 +780,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.reformat(self.model._one(id=data.disk_id), data.ptable)
         return await self.v2_GET()
 
-    async def v2_potential_boot_disks_GET(self) -> List[str]:
-        disks = self.potential_boot_disks(check_boot=True,
-                                          with_reformatting=False)
-        return [disk.id for disk in disks]
-
     async def v2_add_boot_partition_POST(self, disk_id: str) \
             -> StorageResponseV2:
         disk = self.model._one(id=disk_id)
