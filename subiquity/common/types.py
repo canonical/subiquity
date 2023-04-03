@@ -390,6 +390,14 @@ class SizingPolicy(enum.Enum):
     SCALED = enum.auto()
     ALL = enum.auto()
 
+    @classmethod
+    def from_string(cls, value):
+        if value is None or value == 'scaled':
+            return cls.SCALED
+        if value == 'all':
+            return cls.ALL
+        raise Exception(f'Unknown SizingPolicy value {value}')
+
 
 @attr.s(auto_attribs=True)
 class GuidedResizeValues:
