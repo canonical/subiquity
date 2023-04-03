@@ -306,6 +306,7 @@ def _for_client_disk(disk, *, min_size=0):
         usage_labels=usage_labels(disk),
         partitions=[for_client(p) for p in gaps.parts_and_gaps(disk)],
         boot_device=boot.is_boot_device(disk),
+        can_be_boot_device=boot.can_be_boot_device(disk),
         ok_for_guided=disk.size >= min_size,
         model=getattr(disk, 'model', None),
         vendor=getattr(disk, 'vendor', None))
