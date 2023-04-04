@@ -510,27 +510,30 @@ class TestManualBoot(IsolatedAsyncioTestCase):
         self.app = make_app()
         self.app.opts.bootloader = bootloader.value
         self.fsc = FilesystemController(app=self.app)
+        self.fsc.calculate_suggested_install_min = mock.Mock()
+        self.fsc.calculate_suggested_install_min.return_value = 10 << 30
         self.fsc.model = self.model = make_model(bootloader)
+        self.model.storage_version = 2
+        self.fsc._probe_task.task = mock.Mock()
+        self.fsc._get_system_task.task = mock.Mock()
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_get_boot_disks_only(self, bootloader, ptable):
         self._setup(bootloader, ptable)
-        disk = make_disk(self.model)
-        self.assertEqual([disk.id],
-                         await self.fsc.v2_potential_boot_disks_GET())
-
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_get_boot_disks_none(self, bootloader, ptable):
-        self._setup(bootloader, ptable)
-        self.assertEqual([], await self.fsc.v2_potential_boot_disks_GET())
+        make_disk(self.model)
+        resp = await self.fsc.v2_GET()
+        [d] = resp.disks
+        self.assertTrue(d.can_be_boot_device)
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_get_boot_disks_all(self, bootloader, ptable):
         self._setup(bootloader, ptable)
-        d1 = make_disk(self.model)
-        d2 = make_disk(self.model)
-        self.assertEqual(set([d1.id, d2.id]),
-                         set(await self.fsc.v2_potential_boot_disks_GET()))
+        make_disk(self.model)
+        make_disk(self.model)
+        resp = await self.fsc.v2_GET()
+        [d1, d2] = resp.disks
+        self.assertTrue(d1.can_be_boot_device)
+        self.assertTrue(d2.can_be_boot_device)
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_get_boot_disks_some(self, bootloader, ptable):
@@ -542,11 +545,12 @@ class TestManualBoot(IsolatedAsyncioTestCase):
                        preserve=True)
         if bootloader == Bootloader.NONE:
             # NONE will always pass the boot check, even on a full disk
-            expected = set([d1.id, d2.id])
+            bootable = set([d1.id, d2.id])
         else:
-            expected = set([d2.id])
-        self.assertEqual(expected,
-                         set(await self.fsc.v2_potential_boot_disks_GET()))
+            bootable = set([d2.id])
+        resp = await self.fsc.v2_GET()
+        for d in resp.disks:
+            self.assertEqual(d.id in bootable, d.can_be_boot_device)
 
 
 class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
