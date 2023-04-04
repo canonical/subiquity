@@ -309,6 +309,7 @@ class Disk:
     preserve: bool
     path: Optional[str]
     boot_device: bool
+    can_be_boot_device: bool
     model: Optional[str] = None
     vendor: Optional[str] = None
 
