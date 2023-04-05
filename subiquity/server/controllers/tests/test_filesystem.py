@@ -62,7 +62,8 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
 
     async def test_probe_restricted(self):
         await self.fsc._probe_once(context=None, restricted=True)
-        self.app.prober.get_storage.assert_called_with({'blockdev'})
+        expected = {'blockdev', 'filesystem'}
+        self.app.prober.get_storage.assert_called_with(expected)
 
     async def test_probe_os_prober_false(self):
         self.app.opts.use_os_prober = False

@@ -776,7 +776,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     @with_context(name='probe_once', description='restricted={restricted}')
     async def _probe_once(self, *, context, restricted):
         if restricted:
-            probe_types = {'blockdev'}
+            probe_types = {'blockdev', 'filesystem'}
             fname = 'probe-data-restricted.json'
             key = "ProbeDataRestricted"
         else:
