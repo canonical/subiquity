@@ -18,7 +18,10 @@ from subiquitycore.tests.parameterized import parameterized
 from subiquitycore.tests import SubiTestCase
 
 from subiquity.common.types import KeyboardSetting
-from subiquity.models.keyboard import KeyboardModel
+from subiquity.models.keyboard import (
+    InconsistentMultiLayoutError,
+    KeyboardModel,
+)
 
 
 class TestKeyboardModel(SubiTestCase):
@@ -44,6 +47,25 @@ class TestKeyboardModel(SubiTestCase):
         with self.assertRaises(ValueError):
             self.model.setting = val
         self.assertEqual(initial, self.model.setting)
+
+    def testMultiLayout(self):
+        val = KeyboardSetting(layout='us,ara', variant=',')
+        self.model.setting = val
+        self.assertEqual(self.model.setting, val)
+
+    def testInconsistentMultiLayout(self):
+        initial = self.model.setting
+        val = KeyboardSetting(layout='us,ara', variant='')
+        with self.assertRaises(InconsistentMultiLayoutError):
+            self.model.setting = val
+        self.assertEqual(self.model.setting, initial)
+
+    def testInvalidMultiLayout(self):
+        initial = self.model.setting
+        val = KeyboardSetting(layout='us,ara', variant='zz,')
+        with self.assertRaises(ValueError):
+            self.model.setting = val
+        self.assertEqual(self.model.setting, initial)
 
     @parameterized.expand([
         ['ast_ES.UTF-8', 'es', 'ast'],
