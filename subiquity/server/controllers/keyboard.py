@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import Dict, Optional, Sequence
+from typing import Dict, Optional, Sequence, Tuple
 import os
 import pwd
 
@@ -48,7 +48,7 @@ standard_non_latin_layouts = set(
 default_desktop_user = 'ubuntu'
 
 
-def latinizable(layout_code, variant_code):
+def latinizable(layout_code, variant_code) -> Optional[Tuple[str, str]]:
     """
     If this setting does not allow the typing of latin characters,
     return a setting that can be switched to one that can.

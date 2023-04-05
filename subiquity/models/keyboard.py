@@ -43,6 +43,15 @@ BACKSPACE="guess"
 """
 
 
+class InconsistentMultiLayoutError(ValueError):
+    """ Exception to raise when a multi layout has a different number of
+    layouts and variants. """
+    def __init__(self, layouts: str, variants: str) -> None:
+        super().__init__(
+                f'inconsistent multi-layout: layouts="{layouts}"'
+                f' variants="{variants}"')
+
+
 def from_config_file(config_file):
     with open(config_file) as fp:
         content = fp.read()
@@ -91,13 +100,21 @@ class KeyboardModel:
         self._setting = value
 
     def validate_setting(self, setting: KeyboardSetting) -> None:
-        kbd_layout = self.keyboard_list.layout_map.get(setting.layout)
-        if kbd_layout is None:
-            raise ValueError(f'Unknown keyboard layout "{setting.layout}"')
-        if not any(variant.code == setting.variant
-                   for variant in kbd_layout.variants):
-            raise ValueError(f'Unknown keyboard variant "{setting.variant}" '
-                             f'for layout "{setting.layout}"')
+        layout_tokens = setting.layout.split(",")
+        variant_tokens = setting.variant.split(",")
+
+        if len(layout_tokens) != len(variant_tokens):
+            raise InconsistentMultiLayoutError(
+                    layouts=setting.layout, variants=setting.variant)
+
+        for layout, variant in zip(layout_tokens, variant_tokens):
+            kbd_layout = self.keyboard_list.layout_map.get(layout)
+            if kbd_layout is None:
+                raise ValueError(f'Unknown keyboard layout "{layout}"')
+            if not any(kbd_variant.code == variant
+                       for kbd_variant in kbd_layout.variants):
+                raise ValueError(f'Unknown keyboard variant "{variant}" '
+                                 f'for layout "{layout}"')
 
     def render_config_file(self):
         options = ""
