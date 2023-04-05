@@ -156,6 +156,12 @@ AnyStep = Union[StepPressKey, StepKeyPresent, StepResult]
 
 @attr.s(auto_attribs=True)
 class KeyboardSetting:
+    # This data structure represents a subset of the XKB options.
+    # As explained in the XKB configuration guide, XkbLayout and
+    # XkbVariant can hold multiple comma-separated values.
+    # http://www.xfree86.org/current/XKB-Config2.html#4
+    # Ideally, we would internally represent a keyboard setting as a
+    # toggle + a list of [layout, variant].
     layout: str
     variant: str = ''
     toggle: Optional[str] = None
