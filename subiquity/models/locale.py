@@ -37,22 +37,19 @@ class LocaleModel:
     def switch_language(self, code):
         self.selected_language = code
 
-    async def gen_localedef(self) -> None:
-        language, charmap = locale.normalize(self.selected_language).split(".")
+    async def localectl_set_locale(self) -> None:
         cmd = [
-            "localedef",
-            "-f", charmap,
-            "-i", language,
-            "--",
-            f"{language}.{charmap}",
+            'localectl',
+            'set-locale',
+            locale.normalize(self.selected_language)
         ]
         await arun_command(cmd, check=True)
 
-    async def try_gen_localedef(self) -> None:
+    async def try_localectl_set_locale(self) -> None:
         try:
-            await self.gen_localedef()
+            await self.localectl_set_locale()
         except subprocess.CalledProcessError as exc:
-            log.warning("Could not generate locale: %r", exc)
+            log.warning("Could not localectl set-locale: %r", exc)
 
     def __repr__(self):
         return "<Selected: {}>".format(self.selected_language)
