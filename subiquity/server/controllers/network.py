@@ -239,13 +239,26 @@ class NetworkController(BaseNetworkController, SubiquityController):
 
     @with_context()
     async def apply_autoinstall_config(self, context):
+        want_apply_config = True
         if self.ai_data is None:
-            with context.child("wait_initial_config"):
-                await self.initial_config
-            self.update_initial_configs()
-            self.apply_config(context)
-        with context.child("wait_for_apply"):
-            await self.apply_config_task.wait()
+            if not await self.model.is_nm_enabled():
+                with context.child("wait_initial_config"):
+                    await self.initial_config
+                self.update_initial_configs()
+                self.apply_config(context)
+            else:
+                log.debug("NetworkManager is enabled and no network"
+                          " autoinstall section was found. Not applying"
+                          " network settings.")
+                want_apply_config = False
+        if want_apply_config:
+            with context.child("wait_for_apply"):
+                await self.apply_config_task.wait()
+        else:
+            # Make sure we have read at least once the routing table.
+            # Careful, the following is a blocking call. But running it in a
+            # separate thread without locking sounds unsafe too.
+            self.network_event_receiver.probe_default_routes()
         self.model.has_network = self.network_event_receiver.has_default_route
 
     async def _apply_config(self, *, context=None, silent=False):
