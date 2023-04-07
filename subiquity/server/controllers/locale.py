@@ -67,5 +67,5 @@ class LocaleController(SubiquityController):
     async def POST(self, data: str):
         log.debug(data)
         self.model.switch_language(data)
-        async_helpers.run_bg_task(self.model.try_gen_localedef())
+        async_helpers.run_bg_task(self.model.try_localectl_set_locale())
         await self.configured()
