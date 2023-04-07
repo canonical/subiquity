@@ -150,7 +150,10 @@ def find_disk_gaps_v2(device, info=None):
         if part is None:
             gap_end = ad(device.size - info.min_end_offset)
         else:
-            gap_end = ad(part.offset)
+            if part.is_logical:
+                gap_end = ad(part.offset - info.ebr_space)
+            else:
+                gap_end = ad(part.offset)
 
         gap_start = au(prev_end)
 
