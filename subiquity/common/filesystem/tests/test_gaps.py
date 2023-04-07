@@ -333,6 +333,32 @@ class TestDiskGaps(unittest.TestCase):
                 gaps.Gap(d, 50, 50, False),
             ])
 
+    def test_gap_before_primary(self):
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # [        g1             ][    p1 (primary)          ]
+        info = PartitionAlignmentData(
+            part_align=5, min_gap_size=1, min_start_offset=0, min_end_offset=0,
+            ebr_space=1, primary_part_limit=10)
+        m, d = make_model_and_disk(size=100, ptable='dos')
+        p1 = make_partition(m, d, offset=50, size=50)
+        self.assertEqual(
+            gaps.find_disk_gaps_v2(d, info),
+            [gaps.Gap(d, 0, 50, False), p1])
+
+    def test_gap_in_extended_before_logical(self):
+        # 0----10---20---30---40---50---60---70---80---90---100
+        # [      p1 (extended)                                ]
+        #   [      g1            ] [    p5 (logical)          ]
+        info = PartitionAlignmentData(
+            part_align=5, min_gap_size=1, min_start_offset=0, min_end_offset=0,
+            ebr_space=1, primary_part_limit=10)
+        m, d = make_model_and_disk(size=100, ptable='dos')
+        p1 = make_partition(m, d, offset=0, size=100, flag='extended')
+        p5 = make_partition(m, d, offset=50, size=50, flag='logical')
+        self.assertEqual(
+            gaps.find_disk_gaps_v2(d, info),
+            [p1, gaps.Gap(d, 5, 40, True), p5])
+
     def test_unusable_gap_primaries(self):
         info = PartitionAlignmentData(
             part_align=10, min_gap_size=1, min_start_offset=0,
