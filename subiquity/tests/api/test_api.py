@@ -1438,6 +1438,38 @@ class TestRegression(TestAPI):
             v1resp = await inst.get('/storage')
             self.assertEqual([], match(v1resp['config'], type='format'))
 
+    @timeout()
+    async def test_guided_v2_resize_logical_middle_partition(self):
+        '''LP: #2015521 - a logical partition that wasn't the physically last
+        logical partition was resized to allow creation of more partitions, but
+        the 1MiB space was not left between the newly created partition and the
+        physically last partition.'''
+        cfg = 'examples/threebuntu-on-msdos.json'
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
+            resp = await inst.get('/storage/v2/guided')
+            [resize] = match(resp['possible'], partition_number=5,
+                             _type='GuidedStorageTargetResize')
+            data = {
+                'target': resize,
+                'use_lvm': False,
+                }
+            resp = await inst.post('/storage/v2/guided', data)
+            self.assertEqual(resize, resp['configured']['target'])
+
+            resp = await inst.get('/storage')
+            parts = match(resp['config'], type='partition', flag='logical')
+            logicals = []
+            for part in parts:
+                part['end'] = part['offset'] + part['size']
+                logicals.append(part)
+
+            logicals.sort(key=lambda p: p['offset'])
+            for i in range(len(logicals) - 1):
+                cur, nxt = logicals[i:i+2]
+                self.assertLessEqual(cur['end'] + (1 << 20), nxt['offset'],
+                                     f'partition overlap {cur} {nxt}')
+
 
 class TestCancel(TestAPI):
     @timeout()
