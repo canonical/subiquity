@@ -29,6 +29,7 @@ from subiquity.common.types import (
     SourceSelection,
     SourceSelectionAndSetting,
     )
+from subiquity.models.source import CatalogEntryVariation
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
 
@@ -42,11 +43,12 @@ def _translate(d, lang):
 
 
 def convert_source(source, lang):
+    size = max([v.size for v in source.variations.values()])
     return SourceSelection(
         name=_translate(source.name, lang),
         description=_translate(source.description, lang),
         id=source.id,
-        size=source.size,
+        size=size,
         variant=source.variant,
         default=source.default)
 
@@ -132,9 +134,10 @@ class SourceController(SubiquityController):
             self.model.current.id,
             search_drivers=self.model.search_drivers)
 
-    def get_handler(self) -> AbstractSourceHandler:
+    def get_handler(self, variation: Optional[CatalogEntryVariation] = None) \
+            -> AbstractSourceHandler:
         handler = get_handler_for_source(
-            sanitize_source(self.model.get_source()))
+            sanitize_source(self.model.get_source(variation)))
         if self.app.opts.dry_run:
             handler = TrivialSourceHandler('/')
         return handler
