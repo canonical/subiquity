@@ -1,0 +1,29 @@
+- description:
+    en: A minimal but usable Ubuntu Desktop.
+  id: ubuntu-desktop-minimal
+  locale_support: none
+  name:
+    en: Ubuntu Desktop (minimized)
+  path: minimal.squashfs
+  size: 4036235264
+  type: fsimage-layered
+  variant: desktop
+- default: true
+  description:
+    en: A full featured Ubuntu Desktop.
+  id: ubuntu-desktop
+  locale_support: none
+  name:
+    en: Ubuntu Desktop
+  path: minimal.standard.squashfs
+  size: 5513543680
+  type: fsimage-layered
+  variant: desktop
+  variations:
+    classic:
+      path: minimal.standard.squashfs
+      size: 5514694656
+    enhanced-secureboot:
+      path: minimal.standard.enhanced-secureboot.squashfs
+      size: 6292033536
+      snapd_system_label: enhanced-secureboot-desktop
