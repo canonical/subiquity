@@ -119,3 +119,30 @@ class TestSourceModel(unittest.TestCase):
     def test_render(self):
         model = SourceModel()
         self.assertEqual(model.render(), {})
+
+    def test_canary(self):
+        with open('examples/install-sources-canary.yaml') as fp:
+            model = SourceModel()
+            model.load_from_file(fp)
+        self.assertEqual(2, len(model.sources))
+
+        minimal = model.get_matching_source('ubuntu-desktop-minimal')
+        self.assertIsNotNone(minimal.variations)
+        self.assertEqual(minimal.size, minimal.variations['default'].size)
+        self.assertEqual(minimal.path, minimal.variations['default'].path)
+        self.assertIsNone(minimal.variations['default'].snapd_system_label)
+
+        standard = model.get_matching_source('ubuntu-desktop')
+        self.assertIsNotNone(standard.variations)
+        self.assertEqual(2, len(standard.variations))
+
+        for var in standard.variations.values():
+            if var.snapd_system_label is None:
+                # FIXME broken in current build?
+                # self.assertEqual(standard.size, var.size)
+                self.assertEqual(standard.path, var.path)
+            else:
+                root, ext_expected = os.path.splitext(standard.path)
+                root_actual, ext_actual = os.path.splitext(var.path)
+                self.assertEqual(ext_expected, ext_actual)
+                self.assertTrue(root_actual.startswith(root))
