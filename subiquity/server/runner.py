@@ -81,7 +81,8 @@ class LoggedCommandRunner:
         # .communicate() forces returncode to be set to a value
         assert proc.returncode is not None
         if proc.returncode != 0:
-            raise subprocess.CalledProcessError(proc.returncode, proc.args)
+            raise subprocess.CalledProcessError(
+                proc.returncode, proc.args, output=stdout, stderr=stderr)
         else:
             return subprocess.CompletedProcess(
                 proc.args, proc.returncode, stdout=stdout, stderr=stderr)

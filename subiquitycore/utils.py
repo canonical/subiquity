@@ -142,6 +142,26 @@ def start_command(cmd: Sequence[str], *,
                             env=_clean_env(env, locale=clean_locale), **kw)
 
 
+def _log_stream(level: int, stream, name: str):
+    if stream:
+        log.log(level, f'{name}: ------------------------------------------')
+        for line in stream.splitlines():
+            log.log(level, line)
+    elif stream is None:
+        log.log(level, f'<{name} is None>')
+    else:
+        log.log(level, f'<{name} is empty>')
+
+
+def log_process_streams(level: int,
+                        cpe: subprocess.CalledProcessError,
+                        command_msg: str):
+    log.log(level, f'{command_msg} exited with result: {cpe.returncode}')
+    _log_stream(level, cpe.stdout, 'stdout')
+    _log_stream(level, cpe.stderr, 'stderr')
+    log.log(level, '--------------------------------------------------')
+
+
 # FIXME: replace with passlib and update package deps
 def crypt_password(passwd, algo='SHA-512'):
     # encryption algo - id pairs for crypt()
