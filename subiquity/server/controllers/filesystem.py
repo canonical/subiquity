@@ -299,11 +299,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         vg = self.create_volgroup(spec)
         if choice.sizing_policy == SizingPolicy.SCALED:
             lv_size = sizes.scaled_rootfs_size(vg.size)
-            lv_size = align_down(lv_size, LVM_CHUNK_SIZE)
         elif choice.sizing_policy == SizingPolicy.ALL:
             lv_size = vg.size
         else:
             raise Exception(f'Unhandled size policy {choice.sizing_policy}')
+        lv_size = align_down(lv_size, LVM_CHUNK_SIZE)
         log.debug(f'lv_size {lv_size} for {choice.sizing_policy}')
         self.create_logical_volume(
             vg=vg, spec=dict(
