@@ -265,13 +265,14 @@ async def start_server_factory(factory, *args, **kwargs):
 
 
 @contextlib.asynccontextmanager
-async def start_server(*args, **kwargs):
+async def start_server(*args, set_first_source=True, **kwargs):
     async with start_server_factory(Server, *args, **kwargs) as instance:
-        sources = await instance.get('/source')
-        if sources is None:
-            raise Exception('unexpected /source response')
-        await instance.post(
-            '/source', source_id=sources['sources'][0]['id'])
+        if set_first_source:
+            sources = await instance.get('/source')
+            if sources is None:
+                raise Exception('unexpected /source response')
+            await instance.post(
+                '/source', source_id=sources['sources'][0]['id'])
         while True:
             resp = await instance.get('/storage/v2')
             print(resp)
@@ -1653,7 +1654,8 @@ class TestAutoinstallServer(TestAPI):
             '--autoinstall', 'examples/autoinstall-short.yaml',
             '--source-catalog', 'examples/install-sources.yaml',
         ]
-        async with start_server(cfg, extra_args=extra) as inst:
+        async with start_server(cfg, extra_args=extra,
+                                set_first_source=False) as inst:
             view_request_unspecified, resp = await inst.get(
                     '/locale',
                     full_response=True)
@@ -1798,7 +1800,8 @@ class TestActiveDirectory(TestAPI):
             '--kernel-cmdline', 'autoinstall',
         ]
         try:
-            async with start_server(cfg, extra_args=extra) as inst:
+            async with start_server(cfg, extra_args=extra,
+                                    set_first_source=False) as inst:
                 endpoint = '/active_directory'
                 logdir = inst.output_base()
                 self.assertIsNotNone(logdir)
