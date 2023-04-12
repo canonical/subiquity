@@ -314,9 +314,14 @@ class MirrorController(SubiquityController):
 
     async def run_mirror_testing(self, output: io.StringIO) -> None:
         await self.source_configured_event.wait()
-        await self.test_apt_configurer.apply_apt_config(
+        # If the source model changes at the wrong time, there is a chance that
+        # self.test_apt_configurer will be replaced between the call to
+        # apply_apt_config and run_apt_config_check. Just make sure we still
+        # use the original one.
+        configurer = self.test_apt_configurer
+        await configurer.apply_apt_config(
             self.context, final=False)
-        await self.test_apt_configurer.run_apt_config_check(output)
+        await configurer.run_apt_config_check(output)
 
     async def wait_config(self) -> AptConfigurer:
         self.final_apt_configurer = get_apt_configurer(
