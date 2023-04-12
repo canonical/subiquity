@@ -35,7 +35,9 @@ add_overlay() {
         local upper="$(mktemp -dp "${tmpdir}")"
     fi
     chmod go+rx "${work}" "${upper}"
-    do_mount -t overlay overlay -o lowerdir="${lower}",upperdir="${upper}",workdir="${work}" "${mountpoint}"
+    do_mount -t overlay overlay \
+        -o lowerdir="${lower}",upperdir="${upper}",workdir="${work}" \
+        "${mountpoint}"
 }
 
 
@@ -53,11 +55,22 @@ do_mount $old old
 add_overlay old new
 
 rm -rf new/lib/python3.10/site-packages/curtin
-rm -rf new/lib/python3.10/site-packages/subiquity
-rm -rf new/lib/python3.10/site-packages/subiquitycore
+
+if [ -d new/lib/python3.10/site-packages/subiquity ] ; then
+    subiquity_dest=new/lib/python3.10/site-packages
+elif [ -d new/bin/subiquity/subiquity ] ; then
+    subiquity_dest=new/bin/subiquity
+else
+    echo "unrecognized snap" >&2
+    exit 1
+fi
+
+rm -rf "${subiquity_dest}/subiquity"
+rm -rf "${subiquity_dest}/subiquitycore"
 
 (cd "${src}" && ./scripts/update-part.py curtin)
 
-rsync -a --chown 0:0 $src/subiquity $src/subiquitycore $src/curtin/curtin new/lib/python3.10/site-packages
+rsync -a --chown 0:0 $src/curtin/curtin new/lib/python3.10/site-packages
+rsync -a --chown 0:0 $src/subiquity $src/subiquitycore $subiquity_dest
 
 snapcraft pack new --output $new

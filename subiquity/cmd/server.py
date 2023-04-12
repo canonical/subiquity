@@ -172,6 +172,10 @@ def main():
             "InstallerServerLog", logfiles['debug'])
         server.note_file_for_apport(
             "InstallerServerLogInfo", logfiles['info'])
+        server.note_file_for_apport(
+            "UdiLog",
+            os.path.realpath(
+                "/var/log/installer/ubuntu_desktop_installer.log"))
         await server.run()
 
     asyncio.run(run_with_loop())

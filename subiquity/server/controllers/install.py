@@ -34,6 +34,7 @@ from subiquitycore.async_helpers import (
     )
 from subiquitycore.context import with_context
 from subiquitycore.file_util import write_file, generate_config_yaml
+from subiquitycore.utils import log_process_streams
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.types import (
@@ -480,7 +481,11 @@ class InstallController(SubiquityController):
                 self.app, context, "in-target", "-t", self.tpath(),
                 "--", "unattended-upgrades", "-v",
                 private_mounts=True)
-            await self.unattended_upgrades_cmd.wait()
+            try:
+                await self.unattended_upgrades_cmd.wait()
+            except subprocess.CalledProcessError as cpe:
+                log_process_streams(logging.ERROR, cpe, 'Unattended upgrades')
+                context.description = f"FAILED to apply {policy} updates"
             self.unattended_upgrades_cmd = None
             self.unattended_upgrades_ctx = None
 
