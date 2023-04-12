@@ -155,6 +155,7 @@ class MirrorController(SubiquityController):
             self._promote_mirror)
         self.apt_configurer = None
         self.mirror_check: Optional[MirrorCheck] = None
+        self.autoinstall_apply_started = False
 
     def load_autoinstall_data(self, data):
         if data is None:
@@ -273,6 +274,7 @@ class MirrorController(SubiquityController):
 
     @with_context()
     async def apply_autoinstall_config(self, context):
+        self.autoinstall_apply_started = True
         await self.run_mirror_selection_or_fallback(context)
 
     def on_geoip(self):
@@ -281,6 +283,12 @@ class MirrorController(SubiquityController):
         self.cc_event.set()
 
     def on_source(self):
+        if self.autoinstall_apply_started:
+            # Alternatively, we should cancel and restart the
+            # apply_autoinstall_config but this is out of scope.
+            raise RuntimeError("source model has changed but autoinstall"
+                               " configuration is already being applied")
+
         # FIXME disabled until we can sort out umount
         # if self.apt_configurer is not None:
         #     await self.apt_configurer.cleanup()
