@@ -14,8 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import subprocess
 
 from subiquitycore.models.network import NetworkModel as CoreNetworkModel
+from subiquitycore.utils import arun_command
 
 log = logging.getLogger('subiquity.models.network')
 
@@ -72,3 +74,16 @@ class NetworkModel(CoreNetworkModel):
             return ['wpasupplicant']
         else:
             return []
+
+    async def is_nm_enabled(self):
+        try:
+            cp = await arun_command(("nmcli", "networking"), check=True)
+        except subprocess.CalledProcessError as exc:
+            log.warning("failed to run nmcli networking,"
+                        " considering NetworkManager disabled.")
+            log.debug("stderr: %s", exc.stderr)
+            return False
+        except FileNotFoundError:
+            return False
+
+        return cp.stdout == "enabled\n"
