@@ -22,6 +22,7 @@ import re
 import sys
 import time
 import traceback
+from typing import Iterable, Set
 
 import apport
 import apport.crashdb
@@ -328,6 +329,20 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             seen=self.seen,
             oops_id=self.oops_id,
             )
+
+    # with core24 these tag methods can be dropped for equivalent methods
+    # that will be on the report object
+    def get_tags(self) -> Set[str]:
+        """Return the set of tags."""
+        if "Tags" not in self.pr:
+            return set()
+        return set(self.pr["Tags"].split(" "))
+
+    def add_tags(self, tags: Iterable[str]) -> None:
+        """Add tags to the report. Duplicates are dropped."""
+        current_tags = self.get_tags()
+        new_tags = current_tags.union(tags)
+        self.pr["Tags"] = " ".join(sorted(new_tags))
 
 
 class ErrorReporter(object):
