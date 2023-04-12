@@ -141,6 +141,9 @@ class ErrorReport(metaclass=urwid.MetaSignals):
                 self.pr.add_hooks_info(None)
                 apport.hookutils.attach_hardware(self.pr)
             self.pr['Syslog'] = apport.hookutils.recent_syslog(re.compile('.'))
+            snap_name = os.environ.get('SNAP_NAME', '')
+            if snap_name != '':
+                self.add_tags([snap_name])
             # Because apport-cli will in general be run on a different
             # machine, we make some slightly obscure alterations to the report
             # to make this go better.
