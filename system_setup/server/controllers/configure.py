@@ -91,7 +91,9 @@ class ConfigureController(SubiquityController):
 
     def __update_locale_cmd(self, lang) -> List[str]:
         """ Add mocking cli to update-locale if in dry-run."""
-        updateLocCmd = ["update-locale", "LANG={}".format(lang),
+        # A fixed path should be ok here since all releases (so far) ship
+        # the locales package.
+        updateLocCmd = ["/usr/sbin/update-locale", "LANG={}".format(lang),
                         "--no-checks"]
         if not self.app.opts.dry_run:
             return updateLocCmd
@@ -123,13 +125,12 @@ class ConfigureController(SubiquityController):
 
         return True
 
-    async def __recommended_language_packs(self, lang) \
+    async def __recommended_language_packs(self, lang, env) \
             -> Optional[List[str]]:
         """ Return a list of package names recommended by
          check-language-support (or a fake list if in dryrun).
          List returned can be empty on success. None for failure.
         """
-        clsCommand = "check-language-support"
         # lang code may be separated by @, dot or spaces.
         # clsLang = lang.split('@')[0].split('.')[0].split(' ')[0]
         pattern = re.compile(r'([^.@\s]+)', re.IGNORECASE)
@@ -156,6 +157,10 @@ class ConfigureController(SubiquityController):
         snap_dir = snap_dir if snap_dir != '.' else '/'
         data_dir_base = "usr/share/language-selector"
         data_dir = os.path.join(snap_dir, data_dir_base)
+        # jammy does not (yet?) ship language-selector seeded.
+        # being defensive to prevent crashes.
+        clsCommand = "check-language-support"
+        envcp = None
         if not os.path.exists(data_dir):
             log.error("Language selector data dir %s seems not to be part"
                       " of the snap.", data_dir)
@@ -165,7 +170,12 @@ class ConfigureController(SubiquityController):
                 log.error("Cannot find language selector data directory.")
                 return None
 
-        cp = await arun_command([clsCommand, "-d", data_dir, "-l", clsLang])
+            # The env parameter is only needed if the package isn't in the snap
+            envcp = env
+            clsCommand = os.path.join("/usr/bin/", clsCommand)
+
+        cp = await arun_command([clsCommand, "-d", data_dir, "-l", clsLang],
+                                env=envcp)
         if cp.returncode != 0:
             log.error('Command "%s" failed with return code %d',
                       cp.args, cp.returncode)
@@ -186,7 +196,7 @@ class ConfigureController(SubiquityController):
         """ Install recommended packages.
         lang is expected to be one single language/locale.
         """
-        packages = await self.__recommended_language_packs(lang)
+        packages = await self.__recommended_language_packs(lang, env)
         # Hardcoded path is necessary to ensure escaping out of the snap env.
         aptCommand = "/usr/bin/apt"
         if packages is None:
