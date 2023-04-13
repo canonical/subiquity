@@ -569,8 +569,20 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if probe_resp is not None:
             return probe_resp
         disks = self.potential_boot_disks(with_reformatting=True)
-        assert len(self._variation_info) == 1
-        [info] = self._variation_info.values()
+
+        # Choose the first non-core-boot one offered.  If we only have
+        # core-boot choices, choose the first of those.
+        core_boot_info = None
+        for info in self._variation_info.values():
+            if not info.is_valid():
+                continue
+            if not info.is_core_boot_classic():
+                break
+            if core_boot_info is None:
+                core_boot_info = info
+        else:
+            info = core_boot_info
+
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
