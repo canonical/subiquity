@@ -1446,6 +1446,37 @@ class TestRegression(TestAPI):
             self.assertEqual(orig_p, p)
 
     @timeout()
+    async def test_no_change_edit_swap(self):
+        '''LP: 2002413 - editing a swap partition would fail with
+        > Exception: Filesystem(fstype='swap', ...) is already mounted
+        Make sure editing the partition is ok now.
+        '''
+        cfg = 'examples/simple.json'
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
+            resp = await inst.get('/storage/v2')
+            [d] = resp['disks']
+            [g] = d['partitions']
+            data = {
+                "disk_id": 'disk-sda',
+                "gap": g,
+                "partition": {
+                    "size": 8589934592,  # 8 GiB
+                    "format": "swap",
+                }
+            }
+            resp = await inst.post('/storage/v2/add_partition', data)
+            [p, gap] = resp['disks'][0]['partitions']
+            self.assertEqual('swap', p['format'])
+
+            orig_p = p.copy()
+
+            data = {"disk_id": 'disk-sda', "partition": p}
+            resp = await inst.post('/storage/v2/edit_partition', data)
+            [p, gap] = resp['disks'][0]['partitions']
+            self.assertEqual(orig_p, p)
+
+    @timeout()
     async def test_can_create_unformatted_partition(self):
         '''We want to offer the same list of fstypes for Subiquity and U-D-I,
            but the list is different today.  Verify that unformatted partitions

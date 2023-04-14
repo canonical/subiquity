@@ -68,9 +68,10 @@ class FilesystemManipulator:
                 volume.flag = ""
         if spec.get('fstype') == "swap":
             self.model.add_mount(fs, "")
-        if spec.get('fstype') is None and spec.get('use_swap'):
+        elif spec.get('fstype') is None and spec.get('use_swap'):
             self.model.add_mount(fs, "")
-        self.create_mount(fs, spec)
+        else:
+            self.create_mount(fs, spec)
         return fs
 
     def delete_filesystem(self, fs):
