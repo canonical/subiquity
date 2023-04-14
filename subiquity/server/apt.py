@@ -34,7 +34,7 @@ from curtin.commands.extract import AbstractSourceHandler
 
 from subiquitycore.file_util import write_file, generate_config_yaml
 from subiquitycore.lsb_release import lsb_release
-from subiquitycore.utils import astart_command
+from subiquitycore.utils import astart_command, orig_environ
 
 from subiquity.server.curtin import run_curtin_command
 from subiquity.server.mounter import (
@@ -193,7 +193,7 @@ class AptConfigurer:
         for target in get_index_targets():
             apt_cmd.append(f"-o{target}::DefaultEnabled=false")
 
-        env = os.environ.copy()
+        env = orig_environ(None)
         env["LANG"] = self.app.base_model.locale.selected_language
         with tempfile.NamedTemporaryFile(mode="w+") as config_file:
             env["APT_CONFIG"] = config_file.name
