@@ -22,7 +22,7 @@ import os
 import pathlib
 import select
 import time
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from curtin.storage_config import ptable_uuid_to_flag_entry
 
@@ -154,6 +154,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._role_to_device: Dict[str: _Device] = {}
         self._device_to_structure: Dict[_Device: snapdapi.OnVolume] = {}
         self.use_tpm: bool = False
+        self.locked_probe_data = False
+        # If probe data come in while we are doing partitioning, store it in
+        # this variable. It will be picked up on next reset will pick it up.
+        self.queued_probe_data: Optional[Dict[str, Any]] = None
 
     def is_core_boot_classic(self):
         return self._system is not None
@@ -644,8 +648,21 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_reset_POST(self) -> StorageResponseV2:
         log.info("Resetting Filesystem model")
-        self.model.reset()
+        # From the API standpoint, it seems sound to set locked_probe_data back
+        # to False after a reset. But in practise, v2_reset_POST can be called
+        # during manual partitioning ; and we don't want to reenable automatic
+        # loading of probe data. Going forward, this could be controlled by an
+        # optional parameter maybe?
+        if self.queued_probe_data is not None:
+            log.debug("using newly obtained probe data")
+            self.model.load_probe_data(self.queued_probe_data)
+            self.queued_probe_data = None
+        else:
+            self.model.reset()
         return await self.v2_GET()
+
+    async def v2_ensure_transaction_POST(self) -> None:
+        self.locked_probe_data = True
 
     async def v2_guided_GET(self, wait: bool = False) \
             -> GuidedStorageResponseV2:
@@ -702,16 +719,19 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_guided_POST(self, data: GuidedChoiceV2) \
             -> GuidedStorageResponseV2:
         log.debug(data)
+        self.locked_probe_data = True
         self.guided(data)
         return await self.v2_guided_GET()
 
     async def v2_reformat_disk_POST(self, data: ReformatDisk) \
             -> StorageResponseV2:
+        self.locked_probe_data = True
         self.reformat(self.model._one(id=data.disk_id), data.ptable)
         return await self.v2_GET()
 
     async def v2_add_boot_partition_POST(self, disk_id: str) \
             -> StorageResponseV2:
+        self.locked_probe_data = True
         disk = self.model._one(id=disk_id)
         if boot.is_boot_device(disk):
             raise ValueError('device already has bootloader partition')
@@ -723,6 +743,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_add_partition_POST(self, data: AddPartitionV2) \
             -> StorageResponseV2:
         log.debug(data)
+        self.locked_probe_data = True
         if data.partition.boot is not None:
             raise ValueError('add_partition does not support changing boot')
         disk = self.model._one(id=data.disk_id)
@@ -744,6 +765,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_delete_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
         log.debug(data)
+        self.locked_probe_data = True
         disk = self.model._one(id=data.disk_id)
         partition = self.get_partition(disk, data.partition.number)
         self.delete_partition(partition)
@@ -752,6 +774,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_edit_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
         log.debug(data)
+        self.locked_probe_data = True
         disk = self.model._one(id=data.disk_id)
         partition = self.get_partition(disk, data.partition.number)
         if data.partition.size not in (None, partition.size) \
@@ -797,7 +820,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         with open(fpath, 'w') as fp:
             json.dump(storage, fp, indent=4)
         self.app.note_file_for_apport(key, fpath)
-        self.model.load_probe_data(storage)
+        if not self.locked_probe_data:
+            self.queued_probe_data = None
+            self.model.load_probe_data(storage)
+        else:
+            self.queued_probe_data = storage
 
     @with_context()
     async def _probe(self, *, context=None):

@@ -302,6 +302,16 @@ class API:
             class reset:
                 def POST() -> StorageResponseV2: ...
 
+            class ensure_transaction:
+                """This call will ensure that a transaction is initiated.
+                During a transaction, storage probing runs are not permitted to
+                reset the partitioning configuration.
+                A transaction will also be initiated by any v2_storage POST
+                request that modifies the partitioning configuration (e.g.,
+                add_partition, edit_partition, ...) but ensure_transaction can
+                be called early if desired. """
+                def POST() -> None: ...
+
             class reformat_disk:
                 def POST(data: Payload[ReformatDisk]) \
                     -> StorageResponseV2: ...
