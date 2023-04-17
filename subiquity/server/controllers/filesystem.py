@@ -866,6 +866,15 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.partition_disk_handler(disk, spec, partition=partition)
         return await self.v2_GET()
 
+    async def dry_run_wait_probe_POST(self) -> None:
+        if not self.app.opts.dry_run:
+            raise NotImplementedError
+
+        # This will start the probe task if not yet started.
+        self.ensure_probing()
+
+        await self._probe_task.task
+
     @with_context(name='probe_once', description='restricted={restricted}')
     async def _probe_once(self, *, context, restricted):
         if restricted:
@@ -1049,6 +1058,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         loop = asyncio.get_running_loop()
         loop.remove_reader(self._monitor.fileno())
 
+    def ensure_probing(self):
+        try:
+            self._probe_task.start_sync()
+        except TaskAlreadyRunningError:
+            log.debug('Skipping run of Probert - probe run already active')
+        else:
+            log.debug('Triggered Probert run on udev event')
+
     def _udev_event(self):
         cp = run_command(['udevadm', 'settle', '-t', '0'])
         if cp.returncode != 0:
@@ -1065,12 +1082,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         while select.select([self._monitor.fileno()], [], [], 0)[0]:
             action, dev = self._monitor.receive_device()
             log.debug("_udev_event %s %s", action, dev)
-        try:
-            self._probe_task.start_sync()
-        except TaskAlreadyRunningError:
-            log.debug('Skipping run of Probert - probe run already active')
-        else:
-            log.debug('Triggered Probert run on udev event')
+        self.ensure_probing()
 
     def make_autoinstall(self):
         rendered = self.model.render()
