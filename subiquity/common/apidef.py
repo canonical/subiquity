@@ -277,6 +277,10 @@ class API:
 
         def POST(config: Payload[list]): ...
 
+        class dry_run_wait_probe:
+            """This endpoint only works in dry-run mode."""
+            def POST() -> None: ...
+
         class reset:
             def POST() -> StorageResponse: ...
 
