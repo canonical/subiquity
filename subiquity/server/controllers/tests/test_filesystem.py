@@ -27,14 +27,21 @@ from subiquitycore.utils import matching_dicts
 from subiquitycore.tests.util import random_string
 
 from subiquity.common.filesystem import gaps
+from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.common.types import (
+    AddPartitionV2,
     Bootloader,
+    Gap,
+    GapUsable,
     GuidedCapability,
     GuidedChoiceV2,
     GuidedStorageTargetReformat,
     GuidedStorageTargetResize,
     GuidedStorageTargetUseGap,
+    ModifyPartitionV2,
+    Partition,
     ProbeStatus,
+    ReformatDisk,
     SizingPolicy,
     )
 from subiquity.models.filesystem import dehumanize_size
@@ -61,12 +68,16 @@ default_capabilities = [
 
 
 class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
+    MOCK_PREFIX = 'subiquity.server.controllers.filesystem.'
+
     def setUp(self):
         self.app = make_app()
         self.app.opts.bootloader = 'UEFI'
         self.app.report_start_event = mock.Mock()
         self.app.report_finish_event = mock.Mock()
         self.app.prober = mock.Mock()
+        self.app.block_log_dir = '/inexistent'
+        self.app.note_file_for_apport = mock.Mock()
         self.fsc = FilesystemController(app=self.app)
         self.fsc._configured = True
 
@@ -87,6 +98,197 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         await self.fsc._probe_once(context=None, restricted=False)
         actual = self.app.prober.get_storage.call_args.args[0]
         self.assertTrue({'defaults', 'os'} <= actual)
+
+    async def test_probe_once_fs_configured(self):
+        self.fsc._configured = True
+        self.fsc.queued_probe_data = None
+        with mock.patch.object(self.fsc.model, 'load_probe_data') as load:
+            await self.fsc._probe_once(restricted=True)
+        self.assertIsNone(self.fsc.queued_probe_data)
+        load.assert_not_called()
+
+    @mock.patch('subiquity.server.controllers.filesystem.open',
+                mock.mock_open())
+    async def test_probe_once_locked_probe_data(self):
+        self.fsc._configured = False
+        self.fsc.locked_probe_data = True
+        self.fsc.queued_probe_data = None
+        self.app.prober.get_storage = mock.Mock(return_value={})
+        with mock.patch.object(self.fsc.model, 'load_probe_data') as load:
+            await self.fsc._probe_once(restricted=True)
+        self.assertEqual(self.fsc.queued_probe_data, {})
+        load.assert_not_called()
+
+    @mock.patch('subiquity.server.controllers.filesystem.open',
+                mock.mock_open())
+    async def test_probe_once_unlocked_probe_data(self):
+        self.fsc._configured = False
+        self.fsc.locked_probe_data = False
+        self.fsc.queued_probe_data = None
+        self.app.prober.get_storage = mock.Mock(return_value={})
+        with mock.patch.object(self.fsc.model, 'load_probe_data') as load:
+            await self.fsc._probe_once(restricted=True)
+        self.assertIsNone(self.fsc.queued_probe_data, {})
+        load.assert_called_once_with({})
+
+    async def test_v2_reset_POST_no_queued_data(self):
+        self.fsc.queued_probe_data = None
+        with mock.patch.object(self.fsc.model, 'load_probe_data') as load:
+            await self.fsc.v2_reset_POST()
+        load.assert_not_called()
+
+    async def test_v2_reset_POST_queued_data(self):
+        self.fsc.queued_probe_data = {}
+        with mock.patch.object(self.fsc.model, 'load_probe_data') as load:
+            await self.fsc.v2_reset_POST()
+        load.assert_called_once_with({})
+
+    async def test_v2_ensure_transaction_POST(self):
+        self.fsc.locked_probe_data = False
+        await self.fsc.v2_ensure_transaction_POST()
+        self.assertTrue(self.fsc.locked_probe_data)
+
+    async def test_v2_reformat_disk_POST(self):
+        self.fsc.locked_probe_data = False
+        with mock.patch.object(self.fsc, 'reformat') as reformat:
+            await self.fsc.v2_reformat_disk_POST(
+                    ReformatDisk(disk_id='dev-sda'))
+        self.assertTrue(self.fsc.locked_probe_data)
+        reformat.assert_called_once()
+
+    @mock.patch(MOCK_PREFIX + 'boot.is_boot_device',
+                mock.Mock(return_value=True))
+    async def test_v2_add_boot_partition_POST_existing_bootloader(self):
+        self.fsc.locked_probe_data = False
+        with mock.patch.object(self.fsc, 'add_boot_disk') as add_boot_disk:
+            with self.assertRaisesRegex(ValueError,
+                                        r'already\ has\ bootloader'):
+                await self.fsc.v2_add_boot_partition_POST('dev-sda')
+        self.assertTrue(self.fsc.locked_probe_data)
+        add_boot_disk.assert_not_called()
+
+    @mock.patch(MOCK_PREFIX + 'boot.is_boot_device',
+                mock.Mock(return_value=False))
+    @mock.patch(MOCK_PREFIX + 'DeviceAction.supported',
+                mock.Mock(return_value=[]))
+    async def test_v2_add_boot_partition_POST_not_supported(self):
+        self.fsc.locked_probe_data = False
+        with mock.patch.object(self.fsc, 'add_boot_disk') as add_boot_disk:
+            with self.assertRaisesRegex(ValueError,
+                                        r'does\ not\ support\ boot'):
+                await self.fsc.v2_add_boot_partition_POST('dev-sda')
+        self.assertTrue(self.fsc.locked_probe_data)
+        add_boot_disk.assert_not_called()
+
+    @mock.patch(MOCK_PREFIX + 'boot.is_boot_device',
+                mock.Mock(return_value=False))
+    @mock.patch(MOCK_PREFIX + 'DeviceAction.supported',
+                mock.Mock(return_value=[DeviceAction.TOGGLE_BOOT]))
+    async def test_v2_add_boot_partition_POST(self):
+        self.fsc.locked_probe_data = False
+        with mock.patch.object(self.fsc, 'add_boot_disk') as add_boot_disk:
+            await self.fsc.v2_add_boot_partition_POST('dev-sda')
+        self.assertTrue(self.fsc.locked_probe_data)
+        add_boot_disk.assert_called_once()
+
+    async def test_v2_add_partition_POST_changing_boot(self):
+        self.fsc.locked_probe_data = False
+        data = AddPartitionV2(
+                disk_id='dev-sda',
+                partition=Partition(
+                    format='ext4',
+                    mount='/',
+                    boot=True,
+                ), gap=Gap(
+                    offset=1 << 20,
+                    size=1000 << 20,
+                    usable=GapUsable.YES,
+                ))
+        with mock.patch.object(self.fsc, 'create_partition') as create_part:
+            with self.assertRaisesRegex(ValueError,
+                                        r'does\ not\ support\ changing\ boot'):
+                await self.fsc.v2_add_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        create_part.assert_not_called()
+
+    async def test_v2_add_partition_POST_too_large(self):
+        self.fsc.locked_probe_data = False
+        data = AddPartitionV2(
+                disk_id='dev-sda',
+                partition=Partition(
+                    format='ext4',
+                    mount='/',
+                    size=2000 << 20,
+                ), gap=Gap(
+                    offset=1 << 20,
+                    size=1000 << 20,
+                    usable=GapUsable.YES,
+                ))
+        with mock.patch.object(self.fsc, 'create_partition') as create_part:
+            with self.assertRaisesRegex(ValueError, r'too\ large'):
+                await self.fsc.v2_add_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        create_part.assert_not_called()
+
+    @mock.patch(MOCK_PREFIX + 'gaps.at_offset')
+    async def test_v2_add_partition_POST(self, at_offset):
+        at_offset.split = mock.Mock(return_value=[mock.Mock()])
+        self.fsc.locked_probe_data = False
+        data = AddPartitionV2(
+                disk_id='dev-sda',
+                partition=Partition(
+                    format='ext4',
+                    mount='/',
+                ), gap=Gap(
+                    offset=1 << 20,
+                    size=1000 << 20,
+                    usable=GapUsable.YES,
+                ))
+        with mock.patch.object(self.fsc, 'create_partition') as create_part:
+            await self.fsc.v2_add_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        create_part.assert_called_once()
+
+    async def test_v2_delete_partition_POST(self):
+        self.fsc.locked_probe_data = False
+        data = ModifyPartitionV2(
+                disk_id='dev-sda',
+                partition=Partition(number=1),
+                )
+        with mock.patch.object(self.fsc, 'delete_partition') as del_part:
+            with mock.patch.object(self.fsc, 'get_partition'):
+                await self.fsc.v2_delete_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        del_part.assert_called_once()
+
+    async def test_v2_edit_partition_POST_change_boot(self):
+        self.fsc.locked_probe_data = False
+        data = ModifyPartitionV2(
+                disk_id='dev-sda',
+                partition=Partition(number=1, boot=True),
+                )
+        existing = Partition(number=1, size=1000 << 20, boot=False)
+        with mock.patch.object(self.fsc, 'partition_disk_handler') as handler:
+            with mock.patch.object(self.fsc, 'get_partition',
+                                   return_value=existing):
+                with self.assertRaisesRegex(ValueError, r'changing\ boot'):
+                    await self.fsc.v2_edit_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        handler.assert_not_called()
+
+    async def test_v2_edit_partition_POST(self):
+        self.fsc.locked_probe_data = False
+        data = ModifyPartitionV2(
+                disk_id='dev-sda',
+                partition=Partition(number=1),
+                )
+        existing = Partition(number=1, size=1000 << 20, boot=False)
+        with mock.patch.object(self.fsc, 'partition_disk_handler') as handler:
+            with mock.patch.object(self.fsc, 'get_partition',
+                                   return_value=existing):
+                await self.fsc.v2_edit_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        handler.assert_called_once()
 
 
 class TestGuided(IsolatedAsyncioTestCase):
