@@ -62,7 +62,7 @@ parts:
     source: https://git.launchpad.net/curtin
     source-type: git
     # We're traking the branch ubuntu/lunar here.
-    source-commit: f30a1533f88b753b6fdd3c04699dda9621b632cc
+    source-commit: 9e9f66e835c79e00d17e61593cc01a66d055c2e9
 
     override-pull: |
       craftctl default
