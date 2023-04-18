@@ -1533,6 +1533,49 @@ class TestRegression(TestAPI):
                 self.assertLessEqual(cur['end'] + (1 << 20), nxt['offset'],
                                      f'partition overlap {cur} {nxt}')
 
+    @timeout()
+    async def test_probert_result_during_partitioning(self):
+        '''If a probert run finished during manual partition, we used to
+        load the probing data, essentially discarding changes made by the user
+        so far.  This test creates a new partition, simulates the end of a
+        probert run, and then tries to edit the previously created partition.
+        The edit operation would fail in earlier versions, because the new
+        partition would be discarded.
+        '''
+        cfg = 'examples/simple.json'
+        extra = ['--storage-version', '2']
+        async with start_server(cfg, extra_args=extra) as inst:
+            names = ['locale', 'keyboard', 'source', 'network', 'proxy',
+                     'mirror']
+            await inst.post('/meta/mark_configured', endpoint_names=names)
+            resp = await inst.get('/storage/v2')
+            [d] = resp['disks']
+            [g] = d['partitions']
+            data = {
+                'disk_id': 'disk-sda',
+                'gap': g,
+                'partition': {
+                    'size': -1,
+                    'mount': '/',
+                    'format': 'ext4',
+                }
+            }
+            add_resp = await inst.post('/storage/v2/add_partition', data)
+            [sda] = add_resp['disks']
+            [root] = match(sda['partitions'], mount='/')
+
+            # Now let's make sure we get the results from a probert run to kick
+            # in.
+            await inst.post('/storage/dry_run_wait_probe')
+            data = {
+                'disk_id': 'disk-sda',
+                'partition': {
+                    'number': root['number'],
+                }
+            }
+            # We should be able to modify the created partition.
+            await inst.post('/storage/v2/edit_partition', data)
+
 
 class TestCancel(TestAPI):
     @timeout()
