@@ -162,7 +162,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.use_tpm: bool = False
         self.locked_probe_data: bool = False
         # If probe data come in while we are doing partitioning, store it in
-        # this variable. It will be picked up on next reset will pick it up.
+        # this variable. It will be picked up on next reset.
         self.queued_probe_data: Optional[Dict[str, Any]] = None
 
     def is_core_boot_classic(self):

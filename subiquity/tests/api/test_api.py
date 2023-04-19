@@ -1535,13 +1535,13 @@ class TestRegression(TestAPI):
 
     @timeout()
     async def test_probert_result_during_partitioning(self):
-        '''If a probert run finished during manual partition, we used to
-        load the probing data, essentially discarding changes made by the user
-        so far.  This test creates a new partition, simulates the end of a
-        probert run, and then tries to edit the previously created partition.
-        The edit operation would fail in earlier versions, because the new
-        partition would be discarded.
-        '''
+        '''LP: #2016901 - when a probert run finishes during manual
+        partitioning, we used to load the probing data automatically ;
+        essentially discarding any change made by the user so far. This test
+        creates a new partition, simulates the end of a probert run, and then
+        tries to edit the previously created partition.  The edit operation
+        would fail in earlier versions because the new partition would have
+        been discarded. '''
         cfg = 'examples/simple.json'
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
