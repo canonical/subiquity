@@ -1,5 +1,3 @@
-# Automated Server Installs Config File Reference
-
 ## Overall format
 
 The autoinstall file is YAML. At top level it must be a mapping containing the keys described in this document. Unrecognized keys are ignored.
@@ -34,12 +32,14 @@ A future-proofing config file version field. Currently this must be "1".
 
 A list of config keys to still show in the UI. So for example:
 
-    version: 1
-    interactive-sections:
-     - network
-    identity:
-     username: ubuntu
-     password: $crypted_pass
+```yaml
+version: 1
+interactive-sections:
+ - network
+identity:
+ username: ubuntu
+ password: $crypted_pass
+```
 
 Would stop on the network screen and allow the user to change the defaults. If a value is provided for an interactive section it is used as the default.
 
@@ -130,7 +130,7 @@ Corresponds to the `XKBVARIANT` setting.
 
 Corresponds to the value of `grp:` option from the `XKBOPTIONS` setting. Acceptable values are (but note that the installer does not validate these): `caps_toggle`, `toggle`, `rctrl_toggle`, `rshift_toggle`, `rwin_toggle`, `menu_toggle`, `alt_shift_toggle`, `ctrl_shift_toggle`, `ctrl_alt_toggle`, `alt_caps_toggle`, `lctrl_lshift_toggle`, `lalt_toggle`, `lctrl_toggle`, `lshift_toggle`, `lwin_toggle`, `sclk_toggle`
 
-The version of subiquity released with 20.04 GA does not accept `null` for this field due to a bug.
+The version of Subiquity released with 20.04 GA does not accept `null` for this field due to a bug.
 
 ### source
 **type:** mapping, see below
@@ -157,24 +157,28 @@ Identifier of the source to install (e.g., `"ubuntu-server-minimized"`).
 **default:** DHCP on interfaces named eth\* or en\*
 **can be interactive:** yes
 
-[netplan](https://netplan.io/reference) formatted network configuration. This will be applied during installation as well as in the installed system. The default is to interpret the config for the install media, which runs DHCPv4 on any interface with a name matching "eth\*" or "en\*" but then disables any interface that does not receive an address.
+[Netplan-formatted](https://netplan.io/reference) network configuration. This will be applied during installation as well as in the installed system. The default is to interpret the config for the install media, which runs DHCPv4 on any interface with a name matching "eth\*" or "en\*" but then disables any interface that does not receive an address.
 
-For example, to run dhcp6 on a particular NIC:
+For example, to run DHCPv6 on a particular NIC:
 
-    network:
-      version: 2
-      ethernets:
-        enp0s31f6:
-          dhcp6: yes
+```yaml
+network:
+  version: 2
+  ethernets:
+    enp0s31f6:
+      dhcp6: yes
+```
 
-Note that thanks to a bug, the version of subiquity released with 20.04 GA forces you to write this with an extra "network:" key like so:
+Note that because of a bug, the version of Subiquity released with 20.04 GA forces you to write this with an extra `network:` key like so:
 
-    network:
-      network:
-        version: 2
-        ethernets:
-          enp0s31f6:
-            dhcp6: yes
+```yaml
+network:
+  network:
+    version: 2
+    ethernets:
+      enp0s31f6:
+        dhcp6: yes
+```
 
 Later versions support this syntax too for compatibility but if you can assume a newer version you should use the former.
 
@@ -186,7 +190,7 @@ Later versions support this syntax too for compatibility but if you can assume a
 **default:** no proxy
 **can be interactive:** yes
 
-The proxy to configure both during installation and for apt and for snapd in the target system.
+The proxy to configure both during installation and for `apt` and for `snapd` in the target system.
 
 <a name="apt"></a>
 
@@ -206,17 +210,19 @@ This section historically used the same format as curtin, [which is documented h
 
 The default is:
 
-    apt:
-        preserve_sources_list: false
-        mirror-selection:
-            primary:
-                - country-mirror
-                - arches: [i386, amd64]
-                  uri: "http://archive.ubuntu.com/ubuntu"
-                - arches: [s390x, arm64, armhf, powerpc, ppc64el, riscv64]
-                  uri: "http://ports.ubuntu.com/ubuntu-ports"
-        fallback: abort
-        geoip: true
+```yaml
+apt:
+    preserve_sources_list: false
+    mirror-selection:
+        primary:
+            - country-mirror
+            - arches: [i386, amd64]
+              uri: "http://archive.ubuntu.com/ubuntu"
+            - arches: [s390x, arm64, armhf, powerpc, ppc64el, riscv64]
+              uri: "http://ports.ubuntu.com/ubuntu-ports"
+    fallback: abort
+    geoip: true
+```
 
 #### mirror-selection
 if the `primary` section is contained within the `mirror-selection` section, the automatic mirror selection is enabled. This is the default in new installations.
@@ -246,25 +252,29 @@ Supported values are:
 **type:** boolean
 **default:**: `true`
 
-If geoip is true and one of the candidate primary mirrors has the special value `country-mirror`, a request is made to `https://geoip.ubuntu.com/lookup`. Subiquity then sets the mirror uri to `http://CC.archive.ubuntu.com/ubuntu` (or similar for ports) where `CC` is the country code returned by the lookup. If this section is not interactive, the request is timed out after 10 seconds.
+If geoip is true and one of the candidate primary mirrors has the special value `country-mirror`, a request is made to `https://geoip.ubuntu.com/lookup`. Subiquity then sets the mirror URI to `http://CC.archive.ubuntu.com/ubuntu` (or similar for ports) where `CC` is the country code returned by the lookup. If this section is not interactive, the request is timed out after 10 seconds.
 
-If the legacy behavior (i.e., without mirror-selection) is in use, the geoip request is made if the mirror to be used is the default, and its uri ends up getting replaced by the proper country mirror uri.
+If the legacy behavior (i.e., without mirror-selection) is in use, the geoip request is made if the mirror to be used is the default, and its URI ends up getting replaced by the proper country mirror URI.
 
 If you just want to specify a mirror, you can use a configuration like this:
 
-    apt:
-        mirror-selection:
-            primary:
-                - uri: YOUR_MIRROR_GOES_HERE
-                - country-mirror
-                - uri: http://archive.ubuntu.com/ubuntu
+```yaml
+apt:
+    mirror-selection:
+        primary:
+            - uri: YOUR_MIRROR_GOES_HERE
+            - country-mirror
+            - uri: http://archive.ubuntu.com/ubuntu
+```
 
 To add a ppa:
 
-    apt:
-        sources:
-            curtin-ppa:
-                source: ppa:curtin-dev/test-archive
+```yaml
+apt:
+    sources:
+        curtin-ppa:
+            source: ppa:curtin-dev/test-archive
+```
 
 <a name="storage"></a>
 
@@ -274,44 +284,49 @@ To add a ppa:
 **default:** use "lvm" layout in a single disk system, no default in a multiple disk system
 **can be interactive:** yes
 
-Storage configuration is a complex topic and the description of the desired configuration in the autoinstall file can necessarily also be complex. The installer supports "layouts", simple ways of expressing common configurations.
+Storage configuration is a complex topic and the description of the desired configuration in the autoinstall file can also be complex. The installer supports "layouts", simple ways of expressing common configurations.
 
 #### Supported layouts
 
 The two supported layouts at the time of writing are "lvm" and "direct".
-
-    storage:
-      layout:
-        name: lvm
-    storage:
-      layout:
-        name: direct
+```yaml
+storage:
+  layout:
+    name: lvm
+storage:
+  layout:
+    name: direct
+```
 
 By default these will install to the largest disk in a system, but you can supply a match spec (see below) to indicate which disk to use:
 
-    storage:
-      layout:
-        name: lvm
-        match:
-          serial: CT*
-    storage:
-      layout:
-        name: disk
-        match:
-          ssd: yes
+```yaml
+storage:
+  layout:
+    name: lvm
+    match:
+      serial: CT*
+storage:
+  layout:
+    name: disk
+    match:
+      ssd: yes
+```
 
 (you can just say "`match: {}`" to match an arbitrary disk)
 
 When using the "lvm" layout, LUKS encryption can be enabled by supplying a password.
 
-    storage:
-      layout:
-        name: lvm
-        password: LUKS_PASSPHRASE
+```yaml
+storage:
+  layout:
+    name: lvm
+    password: LUKS_PASSPHRASE
+```
 
-The default is to use the lvm layout.
+The default is to use the `lvm` layout.
 
-#### sizing-policy
+#### Sizing-policy
 
 The lvm layout will, by default, attempt to leave room for snapshots and further expansion.  A sizing-policy key may be supplied to control this behavior.
 
@@ -329,7 +344,16 @@ The scaling system is currently as follows:
  * Between 20-200 GiB: use half of remaining space for root filesystem
  * Greater than 200 GiB: 100 GiB root filesystem
 
-#### action-based config
+Example with no size scaling and a passphrase:
+```yaml
+storage:
+  layout:
+    name: lvm
+    sizing-policy: all
+    password: LUKS_PASSPHRASE
+```
+
+#### Action-based config
 
 For full flexibility, the installer allows storage configuration to be done using a syntax which is a superset of that supported by curtin, described at https://curtin.readthedocs.io/en/latest/topics/storage.html.
 
@@ -337,15 +361,17 @@ If the "layout" feature is used to configure the disks, the "config" section wil
 
 As well as putting the list of actions under the 'config' key, the [grub](https://curtin.readthedocs.io/en/latest/topics/config.html#grub) and [swap](https://curtin.readthedocs.io/en/latest/topics/config.html#swap) curtin config items can be put here. So a storage section might look like:
 
-    storage:
-        swap:
-            size: 0
-        config:
-            - type: disk
-              id: disk0
-              serial: ADATA_SX8200PNP_XXXXXXXXXXX
-            - type: partition
-              ...
+```yaml
+storage:
+    swap:
+        size: 0
+    config:
+        - type: disk
+          id: disk0
+          serial: ADATA_SX8200PNP_XXXXXXXXXXX
+        - type: partition
+          ...
+```
 
 The extensions to the curtin syntax are around disk selection and partition/logical volume sizing.
 
@@ -367,33 +393,40 @@ A special sort of key is `install-media: yes`, which will take the disk the inst
 
 So for example, to match an arbitrary disk it is simply:
 
-     - type: disk
-       id: disk0
+```yaml
+ - type: disk
+   id: disk0
+```
 
-To match the largest ssd:
+To match the largest SSD:
 
-<pre><code> - type: disk
+```yaml
+ - type: disk
    id: big-fast-disk
    match:
      ssd: yes
-     size: largest</code></pre>
+     size: largest
+```
 
 To match a Seagate drive:
 
-<pre><code> - type: disk
+```yaml
+ - type: disk
    id: data-disk
    match:
-     model: Seagate</code></pre>
+     model: Seagate
+```
 
-##### partition/logical volume extensions
+##### Partition/logical volume extensions
 
 The size of a partition or logical volume in curtin is specified as a number of bytes. The autoinstall config is more flexible:
 
- * You can specify the size using the "1G", "512M" syntax supported in the installer UI
- * You can specify the size as a percentage of the containing disk (or RAID), e.g. "50%"
+ * You can specify the size using the "1G", "512M" syntax supported in the installer UI.
+ * You can specify the size as a percentage of the containing disk (or RAID), e.g. "50%".
  * For the last partition specified for a particular device, you can specify the size as "-1" to indicate that the partition should fill the remaining space.
 
-<pre><code> - type: partition
+```yaml
+ - type: partition
    id: boot-partition
    device: root-disk
    size: 10%
@@ -403,7 +436,8 @@ The size of a partition or logical volume in curtin is specified as a number of 
  - type: partition
    id: data-partition
    device: root-disk
-   size: -1</code></pre>
+   size: -1
+```
 
 <a name="identity"></a>
 
@@ -431,7 +465,7 @@ The hostname for the system.
 
 #### password
 
-The password for the new user, crypted. This is required for use with sudo, even if SSH access is configured.
+The password for the new user, encrypted. This is required for use with `sudo`, even if SSH access is configured.
 
 The crypted password string must conform to what [passwd](https://manpages.ubuntu.com/manpages/jammy/en/man1/passwd.1.html) expects.  Depending on the special characters in the password hash, quoting may be required, so it's safest to just always include the quotes around the hash.
 
@@ -486,7 +520,7 @@ A contract token to attach to an existing Ubuntu Pro subscription.
 **default:** see below
 **can be interactive:** yes
 
-Configure ssh for the installed system. A mapping that can contain keys:
+Configure SSH for the installed system. A mapping that can contain keys:
 
 #### install-server
 
@@ -549,10 +583,12 @@ Whether to install the available third-party drivers.
 
 A list of snaps to install. Each snap is represented as a mapping with required `name` and optional `channel` (defaulting to `stable`) and classic (defaulting to `false`) keys. For example:
 
-<pre><code>snaps:
+```
+snaps:
     - name: etcd
       channel: edge
-      classic: false</code></pre>
+      classic: false
+```
 
 <a name="debconf-selections"></a>
 
@@ -620,7 +656,7 @@ Supported values are:
 **default:** `reboot`
 **can be interactive:** no
 
-Request the system to poweroff or reboot automatically after the installation has finished.
+Request the system to power off or reboot automatically after the installation has finished.
 Supported values are:
 
  * `reboot`
@@ -671,26 +707,33 @@ Examples:
 
 The default configuration is:
 
-<pre><code>reporting:
+```yaml
+reporting:
  builtin:
-  type: print</code></pre>
+  type: print
+```
 
 Report to rsyslog:
 
-<pre><code>reporting:
+```yaml
+reporting:
  central:
   type: rsyslog
-  destination: @192.168.0.1</code></pre>
+  destination: @192.168.0.1
+```
 
 Suppress the default output:
 
-<pre><code>reporting:
+```yaml
+reporting:
  builtin:
-  type: none</code></pre>
+  type: none
+```
 
 Report to a curtin-style webhook:
 
-<pre><code>reporting:
+```yaml
+reporting:
  hook:
   type: webhook
   endpoint: http://example.com/endpoint/path
@@ -698,7 +741,8 @@ Report to a curtin-style webhook:
   consumer_secret: "cs_foo"
   token_key: "tk_foo"
   token_secret: "tk_secret"
-  level: INFO</code></pre>
+  level: INFO
+```
 
 <a name="user-data"></a>
 
@@ -708,4 +752,4 @@ Report to a curtin-style webhook:
 **default:** `{}`
 **can be interactive:** no
 
-Provide cloud-init user-data which will be merged with the user-data the installer produces. If you supply this, you don't need to supply an [identity section](#identity) (but then it's your responsibility to make sure that you can log into the installed system!).
+Provide cloud-init user data which will be merged with the user data the installer produces. If you supply this, you don't need to supply an [identity section](#identity) (but then it's your responsibility to make sure that you can log into the installed system!).

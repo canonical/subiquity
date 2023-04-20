@@ -27,3 +27,9 @@ clean:
 	$(RM) -d discourse
 	$(RM) $(HTML)
 	$(RM) -d html
+
+.PHONY: new
+new: clean all
+
+.PHONY: all
+all: discourse html
