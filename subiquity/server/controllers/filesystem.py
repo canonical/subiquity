@@ -30,7 +30,6 @@ from curtin.storage_config import ptable_uuid_to_flag_entry
 import pyudev
 
 from subiquitycore.async_helpers import (
-    run_in_thread,
     schedule_task,
     SingleInstanceTask,
     TaskAlreadyRunningError,
@@ -887,8 +886,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 probe_types |= {'os'}
             fname = 'probe-data.json'
             key = "ProbeData"
-        storage = await run_in_thread(
-            self.app.prober.get_storage, probe_types)
+        storage = await self.app.prober.get_storage(probe_types)
         # It is possible for the user to submit filesystem config
         # while a probert probe is running. We don't want to overwrite
         # the users config with a blank one if this happens! (See
