@@ -265,13 +265,14 @@ async def start_server_factory(factory, *args, **kwargs):
 
 
 @contextlib.asynccontextmanager
-async def start_server(*args, **kwargs):
+async def start_server(*args, source=None, **kwargs):
     async with start_server_factory(Server, *args, **kwargs) as instance:
-        sources = await instance.get('/source')
-        if sources is None:
-            raise Exception('unexpected /source response')
-        await instance.post(
-            '/source', source_id=sources['sources'][0]['id'])
+        if source is None:
+            sources = await instance.get('/source')
+            if sources is None:
+                raise Exception('unexpected /source response')
+            source = sources['sources'][0]['id']
+        await instance.post('/source', source_id=source)
         while True:
             resp = await instance.get('/storage/v2')
             print(resp)
@@ -584,6 +585,38 @@ class TestGuided(TestAPI):
             resp = await inst.post('/storage/v2/guided', data)
             self.assertEqual(resize, resp['configured']['target'])
             # should not throw a Gap Not Found exception
+
+
+class TestCore(TestAPI):
+    @timeout()
+    async def test_basic_core_boot(self):
+        cfg = 'examples/simple.json'
+        kw = dict(
+            source='ubuntu-desktop',
+            bootloader='uefi',
+            extra_args=[
+                '--storage-version', '2',
+                '--source-catalog', 'examples/install-sources-canary.yaml',
+                '--dry-run-config', 'examples/tpm-dr-config.yaml',
+            ]
+        )
+        async with start_server(cfg, **kw) as inst:
+            resp = await inst.get('/storage/v2/guided', wait=True)
+            [reformat] = resp['possible']
+            self.assertIn('CORE_BOOT_PREFER_ENCRYPTED',
+                          reformat['capabilities'])
+            data = dict(target=reformat, capability='CORE_BOOT_ENCRYPTED')
+            await inst.post('/storage/v2/guided', data)
+            v2resp = await inst.get('/storage/v2')
+            [d] = v2resp['disks']
+            [p1, p2, p3, p4, p5] = d['partitions']
+            e1 = dict(offset=1 << 20, size=1 << 20, mount=None)
+            self.assertDictSubset(e1, p1)
+            e2 = dict(offset=2 << 20, mount='/boot/efi')
+            self.assertDictSubset(e2, p2)
+            self.assertDictSubset(dict(mount='/boot'), p3)
+            self.assertDictSubset(dict(mount=None), p4)
+            self.assertDictSubset(dict(mount='/'), p5)
 
 
 class TestAdd(TestAPI):
