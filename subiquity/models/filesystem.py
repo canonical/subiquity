@@ -797,7 +797,18 @@ class Partition(_Formattable):
 
     @property
     def is_logical(self):
-        return self.flag == 'logical'
+        if self.flag == "logical":
+            return True
+
+        if self.number is None:
+            # Should only be possible during initialization.
+            return False
+
+        # There is not guarantee that a logical partition will have its flag
+        # set to 'logical'. For a swap partition, for instance, the partition's
+        # flag will be set to 'swap'.  For MSDOS partitions tables, we need to
+        # check the partition number.
+        return self.device.ptable == "msdos" and self.number > 4
 
 
 @fsobj("raid")

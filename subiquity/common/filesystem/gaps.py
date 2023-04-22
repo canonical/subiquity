@@ -264,12 +264,12 @@ def _movable_trailing_partitions_and_gap_size_partition(partition: Partition) \
     pgs = parts_and_gaps(partition.device)
     part_idx = pgs.index(partition)
     trailing_partitions = []
-    in_extended = partition.flag == "logical"
+    in_extended = partition.is_logical
     for pg in pgs[part_idx + 1:]:
         if isinstance(pg, Partition):
             if pg.preserve:
                 break
-            if in_extended and pg.flag != "logical":
+            if in_extended and not pg.is_logical:
                 break
             trailing_partitions.append(pg)
         else:

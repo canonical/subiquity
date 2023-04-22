@@ -1167,3 +1167,23 @@ class TestSwap(unittest.TestCase):
         with mock.patch.object(m, '_should_add_swapfile', return_value=False):
             cfg = m.render()
             self.assertEqual({'size': 0}, cfg['swap'])
+
+
+class TestPartition(unittest.TestCase):
+
+    def test_is_logical(self):
+        m = make_model(storage_version=2)
+        d = make_disk(m, ptable='msdos')
+        make_partition(m, d, flag='extended')
+        p3 = make_partition(m, d, number=3, flag='swap')
+        p4 = make_partition(m, d, number=4, flag='boot')
+
+        p5 = make_partition(m, d, number=5, flag='logical')
+        p6 = make_partition(m, d, number=6, flag='boot')
+        p7 = make_partition(m, d, number=7, flag='swap')
+
+        self.assertFalse(p3.is_logical)
+        self.assertFalse(p4.is_logical)
+        self.assertTrue(p5.is_logical)
+        self.assertTrue(p6.is_logical)
+        self.assertTrue(p7.is_logical)

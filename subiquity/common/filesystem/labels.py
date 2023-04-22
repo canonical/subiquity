@@ -84,9 +84,11 @@ def _annotations_partition(partition):
     elif partition.flag == "extended":
         # extended partition
         r.append(_("extended"))
-    elif partition.flag == "logical":
+
+    if partition.is_logical:
         # logical partition
         r.append(_("logical"))
+
     return r
 
 
@@ -182,7 +184,7 @@ def _label_just_name(device, *, short=False):
 
 @label.register(Partition)
 def _label_partition(partition, *, short=False):
-    if partition.flag == "logical":
+    if partition.is_logical:
         p = "  "
     else:
         p = ""
