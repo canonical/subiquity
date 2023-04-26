@@ -451,7 +451,8 @@ class SubiquityModel:
         config = {
             'grub': {
                 'terminal': 'unmodified',
-                'probe_additional_os': True
+                'probe_additional_os': True,
+                'reorder_uefi': False,
                 },
 
             'install': {
