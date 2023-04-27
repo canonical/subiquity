@@ -13,9 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
-import time
 import yaml
+
+from subiquitycore.async_helpers import run_in_thread
 
 from probert.network import (
     StoredDataObserver,
@@ -41,13 +43,13 @@ class Prober():
             observer = UdevObserver(receiver)
         return observer, observer.start()
 
-    def get_storage(self, probe_types=None):
+    async def get_storage(self, probe_types=None):
         if self.saved_config is not None:
             flag = 'bpfail-full'
             if probe_types is not None:
                 flag = 'bpfail-restricted'
             if flag in self.debug_flags:
-                time.sleep(2)
+                await asyncio.sleep(2)
                 1/0
             r = self.saved_config['storage'].copy()
             if probe_types is not None and 'defaults' not in probe_types:
@@ -55,5 +57,12 @@ class Prober():
                     if k not in probe_types:
                         r[k] = {}
             return r
+
         from probert.storage import Storage
-        return Storage().probe(probe_types=probe_types)
+
+        # Until probert is completely free of blocking IO, we should continue
+        # running it in a separate thread.
+        def run_probert(probe_types):
+            return asyncio.run(Storage().probe(probe_types=probe_types))
+
+        return await run_in_thread(run_probert, probe_types)

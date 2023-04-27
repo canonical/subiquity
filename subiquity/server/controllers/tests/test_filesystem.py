@@ -76,6 +76,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.app.report_start_event = mock.Mock()
         self.app.report_finish_event = mock.Mock()
         self.app.prober = mock.Mock()
+        self.app.prober.get_storage = mock.AsyncMock()
         self.app.block_log_dir = '/inexistent'
         self.app.note_file_for_apport = mock.Mock()
         self.fsc = FilesystemController(app=self.app)
@@ -113,7 +114,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.fsc._configured = False
         self.fsc.locked_probe_data = True
         self.fsc.queued_probe_data = None
-        self.app.prober.get_storage = mock.Mock(return_value={})
+        self.app.prober.get_storage = mock.AsyncMock(return_value={})
         with mock.patch.object(self.fsc.model, 'load_probe_data') as load:
             await self.fsc._probe_once(restricted=True)
         self.assertEqual(self.fsc.queued_probe_data, {})
@@ -125,7 +126,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.fsc._configured = False
         self.fsc.locked_probe_data = False
         self.fsc.queued_probe_data = None
-        self.app.prober.get_storage = mock.Mock(return_value={})
+        self.app.prober.get_storage = mock.AsyncMock(return_value={})
         with mock.patch.object(self.fsc.model, 'load_probe_data') as load:
             await self.fsc._probe_once(restricted=True)
         self.assertIsNone(self.fsc.queued_probe_data, {})
@@ -800,6 +801,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.app.report_start_event = mock.Mock()
         self.app.report_finish_event = mock.Mock()
         self.app.prober = mock.Mock()
+        self.app.prober.get_storage = mock.AsyncMock()
         self.app.snapdapi = snapdapi.make_api_client(
             AsyncSnapd(get_fake_connection()))
         self.app.dr_cfg = DRConfig()
