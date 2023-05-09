@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import pathlib
 from unittest.mock import AsyncMock, call, Mock, patch
 
 from subiquitycore.tests import SubiTestCase
@@ -37,7 +38,7 @@ class TestMounter(SubiTestCase):
         # Make sure we can unmount something that we mounted before.
         with patch.object(self.app, "command_runner",
                           create=True, new_callable=AsyncMock):
-            m = await mounter.mount("/dev/cdrom", "/target")
+            m = await mounter.mount("/dev/cdrom", self.tmp_dir())
             await mounter.unmount(m)
 
     async def test_bind_mount_tree(self):
@@ -111,6 +112,41 @@ class TestMounter(SubiTestCase):
         with patch.object(mounter, "mount", new_callable=AsyncMock) as mocked:
             await mounter.bind_mount_tree(src, dst)
         mocked.assert_called_once_with(src, dst, options='bind')
+
+    async def test_bind_mount_creates_dest_dir(self):
+        mounter = Mounter(self.app)
+        # When we are bind mounting a directory, the destination should be
+        # created as a directory.
+        src = self.tmp_dir()
+        dst = pathlib.Path(self.tmp_dir()) / 'dst'
+
+        self.app.command_runner = AsyncMock()
+        await mounter.bind_mount_tree(src, dst)
+        self.assertTrue(dst.is_dir())
+
+    async def test_bind_mount_file_creates_dest_file(self):
+        mounter = Mounter(self.app)
+        # When we are bind mounting a file, the destination should be created
+        # as a file.
+        src = pathlib.Path(self.tmp_dir()) / 'src'
+        src.touch()
+        dst = pathlib.Path(self.tmp_dir()) / 'dst'
+
+        self.app.command_runner = AsyncMock()
+        await mounter.bind_mount_tree(src, dst)
+        self.assertTrue(dst.is_file())
+
+    async def test_mount_file_creates_dest_dir(self):
+        mounter = Mounter(self.app)
+        # When we are mounting a device, the destination should be created
+        # as a directory.
+        src = pathlib.Path(self.tmp_dir()) / 'src'
+        src.touch()
+        dst = pathlib.Path(self.tmp_dir()) / 'dst'
+
+        self.app.command_runner = AsyncMock()
+        await mounter.mount(src, dst)
+        self.assertTrue(dst.is_dir())
 
 
 class TestLowerDirFor(SubiTestCase):

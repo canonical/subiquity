@@ -13,9 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import functools
 import logging
 import os
+from pathlib import Path
 import shutil
 import tempfile
 from typing import List, Optional, Union
@@ -66,6 +68,7 @@ class _MountBase:
 @attr.s(auto_attribs=True, kw_only=True)
 class Mountpoint(_MountBase):
     mountpoint: str
+    created: bool = False
 
 
 @attr.s(auto_attribs=True, kw_only=True)
@@ -121,9 +124,18 @@ class Mounter:
             opts.extend(['-o', options])
         if type is not None:
             opts.extend(['-t', type])
+        if os.path.exists(mountpoint):
+            created = False
+        else:
+            path = Path(device)
+            if options == 'bind' and not path.is_dir():
+                Path(mountpoint).touch(exist_ok=False)
+            else:
+                os.makedirs(mountpoint, exist_ok=False)
+            created = True
         await self.app.command_runner.run(
             ['mount'] + opts + [device, mountpoint], private_mounts=False)
-        m = Mountpoint(mountpoint=mountpoint)
+        m = Mountpoint(mountpoint=mountpoint, created=created)
         self._mounts.append(m)
         return m
 
@@ -133,6 +145,13 @@ class Mounter:
         await self.app.command_runner.run(
                 ['umount', mountpoint.mountpoint],
                 private_mounts=False)
+        if mountpoint.created:
+            path = Path(mountpoint.mountpoint)
+            if path.is_dir():
+                with contextlib.suppress(OSError):
+                    path.rmdir()
+            else:
+                path.unlink(missing_ok=True)
 
     async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
         tdir = self.tmpfiles.tdir()
