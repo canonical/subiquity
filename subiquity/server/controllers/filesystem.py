@@ -227,6 +227,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         await self._system_mounter.bind_mount_tree(
             source_systems_dir, cur_systems_dir)
 
+        cur_snaps_dir = '/var/lib/snapd/seed/snaps'
+        source_snaps_dir = os.path.join(source_path, cur_snaps_dir[1:])
+        if not self.app.opts.dry_run:
+            await self._system_mounter.bind_mount_tree(
+                source_snaps_dir, cur_snaps_dir)
+
     async def _unmount_systems_dir(self):
         if self._system_mounter is not None:
             await self._system_mounter.cleanup()
