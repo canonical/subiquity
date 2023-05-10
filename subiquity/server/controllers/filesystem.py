@@ -686,7 +686,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     @with_context(description="configuring TPM-backed full disk encryption")
     async def setup_encryption(self, context):
-        label = self.app.base_model.source.current.snapd_system_label
+        label = self._info.label
         result = await snapdapi.post_and_wait(
             self.app.snapdapi,
             self.app.snapdapi.v2.systems[label].POST,
@@ -705,7 +705,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     @with_context(description="making system bootable")
     async def finish_install(self, context):
-        label = self.app.base_model.source.current.snapd_system_label
+        label = self._info.label
         await snapdapi.post_and_wait(
             self.app.snapdapi,
             self.app.snapdapi.v2.systems[label].POST,
