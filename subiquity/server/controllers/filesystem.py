@@ -224,8 +224,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if not systems_dir_exists:
             raise NoSnapdSystemsOnSource
         self._system_mounter = Mounter(self.app)
-        await self._system_mounter.bind_mount_tree(
-            source_systems_dir, cur_systems_dir)
+        if not self.app.opts.dry_run:
+            await self._system_mounter.bind_mount_tree(
+                source_systems_dir, cur_systems_dir)
 
         cur_snaps_dir = '/var/lib/snapd/seed/snaps'
         source_snaps_dir = os.path.join(source_path, cur_snaps_dir[1:])
