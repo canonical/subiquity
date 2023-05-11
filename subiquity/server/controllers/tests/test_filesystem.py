@@ -716,6 +716,13 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         disk = make_disk(self.fsc.model)
         self._add_details_for_structures([
             snapdapi.VolumeStructure(
+                type="21686148-6449-6E6F-744E-656564454649",
+                offset=1 << 20,
+                name='BIOS Boot',
+                size=1 << 20,
+                role='',
+                filesystem=''),
+            snapdapi.VolumeStructure(
                 type="0FC63DAF-8483-4772-8E79-3D69D8477DE4",
                 offset=2 << 20,
                 name='ptname',
@@ -724,7 +731,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 filesystem='ext4'),
             ])
         await self.fsc.guided_core_boot(disk)
-        [part] = disk.partitions()
+        [bios_part, part] = disk.partitions()
         self.assertEqual(part.offset, 2 << 20)
         self.assertEqual(part.partition_name, 'ptname')
         self.assertEqual(part.flag, 'linux')

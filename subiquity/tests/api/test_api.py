@@ -590,7 +590,10 @@ class TestGuided(TestAPI):
 class TestCore(TestAPI):
     @timeout()
     async def test_basic_core_boot(self):
-        cfg = 'examples/simple.json'
+        cfg = self.machineConfig('examples/simple.json')
+        with cfg.edit() as data:
+            attrs = data['storage']['blockdev']['/dev/sda']['attrs']
+            attrs['size'] = str(25 << 30)
         kw = dict(
             source='ubuntu-desktop',
             bootloader='uefi',
@@ -609,14 +612,16 @@ class TestCore(TestAPI):
             await inst.post('/storage/v2/guided', data)
             v2resp = await inst.get('/storage/v2')
             [d] = v2resp['disks']
-            [p1, p2, p3, p4, p5] = d['partitions']
-            e1 = dict(offset=1 << 20, size=1 << 20, mount=None)
+            pgs = d['partitions']
+            [p4] = match(pgs, number=4)
+            # FIXME The current model has a ~13GiB gap between p1 and p2.
+            #       Presumably this will be removed later.
+            [p1, g1, p2, p3, p4] = d['partitions']
+            e1 = dict(offset=1 << 20, mount='/boot/efi')
             self.assertDictSubset(e1, p1)
-            e2 = dict(offset=2 << 20, mount='/boot/efi')
-            self.assertDictSubset(e2, p2)
-            self.assertDictSubset(dict(mount='/boot'), p3)
-            self.assertDictSubset(dict(mount=None), p4)
-            self.assertDictSubset(dict(mount='/'), p5)
+            self.assertDictSubset(dict(mount='/boot'), p2)
+            self.assertDictSubset(dict(mount=None), p3)
+            self.assertDictSubset(dict(mount='/'), p4)
 
 
 class TestAdd(TestAPI):
