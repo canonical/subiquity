@@ -208,8 +208,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         await super().configured()
         self.stop_listening_udev()
 
-    async def _mount_systems_dir(self):
-        self._source_handler = self.app.controllers.Source.get_handler()
+    async def _mount_systems_dir(self, variation_name):
+        self._source_handler = \
+                self.app.controllers.Source.get_handler(variation_name)
         source_path = self._source_handler.setup()
         cur_systems_dir = '/var/lib/snapd/seed/systems'
         source_systems_dir = os.path.join(source_path, cur_systems_dir[1:])
@@ -223,6 +224,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         await self._system_mounter.bind_mount_tree(
             source_systems_dir, cur_systems_dir)
 
+        cur_snaps_dir = '/var/lib/snapd/seed/snaps'
+        source_snaps_dir = os.path.join(source_path, cur_snaps_dir[1:])
+        if not self.app.opts.dry_run:
+            await self._system_mounter.bind_mount_tree(
+                source_snaps_dir, cur_snaps_dir)
+
     async def _unmount_systems_dir(self):
         if self._system_mounter is not None:
             await self._system_mounter.cleanup()
@@ -231,9 +238,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self._source_handler.cleanup()
             self._source_handler = None
 
-    async def _get_system(self, label):
+    async def _get_system(self, variation_name, label):
         try:
-            await self._mount_systems_dir()
+            await self._mount_systems_dir(variation_name)
         except NoSnapdSystemsOnSource:
             return None
         try:
@@ -301,7 +308,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             system = None
             label = variation.snapd_system_label
             if label is not None:
-                system = await self._get_system(label)
+                system = await self._get_system(name, label)
             log.debug("got system %s for variation %s", system, name)
             if system is not None and len(system.volumes) > 0:
                 self._variation_info[name] = self.info_for_system(
@@ -603,7 +610,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def guided_core_boot(self, disk: Disk):
         # Formatting for a core boot classic system relies on some curtin
         # features that are only available with v2 partitioning.
-        await self._mount_systems_dir()
+        await self._mount_systems_dir(self._info.name)
         self.model.storage_version = 2
         [volume] = self._info.system.volumes.values()
         self._on_volume = snapdapi.OnVolume.from_volume(volume)
@@ -679,7 +686,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     @with_context(description="configuring TPM-backed full disk encryption")
     async def setup_encryption(self, context):
-        label = self.app.base_model.source.current.snapd_system_label
+        label = self._info.label
         result = await snapdapi.post_and_wait(
             self.app.snapdapi,
             self.app.snapdapi.v2.systems[label].POST,
@@ -698,7 +705,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     @with_context(description="making system bootable")
     async def finish_install(self, context):
-        label = self.app.base_model.source.current.snapd_system_label
+        label = self._info.label
         await snapdapi.post_and_wait(
             self.app.snapdapi,
             self.app.snapdapi.v2.systems[label].POST,

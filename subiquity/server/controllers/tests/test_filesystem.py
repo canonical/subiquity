@@ -629,6 +629,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.fsc = FilesystemController(app=self.app)
         self.fsc._configured = True
         self.fsc.model = make_model(Bootloader.UEFI)
+        self.fsc._mount_systems_dir = mock.AsyncMock()
 
     def _add_details_for_structures(self, structures):
         self.fsc._info = VariationInfo(
