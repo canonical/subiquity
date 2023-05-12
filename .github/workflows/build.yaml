@@ -13,6 +13,7 @@ jobs:
           - ubuntu-daily:jammy
           - ubuntu-daily:kinetic
           - ubuntu-daily:lunar
+          - ubuntu-daily:mantic
     steps:
     - uses: actions/checkout@v2
     - name: run
@@ -24,7 +25,7 @@ jobs:
       matrix:
         image:
           - ubuntu-daily:jammy    # match the core snap we're running against
-          - ubuntu-daily:lunar    # latest
+          - ubuntu-daily:mantic   # latest
     steps:
     - uses: actions/checkout@v2
     - name: lint
