@@ -156,8 +156,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._core_boot_classic_error: str = ''
         self._source_handler: Optional[AbstractSourceHandler] = None
         self._system_mounter: Optional[Mounter] = None
-        self._role_to_device: Dict[str: _Device] = {}
-        self._device_to_structure: Dict[_Device: snapdapi.OnVolume] = {}
+        self._role_to_device: Dict[str, _Device] = {}
+        self._device_to_structure: Dict[_Device, snapdapi.OnVolume] = {}
         self.use_tpm: bool = False
         self.locked_probe_data: bool = False
         # If probe data come in while we are doing partitioning, store it in
