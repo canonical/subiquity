@@ -265,7 +265,7 @@ async def start_server_factory(factory, *args, **kwargs):
 
 
 @contextlib.asynccontextmanager
-async def start_server(*args, set_first_source=True, **kwargs):
+async def start_server(*args, set_first_source=True, source=None, **kwargs):
     async with start_server_factory(Server, *args, **kwargs) as instance:
         if set_first_source:
             sources = await instance.get('/source')
@@ -585,6 +585,43 @@ class TestGuided(TestAPI):
             resp = await inst.post('/storage/v2/guided', data)
             self.assertEqual(resize, resp['configured']['target'])
             # should not throw a Gap Not Found exception
+
+
+class TestCore(TestAPI):
+    @timeout()
+    async def test_basic_core_boot(self):
+        cfg = self.machineConfig('examples/simple.json')
+        with cfg.edit() as data:
+            attrs = data['storage']['blockdev']['/dev/sda']['attrs']
+            attrs['size'] = str(25 << 30)
+        kw = dict(
+            bootloader='uefi',
+            extra_args=[
+                '--storage-version', '2',
+                '--source-catalog', 'examples/install-sources-canary.yaml',
+                '--dry-run-config', 'examples/tpm-dr-config.yaml',
+            ]
+        )
+        async with start_server(cfg, **kw) as inst:
+            await inst.post('/source', source_id='ubuntu-desktop')
+            resp = await inst.get('/storage/v2/guided', wait=True)
+            [reformat] = resp['possible']
+            self.assertIn('CORE_BOOT_PREFER_ENCRYPTED',
+                          reformat['capabilities'])
+            data = dict(target=reformat, capability='CORE_BOOT_ENCRYPTED')
+            await inst.post('/storage/v2/guided', data)
+            v2resp = await inst.get('/storage/v2')
+            [d] = v2resp['disks']
+            pgs = d['partitions']
+            [p4] = match(pgs, number=4)
+            # FIXME The current model has a ~13GiB gap between p1 and p2.
+            #       Presumably this will be removed later.
+            [p1, g1, p2, p3, p4] = d['partitions']
+            e1 = dict(offset=1 << 20, mount='/boot/efi')
+            self.assertDictSubset(e1, p1)
+            self.assertDictSubset(dict(mount='/boot'), p2)
+            self.assertDictSubset(dict(mount=None), p3)
+            self.assertDictSubset(dict(mount='/'), p4)
 
 
 class TestAdd(TestAPI):

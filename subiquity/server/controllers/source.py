@@ -42,11 +42,12 @@ def _translate(d, lang):
 
 
 def convert_source(source, lang):
+    size = max([v.size for v in source.variations.values()])
     return SourceSelection(
         name=_translate(source.name, lang),
         description=_translate(source.description, lang),
         id=source.id,
-        size=source.size,
+        size=size,
         variant=source.variant,
         default=source.default)
 
@@ -132,9 +133,10 @@ class SourceController(SubiquityController):
             self.model.current.id,
             search_drivers=self.model.search_drivers)
 
-    def get_handler(self) -> AbstractSourceHandler:
+    def get_handler(self, variation_name: Optional[str] = None) \
+            -> AbstractSourceHandler:
         handler = get_handler_for_source(
-            sanitize_source(self.model.get_source()))
+            sanitize_source(self.model.get_source(variation_name)))
         if self.app.opts.dry_run:
             handler = TrivialSourceHandler('/')
         return handler

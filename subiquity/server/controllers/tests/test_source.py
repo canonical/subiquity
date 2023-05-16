@@ -13,30 +13,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import random
 import unittest
 
-import attr
-
-from subiquitycore.tests.util import random_string
-
+from subiquity.common.serialize import Serializer
 from subiquity.models.source import CatalogEntry
+from subiquity.models.tests.test_source import make_entry as make_raw_entry
 from subiquity.server.controllers.source import convert_source
 
 
 def make_entry(**kw):
-    fields = {
-        'default': False,
-        'name': {'en': random_string()},
-        'description': {'en': random_string()},
-        'size': random.randint(1000000, 2000000),
-        }
-    for field in attr.fields(CatalogEntry):
-        if field.name not in fields:
-            fields[field.name] = random_string()
-    for k, v in kw.items():
-        fields[k] = v
-    return CatalogEntry(**fields)
+    return Serializer().deserialize(CatalogEntry, make_raw_entry(**kw))
 
 
 class TestSubiquityModel(unittest.TestCase):

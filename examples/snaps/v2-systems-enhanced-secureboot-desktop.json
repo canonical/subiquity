@@ -1,0 +1,224 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": {
+    "label": "enhanced-secureboot-desktop",
+    "model": {
+      "architecture": "amd64",
+      "authority-id": "canonical",
+      "base": "core22",
+      "brand-id": "canonical",
+      "classic": "true",
+      "distribution": "ubuntu",
+      "grade": "signed",
+      "model": "ubuntu-classic-2304-amd64",
+      "series": "16",
+      "sign-key-sha3-384": "9tydnLa6MTJ-jaQTFUXEwHl1yRx7ZS4K5cyFDhYDcPzhS7uyEkDxdUjg9g08BtNn",
+      "snaps": [
+        {
+          "default-channel": "classic-23.04/stable",
+          "id": "UqFziVZDHLSyO3TqSWgNBoAdHbLI4dAH",
+          "name": "pc",
+          "type": "gadget"
+        },
+        {
+          "default-channel": "24-hwe/stable",
+          "id": "pYVQrBcKmBa0mZ4CCN7ExT6jH8rY1hza",
+          "name": "pc-kernel",
+          "type": "kernel"
+        },
+        {
+          "default-channel": "latest/stable",
+          "id": "amcUKQILKXHHTlmSa7NMdnXSx02dNeeT",
+          "name": "core22",
+          "type": "base"
+        },
+        {
+          "default-channel": "latest/stable",
+          "id": "PMrrV4ml8uWuEUDBT8dSGnKUYbevVhc4",
+          "name": "snapd",
+          "type": "snapd"
+        },
+        {
+          "default-channel": "latest/stable",
+          "id": "DLqre5XGLbDqg9jPtiAhRRjDuPVa5X1q",
+          "name": "core20",
+          "type": "base"
+        },
+        {
+          "default-channel": "latest/stable",
+          "id": "EISPgh06mRh1vordZY9OZ34QHdd7OrdR",
+          "name": "bare",
+          "type": "base"
+        },
+        {
+          "default-channel": "latest/stable",
+          "id": "3wdHCAVyZEmYsCMFDE9qt92UV8rC8Wdk",
+          "name": "firefox",
+          "type": "app"
+        },
+        {
+          "default-channel": "latest/stable",
+          "id": "rw36mkAjdIKl13dzfwyxP87cejpyIcct",
+          "name": "gnome-3-38-2004",
+          "type": "app"
+        },
+        {
+          "default-channel": "latest/stable",
+          "id": "lATO8HzwVvrAPrlZRAWpfyrJKlAJrZS3",
+          "name": "gnome-42-2204",
+          "type": "app"
+        },
+        {
+          "default-channel": "latest/stable",
+          "id": "jZLfBRzf1cYlYysIjD2bwSzNtngY0qit",
+          "name": "gtk-common-themes",
+          "type": "app"
+        },
+        {
+          "default-channel": "latest/stable",
+          "id": "gjf3IPXoRiipCu9K0kVu52f0H56fIksg",
+          "name": "snap-store",
+          "type": "app"
+        },
+        {
+          "default-channel": "latest/stable",
+          "id": "IrwRHakqtzhFRHJOOPxKVPU0Kk7Erhcu",
+          "name": "snapd-desktop-integration",
+          "type": "app"
+        }
+      ],
+      "timestamp": "2023-03-19T12:00:00.0Z",
+      "type": "model"
+    },
+    "brand": {
+      "id": "canonical",
+      "username": "canonical",
+      "display-name": "Canonical",
+      "validation": "verified"
+    },
+    "actions": [
+      {
+        "title": "Install",
+        "mode": "install"
+      }
+    ],
+    "volumes": {
+      "pc": {
+        "schema": "gpt",
+        "bootloader": "grub",
+        "id": "",
+        "structure": [
+          {
+            "name": "EFI System partition",
+            "filesystem-label": "ubuntu-seed",
+            "offset": 1048576,
+            "offset-write": null,
+            "size": 786432000,
+            "type": "C12A7328-F81F-11D2-BA4B-00A0C93EC93B",
+            "role": "system-seed-null",
+            "id": "",
+            "filesystem": "vfat",
+            "content": [
+              {
+                "source": "grubx64.efi",
+                "target": "EFI/boot/grubx64.efi",
+                "image": "",
+                "offset": null,
+                "offset-write": null,
+                "size": 0,
+                "unpack": false
+              },
+              {
+                "source": "shim.efi.signed",
+                "target": "EFI/boot/bootx64.efi",
+                "image": "",
+                "offset": null,
+                "offset-write": null,
+                "size": 0,
+                "unpack": false
+              }
+            ],
+            "update": {
+              "edition": 2,
+              "preserve": null
+            }
+          },
+          {
+            "name": "ubuntu-boot",
+            "filesystem-label": "ubuntu-boot",
+            "offset": 14930673664,
+            "offset-write": null,
+            "size": 786432000,
+            "type": "0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+            "role": "system-boot",
+            "id": "",
+            "filesystem": "ext4",
+            "content": [
+              {
+                "source": "grubx64.efi",
+                "target": "EFI/boot/grubx64.efi",
+                "image": "",
+                "offset": null,
+                "offset-write": null,
+                "size": 0,
+                "unpack": false
+              },
+              {
+                "source": "shim.efi.signed",
+                "target": "EFI/boot/bootx64.efi",
+                "image": "",
+                "offset": null,
+                "offset-write": null,
+                "size": 0,
+                "unpack": false
+              }
+            ],
+            "update": {
+              "edition": 1,
+              "preserve": null
+            }
+          },
+          {
+            "name": "ubuntu-save",
+            "filesystem-label": "ubuntu-save",
+            "offset": 15717105664,
+            "offset-write": null,
+            "size": 33554432,
+            "type": "0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+            "role": "system-save",
+            "id": "",
+            "filesystem": "ext4",
+            "content": null,
+            "update": {
+              "edition": 0,
+              "preserve": null
+            }
+          },
+          {
+            "name": "ubuntu-data",
+            "filesystem-label": "ubuntu-data",
+            "offset": 15750660096,
+            "offset-write": null,
+            "size": 4294967296,
+            "type": "0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+            "role": "system-data",
+            "id": "",
+            "filesystem": "ext4",
+            "content": null,
+            "update": {
+              "edition": 0,
+              "preserve": null
+            }
+          }
+        ]
+      }
+    },
+    "storage-encryption": {
+      "support": "available",
+      "storage-safety": "prefer-encrypted",
+      "encryption-type": "cryptsetup"
+    }
+  }
+}

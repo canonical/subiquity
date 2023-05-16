@@ -330,9 +330,9 @@ class MirrorController(SubiquityController):
             self.context, final=False)
         await configurer.run_apt_config_check(output)
 
-    async def wait_config(self) -> AptConfigurer:
+    async def wait_config(self, variation_name: str) -> AptConfigurer:
         self.final_apt_configurer = get_apt_configurer(
-            self.app, self.app.controllers.Source.get_handler())
+            self.app, self.app.controllers.Source.get_handler(variation_name))
         await self._promote_mirror()
         return self.final_apt_configurer
 
