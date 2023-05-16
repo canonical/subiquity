@@ -30,3 +30,42 @@ jobs:
     - uses: actions/checkout@v2
     - name: lint
       run: sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make lint"
+
+  static-typing:
+    # In this job, we compare the output of mypy before and after the PR.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install mypy and typeshed
+        run: sudo apt-get install -y python3-mypy python3-typeshed
+      - name: Checkout the pull request branch
+        uses: actions/checkout@v3
+        with:
+          # When no ref is specified, a merge commit (from PR branch to target
+          # branch) will be checked out. Use the last commit of the PR branch
+          # instead.
+          ref: ${{ github.event.pull_request.head.sha }}
+          # By default, no ancestors of the specified revision will be checked
+          # out (see shallow repositories). Let's fetch just enough revisions
+          # so that, later, we can access the most recent common ancestor.
+          # If it does not work, we can set fetch-depth: 0
+          fetch-depth: $(( ${{ github.event.pull_request.commits }} + 1 ))
+      - name: Run mypy on pull request branch
+        run: python3 -m mypy --ignore-missing-imports --check-untyped-defs subiquity subiquitycore system_setup console_conf scripts/replay-curtin-log.py | tee /tmp/mypy-head.out
+      - name: Determine base commit (most recent common ancestor)
+        id: determine_base_commit
+        run: |
+          ancestor=$(git merge-base -- \
+              "${{ github.event.pull_request.base.sha }}" \
+              "${{ github.event.pull_request.head.sha }}")
+          echo "base_commit=$ancestor" >> "$GITHUB_OUTPUT"
+      - name: Checkout the base commit (most recent common ancestor)
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.determine_base_commit.outputs.base_commit }}
+      - run: git show
+      - name: Run mypy on base commit
+        run: python3 -m mypy --ignore-missing-imports --check-untyped-defs subiquity subiquitycore system_setup console_conf scripts/replay-curtin-log.py | tee /tmp/mypy-base.out
+      - name: Produce the diff between the two mypy runs
+        run: diff --color=always --unified=0 /tmp/mypy-base.out /tmp/mypy-head.out
+        continue-on-error: true
