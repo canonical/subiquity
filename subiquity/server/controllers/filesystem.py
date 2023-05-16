@@ -282,7 +282,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         spec = dict(fstype="ext4", mount="/")
         self.create_partition(device=gap.device, gap=gap, spec=spec)
 
-    def guided_lvm(self, gap, choice: GuidedChoiceV2):
+    def guided_lvm(self, gap, choice):
         device = gap.device
         part_align = device.alignment_data().part_align
         bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
