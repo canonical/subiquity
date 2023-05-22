@@ -14,7 +14,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
-          fetch-depth: 0
+          #fetch-depth: 0
       - run: git remote -v
       - name: Run mypy on pull request branch
         run: python3 -m mypy --ignore-missing-imports --check-untyped-defs subiquity subiquitycore system_setup console_conf scripts/replay-curtin-log.py | tee /tmp/mypy-head.out
