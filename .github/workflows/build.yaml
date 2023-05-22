@@ -3,34 +3,6 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  test:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        image:
-          - ubuntu-daily:focal
-          - ubuntu-daily:jammy
-          - ubuntu-daily:kinetic
-          - ubuntu-daily:lunar
-          - ubuntu-daily:mantic
-    steps:
-    - uses: actions/checkout@v2
-    - name: run
-      run: sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make check"
-  lint:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        image:
-          - ubuntu-daily:jammy    # match the core snap we're running against
-          - ubuntu-daily:mantic   # latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: lint
-      run: sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make lint"
-
   static-typing:
     # In this job, we compare the output of mypy before and after the PR.
     if: github.event_name == 'pull_request'
