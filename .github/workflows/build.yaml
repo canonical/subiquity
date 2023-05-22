@@ -22,7 +22,7 @@ jobs:
       - run: git remote -v
       - name: Run mypy on pull request branch
         run: python3 -m mypy --ignore-missing-imports --check-untyped-defs subiquity subiquitycore system_setup console_conf scripts/replay-curtin-log.py | tee /tmp/mypy-head.out
-      - run: git fetch --unshallow
+      - run: git fetch --all
       - name: Determine base commit (most recent common ancestor)
         id: determine_base_commit
         run: |
