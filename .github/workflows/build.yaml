@@ -10,11 +10,6 @@ jobs:
     steps:
       - name: Install mypy and typeshed
         run: sudo apt-get install -y python3-mypy python3-typeshed
-      - name: Checkout the pull request base branch
-        uses: actions/checkout@v3
-        with:
-          ref: "${{ github.event.pull_request.base.sha }}"
-      - run: git remote -v
       - name: Checkout the pull request branch
         uses: actions/checkout@v3
         with:
