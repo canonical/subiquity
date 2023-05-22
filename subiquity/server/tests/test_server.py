@@ -19,7 +19,9 @@ from unittest.mock import Mock
 
 from subiquitycore.utils import run_command
 from subiquitycore.tests import SubiTestCase
+from subiquitycore.tests.mocks import make_app
 from subiquity.server.server import (
+    MetaController,
     SubiquityServer,
     cloud_autoinstall_path,
     iso_autoinstall_path,
@@ -121,3 +123,25 @@ early-commands: ["{cmd}"]
                        'early-commands': [cmd],
                        'stuff': 'things'}
         self.assertEqual(after_early, self.server.autoinstall_config)
+
+
+class TestMetaController(SubiTestCase):
+    async def test_interactive_sections_not_present(self):
+        mc = MetaController(make_app())
+        mc.app.autoinstall_config = None
+        self.assertIsNone(await mc.interactive_sections_GET())
+
+    async def test_interactive_sections_empty(self):
+        mc = MetaController(make_app())
+        mc.app.autoinstall_config['interactive-sections'] = []
+        self.assertEqual([], await mc.interactive_sections_GET())
+
+    async def test_interactive_sections_all(self):
+        mc = MetaController(make_app())
+        mc.app.autoinstall_config['interactive-sections'] = ['*']
+        self.assertEqual(['*'], await mc.interactive_sections_GET())
+
+    async def test_interactive_sections_one(self):
+        mc = MetaController(make_app())
+        mc.app.autoinstall_config['interactive-sections'] = ['network']
+        self.assertEqual(['network'], await mc.interactive_sections_GET())
