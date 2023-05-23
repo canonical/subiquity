@@ -316,6 +316,7 @@ class MirrorController(SubiquityController):
             # recommended. Clients should do a POST request to /mirror with
             # null as the body instead.
             await self.run_mirror_selection_or_fallback(self.context)
+        assert self.final_apt_configurer is not None
         await self.final_apt_configurer.apply_apt_config(
             self.context, final=True)
 
@@ -326,6 +327,7 @@ class MirrorController(SubiquityController):
         # apply_apt_config and run_apt_config_check. Just make sure we still
         # use the original one.
         configurer = self.test_apt_configurer
+        assert configurer is not None
         await configurer.apply_apt_config(
             self.context, final=False)
         await configurer.run_apt_config_check(output)
@@ -334,6 +336,7 @@ class MirrorController(SubiquityController):
         self.final_apt_configurer = get_apt_configurer(
             self.app, self.app.controllers.Source.get_handler(variation_name))
         await self._promote_mirror()
+        assert self.final_apt_configurer is not None
         return self.final_apt_configurer
 
     async def GET(self) -> MirrorGet:
