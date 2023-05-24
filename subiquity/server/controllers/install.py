@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import functools
+import copy
 import json
 import logging
 import os
@@ -23,9 +23,9 @@ import re
 import shutil
 import subprocess
 import tempfile
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
 
-import attr
+from curtin.config import merge_config
 import yaml
 
 from subiquitycore.async_helpers import (
@@ -78,57 +78,6 @@ class TracebackExtractor:
             self.traceback.append(line)
 
 
-@attr.s(auto_attribs=True)
-class CurtinInstallStep:
-    """Represents the parameters of a single invocation of curtin install."""
-    controller: "InstallController"
-    name: str
-    stages: List[str]
-    config_file: Path
-    log_file: Path
-    error_file: Path
-    resume_data_file: Path
-    source: str
-    acquire_config: Callable[["CurtinInstallStep"], Dict[str, Any]]
-
-    @with_context(
-        description="executing curtin install {self.name} step")
-    async def run(self, context):
-        """ Run a curtin install step. """
-
-        self.controller.app.note_file_for_apport(
-                f"Curtin{self.name}Config", str(self.config_file))
-
-        self.controller.write_config(
-                config_file=self.config_file,
-                config=self.acquire_config(self)
-                )
-
-        # Make sure the log directory exists.
-        self.log_file.parent.mkdir(parents=True, exist_ok=True)
-
-        # Add a marker to identify the step in the log file.
-        with open(str(self.log_file), mode="a") as fh:
-            fh.write(f"\n---- [[ subiquity step {self.name} ]] ----\n")
-
-        await run_curtin_command(
-            self.controller.app, context, "install", self.source,
-            "--set", f'json:stages={json.dumps(self.stages)}',
-            config=str(self.config_file), private_mounts=False)
-
-
-@attr.s(auto_attribs=True)
-class CurtinPartitioningStep(CurtinInstallStep):
-    device_map_path: Path
-
-    async def run(self, context):
-        await super().run(context=context)
-        with open(self.device_map_path) as fp:
-            device_map = json.load(fp)
-        fs = self.controller.app.controllers.Filesystem
-        fs.update_devices(device_map)
-
-
 class InstallController(SubiquityController):
 
     def __init__(self, app):
@@ -163,44 +112,40 @@ class InstallController(SubiquityController):
         config_file.parent.mkdir(parents=True, exist_ok=True)
         generate_config_yaml(str(config_file), config)
 
-    def acquire_generic_config(self,
-                               step: CurtinInstallStep,
-                               **kw) -> Dict[str, Any]:
-        """ Return a dictionary object to be used as the configuration of a
-        generic curtin install step. """
-        config = self.model.render()
-        config["install"]["log_file"] = str(step.log_file)
-        config["install"]["log_file_append"] = True
-        config["install"]["error_tarfile"] = str(step.error_file)
-        config["install"]["resume_data"] = str(step.resume_data_file)
-        config.update(kw)
-        return config
-
-    def acquire_initial_config(self,
-                               step: CurtinInstallStep) -> Dict[str, Any]:
-        """ Return a dictionary object to be used as the configuration of the
-        initial curtin install step. """
+    def base_config(self, logs_dir, resume_data_file) -> Dict[str, Any]:
+        """Return configuration to be used as part of every curtin install
+        step."""
         return {
             "install": {
                 "target": self.model.target,
                 "unmount": "disabled",
                 "save_install_config": False,
                 "save_install_log": False,
-                "log_file": str(step.log_file),
+                "log_file": str(logs_dir / "curtin-install.log"),
                 "log_file_append": True,
-                "error_tarfile": str(step.error_file),
-                "resume_data": str(step.resume_data_file),
+                "error_tarfile": str(logs_dir / "curtin-errors.tar"),
+                "resume_data": str(resume_data_file),
             }
         }
 
-    def acquire_filesystem_config(
-            self, step: CurtinPartitioningStep,
-            mode: ActionRenderMode = ActionRenderMode.DEFAULT
+    def filesystem_config(
+            self,
+            device_map_path: Path,
+            mode: ActionRenderMode = ActionRenderMode.DEFAULT,
             ) -> Dict[str, Any]:
-        cfg = self.acquire_initial_config(step)
-        cfg.update(self.model.filesystem.render(mode=mode))
-        cfg['storage']['device_map_path'] = str(step.device_map_path)
+        """Return configuration to be used as part of a curtin 'block-meta'
+        step."""
+        cfg = self.model.filesystem.render(mode=mode)
+        if device_map_path is not None:
+            cfg['storage']['device_map_path'] = str(device_map_path)
         return cfg
+
+    def generic_config(self, **kw) -> Dict[str, Any]:
+        """Return configuration to be used as part of a generic curtin
+        install step."""
+        config = self.model.render()
+        config.update(kw)
+        return config
 
     @with_context(description="umounting /target dir")
     async def unmount_target(self, *, context, target):
@@ -222,113 +167,130 @@ class InstallController(SubiquityController):
         await mirror.final_apt_configurer.setup_target(context, self.tpath())
 
     @with_context(
+        description="executing curtin install {name} step")
+    async def run_curtin_step(
+            self,
+            context,
+            name: str,
+            stages: List[str],
+            config_file: Path,
+            source: str,
+            config: Dict[str, Any]):
+        """Run a curtin install step."""
+        self.app.note_file_for_apport(
+            f"Curtin{name}Config", str(config_file))
+
+        self.write_config(config_file=config_file, config=config)
+
+        log_file = Path(config['install']['log_file'])
+
+        # Make sure the log directory exists.
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Add a marker to identify the step in the log file.
+        with open(str(log_file), mode="a") as fh:
+            fh.write(f"\n---- [[ subiquity step {name} ]] ----\n")
+
+        await run_curtin_command(
+            self.app, context, "install", source,
+            "--set", f'json:stages={json.dumps(stages)}',
+            config=str(config_file), private_mounts=False)
+
+        device_map_path = config.get('storage', {}).get('device_map_path')
+        if device_map_path is not None:
+            with open(device_map_path) as fp:
+                device_map = json.load(fp)
+            self.app.controllers.Filesystem.update_devices(device_map)
+
+    @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
     async def curtin_install(self, *, context, source):
-        logs_dir_prefix = Path(
-                self.app.opts.output_base if self.app.opts.dry_run else "/")
+        if self.app.opts.dry_run:
+            root = Path(self.app.opts.output_base)
+        else:
+            root = Path("/")
 
-        logs_dir = logs_dir_prefix / "var/log/installer"
-        logs_dir.mkdir(parents=True, exist_ok=True)
+        logs_dir = root / "var/log/installer"
 
         config_dir = logs_dir / "curtin-install"
 
-        install_log_file = logs_dir / "curtin-install.log"
-        error_file = logs_dir / "curtin-errors.tar"
+        base_config = self.base_config(
+            logs_dir, Path(tempfile.mkdtemp()) / "resume-data.json")
 
-        self.app.note_file_for_apport("CurtinErrors", str(error_file))
-        self.app.note_file_for_apport("CurtinLog", str(install_log_file))
+        self.app.note_file_for_apport(
+            "CurtinErrors", base_config['install']['error_tarfile'])
+        self.app.note_file_for_apport(
+            "CurtinLog", base_config['install']['log_file'])
 
-        resume_data_file = Path(tempfile.mkdtemp()) / "resume-data.json"
+        fs_controller = self.app.controllers.Filesystem
 
-        def make_curtin_step(name, stages, acquire_config, *,
-                             cls=CurtinInstallStep, **kw):
-            return cls(
-                controller=self,
+        async def run_curtin_step(name, stages, step_config):
+            config = copy.deepcopy(base_config)
+            merge_config(config, copy.deepcopy(step_config))
+            await self.run_curtin_step(
+                context=context,
                 name=name,
                 stages=stages,
                 config_file=config_dir / f"subiquity-{name}.conf",
-                log_file=install_log_file,
-                error_file=error_file,
-                resume_data_file=resume_data_file,
                 source=source,
-                acquire_config=acquire_config,
-                **kw,
-            )
+                config=config,
+                )
 
-        steps = [
-            make_curtin_step(
-                "initial",
-                stages=[],
-                acquire_config=self.acquire_initial_config
-            ).run,
-            ]
-        fs_controller = self.app.controllers.Filesystem
+        await run_curtin_step(name="initial", stages=[], step_config={})
+
         if fs_controller.is_core_boot_classic():
-            steps.append(
-                make_curtin_step(
-                    name="partitioning", stages=["partitioning"],
-                    acquire_config=functools.partial(
-                        self.acquire_filesystem_config,
-                        mode=ActionRenderMode.DEVICES),
-                    cls=CurtinPartitioningStep,
+            await run_curtin_step(
+                name="partitioning", stages=["partitioning"],
+                step_config=self.filesystem_config(
+                    mode=ActionRenderMode.DEVICES,
                     device_map_path=logs_dir / "device-map-partition.json",
-                    ).run,
+                    ),
                 )
             if fs_controller.use_tpm:
-                steps.append(fs_controller.setup_encryption)
-            steps.extend([
-                make_curtin_step(
-                    name="formatting", stages=["partitioning"],
-                    acquire_config=functools.partial(
-                        self.acquire_filesystem_config,
-                        mode=ActionRenderMode.FORMAT_MOUNT),
-                    cls=CurtinPartitioningStep,
-                    device_map_path=logs_dir / "device-map-format.json",
-                    ).run,
-                make_curtin_step(
-                    name="extract", stages=["extract"],
-                    acquire_config=self.acquire_generic_config,
-                    ).run,
-                self.create_core_boot_classic_fstab,
-                make_curtin_step(
-                        name="swap", stages=["swap"],
-                        acquire_config=functools.partial(
-                            self.acquire_generic_config,
-                            swap_commands={
-                                'subiquity': [
-                                    'curtin', 'swap',
-                                    '--fstab', self.tpath('etc/fstab'),
-                                    ],
-                                }),
-                    ).run,
-                fs_controller.finish_install,
-                self.setup_target,
-                ])
+                await fs_controller.setup_encryption(context=context)
+            await run_curtin_step(
+                name="formatting", stages=["partitioning"],
+                step_config=self.filesystem_config(
+                    mode=ActionRenderMode.FORMAT_MOUNT,
+                    device_map_path=logs_dir / "device-map-format.json"),
+                )
+            await run_curtin_step(
+                name="extract", stages=["extract"],
+                step_config=self.generic_config(),
+                )
+            await self.create_core_boot_classic_fstab(context=context)
+            await run_curtin_step(
+                name="swap", stages=["swap"],
+                step_config=self.generic_config(
+                    swap_commands={
+                        'subiquity': [
+                            'curtin', 'swap',
+                            '--fstab', self.tpath('etc/fstab'),
+                            ],
+                        }),
+                )
+            await fs_controller.finish_install(context=context)
+            await self.setup_target(context=context)
         else:
-            steps.extend([
-                make_curtin_step(
-                    name="partitioning", stages=["partitioning"],
-                    acquire_config=self.acquire_filesystem_config,
-                    cls=CurtinPartitioningStep,
+            await run_curtin_step(
+                name="partitioning", stages=["partitioning"],
+                step_config=self.filesystem_config(
                     device_map_path=logs_dir / "device-map.json",
-                    ).run,
-                make_curtin_step(
-                    name="extract", stages=["extract"],
-                    acquire_config=self.acquire_generic_config,
-                    ).run,
-                self.setup_target,
-                make_curtin_step(
-                        name="curthooks", stages=["curthooks"],
-                        acquire_config=self.acquire_generic_config,
-                    ).run,
-                ])
+                    ),
+                )
+            await run_curtin_step(
+                name="extract", stages=["extract"],
+                step_config=self.generic_config(),
+                )
+            await self.setup_target(context=context)
+            await run_curtin_step(
+                name="curthooks", stages=["curthooks"],
+                step_config=self.generic_config(),
+                )
             # If the current source has a snapd_system_label here we should
             # really write recovery_system={snapd_system_label} to
             # {target}/var/lib/snapd/modeenv to get snapd to pick it up on
             # first boot. But not needed for now.
-
-        for step in steps:
-            await step(context=context)
 
     @with_context(description="creating fstab")
     async def create_core_boot_classic_fstab(self, *, context):
