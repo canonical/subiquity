@@ -181,7 +181,16 @@ class MetaController:
     async def interactive_sections_GET(self) -> Optional[List[str]]:
         if self.app.autoinstall_config is None:
             return None
-        return self.app.autoinstall_config.get('interactive-sections', None)
+
+        i_sections = self.app.autoinstall_config.get(
+                'interactive-sections', None)
+        if i_sections == ['*']:
+            # expand the asterisk to the actual controller key names
+            return [controller.autoinstall_key
+                    for controller in self.app.controllers.instances
+                    if controller.interactive()]
+
+        return i_sections
 
 
 def get_installer_password_from_cloudinit_log():

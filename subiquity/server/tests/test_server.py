@@ -139,7 +139,11 @@ class TestMetaController(SubiTestCase):
     async def test_interactive_sections_all(self):
         mc = MetaController(make_app())
         mc.app.autoinstall_config['interactive-sections'] = ['*']
-        self.assertEqual(['*'], await mc.interactive_sections_GET())
+        mc.app.controllers.instances = [
+            Mock(autoinstall_key='f', interactive=Mock(return_value=False)),
+            Mock(autoinstall_key='t', interactive=Mock(return_value=True)),
+        ]
+        self.assertEqual(['t'], await mc.interactive_sections_GET())
 
     async def test_interactive_sections_one(self):
         mc = MetaController(make_app())
