@@ -188,7 +188,8 @@ class MetaController:
             # expand the asterisk to the actual controller key names
             return [controller.autoinstall_key
                     for controller in self.app.controllers.instances
-                    if controller.interactive()]
+                    if controller.interactive()
+                    if controller.autoinstall_key is not None]
 
         return i_sections
 
