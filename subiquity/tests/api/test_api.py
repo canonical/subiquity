@@ -1818,6 +1818,26 @@ class TestAutoinstallServer(TestAPI):
             self.assertIsNone(view_request_yes)
             self.assertEqual('skip', resp.headers['x-status'])
 
+    @timeout()
+    async def test_interactive(self):
+        cfg = 'examples/simple.json'
+        with tempfile.NamedTemporaryFile(mode='w') as tf:
+            tf.write('''
+                version: 1
+                interactive-sections: ['*']
+            ''')
+            tf.flush()
+            extra = ['--autoinstall', tf.name]
+            async with start_server(cfg, extra_args=extra) as inst:
+                resp = await inst.get('/meta/interactive_sections')
+                expected = set([
+                    'locale', 'refresh-installer', 'keyboard', 'source',
+                    'network', 'ubuntu-pro', 'proxy', 'apt', 'storage',
+                    'identity', 'ssh', 'snaps', 'codecs', 'drivers',
+                    'timezone', 'updates', 'shutdown',
+                ])
+                self.assertTrue(expected.issubset(resp))
+
 
 class TestWSLSetupOptions(TestAPI):
     @timeout()
