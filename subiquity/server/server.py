@@ -178,6 +178,21 @@ class MetaController:
         # enabling free only mode means disabling components
         self.app.base_model.mirror.disable_components(to_disable, enable)
 
+    async def interactive_sections_GET(self) -> Optional[List[str]]:
+        if self.app.autoinstall_config is None:
+            return None
+
+        i_sections = self.app.autoinstall_config.get(
+                'interactive-sections', None)
+        if i_sections == ['*']:
+            # expand the asterisk to the actual controller key names
+            return [controller.autoinstall_key
+                    for controller in self.app.controllers.instances
+                    if controller.interactive()
+                    if controller.autoinstall_key is not None]
+
+        return i_sections
+
 
 def get_installer_password_from_cloudinit_log():
     try:

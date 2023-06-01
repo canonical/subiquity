@@ -135,6 +135,9 @@ class API:
                 the list of components.  free-only choice must be made prior to
                 confirmation of filesystem changes"""
 
+        class interactive_sections:
+            def GET() -> Optional[List[str]]: ...
+
     class errors:
         class wait:
             def GET(error_ref: ErrorReportRef) -> ErrorReportRef:
