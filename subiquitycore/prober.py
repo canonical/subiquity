@@ -63,6 +63,7 @@ class Prober():
         # Until probert is completely free of blocking IO, we should continue
         # running it in a separate thread.
         def run_probert(probe_types):
-            return asyncio.run(Storage().probe(probe_types=probe_types))
+            return asyncio.run(Storage().probe(probe_types=probe_types,
+                                               parallelize=True))
 
         return await run_in_thread(run_probert, probe_types)
