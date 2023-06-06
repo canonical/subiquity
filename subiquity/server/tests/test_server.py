@@ -15,7 +15,7 @@
 
 import os
 import shlex
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from subiquitycore.utils import run_command
 from subiquitycore.tests import SubiTestCase
@@ -27,6 +27,7 @@ from subiquity.server.server import (
     iso_autoinstall_path,
     root_autoinstall_path,
 )
+from subiquity.common.types import PasswordKind
 
 
 class TestAutoinstallLoad(SubiTestCase):
@@ -150,3 +151,26 @@ class TestMetaController(SubiTestCase):
         mc = MetaController(make_app())
         mc.app.autoinstall_config['interactive-sections'] = ['network']
         self.assertEqual(['network'], await mc.interactive_sections_GET())
+
+
+class TestDefaultUser(SubiTestCase):
+    @patch('subiquity.server.server.ug_util.normalize_users_groups',
+           Mock(return_value=(None, None)))
+    @patch('subiquity.server.server.ug_util.extract_default',
+           Mock(return_value=(None, None)))
+    @patch('subiquity.server.server.user_key_fingerprints',
+           Mock(side_effect=Exception('should not be called')))
+    async def test_no_default_user(self):
+        opts = Mock()
+        opts.dry_run = True
+        opts.output_base = self.tmp_dir()
+        opts.machine_config = 'examples/simple.json'
+        server = SubiquityServer(opts, None)
+        server.cloud = Mock()
+        server._user_has_password = Mock(
+                side_effect=Exception('should not be called'))
+
+        opts.dry_run = False  # exciting!
+        server.set_installer_password()
+        self.assertIsNone(server.installer_user_name)
+        self.assertEqual(PasswordKind.NONE, server.installer_user_passwd_kind)
