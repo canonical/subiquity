@@ -454,7 +454,7 @@ class _Formattable(ABC):
 
     # Filesystem
     _fs = attributes.backlink()
-    # Raid or LVM_VolGroup for now, but one day ZPool, BCache...
+    # Raid or LVM_VolGroup or ZPool for now, but one day BCache...
     _constructed_device = attributes.backlink()
 
     def _is_entirely_used(self):
@@ -559,7 +559,7 @@ class _Device(_Formattable, ABC):
 
     def available(self):
         # A _Device is available if:
-        # 1) it is not part of a device like a RAID or LVM or zpool or ...
+        # 1) it is not part of a device like a RAID or LVM or ZPool or ...
         # 2) if it is formatted, it is available if it is formatted with fs
         #    that needs to be mounted and is not mounted
         # 3) if it is not formatted, it is available if it has free
@@ -1042,6 +1042,28 @@ class Mount:
             # /boot/efi
             return False
         return True
+
+
+@fsobj("zpool")
+class ZPool:
+    vdevs = attributes.reflist(backlink="_constructed_device")
+    pool: str = attr.ib()
+    mountpoint: str = attr.ib()
+
+    _zfses = attributes.backlink(default=attr.Factory(list))
+
+    # storage options on the pool
+    pool_properties: dict = attr.ib(default=None)
+    # default dataset options for the zfses in the pool
+    fs_properties: dict = attr.ib(default=None)
+
+
+@fsobj("zfs")
+class ZFS:
+    pool = attributes.ref(backlink="_zfses")
+    volume: str = attr.ib()
+    # options to pass to zfs dataset creation
+    properties: dict = attr.ib(default=None)
 
 
 def align_up(size, block_size=1 << 20):
