@@ -1788,7 +1788,13 @@ class FilesystemModel(object):
                 "unknown bootloader type {}".format(self.bootloader))
 
     def _mount_for_path(self, path):
-        return self._one(type='mount', path=path)
+        mount = self._one(type='mount', path=path)
+        if mount is not None:
+            return mount
+        zpool = self._one(type='zpool', mountpoint=path)
+        if zpool is not None:
+            return zpool
+        return None
 
     def is_root_mounted(self):
         return self._mount_for_path('/') is not None

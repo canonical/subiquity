@@ -1290,3 +1290,15 @@ class TestZPool(SubiTestCase):
         self.assertEqual('zfs-1', zfs.id)
         self.assertEqual(zpool, zfs.pool)
         self.assertEqual('/ROOT', zfs.volume)
+
+
+class TestRootfs(SubiTestCase):
+    def test_zpool_may_provide_rootfs(self):
+        m = make_model()
+        make_zpool(model=m, mountpoint='/')
+        self.assertTrue(m.is_root_mounted())
+
+    def test_zpool_nonrootfs_mountpoint(self):
+        m = make_model()
+        make_zpool(model=m, mountpoint='/srv')
+        self.assertFalse(m.is_root_mounted())
