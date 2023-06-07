@@ -1057,6 +1057,9 @@ class ZPool:
     # default dataset options for the zfses in the pool
     fs_properties: dict = attr.ib(default=None)
 
+    async def pre_shutdown(self, command_runner):
+        await command_runner.run(['zpool', 'export', self.pool])
+
 
 @fsobj("zfs")
 class ZFS:
