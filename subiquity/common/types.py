@@ -586,6 +586,11 @@ class DriversResponse:
 
 
 @attr.s(auto_attribs=True)
+class OEMResponse:
+    metapackages: Optional[List[str]]
+
+
+@attr.s(auto_attribs=True)
 class CodecsData:
     install: bool
 

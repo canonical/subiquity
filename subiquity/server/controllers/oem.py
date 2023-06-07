@@ -19,6 +19,8 @@ from typing import Optional
 
 from subiquitycore.context import with_context
 
+from subiquity.common.apidef import API
+from subiquity.common.types import OEMResponse
 from subiquity.server.apt import OverlayCleanupError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
@@ -31,6 +33,8 @@ log = logging.getLogger('subiquity.server.controllers.oem')
 
 
 class OEMController(SubiquityController):
+
+    endpoint = API.oem
 
     model_name = "oem"
 
@@ -74,3 +78,8 @@ class OEMController(SubiquityController):
         except OverlayCleanupError:
             log.exception("Failed to cleanup overlay. Continuing anyway.")
         log.debug("OEM meta-packages to install: %s", self.model.metapkgs)
+
+    async def GET(self, wait: bool = False) -> OEMResponse:
+        if wait:
+            await asyncio.shield(self.load_metapkgs_task)
+        return OEMResponse(metapackages=self.model.metapkgs)

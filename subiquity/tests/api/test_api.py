@@ -1683,6 +1683,46 @@ class TestDrivers(TestAPI):
             self.assertIsNone(resp['drivers'])
 
 
+class TestOEM(TestAPI):
+    @timeout()
+    async def test_listing_ongoing(self):
+        ''' Ensure that the list of OEM metapackages returned by /oem is
+        null while the list has not been retrieved. '''
+        async with start_server('examples/simple.json') as inst:
+            resp = await inst.get('/oem', wait=False)
+            self.assertIsNone(resp['metapackages'])
+
+    async def test_listing_empty(self):
+        expected_pkgs = []
+        with patch.dict(os.environ, {'SUBIQUITY_DEBUG': 'no-drivers'}):
+            async with start_server('examples/simple.json') as inst:
+                await inst.post('/source', source_id='ubuntu-server')
+                names = ['locale', 'keyboard', 'source', 'network', 'proxy',
+                         'mirror', 'storage']
+                await inst.post('/meta/mark_configured', endpoint_names=names)
+                await inst.get('/meta/status', cur='WAITING')
+                await inst.post('/meta/confirm', tty='/dev/tty1')
+                await inst.get('/meta/status', cur='NEEDS_CONFIRMATION')
+
+                resp = await inst.get('/oem', wait=True)
+                self.assertEqual(expected_pkgs, resp['metapackages'])
+
+    async def test_listing_certified(self):
+        expected_pkgs = ['oem-somerville-tentacool-meta']
+        with patch.dict(os.environ, {'SUBIQUITY_DEBUG': 'has-drivers'}):
+            async with start_server('examples/simple.json') as inst:
+                await inst.post('/source', source_id='ubuntu-server')
+                names = ['locale', 'keyboard', 'source', 'network', 'proxy',
+                         'mirror', 'storage']
+                await inst.post('/meta/mark_configured', endpoint_names=names)
+                await inst.get('/meta/status', cur='WAITING')
+                await inst.post('/meta/confirm', tty='/dev/tty1')
+                await inst.get('/meta/status', cur='NEEDS_CONFIRMATION')
+
+                resp = await inst.get('/oem', wait=True)
+                self.assertEqual(expected_pkgs, resp['metapackages'])
+
+
 class TestSource(TestAPI):
     @timeout()
     async def test_optional_search_drivers(self):

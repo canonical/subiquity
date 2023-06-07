@@ -63,6 +63,7 @@ from subiquity.common.types import (
     CodecsData,
     DriversResponse,
     DriversPayload,
+    OEMResponse,
     SnapInfo,
     SnapListResponse,
     SnapSelection,
@@ -365,6 +366,9 @@ class API:
     class drivers:
         def GET(wait: bool = False) -> DriversResponse: ...
         def POST(data: Payload[DriversPayload]) -> None: ...
+
+    class oem:
+        def GET(wait: bool = False) -> OEMResponse: ...
 
     class snaplist:
         def GET(wait: bool = False) -> SnapListResponse: ...
