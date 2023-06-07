@@ -27,6 +27,7 @@ from .kernel import KernelController
 from .locale import LocaleController
 from .mirror import MirrorController
 from .network import NetworkController
+from .oem import OEMController
 from .package import PackageController
 from .proxy import ProxyController
 from .refresh import RefreshController
@@ -58,6 +59,7 @@ __all__ = [
     'LocaleController',
     'MirrorController',
     'NetworkController',
+    'OEMController',
     'PackageController',
     'ProxyController',
     'RefreshController',

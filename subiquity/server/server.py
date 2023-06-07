@@ -277,6 +277,7 @@ class SubiquityServer(Application):
         "Ad",
         "Codecs",
         "Drivers",
+        "OEM",
         "TimeZone",
         "Install",
         "Updates",
