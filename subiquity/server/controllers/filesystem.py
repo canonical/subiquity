@@ -38,6 +38,7 @@ from subiquitycore.async_helpers import (
     )
 from subiquitycore.context import with_context
 from subiquitycore.utils import (
+    arun_command,
     run_command,
     )
 from subiquitycore.lsb_release import lsb_release
@@ -83,6 +84,8 @@ from subiquity.models.filesystem import (
     align_down,
     _Device,
     Disk as ModelDisk,
+    MiB,
+    Partition as ModelPartition,
     LVM_CHUNK_SIZE,
     Raid,
     )
@@ -194,6 +197,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # If probe data come in while we are doing partitioning, store it in
         # this variable. It will be picked up on next reset.
         self.queued_probe_data: Optional[Dict[str, Any]] = None
+        self.reset_partition: Optional[ModelPartition] = None
 
     def is_core_boot_classic(self):
         return self._info.is_core_boot_classic()
@@ -490,6 +494,16 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         gap = gap.within()
         if gap is None:
             raise Exception('failed to locate gap after adding boot')
+
+        if choice.reset_partition:
+            cp = await arun_command(['du', '-sb', '/cdrom'])
+            reset_size = int(cp.stdout.strip().split()[0])
+            reset_size = align_up(int(reset_size * 1.10), 256 * MiB)
+            reset_gap, gap = gap.split(reset_size)
+            self.reset_partition = self.create_partition(
+                device=reset_gap.device, gap=reset_gap,
+                spec={'fstype': 'fat32'})
+            # Should probably set some kind of flag on reset_partition
 
         if choice.capability.is_lvm():
             self.guided_lvm(gap, choice)
@@ -1114,8 +1128,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.info(f'autoinstall: running guided {capability} install in '
                  f'mode {mode} using {target}')
         await self.guided(
-                GuidedChoiceV2(target=target, capability=capability,
-                               password=password, sizing_policy=sizing_policy))
+                GuidedChoiceV2(
+                    target=target, capability=capability,
+                    password=password, sizing_policy=sizing_policy,
+                    reset_partition=layout.get('reset-partition', False)))
 
     def validate_layout_mode(self, mode):
         if mode not in ('reformat_disk', 'use_gap'):

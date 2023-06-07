@@ -451,6 +451,7 @@ class GuidedChoiceV2:
     password: Optional[str] = attr.ib(default=None, repr=False)
     sizing_policy: Optional[SizingPolicy] = \
         attr.ib(default=SizingPolicy.SCALED)
+    reset_partition: bool = False
 
     @staticmethod
     def from_guided_choice(choice: GuidedChoice):
