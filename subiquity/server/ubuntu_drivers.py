@@ -195,11 +195,11 @@ def get_ubuntu_drivers_interface(app) -> UbuntuDriversInterface:
     is_server = app.base_model.source.current.variant == "server"
     cls: Type[UbuntuDriversInterface] = UbuntuDriversClientInterface
     if app.opts.dry_run:
-        if 'has-drivers' in app.debug_flags:
-            cls = UbuntuDriversHasDriversInterface
+        if 'no-drivers' in app.debug_flags:
+            cls = UbuntuDriversNoDriversInterface
         elif 'run-drivers' in app.debug_flags:
             cls = UbuntuDriversRunDriversInterface
         else:
-            cls = UbuntuDriversNoDriversInterface
+            cls = UbuntuDriversHasDriversInterface
 
     return cls(app, gpgpu=is_server)
