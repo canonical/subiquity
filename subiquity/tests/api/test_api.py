@@ -1667,6 +1667,21 @@ class TestDrivers(TestAPI):
     async def test_desktop_source(self):
         await self._test_source('ubuntu-desktop', 'nvidia-driver-510')
 
+    @timeout()
+    async def test_listing_ongoing(self):
+        ''' Ensure that the list of drivers returned by /drivers is null while
+        the list has not been retrieved. '''
+        async with start_server('examples/simple.json') as inst:
+            resp = await inst.get('/drivers', wait=False)
+            self.assertIsNone(resp['drivers'])
+
+            # POSTing to /source will restart the retrieval operation.
+            await inst.post('/source', source_id='ubuntu-server',
+                            search_drivers=True)
+
+            resp = await inst.get('/drivers', wait=False)
+            self.assertIsNone(resp['drivers'])
+
 
 class TestSource(TestAPI):
     @timeout()

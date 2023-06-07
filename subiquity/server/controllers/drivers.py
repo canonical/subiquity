@@ -48,8 +48,6 @@ class DriversController(SubiquityController):
     }
     autoinstall_default = {"install": False}
 
-    drivers: Optional[List[str]] = None
-
     def __init__(self, app) -> None:
         super().__init__(app)
         self.ubuntu_drivers: Optional[UbuntuDriversInterface] = None
@@ -57,7 +55,9 @@ class DriversController(SubiquityController):
         self._list_drivers_task: Optional[asyncio.Task] = None
         self.list_drivers_done_event = asyncio.Event()
 
-        self.drivers: List[str] = []
+        # None means that the list has not (yet) been retrieved whereas an
+        # empty list means that no drivers are available.
+        self.drivers: Optional[List[str]] = None
 
     def make_autoinstall(self):
         return {
@@ -84,7 +84,7 @@ class DriversController(SubiquityController):
 
         self.ubuntu_drivers = get_ubuntu_drivers_interface(self.app)
 
-        self.drivers = []
+        self.drivers = None
         self.list_drivers_done_event.clear()
         if self._list_drivers_task is not None:
             self._list_drivers_task.cancel()
