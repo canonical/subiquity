@@ -192,7 +192,7 @@ class InstallController(SubiquityController):
             config: Dict[str, Any]):
         """Run a curtin install step."""
         self.app.note_file_for_apport(
-            f"Curtin{name}Config", str(config_file))
+            f"Curtin{name.title().replace(' ', '')}Config", str(config_file))
 
         self.write_config(config_file=config_file, config=config)
 
@@ -240,12 +240,13 @@ class InstallController(SubiquityController):
 
         async def run_curtin_step(name, stages, step_config, source=source):
             config = copy.deepcopy(base_config)
+            filename = f"subiquity-{name.replace(' ', '-')}.conf"
             merge_config(config, copy.deepcopy(step_config))
             await self.run_curtin_step(
                 context=context,
                 name=name,
                 stages=stages,
-                config_file=config_dir / f"subiquity-{name}.conf",
+                config_file=config_dir / filename,
                 source=source,
                 config=config,
                 )
