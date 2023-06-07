@@ -31,6 +31,7 @@ from subiquity.common.apidef import API
 from subiquity.common.types import ShutdownMode
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.install import ApplicationState
+from subiquity.server.types import InstallerChannels
 
 log = logging.getLogger("subiquity.server.controllers.shutdown")
 
@@ -87,9 +88,9 @@ class ShutdownController(SubiquityController):
         await self.server_reboot_event.wait()
         if self.app.interactive:
             await self.user_shutdown_event.wait()
-            self.shutdown()
+            await self.shutdown()
         elif self.app.state == ApplicationState.DONE:
-            self.shutdown()
+            await self.shutdown()
 
     @with_context()
     async def copy_logs_to_target(self, context):
@@ -127,7 +128,10 @@ class ShutdownController(SubiquityController):
             log.exception("saving journal failed")
 
     @with_context(description='mode={self.mode.name}')
-    def shutdown(self, context):
+    async def shutdown(self, context):
+        await self.app.hub.abroadcast(InstallerChannels.PRE_SHUTDOWN)
+        # As PRE_SHUTDOWN is supposed to be as close as possible to the
+        # shutdown, we probably don't want additional logic in between.
         self.shuttingdown_event.set()
         if self.opts.dry_run:
             self.app.exit()

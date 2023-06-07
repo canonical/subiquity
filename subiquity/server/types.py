@@ -43,3 +43,7 @@ class InstallerChannels(CoreChannels):
     # models in the "install" side of the install/postinstall divide will not
     # be reconfigured.
     INSTALL_CONFIRMED = 'install-confirmed'
+    # This message is sent as late as possible, and just before shutdown.  This
+    # step is after logfiles have been copied to the system, so should be used
+    # sparingly and only as absolutely required.
+    PRE_SHUTDOWN = 'pre-shutdown'
