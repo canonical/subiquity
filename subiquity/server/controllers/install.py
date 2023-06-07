@@ -157,6 +157,7 @@ class InstallController(SubiquityController):
             "install": {
                 "target": target,
                 "resume_data": None,
+                "extra_rsync_args": ['--no-links'],
             }
         }
 
