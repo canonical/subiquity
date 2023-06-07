@@ -197,6 +197,14 @@ class Mounter:
                 if name in dirnames:
                     dirnames.remove(name)
 
+    @contextlib.asynccontextmanager
+    async def mounted(self, device, mountpoint=None, options=None, type=None):
+        mp = await self.mount(device, mountpoint, options, type)
+        try:
+            yield mp
+        finally:
+            await self.unmount(mp)
+
 
 class DryRunMounter(Mounter):
 
