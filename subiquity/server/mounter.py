@@ -118,13 +118,16 @@ class Mounter:
         self.tmpfiles = TmpFileSet()
         self._mounts: List[Mountpoint] = []
 
-    async def mount(self, device, mountpoint, options=None, type=None):
+    async def mount(self, device, mountpoint=None, options=None, type=None):
         opts = []
         if options is not None:
             opts.extend(['-o', options])
         if type is not None:
             opts.extend(['-t', type])
-        if os.path.exists(mountpoint):
+        if mountpoint is None:
+            mountpoint = tempfile.mkdtemp()
+            created = True
+        elif os.path.exists(mountpoint):
             created = False
         else:
             path = Path(device)
