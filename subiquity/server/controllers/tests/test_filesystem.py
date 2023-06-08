@@ -329,7 +329,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_direct(self, bootloader, ptable, p1mnt):
         await self._guided_setup(bootloader, ptable)
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, capabilities=default_capabilities)
+            disk_id=self.d1.id, allowed=default_capabilities)
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.DIRECT))
         [d1p1, d1p2] = self.d1.partitions()
@@ -342,7 +342,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_direct_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, 'msdos')
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, capabilities=default_capabilities)
+            disk_id=self.d1.id, allowed=default_capabilities)
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.DIRECT))
         [d1p1] = self.d1.partitions()
@@ -354,7 +354,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_lvm(self, bootloader, ptable, p1mnt):
         await self._guided_setup(bootloader, ptable)
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, capabilities=default_capabilities)
+            disk_id=self.d1.id, allowed=default_capabilities)
         await self.controller.guided(GuidedChoiceV2(
             target=target, capability=GuidedCapability.LVM))
         [d1p1, d1p2, d1p3] = self.d1.partitions()
@@ -372,7 +372,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_lvm_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, 'msdos')
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, capabilities=default_capabilities)
+            disk_id=self.d1.id, allowed=default_capabilities)
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.LVM))
         [d1p1, d1p2] = self.d1.partitions()
@@ -421,7 +421,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         parts_before = self.d1._partitions.copy()
         gap = gaps.largest_gap(self.d1)
         target = GuidedStorageTargetUseGap(
-            disk_id=self.d1.id, gap=gap, capabilities=default_capabilities)
+            disk_id=self.d1.id, gap=gap, allowed=default_capabilities)
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.DIRECT))
         parts_after = gaps.parts_and_gaps(self.d1)[:-1]
@@ -443,7 +443,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         parts_before = self.d1._partitions.copy()
         gap = gaps.largest_gap(self.d1)
         target = GuidedStorageTargetUseGap(
-            disk_id=self.d1.id, gap=gap, capabilities=default_capabilities)
+            disk_id=self.d1.id, gap=gap, allowed=default_capabilities)
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.LVM))
         parts_after = gaps.parts_and_gaps(self.d1)[:-2]
@@ -507,7 +507,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         await self._setup(bootloader, ptable, fix_bios=False)
         expected = [
             GuidedStorageTargetReformat(
-                disk_id=self.disk.id, capabilities=default_capabilities),
+                disk_id=self.disk.id, allowed=default_capabilities),
             ]
         resp = await self.fsc.v2_guided_GET()
         self.assertEqual(expected, resp.targets)
@@ -538,7 +538,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         reformat = resp.targets.pop(0)
         self.assertEqual(
             GuidedStorageTargetReformat(
-                disk_id=self.disk.id, capabilities=default_capabilities),
+                disk_id=self.disk.id, allowed=default_capabilities),
             reformat)
 
         use_gap = resp.targets.pop(0)
@@ -561,7 +561,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         reformat = resp.targets.pop(0)
         self.assertEqual(
             GuidedStorageTargetReformat(
-                disk_id=self.disk.id, capabilities=default_capabilities),
+                disk_id=self.disk.id, allowed=default_capabilities),
             reformat)
 
         resize = resp.targets.pop(0)
@@ -583,7 +583,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         reformat = resp.targets.pop(0)
         self.assertEqual(
             GuidedStorageTargetReformat(
-                disk_id=self.disk.id, capabilities=default_capabilities),
+                disk_id=self.disk.id, allowed=default_capabilities),
             reformat)
 
         resize = resp.targets.pop(0)
@@ -594,7 +594,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             minimum=50 << 30,
             recommended=200 << 30,
             maximum=230 << 30,
-            capabilities=default_capabilities)
+            allowed=default_capabilities)
         self.assertEqual(expected, resize)
         self.assertEqual(0, len(resp.targets))
 
