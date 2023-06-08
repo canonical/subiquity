@@ -23,7 +23,7 @@ import re
 import shutil
 import subprocess
 import tempfile
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from curtin.config import merge_config
 import yaml
@@ -188,7 +188,7 @@ class InstallController(SubiquityController):
             name: str,
             stages: List[str],
             config_file: Path,
-            source: str,
+            source: Optional[str],
             config: Dict[str, Any]):
         """Run a curtin install step."""
         self.app.note_file_for_apport(
@@ -205,9 +205,15 @@ class InstallController(SubiquityController):
         with open(str(log_file), mode="a") as fh:
             fh.write(f"\n---- [[ subiquity step {name} ]] ----\n")
 
+        if source is not None:
+            source_args = (source, )
+        else:
+            source_args = ()
+
         await run_curtin_command(
-            self.app, context, "install", source,
+            self.app, context, "install",
             "--set", f'json:stages={json.dumps(stages)}',
+            *source_args,
             config=str(config_file), private_mounts=False)
 
         device_map_path = config.get('storage', {}).get('device_map_path')
@@ -238,7 +244,7 @@ class InstallController(SubiquityController):
 
         fs_controller = self.app.controllers.Filesystem
 
-        async def run_curtin_step(name, stages, step_config, source=source):
+        async def run_curtin_step(name, stages, step_config, source=None):
             config = copy.deepcopy(base_config)
             filename = f"subiquity-{name.replace(' ', '-')}.conf"
             merge_config(config, copy.deepcopy(step_config))
@@ -272,6 +278,7 @@ class InstallController(SubiquityController):
             await run_curtin_step(
                 name="extract", stages=["extract"],
                 step_config=self.generic_config(),
+                source=source,
                 )
             await self.create_core_boot_classic_fstab(context=context)
             await run_curtin_step(
@@ -296,6 +303,7 @@ class InstallController(SubiquityController):
             await run_curtin_step(
                 name="extract", stages=["extract"],
                 step_config=self.generic_config(),
+                source=source,
                 )
             await self.setup_target(context=context)
             await run_curtin_step(

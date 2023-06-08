@@ -54,7 +54,32 @@ class TestWriteConfig(unittest.IsolatedAsyncioTestCase):
         run_cmd.assert_called_once_with(
                 self.controller.app,
                 ANY,
-                "install", "/source",
+                "install",
+                "--set", 'json:stages=["partitioning", "extract"]',
+                "/source",
+                config="/config.yaml",
+                private_mounts=False)
+
+    @patch("subiquity.server.controllers.install.run_curtin_command")
+    async def test_run_curtin_install_step_no_src(self, run_cmd):
+
+        with patch("subiquity.server.controllers.install.open",
+                   mock_open()) as m_open:
+            await self.controller.run_curtin_step(
+                name='MyStep',
+                stages=["partitioning", "extract"],
+                config_file=Path("/config.yaml"),
+                source=None,
+                config=self.controller.base_config(
+                    logs_dir=Path("/"), resume_data_file=Path("resume-data"))
+                )
+
+        m_open.assert_called_once_with("/curtin-install.log", mode="a")
+
+        run_cmd.assert_called_once_with(
+                self.controller.app,
+                ANY,
+                "install",
                 "--set", 'json:stages=["partitioning", "extract"]',
                 config="/config.yaml",
                 private_mounts=False)
