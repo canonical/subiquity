@@ -18,7 +18,9 @@ from unittest import mock
 
 import attr
 
+from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.parameterized import parameterized
+from subiquitycore.utils import matching_dicts
 
 from subiquity.models.filesystem import (
     ActionRenderMode,
@@ -31,6 +33,8 @@ from subiquity.models.filesystem import (
     humanize_size,
     NotFinalPartitionError,
     Partition,
+    ZFS,
+    ZPool,
     align_down,
     LVM_CHUNK_SIZE,
     )
@@ -234,6 +238,24 @@ def make_lv(model, vg=None, size=None):
 def make_model_and_lv(bootloader=None, lv_size=None):
     model = make_model(bootloader)
     return model, make_lv(model, size=lv_size)
+
+
+def make_zpool(model=None, device=None, pool=None, mountpoint=None, **kw):
+    if model is None:
+        model = make_model()
+    if device is None:
+        device = make_disk(model)
+    if pool is None:
+        pool = f'pool{len(model._actions)}'
+    zpool = ZPool(m=model, vdevs=[device], pool=pool, mountpoint=mountpoint)
+    model._actions.append(zpool)
+    return zpool
+
+
+def make_zfs(model, *, pool, **kw):
+    zfs = ZFS(m=model, pool=pool, **kw)
+    model._actions.append(zfs)
+    return zfs
 
 
 class TestFilesystemModel(unittest.TestCase):
@@ -1223,3 +1245,60 @@ class TestPartition(unittest.TestCase):
         self.assertTrue(p5.is_logical)
         self.assertTrue(p6.is_logical)
         self.assertTrue(p7.is_logical)
+
+
+class TestZPool(SubiTestCase):
+    def test_zpool_to_action(self):
+        m = make_model()
+        d = make_disk(m)
+        zp = make_zpool(model=m, device=d, mountpoint='/', pool='p1')
+        zfs = make_zfs(model=m, pool=zp, volume='/ROOTFS')
+
+        actions = m._render_actions()
+        a_zp = dict(matching_dicts(actions, type='zpool')[0])
+        a_zfs = dict(matching_dicts(actions, type='zfs')[0])
+        e_zp = {'vdevs': [d.id], 'pool': 'p1', 'mountpoint': '/',
+                'type': 'zpool', 'id': zp.id}
+        e_zfs = {'pool': zp.id, 'volume': '/ROOTFS',
+                 'type': 'zfs', 'id': zfs.id}
+        self.assertEqual(e_zp, a_zp)
+        self.assertEqual(e_zfs, a_zfs)
+
+    def test_zpool_from_action(self):
+        m = make_model()
+        d = make_disk(m)
+        fake_up_blockdata(m)
+        blockdevs = m._probe_data['blockdev']
+        config = [
+            dict(type='disk', id=d.id, path=d.path, ptable=d.ptable,
+                 serial=d.serial),
+            dict(type='zpool', id='zpool-1', vdevs=[d.id], pool='p1',
+                 mountpoint='/'),
+            dict(type='zfs', id='zfs-1', volume='/ROOT', pool='zpool-1'),
+        ]
+        objs, _exclusions = m._actions_from_config(config, blockdevs,
+                                                   is_probe_data=False)
+        actual_disk, zpool, zfs = objs
+        self.assertTrue(isinstance(zpool, ZPool))
+        self.assertEqual('zpool-1', zpool.id)
+        self.assertEqual([actual_disk], zpool.vdevs)
+        self.assertEqual('p1', zpool.pool)
+        self.assertEqual('/', zpool.mountpoint)
+        self.assertEqual([zfs], zpool._zfses)
+
+        self.assertTrue(isinstance(zfs, ZFS))
+        self.assertEqual('zfs-1', zfs.id)
+        self.assertEqual(zpool, zfs.pool)
+        self.assertEqual('/ROOT', zfs.volume)
+
+
+class TestRootfs(SubiTestCase):
+    def test_zpool_may_provide_rootfs(self):
+        m = make_model()
+        make_zpool(model=m, mountpoint='/')
+        self.assertTrue(m.is_root_mounted())
+
+    def test_zpool_nonrootfs_mountpoint(self):
+        m = make_model()
+        make_zpool(model=m, mountpoint='/srv')
+        self.assertFalse(m.is_root_mounted())

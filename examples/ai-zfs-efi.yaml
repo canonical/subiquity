@@ -1,0 +1,83 @@
+#cloud-config
+autoinstall:
+  version: 1
+
+  identity:
+    realname: ''
+    hostname: ubuntu
+    username: ubuntu
+    password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
+
+  source:
+    id: ubuntu-server-minimal
+
+  early-commands:
+    - apt-get install -y zfsutils-linux
+
+  late-commands:
+    # Let's avoid recreating LP: #1993318
+    - zpool set cachefile= rpool
+    - cp /etc/zfs/zpool.cache "/target/etc/zfs/"
+    - mkdir -p "/etc/zfs/zfs-list.cache" "/target/etc/zfs/zfs-list.cache"
+    - truncate -s 0 /etc/zfs/zfs-list.cache/rpool
+    - >-
+      env -i
+      ZEVENT_POOL=rpool
+      ZED_ZEDLET_DIR=/etc/zfs/zed.d
+      ZEVENT_SUBCLASS=history_event
+      ZFS=zfs
+      ZEVENT_HISTORY_INTERNAL_NAME=create
+      /etc/zfs/zed.d/history_event-zfs-list-cacher.sh
+    - >-
+      sh -c
+      'sed -E "s|\t/target/?|\t/|g" "/etc/zfs/zfs-list.cache/rpool" > "/target/etc/zfs/zfs-list.cache/rpool"'
+    - rm -f "/etc/zfs/zfs-list.cache/rpool"
+
+  storage:
+    version: 2
+    swap:
+      size: 0
+
+    config:
+      - {type: disk, id: d1, ptable: gpt, match: {size: largest},
+         wipe: superblock, grub_device: true}
+
+      - {type: partition, id: d1p1, number: 1, size: 1G, device: d1,
+         flag: boot, wipe: superblock, grub_device: true}
+      - {type: format, id: d1p1_format, label: efi, fstype: fat32,
+         volume: d1p1}
+
+      - {type: partition, id: d1p2, number: 2, size: -1, device: d1}
+      - {type: zpool, id: d1_rpool, pool: rpool, vdevs: [d1p2], mountpoint: /,
+         pool_properties: {ashift: 12},
+         fs_properties: {acltype: posixacl, relatime: on, canmount: off,
+                         compression: gzip, devices: off, xattr: sa}}
+
+      - {type: zfs, id: d1_rpool_root,      pool: d1_rpool, volume: /ROOT,
+         properties: {canmount: off, mountpoint: none}}
+      - {type: zfs, id: d1_rpool_root_real, pool: d1_rpool, volume: /ROOT/real,
+         properties: {mountpoint: /, org.zsys:bootfs: 'yes'}}
+
+      - {type: zfs, id: d1_rpool_srv,       pool: d1_rpool, volume: /srv}
+
+      - {type: zfs, id: d1_rpool_usr,       pool: d1_rpool, volume: /usr,
+         properties: {canmount: off}}
+      - {type: zfs, id: d1_rpool_usr_local, pool: d1_rpool, volume: /usr/local}
+
+      - {type: zfs, id: d1_rpool_var,       pool: d1_rpool, volume: /var,
+         properties: {canmount: off}}
+      - {type: zfs, id: d1_rpool_var_games, pool: d1_rpool, volume: /var/games}
+      - {type: zfs, id: d1_rpool_var_lib,   pool: d1_rpool, volume: /var/lib}
+      - {type: zfs, id: d1_rpool_var_log,   pool: d1_rpool, volume: /var/log}
+      - {type: zfs, id: d1_rpool_var_mail,  pool: d1_rpool, volume: /var/mail}
+      - {type: zfs, id: d1_rpool_var_snap,  pool: d1_rpool, volume: /var/snap}
+      - {type: zfs, id: d1_rpool_var_spool, pool: d1_rpool, volume: /var/spool}
+      - {type: zfs, id: d1_rpool_var_www,   pool: d1_rpool, volume: /var/www}
+
+      - {type: zfs, id: d1_rpool_USERDATA,  pool: d1_rpool, volume: /USERDATA,
+         properties: {canmount: off, mountpoint: /}}
+      - {type: zfs, id: d1_rpool_USERDATA_home, pool: d1_rpool,
+         volume: /USERDATA/home}
+
+      # workaround target exist problem
+      - {type: mount, id: d1p1_mount, device: d1p1_format, path: /boot/efi}

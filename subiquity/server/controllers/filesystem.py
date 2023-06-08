@@ -182,6 +182,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, 'source'),
             self._examine_systems_task.start_sync)
+        self.app.hub.subscribe(
+            InstallerChannels.PRE_SHUTDOWN, self._pre_shutdown)
         self._variation_info: Dict[str, VariationInfo] = {}
         self._info: Optional[VariationInfo] = None
         self._on_volume: Optional[snapdapi.OnVolume] = None
@@ -1205,3 +1207,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if 'swap' in rendered:
             r['swap'] = rendered['swap']
         return r
+
+    async def _pre_shutdown(self):
+        await self.app.command_runner.run(['umount', '--recursive', '/target'])
+        for pool in self.model._all(type='zpool'):
+            await pool.pre_shutdown(self.app.command_runner)
