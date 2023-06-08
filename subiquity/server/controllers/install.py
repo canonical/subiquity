@@ -23,7 +23,7 @@ import re
 import shutil
 import subprocess
 import tempfile
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from curtin.config import merge_config
 import yaml
@@ -50,6 +50,9 @@ from subiquity.server.controller import (
 from subiquity.server.curtin import (
     run_curtin_command,
     start_curtin_command,
+    )
+from subiquity.server.mounter import (
+    Mounter,
     )
 from subiquity.server.types import (
     InstallerChannels,
@@ -147,6 +150,17 @@ class InstallController(SubiquityController):
         config.update(kw)
         return config
 
+    def rp_config(self, logs_dir: Path, target: str) -> Dict[str, Any]:
+        """Return configuration to be used as part of populating a recovery
+        partition."""
+        return {
+            "install": {
+                "target": target,
+                "resume_data": None,
+                "extra_rsync_args": ['--no-links'],
+            }
+        }
+
     @with_context(description="umounting /target dir")
     async def unmount_target(self, *, context, target):
         await run_curtin_command(self.app, context, 'unmount', '-t', target,
@@ -174,11 +188,11 @@ class InstallController(SubiquityController):
             name: str,
             stages: List[str],
             config_file: Path,
-            source: str,
+            source: Optional[str],
             config: Dict[str, Any]):
         """Run a curtin install step."""
         self.app.note_file_for_apport(
-            f"Curtin{name}Config", str(config_file))
+            f"Curtin{name.title().replace(' ', '')}Config", str(config_file))
 
         self.write_config(config_file=config_file, config=config)
 
@@ -191,9 +205,15 @@ class InstallController(SubiquityController):
         with open(str(log_file), mode="a") as fh:
             fh.write(f"\n---- [[ subiquity step {name} ]] ----\n")
 
+        if source is not None:
+            source_args = (source, )
+        else:
+            source_args = ()
+
         await run_curtin_command(
-            self.app, context, "install", source,
+            self.app, context, "install",
             "--set", f'json:stages={json.dumps(stages)}',
+            *source_args,
             config=str(config_file), private_mounts=False)
 
         device_map_path = config.get('storage', {}).get('device_map_path')
@@ -224,14 +244,15 @@ class InstallController(SubiquityController):
 
         fs_controller = self.app.controllers.Filesystem
 
-        async def run_curtin_step(name, stages, step_config):
+        async def run_curtin_step(name, stages, step_config, source=None):
             config = copy.deepcopy(base_config)
+            filename = f"subiquity-{name.replace(' ', '-')}.conf"
             merge_config(config, copy.deepcopy(step_config))
             await self.run_curtin_step(
                 context=context,
                 name=name,
                 stages=stages,
-                config_file=config_dir / f"subiquity-{name}.conf",
+                config_file=config_dir / filename,
                 source=source,
                 config=config,
                 )
@@ -257,6 +278,7 @@ class InstallController(SubiquityController):
             await run_curtin_step(
                 name="extract", stages=["extract"],
                 step_config=self.generic_config(),
+                source=source,
                 )
             await self.create_core_boot_classic_fstab(context=context)
             await run_curtin_step(
@@ -281,6 +303,7 @@ class InstallController(SubiquityController):
             await run_curtin_step(
                 name="extract", stages=["extract"],
                 step_config=self.generic_config(),
+                source=source,
                 )
             await self.setup_target(context=context)
             await run_curtin_step(
@@ -291,6 +314,15 @@ class InstallController(SubiquityController):
             # really write recovery_system={snapd_system_label} to
             # {target}/var/lib/snapd/modeenv to get snapd to pick it up on
             # first boot. But not needed for now.
+        rp = fs_controller.reset_partition
+        if rp is not None:
+            mounter = Mounter(self.app)
+            async with mounter.mounted(rp.path) as mp:
+                await run_curtin_step(
+                    name="populate recovery", stages=["extract"],
+                    step_config=self.rp_config(logs_dir, mp.p()),
+                    source='cp:///cdrom',
+                    )
 
     @with_context(description="creating fstab")
     async def create_core_boot_classic_fstab(self, *, context):
