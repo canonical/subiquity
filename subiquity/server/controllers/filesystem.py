@@ -22,7 +22,7 @@ import os
 import pathlib
 import select
 import time
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 import attr
 
@@ -64,6 +64,8 @@ from subiquity.common.types import (
     GuidedCapability,
     GuidedChoice,
     GuidedChoiceV2,
+    GuidedDisallowedCapability,
+    GuidedDisallowedCapabilityReason,
     GuidedStorageResponse,
     GuidedStorageResponseV2,
     GuidedStorageTarget,
@@ -128,12 +130,16 @@ class NoSnapdSystemsOnSource(Exception):
 
 
 @attr.s(auto_attribs=True)
+class CapabilityInfo:
+    allowed: List[GuidedCapability] = attr.Factory(list)
+    disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
+
+
+@attr.s(auto_attribs=True)
 class VariationInfo:
     name: str
     label: Optional[str]
-    capabilities: Set[GuidedCapability]
-    error: str = ''
-    encryption_unavailable_reason: str = ''
+    capability_info: CapabilityInfo = attr.Factory(CapabilityInfo)
     min_size: Optional[int] = None
     system: Optional[SystemDetails] = None
 
@@ -141,7 +147,7 @@ class VariationInfo:
         return self.label is not None
 
     def is_valid(self) -> bool:
-        return self.error == ''
+        return bool(self.capability_info.allowed)
 
     @classmethod
     def classic(cls, name: str, min_size: int):
@@ -149,11 +155,12 @@ class VariationInfo:
             name=name,
             label=None,
             min_size=min_size,
-            capabilities={
-                GuidedCapability.DIRECT,
-                GuidedCapability.LVM,
-                GuidedCapability.LVM_LUKS
-            })
+            capability_info=CapabilityInfo(
+                allowed=[
+                    GuidedCapability.DIRECT,
+                    GuidedCapability.LVM,
+                    GuidedCapability.LVM_LUKS,
+                    ]))
 
 
 class FilesystemController(SubiquityController, FilesystemManipulator):
@@ -277,14 +284,21 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         info = VariationInfo(
             name=name,
             label=label,
-            capabilities=[],
             system=system,
             )
 
+        def disallowed_encryption(msg):
+            GCDR = GuidedDisallowedCapabilityReason
+            reason = GCDR.CORE_BOOT_ENCRYPTION_UNAVAILABLE
+            return GuidedDisallowedCapability(
+                capability=GuidedCapability.CORE_BOOT_ENCRYPTED,
+                reason=reason,
+                message=msg)
+
         se = system.storage_encryption
         if se.support == StorageEncryptionSupport.DEFECTIVE:
-            info.error = system_defective_encryption_text.format(
-                  reason=se.unavailable_reason)
+            info.capability_info.disallowed = [
+                disallowed_encryption(se.unavailable_reason)]
             return info
 
         offsets_and_sizes = list(
@@ -293,26 +307,26 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         info.min_size = last_offset + last_size
 
         if se.support == StorageEncryptionSupport.DISABLED:
-            info.encryption_unavailable_reason = _(
+            info.capability_info.allowed = [
+                GuidedCapability.CORE_BOOT_UNENCRYPTED]
+            msg = _(
                 "TPM backed full-disk encryption has been disabled")
-            info.capabilities = {
-                GuidedCapability.CORE_BOOT_UNENCRYPTED}
+            info.capability_info.disallowed = [disallowed_encryption(msg)]
         elif se.support == StorageEncryptionSupport.UNAVAILABLE:
-            log.debug(
-                "storage encryption unavailable: %r", se.unavailable_reason)
-            info.encryption_unavailable_reason = se.unavailable_reason
-            info.capabilities = {
-                GuidedCapability.CORE_BOOT_UNENCRYPTED}
+            info.capability_info.allowed = [
+                GuidedCapability.CORE_BOOT_UNENCRYPTED]
+            info.capability_info.disallowed = [
+                disallowed_encryption(se.unavailable_reason)]
         else:
             if se.storage_safety == StorageSafety.ENCRYPTED:
-                info.capabilities = {
-                    GuidedCapability.CORE_BOOT_ENCRYPTED}
+                info.capability_info.allowed = [
+                    GuidedCapability.CORE_BOOT_ENCRYPTED]
             elif se.storage_safety == StorageSafety.PREFER_ENCRYPTED:
-                info.capabilities = {
-                    GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED}
+                info.capability_info.allowed = [
+                    GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED]
             elif se.storage_safety == StorageSafety.PREFER_UNENCRYPTED:
-                info.capabilities = {
-                    GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED}
+                info.capability_info.allowed = [
+                    GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED]
 
         return info
 
@@ -459,22 +473,27 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return gap
 
     def set_info_for_capability(self, capability: GuidedCapability):
-        d = {
-            GuidedCapability.CORE_BOOT_ENCRYPTED: {
+        """Given a request for a capability, select the variation to use."""
+        if capability == GuidedCapability.CORE_BOOT_ENCRYPTED:
+            # If the request is for encryption, a variation with any
+            # of these capabilities is OK:
+            caps = {
                 GuidedCapability.CORE_BOOT_ENCRYPTED,
                 GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
                 GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
-                },
-            GuidedCapability.CORE_BOOT_UNENCRYPTED: {
+                }
+        elif capability == GuidedCapability.CORE_BOOT_UNENCRYPTED:
+            # Similar if the request is for uncrypted
+            caps = {
                 GuidedCapability.CORE_BOOT_UNENCRYPTED,
                 GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
                 GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
-                },
-            }
+                }
+        else:
+            # Otherwise, just look for what we were asked for.
+            caps = {capability}
         for info in self._variation_info.values():
-            if not info.is_valid():
-                continue
-            if d.get(capability, {capability}) & info.capabilities:
+            if caps & set(info.capability_info.allowed):
                 self._info = info
                 return
         raise Exception(
@@ -603,8 +622,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # core-boot choices, choose the first of those.
         core_boot_info = None
         for info in self._variation_info.values():
-            if not info.is_valid():
-                continue
             if not info.is_core_boot_classic():
                 break
             if core_boot_info is None:
@@ -612,15 +629,28 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         else:
             info = core_boot_info
 
+        if info.capability_info.allowed:
+            disks = [
+                labels.for_client(d, min_size=info.min_size) for d in disks
+                ]
+            error = ''
+        else:
+            disks = []
+            error = info.capability_info.disallowed[0].message
+
+        encryption_unavailable_reason = ''
+        for disallowed_cap in info.capability_info.disallowed:
+            if disallowed_cap.capability == \
+               GuidedCapability.CORE_BOOT_ENCRYPTED:
+                encryption_unavailable_reason = disallowed_cap.message
+
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
-            disks=[
-                labels.for_client(d, min_size=info.min_size) for d in disks
-                ],
-            core_boot_classic_error=info.error,
-            encryption_unavailable_reason=info.encryption_unavailable_reason,
-            capabilities=list(info.capabilities))
+            disks=disks,
+            core_boot_classic_error=error,
+            encryption_unavailable_reason=encryption_unavailable_reason,
+            capabilities=list(info.capability_info.allowed))
 
     def _offsets_and_sizes_for_volume(self, volume):
         offset = self.model._partition_alignment_data['gpt'].min_start_offset
@@ -841,9 +871,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             if not info.is_valid():
                 continue
             if info.is_core_boot_classic():
-                core_boot_capabilities.update(info.capabilities)
+                core_boot_capabilities.update(info.capability_info.allowed)
             else:
-                classic_capabilities.update(info.capabilities)
+                classic_capabilities.update(info.capability_info.allowed)
         return sorted(classic_capabilities, key=lambda x: x.name), \
             sorted(core_boot_capabilities, key=lambda x: x.name)
 

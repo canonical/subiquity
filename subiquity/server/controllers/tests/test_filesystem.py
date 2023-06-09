@@ -839,7 +839,6 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.fsc._info = VariationInfo(
             name='foo',
             label='system',
-            capabilities=[],
             system=snapdapi.SystemDetails(
                 volumes={
                     'pc': snapdapi.Volume(schema='gpt', structure=structures),
