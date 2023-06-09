@@ -341,6 +341,18 @@ class GuidedCapability(enum.Enum):
                         GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED]
 
 
+class GuidedDisallowedCapabilityReason(enum.Enum):
+    TOO_SMALL = enum.auto()
+    CORE_BOOT_ENCRYPTION_UNAVAILABLE = enum.auto()
+
+
+@attr.s(auto_attribs=True)
+class GuidedDisallowedCapability:
+    capability: GuidedCapability
+    reason: GuidedDisallowedCapabilityReason
+    message: Optional[str] = None
+
+
 @attr.s(auto_attribs=True)
 class GuidedChoice:
     disk_id: str
@@ -406,7 +418,8 @@ class GuidedResizeValues:
 @attr.s(auto_attribs=True)
 class GuidedStorageTargetReformat:
     disk_id: str
-    allowed: List[GuidedCapability]
+    allowed: List[GuidedCapability] = attr.Factory(list)
+    disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
 
 
 @attr.s(auto_attribs=True)
@@ -417,7 +430,8 @@ class GuidedStorageTargetResize:
     minimum: Optional[int]
     recommended: Optional[int]
     maximum: Optional[int]
-    allowed: List[GuidedCapability]
+    allowed: List[GuidedCapability] = attr.Factory(list)
+    disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
 
     @staticmethod
     def from_recommendations(part, resize_vals, allowed):
@@ -436,7 +450,8 @@ class GuidedStorageTargetResize:
 class GuidedStorageTargetUseGap:
     disk_id: str
     gap: Gap
-    allowed: List[GuidedCapability]
+    allowed: List[GuidedCapability] = attr.Factory(list)
+    disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
 
 
 GuidedStorageTarget = Union[GuidedStorageTargetReformat,
