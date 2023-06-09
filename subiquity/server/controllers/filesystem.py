@@ -504,7 +504,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             reset_gap, gap = gap.split(reset_size)
             self.reset_partition = self.create_partition(
                 device=reset_gap.device, gap=reset_gap,
-                spec={'fstype': 'fat32'})
+                spec={'fstype': 'fat32'}, flag='msftres')
             # Should probably set some kind of flag on reset_partition
 
         if choice.capability.is_lvm():
