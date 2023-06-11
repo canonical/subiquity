@@ -469,7 +469,7 @@ class GuidedStorageResponseV2:
     status: ProbeStatus
     error_report: Optional[ErrorReportRef] = None
     configured: Optional[GuidedChoiceV2] = None
-    possible: List[GuidedStorageTarget] = attr.Factory(list)
+    targets: List[GuidedStorageTarget] = attr.Factory(list)
 
 
 @attr.s(auto_attribs=True)

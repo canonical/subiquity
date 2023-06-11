@@ -332,7 +332,7 @@ class TestFlow(TestAPI):
                             {'elected': 'http://us.archive.ubuntu.com/ubuntu'})
 
             resp = await inst.get('/storage/v2/guided?wait=true')
-            [reformat] = resp['possible']
+            [reformat] = resp['targets']
             await inst.post(
                 '/storage/v2/guided',
                 {
@@ -424,7 +424,7 @@ class TestFlow(TestAPI):
             self.assertEqual(orig_resp, reset_resp)
 
             resp = await inst.get('/storage/v2/guided')
-            [reformat] = match(resp['possible'],
+            [reformat] = match(resp['targets'],
                                _type='GuidedStorageTargetReformat')
             data = {
                 'target': reformat,
@@ -443,7 +443,7 @@ class TestGuided(TestAPI):
         cfg = 'examples/win10-along-ubuntu.json'
         async with start_server(cfg) as inst:
             resp = await inst.get('/storage/v2/guided')
-            [reformat] = match(resp['possible'],
+            [reformat] = match(resp['targets'],
                                _type='GuidedStorageTargetReformat')
             resp = await inst.post(
                 '/storage/v2/guided',
@@ -490,7 +490,7 @@ class TestGuided(TestAPI):
                 orig_resp['disks'][0]['partitions']
             resp = await inst.get('/storage/v2/guided')
             [resize_ntfs, resize_ext4] = match(
-                    resp['possible'], _type='GuidedStorageTargetResize')
+                    resp['targets'], _type='GuidedStorageTargetResize')
             resize_ntfs['new_size'] = 30 << 30
             data = {
                 'target': resize_ntfs,
@@ -537,7 +537,7 @@ class TestGuided(TestAPI):
             [orig_p1, orig_p2, orig_p3, orig_p4, gap] = \
                 orig_resp['disks'][0]['partitions']
             resp = await inst.get('/storage/v2/guided')
-            [use_gap] = match(resp['possible'],
+            [use_gap] = match(resp['targets'],
                               _type='GuidedStorageTargetUseGap')
             data = {
                 'target': use_gap,
@@ -576,7 +576,7 @@ class TestGuided(TestAPI):
         async with start_server(cfg, extra_args=extra) as inst:
             resp = await inst.get('/storage/v2/guided')
             [resize] = match(
-                    resp['possible'], _type='GuidedStorageTargetResize',
+                    resp['targets'], _type='GuidedStorageTargetResize',
                     partition_number=6)
             data = {
                 'target': resize,
@@ -605,7 +605,7 @@ class TestCore(TestAPI):
         async with start_server(cfg, **kw) as inst:
             await inst.post('/source', source_id='ubuntu-desktop')
             resp = await inst.get('/storage/v2/guided', wait=True)
-            [reformat] = resp['possible']
+            [reformat] = resp['targets']
             self.assertIn('CORE_BOOT_PREFER_ENCRYPTED',
                           reformat['capabilities'])
             data = dict(target=reformat, capability='CORE_BOOT_ENCRYPTED')
@@ -1042,7 +1042,7 @@ class TestTodos(TestAPI):  # server indicators of required client actions
             self.assertTrue(resp['need_boot'])
 
             resp = await inst.get('/storage/v2/guided')
-            [reformat] = resp['possible']
+            [reformat] = resp['targets']
             data = {
                 'target': reformat,
                 'capability': reformat['capabilities'][0],
@@ -1245,7 +1245,7 @@ class TestPartitionTableEditing(TestAPI):
         async with start_server(cfg, extra_args=extra) as inst:
             start_resp = await inst.get('/storage/v2')
             resp = await inst.get('/storage/v2/guided')
-            resize = match(resp['possible'],
+            resize = match(resp['targets'],
                            _type='GuidedStorageTargetResize')[0]
             resize['new_size'] = 30 << 30
             data = {
@@ -1548,7 +1548,7 @@ class TestRegression(TestAPI):
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
             resp = await inst.get('/storage/v2/guided')
-            [resize] = match(resp['possible'], partition_number=5,
+            [resize] = match(resp['targets'], partition_number=5,
                              _type='GuidedStorageTargetResize')
             data = {
                 'target': resize,

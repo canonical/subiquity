@@ -897,7 +897,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return GuidedStorageResponseV2(
                 status=ProbeStatus.DONE,
                 configured=self.model.guided_configuration,
-                possible=[s[1] for s in scenarios if s[1].capabilities])
+                targets=[s[1] for s in scenarios if s[1].capabilities])
 
     async def v2_guided_POST(self, data: GuidedChoiceV2) \
             -> GuidedStorageResponseV2:
