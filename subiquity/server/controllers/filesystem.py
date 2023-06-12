@@ -27,7 +27,7 @@ from typing import Any, Dict, List, Optional, Set
 import attr
 
 from curtin.commands.extract import AbstractSourceHandler
-from curtin.storage_config import ptable_uuid_to_flag_entry
+from curtin.storage_config import ptable_part_type_to_flag
 
 import pyudev
 
@@ -509,7 +509,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             reset_gap, gap = gap.split(reset_size)
             self.reset_partition = self.create_partition(
                 device=reset_gap.device, gap=reset_gap,
-                spec={'fstype': 'fat32'})
+                spec={'fstype': 'fat32'}, flag='msftres')
             # Should probably set some kind of flag on reset_partition
 
         if choice.capability.is_lvm():
@@ -678,7 +678,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             type_uuid = structure.gpt_part_type_uuid()
             if type_uuid:
                 part.partition_type = type_uuid
-                part.flag = ptable_uuid_to_flag_entry(type_uuid)[0]
+                part.flag = ptable_part_type_to_flag(type_uuid)
             if structure.name:
                 part.partition_name = structure.name
             if structure.filesystem:
