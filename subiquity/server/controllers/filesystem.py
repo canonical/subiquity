@@ -261,21 +261,25 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return system
 
     def info_for_system(self, name: str, label: str, system: SystemDetails):
+        if len(system.volumes) > 1:
+            log.error(
+                "Skipping uninstallable system: %s",
+                system_multiple_volumes_text)
+            return None
+
+        [volume] = system.volumes.values()
+        if volume.schema != 'gpt':
+            log.error(
+                "Skipping uninstallable system: %s",
+                system_non_gpt_text)
+            return None
+
         info = VariationInfo(
             name=name,
             label=label,
             capabilities=[],
             system=system,
             )
-
-        if len(system.volumes) > 1:
-            info.error = system_multiple_volumes_text
-            return info
-
-        [volume] = system.volumes.values()
-        if volume.schema != 'gpt':
-            info.error = system_non_gpt_text
-            return info
 
         se = system.storage_encryption
         if se.support == StorageEncryptionSupport.DEFECTIVE:
@@ -321,8 +325,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 system = await self._get_system(name, label)
             log.debug("got system %s for variation %s", system, name)
             if system is not None and len(system.volumes) > 0:
-                self._variation_info[name] = self.info_for_system(
-                    name, label, system)
+                info = self.info_for_system(name, label, system)
+                if info is not None:
+                    self._variation_info[name] = info
             else:
                 # This calculation is pretty much a hack and we should
                 # actually think about it at some point (like: maybe the
