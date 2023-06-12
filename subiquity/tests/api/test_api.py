@@ -337,7 +337,7 @@ class TestFlow(TestAPI):
                 '/storage/v2/guided',
                 {
                     'target': reformat,
-                    'capability': reformat['capabilities'][0],
+                    'capability': reformat['allowed'][0],
                 })
             await inst.post('/storage/v2')
             await inst.get('/meta/status', cur='WAITING')
@@ -428,7 +428,7 @@ class TestFlow(TestAPI):
                                _type='GuidedStorageTargetReformat')
             data = {
                 'target': reformat,
-                'capability': reformat['capabilities'][0],
+                'capability': reformat['allowed'][0],
                 }
             await inst.post('/storage/v2/guided', data)
             after_guided_resp = await inst.get('/storage/v2')
@@ -449,7 +449,7 @@ class TestGuided(TestAPI):
                 '/storage/v2/guided',
                 {
                     'target': reformat,
-                    'capability': reformat['capabilities'][0],
+                    'capability': reformat['allowed'][0],
                 })
             self.assertEqual(reformat, resp['configured']['target'])
             resp = await inst.get('/storage/v2')
@@ -494,7 +494,7 @@ class TestGuided(TestAPI):
             resize_ntfs['new_size'] = 30 << 30
             data = {
                 'target': resize_ntfs,
-                'capability': resize_ntfs['capabilities'][0],
+                'capability': resize_ntfs['allowed'][0],
                 }
             resp = await inst.post('/storage/v2/guided', data)
             self.assertEqual(resize_ntfs, resp['configured']['target'])
@@ -541,7 +541,7 @@ class TestGuided(TestAPI):
                               _type='GuidedStorageTargetUseGap')
             data = {
                 'target': use_gap,
-                'capability': use_gap['capabilities'][0],
+                'capability': use_gap['allowed'][0],
                 }
             resp = await inst.post('/storage/v2/guided', data)
             self.assertEqual(use_gap, resp['configured']['target'])
@@ -580,7 +580,7 @@ class TestGuided(TestAPI):
                     partition_number=6)
             data = {
                 'target': resize,
-                'capability': resize['capabilities'][0],
+                'capability': resize['allowed'][0],
                 }
             resp = await inst.post('/storage/v2/guided', data)
             self.assertEqual(resize, resp['configured']['target'])
@@ -607,7 +607,7 @@ class TestCore(TestAPI):
             resp = await inst.get('/storage/v2/guided', wait=True)
             [reformat] = resp['targets']
             self.assertIn('CORE_BOOT_PREFER_ENCRYPTED',
-                          reformat['capabilities'])
+                          reformat['allowed'])
             data = dict(target=reformat, capability='CORE_BOOT_ENCRYPTED')
             await inst.post('/storage/v2/guided', data)
             v2resp = await inst.get('/storage/v2')
@@ -1045,7 +1045,7 @@ class TestTodos(TestAPI):  # server indicators of required client actions
             [reformat] = resp['targets']
             data = {
                 'target': reformat,
-                'capability': reformat['capabilities'][0],
+                'capability': reformat['allowed'][0],
                 }
             await inst.post('/storage/v2/guided', data)
             resp = await inst.get('/storage/v2')
@@ -1250,7 +1250,7 @@ class TestPartitionTableEditing(TestAPI):
             resize['new_size'] = 30 << 30
             data = {
                 'target': resize,
-                'capability': resize['capabilities'][0],
+                'capability': resize['allowed'][0],
                 }
             await inst.post('/storage/v2/guided', data)
             orig_config = await inst.get('/storage/v2/orig_config')
@@ -1552,7 +1552,7 @@ class TestRegression(TestAPI):
                              _type='GuidedStorageTargetResize')
             data = {
                 'target': resize,
-                'capability': resize['capabilities'][0],
+                'capability': resize['allowed'][0],
                 }
             resp = await inst.post('/storage/v2/guided', data)
             self.assertEqual(resize, resp['configured']['target'])

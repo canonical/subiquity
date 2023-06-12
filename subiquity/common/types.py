@@ -341,6 +341,18 @@ class GuidedCapability(enum.Enum):
                         GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED]
 
 
+class GuidedDisallowedCapabilityReason(enum.Enum):
+    TOO_SMALL = enum.auto()
+    CORE_BOOT_ENCRYPTION_UNAVAILABLE = enum.auto()
+
+
+@attr.s(auto_attribs=True)
+class GuidedDisallowedCapability:
+    capability: GuidedCapability
+    reason: GuidedDisallowedCapabilityReason
+    message: Optional[str] = None
+
+
 @attr.s(auto_attribs=True)
 class GuidedChoice:
     disk_id: str
@@ -406,7 +418,8 @@ class GuidedResizeValues:
 @attr.s(auto_attribs=True)
 class GuidedStorageTargetReformat:
     disk_id: str
-    capabilities: List[GuidedCapability]
+    allowed: List[GuidedCapability] = attr.Factory(list)
+    disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
 
 
 @attr.s(auto_attribs=True)
@@ -417,10 +430,11 @@ class GuidedStorageTargetResize:
     minimum: Optional[int]
     recommended: Optional[int]
     maximum: Optional[int]
-    capabilities: List[GuidedCapability]
+    allowed: List[GuidedCapability] = attr.Factory(list)
+    disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
 
     @staticmethod
-    def from_recommendations(part, resize_vals, capabilities):
+    def from_recommendations(part, resize_vals, allowed):
         return GuidedStorageTargetResize(
                 disk_id=part.device.id,
                 partition_number=part.number,
@@ -428,7 +442,7 @@ class GuidedStorageTargetResize:
                 minimum=resize_vals.minimum,
                 recommended=resize_vals.recommended,
                 maximum=resize_vals.maximum,
-                capabilities=capabilities,
+                allowed=allowed,
                 )
 
 
@@ -436,7 +450,8 @@ class GuidedStorageTargetResize:
 class GuidedStorageTargetUseGap:
     disk_id: str
     gap: Gap
-    capabilities: List[GuidedCapability]
+    allowed: List[GuidedCapability] = attr.Factory(list)
+    disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
 
 
 GuidedStorageTarget = Union[GuidedStorageTargetReformat,
@@ -457,7 +472,7 @@ class GuidedChoiceV2:
     def from_guided_choice(choice: GuidedChoice):
         return GuidedChoiceV2(
                 target=GuidedStorageTargetReformat(
-                    disk_id=choice.disk_id, capabilities=[choice.capability]),
+                    disk_id=choice.disk_id, allowed=[choice.capability]),
                 capability=choice.capability,
                 password=choice.password,
                 sizing_policy=SizingPolicy.SCALED,
