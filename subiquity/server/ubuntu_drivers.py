@@ -73,7 +73,7 @@ class UbuntuDriversInterface(ABC):
         """ Parse the output of ubuntu-drivers list --recommended and return a
         list of drivers. """
         drivers: List[str] = []
-        # Drivers are listed one per line, but each driver is followed by a
+        # Drivers are listed one per line, but some drivers are followed by a
         # linux-modules-* package (which we are not interested in showing).
         # e.g.,:
         # $ ubuntu-drivers list --recommended
@@ -81,7 +81,12 @@ class UbuntuDriversInterface(ABC):
         for line in [x.strip() for x in output.split("\n")]:
             if not line:
                 continue
-            drivers.append(line.split(" ", maxsplit=1)[0])
+            package = line.split(" ", maxsplit=1)[0]
+            if package.startswith("oem-") and package.endswith("-meta"):
+                # Ignore oem-*-meta packages (this would not be needed if we
+                # had passed --no-oem but ..)
+                continue
+            drivers.append(package)
 
         return drivers
 
