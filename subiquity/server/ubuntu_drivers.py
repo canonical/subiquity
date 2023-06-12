@@ -169,6 +169,28 @@ class UbuntuDriversNoDriversInterface(UbuntuDriversHasDriversInterface):
 class UbuntuDriversRunDriversInterface(UbuntuDriversInterface):
     """ A dry-run implementation of ubuntu-drivers that actually runs the
     ubuntu-drivers command but locally. """
+
+    def __init__(self, app, gpgpu: bool) -> None:
+        super().__init__(app, gpgpu)
+
+        if app.dr_cfg.ubuntu_drivers_run_on_host_umockdev is None:
+            return
+
+        self.list_oem_cmd = [
+            "scripts/umockdev-wrapper.py",
+            "--config", app.dr_cfg.ubuntu_drivers_run_on_host_umockdev,
+            "--"] + self.list_oem_cmd
+
+        self.list_drivers_cmd = [
+            "scripts/umockdev-wrapper.py",
+            "--config", app.dr_cfg.ubuntu_drivers_run_on_host_umockdev,
+            "--"] + self.list_drivers_cmd
+
+        self.install_drivers_cmd = [
+            "scripts/umockdev-wrapper.py",
+            "--config", app.dr_cfg.ubuntu_drivers_run_on_host_umockdev,
+            "--"] + self.install_drivers_cmd
+
     async def ensure_cmd_exists(self, root_dir: str) -> None:
         # TODO This does not tell us if the "--recommended" option is
         # available.

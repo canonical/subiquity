@@ -1,0 +1,11 @@
+devices:
+  # This is the SMBus from the XPS 9230
+  # 0000:00:1f.4 SMBus [0c05]: Intel Corporation Alder Lake PCH-P SMBus Host Controller [8086:51a3] (rev 01)
+  - modalias: 'pci:v00008086d000051A3sv00001028sd00000AF3bc0Csc05i00'
+    vendor: '0x8086'
+    device: '0x51A3'
+  # This is a fake NVIDIA GPU
+  - modalias: 'pci:v000010DEd00001E36sv0000deadbeefsd0000deadbeefbc03scdeadbeefideadbeef'
+    vendor: '0x10DE'
+    device: '0x1E36'
+

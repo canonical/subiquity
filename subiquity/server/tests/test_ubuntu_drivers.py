@@ -19,6 +19,7 @@ from unittest.mock import patch, AsyncMock, Mock
 
 from subiquitycore.tests.mocks import make_app
 
+from subiquity.server.dryrun import DRConfig
 from subiquity.server.ubuntu_drivers import (
     UbuntuDriversInterface,
     UbuntuDriversClientInterface,
@@ -158,8 +159,38 @@ oem-somerville-tentacool-meta
 class TestUbuntuDriversRunDriversInterface(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
+        self.app.dr_cfg = DRConfig()
+        self.app.dr_cfg.ubuntu_drivers_run_on_host_umockdev = None
         self.ubuntu_drivers = UbuntuDriversRunDriversInterface(
                 self.app, gpgpu=False)
+
+    def test_init_no_umockdev(self):
+        self.app.dr_cfg.ubuntu_drivers_run_on_host_umockdev = None
+        ubuntu_drivers = UbuntuDriversRunDriversInterface(
+                self.app, gpgpu=False)
+        self.assertEqual(ubuntu_drivers.list_oem_cmd,
+                         ["ubuntu-drivers", "list-oem"])
+        self.assertEqual(ubuntu_drivers.list_drivers_cmd[0:2],
+                         ["ubuntu-drivers", "list"])
+        self.assertEqual(ubuntu_drivers.install_drivers_cmd[0:2],
+                         ["ubuntu-drivers", "install"])
+
+    def test_init_with_umockdev(self):
+        self.app.dr_cfg.ubuntu_drivers_run_on_host_umockdev = "/xps.yaml"
+        ubuntu_drivers = UbuntuDriversRunDriversInterface(
+                self.app, gpgpu=False)
+        self.assertEqual(ubuntu_drivers.list_oem_cmd,
+                         ["scripts/umockdev-wrapper.py",
+                          "--config", "/xps.yaml", "--",
+                          "ubuntu-drivers", "list-oem"])
+        self.assertEqual(ubuntu_drivers.list_drivers_cmd[0:6],
+                         ["scripts/umockdev-wrapper.py",
+                          "--config", "/xps.yaml", "--",
+                          "ubuntu-drivers", "list"])
+        self.assertEqual(ubuntu_drivers.install_drivers_cmd[0:6],
+                         ["scripts/umockdev-wrapper.py",
+                          "--config", "/xps.yaml", "--",
+                          "ubuntu-drivers", "install"])
 
     @patch("subiquity.server.ubuntu_drivers.arun_command")
     async def test_ensure_cmd_exists(self, mock_arun_command):

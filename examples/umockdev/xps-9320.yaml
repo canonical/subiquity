@@ -1,0 +1,32 @@
+devices:
+  # List was extracted on focal:
+  # == /sys/devices/pci0000:00/0000:00:14.0/usb3/3-9/3-9:1.0 ==
+  # modalias : usb:v27C6p63BCd0100dcEFdsc00dp00icFFisc00ip00in00
+  # vendor   : Shenzhen Goodix Technology Co.,Ltd.
+  # driver   : oem-fix-fpr-goodix-deletestoredfp - third-party free
+  #
+  # == /sys/devices/pci0000:00/0000:00:1f.4 ==
+  # modalias : pci:v00008086d000051A3sv00001028sd00000AF3bc0Csc05i00
+  # vendor   : Intel Corporation
+  # driver   : oem-somerville-tentacool-meta - third-party free
+  #
+  # == /sys/devices/pci0000:00/0000:00:05.0 ==
+  # modalias : pci:v00008086d0000465Dsv00001028sd00000AF3bc04sc80i00
+  # vendor   : Intel Corporation
+  # driver   : libcamhal-ipu6ep0 - third-party free
+  # driver   : oem-fix-cam-intel-mipi-ipu6ep - third-party free
+  #
+  # == /sys/devices/virtual/dmi/id ==
+  # modalias : dmi:bvnDellInc.:bvr2.2.1:bd04/17/2023:br2.2:svnDellInc.:pnXPS9320:pvr:rvnDellInc.:rn:rvr:cvnDellInc.:ct10:cvr:sku0AF3:
+  # driver   : oem-release - third-party free
+  # driver   : oem-somerville-meta - third-party free
+  - modalias: 'usb:v27C6p63BCd0100dcEFdsc00dp00icFFisc00ip00in00'
+    vendor: '0x27C6'
+    device: '0x63BC'
+  - modalias: 'pci:v00008086d000051A3sv00001028sd00000AF3bc0Csc05i00'
+    vendor: '0x8086'
+    device: '0x51A3'
+  - modalias: 'pci:v00008086d0000465Dsv00001028sd00000AF3bc04sc80i00'
+    vendor: '0x8086'
+    device: '0x465D'
+  - modalias: 'dmi:bvnDellInc.:bvr2.2.1:bd04/17/2023:br2.2:svnDellInc.:pnXPS9320:pvr:rvnDellInc.:rn:rvr:cvnDellInc.:ct10:cvr:sku0AF3:'

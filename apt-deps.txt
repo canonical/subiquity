@@ -3,6 +3,7 @@ cloud-init
 curl
 fuseiso
 gettext
+gir1.2-umockdev-1.0
 git
 isolinux
 jq
@@ -25,6 +26,7 @@ python3-coverage
 python3-dev
 python3-distutils-extra
 python3-flake8
+python3-gi
 python3-jsonschema
 python3-more-itertools
 python3-mypy
@@ -45,4 +47,5 @@ python3-wheel
 python3-yaml
 ssh-import-id
 ubuntu-drivers-common
+umockdev
 xorriso
