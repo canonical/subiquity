@@ -44,8 +44,13 @@ class UbuntuDriversInterface(ABC):
             "ubuntu-drivers", "list",
             "--recommended",
         ]
+        # Because of LP #1966413, the following command will also install
+        # relevant OEM meta-packages on affected ubuntu-drivers-common
+        # versions (unless --gpgpu is also passed).
+        # This is not ideal but should be acceptable because we want OEM
+        # meta-packages installed unconditionally (except in autoinstall).
         self.install_drivers_cmd = [
-            "ubuntu-drivers", "install",
+            "ubuntu-drivers", "install", "--no-oem",
         ]
         if gpgpu:
             self.list_drivers_cmd.append("--gpgpu")
