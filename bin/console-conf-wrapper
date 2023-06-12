@@ -22,7 +22,14 @@ if [ -e /run/snapd-recovery-chooser-triggered ]; then
     fi
 fi
 
-if grep -q 'snapd_recovery_mode=install' /proc/cmdline ; then
+# always prefer to use modeevn if it is available
+if [ -e "/var/lib/snapd/modeenv" ]; then
+    mode="$(sed -n 's/mode=\([^[:space:]]*\)/\1/p' /var/lib/snapd/modeenv)"
+else
+    mode="$(sed 's/.*snapd_recovery_mode=\([^[:space:]]*\)[[:space:]].*/\1/' /proc/cmdline)"
+fi
+
+if [ "${mode}" = "install" ]; then
     echo "Installing the system, please wait for reboot"
     # XXX: replace with something more user friendly after the beta?
     journalctl -u snapd.service -f
