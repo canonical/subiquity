@@ -44,4 +44,5 @@ python3-urwid
 python3-wheel
 python3-yaml
 ssh-import-id
+ubuntu-drivers-common
 xorriso
