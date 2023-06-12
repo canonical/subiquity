@@ -34,6 +34,7 @@ from subiquity.common.types import (
     Gap,
     GapUsable,
     GuidedCapability,
+    GuidedDisallowedCapabilityReason,
     GuidedChoiceV2,
     GuidedStorageTargetReformat,
     GuidedStorageTargetResize,
@@ -525,7 +526,26 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
     async def test_small_blank_disk(self, bootloader, ptable):
         await self._setup(bootloader, ptable, size=1 << 30)
         resp = await self.fsc.v2_guided_GET()
-        self.assertEqual(0, len(resp.targets))
+        self.assertEqual(1, len(resp.targets))
+        self.assertEqual(0, len(resp.targets[0].allowed))
+        self.assertEqual(
+            {
+                disabled_cap.capability
+                for disabled_cap in resp.targets[0].disallowed
+            },
+            {
+                GuidedCapability.DIRECT,
+                GuidedCapability.LVM,
+                GuidedCapability.LVM_LUKS,
+            })
+        self.assertEqual(
+            {
+                disabled_cap.reason
+                for disabled_cap in resp.targets[0].disallowed
+            },
+            {
+                GuidedDisallowedCapabilityReason.TOO_SMALL,
+            })
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_used_half_disk(self, bootloader, ptable):
@@ -580,13 +600,14 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.fs_probe[p._path()] = {'ESTIMATED_MIN_SIZE': 40 << 30}
         self.fsc.calculate_suggested_install_min.return_value = 10 << 30
         resp = await self.fsc.v2_guided_GET()
-        reformat = resp.targets.pop(0)
+        possible = [t for t in resp.targets if t.allowed]
+        reformat = possible.pop(0)
         self.assertEqual(
             GuidedStorageTargetReformat(
                 disk_id=self.disk.id, allowed=default_capabilities),
             reformat)
 
-        resize = resp.targets.pop(0)
+        resize = possible.pop(0)
         expected = GuidedStorageTargetResize(
             disk_id=self.disk.id,
             partition_number=p.number,
@@ -596,7 +617,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             maximum=230 << 30,
             allowed=default_capabilities)
         self.assertEqual(expected, resize)
-        self.assertEqual(0, len(resp.targets))
+        self.assertEqual(0, len(possible))
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_half_disk_reformat(self, bootloader, ptable):

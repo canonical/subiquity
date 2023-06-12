@@ -134,6 +134,21 @@ class CapabilityInfo:
     allowed: List[GuidedCapability] = attr.Factory(list)
     disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
 
+    def combine(self, other: "CapabilityInfo"):
+        for allowed_cap in other.allowed:
+            if allowed_cap not in self.allowed:
+                self.allowed.append(allowed_cap)
+        seen_disallowed = set()
+        new_disallowed = []
+        for disallowed_cap in self.disallowed + other.disallowed:
+            if disallowed_cap.capability in self.allowed:
+                continue
+            if disallowed_cap.capability in seen_disallowed:
+                continue
+            new_disallowed.append(disallowed_cap)
+            seen_disallowed.add(disallowed_cap.capability)
+        self.disallowed = new_disallowed
+
 
 @attr.s(auto_attribs=True)
 class VariationInfo:
@@ -148,6 +163,27 @@ class VariationInfo:
 
     def is_valid(self) -> bool:
         return bool(self.capability_info.allowed)
+
+    def capability_info_for_disk(
+            self,
+            part_align,
+            size: Optional[int],
+            ) -> CapabilityInfo:
+        if self.label is None:
+            install_min = sizes.calculate_suggested_install_min(
+                self.min_size, part_align)
+        else:
+            install_min = self.min_size
+        r = CapabilityInfo()
+        r.disallowed = list(self.capability_info.disallowed)
+        if size < install_min:
+            for capability in self.capability_info.allowed:
+                r.disallowed.append(GuidedDisallowedCapability(
+                    capability=capability,
+                    reason=GuidedDisallowedCapabilityReason.TOO_SMALL))
+        else:
+            r.allowed = list(self.capability_info.allowed)
+        return r
 
     @classmethod
     def classic(cls, name: str, min_size: int):
@@ -893,24 +929,41 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self.get_available_capabilities()
 
         for disk in self.potential_boot_disks(with_reformatting=True):
-            if disk.size >= install_min:
-                reformat = GuidedStorageTargetReformat(
-                    disk_id=disk.id,
-                    allowed=core_boot_capabilities + classic_capabilities)
-                scenarios.append((disk.size, reformat))
+            capability_info = CapabilityInfo()
+            for variation in self._variation_info.values():
+                capability_info.combine(
+                    variation.capability_info_for_disk(
+                        disk.alignment_data().part_align, disk.size))
+            reformat = GuidedStorageTargetReformat(
+                disk_id=disk.id,
+                allowed=capability_info.allowed,
+                disallowed=capability_info.disallowed)
+            scenarios.append((disk.size, reformat))
 
         for disk in self.potential_boot_disks(with_reformatting=False):
-            if len(disk.partitions()) < 1:
-                # On an empty disk, don't bother to offer it with UseGap, as
-                # it's basically the same as the Reformat case.
+            parts = [p for p in disk.partitions() if p.flag != 'bios_grub']
+            if len(parts) < 1:
+                # On an (essentially) empty disk, don't bother to offer it
+                # with UseGap, as it's basically the same as the Reformat
+                # case.
                 continue
             gap = gaps.largest_gap(disk)
-            if gap is not None and gap.size >= install_min:
-                api_gap = labels.for_client(gap)
-                use_gap = GuidedStorageTargetUseGap(
-                    disk_id=disk.id, gap=api_gap,
-                    allowed=classic_capabilities)
-                scenarios.append((gap.size, use_gap))
+            if gap is None:
+                # Do we return a reason here?
+                continue
+            capability_info = CapabilityInfo()
+            for variation in self._variation_info.values():
+                if variation.is_core_boot_classic():
+                    continue
+                capability_info.combine(
+                    variation.capability_info_for_disk(
+                        disk.alignment_data().part_align, gap.size))
+            api_gap = labels.for_client(gap)
+            use_gap = GuidedStorageTargetUseGap(
+                disk_id=disk.id, gap=api_gap,
+                allowed=capability_info.allowed,
+                disallowed=capability_info.disallowed)
+            scenarios.append((gap.size, use_gap))
 
         for disk in self.potential_boot_disks(check_boot=False):
             part_align = disk.alignment_data().part_align
@@ -919,10 +972,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                         partition.estimated_min_size, partition.size,
                         install_min, part_align=part_align)
                 if vals is None:
+                    # Return a reason here
                     continue
                 if not boot.can_be_boot_device(
                         disk, resize_partition=partition,
                         with_reformatting=False):
+                    # Return a reason here
                     continue
                 resize = GuidedStorageTargetResize.from_recommendations(
                     partition, vals, allowed=classic_capabilities)
@@ -932,7 +987,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return GuidedStorageResponseV2(
                 status=ProbeStatus.DONE,
                 configured=self.model.guided_configuration,
-                targets=[s[1] for s in scenarios if s[1].allowed])
+                targets=[s[1] for s in scenarios])
 
     async def v2_guided_POST(self, data: GuidedChoiceV2) \
             -> GuidedStorageResponseV2:
