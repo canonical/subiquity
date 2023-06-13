@@ -135,6 +135,25 @@ nvidia-driver-510 linux-modules-nvidia-510-generic-hwe-20.04
 
         self.assertEqual(drivers, ["nvidia-driver-510"])
 
+    @patch("subiquity.server.ubuntu_drivers.run_curtin_command")
+    async def test_list_oem(self, mock_run_curtin_command):
+        # Make sure this gets decoded as utf-8.
+        mock_run_curtin_command.return_value = Mock(stdout=b"""\
+oem-somerville-tentacool-meta
+""")
+        drivers = await self.ubuntu_drivers.list_oem(
+            root_dir="/target",
+            context="listing OEM meta-packages")
+
+        mock_run_curtin_command.assert_called_once_with(
+                self.app, "listing OEM meta-packages",
+                "in-target", "-t", "/target",
+                "--",
+                "ubuntu-drivers", "list-oem",
+                capture=True, private_mounts=True)
+
+        self.assertEqual(drivers, ["oem-somerville-tentacool-meta"])
+
 
 class TestUbuntuDriversRunDriversInterface(unittest.IsolatedAsyncioTestCase):
     def setUp(self):

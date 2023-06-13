@@ -57,6 +57,7 @@ from .keyboard import KeyboardModel
 from .locale import LocaleModel
 from .mirror import MirrorModel
 from .network import NetworkModel
+from .oem import OEMModel
 from .proxy import ProxyModel
 from .snaplist import SnapListModel
 from .source import SourceModel
@@ -192,6 +193,7 @@ class SubiquityModel:
         self.locale = LocaleModel(self.chroot_prefix)
         self.mirror = MirrorModel()
         self.network = NetworkModel()
+        self.oem = OEMModel()
         self.packages = []
         self.proxy = ProxyModel()
         self.snaplist = SnapListModel()

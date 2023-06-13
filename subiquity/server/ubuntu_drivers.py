@@ -37,6 +37,9 @@ class UbuntuDriversInterface(ABC):
     def __init__(self, app, gpgpu: bool) -> None:
         self.app = app
 
+        self.list_oem_cmd = [
+            "ubuntu-drivers", "list-oem",
+        ]
         self.list_drivers_cmd = [
             "ubuntu-drivers", "list",
             "--recommended",
@@ -54,6 +57,10 @@ class UbuntuDriversInterface(ABC):
 
     @abstractmethod
     async def list_drivers(self, root_dir: str, context) -> List[str]:
+        pass
+
+    @abstractmethod
+    async def list_oem(self, root_dir: str, context) -> List[str]:
         pass
 
     async def install_drivers(self, root_dir: str, context) -> None:
@@ -77,6 +84,18 @@ class UbuntuDriversInterface(ABC):
             drivers.append(line.split(" ", maxsplit=1)[0])
 
         return drivers
+
+    def _oem_metapackages_from_output(self, output: str) -> List[str]:
+        """ Parse the output of ubuntu-drivers list-oem and return a list of
+        packages. """
+        metapackages: List[str] = []
+        # Packages are listed one per line.
+        for line in [x.strip() for x in output.split("\n")]:
+            if not line:
+                continue
+            metapackages.append(line)
+
+        return metapackages
 
 
 class UbuntuDriversClientInterface(UbuntuDriversInterface):
@@ -105,12 +124,24 @@ class UbuntuDriversClientInterface(UbuntuDriversInterface):
         # output.
         return self._drivers_from_output(result.stdout.decode("utf-8"))
 
+    async def list_oem(self, root_dir: str, context) -> List[str]:
+        result = await run_curtin_command(
+            self.app, context,
+            "in-target", "-t", root_dir, "--", *self.list_oem_cmd,
+            capture=True, private_mounts=True)
+        # Currently we have no way to specify universal_newlines=True or
+        # encoding="utf-8" to run_curtin_command so we need to decode the
+        # output.
+        return self._oem_metapackages_from_output(
+                result.stdout.decode("utf-8"))
+
 
 class UbuntuDriversHasDriversInterface(UbuntuDriversInterface):
     """ A dry-run implementation of ubuntu-drivers that returns a hard-coded
     list of drivers. """
     gpgpu_drivers: List[str] = ["nvidia-driver-470-server"]
     not_gpgpu_drivers: List[str] = ["nvidia-driver-510"]
+    oem_metapackages: List[str] = ["oem-somerville-tentacool-meta"]
 
     def __init__(self, app, gpgpu: bool) -> None:
         super().__init__(app, gpgpu)
@@ -122,6 +153,9 @@ class UbuntuDriversHasDriversInterface(UbuntuDriversInterface):
     async def list_drivers(self, root_dir: str, context) -> List[str]:
         return self.drivers
 
+    async def list_oem(self, root_dir: str, context) -> List[str]:
+        return self.oem_metapackages
+
 
 class UbuntuDriversNoDriversInterface(UbuntuDriversHasDriversInterface):
     """ A dry-run implementation of ubuntu-drivers that returns a hard-coded
@@ -129,6 +163,7 @@ class UbuntuDriversNoDriversInterface(UbuntuDriversHasDriversInterface):
 
     gpgpu_drivers: List[str] = []
     not_gpgpu_drivers: List[str] = []
+    oem_metapackages: List[str] = []
 
 
 class UbuntuDriversRunDriversInterface(UbuntuDriversInterface):
@@ -150,16 +185,21 @@ class UbuntuDriversRunDriversInterface(UbuntuDriversInterface):
         result = await arun_command(self.list_drivers_cmd)
         return self._drivers_from_output(result.stdout)
 
+    async def list_oem(self, root_dir: str, context) -> List[str]:
+        # We run the command locally - ignoring the root_dir.
+        result = await arun_command(self.list_oem_cmd)
+        return self._oem_metapackages_from_output(result.stdout)
+
 
 def get_ubuntu_drivers_interface(app) -> UbuntuDriversInterface:
     is_server = app.base_model.source.current.variant == "server"
     cls: Type[UbuntuDriversInterface] = UbuntuDriversClientInterface
     if app.opts.dry_run:
-        if 'has-drivers' in app.debug_flags:
-            cls = UbuntuDriversHasDriversInterface
+        if 'no-drivers' in app.debug_flags:
+            cls = UbuntuDriversNoDriversInterface
         elif 'run-drivers' in app.debug_flags:
             cls = UbuntuDriversRunDriversInterface
         else:
-            cls = UbuntuDriversNoDriversInterface
+            cls = UbuntuDriversHasDriversInterface
 
     return cls(app, gpgpu=is_server)
