@@ -1222,7 +1222,7 @@ class TestAlignmentData(unittest.TestCase):
 class TestSwap(unittest.TestCase):
     def test_basic(self):
         m = make_model()
-        with mock.patch.object(m, '_should_add_swapfile', return_value=False):
+        with mock.patch.object(m, 'should_add_swapfile', return_value=False):
             cfg = m.render()
             self.assertEqual({'size': 0}, cfg['swap'])
 

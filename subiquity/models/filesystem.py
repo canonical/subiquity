@@ -1584,7 +1584,7 @@ class FilesystemModel(object):
             }
         if self.swap is not None:
             config['swap'] = self.swap
-        elif not self._should_add_swapfile():
+        elif not self.should_add_swapfile():
             config['swap'] = {'size': 0}
         if self.grub is not None:
             config['grub'] = self.grub
@@ -1812,7 +1812,7 @@ class FilesystemModel(object):
         return (self.is_root_mounted()
                 and not self.needs_bootloader_partition())
 
-    def _should_add_swapfile(self):
+    def should_add_swapfile(self):
         mount = self._mount_for_path('/')
         if mount is not None and mount.device.fstype == 'btrfs':
             return False
