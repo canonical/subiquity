@@ -32,6 +32,7 @@ import more_itertools
 
 from curtin import storage_config
 from curtin.block import partition_kname
+from curtin.swap import can_use_swapfile
 from curtin.util import human2bytes
 
 from probert.storage import StorageInfo
@@ -1814,8 +1815,9 @@ class FilesystemModel(object):
 
     def should_add_swapfile(self):
         mount = self._mount_for_path('/')
-        if mount is not None and mount.device.fstype == 'btrfs':
-            return False
+        if mount is not None:
+            if not can_use_swapfile('/', mount.device.fstype):
+                return False
         for swap in self._all(type='format', fstype='swap'):
             if swap.mount():
                 return False
