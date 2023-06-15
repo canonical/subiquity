@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, TypedDict
+from typing import List, Optional, TypedDict
 import yaml
 
 import attr
@@ -76,6 +76,11 @@ class DRConfig:
         {"username": "heracles", "strategy": "success"},
         {"username": "sisyphus", "strategy": "failure"},
     ]
+
+    # If running ubuntu-drivers on the host, supply a file to
+    # umockdev-wrapper.py
+    ubuntu_drivers_run_on_host_umockdev: Optional[str] = \
+        "examples/umockdev/dell-certified+nvidia.yaml"
 
     @classmethod
     def load(cls, stream):
