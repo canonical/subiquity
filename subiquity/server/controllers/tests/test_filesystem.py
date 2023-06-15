@@ -460,6 +460,41 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertFalse(d1p2.preserve)
         self.assertIsNone(gaps.largest_gap(self.d1))
 
+    @parameterized.expand(boot_expectations)
+    async def test_guided_zfs(self, bootloader, ptable, p1mnt):
+        await self._guided_setup(bootloader, ptable)
+        target = GuidedStorageTargetReformat(
+            disk_id=self.d1.id, allowed=default_capabilities)
+        await self.controller.guided(GuidedChoiceV2(
+            target=target, capability=GuidedCapability.ZFS))
+        [d1p1, d1p2, d1p3] = self.d1.partitions()
+        self.assertEqual(p1mnt, d1p1.mount)
+        self.assertEqual(None, d1p2.mount)
+        self.assertEqual(None, d1p3.mount)
+        self.assertFalse(d1p1.preserve)
+        self.assertFalse(d1p2.preserve)
+        self.assertFalse(d1p3.preserve)
+        [rpool] = self.model._all(type='zpool', pool='rpool')
+        self.assertEqual('/', rpool.mount)
+        [bpool] = self.model._all(type='zpool', pool='bpool')
+        self.assertEqual('/boot', bpool.mount)
+
+    async def test_guided_zfs_BIOS_MSDOS(self):
+        await self._guided_setup(Bootloader.BIOS, 'msdos')
+        target = GuidedStorageTargetReformat(
+            disk_id=self.d1.id, allowed=default_capabilities)
+        await self.controller.guided(GuidedChoiceV2(
+            target=target, capability=GuidedCapability.ZFS))
+        [d1p1, d1p2] = self.d1.partitions()
+        self.assertEqual(None, d1p1.mount)
+        self.assertEqual(None, d1p2.mount)
+        self.assertFalse(d1p1.preserve)
+        self.assertFalse(d1p2.preserve)
+        [rpool] = self.model._all(type='zpool', pool='rpool')
+        self.assertEqual('/', rpool.mount)
+        [bpool] = self.model._all(type='zpool', pool='bpool')
+        self.assertEqual('/boot', bpool.mount)
+
     async def _guided_side_by_side(self, bl, ptable):
         await self._guided_setup(bl, ptable, storage_version=2)
         self.controller.add_boot_disk(self.d1)

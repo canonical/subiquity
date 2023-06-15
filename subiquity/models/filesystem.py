@@ -1854,3 +1854,22 @@ class FilesystemModel(object):
             if swap.mount():
                 return False
         return True
+
+    def add_zpool(self, device, pool, mountpoint):
+        fs_properties = dict(
+            acltype='posixacl',
+            relatime='on',
+            canmount='on',
+            compression='gzip',
+            devices='off',
+            xattr='sa',
+        )
+        zpool = ZPool(
+            m=self,
+            vdevs=[device],
+            pool=pool,
+            mountpoint=mountpoint,
+            pool_properties=dict(ashift=12),
+            fs_properties=fs_properties)
+        self._actions.append(zpool)
+        return zpool
