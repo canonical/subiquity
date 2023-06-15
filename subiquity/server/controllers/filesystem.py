@@ -243,6 +243,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # this variable. It will be picked up on next reset.
         self.queued_probe_data: Optional[Dict[str, Any]] = None
         self.reset_partition: Optional[ModelPartition] = None
+        self.reset_partition_only: bool = False
 
     def is_core_boot_classic(self):
         return self._info.is_core_boot_classic()
@@ -535,7 +536,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         raise Exception(
             "could not find variation for {}".format(capability))
 
-    async def guided(self, choice: GuidedChoiceV2):
+    async def guided(
+            self,
+            choice: GuidedChoiceV2,
+            reset_partition_only: bool = False
+            ) -> None:
         self.model.guided_configuration = choice
 
         self.set_info_for_capability(choice.capability)
@@ -565,7 +570,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self.reset_partition = self.create_partition(
                 device=reset_gap.device, gap=reset_gap,
                 spec={'fstype': 'fat32'}, flag='msftres')
-            # Should probably set some kind of flag on reset_partition
+            self.reset_partition_only = reset_partition_only
+            if reset_partition_only:
+                return
 
         if choice.capability.is_lvm():
             self.guided_lvm(gap, choice)
@@ -1223,7 +1230,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 GuidedChoiceV2(
                     target=target, capability=capability,
                     password=password, sizing_policy=sizing_policy,
-                    reset_partition=layout.get('reset-partition', False)))
+                    reset_partition=layout.get('reset-partition', False)),
+                reset_partition_only=layout.get('reset-partition-only', False))
 
     def validate_layout_mode(self, mode):
         if mode not in ('reformat_disk', 'use_gap'):

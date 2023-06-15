@@ -259,7 +259,14 @@ class InstallController(SubiquityController):
 
         await run_curtin_step(name="initial", stages=[], step_config={})
 
-        if fs_controller.is_core_boot_classic():
+        if fs_controller.reset_partition_only:
+            await run_curtin_step(
+                name="partitioning", stages=["partitioning"],
+                step_config=self.filesystem_config(
+                    device_map_path=logs_dir / "device-map.json",
+                    ),
+                )
+        elif fs_controller.is_core_boot_classic():
             await run_curtin_step(
                 name="partitioning", stages=["partitioning"],
                 step_config=self.filesystem_config(
