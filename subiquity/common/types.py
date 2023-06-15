@@ -325,6 +325,8 @@ class GuidedCapability(enum.Enum):
     DIRECT = enum.auto()
     LVM = enum.auto()
     LVM_LUKS = enum.auto()
+    ZFS = enum.auto()
+
     CORE_BOOT_ENCRYPTED = enum.auto()
     CORE_BOOT_UNENCRYPTED = enum.auto()
     # These two are not valid as GuidedChoiceV2.capability:
@@ -348,6 +350,9 @@ class GuidedCapability(enum.Enum):
                         GuidedCapability.DIRECT,
                         GuidedCapability.LVM,
                         GuidedCapability.LVM_LUKS]
+
+    def is_zfs(self) -> bool:
+        return self in [GuidedCapability.ZFS]
 
 
 class GuidedDisallowedCapabilityReason(enum.Enum):

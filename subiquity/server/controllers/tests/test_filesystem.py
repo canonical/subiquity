@@ -72,6 +72,7 @@ default_capabilities = [
     GuidedCapability.DIRECT,
     GuidedCapability.LVM,
     GuidedCapability.LVM_LUKS,
+    GuidedCapability.ZFS,
     ]
 
 
@@ -618,11 +619,8 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
                 disabled_cap.capability
                 for disabled_cap in resp.targets[0].disallowed
             },
-            {
-                GuidedCapability.DIRECT,
-                GuidedCapability.LVM,
-                GuidedCapability.LVM_LUKS,
-            })
+            set(default_capabilities)
+            )
         self.assertEqual(
             {
                 disabled_cap.reason

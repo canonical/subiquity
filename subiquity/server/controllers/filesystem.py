@@ -198,6 +198,7 @@ class VariationInfo:
                     GuidedCapability.DIRECT,
                     GuidedCapability.LVM,
                     GuidedCapability.LVM_LUKS,
+                    GuidedCapability.ZFS,
                     ]))
 
 
