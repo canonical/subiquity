@@ -1226,6 +1226,34 @@ class TestSwap(unittest.TestCase):
             cfg = m.render()
             self.assertEqual({'size': 0}, cfg['swap'])
 
+    @parameterized.expand([
+        ['ext4'],
+        ['btrfs'],
+    ])
+    def test_should_add_swapfile_nomount(self, fs):
+        m, d1 = make_model_and_disk(Bootloader.BIOS)
+        d1p1 = make_partition(m, d1)
+        m.add_filesystem(d1p1, fs)
+        self.assertTrue(m.should_add_swapfile())
+
+    @parameterized.expand([
+        ['ext4', True],
+        ['btrfs', False],
+    ])
+    def test_should_add_swapfile(self, fs, expected):
+        m, d1 = make_model_and_disk(Bootloader.BIOS)
+        d1p1 = make_partition(m, d1)
+        m.add_mount(m.add_filesystem(d1p1, fs), '/')
+        self.assertEqual(expected, m.should_add_swapfile())
+
+    def test_should_add_swapfile_has_swappart(self):
+        m, d1 = make_model_and_disk(Bootloader.BIOS)
+        d1p1 = make_partition(m, d1)
+        d1p2 = make_partition(m, d1)
+        m.add_mount(m.add_filesystem(d1p1, 'ext4'), '/')
+        m.add_mount(m.add_filesystem(d1p2, 'swap'), '')
+        self.assertFalse(m.should_add_swapfile())
+
 
 class TestPartition(unittest.TestCase):
 
