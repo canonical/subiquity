@@ -574,6 +574,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 spec={'fstype': 'fat32'}, flag='msftres')
             self.reset_partition_only = reset_partition_only
             if reset_partition_only:
+                for mount in self.model._all(type='mount'):
+                    self.delete_mount(mount)
                 return
 
         if choice.capability.is_lvm():
@@ -1325,6 +1327,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return r
 
     async def _pre_shutdown(self):
-        await self.app.command_runner.run(['umount', '--recursive', '/target'])
+        if not self.reset_partition_only:
+            await self.app.command_runner.run(
+                ['umount', '--recursive', '/target'])
         for pool in self.model._all(type='zpool'):
             await pool.pre_shutdown(self.app.command_runner)
