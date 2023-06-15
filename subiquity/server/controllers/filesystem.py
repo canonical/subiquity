@@ -414,6 +414,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                         },
                     }
         await self.convert_autoinstall_config(context=context)
+        if self.reset_partition_only:
+            return
         if not self.model.is_root_mounted():
             raise Exception("autoinstall config did not mount root")
         if self.model.needs_bootloader_partition():
