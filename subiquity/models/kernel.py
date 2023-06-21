@@ -13,14 +13,25 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
+
 
 class KernelModel:
 
-    metapkg_name = None
+    # The name of the kernel metapackage that we intend to install.
+    metapkg_name: Optional[str] = None
+    # During the installation, if we detect that a different kernel version is
+    # needed (OEM being a common use-case), we can override the metapackage
+    # name.
+    metapkg_name_override: Optional[str] = None
 
     def render(self):
+        if self.metapkg_name_override is not None:
+            metapkg = self.metapkg_name_override
+        else:
+            metapkg = self.metapkg_name
         return {
             'kernel': {
-                'package': self.metapkg_name,
+                'package': metapkg,
                 },
             }
