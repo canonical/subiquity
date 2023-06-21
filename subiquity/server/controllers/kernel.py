@@ -16,9 +16,8 @@
 import logging
 import os
 
-from subiquitycore.lsb_release import lsb_release
-
 from subiquity.server.controller import NonInteractiveController
+from subiquity.server.kernel import flavor_to_pkgname
 
 log = logging.getLogger("subiquity.server.controllers.kernel")
 
@@ -75,18 +74,10 @@ class KernelController(NonInteractiveController):
         package = data.get('package')
         flavor = data.get('flavor')
         if package is None:
-            if flavor is None or flavor == 'generic':
-                package = 'linux-generic'
-            else:
-                if flavor == 'hwe':
-                    flavor = 'generic-hwe'
-                # Should check this package exists really but
-                # that's a bit tricky until we get cleverer about
-                # the apt config in general.
-                dry_run: bool = self.app.opts.dry_run
-                package = 'linux-{flavor}-{release}'.format(
-                    flavor=flavor,
-                    release=lsb_release(dry_run=dry_run)['release'])
+            dry_run: bool = self.app.opts.dry_run
+            if flavor is None:
+                flavor = 'generic'
+            package = flavor_to_pkgname(flavor, dry_run=dry_run)
         log.debug(f'Using kernel {package} due to autoinstall')
         self.model.metapkg_name = package
 
