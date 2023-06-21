@@ -15,14 +15,17 @@
 
 import asyncio
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
 from subiquity.common.types import OEMResponse
+from subiquity.models.oem import OEMMetaPkg
 from subiquity.server.apt import OverlayCleanupError
 from subiquity.server.controller import SubiquityController
+from subiquity.server.curtin import run_curtin_command
+from subiquity.server.kernel import flavor_to_pkgname
 from subiquity.server.types import InstallerChannels
 from subiquity.server.ubuntu_drivers import (
     CommandNotFoundError,
@@ -59,6 +62,34 @@ class OEMController(SubiquityController):
         self.load_metapkgs_task = asyncio.create_task(
                 list_and_mark_configured())
 
+    async def wants_oem_kernel(self, pkgname: str,
+                               *, context, overlay) -> bool:
+        """ For a given package, tell whether it wants the OEM or the default
+        kernel flavor. We look for the Ubuntu-Oem-Kernel-Flavour attribute in
+        the package meta-data. If the attribute is present and has the value
+        "default", then return False. Otherwise, return True. """
+        result = await run_curtin_command(
+            self.app, context,
+            "in-target", "-t", overlay.mountpoint, "--",
+            "apt-cache", "show", pkgname,
+            capture=True, private_mounts=True)
+        for line in result.stdout.decode("utf-8").splitlines():
+            if not line.startswith("Ubuntu-Oem-Kernel-Flavour:"):
+                continue
+
+            flavor = line.split("=", maxsplit=1)[1].strip()
+            if flavor == "default":
+                return False
+            elif flavor == "oem":
+                return True
+            else:
+                log.warning("%s wants unexpected kernel flavor: %s",
+                            pkgname, flavor)
+                return True
+
+        log.warning("%s has no Ubuntu-Oem-Kernel-Flavour", pkgname)
+        return True
+
     @with_context()
     async def load_metapackages_list(self, context) -> None:
         with context.child("wait_apt"):
@@ -72,14 +103,34 @@ class OEMController(SubiquityController):
                 except CommandNotFoundError:
                     self.model.metapkgs = []
                 else:
-                    self.model.metapkgs = await self.ubuntu_drivers.list_oem(
+                    metapkgs: List[str] = await self.ubuntu_drivers.list_oem(
                         root_dir=d.mountpoint,
                         context=context)
+                    self.model.metapkgs = [
+                        OEMMetaPkg(
+                            name=name,
+                            wants_oem_kernel=await self.wants_oem_kernel(
+                                name, context=context, overlay=d),
+                        ) for name in metapkgs]
+
         except OverlayCleanupError:
             log.exception("Failed to cleanup overlay. Continuing anyway.")
+
+        for pkg in self.model.metapkgs:
+            if pkg.wants_oem_kernel:
+                kernel_model = self.app.base_model.kernel
+                kernel_model.metapkg_name_override = flavor_to_pkgname(
+                        pkg.name, dry_run=self.app.opts.dry_run)
+
+                log.debug("overriding kernel flavor because of OEM")
+
         log.debug("OEM meta-packages to install: %s", self.model.metapkgs)
 
     async def GET(self, wait: bool = False) -> OEMResponse:
         if wait:
             await asyncio.shield(self.load_metapkgs_task)
-        return OEMResponse(metapackages=self.model.metapkgs)
+        if self.model.metapkgs is None:
+            metapkgs = None
+        else:
+            metapkgs = [pkg.name for pkg in self.model.metapkgs]
+        return OEMResponse(metapackages=metapkgs)

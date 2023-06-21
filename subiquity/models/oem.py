@@ -16,11 +16,19 @@
 import logging
 from typing import List, Optional
 
+import attr
+
 log = logging.getLogger('subiquity.models.oem')
+
+
+@attr.s(auto_attribs=True)
+class OEMMetaPkg:
+    name: str
+    wants_oem_kernel: bool
 
 
 class OEMModel:
     def __init__(self):
         # List of OEM metapackages relevant to the current hardware.
         # When the list is None, it has not yet been retrieved.
-        self.metapkgs: Optional[List[str]] = None
+        self.metapkgs: Optional[List[OEMMetaPkg]] = None
