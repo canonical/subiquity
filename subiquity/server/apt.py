@@ -99,8 +99,10 @@ class AptConfigurer:
     #
     # 1. Removing /cdrom from the installed system.
     #
-    # 2. Copying /etc/apt from the 'configured' overlay to the installed
-    #    system.
+    # 2. Copying a set of diverted /etc/apt files from the 'configured' overlay
+    #    to the installed system. Some packages such as OEM meta-packages and
+    #    keyrings will install files in /etc/apt so we cannot simply discard
+    #    everything.
     #
     # 3. If the network is working, run apt-get update in the installed
     #    system, or if it is not, just copy /var/lib/apt/lists from the
@@ -288,7 +290,16 @@ class AptConfigurer:
                 'cp', '-aT', self.configured_tree.p(dir), target_mnt.p(dir),
                 ])
 
-        await _restore_dir('etc/apt')
+        def _restore_file(path: str) -> None:
+            shutil.copyfile(self.configured_tree.p(path), target_mnt.p(path))
+
+        # The file only exists if we are online
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(target_mnt.p('etc/apt/sources.list.d/original.list'))
+        _restore_file('etc/apt/sources.list')
+
+        with contextlib.suppress(FileNotFoundError):
+            _restore_file('etc/apt/apt.conf.d/90curtin-aptproxy')
 
         if self.app.base_model.network.has_network:
             await run_curtin_command(
