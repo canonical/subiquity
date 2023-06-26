@@ -1707,11 +1707,13 @@ class TestOEM(TestAPI):
                 resp = await inst.get('/oem', wait=True)
                 self.assertEqual(expected_pkgs, resp['metapackages'])
 
-    async def test_listing_certified(self):
-        expected_pkgs = ['oem-somerville-tentacool-meta']
+    async def _test_listing_certified(self, source_id: str,
+                                      expected: List[str]):
         with patch.dict(os.environ, {'SUBIQUITY_DEBUG': 'has-drivers'}):
-            async with start_server('examples/simple.json') as inst:
-                await inst.post('/source', source_id='ubuntu-server')
+            args = ['--source-catalog', 'examples/mixed-sources.yaml']
+            config = 'examples/simple.json'
+            async with start_server(config, extra_args=args) as inst:
+                await inst.post('/source', source_id=source_id)
                 names = ['locale', 'keyboard', 'source', 'network', 'proxy',
                          'mirror', 'storage']
                 await inst.post('/meta/mark_configured', endpoint_names=names)
@@ -1720,7 +1722,19 @@ class TestOEM(TestAPI):
                 await inst.get('/meta/status', cur='NEEDS_CONFIRMATION')
 
                 resp = await inst.get('/oem', wait=True)
-                self.assertEqual(expected_pkgs, resp['metapackages'])
+                self.assertEqual(expected, resp['metapackages'])
+
+    async def test_listing_certified_ubuntu_server(self):
+        # Listing of OEM meta-packages is intentionally disabled on
+        # ubuntu-server.
+        await self._test_listing_certified(
+                source_id='ubuntu-server',
+                expected=[])
+
+    async def test_listing_certified_ubuntu_desktop(self):
+        await self._test_listing_certified(
+                source_id='ubuntu-desktop',
+                expected=['oem-somerville-tentacool-meta'])
 
 
 class TestSource(TestAPI):

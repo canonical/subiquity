@@ -94,6 +94,16 @@ class OEMController(SubiquityController):
     async def load_metapackages_list(self, context) -> None:
         with context.child("wait_apt"):
             await self._wait_apt.wait()
+
+        # Skip looking for OEM meta-packages if we are running ubuntu-server.
+        # OEM meta-packages expect the default kernel flavor to be HWE (which
+        # is only true for ubuntu-desktop).
+        if self.app.base_model.source.current.variant == "server":
+            log.debug("not listing OEM meta-packages since we are installing"
+                      " ubuntu-server")
+            self.model.metapkgs = []
+            return
+
         apt = self.app.controllers.Mirror.final_apt_configurer
         try:
             async with apt.overlay() as d:
