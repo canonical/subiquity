@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import attr
 
@@ -32,3 +32,34 @@ class OEMModel:
         # List of OEM metapackages relevant to the current hardware.
         # When the list is None, it has not yet been retrieved.
         self.metapkgs: Optional[List[OEMMetaPkg]] = None
+
+        # By default, skip looking for OEM meta-packages if we are running
+        # ubuntu-server. OEM meta-packages expect the default kernel flavor to
+        # be HWE (which is only true for ubuntu-desktop).
+        self.install_on = {
+            "server": False,
+            "desktop": True,
+        }
+
+    def make_autoinstall(self) -> Dict[str, Union[str, bool]]:
+        server = self.install_on["server"]
+        desktop = self.install_on["desktop"]
+
+        if server and desktop:
+            return {"install": True}
+        if not server and not desktop:
+            return {"install": False}
+
+        # Having server = True and desktop = False is not supported.
+        assert desktop and not server
+
+        return {"install": "auto"}
+
+    def load_autoinstall_data(self, data: Dict[str, Any]) -> None:
+        if data["install"] == "auto":
+            self.install_on["server"] = False
+            self.install_on["desktop"] = True
+            return
+
+        self.install_on["server"] = data["install"]
+        self.install_on["desktop"] = data["install"]

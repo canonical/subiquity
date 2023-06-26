@@ -575,6 +575,21 @@ Whether to install the ubuntu-restricted-addons package.
 
 Whether to install the available third-party drivers.
 
+<a name="oem"></a>
+
+### oem
+
+**type:** mapping, see below
+**default:** see below
+**can be interactive:** no
+
+#### install
+
+**type:** boolean or string (special value `auto`)
+**default:**: `auto`
+
+Whether to install the available OEM meta-packages. The special value `auto` - which is the default - enables the installation on ubuntu-desktop but not on ubuntu-server.
+
 <a name="snaps"></a>
 
 ### snaps
