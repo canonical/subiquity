@@ -589,6 +589,7 @@ Whether to install the available third-party drivers.
 **default:**: `auto`
 
 Whether to install the available OEM meta-packages. The special value `auto` - which is the default - enables the installation on ubuntu-desktop but not on ubuntu-server.
+This option has no effect on core boot classic.
 
 <a name="snaps"></a>
 

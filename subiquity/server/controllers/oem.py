@@ -124,10 +124,15 @@ class OEMController(SubiquityController):
         with context.child("wait_apt"):
             await self._wait_apt.wait()
 
-        # Skip looking for OEM meta-packages if we are running ubuntu-server.
-        # OEM meta-packages expect the default kernel flavor to be HWE (which
-        # is only true for ubuntu-desktop).
+        # Only look for OEM meta-packages on supported variants and if we are
+        # not running core boot.
         variant: str = self.app.base_model.source.current.variant
+        fs_controller = self.app.controllers.Filesystem
+        if fs_controller.is_core_boot_classic():
+            log.debug("listing of OEM meta-packages disabled on core boot"
+                      " classic")
+            self.model.metapkgs = []
+            return
         if not self.model.install_on[variant]:
             log.debug("listing of OEM meta-packages disabled on %s", variant)
             self.model.metapkgs = []
