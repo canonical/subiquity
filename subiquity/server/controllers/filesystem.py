@@ -565,8 +565,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise Exception('failed to locate gap after adding boot')
 
         if choice.reset_partition:
-            cp = await arun_command(['du', '-sb', '/cdrom'])
-            reset_size = int(cp.stdout.strip().split()[0])
+            if self.app.opts.dry_run:
+                reset_size = 500*MiB
+            else:
+                cp = await arun_command(['du', '-sb', '/cdrom'])
+                reset_size = int(cp.stdout.strip().split()[0])
             reset_size = align_up(int(reset_size * 1.10), 256 * MiB)
             reset_gap, gap = gap.split(reset_size)
             self.reset_partition = self.create_partition(
