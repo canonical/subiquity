@@ -1,6 +1,7 @@
 build-essential
 cloud-init
 curl
+dctrl-tools
 fuseiso
 gettext
 gir1.2-umockdev-1.0

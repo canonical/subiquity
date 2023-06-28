@@ -34,7 +34,7 @@ from subiquitycore.async_helpers import (
     )
 from subiquitycore.context import with_context
 from subiquitycore.file_util import write_file, generate_config_yaml
-from subiquitycore.utils import log_process_streams
+from subiquitycore.utils import arun_command, log_process_streams
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.types import (
@@ -50,6 +50,9 @@ from subiquity.server.controller import (
 from subiquity.server.curtin import (
     run_curtin_command,
     start_curtin_command,
+    )
+from subiquity.server.kernel import (
+    list_installed_kernels,
     )
 from subiquity.server.mounter import (
     Mounter,
@@ -312,6 +315,17 @@ class InstallController(SubiquityController):
                 step_config=self.generic_config(),
                 source=source,
                 )
+            if self.app.opts.dry_run:
+                # In dry-run, extract does not do anything. Let's create what's
+                # needed manually. Ideally, we would not hardcode
+                # var/lib/dpkg/status because it is an implementation detail.
+                status = "var/lib/dpkg/status"
+                (root / status).parent.mkdir(parents=True, exist_ok=True)
+                await arun_command([
+                    "cp", "-aT", "--",
+                    str(Path("/") / status),
+                    str(root / status),
+                ])
             await self.setup_target(context=context)
 
             # For OEM, we basically mimic what ubuntu-drivers does:
@@ -342,6 +356,12 @@ class InstallController(SubiquityController):
                 # apt-get install.
                 for pkg in self.model.oem.metapkgs:
                     await self.install_package(package=pkg.name)
+
+            # If we already have a kernel installed, don't bother requesting
+            # curthooks to install it again or we might end up with two
+            # kernels.
+            if await list_installed_kernels(Path(self.tpath())):
+                self.model.kernel.curthooks_no_install = True
 
             await run_curtin_step(
                 name="curthooks", stages=["curthooks"],
