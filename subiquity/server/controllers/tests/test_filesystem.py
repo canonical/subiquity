@@ -54,6 +54,7 @@ from subiquity.models.tests.test_filesystem import (
     )
 from subiquity.server import snapdapi
 from subiquity.server.controllers.filesystem import (
+    DRY_RUN_RESET_SIZE,
     FilesystemController,
     VariationInfo,
     )
@@ -339,6 +340,36 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertFalse(d1p1.preserve)
         self.assertFalse(d1p2.preserve)
         self.assertIsNone(gaps.largest_gap(self.d1))
+
+    async def test_guided_reset_partition(self):
+        await self._guided_setup(Bootloader.UEFI, 'gpt')
+        target = GuidedStorageTargetReformat(
+            disk_id=self.d1.id, allowed=default_capabilities)
+        await self.controller.guided(
+            GuidedChoiceV2(
+                target=target,
+                capability=GuidedCapability.DIRECT,
+                reset_partition=True))
+        [d1p1, d1p2, d1p3] = self.d1.partitions()
+        self.assertEqual('/boot/efi', d1p1.mount)
+        self.assertEqual(None, d1p2.mount)
+        self.assertEqual(DRY_RUN_RESET_SIZE, d1p2.size)
+        self.assertEqual('/', d1p3.mount)
+
+    async def test_guided_reset_partition_only(self):
+        await self._guided_setup(Bootloader.UEFI, 'gpt')
+        target = GuidedStorageTargetReformat(
+            disk_id=self.d1.id, allowed=default_capabilities)
+        await self.controller.guided(
+            GuidedChoiceV2(
+                target=target,
+                capability=GuidedCapability.DIRECT,
+                reset_partition=True),
+            reset_partition_only=True)
+        [d1p1, d1p2] = self.d1.partitions()
+        self.assertEqual(None, d1p1.mount)
+        self.assertEqual(None, d1p2.mount)
+        self.assertEqual(DRY_RUN_RESET_SIZE, d1p2.size)
 
     async def test_guided_direct_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, 'msdos')
