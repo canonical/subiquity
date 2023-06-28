@@ -576,6 +576,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             if reset_partition_only:
                 for mount in self.model._all(type='mount'):
                     self.delete_mount(mount)
+                self.model.target = self.app.base_model.target = None
                 return
 
         if choice.capability.is_lvm():

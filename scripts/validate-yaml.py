@@ -75,10 +75,14 @@ class StorageChecker:
         assert '/' in self.path_to_mount
 
 
-
-
 def main():
     storage_checker = StorageChecker()
+
+    final_checks = True
+
+    if sys.argv[1:2] == ['--no-root-mount']:
+        final_checks = False
+        sys.argv.pop(1)
 
     actions = []
     for path in sys.argv[1:]:
@@ -92,7 +96,8 @@ def main():
             print('checking {} failed'.format(action))
             raise
 
-    storage_checker.final_checks()
+    if final_checks:
+        storage_checker.final_checks()
 
 
 main()
