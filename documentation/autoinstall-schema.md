@@ -481,6 +481,18 @@ The [JSON schema](https://json-schema.org/) for autoinstall data is as follows:
                 "additionalProperties": false
             }
         },
+        "active-directory": {
+            "type": "object",
+            "properties": {
+                "admin-name": {
+                    "type": "string"
+                },
+                "domain-name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
         "codecs": {
             "type": "object",
             "properties": {
