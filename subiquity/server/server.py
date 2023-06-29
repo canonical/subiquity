@@ -629,7 +629,10 @@ class SubiquityServer(Application):
 
         self.installer_user_name = username
 
-        if self._user_has_password(username):
+        if username is None:
+            # extract_default can return None, if there is no default user
+            self.installer_user_passwd_kind = PasswordKind.NONE
+        elif self._user_has_password(username):
             # Was the password set to a random password by a version of
             # cloud-init that records the username in the log?  (This is the
             # case we hit on upgrading the subiquity snap)
