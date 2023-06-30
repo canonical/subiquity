@@ -42,7 +42,7 @@ class TestUbuntuDriversInterface(unittest.IsolatedAsyncioTestCase):
             "--recommended",
             ])
         self.assertEqual(ubuntu_drivers.install_drivers_cmd, [
-            "ubuntu-drivers", "install"])
+            "ubuntu-drivers", "install", "--no-oem"])
 
         ubuntu_drivers = UbuntuDriversInterface(self.app, gpgpu=True)
         self.assertEqual(ubuntu_drivers.list_drivers_cmd, [
@@ -50,7 +50,7 @@ class TestUbuntuDriversInterface(unittest.IsolatedAsyncioTestCase):
             "--recommended", "--gpgpu",
             ])
         self.assertEqual(ubuntu_drivers.install_drivers_cmd, [
-            "ubuntu-drivers", "install", "--gpgpu"])
+            "ubuntu-drivers", "install", "--no-oem", "--gpgpu"])
 
     @patch.multiple(UbuntuDriversInterface, __abstractmethods__=set())
     @patch("subiquity.server.ubuntu_drivers.run_curtin_command")
@@ -63,7 +63,7 @@ class TestUbuntuDriversInterface(unittest.IsolatedAsyncioTestCase):
                 self.app, "installing third-party drivers",
                 "in-target", "-t", "/target",
                 "--",
-                "ubuntu-drivers", "install",
+                "ubuntu-drivers", "install", "--no-oem",
                 private_mounts=True,
                 )
 
