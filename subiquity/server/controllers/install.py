@@ -324,11 +324,11 @@ class InstallController(SubiquityController):
             # NOTE In ubuntu-drivers, this is done in a single call to apt-get
             # install.
             for pkg in self.model.oem.metapkgs:
-                await self.install_package(package=pkg)
+                await self.install_package(package=pkg.name)
 
             if self.model.network.has_network:
                 for pkg in self.model.oem.metapkgs:
-                    source_list = f"/etc/apt/sources.list.d/{pkg}.list"
+                    source_list = f"/etc/apt/sources.list.d/{pkg.name}.list"
                     await run_curtin_command(
                         self.app, context,
                         "in-target", "-t", self.tpath(), "--",
@@ -341,7 +341,7 @@ class InstallController(SubiquityController):
                 # NOTE In ubuntu-drivers, this is done in a single call to
                 # apt-get install.
                 for pkg in self.model.oem.metapkgs:
-                    await self.install_package(package=pkg)
+                    await self.install_package(package=pkg.name)
 
             await run_curtin_step(
                 name="curthooks", stages=["curthooks"],

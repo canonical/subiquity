@@ -13,22 +13,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-from typing import List, Optional
-
-import attr
-
-log = logging.getLogger('subiquity.models.oem')
+from subiquitycore.lsb_release import lsb_release
 
 
-@attr.s(auto_attribs=True)
-class OEMMetaPkg:
-    name: str
-    wants_oem_kernel: bool
+def flavor_to_pkgname(flavor: str, *, dry_run: bool) -> str:
+    if flavor == 'generic':
+        return 'linux-generic'
+    if flavor == 'hwe':
+        flavor = 'generic-hwe'
 
-
-class OEMModel:
-    def __init__(self):
-        # List of OEM metapackages relevant to the current hardware.
-        # When the list is None, it has not yet been retrieved.
-        self.metapkgs: Optional[List[OEMMetaPkg]] = None
+    release = lsb_release(dry_run=dry_run)['release']
+    # Should check this package exists really but
+    # that's a bit tricky until we get cleverer about
+    # the apt config in general.
+    return f'linux-{flavor}-{release}'

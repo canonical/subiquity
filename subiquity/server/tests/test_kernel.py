@@ -13,22 +13,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-from typing import List, Optional
+import unittest
 
-import attr
-
-log = logging.getLogger('subiquity.models.oem')
+from subiquity.server.kernel import flavor_to_pkgname
 
 
-@attr.s(auto_attribs=True)
-class OEMMetaPkg:
-    name: str
-    wants_oem_kernel: bool
+class TestFlavorToPkgname(unittest.TestCase):
+    def test_flavor_generic(self):
+        self.assertEqual('linux-generic',
+                         flavor_to_pkgname('generic', dry_run=True))
 
+    def test_flavor_oem(self):
+        self.assertEqual('linux-oem-20.04',
+                         flavor_to_pkgname('oem', dry_run=True))
 
-class OEMModel:
-    def __init__(self):
-        # List of OEM metapackages relevant to the current hardware.
-        # When the list is None, it has not yet been retrieved.
-        self.metapkgs: Optional[List[OEMMetaPkg]] = None
+    def test_flavor_hwe(self):
+        self.assertEqual('linux-generic-hwe-20.04',
+                         flavor_to_pkgname('hwe', dry_run=True))
+
+        self.assertEqual('linux-generic-hwe-20.04',
+                         flavor_to_pkgname('generic-hwe', dry_run=True))
