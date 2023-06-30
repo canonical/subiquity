@@ -48,15 +48,20 @@ class OEMController(SubiquityController):
         self.ubuntu_drivers = get_ubuntu_drivers_interface(self.app)
 
         self.load_metapkgs_task: Optional[asyncio.Task] = None
+        self.kernel_configured_event = asyncio.Event()
 
     def start(self) -> None:
         self._wait_apt = asyncio.Event()
         self.app.hub.subscribe(
             InstallerChannels.APT_CONFIGURED,
             self._wait_apt.set)
+        self.app.hub.subscribe(
+            (InstallerChannels.CONFIGURED, "kernel"),
+            self.kernel_configured_event.set)
 
         async def list_and_mark_configured() -> None:
             await self.load_metapackages_list()
+            await self.ensure_no_kernel_conflict()
             await self.configured()
 
         self.load_metapkgs_task = asyncio.create_task(
@@ -135,6 +140,32 @@ class OEMController(SubiquityController):
                 log.debug("overriding kernel flavor because of OEM")
 
         log.debug("OEM meta-packages to install: %s", self.model.metapkgs)
+
+    async def ensure_no_kernel_conflict(self) -> None:
+        kernel_model = self.app.base_model.kernel
+
+        await self.kernel_configured_event.wait()
+
+        if self.model.metapkgs and kernel_model.explicitly_requested:
+            # TODO
+            # This should be a dialog or something rather than the content of
+            # an exception, really. But this is a simple way to print out
+            # something in autoinstall.
+            msg = _("""\
+A specific kernel flavor was requested but it cannot be satistified when \
+installing on certified hardware.
+You should either disable the installation of OEM meta-packages using the \
+following autoinstall snippet or let the installer decide which kernel to
+install.
+  oem:
+    install: false
+""")
+            raise RuntimeError(msg)
+
+    @with_context()
+    async def apply_autoinstall_config(self, context) -> None:
+        await self.load_metapkgs_task
+        await self.ensure_no_kernel_conflict()
 
     async def GET(self, wait: bool = False) -> OEMResponse:
         if wait:

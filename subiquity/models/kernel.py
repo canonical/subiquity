@@ -25,6 +25,10 @@ class KernelModel:
     # name.
     metapkg_name_override: Optional[str] = None
 
+    # If we explicitly request a kernel through autoinstall, this attribute
+    # should be True.
+    explicitly_requested: bool = False
+
     def render(self):
         if self.metapkg_name_override is not None:
             metapkg = self.metapkg_name_override

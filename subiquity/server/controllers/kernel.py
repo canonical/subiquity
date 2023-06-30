@@ -80,6 +80,7 @@ class KernelController(NonInteractiveController):
             package = flavor_to_pkgname(flavor, dry_run=dry_run)
         log.debug(f'Using kernel {package} due to autoinstall')
         self.model.metapkg_name = package
+        self.model.explicitly_requested = True
 
     def make_autoinstall(self):
         return {'package': self.model.metapkg_name}
