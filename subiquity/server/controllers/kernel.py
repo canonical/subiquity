@@ -62,6 +62,7 @@ class KernelController(NonInteractiveController):
                 with open(mp_file) as fp:
                     kernel_package = fp.read().strip()
                 self.model.metapkg_name = kernel_package
+                self.model.explicitly_requested = True
                 log.debug(f'Using kernel {kernel_package} due to {mp_file}')
                 break
         else:
