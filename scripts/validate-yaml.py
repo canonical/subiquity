@@ -78,10 +78,10 @@ class StorageChecker:
 def main():
     storage_checker = StorageChecker()
 
-    final_checks = True
+    root_mount = True
 
     if sys.argv[1:2] == ['--no-root-mount']:
-        final_checks = False
+        root_mount = False
         sys.argv.pop(1)
 
     actions = []
@@ -96,7 +96,7 @@ def main():
             print('checking {} failed'.format(action))
             raise
 
-    if final_checks:
+    if root_mount:
         storage_checker.final_checks()
 
 
