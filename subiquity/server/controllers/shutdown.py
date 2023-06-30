@@ -96,6 +96,8 @@ class ShutdownController(SubiquityController):
     async def copy_logs_to_target(self, context):
         if self.opts.dry_run and 'copy-logs-fail' in self.app.debug_flags:
             raise PermissionError()
+        if self.app.controllers.Filesystem.reset_partition_only:
+            return
         target_logs = os.path.join(
             self.app.base_model.target, 'var/log/installer')
         if self.opts.dry_run:

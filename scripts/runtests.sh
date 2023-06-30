@@ -31,16 +31,25 @@ validate () {
                 cfgs+=("$cfg")
             fi
         done
-        python3 scripts/validate-yaml.py "${cfgs[@]}"
-        if [ ! -e $tmpdir/subiquity-client-debug.log ] || [ ! -e $tmpdir/subiquity-server-debug.log ]; then
-            echo "log file not created"
-            exit 1
-        fi
-        python3 scripts/validate-autoinstall-user-data.py < $tmpdir/var/log/installer/autoinstall-user-data
         if grep passw0rd $tmpdir/subiquity-client-debug.log $tmpdir/subiquity-server-debug.log | grep -v "Loaded answers" | grep -v "answers_action"; then
             echo "password leaked into log file"
             exit 1
         fi
+        opt=
+        [ $# -gt 1 ] && opt="$2"
+        if [ $opt = reset-only ]; then
+            python3 scripts/validate-yaml.py --no-root-mount "${cfgs[@]}"
+        else
+            python3 scripts/validate-yaml.py "${cfgs[@]}"
+        fi
+        if [ ! -e $tmpdir/subiquity-client-debug.log ] || [ ! -e $tmpdir/subiquity-server-debug.log ]; then
+            echo "log file not created"
+            exit 1
+        fi
+        if [ $opt = reset-only ]; then
+            return
+        fi
+        python3 scripts/validate-autoinstall-user-data.py < $tmpdir/var/log/installer/autoinstall-user-data
         netplan generate --root $tmpdir
     elif [ "${mode}" = "system_setup" ]; then
         setup_mode="$2"
@@ -253,6 +262,17 @@ validate
 python3 scripts/check-yaml-fields.py "$tmpdir"/var/log/installer/autoinstall-user-data \
         'autoinstall.source.id="ubuntu-server-minimal"'
 grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
+
+clean
+LANG=C.UTF-8 timeout --foreground 60 \
+    python3 -m subiquity.cmd.tui \
+    --dry-run \
+    --output-base "$tmpdir" \
+    --machine-config examples/simple.json \
+    --autoinstall examples/autoinstall-reset-only.yaml \
+    --kernel-cmdline autoinstall \
+    --source-catalog examples/install-sources.yaml
+validate install reset-only
 
 # The OOBE doesn't exist in WSL < 20.04
 if [ "${RELEASE%.*}" -ge 20 ]; then

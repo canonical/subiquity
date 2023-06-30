@@ -259,7 +259,14 @@ class InstallController(SubiquityController):
 
         await run_curtin_step(name="initial", stages=[], step_config={})
 
-        if fs_controller.is_core_boot_classic():
+        if fs_controller.reset_partition_only:
+            await run_curtin_step(
+                name="partitioning", stages=["partitioning"],
+                step_config=self.filesystem_config(
+                    device_map_path=logs_dir / "device-map.json",
+                    ),
+                )
+        elif fs_controller.is_core_boot_classic():
             await run_curtin_step(
                 name="partitioning", stages=["partitioning"],
                 step_config=self.filesystem_config(
@@ -349,24 +356,29 @@ class InstallController(SubiquityController):
 
             self.app.update_state(ApplicationState.RUNNING)
 
-            for_install_path = await self.configure_apt(context=context)
+            if not self.app.controllers.Filesystem.reset_partition_only:
+                for_install_path = await self.configure_apt(context=context)
 
-            await self.app.hub.abroadcast(InstallerChannels.APT_CONFIGURED)
+                await self.app.hub.abroadcast(InstallerChannels.APT_CONFIGURED)
 
-            if os.path.exists(self.model.target):
-                await self.unmount_target(
-                    context=context, target=self.model.target)
+                if os.path.exists(self.model.target):
+                    await self.unmount_target(
+                        context=context, target=self.model.target)
+            else:
+                for_install_path = ''
 
             await self.curtin_install(
                 context=context, source='cp://' + for_install_path)
 
-            self.app.update_state(ApplicationState.WAITING)
+            if not self.app.controllers.Filesystem.reset_partition_only:
 
-            await self.model.wait_postinstall()
+                self.app.update_state(ApplicationState.WAITING)
 
-            self.app.update_state(ApplicationState.RUNNING)
+                await self.model.wait_postinstall()
 
-            await self.postinstall(context=context)
+                self.app.update_state(ApplicationState.RUNNING)
+
+                await self.postinstall(context=context)
 
             self.app.update_state(ApplicationState.DONE)
         except Exception:
