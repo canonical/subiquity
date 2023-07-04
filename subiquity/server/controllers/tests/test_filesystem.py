@@ -1058,3 +1058,22 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         request = call.args[2]
         self.assertEqual(request.action, snapdapi.SystemAction.INSTALL)
         self.assertEqual(request.step, snapdapi.SystemActionStep.FINISH)
+
+    async def test_from_sample_data_defective(self):
+        self.fsc.model = model = make_model(Bootloader.UEFI)
+        make_disk(model)
+        self.app.base_model.source.current.variations = {
+            'default': CatalogEntryVariation(
+                path='', size=1, snapd_system_label='defective'),
+            }
+        self.app.dr_cfg.systems_dir_exists = True
+        await self.fsc._examine_systems_task.start()
+        self.fsc.start()
+        response = await self.fsc.v2_guided_GET(wait=True)
+        self.assertEqual(len(response.targets), 1)
+        self.assertEqual(len(response.targets[0].allowed), 0)
+        self.assertEqual(len(response.targets[0].disallowed), 1)
+        disallowed = response.targets[0].disallowed[0]
+        self.assertEqual(
+            disallowed.reason,
+            GuidedDisallowedCapabilityReason.CORE_BOOT_ENCRYPTION_UNAVAILABLE)

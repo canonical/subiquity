@@ -179,7 +179,7 @@ class VariationInfo:
             install_min = self.min_size
         r = CapabilityInfo()
         r.disallowed = list(self.capability_info.disallowed)
-        if size < install_min:
+        if self.capability_info.allowed and size < install_min:
             for capability in self.capability_info.allowed:
                 r.disallowed.append(GuidedDisallowedCapability(
                     capability=capability,
