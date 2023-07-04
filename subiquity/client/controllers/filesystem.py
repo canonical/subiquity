@@ -27,6 +27,7 @@ from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.common.types import (
     ProbeStatus,
     GuidedCapability,
+    GuidedChoiceV2,
     GuidedStorageResponseV2,
     GuidedStorageTargetReformat,
     StorageResponseV2,
@@ -286,7 +287,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         else:
             raise Exception("could not process action {}".format(action))
 
-    async def _guided_choice(self, choice):
+    async def _guided_choice(self, choice: Optional[GuidedChoiceV2]):
         if self.core_boot_capability is not None:
             self.app.next_screen(self.endpoint.guided.POST(choice))
             return

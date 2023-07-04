@@ -62,7 +62,6 @@ from subiquity.common.types import (
     Bootloader,
     Disk,
     GuidedCapability,
-    GuidedChoice,
     GuidedChoiceV2,
     GuidedDisallowedCapability,
     GuidedDisallowedCapabilityReason,
@@ -823,9 +822,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 step=snapdapi.SystemActionStep.FINISH,
                 on_volumes=self._on_volumes()))
 
-    async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
+    async def guided_POST(self, data: GuidedChoiceV2) -> StorageResponse:
         log.debug(data)
-        await self.guided(GuidedChoiceV2.from_guided_choice(data))
+        await self.guided(data)
         if data.capability.is_core_boot():
             await self.configured()
         return self._done_response()
