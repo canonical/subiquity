@@ -354,23 +354,6 @@ class GuidedDisallowedCapability:
 
 
 @attr.s(auto_attribs=True)
-class GuidedChoice:
-    disk_id: str
-    capability: GuidedCapability = GuidedCapability.DIRECT
-    password: Optional[str] = attr.ib(default=None, repr=False)
-
-
-@attr.s(auto_attribs=True)
-class GuidedStorageResponse:
-    status: ProbeStatus
-    error_report: Optional[ErrorReportRef] = None
-    disks: Optional[List[Disk]] = None
-    core_boot_classic_error: str = ''
-    encryption_unavailable_reason: str = ''
-    capabilities: List[GuidedCapability] = attr.Factory(list)
-
-
-@attr.s(auto_attribs=True)
 class StorageResponse:
     status: ProbeStatus
     error_report: Optional[ErrorReportRef] = None
@@ -467,16 +450,6 @@ class GuidedChoiceV2:
     sizing_policy: Optional[SizingPolicy] = \
         attr.ib(default=SizingPolicy.SCALED)
     reset_partition: bool = False
-
-    @staticmethod
-    def from_guided_choice(choice: GuidedChoice):
-        return GuidedChoiceV2(
-                target=GuidedStorageTargetReformat(
-                    disk_id=choice.disk_id, allowed=[choice.capability]),
-                capability=choice.capability,
-                password=choice.password,
-                sizing_policy=SizingPolicy.SCALED,
-                )
 
 
 @attr.s(auto_attribs=True)

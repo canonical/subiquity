@@ -65,7 +65,6 @@ from subiquity.common.types import (
     GuidedChoiceV2,
     GuidedDisallowedCapability,
     GuidedDisallowedCapabilityReason,
-    GuidedStorageResponse,
     GuidedStorageResponseV2,
     GuidedStorageTarget,
     GuidedStorageTargetReformat,
@@ -664,46 +663,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     continue
             disks.append(disk)
         return [d for d in disks if d not in self.model._exclusions]
-
-    async def guided_GET(self, wait: bool = False) -> GuidedStorageResponse:
-        probe_resp = await self._probe_response(wait, GuidedStorageResponse)
-        if probe_resp is not None:
-            return probe_resp
-        disks = self.potential_boot_disks(with_reformatting=True)
-
-        # Choose the first non-core-boot one offered.  If we only have
-        # core-boot choices, choose the first of those.
-        core_boot_info = None
-        for info in self._variation_info.values():
-            if not info.is_core_boot_classic():
-                break
-            if core_boot_info is None:
-                core_boot_info = info
-        else:
-            info = core_boot_info
-
-        if info.capability_info.allowed:
-            disks = [
-                labels.for_client(d, min_size=info.min_size) for d in disks
-                ]
-            error = ''
-        else:
-            disks = []
-            error = info.capability_info.disallowed[0].message
-
-        encryption_unavailable_reason = ''
-        for disallowed_cap in info.capability_info.disallowed:
-            if disallowed_cap.capability == \
-               GuidedCapability.CORE_BOOT_ENCRYPTED:
-                encryption_unavailable_reason = disallowed_cap.message
-
-        return GuidedStorageResponse(
-            status=ProbeStatus.DONE,
-            error_report=self.full_probe_error(),
-            disks=disks,
-            core_boot_classic_error=error,
-            encryption_unavailable_reason=encryption_unavailable_reason,
-            capabilities=list(info.capability_info.allowed))
 
     def _offsets_and_sizes_for_volume(self, volume):
         offset = self.model._partition_alignment_data['gpt'].min_start_offset
