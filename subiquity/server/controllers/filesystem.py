@@ -873,13 +873,18 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                      for pa in self.model._partition_alignment_data.values()))
         return sizes.calculate_suggested_install_min(source_min, align)
 
-    async def get_v2_storage_response(self, model, wait):
+    async def get_v2_storage_response(self, model, wait, include_raid):
         probe_resp = await self._probe_response(wait, StorageResponseV2)
         if probe_resp is not None:
             return probe_resp
-        disks = [
-            d for d in model._all(type='disk') if d not in model._exclusions
-            ]
+        if include_raid:
+            disks = self.potential_boot_disks(with_reformatting=True)
+        else:
+            disks = [
+                d
+                for d in model._all(type='disk')
+                if d not in model._exclusions
+                ]
         minsize = self.calculate_suggested_install_min()
         return StorageResponseV2(
                 status=ProbeStatus.DONE,
@@ -889,8 +894,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 install_minimum_size=minsize,
                 )
 
-    async def v2_GET(self, wait: bool = False) -> StorageResponseV2:
-        return await self.get_v2_storage_response(self.model, wait)
+    async def v2_GET(
+            self,
+            wait: bool = False,
+            include_raid: bool = False,
+            ) -> StorageResponseV2:
+        return await self.get_v2_storage_response(
+            self.model, wait, include_raid)
 
     async def v2_POST(self) -> StorageResponseV2:
         await self.configured()
@@ -898,7 +908,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_orig_config_GET(self) -> StorageResponseV2:
         model = self.model.get_orig_model()
-        return await self.get_v2_storage_response(model, False)
+        return await self.get_v2_storage_response(model, False, False)
 
     async def v2_reset_POST(self) -> StorageResponseV2:
         log.info("Resetting Filesystem model")
