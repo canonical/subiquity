@@ -489,6 +489,25 @@
                 }
             }
         },
+        "oem": {
+            "type": "object",
+            "properties": {
+                "install": {
+                    "oneOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "string",
+                            "const": "auto"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "install"
+            ]
+        },
         "timezone": {
             "type": "string"
         },

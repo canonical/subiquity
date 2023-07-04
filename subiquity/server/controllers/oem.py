@@ -39,7 +39,25 @@ class OEMController(SubiquityController):
 
     endpoint = API.oem
 
-    model_name = "oem"
+    autoinstall_key = model_name = "oem"
+    autoinstall_schema = {
+        "type": "object",
+        "properties": {
+            "install": {
+                "oneOf": [
+                    {
+                        "type": "boolean",
+                    },
+                    {
+                        "type": "string",
+                        "const": "auto",
+                    },
+                ],
+            },
+        },
+        "required": ["install"],
+    }
+    autoinstall_default = {"install": "auto"}
 
     def __init__(self, app) -> None:
         super().__init__(app)
@@ -66,6 +84,12 @@ class OEMController(SubiquityController):
 
         self.load_metapkgs_task = asyncio.create_task(
                 list_and_mark_configured())
+
+    def make_autoinstall(self):
+        return self.model.make_autoinstall()
+
+    def load_autoinstall_data(self, *args, **kwargs) -> None:
+        self.model.load_autoinstall_data(*args, **kwargs)
 
     async def wants_oem_kernel(self, pkgname: str,
                                *, context, overlay) -> bool:
@@ -100,12 +124,17 @@ class OEMController(SubiquityController):
         with context.child("wait_apt"):
             await self._wait_apt.wait()
 
-        # Skip looking for OEM meta-packages if we are running ubuntu-server.
-        # OEM meta-packages expect the default kernel flavor to be HWE (which
-        # is only true for ubuntu-desktop).
-        if self.app.base_model.source.current.variant == "server":
-            log.debug("not listing OEM meta-packages since we are installing"
-                      " ubuntu-server")
+        # Only look for OEM meta-packages on supported variants and if we are
+        # not running core boot.
+        variant: str = self.app.base_model.source.current.variant
+        fs_controller = self.app.controllers.Filesystem
+        if fs_controller.is_core_boot_classic():
+            log.debug("listing of OEM meta-packages disabled on core boot"
+                      " classic")
+            self.model.metapkgs = []
+            return
+        if not self.model.install_on[variant]:
+            log.debug("listing of OEM meta-packages disabled on %s", variant)
             self.model.metapkgs = []
             return
 

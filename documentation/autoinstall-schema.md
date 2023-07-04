@@ -509,6 +509,25 @@ The [JSON schema](https://json-schema.org/) for autoinstall data is as follows:
                 }
             }
         },
+        "oem": {
+            "type": "object",
+            "properties": {
+                "install": {
+                    "oneOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "string",
+                            "const": "auto"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "install"
+            ]
+        },
         "timezone": {
             "type": "string"
         },
