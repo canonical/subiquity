@@ -27,6 +27,9 @@ from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.common.types import (
     ProbeStatus,
     GuidedCapability,
+    GuidedStorageResponseV2,
+    GuidedStorageTargetReformat,
+    StorageResponseV2,
     )
 from subiquity.models.filesystem import (
     Bootloader,
@@ -66,12 +69,12 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             assert self.current_view is not None
             return self.current_view
 
-        status = await self.endpoint.guided.GET()
+        status: GuidedStorageResponseV2 = await self.endpoint.v2.guided.GET()
         if status.status == ProbeStatus.PROBING:
             run_bg_task(self._wait_for_probing())
             self.current_view = SlowProbing(self)
         else:
-            self.current_view = self.make_guided_ui(status)
+            self.current_view = await self.make_guided_ui(status)
         # NOTE: If we return a BaseView instance directly here, we have no
         # guarantee that it will be displayed on the screen by the time the
         # probing operation finishes. Therefore, to allow us to reliably
@@ -83,34 +86,59 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         return get_current_view
 
     async def _wait_for_probing(self):
-        status = await self.endpoint.guided.GET(wait=True)
-        self.current_view = self.make_guided_ui(status)
+        status = await self.endpoint.v2.guided.GET(wait=True)
+        self.current_view = await self.make_guided_ui(status)
         if isinstance(self.ui.body, SlowProbing):
             self.ui.set_body(self.current_view)
         else:
             log.debug("not refreshing the display. Current display is %r",
                       self.ui.body)
 
-    def make_guided_ui(self, status):
-        if status.core_boot_classic_error != '':
-            return CoreBootClassicError(self, status.core_boot_classic_error)
+    async def make_guided_ui(
+            self,
+            status: GuidedStorageResponseV2,
+            ) -> GuidedDiskSelectionView:
         if status.status == ProbeStatus.FAILED:
             self.app.show_error_report(status.error_report)
             return ProbingFailed(self, status.error_report)
 
-        for capability in status.capabilities:
-            if capability.is_core_boot():
-                assert len(status.capabilities) == 1
-                self.core_boot_capability = status.capabilities[0]
-                break
-        else:
-            self.core_boot_capability = None
+        reformat_targets = [
+            target
+            for target in status.targets
+            if isinstance(target, GuidedStorageTargetReformat)
+            ]
 
-        self.encryption_unavailable_reason = \
-            status.encryption_unavailable_reason
+        self.core_boot_capability = None
+        self.encryption_unavailable_reason = ''
+
+        response: StorageResponseV2 = await self.endpoint.v2.GET(
+            include_raid=True)
+
+        disk_by_id = {
+            disk.id: disk for disk in response.disks
+            }
+
+        disks = []
+
+        for target in reformat_targets:
+            if target.allowed:
+                disks.append(disk_by_id[target.disk_id])
+                for capability in target.allowed:
+                    if capability.is_core_boot():
+                        assert len(target.allowed) == 1
+                        self.core_boot_capability = capability
+            for disallowed in target.disallowed:
+                if disallowed.capability.is_core_boot():
+                    self.encryption_unavailable_reason = disallowed.message
+
+        if not disks and self.encryption_unavailable_reason:
+            return CoreBootClassicError(
+                self, self.encryption_unavailable_reason)
+
         if status.error_report:
             self.app.show_error_report(status.error_report)
-        return GuidedDiskSelectionView(self, status.disks)
+
+        return GuidedDiskSelectionView(self, disks)
 
     async def run_answers(self):
         # Wait for probing to finish.
