@@ -321,6 +321,7 @@ class Disk:
 
 
 class GuidedCapability(enum.Enum):
+    MANUAL = enum.auto()
     DIRECT = enum.auto()
     LVM = enum.auto()
     LVM_LUKS = enum.auto()
@@ -437,9 +438,17 @@ class GuidedStorageTargetUseGap:
     disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
 
 
+@attr.s(auto_attribs=True)
+class GuidedStorageTargetManual:
+    allowed: List[GuidedCapability] = attr.Factory(
+        lambda: [GuidedCapability.MANUAL])
+    disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
+
+
 GuidedStorageTarget = Union[GuidedStorageTargetReformat,
                             GuidedStorageTargetResize,
-                            GuidedStorageTargetUseGap]
+                            GuidedStorageTargetUseGap,
+                            GuidedStorageTargetManual]
 
 
 @attr.s(auto_attribs=True)
@@ -447,8 +456,7 @@ class GuidedChoiceV2:
     target: GuidedStorageTarget
     capability: GuidedCapability
     password: Optional[str] = attr.ib(default=None, repr=False)
-    sizing_policy: Optional[SizingPolicy] = \
-        attr.ib(default=SizingPolicy.SCALED)
+    sizing_policy: Optional[SizingPolicy] = SizingPolicy.SCALED
     reset_partition: bool = False
 
 

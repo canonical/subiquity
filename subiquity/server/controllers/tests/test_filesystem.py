@@ -36,6 +36,7 @@ from subiquity.common.types import (
     GuidedCapability,
     GuidedDisallowedCapabilityReason,
     GuidedChoiceV2,
+    GuidedStorageTargetManual,
     GuidedStorageTargetReformat,
     GuidedStorageTargetResize,
     GuidedStorageTargetUseGap,
@@ -540,6 +541,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         expected = [
             GuidedStorageTargetReformat(
                 disk_id=self.disk.id, allowed=default_capabilities),
+            GuidedStorageTargetManual(),
             ]
         resp = await self.fsc.v2_guided_GET()
         self.assertEqual(expected, resp.targets)
@@ -553,11 +555,18 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual([], resp.targets)
         self.assertEqual(ProbeStatus.PROBING, resp.status)
 
+    async def test_manual(self):
+        await self._setup(Bootloader.UEFI, 'gpt')
+        guided_get_resp = await self.fsc.v2_guided_GET()
+        [reformat, manual] = guided_get_resp.targets
+        self.assertEqual(manual, GuidedStorageTargetManual())
+
     @parameterized.expand(bootloaders_and_ptables)
     async def test_small_blank_disk(self, bootloader, ptable):
         await self._setup(bootloader, ptable, size=1 << 30)
         resp = await self.fsc.v2_guided_GET()
-        self.assertEqual(1, len(resp.targets))
+        self.assertEqual(2, len(resp.targets))
+        self.assertEqual(GuidedStorageTargetManual(), resp.targets[1])
         self.assertEqual(0, len(resp.targets[0].allowed))
         self.assertEqual(
             {
@@ -600,7 +609,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual(self.disk.id, resize.disk_id)
         self.assertEqual(p.number, resize.partition_number)
         self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
-        self.assertEqual(0, len(resp.targets))
+        self.assertEqual(1, len(resp.targets))
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_used_full_disk(self, bootloader, ptable):
@@ -619,7 +628,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual(self.disk.id, resize.disk_id)
         self.assertEqual(p.number, resize.partition_number)
         self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
-        self.assertEqual(0, len(resp.targets))
+        self.assertEqual(1, len(resp.targets))
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_weighted_split(self, bootloader, ptable):
@@ -648,7 +657,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             maximum=230 << 30,
             allowed=default_capabilities)
         self.assertEqual(expected, resize)
-        self.assertEqual(0, len(possible))
+        self.assertEqual(1, len(possible))
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_half_disk_reformat(self, bootloader, ptable):
@@ -675,7 +684,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         resp = await self.fsc.v2_GET()
         self.assertFalse(resp.need_root)
         self.assertFalse(resp.need_boot)
-        self.assertEqual(0, len(guided_get_resp.targets))
+        self.assertEqual(1, len(guided_get_resp.targets))
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_half_disk_use_gap(self, bootloader, ptable):
@@ -708,7 +717,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual(orig_p, existing_part)
         self.assertFalse(resp.need_root)
         self.assertFalse(resp.need_boot)
-        self.assertEqual(0, len(guided_get_resp.targets))
+        self.assertEqual(1, len(guided_get_resp.targets))
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_half_disk_resize(self, bootloader, ptable):
@@ -743,7 +752,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual(p_expected, existing_part)
         self.assertFalse(resp.need_root)
         self.assertFalse(resp.need_boot)
-        self.assertEqual(0, len(guided_get_resp.targets))
+        self.assertEqual(1, len(guided_get_resp.targets))
 
     @parameterized.expand([
         [10], [20], [25], [30], [50], [100], [250],
