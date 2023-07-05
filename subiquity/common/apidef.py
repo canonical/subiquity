@@ -43,9 +43,7 @@ from subiquity.common.types import (
     Change,
     Disk,
     ErrorReportRef,
-    GuidedChoice,
     GuidedChoiceV2,
-    GuidedStorageResponse,
     GuidedStorageResponseV2,
     KeyboardSetting,
     KeyboardSetup,
@@ -269,10 +267,7 @@ class API:
 
     class storage:
         class guided:
-            def GET(wait: bool = False) -> GuidedStorageResponse:
-                pass
-
-            def POST(data: Payload[GuidedChoice]) \
+            def POST(data: Payload[GuidedChoiceV2]) \
                     -> StorageResponse:
                 pass
 
@@ -296,7 +291,11 @@ class API:
             def GET() -> List[Disk]: ...
 
         class v2:
-            def GET(wait: bool = False) -> StorageResponseV2: ...
+            def GET(
+                    wait: bool = False,
+                    include_raid: bool = False,
+                    ) -> StorageResponseV2: ...
+
             def POST() -> StorageResponseV2: ...
 
             class orig_config:

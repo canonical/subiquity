@@ -62,11 +62,9 @@ from subiquity.common.types import (
     Bootloader,
     Disk,
     GuidedCapability,
-    GuidedChoice,
     GuidedChoiceV2,
     GuidedDisallowedCapability,
     GuidedDisallowedCapabilityReason,
-    GuidedStorageResponse,
     GuidedStorageResponseV2,
     GuidedStorageTarget,
     GuidedStorageTargetReformat,
@@ -179,7 +177,7 @@ class VariationInfo:
             install_min = self.min_size
         r = CapabilityInfo()
         r.disallowed = list(self.capability_info.disallowed)
-        if size < install_min:
+        if self.capability_info.allowed and size < install_min:
             for capability in self.capability_info.allowed:
                 r.disallowed.append(GuidedDisallowedCapability(
                     capability=capability,
@@ -666,46 +664,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             disks.append(disk)
         return [d for d in disks if d not in self.model._exclusions]
 
-    async def guided_GET(self, wait: bool = False) -> GuidedStorageResponse:
-        probe_resp = await self._probe_response(wait, GuidedStorageResponse)
-        if probe_resp is not None:
-            return probe_resp
-        disks = self.potential_boot_disks(with_reformatting=True)
-
-        # Choose the first non-core-boot one offered.  If we only have
-        # core-boot choices, choose the first of those.
-        core_boot_info = None
-        for info in self._variation_info.values():
-            if not info.is_core_boot_classic():
-                break
-            if core_boot_info is None:
-                core_boot_info = info
-        else:
-            info = core_boot_info
-
-        if info.capability_info.allowed:
-            disks = [
-                labels.for_client(d, min_size=info.min_size) for d in disks
-                ]
-            error = ''
-        else:
-            disks = []
-            error = info.capability_info.disallowed[0].message
-
-        encryption_unavailable_reason = ''
-        for disallowed_cap in info.capability_info.disallowed:
-            if disallowed_cap.capability == \
-               GuidedCapability.CORE_BOOT_ENCRYPTED:
-                encryption_unavailable_reason = disallowed_cap.message
-
-        return GuidedStorageResponse(
-            status=ProbeStatus.DONE,
-            error_report=self.full_probe_error(),
-            disks=disks,
-            core_boot_classic_error=error,
-            encryption_unavailable_reason=encryption_unavailable_reason,
-            capabilities=list(info.capability_info.allowed))
-
     def _offsets_and_sizes_for_volume(self, volume):
         offset = self.model._partition_alignment_data['gpt'].min_start_offset
         for structure in volume.structure:
@@ -823,9 +781,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 step=snapdapi.SystemActionStep.FINISH,
                 on_volumes=self._on_volumes()))
 
-    async def guided_POST(self, data: GuidedChoice) -> StorageResponse:
+    async def guided_POST(self, data: GuidedChoiceV2) -> StorageResponse:
         log.debug(data)
-        await self.guided(GuidedChoiceV2.from_guided_choice(data))
+        await self.guided(data)
         if data.capability.is_core_boot():
             await self.configured()
         return self._done_response()
@@ -873,13 +831,18 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                      for pa in self.model._partition_alignment_data.values()))
         return sizes.calculate_suggested_install_min(source_min, align)
 
-    async def get_v2_storage_response(self, model, wait):
+    async def get_v2_storage_response(self, model, wait, include_raid):
         probe_resp = await self._probe_response(wait, StorageResponseV2)
         if probe_resp is not None:
             return probe_resp
-        disks = [
-            d for d in model._all(type='disk') if d not in model._exclusions
-            ]
+        if include_raid:
+            disks = self.potential_boot_disks(with_reformatting=True)
+        else:
+            disks = [
+                d
+                for d in model._all(type='disk')
+                if d not in model._exclusions
+                ]
         minsize = self.calculate_suggested_install_min()
         return StorageResponseV2(
                 status=ProbeStatus.DONE,
@@ -889,8 +852,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 install_minimum_size=minsize,
                 )
 
-    async def v2_GET(self, wait: bool = False) -> StorageResponseV2:
-        return await self.get_v2_storage_response(self.model, wait)
+    async def v2_GET(
+            self,
+            wait: bool = False,
+            include_raid: bool = False,
+            ) -> StorageResponseV2:
+        return await self.get_v2_storage_response(
+            self.model, wait, include_raid)
 
     async def v2_POST(self) -> StorageResponseV2:
         await self.configured()
@@ -898,7 +866,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_orig_config_GET(self) -> StorageResponseV2:
         model = self.model.get_orig_model()
-        return await self.get_v2_storage_response(model, False)
+        return await self.get_v2_storage_response(model, False, False)
 
     async def v2_reset_POST(self) -> StorageResponseV2:
         log.info("Resetting Filesystem model")

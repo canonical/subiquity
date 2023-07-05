@@ -49,7 +49,8 @@ from subiquitycore.view import BaseView
 from subiquity.common.types import (
     Gap,
     GuidedCapability,
-    GuidedChoice,
+    GuidedChoiceV2,
+    GuidedStorageTargetReformat,
     Partition,
 )
 from subiquity.models.filesystem import humanize_size
@@ -311,16 +312,15 @@ class GuidedDiskSelectionView(BaseView):
 
     def done(self, sender):
         results = sender.as_data()
-        choice = None
+        password = None
+        disk_id = None
         if self.controller.core_boot_capability is not None:
             if results.get('use_tpm', sender.tpm_choice.default):
                 capability = GuidedCapability.CORE_BOOT_ENCRYPTED
             else:
                 capability = GuidedCapability.CORE_BOOT_UNENCRYPTED
-            choice = GuidedChoice(
-                disk_id=results['disk'].id, capability=capability)
+            disk_id = results['disk'].id
         elif results['guided']:
-            password = None
             if results['guided_choice']['use_lvm']:
                 opts = results['guided_choice'].get('lvm_options', {})
                 if opts.get('encrypt', False):
@@ -330,9 +330,18 @@ class GuidedDiskSelectionView(BaseView):
                     capability = GuidedCapability.LVM
             else:
                 capability = GuidedCapability.DIRECT
-            choice = GuidedChoice(
-                disk_id=results['guided_choice']['disk'].id,
-                capability=capability, password=password)
+            disk_id = results['guided_choice']['disk'].id
+        else:
+            disk_id = None
+        if disk_id is not None:
+            choice = GuidedChoiceV2(
+                target=GuidedStorageTargetReformat(
+                    disk_id=disk_id, allowed=[capability]),
+                capability=capability,
+                password=password,
+                )
+        else:
+            choice = None
         self.controller.guided_choice(choice)
 
     def manual(self, sender):
