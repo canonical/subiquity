@@ -560,6 +560,11 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         guided_get_resp = await self.fsc.v2_guided_GET()
         [reformat, manual] = guided_get_resp.targets
         self.assertEqual(manual, GuidedStorageTargetManual())
+        data = GuidedChoiceV2(target=reformat, capability=manual.allowed[0])
+        # POSTing the manual choice doesn't change anything
+        await self.fsc.v2_guided_POST(data=data)
+        guided_get_resp = await self.fsc.v2_guided_GET()
+        self.assertEqual([reformat, manual], guided_get_resp.targets)
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_small_blank_disk(self, bootloader, ptable):

@@ -29,6 +29,7 @@ from subiquity.common.types import (
     GuidedCapability,
     GuidedChoiceV2,
     GuidedStorageResponseV2,
+    GuidedStorageTargetManual,
     GuidedStorageTargetReformat,
     StorageResponseV2,
     )
@@ -177,7 +178,10 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
                 await asyncio.sleep(0.1)
             self.finish()
         elif self.answers['manual']:
-            await self._guided_choice(None)
+            await self._guided_choice(
+                GuidedChoiceV2(
+                    target=GuidedStorageTargetManual(),
+                    capability=GuidedCapability.MANUAL))
             await self._run_actions(self.answers['manual'])
             self.answers['manual'] = []
 
@@ -287,10 +291,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         else:
             raise Exception("could not process action {}".format(action))
 
-    async def _guided_choice(self, choice: Optional[GuidedChoiceV2]):
-        if self.core_boot_capability is not None:
-            self.app.next_screen(self.endpoint.guided.POST(choice))
-            return
+    async def _guided_choice(self, choice: GuidedChoiceV2):
         # FIXME It would seem natural here to pass the wait=true flag to the
         # below HTTP calls, especially because we wrap the coroutine in
         # wait_with_progress.
@@ -298,10 +299,10 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         # the least risky option to address https://launchpad.net/bugs/1993257
         # before the kinetic release. This is also similar to what we did for
         # https://launchpad.net/bugs/1962205
-        if choice is not None:
-            coro = self.endpoint.guided.POST(choice)
-        else:
-            coro = self.endpoint.GET(use_cached_result=True)
+        coro = self.endpoint.guided.POST(choice)
+        if self.core_boot_capability is not None:
+            self.app.next_screen(coro)
+            return
         status = await self.app.wait_with_progress(coro)
         self.model = FilesystemModel(status.bootloader)
         self.model.load_server_data(status)

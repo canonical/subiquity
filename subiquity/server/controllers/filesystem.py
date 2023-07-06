@@ -545,6 +545,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             choice: GuidedChoiceV2,
             reset_partition_only: bool = False
             ) -> None:
+        if choice.capability == GuidedCapability.MANUAL:
+            return
+
         self.model.guided_configuration = choice
 
         self.set_info_for_capability(choice.capability)
