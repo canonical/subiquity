@@ -30,7 +30,6 @@ from subiquity.common.types import (
     GuidedChoiceV2,
     GuidedStorageResponseV2,
     GuidedStorageTargetManual,
-    GuidedStorageTargetReformat,
     StorageResponseV2,
     )
 from subiquity.models.filesystem import (
@@ -43,7 +42,6 @@ from subiquity.ui.views import (
     GuidedDiskSelectionView,
     )
 from subiquity.ui.views.filesystem.probing import (
-    CoreBootClassicError,
     SlowProbing,
     ProbingFailed,
     )
@@ -64,7 +62,6 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
         self.current_view: Optional[BaseView] = None
-        self.core_boot_capability: Optional[GuidedCapability] = None
 
     async def make_ui(self) -> Callable[[], BaseView]:
         def get_current_view() -> BaseView:
@@ -104,15 +101,6 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             self.app.show_error_report(status.error_report)
             return ProbingFailed(self, status.error_report)
 
-        reformat_targets = [
-            target
-            for target in status.targets
-            if isinstance(target, GuidedStorageTargetReformat)
-            ]
-
-        self.core_boot_capability = None
-        self.encryption_unavailable_reason = ''
-
         response: StorageResponseV2 = await self.endpoint.v2.GET(
             include_raid=True)
 
@@ -120,27 +108,10 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             disk.id: disk for disk in response.disks
             }
 
-        disks = []
-
-        for target in reformat_targets:
-            if target.allowed:
-                disks.append(disk_by_id[target.disk_id])
-                for capability in target.allowed:
-                    if capability.is_core_boot():
-                        assert len(target.allowed) == 1
-                        self.core_boot_capability = capability
-            for disallowed in target.disallowed:
-                if disallowed.capability.is_core_boot():
-                    self.encryption_unavailable_reason = disallowed.message
-
-        if not disks and self.encryption_unavailable_reason:
-            return CoreBootClassicError(
-                self, self.encryption_unavailable_reason)
-
         if status.error_report:
             self.app.show_error_report(status.error_report)
 
-        return GuidedDiskSelectionView(self, disks)
+        return GuidedDiskSelectionView(self, status.targets, disk_by_id)
 
     async def run_answers(self):
         # Wait for probing to finish.
@@ -151,15 +122,20 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             await self.app.confirm_install()
             self.ui.body.done(self.ui.body.form)
         if self.answers['guided']:
+            targets = self.ui.body.form.targets
             if 'guided-index' in self.answers:
-                disk = self.ui.body.form.disks[self.answers['guided-index']]
+                target = targets[self.answers['guided-index']]
             elif 'guided-label' in self.answers:
                 label = self.answers['guided-label']
-                [disk] = [d for d in self.ui.body.form.disks
-                          if d.label == label]
+                disk_by_id = self.ui.body.form.disk_by_id
+                [target] = [
+                    t
+                    for t in targets
+                    if disk_by_id[t.disk_id].label == label
+                    ]
             method = self.answers.get('guided-method')
             value = {
-                'disk': disk,
+                'disk': target,
                 'use_lvm': method == "lvm",
                 }
             passphrase = self.answers.get('guided-passphrase')
@@ -172,7 +148,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
                         }
                     }
             self.ui.body.form.guided_choice.value = value
-            self.ui.body.done(self.ui.body.form)
+            self.ui.body.done(None)
             await self.app.confirm_install()
             while not isinstance(self.ui.body, FilesystemView):
                 await asyncio.sleep(0.1)
