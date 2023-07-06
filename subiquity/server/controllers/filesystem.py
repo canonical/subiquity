@@ -788,7 +788,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def guided_POST(self, data: GuidedChoiceV2) -> StorageResponse:
         log.debug(data)
         await self.guided(data)
-        if data.capability.is_core_boot():
+        if not data.capability.supports_manual_customization():
             await self.configured()
         return self._done_response()
 

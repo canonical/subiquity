@@ -341,6 +341,14 @@ class GuidedCapability(enum.Enum):
                         GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
                         GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED]
 
+    def supports_manual_customization(self) -> bool:
+        # After posting this capability to guided_POST, is it possible
+        # for the user to customize the layout further?
+        return self in [GuidedCapability.MANUAL,
+                        GuidedCapability.DIRECT,
+                        GuidedCapability.LVM,
+                        GuidedCapability.LVM_LUKS]
+
 
 class GuidedDisallowedCapabilityReason(enum.Enum):
     TOO_SMALL = enum.auto()

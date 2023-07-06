@@ -300,7 +300,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         # before the kinetic release. This is also similar to what we did for
         # https://launchpad.net/bugs/1962205
         coro = self.endpoint.guided.POST(choice)
-        if self.core_boot_capability is not None:
+        if not choice.capability.supports_manual_customization():
             self.app.next_screen(coro)
             return
         status = await self.app.wait_with_progress(coro)
