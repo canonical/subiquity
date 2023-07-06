@@ -35,10 +35,17 @@ needs_sphinx = '5.1.1'
 
 extensions = [
     'm2r2',
+    'sphinx.ext.intersphinx',
     'sphinx_copybutton',
     'sphinx_design',
 ]
 
+intersphinx_mapping = {
+    'cloud-init': (
+        'https://canonical-cloud-init.readthedocs-hosted.com/en/latest',
+         None
+    )
+}
 
 # Add any paths that contain templates here, relative to this directory.
 

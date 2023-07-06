@@ -46,8 +46,14 @@ The suggested method of providing autoinstall to the Ubuntu installer is by way
 of cloud-init.  This allows the configuration to be applied to the installer
 without having to modify the install media.
 
-When providing autoinstall via cloud-init, the autoinstall config is wrapped in
-a cloud-config header and an autoinstall top-level key, like so:
+The autoinstall config is provided via cloud-init configuration, which is
+almost endlessly flexible. In most scenarios the easiest way will be to provide
+user-data via the :external+cloud-init:ref:`datasource_nocloud` data source.
+
+When providing autoinstall via cloud-init, the autoinstall config is provided
+as :external+cloud-init:ref:`user_data_formats-cloud_config`.  This
+means we need a :code:`#cloud-config` header. The autoinstall directives are
+placed under a top level :code:`autoinstall` key, like so:
 
 .. code-block:: yaml
 
