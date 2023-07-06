@@ -22,7 +22,7 @@ import sys
 # -- Project information -----------------------------------------------------
 
 project = 'Ubuntu Install Guide'
-copyright = f'Canonical Group Ltd, {datetime.date.today().year}'
+copyright = f'Canonical Group Ltd, 2020 - {datetime.date.today().year}'
 
 # -- General configuration ---------------------------------------------------
 
@@ -47,8 +47,8 @@ templates_path = ['_templates']
 # The suffix of source filenames.
 source_suffix = '.rst'
 
-# The master toctree document.
-master_doc = 'index'
+# The root toctree document.
+root_doc = 'index'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -62,7 +62,8 @@ master_doc = 'index'
 # This pattern also affects html_static_path and html_extra_path.
 
 exclude_patterns = [
-    ".sphinx/venv/*",
+    '.sphinx/venv/*',
+    'README.md',
 ]
 
 # Sphinx-copybutton config options:
