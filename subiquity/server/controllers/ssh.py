@@ -29,7 +29,6 @@ from subiquity.server.ssh import (
     SSHKeyFetcher,
     DryRunSSHKeyFetcher,
     )
-from subiquity.server.types import InstallerChannels
 
 log = logging.getLogger('subiquity.server.controllers.ssh')
 
@@ -51,25 +50,14 @@ class SSHController(SubiquityController):
         },
     }
 
+    interactive_for_variants = {'server'}
+
     def __init__(self, app):
         super().__init__(app)
-        self.app.hub.subscribe(
-            InstallerChannels.INSTALL_CONFIRMED, self._confirmed)
-        self._active = True
         if app.opts.dry_run:
             self.fetcher = DryRunSSHKeyFetcher(app)
         else:
             self.fetcher = SSHKeyFetcher(app)
-
-    async def _confirmed(self):
-        if self.app.base_model.source.current.variant == 'desktop':
-            await self.configured()
-            self._active = False
-
-    def interactive(self):
-        if super().interactive():
-            return self._active
-        return False
 
     def load_autoinstall_data(self, data):
         if data is None:
