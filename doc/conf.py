@@ -34,7 +34,6 @@ needs_sphinx = '5.1.1'
 # ones.
 
 extensions = [
-    'm2r2',
     'sphinx.ext.intersphinx',
     'sphinx_copybutton',
     'sphinx_design',
