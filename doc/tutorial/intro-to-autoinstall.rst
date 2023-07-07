@@ -1,10 +1,10 @@
 .. _tutorial_intro-to-autoinstall:
 
-Introduction to Autoinstall
+Introduction to autoinstall
 ***************************
 
-Ubuntu installation automation is performed with the autoinstall format.
-You might also know this feature as unattended or handsoff or preseeded
+Automatic Ubuntu installation is performed with the autoinstall format.
+You might also know this feature as "unattended", "hands-off" or "preseeded"
 installation.
 
 This format is supported in the following installers:
@@ -23,35 +23,36 @@ Differences from debian-installer preseeding
 (also known as d-i).
 
 Autoinstalls differ from preseeds in the following ways:
- * the format is different (yaml vs debconf-set-selections)
- * when the answer to a question is not present in a preseed, d-i stops and
-   asks the user for input. Autoinstalls are not like this:  by default, if
-   there is any autoinstall configuration at all, the installer takes the
-   default for any unanswered question (and fails if there is no default).
- * You can designate particular sections in the configuration as "interactive",
-   which means the installer will still stop and ask about those.
+ * The format is different: autoinstalls use YAML instead of the preseed
+   debconf-set-selections
+ * When the answer to a question is not present in a preseed, d-i stops and
+   asks the user for input. By comparison, if there is any autoinstall
+   configuration at all, the autoinstall takes the default for any
+   unanswered question (and fails if there is no default).
+ * You can designate particular sections in the autoinstall configuration as
+   "interactive", which means the installer will still stop and ask about those.
 
 
 Providing the autoinstall configuration
 =======================================
 
-There are 2 methods of providing the autoinstall configuration:
+There are 2 ways to provide the autoinstall configuration:
  * Carried as part of cloud-config
  * Directly on the install media
 
 Autoinstall by way of cloud-config
 ----------------------------------
 
-The suggested method of providing autoinstall to the Ubuntu installer is by way
-of cloud-init.  This allows the configuration to be applied to the installer
+The suggested way of providing autoinstall config to the Ubuntu installer is
+via cloud-init. This allows the configuration to be applied to the installer
 without having to modify the install media.
 
 The autoinstall config is provided via cloud-init configuration, which is
 almost endlessly flexible. In most scenarios the easiest way will be to provide
-user-data via the :external+cloud-init:ref:`datasource_nocloud` data source.
+user data via the :external+cloud-init:ref:`datasource_nocloud` data source.
 
 When providing autoinstall via cloud-init, the autoinstall config is provided
-as :external+cloud-init:ref:`user_data_formats-cloud_config`.  This
+as :external+cloud-init:ref:`user_data_formats-cloud_config`. This
 means we need a :code:`#cloud-config` header. The autoinstall directives are
 placed under a top level :code:`autoinstall` key, like so:
 
@@ -62,6 +63,12 @@ placed under a top level :code:`autoinstall` key, like so:
         version: 1
         ....
 
+.. note::
+
+   :external+cloud-init:ref:`user_data_formats-cloud_config` files must contain
+   the ``#cloud-config`` header to be recognized as a valid cloud config data
+   file.
+
 Autoinstall on the install media
 --------------------------------
 
@@ -69,17 +76,17 @@ Another option for supplying autoinstall to the Ubuntu installer is to place a
 file named :code:`autoinstall.yaml` on the install media itself.
 
 There are two potential locations for the :code:`autoinstall.yaml` file:
- * At the root of the "cdrom".  When writing the installation ISO to a USB
+ * At the root of the "cdrom". When you write the installation ISO to a USB
    Flash Drive, this can be done by copying the :code:`autoinstall.yaml` to the
-   partition containing the contents of the ISO - i.e., in the same directory
-   containing the :code:`casper` directory.
+   partition containing the contents of the ISO - i.e.,
+   in the directory containing the ``casper`` sub-directory.
  * On the rootfs of the installation system - this option will typically
    require modifying the installation ISO and is not suggested, but is
    supported.
 
 Directly specifying autoinstall as a :code:`autoinstall.yaml` file does not
 require a :code:`#cloud-config` header, and does not use a top level
-:code:`autoinstall` key.  The autoinstall directives are placed at the top
+:code:`autoinstall` key. The autoinstall directives are placed at the top
 level.
 
 .. code-block:: yaml
@@ -88,14 +95,14 @@ level.
     ....
 
 
-Cloud-init and Autoinstall interaction
+Cloud-init and autoinstall interaction
 ======================================
 
-While cloud-init may assist in providing the autoinstall configuration to the
-Ubuntu installer, cloud-init itself is not processing the autoinstall.
+While cloud-init may provide the autoinstall configuration to the
+Ubuntu installer, it does not process the autoinstall itself.
 
 If cloud-init directives are intended to modify the ephemeral system, they
-must appear at the top level of the cloud-config.  If instead
+must appear at the top level of the cloud-config. If instead
 cloud-init directives are intended to modify the system being installed, they
 must appear under a :code:`user-data` section in :code:`autoinstall`.
 
