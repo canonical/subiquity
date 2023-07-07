@@ -11,7 +11,7 @@ capable of.
 
 -----
 
-Introduction to Autoinstall
+Introduction to autoinstall
 ===========================
 
 This tutorial introduces the core concepts of autoinstall and is recommended as
