@@ -1,6 +1,6 @@
 .. _ai:
 
-Autoinstall Configuration Reference Manual
+Autoinstall configuration reference manual
 ******************************************
 
 .. _ai-active-directory:
