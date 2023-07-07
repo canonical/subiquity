@@ -22,7 +22,7 @@ import sys
 # -- Project information -----------------------------------------------------
 
 project = 'Ubuntu Install Guide'
-copyright = f'Canonical Group Ltd, 2020 - {datetime.date.today().year}'
+copyright = 'Canonical Group Ltd'
 
 # -- General configuration ---------------------------------------------------
 
