@@ -37,7 +37,7 @@ Providing the autoinstall configuration
 =======================================
 
 There are 2 ways to provide the autoinstall configuration:
- * Carried as part of cloud-config
+ * Provide :external+cloud-init:ref:`#cloud-config user-data<user_data_formats-cloud_config>` containing `autoinstall:` configuration directives to cloud-init at boot time
  * Directly on the install media
 
 Autoinstall by way of cloud-config
@@ -54,7 +54,7 @@ user data via the :external+cloud-init:ref:`datasource_nocloud` data source.
 When providing autoinstall via cloud-init, the autoinstall config is provided
 as :external+cloud-init:ref:`user_data_formats-cloud_config`. This
 means we need a :code:`#cloud-config` header. The autoinstall directives are
-placed under a top level :code:`autoinstall` key, like so:
+placed under a top level :code:`autoinstall:` key, like so:
 
 .. code-block:: yaml
 
@@ -98,13 +98,18 @@ level.
 Cloud-init and autoinstall interaction
 ======================================
 
-While cloud-init may provide the autoinstall configuration to the
-Ubuntu installer, it does not process the autoinstall itself.
+Cloud-init runs in both the ephemeral system, during install, and in the target
+system during first boot. Cloud-init then becomes inert for every subsequent
+reboot.
 
-If cloud-init directives are intended to modify the ephemeral system, they
-must appear at the top level of the cloud-config. If instead
-cloud-init directives are intended to modify the system being installed, they
-must appear under a :code:`user-data` section in :code:`autoinstall`.
+While cloud-init may provide the autoinstall configuration to the Ubuntu
+installer, it does not process the autoinstall directives itself.
+
+To modify the ephemeral system with cloud-init, any
+:external+cloud-init:ref:`#cloud-config module schema keys<modules>` can
+be provided. If instead cloud-init directives are intended to modify the system
+being installed, they must appear under a :ref:`ai-user-data` section under
+``autoinstall:``.
 
 .. code-block:: yaml
 
