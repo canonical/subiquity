@@ -30,14 +30,17 @@ Autoinstalls differ from preseeds in the following ways:
    configuration at all, the autoinstall takes the default for any
    unanswered question (and fails if there is no default).
  * You can designate particular sections in the autoinstall configuration as
-   "interactive", which means the installer will still stop and ask about those.
+   "interactive", which means the installer will still stop and ask about
+   those.
 
 
 Providing the autoinstall configuration
 =======================================
 
 There are 2 ways to provide the autoinstall configuration:
- * Provide :external+cloud-init:ref:`#cloud-config user-data<user_data_formats-cloud_config>` containing `autoinstall:` configuration directives to cloud-init at boot time
+ * Provide :external+cloud-init:ref:`#cloud-config
+   user-data<user_data_formats-cloud_config>` containing ``autoinstall:``
+   configuration directives to cloud-init at boot time
  * Directly on the install media
 
 Autoinstall by way of cloud-config
@@ -86,7 +89,7 @@ There are two potential locations for the :code:`autoinstall.yaml` file:
 
 Directly specifying autoinstall as a :code:`autoinstall.yaml` file does not
 require a :code:`#cloud-config` header, and does not use a top level
-:code:`autoinstall` key. The autoinstall directives are placed at the top
+``autoinstall:`` key. The autoinstall directives are placed at the top
 level.
 
 .. code-block:: yaml
@@ -134,8 +137,8 @@ Zero-touch deployment with autoinstall
 The Ubuntu Installer contains a safeguard, intended to prevent USB Flash Drives
 with an :code:`autoinstall.yaml` file from wiping out the wrong system.
 
-During autoinstall, a prompt will be shown to confirm that the install really
-should proceed and start making modifications to the target system. ::
+Before the Ubuntu Installer actually makes changes to the target system, a
+prompt is shown. ::
 
     start: subiquity/Meta/status_GET
     Confirmation is required to continue.
@@ -174,7 +177,7 @@ A minimal autoinstall configuration in
             username: username
             password: $crypted_pass
 
-Here is an example file that shows off most features:
+Here is an example file that shows off most of the autoinstall directives:
 
 .. parsed-literal::
 
