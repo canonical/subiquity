@@ -292,13 +292,6 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             raise Exception("could not process action {}".format(action))
 
     async def _guided_choice(self, choice: GuidedChoiceV2):
-        # FIXME It would seem natural here to pass the wait=true flag to the
-        # below HTTP calls, especially because we wrap the coroutine in
-        # wait_with_progress.
-        # Having said that, making the server return a cached result seems like
-        # the least risky option to address https://launchpad.net/bugs/1993257
-        # before the kinetic release. This is also similar to what we did for
-        # https://launchpad.net/bugs/1962205
         coro = self.endpoint.guided.POST(choice)
         if not choice.capability.supports_manual_customization():
             self.app.next_screen(coro)
