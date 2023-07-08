@@ -67,6 +67,7 @@ from subiquity.common.types import (
     GuidedDisallowedCapabilityReason,
     GuidedStorageResponseV2,
     GuidedStorageTarget,
+    GuidedStorageTargetManual,
     GuidedStorageTargetReformat,
     GuidedStorageTargetResize,
     GuidedStorageTargetUseGap,
@@ -544,6 +545,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             choice: GuidedChoiceV2,
             reset_partition_only: bool = False
             ) -> None:
+        if choice.capability == GuidedCapability.MANUAL:
+            return
+
         self.model.guided_configuration = choice
 
         self.set_info_for_capability(choice.capability)
@@ -784,7 +788,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def guided_POST(self, data: GuidedChoiceV2) -> StorageResponse:
         log.debug(data)
         await self.guided(data)
-        if data.capability.is_core_boot():
+        if not data.capability.supports_manual_customization():
             await self.configured()
         return self._done_response()
 
@@ -886,18 +890,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_ensure_transaction_POST(self) -> None:
         self.locked_probe_data = True
 
-    def get_available_capabilities(self):
+    def get_classic_capabilities(self):
         classic_capabilities = set()
-        core_boot_capabilities = set()
         for info in self._variation_info.values():
             if not info.is_valid():
                 continue
-            if info.is_core_boot_classic():
-                core_boot_capabilities.update(info.capability_info.allowed)
-            else:
+            if not info.is_core_boot_classic():
                 classic_capabilities.update(info.capability_info.allowed)
-        return sorted(classic_capabilities, key=lambda x: x.name), \
-            sorted(core_boot_capabilities, key=lambda x: x.name)
+        return sorted(classic_capabilities, key=lambda x: x.name)
 
     async def v2_guided_GET(self, wait: bool = False) \
             -> GuidedStorageResponseV2:
@@ -911,8 +911,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         scenarios = []
         install_min = self.calculate_suggested_install_min()
 
-        classic_capabilities, core_boot_capabilities = \
-            self.get_available_capabilities()
+        classic_capabilities = self.get_classic_capabilities()
+
+        if GuidedCapability.DIRECT in classic_capabilities:
+            scenarios.append((0, GuidedStorageTargetManual()))
 
         for disk in self.potential_boot_disks(with_reformatting=True):
             capability_info = CapabilityInfo()

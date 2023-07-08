@@ -332,7 +332,7 @@ class TestFlow(TestAPI):
                             {'elected': 'http://us.archive.ubuntu.com/ubuntu'})
 
             resp = await inst.get('/storage/v2/guided?wait=true')
-            [reformat] = resp['targets']
+            [reformat, manual] = resp['targets']
             await inst.post(
                 '/storage/v2/guided',
                 {
@@ -605,7 +605,7 @@ class TestCore(TestAPI):
         async with start_server(cfg, **kw) as inst:
             await inst.post('/source', source_id='ubuntu-desktop')
             resp = await inst.get('/storage/v2/guided', wait=True)
-            [reformat] = resp['targets']
+            [reformat, manual] = resp['targets']
             self.assertIn('CORE_BOOT_PREFER_ENCRYPTED',
                           reformat['allowed'])
             data = dict(target=reformat, capability='CORE_BOOT_ENCRYPTED')
@@ -1042,7 +1042,7 @@ class TestTodos(TestAPI):  # server indicators of required client actions
             self.assertTrue(resp['need_boot'])
 
             resp = await inst.get('/storage/v2/guided')
-            [reformat] = resp['targets']
+            [reformat, manual] = resp['targets']
             data = {
                 'target': reformat,
                 'capability': reformat['allowed'][0],

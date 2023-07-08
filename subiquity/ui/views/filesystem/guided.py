@@ -50,6 +50,7 @@ from subiquity.common.types import (
     Gap,
     GuidedCapability,
     GuidedChoiceV2,
+    GuidedStorageTargetManual,
     GuidedStorageTargetReformat,
     Partition,
 )
@@ -313,12 +314,11 @@ class GuidedDiskSelectionView(BaseView):
     def done(self, sender):
         results = sender.as_data()
         password = None
+        capability = None
         disk_id = None
         if self.controller.core_boot_capability is not None:
             if results.get('use_tpm', sender.tpm_choice.default):
                 capability = GuidedCapability.CORE_BOOT_ENCRYPTED
-            else:
-                capability = GuidedCapability.CORE_BOOT_UNENCRYPTED
             disk_id = results['disk'].id
         elif results['guided']:
             if results['guided_choice']['use_lvm']:
@@ -341,11 +341,17 @@ class GuidedDiskSelectionView(BaseView):
                 password=password,
                 )
         else:
-            choice = None
+            choice = GuidedChoiceV2(
+                target=GuidedStorageTargetManual(),
+                capability=GuidedCapability.MANUAL,
+                )
         self.controller.guided_choice(choice)
 
     def manual(self, sender):
-        self.controller.guided_choice(None)
+        self.controller.guided_choice(GuidedChoiceV2(
+            target=GuidedStorageTargetManual(),
+            capability=GuidedCapability.MANUAL,
+            ))
 
     def cancel(self, btn=None):
         self.controller.cancel()
