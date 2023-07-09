@@ -596,28 +596,28 @@ class _Device(_Formattable, ABC):
 
 @fsobj("dasd")
 class Dasd:
-    device_id: str = attr.ib()
-    blocksize: int = attr.ib()
-    disk_layout: str = attr.ib()
-    label: Optional[str] = attr.ib(default=None)
-    mode: Optional[str] = attr.ib(default=None)
-    preserve: bool = attr.ib(default=False)
+    device_id: str
+    blocksize: int
+    disk_layout: str
+    label: Optional[str] = None
+    mode: Optional[str] = None
+    preserve: bool = False
 
 
 @fsobj("disk")
 class Disk(_Device):
     ptable: Optional[str] = attributes.ptable()
-    serial: str = attr.ib(default=None)
-    wwn: str = attr.ib(default=None)
-    multipath: str = attr.ib(default=None)
-    path: str = attr.ib(default=None)
-    wipe: Optional[str] = attr.ib(default=None)
-    preserve: str = attr.ib(default=False)
-    name: str = attr.ib(default="")
-    grub_device: bool = attr.ib(default=False)
-    device_id: str = attr.ib(default=None)
+    serial: str = None
+    wwn: str = None
+    multipath: str = None
+    path: str = None
+    wipe: Optional[str] = None
+    preserve: str = False
+    name: str = ""
+    grub_device: bool = False
+    device_id: str = None
 
-    _info: Optional[StorageInfo] = attr.ib(default=None)
+    _info: Optional[StorageInfo] = None
 
     @property
     def available_for_partitions(self):
@@ -715,18 +715,18 @@ class Partition(_Formattable):
     device: _Device = attributes.ref(backlink="_partitions")
     size: int = attributes.size()
 
-    wipe: Optional[str] = attr.ib(default=None)
-    flag: Optional[str] = attr.ib(default=None)
-    number: Optional[int] = attr.ib(default=None)
-    preserve: bool = attr.ib(default=False)
-    grub_device: bool = attr.ib(default=False)
-    name: Optional[str] = attr.ib(default=None)
-    multipath: Optional[str] = attr.ib(default=None)
-    offset: Optional[int] = attr.ib(default=None)
-    resize: Optional[bool] = attr.ib(default=None)
-    partition_type: Optional[str] = attr.ib(default=None)
-    partition_name: Optional[str] = attr.ib(default=None)
-    path: Optional[str] = attr.ib(default=None)
+    wipe: Optional[str] = None
+    flag: Optional[str] = None
+    number: Optional[int] = None
+    preserve: bool = False
+    grub_device: bool = False
+    name: Optional[str] = None
+    multipath: Optional[str] = None
+    offset: Optional[int] = None
+    resize: Optional[bool] = None
+    partition_type: Optional[str] = None
+    partition_name: Optional[str] = None
+    path: Optional[str] = None
 
     def __post_init__(self):
         if self.number is not None:
@@ -816,7 +816,7 @@ class Partition(_Formattable):
 
 @fsobj("raid")
 class Raid(_Device):
-    name: str = attr.ib()
+    name: str
     raidlevel: str = attr.ib(converter=lambda x: raidlevels_by_value[x].value)
     devices: Set[Union[Disk, Partition, "Raid"]] = attributes.reflist(
         backlink="_constructed_device", default=attr.Factory(set))
@@ -830,11 +830,11 @@ class Raid(_Device):
     spare_devices: Set[Union[Disk, Partition, "Raid"]] = attributes.reflist(
         backlink="_constructed_device", default=attr.Factory(set))
 
-    preserve: bool = attr.ib(default=False)
-    wipe: Optional[str] = attr.ib(default=None)
+    preserve: bool = False
+    wipe: Optional[str] = None
     ptable: Optional[str] = attributes.ptable()
-    metadata: Optional[str] = attr.ib(default=None)
-    _path: Optional[str] = attr.ib(default=None)
+    metadata: Optional[str] = None
+    _path: Optional[str] = None
     container: Optional["Raid"] = attributes.ref(
         backlink="_subvolumes", default=None)
     _subvolumes: List["Raid"] = attributes.backlink(default=attr.Factory(list))
@@ -901,11 +901,11 @@ class Raid(_Device):
 
 @fsobj("lvm_volgroup")
 class LVM_VolGroup(_Device):
-    name: str = attr.ib()
+    name: str
     devices: List[Union[Disk, Partition, Raid]] = attributes.reflist(
         backlink="_constructed_device")
 
-    preserve: bool = attr.ib(default=False)
+    preserve: bool = False
 
     @property
     def size(self):
@@ -925,13 +925,13 @@ class LVM_VolGroup(_Device):
 
 @fsobj("lvm_partition")
 class LVM_LogicalVolume(_Formattable):
-    name: str = attr.ib()
+    name: str
     volgroup: LVM_VolGroup = attributes.ref(backlink="_partitions")
     size: int = attributes.size(default=None)
-    wipe: Optional[str] = attr.ib(default=None)
+    wipe: Optional[str] = None
 
-    preserve: bool = attr.ib(default=False)
-    path: Optional[str] = attr.ib(default=None)
+    preserve: bool = False
+    path: Optional[str] = None
 
     def serialize_size(self):
         if self.size is None:
@@ -961,8 +961,8 @@ LUKS_OVERHEAD = 16*(2**20)
 class DM_Crypt:
     volume: _Formattable = attributes.ref(backlink="_constructed_device")
     key: Optional[str] = attr.ib(metadata={'redact': True}, default=None)
-    keyfile: Optional[str] = attr.ib(default=None)
-    path: Optional[str] = attr.ib(default=None)
+    keyfile: Optional[str] = None
+    path: Optional[str] = None
 
     def serialize_key(self):
         if self.key and not self.keyfile:
@@ -974,8 +974,8 @@ class DM_Crypt:
         else:
             return {}
 
-    dm_name: Optional[str] = attr.ib(default=None)
-    preserve: bool = attr.ib(default=False)
+    dm_name: Optional[str] = None
+    preserve: bool = False
 
     _constructed_device: Optional["ConstructedDevice"] = attributes.backlink()
 
@@ -989,8 +989,8 @@ class DM_Crypt:
 
 @fsobj("device")
 class ArbitraryDevice(_Device):
-    ptable: Optional[str] = attr.ib(default=None)
-    path: Optional[str] = attr.ib(default=None)
+    ptable: Optional[str] = None
+    path: Optional[str] = None
 
     @property
     def size(self):
@@ -1002,13 +1002,13 @@ class ArbitraryDevice(_Device):
 
 @fsobj("format")
 class Filesystem:
-    fstype: str = attr.ib()
+    fstype: str
     volume: _Formattable = attributes.ref(backlink="_fs")
 
-    label: Optional[str] = attr.ib(default=None)
-    uuid: Optional[str] = attr.ib(default=None)
-    preserve: bool = attr.ib(default=False)
-    extra_options: Optional[List[str]] = attr.ib(default=None)
+    label: Optional[str] = None
+    uuid: Optional[str] = None
+    preserve: bool = False
+    extra_options: Optional[List[str]] = None
 
     _mount: Optional["Mount"] = attributes.backlink()
 
@@ -1028,11 +1028,11 @@ class Filesystem:
 
 @fsobj("mount")
 class Mount:
-    path: str = attr.ib()
+    path: str
     device: Filesystem = attributes.ref(backlink="_mount", default=None)
-    fstype: Optional[str] = attr.ib(default=None)
-    options: Optional[str] = attr.ib(default=None)
-    spec: Optional[str] = attr.ib(default=None)
+    fstype: Optional[str] = None
+    options: Optional[str] = None
+    spec: Optional[str] = None
 
     def can_delete(self):
         from subiquity.common.filesystem import boot
@@ -1053,15 +1053,15 @@ class Mount:
 class ZPool:
     vdevs: List[Union[Disk, Partition]] = attributes.reflist(
         backlink="_constructed_device")
-    pool: str = attr.ib()
-    mountpoint: str = attr.ib()
+    pool: str
+    mountpoint: str
 
     _zfses: List["ZFS"] = attributes.backlink(default=attr.Factory(list))
 
     # storage options on the pool
-    pool_properties: Optional[dict] = attr.ib(default=None)
+    pool_properties: Optional[dict] = None
     # default dataset options for the zfses in the pool
-    fs_properties: Optional[dict] = attr.ib(default=None)
+    fs_properties: Optional[dict] = None
 
     async def pre_shutdown(self, command_runner):
         await command_runner.run(['zpool', 'export', self.pool])
@@ -1070,9 +1070,9 @@ class ZPool:
 @fsobj("zfs")
 class ZFS:
     pool: ZPool = attributes.ref(backlink="_zfses")
-    volume: str = attr.ib()
+    volume: str
     # options to pass to zfs dataset creation
-    properties: Optional[dict] = attr.ib(default=None)
+    properties: Optional[dict] = None
 
 
 ConstructedDevice = Union[Raid, LVM_VolGroup, ZPool]
