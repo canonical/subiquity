@@ -653,7 +653,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def POST(self, config: list):
         log.debug(config)
-        self.model._actions, self.model._exclusions = \
+        self.model._actions = \
             self.model._actions_from_config(
                 config, blockdevs=self.model._probe_data['blockdev'],
                 is_probe_data=False)
@@ -680,7 +680,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if can_be_boot:
                     continue
             disks.append(disk)
-        return [d for d in disks if d not in self.model._exclusions]
+        return [d for d in disks if not d._has_in_use_partition]
 
     def _offsets_and_sizes_for_volume(self, volume):
         offset = self.model._partition_alignment_data['gpt'].min_start_offset
@@ -859,7 +859,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             disks = [
                 d
                 for d in model._all(type='disk')
-                if d not in model._exclusions
+                if not d._has_in_use_partition
                 ]
         minsize = self.calculate_suggested_install_min()
         return StorageResponseV2(
