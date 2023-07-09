@@ -144,7 +144,7 @@ def fsobj(typ):
         c.__annotations__['id'] = str
         c.__annotations__['_m'] = "FilesystemModel"
         c.__annotations__['type'] = str
-        c = attr.s(eq=False, repr=False)(c)
+        c = attr.s(eq=False, repr=False, auto_attribs=True, kw_only=True)(c)
         c.__repr__ = fsobj__repr
         _type_to_cls[typ] = c
         return c
