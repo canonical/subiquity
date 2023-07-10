@@ -66,7 +66,6 @@ from subiquity.common.filesystem.actions import (
 from subiquity.common.filesystem import boot, gaps, labels
 from subiquity.models.filesystem import (
     humanize_size,
-    Disk,
     )
 
 from .delete import ConfirmDeleteStretchy, ConfirmReformatStretchy
@@ -377,9 +376,8 @@ class DeviceList(WidgetWrap):
     def refresh_model_inputs(self):
         devices = [
             d for d in self.parent.model.all_devices()
-            if ((d.available() == self.show_available
+            if (d.available() == self.show_available
                 or (not self.show_available and d.has_unavailable_partition()))
-                and (not isinstance(d, Disk) or not d._has_in_use_partition))
         ]
         if len(devices) == 0:
             self._w = Padding.push_2(self._no_devices_content)

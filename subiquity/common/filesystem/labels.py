@@ -233,6 +233,8 @@ def _usage_labels_generic(device, *, exclude_final_unused=False):
             if m:
                 # A filesytem
                 r.append(_("mounted at {path}").format(path=m.path))
+            elif device._is_in_use:
+                r.append(_("in use"))
             elif not boot.is_esp(device):
                 # A filesytem
                 r.append(_("not mounted"))

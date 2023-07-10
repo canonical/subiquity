@@ -168,7 +168,13 @@ def _can_edit_generic(device):
             cdname=labels.label(cd))
 
 
-_can_edit.register(Partition, _can_edit_generic)
+@_can_edit.register(Partition)
+def _can_edit_partition(partition):
+    if partition._is_in_use:
+        return False
+    return _can_edit_generic(partition)
+
+
 _can_edit.register(LVM_LogicalVolume, _can_edit_generic)
 
 
@@ -203,6 +209,8 @@ _can_reformat = make_checker(DeviceAction.REFORMAT)
 @_can_reformat.register(Disk)
 @_can_reformat.register(Raid)
 def _can_reformat_device(device):
+    if device._has_in_use_partition:
+        return False
     if len(device._partitions) == 0:
         return False
     for p in device._partitions:
@@ -288,6 +296,8 @@ def _can_delete_generic(device):
 
 @_can_delete.register(Partition)
 def _can_delete_partition(partition):
+    if partition._is_in_use:
+        return False
     if partition.device._has_preexisting_partition():
         return _("Cannot delete a single partition from a device that "
                  "already has partitions.")

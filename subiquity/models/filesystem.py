@@ -580,6 +580,8 @@ class _Device(_Formattable, ABC):
         #    with a fs that needs to be mounted and is not mounted
         if self._constructed_device is not None:
             return False
+        if self._is_in_use:
+            return False
         if self._fs is not None:
             return self._fs._available()
         from subiquity.common.filesystem.gaps import (
@@ -761,6 +763,8 @@ class Partition(_Formattable):
 
     def available(self):
         if self.flag in ['bios_grub', 'prep'] or self.grub_device:
+            return False
+        if self._is_in_use:
             return False
         if self._constructed_device is not None:
             return False
