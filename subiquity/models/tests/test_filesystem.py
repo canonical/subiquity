@@ -189,6 +189,8 @@ def make_partition(model, device=None, *, preserve=False, size=None,
             offset = gap.offset
     partition = Partition(m=model, device=device, size=size, offset=offset,
                           preserve=preserve, flag=flag, **kw)
+    if partition.preserve:
+        partition._info = FakeStorageInfo(size=size)
     model._actions.append(partition)
     return partition
 
@@ -206,8 +208,11 @@ def make_raid(model, **kw):
     name = 'md%s' % len(model._actions)
     r = model.add_raid(
         name, 'raid1', {make_disk(model), make_disk(model)}, set())
+    size = r.size
     for k, v in kw.items():
         setattr(r, k, v)
+    if r.preserve:
+        r._info = FakeStorageInfo(size=size)
     return r
 
 
@@ -1272,7 +1277,7 @@ class TestZPool(SubiTestCase):
                  mountpoint='/'),
             dict(type='zfs', id='zfs-1', volume='/ROOT', pool='zpool-1'),
         ]
-        objs, _exclusions = m._actions_from_config(config, blockdevs,
+        objs, _exclusions = m._actions_from_config(config, blockdevs=blockdevs,
                                                    is_probe_data=False)
         actual_disk, zpool, zfs = objs
         self.assertTrue(isinstance(zpool, ZPool))

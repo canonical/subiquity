@@ -617,7 +617,7 @@ class Disk(_Device):
     grub_device: bool = False
     device_id: str = None
 
-    _info: Optional[StorageInfo] = None
+    _info: StorageInfo
 
     @property
     def available_for_partitions(self):
@@ -728,6 +728,8 @@ class Partition(_Formattable):
     partition_name: Optional[str] = None
     path: Optional[str] = None
 
+    _info: Optional[StorageInfo] = None
+
     def __post_init__(self):
         if self.number is not None:
             return
@@ -820,6 +822,7 @@ class Raid(_Device):
     raidlevel: str = attr.ib(converter=lambda x: raidlevels_by_value[x].value)
     devices: Set[Union[Disk, Partition, "Raid"]] = attributes.reflist(
         backlink="_constructed_device", default=attr.Factory(set))
+    _info: Optional[StorageInfo] = None
 
     def serialize_devices(self):
         # Surprisingly, the order of devices passed to mdadm --create
@@ -1177,7 +1180,7 @@ class FilesystemModel(object):
                 self._probe_data)["storage"]["config"]
             self._actions, self._exclusions = self._actions_from_config(
                 self._orig_config,
-                self._probe_data['blockdev'],
+                blockdevs=self._probe_data['blockdev'],
                 is_probe_data=True)
         else:
             self._orig_config = []
@@ -1208,7 +1211,7 @@ class FilesystemModel(object):
             }
         self._actions, self._exclusions = self._actions_from_config(
             status.config,
-            status.blockdev,
+            blockdevs=status.blockdev,
             is_probe_data=False)
 
     def _make_matchers(self, match):
@@ -1354,7 +1357,9 @@ class FilesystemModel(object):
                 action['path'] = disk.path
                 action['serial'] = disk.serial
         self._actions, self._exclusions = self._actions_from_config(
-            ai_config, self._probe_data['blockdev'], is_probe_data=False)
+            ai_config,
+            blockdevs=self._probe_data['blockdev'],
+            is_probe_data=False)
 
         self.assign_omitted_offsets()
 
@@ -1397,7 +1402,7 @@ class FilesystemModel(object):
                 else:
                     p.size = dehumanize_size(p.size)
 
-    def _actions_from_config(self, config, blockdevs, *, is_probe_data):
+    def _actions_from_config(self, config, *, blockdevs, is_probe_data):
         """Convert curtin storage config into action instances.
 
         curtin represents storage "actions" as defined in
@@ -1436,8 +1441,10 @@ class FilesystemModel(object):
                 # (e.g. bcache)
                 continue
             kw = {}
+            field_names = set()
             for f in attr.fields(c):
-                n = f.name
+                n = f.name.lstrip('_')
+                field_names.add(f.name)
                 if n not in action:
                     continue
                 v = action[n]
@@ -1453,7 +1460,7 @@ class FilesystemModel(object):
                     # ignored, we need to ignore the current action too
                     # (e.g. a bcache's filesystem).
                     continue
-            if kw['type'] == 'disk':
+            if '_info' in field_names and 'path' in kw:
                 path = kw['path']
                 kw['info'] = StorageInfo({path: blockdevs[path]})
             if is_probe_data:

@@ -641,7 +641,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug(config)
         self.model._actions, self.model._exclusions = \
             self.model._actions_from_config(
-                config, self.model._probe_data['blockdev'],
+                config, blockdevs=self.model._probe_data['blockdev'],
                 is_probe_data=False)
         await self.configured()
 
