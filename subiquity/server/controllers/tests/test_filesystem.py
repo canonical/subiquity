@@ -49,6 +49,7 @@ from subiquity.common.types import (
 from subiquity.models.filesystem import dehumanize_size
 from subiquity.models.source import CatalogEntryVariation
 from subiquity.models.tests.test_filesystem import (
+    FakeStorageInfo,
     make_disk,
     make_model,
     make_partition,
@@ -325,7 +326,6 @@ class TestGuided(IsolatedAsyncioTestCase):
         await self.controller._examine_systems_task.wait()
         self.model = make_model(bootloader, storage_version)
         self.controller.model = self.model
-        self.model._probe_data = {'blockdev': {}}
         self.d1 = make_disk(self.model, ptable=ptable)
 
     @parameterized.expand(boot_expectations)
@@ -425,9 +425,8 @@ class TestGuided(IsolatedAsyncioTestCase):
             p.preserve = True
             if bl == Bootloader.UEFI:
                 # let it pass the is_esp check
-                self.model._probe_data['blockdev'][p._path()] = {
-                    "ID_PART_ENTRY_TYPE": str(0xef)
-                }
+                p._info = FakeStorageInfo(size=p.size)
+                p._info.raw["ID_PART_ENTRY_TYPE"] = str(0xef)
         # Make it more interesting with other partitions.
         # Also create the extended part if needed.
         g = gaps.largest_gap(self.d1)
