@@ -1212,12 +1212,11 @@ class FilesystemModel(object):
         self.storage_version = status.storage_version
         self._orig_config = status.orig_config
         self._probe_data = {
-            'blockdev': status.blockdev,
             'dasd': status.dasd,
             }
         self._actions, self._exclusions = self._actions_from_config(
             status.config,
-            blockdevs=status.blockdev,
+            blockdevs=None,
             is_probe_data=False)
 
     def _make_matchers(self, match):
