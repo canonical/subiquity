@@ -297,8 +297,7 @@ class TestActions(unittest.TestCase):
         model.add_volgroup('vg0', {raid1p1})
         self.assertActionNotPossible(raid1, DeviceAction.REFORMAT)
 
-        raid2 = make_raid(model)
-        raid2.preserve = True
+        raid2 = make_raid(model, preserve=True)
         self.assertActionNotPossible(raid2, DeviceAction.REFORMAT)
         raid2p1 = make_partition(model, raid2, preserve=True)
         self.assertActionPossible(raid2, DeviceAction.REFORMAT)

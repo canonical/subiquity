@@ -202,10 +202,13 @@ def make_model_and_partition(bootloader=None):
     return model, make_partition(model, disk)
 
 
-def make_raid(model):
+def make_raid(model, **kw):
     name = 'md%s' % len(model._actions)
-    return model.add_raid(
+    r = model.add_raid(
         name, 'raid1', {make_disk(model), make_disk(model)}, set())
+    for k, v in kw.items():
+        setattr(r, k, v)
+    return r
 
 
 def make_model_and_raid(bootloader=None):
@@ -263,25 +266,23 @@ class TestFilesystemModel(unittest.TestCase):
     def _test_ok_for_xxx(self, model, make_new_device, attr,
                          test_partitions=True):
         # Newly formatted devs are ok_for_raid
-        dev1 = make_new_device()
+        dev1 = make_new_device(model)
         self.assertTrue(getattr(dev1, attr))
         # A freshly formatted dev is not ok_for_raid
-        dev2 = make_new_device()
+        dev2 = make_new_device(model)
         model.add_filesystem(dev2, 'ext4')
         self.assertFalse(getattr(dev2, attr))
         if test_partitions:
             # A device with a partition is not ok_for_raid
-            dev3 = make_new_device()
+            dev3 = make_new_device(model)
             make_partition(model, dev3)
             self.assertFalse(getattr(dev3, attr))
         # Empty existing devices are ok
-        dev4 = make_new_device()
-        dev4.preserve = True
+        dev4 = make_new_device(model, preserve=True)
         self.assertTrue(getattr(dev4, attr))
         # A dev with an existing filesystem is ok (there is no
         # way to remove the format)
-        dev5 = make_new_device()
-        dev5.preserve = True
+        dev5 = make_new_device(model, preserve=True)
         fs = model.add_filesystem(dev5, 'ext4')
         fs.preserve = True
         self.assertTrue(dev5.ok_for_raid)
@@ -291,18 +292,15 @@ class TestFilesystemModel(unittest.TestCase):
 
     def test_disk_ok_for_xxx(self):
         model = make_model()
-        self._test_ok_for_xxx(
-            model, lambda: make_disk(model), "ok_for_raid")
-        self._test_ok_for_xxx(
-            model, lambda: make_disk(model), "ok_for_lvm_vg")
+
+        self._test_ok_for_xxx(model, make_disk, "ok_for_raid")
+        self._test_ok_for_xxx(model, make_disk, "ok_for_lvm_vg")
 
     def test_partition_ok_for_xxx(self):
         model = make_model()
 
-        def make_new_device():
-            return make_partition(model)
-        self._test_ok_for_xxx(model, make_new_device, "ok_for_raid", False)
-        self._test_ok_for_xxx(model, make_new_device, "ok_for_lvm_vg", False)
+        self._test_ok_for_xxx(model, make_partition, "ok_for_raid", False)
+        self._test_ok_for_xxx(model, make_partition, "ok_for_lvm_vg", False)
 
         part = make_partition(make_model(Bootloader.BIOS), flag='bios_grub')
         self.assertFalse(part.ok_for_raid)
@@ -317,10 +315,8 @@ class TestFilesystemModel(unittest.TestCase):
     def test_raid_ok_for_xxx(self):
         model = make_model()
 
-        def make_new_device():
-            return make_raid(model)
-        self._test_ok_for_xxx(model, make_new_device, "ok_for_raid", False)
-        self._test_ok_for_xxx(model, make_new_device, "ok_for_lvm_vg", False)
+        self._test_ok_for_xxx(model, make_raid, "ok_for_raid", False)
+        self._test_ok_for_xxx(model, make_raid, "ok_for_lvm_vg", False)
 
     def test_vg_ok_for_xxx(self):
         model, vg = make_model_and_vg()
