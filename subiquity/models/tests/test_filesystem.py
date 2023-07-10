@@ -1272,12 +1272,12 @@ class TestZPool(SubiTestCase):
         blockdevs = m._probe_data['blockdev']
         config = [
             dict(type='disk', id=d.id, path=d.path, ptable=d.ptable,
-                 serial=d.serial),
+                 serial=d.serial, info={d.path: blockdevs[d.path]}),
             dict(type='zpool', id='zpool-1', vdevs=[d.id], pool='p1',
                  mountpoint='/'),
             dict(type='zfs', id='zfs-1', volume='/ROOT', pool='zpool-1'),
         ]
-        objs, _exclusions = m._actions_from_config(config, blockdevs=blockdevs,
+        objs, _exclusions = m._actions_from_config(config, blockdevs=None,
                                                    is_probe_data=False)
         actual_disk, zpool, zfs = objs
         self.assertTrue(isinstance(zpool, ZPool))

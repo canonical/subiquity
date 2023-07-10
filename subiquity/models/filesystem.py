@@ -446,6 +446,8 @@ def asdict(inst, *, for_api: bool):
                     r[name] = v.id
                 elif metadata.get('reflist', False):
                     r[name] = [elem.id for elem in v]
+                elif isinstance(v, StorageInfo):
+                    r[name] = {v.name: v.raw}
                 else:
                     r[name] = v
     return r
@@ -624,7 +626,7 @@ class Disk(_Device):
     grub_device: bool = False
     device_id: str = None
 
-    _info: StorageInfo
+    _info: StorageInfo = attributes.for_api()
 
     @property
     def available_for_partitions(self):
@@ -735,7 +737,7 @@ class Partition(_Formattable):
     partition_name: Optional[str] = None
     path: Optional[str] = None
 
-    _info: Optional[StorageInfo] = None
+    _info: Optional[StorageInfo] = attributes.for_api(default=None)
 
     def __post_init__(self):
         if self.number is not None:
@@ -829,7 +831,7 @@ class Raid(_Device):
     raidlevel: str = attr.ib(converter=lambda x: raidlevels_by_value[x].value)
     devices: Set[Union[Disk, Partition, "Raid"]] = attributes.reflist(
         backlink="_constructed_device", default=attr.Factory(set))
-    _info: Optional[StorageInfo] = None
+    _info: Optional[StorageInfo] = attributes.for_api(default=None)
 
     def serialize_devices(self):
         # Surprisingly, the order of devices passed to mdadm --create
@@ -1468,9 +1470,12 @@ class FilesystemModel(object):
                     # ignored, we need to ignore the current action too
                     # (e.g. a bcache's filesystem).
                     continue
-            if '_info' in field_names and 'path' in kw:
-                path = kw['path']
-                kw['info'] = StorageInfo({path: blockdevs[path]})
+            if '_info' in field_names:
+                if 'info' in kw:
+                    kw['info'] = StorageInfo(kw['info'])
+                elif 'path' in kw:
+                    path = kw['path']
+                    kw['info'] = StorageInfo({path: blockdevs[path]})
             if is_probe_data:
                 kw['preserve'] = True
             obj = byid[action['id']] = c(m=self, **kw)
