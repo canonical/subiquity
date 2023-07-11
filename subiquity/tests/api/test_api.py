@@ -598,10 +598,8 @@ class TestCore(TestAPI):
             bootloader='uefi',
             extra_args=[
                 '--storage-version', '2',
-                '--source-catalog',
-                'examples/sources/install-sources-canary.yaml',
-                '--dry-run-config',
-                'examples/dry-run-configs/tpm-dr-config.yaml',
+                '--source-catalog', 'examples/sources/install-canary.yaml',
+                '--dry-run-config', 'examples/dry-run-configs/tpm.yaml',
             ]
         )
         async with start_server(cfg, **kw) as inst:
@@ -1654,7 +1652,7 @@ class TestDrivers(TestAPI):
     async def _test_source(self, source_id, expected_driver):
         with patch.dict(os.environ, {'SUBIQUITY_DEBUG': 'has-drivers'}):
             cfg = 'examples/machines/simple.json'
-            extra = ['--source-catalog', 'examples/sources/mixed-sources.yaml']
+            extra = ['--source-catalog', 'examples/sources/mixed.yaml']
             async with start_server(cfg, extra_args=extra) as inst:
                 await inst.post('/source', source_id=source_id,
                                 search_drivers=True)
@@ -1721,7 +1719,7 @@ class TestOEM(TestAPI):
     async def _test_listing_certified(self, source_id: str,
                                       expected: List[str]):
         with patch.dict(os.environ, {'SUBIQUITY_DEBUG': 'has-drivers'}):
-            args = ['--source-catalog', 'examples/sources/mixed-sources.yaml']
+            args = ['--source-catalog', 'examples/sources/mixed.yaml']
             config = 'examples/machines/simple.json'
             async with start_server(config, extra_args=args) as inst:
                 await inst.post('/source', source_id=source_id)
@@ -1873,8 +1871,8 @@ class TestAutoinstallServer(TestAPI):
     async def test_make_view_requests(self):
         cfg = 'examples/machines/simple.json'
         extra = [
-            '--autoinstall', 'examples/autoinstall/autoinstall-short.yaml',
-            '--source-catalog', 'examples/sources/install-sources.yaml',
+            '--autoinstall', 'examples/autoinstall/short.yaml',
+            '--source-catalog', 'examples/sources/install.yaml',
         ]
         async with start_server(cfg, extra_args=extra,
                                 set_first_source=False) as inst:
@@ -2039,8 +2037,8 @@ class TestActiveDirectory(TestAPI):
     async def test_ad_autoinstall(self):
         cfg = 'examples/machines/simple.json'
         extra = [
-            '--autoinstall', 'examples/autoinstall/autoinstall-ad.yaml',
-            '--source-catalog', 'examples/sources/mixed-sources.yaml',
+            '--autoinstall', 'examples/autoinstall/ad.yaml',
+            '--source-catalog', 'examples/sources/mixed.yaml',
             '--kernel-cmdline', 'autoinstall',
         ]
         try:

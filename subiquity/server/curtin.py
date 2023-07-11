@@ -130,11 +130,11 @@ class _CurtinCommand:
 class _DryRunCurtinCommand(_CurtinCommand):
 
     stages_mapping = {
-        tuple(): "curtin-events-initial.json",  # no stage
-        ("partitioning",): "curtin-events-partitioning.json",
-        ("extract",): "curtin-events-extract.json",
-        ("curthooks",): "curtin-events-curthooks.json",
-        ("swap",): "curtin-events-curthooks.json",  # hack
+        tuple(): "initial.json",  # no stage
+        ("partitioning",): "partitioning.json",
+        ("extract",): "extract.json",
+        ("curthooks",): "curthooks.json",
+        ("swap",): "curthooks.json",  # hack
     }
 
     def make_command(self, command, *args, config=None):

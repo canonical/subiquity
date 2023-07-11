@@ -1,5 +1,5 @@
-#source-catalog: examples/sources/tpm-sources.yaml
-#dr-config: examples/dry-run-configs/tpm-dr-config.yaml
+#source-catalog: examples/sources/tpm.yaml
+#dr-config: examples/dry-run-configs/tpm.yaml
 Source:
   source: src-prefer-encrypted
 Serial:
