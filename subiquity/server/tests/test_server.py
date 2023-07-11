@@ -37,7 +37,7 @@ class TestAutoinstallLoad(SubiTestCase):
         opts = Mock()
         opts.dry_run = True
         opts.output_base = self.tempdir
-        opts.machine_config = 'examples/simple.json'
+        opts.machine_config = 'examples/machines/simple.json'
         opts.kernel_cmdline = {}
         opts.autoinstall = None
         self.server = SubiquityServer(opts, None)
@@ -164,7 +164,7 @@ class TestDefaultUser(SubiTestCase):
         opts = Mock()
         opts.dry_run = True
         opts.output_base = self.tmp_dir()
-        opts.machine_config = 'examples/simple.json'
+        opts.machine_config = 'examples/machines/simple.json'
         server = SubiquityServer(opts, None)
         server.cloud = Mock()
         server._user_has_password = Mock(

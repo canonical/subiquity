@@ -1,4 +1,4 @@
-#machine-config: examples/existing-partitions.json
+#machine-config: examples/machines/imsm.json
 Source:
   source: ubuntu-server
 Welcome:
@@ -14,13 +14,8 @@ Proxy:
 Mirror:
   mirror: "http://us.archive.ubuntu.com"
 Filesystem:
-  manual:
-    - obj: [disk serial serial1, part 5]
-      action: EDIT
-      data:
-        fstype: ext4
-        mount: /
-    - action: done
+  guided: yes
+  guided-label: "md126"
 Identity:
   realname: Ubuntu
   username: ubuntu
@@ -28,7 +23,7 @@ Identity:
   # ubuntu
   password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
 UbuntuPro:
-  token: ""
+  token: C1NWcZTHLteJXGVMM6YhvHDpGrhyy7
 SSH:
   install_server: true
   pwauth: false

@@ -302,13 +302,13 @@ async def connect_server(*args, **kwargs):
 class TestBitlocker(TestAPI):
     @timeout()
     async def test_has_bitlocker(self):
-        async with start_server('examples/win10.json') as inst:
+        async with start_server('examples/machines/win10.json') as inst:
             resp = await inst.get('/storage/has_bitlocker')
             self.assertEqual(1, len(resp))
 
     @timeout()
     async def test_not_bitlocker(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             resp = await inst.get('/storage/has_bitlocker')
             self.assertEqual(0, len(resp))
 
@@ -316,7 +316,7 @@ class TestBitlocker(TestAPI):
 class TestFlow(TestAPI):
     @timeout(2)
     async def test_serverish_flow(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             await inst.post('/locale', 'en_US.UTF-8')
             keyboard = {
                 'layout': 'us',
@@ -369,7 +369,7 @@ class TestFlow(TestAPI):
 
     @timeout()
     async def test_v2_flow(self):
-        async with start_server('examples/win10.json') as inst:
+        async with start_server('examples/machines/win10.json') as inst:
             disk_id = 'disk-sda'
             orig_resp = await inst.get('/storage/v2')
             [sda] = match(orig_resp['disks'], id=disk_id)
@@ -440,7 +440,7 @@ class TestFlow(TestAPI):
 class TestGuided(TestAPI):
     @timeout()
     async def test_guided_v2_reformat(self):
-        cfg = 'examples/win10-along-ubuntu.json'
+        cfg = 'examples/machines/win10-along-ubuntu.json'
         async with start_server(cfg) as inst:
             resp = await inst.get('/storage/v2/guided')
             [reformat] = match(resp['targets'],
@@ -482,7 +482,7 @@ class TestGuided(TestAPI):
 
     @timeout()
     async def test_guided_v2_resize(self):
-        cfg = 'examples/win10-along-ubuntu.json'
+        cfg = 'examples/machines/win10-along-ubuntu.json'
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
             orig_resp = await inst.get('/storage/v2')
@@ -524,7 +524,7 @@ class TestGuided(TestAPI):
 
     @timeout()
     async def test_guided_v2_use_gap(self):
-        cfg = self.machineConfig('examples/win10-along-ubuntu.json')
+        cfg = self.machineConfig('examples/machines/win10-along-ubuntu.json')
         with cfg.edit() as data:
             pt = data['storage']['blockdev']['/dev/sda']['partitiontable']
             [node] = match(pt['partitions'], node='/dev/sda5')
@@ -571,7 +571,7 @@ class TestGuided(TestAPI):
 
     @timeout()
     async def test_guided_v2_resize_logical(self):
-        cfg = 'examples/threebuntu-on-msdos.json'
+        cfg = 'examples/machines/threebuntu-on-msdos.json'
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
             resp = await inst.get('/storage/v2/guided')
@@ -590,7 +590,7 @@ class TestGuided(TestAPI):
 class TestCore(TestAPI):
     @timeout()
     async def test_basic_core_boot(self):
-        cfg = self.machineConfig('examples/simple.json')
+        cfg = self.machineConfig('examples/machines/simple.json')
         with cfg.edit() as data:
             attrs = data['storage']['blockdev']['/dev/sda']['attrs']
             attrs['size'] = str(25 << 30)
@@ -598,8 +598,10 @@ class TestCore(TestAPI):
             bootloader='uefi',
             extra_args=[
                 '--storage-version', '2',
-                '--source-catalog', 'examples/install-sources-canary.yaml',
-                '--dry-run-config', 'examples/tpm-dr-config.yaml',
+                '--source-catalog',
+                'examples/sources/install-sources-canary.yaml',
+                '--dry-run-config',
+                'examples/dry-run-configs/tpm-dr-config.yaml',
             ]
         )
         async with start_server(cfg, **kw) as inst:
@@ -627,7 +629,7 @@ class TestCore(TestAPI):
 class TestAdd(TestAPI):
     @timeout()
     async def test_v2_add_boot_partition(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             disk_id = 'disk-sda'
 
             resp = await inst.post('/storage/v2')
@@ -678,7 +680,7 @@ class TestAdd(TestAPI):
 
     @timeout()
     async def test_v2_deny_multiple_add_boot_partition(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             disk_id = 'disk-sda'
             await inst.post('/storage/v2/add_boot_partition', disk_id=disk_id)
             with self.assertRaises(ClientResponseError):
@@ -687,7 +689,8 @@ class TestAdd(TestAPI):
 
     @timeout()
     async def test_v2_deny_multiple_add_boot_partition_BIOS(self):
-        async with start_server('examples/simple.json', 'bios') as inst:
+        cfg = 'examples/machines/simple.json'
+        async with start_server(cfg, 'bios') as inst:
             disk_id = 'disk-sda'
             await inst.post('/storage/v2/add_boot_partition', disk_id=disk_id)
             with self.assertRaises(ClientResponseError):
@@ -697,7 +700,7 @@ class TestAdd(TestAPI):
     @timeout()
     async def test_add_format_required(self):
         disk_id = 'disk-sda'
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             bad_partitions = [
                 {},
                 {'mount': '/'},
@@ -710,7 +713,7 @@ class TestAdd(TestAPI):
 
     @timeout()
     async def test_add_default_size_handling(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             disk_id = 'disk-sda'
             resp = await inst.get('/storage/v2')
             [sda] = match(resp['disks'], id=disk_id)
@@ -731,7 +734,8 @@ class TestAdd(TestAPI):
 
     @timeout()
     async def test_v2_add_boot_BIOS(self):
-        async with start_server('examples/simple.json', 'bios') as inst:
+        cfg = 'examples/machines/simple.json'
+        async with start_server(cfg, 'bios') as inst:
             disk_id = 'disk-sda'
             resp = await inst.post('/storage/v2/add_boot_partition',
                                    disk_id=disk_id)
@@ -742,7 +746,8 @@ class TestAdd(TestAPI):
 
     @timeout()
     async def test_v2_blank_is_not_boot(self):
-        async with start_server('examples/simple.json', 'bios') as inst:
+        cfg = 'examples/machines/simple.json'
+        async with start_server(cfg, 'bios') as inst:
             disk_id = 'disk-sda'
             resp = await inst.get('/storage/v2')
             [sda] = match(resp['disks'], id=disk_id)
@@ -750,7 +755,8 @@ class TestAdd(TestAPI):
 
     @timeout()
     async def test_v2_multi_disk_multi_boot(self):
-        async with start_server('examples/many-nics-and-disks.json') as inst:
+        cfg = 'examples/machines/many-nics-and-disks.json'
+        async with start_server(cfg) as inst:
             resp = await inst.get('/storage/v2')
             [d1] = match(resp['disks'], id='disk-vda')
             [d2] = match(resp['disks'], id='disk-vdb')
@@ -764,7 +770,7 @@ class TestAdd(TestAPI):
 class TestDelete(TestAPI):
     @timeout()
     async def test_v2_delete_without_reformat(self):
-        cfg = 'examples/win10.json'
+        cfg = 'examples/machines/win10.json'
         extra = ['--storage-version', '1']
         async with start_server(cfg, extra_args=extra) as inst:
             data = {
@@ -776,7 +782,7 @@ class TestDelete(TestAPI):
 
     @timeout()
     async def test_v2_delete_without_reformat_is_ok_with_sv2(self):
-        cfg = 'examples/win10.json'
+        cfg = 'examples/machines/win10.json'
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
             data = {
@@ -787,7 +793,7 @@ class TestDelete(TestAPI):
 
     @timeout()
     async def test_v2_delete_with_reformat(self):
-        async with start_server('examples/win10.json') as inst:
+        async with start_server('examples/machines/win10.json') as inst:
             disk_id = 'disk-sda'
             resp = await inst.post('/storage/v2/reformat_disk',
                                    {'disk_id': disk_id})
@@ -810,7 +816,7 @@ class TestDelete(TestAPI):
 
     @timeout()
     async def test_delete_nonexistant(self):
-        async with start_server('examples/win10.json') as inst:
+        async with start_server('examples/machines/win10.json') as inst:
             disk_id = 'disk-sda'
             await inst.post('/storage/v2/reformat_disk', {'disk_id': disk_id})
             data = {
@@ -824,7 +830,7 @@ class TestDelete(TestAPI):
 class TestEdit(TestAPI):
     @timeout()
     async def test_edit_no_change_size(self):
-        async with start_server('examples/win10.json') as inst:
+        async with start_server('examples/machines/win10.json') as inst:
             disk_id = 'disk-sda'
             resp = await inst.get('/storage/v2')
 
@@ -842,7 +848,7 @@ class TestEdit(TestAPI):
 
     @timeout()
     async def test_edit_no_change_grub(self):
-        async with start_server('examples/win10.json') as inst:
+        async with start_server('examples/machines/win10.json') as inst:
             disk_id = 'disk-sda'
             data = {
                 'disk_id': disk_id,
@@ -856,7 +862,7 @@ class TestEdit(TestAPI):
 
     @timeout()
     async def test_edit_format(self):
-        async with start_server('examples/win10.json') as inst:
+        async with start_server('examples/machines/win10.json') as inst:
             disk_id = 'disk-sda'
             data = {
                 'disk_id': disk_id,
@@ -874,7 +880,7 @@ class TestEdit(TestAPI):
 
     @timeout()
     async def test_edit_mount(self):
-        async with start_server('examples/win10.json') as inst:
+        async with start_server('examples/machines/win10.json') as inst:
             disk_id = 'disk-sda'
             data = {
                 'disk_id': disk_id,
@@ -891,7 +897,7 @@ class TestEdit(TestAPI):
 
     @timeout()
     async def test_edit_format_and_mount(self):
-        async with start_server('examples/win10.json') as inst:
+        async with start_server('examples/machines/win10.json') as inst:
             disk_id = 'disk-sda'
             data = {
                 'disk_id': disk_id,
@@ -911,7 +917,7 @@ class TestEdit(TestAPI):
 
     @timeout()
     async def test_v2_reuse(self):
-        async with start_server('examples/win10.json') as inst:
+        async with start_server('examples/machines/win10.json') as inst:
             disk_id = 'disk-sda'
             resp = await inst.get('/storage/v2')
             [orig_sda] = match(resp['disks'], id=disk_id)
@@ -947,7 +953,7 @@ class TestEdit(TestAPI):
 class TestReformat(TestAPI):
     @timeout()
     async def test_reformat_msdos(self):
-        cfg = 'examples/simple.json'
+        cfg = 'examples/machines/simple.json'
         async with start_server(cfg) as inst:
             data = {
                 'disk_id': 'disk-sda',
@@ -961,21 +967,22 @@ class TestReformat(TestAPI):
 class TestPartitionTableTypes(TestAPI):
     @timeout()
     async def test_ptable_gpt(self):
-        async with start_server('examples/win10.json') as inst:
+        async with start_server('examples/machines/win10.json') as inst:
             resp = await inst.get('/storage/v2')
             [sda] = match(resp['disks'], id='disk-sda')
             self.assertEqual('gpt', sda['ptable'])
 
     @timeout()
     async def test_ptable_msdos(self):
-        async with start_server('examples/many-nics-and-disks.json') as inst:
+        cfg = 'examples/machines/many-nics-and-disks.json'
+        async with start_server(cfg) as inst:
             resp = await inst.get('/storage/v2')
             [sda] = match(resp['disks'], id='disk-sda')
             self.assertEqual('msdos', sda['ptable'])
 
     @timeout()
     async def test_ptable_none(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             resp = await inst.get('/storage/v2')
             [sda] = match(resp['disks'], id='disk-sda')
             self.assertEqual(None, sda['ptable'])
@@ -984,7 +991,7 @@ class TestPartitionTableTypes(TestAPI):
 class TestTodos(TestAPI):  # server indicators of required client actions
     @timeout()
     async def test_todos_simple(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             disk_id = 'disk-sda'
             resp = await inst.post('/storage/v2/reformat_disk',
                                    {'disk_id': disk_id})
@@ -1007,7 +1014,7 @@ class TestTodos(TestAPI):  # server indicators of required client actions
 
     @timeout()
     async def test_todos_manual(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             disk_id = 'disk-sda'
             resp = await inst.post('/storage/v2/reformat_disk',
                                    {'disk_id': disk_id})
@@ -1035,7 +1042,7 @@ class TestTodos(TestAPI):  # server indicators of required client actions
 
     @timeout()
     async def test_todos_guided(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             resp = await inst.post('/storage/v2/reformat_disk',
                                    {'disk_id': 'disk-sda'})
             self.assertTrue(resp['need_root'])
@@ -1056,7 +1063,7 @@ class TestTodos(TestAPI):  # server indicators of required client actions
 class TestInfo(TestAPI):
     @timeout()
     async def test_path(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             disk_id = 'disk-sda'
             resp = await inst.get('/storage/v2')
             [sda] = match(resp['disks'], id=disk_id)
@@ -1064,7 +1071,7 @@ class TestInfo(TestAPI):
 
     @timeout()
     async def test_model_and_vendor(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             disk_id = 'disk-sda'
             resp = await inst.get('/storage/v2')
             [sda] = match(resp['disks'], id=disk_id)
@@ -1073,7 +1080,8 @@ class TestInfo(TestAPI):
 
     @timeout()
     async def test_no_vendor(self):
-        async with start_server('examples/many-nics-and-disks.json') as inst:
+        cfg = 'examples/machines/many-nics-and-disks.json'
+        async with start_server(cfg) as inst:
             disk_id = 'disk-sda'
             resp = await inst.get('/storage/v2')
             [sda] = match(resp['disks'], id=disk_id)
@@ -1084,7 +1092,7 @@ class TestInfo(TestAPI):
 class TestFree(TestAPI):
     @timeout()
     async def test_free_only(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             await inst.post('/meta/free_only', enable=True)
             components = await inst.get('/mirror/disable_components')
             components.sort()
@@ -1092,7 +1100,7 @@ class TestFree(TestAPI):
 
     @timeout()
     async def test_not_free_only(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             comps = ['universe', 'multiverse']
             await inst.post('/mirror/disable_components', comps)
             await inst.post('/meta/free_only', enable=False)
@@ -1103,7 +1111,7 @@ class TestFree(TestAPI):
 class TestOSProbe(TestAPI):
     @timeout()
     async def test_win10(self):
-        async with start_server('examples/win10.json') as inst:
+        async with start_server('examples/machines/win10.json') as inst:
             resp = await inst.get('/storage/v2')
             [sda] = match(resp['disks'], id='disk-sda')
             [sda1] = match(sda['partitions'], number=1)
@@ -1121,7 +1129,7 @@ class TestOSProbe(TestAPI):
 class TestPartitionTableEditing(TestAPI):
     @timeout()
     async def test_use_free_space_after_existing(self):
-        cfg = 'examples/ubuntu-and-free-space.json'
+        cfg = 'examples/machines/ubuntu-and-free-space.json'
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
             # Disk has 3 existing partitions and free space.  Add one to end.
@@ -1159,7 +1167,8 @@ class TestPartitionTableEditing(TestAPI):
 
     @timeout()
     async def test_resize(self):
-        cfg = self.machineConfig('examples/ubuntu-and-free-space.json')
+        cfg = self.machineConfig(
+            'examples/machines/ubuntu-and-free-space.json')
         with cfg.edit() as data:
             blockdev = data['storage']['blockdev']
             sizes = {k: int(v['attrs']['size']) for k, v in blockdev.items()}
@@ -1221,7 +1230,7 @@ class TestPartitionTableEditing(TestAPI):
 
     @timeout()
     async def test_est_min_size(self):
-        cfg = self.machineConfig('examples/win10-along-ubuntu.json')
+        cfg = self.machineConfig('examples/machines/win10-along-ubuntu.json')
         with cfg.edit() as data:
             fs = data['storage']['filesystem']
             fs['/dev/sda1']['ESTIMATED_MIN_SIZE'] = 0
@@ -1240,7 +1249,7 @@ class TestPartitionTableEditing(TestAPI):
 
     @timeout()
     async def test_v2_orig_config(self):
-        cfg = 'examples/win10-along-ubuntu.json'
+        cfg = 'examples/machines/win10-along-ubuntu.json'
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
             start_resp = await inst.get('/storage/v2')
@@ -1262,7 +1271,7 @@ class TestPartitionTableEditing(TestAPI):
 class TestGap(TestAPI):
     @timeout()
     async def test_blank_disk_is_one_big_gap(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             resp = await inst.get('/storage/v2')
             [sda] = match(resp['disks'], id='disk-sda')
             gap = sda['partitions'][0]
@@ -1272,7 +1281,7 @@ class TestGap(TestAPI):
 
     @timeout()
     async def test_gap_at_end(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             resp = await inst.get('/storage/v2')
             [sda] = resp['disks']
             [gap] = match(sda['partitions'], _type='Gap')
@@ -1295,7 +1304,7 @@ class TestGap(TestAPI):
 
     @timeout()
     async def SKIP_test_two_gaps(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             disk_id = 'disk-sda'
             resp = await inst.post('/storage/v2/add_boot_partition',
                                    disk_id=disk_id)
@@ -1336,7 +1345,7 @@ class TestGap(TestAPI):
 class TestRegression(TestAPI):
     @timeout()
     async def test_edit_not_trigger_boot_device(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             disk_id = 'disk-sda'
             resp = await inst.get('/storage/v2')
             [sda] = resp['disks']
@@ -1364,7 +1373,7 @@ class TestRegression(TestAPI):
 
     @timeout()
     async def test_osprober_knames(self):
-        cfg = 'examples/lp-1986676-missing-osprober.json'
+        cfg = 'examples/machines/lp-1986676-missing-osprober.json'
         async with start_server(cfg) as inst:
             resp = await inst.get('/storage/v2')
             [nvme] = match(resp['disks'], id='disk-nvme0n1')
@@ -1384,7 +1393,8 @@ class TestRegression(TestAPI):
         # The old way this worked was to use changes to the 'format' value to
         # decide if a wipe was happening or not, and now the client chooses so
         # explicitly.
-        async with start_server('examples/win10-along-ubuntu.json') as inst:
+        cfg = 'examples/machines/win10-along-ubuntu.json'
+        async with start_server(cfg) as inst:
             resp = await inst.get('/storage/v2')
             [d1] = resp['disks']
             [p5] = match(d1['partitions'], number=5)
@@ -1415,7 +1425,8 @@ class TestRegression(TestAPI):
 
     @timeout()
     async def test_edit_should_leave_other_values_alone(self):
-        async with start_server('examples/win10-along-ubuntu.json') as inst:
+        cfg = 'examples/machines/win10-along-ubuntu.json'
+        async with start_server(cfg) as inst:
             async def check_preserve():
                 v1resp = await inst.get('/storage')
                 [c_p5] = match(v1resp['config'], number=5)
@@ -1457,7 +1468,7 @@ class TestRegression(TestAPI):
 
     @timeout()
     async def test_no_change_edit(self):
-        cfg = 'examples/simple.json'
+        cfg = 'examples/machines/simple.json'
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
             resp = await inst.get('/storage/v2')
@@ -1488,7 +1499,7 @@ class TestRegression(TestAPI):
         > Exception: Filesystem(fstype='swap', ...) is already mounted
         Make sure editing the partition is ok now.
         '''
-        cfg = 'examples/simple.json'
+        cfg = 'examples/machines/simple.json'
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
             resp = await inst.get('/storage/v2')
@@ -1518,7 +1529,7 @@ class TestRegression(TestAPI):
         '''We want to offer the same list of fstypes for Subiquity and U-D-I,
            but the list is different today.  Verify that unformatted partitions
            may be created.'''
-        cfg = 'examples/simple.json'
+        cfg = 'examples/machines/simple.json'
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
             resp = await inst.get('/storage/v2')
@@ -1544,7 +1555,7 @@ class TestRegression(TestAPI):
         logical partition was resized to allow creation of more partitions, but
         the 1MiB space was not left between the newly created partition and the
         physically last partition.'''
-        cfg = 'examples/threebuntu-on-msdos.json'
+        cfg = 'examples/machines/threebuntu-on-msdos.json'
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
             resp = await inst.get('/storage/v2/guided')
@@ -1579,7 +1590,7 @@ class TestRegression(TestAPI):
         tries to edit the previously created partition.  The edit operation
         would fail in earlier versions because the new partition would have
         been discarded. '''
-        cfg = 'examples/simple.json'
+        cfg = 'examples/machines/simple.json'
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
             names = ['locale', 'keyboard', 'source', 'network', 'proxy',
@@ -1618,7 +1629,7 @@ class TestCancel(TestAPI):
     @timeout()
     async def test_cancel_drivers(self):
         with patch.dict(os.environ, {'SUBIQUITY_DEBUG': 'has-drivers'}):
-            async with start_server('examples/simple.json') as inst:
+            async with start_server('examples/machines/simple.json') as inst:
                 await inst.post('/source', source_id="placeholder",
                                 search_drivers=True)
                 # /drivers?wait=true is expected to block until APT is
@@ -1642,8 +1653,8 @@ class TestCancel(TestAPI):
 class TestDrivers(TestAPI):
     async def _test_source(self, source_id, expected_driver):
         with patch.dict(os.environ, {'SUBIQUITY_DEBUG': 'has-drivers'}):
-            cfg = 'examples/simple.json'
-            extra = ['--source-catalog', 'examples/mixed-sources.yaml']
+            cfg = 'examples/machines/simple.json'
+            extra = ['--source-catalog', 'examples/sources/mixed-sources.yaml']
             async with start_server(cfg, extra_args=extra) as inst:
                 await inst.post('/source', source_id=source_id,
                                 search_drivers=True)
@@ -1671,7 +1682,7 @@ class TestDrivers(TestAPI):
     async def test_listing_ongoing(self):
         ''' Ensure that the list of drivers returned by /drivers is null while
         the list has not been retrieved. '''
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             resp = await inst.get('/drivers', wait=False)
             self.assertIsNone(resp['drivers'])
 
@@ -1688,14 +1699,14 @@ class TestOEM(TestAPI):
     async def test_listing_ongoing(self):
         ''' Ensure that the list of OEM metapackages returned by /oem is
         null while the list has not been retrieved. '''
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             resp = await inst.get('/oem', wait=False)
             self.assertIsNone(resp['metapackages'])
 
     async def test_listing_empty(self):
         expected_pkgs = []
         with patch.dict(os.environ, {'SUBIQUITY_DEBUG': 'no-drivers'}):
-            async with start_server('examples/simple.json') as inst:
+            async with start_server('examples/machines/simple.json') as inst:
                 await inst.post('/source', source_id='ubuntu-server')
                 names = ['locale', 'keyboard', 'source', 'network', 'proxy',
                          'mirror', 'storage']
@@ -1710,8 +1721,8 @@ class TestOEM(TestAPI):
     async def _test_listing_certified(self, source_id: str,
                                       expected: List[str]):
         with patch.dict(os.environ, {'SUBIQUITY_DEBUG': 'has-drivers'}):
-            args = ['--source-catalog', 'examples/mixed-sources.yaml']
-            config = 'examples/simple.json'
+            args = ['--source-catalog', 'examples/sources/mixed-sources.yaml']
+            config = 'examples/machines/simple.json'
             async with start_server(config, extra_args=args) as inst:
                 await inst.post('/source', source_id=source_id)
                 names = ['locale', 'keyboard', 'source', 'network', 'proxy',
@@ -1740,7 +1751,7 @@ class TestOEM(TestAPI):
 class TestSource(TestAPI):
     @timeout()
     async def test_optional_search_drivers(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             await inst.post('/source', source_id='ubuntu-server')
             resp = await inst.get('/source')
             self.assertFalse(resp['search_drivers'])
@@ -1759,7 +1770,7 @@ class TestSource(TestAPI):
 class TestIdentityValidation(TestAPI):
     @timeout()
     async def test_username_validation(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             resp = await inst.get('/identity/validate_username',
                                   username='plugdev')
             self.assertEqual(resp, 'SYSTEM_RESERVED')
@@ -1784,7 +1795,7 @@ class TestIdentityValidation(TestAPI):
 class TestManyPrimaries(TestAPI):
     @timeout()
     async def test_create_primaries(self):
-        cfg = 'examples/simple.json'
+        cfg = 'examples/machines/simple.json'
         extra = ['--storage-version', '2']
         async with start_server(cfg, extra_args=extra) as inst:
             resp = await inst.get('/storage/v2')
@@ -1824,7 +1835,7 @@ class TestManyPrimaries(TestAPI):
 class TestKeyboard(TestAPI):
     @timeout()
     async def test_input_source(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             data = {'layout': 'fr', 'variant': 'latin9'}
             await inst.post('/keyboard/input_source', data, user='foo')
 
@@ -1832,7 +1843,7 @@ class TestKeyboard(TestAPI):
 class TestUbuntuProContractSelection(TestAPI):
     @timeout()
     async def test_upcs_flow(self):
-        async with start_server('examples/simple.json') as inst:
+        async with start_server('examples/machines/simple.json') as inst:
             # Wait should fail if no initiate first.
             with self.assertRaises(Exception):
                 await inst.get('/ubuntu_pro/contract_selection/wait')
@@ -1860,10 +1871,10 @@ class TestUbuntuProContractSelection(TestAPI):
 class TestAutoinstallServer(TestAPI):
     @timeout(2)
     async def test_make_view_requests(self):
-        cfg = 'examples/simple.json'
+        cfg = 'examples/machines/simple.json'
         extra = [
-            '--autoinstall', 'examples/autoinstall-short.yaml',
-            '--source-catalog', 'examples/install-sources.yaml',
+            '--autoinstall', 'examples/autoinstall/autoinstall-short.yaml',
+            '--source-catalog', 'examples/sources/install-sources.yaml',
         ]
         async with start_server(cfg, extra_args=extra,
                                 set_first_source=False) as inst:
@@ -1889,7 +1900,7 @@ class TestAutoinstallServer(TestAPI):
 
     @timeout()
     async def test_interactive(self):
-        cfg = 'examples/simple.json'
+        cfg = 'examples/machines/simple.json'
         with tempfile.NamedTemporaryFile(mode='w') as tf:
             tf.write('''
                 version: 1
@@ -1911,7 +1922,8 @@ class TestAutoinstallServer(TestAPI):
 class TestWSLSetupOptions(TestAPI):
     @timeout()
     async def test_wslsetupoptions(self):
-        async with start_system_setup_server('examples/simple.json') as inst:
+        cfg = 'examples/machines/simple.json'
+        async with start_system_setup_server(cfg) as inst:
             await inst.post('/meta/client_variant', variant='wsl_setup')
 
             payload = {'install_language_support_packages': False}
@@ -1929,7 +1941,8 @@ class TestActiveDirectory(TestAPI):
     async def test_ad(self):
         # Few tests to assert that the controller is properly wired.
         # Exhaustive validation test cases are in the unit tests.
-        async with start_server('examples/simple.json') as instance:
+        cfg = 'examples/machines/simple.json'
+        async with start_server(cfg) as instance:
             endpoint = '/active_directory'
             ad_dict = await instance.get(endpoint)
             # Starts with the detected domain.
@@ -2024,10 +2037,10 @@ class TestActiveDirectory(TestAPI):
 
     @timeout()
     async def test_ad_autoinstall(self):
-        cfg = 'examples/simple.json'
+        cfg = 'examples/machines/simple.json'
         extra = [
-            '--autoinstall', 'examples/autoinstall-ad.yaml',
-            '--source-catalog', 'examples/mixed-sources.yaml',
+            '--autoinstall', 'examples/autoinstall/autoinstall-ad.yaml',
+            '--source-catalog', 'examples/sources/mixed-sources.yaml',
             '--kernel-cmdline', 'autoinstall',
         ]
         try:

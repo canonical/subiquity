@@ -121,7 +121,7 @@ class TestSourceModel(unittest.TestCase):
         self.assertEqual(model.render(), {})
 
     def test_canary(self):
-        with open('examples/install-sources-canary.yaml') as fp:
+        with open('examples/sources/install-sources-canary.yaml') as fp:
             model = SourceModel()
             model.load_from_file(fp)
         self.assertEqual(2, len(model.sources))

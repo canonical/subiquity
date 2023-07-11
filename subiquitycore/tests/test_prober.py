@@ -20,7 +20,7 @@ from subiquitycore.prober import Prober
 
 class TestProber(SubiTestCase):
     async def test_none_and_defaults_equal(self):
-        with open('examples/simple.json', 'r') as fp:
+        with open('examples/machines/simple.json', 'r') as fp:
             prober = Prober(machine_config=fp, debug_flags=())
         none_storage = await prober.get_storage(probe_types=None)
         defaults_storage = await prober.get_storage(probe_types={'defaults'})
