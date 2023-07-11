@@ -1261,19 +1261,6 @@ class FilesystemModel(object):
                 work.extend(dependencies(o))
             mounts.extend(mount.get('children', []))
 
-        # For now we mark anything that can be reached from a mounted
-        # partition (e.g. an unused partition on the install drive) as
-        # part of the install media.
-        work = [
-            o
-            for o in self._actions
-            if getattr(o, '_has_in_use_partition', False)
-            ]
-        while work:
-            o = work.pop(0)
-            o._is_in_use = True
-            work.extend(reverse_dependencies(o))
-
         # This is a special hack for the install media. When written to a USB
         # stick or similar, both the block device for the whole drive and for
         # the partition will show up as having a filesystem. Casper should
@@ -1620,11 +1607,7 @@ class FilesystemModel(object):
         log.debug('mountpoints %s', mountpoints)
 
         if mode == ActionRenderMode.FOR_API:
-            work = [
-                a
-                for a in self._actions
-                if not getattr(a, '_is_in_use', False)
-                ]
+            work = list(self._actions)
         else:
             work = [
                 a for a in self._actions if not getattr(a, 'preserve', False)
