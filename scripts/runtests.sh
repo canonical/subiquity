@@ -163,16 +163,16 @@ tty=$(tty) || tty=/dev/console
 
 export SUBIQUITY_REPLAY_TIMESCALE=100
 
-for answers in examples/answers*.yaml; do
+for answers in examples/answers/*.yaml; do
     if echo $answers|grep -vq system-setup; then
         config=$(sed -n 's/^#machine-config: \(.*\)/\1/p' $answers || true)
         catalog=$(sed -n 's/^#source-catalog: \(.*\)/\1/p' $answers || true)
         dr_config=$(sed -n 's/^#dr-config: \(.*\)/\1/p' "$answers" || true)
         if [ -z "$config" ]; then
-            config=examples/simple.json
+            config=examples/machines/simple.json
         fi
         if [ -z "$catalog" ]; then
-            catalog=examples/install-sources.yaml
+            catalog=examples/sources/install.yaml
         fi
         serial=$(sed -n 's/^#serial/x/p' $answers || true)
         opts=()
@@ -220,12 +220,12 @@ LANG=C.UTF-8 timeout --foreground 60 \
     python3 -m subiquity.cmd.tui \
     --dry-run \
     --output-base "$tmpdir" \
-    --machine-config examples/existing-partitions.json \
+    --machine-config examples/machines/existing-partitions.json \
     --bootloader bios \
-    --autoinstall examples/autoinstall.yaml \
-    --dry-run-config examples/dr-config-apt-local-mirror.yaml \
+    --autoinstall examples/autoinstall/most-options.yaml \
+    --dry-run-config examples/dry-run-configs/apt-local-mirror.yaml \
     --kernel-cmdline autoinstall \
-    --source-catalog examples/install-sources.yaml
+    --source-catalog examples/sources/install.yaml
 validate
 python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/subiquity-curtin-apt.conf \
         apt.disable_components='[non-free, restricted]' \
@@ -254,10 +254,10 @@ LANG=C.UTF-8 timeout --foreground 60 \
     python3 -m subiquity.cmd.tui \
     --dry-run \
     --output-base "$tmpdir" \
-    --machine-config examples/simple.json \
-    --autoinstall examples/autoinstall-user-data.yaml \
+    --machine-config examples/machines/simple.json \
+    --autoinstall examples/autoinstall/user-data.yaml \
     --kernel-cmdline autoinstall \
-    --source-catalog examples/install-sources.yaml
+    --source-catalog examples/sources/install.yaml
 validate
 python3 scripts/check-yaml-fields.py "$tmpdir"/var/log/installer/autoinstall-user-data \
         'autoinstall.source.id="ubuntu-server-minimal"'
@@ -268,10 +268,10 @@ LANG=C.UTF-8 timeout --foreground 60 \
     python3 -m subiquity.cmd.tui \
     --dry-run \
     --output-base "$tmpdir" \
-    --machine-config examples/simple.json \
-    --autoinstall examples/autoinstall-reset-only.yaml \
+    --machine-config examples/machines/simple.json \
+    --autoinstall examples/autoinstall/reset-only.yaml \
     --kernel-cmdline autoinstall \
-    --source-catalog examples/install-sources.yaml
+    --source-catalog examples/sources/install.yaml
 validate install reset-only
 
 # The OOBE doesn't exist in WSL < 20.04
@@ -299,7 +299,7 @@ if [ "${RELEASE%.*}" -ge 20 ]; then
             python3 -m system_setup.cmd.tui \
             --dry-run \
             --output-base "$tmpdir" \
-            --autoinstall "examples/autoinstall-system-setup${mode}.yaml"
+            --autoinstall "examples/autoinstall/system-setup${mode}.yaml"
         validate "system_setup" "autoinstall${mode}"
     done
 

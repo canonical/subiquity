@@ -1,26 +1,25 @@
-#machine-config: examples/existing-partitions.json
+#source-catalog: examples/sources/tpm.yaml
+#dr-config: examples/dry-run-configs/tpm.yaml
 Source:
-  source: ubuntu-server
+  source: src-prefer-encrypted
+Serial:
+  rich: false
 Welcome:
   lang: en_US
 Refresh:
   update: no
 Keyboard:
   layout: us
+Zdev:
+  accept-default: yes
 Network:
   accept-default: yes
 Proxy:
   proxy: ""
 Mirror:
-  mirror: "http://us.archive.ubuntu.com"
+  country-code: us
 Filesystem:
-  manual:
-    - obj: [disk serial serial1, part 5]
-      action: EDIT
-      data:
-        fstype: ext4
-        mount: /
-    - action: done
+  tpm-default: yes
 Identity:
   realname: Ubuntu
   username: ubuntu

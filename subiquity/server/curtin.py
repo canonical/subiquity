@@ -130,11 +130,11 @@ class _CurtinCommand:
 class _DryRunCurtinCommand(_CurtinCommand):
 
     stages_mapping = {
-        tuple(): "examples/curtin-events-initial.json",  # no stage
-        ("partitioning",): "examples/curtin-events-partitioning.json",
-        ("extract",): "examples/curtin-events-extract.json",
-        ("curthooks",): "examples/curtin-events-curthooks.json",
-        ("swap",): "examples/curtin-events-curthooks.json",  # hack
+        tuple(): "initial.json",  # no stage
+        ("partitioning",): "partitioning.json",
+        ("extract",): "extract.json",
+        ("curthooks",): "curthooks.json",
+        ("swap",): "curthooks.json",  # hack
     }
 
     def make_command(self, command, *args, config=None):
@@ -161,9 +161,10 @@ class _DryRunCurtinCommand(_CurtinCommand):
                 ]
             if config:
                 cmd.extend(['--config', config])
+            event_log_filename = self.stages_mapping[tuple(stages)]
             cmd.extend([
                 "--",
-                self.stages_mapping[tuple(stages)],
+                f"examples/curtin-events/{event_log_filename}",
                 ])
             return cmd
         else:
@@ -174,7 +175,7 @@ class _FailingDryRunCurtinCommand(_DryRunCurtinCommand):
 
     stages_mapping = {
             **_DryRunCurtinCommand.stages_mapping,
-            **{("extract",): "examples/curtin-events-fail.json"}
+            **{("extract",): "curtin-events-fail.json"}
     }
 
 

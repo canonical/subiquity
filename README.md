@@ -42,10 +42,10 @@ backend configuration files to /tmp/subiquity-config-\* but it won't attempt to
 run any installer commands (which would fail without root privileges).  Further,
 subiquity can load other machine profiles in case you want to test out the
 installer without having access to the machine.  A few sample machine
-profiles are available in the repository at ./examples/ and
+profiles are available in the repository at ./examples/machines and
 can be loaded via the MACHINE make variable:
 
-`make dryrun MACHINE=examples/simple.json`
+`make dryrun MACHINE=examples/machines/simple.json`
 
 # Generating machine profiles
 Machine profiles are generated from the probert tool.  To collect a machine profile:

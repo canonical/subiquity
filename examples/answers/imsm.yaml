@@ -1,4 +1,4 @@
-#machine-config: examples/imsm.json
+#machine-config: examples/machines/imsm.json
 Source:
   source: ubuntu-server
 Welcome:
