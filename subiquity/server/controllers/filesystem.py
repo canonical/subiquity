@@ -624,7 +624,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             bootloader=self.model.bootloader,
             error_report=self.full_probe_error(),
             orig_config=self.model._orig_config,
-            config=self.model._render_actions(mode=ActionRenderMode.ALL),
+            config=self.model._render_actions(mode=ActionRenderMode.FOR_API),
             blockdev=self.model._probe_data['blockdev'],
             dasd=self.model._probe_data.get('dasd', {}),
             storage_version=self.model.storage_version)

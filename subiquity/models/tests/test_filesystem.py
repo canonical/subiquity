@@ -993,7 +993,7 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertTrue(disk2.id not in rendered_ids)
         self.assertTrue(disk2p1.id not in rendered_ids)
 
-    def test_render_all_does_include_unreferenced(self):
+    def test_render_for_api_does_include_unreferenced(self):
         model = make_model(Bootloader.NONE)
         disk1 = make_disk(model, preserve=True)
         disk2 = make_disk(model, preserve=True)
@@ -1003,7 +1003,7 @@ class TestAutoInstallConfig(unittest.TestCase):
         model.add_mount(fs, '/')
         rendered_ids = {
             action['id']
-            for action in model._render_actions(ActionRenderMode.ALL)
+            for action in model._render_actions(ActionRenderMode.FOR_API)
             }
         self.assertTrue(disk1.id in rendered_ids)
         self.assertTrue(disk1p1.id in rendered_ids)

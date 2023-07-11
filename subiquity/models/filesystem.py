@@ -423,24 +423,31 @@ class attributes:
             return val
         return attr.ib(default=None, converter=conv)
 
+    @staticmethod
+    def for_api(*, default=attr.NOTHING):
+        return attr.ib(default=default, metadata={'for_api': True})
 
-def asdict(inst):
+
+def asdict(inst, *, for_api: bool):
     r = collections.OrderedDict()
     for field in attr.fields(type(inst)):
-        if field.name.startswith('_'):
-            continue
-        m = getattr(inst, 'serialize_' + field.name, None)
+        metadata = field.metadata
+        if not for_api or not metadata.get('for_api', False):
+            if field.name.startswith('_'):
+                continue
+        name = field.name.lstrip('_')
+        m = getattr(inst, 'serialize_' + name, None)
         if m:
             r.update(m())
         else:
             v = getattr(inst, field.name)
             if v is not None:
-                if field.metadata.get('ref', False):
-                    r[field.name] = v.id
-                elif field.metadata.get('reflist', False):
-                    r[field.name] = [elem.id for elem in v]
+                if metadata.get('ref', False):
+                    r[name] = v.id
+                elif metadata.get('reflist', False):
+                    r[name] = [elem.id for elem in v]
                 else:
-                    r[field.name] = v
+                    r[name] = v
     return r
 
 
@@ -1104,9 +1111,10 @@ class ActionRenderMode(enum.Enum):
     # for devices that have changes, but not e.g. a hard drive that
     # will be untouched by the installation process.
     DEFAULT = enum.auto()
-    # ALL means render actions for all model objects. This is used to
-    # send information to the client.
-    ALL = enum.auto()
+    # FOR_API means render actions for all model objects and include
+    # information that is only used by client/server communication,
+    # not curtin.
+    FOR_API = enum.auto()
     # DEVICES means to just render actions for setting up block
     # devices, e.g. partitioning disks and assembling RAIDs but not
     # any format or mount actions.
@@ -1505,7 +1513,7 @@ class FilesystemModel(object):
                 log.debug(
                     "FilesystemModel: estimated size of %s %s is %s",
                     obj.raidlevel, obj.name, obj.size)
-            r.append(asdict(obj))
+            r.append(asdict(obj, for_api=mode == ActionRenderMode.FOR_API))
             emitted_ids.add(obj.id)
 
         def ensure_partitions(dev):
@@ -1543,7 +1551,7 @@ class FilesystemModel(object):
         mountpoints = {m.path: m.id for m in self.all_mounts()}
         log.debug('mountpoints %s', mountpoints)
 
-        if mode == ActionRenderMode.ALL:
+        if mode == ActionRenderMode.FOR_API:
             work = [a for a in self._actions if a not in self._exclusions]
         else:
             work = [
