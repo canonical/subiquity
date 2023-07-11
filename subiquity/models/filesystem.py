@@ -1274,6 +1274,23 @@ class FilesystemModel(object):
             o._is_in_use = True
             work.extend(reverse_dependencies(o))
 
+        # This is a special hack for the install media. When written to a USB
+        # stick or similar, both the block device for the whole drive and for
+        # the partition will show up as having a filesystem. Casper should
+        # preferentially mount it as a partition though and if it looks like
+        # that has happened, we ignore the filesystem on the drive itself.
+        for disk in self._all(type='disk'):
+            if disk._fs is None:
+                continue
+            if not disk._partitions:
+                continue
+            p1 = disk._partitions[0]
+            if p1._fs is None:
+                continue
+            if disk._fs.fstype == p1._fs.fstype == 'iso9660':
+                if p1._is_in_use and not disk._is_in_use:
+                    self.remove_filesystem(disk._fs)
+
         for o in self._actions:
             if o.type == "partition" and o.flag == "swap":
                 if o._fs is None:
