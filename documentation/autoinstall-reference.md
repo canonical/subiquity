@@ -84,7 +84,7 @@ The mapping contains keys:
 #### update
 
 **type:** boolean
-**default:** `no`
+**default:** `false`
 
 Whether to update or not.
 
@@ -166,7 +166,7 @@ network:
   version: 2
   ethernets:
     enp0s31f6:
-      dhcp6: yes
+      dhcp6: true
 ```
 
 Note that because of a bug, the version of Subiquity released with 20.04 GA forces you to write this with an extra `network:` key like so:
@@ -177,7 +177,7 @@ network:
     version: 2
     ethernets:
       enp0s31f6:
-        dhcp6: yes
+        dhcp6: true
 ```
 
 Later versions support this syntax too for compatibility but if you can assume a newer version you should use the former.
@@ -310,7 +310,7 @@ storage:
   layout:
     name: disk
     match:
-      ssd: yes
+      ssd: true
 ```
 
 (you can just say "`match: {}`" to match an arbitrary disk)
@@ -388,10 +388,10 @@ A match spec supports the following keys:
  * `id_path: foo`: matches a disk where ID_PATH=foo in udev, supporting globbing
  * `devpath: foo`: matches a disk where DEVPATH=foo in udev, supporting globbing
  * `serial: foo`: matches a disk where ID_SERIAL=foo in udev, supporting globbing (the globbing support distinguishes this from specifying serial: foo directly in the disk action)
- * `ssd: yes|no`: matches a disk that is or is not an SSD (vs a rotating drive)
+ * `ssd: true|false`: matches a disk that is or is not an SSD (vs a rotating drive)
  * `size: largest|smallest`: take the largest or smallest disk rather than an arbitrary one if there are multiple matches (support for `smallest` added in version 20.06.1)
 
-A special sort of key is `install-media: yes`, which will take the disk the installer was loaded from (the `ssd` and `size` selectors will never return this disk). If installing to the install media, care obviously needs to be take to not overwrite the installer itself!
+A special sort of key is `install-media: true`, which will take the disk the installer was loaded from (the `ssd` and `size` selectors will never return this disk). If installing to the install media, care obviously needs to be take to not overwrite the installer itself!
 
 So for example, to match an arbitrary disk it is simply:
 
@@ -406,7 +406,7 @@ To match the largest SSD:
  - type: disk
    id: big-fast-disk
    match:
-     ssd: yes
+     ssd: true
      size: largest
 ```
 
