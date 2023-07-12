@@ -36,7 +36,7 @@ from subiquity.common.api.server import make_server_at_path
 from subiquity.common.apidef import LinkAction, NetEventAPI
 from subiquity.common.types import (
     ErrorReportKind,
-    WLANSupportInstallState,
+    PackageInstallState,
     )
 
 log = logging.getLogger('subiquity.client.controllers.network')
@@ -91,7 +91,7 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
             self.view.show_network_error(stage)
 
     async def wlan_support_install_finished_POST(
-            self, state: WLANSupportInstallState) -> None:
+            self, state: PackageInstallState) -> None:
         if self.view:
             self.view.update_for_wlan_support_install_state(state.name)
 
