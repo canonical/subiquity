@@ -233,7 +233,7 @@ class ZdevInfo:
         return self.type
 
 
-class WLANSupportInstallState(enum.Enum):
+class PackageInstallState(enum.Enum):
     NOT_NEEDED = enum.auto()
     NOT_AVAILABLE = enum.auto()
     INSTALLING = enum.auto()
@@ -244,7 +244,7 @@ class WLANSupportInstallState(enum.Enum):
 @attr.s(auto_attribs=True)
 class NetworkStatus:
     devices: List[NetDevInfo]
-    wlan_support_install_state: WLANSupportInstallState
+    wlan_support_install_state: PackageInstallState
 
 
 class ProbeStatus(enum.Enum):

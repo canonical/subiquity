@@ -78,7 +78,7 @@ from subiquity.common.types import (
     UPCSInitiateResponse,
     UPCSWaitResponse,
     UsernameValidation,
-    WLANSupportInstallState,
+    PackageInstallState,
     ZdevInfo,
     WSLConfigurationBase,
     WSLConfigurationAdvanced,
@@ -484,7 +484,7 @@ class LinkAction(enum.Enum):
 @api
 class NetEventAPI:
     class wlan_support_install_finished:
-        def POST(state: WLANSupportInstallState) -> None: ...
+        def POST(state: PackageInstallState) -> None: ...
 
     class update_link:
         def POST(act: LinkAction, info: Payload[NetDevInfo]) -> None: ...
