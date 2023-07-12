@@ -28,6 +28,12 @@ log = logging.getLogger('subiquity.server.pkghelper')
 
 
 class PackageInstaller:
+    """Install packages from the pool on the ISO in the live session.
+
+    Sometimes we need packages from the pool in the live session, for
+    example to install wpasupplicant when wlan interfaces are detected
+    by the server installer.
+    """
 
     def __init__(self):
         self.pkgs: Dict[str, asyncio.Task] = {}
