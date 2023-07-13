@@ -24,7 +24,7 @@ Differences from debian-installer preseeding
 
 Autoinstalls differ from preseeds in the following ways:
  * The format is different: autoinstalls use YAML instead of the preseed
-   debconf-set-selections
+   debconf-set-selections.
  * When the answer to a question is not present in a preseed, d-i stops and
    asks the user for input. By comparison, if there is any autoinstall
    configuration at all, the autoinstall takes the default for any
@@ -79,7 +79,7 @@ Another option for supplying autoinstall to the Ubuntu installer is to place a
 file named :code:`autoinstall.yaml` on the install media itself.
 
 There are two potential locations for the :code:`autoinstall.yaml` file:
- * At the root of the "cdrom". When you write the installation ISO to a USB
+ * At the root of the "CD-ROM". When you write the installation ISO to a USB
    Flash Drive, this can be done by copying the :code:`autoinstall.yaml` to the
    partition containing the contents of the ISO - i.e.,
    in the directory containing the ``casper`` sub-directory.
@@ -90,7 +90,7 @@ There are two potential locations for the :code:`autoinstall.yaml` file:
 Directly specifying autoinstall as a :code:`autoinstall.yaml` file does not
 require a :code:`#cloud-config` header, and does not use a top level
 ``autoinstall:`` key. The autoinstall directives are placed at the top
-level.
+level. For example:
 
 .. code-block:: yaml
 
@@ -101,7 +101,7 @@ level.
 Cloud-init and autoinstall interaction
 ======================================
 
-Cloud-init runs in both the ephemeral system, during install, and in the target
+Cloud-init runs in both the ephemeral system (during install) and in the target
 system during first boot. Cloud-init then becomes inert for every subsequent
 reboot.
 
