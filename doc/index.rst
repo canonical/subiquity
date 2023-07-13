@@ -1,7 +1,7 @@
 .. _index:
 
-Subiquity documentation
-#######################
+Ubuntu Installation documentation
+#################################
 
 A single sentence that says what the product is, succinctly and memorably
 consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et

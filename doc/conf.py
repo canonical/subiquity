@@ -22,7 +22,7 @@ import sys
 # -- Project information -----------------------------------------------------
 
 project = 'Ubuntu Install Guide'
-copyright = f'Canonical Group Ltd, {datetime.date.today().year}'
+copyright = 'Canonical Group Ltd'
 
 # -- General configuration ---------------------------------------------------
 
@@ -34,11 +34,17 @@ needs_sphinx = '5.1.1'
 # ones.
 
 extensions = [
-    'm2r2',
+    'sphinx.ext.intersphinx',
     'sphinx_copybutton',
     'sphinx_design',
 ]
 
+intersphinx_mapping = {
+    'cloud-init': (
+        'https://canonical-cloud-init.readthedocs-hosted.com/en/latest',
+         None
+    )
+}
 
 # Add any paths that contain templates here, relative to this directory.
 
@@ -47,8 +53,8 @@ templates_path = ['_templates']
 # The suffix of source filenames.
 source_suffix = '.rst'
 
-# The master toctree document.
-master_doc = 'index'
+# The root toctree document.
+root_doc = 'index'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -62,7 +68,8 @@ master_doc = 'index'
 # This pattern also affects html_static_path and html_extra_path.
 
 exclude_patterns = [
-    ".sphinx/venv/*",
+    '.sphinx/venv/*',
+    'README.md',
 ]
 
 # Sphinx-copybutton config options:

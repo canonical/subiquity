@@ -11,20 +11,13 @@ capable of.
 
 -----
 
-Core tutorial
-=============
+Introduction to autoinstall
+===========================
 
-<some blurb here>
-
-.. toctree::
-   :maxdepth: 1
-
-Quick-start tutorial
-====================
-
-<some blurb here>
+This tutorial introduces the core concepts of autoinstall and is recommended as
+the first step.
 
 .. toctree::
    :maxdepth: 1
 
-
+   intro-to-autoinstall.rst
