@@ -9,3 +9,5 @@ storage:
     name: direct
     reset-partition: yes
     reset-partition-only: yes
+late-commands:
+  - ['true']
