@@ -27,7 +27,6 @@ from subiquitycore.ui.spinner import (
     )
 from subiquitycore.ui.utils import (
     button_pile,
-    rewrap,
     screen,
     )
 from subiquitycore.view import BaseView
@@ -84,19 +83,3 @@ class ProbingFailed(BaseView):
 
     def show_error(self, sender=None):
         self.controller.app.show_error_report(self.error_ref)
-
-
-class CoreBootClassicError(BaseView):
-
-    title = _("Cannot install core boot classic system")
-
-    def __init__(self, controller, msg):
-        self.controller = controller
-        super().__init__(screen([
-            Text(rewrap(_(msg))),
-            Text(""),
-            ],
-            [other_btn(_("Back"), on_press=self.cancel)]))
-
-    def cancel(self, result=None):
-        self.controller.cancel()
