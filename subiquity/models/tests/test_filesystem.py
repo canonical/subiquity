@@ -1223,9 +1223,41 @@ class TestAlignmentData(unittest.TestCase):
 class TestSwap(unittest.TestCase):
     def test_basic(self):
         m = make_model()
-        with mock.patch.object(m, '_should_add_swapfile', return_value=False):
+        with mock.patch.object(m, 'should_add_swapfile', return_value=False):
             cfg = m.render()
             self.assertEqual({'size': 0}, cfg['swap'])
+
+    @parameterized.expand([
+        ['ext4'],
+        ['btrfs'],
+    ])
+    def test_should_add_swapfile_nomount(self, fs):
+        m, d1 = make_model_and_disk(Bootloader.BIOS)
+        d1p1 = make_partition(m, d1)
+        m.add_filesystem(d1p1, fs)
+        self.assertTrue(m.should_add_swapfile())
+
+    @parameterized.expand([
+        ['ext4', None, True],
+        ['btrfs', 5, True],
+        ['btrfs', 4, False],
+        ['zfs', None, False],
+    ])
+    def test_should_add_swapfile(self, fs, kern_maj_ver, expected):
+        m, d1 = make_model_and_disk(Bootloader.BIOS)
+        d1p1 = make_partition(m, d1)
+        m.add_mount(m.add_filesystem(d1p1, fs), '/')
+        with mock.patch('curtin.swap.get_target_kernel_version',
+                        return_value={'major': kern_maj_ver}):
+            self.assertEqual(expected, m.should_add_swapfile())
+
+    def test_should_add_swapfile_has_swappart(self):
+        m, d1 = make_model_and_disk(Bootloader.BIOS)
+        d1p1 = make_partition(m, d1)
+        d1p2 = make_partition(m, d1)
+        m.add_mount(m.add_filesystem(d1p1, 'ext4'), '/')
+        m.add_mount(m.add_filesystem(d1p2, 'swap'), '')
+        self.assertFalse(m.should_add_swapfile())
 
 
 class TestPartition(unittest.TestCase):
