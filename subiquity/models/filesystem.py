@@ -1072,6 +1072,20 @@ class ZPool:
     # default dataset options for the zfses in the pool
     fs_properties: Optional[dict] = None
 
+    component_name = "vdev"
+
+    @property
+    def fstype(self):
+        return 'zfs'
+
+    @property
+    def name(self):
+        return self.pool
+
+    @property
+    def mount(self):
+        return self.mountpoint
+
     async def pre_shutdown(self, command_runner):
         await command_runner.run(['zpool', 'export', self.pool])
 
