@@ -147,7 +147,7 @@ Whether the installer should search for available third-party drivers. When set 
 **type:** string
 **default:** identifier of the first available source.
 
-Identifier of the source to install (e.g., `"ubuntu-server-minimized"`).
+Identifier of the source to install (e.g., `"ubuntu-server-minimal"`).
 
 <a name="network"></a>
 
