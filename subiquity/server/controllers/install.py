@@ -26,6 +26,10 @@ import tempfile
 from typing import Any, Dict, List, Optional
 
 from curtin.config import merge_config
+from curtin.util import (
+    get_efibootmgr,
+    is_uefi_bootable,
+    )
 import yaml
 
 from subiquitycore.async_helpers import (
@@ -39,6 +43,7 @@ from subiquitycore.utils import arun_command, log_process_streams
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.types import (
     ApplicationState,
+    PackageInstallState,
     )
 from subiquity.journald import (
     journald_listen,
@@ -398,6 +403,43 @@ class InstallController(SubiquityController):
             await run_curtin_command(
                 self.app, context, "in-target", "-t", self.tpath(), "--",
                 "update-grub", private_mounts=False)
+        if self.app.opts.dry_run and not is_uefi_bootable():
+            # Can't even run efibootmgr in this case.
+            return
+        state = await self.app.package_installer.install_pkg('efibootmgr')
+        if state != PackageInstallState.DONE:
+            raise Exception()
+        efi_state_before = get_efibootmgr('/')
+        cmd = [
+            'efibootmgr', '--create',
+            '--loader', '\\EFI\\boot\\shimx64.efi',
+            '--disk', rp.device.path,
+            '--part', str(rp.number),
+            '--label', "Restore Ubuntu to factory state",
+            ]
+        await self.app.command_runner.run(cmd)
+        efi_state_after = get_efibootmgr('/')
+        new_bootnums = (
+            set(efi_state_after.entries) - set(efi_state_before.entries))
+        if len(new_bootnums) == 0:
+            return
+        new_bootnum = new_bootnums.pop()
+        new_entry = efi_state_after.entries[new_bootnum]
+        was_dup = False
+        for entry in efi_state_before.entries.values():
+            if entry.path == new_entry.path and entry.label == new_entry.label:
+                was_dup = True
+        if was_dup:
+            cmd = [
+                'efibootmgr', '--delete-bootnum',
+                '--bootnum', new_entry,
+                ]
+        else:
+            cmd = [
+                'efibootmgr',
+                '--bootorder', ','.join(efi_state_before.order),
+                ]
+        await self.app.command_runner.run(cmd)
 
     @with_context(description="creating fstab")
     async def create_core_boot_classic_fstab(self, *, context):
@@ -434,6 +476,9 @@ class InstallController(SubiquityController):
                         context=context, target=self.model.target)
             else:
                 for_install_path = ''
+
+            if self.app.controllers.Filesystem.reset_partition:
+                self.app.package_installer.start_installing_pkg('efibootmgr')
 
             await self.curtin_install(
                 context=context, source='cp://' + for_install_path)
