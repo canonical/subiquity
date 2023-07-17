@@ -23,6 +23,8 @@ from subiquity.models.filesystem import (
     LVM_VolGroup,
     Partition,
     Raid,
+    ZFS,
+    ZPool,
     )
 
 
@@ -152,6 +154,11 @@ def _desc_lv(lv):
 def _desc_gap(gap):
     # This is only used in text "cannot add partition {desc}"... bit hackish.
     return _("to gap")
+
+
+@desc.register(ZPool)
+def _desc_zpool(zpool):
+    return _("zpool")
 
 
 @functools.singledispatch
@@ -336,3 +343,19 @@ def _for_client_partition(partition, *, min_size=0):
 @for_client.register(gaps.Gap)
 def _for_client_gap(gap, *, min_size=0):
     return types.Gap(offset=gap.offset, size=gap.size, usable=gap.usable)
+
+
+@for_client.register(ZPool)
+def _for_client_zpool(zpool, *, min_size=0):
+    return types.ZPool(
+        pool=zpool.pool,
+        mountpoint=zpool.mountpoint,
+        zfses=[for_client(zfs) for zfs in zpool.zfses],
+        pool_properties=zpool.pool_properties,
+        fs_properties=zpool.fs_properties,
+        )
+
+
+@for_client.register(ZFS)
+def _for_client_zfs(zfs, *, min_size=0):
+    return types.ZFS(volume=zfs.volume, properties=zfs.properties)

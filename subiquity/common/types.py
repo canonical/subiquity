@@ -290,6 +290,21 @@ class Partition:
     path: Optional[str] = None
 
 
+@attr.s(auto_attribs=True)
+class ZFS:
+    volume: str
+    properties: Optional[dict] = None
+
+
+@attr.s(auto_attribs=True)
+class ZPool:
+    pool: str
+    mountpoint: str
+    zfses: Optional[ZFS] = None
+    pool_properties: Optional[dict] = None
+    fs_properties: Optional[dict] = None
+
+
 class GapUsable(enum.Enum):
     YES = enum.auto()
     TOO_MANY_PRIMARY_PARTS = enum.auto()
