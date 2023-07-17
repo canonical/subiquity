@@ -115,6 +115,33 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertIsNone(self.fsc.queued_probe_data)
         load.assert_not_called()
 
+    async def test_layout_no_grub_or_swap(self):
+        self.fsc.model = model = make_model(Bootloader.UEFI)
+        self.fsc.run_autoinstall_guided = mock.AsyncMock()
+
+        self.fsc.ai_data = {
+            'layout': {'name': 'direct'},
+        }
+
+        await self.fsc.convert_autoinstall_config()
+        curtin_cfg = model.render()
+        self.assertNotIn('grub', curtin_cfg)
+        self.assertNotIn('swap', curtin_cfg)
+
+    @parameterized.expand(((True,), (False,)))
+    async def test_layout_plus_grub(self, reorder_uefi):
+        self.fsc.model = model = make_model(Bootloader.UEFI)
+        self.fsc.run_autoinstall_guided = mock.AsyncMock()
+
+        self.fsc.ai_data = {
+            'layout': {'name': 'direct'},
+            'grub': {'reorder_uefi': reorder_uefi}
+        }
+
+        await self.fsc.convert_autoinstall_config()
+        curtin_cfg = model.render()
+        self.assertEqual(reorder_uefi, curtin_cfg['grub']['reorder_uefi'])
+
     @mock.patch('subiquity.server.controllers.filesystem.open',
                 mock.mock_open())
     async def test_probe_once_locked_probe_data(self):
@@ -126,6 +153,20 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             await self.fsc._probe_once(restricted=True)
         self.assertEqual(self.fsc.queued_probe_data, {})
         load.assert_not_called()
+
+    @parameterized.expand(((0,), ('1G',)))
+    async def test_layout_plus_swap(self, swapsize):
+        self.fsc.model = model = make_model(Bootloader.UEFI)
+        self.fsc.run_autoinstall_guided = mock.AsyncMock()
+
+        self.fsc.ai_data = {
+            'layout': {'name': 'direct'},
+            'swap': {'size': swapsize}
+        }
+
+        await self.fsc.convert_autoinstall_config()
+        curtin_cfg = model.render()
+        self.assertEqual(swapsize, curtin_cfg['swap']['size'])
 
     @mock.patch('subiquity.server.controllers.filesystem.open',
                 mock.mock_open())
