@@ -129,7 +129,8 @@ class LateController(CmdListController):
 
     def env(self):
         env = super().env()
-        env['TARGET_MOUNT_POINT'] = self.app.base_model.target
+        if self.app.base_model.target is not None:
+            env['TARGET_MOUNT_POINT'] = self.app.base_model.target
         return env
 
     def start(self):
