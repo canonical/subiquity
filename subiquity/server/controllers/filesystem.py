@@ -1201,6 +1201,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     capability = GuidedCapability.LVM_LUKS
                 else:
                     capability = GuidedCapability.LVM
+            elif name == 'zfs':
+                capability = GuidedCapability.ZFS
             else:
                 capability = GuidedCapability.DIRECT
 
