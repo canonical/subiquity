@@ -46,7 +46,7 @@ validate () {
             echo "log file not created"
             exit 1
         fi
-        if [ $opt = reset-only ]; then
+        if [ "$opt" = reset-only ]; then
             return
         fi
         python3 scripts/validate-autoinstall-user-data.py < $tmpdir/var/log/installer/autoinstall-user-data
