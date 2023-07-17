@@ -363,11 +363,10 @@ def _is_esp_partition(partition):
     if partition.device.ptable == "gpt":
         return partition.flag == "boot"
     elif isinstance(partition.device, Disk):
-        blockdev_raw = partition._m._probe_data['blockdev'].get(
-            partition._path())
-        if blockdev_raw is None:
+        info = partition._info
+        if info is None:
             return False
-        typecode = blockdev_raw.get("ID_PART_ENTRY_TYPE")
+        typecode = info.raw.get("ID_PART_ENTRY_TYPE")
         if typecode is None:
             return False
         try:

@@ -189,6 +189,8 @@ def make_partition(model, device=None, *, preserve=False, size=None,
             offset = gap.offset
     partition = Partition(m=model, device=device, size=size, offset=offset,
                           preserve=preserve, flag=flag, **kw)
+    if partition.preserve:
+        partition._info = FakeStorageInfo(size=size)
     model._actions.append(partition)
     return partition
 
@@ -202,10 +204,16 @@ def make_model_and_partition(bootloader=None):
     return model, make_partition(model, disk)
 
 
-def make_raid(model):
+def make_raid(model, **kw):
     name = 'md%s' % len(model._actions)
-    return model.add_raid(
+    r = model.add_raid(
         name, 'raid1', {make_disk(model), make_disk(model)}, set())
+    size = r.size
+    for k, v in kw.items():
+        setattr(r, k, v)
+    if r.preserve:
+        r._info = FakeStorageInfo(size=size)
+    return r
 
 
 def make_model_and_raid(bootloader=None):
@@ -263,25 +271,23 @@ class TestFilesystemModel(unittest.TestCase):
     def _test_ok_for_xxx(self, model, make_new_device, attr,
                          test_partitions=True):
         # Newly formatted devs are ok_for_raid
-        dev1 = make_new_device()
+        dev1 = make_new_device(model)
         self.assertTrue(getattr(dev1, attr))
         # A freshly formatted dev is not ok_for_raid
-        dev2 = make_new_device()
+        dev2 = make_new_device(model)
         model.add_filesystem(dev2, 'ext4')
         self.assertFalse(getattr(dev2, attr))
         if test_partitions:
             # A device with a partition is not ok_for_raid
-            dev3 = make_new_device()
+            dev3 = make_new_device(model)
             make_partition(model, dev3)
             self.assertFalse(getattr(dev3, attr))
         # Empty existing devices are ok
-        dev4 = make_new_device()
-        dev4.preserve = True
+        dev4 = make_new_device(model, preserve=True)
         self.assertTrue(getattr(dev4, attr))
         # A dev with an existing filesystem is ok (there is no
         # way to remove the format)
-        dev5 = make_new_device()
-        dev5.preserve = True
+        dev5 = make_new_device(model, preserve=True)
         fs = model.add_filesystem(dev5, 'ext4')
         fs.preserve = True
         self.assertTrue(dev5.ok_for_raid)
@@ -291,18 +297,15 @@ class TestFilesystemModel(unittest.TestCase):
 
     def test_disk_ok_for_xxx(self):
         model = make_model()
-        self._test_ok_for_xxx(
-            model, lambda: make_disk(model), "ok_for_raid")
-        self._test_ok_for_xxx(
-            model, lambda: make_disk(model), "ok_for_lvm_vg")
+
+        self._test_ok_for_xxx(model, make_disk, "ok_for_raid")
+        self._test_ok_for_xxx(model, make_disk, "ok_for_lvm_vg")
 
     def test_partition_ok_for_xxx(self):
         model = make_model()
 
-        def make_new_device():
-            return make_partition(model)
-        self._test_ok_for_xxx(model, make_new_device, "ok_for_raid", False)
-        self._test_ok_for_xxx(model, make_new_device, "ok_for_lvm_vg", False)
+        self._test_ok_for_xxx(model, make_partition, "ok_for_raid", False)
+        self._test_ok_for_xxx(model, make_partition, "ok_for_lvm_vg", False)
 
         part = make_partition(make_model(Bootloader.BIOS), flag='bios_grub')
         self.assertFalse(part.ok_for_raid)
@@ -317,10 +320,8 @@ class TestFilesystemModel(unittest.TestCase):
     def test_raid_ok_for_xxx(self):
         model = make_model()
 
-        def make_new_device():
-            return make_raid(model)
-        self._test_ok_for_xxx(model, make_new_device, "ok_for_raid", False)
-        self._test_ok_for_xxx(model, make_new_device, "ok_for_lvm_vg", False)
+        self._test_ok_for_xxx(model, make_raid, "ok_for_raid", False)
+        self._test_ok_for_xxx(model, make_raid, "ok_for_lvm_vg", False)
 
     def test_vg_ok_for_xxx(self):
         model, vg = make_model_and_vg()
@@ -992,7 +993,7 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertTrue(disk2.id not in rendered_ids)
         self.assertTrue(disk2p1.id not in rendered_ids)
 
-    def test_render_all_does_include_unreferenced(self):
+    def test_render_for_api_does_include_unreferenced(self):
         model = make_model(Bootloader.NONE)
         disk1 = make_disk(model, preserve=True)
         disk2 = make_disk(model, preserve=True)
@@ -1002,7 +1003,7 @@ class TestAutoInstallConfig(unittest.TestCase):
         model.add_mount(fs, '/')
         rendered_ids = {
             action['id']
-            for action in model._render_actions(ActionRenderMode.ALL)
+            for action in model._render_actions(ActionRenderMode.FOR_API)
             }
         self.assertTrue(disk1.id in rendered_ids)
         self.assertTrue(disk1p1.id in rendered_ids)
@@ -1271,12 +1272,12 @@ class TestZPool(SubiTestCase):
         blockdevs = m._probe_data['blockdev']
         config = [
             dict(type='disk', id=d.id, path=d.path, ptable=d.ptable,
-                 serial=d.serial),
+                 serial=d.serial, info={d.path: blockdevs[d.path]}),
             dict(type='zpool', id='zpool-1', vdevs=[d.id], pool='p1',
                  mountpoint='/'),
             dict(type='zfs', id='zfs-1', volume='/ROOT', pool='zpool-1'),
         ]
-        objs, _exclusions = m._actions_from_config(config, blockdevs,
+        objs, _exclusions = m._actions_from_config(config, blockdevs=None,
                                                    is_probe_data=False)
         actual_disk, zpool, zfs = objs
         self.assertTrue(isinstance(zpool, ZPool))

@@ -671,7 +671,6 @@ class TestFilesystemManipulator(unittest.TestCase):
     def test_logical_no_esp_in_gap(self):
         manipulator = make_manipulator(Bootloader.UEFI, storage_version=2)
         m = manipulator.model
-        m._probe_data.setdefault('blockdev', {})
         d1 = make_disk(m, preserve=True, ptable='msdos')
         size = gaps.largest_gap_size(d1)
         make_partition(m, d1, flag='extended', preserve=True, size=size)
@@ -683,7 +682,6 @@ class TestFilesystemManipulator(unittest.TestCase):
     def test_logical_no_esp_by_resize(self):
         manipulator = make_manipulator(Bootloader.UEFI, storage_version=2)
         m = manipulator.model
-        m._probe_data.setdefault('blockdev', {})
         d1 = make_disk(m, preserve=True, ptable='msdos')
         size = gaps.largest_gap_size(d1)
         make_partition(m, d1, flag='extended', preserve=True, size=size)
@@ -694,7 +692,6 @@ class TestFilesystemManipulator(unittest.TestCase):
     def test_logical_no_esp_in_new_part(self):
         manipulator = make_manipulator(Bootloader.UEFI, storage_version=2)
         m = manipulator.model
-        m._probe_data.setdefault('blockdev', {})
         d1 = make_disk(m, preserve=True, ptable='msdos')
         size = gaps.largest_gap_size(d1)
         make_partition(m, d1, flag='extended', size=size)
@@ -706,7 +703,6 @@ class TestFilesystemManipulator(unittest.TestCase):
     def test_too_many_primaries(self, bl):
         manipulator = make_manipulator(bl, storage_version=2)
         m = manipulator.model
-        m._probe_data.setdefault('blockdev', {})
         d1 = make_disk(m, preserve=True, ptable='msdos', size=100 << 30)
         tenth = 10 << 30
         for i in range(4):
@@ -719,7 +715,6 @@ class TestFilesystemManipulator(unittest.TestCase):
     def test_logical_when_in_extended(self):
         manipulator = make_manipulator(storage_version=2)
         m = manipulator.model
-        m._probe_data.setdefault('blockdev', {})
         d1 = make_disk(m, preserve=True, ptable='msdos')
         size = gaps.largest_gap_size(d1)
         make_partition(m, d1, flag='extended', size=size)

@@ -369,7 +369,6 @@ class StorageResponse:
     bootloader: Optional[Bootloader] = None
     orig_config: Optional[list] = None
     config: Optional[list] = None
-    blockdev: Optional[dict] = None
     dasd: Optional[dict] = None
     storage_version: int = 1
 

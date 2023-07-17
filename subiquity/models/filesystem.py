@@ -423,24 +423,33 @@ class attributes:
             return val
         return attr.ib(default=None, converter=conv)
 
+    @staticmethod
+    def for_api(*, default=attr.NOTHING):
+        return attr.ib(default=default, metadata={'for_api': True})
 
-def asdict(inst):
+
+def asdict(inst, *, for_api: bool):
     r = collections.OrderedDict()
     for field in attr.fields(type(inst)):
-        if field.name.startswith('_'):
-            continue
-        m = getattr(inst, 'serialize_' + field.name, None)
+        metadata = field.metadata
+        if not for_api or not metadata.get('for_api', False):
+            if field.name.startswith('_'):
+                continue
+        name = field.name.lstrip('_')
+        m = getattr(inst, 'serialize_' + name, None)
         if m:
             r.update(m())
         else:
             v = getattr(inst, field.name)
             if v is not None:
-                if field.metadata.get('ref', False):
-                    r[field.name] = v.id
-                elif field.metadata.get('reflist', False):
-                    r[field.name] = [elem.id for elem in v]
+                if metadata.get('ref', False):
+                    r[name] = v.id
+                elif metadata.get('reflist', False):
+                    r[name] = [elem.id for elem in v]
+                elif isinstance(v, StorageInfo):
+                    r[name] = {v.name: v.raw}
                 else:
-                    r[field.name] = v
+                    r[name] = v
     return r
 
 
@@ -617,7 +626,7 @@ class Disk(_Device):
     grub_device: bool = False
     device_id: str = None
 
-    _info: Optional[StorageInfo] = None
+    _info: StorageInfo = attributes.for_api()
 
     @property
     def available_for_partitions(self):
@@ -728,6 +737,8 @@ class Partition(_Formattable):
     partition_name: Optional[str] = None
     path: Optional[str] = None
 
+    _info: Optional[StorageInfo] = attributes.for_api(default=None)
+
     def __post_init__(self):
         if self.number is not None:
             return
@@ -820,6 +831,7 @@ class Raid(_Device):
     raidlevel: str = attr.ib(converter=lambda x: raidlevels_by_value[x].value)
     devices: Set[Union[Disk, Partition, "Raid"]] = attributes.reflist(
         backlink="_constructed_device", default=attr.Factory(set))
+    _info: Optional[StorageInfo] = attributes.for_api(default=None)
 
     def serialize_devices(self):
         # Surprisingly, the order of devices passed to mdadm --create
@@ -853,12 +865,8 @@ class Raid(_Device):
 
     @property
     def size(self):
-        if self.preserve and self._m._probe_data:
-            bd = self._m._probe_data['blockdev'].get('/dev/' + self.name)
-            if bd:
-                s = int(bd['attrs']['size'])
-                if s > 0:
-                    return s
+        if self.preserve:
+            return self._info.size
         return get_raid_size(self.raidlevel, self.devices)
 
     def alignment_data(self):
@@ -1101,9 +1109,10 @@ class ActionRenderMode(enum.Enum):
     # for devices that have changes, but not e.g. a hard drive that
     # will be untouched by the installation process.
     DEFAULT = enum.auto()
-    # ALL means render actions for all model objects. This is used to
-    # send information to the client.
-    ALL = enum.auto()
+    # FOR_API means render actions for all model objects and include
+    # information that is only used by client/server communication,
+    # not curtin.
+    FOR_API = enum.auto()
     # DEVICES means to just render actions for setting up block
     # devices, e.g. partitioning disks and assembling RAIDs but not
     # any format or mount actions.
@@ -1177,7 +1186,7 @@ class FilesystemModel(object):
                 self._probe_data)["storage"]["config"]
             self._actions, self._exclusions = self._actions_from_config(
                 self._orig_config,
-                self._probe_data['blockdev'],
+                blockdevs=self._probe_data['blockdev'],
                 is_probe_data=True)
         else:
             self._orig_config = []
@@ -1203,12 +1212,11 @@ class FilesystemModel(object):
         self.storage_version = status.storage_version
         self._orig_config = status.orig_config
         self._probe_data = {
-            'blockdev': status.blockdev,
             'dasd': status.dasd,
             }
         self._actions, self._exclusions = self._actions_from_config(
             status.config,
-            status.blockdev,
+            blockdevs=None,
             is_probe_data=False)
 
     def _make_matchers(self, match):
@@ -1354,7 +1362,9 @@ class FilesystemModel(object):
                 action['path'] = disk.path
                 action['serial'] = disk.serial
         self._actions, self._exclusions = self._actions_from_config(
-            ai_config, self._probe_data['blockdev'], is_probe_data=False)
+            ai_config,
+            blockdevs=self._probe_data['blockdev'],
+            is_probe_data=False)
 
         self.assign_omitted_offsets()
 
@@ -1397,7 +1407,7 @@ class FilesystemModel(object):
                 else:
                     p.size = dehumanize_size(p.size)
 
-    def _actions_from_config(self, config, blockdevs, *, is_probe_data):
+    def _actions_from_config(self, config, *, blockdevs, is_probe_data):
         """Convert curtin storage config into action instances.
 
         curtin represents storage "actions" as defined in
@@ -1436,8 +1446,10 @@ class FilesystemModel(object):
                 # (e.g. bcache)
                 continue
             kw = {}
+            field_names = set()
             for f in attr.fields(c):
-                n = f.name
+                n = f.name.lstrip('_')
+                field_names.add(f.name)
                 if n not in action:
                     continue
                 v = action[n]
@@ -1453,9 +1465,12 @@ class FilesystemModel(object):
                     # ignored, we need to ignore the current action too
                     # (e.g. a bcache's filesystem).
                     continue
-            if kw['type'] == 'disk':
-                path = kw['path']
-                kw['info'] = StorageInfo({path: blockdevs[path]})
+            if '_info' in field_names:
+                if 'info' in kw:
+                    kw['info'] = StorageInfo(kw['info'])
+                elif 'path' in kw:
+                    path = kw['path']
+                    kw['info'] = StorageInfo({path: blockdevs[path]})
             if is_probe_data:
                 kw['preserve'] = True
             obj = byid[action['id']] = c(m=self, **kw)
@@ -1498,7 +1513,7 @@ class FilesystemModel(object):
                 log.debug(
                     "FilesystemModel: estimated size of %s %s is %s",
                     obj.raidlevel, obj.name, obj.size)
-            r.append(asdict(obj))
+            r.append(asdict(obj, for_api=mode == ActionRenderMode.FOR_API))
             emitted_ids.add(obj.id)
 
         def ensure_partitions(dev):
@@ -1536,7 +1551,7 @@ class FilesystemModel(object):
         mountpoints = {m.path: m.id for m in self.all_mounts()}
         log.debug('mountpoints %s', mountpoints)
 
-        if mode == ActionRenderMode.ALL:
+        if mode == ActionRenderMode.FOR_API:
             work = [a for a in self._actions if a not in self._exclusions]
         else:
             work = [
