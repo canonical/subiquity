@@ -288,6 +288,8 @@ class Partition:
     estimated_min_size: Optional[int] = -1
     resize: Optional[bool] = None
     path: Optional[str] = None
+    # Was this partition mounted when the installer started?
+    is_in_use: bool = False
 
 
 @attr.s(auto_attribs=True)
@@ -333,6 +335,7 @@ class Disk:
     can_be_boot_device: bool
     model: Optional[str] = None
     vendor: Optional[str] = None
+    has_in_use_partition: bool = False
 
 
 class GuidedCapability(enum.Enum):

@@ -862,11 +862,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if include_raid:
             disks = self.potential_boot_disks(with_reformatting=True)
         else:
-            disks = [
-                d
-                for d in model._all(type='disk')
-                if not d._has_in_use_partition
-                ]
+            disks = model._all(type='disk')
         minsize = self.calculate_suggested_install_min()
         return StorageResponseV2(
                 status=ProbeStatus.DONE,

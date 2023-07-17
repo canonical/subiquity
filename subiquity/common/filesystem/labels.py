@@ -320,7 +320,8 @@ def _for_client_disk(disk, *, min_size=0):
         can_be_boot_device=boot.can_be_boot_device(disk),
         ok_for_guided=disk.size >= min_size,
         model=getattr(disk, 'model', None),
-        vendor=getattr(disk, 'vendor', None))
+        vendor=getattr(disk, 'vendor', None),
+        has_in_use_partition=disk._has_in_use_partition)
 
 
 @for_client.register(Partition)
@@ -339,7 +340,8 @@ def _for_client_partition(partition, *, min_size=0):
         path=partition._path(),
         estimated_min_size=partition.estimated_min_size,
         mount=partition.mount,
-        format=partition.format)
+        format=partition.format,
+        is_in_use=partition._is_in_use)
 
 
 @for_client.register(gaps.Gap)
