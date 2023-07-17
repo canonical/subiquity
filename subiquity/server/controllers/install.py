@@ -380,6 +380,24 @@ class InstallController(SubiquityController):
                     step_config=self.rp_config(logs_dir, mp.p()),
                     source='cp:///cdrom',
                     )
+            await self.create_rp_boot_entry(context=context, rp=rp)
+
+    @with_context(description="creating boot entry for reset partition")
+    async def create_rp_boot_entry(self, context, rp):
+        fs_controller = self.app.controllers.Filesystem
+        if not fs_controller.reset_partition_only:
+            cp = await self.app.command_runner.run(
+                ['lsblk', '-n', '-o', 'UUID', rp.path],
+                capture=True)
+            uuid = cp.stdout.decode('ascii').strip()
+            conf = grub_reset_conf.replace("#UUID#", uuid)
+            conf = conf.replace("#PARTITION#", str(rp.number))
+            with open(self.tpath('etc/grub.d/99_reset'), 'w') as fp:
+                os.chmod(fp.fileno(), 0o755)
+                fp.write(conf)
+            await run_curtin_command(
+                self.app, context, "in-target", "-t", self.tpath(), "--",
+                "update-grub", private_mounts=False)
 
     @with_context(description="creating fstab")
     async def create_core_boot_classic_fstab(self, *, context):
@@ -589,4 +607,16 @@ Unattended-Upgrade::Allowed-Origins {
         "${distro_id}ESMApps:${distro_codename}-apps-security";
         "${distro_id}ESM:${distro_codename}-infra-security";
 };
+"""
+
+grub_reset_conf = """\
+#!/bin/bash -e
+
+cat << EOF
+menuentry "Restore Ubuntu to factory state" {
+      search --no-floppy --hint '(hd0,#PARTITION#)' --set --fs-uuid #UUID#
+      linux  /casper/vmlinuz uuid=#UUID# nopersistent
+      initrd /casper/initrd
+}
+EOF
 """
