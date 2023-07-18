@@ -787,6 +787,7 @@ class MirrorPostResponse(enum.Enum):
 
 @attr.s(auto_attribs=True)
 class MirrorGet:
+    relevant: bool
     elected: Optional[str]
     candidates: List[str]
     staged: Optional[str]

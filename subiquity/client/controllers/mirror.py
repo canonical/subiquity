@@ -16,6 +16,8 @@
 import asyncio
 import logging
 
+from subiquitycore.tuicontroller import Skip
+
 from subiquity.common.types import (
     MirrorCheckStatus,
     MirrorGet,
@@ -33,6 +35,8 @@ class MirrorController(SubiquityTuiController):
 
     async def make_ui(self):
         mirror_response: MirrorGet = await self.endpoint.GET()
+        if not mirror_response.relevant:
+            raise Skip
         # We could do all sort of things with the list of candidate mirrors in
         # the UI ; like suggesting the next mirror automatically if the first
         # candidate fails. For now, we keep things simple.
