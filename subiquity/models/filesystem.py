@@ -1132,6 +1132,11 @@ class ZFS:
 
 ConstructedDevice = Union[Raid, LVM_VolGroup, ZPool]
 
+# A Mountlike is a literal Mount object, or one similar enough in behavior.
+# Mountlikes have a path property that may return None if that given object is
+# not actually mountable.
+MountlikeNames = ('mount', 'zpool', 'zfs')
+
 
 def align_up(size, block_size=1 << 20):
     return (size + block_size - 1) & ~(block_size - 1)
@@ -1618,7 +1623,7 @@ class FilesystemModel(object):
                         if dep.type in ['disk', 'raid']:
                             ensure_partitions(dep)
                     return False
-            if isinstance(obj, Mount):
+            if obj.type in MountlikeNames:
                 # Any mount actions for a parent of this one have to be emitted
                 # first.
                 for parent in pathlib.Path(obj.path).parents:
@@ -1631,7 +1636,7 @@ class FilesystemModel(object):
                             return False
             return True
 
-        mountpoints = {m.path: m.id for m in self.all_mounts()}
+        mountpoints = {m.path: m.id for m in self.all_mountlikes()}
         log.debug('mountpoints %s', mountpoints)
 
         if mode == ActionRenderMode.FOR_API:
@@ -1729,6 +1734,12 @@ class FilesystemModel(object):
 
     def all_mounts(self):
         return self._all(type='mount')
+
+    def all_mountlikes(self):
+        ret = []
+        for typename in MountlikeNames:
+            ret += self._all(type=typename)
+        return ret
 
     def all_devices(self):
         # return:
@@ -1895,12 +1906,10 @@ class FilesystemModel(object):
                 "unknown bootloader type {}".format(self.bootloader))
 
     def _mount_for_path(self, path):
-        mount = self._one(type='mount', path=path)
-        if mount is not None:
-            return mount
-        zpool = self._one(type='zpool', mountpoint=path)
-        if zpool is not None:
-            return zpool
+        for typename in MountlikeNames:
+            mount = self._one(type=typename, path=path)
+            if mount is not None:
+                return mount
         return None
 
     def is_root_mounted(self):

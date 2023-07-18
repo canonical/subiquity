@@ -195,8 +195,8 @@ def make_partition(model, device=None, *, preserve=False, size=None,
     return partition
 
 
-def make_filesystem(model, *, partition, **kw):
-    return Filesystem(m=model, volume=partition, **kw)
+def make_filesystem(model, partition, *, fstype='ext4', **kw):
+    return Filesystem(m=model, volume=partition, fstype=fstype, **kw)
 
 
 def make_model_and_partition(bootloader=None):
@@ -255,7 +255,8 @@ def make_zpool(model=None, device=None, pool=None, mountpoint=None, **kw):
         device = make_disk(model)
     if pool is None:
         pool = f'pool{len(model._actions)}'
-    zpool = ZPool(m=model, vdevs=[device], pool=pool, mountpoint=mountpoint)
+    zpool = ZPool(m=model, vdevs=[device], pool=pool, mountpoint=mountpoint,
+                  **kw)
     model._actions.append(zpool)
     return zpool
 
@@ -1348,9 +1349,31 @@ class TestZPool(SubiTestCase):
 
 
 class TestRootfs(SubiTestCase):
+    def test_mount_rootfs(self):
+        m, p = make_model_and_partition()
+        fs = make_filesystem(m, p)
+        m.add_mount(fs, '/')
+        self.assertTrue(m.is_root_mounted())
+
+    def test_mount_srv(self):
+        m, p = make_model_and_partition()
+        fs = make_filesystem(m, p)
+        m.add_mount(fs, '/srv')
+        self.assertFalse(m.is_root_mounted())
+
     def test_zpool_may_provide_rootfs(self):
         m = make_model()
         make_zpool(model=m, mountpoint='/')
+        self.assertTrue(m.is_root_mounted())
+
+    def test_zpool_not_rootfs_because_not_canmount(self):
+        m = make_model()
+        make_zpool(model=m, mountpoint='/', fs_properties=dict(canmount='no'))
+        self.assertFalse(m.is_root_mounted())
+
+    def test_zpool_rootfs_because_canmount(self):
+        m = make_model()
+        make_zpool(model=m, mountpoint='/', fs_properties=dict(canmount='yes'))
         self.assertTrue(m.is_root_mounted())
 
     def test_zpool_nonrootfs_mountpoint(self):
