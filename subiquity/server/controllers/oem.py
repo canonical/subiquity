@@ -69,6 +69,10 @@ class OEMController(SubiquityController):
         self.kernel_configured_event = asyncio.Event()
 
     def start(self) -> None:
+        self._wait_confirmation = asyncio.Event()
+        self.app.hub.subscribe(
+            InstallerChannels.INSTALL_CONFIRMED,
+            self._wait_confirmation.set)
         self._wait_apt = asyncio.Event()
         self.app.hub.subscribe(
             InstallerChannels.APT_CONFIGURED,
@@ -121,8 +125,8 @@ class OEMController(SubiquityController):
 
     @with_context()
     async def load_metapackages_list(self, context) -> None:
-        with context.child("wait_apt"):
-            await self._wait_apt.wait()
+        with context.child("wait_confirmation"):
+            await self._wait_confirmation.wait()
 
         # Only look for OEM meta-packages on supported variants and if we are
         # not running core boot.
@@ -137,6 +141,9 @@ class OEMController(SubiquityController):
             log.debug("listing of OEM meta-packages disabled on %s", variant)
             self.model.metapkgs = []
             return
+
+        with context.child("wait_apt"):
+            await self._wait_apt.wait()
 
         apt = self.app.controllers.Mirror.final_apt_configurer
         try:
