@@ -213,6 +213,7 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
 
     def setup_rp_test(self):
         app = self.controller.app
+        app.opts.dry_run = False
         fsc = app.controllers.Filesystem
         fsc.reset_partition_only = True
         app.package_installer = Mock()
