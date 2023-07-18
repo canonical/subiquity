@@ -119,7 +119,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             await asyncio.sleep(0.1)
 
         if self.answers['tpm-default']:
-            await self.app.confirm_install()
+            self.app.answers['filesystem-confirmed'] = True
             self.ui.body.done(self.ui.body.form)
         if self.answers['guided']:
             targets = self.ui.body.form.targets
@@ -149,7 +149,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
                     }
             self.ui.body.form.guided_choice.value = value
             self.ui.body.done(None)
-            await self.app.confirm_install()
+            self.app.answers['filesystem-confirmed'] = True
             while not isinstance(self.ui.body, FilesystemView):
                 await asyncio.sleep(0.1)
             self.finish()
@@ -262,7 +262,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         elif action['action'] == 'done':
             if not self.ui.body.done_btn.enabled:
                 raise Exception("answers did not provide complete fs config")
-            await self.app.confirm_install()
+            self.app.answers['filesystem-confirmed'] = True
             self.finish()
         else:
             raise Exception("could not process action {}".format(action))

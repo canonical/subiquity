@@ -519,7 +519,10 @@ class SubiquityClient(TuiApplication):
 
     def show_confirm_install(self):
         log.debug("showing InstallConfirmation over %s", self.ui.body)
-        self.add_global_overlay(InstallConfirmation(self))
+        overlay = InstallConfirmation(self)
+        self.add_global_overlay(overlay)
+        if self.answers.get('filesystem-confirmed', False):
+            overlay.ok(None)
 
     async def _start_answers_for_view(
             self, controller, view: Union[BaseView, Callable[[], BaseView]]):
