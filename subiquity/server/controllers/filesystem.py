@@ -482,8 +482,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         bpool_part = self.create_partition(device, gap_boot, dict(fstype=None))
         rpool_part = self.create_partition(device, gap_rest, dict(fstype=None))
 
-        self.create_zpool(rpool_part, 'rpool', '/')
         self.create_zpool(bpool_part, 'bpool', '/boot')
+        self.create_zpool(rpool_part, 'rpool', '/')
 
     @functools.singledispatchmethod
     def start_guided(self, target: GuidedStorageTarget,
