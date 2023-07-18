@@ -433,12 +433,12 @@ class InstallController(SubiquityController):
         new_entry = efi_state_after.entries[new_bootnum]
         was_dup = False
         for entry in efi_state_before.entries.values():
-            if entry.path == new_entry.path and entry.label == new_entry.label:
+            if entry.path == new_entry.path and entry.name == new_entry.name:
                 was_dup = True
         if was_dup:
             cmd = [
                 'efibootmgr', '--delete-bootnum',
-                '--bootnum', new_entry,
+                '--bootnum', new_bootnum,
                 ]
         else:
             cmd = [
