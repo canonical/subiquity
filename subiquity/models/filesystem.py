@@ -1521,6 +1521,7 @@ class FilesystemModel(object):
             if c is None:
                 # Ignore any action we do not know how to process yet
                 # (e.g. bcache)
+                log.debug(f'ignoring unknown action type {action["type"]}')
                 continue
             kw = {}
             field_names = set()
