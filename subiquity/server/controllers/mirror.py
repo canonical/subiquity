@@ -289,8 +289,12 @@ class MirrorController(SubiquityController):
             # apply_autoinstall_config but this is out of scope.
             raise RuntimeError("source model has changed but autoinstall"
                                " configuration is already being applied")
-        self.test_apt_configurer = get_apt_configurer(
-            self.app, self.app.controllers.Source.get_handler())
+        source_entry = self.app.base_model.source.current
+        if source_entry.variant == 'core':
+            self.test_apt_configurer = None
+        else:
+            self.test_apt_configurer = get_apt_configurer(
+                self.app, self.app.controllers.Source.get_handler())
         self.source_configured_event.set()
 
     def serialize(self):
@@ -327,7 +331,9 @@ class MirrorController(SubiquityController):
         # apply_apt_config and run_apt_config_check. Just make sure we still
         # use the original one.
         configurer = self.test_apt_configurer
-        assert configurer is not None
+        if configurer is None:
+            # i.e. core
+            return
         await configurer.apply_apt_config(
             self.context, final=False)
         await configurer.run_apt_config_check(output)
@@ -342,15 +348,25 @@ class MirrorController(SubiquityController):
     async def GET(self) -> MirrorGet:
         elected: Optional[str] = None
         staged: Optional[str] = None
-        if self.model.primary_elected is not None:
-            elected = self.model.primary_elected.uri
-        if self.model.primary_staged is not None:
-            staged = self.model.primary_staged.uri
+        candidates: List[str] = []
+        source_entry = self.app.base_model.source.current
+        if source_entry.variant == 'core':
+            relevant = False
+        else:
+            relevant = True
+            if self.model.primary_elected is not None:
+                elected = self.model.primary_elected.uri
+            if self.model.primary_staged is not None:
+                staged = self.model.primary_staged.uri
 
-        compatibles = self.model.compatible_primary_candidates()
-        # Skip the country-mirrors if they have not been resolved yet.
-        candidates = [c.uri for c in compatibles if c.uri is not None]
-        return MirrorGet(elected=elected, candidates=candidates, staged=staged)
+            compatibles = self.model.compatible_primary_candidates()
+            # Skip the country-mirrors if they have not been resolved yet.
+            candidates = [c.uri for c in compatibles if c.uri is not None]
+        return MirrorGet(
+            relevant=relevant,
+            elected=elected,
+            candidates=candidates,
+            staged=staged)
 
     async def POST(self, data: Optional[MirrorPost]) -> MirrorPostResponse:
         log.debug(data)
