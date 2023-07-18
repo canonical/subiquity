@@ -397,7 +397,7 @@ class InstallController(SubiquityController):
 
                 if not self.app.interactive:
                     if 'autoinstall' in self.app.kernel_cmdline:
-                        self.model.confirm()
+                        await self.model.confirm()
 
                 self.app.update_state(ApplicationState.NEEDS_CONFIRMATION)
 
