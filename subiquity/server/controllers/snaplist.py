@@ -160,6 +160,8 @@ class SnapListController(SubiquityController):
         }
     model_name = "snaplist"
 
+    interactive_for_variants = {'server'}
+
     def _make_loader(self):
         return SnapdSnapInfoLoader(
             self.model, self.app.snapd, self.opts.snap_section,
@@ -170,20 +172,6 @@ class SnapListController(SubiquityController):
         self.loader = self._make_loader()
         self.app.hub.subscribe(
             InstallerChannels.SNAPD_NETWORK_CHANGE, self.snapd_network_changed)
-        self.app.hub.subscribe(
-            InstallerChannels.INSTALL_CONFIRMED, self._confirmed)
-        self._active = True
-
-    async def _confirmed(self):
-        if self.app.base_model.source.current.variant == 'desktop':
-            await self.configured()
-            self._active = False
-            self.loader.stop()
-
-    def interactive(self):
-        if super().interactive():
-            return self._active
-        return False
 
     def load_autoinstall_data(self, ai_data):
         to_install = []

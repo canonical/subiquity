@@ -43,9 +43,21 @@ class SubiquityController(BaseController):
     # deprecated in favor of autoinstall_key.
     autoinstall_key_alias: Optional[str] = None
 
+    interactive_for_variants = None
+    _active = True
+
     def __init__(self, app):
         super().__init__(app)
         self.context.set('controller', self)
+        if self.interactive_for_variants is not None:
+            self.app.hub.subscribe(
+                InstallerChannels.INSTALL_CONFIRMED, self._confirmed)
+
+    async def _confirmed(self):
+        variant = self.app.base_model.source.current.variant
+        if variant not in self.interactive_for_variants:
+            await self.configured()
+            self._active = False
 
     def setup_autoinstall(self):
         if not self.app.autoinstall_config:
@@ -89,18 +101,19 @@ class SubiquityController(BaseController):
 
     def interactive(self):
         if not self.app.autoinstall_config:
-            return True
+            return self._active
         i_sections = self.app.autoinstall_config.get(
             'interactive-sections', [])
 
         if "*" in i_sections:
-            return True
+            return self._active
 
         if self.autoinstall_key in i_sections:
-            return True
+            return self._active
 
-        return (self.autoinstall_key_alias is not None
-                and self.autoinstall_key_alias in i_sections)
+        if self.autoinstall_key_alias is not None \
+           and self.autoinstall_key_alias in i_sections:
+            return self._active
 
     async def configured(self):
         """Let the world know that this controller's model is now configured.

@@ -62,6 +62,8 @@ class IdentityController(SubiquityController):
         'additionalProperties': False,
         }
 
+    interactive_for_variants = {'desktop', 'server'}
+
     def __init__(self, app):
         super().__init__(app)
         core_reserved_path = resource_path("reserved-usernames")
