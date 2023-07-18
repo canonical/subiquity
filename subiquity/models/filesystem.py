@@ -28,6 +28,7 @@ import tempfile
 from typing import List, Optional, Set, Union
 
 import more_itertools
+import yaml
 
 from curtin import storage_config
 from curtin.block import partition_kname
@@ -1109,6 +1110,21 @@ class ZFS:
     volume: str
     # options to pass to zfs dataset creation
     properties: Optional[dict] = None
+
+    @property
+    def fstype(self):
+        return 'zfs'
+
+    @property
+    def path(self):
+        if self.properties is None:
+            return self.volume
+        if not yaml.safe_load(self.properties.get('canmount', 'on')):
+            return None
+        mountpoint = self.properties.get('mountpoint', None)
+        if mountpoint is not None:
+            return mountpoint
+        return self.volume
 
 
 ConstructedDevice = Union[Raid, LVM_VolGroup, ZPool]
