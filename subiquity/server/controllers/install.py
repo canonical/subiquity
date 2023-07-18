@@ -408,7 +408,7 @@ class InstallController(SubiquityController):
             return
         state = await self.app.package_installer.install_pkg('efibootmgr')
         if state != PackageInstallState.DONE:
-            raise Exception()
+            raise RuntimeError('could not install efibootmgr')
         efi_state_before = get_efibootmgr('/')
         cmd = [
             'efibootmgr', '--create',
@@ -421,7 +421,7 @@ class InstallController(SubiquityController):
         efi_state_after = get_efibootmgr('/')
         new_bootnums = (
             set(efi_state_after.entries) - set(efi_state_before.entries))
-        if len(new_bootnums) == 0:
+        if not new_bootnums:
             return
         new_bootnum = new_bootnums.pop()
         new_entry = efi_state_after.entries[new_bootnum]
