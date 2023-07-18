@@ -46,6 +46,7 @@ autoinstall:
          flag: boot, wipe: superblock, grub_device: true}
       - {type: format, id: d1p1_format, label: efi, fstype: fat32,
          volume: d1p1}
+      - {type: mount, id: d1p1_mount, device: d1p1_format, path: /boot/efi}
 
       - {type: partition, id: d1p2, number: 2, size: -1, device: d1}
       - {type: zpool, id: d1_rpool, pool: rpool, vdevs: [d1p2], mountpoint: /,
@@ -78,6 +79,3 @@ autoinstall:
          properties: {canmount: off, mountpoint: /}}
       - {type: zfs, id: d1_rpool_USERDATA_home, pool: d1_rpool,
          volume: /USERDATA/home}
-
-      # workaround target exist problem
-      - {type: mount, id: d1p1_mount, device: d1p1_format, path: /boot/efi}

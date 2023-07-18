@@ -34,22 +34,5 @@ autoinstall:
     - rm -f "/etc/zfs/zfs-list.cache/rpool"
 
   storage:
-    version: 2
-    swap:
-      size: 0
-
-    config:
-      - {type: disk, id: d1, ptable: gpt, match: {size: largest},
-         wipe: superblock, grub_device: true}
-
-      - {type: partition, id: d1p1, number: 1, size: 1G, device: d1,
-         flag: boot, wipe: superblock, grub_device: true}
-      - {type: format, id: d1p1_format, label: efi, fstype: fat32,
-         volume: d1p1}
-      - {type: mount, id: d1p1_mount, device: d1p1_format, path: /boot/efi}
-
-      - {type: partition, id: d1p2, number: 2, size: -1, device: d1}
-      - {type: zpool, id: d1_rpool, pool: rpool, vdevs: [d1p2], mountpoint: /,
-         pool_properties: {ashift: 12},
-         fs_properties: {acltype: posixacl, relatime: on, canmount: on,
-                         compression: gzip, devices: off, xattr: sa}}
+    layout:
+      name: zfs
