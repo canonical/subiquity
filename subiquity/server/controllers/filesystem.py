@@ -198,6 +198,7 @@ class VariationInfo:
                     GuidedCapability.DIRECT,
                     GuidedCapability.LVM,
                     GuidedCapability.LVM_LUKS,
+                    GuidedCapability.ZFS,
                     ]))
 
 
@@ -472,6 +473,18 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 mount="/",
                 ))
 
+    def guided_zfs(self, gap, choice: GuidedChoiceV2):
+        device = gap.device
+        part_align = device.alignment_data().part_align
+        bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
+        gap_boot, gap_rest = gap.split(bootfs_size)
+
+        bpool_part = self.create_partition(device, gap_boot, dict(fstype=None))
+        rpool_part = self.create_partition(device, gap_rest, dict(fstype=None))
+
+        self.create_zpool(rpool_part, 'rpool', '/')
+        self.create_zpool(bpool_part, 'bpool', '/boot')
+
     @functools.singledispatchmethod
     def start_guided(self, target: GuidedStorageTarget,
                      disk: ModelDisk) -> gaps.Gap:
@@ -589,6 +602,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         if choice.capability.is_lvm():
             self.guided_lvm(gap, choice)
+        elif choice.capability.is_zfs():
+            self.guided_zfs(gap, choice)
         elif choice.capability == GuidedCapability.DIRECT:
             self.guided_direct(gap)
         else:
@@ -1186,6 +1201,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     capability = GuidedCapability.LVM_LUKS
                 else:
                     capability = GuidedCapability.LVM
+            elif name == 'zfs':
+                capability = GuidedCapability.ZFS
             else:
                 capability = GuidedCapability.DIRECT
 

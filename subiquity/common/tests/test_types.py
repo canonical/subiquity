@@ -15,7 +15,10 @@
 
 import unittest
 
-from subiquity.common.types import SizingPolicy
+from subiquity.common.types import (
+    GuidedCapability,
+    SizingPolicy,
+)
 
 
 class TestSizingPolicy(unittest.TestCase):
@@ -30,3 +33,11 @@ class TestSizingPolicy(unittest.TestCase):
     def test_default(self):
         actual = SizingPolicy.from_string(None)
         self.assertEqual(SizingPolicy.SCALED, actual)
+
+
+class TestCapabilities(unittest.TestCase):
+    def test_not_zfs(self):
+        self.assertFalse(GuidedCapability.DIRECT.is_zfs())
+
+    def test_is_zfs(self):
+        self.assertTrue(GuidedCapability.ZFS.is_zfs())

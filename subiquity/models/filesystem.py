@@ -1039,9 +1039,12 @@ class Filesystem:
 class Mount:
     path: str
     device: Filesystem = attributes.ref(backlink="_mount", default=None)
-    fstype: Optional[str] = None
     options: Optional[str] = None
     spec: Optional[str] = None
+
+    @property
+    def fstype(self):
+        return self.device.fstype
 
     def can_delete(self):
         from subiquity.common.filesystem import boot
@@ -1071,6 +1074,20 @@ class ZPool:
     pool_properties: Optional[dict] = None
     # default dataset options for the zfses in the pool
     fs_properties: Optional[dict] = None
+
+    component_name = "vdev"
+
+    @property
+    def fstype(self):
+        return 'zfs'
+
+    @property
+    def name(self):
+        return self.pool
+
+    @property
+    def mount(self):
+        return self.mountpoint
 
     async def pre_shutdown(self, command_runner):
         await command_runner.run(['zpool', 'export', self.pool])
@@ -1831,9 +1848,28 @@ class FilesystemModel(object):
     def should_add_swapfile(self):
         mount = self._mount_for_path('/')
         if mount is not None:
-            if not can_use_swapfile('/', mount.device.fstype):
+            if not can_use_swapfile('/', mount.fstype):
                 return False
         for swap in self._all(type='format', fstype='swap'):
             if swap.mount():
                 return False
         return True
+
+    def add_zpool(self, device, pool, mountpoint):
+        fs_properties = dict(
+            acltype='posixacl',
+            relatime='on',
+            canmount='on',
+            compression='gzip',
+            devices='off',
+            xattr='sa',
+        )
+        zpool = ZPool(
+            m=self,
+            vdevs=[device],
+            pool=pool,
+            mountpoint=mountpoint,
+            pool_properties=dict(ashift=12),
+            fs_properties=fs_properties)
+        self._actions.append(zpool)
+        return zpool

@@ -290,6 +290,21 @@ class Partition:
     path: Optional[str] = None
 
 
+@attr.s(auto_attribs=True)
+class ZFS:
+    volume: str
+    properties: Optional[dict] = None
+
+
+@attr.s(auto_attribs=True)
+class ZPool:
+    pool: str
+    mountpoint: str
+    zfses: Optional[ZFS] = None
+    pool_properties: Optional[dict] = None
+    fs_properties: Optional[dict] = None
+
+
 class GapUsable(enum.Enum):
     YES = enum.auto()
     TOO_MANY_PRIMARY_PARTS = enum.auto()
@@ -325,6 +340,8 @@ class GuidedCapability(enum.Enum):
     DIRECT = enum.auto()
     LVM = enum.auto()
     LVM_LUKS = enum.auto()
+    ZFS = enum.auto()
+
     CORE_BOOT_ENCRYPTED = enum.auto()
     CORE_BOOT_UNENCRYPTED = enum.auto()
     # These two are not valid as GuidedChoiceV2.capability:
@@ -348,6 +365,9 @@ class GuidedCapability(enum.Enum):
                         GuidedCapability.DIRECT,
                         GuidedCapability.LVM,
                         GuidedCapability.LVM_LUKS]
+
+    def is_zfs(self) -> bool:
+        return self in [GuidedCapability.ZFS]
 
 
 class GuidedDisallowedCapabilityReason(enum.Enum):
