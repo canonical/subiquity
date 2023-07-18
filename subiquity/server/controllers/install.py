@@ -37,7 +37,11 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     )
 from subiquitycore.context import with_context
-from subiquitycore.file_util import write_file, generate_config_yaml
+from subiquitycore.file_util import (
+    write_file,
+    generate_config_yaml,
+    generate_timestamped_header,
+    )
 from subiquitycore.utils import arun_command, log_process_streams
 
 from subiquity.common.errorreport import ErrorReportKind
@@ -395,8 +399,10 @@ class InstallController(SubiquityController):
                 ['lsblk', '-n', '-o', 'UUID', rp.path],
                 capture=True)
             uuid = cp.stdout.decode('ascii').strip()
-            conf = grub_reset_conf.replace("#UUID#", uuid)
-            conf = conf.replace("#PARTITION#", str(rp.number))
+            conf = grub_reset_conf.format(
+                HEADER=generate_timestamped_header(),
+                PARTITION=rp.number,
+                UUID=uuid)
             with open(self.tpath('etc/grub.d/99_reset'), 'w') as fp:
                 os.chmod(fp.fileno(), 0o755)
                 fp.write(conf)
@@ -655,12 +661,15 @@ Unattended-Upgrade::Allowed-Origins {
 """
 
 grub_reset_conf = """\
-#!/bin/bash -e
+#!/bin/sh
+{HEADER}
+
+set -e
 
 cat << EOF
 menuentry "Restore Ubuntu to factory state" {
-      search --no-floppy --hint '(hd0,#PARTITION#)' --set --fs-uuid #UUID#
-      linux  /casper/vmlinuz uuid=#UUID# nopersistent
+      search --no-floppy --hint '(hd0,{PARTITION})' --set --fs-uuid {UUID}
+      linux  /casper/vmlinuz uuid={UUID} nopersistent
       initrd /casper/initrd
 }
 EOF
