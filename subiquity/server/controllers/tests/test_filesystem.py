@@ -483,9 +483,9 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertFalse(d1p2.preserve)
         self.assertFalse(d1p3.preserve)
         [rpool] = self.model._all(type='zpool', pool='rpool')
-        self.assertEqual('/', rpool.mount)
+        self.assertEqual('/', rpool.path)
         [bpool] = self.model._all(type='zpool', pool='bpool')
-        self.assertEqual('/boot', bpool.mount)
+        self.assertEqual('/boot', bpool.path)
 
     async def test_guided_zfs_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, 'msdos')
@@ -499,9 +499,9 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertFalse(d1p1.preserve)
         self.assertFalse(d1p2.preserve)
         [rpool] = self.model._all(type='zpool', pool='rpool')
-        self.assertEqual('/', rpool.mount)
+        self.assertEqual('/', rpool.path)
         [bpool] = self.model._all(type='zpool', pool='bpool')
-        self.assertEqual('/boot', bpool.mount)
+        self.assertEqual('/boot', bpool.path)
 
     async def _guided_side_by_side(self, bl, ptable):
         await self._guided_setup(bl, ptable, storage_version=2)

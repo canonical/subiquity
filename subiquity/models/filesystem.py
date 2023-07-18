@@ -1100,7 +1100,10 @@ class ZPool:
         return self.pool
 
     @property
-    def mount(self):
+    def path(self):
+        if self.fs_properties is not None:
+            if not yaml.safe_load(self.fs_properties.get('canmount', 'off')):
+                return None
         return self.mountpoint
 
 

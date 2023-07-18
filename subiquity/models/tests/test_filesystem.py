@@ -1299,30 +1299,52 @@ class TestZPool(SubiTestCase):
 
     def test_zpool_from_action(self):
         m = make_model()
-        d = make_disk(m)
+        d1 = make_disk(m)
+        d2 = make_disk(m)
         fake_up_blockdata(m)
         blockdevs = m._probe_data['blockdev']
         config = [
-            dict(type='disk', id=d.id, path=d.path, ptable=d.ptable,
-                 serial=d.serial, info={d.path: blockdevs[d.path]}),
-            dict(type='zpool', id='zpool-1', vdevs=[d.id], pool='p1',
+            dict(type='disk', id=d1.id, path=d1.path, ptable=d1.ptable,
+                 serial=d1.serial, info={d1.path: blockdevs[d1.path]}),
+            dict(type='disk', id=d2.id, path=d2.path, ptable=d2.ptable,
+                 serial=d2.serial, info={d2.path: blockdevs[d2.path]}),
+            dict(type='zpool', id='zpool-1', vdevs=[d1.id], pool='p1',
                  mountpoint='/'),
+            dict(type='zpool', id='zpool-2', vdevs=[d2.id], pool='p2',
+                 mountpoint='/srv', fs_properties=dict(canmount='off')),
             dict(type='zfs', id='zfs-1', volume='/ROOT', pool='zpool-1'),
+            dict(type='zfs', id='zfs-2', volume='/SRV/srv', pool='zpool-2',
+                 properties=dict(mountpoint='/srv', canmount='on')),
         ]
         objs = m._actions_from_config(
             config, blockdevs=None, is_probe_data=False)
-        actual_disk, zpool, zfs = objs
-        self.assertTrue(isinstance(zpool, ZPool))
-        self.assertEqual('zpool-1', zpool.id)
-        self.assertEqual([actual_disk], zpool.vdevs)
-        self.assertEqual('p1', zpool.pool)
-        self.assertEqual('/', zpool.mountpoint)
-        self.assertEqual([zfs], zpool._zfses)
+        actual_d1, actual_d2, zp1, zp2, zfs_zp1, zfs_zp2 = objs
+        self.assertTrue(isinstance(zp1, ZPool))
+        self.assertEqual('zpool-1', zp1.id)
+        self.assertEqual([actual_d1], zp1.vdevs)
+        self.assertEqual('p1', zp1.pool)
+        self.assertEqual('/', zp1.mountpoint)
+        self.assertEqual('/', zp1.path)
+        self.assertEqual([zfs_zp1], zp1._zfses)
 
-        self.assertTrue(isinstance(zfs, ZFS))
-        self.assertEqual('zfs-1', zfs.id)
-        self.assertEqual(zpool, zfs.pool)
-        self.assertEqual('/ROOT', zfs.volume)
+        self.assertTrue(isinstance(zp2, ZPool))
+        self.assertEqual('zpool-2', zp2.id)
+        self.assertEqual([actual_d2], zp2.vdevs)
+        self.assertEqual('p2', zp2.pool)
+        self.assertEqual('/srv', zp2.mountpoint)
+        self.assertEqual(None, zp2.path)
+        self.assertEqual([zfs_zp2], zp2._zfses)
+
+        self.assertTrue(isinstance(zfs_zp1, ZFS))
+        self.assertEqual('zfs-1', zfs_zp1.id)
+        self.assertEqual(zp1, zfs_zp1.pool)
+        self.assertEqual('/ROOT', zfs_zp1.volume)
+
+        self.assertTrue(isinstance(zfs_zp2, ZFS))
+        self.assertEqual('zfs-2', zfs_zp2.id)
+        self.assertEqual(zp2, zfs_zp2.pool)
+        self.assertEqual('/SRV/srv', zfs_zp2.volume)
+        self.assertEqual('/srv', zfs_zp2.path)
 
 
 class TestRootfs(SubiTestCase):
