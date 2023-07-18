@@ -295,9 +295,9 @@ class SubiquityModel:
         return model_name in self._cur_postinstall_model_names and \
                model_name not in self._cur_install_model_names
 
-    def confirm(self):
+    async def confirm(self):
         self._confirmation.set()
-        self.hub.broadcast(InstallerChannels.INSTALL_CONFIRMED)
+        await self.hub.abroadcast(InstallerChannels.INSTALL_CONFIRMED)
 
     def validate_cloudconfig_schema(self, data: dict, data_source: str):
         """Validate data config adheres to strict cloud-config schema

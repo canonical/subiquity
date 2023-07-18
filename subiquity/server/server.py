@@ -121,7 +121,7 @@ class MetaController:
 
     async def confirm_POST(self, tty: str) -> None:
         self.app.confirming_tty = tty
-        self.app.base_model.confirm()
+        await self.app.base_model.confirm()
 
     async def restart_POST(self) -> None:
         self.app.restart()
