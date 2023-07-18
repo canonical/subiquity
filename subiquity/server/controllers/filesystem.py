@@ -1329,5 +1329,5 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if not self.reset_partition_only:
             await self.app.command_runner.run(
                 ['umount', '--recursive', '/target'])
-        for pool in self.model._all(type='zpool'):
-            await pool.pre_shutdown(self.app.command_runner)
+        if len(self.model._all(type='zpool')) > 0:
+            await self.app.command_runner.run(['zpool', 'export', '-a'])

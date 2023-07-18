@@ -1095,9 +1095,6 @@ class ZPool:
     def mount(self):
         return self.mountpoint
 
-    async def pre_shutdown(self, command_runner):
-        await command_runner.run(['zpool', 'export', self.pool])
-
 
 @fsobj("zfs")
 class ZFS:
