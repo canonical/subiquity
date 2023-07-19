@@ -1,0 +1,24 @@
+#source-catalog: examples/sources/core.yaml
+Source:
+  source: ubuntu-core
+Welcome:
+  lang: en_US
+Refresh:
+  update: no
+Keyboard:
+  layout: us
+Zdev:
+  accept-default: yes
+Network:
+  accept-default: yes
+Proxy:
+  proxy: ""
+Filesystem:
+  guided: yes
+  guided-index: 0
+UbuntuPro:
+  token: ""
+InstallProgress:
+  reboot: yes
+Drivers:
+  install: yes

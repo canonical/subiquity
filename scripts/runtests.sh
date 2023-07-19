@@ -49,7 +49,9 @@ validate () {
         if [ "$opt" = reset-only ]; then
             return
         fi
-        python3 scripts/validate-autoinstall-user-data.py < $tmpdir/var/log/installer/autoinstall-user-data
+        if [ $answers != examples/answers/core.yaml ]; then
+            python3 scripts/validate-autoinstall-user-data.py < $tmpdir/var/log/installer/autoinstall-user-data
+        fi
         netplan generate --root $tmpdir
     elif [ "${mode}" = "system_setup" ]; then
         setup_mode="$2"
@@ -194,7 +196,9 @@ for answers in examples/answers/*.yaml; do
             --snaps-from-examples \
             --source-catalog $catalog
         validate install
-        grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
+        if [ $answers != examples/answers/core.yaml ]; then
+            grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
+        fi
     else
         # The OOBE doesn't exist in WSL < 20.04
         if [ "${RELEASE%.*}" -ge 20 ]; then
