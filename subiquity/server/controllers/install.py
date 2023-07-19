@@ -180,6 +180,10 @@ class InstallController(SubiquityController):
         if not self.app.opts.dry_run:
             shutil.rmtree(target)
 
+    def supports_apt(self) -> bool:
+        return self.model.target is not None and \
+            self.model.source.current.variant != 'core'
+
     @with_context(
         description="configuring apt", level="INFO", childlevel="DEBUG")
     async def configure_apt(self, *, context):
@@ -189,6 +193,8 @@ class InstallController(SubiquityController):
         return await configurer.configure_for_install(context)
 
     async def setup_target(self, context):
+        if not self.supports_apt():
+            return
         mirror = self.app.controllers.Mirror
         await mirror.final_apt_configurer.setup_target(context, self.tpath())
 
@@ -472,32 +478,34 @@ class InstallController(SubiquityController):
 
             self.app.update_state(ApplicationState.RUNNING)
 
-            if not self.app.controllers.Filesystem.reset_partition_only:
-                for_install_path = await self.configure_apt(context=context)
+            if self.model.target is None:
+                for_install_path = None
+            elif self.supports_apt():
+                for_install_path = 'cp://' + await self.configure_apt(
+                    context=context)
 
                 await self.app.hub.abroadcast(InstallerChannels.APT_CONFIGURED)
-
-                if os.path.exists(self.model.target):
-                    await self.unmount_target(
-                        context=context, target=self.model.target)
             else:
-                for_install_path = ''
+                fsc = self.app.controllers.Filesystem
+                for_install_path = self.model.source.get_source(fsc._info.name)
 
             if self.app.controllers.Filesystem.reset_partition:
                 self.app.package_installer.start_installing_pkg('efibootmgr')
 
-            await self.curtin_install(
-                context=context, source='cp://' + for_install_path)
+            if self.model.target is not None:
+                if os.path.exists(self.model.target):
+                    await self.unmount_target(
+                        context=context, target=self.model.target)
 
-            if not self.app.controllers.Filesystem.reset_partition_only:
+            await self.curtin_install(context=context, source=for_install_path)
 
-                self.app.update_state(ApplicationState.WAITING)
+            self.app.update_state(ApplicationState.WAITING)
 
-                await self.model.wait_postinstall()
+            await self.model.wait_postinstall()
 
-                self.app.update_state(ApplicationState.RUNNING)
+            self.app.update_state(ApplicationState.RUNNING)
 
-                await self.postinstall(context=context)
+            await self.postinstall(context=context)
 
             self.app.update_state(ApplicationState.DONE)
         except Exception:
@@ -518,22 +526,24 @@ class InstallController(SubiquityController):
             {"autoinstall": self.app.make_autoinstall()})
         write_file(autoinstall_path, autoinstall_config)
         await self.configure_cloud_init(context=context)
-        packages = await self.get_target_packages(context=context)
-        for package in packages:
-            await self.install_package(context=context, package=package)
-        if self.model.drivers.do_install:
-            with context.child(
-                    "ubuntu-drivers-install",
-                    "installing third-party drivers") as child:
-                ubuntu_drivers = self.app.controllers.Drivers.ubuntu_drivers
-                await ubuntu_drivers.install_drivers(root_dir=self.tpath(),
-                                                     context=child)
-
-        if self.model.network.has_network:
-            self.app.update_state(ApplicationState.UU_RUNNING)
-            policy = self.model.updates.updates
-            await self.run_unattended_upgrades(context=context, policy=policy)
-        await self.restore_apt_config(context=context)
+        if self.supports_apt():
+            packages = await self.get_target_packages(context=context)
+            for package in packages:
+                await self.install_package(context=context, package=package)
+            if self.model.drivers.do_install:
+                with context.child(
+                        "ubuntu-drivers-install",
+                        "installing third-party drivers") as child:
+                    udrivers = self.app.controllers.Drivers.ubuntu_drivers
+                    await udrivers.install_drivers(
+                        root_dir=self.tpath(),
+                        context=child)
+            if self.model.network.has_network:
+                self.app.update_state(ApplicationState.UU_RUNNING)
+                policy = self.model.updates.updates
+                await self.run_unattended_upgrades(
+                    context=context, policy=policy)
+            await self.restore_apt_config(context=context)
         if self.model.active_directory.do_join:
             hostname = self.model.identity.hostname
             if not hostname:
