@@ -15,6 +15,7 @@
 
 import abc
 import functools
+import logging
 from typing import Any, Optional
 
 import attr
@@ -27,6 +28,9 @@ from subiquity.models.filesystem import (
     Bootloader,
     Partition,
     )
+
+
+log = logging.getLogger('subiquity.common.filesystem.boot')
 
 
 @functools.singledispatch
@@ -331,7 +335,9 @@ def can_be_boot_device(device, *,
 def _can_be_boot_device_disk(disk, *,
                              resize_partition=None, with_reformatting=False):
     if with_reformatting:
-        return True
+        new_disk = attr.evolve(disk)
+        new_disk._partitions = [p for p in disk.partitions() if p._is_in_use]
+        disk = new_disk
     plan = get_boot_device_plan(disk, resize_partition=resize_partition)
     return plan is not None
 
@@ -358,7 +364,9 @@ def is_esp(device):
 
 @is_esp.register(Partition)
 def _is_esp_partition(partition):
-    if not can_be_boot_device(partition.device, with_reformatting=True):
+    new_disk = attr.evolve(partition.device)
+    new_disk._partitions = []
+    if not can_be_boot_device(new_disk, with_reformatting=True):
         return False
     if partition.device.ptable == "gpt":
         return partition.flag == "boot"
