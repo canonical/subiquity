@@ -26,7 +26,7 @@ from subiquitycore.tests.mocks import make_app
 from subiquitycore.utils import matching_dicts
 from subiquitycore.tests.util import random_string
 
-from subiquity.common.filesystem import gaps
+from subiquity.common.filesystem import gaps, labels
 from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.common.types import (
     AddPartitionV2,
@@ -34,6 +34,7 @@ from subiquity.common.types import (
     Gap,
     GapUsable,
     GuidedCapability,
+    GuidedDisallowedCapability,
     GuidedDisallowedCapabilityReason,
     GuidedChoiceV2,
     GuidedStorageTargetManual,
@@ -74,6 +75,13 @@ default_capabilities = [
     GuidedCapability.LVM_LUKS,
     GuidedCapability.ZFS,
     ]
+
+
+default_capabilities_disallowed_too_small = [
+    GuidedDisallowedCapability(
+        capability=cap,
+        reason=GuidedDisallowedCapabilityReason.TOO_SMALL)
+    for cap in default_capabilities]
 
 
 class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
@@ -646,24 +654,13 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
     async def test_small_blank_disk(self, bootloader, ptable):
         await self._setup(bootloader, ptable, size=1 << 30)
         resp = await self.fsc.v2_guided_GET()
-        self.assertEqual(2, len(resp.targets))
-        self.assertEqual(GuidedStorageTargetManual(), resp.targets[1])
-        self.assertEqual(0, len(resp.targets[0].allowed))
-        self.assertEqual(
-            {
-                disabled_cap.capability
-                for disabled_cap in resp.targets[0].disallowed
-            },
-            set(default_capabilities)
-            )
-        self.assertEqual(
-            {
-                disabled_cap.reason
-                for disabled_cap in resp.targets[0].disallowed
-            },
-            {
-                GuidedDisallowedCapabilityReason.TOO_SMALL,
-            })
+        expected = [
+            GuidedStorageTargetReformat(
+                disk_id=self.disk.id, allowed=[],
+                disallowed=default_capabilities_disallowed_too_small),
+            GuidedStorageTargetManual(),
+            ]
+        self.assertEqual(expected, resp.targets)
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_used_half_disk(self, bootloader, ptable):
@@ -903,6 +900,93 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertLess(size, part_size)
         # but we should using most of the disk, minus boot partition(s)
         self.assertLess(45 << 30, size)
+
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_in_use(self, bootloader, ptable):
+        # Disks with "in use" partitions allow a reformat if there is
+        # enough space on the rest of the disk.
+        await self._setup(bootloader, ptable, fix_bios=True)
+        make_partition(
+            self.model, self.disk, preserve=True,
+            size=4 << 30, is_in_use=True)
+        expected = [
+            GuidedStorageTargetReformat(
+                disk_id=self.disk.id, allowed=default_capabilities),
+            GuidedStorageTargetManual(),
+            ]
+        resp = await self.fsc.v2_guided_GET()
+        self.assertEqual(expected, resp.targets)
+        self.assertEqual(ProbeStatus.DONE, resp.status)
+
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_in_use_full(self, bootloader, ptable):
+        # Disks with "in use" partitions allow a reformat (but not
+        # usegap) if there is enough space on the rest of the disk,
+        # even if the disk is full of other partitions.
+        await self._setup(bootloader, ptable, fix_bios=True)
+        make_partition(
+            self.model, self.disk, preserve=True,
+            size=4 << 30, is_in_use=True)
+        make_partition(
+            self.model, self.disk, preserve=True,
+            size=gaps.largest_gap_size(self.disk))
+        expected = [
+            GuidedStorageTargetReformat(
+                disk_id=self.disk.id, allowed=default_capabilities),
+            GuidedStorageTargetManual(),
+            ]
+        resp = await self.fsc.v2_guided_GET()
+        self.assertEqual(expected, resp.targets)
+        self.assertEqual(ProbeStatus.DONE, resp.status)
+
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_in_use_too_small(self, bootloader, ptable):
+        # Disks with "in use" partitions do not allow a reformat if
+        # there is not enough space on the rest of the disk.
+        await self._setup(bootloader, ptable, fix_bios=True, size=5 << 30)
+        make_partition(
+            self.model, self.disk, preserve=True,
+            size=4 << 30, is_in_use=True)
+        make_partition(
+            self.model, self.disk, preserve=True,
+            size=gaps.largest_gap_size(self.disk))
+        expected = [
+            GuidedStorageTargetReformat(
+                disk_id=self.disk.id, allowed=default_capabilities),
+            GuidedStorageTargetManual(),
+            ]
+        resp = await self.fsc.v2_guided_GET()
+        expected = [
+            GuidedStorageTargetReformat(
+                disk_id=self.disk.id, allowed=[],
+                disallowed=default_capabilities_disallowed_too_small),
+            GuidedStorageTargetManual(),
+            ]
+        self.assertEqual(expected, resp.targets)
+
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_in_use_reformat_and_gap(self, bootloader, ptable):
+        # Disks with "in use" partitions allow both a reformat and a
+        # usegap if there is an in use partition, another partition
+        # and a big enough gap.
+        await self._setup(bootloader, ptable, fix_bios=True)
+        make_partition(
+            self.model, self.disk, preserve=True,
+            size=4 << 30, is_in_use=True)
+        make_partition(
+            self.model, self.disk, preserve=True,
+            size=gaps.largest_gap_size(self.disk)//2)
+        expected = [
+            GuidedStorageTargetReformat(
+                disk_id=self.disk.id, allowed=default_capabilities),
+            GuidedStorageTargetUseGap(
+                disk_id=self.disk.id, allowed=default_capabilities,
+                gap=labels.for_client(gaps.largest_gap(self.disk))),
+            GuidedStorageTargetManual(),
+            ]
+        resp = await self.fsc.v2_guided_GET()
+        self.assertEqual(expected, resp.targets)
+        self.assertEqual(ProbeStatus.DONE, resp.status)
 
 
 class TestManualBoot(IsolatedAsyncioTestCase):

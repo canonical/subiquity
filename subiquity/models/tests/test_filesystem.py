@@ -1309,8 +1309,8 @@ class TestZPool(SubiTestCase):
                  mountpoint='/'),
             dict(type='zfs', id='zfs-1', volume='/ROOT', pool='zpool-1'),
         ]
-        objs, _exclusions = m._actions_from_config(config, blockdevs=None,
-                                                   is_probe_data=False)
+        objs = m._actions_from_config(
+            config, blockdevs=None, is_probe_data=False)
         actual_disk, zpool, zfs = objs
         self.assertTrue(isinstance(zpool, ZPool))
         self.assertEqual('zpool-1', zpool.id)

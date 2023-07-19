@@ -496,7 +496,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     def start_guided_reformat(self, target: GuidedStorageTargetReformat,
                               disk: ModelDisk) -> gaps.Gap:
         """Perform the reformat, and return the resulting gap."""
-        self.reformat(disk, wipe='superblock-recursive')
+        in_use_parts = [p for p in disk.partitions() if p._is_in_use]
+        if in_use_parts:
+            for p in disk.partitions():
+                if not p._is_in_use:
+                    self.delete_partition(p)
+        else:
+            self.reformat(disk, wipe='superblock-recursive')
         return gaps.largest_gap(disk)
 
     @start_guided.register
@@ -653,7 +659,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def POST(self, config: list):
         log.debug(config)
-        self.model._actions, self.model._exclusions = \
+        self.model._actions = \
             self.model._actions_from_config(
                 config, blockdevs=self.model._probe_data['blockdev'],
                 is_probe_data=False)
@@ -680,7 +686,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if can_be_boot:
                     continue
             disks.append(disk)
-        return [d for d in disks if d not in self.model._exclusions]
+        return [d for d in disks]
 
     def _offsets_and_sizes_for_volume(self, volume):
         offset = self.model._partition_alignment_data['gpt'].min_start_offset
@@ -856,11 +862,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if include_raid:
             disks = self.potential_boot_disks(with_reformatting=True)
         else:
-            disks = [
-                d
-                for d in model._all(type='disk')
-                if d not in model._exclusions
-                ]
+            disks = model._all(type='disk')
         minsize = self.calculate_suggested_install_min()
         return StorageResponseV2(
                 status=ProbeStatus.DONE,
@@ -943,7 +945,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             scenarios.append((disk.size, reformat))
 
         for disk in self.potential_boot_disks(with_reformatting=False):
-            parts = [p for p in disk.partitions() if p.flag != 'bios_grub']
+            parts = [
+                p
+                for p in disk.partitions()
+                if p.flag != 'bios_grub' and not p._is_in_use
+                ]
             if len(parts) < 1:
                 # On an (essentially) empty disk, don't bother to offer it
                 # with UseGap, as it's basically the same as the Reformat

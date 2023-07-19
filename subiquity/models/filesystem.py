@@ -19,7 +19,6 @@ import collections
 import copy
 import enum
 import fnmatch
-import itertools
 import logging
 import math
 import os
@@ -468,6 +467,7 @@ class _Formattable(ABC):
 
     _fs: Optional["Filesystem"] = attributes.backlink()
     _constructed_device: Optional["ConstructedDevice"] = attributes.backlink()
+    _is_in_use: bool = attributes.for_api(default=False)
 
     def _is_entirely_used(self):
         return self._fs is not None or self._constructed_device is not None
@@ -580,6 +580,8 @@ class _Device(_Formattable, ABC):
         #    with a fs that needs to be mounted and is not mounted
         if self._constructed_device is not None:
             return False
+        if self._is_in_use:
+            return False
         if self._fs is not None:
             return self._fs._available()
         from subiquity.common.filesystem.gaps import (
@@ -628,6 +630,7 @@ class Disk(_Device):
     device_id: str = None
 
     _info: StorageInfo = attributes.for_api()
+    _has_in_use_partition: bool = attributes.for_api(default=False)
 
     @property
     def available_for_partitions(self):
@@ -761,6 +764,8 @@ class Partition(_Formattable):
     def available(self):
         if self.flag in ['bios_grub', 'prep'] or self.grub_device:
             return False
+        if self._is_in_use:
+            return False
         if self._constructed_device is not None:
             return False
         if self._fs is None:
@@ -833,6 +838,7 @@ class Raid(_Device):
     devices: Set[Union[Disk, Partition, "Raid"]] = attributes.reflist(
         backlink="_constructed_device", default=attr.Factory(set))
     _info: Optional[StorageInfo] = attributes.for_api(default=None)
+    _has_in_use_partition = False
 
     def serialize_devices(self):
         # Surprisingly, the order of devices passed to mdadm --create
@@ -1200,16 +1206,10 @@ class FilesystemModel(object):
     def reset(self):
         self._all_ids = set()
         if self._probe_data is not None:
-            self._orig_config = storage_config.extract_storage_config(
-                self._probe_data)["storage"]["config"]
-            self._actions, self._exclusions = self._actions_from_config(
-                self._orig_config,
-                blockdevs=self._probe_data['blockdev'],
-                is_probe_data=True)
+            self.process_probe_data()
         else:
             self._orig_config = []
             self._actions = []
-            self._exclusions = set()
         self.swap = None
         self.grub = None
         self.guided_configuration = None
@@ -1224,6 +1224,70 @@ class FilesystemModel(object):
         orig_model.load_probe_data(self._probe_data)
         return orig_model
 
+    def process_probe_data(self):
+        self._orig_config = storage_config.extract_storage_config(
+            self._probe_data)["storage"]["config"]
+        self._actions = self._actions_from_config(
+            self._orig_config,
+            blockdevs=self._probe_data['blockdev'],
+            is_probe_data=True)
+
+        majmin_to_dev = {}
+
+        for obj in self._actions:
+            if not hasattr(obj, '_info'):
+                continue
+            major = obj._info.raw.get('MAJOR')
+            minor = obj._info.raw.get('MINOR')
+            if major is None or minor is None:
+                continue
+            majmin_to_dev[f'{major}:{minor}'] = obj
+
+        mounts = list(self._probe_data.get('mount', []))
+        while mounts:
+            mount = mounts.pop(0)
+            if mount['target'].startswith(self.target):
+                # Completely ignore mounts under /target, they are probably
+                # leftovers from a previous install attempt.
+                continue
+            if 'maj:min' not in mount:
+                continue
+            obj = majmin_to_dev.get(mount['maj:min'])
+            if obj is None:
+                continue
+            obj._is_in_use = True
+            log.debug("%s is mounted", obj.path)
+            work = [obj]
+            while work:
+                o = work.pop(0)
+                if isinstance(o, Disk):
+                    o._has_in_use_partition = True
+                work.extend(dependencies(o))
+            mounts.extend(mount.get('children', []))
+
+        # This is a special hack for the install media. When written to a USB
+        # stick or similar, both the block device for the whole drive and for
+        # the partition will show up as having a filesystem. Casper should
+        # preferentially mount it as a partition though and if it looks like
+        # that has happened, we ignore the filesystem on the drive itself.
+        for disk in self._all(type='disk'):
+            if disk._fs is None:
+                continue
+            if not disk._partitions:
+                continue
+            p1 = disk._partitions[0]
+            if p1._fs is None:
+                continue
+            if disk._fs.fstype == p1._fs.fstype == 'iso9660':
+                if p1._is_in_use and not disk._is_in_use:
+                    self.remove_filesystem(disk._fs)
+
+        for o in self._actions:
+            if o.type == "partition" and o.flag == "swap":
+                if o._fs is None:
+                    self._actions.append(Filesystem(
+                        m=self, fstype="swap", volume=o, preserve=True))
+
     def load_server_data(self, status):
         log.debug('load_server_data %s', status)
         self._all_ids = set()
@@ -1232,7 +1296,7 @@ class FilesystemModel(object):
         self._probe_data = {
             'dasd': status.dasd,
             }
-        self._actions, self._exclusions = self._actions_from_config(
+        self._actions = self._actions_from_config(
             status.config,
             blockdevs=None,
             is_probe_data=False)
@@ -1271,7 +1335,7 @@ class FilesystemModel(object):
             return is_ssd == match['ssd']
 
         def match_install_media(disk):
-            return disk in self._exclusions
+            return disk._has_in_use_partition
 
         if match.get('install-media', False):
             matchers.append(match_install_media)
@@ -1305,7 +1369,8 @@ class FilesystemModel(object):
             else:
                 candidates.append(candidate)
         if 'size' in match or 'ssd' in match:
-            candidates = [c for c in candidates if c not in self._exclusions]
+            candidates = [
+                c for c in candidates if not c._has_in_use_partition]
         if match.get('size') == 'smallest':
             candidates.sort(key=lambda d: d.size)
         if match.get('size') == 'largest':
@@ -1379,7 +1444,7 @@ class FilesystemModel(object):
                 disks.remove(disk)
                 action['path'] = disk.path
                 action['serial'] = disk.serial
-        self._actions, self._exclusions = self._actions_from_config(
+        self._actions = self._actions_from_config(
             ai_config,
             blockdevs=self._probe_data['blockdev'],
             is_probe_data=False)
@@ -1449,14 +1514,8 @@ class FilesystemModel(object):
         """
         byid = {}
         objs = []
-        exclusions = set()
         for action in config:
             if is_probe_data and action['type'] == 'mount':
-                if not action['path'].startswith(self.target):
-                    # Completely ignore mounts under /target, they are
-                    # probably leftovers from a previous install
-                    # attempt.
-                    exclusions.add(byid[action['device']])
                 continue
             c = _type_to_cls.get(action['type'], None)
             if c is None:
@@ -1494,25 +1553,7 @@ class FilesystemModel(object):
             obj = byid[action['id']] = c(m=self, **kw)
             objs.append(obj)
 
-        while True:
-            next_exclusions = exclusions.copy()
-            for e in exclusions:
-                next_exclusions.update(itertools.chain(
-                    dependencies(e), reverse_dependencies(e)))
-            if len(exclusions) == len(next_exclusions):
-                break
-            exclusions = next_exclusions
-
-        log.debug("exclusions %s", {e.id for e in exclusions})
-
-        if is_probe_data:
-            for o in objs:
-                if o.type == "partition" and o.flag == "swap":
-                    if o._fs is None:
-                        objs.append(Filesystem(
-                            m=self, fstype="swap", volume=o, preserve=True))
-
-        return objs, exclusions
+        return objs
 
     def _render_actions(self,
                         mode: ActionRenderMode = ActionRenderMode.DEFAULT):
@@ -1570,7 +1611,7 @@ class FilesystemModel(object):
         log.debug('mountpoints %s', mountpoints)
 
         if mode == ActionRenderMode.FOR_API:
-            work = [a for a in self._actions if a not in self._exclusions]
+            work = list(self._actions)
         else:
             work = [
                 a for a in self._actions if not getattr(a, 'preserve', False)

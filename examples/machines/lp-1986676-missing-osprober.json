@@ -623,7 +623,7 @@
                     "range": "16",
                     "removable": "1",
                     "ro": "0",
-                    "size": "15728640000",
+                    "size": "157286400000",
                     "stat": "   71504      922  8712293   373538     2643     1512   442264   197181        0   367044   570719        0        0        0        0        0        0",
                     "subsystem": "block",
                     "uevent": "MAJOR=8\nMINOR=48\nDEVNAME=sdd\nDEVTYPE=disk\nDISKSEQ=15"
