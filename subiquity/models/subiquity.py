@@ -433,6 +433,12 @@ class SubiquityModel:
         return files
 
     def configure_cloud_init(self):
+        if self.target is None:
+            # i.e. reset_partition_only
+            return
+        if self.source.current.variant == 'core':
+            # can probably be supported but requires changes
+            return
         for path, content, cmode in self._cloud_init_files():
             path = os.path.join(self.target, path)
             os.makedirs(os.path.dirname(path), exist_ok=True)

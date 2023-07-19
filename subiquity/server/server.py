@@ -214,11 +214,12 @@ INSTALL_MODEL_NAMES = ModelNames({
     "filesystem",
     "kernel",
     "keyboard",
-    "mirror",
     "network",
     "proxy",
     "source",
-    })
+    },
+    desktop={'mirror'},
+    server={'mirror'})
 
 POSTINSTALL_MODEL_NAMES = ModelNames({
     "drivers",

@@ -1,0 +1,10 @@
+- description:
+    en: This test source provides a "Ubuntu Core" base install
+  id: ubuntu-core
+  locale_support: none
+  name:
+    en: Ubuntu Server
+  path: ubuntu-core.squashfs
+  size: 530485248
+  type: fsimage
+  variant: core
