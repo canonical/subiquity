@@ -16,8 +16,19 @@
 from pathlib import Path
 import subprocess
 import unittest
-from unittest.mock import ANY, Mock, mock_open, patch
+from unittest.mock import (
+    ANY,
+    AsyncMock,
+    call,
+    Mock,
+    mock_open,
+    patch,
+    )
 
+from curtin.util import EFIBootEntry, EFIBootState
+
+from subiquity.common.types import PackageInstallState
+from subiquity.models.tests.test_filesystem import make_model_and_partition
 from subiquity.server.controllers.install import (
     InstallController,
     )
@@ -115,6 +126,64 @@ class TestWriteConfig(unittest.IsolatedAsyncioTestCase):
             })
 
 
+efi_state_no_rp = EFIBootState(
+    current='0000',
+    timeout='0 seconds',
+    order=['0000', '0002'],
+    entries={
+        '0000': EFIBootEntry(
+            name='ubuntu',
+            path='HD(1,GPT,...)/File(\\EFI\\ubuntu\\shimx64.efi)'),
+        '0001': EFIBootEntry(
+            name='Windows Boot Manager',
+            path='HD(1,GPT,...,0x82000)/File(\\EFI\\bootmgfw.efi'),
+        '0002': EFIBootEntry(
+            name='Linux-Firmware-Updater',
+            path='HD(1,GPT,...,0x800,0x100000)/File(\\shimx64.efi)\\.fwupd'),
+        })
+
+efi_state_with_rp = EFIBootState(
+    current='0000',
+    timeout='0 seconds',
+    order=['0000', '0002', '0003'],
+    entries={
+        '0000': EFIBootEntry(
+            name='ubuntu',
+            path='HD(1,GPT,...)/File(\\EFI\\ubuntu\\shimx64.efi)'),
+        '0001': EFIBootEntry(
+            name='Windows Boot Manager',
+            path='HD(1,GPT,...,0x82000)/File(\\EFI\\bootmgfw.efi'),
+        '0002': EFIBootEntry(
+            name='Linux-Firmware-Updater',
+            path='HD(1,GPT,...,0x800,0x100000)/File(\\shimx64.efi)\\.fwupd'),
+        '0003': EFIBootEntry(
+            name='Restore Ubuntu to factory state',
+            path='HD(1,GPT,...,0x800,0x100000)/File(\\shimx64.efi)'),
+        })
+
+efi_state_with_dup_rp = EFIBootState(
+    current='0000',
+    timeout='0 seconds',
+    order=['0000', '0002', '0004'],
+    entries={
+        '0000': EFIBootEntry(
+            name='ubuntu',
+            path='HD(1,GPT,...)/File(\\EFI\\ubuntu\\shimx64.efi)'),
+        '0001': EFIBootEntry(
+            name='Windows Boot Manager',
+            path='HD(1,GPT,...,0x82000)/File(\\EFI\\bootmgfw.efi'),
+        '0002': EFIBootEntry(
+            name='Linux-Firmware-Updater',
+            path='HD(1,GPT,...,0x800,0x100000)/File(\\shimx64.efi)\\.fwupd'),
+        '0003': EFIBootEntry(
+            name='Restore Ubuntu to factory state',
+            path='HD(1,GPT,...,0x800,0x100000)/File(\\shimx64.efi)'),
+        '0004': EFIBootEntry(
+            name='Restore Ubuntu to factory state',
+            path='HD(1,GPT,...,0x800,0x100000)/File(\\shimx64.efi)'),
+        })
+
+
 class TestInstallController(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.controller = InstallController(make_app())
@@ -141,3 +210,56 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
         with patch(run_curtin, side_effect=(error, error, error, error)):
             with self.assertRaises(subprocess.CalledProcessError):
                 await self.controller.install_package(package="git")
+
+    def setup_rp_test(self):
+        app = self.controller.app
+        app.opts.dry_run = False
+        fsc = app.controllers.Filesystem
+        fsc.reset_partition_only = True
+        app.package_installer = Mock()
+        app.command_runner = Mock()
+        self.run = app.command_runner.run = AsyncMock()
+        app.package_installer.install_pkg = AsyncMock()
+        app.package_installer.install_pkg.return_value = \
+            PackageInstallState.DONE
+        fsm, self.part = make_model_and_partition()
+
+    @patch("subiquity.server.controllers.install.get_efibootmgr")
+    async def test_create_rp_boot_entry_add(self, m_get_efibootmgr):
+        m_get_efibootmgr.side_effect = iter([
+            efi_state_no_rp, efi_state_with_rp])
+        self.setup_rp_test()
+        await self.controller.create_rp_boot_entry(rp=self.part)
+        calls = [
+            call([
+                'efibootmgr', '--create',
+                '--loader', '\\EFI\\boot\\shimx64.efi',
+                '--disk', self.part.device.path,
+                '--part', str(self.part.number),
+                '--label', "Restore Ubuntu to factory state",
+                ]),
+            call([
+                'efibootmgr', '--bootorder', '0000,0002',
+                ]),
+            ]
+        self.run.assert_has_awaits(calls)
+
+    @patch("subiquity.server.controllers.install.get_efibootmgr")
+    async def test_create_rp_boot_entry_dup(self, m_get_efibootmgr):
+        m_get_efibootmgr.side_effect = iter([
+            efi_state_with_rp, efi_state_with_dup_rp])
+        self.setup_rp_test()
+        await self.controller.create_rp_boot_entry(rp=self.part)
+        calls = [
+            call([
+                'efibootmgr', '--create',
+                '--loader', '\\EFI\\boot\\shimx64.efi',
+                '--disk', self.part.device.path,
+                '--part', str(self.part.number),
+                '--label', "Restore Ubuntu to factory state",
+                ]),
+            call([
+                'efibootmgr', '--delete-bootnum', '--bootnum', '0004',
+                ]),
+            ]
+        self.run.assert_has_awaits(calls)

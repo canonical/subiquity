@@ -26,6 +26,10 @@ import tempfile
 from typing import Any, Dict, List, Optional
 
 from curtin.config import merge_config
+from curtin.util import (
+    get_efibootmgr,
+    is_uefi_bootable,
+    )
 import yaml
 
 from subiquitycore.async_helpers import (
@@ -33,12 +37,17 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     )
 from subiquitycore.context import with_context
-from subiquitycore.file_util import write_file, generate_config_yaml
+from subiquitycore.file_util import (
+    write_file,
+    generate_config_yaml,
+    generate_timestamped_header,
+    )
 from subiquitycore.utils import arun_command, log_process_streams
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.types import (
     ApplicationState,
+    PackageInstallState,
     )
 from subiquity.journald import (
     journald_listen,
@@ -380,6 +389,63 @@ class InstallController(SubiquityController):
                     step_config=self.rp_config(logs_dir, mp.p()),
                     source='cp:///cdrom',
                     )
+            await self.create_rp_boot_entry(context=context, rp=rp)
+
+    @with_context(description="creating boot entry for reset partition")
+    async def create_rp_boot_entry(self, context, rp):
+        fs_controller = self.app.controllers.Filesystem
+        if not fs_controller.reset_partition_only:
+            cp = await self.app.command_runner.run(
+                ['lsblk', '-n', '-o', 'UUID', rp.path],
+                capture=True)
+            uuid = cp.stdout.decode('ascii').strip()
+            conf = grub_reset_conf.format(
+                HEADER=generate_timestamped_header(),
+                PARTITION=rp.number,
+                UUID=uuid)
+            with open(self.tpath('etc/grub.d/99_reset'), 'w') as fp:
+                os.chmod(fp.fileno(), 0o755)
+                fp.write(conf)
+            await run_curtin_command(
+                self.app, context, "in-target", "-t", self.tpath(), "--",
+                "update-grub", private_mounts=False)
+        if self.app.opts.dry_run and not is_uefi_bootable():
+            # Can't even run efibootmgr in this case.
+            return
+        state = await self.app.package_installer.install_pkg('efibootmgr')
+        if state != PackageInstallState.DONE:
+            raise RuntimeError('could not install efibootmgr')
+        efi_state_before = get_efibootmgr('/')
+        cmd = [
+            'efibootmgr', '--create',
+            '--loader', '\\EFI\\boot\\shimx64.efi',
+            '--disk', rp.device.path,
+            '--part', str(rp.number),
+            '--label', "Restore Ubuntu to factory state",
+            ]
+        await self.app.command_runner.run(cmd)
+        efi_state_after = get_efibootmgr('/')
+        new_bootnums = (
+            set(efi_state_after.entries) - set(efi_state_before.entries))
+        if not new_bootnums:
+            return
+        new_bootnum = new_bootnums.pop()
+        new_entry = efi_state_after.entries[new_bootnum]
+        was_dup = False
+        for entry in efi_state_before.entries.values():
+            if entry.path == new_entry.path and entry.name == new_entry.name:
+                was_dup = True
+        if was_dup:
+            cmd = [
+                'efibootmgr', '--delete-bootnum',
+                '--bootnum', new_bootnum,
+                ]
+        else:
+            cmd = [
+                'efibootmgr',
+                '--bootorder', ','.join(efi_state_before.order),
+                ]
+        await self.app.command_runner.run(cmd)
 
     @with_context(description="creating fstab")
     async def create_core_boot_classic_fstab(self, *, context):
@@ -416,6 +482,9 @@ class InstallController(SubiquityController):
                         context=context, target=self.model.target)
             else:
                 for_install_path = ''
+
+            if self.app.controllers.Filesystem.reset_partition:
+                self.app.package_installer.start_installing_pkg('efibootmgr')
 
             await self.curtin_install(
                 context=context, source='cp://' + for_install_path)
@@ -589,4 +658,19 @@ Unattended-Upgrade::Allowed-Origins {
         "${distro_id}ESMApps:${distro_codename}-apps-security";
         "${distro_id}ESM:${distro_codename}-infra-security";
 };
+"""
+
+grub_reset_conf = """\
+#!/bin/sh
+{HEADER}
+
+set -e
+
+cat << EOF
+menuentry "Restore Ubuntu to factory state" {
+      search --no-floppy --hint '(hd0,{PARTITION})' --set --fs-uuid {UUID}
+      linux  /casper/vmlinuz uuid={UUID} nopersistent
+      initrd /casper/initrd
+}
+EOF
 """
