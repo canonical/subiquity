@@ -1623,7 +1623,7 @@ class FilesystemModel(object):
                         if dep.type in ['disk', 'raid']:
                             ensure_partitions(dep)
                     return False
-            if obj.type in MountlikeNames:
+            if obj.type in MountlikeNames and obj.path is not None:
                 # Any mount actions for a parent of this one have to be emitted
                 # first.
                 for parent in pathlib.Path(obj.path).parents:
