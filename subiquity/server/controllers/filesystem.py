@@ -166,19 +166,18 @@ class VariationInfo:
     def is_valid(self) -> bool:
         return bool(self.capability_info.allowed)
 
-    def capability_info_for_disk(
+    def capability_info_for_gap(
             self,
-            part_align,
-            size: Optional[int],
+            gap: gaps.Gap,
             ) -> CapabilityInfo:
         if self.label is None:
             install_min = sizes.calculate_suggested_install_min(
-                self.min_size, part_align)
+                self.min_size, gap.device.alignment_data().part_align)
         else:
             install_min = self.min_size
         r = CapabilityInfo()
         r.disallowed = list(self.capability_info.disallowed)
-        if self.capability_info.allowed and size < install_min:
+        if self.capability_info.allowed and gap.size < install_min:
             for capability in self.capability_info.allowed:
                 r.disallowed.append(GuidedDisallowedCapability(
                     capability=capability,
@@ -930,9 +929,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         for disk in self.potential_boot_disks(with_reformatting=True):
             capability_info = CapabilityInfo()
             for variation in self._variation_info.values():
-                capability_info.combine(
-                    variation.capability_info_for_disk(
-                        disk.alignment_data().part_align, disk.size))
+                gap = gaps.largest_gap(disk._reformatted())
+                capability_info.combine(variation.capability_info_for_gap(gap))
             reformat = GuidedStorageTargetReformat(
                 disk_id=disk.id,
                 allowed=capability_info.allowed,
@@ -958,9 +956,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             for variation in self._variation_info.values():
                 if variation.is_core_boot_classic():
                     continue
-                capability_info.combine(
-                    variation.capability_info_for_disk(
-                        disk.alignment_data().part_align, gap.size))
+                capability_info.combine(variation.capability_info_for_gap(gap))
             api_gap = labels.for_client(gap)
             use_gap = GuidedStorageTargetUseGap(
                 disk_id=disk.id, gap=api_gap,

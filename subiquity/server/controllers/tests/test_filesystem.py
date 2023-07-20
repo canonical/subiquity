@@ -943,18 +943,14 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
     async def test_in_use_too_small(self, bootloader, ptable):
         # Disks with "in use" partitions do not allow a reformat if
         # there is not enough space on the rest of the disk.
-        await self._setup(bootloader, ptable, fix_bios=True, size=5 << 30)
+        await self._setup(bootloader, ptable, fix_bios=True, size=25 << 30)
+        print(bootloader, ptable)
         make_partition(
             self.model, self.disk, preserve=True,
-            size=4 << 30, is_in_use=True)
+            size=23 << 30, is_in_use=True)
         make_partition(
             self.model, self.disk, preserve=True,
             size=gaps.largest_gap_size(self.disk))
-        expected = [
-            GuidedStorageTargetReformat(
-                disk_id=self.disk.id, allowed=default_capabilities),
-            GuidedStorageTargetManual(),
-            ]
         resp = await self.fsc.v2_guided_GET()
         expected = [
             GuidedStorageTargetReformat(

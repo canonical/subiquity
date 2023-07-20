@@ -335,9 +335,7 @@ def can_be_boot_device(device, *,
 def _can_be_boot_device_disk(disk, *,
                              resize_partition=None, with_reformatting=False):
     if with_reformatting:
-        new_disk = attr.evolve(disk)
-        new_disk._partitions = [p for p in disk.partitions() if p._is_in_use]
-        disk = new_disk
+        disk = disk._reformatted()
     plan = get_boot_device_plan(disk, resize_partition=resize_partition)
     return plan is not None
 

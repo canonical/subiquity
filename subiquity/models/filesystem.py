@@ -534,6 +534,13 @@ class _Device(_Formattable, ABC):
     _partitions: List["Partition"] = attributes.backlink(
         default=attr.Factory(list))
 
+    def _reformatted(self):
+        # Return a ephemeral copy of the device with as many partitions
+        # deleted as possible.
+        new_disk = attr.evolve(self)
+        new_disk._partitions = [p for p in self.partitions() if p._is_in_use]
+        return new_disk
+
     def dasd(self):
         return None
 
