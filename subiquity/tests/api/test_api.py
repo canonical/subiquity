@@ -369,7 +369,12 @@ class TestFlow(TestAPI):
 
     @timeout()
     async def test_v2_flow(self):
-        async with start_server('examples/machines/win10.json') as inst:
+        cfg = self.machineConfig('examples/machines/simple.json')
+        with cfg.edit() as data:
+            attrs = data['storage']['blockdev']['/dev/sda']['attrs']
+            attrs['size'] = str(25 << 30)
+        extra_args = ['--source-catalog', 'examples/sources/desktop.yaml']
+        async with start_server(cfg, extra_args=extra_args) as inst:
             disk_id = 'disk-sda'
             orig_resp = await inst.get('/storage/v2')
             [sda] = match(orig_resp['disks'], id=disk_id)

@@ -383,13 +383,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if info is not None:
                     self._variation_info[name] = info
             else:
-                # This calculation is pretty much a hack and we should
-                # actually think about it at some point (like: maybe the
-                # source catalog should directly specify the minimum suitable
-                # size?)
-                min_size = 2*variation.size + (1 << 30)
                 self._variation_info[name] = VariationInfo.classic(
-                    name=name, min_size=min_size)
+                    name=name, min_size=variation.size)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
