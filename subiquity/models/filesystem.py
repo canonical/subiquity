@@ -28,7 +28,6 @@ import tempfile
 from typing import List, Optional, Set, Union
 
 import more_itertools
-import yaml
 
 from curtin import storage_config
 from curtin.block import partition_kname
@@ -1075,6 +1074,25 @@ class Mount:
         return True
 
 
+def get_canmount(properties: Optional[dict], default: bool) -> bool:
+    """Handle the possible values of the zfs canmount property, which should be
+    on/off/noauto.  Due to yaml handling, on/off may be turned into a bool, so
+    handle that also."""
+    if properties is None:
+        return default
+    vals = {
+        'on': True,
+        'off': False,
+        'noauto': False,
+        True: True,
+        False: False,
+    }
+    result = vals.get(properties.get('canmount', default))
+    if result is None:
+        raise ValueError('canmount must be one of "on", "off", or "noauto"')
+    return result
+
+
 @fsobj("zpool")
 class ZPool:
     vdevs: List[Union[Disk, Partition]] = attributes.reflist(
@@ -1100,11 +1118,14 @@ class ZPool:
         return self.pool
 
     @property
+    def canmount(self):
+        return get_canmount(self.fs_properties, False)
+
+    @property
     def path(self):
-        if self.fs_properties is not None:
-            if not yaml.safe_load(self.fs_properties.get('canmount', 'off')):
-                return None
-        return self.mountpoint
+        if self.canmount:
+            return self.mountpoint
+        return None
 
 
 @fsobj("zfs")
@@ -1119,15 +1140,15 @@ class ZFS:
         return 'zfs'
 
     @property
+    def canmount(self):
+        return get_canmount(self.properties, False)
+
+    @property
     def path(self):
-        if self.properties is None:
-            return self.volume
-        if not yaml.safe_load(self.properties.get('canmount', 'on')):
+        if self.canmount:
+            return self.properties.get('mountpoint', self.volume)
+        else:
             return None
-        mountpoint = self.properties.get('mountpoint', None)
-        if mountpoint is not None:
-            return mountpoint
-        return self.volume
 
 
 ConstructedDevice = Union[Raid, LVM_VolGroup, ZPool]

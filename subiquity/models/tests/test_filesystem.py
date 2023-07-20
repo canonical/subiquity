@@ -17,6 +17,7 @@ import unittest
 from unittest import mock
 
 import attr
+import yaml
 
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.parameterized import parameterized
@@ -29,6 +30,7 @@ from subiquity.models.filesystem import (
     Disk,
     Filesystem,
     FilesystemModel,
+    get_canmount,
     get_raid_size,
     humanize_size,
     NotFinalPartitionError,
@@ -1277,6 +1279,45 @@ class TestPartition(unittest.TestCase):
         self.assertTrue(p5.is_logical)
         self.assertTrue(p6.is_logical)
         self.assertTrue(p7.is_logical)
+
+
+class TestCanmount(SubiTestCase):
+    @parameterized.expand((
+        ('on', True),
+        ('"on"', True),
+        ('true', True),
+        ('off', False),
+        ('"off"', False),
+        ('false', False),
+        ('noauto', False),
+        ('"noauto"', False),
+    ))
+    def test_present(self, value, expected):
+        property_yaml = f'canmount: {value}'
+        properties = yaml.safe_load(property_yaml)
+        for default in (True, False):
+            self.assertEqual(expected, get_canmount(properties, default),
+                             f'yaml {property_yaml} default {default}')
+
+    @parameterized.expand((
+        ['{}'],
+        ['something-else: on'],
+    ))
+    def test_not_present(self, property_yaml):
+        properties = yaml.safe_load(property_yaml)
+        for default in (True, False):
+            self.assertEqual(default, get_canmount(properties, default),
+                             f'yaml {property_yaml} default {default}')
+
+    @parameterized.expand((
+        ['asdf'],
+        ['"true"'],
+        ['"false"'],
+    ))
+    def test_invalid(self, value):
+        with self.assertRaises(ValueError):
+            properties = yaml.safe_load(f'canmount: {value}')
+            get_canmount(properties, False)
 
 
 class TestZPool(SubiTestCase):
