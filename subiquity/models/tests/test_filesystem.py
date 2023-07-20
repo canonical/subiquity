@@ -255,10 +255,8 @@ def make_zpool(model=None, device=None, pool=None, mountpoint=None, **kw):
         device = make_disk(model)
     if pool is None:
         pool = f'pool{len(model._actions)}'
-    zpool = ZPool(m=model, vdevs=[device], pool=pool, mountpoint=mountpoint,
-                  **kw)
-    model._actions.append(zpool)
-    return zpool
+    return model.add_zpool(
+        device=device, pool=pool, mountpoint=mountpoint, **kw)
 
 
 def make_zfs(model, *, pool, **kw):

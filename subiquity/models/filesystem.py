@@ -1929,21 +1929,14 @@ class FilesystemModel(object):
                 return False
         return True
 
-    def add_zpool(self, device, pool, mountpoint):
-        fs_properties = dict(
-            acltype='posixacl',
-            relatime='on',
-            canmount='on',
-            compression='gzip',
-            devices='off',
-            xattr='sa',
-        )
+    def add_zpool(self, device, pool, mountpoint, *,
+                  fs_properties=None, pool_properties=None):
         zpool = ZPool(
             m=self,
             vdevs=[device],
             pool=pool,
             mountpoint=mountpoint,
-            pool_properties=dict(ashift=12),
+            pool_properties=pool_properties,
             fs_properties=fs_properties)
         self._actions.append(zpool)
         return zpool
