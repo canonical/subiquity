@@ -1310,10 +1310,11 @@ class TestZPool(SubiTestCase):
             dict(type='disk', id=d2.id, path=d2.path, ptable=d2.ptable,
                  serial=d2.serial, info={d2.path: blockdevs[d2.path]}),
             dict(type='zpool', id='zpool-1', vdevs=[d1.id], pool='p1',
-                 mountpoint='/'),
+                 mountpoint='/', fs_properties=dict(canmount='on')),
             dict(type='zpool', id='zpool-2', vdevs=[d2.id], pool='p2',
                  mountpoint='/srv', fs_properties=dict(canmount='off')),
-            dict(type='zfs', id='zfs-1', volume='/ROOT', pool='zpool-1'),
+            dict(type='zfs', id='zfs-1', volume='/ROOT', pool='zpool-1',
+                 properties=dict(canmount='off')),
             dict(type='zfs', id='zfs-2', volume='/SRV/srv', pool='zpool-2',
                  properties=dict(mountpoint='/srv', canmount='on')),
         ]
@@ -1340,6 +1341,7 @@ class TestZPool(SubiTestCase):
         self.assertEqual('zfs-1', zfs_zp1.id)
         self.assertEqual(zp1, zfs_zp1.pool)
         self.assertEqual('/ROOT', zfs_zp1.volume)
+        self.assertEqual(None, zfs_zp1.path)
 
         self.assertTrue(isinstance(zfs_zp2, ZFS))
         self.assertEqual('zfs-2', zfs_zp2.id)
@@ -1361,19 +1363,14 @@ class TestRootfs(SubiTestCase):
         m.add_mount(fs, '/srv')
         self.assertFalse(m.is_root_mounted())
 
-    def test_zpool_may_provide_rootfs(self):
-        m = make_model()
-        make_zpool(model=m, mountpoint='/')
-        self.assertTrue(m.is_root_mounted())
-
     def test_zpool_not_rootfs_because_not_canmount(self):
         m = make_model()
-        make_zpool(model=m, mountpoint='/', fs_properties=dict(canmount='no'))
+        make_zpool(model=m, mountpoint='/', fs_properties=dict(canmount='off'))
         self.assertFalse(m.is_root_mounted())
 
     def test_zpool_rootfs_because_canmount(self):
         m = make_model()
-        make_zpool(model=m, mountpoint='/', fs_properties=dict(canmount='yes'))
+        make_zpool(model=m, mountpoint='/', fs_properties=dict(canmount='on'))
         self.assertTrue(m.is_root_mounted())
 
     def test_zpool_nonrootfs_mountpoint(self):
