@@ -619,15 +619,15 @@ class Dasd:
 @fsobj("disk")
 class Disk(_Device):
     ptable: Optional[str] = attributes.ptable()
-    serial: str = None
-    wwn: str = None
-    multipath: str = None
-    path: str = None
+    serial: Optional[str] = None
+    wwn: Optional[str] = None
+    multipath: Optional[str] = None
+    path: Optional[str] = None
     wipe: Optional[str] = None
-    preserve: str = False
+    preserve: bool = False
     name: str = ""
     grub_device: bool = False
-    device_id: str = None
+    device_id: Optional[str] = None
 
     _info: StorageInfo = attributes.for_api()
     _has_in_use_partition: bool = attributes.for_api(default=False)
