@@ -91,12 +91,13 @@ def merge_cloud_init_config(target, source):
             target[k] = v
 
 
+def _represent_dict_order(self, data):
+    """http://stackoverflow.com/a/8661021"""
+    return self.represent_mapping("tag:yaml.org,2002:map", data.items())
+
+
 def setup_yaml():
-    """ http://stackoverflow.com/a/8661021 """
-    represent_dict_order = (
-        lambda self, data: self.represent_mapping('tag:yaml.org,2002:map',
-                                                  data.items()))
-    yaml.add_representer(OrderedDict, represent_dict_order)
+    yaml.add_representer(OrderedDict, _represent_dict_order)
 
 
 setup_yaml()
