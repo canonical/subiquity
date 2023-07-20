@@ -477,8 +477,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         bpool_part = self.create_partition(device, gap_boot, dict(fstype=None))
         rpool_part = self.create_partition(device, gap_rest, dict(fstype=None))
 
-        self.create_zpool(rpool_part, 'rpool', '/')
         self.create_zpool(bpool_part, 'bpool', '/boot')
+        self.create_zpool(rpool_part, 'rpool', '/')
 
     @functools.singledispatchmethod
     def start_guided(self, target: GuidedStorageTarget,
@@ -1324,5 +1324,5 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if not self.reset_partition_only:
             await self.app.command_runner.run(
                 ['umount', '--recursive', '/target'])
-        for pool in self.model._all(type='zpool'):
-            await pool.pre_shutdown(self.app.command_runner)
+        if len(self.model._all(type='zpool')) > 0:
+            await self.app.command_runner.run(['zpool', 'export', '-a'])

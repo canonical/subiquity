@@ -1095,9 +1095,6 @@ class ZPool:
     def mount(self):
         return self.mountpoint
 
-    async def pre_shutdown(self, command_runner):
-        await command_runner.run(['zpool', 'export', self.pool])
-
 
 @fsobj("zfs")
 class ZFS:
@@ -1521,6 +1518,7 @@ class FilesystemModel(object):
             if c is None:
                 # Ignore any action we do not know how to process yet
                 # (e.g. bcache)
+                log.debug(f'ignoring unknown action type {action["type"]}')
                 continue
             kw = {}
             field_names = set()

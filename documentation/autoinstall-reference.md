@@ -288,7 +288,7 @@ Storage configuration is a complex topic and the description of the desired conf
 
 #### Supported layouts
 
-The two supported layouts at the time of writing are "lvm" and "direct".
+The three supported layouts at the time of writing are "lvm", "direct", and "zfs".
 ```yaml
 storage:
   layout:
@@ -296,6 +296,9 @@ storage:
 storage:
   layout:
     name: direct
+storage:
+  layout:
+    name: zfs
 ```
 
 By default these will install to the largest disk in a system, but you can supply a match spec (see below) to indicate which disk to use:
@@ -308,7 +311,7 @@ storage:
       serial: CT*
 storage:
   layout:
-    name: disk
+    name: direct
     match:
       ssd: true
 ```
