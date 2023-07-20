@@ -273,6 +273,19 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --dry-run \
     --output-base "$tmpdir" \
     --machine-config examples/machines/simple.json \
+    --autoinstall examples/autoinstall/hybrid.yaml \
+    --dry-run-config examples/dry-run-configs/tpm.yaml \
+    --bootloader uefi \
+    --kernel-cmdline autoinstall \
+    --source-catalog examples/sources/tpm.yaml
+validate
+
+clean
+LANG=C.UTF-8 timeout --foreground 60 \
+    python3 -m subiquity.cmd.tui \
+    --dry-run \
+    --output-base "$tmpdir" \
+    --machine-config examples/machines/simple.json \
     --autoinstall examples/autoinstall/reset-only.yaml \
     --kernel-cmdline autoinstall \
     --source-catalog examples/sources/install.yaml

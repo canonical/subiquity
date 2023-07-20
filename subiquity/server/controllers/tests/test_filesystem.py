@@ -1226,6 +1226,35 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.assertEqual(request.action, snapdapi.SystemAction.INSTALL)
         self.assertEqual(request.step, snapdapi.SystemActionStep.FINISH)
 
+    async def test_from_sample_data_autoinstall(self):
+        # calling this a unit test is definitely questionable. but it
+        # runs much more quickly than the integration test!
+        self.fsc.model = model = make_model(Bootloader.UEFI)
+        disk = make_disk(model)
+        self.app.base_model.source.current.variations = {
+            'default': CatalogEntryVariation(
+                path='', size=1, snapd_system_label='prefer-encrypted'),
+            }
+
+        self.app.dr_cfg.systems_dir_exists = True
+
+        await self.fsc._examine_systems_task.start()
+        await self.fsc._examine_systems_task.wait()
+        self.fsc.start()
+
+        await self.fsc.run_autoinstall_guided({'name': 'hybrid'})
+
+        self.assertEqual(model.storage_version, 2)
+
+        partition_count = len([
+            structure
+            for structure in self.fsc._info.system.volumes['pc'].structure
+            if structure.role != snapdapi.Role.MBR
+            ])
+        self.assertEqual(
+            partition_count,
+            len(disk.partitions()))
+
     async def test_from_sample_data_defective(self):
         self.fsc.model = model = make_model(Bootloader.UEFI)
         make_disk(model)
