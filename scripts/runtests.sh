@@ -151,6 +151,13 @@ on_exit () {
     else
         echo 'Runtests FAILURE'
         echo "Output from the last run is at $tmpdir"
+        if [ -n "${GITHUB_ACTIONS:-}" -a -d $tmpdir/var/crash -a -n "$(ls -A $tmpdir/var/crash)" ] ; then
+            for file in $tmpdir/var/crash/*.crash; do
+                echo "--- Start crash file $file ---"
+                cat $file
+                echo "--- End crash file $file   ---"
+            done
+        fi
     fi
 
     if [ -n "$subiquity_pid" ] ; then
