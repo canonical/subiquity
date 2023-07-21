@@ -16,6 +16,7 @@
 import logging
 import subprocess
 
+from subiquity import cloudinit
 from subiquitycore.models.network import NetworkModel as CoreNetworkModel
 from subiquitycore.utils import arun_command
 
@@ -41,31 +42,57 @@ class NetworkModel(CoreNetworkModel):
         # perfect solution because in principle there could be wired 802.1x
         # stuff that has secrets too but the subiquity UI does not support any
         # of that yet so this will do for now.
-        wifis = netplan['network'].pop('wifis', None)
-        r = {
-            'write_files': {
-                'etc_netplan_installer': {
-                    'path': 'etc/netplan/00-installer-config.yaml',
-                    'content': self.stringify_config(netplan),
+
+        # If host cloud-init version has no readable combined-cloud-config,
+        # default to False.
+        cloud_cfg = cloudinit.get_host_combined_cloud_config()
+        use_cloudinit_net = cloud_cfg.get('features', {}).get(
+            'NETPLAN_CONFIG_ROOT_READ_ONLY', False
+        )
+
+        if use_cloudinit_net:
+            r = {
+                'write_files': {
+                    'etc_netplan_installer': {
+                        'path': (
+                            'etc/cloud/cloud.cfg.d/90-installer-network.cfg'
+                        ),
+                        'content': self.stringify_config(netplan),
+                        'permissions': '0600',
                     },
-                'nonet': {
-                    'path': ('etc/cloud/cloud.cfg.d/'
-                             'subiquity-disable-cloudinit-networking.cfg'),
-                    'content': 'network: {config: disabled}\n',
+                }
+            }
+        else:
+            # Separate sensitive wifi config from world-readable config
+            wifis = netplan['network'].pop('wifis', None)
+            r = {
+                'write_files': {
+                    # Disable cloud-init networking
+                    'no_cloudinit_net': {
+                        'path': (
+                            'etc/cloud/cloud.cfg.d/'
+                            'subiquity-disable-cloudinit-networking.cfg'
+                        ),
+                        'content': 'network: {config: disabled}\n',
+                    },
+                    # World-readable netplan without sensitive wifi config
+                    'etc_netplan_installer': {
+                        'path': 'etc/netplan/00-installer-config.yaml',
+                        'content': self.stringify_config(netplan),
                     },
                 },
             }
-        if wifis is not None:
-            netplan_wifi = {
-                'network': {
-                    'version': 2,
-                    'wifis': wifis,
+            if wifis is not None:
+                netplan_wifi = {
+                    'network': {
+                        'version': 2,
+                        'wifis': wifis,
                     },
                 }
-            r['write_files']['etc_netplan_installer_wifi'] = {
-                'path': 'etc/netplan/00-installer-config-wifi.yaml',
-                'content': self.stringify_config(netplan_wifi),
-                'permissions': '0600',
+                r['write_files']['etc_netplan_installer_wifi'] = {
+                    'path': 'etc/netplan/00-installer-config-wifi.yaml',
+                    'content': self.stringify_config(netplan_wifi),
+                    'permissions': '0600',
                 }
         return r
 
@@ -79,8 +106,10 @@ class NetworkModel(CoreNetworkModel):
         try:
             cp = await arun_command(("nmcli", "networking"), check=True)
         except subprocess.CalledProcessError as exc:
-            log.warning("failed to run nmcli networking,"
-                        " considering NetworkManager disabled.")
+            log.warning(
+                "failed to run nmcli networking,"
+                " considering NetworkManager disabled."
+            )
             log.debug("stderr: %s", exc.stderr)
             return False
         except FileNotFoundError:
