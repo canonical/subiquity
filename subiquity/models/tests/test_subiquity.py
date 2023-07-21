@@ -268,7 +268,9 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
         model.identity.add_user(main_user)
         model.userdata = {}
         expected_files = {
-            'etc/cloud/cloud.cfg.d/99-installer.cfg': re.compile('datasource:\n  None:\n    metadata:\n      instance-id: .*\n    userdata_raw: "#cloud-config\\\\ngrowpart:\\\\n  mode: \\\'off\\\'\\\\npreserve_hostname: true\\\\n\\\\\n'), # noqa
+            'etc/cloud/cloud.cfg.d/99-installer.cfg': re.compile(
+                'datasource:\n  None:\n    metadata:\n      instance-id: .*\n    userdata_raw: "#cloud-config\\\\ngrowpart:\\\\n  mode: \\\'off\\\'\\\\npreserve_hostname: true\\\\n\\\\\n'  # noqa
+            ),
             'etc/hostname': 'somehost\n',
             'etc/cloud/ds-identify.cfg': 'policy: enabled\n',
             'etc/hosts': HOSTS_CONTENT.format(hostname='somehost'),
