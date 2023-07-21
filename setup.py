@@ -135,7 +135,9 @@ setup(name='subiquity',
                'console_conf.cmd.write_login_details:main'),
           ],
       },
-      data_files=[],
+      data_files=[
+          ('po', ['po/POTFILES.in']),
+      ],
       cmdclass={
           'build': build,
           'build_i18n': build_i18n,
