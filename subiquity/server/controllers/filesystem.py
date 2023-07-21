@@ -1145,12 +1145,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if name == 'hybrid':
             # this check is conceptually unnecessary but results in a
             # much cleaner error message...
+            core_boot_caps = set()
             for variation in self._variation_info.values():
                 if not variation.is_valid():
                     continue
                 if variation.is_core_boot_classic():
-                    break
-            else:
+                    core_boot_caps.update(variation.capability_info.allowed)
+            if not core_boot_caps:
                 raise Exception(
                     "can only use name: hybrid when installing core boot "
                     "classic")
@@ -1160,15 +1161,15 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             encrypted = layout.get('encrypted', None)
             GC = GuidedCapability
             if encrypted is None:
-                if GC.CORE_BOOT_ENCRYPTED in self._info.capabilities or \
-                   GC.CORE_BOOT_PREFER_ENCRYPTED in self._info.capabilities:
+                if GC.CORE_BOOT_ENCRYPTED in core_boot_caps or \
+                   GC.CORE_BOOT_PREFER_ENCRYPTED in core_boot_caps:
                     capability = GC.CORE_BOOT_ENCRYPTED
                 else:
                     capability = GC.CORE_BOOT_UNENCRYPTED
             elif encrypted:
                 capability = GC.CORE_BOOT_ENCRYPTED
             else:
-                if self._info.capabilities == {
+                if core_boot_caps == {
                         GuidedCapability.CORE_BOOT_ENCRYPTED} and \
                    not encrypted:
                     raise Exception("cannot install this model unencrypted")
