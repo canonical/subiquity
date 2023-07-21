@@ -1074,6 +1074,25 @@ class Mount:
         return True
 
 
+def get_canmount(properties: Optional[dict], default: bool) -> bool:
+    """Handle the possible values of the zfs canmount property, which should be
+    on/off/noauto.  Due to yaml handling, on/off may be turned into a bool, so
+    handle that also."""
+    if properties is None:
+        return default
+    vals = {
+        'on': True,
+        'off': False,
+        'noauto': False,
+        True: True,
+        False: False,
+    }
+    result = vals.get(properties.get('canmount', default))
+    if result is None:
+        raise ValueError('canmount must be one of "on", "off", or "noauto"')
+    return result
+
+
 @fsobj("zpool")
 class ZPool:
     vdevs: List[Union[Disk, Partition]] = attributes.reflist(
@@ -1099,8 +1118,14 @@ class ZPool:
         return self.pool
 
     @property
-    def mount(self):
-        return self.mountpoint
+    def canmount(self):
+        return get_canmount(self.fs_properties, False)
+
+    @property
+    def path(self):
+        if self.canmount:
+            return self.mountpoint
+        return None
 
 
 @fsobj("zfs")
@@ -1110,8 +1135,28 @@ class ZFS:
     # options to pass to zfs dataset creation
     properties: Optional[dict] = None
 
+    @property
+    def fstype(self):
+        return 'zfs'
+
+    @property
+    def canmount(self):
+        return get_canmount(self.properties, False)
+
+    @property
+    def path(self):
+        if self.canmount:
+            return self.properties.get('mountpoint', self.volume)
+        else:
+            return None
+
 
 ConstructedDevice = Union[Raid, LVM_VolGroup, ZPool]
+
+# A Mountlike is a literal Mount object, or one similar enough in behavior.
+# Mountlikes have a path property that may return None if that given object is
+# not actually mountable.
+MountlikeNames = ('mount', 'zpool', 'zfs')
 
 
 def align_up(size, block_size=1 << 20):
@@ -1599,7 +1644,7 @@ class FilesystemModel(object):
                         if dep.type in ['disk', 'raid']:
                             ensure_partitions(dep)
                     return False
-            if isinstance(obj, Mount):
+            if obj.type in MountlikeNames and obj.path is not None:
                 # Any mount actions for a parent of this one have to be emitted
                 # first.
                 for parent in pathlib.Path(obj.path).parents:
@@ -1612,7 +1657,7 @@ class FilesystemModel(object):
                             return False
             return True
 
-        mountpoints = {m.path: m.id for m in self.all_mounts()}
+        mountpoints = {m.path: m.id for m in self.all_mountlikes()}
         log.debug('mountpoints %s', mountpoints)
 
         if mode == ActionRenderMode.FOR_API:
@@ -1710,6 +1755,12 @@ class FilesystemModel(object):
 
     def all_mounts(self):
         return self._all(type='mount')
+
+    def all_mountlikes(self):
+        ret = []
+        for typename in MountlikeNames:
+            ret += self._all(type=typename)
+        return ret
 
     def all_devices(self):
         # return:
@@ -1876,12 +1927,10 @@ class FilesystemModel(object):
                 "unknown bootloader type {}".format(self.bootloader))
 
     def _mount_for_path(self, path):
-        mount = self._one(type='mount', path=path)
-        if mount is not None:
-            return mount
-        zpool = self._one(type='zpool', mountpoint=path)
-        if zpool is not None:
-            return zpool
+        for typename in MountlikeNames:
+            mount = self._one(type=typename, path=path)
+            if mount is not None:
+                return mount
         return None
 
     def is_root_mounted(self):
@@ -1901,21 +1950,14 @@ class FilesystemModel(object):
                 return False
         return True
 
-    def add_zpool(self, device, pool, mountpoint):
-        fs_properties = dict(
-            acltype='posixacl',
-            relatime='on',
-            canmount='on',
-            compression='gzip',
-            devices='off',
-            xattr='sa',
-        )
+    def add_zpool(self, device, pool, mountpoint, *,
+                  fs_properties=None, pool_properties=None):
         zpool = ZPool(
             m=self,
             vdevs=[device],
             pool=pool,
             mountpoint=mountpoint,
-            pool_properties=dict(ashift=12),
+            pool_properties=pool_properties,
             fs_properties=fs_properties)
         self._actions.append(zpool)
         return zpool

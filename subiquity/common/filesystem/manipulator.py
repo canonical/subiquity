@@ -158,7 +158,19 @@ class FilesystemManipulator:
     delete_lvm_partition = delete_logical_volume
 
     def create_zpool(self, device, pool, mountpoint):
-        self.model.add_zpool(device, pool, mountpoint)
+        fs_properties = dict(
+            acltype='posixacl',
+            relatime='on',
+            canmount='on',
+            compression='gzip',
+            devices='off',
+            xattr='sa',
+        )
+        pool_properties = dict(ashift=12)
+
+        self.model.add_zpool(
+            device, pool, mountpoint,
+            fs_properties=fs_properties, pool_properties=pool_properties)
 
     def delete(self, obj):
         if obj is None:
