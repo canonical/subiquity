@@ -108,6 +108,12 @@ schema: gitdeps
 	@$(PYTHON) -m subiquity.cmd.schema > autoinstall-schema.json
 	@$(PYTHON) -m system_setup.cmd.schema > autoinstall-system-setup-schema.json
 
+.PHONY: format black isort
+format:
+	env -u PYTHONPATH tox -e black,isort
+black isort:
+	env -u PYTHONPATH tox -e $@
+
 .PHONY: clean
 clean:
 	./debian/rules clean
