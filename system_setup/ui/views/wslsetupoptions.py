@@ -48,10 +48,8 @@ class WSLSetupOptionsView(BaseView):
     def __init__(self, controller, configuration_data, cur_lang):
         self.controller = controller
 
-        initial = {
-            'install_language_support_packages':
-                configuration_data.install_language_support_packages,
-        }
+        pkgs = configuration_data.install_language_support_packages
+        initial = {"install_language_support_packages": pkgs}
         self.form = WSLSetupOptionsForm(initial=initial)
         self.form.install_language_support_packages.caption = \
             CAPTION.format(lang=cur_lang)
