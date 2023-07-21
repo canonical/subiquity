@@ -13,7 +13,7 @@ SYSTEM_SETUP_DRYRUN?=--dry-run
 export PYTHONPATH
 CWD := $(shell pwd)
 
-CHECK_DIRS := console_conf/ subiquity/ subiquitycore/ system_setup/
+CHECK_DIRS := console_conf subiquity subiquitycore system_setup
 PYTHON := python3
 
 ifneq (,$(MACHINE))
@@ -73,7 +73,6 @@ lint: flake8
 
 .PHONY: flake8
 flake8:
-	@echo 'tox -e flake8' is preferred to 'make flake8'
 	$(PYTHON) -m flake8 $(CHECK_DIRS)
 
 .PHONY: unit
