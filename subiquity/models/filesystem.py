@@ -1292,15 +1292,19 @@ class FilesystemModel(object):
                 continue
             majmin_to_dev[f'{major}:{minor}'] = obj
 
+        log.debug("majmin_to_dev %s", majmin_to_dev)
+
         mounts = list(self._probe_data.get('mount', []))
         while mounts:
             mount = mounts.pop(0)
+            mounts.extend(mount.get('children', []))
             if mount['target'].startswith(self.target):
                 # Completely ignore mounts under /target, they are probably
                 # leftovers from a previous install attempt.
                 continue
             if 'maj:min' not in mount:
                 continue
+            log.debug("considering mount of %s", mount['maj:min'])
             obj = majmin_to_dev.get(mount['maj:min'])
             if obj is None:
                 continue
@@ -1312,7 +1316,6 @@ class FilesystemModel(object):
                 if isinstance(o, Disk):
                     o._has_in_use_partition = True
                 work.extend(dependencies(o))
-            mounts.extend(mount.get('children', []))
 
         # This is a special hack for the install media. When written to a USB
         # stick or similar, both the block device for the whole drive and for
