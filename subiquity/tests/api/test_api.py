@@ -2075,3 +2075,17 @@ class TestActiveDirectory(TestAPI):
         # manager will fail to POST /shutdown.
         except aiohttp.client_exceptions.ClientOSError:
             pass
+
+
+class TestMountDetection(TestAPI):
+    @timeout()
+    async def test_mount_detection(self):
+        # Test that the partition the installer is running from is
+        # correctly identified as mounted.
+        cfg = 'examples/machines/booted-from-rp.json'
+        async with start_server(cfg) as instance:
+            result = await instance.get('/storage/v2')
+            [disk1] = result['disks']
+            self.assertTrue(disk1['has_in_use_partition'])
+            disk1p2 = disk1['partitions'][1]
+            self.assertTrue(disk1p2['is_in_use'])
