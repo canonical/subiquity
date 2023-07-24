@@ -25,7 +25,6 @@ from subiquitycore.file_util import (
 )
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.context import with_context
-from subiquitycore.utils import arun_command, run_command
 
 from subiquity.common.apidef import API
 from subiquity.common.types import ShutdownMode
@@ -113,9 +112,9 @@ class ShutdownController(SubiquityController):
                if os.path.exists(cloudinit_log)
             ]
             if cloudinit_logs:
-                await arun_command(
+                await self.app.command_runner.run(
                     ['cp', '-a'] + cloudinit_logs + ['/var/log/installer'])
-            await arun_command(
+            await self.app.command_runner.run(
                 ['cp', '-aT', '/var/log/installer', target_logs])
             # Close the permissions from group writes on the target.
             set_log_perms(target_logs, isdir=True, group_write=False)
@@ -123,7 +122,7 @@ class ShutdownController(SubiquityController):
         journal_txt = os.path.join(target_logs, 'installer-journal.txt')
         try:
             with open_perms(journal_txt) as output:
-                await arun_command(
+                await self.app.command_runner.run(
                     ['journalctl', '-b'],
                     stdout=output, stderr=subprocess.STDOUT)
         except Exception:
@@ -140,8 +139,9 @@ class ShutdownController(SubiquityController):
         else:
             if self.app.state == ApplicationState.DONE:
                 if platform.machine() == 's390x':
-                    run_command(["chreipl", "/target/boot"])
+                    await self.app.command_runner.run(
+                            ["chreipl", "/target/boot"])
             if self.mode == ShutdownMode.REBOOT:
-                run_command(["/sbin/reboot"])
+                await self.app.command_runner.run(["/sbin/reboot"])
             elif self.mode == ShutdownMode.POWEROFF:
-                run_command(["/sbin/poweroff"])
+                await self.app.command_runner.run(["/sbin/poweroff"])
