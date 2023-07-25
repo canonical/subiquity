@@ -23,11 +23,10 @@ from typing import List, Optional
 import jsonschema
 import yaml
 from aiohttp import web
-from cloudinit import safeyaml, stages
 from cloudinit.config.cc_set_passwords import rand_user_password
-from cloudinit.distros import ug_util
 from systemd import journal
 
+from subiquity.cloudinit import get_host_combined_cloud_config
 from subiquity.common.api.server import bind, controller_for_request
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReporter, ErrorReportKind
@@ -511,6 +510,48 @@ class SubiquityServer(Application):
     def base_relative(self, path):
         return os.path.join(self.base_model.root, path)
 
+    def load_cloud_config(self):
+        # cloud-init 23.3 introduced combined-cloud-config, which helps to
+        # prevent subiquity from having to go load cloudinit modules.
+        # This matters because a downgrade pickle deserialization issue may
+        # occur when the cloud-init outside the snap (which writes the pickle
+        # data) is newer than the one inside the snap (which reads the pickle
+        # data if we do stages.Init()).  LP: #2022102
+
+        # The stages.Init() code path should be retained until we can assume a
+        # minimum cloud-init version of 23.3 (when Subiquity drops support for
+        # Ubuntu 22.04.2 LTS and earlier, presumably)
+
+        cloud_cfg = get_host_combined_cloud_config()
+        if len(cloud_cfg) > 0:
+            system_info = cloud_cfg.get("system_info", {})
+            default_user = system_info.get("default_user", {})
+            self.installer_user_name = default_user.get("name")
+
+        else:
+            log.debug("loading cloud-config from stages.Init()")
+            from cloudinit import stages
+            from cloudinit.distros import ug_util
+
+            init = stages.Init()
+            init.read_cfg()
+            init.fetch(existing="trust")
+            cloud = init.cloudify()
+            cloud_cfg = cloud.cfg
+
+            users = ug_util.normalize_users_groups(cloud_cfg, cloud.distro)[0]
+            self.installer_user_name = ug_util.extract_default(users)[0]
+
+        if "autoinstall" in cloud_cfg:
+            log.debug("autoinstall found in cloud-config")
+            cfg = cloud_cfg["autoinstall"]
+            target = self.base_relative(cloud_autoinstall_path)
+            from cloudinit import safeyaml
+
+            write_file(target, safeyaml.dumps(cfg))
+        else:
+            log.debug("no autoinstall found in cloud-config")
+
     async def wait_for_cloudinit(self):
         if self.opts.dry_run:
             self.cloud_init_ok = True
@@ -527,15 +568,7 @@ class SubiquityServer(Application):
             self.cloud_init_ok = True
         log.debug("waited %ss for cloud-init", time.time() - ci_start)
         if "status: done" in status_txt:
-            log.debug("loading cloud config")
-            init = stages.Init()
-            init.read_cfg()
-            init.fetch(existing="trust")
-            self.cloud = init.cloudify()
-            if "autoinstall" in self.cloud.cfg:
-                cfg = self.cloud.cfg["autoinstall"]
-                target = self.base_relative(cloud_autoinstall_path)
-                write_file(target, safeyaml.dumps(cfg))
+            self.load_cloud_config()
         else:
             log.debug("cloud-init status: %r, assumed disabled", status_txt)
 
@@ -605,12 +638,7 @@ class SubiquityServer(Application):
             use_passwd(rand_user_password())
             return
 
-        (users, _groups) = ug_util.normalize_users_groups(
-            self.cloud.cfg, self.cloud.distro
-        )
-        (username, _user_config) = ug_util.extract_default(users)
-
-        self.installer_user_name = username
+        username = self.installer_user_name
 
         if username is None:
             # extract_default can return None, if there is no default user

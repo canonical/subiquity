@@ -152,14 +152,6 @@ class TestMetaController(SubiTestCase):
 
 class TestDefaultUser(SubiTestCase):
     @patch(
-        "subiquity.server.server.ug_util.normalize_users_groups",
-        Mock(return_value=(None, None)),
-    )
-    @patch(
-        "subiquity.server.server.ug_util.extract_default",
-        Mock(return_value=(None, None)),
-    )
-    @patch(
         "subiquity.server.server.user_key_fingerprints",
         Mock(side_effect=Exception("should not be called")),
     )
