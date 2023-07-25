@@ -13,15 +13,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import requests
 import unittest
 from unittest.mock import AsyncMock, Mock
 
+import requests
+
+from subiquity.models.snaplist import SnapListModel
 from subiquity.server.controllers.snaplist import (
     SnapdSnapInfoLoader,
     SnapListFetchError,
 )
-from subiquity.models.snaplist import SnapListModel
 from subiquitycore.tests.mocks import make_app
 
 
@@ -34,7 +35,8 @@ class TestSnapdSnapInfoLoader(unittest.IsolatedAsyncioTestCase):
         self.app.report_finish_event = Mock()
 
         self.loader = SnapdSnapInfoLoader(
-                self.model, self.app.snapd, "server", self.app.context)
+            self.model, self.app.snapd, "server", self.app.context
+        )
 
     async def test_list_task_not_started(self):
         self.assertFalse(self.loader.fetch_list_completed())

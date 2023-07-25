@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .ad import AdController
-from .cmdlist import EarlyController, LateController, ErrorController
+from .cmdlist import EarlyController, ErrorController, LateController
 from .codecs import CodecsController
 from .debconf import DebconfController
 from .drivers import DriversController
@@ -22,8 +22,8 @@ from .filesystem import FilesystemController
 from .identity import IdentityController
 from .install import InstallController
 from .integrity import IntegrityController
-from .keyboard import KeyboardController
 from .kernel import KernelController
+from .keyboard import KeyboardController
 from .locale import LocaleController
 from .mirror import MirrorController
 from .network import NetworkController
@@ -43,34 +43,34 @@ from .userdata import UserdataController
 from .zdev import ZdevController
 
 __all__ = [
-    'AdController',
-    'CodecsController',
-    'DebconfController',
-    'DriversController',
-    'EarlyController',
-    'ErrorController',
-    'FilesystemController',
-    'IdentityController',
-    'IntegrityController',
-    'InstallController',
-    'KernelController',
-    'KeyboardController',
-    'LateController',
-    'LocaleController',
-    'MirrorController',
-    'NetworkController',
-    'OEMController',
-    'PackageController',
-    'ProxyController',
-    'RefreshController',
-    'ReportingController',
-    'ShutdownController',
-    'SnapListController',
-    'SourceController',
-    'SSHController',
-    'TimeZoneController',
-    'UbuntuProController',
-    'UpdatesController',
-    'UserdataController',
-    'ZdevController',
+    "AdController",
+    "CodecsController",
+    "DebconfController",
+    "DriversController",
+    "EarlyController",
+    "ErrorController",
+    "FilesystemController",
+    "IdentityController",
+    "IntegrityController",
+    "InstallController",
+    "KernelController",
+    "KeyboardController",
+    "LateController",
+    "LocaleController",
+    "MirrorController",
+    "NetworkController",
+    "OEMController",
+    "PackageController",
+    "ProxyController",
+    "RefreshController",
+    "ReportingController",
+    "ShutdownController",
+    "SnapListController",
+    "SourceController",
+    "SSHController",
+    "TimeZoneController",
+    "UbuntuProController",
+    "UpdatesController",
+    "UserdataController",
+    "ZdevController",
 ]

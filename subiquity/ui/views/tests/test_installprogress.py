@@ -1,15 +1,13 @@
 import unittest
 from unittest import mock
 
-from subiquitycore.testing import view_helpers
-
 from subiquity.client.controllers.progress import ProgressController
 from subiquity.common.types import ApplicationState
 from subiquity.ui.views.installprogress import ProgressView
+from subiquitycore.testing import view_helpers
 
 
 class IdentityViewTests(unittest.TestCase):
-
     def make_view(self):
         controller = mock.create_autospec(spec=ProgressController)
         controller.app = mock.Mock()

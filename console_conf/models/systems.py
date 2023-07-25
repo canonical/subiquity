@@ -13,8 +13,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import logging
 import json
+import logging
 
 import attr
 import jsonschema
@@ -113,9 +113,7 @@ class RecoverySystemsModel:
             m = syst["model"]
             b = syst["brand"]
             model = SystemModel(
-                model=m["model"],
-                brand_id=m["brand-id"],
-                display_name=m["display-name"]
+                model=m["model"], brand_id=m["brand-id"], display_name=m["display-name"]
             )
             brand = Brand(
                 ID=b["id"],
@@ -180,11 +178,13 @@ class RecoverySystem:
     actions = attr.ib()
 
     def __eq__(self, other):
-        return self.current == other.current and \
-            self.label == other.label and \
-            self.model == other.model and \
-            self.brand == other.brand and \
-            self.actions == other.actions
+        return (
+            self.current == other.current
+            and self.label == other.label
+            and self.model == other.model
+            and self.brand == other.brand
+            and self.actions == other.actions
+        )
 
 
 @attr.s
@@ -195,10 +195,12 @@ class Brand:
     validation = attr.ib()
 
     def __eq__(self, other):
-        return self.ID == other.ID and \
-            self.username == other.username and \
-            self.display_name == other.display_name and \
-            self.validation == other.validation
+        return (
+            self.ID == other.ID
+            and self.username == other.username
+            and self.display_name == other.display_name
+            and self.validation == other.validation
+        )
 
 
 @attr.s
@@ -208,9 +210,11 @@ class SystemModel:
     display_name = attr.ib()
 
     def __eq__(self, other):
-        return self.model == other.model and \
-            self.brand_id == other.brand_id and \
-            self.display_name == other.display_name
+        return (
+            self.model == other.model
+            and self.brand_id == other.brand_id
+            and self.display_name == other.display_name
+        )
 
 
 @attr.s
@@ -219,8 +223,7 @@ class SystemAction:
     mode = attr.ib()
 
     def __eq__(self, other):
-        return self.title == other.title and \
-            self.mode == other.mode
+        return self.title == other.title and self.mode == other.mode
 
 
 @attr.s
@@ -229,5 +232,4 @@ class SelectedSystemAction:
     action = attr.ib()
 
     def __eq__(self, other):
-        return self.system == other.system and \
-            self.action == other.action
+        return self.system == other.system and self.action == other.action

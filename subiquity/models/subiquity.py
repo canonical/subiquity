@@ -14,37 +14,35 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-from collections import OrderedDict
 import functools
 import json
 import logging
 import os
-from typing import Any, Dict, Set
 import uuid
-import yaml
+from collections import OrderedDict
+from typing import Any, Dict, Set
 
+import yaml
 from cloudinit.config.schema import (
-        SchemaValidationError,
-        get_schema,
-        validate_cloudconfig_schema
+    SchemaValidationError,
+    get_schema,
+    validate_cloudconfig_schema,
 )
 
 try:
     from cloudinit.config.schema import SchemaProblem
 except ImportError:
-    def SchemaProblem(x, y): return (x, y)  # TODO(drop on cloud-init 22.3 SRU)
+
+    def SchemaProblem(x, y):
+        return (x, y)  # TODO(drop on cloud-init 22.3 SRU)
 
 
 from curtin.config import merge_config
 
-from subiquitycore.file_util import (
-    generate_timestamped_header,
-    write_file,
-)
-from subiquitycore.lsb_release import lsb_release
-
 from subiquity.common.resources import get_users_and_groups
 from subiquity.server.types import InstallerChannels
+from subiquitycore.file_util import generate_timestamped_header, write_file
+from subiquitycore.lsb_release import lsb_release
 
 from .ad import AdModel
 from .codecs import CodecsModel
@@ -66,8 +64,7 @@ from .timezone import TimeZoneModel
 from .ubuntu_pro import UbuntuProModel
 from .updates import UpdatesModel
 
-
-log = logging.getLogger('subiquity.models.subiquity')
+log = logging.getLogger("subiquity.models.subiquity")
 
 
 def merge_cloud_init_config(target, source):
@@ -130,13 +127,13 @@ for cfg_file in {cfg_files}:
 
 # Emit #cloud-config write_files entry to disable cloud-init after install
 CLOUDINIT_DISABLE_AFTER_INSTALL = {
-  "path": "/etc/cloud/cloud-init.disabled",
-  "defer": True,
-  "content": (
-     "Disabled by Ubuntu live installer after first boot.\n"
-     "To re-enable cloud-init on this image run:\n"
-     "  sudo cloud-init clean --machine-id\n"
-   )
+    "path": "/etc/cloud/cloud-init.disabled",
+    "defer": True,
+    "content": (
+        "Disabled by Ubuntu live installer after first boot.\n"
+        "To re-enable cloud-init on this image run:\n"
+        "  sudo cloud-init clean --machine-id\n"
+    ),
 }
 
 
@@ -156,29 +153,26 @@ class ModelNames:
 
 
 class DebconfSelectionsModel:
-
     def __init__(self):
-        self.selections = ''
+        self.selections = ""
 
     def render(self):
         return {}
 
-    def get_apt_config(
-            self, final: bool, has_network: bool) -> Dict[str, Any]:
-        return {'debconf_selections': {'subiquity': self.selections}}
+    def get_apt_config(self, final: bool, has_network: bool) -> Dict[str, Any]:
+        return {"debconf_selections": {"subiquity": self.selections}}
 
 
 class SubiquityModel:
     """The overall model for subiquity."""
 
-    target = '/target'
-    chroot_prefix = ['chroot', target]
+    target = "/target"
+    chroot_prefix = ["chroot", target]
 
-    def __init__(self, root, hub, install_model_names,
-                 postinstall_model_names):
+    def __init__(self, root, hub, install_model_names, postinstall_model_names):
         self.root = root
         self.hub = hub
-        if root != '/':
+        if root != "/":
             self.target = root
             self.chroot_prefix = []
 
@@ -212,8 +206,7 @@ class SubiquityModel:
         self._install_model_names = install_model_names
         self._postinstall_model_names = postinstall_model_names
         self._cur_install_model_names = install_model_names.default_names
-        self._cur_postinstall_model_names = \
-            postinstall_model_names.default_names
+        self._cur_postinstall_model_names = postinstall_model_names.default_names
         self._install_event = asyncio.Event()
         self._postinstall_event = asyncio.Event()
         all_names = set()
@@ -222,15 +215,17 @@ class SubiquityModel:
         for name in all_names:
             hub.subscribe(
                 (InstallerChannels.CONFIGURED, name),
-                functools.partial(self._configured, name))
+                functools.partial(self._configured, name),
+            )
 
     def set_source_variant(self, variant):
-        self._cur_install_model_names = \
-            self._install_model_names.for_variant(variant)
-        self._cur_postinstall_model_names = \
-            self._postinstall_model_names.for_variant(variant)
-        unconfigured_install_model_names = \
+        self._cur_install_model_names = self._install_model_names.for_variant(variant)
+        self._cur_postinstall_model_names = self._postinstall_model_names.for_variant(
+            variant
+        )
+        unconfigured_install_model_names = (
             self._cur_install_model_names - self._configured_names
+        )
         if unconfigured_install_model_names:
             if self._install_event.is_set():
                 self._install_event = asyncio.Event()
@@ -238,8 +233,9 @@ class SubiquityModel:
                 self._confirmation_task.cancel()
         else:
             self._install_event.set()
-        unconfigured_postinstall_model_names = \
+        unconfigured_postinstall_model_names = (
             self._cur_postinstall_model_names - self._configured_names
+        )
         if unconfigured_postinstall_model_names:
             if self._postinstall_event.is_set():
                 self._postinstall_event = asyncio.Event()
@@ -247,27 +243,34 @@ class SubiquityModel:
             self._postinstall_event.set()
 
     def _configured(self, model_name):
-        """ Add the model to the set of models that have been configured. If
+        """Add the model to the set of models that have been configured. If
         there is no more model to configure in the relevant section(s) (i.e.,
-        INSTALL or POSTINSTALL), we trigger the associated event(s).  """
-        def log_and_trigger(stage: str, names: Set[str],
-                            event: asyncio.Event) -> None:
+        INSTALL or POSTINSTALL), we trigger the associated event(s)."""
+
+        def log_and_trigger(stage: str, names: Set[str], event: asyncio.Event) -> None:
             unconfigured = names - self._configured_names
             log.debug(
                 "model %s for %s stage is configured, to go %s",
-                model_name, stage, unconfigured)
+                model_name,
+                stage,
+                unconfigured,
+            )
             if not unconfigured:
                 event.set()
 
         self._configured_names.add(model_name)
         if model_name in self._cur_install_model_names:
-            log_and_trigger(stage="install",
-                            names=self._cur_install_model_names,
-                            event=self._install_event)
+            log_and_trigger(
+                stage="install",
+                names=self._cur_install_model_names,
+                event=self._install_event,
+            )
         if model_name in self._cur_postinstall_model_names:
-            log_and_trigger(stage="postinstall",
-                            names=self._cur_postinstall_model_names,
-                            event=self._postinstall_event)
+            log_and_trigger(
+                stage="postinstall",
+                names=self._cur_postinstall_model_names,
+                event=self._postinstall_event,
+            )
 
     async def wait_install(self):
         if len(self._cur_install_model_names) == 0:
@@ -281,8 +284,7 @@ class SubiquityModel:
 
     async def wait_confirmation(self):
         if self._confirmation_task is None:
-            self._confirmation_task = asyncio.create_task(
-                self._confirmation.wait())
+            self._confirmation_task = asyncio.create_task(self._confirmation.wait())
         try:
             await self._confirmation_task
         except asyncio.CancelledError:
@@ -293,8 +295,10 @@ class SubiquityModel:
             self._confirmation_task = None
 
     def is_postinstall_only(self, model_name):
-        return model_name in self._cur_postinstall_model_names and \
-               model_name not in self._cur_install_model_names
+        return (
+            model_name in self._cur_postinstall_model_names
+            and model_name not in self._cur_install_model_names
+        )
 
     async def confirm(self):
         self._confirmation.set()
@@ -326,9 +330,9 @@ class SubiquityModel:
                 if warnings:
                     log.warning(
                         "The cloud-init configuration for %s contains"
-                        " deprecated values:\n%s", data_source, "\n".join(
-                            warnings
-                        )
+                        " deprecated values:\n%s",
+                        data_source,
+                        "\n".join(warnings),
                     )
             if e.schema_errors:
                 if data_source == "autoinstall.user-data":
@@ -342,50 +346,46 @@ class SubiquityModel:
 
     def _cloud_init_config(self):
         config = {
-            'growpart': {
-                'mode': 'off',
-                },
-            'resize_rootfs': False,
+            "growpart": {
+                "mode": "off",
+            },
+            "resize_rootfs": False,
         }
         if self.identity.hostname is not None:
-            config['preserve_hostname'] = True
+            config["preserve_hostname"] = True
         user = self.identity.user
         if user:
             groups = get_users_and_groups(self.chroot_prefix)
             user_info = {
-                'name': user.username,
-                'gecos': user.realname,
-                'passwd': user.password,
-                'shell': '/bin/bash',
-                'groups': ','.join(sorted(groups)),
-                'lock_passwd': False,
-                }
+                "name": user.username,
+                "gecos": user.realname,
+                "passwd": user.password,
+                "shell": "/bin/bash",
+                "groups": ",".join(sorted(groups)),
+                "lock_passwd": False,
+            }
             if self.ssh.authorized_keys:
-                user_info['ssh_authorized_keys'] = self.ssh.authorized_keys
-            config['users'] = [user_info]
+                user_info["ssh_authorized_keys"] = self.ssh.authorized_keys
+            config["users"] = [user_info]
         else:
             if self.ssh.authorized_keys:
-                config['ssh_authorized_keys'] = self.ssh.authorized_keys
+                config["ssh_authorized_keys"] = self.ssh.authorized_keys
         if self.ssh.install_server:
-            config['ssh_pwauth'] = self.ssh.pwauth
+            config["ssh_pwauth"] = self.ssh.pwauth
         for model_name in self._postinstall_model_names.all():
             model = getattr(self, model_name)
-            if getattr(model, 'make_cloudconfig', None):
+            if getattr(model, "make_cloudconfig", None):
                 merge_config(config, model.make_cloudconfig())
         merge_cloud_init_config(config, self.userdata)
-        if lsb_release()['release'] not in ("20.04", "22.04"):
-            config.setdefault("write_files", []).append(
-                CLOUDINIT_DISABLE_AFTER_INSTALL
-            )
-        self.validate_cloudconfig_schema(
-            data=config, data_source="system install"
-        )
+        if lsb_release()["release"] not in ("20.04", "22.04"):
+            config.setdefault("write_files", []).append(CLOUDINIT_DISABLE_AFTER_INSTALL)
+        self.validate_cloudconfig_schema(data=config, data_source="system install")
         return config
 
     async def target_packages(self):
         packages = list(self.packages)
         for model_name in self._postinstall_model_names.all():
-            meth = getattr(getattr(self, model_name), 'target_packages', None)
+            meth = getattr(getattr(self, model_name), "target_packages", None)
             if meth is not None:
                 packages.extend(await meth())
         return packages
@@ -395,49 +395,55 @@ class SubiquityModel:
         # first boot of the target, it reconfigures datasource_list to none
         # for subsequent boots.
         # (mwhudson does not entirely know what the above means!)
-        userdata = '#cloud-config\n' + yaml.dump(self._cloud_init_config())
-        metadata = {'instance-id': str(uuid.uuid4())}
-        config = yaml.dump({
-            'datasource_list': ["None"],
-            'datasource': {
-                "None": {
-                    'userdata_raw': userdata,
-                    'metadata': metadata,
+        userdata = "#cloud-config\n" + yaml.dump(self._cloud_init_config())
+        metadata = {"instance-id": str(uuid.uuid4())}
+        config = yaml.dump(
+            {
+                "datasource_list": ["None"],
+                "datasource": {
+                    "None": {
+                        "userdata_raw": userdata,
+                        "metadata": metadata,
                     },
                 },
-            })
+            }
+        )
         files = [
-            ('etc/cloud/cloud.cfg.d/99-installer.cfg', config, 0o600),
-            ('etc/cloud/ds-identify.cfg', 'policy: enabled\n', 0o644),
-            ]
+            ("etc/cloud/cloud.cfg.d/99-installer.cfg", config, 0o600),
+            ("etc/cloud/ds-identify.cfg", "policy: enabled\n", 0o644),
+        ]
         # Add cloud-init clean hooks to support golden-image creation.
         cfg_files = ["/" + path for (path, _content, _cmode) in files]
         cfg_files.extend(self.network.rendered_config_paths())
-        if lsb_release()['release'] not in ("20.04", "22.04"):
+        if lsb_release()["release"] not in ("20.04", "22.04"):
             cfg_files.append("/etc/cloud/cloud-init.disabled")
 
         if self.identity.hostname is not None:
             hostname = self.identity.hostname.strip()
-            files.extend([
-                ('etc/hostname', hostname + "\n", 0o644),
-                ('etc/hosts', HOSTS_CONTENT.format(hostname=hostname), 0o644),
-                ])
+            files.extend(
+                [
+                    ("etc/hostname", hostname + "\n", 0o644),
+                    ("etc/hosts", HOSTS_CONTENT.format(hostname=hostname), 0o644),
+                ]
+            )
 
-        files.append((
-            'etc/cloud/clean.d/99-installer',
-            CLOUDINIT_CLEAN_FILE_TMPL.format(
-                header=generate_timestamped_header(),
-                cfg_files=json.dumps(sorted(cfg_files))
-            ),
-            0o755
-        ))
+        files.append(
+            (
+                "etc/cloud/clean.d/99-installer",
+                CLOUDINIT_CLEAN_FILE_TMPL.format(
+                    header=generate_timestamped_header(),
+                    cfg_files=json.dumps(sorted(cfg_files)),
+                ),
+                0o755,
+            )
+        )
         return files
 
     def configure_cloud_init(self):
         if self.target is None:
             # i.e. reset_partition_only
             return
-        if self.source.current.variant == 'core':
+        if self.source.current.variant == "core":
             # can probably be supported but requires changes
             return
         for path, content, cmode in self._cloud_init_files():
@@ -446,60 +452,58 @@ class SubiquityModel:
             write_file(path, content, cmode=cmode)
 
     def _media_info(self):
-        if os.path.exists('/cdrom/.disk/info'):
-            with open('/cdrom/.disk/info') as fp:
+        if os.path.exists("/cdrom/.disk/info"):
+            with open("/cdrom/.disk/info") as fp:
                 return fp.read()
         else:
             return "media-info"
 
     def _machine_id(self):
-        with open('/etc/machine-id') as fp:
+        with open("/etc/machine-id") as fp:
             return fp.read()
 
     def render(self):
         config = {
-            'grub': {
-                'terminal': 'unmodified',
-                'probe_additional_os': True,
-                'reorder_uefi': False,
+            "grub": {
+                "terminal": "unmodified",
+                "probe_additional_os": True,
+                "reorder_uefi": False,
+            },
+            "install": {
+                "unmount": "disabled",
+                "save_install_config": False,
+                "save_install_log": False,
+            },
+            "pollinate": {
+                "user_agent": {
+                    "subiquity": "%s_%s"
+                    % (
+                        os.environ.get("SNAP_VERSION", "dry-run"),
+                        os.environ.get("SNAP_REVISION", "dry-run"),
+                    ),
                 },
-
-            'install': {
-                'unmount': 'disabled',
-                'save_install_config': False,
-                'save_install_log': False,
+            },
+            "write_files": {
+                "etc_machine_id": {
+                    "path": "etc/machine-id",
+                    "content": self._machine_id(),
+                    "permissions": 0o444,
                 },
-
-            'pollinate': {
-                'user_agent': {
-                    'subiquity': "%s_%s" % (os.environ.get("SNAP_VERSION",
-                                                           'dry-run'),
-                                            os.environ.get("SNAP_REVISION",
-                                                           'dry-run')),
-                    },
+                "media_info": {
+                    "path": "var/log/installer/media-info",
+                    "content": self._media_info(),
+                    "permissions": 0o644,
                 },
+            },
+        }
 
-            'write_files': {
-                'etc_machine_id': {
-                    'path': 'etc/machine-id',
-                    'content': self._machine_id(),
-                    'permissions': 0o444,
-                    },
-                'media_info': {
-                    'path': 'var/log/installer/media-info',
-                    'content': self._media_info(),
-                    'permissions': 0o644,
-                    },
-                },
-            }
-
-        if os.path.exists('/run/casper-md5check.json'):
-            with open('/run/casper-md5check.json') as fp:
-                config['write_files']['md5check'] = {
-                    'path': 'var/log/installer/casper-md5check.json',
-                    'content': fp.read(),
-                    'permissions': 0o644,
-                    }
+        if os.path.exists("/run/casper-md5check.json"):
+            with open("/run/casper-md5check.json") as fp:
+                config["write_files"]["md5check"] = {
+                    "path": "var/log/installer/casper-md5check.json",
+                    "content": fp.read(),
+                    "permissions": 0o644,
+                }
 
         for model_name in self._install_model_names.all():
             model = getattr(self, model_name)

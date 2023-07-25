@@ -15,9 +15,7 @@
 
 import unittest
 
-from subiquity.server.controllers.ubuntu_pro import (
-    UbuntuProController,
-)
+from subiquity.server.controllers.ubuntu_pro import UbuntuProController
 from subiquity.server.dryrun import DRConfig
 from subiquitycore.tests.mocks import make_app
 

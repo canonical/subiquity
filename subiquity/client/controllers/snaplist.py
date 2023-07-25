@@ -16,48 +16,37 @@
 import logging
 from typing import List
 
-from subiquitycore.tuicontroller import (
-    Skip,
-    )
-
-from subiquity.client.controller import (
-    SubiquityTuiController,
-    )
-from subiquity.common.types import (
-    SnapCheckState,
-    SnapSelection,
-    )
+from subiquity.client.controller import SubiquityTuiController
+from subiquity.common.types import SnapCheckState, SnapSelection
 from subiquity.ui.views.snaplist import SnapListView
+from subiquitycore.tuicontroller import Skip
 
-log = logging.getLogger('subiquity.client.controllers.snaplist')
+log = logging.getLogger("subiquity.client.controllers.snaplist")
 
 
 class SnapListController(SubiquityTuiController):
-
-    endpoint_name = 'snaplist'
+    endpoint_name = "snaplist"
 
     async def make_ui(self):
         data = await self.endpoint.GET()
         if data.status == SnapCheckState.FAILED:
             # If loading snaps failed or network is disabled, skip the screen.
-            log.debug('snaplist GET failed, mark done')
+            log.debug("snaplist GET failed, mark done")
             await self.endpoint.POST([])
             raise Skip
         return SnapListView(self, data)
 
     def run_answers(self):
-        if 'snaps' in self.answers:
+        if "snaps" in self.answers:
             selections = []
-            for snap_name, selection in self.answers['snaps'].items():
-                if 'is_classic' in selection:
-                    selection['classic'] = selection.pop('is_classic')
+            for snap_name, selection in self.answers["snaps"].items():
+                if "is_classic" in selection:
+                    selection["classic"] = selection.pop("is_classic")
                 selections.append(SnapSelection(name=snap_name, **selection))
             self.done(selections)
 
     def done(self, selections: List[SnapSelection]):
-        log.debug(
-            "SnapListController.done next_screen snaps_to_install=%s",
-            selections)
+        log.debug("SnapListController.done next_screen snaps_to_install=%s", selections)
         self.app.next_screen(self.endpoint.POST(selections))
 
     def cancel(self, sender=None):

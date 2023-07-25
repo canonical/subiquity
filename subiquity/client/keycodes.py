@@ -19,7 +19,7 @@ import os
 import struct
 import sys
 
-log = logging.getLogger('subiquity.client.keycodes')
+log = logging.getLogger("subiquity.client.keycodes")
 
 # /usr/include/linux/kd.h
 K_RAW = 0x00
@@ -46,7 +46,7 @@ class KeyCodesFilter:
     """
 
     def __init__(self):
-        self._fd = os.open("/proc/self/fd/"+str(sys.stdin.fileno()), os.O_RDWR)
+        self._fd = os.open("/proc/self/fd/" + str(sys.stdin.fileno()), os.O_RDWR)
         self.filtering = False
 
     def enter_keycodes_mode(self):
@@ -56,7 +56,7 @@ class KeyCodesFilter:
         # well).
         o = bytearray(4)
         fcntl.ioctl(self._fd, KDGKBMODE, o)
-        self._old_mode = struct.unpack('i', o)[0]
+        self._old_mode = struct.unpack("i", o)[0]
         # Set the keyboard mode to K_MEDIUMRAW, which causes the keyboard
         # driver in the kernel to pass us keycodes.
         fcntl.ioctl(self._fd, KDSKBMODE, K_MEDIUMRAW)
@@ -76,17 +76,16 @@ class KeyCodesFilter:
             while i < len(codes):
                 # This is straight from showkeys.c.
                 if codes[i] & 0x80:
-                    p = 'release '
+                    p = "release "
                 else:
-                    p = 'press '
-                if i + 2 < n and (codes[i] & 0x7f) == 0:
+                    p = "press "
+                if i + 2 < n and (codes[i] & 0x7F) == 0:
                     if (codes[i + 1] & 0x80) != 0:
                         if (codes[i + 2] & 0x80) != 0:
-                            kc = (((codes[i + 1] & 0x7f) << 7) |
-                                  (codes[i + 2] & 0x7f))
+                            kc = ((codes[i + 1] & 0x7F) << 7) | (codes[i + 2] & 0x7F)
                             i += 3
                 else:
-                    kc = codes[i] & 0x7f
+                    kc = codes[i] & 0x7F
                     i += 1
                 r.append(p + str(kc))
             return r

@@ -21,28 +21,25 @@ from typing import Optional
 
 from subiquity.common.apidef import API
 from subiquity.common.types import (
-    UbuntuProInfo,
     UbuntuProCheckTokenAnswer,
     UbuntuProCheckTokenStatus,
+    UbuntuProInfo,
     UbuntuProResponse,
     UPCSInitiateResponse,
-    UPCSWaitStatus,
     UPCSWaitResponse,
+    UPCSWaitStatus,
 )
+from subiquity.server.contract_selection import ContractSelection, UPCSExpiredError
+from subiquity.server.controller import SubiquityController
 from subiquity.server.ubuntu_advantage import (
-    InvalidTokenError,
-    ExpiredTokenError,
     CheckSubscriptionError,
-    UAInterface,
-    UAInterfaceStrategy,
+    ExpiredTokenError,
+    InvalidTokenError,
     MockedUAInterfaceStrategy,
     UAClientUAInterfaceStrategy,
+    UAInterface,
+    UAInterfaceStrategy,
 )
-from subiquity.server.contract_selection import (
-    ContractSelection,
-    UPCSExpiredError,
-    )
-from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger("subiquity.server.controllers.ubuntu_pro")
 
@@ -52,21 +49,21 @@ See https://pkg.go.dev/github.com/btcsuite/btcutil/base58#CheckEncode"""
 
 
 class UPCSAlreadyInitiatedError(Exception):
-    """ Exception to be raised when trying to initiate a contract selection
-    while another contract selection is already pending. """
+    """Exception to be raised when trying to initiate a contract selection
+    while another contract selection is already pending."""
 
 
 class UPCSCancelledError(Exception):
-    """ Exception to be raised when a contract selection got cancelled. """
+    """Exception to be raised when a contract selection got cancelled."""
 
 
 class UPCSNotInitiatedError(Exception):
-    """ Exception to be raised when trying to cancel or wait on a contract
-    selection that was not initiated. """
+    """Exception to be raised when trying to cancel or wait on a contract
+    selection that was not initiated."""
 
 
 class UbuntuProController(SubiquityController):
-    """ Represent the server-side Ubuntu Pro controller. """
+    """Represent the server-side Ubuntu Pro controller."""
 
     endpoint = API.ubuntu_pro
 
@@ -87,7 +84,7 @@ class UbuntuProController(SubiquityController):
     }
 
     def __init__(self, app) -> None:
-        """ Initializer for server-side Ubuntu Pro controller. """
+        """Initializer for server-side Ubuntu Pro controller."""
         strategy: UAInterfaceStrategy
         if app.opts.dry_run:
             contracts_url = app.dr_cfg.pro_ua_contracts_url
@@ -97,8 +94,7 @@ class UbuntuProController(SubiquityController):
                 strategy.load_default_uaclient_config()
                 strategy.uaclient_config["contract_url"] = contracts_url
             else:
-                strategy = MockedUAInterfaceStrategy(
-                        scale_factor=app.scale_factor)
+                strategy = MockedUAInterfaceStrategy(scale_factor=app.scale_factor)
         else:
             # Make sure we execute `$PYTHON "$SNAP/usr/bin/ubuntu-advantage"`.
             executable = (
@@ -112,58 +108,53 @@ class UbuntuProController(SubiquityController):
         super().__init__(app)
 
     def load_autoinstall_data(self, data: dict) -> None:
-        """ Load autoinstall data and update the model. """
+        """Load autoinstall data and update the model."""
         if data is None:
             return
         self.model.token = data.get("token", "")
 
     def make_autoinstall(self) -> dict:
-        """ Return a dictionary that can be used as an autoinstall snippet for
+        """Return a dictionary that can be used as an autoinstall snippet for
         Ubuntu Pro.
         """
         if not self.model.token:
             return {}
-        return {
-            "token": self.model.token
-        }
+        return {"token": self.model.token}
 
     def serialize(self) -> str:
-        """ Save the current state of the model so it can be loaded later.
+        """Save the current state of the model so it can be loaded later.
         Currently this function is called automatically by .configured().
         """
         return self.model.token
 
     def deserialize(self, token: str) -> None:
-        """ Loads the last-known state of the model. """
+        """Loads the last-known state of the model."""
         self.model.token = token
 
     async def GET(self) -> UbuntuProResponse:
-        """ Handle a GET request coming from the client-side controller. """
+        """Handle a GET request coming from the client-side controller."""
         has_network = self.app.base_model.network.has_network
-        return UbuntuProResponse(token=self.model.token,
-                                 has_network=has_network)
+        return UbuntuProResponse(token=self.model.token, has_network=has_network)
 
     async def POST(self, data: UbuntuProInfo) -> None:
-        """ Handle a POST request coming from the client-side controller and
+        """Handle a POST request coming from the client-side controller and
         then call .configured().
         """
         self.model.token = data.token
         await self.configured()
 
     async def skip_POST(self) -> None:
-        """ When running on a non-LTS release, we want to call this so we can
-        skip the screen on the client side. """
+        """When running on a non-LTS release, we want to call this so we can
+        skip the screen on the client side."""
         await self.configured()
 
-    async def check_token_GET(self, token: str) \
-            -> UbuntuProCheckTokenAnswer:
-        """ Handle a GET request asking whether the contract token is valid or
+    async def check_token_GET(self, token: str) -> UbuntuProCheckTokenAnswer:
+        """Handle a GET request asking whether the contract token is valid or
         not. If it is valid, we provide the information about the subscription.
         """
         subscription = None
         try:
-            subscription = await \
-                    self.ua_interface.get_subscription(token=token)
+            subscription = await self.ua_interface.get_subscription(token=token)
         except InvalidTokenError:
             status = UbuntuProCheckTokenStatus.INVALID_TOKEN
         except ExpiredTokenError:
@@ -173,38 +164,36 @@ class UbuntuProController(SubiquityController):
         else:
             status = UbuntuProCheckTokenStatus.VALID_TOKEN
 
-        return UbuntuProCheckTokenAnswer(status=status,
-                                         subscription=subscription)
+        return UbuntuProCheckTokenAnswer(status=status, subscription=subscription)
 
     async def contract_selection_initiate_POST(self) -> UPCSInitiateResponse:
-        """ Initiate the contract selection request and start the polling. """
+        """Initiate the contract selection request and start the polling."""
         if self.cs and not self.cs.task.done():
             raise UPCSAlreadyInitiatedError
 
         self.cs = await ContractSelection.initiate(client=self.ua_interface)
 
         return UPCSInitiateResponse(
-                user_code=self.cs.user_code,
-                validity_seconds=self.cs.validity_seconds)
+            user_code=self.cs.user_code, validity_seconds=self.cs.validity_seconds
+        )
 
     async def contract_selection_wait_GET(self) -> UPCSWaitResponse:
-        """ Block until the contract selection finishes or times out.
+        """Block until the contract selection finishes or times out.
         If the contract selection is successful, the contract token is included
-        in the response. """
+        in the response."""
         if self.cs is None:
             raise UPCSNotInitiatedError
 
         try:
             return UPCSWaitResponse(
-                    status=UPCSWaitStatus.SUCCESS,
-                    contract_token=await asyncio.shield(self.cs.task))
+                status=UPCSWaitStatus.SUCCESS,
+                contract_token=await asyncio.shield(self.cs.task),
+            )
         except UPCSExpiredError:
-            return UPCSWaitResponse(
-                    status=UPCSWaitStatus.TIMEOUT,
-                    contract_token=None)
+            return UPCSWaitResponse(status=UPCSWaitStatus.TIMEOUT, contract_token=None)
 
     async def contract_selection_cancel_POST(self) -> None:
-        """ Cancel the currently ongoing contract selection. """
+        """Cancel the currently ongoing contract selection."""
         if self.cs is None:
             raise UPCSNotInitiatedError
 

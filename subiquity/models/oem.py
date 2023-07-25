@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import attr
 
-log = logging.getLogger('subiquity.models.oem')
+log = logging.getLogger("subiquity.models.oem")
 
 
 @attr.s(auto_attribs=True)

@@ -16,25 +16,20 @@
 """ Re-usable input widgets
 """
 
-from functools import partial
 import logging
 import re
+from functools import partial
 
-from urwid import (
-    Edit,
-    IntEdit,
-    )
+from urwid import Edit, IntEdit
 
-from subiquitycore.ui.container import (
-    WidgetWrap,
-    )
+from subiquitycore.ui.container import WidgetWrap
 from subiquitycore.ui.selector import Selector
 
 log = logging.getLogger("subiquitycore.ui.interactive")
 
 
 class StringEditor(Edit):
-    """ Edit input class
+    """Edit input class
 
     Attaches its result to the `value` accessor.
     """
@@ -49,8 +44,8 @@ class StringEditor(Edit):
 
 
 class PasswordEditor(StringEditor):
-    """ Password input prompt with masking
-    """
+    """Password input prompt with masking"""
+
     def __init__(self, mask="*"):
         super().__init__(mask=mask)
 
@@ -66,20 +61,19 @@ class RestrictedEditor(StringEditor):
         return len(ch) == 1 and self.matcher.match(ch) is not None
 
 
-RealnameEditor = partial(RestrictedEditor, r'[^:,=]')
-EmailEditor = partial(RestrictedEditor, r'[-a-zA-Z0-9_.@+=]')
+RealnameEditor = partial(RestrictedEditor, r"[^:,=]")
+EmailEditor = partial(RestrictedEditor, r"[-a-zA-Z0-9_.@+=]")
 
 
 class UsernameEditor(StringEditor):
-    """ Username input prompt with input rules
-    """
+    """Username input prompt with input rules"""
 
     def keypress(self, size, key):
-        ''' restrict what chars we allow for username '''
+        """restrict what chars we allow for username"""
         if self._command_map[key] is not None:
             return super().keypress(size, key)
         new_text = self.insert_text_result(key)[0]
-        username = r'[a-z_][a-z0-9_-]*'
+        username = r"[a-z_][a-z0-9_-]*"
         # don't allow non username chars
         if new_text != "" and re.match(username, new_text) is None:
             return False
@@ -87,8 +81,8 @@ class UsernameEditor(StringEditor):
 
 
 class IntegerEditor(WidgetWrap):
-    """ IntEdit input class
-    """
+    """IntEdit input class"""
+
     def __init__(self, default=0):
         self._edit = IntEdit(default=default)
         super().__init__(self._edit)
@@ -103,8 +97,8 @@ class IntegerEditor(WidgetWrap):
 
 
 class YesNo(Selector):
-    """ Yes/No selector
-    """
+    """Yes/No selector"""
+
     def __init__(self):
-        opts = [_('Yes'), _('No')]
+        opts = [_("Yes"), _("No")]
         super().__init__(opts)

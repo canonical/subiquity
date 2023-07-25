@@ -15,20 +15,19 @@
 
 """ Module that defines helpers to use the ubuntu-drivers command. """
 
-from abc import ABC, abstractmethod
 import logging
 import subprocess
+from abc import ABC, abstractmethod
 from typing import List, Type
 
 from subiquity.server.curtin import run_curtin_command
 from subiquitycore.utils import arun_command
 
-
 log = logging.getLogger("subiquity.server.ubuntu_drivers")
 
 
 class CommandNotFoundError(Exception):
-    """ Exception to be raised when the ubuntu-drivers command is not
+    """Exception to be raised when the ubuntu-drivers command is not
     available.
     """
 
@@ -38,10 +37,12 @@ class UbuntuDriversInterface(ABC):
         self.app = app
 
         self.list_oem_cmd = [
-            "ubuntu-drivers", "list-oem",
+            "ubuntu-drivers",
+            "list-oem",
         ]
         self.list_drivers_cmd = [
-            "ubuntu-drivers", "list",
+            "ubuntu-drivers",
+            "list",
             "--recommended",
         ]
         # Because of LP #1966413, the following command will also install
@@ -50,7 +51,9 @@ class UbuntuDriversInterface(ABC):
         # This is not ideal but should be acceptable because we want OEM
         # meta-packages installed unconditionally (except in autoinstall).
         self.install_drivers_cmd = [
-            "ubuntu-drivers", "install", "--no-oem",
+            "ubuntu-drivers",
+            "install",
+            "--no-oem",
         ]
         if gpgpu:
             self.list_drivers_cmd.append("--gpgpu")
@@ -70,13 +73,19 @@ class UbuntuDriversInterface(ABC):
 
     async def install_drivers(self, root_dir: str, context) -> None:
         await run_curtin_command(
-            self.app, context,
-            "in-target", "-t", root_dir, "--", *self.install_drivers_cmd,
-            private_mounts=True)
+            self.app,
+            context,
+            "in-target",
+            "-t",
+            root_dir,
+            "--",
+            *self.install_drivers_cmd,
+            private_mounts=True,
+        )
 
     def _drivers_from_output(self, output: str) -> List[str]:
-        """ Parse the output of ubuntu-drivers list --recommended and return a
-        list of drivers. """
+        """Parse the output of ubuntu-drivers list --recommended and return a
+        list of drivers."""
         drivers: List[str] = []
         # Drivers are listed one per line, but some drivers are followed by a
         # linux-modules-* package (which we are not interested in showing).
@@ -96,8 +105,8 @@ class UbuntuDriversInterface(ABC):
         return drivers
 
     def _oem_metapackages_from_output(self, output: str) -> List[str]:
-        """ Parse the output of ubuntu-drivers list-oem and return a list of
-        packages. """
+        """Parse the output of ubuntu-drivers list-oem and return a list of
+        packages."""
         metapackages: List[str] = []
         # Packages are listed one per line.
         for line in [x.strip() for x in output.split("\n")]:
@@ -109,26 +118,33 @@ class UbuntuDriversInterface(ABC):
 
 
 class UbuntuDriversClientInterface(UbuntuDriversInterface):
-    """ UbuntuDrivers interface that uses the ubuntu-drivers command from the
-    specified root directory. """
+    """UbuntuDrivers interface that uses the ubuntu-drivers command from the
+    specified root directory."""
 
     async def ensure_cmd_exists(self, root_dir: str) -> None:
         # TODO This does not tell us if the "--recommended" option is
         # available.
         try:
             await self.app.command_runner.run(
-                ['chroot', root_dir,
-                 'sh', '-c',
-                 "command -v ubuntu-drivers"])
+                ["chroot", root_dir, "sh", "-c", "command -v ubuntu-drivers"]
+            )
         except subprocess.CalledProcessError:
             raise CommandNotFoundError(
-                    f"Command ubuntu-drivers is not available in {root_dir}")
+                f"Command ubuntu-drivers is not available in {root_dir}"
+            )
 
     async def list_drivers(self, root_dir: str, context) -> List[str]:
         result = await run_curtin_command(
-            self.app, context,
-            "in-target", "-t", root_dir, "--", *self.list_drivers_cmd,
-            capture=True, private_mounts=True)
+            self.app,
+            context,
+            "in-target",
+            "-t",
+            root_dir,
+            "--",
+            *self.list_drivers_cmd,
+            capture=True,
+            private_mounts=True,
+        )
         # Currently we have no way to specify universal_newlines=True or
         # encoding="utf-8" to run_curtin_command so we need to decode the
         # output.
@@ -136,19 +152,26 @@ class UbuntuDriversClientInterface(UbuntuDriversInterface):
 
     async def list_oem(self, root_dir: str, context) -> List[str]:
         result = await run_curtin_command(
-            self.app, context,
-            "in-target", "-t", root_dir, "--", *self.list_oem_cmd,
-            capture=True, private_mounts=True)
+            self.app,
+            context,
+            "in-target",
+            "-t",
+            root_dir,
+            "--",
+            *self.list_oem_cmd,
+            capture=True,
+            private_mounts=True,
+        )
         # Currently we have no way to specify universal_newlines=True or
         # encoding="utf-8" to run_curtin_command so we need to decode the
         # output.
-        return self._oem_metapackages_from_output(
-                result.stdout.decode("utf-8"))
+        return self._oem_metapackages_from_output(result.stdout.decode("utf-8"))
 
 
 class UbuntuDriversHasDriversInterface(UbuntuDriversInterface):
-    """ A dry-run implementation of ubuntu-drivers that returns a hard-coded
-    list of drivers. """
+    """A dry-run implementation of ubuntu-drivers that returns a hard-coded
+    list of drivers."""
+
     gpgpu_drivers: List[str] = ["nvidia-driver-470-server"]
     not_gpgpu_drivers: List[str] = ["nvidia-driver-510"]
     oem_metapackages: List[str] = ["oem-somerville-tentacool-meta"]
@@ -168,8 +191,8 @@ class UbuntuDriversHasDriversInterface(UbuntuDriversInterface):
 
 
 class UbuntuDriversNoDriversInterface(UbuntuDriversHasDriversInterface):
-    """ A dry-run implementation of ubuntu-drivers that returns a hard-coded
-    empty list of drivers. """
+    """A dry-run implementation of ubuntu-drivers that returns a hard-coded
+    empty list of drivers."""
 
     gpgpu_drivers: List[str] = []
     not_gpgpu_drivers: List[str] = []
@@ -177,8 +200,8 @@ class UbuntuDriversNoDriversInterface(UbuntuDriversHasDriversInterface):
 
 
 class UbuntuDriversRunDriversInterface(UbuntuDriversInterface):
-    """ A dry-run implementation of ubuntu-drivers that actually runs the
-    ubuntu-drivers command but locally. """
+    """A dry-run implementation of ubuntu-drivers that actually runs the
+    ubuntu-drivers command but locally."""
 
     def __init__(self, app, gpgpu: bool) -> None:
         super().__init__(app, gpgpu)
@@ -188,29 +211,34 @@ class UbuntuDriversRunDriversInterface(UbuntuDriversInterface):
 
         self.list_oem_cmd = [
             "scripts/umockdev-wrapper.py",
-            "--config", app.dr_cfg.ubuntu_drivers_run_on_host_umockdev,
-            "--"] + self.list_oem_cmd
+            "--config",
+            app.dr_cfg.ubuntu_drivers_run_on_host_umockdev,
+            "--",
+        ] + self.list_oem_cmd
 
         self.list_drivers_cmd = [
             "scripts/umockdev-wrapper.py",
-            "--config", app.dr_cfg.ubuntu_drivers_run_on_host_umockdev,
-            "--"] + self.list_drivers_cmd
+            "--config",
+            app.dr_cfg.ubuntu_drivers_run_on_host_umockdev,
+            "--",
+        ] + self.list_drivers_cmd
 
         self.install_drivers_cmd = [
             "scripts/umockdev-wrapper.py",
-            "--config", app.dr_cfg.ubuntu_drivers_run_on_host_umockdev,
-            "--"] + self.install_drivers_cmd
+            "--config",
+            app.dr_cfg.ubuntu_drivers_run_on_host_umockdev,
+            "--",
+        ] + self.install_drivers_cmd
 
     async def ensure_cmd_exists(self, root_dir: str) -> None:
         # TODO This does not tell us if the "--recommended" option is
         # available.
         try:
-            await arun_command(
-                    ["sh", "-c", "command -v ubuntu-drivers"],
-                    check=True)
+            await arun_command(["sh", "-c", "command -v ubuntu-drivers"], check=True)
         except subprocess.CalledProcessError:
             raise CommandNotFoundError(
-                    "Command ubuntu-drivers is not available in this system")
+                "Command ubuntu-drivers is not available in this system"
+            )
 
     async def list_drivers(self, root_dir: str, context) -> List[str]:
         # We run the command locally - ignoring the root_dir.
@@ -227,9 +255,9 @@ def get_ubuntu_drivers_interface(app) -> UbuntuDriversInterface:
     is_server = app.base_model.source.current.variant == "server"
     cls: Type[UbuntuDriversInterface] = UbuntuDriversClientInterface
     if app.opts.dry_run:
-        if 'no-drivers' in app.debug_flags:
+        if "no-drivers" in app.debug_flags:
             cls = UbuntuDriversNoDriversInterface
-        elif 'run-drivers' in app.debug_flags:
+        elif "run-drivers" in app.debug_flags:
             cls = UbuntuDriversRunDriversInterface
         else:
             cls = UbuntuDriversHasDriversInterface

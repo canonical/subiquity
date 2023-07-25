@@ -21,32 +21,21 @@ from typing import Tuple
 
 import requests.exceptions
 
-from subiquitycore.async_helpers import (
-    schedule_task,
-    SingleInstanceTask,
-    )
-from subiquitycore.context import with_context
-from subiquitycore.lsb_release import lsb_release
-
 from subiquity.common.apidef import API
-from subiquity.common.types import (
-    Change,
-    RefreshCheckState,
-    RefreshStatus,
-    )
-from subiquity.server.controller import (
-    SubiquityController,
-    )
+from subiquity.common.types import Change, RefreshCheckState, RefreshStatus
+from subiquity.server.controller import SubiquityController
 from subiquity.server.snapdapi import (
     SnapAction,
     SnapActionRequest,
     TaskStatus,
     post_and_wait,
-    )
+)
 from subiquity.server.types import InstallerChannels
+from subiquitycore.async_helpers import SingleInstanceTask, schedule_task
+from subiquitycore.context import with_context
+from subiquitycore.lsb_release import lsb_release
 
-
-log = logging.getLogger('subiquity.server.controllers.refresh')
+log = logging.getLogger("subiquity.server.controllers.refresh")
 
 
 class SnapChannelSource(enum.Enum):
@@ -57,18 +46,17 @@ class SnapChannelSource(enum.Enum):
 
 
 class RefreshController(SubiquityController):
-
     endpoint = API.refresh
 
     autoinstall_key = "refresh-installer"
     autoinstall_schema = {
-        'type': 'object',
-        'properties': {
-            'update': {'type': 'boolean'},
-            'channel': {'type': 'string'},
-            },
-        'additionalProperties': False,
-        }
+        "type": "object",
+        "properties": {
+            "update": {"type": "boolean"},
+            "channel": {"type": "string"},
+        },
+        "additionalProperties": False,
+    }
 
     def __init__(self, app):
         super().__init__(app)
@@ -77,8 +65,9 @@ class RefreshController(SubiquityController):
         self.configure_task = None
         self.check_task = None
         self.status = RefreshStatus(availability=RefreshCheckState.UNKNOWN)
-        self.app.hub.subscribe(InstallerChannels.SNAPD_NETWORK_CHANGE,
-                               self.snapd_network_changed)
+        self.app.hub.subscribe(
+            InstallerChannels.SNAPD_NETWORK_CHANGE, self.snapd_network_changed
+        )
 
     def load_autoinstall_data(self, data):
         if data is not None:
@@ -86,8 +75,8 @@ class RefreshController(SubiquityController):
 
     @property
     def active(self):
-        if 'update' in self.ai_data:
-            return self.ai_data['update']
+        if "update" in self.ai_data:
+            return self.ai_data["update"]
         else:
             return self.interactive()
 
@@ -96,7 +85,8 @@ class RefreshController(SubiquityController):
             return
         self.configure_task = schedule_task(self.configure_snapd())
         self.check_task = SingleInstanceTask(
-            self.check_for_update, propagate_errors=False)
+            self.check_for_update, propagate_errors=False
+        )
         self.check_task.start_sync()
 
     @with_context()
@@ -112,8 +102,7 @@ class RefreshController(SubiquityController):
         change_id = await self.start_update(context=context)
         while True:
             change = await self.get_progress(change_id)
-            if change.status not in [
-                    TaskStatus.DO, TaskStatus.DOING, TaskStatus.DONE]:
+            if change.status not in [TaskStatus.DO, TaskStatus.DOING, TaskStatus.DONE]:
                 raise Exception(f"update failed: {change.status}")
             await asyncio.sleep(0.1)
 
@@ -132,21 +121,24 @@ class RefreshController(SubiquityController):
                 log.exception("getting snap details")
                 return
             self.status.current_snap_version = snap.version
-            for k in 'channel', 'revision', 'version':
-                self.app.note_data_for_apport(
-                    "Snap" + k.title(), getattr(snap, k))
+            for k in "channel", "revision", "version":
+                self.app.note_data_for_apport("Snap" + k.title(), getattr(snap, k))
             subcontext.description = "current version of snap is: %r" % (
-                self.status.current_snap_version)
+                self.status.current_snap_version
+            )
         (channel, source) = self.get_refresh_channel()
         if source == SnapChannelSource.NOT_FOUND:
             log.debug("no refresh channel found")
             return
         info = lsb_release(dry_run=self.app.opts.dry_run)
-        expected_channel = 'stable/ubuntu-' + info['release']
-        if source == SnapChannelSource.DISK_INFO_FILE \
-           and snap.channel != expected_channel:
-            log.debug(f"snap tracking {snap.channel}, not resetting based "
-                      "on .disk/info")
+        expected_channel = "stable/ubuntu-" + info["release"]
+        if (
+            source == SnapChannelSource.DISK_INFO_FILE
+            and snap.channel != expected_channel
+        ):
+            log.debug(
+                f"snap tracking {snap.channel}, not resetting based " "on .disk/info"
+            )
             return
         desc = "switching {} to {}".format(self.snap_name, channel)
         with context.child("switching", desc) as subcontext:
@@ -154,8 +146,8 @@ class RefreshController(SubiquityController):
                 await post_and_wait(
                     self.app.snapdapi,
                     self.app.snapdapi.v2.snaps[self.snap_name].POST,
-                    SnapActionRequest(
-                        action=SnapAction.SWITCH, channel=channel))
+                    SnapActionRequest(action=SnapAction.SWITCH, channel=channel),
+                )
             except requests.exceptions.RequestException:
                 log.exception("switching channels")
                 return
@@ -163,35 +155,33 @@ class RefreshController(SubiquityController):
 
     def get_refresh_channel(self) -> Tuple[str, SnapChannelSource]:
         """Return the channel we should refresh subiquity to."""
-        channel = self.app.kernel_cmdline.get('subiquity-channel')
+        channel = self.app.kernel_cmdline.get("subiquity-channel")
         if channel is not None:
-            log.debug(
-                "get_refresh_channel: found %s on kernel cmdline", channel)
+            log.debug("get_refresh_channel: found %s on kernel cmdline", channel)
             return (channel, SnapChannelSource.CMDLINE)
-        if 'channel' in self.ai_data:
-            return (self.ai_data['channel'], SnapChannelSource.AUTOINSTALL)
+        if "channel" in self.ai_data:
+            return (self.ai_data["channel"], SnapChannelSource.AUTOINSTALL)
 
-        info_file = '/cdrom/.disk/info'
+        info_file = "/cdrom/.disk/info"
         try:
             fp = open(info_file)
         except FileNotFoundError:
             if self.opts.dry_run:
                 info = (
                     'Ubuntu-Server 18.04.2 LTS "Bionic Beaver" - '
-                    'Release amd64 (20190214.3)')
+                    "Release amd64 (20190214.3)"
+                )
             else:
-                log.debug(
-                    "get_refresh_channel: failed to find .disk/info file")
+                log.debug("get_refresh_channel: failed to find .disk/info file")
                 return (None, SnapChannelSource.NOT_FOUND)
         else:
             with fp:
                 info = fp.read()
         release = info.split()[1]
-        return ('stable/ubuntu-' + release, SnapChannelSource.DISK_INFO_FILE)
+        return ("stable/ubuntu-" + release, SnapChannelSource.DISK_INFO_FILE)
 
     def snapd_network_changed(self):
-        if self.active and \
-          self.status.availability == RefreshCheckState.UNKNOWN:
+        if self.active and self.status.availability == RefreshCheckState.UNKNOWN:
             self.check_task.start_sync()
 
     @with_context()
@@ -202,7 +192,7 @@ class RefreshController(SubiquityController):
             self.status.availability = RefreshCheckState.UNAVAILABLE
             return
         try:
-            result = await self.app.snapdapi.v2.find.GET(select='refresh')
+            result = await self.app.snapdapi.v2.find.GET(select="refresh")
         except requests.exceptions.RequestException:
             log.exception("checking for snap update failed")
             context.description = "checking for snap update failed"
@@ -214,8 +204,8 @@ class RefreshController(SubiquityController):
                 continue
             self.status.new_snap_version = snap.version
             context.description = (
-                "new version of snap available: %r"
-                % self.status.new_snap_version)
+                "new version of snap available: %r" % self.status.new_snap_version
+            )
             self.status.availability = RefreshCheckState.AVAILABLE
             return
         else:
@@ -225,7 +215,8 @@ class RefreshController(SubiquityController):
     @with_context()
     async def start_update(self, context):
         change_id = await self.app.snapdapi.v2.snaps[self.snap_name].POST(
-            SnapActionRequest(action=SnapAction.REFRESH, ignore_running=True))
+            SnapActionRequest(action=SnapAction.REFRESH, ignore_running=True)
+        )
         context.description = "change id: {}".format(change_id)
         return change_id
 

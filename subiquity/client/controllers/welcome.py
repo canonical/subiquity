@@ -15,17 +15,16 @@
 
 import logging
 
-from subiquitycore import i18n
-from subiquitycore.tuicontroller import Skip
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.ui.views.welcome import WelcomeView
+from subiquitycore import i18n
+from subiquitycore.tuicontroller import Skip
 
-log = logging.getLogger('subiquity.client.controllers.welcome')
+log = logging.getLogger("subiquity.client.controllers.welcome")
 
 
 class WelcomeController(SubiquityTuiController):
-
-    endpoint_name = 'locale'
+    endpoint_name = "locale"
 
     async def make_ui(self):
         if not self.app.rich_mode:
@@ -36,11 +35,11 @@ class WelcomeController(SubiquityTuiController):
         return WelcomeView(self, language, self.serial)
 
     def run_answers(self):
-        if 'lang' in self.answers:
-            self.done((self.answers['lang'], ""))
+        if "lang" in self.answers:
+            self.done((self.answers["lang"], ""))
 
     def done(self, lang):
-        """ Completes this controller. lang must be a tuple of strings
+        """Completes this controller. lang must be a tuple of strings
         containing the language code and its native representation
         respectively.
         """

@@ -18,30 +18,22 @@ import json
 import logging
 
 import aiohttp
+from urwid import ProgressBar, Text, WidgetWrap
 
-from urwid import (
-    ProgressBar,
-    Text,
-    WidgetWrap,
-    )
-
+from subiquity.common.types import RefreshCheckState, TaskStatus
 from subiquitycore.async_helpers import schedule_task
-from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, other_btn
 from subiquitycore.ui.container import Columns, ListBox
 from subiquitycore.ui.spinner import Spinner
-from subiquitycore.ui.utils import button_pile, Color, screen
+from subiquitycore.ui.utils import Color, button_pile, screen
+from subiquitycore.view import BaseView
 
-from subiquity.common.types import RefreshCheckState, TaskStatus
-
-log = logging.getLogger('subiquity.ui.views.refresh')
+log = logging.getLogger("subiquity.ui.views.refresh")
 
 
 class TaskProgressBar(ProgressBar):
     def __init__(self):
-        super().__init__(
-            normal='progress_incomplete',
-            complete='progress_complete')
+        super().__init__(normal="progress_incomplete", complete="progress_complete")
         self._width = 80
         self.label = ""
 
@@ -55,25 +47,28 @@ class TaskProgressBar(ProgressBar):
         suffix = " {:.2f} / {:.2f} MiB".format(current_MiB, done_MiB)
         remaining = self._width - len(suffix) - 2
         if len(self.label) > remaining:
-            label = self.label[:remaining-3] + '...'
+            label = self.label[: remaining - 3] + "..."
         else:
-            label = self.label + ' ' * (remaining - len(self.label))
+            label = self.label + " " * (remaining - len(self.label))
         return label + suffix
 
 
 class TaskProgress(WidgetWrap):
-
     def __init__(self):
         self.mode = "spinning"
         self.spinner = Spinner()
-        self.label = Text("", wrap='clip')
-        cols = Color.progress_incomplete(Columns([
-            (1, Text("")),
-            self.label,
-            (1, Text("")),
-            (1, self.spinner),
-            (1, Text("")),
-            ]))
+        self.label = Text("", wrap="clip")
+        cols = Color.progress_incomplete(
+            Columns(
+                [
+                    (1, Text("")),
+                    self.label,
+                    (1, Text("")),
+                    (1, self.spinner),
+                    (1, Text("")),
+                ]
+            )
+        )
         super().__init__(cols)
 
     def update(self, task):
@@ -107,34 +102,29 @@ def exc_message(exc):
 
 
 class RefreshView(BaseView):
-
     checking_title = _("Checking for installer update...")
     checking_excerpt = _(
         "Contacting the snap store to check if a new version of the "
         "installer is available."
-        )
+    )
 
     check_failed_title = _("Contacting the snap store failed")
-    check_failed_excerpt = _(
-        "Contacting the snap store failed:"
-        )
+    check_failed_excerpt = _("Contacting the snap store failed:")
 
     available_title = _("Installer update available")
     available_excerpt = _(
         "Version {new} of the installer is now available ({current} is "
         "currently running)."
-        )
+    )
 
     progress_title = _("Downloading update...")
     progress_excerpt = _(
         "Please wait while the updated installer is being downloaded. The "
         "installer will restart automatically when the download is complete."
-        )
+    )
 
     update_failed_title = _("Update failed")
-    update_failed_excerpt = _(
-        "Downloading and applying the update:"
-        )
+    update_failed_excerpt = _("Downloading and applying the update:")
 
     def __init__(self, controller):
         self.controller = controller
@@ -156,7 +146,7 @@ class RefreshView(BaseView):
         buttons = [
             done_btn(_("Continue without updating"), on_press=self.done),
             other_btn(_("Back"), on_press=self.cancel),
-            ]
+        ]
 
         self.title = self.checking_title
         self.controller.ui.set_header(self.title)
@@ -179,11 +169,13 @@ class RefreshView(BaseView):
 
         rows = [Text(exc_message(exc))]
 
-        buttons = button_pile([
-            done_btn(_("Try again"), on_press=self.try_check_again),
-            done_btn(_("Continue without updating"), on_press=self.done),
-            other_btn(_("Back"), on_press=self.cancel),
-            ])
+        buttons = button_pile(
+            [
+                done_btn(_("Try again"), on_press=self.try_check_again),
+                done_btn(_("Continue without updating"), on_press=self.done),
+                other_btn(_("Back"), on_press=self.cancel),
+            ]
+        )
         buttons.base_widget.focus_position = 1
 
         self.title = self.check_failed_title
@@ -199,37 +191,41 @@ class RefreshView(BaseView):
         rows = [
             Text(_("You can read the release notes for each version at:")),
             Text(""),
-            Text(
-                "https://github.com/canonical/subiquity/releases",
-                align='center'),
+            Text("https://github.com/canonical/subiquity/releases", align="center"),
             Text(""),
             Text(
-                _("If you choose to update, the update will be downloaded "
-                  "and the installation will continue from here."),
+                _(
+                    "If you choose to update, the update will be downloaded "
+                    "and the installation will continue from here."
                 ),
-            ]
+            ),
+        ]
 
-        buttons = button_pile([
-            done_btn(_("Update to the new installer"), on_press=self.update),
-            done_btn(_("Continue without updating"),
-                     on_press=self.skip_update),
-            other_btn(_("Back"), on_press=self.cancel),
-            ])
+        buttons = button_pile(
+            [
+                done_btn(_("Update to the new installer"), on_press=self.update),
+                done_btn(_("Continue without updating"), on_press=self.skip_update),
+                other_btn(_("Back"), on_press=self.cancel),
+            ]
+        )
         buttons.base_widget.focus_position = 1
 
         excerpt = _(self.available_excerpt).format(
             current=self.controller.status.current_snap_version,
-            new=self.controller.status.new_snap_version)
+            new=self.controller.status.new_snap_version,
+        )
 
         self.title = self.available_title
         self.controller.ui.set_header(self.available_title)
         self._w = screen(rows, buttons, excerpt=excerpt)
-        if 'update' in self.controller.answers:
-            if self.controller.answers['update']:
+        if "update" in self.controller.answers:
+            if self.controller.answers["update"]:
                 self.update()
             else:
+
                 async def skip():
                     self.skip_update()
+
                 self._skip_task = asyncio.create_task(skip())
 
     def update(self, sender=None):
@@ -276,12 +272,13 @@ class RefreshView(BaseView):
 
         rows = [Text(msg)]
 
-        buttons = button_pile([
-            done_btn(_("Try again"), on_press=self.try_update_again),
-            done_btn(_("Continue without updating"),
-                     on_press=self.skip_update),
-            other_btn(_("Back"), on_press=self.cancel),
-            ])
+        buttons = button_pile(
+            [
+                done_btn(_("Try again"), on_press=self.try_update_again),
+                done_btn(_("Continue without updating"), on_press=self.skip_update),
+                other_btn(_("Back"), on_press=self.cancel),
+            ]
+        )
         buttons.base_widget.focus_position = 1
 
         self.title = self.update_failed_title

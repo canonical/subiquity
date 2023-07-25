@@ -14,16 +14,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-
-import attr
 import os
 from typing import Set
+
+import attr
 
 from subiquity.common.resources import resource_path
 from subiquity.common.types import IdentityData
 from subiquity.server.controllers.identity import IdentityController
 
-log = logging.getLogger('system_setup.server.controllers.identity')
+log = logging.getLogger("system_setup.server.controllers.identity")
 
 
 def _existing_user_names(path: str) -> Set[str]:
@@ -39,17 +39,16 @@ def _existing_user_names(path: str) -> Set[str]:
 
 
 class WSLIdentityController(IdentityController):
-
     autoinstall_schema = {
-        'type': 'object',
-        'properties': {
-            'realname': {'type': 'string'},
-            'username': {'type': 'string'},
-            'password': {'type': 'string'},
-            },
-        'required': ['username', 'password'],
-        'additionalProperties': False,
-        }
+        "type": "object",
+        "properties": {
+            "realname": {"type": "string"},
+            "username": {"type": "string"},
+            "password": {"type": "string"},
+        },
+        "required": ["username", "password"],
+        "additionalProperties": False,
+    }
 
     def __init__(self, app):
         super().__init__(app)
@@ -58,21 +57,21 @@ class WSLIdentityController(IdentityController):
             return
 
         # Only applies when interactive and prefill Info is set.
-        idata = app.prefillInfo.get('WSLIdentity', None)
+        idata = app.prefillInfo.get("WSLIdentity", None)
         if idata is None:
             return
 
         # Cannot call load_autoinstall_data because password is
         # required in that context, but not here.
         identity_data = IdentityData(
-            realname=idata.get('realname', ''),
-            username=idata.get('username', ''),
-            hostname='',
-            crypted_password='',
-            )
+            realname=idata.get("realname", ""),
+            username=idata.get("username", ""),
+            hostname="",
+            crypted_password="",
+        )
 
         self.model.add_user(identity_data)
-        log.debug('Prefilled Identity: {}'.format(self.model.user))
+        log.debug("Prefilled Identity: {}".format(self.model.user))
 
     def _passwd_path(self) -> str:
         if self.app.opts.dry_run:
@@ -83,10 +82,10 @@ class WSLIdentityController(IdentityController):
     def load_autoinstall_data(self, data):
         if data is not None:
             identity_data = IdentityData(
-                realname=data.get('realname', ''),
-                username=data['username'],
-                crypted_password=data['password'],
-                )
+                realname=data.get("realname", ""),
+                username=data["username"],
+                crypted_password=data["password"],
+            )
             self.model.add_user(identity_data)
 
     def make_autoinstall(self):

@@ -18,22 +18,20 @@ import logging
 from subiquity.common.apidef import API
 from subiquity.server.controller import SubiquityController
 
-
-log = logging.getLogger('subiquity.server.controllers.updates')
+log = logging.getLogger("subiquity.server.controllers.updates")
 
 
 class UpdatesController(SubiquityController):
-
     endpoint = API.updates
 
-    possible = ['security', 'all']
+    possible = ["security", "all"]
 
     autoinstall_key = model_name = "updates"
     autoinstall_schema = {
-        'type': 'string',
-        'enum': possible,
+        "type": "string",
+        "enum": possible,
     }
-    autoinstall_default = 'security'
+    autoinstall_default = "security"
 
     def load_autoinstall_data(self, data):
         self.deserialize(data)

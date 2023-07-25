@@ -15,43 +15,38 @@
 
 import logging
 
-from urwid import (
-    Text,
-    )
+from urwid import Text
 
-from subiquitycore.ui.buttons import (
-    other_btn,
-    )
-from subiquitycore.ui.spinner import (
-    Spinner,
-    )
-from subiquitycore.ui.utils import (
-    button_pile,
-    screen,
-    )
+from subiquitycore.ui.buttons import other_btn
+from subiquitycore.ui.spinner import Spinner
+from subiquitycore.ui.utils import button_pile, screen
 from subiquitycore.view import BaseView
-
 
 log = logging.getLogger("subiquity.ui.views.filesystem.probing")
 
 
 class SlowProbing(BaseView):
-
     title = _("Waiting for storage probing to complete")
 
     def __init__(self, controller):
         self.controller = controller
         self.spinner = Spinner(style="dots")
         self.spinner.start()
-        super().__init__(screen(
-            [
-                Text(_("The installer is probing for block devices to install "
-                       "to. Please wait until it completes.")),
-                Text(""),
-                self.spinner,
-            ],
-            [other_btn(_("Back"), on_press=self.cancel)]
-            ))
+        super().__init__(
+            screen(
+                [
+                    Text(
+                        _(
+                            "The installer is probing for block devices to install "
+                            "to. Please wait until it completes."
+                        )
+                    ),
+                    Text(""),
+                    self.spinner,
+                ],
+                [other_btn(_("Back"), on_press=self.cancel)],
+            )
+        )
 
     def cancel(self, result=None):
         self.controller.cancel()
@@ -60,23 +55,28 @@ class SlowProbing(BaseView):
 fail_text = _(
     "Unfortunately probing for devices to install to failed. Please report a "
     "bug on Launchpad, and if possible include the contents of the "
-    "/var/log/installer directory.")
+    "/var/log/installer directory."
+)
 
 
 class ProbingFailed(BaseView):
-
     title = _("Probing for devices to install to failed")
 
     def __init__(self, controller, error_ref):
         self.controller = controller
         self.error_ref = error_ref
-        super().__init__(screen([
-            Text(_(fail_text)),
-            Text(""),
-            button_pile(
-                [other_btn(_("Show Error Report"), on_press=self.show_error)]),
-            ],
-            [other_btn(_("Back"), on_press=self.cancel)]))
+        super().__init__(
+            screen(
+                [
+                    Text(_(fail_text)),
+                    Text(""),
+                    button_pile(
+                        [other_btn(_("Show Error Report"), on_press=self.show_error)]
+                    ),
+                ],
+                [other_btn(_("Back"), on_press=self.cancel)],
+            )
+        )
 
     def cancel(self, result=None):
         self.controller.cancel()

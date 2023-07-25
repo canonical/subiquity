@@ -13,19 +13,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from abc import ABC, abstractmethod
-import aiohttp
-import logging
 import enum
+import logging
+from abc import ABC, abstractmethod
 from xml.etree import ElementTree
 
-from subiquitycore.async_helpers import (
-    SingleInstanceTask,
-)
+import aiohttp
 
 from subiquity.server.types import InstallerChannels
+from subiquitycore.async_helpers import SingleInstanceTask
 
-log = logging.getLogger('subiquity.server.geoip')
+log = logging.getLogger("subiquity.server.geoip")
 
 
 class CheckState(enum.IntEnum):
@@ -36,17 +34,19 @@ class CheckState(enum.IntEnum):
 
 
 class GeoIPStrategy(ABC):
-    """ Base class for strategies (e.g. HTTP or dry-run) to retrieve the GeoIP
-    information. """
+    """Base class for strategies (e.g. HTTP or dry-run) to retrieve the GeoIP
+    information."""
+
     @abstractmethod
     async def get_response(self) -> str:
-        """ Return the GeoIP information as an XML document. """
+        """Return the GeoIP information as an XML document."""
 
 
 class DryRunGeoIPStrategy(GeoIPStrategy):
-    """ Dry-run implementation to retrieve GeoIP information. """
+    """Dry-run implementation to retrieve GeoIP information."""
+
     async def get_response(self) -> str:
-        """ Return the GeoIP information as an XML document. """
+        """Return the GeoIP information as an XML document."""
         return """\
 <?xml version="1.0" encoding="UTF-8"?>
   <Response>
@@ -68,8 +68,9 @@ class DryRunGeoIPStrategy(GeoIPStrategy):
 
 
 class HTTPGeoIPStrategy(GeoIPStrategy):
-    """ HTTP implementation to retrieve GeoIP information. We use the
-    geoip.ubuntu.com service. """
+    """HTTP implementation to retrieve GeoIP information. We use the
+    geoip.ubuntu.com service."""
+
     async def get_response(self) -> str:
         url = "https://geoip.ubuntu.com/lookup"
         async with aiohttp.ClientSession() as session:
@@ -86,10 +87,10 @@ class GeoIP:
         self.tz = None
         self.check_state = CheckState.NOT_STARTED
         self.lookup_task = SingleInstanceTask(self.lookup)
-        self.app.hub.subscribe(InstallerChannels.NETWORK_UP,
-                               self.maybe_start_check)
-        self.app.hub.subscribe(InstallerChannels.NETWORK_PROXY_SET,
-                               self.maybe_start_check)
+        self.app.hub.subscribe(InstallerChannels.NETWORK_UP, self.maybe_start_check)
+        self.app.hub.subscribe(
+            InstallerChannels.NETWORK_PROXY_SET, self.maybe_start_check
+        )
         self.strategy = strategy
 
     def maybe_start_check(self):

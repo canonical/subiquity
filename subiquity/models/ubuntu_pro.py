@@ -26,8 +26,9 @@ class UbuntuProModel:
     the provided token is correct ; nor to retrieve information about the
     subscription.
     """
+
     def __init__(self):
-        """ Initialize the model. """
+        """Initialize the model."""
         self.token: str = ""
 
     def make_cloudconfig(self) -> dict:

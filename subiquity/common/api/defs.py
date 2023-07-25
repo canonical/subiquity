@@ -27,8 +27,10 @@ class InvalidQueryArgs(InvalidAPIDefinition):
         self.param = param
 
     def __str__(self):
-        return (f"{self.callable.__qualname__} does not serialize query "
-                f"arguments but has non-str parameter '{self.param}'")
+        return (
+            f"{self.callable.__qualname__} does not serialize query "
+            f"arguments but has non-str parameter '{self.param}'"
+        )
 
 
 class MultiplePathParameters(InvalidAPIDefinition):
@@ -38,45 +40,50 @@ class MultiplePathParameters(InvalidAPIDefinition):
         self.param2 = param2
 
     def __str__(self):
-        return (f"{self.cls.__name__} has multiple path parameters "
-                f"{self.param1!r} and {self.param2!r}")
+        return (
+            f"{self.cls.__name__} has multiple path parameters "
+            f"{self.param1!r} and {self.param2!r}"
+        )
 
 
-def api(cls, prefix_names=(), prefix_path=(), path_params=(),
-        serialize_query_args=True):
-    if hasattr(cls, 'serialize_query_args'):
+def api(
+    cls, prefix_names=(), prefix_path=(), path_params=(), serialize_query_args=True
+):
+    if hasattr(cls, "serialize_query_args"):
         serialize_query_args = cls.serialize_query_args
     else:
         cls.serialize_query_args = serialize_query_args
-    cls.fullpath = '/' + '/'.join(prefix_path)
+    cls.fullpath = "/" + "/".join(prefix_path)
     cls.fullname = prefix_names
     seen_path_param = None
     for k, v in cls.__dict__.items():
         if isinstance(v, type):
             v.__shortname__ = k
-            v.__name__ = cls.__name__ + '.' + k
+            v.__name__ = cls.__name__ + "." + k
             path_part = k
             path_param = ()
-            if getattr(v, '__parameter__', False):
+            if getattr(v, "__parameter__", False):
                 if seen_path_param:
                     raise MultiplePathParameters(cls, seen_path_param, k)
                 seen_path_param = k
-                path_part = '{' + path_part + '}'
+                path_part = "{" + path_part + "}"
                 path_param = (k,)
             api(
                 v,
                 prefix_names + (k,),
                 prefix_path + (path_part,),
                 path_params + path_param,
-                serialize_query_args)
+                serialize_query_args,
+            )
         if callable(v):
-            v.__qualname__ = cls.__name__ + '.' + k
+            v.__qualname__ = cls.__name__ + "." + k
             if not cls.serialize_query_args:
                 params = inspect.signature(v).parameters
                 for param_name, param in params.items():
-                    if param.annotation is not str and \
-                       getattr(param.annotation, '__origin__', None) is not \
-                       Payload:
+                    if (
+                        param.annotation is not str
+                        and getattr(param.annotation, "__origin__", None) is not Payload
+                    ):
                         raise InvalidQueryArgs(v, param)
             v.__path_params__ = path_params
     return cls
@@ -96,8 +103,12 @@ def path_parameter(cls):
 
 def simple_endpoint(typ):
     class endpoint:
-        def GET() -> typ: ...
-        def POST(data: Payload[typ]): ...
+        def GET() -> typ:
+            ...
+
+        def POST(data: Payload[typ]):
+            ...
+
     return endpoint
 
 

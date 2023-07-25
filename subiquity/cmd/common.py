@@ -28,11 +28,13 @@ def setup_environment():
         locale.setlocale(locale.LC_CTYPE, "C.UTF-8")
 
     # Prefer utils from $SUBIQUITY_ROOT, over system-wide
-    root = os.environ.get('SUBIQUITY_ROOT')
+    root = os.environ.get("SUBIQUITY_ROOT")
     if root:
-        os.environ['PATH'] = os.pathsep.join([
-            os.path.join(root, 'bin'),
-            os.path.join(root, 'usr', 'bin'),
-            os.environ['PATH'],
-        ])
-        os.environ["APPORT_DATA_DIR"] = os.path.join(root, 'share/apport')
+        os.environ["PATH"] = os.pathsep.join(
+            [
+                os.path.join(root, "bin"),
+                os.path.join(root, "usr", "bin"),
+                os.environ["PATH"],
+            ]
+        )
+        os.environ["APPORT_DATA_DIR"] = os.path.join(root, "share/apport")

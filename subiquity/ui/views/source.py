@@ -16,25 +16,17 @@
 import logging
 from typing import List
 
-from urwid import (
-    connect_signal,
-    Text,
-)
+from urwid import Text, connect_signal
 
-from subiquitycore.view import BaseView
 from subiquitycore.ui.container import ListBox
-from subiquitycore.ui.form import (
-    BooleanField,
-    Form,
-    RadioButtonField,
-)
+from subiquitycore.ui.form import BooleanField, Form, RadioButtonField
 from subiquitycore.ui.utils import screen
+from subiquitycore.view import BaseView
 
-log = logging.getLogger('subiquity.ui.views.source')
+log = logging.getLogger("subiquity.ui.views.source")
 
 
 class SourceView(BaseView):
-
     title = _("Choose type of install")
 
     def __init__(self, controller, sources, current_id, search_drivers: bool):
@@ -43,8 +35,8 @@ class SourceView(BaseView):
         group: List[RadioButtonField] = []
 
         ns = {
-            'cancel_label': _("Back"),
-            }
+            "cancel_label": _("Back"),
+        }
         initial = {}
 
         for default in True, False:
@@ -52,24 +44,32 @@ class SourceView(BaseView):
                 if source.default != default:
                     continue
                 ns[source.id] = RadioButtonField(
-                    group, source.name, '\n' + source.description)
+                    group, source.name, "\n" + source.description
+                )
                 initial[source.id] = source.id == current_id
 
         ns["search_drivers"] = BooleanField(
-            _("Search for third-party drivers"), "\n" +
-            _("This software is subject to license terms included with its "
-              "documentation. Some is proprietary.") + " " +
-            _("Third-party drivers should not be installed on systems that "
-              "will be used for FIPS or the real-time kernel."))
+            _("Search for third-party drivers"),
+            "\n"
+            + _(
+                "This software is subject to license terms included with its "
+                "documentation. Some is proprietary."
+            )
+            + " "
+            + _(
+                "Third-party drivers should not be installed on systems that "
+                "will be used for FIPS or the real-time kernel."
+            ),
+        )
         initial["search_drivers"] = search_drivers
 
-        SourceForm = type(Form)('SourceForm', (Form,), ns)
-        log.debug('%r %r', ns, current_id)
+        SourceForm = type(Form)("SourceForm", (Form,), ns)
+        log.debug("%r %r", ns, current_id)
 
         self.form = SourceForm(initial=initial)
 
-        connect_signal(self.form, 'submit', self.done)
-        connect_signal(self.form, 'cancel', self.cancel)
+        connect_signal(self.form, "submit", self.done)
+        connect_signal(self.form, "cancel", self.cancel)
 
         excerpt = _("Choose the base for the installation.")
 
@@ -81,10 +81,9 @@ class SourceView(BaseView):
 
         super().__init__(
             screen(
-                ListBox(rows),
-                self.form.buttons,
-                excerpt=excerpt,
-                focus_buttons=True))
+                ListBox(rows), self.form.buttons, excerpt=excerpt, focus_buttons=True
+            )
+        )
 
     def done(self, result):
         log.debug("User input: %s", result.as_data())

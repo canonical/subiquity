@@ -14,30 +14,28 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-from contextlib import contextmanager
 import logging
 import os
+from contextlib import contextmanager
 from socket import gethostname
 from subprocess import CalledProcessError
-from subiquitycore.utils import arun_command, run_command
-from subiquity.server.curtin import run_curtin_command
-from subiquity.common.types import (
-    AdConnectionInfo,
-    AdJoinResult,
-)
 
-log = logging.getLogger('subiquity.server.ad_joiner')
+from subiquity.common.types import AdConnectionInfo, AdJoinResult
+from subiquity.server.curtin import run_curtin_command
+from subiquitycore.utils import arun_command, run_command
+
+log = logging.getLogger("subiquity.server.ad_joiner")
 
 
 @contextmanager
 def joining_context(hostname: str, root_dir: str):
-    """ Temporarily adjusts the host name to [hostname] and bind-mounts
-        interesting system directories in preparation for running realm
-        in target's [root_dir], undoing it all on exit. """
+    """Temporarily adjusts the host name to [hostname] and bind-mounts
+    interesting system directories in preparation for running realm
+    in target's [root_dir], undoing it all on exit."""
     hostname_current = gethostname()
     binds = ("/proc", "/sys", "/dev", "/run")
     try:
-        hostname_process = run_command(['hostname', hostname])
+        hostname_process = run_command(["hostname", hostname])
         for bind in binds:
             bound_dir = os.path.join(root_dir, bind[1:])
             if bound_dir != bind:
@@ -45,7 +43,7 @@ def joining_context(hostname: str, root_dir: str):
         yield hostname_process
     finally:
         # Restoring the live session hostname.
-        hostname_process = run_command(['hostname', hostname_current])
+        hostname_process = run_command(["hostname", hostname_current])
         if hostname_process.returncode:
             log.info("Failed to restore live session hostname")
         for bind in reversed(binds):
@@ -54,17 +52,18 @@ def joining_context(hostname: str, root_dir: str):
                 run_command(["umount", "-f", bound_dir])
 
 
-class AdJoinStrategy():
+class AdJoinStrategy:
     realm = "/usr/sbin/realm"
     pam = "/usr/sbin/pam-auth-update"
 
     def __init__(self, app):
         self.app = app
 
-    async def do_join(self, info: AdConnectionInfo, hostname: str, context) \
-            -> AdJoinResult:
-        """ This method changes the hostname and perform a real AD join, thus
-            should only run in a live session. """
+    async def do_join(
+        self, info: AdConnectionInfo, hostname: str, context
+    ) -> AdJoinResult:
+        """This method changes the hostname and perform a real AD join, thus
+        should only run in a live session."""
         root_dir = self.app.base_model.target
         # Set hostname for AD to determine FQDN (no FQDN option in realm join,
         # only adcli, which only understands the live system, but not chroot)
@@ -73,11 +72,21 @@ class AdJoinStrategy():
                 log.info("Failed to set live session hostname for adcli")
                 return AdJoinResult.JOIN_ERROR
 
-            cp = await arun_command([self.realm, "join", "--install", root_dir,
-                                     "--user", info.admin_name,
-                                     "--computer-name", hostname,
-                                     "--unattended", info.domain_name],
-                                    input=info.password)
+            cp = await arun_command(
+                [
+                    self.realm,
+                    "join",
+                    "--install",
+                    root_dir,
+                    "--user",
+                    info.admin_name,
+                    "--computer-name",
+                    hostname,
+                    "--unattended",
+                    info.domain_name,
+                ],
+                input=info.password,
+            )
 
             if cp.returncode:
                 # Try again without the computer name. Lab tests shown more
@@ -88,10 +97,19 @@ class AdJoinStrategy():
                 log.debug(cp.stderr)
                 log.debug(cp.stdout)
                 log.debug("Trying again without overriding the computer name:")
-                cp = await arun_command([self.realm, "join", "--install",
-                                         root_dir, "--user", info.admin_name,
-                                         "--unattended", info.domain_name],
-                                        input=info.password)
+                cp = await arun_command(
+                    [
+                        self.realm,
+                        "join",
+                        "--install",
+                        root_dir,
+                        "--user",
+                        info.admin_name,
+                        "--unattended",
+                        info.domain_name,
+                    ],
+                    input=info.password,
+                )
 
                 if cp.returncode:
                     log.debug("Joining operation failed:")
@@ -102,11 +120,19 @@ class AdJoinStrategy():
             # Enable pam_mkhomedir
             try:
                 # The function raises if the process fail.
-                await run_curtin_command(self.app, context,
-                                         "in-target", "-t", root_dir,
-                                         "--", self.pam, "--package",
-                                         "--enable", "mkhomedir",
-                                         private_mounts=False)
+                await run_curtin_command(
+                    self.app,
+                    context,
+                    "in-target",
+                    "-t",
+                    root_dir,
+                    "--",
+                    self.pam,
+                    "--package",
+                    "--enable",
+                    "mkhomedir",
+                    private_mounts=False,
+                )
 
                 return AdJoinResult.OK
             except CalledProcessError:
@@ -120,24 +146,25 @@ class AdJoinStrategy():
 
 
 class StubStrategy(AdJoinStrategy):
-    async def do_join(self, info: AdConnectionInfo, hostname: str, context) \
-            -> AdJoinResult:
-        """ Enables testing without real join. The result depends on the
-            domain name initial character, such that if it is:
-            - p or P: returns PAM_ERROR.
-            - j or J: returns JOIN_ERROR.
-            - returns OK otherwise. """
+    async def do_join(
+        self, info: AdConnectionInfo, hostname: str, context
+    ) -> AdJoinResult:
+        """Enables testing without real join. The result depends on the
+        domain name initial character, such that if it is:
+        - p or P: returns PAM_ERROR.
+        - j or J: returns JOIN_ERROR.
+        - returns OK otherwise."""
         initial = info.domain_name[0]
-        if initial in ('j', 'J'):
+        if initial in ("j", "J"):
             return AdJoinResult.JOIN_ERROR
 
-        if initial in ('p', 'P'):
+        if initial in ("p", "P"):
             return AdJoinResult.PAM_ERROR
 
         return AdJoinResult.OK
 
 
-class AdJoiner():
+class AdJoiner:
     def __init__(self, app):
         self._result = AdJoinResult.UNKNOWN
         self._completion_event = asyncio.Event()
@@ -146,8 +173,9 @@ class AdJoiner():
         else:
             self.strategy = AdJoinStrategy(app)
 
-    async def join_domain(self, info: AdConnectionInfo, hostname: str,
-                          context) -> AdJoinResult:
+    async def join_domain(
+        self, info: AdConnectionInfo, hostname: str, context
+    ) -> AdJoinResult:
         if hostname:
             self._result = await self.strategy.do_join(info, hostname, context)
         else:

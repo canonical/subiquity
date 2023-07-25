@@ -17,57 +17,58 @@ import subprocess
 import unittest
 from unittest import mock
 
-from subiquity.server.kernel import (
-    flavor_to_pkgname,
-    list_installed_kernels,
-)
+from subiquity.server.kernel import flavor_to_pkgname, list_installed_kernels
 
 
 class TestFlavorToPkgname(unittest.TestCase):
     def test_flavor_generic(self):
-        self.assertEqual('linux-generic',
-                         flavor_to_pkgname('generic', dry_run=True))
+        self.assertEqual("linux-generic", flavor_to_pkgname("generic", dry_run=True))
 
     def test_flavor_oem(self):
-        self.assertEqual('linux-oem-20.04',
-                         flavor_to_pkgname('oem', dry_run=True))
+        self.assertEqual("linux-oem-20.04", flavor_to_pkgname("oem", dry_run=True))
 
     def test_flavor_hwe(self):
-        self.assertEqual('linux-generic-hwe-20.04',
-                         flavor_to_pkgname('hwe', dry_run=True))
+        self.assertEqual(
+            "linux-generic-hwe-20.04", flavor_to_pkgname("hwe", dry_run=True)
+        )
 
-        self.assertEqual('linux-generic-hwe-20.04',
-                         flavor_to_pkgname('generic-hwe', dry_run=True))
+        self.assertEqual(
+            "linux-generic-hwe-20.04", flavor_to_pkgname("generic-hwe", dry_run=True)
+        )
 
 
 class TestListInstalledKernels(unittest.IsolatedAsyncioTestCase):
     async def test_one_kernel(self):
         rv = subprocess.CompletedProcess([], 0)
-        rv.stdout = 'linux-image-6.1.0-16-generic'
-        with mock.patch('subiquity.server.kernel.arun_command',
-                        return_value=rv) as mock_arun:
-            ret = await list_installed_kernels('/')
-            self.assertEqual(['linux-image-6.1.0-16-generic'], ret)
+        rv.stdout = "linux-image-6.1.0-16-generic"
+        with mock.patch(
+            "subiquity.server.kernel.arun_command", return_value=rv
+        ) as mock_arun:
+            ret = await list_installed_kernels("/")
+            self.assertEqual(["linux-image-6.1.0-16-generic"], ret)
         mock_arun.assert_called_once()
 
     async def test_two_kernels(self):
         rv = subprocess.CompletedProcess([], 0)
-        rv.stdout = '''\
+        rv.stdout = """\
 linux-image-6.1.0-16-generic
 linux-image-6.2.0-24-generic
-'''
-        with mock.patch('subiquity.server.kernel.arun_command',
-                        return_value=rv) as mock_arun:
-            ret = await list_installed_kernels('/')
-            self.assertEqual(['linux-image-6.1.0-16-generic',
-                              'linux-image-6.2.0-24-generic'], ret)
+"""
+        with mock.patch(
+            "subiquity.server.kernel.arun_command", return_value=rv
+        ) as mock_arun:
+            ret = await list_installed_kernels("/")
+            self.assertEqual(
+                ["linux-image-6.1.0-16-generic", "linux-image-6.2.0-24-generic"], ret
+            )
         mock_arun.assert_called_once()
 
     async def test_no_kernel(self):
         rv = subprocess.CompletedProcess([], 0)
-        rv.stdout = '\n'
-        with mock.patch('subiquity.server.kernel.arun_command',
-                        return_value=rv) as mock_arun:
-            ret = await list_installed_kernels('/')
+        rv.stdout = "\n"
+        with mock.patch(
+            "subiquity.server.kernel.arun_command", return_value=rv
+        ) as mock_arun:
+            ret = await list_installed_kernels("/")
             self.assertEqual([], ret)
         mock_arun.assert_called_once()

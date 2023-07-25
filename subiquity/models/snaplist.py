@@ -16,11 +16,7 @@
 import datetime
 import logging
 
-from subiquity.common.types import (
-    ChannelSnapInfo,
-    SnapInfo,
-    )
-
+from subiquity.common.types import ChannelSnapInfo, SnapInfo
 
 log = logging.getLogger("subiquity.models.snaplist")
 
@@ -44,47 +40,49 @@ class SnapListModel:
         return s
 
     def load_find_data(self, data):
-        for info in data['result']:
-            self.update(self._snap_for_name(info['name']), info)
+        for info in data["result"]:
+            self.update(self._snap_for_name(info["name"]), info)
 
     def add_partial_snap(self, name):
         self._snaps_for_name(name)
 
     def update(self, snap, data):
-        snap.summary = data['summary']
-        snap.publisher = data['developer']
-        snap.verified = data['publisher']['validation'] == "verified"
-        snap.starred = data['publisher']['validation'] == "starred"
-        snap.description = data['description']
-        snap.confinement = data['confinement']
-        snap.license = data['license']
+        snap.summary = data["summary"]
+        snap.publisher = data["developer"]
+        snap.verified = data["publisher"]["validation"] == "verified"
+        snap.starred = data["publisher"]["validation"] == "starred"
+        snap.description = data["description"]
+        snap.confinement = data["confinement"]
+        snap.license = data["license"]
         self.complete_snaps.add(snap)
 
     def load_info_data(self, data):
-        info = data['result'][0]
-        snap = self._snaps_by_name.get(info['name'])
+        info = data["result"][0]
+        snap = self._snaps_by_name.get(info["name"])
         if snap is None:
             return
         if snap not in self.complete_snaps:
             self.update_snap(snap, info)
-        channel_map = info['channels']
-        for track in info['tracks']:
+        channel_map = info["channels"]
+        for track in info["tracks"]:
             for risk in risks:
-                channel_name = '{}/{}'.format(track, risk)
+                channel_name = "{}/{}".format(track, risk)
                 if channel_name in channel_map:
                     channel_data = channel_map[channel_name]
                     if track == "latest":
                         channel_name = risk
-                    snap.channels.append(ChannelSnapInfo(
-                        channel_name=channel_name,
-                        revision=channel_data['revision'],
-                        confinement=channel_data['confinement'],
-                        version=channel_data['version'],
-                        size=channel_data['size'],
-                        released_at=datetime.datetime.strptime(
-                            channel_data['released-at'],
-                            '%Y-%m-%dT%H:%M:%S.%fZ'),
-                    ))
+                    snap.channels.append(
+                        ChannelSnapInfo(
+                            channel_name=channel_name,
+                            revision=channel_data["revision"],
+                            confinement=channel_data["confinement"],
+                            version=channel_data["version"],
+                            size=channel_data["size"],
+                            released_at=datetime.datetime.strptime(
+                                channel_data["released-at"], "%Y-%m-%dT%H:%M:%S.%fZ"
+                            ),
+                        )
+                    )
         return snap
 
     def get_snap_list(self):
@@ -100,9 +98,9 @@ class SnapListModel:
             return {}
         cmds = []
         for selection in self.selections:
-            cmd = ['snap', 'install', '--channel=' + selection.channel]
+            cmd = ["snap", "install", "--channel=" + selection.channel]
             if selection.classic:
-                cmd.append('--classic')
+                cmd.append("--classic")
             cmd.append(selection.name)
-            cmds.append(' '.join(cmd))
-        return {'snap': {'commands': cmds}}
+            cmds.append(" ".join(cmd))
+        return {"snap": {"commands": cmds}}

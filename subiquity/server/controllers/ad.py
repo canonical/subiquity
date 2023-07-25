@@ -17,23 +17,23 @@ import logging
 import os
 import re
 from typing import List, Optional, Set
-from subiquitycore.utils import arun_command
-from subiquitycore.async_helpers import run_bg_task
 
 from subiquity.common.apidef import API
 from subiquity.common.types import (
-    AdConnectionInfo,
     AdAdminNameValidation,
+    AdConnectionInfo,
     AdDomainNameValidation,
     AdJoinResult,
-    AdPasswordValidation
+    AdPasswordValidation,
 )
 from subiquity.server.ad_joiner import AdJoiner
 from subiquity.server.controller import SubiquityController
+from subiquitycore.async_helpers import run_bg_task
+from subiquitycore.utils import arun_command
 
-log = logging.getLogger('subiquity.server.controllers.ad')
+log = logging.getLogger("subiquity.server.controllers.ad")
 
-DC_RE = r'^[a-zA-Z0-9.-]+$'
+DC_RE = r"^[a-zA-Z0-9.-]+$"
 # Validation has changed since Ubiquity. See the following links on why:
 # https://bugs.launchpad.net/ubuntu-mate/+bug/1985971
 # https://github.com/canonical/subiquity/pull/1553#discussion_r1103063195
@@ -58,26 +58,27 @@ class DcPingStrategy:
         return AdDomainNameValidation.OK
 
     async def discover(self) -> str:
-        """ Attempts to discover a domain through the network.
-            Returns the domain or an empty string on error. """
+        """Attempts to discover a domain through the network.
+        Returns the domain or an empty string on error."""
         cp = await arun_command([self.cmd, self.arg], env={})
         discovered = ""
         if cp.returncode == 0:
             # A typical output looks like:
             # 'creative.com\n  type: kerberos\n  realm-name: CREATIVE.COM\n...'
-            discovered = cp.stdout.split('\n')[0].strip()
+            discovered = cp.stdout.split("\n")[0].strip()
 
         return discovered
 
 
 class StubDcPingStrategy(DcPingStrategy):
-    """ For testing purpose. This class doesn't talk to the network.
-        Instead its response follows the following rule:
+    """For testing purpose. This class doesn't talk to the network.
+    Instead its response follows the following rule:
 
-        - addresses starting with "r" return REALM_NOT_FOUND;
-        - addresses starting with any other letter return OK. """
+    - addresses starting with "r" return REALM_NOT_FOUND;
+    - addresses starting with any other letter return OK."""
+
     async def ping(self, address: str) -> AdDomainNameValidation:
-        if address[0] == 'r':
+        if address[0] == "r":
             return AdDomainNameValidation.REALM_NOT_FOUND
 
         return AdDomainNameValidation.OK
@@ -90,38 +91,40 @@ class StubDcPingStrategy(DcPingStrategy):
 
 
 class AdController(SubiquityController):
-    """ Implements the server part of the Active Directory feature. """
+    """Implements the server part of the Active Directory feature."""
+
     endpoint = API.active_directory
     # No auto install key and schema for now due password handling uncertainty.
     autoinstall_key = "active-directory"
     model_name = "active_directory"
     autoinstall_schema = {
-        'type': 'object',
-        'properties': {
-            'admin-name': {
-                'type': 'string',
+        "type": "object",
+        "properties": {
+            "admin-name": {
+                "type": "string",
             },
-            'domain-name': {
-                'type': 'string',
+            "domain-name": {
+                "type": "string",
             },
         },
-        'additionalProperties': False,
+        "additionalProperties": False,
     }
-    autoinstall_default = {"admin-name": '', 'domain-name': ''}
+    autoinstall_default = {"admin-name": "", "domain-name": ""}
 
     def make_autoinstall(self):
         info = self.model.conn_info
         if info is None:
             return None
 
-        return {'admin-name': info.admin_name, 'domain-name': info.domain_name}
+        return {"admin-name": info.admin_name, "domain-name": info.domain_name}
 
     def load_autoinstall_data(self, data):
         if data is None:
             return
-        if 'admin-name' in data and 'domain-name' in data:
-            info = AdConnectionInfo(admin_name=data['admin-name'],
-                                    domain_name=data['domain-name'])
+        if "admin-name" in data and "domain-name" in data:
+            info = AdConnectionInfo(
+                admin_name=data["admin-name"], domain_name=data["domain-name"]
+            )
             self.model.set(info)
             self.model.do_join = False
 
@@ -157,56 +160,56 @@ class AdController(SubiquityController):
         return self.model.conn_info
 
     async def POST(self, data: AdConnectionInfo) -> None:
-        """ Configures this controller with the supplied info.
-            Clients are required to validate the info before POST'ing """
+        """Configures this controller with the supplied info.
+        Clients are required to validate the info before POST'ing"""
         self.model.set(data)
         await self.configured()
 
-    async def check_admin_name_POST(self, admin_name: str) \
-            -> AdAdminNameValidation:
+    async def check_admin_name_POST(self, admin_name: str) -> AdAdminNameValidation:
         return AdValidators.admin_user_name(admin_name)
 
-    async def check_domain_name_POST(self, domain_name: str) \
-            -> List[AdDomainNameValidation]:
+    async def check_domain_name_POST(
+        self, domain_name: str
+    ) -> List[AdDomainNameValidation]:
         result = AdValidators.domain_name(domain_name)
         return list(result)
 
-    async def ping_domain_controller_POST(self, domain_name: str) \
-            -> AdDomainNameValidation:
-        return await AdValidators.ping_domain_controller(domain_name,
-                                                         self.ping_strgy)
+    async def ping_domain_controller_POST(
+        self, domain_name: str
+    ) -> AdDomainNameValidation:
+        return await AdValidators.ping_domain_controller(domain_name, self.ping_strgy)
 
     async def check_password_POST(self, password: str) -> AdPasswordValidation:
         return AdValidators.password(password)
 
     async def has_support_GET(self) -> bool:
-        """ Returns True if the executables required
-            to configure AD are present in the live system."""
+        """Returns True if the executables required
+        to configure AD are present in the live system."""
         return self.ping_strgy.has_support()
 
     async def join_result_GET(self, wait: bool = True) -> AdJoinResult:
-        """ If [wait] is True and the model is set for joining, this method
-            blocks until an attempt to join a domain completes.
-            Otherwise returns the current known state.
-            Most likely it will be AdJoinResult.UNKNOWN. """
+        """If [wait] is True and the model is set for joining, this method
+        blocks until an attempt to join a domain completes.
+        Otherwise returns the current known state.
+        Most likely it will be AdJoinResult.UNKNOWN."""
         if wait and self.model.do_join:
             self.join_result = await self.ad_joiner.join_result()
 
         return self.join_result
 
     async def join_domain(self, hostname: str, context) -> None:
-        """ To be called from the install controller if the user requested
-        joining an AD domain """
-        await self.ad_joiner.join_domain(self.model.conn_info, hostname,
-                                         context)
+        """To be called from the install controller if the user requested
+        joining an AD domain"""
+        await self.ad_joiner.join_domain(self.model.conn_info, hostname, context)
 
 
 # Helper out-of-class functions grouped.
 class AdValidators:
-    """ Groups functions that validates the AD info supplied by users. """
+    """Groups functions that validates the AD info supplied by users."""
+
     @staticmethod
     def admin_user_name(name) -> AdAdminNameValidation:
-        """ Validates the supplied admin name against known patterns. """
+        """Validates the supplied admin name against known patterns."""
 
         if len(name) == 0:
             log.debug("admin name is empty")
@@ -215,15 +218,14 @@ class AdValidators:
         # Triggers error if any of the forbidden chars is present.
         regex = re.compile(f"[{re.escape(AD_ACCOUNT_FORBIDDEN_CHARS)}]")
         if regex.search(name):
-            log.debug('<%s>: domain admin name contains invalid characters',
-                      name)
+            log.debug("<%s>: domain admin name contains invalid characters", name)
             return AdAdminNameValidation.INVALID_CHARS
 
         return AdAdminNameValidation.OK
 
     @staticmethod
     def password(value: str) -> AdPasswordValidation:
-        """ Validates that the password is not empty. """
+        """Validates that the password is not empty."""
 
         if not value:
             return AdPasswordValidation.EMPTY
@@ -232,7 +234,7 @@ class AdValidators:
 
     @staticmethod
     def domain_name(name: str) -> Set[AdDomainNameValidation]:
-        """ Check the correctness of a proposed host name.
+        """Check the correctness of a proposed host name.
 
         Returns a set of the possible errors:
             - OK = self explanatory. Should be the only result then.
@@ -256,34 +258,30 @@ class AdValidators:
             log.debug("<%s>: %s too long", name, FIELD)
             result.add(AdDomainNameValidation.TOO_LONG)
 
-        if name.startswith('-'):
-            log.debug("<%s>: %s cannot start with hyphens (-)",
-                      name, FIELD)
+        if name.startswith("-"):
+            log.debug("<%s>: %s cannot start with hyphens (-)", name, FIELD)
             result.add(AdDomainNameValidation.START_HYPHEN)
 
-        if name.endswith('-'):
-            log.debug("<%s>: %s cannot end with hyphens (-)",
-                      name, FIELD)
+        if name.endswith("-"):
+            log.debug("<%s>: %s cannot end with hyphens (-)", name, FIELD)
             result.add(AdDomainNameValidation.END_HYPHEN)
 
-        if '..' in name:
-            log.debug('<%s>: %s cannot contain double dots (..)', name, FIELD)
+        if ".." in name:
+            log.debug("<%s>: %s cannot contain double dots (..)", name, FIELD)
             result.add(AdDomainNameValidation.MULTIPLE_DOTS)
 
-        if name.startswith('.'):
-            log.debug('<%s>: %s cannot start with dots (.)',
-                      name, FIELD)
+        if name.startswith("."):
+            log.debug("<%s>: %s cannot start with dots (.)", name, FIELD)
             result.add(AdDomainNameValidation.START_DOT)
 
-        if name.endswith('.'):
-            log.debug('<%s>: %s cannot end with dots (.)',
-                      name, FIELD)
+        if name.endswith("."):
+            log.debug("<%s>: %s cannot end with dots (.)", name, FIELD)
             result.add(AdDomainNameValidation.END_DOT)
 
         regex = re.compile(DC_RE)
         if not regex.search(name):
             result.add(AdDomainNameValidation.INVALID_CHARS)
-            log.debug('<%s>: %s contains invalid characters', name, FIELD)
+            log.debug("<%s>: %s contains invalid characters", name, FIELD)
 
         if result:
             return result
@@ -291,10 +289,11 @@ class AdValidators:
         return {AdDomainNameValidation.OK}
 
     @staticmethod
-    async def ping_domain_controller(name: str, strategy: DcPingStrategy) \
-            -> AdDomainNameValidation:
-        """ Attempts to find the specified DC in the network.
-            Returns either OK, EMPTY or REALM_NOT_FOUND. """
+    async def ping_domain_controller(
+        name: str, strategy: DcPingStrategy
+    ) -> AdDomainNameValidation:
+        """Attempts to find the specified DC in the network.
+        Returns either OK, EMPTY or REALM_NOT_FOUND."""
 
         if not name:
             return AdDomainNameValidation.EMPTY

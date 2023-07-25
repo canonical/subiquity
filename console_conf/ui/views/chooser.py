@@ -20,29 +20,14 @@ Chooser provides a view with recovery chooser actions.
 """
 import logging
 
-from urwid import (
-    connect_signal,
-    Text,
-    )
-from subiquitycore.ui.buttons import (
-    danger_btn,
-    forward_btn,
-    back_btn,
-    )
-from subiquitycore.ui.actionmenu import (
-    Action,
-    ActionMenu,
-    )
-from subiquitycore.ui.container import Pile, ListBox
-from subiquitycore.ui.utils import (
-    button_pile,
-    screen,
-    make_action_menu_row,
-    Color,
-    )
-from subiquitycore.ui.table import TableRow, TablePile
-from subiquitycore.view import BaseView
+from urwid import Text, connect_signal
 
+from subiquitycore.ui.actionmenu import Action, ActionMenu
+from subiquitycore.ui.buttons import back_btn, danger_btn, forward_btn
+from subiquitycore.ui.container import ListBox, Pile
+from subiquitycore.ui.table import TablePile, TableRow
+from subiquitycore.ui.utils import Color, button_pile, make_action_menu_row, screen
+from subiquitycore.view import BaseView
 
 log = logging.getLogger("console_conf.ui.views.chooser")
 
@@ -69,28 +54,31 @@ class ChooserCurrentSystemView(ChooserBaseView):
 
     def __init__(self, controller, current, has_more=False):
         self.controller = controller
-        log.debug('more systems available: %s', has_more)
-        log.debug('current system: %s', current)
+        log.debug("more systems available: %s", has_more)
+        log.debug("current system: %s", current)
 
         actions = []
         for action in sorted(current.actions, key=by_preferred_action_type):
-            actions.append(forward_btn(label=action.title.capitalize(),
-                                       on_press=self._current_system_action,
-                                       user_arg=(current, action)))
+            actions.append(
+                forward_btn(
+                    label=action.title.capitalize(),
+                    on_press=self._current_system_action,
+                    user_arg=(current, action),
+                )
+            )
 
         if has_more:
             # add a button to show the other systems
             actions.append(Text(""))
-            actions.append(forward_btn(label="Show all available systems",
-                                       on_press=self._more_options))
+            actions.append(
+                forward_btn(
+                    label="Show all available systems", on_press=self._more_options
+                )
+            )
 
         lb = ListBox(actions)
 
-        super().__init__(current,
-                         screen(
-                             lb,
-                             narrow_rows=True,
-                             excerpt=self.excerpt))
+        super().__init__(current, screen(lb, narrow_rows=True, excerpt=self.excerpt))
 
     def _current_system_action(self, sender, arg):
         current, action = arg
@@ -104,43 +92,54 @@ class ChooserCurrentSystemView(ChooserBaseView):
 
 
 class ChooserView(ChooserBaseView):
-    excerpt = ("Select one of available recovery systems and a desired "
-               "action to execute.")
+    excerpt = (
+        "Select one of available recovery systems and a desired " "action to execute."
+    )
 
     def __init__(self, controller, systems):
         self.controller = controller
 
-        heading_table = TablePile([
-            TableRow([
-                Color.info_minor(Text(header)) for header in [
-                    "LABEL", "MODEL", "PUBLISHER", ""
+        heading_table = TablePile(
+            [
+                TableRow(
+                    [
+                        Color.info_minor(Text(header))
+                        for header in ["LABEL", "MODEL", "PUBLISHER", ""]
                     ]
-                ])
+                )
             ],
-            spacing=2)
+            spacing=2,
+        )
 
         trows = []
-        systems = sorted(systems,
-                         key=lambda s: (s.brand.display_name,
-                                        s.model.display_name,
-                                        s.current,
-                                        s.label))
+        systems = sorted(
+            systems,
+            key=lambda s: (
+                s.brand.display_name,
+                s.model.display_name,
+                s.current,
+                s.label,
+            ),
+        )
         for s in systems:
             actions = []
-            log.debug('actions: %s', s.actions)
+            log.debug("actions: %s", s.actions)
             for act in sorted(s.actions, key=by_preferred_action_type):
-                actions.append(Action(label=act.title.capitalize(),
-                                      value=act,
-                                      enabled=True))
+                actions.append(
+                    Action(label=act.title.capitalize(), value=act, enabled=True)
+                )
             menu = ActionMenu(actions)
-            connect_signal(menu, 'action', self._system_action, s)
-            srow = make_action_menu_row([
-                Text(s.label),
-                Text(s.model.display_name),
-                Text(s.brand.display_name),
-                Text("(installed)" if s.current else ""),
+            connect_signal(menu, "action", self._system_action, s)
+            srow = make_action_menu_row(
+                [
+                    Text(s.label),
+                    Text(s.model.display_name),
+                    Text(s.brand.display_name),
+                    Text("(installed)" if s.current else ""),
+                    menu,
+                ],
                 menu,
-            ], menu)
+            )
             trows.append(srow)
 
         systems_table = TablePile(trows, spacing=2)
@@ -154,12 +153,15 @@ class ChooserView(ChooserBaseView):
             # back to options of current system
             buttons.append(back_btn("BACK", on_press=self.back))
 
-        super().__init__(controller.model.current,
-                         screen(
-                             rows=rows,
-                             buttons=button_pile(buttons),
-                             focus_buttons=False,
-                             excerpt=self.excerpt))
+        super().__init__(
+            controller.model.current,
+            screen(
+                rows=rows,
+                buttons=button_pile(buttons),
+                focus_buttons=False,
+                excerpt=self.excerpt,
+            ),
+        )
 
     def _system_action(self, sender, action, system):
         self.controller.select(system, action)
@@ -169,22 +171,24 @@ class ChooserView(ChooserBaseView):
 
 
 class ChooserConfirmView(ChooserBaseView):
-
     canned_summary = {
         "run": "Continue running the system without any changes.",
-        "recover": ("You have requested to reboot the system into recovery "
-                    "mode."),
-        "install": ("You are about to {action_lower} the system version "
-                    "{version} for {model} from {publisher}.\n\n"
-                    "This will remove all existing user data on the "
-                    "device.\n\n"
-                    "The system will reboot in the process."),
+        "recover": ("You have requested to reboot the system into recovery " "mode."),
+        "install": (
+            "You are about to {action_lower} the system version "
+            "{version} for {model} from {publisher}.\n\n"
+            "This will remove all existing user data on the "
+            "device.\n\n"
+            "The system will reboot in the process."
+        ),
     }
-    default_summary = ("You are about to execute action \"{action}\" using "
-                       "system version {version} for device {model} from "
-                       "{publisher}.\n\n"
-                       "Make sure you understand the consequences of "
-                       "performing this action.")
+    default_summary = (
+        'You are about to execute action "{action}" using '
+        "system version {version} for device {model} from "
+        "{publisher}.\n\n"
+        "Make sure you understand the consequences of "
+        "performing this action."
+    )
 
     def __init__(self, controller, selection):
         self.controller = controller
@@ -193,21 +197,21 @@ class ChooserConfirmView(ChooserBaseView):
             danger_btn("CONFIRM", on_press=self.confirm),
             back_btn("BACK", on_press=self.back),
         ]
-        fmt = self.canned_summary.get(selection.action.mode,
-                                      self.default_summary)
-        summary = fmt.format(action=selection.action.title,
-                             action_lower=selection.action.title.lower(),
-                             model=selection.system.model.display_name,
-                             publisher=selection.system.brand.display_name,
-                             version=selection.system.label)
+        fmt = self.canned_summary.get(selection.action.mode, self.default_summary)
+        summary = fmt.format(
+            action=selection.action.title,
+            action_lower=selection.action.title.lower(),
+            model=selection.system.model.display_name,
+            publisher=selection.system.brand.display_name,
+            version=selection.system.label,
+        )
         rows = [
             Text(summary),
         ]
-        super().__init__(controller.model.current,
-                         screen(
-                             rows=rows,
-                             buttons=button_pile(buttons),
-                             focus_buttons=False))
+        super().__init__(
+            controller.model.current,
+            screen(rows=rows, buttons=button_pile(buttons), focus_buttons=False),
+        )
 
     def confirm(self, result):
         self.controller.confirm()

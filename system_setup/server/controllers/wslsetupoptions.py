@@ -14,29 +14,28 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import attr
 
-from subiquitycore.context import with_context
+import attr
 
 from subiquity.common.apidef import API
 from subiquity.common.types import WSLSetupOptions
 from subiquity.server.controller import SubiquityController
+from subiquitycore.context import with_context
 
-log = logging.getLogger('system_setup.server.controllers.wslsetupoptions')
+log = logging.getLogger("system_setup.server.controllers.wslsetupoptions")
 
 
 class WSLSetupOptionsController(SubiquityController):
-
     endpoint = API.wslsetupoptions
 
     autoinstall_key = model_name = "wslsetupoptions"
     autoinstall_schema = {
-        'type': 'object',
-        'properties': {
-            'install_language_support_packages': {'type': 'boolean'},
-            },
-        'additionalProperties': False,
-        }
+        "type": "object",
+        "properties": {
+            "install_language_support_packages": {"type": "boolean"},
+        },
+        "additionalProperties": False,
+    }
 
     def load_autoinstall_data(self, data):
         if data is not None:
@@ -54,8 +53,9 @@ class WSLSetupOptionsController(SubiquityController):
     async def GET(self) -> WSLSetupOptions:
         data = WSLSetupOptions()
         if self.model.wslsetupoptions is not None:
-            data.install_language_support_packages = \
+            data.install_language_support_packages = (
                 self.model.wslsetupoptions.install_language_support_packages
+            )
         return data
 
     async def POST(self, data: WSLSetupOptions):

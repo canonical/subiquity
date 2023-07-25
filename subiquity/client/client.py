@@ -25,46 +25,28 @@ from typing import Callable, Dict, List, Optional, Union
 
 import aiohttp
 
-from subiquitycore.async_helpers import (
-    run_bg_task,
-    run_in_thread,
-    )
-from subiquitycore.screen import is_linux_tty
-from subiquitycore.tuicontroller import Skip
-from subiquitycore.tui import TuiApplication
-from subiquitycore.utils import orig_environ
-from subiquitycore.view import BaseView
-
 from subiquity.client.controller import Confirm
-from subiquity.client.keycodes import (
-    NoOpKeycodesFilter,
-    KeyCodesFilter,
-    )
+from subiquity.client.keycodes import KeyCodesFilter, NoOpKeycodesFilter
 from subiquity.common.api.client import make_client_for_conn
 from subiquity.common.apidef import API
-from subiquity.common.errorreport import (
-    ErrorReporter,
-    )
+from subiquity.common.errorreport import ErrorReporter
 from subiquity.common.serialize import from_json
-from subiquity.common.types import (
-    ApplicationState,
-    ErrorReportKind,
-    ErrorReportRef,
-    )
+from subiquity.common.types import ApplicationState, ErrorReportKind, ErrorReportRef
 from subiquity.journald import journald_listen
 from subiquity.server.server import POSTINSTALL_MODEL_NAMES
 from subiquity.ui.frame import SubiquityUI
 from subiquity.ui.views.error import ErrorReportStretchy
 from subiquity.ui.views.help import HelpMenu, ssh_help_texts
-from subiquity.ui.views.installprogress import (
-    InstallConfirmation,
-    )
-from subiquity.ui.views.welcome import (
-    CloudInitFail,
-    )
+from subiquity.ui.views.installprogress import InstallConfirmation
+from subiquity.ui.views.welcome import CloudInitFail
+from subiquitycore.async_helpers import run_bg_task, run_in_thread
+from subiquitycore.screen import is_linux_tty
+from subiquitycore.tui import TuiApplication
+from subiquitycore.tuicontroller import Skip
+from subiquitycore.utils import orig_environ
+from subiquitycore.view import BaseView
 
-
-log = logging.getLogger('subiquity.client.client')
+log = logging.getLogger("subiquity.client.client")
 
 
 class Abort(Exception):
@@ -72,7 +54,8 @@ class Abort(Exception):
         self.error_report_ref = error_report_ref
 
 
-DEBUG_SHELL_INTRO = _("""\
+DEBUG_SHELL_INTRO = _(
+    """\
 Installer shell session activated.
 
 This shell session is running inside the installer environment.  You
@@ -81,18 +64,19 @@ example by typing Control-D or 'exit'.
 
 Be aware that this is an ephemeral environment.  Changes to this
 environment will not survive a reboot. If the install has started, the
-installed system will be mounted at /target.""")
+installed system will be mounted at /target."""
+)
 
 
 class SubiquityClient(TuiApplication):
-
-    snapd_socket_path: Optional[str] = '/run/snapd.socket'
+    snapd_socket_path: Optional[str] = "/run/snapd.socket"
 
     variant: Optional[str] = None
-    cmdline = ['snap', 'run', 'subiquity']
-    dryrun_cmdline_module = 'subiquity.cmd.tui'
+    cmdline = ["snap", "run", "subiquity"]
+    dryrun_cmdline_module = "subiquity.cmd.tui"
 
     from subiquity.client import controllers as controllers_mod
+
     project = "subiquity"
 
     def make_model(self):
@@ -119,7 +103,7 @@ class SubiquityClient(TuiApplication):
         "Drivers",
         "SnapList",
         "Progress",
-        ]
+    ]
 
     variant_to_controllers: Dict[str, List[str]] = {}
 
@@ -142,11 +126,11 @@ class SubiquityClient(TuiApplication):
         except OSError:
             self.our_tty = "not a tty"
 
-        self.in_make_view_cvar = contextvars.ContextVar(
-            'in_make_view', default=False)
+        self.in_make_view_cvar = contextvars.ContextVar("in_make_view", default=False)
 
         self.error_reporter = ErrorReporter(
-            self.context.child("ErrorReporter"), self.opts.dry_run, self.root)
+            self.context.child("ErrorReporter"), self.opts.dry_run, self.root
+        )
 
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
@@ -169,12 +153,9 @@ class SubiquityClient(TuiApplication):
     def restart(self, remove_last_screen=True, restart_server=False):
         log.debug(f"restart {remove_last_screen} {restart_server}")
         if self.fg_proc is not None:
-            log.debug(
-                "killing foreground process %s before restarting",
-                self.fg_proc)
+            log.debug("killing foreground process %s before restarting", self.fg_proc)
             self.restarting = True
-            run_bg_task(
-                self._kill_fg_proc(remove_last_screen, restart_server))
+            run_bg_task(self._kill_fg_proc(remove_last_screen, restart_server))
             return
         if remove_last_screen:
             self._remove_last_screen()
@@ -187,50 +168,56 @@ class SubiquityClient(TuiApplication):
             self.urwid_loop.stop()
         cmdline = self.cmdline
         if self.opts.dry_run:
-            cmdline = [
-                sys.executable, '-m', self.dryrun_cmdline_module,
-                ] + sys.argv[1:] + ['--socket', self.opts.socket]
+            cmdline = (
+                [
+                    sys.executable,
+                    "-m",
+                    self.dryrun_cmdline_module,
+                ]
+                + sys.argv[1:]
+                + ["--socket", self.opts.socket]
+            )
             if self.opts.server_pid is not None:
-                cmdline.extend(['--server-pid', self.opts.server_pid])
+                cmdline.extend(["--server-pid", self.opts.server_pid])
             log.debug("restarting %r", cmdline)
 
         os.execvpe(cmdline[0], cmdline, orig_environ(os.environ))
 
     def resp_hook(self, response):
         headers = response.headers
-        if 'x-updated' in headers:
+        if "x-updated" in headers:
             if self.server_updated is None:
-                self.server_updated = headers['x-updated']
-            elif self.server_updated != headers['x-updated']:
+                self.server_updated = headers["x-updated"]
+            elif self.server_updated != headers["x-updated"]:
                 self.restart(remove_last_screen=False)
                 raise Abort
-        status = headers.get('x-status')
-        if status == 'skip':
+        status = headers.get("x-status")
+        if status == "skip":
             raise Skip
-        elif status == 'confirm':
+        elif status == "confirm":
             raise Confirm
-        if headers.get('x-error-report') is not None:
-            ref = from_json(ErrorReportRef, headers['x-error-report'])
+        if headers.get("x-error-report") is not None:
+            ref = from_json(ErrorReportRef, headers["x-error-report"])
             raise Abort(ref)
         try:
             response.raise_for_status()
         except aiohttp.ClientError:
             report = self.error_reporter.make_apport_report(
                 ErrorReportKind.SERVER_REQUEST_FAIL,
-                "request to {}".format(response.url.path))
+                "request to {}".format(response.url.path),
+            )
             raise Abort(report.ref())
         return response
 
     async def noninteractive_confirmation(self):
         await asyncio.sleep(1)
-        yes = _('yes')
-        no = _('no')
+        yes = _("yes")
+        no = _("no")
         answer = no
         print(_("Confirmation is required to continue."))
         print(_("Add 'autoinstall' to your kernel command line to avoid this"))
         print()
-        prompt = "\n\n{} ({}|{})".format(
-            _("Continue with autoinstall?"), yes, no)
+        prompt = "\n\n{} ({}|{})".format(_("Continue with autoinstall?"), yes, no)
         while answer != yes:
             print(prompt)
             answer = await run_in_thread(input)
@@ -260,7 +247,8 @@ class SubiquityClient(TuiApplication):
             if app_state == ApplicationState.NEEDS_CONFIRMATION:
                 if confirm_task is None:
                     confirm_task = asyncio.create_task(
-                        self.noninteractive_confirmation())
+                        self.noninteractive_confirmation()
+                    )
             elif confirm_task is not None:
                 confirm_task.cancel()
                 confirm_task = None
@@ -272,21 +260,20 @@ class SubiquityClient(TuiApplication):
             app_status = await self._status_get(app_state)
 
     def subiquity_event_noninteractive(self, event):
-        if event['SUBIQUITY_EVENT_TYPE'] == 'start':
-            print('start: ' + event["MESSAGE"])
-        elif event['SUBIQUITY_EVENT_TYPE'] == 'finish':
-            print('finish: ' + event["MESSAGE"])
+        if event["SUBIQUITY_EVENT_TYPE"] == "start":
+            print("start: " + event["MESSAGE"])
+        elif event["SUBIQUITY_EVENT_TYPE"] == "finish":
+            print("finish: " + event["MESSAGE"])
 
     async def connect(self):
-
         def p(s):
-            print(s, end='', flush=True)
+            print(s, end="", flush=True)
 
         async def spin(message):
-            p(message + '...  ')
+            p(message + "...  ")
             while True:
-                for t in ['-', '\\', '|', '/']:
-                    p('\x08' + t)
+                for t in ["-", "\\", "|", "/"]:
+                    p("\x08" + t)
                     await asyncio.sleep(0.5)
 
         async def spinning_wait(message, task):
@@ -295,16 +282,18 @@ class SubiquityClient(TuiApplication):
                 return await task
             finally:
                 spinner.cancel()
-                p('\x08 \n')
+                p("\x08 \n")
 
         status = await spinning_wait("connecting", self._status_get())
-        journald_listen([status.echo_syslog_id], lambda e: print(e['MESSAGE']))
+        journald_listen([status.echo_syslog_id], lambda e: print(e["MESSAGE"]))
         if status.state == ApplicationState.STARTING_UP:
             status = await spinning_wait(
-                "starting up", self._status_get(cur=status.state))
+                "starting up", self._status_get(cur=status.state)
+            )
         if status.state == ApplicationState.CLOUD_INIT_WAIT:
             status = await spinning_wait(
-                "waiting for cloud-init", self._status_get(cur=status.state))
+                "waiting for cloud-init", self._status_get(cur=status.state)
+            )
         if status.state == ApplicationState.EARLY_COMMANDS:
             print("running early commands")
             status = await self._status_get(cur=status.state)
@@ -316,12 +305,13 @@ class SubiquityClient(TuiApplication):
 
         def header_func():
             if self.in_make_view_cvar.get():
-                return {'x-make-view-request': 'yes'}
+                return {"x-make-view-request": "yes"}
             else:
                 return None
 
-        self.client = make_client_for_conn(API, conn, self.resp_hook,
-                                           header_func=header_func)
+        self.client = make_client_for_conn(
+            API, conn, self.resp_hook, header_func=header_func
+        )
         self.error_reporter.client = self.client
 
         status = await self.connect()
@@ -332,11 +322,14 @@ class SubiquityClient(TuiApplication):
                 texts = ssh_help_texts(ssh_info)
                 for line in texts:
                     import urwid
+
                     if isinstance(line, urwid.Widget):
-                        line = '\n'.join([
-                            line.decode('utf-8').rstrip()
-                            for line in line.render((1000,)).text
-                            ])
+                        line = "\n".join(
+                            [
+                                line.decode("utf-8").rstrip()
+                                for line in line.render((1000,)).text
+                            ]
+                        )
                     print(line)
                 return
 
@@ -355,11 +348,11 @@ class SubiquityClient(TuiApplication):
             # the progress page
             if hasattr(self.controllers, "Progress"):
                 journald_listen(
-                    [status.event_syslog_id],
-                    self.controllers.Progress.event)
+                    [status.event_syslog_id], self.controllers.Progress.event
+                )
                 journald_listen(
-                    [status.log_syslog_id],
-                    self.controllers.Progress.log_line)
+                    [status.log_syslog_id], self.controllers.Progress.log_line
+                )
             if not status.cloud_init_ok:
                 self.add_global_overlay(CloudInitFail(self))
             self.error_reporter.load_reports()
@@ -376,18 +369,16 @@ class SubiquityClient(TuiApplication):
                 # does not matter as the settings will soon be clobbered but
                 # for a non-interactive one we need to clear things up or the
                 # prompting for confirmation will be confusing.
-                os.system('stty sane')
+                os.system("stty sane")
             journald_listen(
-                [status.event_syslog_id],
-                self.subiquity_event_noninteractive,
-                seek=True)
-            run_bg_task(
-                self.noninteractive_watch_app_state(status))
+                [status.event_syslog_id], self.subiquity_event_noninteractive, seek=True
+            )
+            run_bg_task(self.noninteractive_watch_app_state(status))
 
     def _exception_handler(self, loop, context):
-        exc = context.get('exception')
+        exc = context.get("exception")
         if self.restarting:
-            log.debug('ignoring %s %s during restart', exc, type(exc))
+            log.debug("ignoring %s %s during restart", exc, type(exc))
             return
         if isinstance(exc, Abort):
             if self.interactive:
@@ -405,8 +396,8 @@ class SubiquityClient(TuiApplication):
             print("generating crash report")
             try:
                 report = self.make_apport_report(
-                    ErrorReportKind.UI, "Installer UI", interrupt=False,
-                    wait=True)
+                    ErrorReportKind.UI, "Installer UI", interrupt=False, wait=True
+                )
                 if report is not None:
                     print("report saved to {path}".format(path=report.path))
             except Exception:
@@ -426,7 +417,7 @@ class SubiquityClient(TuiApplication):
                 # the server up to a second to exit, and then we signal it.
                 pid = int(self.opts.server_pid)
 
-                print(f'giving the server [{pid}] up to a second to exit')
+                print(f"giving the server [{pid}] up to a second to exit")
                 for unused in range(10):
                     try:
                         if os.waitpid(pid, os.WNOHANG) != (0, 0):
@@ -435,9 +426,9 @@ class SubiquityClient(TuiApplication):
                         # If we attached to an existing server process,
                         # waitpid will fail.
                         pass
-                    await asyncio.sleep(.1)
+                    await asyncio.sleep(0.1)
                 else:
-                    print('killing server {}'.format(pid))
+                    print("killing server {}".format(pid))
                     os.kill(pid, 2)
                     os.waitpid(pid, 0)
 
@@ -448,21 +439,19 @@ class SubiquityClient(TuiApplication):
             if source.id == source_selection.current_id:
                 current = source
                 break
-        if current is not None and current.variant != 'server':
+        if current is not None and current.variant != "server":
             # If using server to install desktop, mark the controllers
             # the TUI client does not currently have interfaces for as
             # configured.
             needed = POSTINSTALL_MODEL_NAMES.for_variant(current.variant)
             for c in self.controllers.instances:
-                if getattr(c, 'endpoint_name', None) is not None:
+                if getattr(c, "endpoint_name", None) is not None:
                     needed.discard(c.endpoint_name)
             if needed:
-                log.info(
-                    "marking additional endpoints as configured: %s",
-                    needed)
+                log.info("marking additional endpoints as configured: %s", needed)
                 await self.client.meta.mark_configured.POST(list(needed))
         # TODO: remove this when TUI gets an Active Directory screen:
-        await self.client.meta.mark_configured.POST(['active_directory'])
+        await self.client.meta.mark_configured.POST(["active_directory"])
         await self.client.meta.confirm.POST(self.our_tty)
 
     def add_global_overlay(self, overlay):
@@ -477,7 +466,7 @@ class SubiquityClient(TuiApplication):
             self.ui.body.remove_overlay(overlay)
 
     def _remove_last_screen(self):
-        last_screen = self.state_path('last-screen')
+        last_screen = self.state_path("last-screen")
         if os.path.exists(last_screen):
             os.unlink(last_screen)
 
@@ -488,7 +477,7 @@ class SubiquityClient(TuiApplication):
     def select_initial_screen(self):
         last_screen = None
         if self.updated:
-            state_path = self.state_path('last-screen')
+            state_path = self.state_path("last-screen")
             if os.path.exists(state_path):
                 with open(state_path) as fp:
                     last_screen = fp.read().strip()
@@ -502,7 +491,7 @@ class SubiquityClient(TuiApplication):
     async def _select_initial_screen(self, index):
         endpoint_names = []
         for c in self.controllers.instances[:index]:
-            if getattr(c, 'endpoint_name', None) is not None:
+            if getattr(c, "endpoint_name", None) is not None:
                 endpoint_names.append(c.endpoint_name)
         if endpoint_names:
             await self.client.meta.mark_configured.POST(endpoint_names)
@@ -521,11 +510,12 @@ class SubiquityClient(TuiApplication):
         log.debug("showing InstallConfirmation over %s", self.ui.body)
         overlay = InstallConfirmation(self)
         self.add_global_overlay(overlay)
-        if self.answers.get('filesystem-confirmed', False):
+        if self.answers.get("filesystem-confirmed", False):
             overlay.ok(None)
 
     async def _start_answers_for_view(
-            self, controller, view: Union[BaseView, Callable[[], BaseView]]):
+        self, controller, view: Union[BaseView, Callable[[], BaseView]]
+    ):
         def noop():
             return view
 
@@ -551,19 +541,19 @@ class SubiquityClient(TuiApplication):
             self.in_make_view_cvar.reset(tok)
         if new.answers:
             run_bg_task(self._start_answers_for_view(new, view))
-        with open(self.state_path('last-screen'), 'w') as fp:
+        with open(self.state_path("last-screen"), "w") as fp:
             fp.write(new.name)
         return view
 
     def show_progress(self):
-        if hasattr(self.controllers, 'Progress'):
+        if hasattr(self.controllers, "Progress"):
             self.ui.set_body(self.controllers.Progress.progress_view)
 
     def unhandled_input(self, key):
-        if key == 'f1':
+        if key == "f1":
             if not self.ui.right_icon.current_help:
                 self.ui.right_icon.open_pop_up()
-        elif key in ['ctrl z', 'f2']:
+        elif key in ["ctrl z", "f2"]:
             self.debug_shell()
         elif self.opts.dry_run:
             self.unhandled_input_dry_run(key)
@@ -571,22 +561,22 @@ class SubiquityClient(TuiApplication):
             super().unhandled_input(key)
 
     def unhandled_input_dry_run(self, key):
-        if key in ['ctrl e', 'ctrl r']:
-            interrupt = key == 'ctrl e'
+        if key in ["ctrl e", "ctrl r"]:
+            interrupt = key == "ctrl e"
             try:
-                1/0
+                1 / 0
             except ZeroDivisionError:
                 self.make_apport_report(
-                    ErrorReportKind.UNKNOWN, "example", interrupt=interrupt)
-        elif key == 'ctrl u':
-            1/0
-        elif key == 'ctrl b':
+                    ErrorReportKind.UNKNOWN, "example", interrupt=interrupt
+                )
+        elif key == "ctrl u":
+            1 / 0
+        elif key == "ctrl b":
             run_bg_task(self.client.dry_run.crash.GET())
         else:
             super().unhandled_input(key)
 
     def debug_shell(self, after_hook=None):
-
         def _before():
             os.system("clear")
             print(DEBUG_SHELL_INTRO)
@@ -594,7 +584,8 @@ class SubiquityClient(TuiApplication):
         env = orig_environ(os.environ)
         cmd = ["bash"]
         self.run_command_in_foreground(
-            cmd, env=env, before_hook=_before, after_hook=after_hook, cwd='/')
+            cmd, env=env, before_hook=_before, after_hook=after_hook, cwd="/"
+        )
 
     def note_file_for_apport(self, key, path):
         self.error_reporter.note_file_for_apport(key, path)
@@ -603,8 +594,7 @@ class SubiquityClient(TuiApplication):
         self.error_reporter.note_data_for_apport(key, value)
 
     def make_apport_report(self, kind, thing, *, interrupt, wait=False, **kw):
-        report = self.error_reporter.make_apport_report(
-            kind, thing, wait=wait, **kw)
+        report = self.error_reporter.make_apport_report(kind, thing, wait=wait, **kw)
 
         if report is not None and interrupt:
             self.show_error_report(report.ref())
@@ -614,7 +604,7 @@ class SubiquityClient(TuiApplication):
     def show_error_report(self, error_ref):
         log.debug("show_error_report %r", error_ref.base)
         if isinstance(self.ui.body, BaseView):
-            w = getattr(self.ui.body._w, 'stretchy', None)
+            w = getattr(self.ui.body._w, "stretchy", None)
             if isinstance(w, ErrorReportStretchy):
                 # Don't show an error if already looking at one.
                 return

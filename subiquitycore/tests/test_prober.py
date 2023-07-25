@@ -13,15 +13,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquitycore.tests import SubiTestCase
-
 from subiquitycore.prober import Prober
+from subiquitycore.tests import SubiTestCase
 
 
 class TestProber(SubiTestCase):
     async def test_none_and_defaults_equal(self):
-        with open('examples/machines/simple.json', 'r') as fp:
+        with open("examples/machines/simple.json", "r") as fp:
             prober = Prober(machine_config=fp, debug_flags=())
         none_storage = await prober.get_storage(probe_types=None)
-        defaults_storage = await prober.get_storage(probe_types={'defaults'})
+        defaults_storage = await prober.get_storage(probe_types={"defaults"})
         self.assertEqual(defaults_storage, none_storage)

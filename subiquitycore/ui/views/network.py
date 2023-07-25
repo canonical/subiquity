@@ -21,49 +21,35 @@ Provides network device listings and extended network information
 
 import logging
 
-from urwid import (
-    connect_signal,
-    Text,
-    )
+from urwid import Text, connect_signal
 
 from subiquitycore.async_helpers import run_bg_task
-from subiquitycore.models.network import (
-    DHCPState,
-    NetDevAction,
-    )
+from subiquitycore.models.network import DHCPState, NetDevAction
 from subiquitycore.ui.actionmenu import ActionMenu
-from subiquitycore.ui.buttons import (
-    back_btn,
-    done_btn,
-    menu_btn,
-    )
-from subiquitycore.ui.container import (
-    Pile,
-    WidgetWrap,
-    )
+from subiquitycore.ui.buttons import back_btn, done_btn, menu_btn
+from subiquitycore.ui.container import Pile, WidgetWrap
 from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.stretchy import StretchyOverlay
 from subiquitycore.ui.table import ColSpec, TablePile, TableRow
 from subiquitycore.ui.utils import (
-    button_pile,
     Color,
+    button_pile,
     make_action_menu_row,
     rewrap,
     screen,
-    )
+)
 from subiquitycore.ui.width import widget_width
+from subiquitycore.view import BaseView
+
 from .network_configure_manual_interface import (
     AddVlanStretchy,
     BondStretchy,
     EditNetworkStretchy,
     ViewInterfaceInfo,
-    )
+)
 from .network_configure_wlan_interface import NetworkConfigureWLANStretchy
 
-from subiquitycore.view import BaseView
-
-
-log = logging.getLogger('subiquitycore.ui.views.network')
+log = logging.getLogger("subiquitycore.ui.views.network")
 
 
 def _stretchy_shower(cls, *args):
@@ -71,6 +57,7 @@ def _stretchy_shower(cls, *args):
         stretchy = cls(self, device, *args)
         stretchy.attach_context(self.controller.context.child(name))
         self.show_stretchy_overlay(stretchy)
+
     impl.opens_dialog = True
     return impl
 
@@ -94,46 +81,55 @@ class NetworkDeviceTable(WidgetWrap):
 
         actions = []
         for action in NetDevAction:
-            meth = getattr(self.parent, '_action_' + action.name)
-            opens_dialog = getattr(meth, 'opens_dialog', False)
+            meth = getattr(self.parent, "_action_" + action.name)
+            opens_dialog = getattr(meth, "opens_dialog", False)
             if action in self.dev_info.enabled_actions:
-                actions.append(
-                    (action.str(), True, (action, meth), opens_dialog))
+                actions.append((action.str(), True, (action, meth), opens_dialog))
 
         menu = ActionMenu(actions)
-        connect_signal(menu, 'action', self.parent._action, self)
+        connect_signal(menu, "action", self.parent._action, self)
 
-        trows = [make_action_menu_row([
-            Text("["),
-            Text(self.dev_info.name),
-            Text(self.dev_info.type),
-            Text(self._notes(), wrap='clip'),
-            menu,
-            Text("]"),
-            ], menu)] + self._address_rows()
+        trows = [
+            make_action_menu_row(
+                [
+                    Text("["),
+                    Text(self.dev_info.name),
+                    Text(self.dev_info.type),
+                    Text(self._notes(), wrap="clip"),
+                    menu,
+                    Text("]"),
+                ],
+                menu,
+            )
+        ] + self._address_rows()
 
-        self.table = TablePile(
-            trows, colspecs=self.parent.device_colspecs, spacing=2)
+        self.table = TablePile(trows, colspecs=self.parent.device_colspecs, spacing=2)
         self.table.bind(self.parent.heading_table)
 
         if self.dev_info.type == "vlan":
             info = _("VLAN {id} on interface {link}").format(
-                id=self.dev_info.vlan.id, link=self.dev_info.vlan.link)
+                id=self.dev_info.vlan.id, link=self.dev_info.vlan.link
+            )
         elif self.dev_info.type == "bond":
             info = _("bond master for {interfaces}").format(
-                interfaces=', '.join(self.dev_info.bond.interfaces))
+                interfaces=", ".join(self.dev_info.bond.interfaces)
+            )
         else:
-            info = " / ".join([
-                self.dev_info.hwaddr,
-                self.dev_info.vendor,
-                self.dev_info.model,
-                ])
+            info = " / ".join(
+                [
+                    self.dev_info.hwaddr,
+                    self.dev_info.vendor,
+                    self.dev_info.model,
+                ]
+            )
 
-        return Pile([
-            ('pack', self.table),
-            ('pack', Color.info_minor(Text("  " + info))),
-            ('pack', Text("")),
-            ])
+        return Pile(
+            [
+                ("pack", self.table),
+                ("pack", Color.info_minor(Text("  " + info))),
+                ("pack", Text("")),
+            ]
+        )
 
     def _notes(self):
         notes = []
@@ -147,28 +143,27 @@ class NetworkDeviceTable(WidgetWrap):
             notes.append(_("not connected"))
         if self.dev_info.bond_master:
             notes.append(
-                _("enslaved to {device}").format(
-                    device=self.dev_info.bond_master))
+                _("enslaved to {device}").format(device=self.dev_info.bond_master)
+            )
         if notes:
             notes = ", ".join(notes)
         else:
-            notes = '-'
+            notes = "-"
         return notes
 
     def _address_rows(self):
         address_info = []
         for v, dhcp_status, static_config in (
-                (4, self.dev_info.dhcp4, self.dev_info.static4),
-                (6, self.dev_info.dhcp6, self.dev_info.static6),
-                ):
+            (4, self.dev_info.dhcp4, self.dev_info.static4),
+            (6, self.dev_info.dhcp6, self.dev_info.static6),
+        ):
             if dhcp_status.enabled:
                 label = Text("DHCPv{v}".format(v=v))
                 addrs = dhcp_status.addresses
                 if addrs:
-                    address_info.extend(
-                        [(label, Text(addr)) for addr in addrs])
+                    address_info.extend([(label, Text(addr)) for addr in addrs])
                 elif dhcp_status.state == DHCPState.PENDING:
-                    s = Spinner(align='left')
+                    s = Spinner(align="left")
                     s.rate = 0.3
                     s.start()
                     address_info.append((label, s))
@@ -177,10 +172,12 @@ class NetworkDeviceTable(WidgetWrap):
                 elif dhcp_status.state == DHCPState.RECONFIGURE:
                     address_info.append((label, Text("-")))
             elif static_config.addresses:
-                address_info.append((
-                    Text(_('static')),
-                    Text(', '.join(static_config.addresses)),
-                    ))
+                address_info.append(
+                    (
+                        Text(_("static")),
+                        Text(", ".join(static_config.addresses)),
+                    )
+                )
         if len(address_info) == 0 and not self.dev_info.is_used:
             reason = self.dev_info.disabled_reason
             if reason is None:
@@ -210,95 +207,122 @@ class NetworkDeviceTable(WidgetWrap):
 
 
 wlan_support_install_state_texts = {
-    "NOT_AVAILABLE": _("""\
+    "NOT_AVAILABLE": _(
+        """\
 A wifi device was detected but the necessary support packages were not
 available.
-"""),
-    "INSTALLING": _("""\
+"""
+    ),
+    "INSTALLING": _(
+        """\
 Wifi support packages are being installed.
-"""),
-    "FAILED": _("""\
+"""
+    ),
+    "FAILED": _(
+        """\
 Wifi support packages failed to install. Please check the logs.
-"""),
-    "DONE": _("""\
+"""
+    ),
+    "DONE": _(
+        """\
 Wifi support packages will be installed in the target system.
-"""),
-    }
+"""
+    ),
+}
 
 
 class NetworkView(BaseView):
     title = _("Network connections")
-    excerpt = _("Configure at least one interface this server can use to talk "
-                "to other machines, and which preferably provides sufficient "
-                "access for updates.")
+    excerpt = _(
+        "Configure at least one interface this server can use to talk "
+        "to other machines, and which preferably provides sufficient "
+        "access for updates."
+    )
 
-    def __init__(self, controller, netdev_infos,
-                 wlan_support_install_state="NOT_NEEDED"):
+    def __init__(
+        self, controller, netdev_infos, wlan_support_install_state="NOT_NEEDED"
+    ):
         self.controller = controller
         self.dev_name_to_table = {}
         self.cur_netdev_names = []
-        self.error = Text("", align='center')
+        self.error = Text("", align="center")
 
         self.device_colspecs = {
             0: ColSpec(rpad=1),
             3: ColSpec(min_width=15),
             4: ColSpec(can_shrink=True, rpad=1),
-            }
+        }
 
-        self.heading_table = TablePile([
-            TableRow([
-                Color.info_minor(Text(header)) for header in [
-                    "", "NAME", "TYPE", "NOTES", "",
+        self.heading_table = TablePile(
+            [
+                TableRow(
+                    [
+                        Color.info_minor(Text(header))
+                        for header in [
+                            "",
+                            "NAME",
+                            "TYPE",
+                            "NOTES",
+                            "",
+                        ]
                     ]
-                ])
+                )
             ],
-            spacing=2, colspecs=self.device_colspecs)
+            spacing=2,
+            colspecs=self.device_colspecs,
+        )
 
         self.device_pile = Pile([self.heading_table])
 
         for dev_info in netdev_infos:
             self.new_link(dev_info)
 
-        self._create_bond_btn = menu_btn(
-            _("Create bond"), on_press=self._create_bond)
+        self._create_bond_btn = menu_btn(_("Create bond"), on_press=self._create_bond)
         bp = button_pile([self._create_bond_btn])
-        bp.align = 'left'
+        bp.align = "left"
 
         rows = [
             self.device_pile,
             bp,
         ]
 
-        self.buttons = button_pile([
-                    done_btn("TBD", on_press=self.done),  # See _route_watcher
-                    back_btn(_("Back"), on_press=self.cancel),
-                    ])
-        self.bottom = Pile([
-            ('pack', self.buttons),
-        ])
+        self.buttons = button_pile(
+            [
+                done_btn("TBD", on_press=self.done),  # See _route_watcher
+                back_btn(_("Back"), on_press=self.cancel),
+            ]
+        )
+        self.bottom = Pile(
+            [
+                ("pack", self.buttons),
+            ]
+        )
 
         self.wlan_support_install_state_showing = False
         self.error_showing = False
 
         self.update_for_wlan_support_install_state(wlan_support_install_state)
 
-        super().__init__(screen(
-            rows=rows,
-            buttons=self.bottom,
-            focus_buttons=True,
-            excerpt=_(self.excerpt)))
+        super().__init__(
+            screen(
+                rows=rows,
+                buttons=self.bottom,
+                focus_buttons=True,
+                excerpt=_(self.excerpt),
+            )
+        )
 
     async def _show_INFO(self, name):
         info = await self.controller.app.wait_with_text_dialog(
-            self.controller.get_info_for_netdev(name), "Loading info",
-            can_cancel=True)
+            self.controller.get_info_for_netdev(name), "Loading info", can_cancel=True
+        )
         stretchy = ViewInterfaceInfo(self, name, info)
         stretchy.attach_context(self.controller.context.child("INFO"))
         self.show_stretchy_overlay(stretchy)
 
     def _action_INFO(self, name, dev_info):
-        run_bg_task(
-            self._show_INFO(dev_info.name))
+        run_bg_task(self._show_INFO(dev_info.name))
+
     _action_INFO.opens_dialog = True
 
     _action_EDIT_WLAN = _stretchy_shower(NetworkConfigureWLANStretchy)
@@ -307,8 +331,7 @@ class NetworkView(BaseView):
     _action_ADD_VLAN = _stretchy_shower(AddVlanStretchy)
 
     def _action_EDIT_BOND(self, name, dev_info):
-        stretchy = BondStretchy(
-            self, dev_info, self.get_candidate_bond_member_names())
+        stretchy = BondStretchy(self, dev_info, self.get_candidate_bond_member_names())
         stretchy.attach_context(self.controller.context.child(name))
         self.show_stretchy_overlay(stretchy)
 
@@ -325,7 +348,7 @@ class NetworkView(BaseView):
         meth("{}/{}".format(dev_info.name, action.name), dev_info)
 
     def update_has_default_route(self, has_default_route):
-        log.debug('view route_watcher %s', has_default_route)
+        log.debug("view route_watcher %s", has_default_route)
         if has_default_route:
             label = _("Done")
         else:
@@ -335,21 +358,26 @@ class NetworkView(BaseView):
             14,
             widget_width(self.buttons.base_widget[0]),
             widget_width(self.buttons.base_widget[1]),
-            )
+        )
 
     def show_apply_spinner(self):
         s = Spinner()
         s.start()
-        c = TablePile([
-            TableRow([
-                Text(_("Applying changes")),
-                s,
-                ]),
-            ], align='center')
+        c = TablePile(
+            [
+                TableRow(
+                    [
+                        Text(_("Applying changes")),
+                        s,
+                    ]
+                ),
+            ],
+            align="center",
+        )
         self.bottom.contents[0:0] = [
             (c, self.bottom.options()),
             (Text(""), self.bottom.options()),
-            ]
+        ]
 
     def hide_apply_spinner(self):
         if len(self.bottom.contents) > 2:
@@ -358,7 +386,9 @@ class NetworkView(BaseView):
     def new_link(self, new_dev_info):
         log.debug(
             "new_link %s %s",
-            new_dev_info.name, (new_dev_info.name in self.cur_netdev_names))
+            new_dev_info.name,
+            (new_dev_info.name in self.cur_netdev_names),
+        )
         if new_dev_info.name in self.dev_name_to_table:
             self.update_link(new_dev_info)
             return
@@ -367,16 +397,17 @@ class NetworkView(BaseView):
         netdev_i = self.cur_netdev_names.index(new_dev_info.name)
         device_table = NetworkDeviceTable(self, new_dev_info)
         self.dev_name_to_table[new_dev_info.name] = device_table
-        self.device_pile.contents[netdev_i+1:netdev_i+1] = [
-            (device_table, self.device_pile.options('pack'))]
+        self.device_pile.contents[netdev_i + 1 : netdev_i + 1] = [
+            (device_table, self.device_pile.options("pack"))
+        ]
 
     def update_link(self, dev_info):
         if isinstance(self._w, StretchyOverlay):
-            if hasattr(self._w.stretchy, 'update_link'):
+            if hasattr(self._w.stretchy, "update_link"):
                 self._w.stretchy.update_link(dev_info)
         log.debug(
-            "update_link %s %s",
-            dev_info.name, (dev_info.name in self.cur_netdev_names))
+            "update_link %s %s", dev_info.name, (dev_info.name in self.cur_netdev_names)
+        )
         if dev_info.name not in self.cur_netdev_names:
             return
         self.dev_name_to_table[dev_info.name].update(dev_info)
@@ -398,20 +429,20 @@ class NetworkView(BaseView):
 
     def del_link(self, dev_info):
         log.debug(
-            "del_link %s %s",
-            dev_info.name, (dev_info.name in self.cur_netdev_names))
+            "del_link %s %s", dev_info.name, (dev_info.name in self.cur_netdev_names)
+        )
         # If a virtual device disappears while we still have config
         # for it, we assume it will be back soon.
         if dev_info.is_virtual and dev_info.has_config:
             return
         if dev_info.name in self.cur_netdev_names:
             netdev_i = self.cur_netdev_names.index(dev_info.name)
-            self._remove_row(netdev_i+1)
+            self._remove_row(netdev_i + 1)
             del self.cur_netdev_names[netdev_i]
             del self.dev_name_to_table[dev_info.name]
         if isinstance(self._w, StretchyOverlay):
             stretchy = self._w.stretchy
-            if getattr(stretchy, 'device', None) is dev_info:
+            if getattr(stretchy, "device", None) is dev_info:
                 self.remove_overlay()
 
     def get_candidate_bond_member_names(self):
@@ -426,8 +457,7 @@ class NetworkView(BaseView):
         return names
 
     def _create_bond(self, sender=None):
-        stretchy = BondStretchy(
-            self, None, self.get_candidate_bond_member_names())
+        stretchy = BondStretchy(self, None, self.get_candidate_bond_member_names())
         stretchy.attach_context(self.controller.context.child("add_bond"))
         self.show_stretchy_overlay(stretchy)
 
@@ -445,9 +475,9 @@ class NetworkView(BaseView):
         self.wlan_support_install_state_showing = True
         text = wlan_support_install_state_texts[state]
         self.bottom.contents[start_i:end_i] = [
-            (Text(rewrap(text), align='center'), self.bottom.options()),
+            (Text(rewrap(text), align="center"), self.bottom.options()),
             (Text(""), self.bottom.options()),
-            ]
+        ]
 
     def show_network_error(self, action, info=None):
         if not self.error_showing:
@@ -459,26 +489,29 @@ class NetworkView(BaseView):
         self.bottom.contents[start_i:end_i] = [
             (Color.info_error(self.error), self.bottom.options()),
             (Text(""), self.bottom.options()),
-            ]
-        if action == 'stop-networkd':
+        ]
+        if action == "stop-networkd":
             exc = info[0]
+            self.error.set_text("Stopping systemd-networkd-failed: %r" % (exc.stderr,))
+        elif action == "apply":
             self.error.set_text(
-                "Stopping systemd-networkd-failed: %r" % (exc.stderr,))
-        elif action == 'apply':
-            self.error.set_text("Network configuration could not be applied; "
-                                "please verify your settings.")
-        elif action == 'timeout':
-            self.error.set_text("Network configuration timed out; "
-                                "please verify your settings.")
-        elif action == 'down':
+                "Network configuration could not be applied; "
+                "please verify your settings."
+            )
+        elif action == "timeout":
+            self.error.set_text(
+                "Network configuration timed out; " "please verify your settings."
+            )
+        elif action == "down":
             self.error.set_text("Downing network interfaces failed.")
-        elif action == 'add-vlan':
+        elif action == "add-vlan":
             self.error.set_text("Failed to add a VLAN tag.")
-        elif action == 'rm-dev':
+        elif action == "rm-dev":
             self.error.set_text("Failed to delete a virtual interface.")
         else:
-            self.error.set_text("An unexpected error has occurred; "
-                                "please verify your settings.")
+            self.error.set_text(
+                "An unexpected error has occurred; " "please verify your settings."
+            )
 
     def done(self, result=None):
         if self.error_showing:

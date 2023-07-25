@@ -18,26 +18,24 @@ import logging
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.ui.views.source import SourceView
 
-log = logging.getLogger('subiquity.client.controllers.source')
+log = logging.getLogger("subiquity.client.controllers.source")
 
 
 class SourceController(SubiquityTuiController):
-
-    endpoint_name = 'source'
+    endpoint_name = "source"
 
     async def make_ui(self):
         sources = await self.endpoint.GET()
-        return SourceView(self,
-                          sources.sources,
-                          sources.current_id,
-                          sources.search_drivers)
+        return SourceView(
+            self, sources.sources, sources.current_id, sources.search_drivers
+        )
 
     def run_answers(self):
         form = self.app.ui.body.form
         if "search_drivers" in self.answers:
             form.search_drivers.value = self.answers["search_drivers"]
-        if 'source' in self.answers:
-            wanted_id = self.answers['source']
+        if "source" in self.answers:
+            wanted_id = self.answers["source"]
             for bf in form._fields:
                 if bf is form.search_drivers:
                     continue
@@ -48,6 +46,9 @@ class SourceController(SubiquityTuiController):
         self.app.prev_screen()
 
     def done(self, source_id, search_drivers: bool):
-        log.debug("SourceController.done source_id=%s, search_drivers=%s",
-                  source_id, search_drivers)
+        log.debug(
+            "SourceController.done source_id=%s, search_drivers=%s",
+            source_id,
+            search_drivers,
+        )
         self.app.next_screen(self.endpoint.POST(source_id, search_drivers))

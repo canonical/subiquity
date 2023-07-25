@@ -26,26 +26,21 @@ def make_entry(**kw):
 
 
 class TestSubiquityModel(unittest.TestCase):
-
     def test_convert_source(self):
         entry = make_entry()
-        source = convert_source(entry, 'C')
+        source = convert_source(entry, "C")
         self.assertEqual(source.id, entry.id)
 
     def test_convert_translations(self):
         entry = make_entry(
             name={
-                'en': 'English',
-                'fr': 'French',
-                'fr_CA': 'French Canadian',
-                })
-        self.assertEqual(
-            convert_source(entry, 'C').name, "English")
-        self.assertEqual(
-            convert_source(entry, 'en').name, "English")
-        self.assertEqual(
-            convert_source(entry, 'fr').name, "French")
-        self.assertEqual(
-            convert_source(entry, 'fr_CA').name, "French Canadian")
-        self.assertEqual(
-            convert_source(entry, 'fr_BE').name, "French")
+                "en": "English",
+                "fr": "French",
+                "fr_CA": "French Canadian",
+            }
+        )
+        self.assertEqual(convert_source(entry, "C").name, "English")
+        self.assertEqual(convert_source(entry, "en").name, "English")
+        self.assertEqual(convert_source(entry, "fr").name, "French")
+        self.assertEqual(convert_source(entry, "fr_CA").name, "French Canadian")
+        self.assertEqual(convert_source(entry, "fr_BE").name, "French")

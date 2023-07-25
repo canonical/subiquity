@@ -15,25 +15,25 @@
 
 import urwid
 
-
 size_neutral_decorations = (
     urwid.AttrMap,
     urwid.PopUpLauncher,
     urwid.WidgetDisable,
-    )
+)
 
 size_neutral_widget_wraps = (
     urwid.Button,
     urwid.CheckBox,
-    )
+)
 
 
 def widget_width(w):
     """Return the natural width of the widget w."""
-    if (isinstance(w, urwid.WidgetDecoration)
-            and getattr(w, 'has_original_width', False)):
+    if isinstance(w, urwid.WidgetDecoration) and getattr(
+        w, "has_original_width", False
+    ):
         return widget_width(w.original_widget)
-    if hasattr(w, 'get_natural_width'):
+    if hasattr(w, "get_natural_width"):
         return w.get_natural_width()
     if isinstance(w, size_neutral_widget_wraps):
         return widget_width(w._wrapped_widget)

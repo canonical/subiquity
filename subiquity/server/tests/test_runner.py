@@ -16,11 +16,8 @@
 import os
 from unittest.mock import patch
 
+from subiquity.server.runner import DryRunCommandRunner, LoggedCommandRunner
 from subiquitycore.tests import SubiTestCase
-from subiquity.server.runner import (
-    LoggedCommandRunner,
-    DryRunCommandRunner,
-    )
 
 
 class TestLoggedCommandRunner(SubiTestCase):
@@ -34,12 +31,10 @@ class TestLoggedCommandRunner(SubiTestCase):
             runner = LoggedCommandRunner(ident="my-identifier")
             self.assertEqual(runner.use_systemd_user, True)
 
-        runner = LoggedCommandRunner(ident="my-identifier",
-                                     use_systemd_user=True)
+        runner = LoggedCommandRunner(ident="my-identifier", use_systemd_user=True)
         self.assertEqual(runner.use_systemd_user, True)
 
-        runner = LoggedCommandRunner(ident="my-identifier",
-                                     use_systemd_user=False)
+        runner = LoggedCommandRunner(ident="my-identifier", use_systemd_user=False)
         self.assertEqual(runner.use_systemd_user, False)
 
     def test_forge_systemd_cmd(self):
@@ -55,21 +50,30 @@ class TestLoggedCommandRunner(SubiTestCase):
 
         with patch.dict(os.environ, environ, clear=True):
             cmd = runner._forge_systemd_cmd(
-                    ["/bin/ls", "/root"],
-                    private_mounts=True, capture=False)
+                ["/bin/ls", "/root"], private_mounts=True, capture=False
+            )
 
         expected = [
             "systemd-run",
-            "--wait", "--same-dir",
-            "--property", "SyslogIdentifier=my-id",
-            "--property", "PrivateMounts=yes",
-            "--setenv", "PATH=/snap/subiquity/x1/bin",
-            "--setenv", "PYTHONPATH=/usr/lib/python3.10/site-packages",
-            "--setenv", "PYTHON=/snap/subiquity/x1/usr/bin/python3.10",
-            "--setenv", "TARGET_MOUNT_POINT=/target",
-            "--setenv", "SNAP=/snap/subiquity/x1",
+            "--wait",
+            "--same-dir",
+            "--property",
+            "SyslogIdentifier=my-id",
+            "--property",
+            "PrivateMounts=yes",
+            "--setenv",
+            "PATH=/snap/subiquity/x1/bin",
+            "--setenv",
+            "PYTHONPATH=/usr/lib/python3.10/site-packages",
+            "--setenv",
+            "PYTHON=/snap/subiquity/x1/usr/bin/python3.10",
+            "--setenv",
+            "TARGET_MOUNT_POINT=/target",
+            "--setenv",
+            "SNAP=/snap/subiquity/x1",
             "--",
-            "/bin/ls", "/root",
+            "/bin/ls",
+            "/root",
         ]
         self.assertEqual(cmd, expected)
 
@@ -80,26 +84,31 @@ class TestLoggedCommandRunner(SubiTestCase):
         }
         with patch.dict(os.environ, environ, clear=True):
             cmd = runner._forge_systemd_cmd(
-                    ["/bin/ls", "/root"],
-                    private_mounts=False, capture=True)
+                ["/bin/ls", "/root"], private_mounts=False, capture=True
+            )
 
         expected = [
             "systemd-run",
-            "--wait", "--same-dir",
-            "--property", "SyslogIdentifier=my-id",
+            "--wait",
+            "--same-dir",
+            "--property",
+            "SyslogIdentifier=my-id",
             "--user",
             "--pipe",
-            "--setenv", "PYTHONPATH=/usr/lib/python3.10/site-packages",
+            "--setenv",
+            "PYTHONPATH=/usr/lib/python3.10/site-packages",
             "--",
-            "/bin/ls", "/root",
+            "/bin/ls",
+            "/root",
         ]
         self.assertEqual(cmd, expected)
 
 
 class TestDryRunCommandRunner(SubiTestCase):
     def setUp(self):
-        self.runner = DryRunCommandRunner(ident="my-identifier",
-                                          delay=10, use_systemd_user=True)
+        self.runner = DryRunCommandRunner(
+            ident="my-identifier", delay=10, use_systemd_user=True
+        )
 
     def test_init(self):
         self.assertEqual(self.runner.ident, "my-identifier")
@@ -109,19 +118,22 @@ class TestDryRunCommandRunner(SubiTestCase):
     @patch.object(LoggedCommandRunner, "_forge_systemd_cmd")
     def test_forge_systemd_cmd(self, mock_super):
         self.runner._forge_systemd_cmd(
-                ["/bin/ls", "/root"],
-                private_mounts=True, capture=True)
+            ["/bin/ls", "/root"], private_mounts=True, capture=True
+        )
         mock_super.assert_called_once_with(
-                ["echo", "not running:", "/bin/ls", "/root"],
-                private_mounts=True, capture=True)
+            ["echo", "not running:", "/bin/ls", "/root"],
+            private_mounts=True,
+            capture=True,
+        )
 
         mock_super.reset_mock()
         # Make sure exceptions are handled.
-        self.runner._forge_systemd_cmd(["scripts/replay-curtin-log.py"],
-                                       private_mounts=True, capture=False)
+        self.runner._forge_systemd_cmd(
+            ["scripts/replay-curtin-log.py"], private_mounts=True, capture=False
+        )
         mock_super.assert_called_once_with(
-                ["scripts/replay-curtin-log.py"],
-                private_mounts=True, capture=False)
+            ["scripts/replay-curtin-log.py"], private_mounts=True, capture=False
+        )
 
     def test_get_delay_for_cmd(self):
         # Most commands use the default delay
@@ -129,16 +141,21 @@ class TestDryRunCommandRunner(SubiTestCase):
         self.assertEqual(delay, 10)
 
         # Commands containing "unattended-upgrades" use delay * 3
-        delay = self.runner._get_delay_for_cmd([
-            "python3", "-m", "curtin",
-            "in-target",
-            "-t", "/target",
-            "--",
-            "unattended-upgrades", "-v",
-        ])
+        delay = self.runner._get_delay_for_cmd(
+            [
+                "python3",
+                "-m",
+                "curtin",
+                "in-target",
+                "-t",
+                "/target",
+                "--",
+                "unattended-upgrades",
+                "-v",
+            ]
+        )
         self.assertEqual(delay, 30)
 
         # Commands having scripts/replay will actually be executed - no delay.
-        delay = self.runner._get_delay_for_cmd(
-                ["scripts/replay-curtin-log.py"])
+        delay = self.runner._get_delay_for_cmd(["scripts/replay-curtin-log.py"])
         self.assertEqual(delay, 0)

@@ -18,27 +18,20 @@
 WSLSetupOptions provides user with options to customize the setup experience.
 """
 
-from urwid import (
-    connect_signal,
-)
+from urwid import connect_signal
 
-from subiquitycore.ui.form import (
-    Form,
-    BooleanField,
-)
+from subiquity.common.types import WSLSetupOptions
+from subiquitycore.ui.form import BooleanField, Form
 from subiquitycore.ui.utils import screen
 from subiquitycore.view import BaseView
-from subiquity.common.types import WSLSetupOptions
 
 CAPTION = _("Install packages for better {lang} language support")
 
 
 class WSLSetupOptionsForm(Form):
-    install_language_support_packages = \
-        BooleanField("",
-                     help=('info_minor',
-                           _("Not recommended for slow internet connections."))
-                     )
+    install_language_support_packages = BooleanField(
+        "", help=("info_minor", _("Not recommended for slow internet connections."))
+    )
 
 
 class WSLSetupOptionsView(BaseView):
@@ -51,10 +44,11 @@ class WSLSetupOptionsView(BaseView):
         pkgs = configuration_data.install_language_support_packages
         initial = {"install_language_support_packages": pkgs}
         self.form = WSLSetupOptionsForm(initial=initial)
-        self.form.install_language_support_packages.caption = \
-            CAPTION.format(lang=cur_lang)
+        self.form.install_language_support_packages.caption = CAPTION.format(
+            lang=cur_lang
+        )
 
-        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, "submit", self.done)
         super().__init__(
             screen(
                 self.form.as_rows(),

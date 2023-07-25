@@ -3,21 +3,16 @@ from unittest import mock
 
 import urwid
 
-from subiquitycore.testing import view_helpers
-from subiquitycore.view import BaseView
-
 from subiquity.client.controllers.filesystem import FilesystemController
 from subiquity.common.filesystem import gaps
-from subiquity.models.filesystem import (
-    dehumanize_size,
-    )
-from subiquity.models.tests.test_filesystem import (
-    make_model_and_disk,
-    )
+from subiquity.models.filesystem import dehumanize_size
+from subiquity.models.tests.test_filesystem import make_model_and_disk
 from subiquity.ui.views.filesystem.partition import (
     FormatEntireStretchy,
     PartitionStretchy,
-    )
+)
+from subiquitycore.testing import view_helpers
+from subiquitycore.view import BaseView
 
 
 def make_partition_view(model, disk, **kw):
@@ -43,7 +38,6 @@ def make_format_entire_view(model, disk):
 
 
 class PartitionViewTests(unittest.TestCase):
-
     def test_initial_focus(self):
         model, disk = make_model_and_disk()
         gap = gaps.Gap(device=disk, offset=1 << 20, size=99 << 30)
@@ -57,60 +51,60 @@ class PartitionViewTests(unittest.TestCase):
 
     def test_create_partition(self):
         valid_data = {
-            'size': "1M",
-            'fstype': "ext4",
-            }
+            "size": "1M",
+            "fstype": "ext4",
+        }
         model, disk = make_model_and_disk()
         gap = gaps.Gap(device=disk, offset=1 << 20, size=99 << 30)
         view, stretchy = make_partition_view(model, disk, gap=gap)
         view_helpers.enter_data(stretchy.form, valid_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)
-        valid_data['mount'] = '/'
-        valid_data['size'] = dehumanize_size(valid_data['size'])
-        valid_data['use_swap'] = False
+        valid_data["mount"] = "/"
+        valid_data["size"] = dehumanize_size(valid_data["size"])
+        valid_data["use_swap"] = False
         view.controller.partition_disk_handler.assert_called_once_with(
-            stretchy.disk, valid_data, partition=None, gap=gap)
+            stretchy.disk, valid_data, partition=None, gap=gap
+        )
 
     def test_edit_partition(self):
         form_data = {
-            'size': "256M",
-            'fstype': "xfs",
-            }
+            "size": "256M",
+            "fstype": "xfs",
+        }
         model, disk = make_model_and_disk()
-        partition = model.add_partition(disk, size=512*(2**20), offset=0)
+        partition = model.add_partition(disk, size=512 * (2**20), offset=0)
         model.add_filesystem(partition, "ext4")
         view, stretchy = make_partition_view(model, disk, partition=partition)
         self.assertTrue(stretchy.form.done_btn.enabled)
         view_helpers.enter_data(stretchy.form, form_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)
         expected_data = {
-            'size': dehumanize_size(form_data['size']),
-            'fstype': 'xfs',
-            'mount': None,
-            'use_swap': False,
-            }
+            "size": dehumanize_size(form_data["size"]),
+            "fstype": "xfs",
+            "mount": None,
+            "use_swap": False,
+        }
         view.controller.partition_disk_handler.assert_called_once_with(
-            stretchy.disk, expected_data,
-            partition=stretchy.partition, gap=None)
+            stretchy.disk, expected_data, partition=stretchy.partition, gap=None
+        )
 
     def test_size_clamping(self):
         model, disk = make_model_and_disk()
-        partition = model.add_partition(disk, size=512*(2**20), offset=0)
+        partition = model.add_partition(disk, size=512 * (2**20), offset=0)
         model.add_filesystem(partition, "ext4")
         view, stretchy = make_partition_view(model, disk, partition=partition)
         self.assertTrue(stretchy.form.done_btn.enabled)
         stretchy.form.size.value = "1000T"
         stretchy.form.size.widget.lost_focus()
         self.assertTrue(stretchy.form.size.showing_extra)
-        self.assertIn(
-            "Capped partition size", stretchy.form.size.under_text.text)
+        self.assertIn("Capped partition size", stretchy.form.size.under_text.text)
 
     def test_edit_existing_partition(self):
         form_data = {
-            'fstype': "xfs",
-            }
+            "fstype": "xfs",
+        }
         model, disk = make_model_and_disk()
-        partition = model.add_partition(disk, size=512*(2**20), offset=0)
+        partition = model.add_partition(disk, size=512 * (2**20), offset=0)
         partition.preserve = True
         model.add_filesystem(partition, "ext4")
         view, stretchy = make_partition_view(model, disk, partition=partition)
@@ -119,19 +113,19 @@ class PartitionViewTests(unittest.TestCase):
         view_helpers.enter_data(stretchy.form, form_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)
         expected_data = {
-            'fstype': 'xfs',
-            'mount': None,
-            'use_swap': False,
-            }
+            "fstype": "xfs",
+            "mount": None,
+            "use_swap": False,
+        }
         view.controller.partition_disk_handler.assert_called_once_with(
-            stretchy.disk, expected_data,
-            partition=stretchy.partition, gap=None)
+            stretchy.disk, expected_data, partition=stretchy.partition, gap=None
+        )
 
     def test_edit_existing_partition_mountpoints(self):
         # Set up a PartitionStretchy for editing a partition with an
         # existing filesystem.
         model, disk = make_model_and_disk()
-        partition = model.add_partition(disk, size=512*(2**20), offset=0)
+        partition = model.add_partition(disk, size=512 * (2**20), offset=0)
         partition.preserve = True
         partition.number = 1
         fs = model.add_filesystem(partition, "ext4")
@@ -149,33 +143,32 @@ class PartitionViewTests(unittest.TestCase):
         # The option for mounting at / is disabled. But /srv is still
         # enabled.
         selector = stretchy.form.mount.widget._selector
-        self.assertFalse(selector.option_by_value('/').enabled)
-        self.assertTrue(selector.option_by_value('/srv').enabled)
+        self.assertFalse(selector.option_by_value("/").enabled)
+        self.assertTrue(selector.option_by_value("/srv").enabled)
 
         # Typing in an unsuitable mountpoint triggers a message.
         stretchy.form.mount.value = "/boot"
         stretchy.form.mount.validate()
         self.assertTrue(stretchy.form.mount.showing_extra)
-        self.assertIn(
-            "bad idea", stretchy.form.mount.under_text.text)
-        self.assertIn(
-            "/boot", stretchy.form.mount.under_text.text)
+        self.assertIn("bad idea", stretchy.form.mount.under_text.text)
+        self.assertIn("/boot", stretchy.form.mount.under_text.text)
 
         # Selecting to reformat the partition clears the message and
         # reenables the / option.
         stretchy.form.select_fstype(None, "ext4")
         self.assertFalse(stretchy.form.mount.showing_extra)
-        self.assertTrue(selector.option_by_value('/').enabled)
+        self.assertTrue(selector.option_by_value("/").enabled)
 
     def test_edit_boot_partition(self):
         form_data = {
-            'size': "256M",
-            }
+            "size": "256M",
+        }
         model, disk = make_model_and_disk()
-        partition = model.add_partition(disk, size=512*(2**20),
-                                        offset=0, flag="boot")
+        partition = model.add_partition(
+            disk, size=512 * (2**20), offset=0, flag="boot"
+        )
         fs = model.add_filesystem(partition, "fat32")
-        model.add_mount(fs, '/boot/efi')
+        model.add_mount(fs, "/boot/efi")
         view, stretchy = make_partition_view(model, disk, partition=partition)
 
         self.assertFalse(stretchy.form.fstype.enabled)
@@ -186,19 +179,20 @@ class PartitionViewTests(unittest.TestCase):
         view_helpers.enter_data(stretchy.form, form_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)
         expected_data = {
-            'size': dehumanize_size(form_data['size']),
-            'fstype': "fat32",
-            'mount': '/boot/efi',
-            'use_swap': False,
-            }
+            "size": dehumanize_size(form_data["size"]),
+            "fstype": "fat32",
+            "mount": "/boot/efi",
+            "use_swap": False,
+        }
         view.controller.partition_disk_handler.assert_called_once_with(
-            stretchy.disk, expected_data,
-            partition=stretchy.partition, gap=None)
+            stretchy.disk, expected_data, partition=stretchy.partition, gap=None
+        )
 
     def test_edit_existing_unused_boot_partition(self):
         model, disk = make_model_and_disk()
-        partition = model.add_partition(disk, size=512*(2**20),
-                                        offset=0, flag="boot")
+        partition = model.add_partition(
+            disk, size=512 * (2**20), offset=0, flag="boot"
+        )
         fs = model.add_filesystem(partition, "fat32")
         model._orig_config = model._render_actions()
         disk.preserve = partition.preserve = fs.preserve = True
@@ -211,38 +205,39 @@ class PartitionViewTests(unittest.TestCase):
 
         view_helpers.click(stretchy.form.done_btn.base_widget)
         expected_data = {
-            'mount': None,
-            'use_swap': False,
-            }
+            "mount": None,
+            "use_swap": False,
+        }
         view.controller.partition_disk_handler.assert_called_once_with(
-            stretchy.disk, expected_data,
-            partition=stretchy.partition, gap=None)
+            stretchy.disk, expected_data, partition=stretchy.partition, gap=None
+        )
 
     def test_edit_existing_used_boot_partition(self):
         model, disk = make_model_and_disk()
-        partition = model.add_partition(disk, size=512*(2**20),
-                                        offset=0, flag="boot")
+        partition = model.add_partition(
+            disk, size=512 * (2**20), offset=0, flag="boot"
+        )
         fs = model.add_filesystem(partition, "fat32")
         model._orig_config = model._render_actions()
         partition.grub_device = True
         disk.preserve = partition.preserve = fs.preserve = True
-        model.add_mount(fs, '/boot/efi')
+        model.add_mount(fs, "/boot/efi")
         view, stretchy = make_partition_view(model, disk, partition=partition)
 
         self.assertTrue(stretchy.form.fstype.enabled)
         self.assertEqual(stretchy.form.fstype.value, None)
         self.assertFalse(stretchy.form.mount.enabled)
-        self.assertEqual(stretchy.form.mount.value, '/boot/efi')
+        self.assertEqual(stretchy.form.mount.value, "/boot/efi")
 
         view_helpers.click(stretchy.form.done_btn.base_widget)
         expected_data = {
-            'fstype': None,
-            'mount': '/boot/efi',
-            'use_swap': False,
-            }
+            "fstype": None,
+            "mount": "/boot/efi",
+            "use_swap": False,
+        }
         view.controller.partition_disk_handler.assert_called_once_with(
-            stretchy.disk, expected_data,
-            partition=stretchy.partition, gap=None)
+            stretchy.disk, expected_data, partition=stretchy.partition, gap=None
+        )
 
     def test_format_entire_unusual_filesystem(self):
         model, disk = make_model_and_disk()
@@ -250,5 +245,4 @@ class PartitionViewTests(unittest.TestCase):
         fs.preserve = True
         model._orig_config = model._render_actions()
         view, stretchy = make_format_entire_view(model, disk)
-        self.assertEqual(
-            stretchy.form.fstype.value, None)
+        self.assertEqual(stretchy.form.fstype.value, None)

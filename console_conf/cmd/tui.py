@@ -16,42 +16,63 @@
 
 import argparse
 import asyncio
-import sys
-import os
 import logging
-from subiquitycore.log import setup_logger
-from subiquitycore import __version__ as VERSION
+import os
+import sys
+
 from console_conf.core import ConsoleConf, RecoveryChooser
+from subiquitycore import __version__ as VERSION
+from subiquitycore.log import setup_logger
 
 
 def parse_options(argv):
     parser = argparse.ArgumentParser(
-        description=(
-            'console-conf - Pre-Ownership Configuration for Ubuntu Core'),
-        prog='console-conf')
-    parser.add_argument('--dry-run', action='store_true',
-                        dest='dry_run',
-                        help='menu-only, do not call installer function')
-    parser.add_argument('--serial', action='store_true',
-                        dest='run_on_serial',
-                        help='Run the installer over serial console.')
-    parser.add_argument('--ascii', action='store_true',
-                        dest='ascii',
-                        help='Run the installer in ascii mode.')
-    parser.add_argument('--machine-config', metavar='CONFIG',
-                        dest='machine_config',
-                        type=argparse.FileType(),
-                        help="Don't Probe. Use probe data file")
-    parser.add_argument('--screens', action='append', dest='screens',
-                        default=[])
-    parser.add_argument('--answers')
-    parser.add_argument('--recovery-chooser-mode', action='store_true',
-                        dest='chooser_systems',
-                        help=('Run as a recovery chooser interacting with the '
-                              'calling process over stdin/stdout streams'))
-    parser.add_argument('--output-base', action='store', dest='output_base',
-                        default='.subiquity',
-                        help='in dryrun, control basedir of files')
+        description=("console-conf - Pre-Ownership Configuration for Ubuntu Core"),
+        prog="console-conf",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        dest="dry_run",
+        help="menu-only, do not call installer function",
+    )
+    parser.add_argument(
+        "--serial",
+        action="store_true",
+        dest="run_on_serial",
+        help="Run the installer over serial console.",
+    )
+    parser.add_argument(
+        "--ascii",
+        action="store_true",
+        dest="ascii",
+        help="Run the installer in ascii mode.",
+    )
+    parser.add_argument(
+        "--machine-config",
+        metavar="CONFIG",
+        dest="machine_config",
+        type=argparse.FileType(),
+        help="Don't Probe. Use probe data file",
+    )
+    parser.add_argument("--screens", action="append", dest="screens", default=[])
+    parser.add_argument("--answers")
+    parser.add_argument(
+        "--recovery-chooser-mode",
+        action="store_true",
+        dest="chooser_systems",
+        help=(
+            "Run as a recovery chooser interacting with the "
+            "calling process over stdin/stdout streams"
+        ),
+    )
+    parser.add_argument(
+        "--output-base",
+        action="store",
+        dest="output_base",
+        default=".subiquity",
+        help="in dryrun, control basedir of files",
+    )
     return parser.parse_args(argv)
 
 
@@ -64,7 +85,7 @@ def main():
     if opts.dry_run:
         LOGDIR = opts.output_base
     setup_logger(dir=LOGDIR)
-    logger = logging.getLogger('console_conf')
+    logger = logging.getLogger("console_conf")
     logger.info("Starting console-conf v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
 
@@ -73,8 +94,7 @@ def main():
             # when running as a chooser, the stdin/stdout streams are set up by
             # the process that runs us, attempt to restore the tty in/out by
             # looking at stderr
-            chooser_input, chooser_output = restore_std_streams_from(
-                    sys.stderr)
+            chooser_input, chooser_output = restore_std_streams_from(sys.stderr)
             interface = RecoveryChooser(opts, chooser_input, chooser_output)
         else:
             interface = ConsoleConf(opts)
@@ -91,10 +111,10 @@ def restore_std_streams_from(from_file):
     tty = os.ttyname(from_file.fileno())
     # we have tty now
     chooser_input, chooser_output = sys.stdin, sys.stdout
-    sys.stdin = open(tty, 'r')
-    sys.stdout = open(tty, 'w')
+    sys.stdin = open(tty, "r")
+    sys.stdout = open(tty, "w")
     return chooser_input, chooser_output
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

@@ -13,19 +13,19 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subprocess import CompletedProcess
 import unittest
-from unittest.mock import patch, AsyncMock, ANY
+from subprocess import CompletedProcess
+from unittest.mock import ANY, AsyncMock, patch
 
 from subiquity.common.types import UbuntuProService
 from subiquity.server.ubuntu_advantage import (
-    InvalidTokenError,
-    ExpiredTokenError,
     CheckSubscriptionError,
-    UAInterface,
+    ExpiredTokenError,
+    InvalidTokenError,
     MockedUAInterfaceStrategy,
     UAClientUAInterfaceStrategy,
-    )
+    UAInterface,
+)
 
 
 class TestMockedUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
@@ -68,19 +68,18 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(strategy.executable, ["/usr/bin/ubuntu-advantage"])
 
         # Initialize with a path + interpreter.
-        strategy = UAClientUAInterfaceStrategy(
-            ("python3", "/usr/bin/ubuntu-advantage")
-        )
-        self.assertEqual(strategy.executable,
-                         ["python3", "/usr/bin/ubuntu-advantage"])
+        strategy = UAClientUAInterfaceStrategy(("python3", "/usr/bin/ubuntu-advantage"))
+        self.assertEqual(strategy.executable, ["python3", "/usr/bin/ubuntu-advantage"])
 
     async def test_query_info_succeeded(self):
         strategy = UAClientUAInterfaceStrategy()
         command = (
             "ubuntu-advantage",
             "status",
-            "--format", "json",
-            "--simulate-with-token", "123456789",
+            "--format",
+            "json",
+            "--simulate-with-token",
+            "123456789",
         )
 
         with patch(self.arun_command_sym) as mock_arun:
@@ -94,8 +93,10 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
         command = (
             "ubuntu-advantage",
             "status",
-            "--format", "json",
-            "--simulate-with-token", "123456789",
+            "--format",
+            "json",
+            "--simulate-with-token",
+            "123456789",
         )
 
         with patch(self.arun_command_sym) as mock_arun:
@@ -110,8 +111,10 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
         command = (
             "ubuntu-advantage",
             "status",
-            "--format", "json",
-            "--simulate-with-token", "123456789",
+            "--format",
+            "json",
+            "--simulate-with-token",
+            "123456789",
         )
 
         with patch(self.arun_command_sym) as mock_arun:
@@ -141,8 +144,10 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
         command = (
             "ubuntu-advantage",
             "status",
-            "--format", "json",
-            "--simulate-with-token", "123456789",
+            "--format",
+            "json",
+            "--simulate-with-token",
+            "123456789",
         )
 
         with patch(self.arun_command_sym) as mock_arun:
@@ -158,15 +163,17 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
             mock_arun.return_value = CompletedProcess([], 0)
             mock_arun.return_value.stdout = '{"result": "success"}'
             result = await strategy._api_call(
-                    endpoint="u.pro.attach.magic.wait.v1",
-                    params=[("magic_token", "132456")])
+                endpoint="u.pro.attach.magic.wait.v1",
+                params=[("magic_token", "132456")],
+            )
             self.assertEqual(result, {"result": "success"})
 
         command = (
             "ubuntu-advantage",
             "api",
             "u.pro.attach.magic.wait.v1",
-            "--args", "magic_token=132456",
+            "--args",
+            "magic_token=132456",
         )
         mock_arun.assert_called_once_with(command, check=False, env=ANY)
 
@@ -176,8 +183,8 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
             await strategy.magic_initiate_v1()
 
         api_call.assert_called_once_with(
-                endpoint="u.pro.attach.magic.initiate.v1",
-                params=[])
+            endpoint="u.pro.attach.magic.initiate.v1", params=[]
+        )
 
     async def test_magic_wait_v1(self):
         strategy = UAClientUAInterfaceStrategy()
@@ -185,8 +192,8 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
             await strategy.magic_wait_v1(magic_token="ABCDEF")
 
         api_call.assert_called_once_with(
-                endpoint="u.pro.attach.magic.wait.v1",
-                params=[("magic_token", "ABCDEF")])
+            endpoint="u.pro.attach.magic.wait.v1", params=[("magic_token", "ABCDEF")]
+        )
 
     async def test_magic_revoke_v1(self):
         strategy = UAClientUAInterfaceStrategy()
@@ -194,12 +201,11 @@ class TestUAClientUAInterfaceStrategy(unittest.IsolatedAsyncioTestCase):
             await strategy.magic_revoke_v1(magic_token="ABCDEF")
 
         api_call.assert_called_once_with(
-                endpoint="u.pro.attach.magic.revoke.v1",
-                params=[("magic_token", "ABCDEF")])
+            endpoint="u.pro.attach.magic.revoke.v1", params=[("magic_token", "ABCDEF")]
+        )
 
 
 class TestUAInterface(unittest.IsolatedAsyncioTestCase):
-
     async def test_mocked_get_subscription(self):
         strategy = MockedUAInterfaceStrategy(scale_factor=1_000_000)
         interface = UAInterface(strategy)
@@ -237,56 +243,66 @@ class TestUAInterface(unittest.IsolatedAsyncioTestCase):
                     "description": "Center for Internet Security Audit Tools",
                     "entitled": "no",
                     "auto_enabled": "no",
-                    "available": "yes"
+                    "available": "yes",
                 },
                 {
                     "name": "esm-apps",
-                    "description":
-                        "UA Apps: Extended Security Maintenance (ESM)",
+                    "description": "UA Apps: Extended Security Maintenance (ESM)",
                     "entitled": "yes",
                     "auto_enabled": "yes",
-                    "available": "no"
+                    "available": "no",
                 },
                 {
                     "name": "esm-infra",
-                    "description":
-                        "UA Infra: Extended Security Maintenance (ESM)",
+                    "description": "UA Infra: Extended Security Maintenance (ESM)",
                     "entitled": "yes",
                     "auto_enabled": "yes",
-                    "available": "yes"
+                    "available": "yes",
                 },
                 {
                     "name": "fips",
                     "description": "NIST-certified core packages",
                     "entitled": "yes",
                     "auto_enabled": "no",
-                    "available": "yes"
+                    "available": "yes",
                 },
-            ]
+            ],
         }
         interface.get_subscription_status = AsyncMock(return_value=status)
         subscription = await interface.get_subscription(token="XXX")
 
-        self.assertIn(UbuntuProService(
-            name="esm-infra",
-            description="UA Infra: Extended Security Maintenance (ESM)",
-            auto_enabled=True,
-        ), subscription.services)
-        self.assertIn(UbuntuProService(
-            name="fips",
-            description="NIST-certified core packages",
-            auto_enabled=False,
-        ), subscription.services)
-        self.assertNotIn(UbuntuProService(
-            name="esm-apps",
-            description="UA Apps: Extended Security Maintenance (ESM)",
-            auto_enabled=True,
-        ), subscription.services)
-        self.assertNotIn(UbuntuProService(
-            name="cis",
-            description="Center for Internet Security Audit Tools",
-            auto_enabled=False,
-        ), subscription.services)
+        self.assertIn(
+            UbuntuProService(
+                name="esm-infra",
+                description="UA Infra: Extended Security Maintenance (ESM)",
+                auto_enabled=True,
+            ),
+            subscription.services,
+        )
+        self.assertIn(
+            UbuntuProService(
+                name="fips",
+                description="NIST-certified core packages",
+                auto_enabled=False,
+            ),
+            subscription.services,
+        )
+        self.assertNotIn(
+            UbuntuProService(
+                name="esm-apps",
+                description="UA Apps: Extended Security Maintenance (ESM)",
+                auto_enabled=True,
+            ),
+            subscription.services,
+        )
+        self.assertNotIn(
+            UbuntuProService(
+                name="cis",
+                description="Center for Internet Security Audit Tools",
+                auto_enabled=False,
+            ),
+            subscription.services,
+        )
 
         # Test with "Z" suffix for the expiration date.
         status["expires"] = "2035-12-31T00:00:00Z"

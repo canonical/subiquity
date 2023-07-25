@@ -19,28 +19,34 @@ from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import WSLConfigurationAdvanced
 from system_setup.ui.views.wslconfadvanced import WSLConfigurationAdvancedView
 
-log = logging.getLogger('system_setup.client.controllers.wslconfadvanced')
+log = logging.getLogger("system_setup.client.controllers.wslconfadvanced")
 
 
 class WSLConfigurationAdvancedController(SubiquityTuiController):
-    endpoint_name = 'wslconfadvanced'
+    endpoint_name = "wslconfadvanced"
 
     async def make_ui(self):
         data = await self.endpoint.GET()
         return WSLConfigurationAdvancedView(self, data)
 
     def run_answers(self):
-        if all(elem in self.answers for elem in
-               ['interop_enabled', 'interop_appendwindowspath',
-                'automount_enabled', 'automount_mountfstab']):
-
+        if all(
+            elem in self.answers
+            for elem in [
+                "interop_enabled",
+                "interop_appendwindowspath",
+                "automount_enabled",
+                "automount_mountfstab",
+            ]
+        ):
             reconfiguration = WSLConfigurationAdvanced(**self.answers)
             self.done(reconfiguration)
 
     def done(self, reconf_data):
         log.debug(
             "WSLConfigurationAdvancedController.done next_screen user_spec=%s",
-            reconf_data)
+            reconf_data,
+        )
         self.app.next_screen(self.endpoint.POST(reconf_data))
 
     def cancel(self):

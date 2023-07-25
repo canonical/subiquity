@@ -19,47 +19,25 @@ import logging
 from typing import Tuple
 
 import yaml
+from urwid import AttrMap, CheckBox, LineBox
+from urwid import ListBox as UrwidListBox
+from urwid import RadioButton, SelectableIcon, SimpleFocusListWalker, Text
 
-from urwid import (
-    AttrMap,
-    CheckBox,
-    LineBox,
-    ListBox as UrwidListBox,
-    RadioButton,
-    SelectableIcon,
-    SimpleFocusListWalker,
-    Text,
-    )
-
+from subiquity.common.types import SnapCheckState, SnapSelection
+from subiquity.models.filesystem import humanize_size
 from subiquitycore.async_helpers import schedule_task
-from subiquitycore.ui.buttons import ok_btn, cancel_btn, other_btn
+from subiquitycore.ui.buttons import cancel_btn, ok_btn, other_btn
 from subiquitycore.ui.container import (
     Columns,
     ListBox,
     Pile,
     ScrollBarListBox,
     WidgetWrap,
-    )
+)
 from subiquitycore.ui.spinner import Spinner
-from subiquitycore.ui.table import (
-    AbstractTable,
-    ColSpec,
-    TablePile,
-    TableRow,
-    )
-from subiquitycore.ui.utils import (
-    button_pile,
-    Color,
-    Padding,
-    screen,
-    )
+from subiquitycore.ui.table import AbstractTable, ColSpec, TablePile, TableRow
+from subiquitycore.ui.utils import Color, Padding, button_pile, screen
 from subiquitycore.view import BaseView
-
-from subiquity.common.types import (
-    SnapCheckState,
-    SnapSelection,
-    )
-from subiquity.models.filesystem import humanize_size
 
 log = logging.getLogger("subiquity.ui.views.snaplist")
 
@@ -68,11 +46,10 @@ class StarRadioButton(RadioButton):
     states = {
         True: SelectableIcon("(*)"),
         False: SelectableIcon("( )"),
-        }
+    }
 
 
 class NoTabCyclingTableListBox(AbstractTable):
-
     def _make(self, rows):
         body = SimpleFocusListWalker(rows)
         return ScrollBarListBox(UrwidListBox(body))
@@ -82,14 +59,14 @@ def format_datetime(d):
     delta = datetime.datetime.now() - d
     if delta.total_seconds() < 60:
         return _("just now")
-    elif delta.total_seconds() < 60*60:
-        amount = int(delta.total_seconds()/60)
+    elif delta.total_seconds() < 60 * 60:
+        amount = int(delta.total_seconds() / 60)
         if amount == 1:
             unit = _("minute")
         else:
             unit = _("minutes")
-    elif delta.total_seconds() < 60*60*24:
-        amount = int(delta.total_seconds()/(60*60))
+    elif delta.total_seconds() < 60 * 60 * 24:
+        amount = int(delta.total_seconds() / (60 * 60))
         if amount == 1:
             unit = _("hour")
         else:
@@ -106,7 +83,7 @@ def format_datetime(d):
 
 
 def check_mark() -> Tuple[Tuple[str, str], ...]:
-    """ Return a tuple that can be passed to a urwid.Text() """
+    """Return a tuple that can be passed to a urwid.Text()"""
 
     # We want a single check-mark "✓" in rich-mode but a double star "**" in
     # basic mode.  Because we have a 1:1 mapping between a given unicode
@@ -114,13 +91,12 @@ def check_mark() -> Tuple[Tuple[str, str], ...]:
     # invisible in rich-mode. In basic mode, they both get substituted with a
     # star.
     return (
-        ('verified', '\N{check mark}'),
-        ('verified invisible', '\N{check mark}'),
+        ("verified", "\N{check mark}"),
+        ("verified invisible", "\N{check mark}"),
     )
 
 
 class SnapInfoView(WidgetWrap):
-
     # This is mostly like a Pile but it tries to be a bit smart about
     # how to distribute space between the description and channel list
     # (which can both be arbitrarily long or short). If both are long,
@@ -133,7 +109,7 @@ class SnapInfoView(WidgetWrap):
         self.needs_focus = True
         self.selections_by_name = {}
 
-        self.description = Text(snap.description.replace('\r', '').strip())
+        self.description = Text(snap.description.replace("\r", "").strip())
         self.lb_description = ListBox([self.description])
 
         latest_update = datetime.datetime.min
@@ -144,88 +120,115 @@ class SnapInfoView(WidgetWrap):
             selection = SnapSelection(
                 name=self.snap.name,
                 channel=csi.channel_name,
-                classic=csi.confinement == "classic")
+                classic=csi.confinement == "classic",
+            )
             btn = StarRadioButton(
                 radio_group,
                 csi.channel_name,
                 state=csi.channel_name == cur_channel,
                 on_state_change=self.state_change,
-                user_data=selection)
-            channel_rows.append(Color.menu_button(TableRow([
-                btn,
-                Text(csi.version),
-                Text("(" + csi.revision + ")"),
-                Text(humanize_size(csi.size)),
-                Text(format_datetime(csi.released_at)),
-                Text(csi.confinement),
-            ])))
+                user_data=selection,
+            )
+            channel_rows.append(
+                Color.menu_button(
+                    TableRow(
+                        [
+                            btn,
+                            Text(csi.version),
+                            Text("(" + csi.revision + ")"),
+                            Text(humanize_size(csi.size)),
+                            Text(format_datetime(csi.released_at)),
+                            Text(csi.confinement),
+                        ]
+                    )
+                )
+            )
 
-        first_info_row = TableRow([
-            (3, Text(
+        first_info_row = TableRow(
+            [
+                (
+                    3,
+                    Text(
+                        [
+                            ("info_minor", _("LICENSE: ")),
+                            snap.license,
+                        ],
+                        wrap="clip",
+                    ),
+                ),
+                (
+                    3,
+                    Text(
+                        [
+                            ("info_minor", _("LAST UPDATED: ")),
+                            format_datetime(latest_update),
+                        ]
+                    ),
+                ),
+            ]
+        )
+        heading_row = Color.info_minor(
+            TableRow(
                 [
-                    ('info_minor', _("LICENSE: ")),
-                    snap.license,
-                ], wrap='clip')),
-            (3, Text(
-                [
-                    ('info_minor', _("LAST UPDATED: ")),
-                    format_datetime(latest_update),
-                ])),
-            ])
-        heading_row = Color.info_minor(TableRow([
-            Text(_("CHANNEL")),
-            (2, Text(_("VERSION"))),
-            Text(_("SIZE")),
-            Text(_("PUBLISHED")),
-            Text(_("CONFINEMENT")),
-            ]))
+                    Text(_("CHANNEL")),
+                    (2, Text(_("VERSION"))),
+                    Text(_("SIZE")),
+                    Text(_("PUBLISHED")),
+                    Text(_("CONFINEMENT")),
+                ]
+            )
+        )
         colspecs = {
             1: ColSpec(can_shrink=True),
-            }
+        }
         info_table = TablePile(
             [
                 first_info_row,
                 TableRow([Text("")]),
                 heading_row,
             ],
-            spacing=2, colspecs=colspecs)
+            spacing=2,
+            colspecs=colspecs,
+        )
         self.lb_channels = NoTabCyclingTableListBox(
-            channel_rows,
-            spacing=2, colspecs=colspecs)
+            channel_rows, spacing=2, colspecs=colspecs
+        )
         info_table.bind(self.lb_channels)
         self.info_padding = Padding.pull_1(info_table)
 
-        publisher = [('info_minor', _("by: ")), snap.publisher]
+        publisher = [("info_minor", _("by: ")), snap.publisher]
         if snap.verified:
             publisher.append(" ")
             publisher.extend(check_mark())
         elif snap.starred:
-            publisher.append(('starred', ' \N{circled white star}'))
+            publisher.append(("starred", " \N{circled white star}"))
 
-        title = Columns([
-            Text(snap.name),
-            ('pack', Text(publisher, align='right')),
-            ], dividechars=1)
+        title = Columns(
+            [
+                Text(snap.name),
+                ("pack", Text(publisher, align="right")),
+            ],
+            dividechars=1,
+        )
 
         contents = [
-            ('pack',      title),
-            ('pack',      Text("")),
-            ('pack',      Text(snap.summary)),
-            ('pack',      Text("")),
+            ("pack", title),
+            ("pack", Text("")),
+            ("pack", Text(snap.summary)),
+            ("pack", Text("")),
             self.lb_description,  # overwritten in render()
-            ('pack',      Text("")),
-            ('pack',      self.info_padding),
-            ('pack',      Text("")),
-            ('weight', 1, self.lb_channels),
-            ]
+            ("pack", Text("")),
+            ("pack", self.info_padding),
+            ("pack", Text("")),
+            ("weight", 1, self.lb_channels),
+        ]
         self.description_index = contents.index(self.lb_description)
         self.pile = Pile(contents)
         super().__init__(self.pile)
 
     def state_change(self, sender, state, selection):
         if state:
-            log.debug(
-                "selecting %s from %s", self.snap.name, selection.channel)
+            log.debug("selecting %s from %s", self.snap.name, selection.channel)
             self.parent.snap_boxes[self.snap.name].set_state(True)
             self.parent.selections_by_name[self.snap.name] = selection
 
@@ -233,12 +236,12 @@ class SnapInfoView(WidgetWrap):
         maxcol, maxrow = size
 
         rows_available = maxrow
-        pack_option = self.pile.options('pack')
+        pack_option = self.pile.options("pack")
         for w, o in self.pile.contents:
             if o == pack_option:
                 rows_available -= w.rows((maxcol,), focus)
 
-        rows_wanted_description = self.description.rows((maxcol-1,), False)
+        rows_wanted_description = self.description.rows((maxcol - 1,), False)
         rows_wanted_channels = 0
         for row in self.lb_channels._w.original_widget.body:
             rows_wanted_channels += row.rows((maxcol,), False)
@@ -247,16 +250,19 @@ class SnapInfoView(WidgetWrap):
             description_rows = rows_wanted_description
             channel_rows = rows_wanted_channels
         else:
-            if rows_wanted_description < 2*rows_available/3:
+            if rows_wanted_description < 2 * rows_available / 3:
                 description_rows = rows_wanted_description
                 channel_rows = rows_available - description_rows
             else:
                 channel_rows = max(
-                    min(rows_wanted_channels, int(rows_available/3)), 3)
+                    min(rows_wanted_channels, int(rows_available / 3)), 3
+                )
                 description_rows = rows_available - channel_rows
 
         self.pile.contents[self.description_index] = (
-            self.lb_description, self.pile.options('given', description_rows))
+            self.lb_description,
+            self.pile.options("given", description_rows),
+        )
         if description_rows >= rows_wanted_description:
             self.lb_description.base_widget._selectable = False
         else:
@@ -272,7 +278,6 @@ class SnapInfoView(WidgetWrap):
 
 
 class FetchingFailed(WidgetWrap):
-
     def __init__(self, row, snap):
         self.row = row
         self.closed = False
@@ -284,10 +289,14 @@ class FetchingFailed(WidgetWrap):
         cancel = cancel_btn(label=_("Cancel"), on_press=self.close)
         super().__init__(
             LineBox(
-                Pile([
-                    ('pack', Text(' ' + text)),
-                    ('pack', button_pile([retry, cancel])),
-                    ])))
+                Pile(
+                    [
+                        ("pack", Text(" " + text)),
+                        ("pack", button_pile([retry, cancel])),
+                    ]
+                )
+            )
+        )
 
     def load(self, sender=None):
         self.close()
@@ -304,21 +313,20 @@ class SnapCheckBox(CheckBox):
     states = {
         True: SelectableIcon("[*]"),
         False: SelectableIcon("[ ]"),
-        }
+    }
 
     def __init__(self, parent, snap, state):
         self.parent = parent
         self.snap = snap
-        super().__init__(
-            snap.name, state=state, on_state_change=self.state_change)
+        super().__init__(snap.name, state=state, on_state_change=self.state_change)
 
     async def load_info(self):
         app = self.parent.controller.app
         await app.wait_with_text_dialog(
-            asyncio.shield(
-                self.parent.controller.get_snap_info(self.snap)),
+            asyncio.shield(self.parent.controller.get_snap_info(self.snap)),
             _("Fetching info for {snap}").format(snap=self.snap.name),
-            can_cancel=True)
+            can_cancel=True,
+        )
         if len(self.snap.channels) == 0:  # or other indication of failure
             ff = FetchingFailed(self, self.snap)
             self.parent.show_overlay(ff, width=ff.width)
@@ -328,12 +336,17 @@ class SnapCheckBox(CheckBox):
             if selection is not None:
                 cur_chan = selection.channel
             siv = SnapInfoView(self.parent, self.snap, cur_chan)
-            self.parent.show_screen(screen(
-                siv,
-                [other_btn(
-                    label=_("Close"),
-                    on_press=self.parent.show_main_screen)],
-                focus_buttons=False))
+            self.parent.show_screen(
+                screen(
+                    siv,
+                    [
+                        other_btn(
+                            label=_("Close"), on_press=self.parent.show_main_screen
+                        )
+                    ],
+                    focus_buttons=False,
+                )
+            )
 
     def keypress(self, size, key):
         if key.startswith("enter"):
@@ -346,15 +359,15 @@ class SnapCheckBox(CheckBox):
             log.debug("selecting %s", self.snap.name)
             self.parent.selections_by_name[self.snap.name] = SnapSelection(
                 name=self.snap.name,
-                channel='stable',
-                classic=self.snap.confinement == "classic")
+                channel="stable",
+                classic=self.snap.confinement == "classic",
+            )
         else:
             log.debug("unselecting %s", self.snap.name)
             self.parent.selections_by_name.pop(self.snap.name, None)
 
 
 class SnapListView(BaseView):
-
     title = _("Featured Server Snaps")
 
     def __init__(self, controller, data):
@@ -366,11 +379,13 @@ class SnapListView(BaseView):
             self.loaded(data)
 
     def wait_load(self):
-        spinner = Spinner(style='dots')
+        spinner = Spinner(style="dots")
         spinner.start()
         self._w = screen(
-            [spinner], [ok_btn(label=_("Continue"), on_press=self.done)],
-            excerpt=_("Loading server snaps from store, please wait..."))
+            [spinner],
+            [ok_btn(label=_("Continue"), on_press=self.done)],
+            excerpt=_("Loading server snaps from store, please wait..."),
+        )
         schedule_task(self._wait_load(spinner))
 
     async def _wait_load(self, spinner):
@@ -398,7 +413,8 @@ class SnapListView(BaseView):
             [
                 other_btn(label=_("Try again"), on_press=try_again_pressed),
                 ok_btn(label=_("Continue"), on_press=self.done),
-            ])
+            ],
+        )
 
     def show_main_screen(self, sender=None):
         self._w = self._main_screen
@@ -408,7 +424,7 @@ class SnapListView(BaseView):
 
     def get_seed_yaml(self):
         if self.controller.opts.dry_run:
-            return '''snaps:
+            return """snaps:
   -
     name: core
     channel: stable
@@ -417,11 +433,11 @@ class SnapListView(BaseView):
     name: lxd
     channel: stable/ubuntu-18.04
     file: lxd_59.snap
-'''
-        seed_location = '/media/filesystem/var/lib/snapd/seed/seed.yaml'
+"""
+        seed_location = "/media/filesystem/var/lib/snapd/seed/seed.yaml"
         content = "{}"
         try:
-            with open(seed_location, encoding='utf-8', errors='replace') as fp:
+            with open(seed_location, encoding="utf-8", errors="replace") as fp:
                 content = fp.read()
         except FileNotFoundError:
             log.exception("could not find source at %r", seed_location)
@@ -434,8 +450,8 @@ class SnapListView(BaseView):
             log.exception("failed to parse seed.yaml")
             return set()
         names = set()
-        for snap in seed.get('snaps', []):
-            name = snap.get('name')
+        for snap in seed.get("snaps", []):
+            name = snap.get("name")
             if name:
                 names.add(name)
         log.debug("pre-seeded snaps %s", names)
@@ -444,7 +460,7 @@ class SnapListView(BaseView):
     def make_main_screen(self, data):
         self.selections_by_name = {
             selection.name: selection for selection in data.selections
-            }
+        }
         self.snap_boxes = {}
         body = []
         preinstalled = self.get_preinstalled_snaps()
@@ -453,49 +469,56 @@ class SnapListView(BaseView):
                 log.debug("not offering preseeded snap %r", snap.name)
                 continue
             box = self.snap_boxes[snap.name] = SnapCheckBox(
-                self, snap, snap.name in self.selections_by_name)
+                self, snap, snap.name in self.selections_by_name
+            )
             publisher = [snap.publisher]
             if snap.verified:
                 publisher.extend(check_mark())
             elif snap.starred:
-                publisher.append(('starred', '\N{circled white star}'))
+                publisher.append(("starred", "\N{circled white star}"))
             row = [
                 box,
                 Text(publisher),
-                Text(snap.summary, wrap='clip'),
-                Text("\N{BLACK RIGHT-POINTING SMALL TRIANGLE}")
-                ]
-            body.append(AttrMap(
-                TableRow(row),
-                'menu_button',
-                {
-                    None: 'menu_button focus',
-                    'verified': 'verified focus',
-                    'verified invisible': 'verified inv focus',
-                    'starred': 'starred focus',
-                },
-                ))
+                Text(snap.summary, wrap="clip"),
+                Text("\N{BLACK RIGHT-POINTING SMALL TRIANGLE}"),
+            ]
+            body.append(
+                AttrMap(
+                    TableRow(row),
+                    "menu_button",
+                    {
+                        None: "menu_button focus",
+                        "verified": "verified focus",
+                        "verified invisible": "verified inv focus",
+                        "starred": "starred focus",
+                    },
+                )
+            )
         table = NoTabCyclingTableListBox(
             body,
             colspecs={
                 1: ColSpec(omittable=True),
                 2: ColSpec(pack=False, min_width=40),
-                })
+            },
+        )
         ok = ok_btn(label=_("Done"), on_press=self.done)
         cancel = cancel_btn(label=_("Back"), on_press=self.cancel)
         self._main_screen = screen(
-            table, [ok, cancel],
+            table,
+            [ok, cancel],
             focus_buttons=False,
             excerpt=_(
                 "These are popular snaps in server environments. Select or "
                 "deselect with SPACE, press ENTER to see more details of the "
-                "package, publisher and versions available."))
+                "package, publisher and versions available."
+            ),
+        )
 
     def done(self, sender=None):
         log.debug("snaps to install %s", self.selections_by_name)
-        self.controller.done(sorted(
-            self.selections_by_name.values(),
-            key=lambda s: s.name))
+        self.controller.done(
+            sorted(self.selections_by_name.values(), key=lambda s: s.name)
+        )
 
     def cancel(self, sender=None):
         if self._w is self._main_screen:

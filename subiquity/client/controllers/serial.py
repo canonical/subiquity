@@ -19,7 +19,7 @@ from subiquity.client.controller import SubiquityTuiController
 from subiquity.ui.views.serial import SerialView
 from subiquitycore.tuicontroller import Skip
 
-log = logging.getLogger('subiquity.client.controllers.serial')
+log = logging.getLogger("subiquity.client.controllers.serial")
 
 
 class SerialController(SubiquityTuiController):
@@ -30,11 +30,11 @@ class SerialController(SubiquityTuiController):
         return SerialView(self, ssh_info)
 
     def run_answers(self):
-        if 'rich' in self.answers:
-            if self.answers['rich']:
-                self.ui.body.rich_btn.base_widget._emit('click')
+        if "rich" in self.answers:
+            if self.answers["rich"]:
+                self.ui.body.rich_btn.base_widget._emit("click")
             else:
-                self.ui.body.basic_btn.base_widget._emit('click')
+                self.ui.body.basic_btn.base_widget._emit("click")
 
     def done(self, rich):
         log.debug("SerialController.done rich %s next_screen", rich)

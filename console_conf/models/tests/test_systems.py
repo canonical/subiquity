@@ -13,23 +13,23 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import unittest
 import json
-import jsonschema
+import unittest
 from io import StringIO
 
+import jsonschema
+
 from console_conf.models.systems import (
-    RecoverySystemsModel,
-    RecoverySystem,
     Brand,
-    SystemModel,
-    SystemAction,
+    RecoverySystem,
+    RecoverySystemsModel,
     SelectedSystemAction,
-    )
+    SystemAction,
+    SystemModel,
+)
 
 
 class RecoverySystemsModelTests(unittest.TestCase):
-
     reference = {
         "systems": [
             {
@@ -49,7 +49,7 @@ class RecoverySystemsModelTests(unittest.TestCase):
                 "actions": [
                     {"title": "reinstall", "mode": "install"},
                     {"title": "recover", "mode": "recover"},
-                ]
+                ],
             },
             {
                 "label": "other",
@@ -66,46 +66,53 @@ class RecoverySystemsModelTests(unittest.TestCase):
                 },
                 "actions": [
                     {"title": "reinstall", "mode": "install"},
-                ]
-            }
-
+                ],
+            },
         ]
     }
 
     def test_from_systems_stream_happy(self):
         raw = json.dumps(self.reference)
         systems = RecoverySystemsModel.from_systems_stream(StringIO(raw))
-        exp = RecoverySystemsModel([
-            RecoverySystem(
-                current=True,
-                label="1234",
-                model=SystemModel(
-                    model="core20-amd64",
-                    brand_id="brand-id",
-                    display_name="Core 20 AMD64 system"),
-                brand=Brand(
-                    ID="brand-id",
-                    username="brand-username",
-                    display_name="this is my brand",
-                    validation="verified"),
-                actions=[SystemAction(title="reinstall", mode="install"),
-                         SystemAction(title="recover", mode="recover")]
+        exp = RecoverySystemsModel(
+            [
+                RecoverySystem(
+                    current=True,
+                    label="1234",
+                    model=SystemModel(
+                        model="core20-amd64",
+                        brand_id="brand-id",
+                        display_name="Core 20 AMD64 system",
+                    ),
+                    brand=Brand(
+                        ID="brand-id",
+                        username="brand-username",
+                        display_name="this is my brand",
+                        validation="verified",
+                    ),
+                    actions=[
+                        SystemAction(title="reinstall", mode="install"),
+                        SystemAction(title="recover", mode="recover"),
+                    ],
                 ),
-            RecoverySystem(
-                current=False,
-                label="other",
-                model=SystemModel(
-                    model="my-brand-box",
-                    brand_id="other-brand-id",
-                    display_name="Funky box"),
-                brand=Brand(
-                    ID="other-brand-id",
-                    username="other-brand",
-                    display_name="my brand",
-                    validation="unproven"),
-                actions=[SystemAction(title="reinstall", mode="install")]
+                RecoverySystem(
+                    current=False,
+                    label="other",
+                    model=SystemModel(
+                        model="my-brand-box",
+                        brand_id="other-brand-id",
+                        display_name="Funky box",
+                    ),
+                    brand=Brand(
+                        ID="other-brand-id",
+                        username="other-brand",
+                        display_name="my brand",
+                        validation="unproven",
+                    ),
+                    actions=[SystemAction(title="reinstall", mode="install")],
                 ),
-            ])
+            ]
+        )
         self.assertEqual(systems.systems, exp.systems)
         self.assertEqual(systems.current, exp.systems[0])
 
@@ -114,101 +121,111 @@ class RecoverySystemsModelTests(unittest.TestCase):
             RecoverySystemsModel.from_systems_stream(StringIO("{}"))
 
     def test_from_systems_stream_invalid_missing_system_label(self):
-        raw = json.dumps({
-            "systems": [
-                {
-                    "brand": {
-                        "id": "brand-id",
-                        "username": "brand-username",
-                        "display-name": "this is my brand",
-                        "validation": "verified",
+        raw = json.dumps(
+            {
+                "systems": [
+                    {
+                        "brand": {
+                            "id": "brand-id",
+                            "username": "brand-username",
+                            "display-name": "this is my brand",
+                            "validation": "verified",
+                        },
+                        "model": {
+                            "model": "core20-amd64",
+                            "brand-id": "brand-id",
+                            "display-name": "Core 20 AMD64 system",
+                        },
+                        "actions": [
+                            {"title": "reinstall", "mode": "install"},
+                            {"title": "recover", "mode": "recover"},
+                        ],
                     },
-                    "model": {
-                        "model": "core20-amd64",
-                        "brand-id": "brand-id",
-                        "display-name": "Core 20 AMD64 system",
-                    },
-                    "actions": [
-                        {"title": "reinstall", "mode": "install"},
-                        {"title": "recover", "mode": "recover"},
-                    ]
-                },
-            ]
-        })
+                ]
+            }
+        )
         with self.assertRaises(jsonschema.ValidationError):
             RecoverySystemsModel.from_systems_stream(StringIO(raw))
 
     def test_from_systems_stream_invalid_missing_brand(self):
-        raw = json.dumps({
-            "systems": [
-                {
-                    "label": "1234",
-                    "model": {
-                        "model": "core20-amd64",
-                        "brand-id": "brand-id",
-                        "display-name": "Core 20 AMD64 system",
+        raw = json.dumps(
+            {
+                "systems": [
+                    {
+                        "label": "1234",
+                        "model": {
+                            "model": "core20-amd64",
+                            "brand-id": "brand-id",
+                            "display-name": "Core 20 AMD64 system",
+                        },
+                        "actions": [
+                            {"title": "reinstall", "mode": "install"},
+                            {"title": "recover", "mode": "recover"},
+                        ],
                     },
-                    "actions": [
-                        {"title": "reinstall", "mode": "install"},
-                        {"title": "recover", "mode": "recover"},
-                    ]
-                },
-            ]
-        })
+                ]
+            }
+        )
         with self.assertRaises(jsonschema.ValidationError):
             RecoverySystemsModel.from_systems_stream(StringIO(raw))
 
     def test_from_systems_stream_invalid_missing_model(self):
-        raw = json.dumps({
-            "systems": [
-                {
-                    "label": "1234",
-                    "brand": {
-                        "id": "brand-id",
-                        "username": "brand-username",
-                        "display-name": "this is my brand",
-                        "validation": "verified",
+        raw = json.dumps(
+            {
+                "systems": [
+                    {
+                        "label": "1234",
+                        "brand": {
+                            "id": "brand-id",
+                            "username": "brand-username",
+                            "display-name": "this is my brand",
+                            "validation": "verified",
+                        },
+                        "actions": [
+                            {"title": "reinstall", "mode": "install"},
+                            {"title": "recover", "mode": "recover"},
+                        ],
                     },
-                    "actions": [
-                        {"title": "reinstall", "mode": "install"},
-                        {"title": "recover", "mode": "recover"},
-                    ]
-                },
-            ]
-        })
+                ]
+            }
+        )
         with self.assertRaises(jsonschema.ValidationError):
             RecoverySystemsModel.from_systems_stream(StringIO(raw))
 
     def test_from_systems_stream_valid_no_actions(self):
-        raw = json.dumps({
-            "systems": [
-                {
-                    "label": "1234",
-                    "model": {
-                        "model": "core20-amd64",
-                        "brand-id": "brand-id",
-                        "display-name": "Core 20 AMD64 system",
+        raw = json.dumps(
+            {
+                "systems": [
+                    {
+                        "label": "1234",
+                        "model": {
+                            "model": "core20-amd64",
+                            "brand-id": "brand-id",
+                            "display-name": "Core 20 AMD64 system",
+                        },
+                        "brand": {
+                            "id": "brand-id",
+                            "username": "brand-username",
+                            "display-name": "this is my brand",
+                            "validation": "verified",
+                        },
+                        "actions": [],
                     },
-                    "brand": {
-                        "id": "brand-id",
-                        "username": "brand-username",
-                        "display-name": "this is my brand",
-                        "validation": "verified",
-                    },
-                    "actions": [],
-                },
-            ]
-        })
+                ]
+            }
+        )
         RecoverySystemsModel.from_systems_stream(StringIO(raw))
 
     def test_selection(self):
         raw = json.dumps(self.reference)
         model = RecoverySystemsModel.from_systems_stream(StringIO(raw))
         model.select(model.systems[1], model.systems[1].actions[0])
-        self.assertEqual(model.selection,
-                         SelectedSystemAction(
-                             system=model.systems[1],
-                             action=model.systems[1].actions[0]))
+        self.assertEqual(
+            model.selection,
+            SelectedSystemAction(
+                system=model.systems[1], action=model.systems[1].actions[0]
+            ),
+        )
         model.unselect()
         self.assertIsNone(model.selection)
 
@@ -221,13 +238,16 @@ class RecoverySystemsModelTests(unittest.TestCase):
         stream = StringIO()
         RecoverySystemsModel.to_response_stream(model.selection, stream)
         fromjson = json.loads(stream.getvalue())
-        self.assertEqual(fromjson, {
-            "label": "other",
-            "action": {
-                "mode": "install",
-                "title": "reinstall",
+        self.assertEqual(
+            fromjson,
+            {
+                "label": "other",
+                "action": {
+                    "mode": "install",
+                    "title": "reinstall",
                 },
-            })
+            },
+        )
 
     def test_no_current(self):
         reference = {
@@ -249,7 +269,7 @@ class RecoverySystemsModelTests(unittest.TestCase):
                     "actions": [
                         {"title": "reinstall", "mode": "install"},
                         {"title": "recover", "mode": "recover"},
-                    ]
+                    ],
                 },
             ],
         }

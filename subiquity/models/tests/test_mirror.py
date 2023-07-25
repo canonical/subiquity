@@ -18,41 +18,37 @@ import unittest
 from unittest import mock
 
 from subiquity.models.mirror import (
-    countrify_uri,
     LEGACY_DEFAULT_PRIMARY_SECTION,
+    LegacyPrimaryEntry,
     MirrorModel,
     MirrorSelectionFallback,
-    LegacyPrimaryEntry,
     PrimaryEntry,
-    )
+    countrify_uri,
+)
 
 
 class TestCountrifyUrl(unittest.TestCase):
     def test_official_archive(self):
         self.assertEqual(
-                countrify_uri(
-                    "http://archive.ubuntu.com/ubuntu",
-                    cc="fr"),
-                "http://fr.archive.ubuntu.com/ubuntu")
+            countrify_uri("http://archive.ubuntu.com/ubuntu", cc="fr"),
+            "http://fr.archive.ubuntu.com/ubuntu",
+        )
 
         self.assertEqual(
-                countrify_uri(
-                    "http://archive.ubuntu.com/ubuntu",
-                    cc="us"),
-                "http://us.archive.ubuntu.com/ubuntu")
+            countrify_uri("http://archive.ubuntu.com/ubuntu", cc="us"),
+            "http://us.archive.ubuntu.com/ubuntu",
+        )
 
     def test_ports_archive(self):
         self.assertEqual(
-                countrify_uri(
-                    "http://ports.ubuntu.com/ubuntu-ports",
-                    cc="fr"),
-                "http://fr.ports.ubuntu.com/ubuntu-ports")
+            countrify_uri("http://ports.ubuntu.com/ubuntu-ports", cc="fr"),
+            "http://fr.ports.ubuntu.com/ubuntu-ports",
+        )
 
         self.assertEqual(
-                countrify_uri(
-                    "http://ports.ubuntu.com/ubuntu-ports",
-                    cc="us"),
-                "http://us.ports.ubuntu.com/ubuntu-ports")
+            countrify_uri("http://ports.ubuntu.com/ubuntu-ports", cc="us"),
+            "http://us.ports.ubuntu.com/ubuntu-ports",
+        )
 
 
 class TestPrimaryEntry(unittest.TestCase):
@@ -78,21 +74,20 @@ class TestPrimaryEntry(unittest.TestCase):
         model = MirrorModel()
 
         entry = PrimaryEntry.from_config("country-mirror", parent=model)
-        self.assertEqual(entry, PrimaryEntry(parent=model,
-                                             country_mirror=True))
+        self.assertEqual(entry, PrimaryEntry(parent=model, country_mirror=True))
 
         with self.assertRaises(ValueError):
             entry = PrimaryEntry.from_config({}, parent=model)
 
-        entry = PrimaryEntry.from_config(
-                {"uri": "http://mirror"}, parent=model)
-        self.assertEqual(entry, PrimaryEntry(
-            uri="http://mirror", parent=model))
+        entry = PrimaryEntry.from_config({"uri": "http://mirror"}, parent=model)
+        self.assertEqual(entry, PrimaryEntry(uri="http://mirror", parent=model))
 
         entry = PrimaryEntry.from_config(
-                {"uri": "http://mirror", "arches": ["amd64"]}, parent=model)
-        self.assertEqual(entry, PrimaryEntry(
-            uri="http://mirror", arches=["amd64"], parent=model))
+            {"uri": "http://mirror", "arches": ["amd64"]}, parent=model
+        )
+        self.assertEqual(
+            entry, PrimaryEntry(uri="http://mirror", arches=["amd64"], parent=model)
+        )
 
 
 class TestLegacyPrimaryEntry(unittest.TestCase):
@@ -111,8 +106,8 @@ class TestLegacyPrimaryEntry(unittest.TestCase):
     def test_get_uri(self):
         self.model.architecture = "amd64"
         primary = LegacyPrimaryEntry(
-                [{"uri": "http://myurl", "arches": "amd64"}],
-                parent=self.model)
+            [{"uri": "http://myurl", "arches": "amd64"}], parent=self.model
+        )
         self.assertEqual(primary.uri, "http://myurl")
 
     def test_set_uri(self):
@@ -130,8 +125,9 @@ class TestMirrorModel(unittest.TestCase):
         self.model_legacy = MirrorModel()
         self.model_legacy.legacy_primary = True
         self.model_legacy.primary_candidates = [
-            LegacyPrimaryEntry(copy.deepcopy(
-                LEGACY_DEFAULT_PRIMARY_SECTION), parent=self.model_legacy),
+            LegacyPrimaryEntry(
+                copy.deepcopy(LEGACY_DEFAULT_PRIMARY_SECTION), parent=self.model_legacy
+            ),
         ]
         self.candidate_legacy = self.model_legacy.primary_candidates[0]
         self.model_legacy.primary_staged = self.candidate_legacy
@@ -152,7 +148,8 @@ class TestMirrorModel(unittest.TestCase):
                     [
                         "http://CC.archive.ubuntu.com/ubuntu",
                         "http://CC.ports.ubuntu.com/ubuntu-ports",
-                    ])
+                    ],
+                )
 
         do_test(self.model)
         do_test(self.model_legacy)
@@ -167,7 +164,7 @@ class TestMirrorModel(unittest.TestCase):
     def test_default_disable_components(self):
         def do_test(model, candidate):
             config = model.get_apt_config_staged()
-            self.assertEqual([], config['disable_components'])
+            self.assertEqual([], config["disable_components"])
 
         # The candidate[0] is a country-mirror, skip it.
         candidate = self.model.primary_candidates[1]
@@ -179,15 +176,14 @@ class TestMirrorModel(unittest.TestCase):
         # autoinstall loads to the config directly
         model = MirrorModel()
         data = {
-            'disable_components': ['non-free'],
-            'fallback': 'offline-install',
+            "disable_components": ["non-free"],
+            "fallback": "offline-install",
         }
         model.load_autoinstall_data(data)
         self.assertFalse(model.legacy_primary)
         model.primary_candidates[0].stage()
-        self.assertEqual(set(['non-free']), model.disabled_components)
-        self.assertEqual(model.primary_candidates,
-                         model._default_primary_entries())
+        self.assertEqual(set(["non-free"]), model.disabled_components)
+        self.assertEqual(model.primary_candidates, model._default_primary_entries())
 
     def test_from_autoinstall_modern(self):
         data = {
@@ -202,16 +198,19 @@ class TestMirrorModel(unittest.TestCase):
         }
         model = MirrorModel()
         model.load_autoinstall_data(data)
-        self.assertEqual(model.primary_candidates, [
-            PrimaryEntry(parent=model, country_mirror=True),
-            PrimaryEntry(uri="http://mirror", parent=model),
-        ])
+        self.assertEqual(
+            model.primary_candidates,
+            [
+                PrimaryEntry(parent=model, country_mirror=True),
+                PrimaryEntry(uri="http://mirror", parent=model),
+            ],
+        )
 
     def test_disable_add(self):
         def do_test(model, candidate):
-            expected = ['things', 'stuff']
+            expected = ["things", "stuff"]
             model.disable_components(expected.copy(), add=True)
-            actual = model.get_apt_config_staged()['disable_components']
+            actual = model.get_apt_config_staged()["disable_components"]
             actual.sort()
             expected.sort()
             self.assertEqual(expected, actual)
@@ -223,11 +222,11 @@ class TestMirrorModel(unittest.TestCase):
         do_test(self.model_legacy, self.candidate_legacy)
 
     def test_disable_remove(self):
-        self.model.disabled_components = set(['a', 'b', 'things'])
-        to_remove = ['things', 'stuff']
-        expected = ['a', 'b']
+        self.model.disabled_components = set(["a", "b", "things"])
+        to_remove = ["things", "stuff"]
+        expected = ["a", "b"]
         self.model.disable_components(to_remove, add=False)
-        actual = self.model.get_apt_config_staged()['disable_components']
+        actual = self.model.get_apt_config_staged()["disable_components"]
         actual.sort()
         expected.sort()
         self.assertEqual(expected, actual)
@@ -242,12 +241,15 @@ class TestMirrorModel(unittest.TestCase):
         self.model.legacy_primary = False
         self.model.fallback = MirrorSelectionFallback.OFFLINE_INSTALL
         self.model.primary_candidates = [
-            PrimaryEntry(uri=None, arches=None,
-                         country_mirror=True, parent=self.model),
-            PrimaryEntry(uri="http://mirror.local/ubuntu",
-                         arches=None, parent=self.model),
-            PrimaryEntry(uri="http://amd64.mirror.local/ubuntu",
-                         arches=["amd64"], parent=self.model),
+            PrimaryEntry(uri=None, arches=None, country_mirror=True, parent=self.model),
+            PrimaryEntry(
+                uri="http://mirror.local/ubuntu", arches=None, parent=self.model
+            ),
+            PrimaryEntry(
+                uri="http://amd64.mirror.local/ubuntu",
+                arches=["amd64"],
+                parent=self.model,
+            ),
         ]
         cfg = self.model.make_autoinstall()
         self.assertEqual(cfg["disable_components"], ["non-free"])
@@ -259,8 +261,7 @@ class TestMirrorModel(unittest.TestCase):
         self.model.disabled_components = set(["non-free"])
         self.model.fallback = MirrorSelectionFallback.ABORT
         self.model.legacy_primary = True
-        self.model.primary_candidates = \
-            [LegacyPrimaryEntry(primary, parent=self.model)]
+        self.model.primary_candidates = [LegacyPrimaryEntry(primary, parent=self.model)]
         self.model.primary_candidates[0].elect()
         cfg = self.model.make_autoinstall()
         self.assertEqual(cfg["disable_components"], ["non-free"])
@@ -269,22 +270,23 @@ class TestMirrorModel(unittest.TestCase):
 
     def test_create_primary_candidate(self):
         self.model.legacy_primary = False
-        candidate = self.model.create_primary_candidate(
-                "http://mymirror.valid")
+        candidate = self.model.create_primary_candidate("http://mymirror.valid")
         self.assertEqual(candidate.uri, "http://mymirror.valid")
         self.model.legacy_primary = True
-        candidate = self.model.create_primary_candidate(
-                "http://mymirror.valid")
+        candidate = self.model.create_primary_candidate("http://mymirror.valid")
         self.assertEqual(candidate.uri, "http://mymirror.valid")
 
     def test_wants_geoip(self):
         country_mirror_candidates = mock.patch.object(
-                self.model, "country_mirror_candidates", return_value=iter([]))
+            self.model, "country_mirror_candidates", return_value=iter([])
+        )
         with country_mirror_candidates:
             self.assertFalse(self.model.wants_geoip())
 
         country_mirror_candidates = mock.patch.object(
-                self.model, "country_mirror_candidates",
-                return_value=iter([PrimaryEntry(parent=self.model)]))
+            self.model,
+            "country_mirror_candidates",
+            return_value=iter([PrimaryEntry(parent=self.model)]),
+        )
         with country_mirror_candidates:
             self.assertTrue(self.model.wants_geoip())

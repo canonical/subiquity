@@ -43,7 +43,7 @@ class TestMessageHub(unittest.IsolatedAsyncioTestCase):
 
     async def test_message_arg(self):
         cb = MagicMock()
-        channel_id = 'test-message-arg'
+        channel_id = "test-message-arg"
         self.hub.subscribe(channel_id, cb)
-        await self.hub.abroadcast(channel_id, '0', 1, 'two', [3], four=4)
-        cb.assert_called_once_with('0', 1, 'two', [3], four=4)
+        await self.hub.abroadcast(channel_id, "0", 1, "two", [3], four=4)
+        cb.assert_called_once_with("0", 1, "two", [3], four=4)

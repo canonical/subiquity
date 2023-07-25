@@ -17,8 +17,7 @@ import logging
 
 import attr
 
-
-log = logging.getLogger('subiquity.models.identity')
+log = logging.getLogger("subiquity.models.identity")
 
 
 @attr.s
@@ -29,8 +28,7 @@ class User(object):
 
 
 class IdentityModel(object):
-    """ Model representing user identity
-    """
+    """Model representing user identity"""
 
     def __init__(self):
         self._user = None
@@ -39,11 +37,11 @@ class IdentityModel(object):
     def add_user(self, identity_data):
         self._hostname = identity_data.hostname
         d = {}
-        d['realname'] = identity_data.realname
-        d['username'] = identity_data.username
-        d['password'] = identity_data.crypted_password
-        if not d['realname']:
-            d['realname'] = identity_data.username
+        d["realname"] = identity_data.realname
+        d["username"] = identity_data.username
+        d["password"] = identity_data.crypted_password
+        if not d["realname"]:
+            d["realname"] = identity_data.username
         self._user = User(**d)
 
     @property

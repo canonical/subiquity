@@ -13,8 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from abc import ABC, abstractmethod
-import attr
 import collections
 import copy
 import enum
@@ -25,28 +23,28 @@ import os
 import pathlib
 import platform
 import tempfile
+from abc import ABC, abstractmethod
 from typing import List, Optional, Set, Union
 
+import attr
 import more_itertools
-
 from curtin import storage_config
 from curtin.block import partition_kname
 from curtin.swap import can_use_swapfile
 from curtin.util import human2bytes
-
 from probert.storage import StorageInfo
 
 from subiquity.common.types import Bootloader, OsProber
 
-log = logging.getLogger('subiquity.models.filesystem')
+log = logging.getLogger("subiquity.models.filesystem")
 
 MiB = 1024 * 1024
 GiB = 1024 * 1024 * 1024
 
 
 class NotFinalPartitionError(Exception):
-    """ Exception to raise when guessing the size of a partition that is not
-    the last one. """
+    """Exception to raise when guessing the size of a partition that is not
+    the last one."""
 
 
 def _set_backlinks(obj):
@@ -61,7 +59,7 @@ def _set_backlinks(obj):
         obj.id = val
     obj._m._all_ids.add(obj.id)
     for field in attr.fields(type(obj)):
-        backlink = field.metadata.get('backlink')
+        backlink = field.metadata.get("backlink")
         if backlink is None:
             continue
         v = getattr(obj, field.name)
@@ -81,7 +79,7 @@ def _set_backlinks(obj):
 
 def _remove_backlinks(obj):
     for field in attr.fields(type(obj)):
-        backlink = field.metadata.get('backlink')
+        backlink = field.metadata.get("backlink")
         if backlink is None:
             continue
         v = getattr(obj, field.name)
@@ -110,15 +108,15 @@ def fsobj__repr(obj):
         v = getattr(obj, f.name)
         if v is f.default:
             continue
-        if f.metadata.get('ref', False):
+        if f.metadata.get("ref", False):
             v = v.id
-        elif f.metadata.get('reflist', False):
+        elif f.metadata.get("reflist", False):
             if isinstance(v, set):
                 delims = "{}"
             else:
                 delims = "[]"
             v = delims[0] + ", ".join(vv.id for vv in v) + delims[1]
-        elif f.metadata.get('redact', False):
+        elif f.metadata.get("redact", False):
             v = "<REDACTED>"
         else:
             v = repr(v)
@@ -135,24 +133,25 @@ def fsobj(typ):
     def wrapper(c):
         c.__attrs_post_init__ = _do_post_inits
         c._post_inits = [_set_backlinks]
-        class_post_init = getattr(c, '__post_init__', None)
+        class_post_init = getattr(c, "__post_init__", None)
         if class_post_init is not None:
             c._post_inits.append(class_post_init)
         c.type = attributes.const(typ)
         c.id = attr.ib(default=None)
         c._m = attr.ib(repr=None, default=None)
-        c.__annotations__['id'] = str
-        c.__annotations__['_m'] = "FilesystemModel"
-        c.__annotations__['type'] = str
+        c.__annotations__["id"] = str
+        c.__annotations__["_m"] = "FilesystemModel"
+        c.__annotations__["type"] = str
         c = attr.s(eq=False, repr=False, auto_attribs=True, kw_only=True)(c)
         c.__repr__ = fsobj__repr
         _type_to_cls[typ] = c
         return c
+
     return wrapper
 
 
 def dependencies(obj):
-    if obj.type == 'disk':
+    if obj.type == "disk":
         dasd = obj.dasd()
         if dasd:
             yield dasd
@@ -160,19 +159,19 @@ def dependencies(obj):
         v = getattr(obj, f.name)
         if not v:
             continue
-        elif f.metadata.get('ref', False):
+        elif f.metadata.get("ref", False):
             yield v
-        elif f.metadata.get('reflist', False):
+        elif f.metadata.get("reflist", False):
             yield from v
 
 
 def reverse_dependencies(obj):
-    if obj.type == 'dasd':
-        disk = obj._m._one(type='disk', device_id=obj.device_id)
+    if obj.type == "dasd":
+        disk = obj._m._one(type="disk", device_id=obj.device_id)
         if disk:
             yield disk
     for f in attr.fields(type(obj)):
-        if not f.metadata.get('is_backlink', False):
+        if not f.metadata.get("is_backlink", False):
             continue
         v = getattr(obj, f.name)
         if isinstance(v, (list, set)):
@@ -198,20 +197,20 @@ class RaidLevel:
 
 raidlevels = [
     # for translators: this is a description of a RAID level
-    RaidLevel(_("0 (striped)"),  "raid0",  2, False),
+    RaidLevel(_("0 (striped)"), "raid0", 2, False),
     # for translators: this is a description of a RAID level
-    RaidLevel(_("1 (mirrored)"), "raid1",  2),
-    RaidLevel(_("5"),            "raid5",  3),
-    RaidLevel(_("6"),            "raid6",  4),
-    RaidLevel(_("10"),           "raid10", 4),
-    RaidLevel(_("Container"),    "container", 2),
-    ]
+    RaidLevel(_("1 (mirrored)"), "raid1", 2),
+    RaidLevel(_("5"), "raid5", 3),
+    RaidLevel(_("6"), "raid6", 4),
+    RaidLevel(_("10"), "raid10", 4),
+    RaidLevel(_("Container"), "container", 2),
+]
 
 
 def _raidlevels_by_value():
     r = {level.value: level for level in raidlevels}
     for n in 0, 1, 5, 6, 10:
-        r[str(n)] = r[n] = r["raid"+str(n)]
+        r[str(n)] = r[n] = r["raid" + str(n)]
     r["stripe"] = r["raid0"]
     r["mirror"] = r["raid1"]
     return r
@@ -219,7 +218,7 @@ def _raidlevels_by_value():
 
 raidlevels_by_value = _raidlevels_by_value()
 
-HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
+HUMAN_UNITS = ["B", "K", "M", "G", "T", "P"]
 
 
 def humanize_size(size):
@@ -228,8 +227,8 @@ def humanize_size(size):
     p = int(math.floor(math.log(size, 2) / 10))
     # We want to truncate the non-integral part, not round to nearest.
     s = "{:.17f}".format(size / 2 ** (10 * p))
-    i = s.index('.')
-    s = s[:i + 4]
+    i = s.index(".")
+    s = s[: i + 4]
     return s + HUMAN_UNITS[int(p)]
 
 
@@ -247,11 +246,12 @@ def dehumanize_size(size):
     else:
         suffix = None
 
-    parts = size.split('.')
+    parts = size.split(".")
     if len(parts) > 2:
         raise ValueError(
             # Attempting to convert input to a size
-            _("{input!r} is not valid input").format(input=size_in))
+            _("{input!r} is not valid input").format(input=size_in)
+        )
     elif len(parts) == 2:
         div = 10 ** len(parts[1])
         size = parts[0] + parts[1]
@@ -263,14 +263,17 @@ def dehumanize_size(size):
     except ValueError:
         raise ValueError(
             # Attempting to convert input to a size
-            _("{input!r} is not valid input").format(input=size_in))
+            _("{input!r} is not valid input").format(input=size_in)
+        )
 
     if suffix is not None:
         if suffix not in HUMAN_UNITS:
             raise ValueError(
                 # Attempting to convert input to a size
                 "unrecognized suffix {suffix!r} in {input!r}".format(
-                    suffix=size_in[-1], input=size_in))
+                    suffix=size_in[-1], input=size_in
+                )
+            )
         mult = 2 ** (10 * HUMAN_UNITS.index(suffix))
     else:
         mult = 1
@@ -307,24 +310,23 @@ def calculate_data_offset_bytes(devsize):
     devsize = align_down(devsize, DEFAULT_CHUNK)
 
     # conversion of choose_bm_space:
-    if devsize < 64*2:
+    if devsize < 64 * 2:
         bmspace = 0
-    elif devsize - 64*2 >= 200*1024*1024*2:
-        bmspace = 128*2
-    elif devsize - 4*2 > 8*1024*1024*2:
-        bmspace = 64*2
+    elif devsize - 64 * 2 >= 200 * 1024 * 1024 * 2:
+        bmspace = 128 * 2
+    elif devsize - 4 * 2 > 8 * 1024 * 1024 * 2:
+        bmspace = 64 * 2
     else:
-        bmspace = 4*2
+        bmspace = 4 * 2
 
     # From the end of validate_geometry1, assuming metadata 1.2.
-    headroom = 128*1024*2
-    while (headroom << 10) > devsize and headroom / 2 >= DEFAULT_CHUNK*2*2:
+    headroom = 128 * 1024 * 2
+    while (headroom << 10) > devsize and headroom / 2 >= DEFAULT_CHUNK * 2 * 2:
         headroom >>= 1
 
-    data_offset = 12*2 + bmspace + headroom
-    log.debug(
-        "get_raid_size: adjusting for %s sectors of overhead", data_offset)
-    data_offset = align_up(data_offset, 2*1024)
+    data_offset = 12 * 2 + bmspace + headroom
+    log.debug("get_raid_size: adjusting for %s sectors of overhead", data_offset)
+    data_offset = align_up(data_offset, 2 * 1024)
 
     # convert back to bytes
     return data_offset << 9
@@ -363,22 +365,20 @@ def get_raid_size(level, devices):
 
 # These are only defaults but curtin does not let you change/specify
 # them at this time.
-LVM_OVERHEAD = (1 << 20)
+LVM_OVERHEAD = 1 << 20
 LVM_CHUNK_SIZE = 4 * (1 << 20)
 
 
 def get_lvm_size(devices, size_overrides={}):
     r = 0
     for d in devices:
-        r += align_down(
-            size_overrides.get(d, d.size) - LVM_OVERHEAD,
-            LVM_CHUNK_SIZE)
+        r += align_down(size_overrides.get(d, d.size) - LVM_OVERHEAD, LVM_CHUNK_SIZE)
     return r
 
 
 def _conv_size(s):
     if isinstance(s, str):
-        if '%' in s:
+        if "%" in s:
             return s
         return int(human2bytes(s))
     return s
@@ -389,22 +389,21 @@ class attributes:
 
     @staticmethod
     def ref(*, backlink=None, default=attr.NOTHING):
-        metadata = {'ref': True}
+        metadata = {"ref": True}
         if backlink:
-            metadata['backlink'] = backlink
+            metadata["backlink"] = backlink
         return attr.ib(metadata=metadata, default=default)
 
     @staticmethod
     def reflist(*, backlink=None, default=attr.NOTHING):
-        metadata = {'reflist': True}
+        metadata = {"reflist": True}
         if backlink:
-            metadata['backlink'] = backlink
+            metadata["backlink"] = backlink
         return attr.ib(metadata=metadata, default=default)
 
     @staticmethod
     def backlink(*, default=None):
-        return attr.ib(
-            init=False, default=default, metadata={'is_backlink': True})
+        return attr.ib(init=False, default=default, metadata={"is_backlink": True})
 
     @staticmethod
     def const(value):
@@ -416,35 +415,35 @@ class attributes:
 
     @staticmethod
     def ptable():
-
         def conv(val):
             if val == "dos":
                 val = "msdos"
             return val
+
         return attr.ib(default=None, converter=conv)
 
     @staticmethod
     def for_api(*, default=attr.NOTHING):
-        return attr.ib(default=default, metadata={'for_api': True})
+        return attr.ib(default=default, metadata={"for_api": True})
 
 
 def asdict(inst, *, for_api: bool):
     r = collections.OrderedDict()
     for field in attr.fields(type(inst)):
         metadata = field.metadata
-        if not for_api or not metadata.get('for_api', False):
-            if field.name.startswith('_'):
+        if not for_api or not metadata.get("for_api", False):
+            if field.name.startswith("_"):
                 continue
-        name = field.name.lstrip('_')
-        m = getattr(inst, 'serialize_' + name, None)
+        name = field.name.lstrip("_")
+        m = getattr(inst, "serialize_" + name, None)
         if m:
             r.update(m())
         else:
             v = getattr(inst, field.name)
             if v is not None:
-                if metadata.get('ref', False):
+                if metadata.get("ref", False):
                     r[name] = v.id
-                elif metadata.get('reflist', False):
+                elif metadata.get("reflist", False):
                     r[name] = [elem.id for elem in v]
                 elif isinstance(v, StorageInfo):
                     r[name] = {v.name: v.raw}
@@ -477,11 +476,11 @@ class _Formattable(ABC):
 
     def original_fstype(self):
         for action in self._m._orig_config:
-            if action['type'] == 'format' and action['volume'] == self.id:
-                return action['fstype']
+            if action["type"] == "format" and action["volume"] == self.id:
+                return action["fstype"]
         for action in self._m._orig_config:
-            if action['id'] == self.id and action.get('flag') == 'swap':
-                return 'swap'
+            if action["id"] == self.id and action.get("flag") == "swap":
+                return "swap"
         return None
 
     def constructed_device(self, skip_dm_crypt=True):
@@ -531,8 +530,7 @@ class _Device(_Formattable, ABC):
         pass
 
     # [Partition]
-    _partitions: List["Partition"] = attributes.backlink(
-        default=attr.Factory(list))
+    _partitions: List["Partition"] = attributes.backlink(default=attr.Factory(list))
 
     def _reformatted(self):
         # Return a ephemeral copy of the device with as many partitions
@@ -547,7 +545,7 @@ class _Device(_Formattable, ABC):
     def ptable_for_new_partition(self):
         if self.ptable is not None:
             return self.ptable
-        return 'gpt'
+        return "gpt"
 
     def partitions(self):
         return self._partitions
@@ -591,9 +589,8 @@ class _Device(_Formattable, ABC):
             return False
         if self._fs is not None:
             return self._fs._available()
-        from subiquity.common.filesystem.gaps import (
-            largest_gap_size,
-            )
+        from subiquity.common.filesystem.gaps import largest_gap_size
+
         if largest_gap_size(self) > 0:
             return True
         return any(p.available() for p in self._partitions)
@@ -605,8 +602,11 @@ class _Device(_Formattable, ABC):
         return any(p.preserve for p in self._partitions)
 
     def renumber_logical_partitions(self, removed_partition):
-        parts = [p for p in self.partitions_by_number()
-                 if p.is_logical and p.number > removed_partition.number]
+        parts = [
+            p
+            for p in self.partitions_by_number()
+            if p.is_logical and p.number > removed_partition.number
+        ]
         next_num = removed_partition.number
         for part in parts:
             part.number = next_num
@@ -650,54 +650,54 @@ class Disk(_Device):
         return self._m._partition_alignment_data[ptable]
 
     def info_for_display(self):
-        bus = self._info.raw.get('ID_BUS', None)
-        major = self._info.raw.get('MAJOR', None)
-        if bus is None and major == '253':
-            bus = 'virtio'
+        bus = self._info.raw.get("ID_BUS", None)
+        major = self._info.raw.get("MAJOR", None)
+        if bus is None and major == "253":
+            bus = "virtio"
 
-        devpath = self._info.raw.get('DEVPATH', self.path)
+        devpath = self._info.raw.get("DEVPATH", self.path)
         # XXX probert should be doing this!!
-        rotational = '1'
+        rotational = "1"
         try:
             dev = os.path.basename(devpath)
-            rfile = '/sys/class/block/{}/queue/rotational'.format(dev)
-            with open(rfile, 'r') as f:
+            rfile = "/sys/class/block/{}/queue/rotational".format(dev)
+            with open(rfile, "r") as f:
                 rotational = f.read().strip()
         except (PermissionError, FileNotFoundError, IOError):
-            log.exception('WARNING: Failed to read file {}'.format(rfile))
+            log.exception("WARNING: Failed to read file {}".format(rfile))
 
         dinfo = {
-            'bus': bus,
-            'devname': self.path,
-            'devpath': devpath,
-            'model': self.model or 'unknown',
-            'serial': self.serial or 'unknown',
-            'wwn': self.wwn or 'unknown',
-            'multipath': self.multipath or 'unknown',
-            'size': self.size,
-            'humansize': humanize_size(self.size),
-            'vendor': self._info.vendor or 'unknown',
-            'rotational': 'true' if rotational == '1' else 'false',
+            "bus": bus,
+            "devname": self.path,
+            "devpath": devpath,
+            "model": self.model or "unknown",
+            "serial": self.serial or "unknown",
+            "wwn": self.wwn or "unknown",
+            "multipath": self.multipath or "unknown",
+            "size": self.size,
+            "humansize": humanize_size(self.size),
+            "vendor": self._info.vendor or "unknown",
+            "rotational": "true" if rotational == "1" else "false",
         }
         return dinfo
 
     def ptable_for_new_partition(self):
         if self.ptable is not None:
             return self.ptable
-        dasd_config = self._m._probe_data.get('dasd', {}).get(self.path)
+        dasd_config = self._m._probe_data.get("dasd", {}).get(self.path)
         if dasd_config is not None:
-            if dasd_config['type'] == "FBA":
-                return 'msdos'
+            if dasd_config["type"] == "FBA":
+                return "msdos"
             else:
-                return 'vtoc'
-        return 'gpt'
+                return "vtoc"
+        return "gpt"
 
     @property
     def size(self):
         return self._info.size
 
     def dasd(self):
-        return self._m._one(type='dasd', device_id=self.device_id)
+        return self._m._one(type="dasd", device_id=self.device_id)
 
     @property
     def ok_for_raid(self):
@@ -717,17 +717,17 @@ class Disk(_Device):
 
     @property
     def model(self):
-        return self._decode_id('ID_MODEL_ENC')
+        return self._decode_id("ID_MODEL_ENC")
 
     @property
     def vendor(self):
-        return self._decode_id('ID_VENDOR_ENC')
+        return self._decode_id("ID_VENDOR_ENC")
 
     def _decode_id(self, id):
         id = self._info.raw.get(id)
         if id is None:
             return None
-        return id.encode('utf-8').decode('unicode_escape').strip()
+        return id.encode("utf-8").decode("unicode_escape").strip()
 
 
 @fsobj("partition")
@@ -754,9 +754,12 @@ class Partition(_Formattable):
         if self.number is not None:
             return
 
-        used_nums = {p.number for p in self.device._partitions
-                     if p.number is not None
-                     if p.is_logical == self.is_logical}
+        used_nums = {
+            p.number
+            for p in self.device._partitions
+            if p.number is not None
+            if p.is_logical == self.is_logical
+        }
         primary_limit = self.device.alignment_data().primary_part_limit
         if self.is_logical:
             possible_nums = range(primary_limit + 1, 129)
@@ -766,10 +769,10 @@ class Partition(_Formattable):
             if num not in used_nums:
                 self.number = num
                 return
-        raise Exception('Exceeded number of available partitions')
+        raise Exception("Exceeded number of available partitions")
 
     def available(self):
-        if self.flag in ['bios_grub', 'prep'] or self.grub_device:
+        if self.flag in ["bios_grub", "prep"] or self.grub_device:
             return False
         if self._is_in_use:
             return False
@@ -785,14 +788,15 @@ class Partition(_Formattable):
     @property
     def boot(self):
         from subiquity.common.filesystem import boot
+
         return boot.is_bootloader_partition(self)
 
     @property
     def estimated_min_size(self):
-        fs_data = self._m._probe_data.get('filesystem', {}).get(self._path())
+        fs_data = self._m._probe_data.get("filesystem", {}).get(self._path())
         if fs_data is None:
             return -1
-        val = fs_data.get('ESTIMATED_MIN_SIZE', -1)
+        val = fs_data.get("ESTIMATED_MIN_SIZE", -1)
         if val == 0:
             return self.device.alignment_data().part_align
         if val == -1:
@@ -817,7 +821,7 @@ class Partition(_Formattable):
 
     @property
     def os(self):
-        os_data = self._m._probe_data.get('os', {}).get(self._path())
+        os_data = self._m._probe_data.get("os", {}).get(self._path())
         if not os_data:
             return None
         return OsProber(**os_data)
@@ -843,7 +847,8 @@ class Raid(_Device):
     name: str
     raidlevel: str = attr.ib(converter=lambda x: raidlevels_by_value[x].value)
     devices: Set[Union[Disk, Partition, "Raid"]] = attributes.reflist(
-        backlink="_constructed_device", default=attr.Factory(set))
+        backlink="_constructed_device", default=attr.Factory(set)
+    )
     _info: Optional[StorageInfo] = attributes.for_api(default=None)
     _has_in_use_partition = False
 
@@ -851,18 +856,18 @@ class Raid(_Device):
         # Surprisingly, the order of devices passed to mdadm --create
         # matters (see get_raid_size) so we sort devices here the same
         # way get_raid_size does.
-        return {'devices': [d.id for d in raid_device_sort(self.devices)]}
+        return {"devices": [d.id for d in raid_device_sort(self.devices)]}
 
     spare_devices: Set[Union[Disk, Partition, "Raid"]] = attributes.reflist(
-        backlink="_constructed_device", default=attr.Factory(set))
+        backlink="_constructed_device", default=attr.Factory(set)
+    )
 
     preserve: bool = False
     wipe: Optional[str] = None
     ptable: Optional[str] = attributes.ptable()
     metadata: Optional[str] = None
     _path: Optional[str] = None
-    container: Optional["Raid"] = attributes.ref(
-        backlink="_subvolumes", default=None)
+    container: Optional["Raid"] = attributes.ref(backlink="_subvolumes", default=None)
     _subvolumes: List["Raid"] = attributes.backlink(default=attr.Factory(list))
 
     @property
@@ -871,7 +876,7 @@ class Raid(_Device):
             return self._path
         # This is just here to make for_client(raid-with-partitions) work. It
         # might not be very accurate.
-        return '/dev/md/' + self.name
+        return "/dev/md/" + self.name
 
     @path.setter
     def path(self, value):
@@ -892,7 +897,7 @@ class Raid(_Device):
         # For some reason, the overhead on RAID devices seems to be
         # higher (may be related to alignment of underlying
         # partitions)
-        return self.size - 2*GPT_OVERHEAD
+        return self.size - 2 * GPT_OVERHEAD
 
     def available(self):
         if self.raidlevel == "container":
@@ -925,7 +930,8 @@ class Raid(_Device):
 class LVM_VolGroup(_Device):
     name: str
     devices: List[Union[Disk, Partition, Raid]] = attributes.reflist(
-        backlink="_constructed_device")
+        backlink="_constructed_device"
+    )
 
     preserve: bool = False
 
@@ -959,7 +965,7 @@ class LVM_LogicalVolume(_Formattable):
         if self.size is None:
             return {}
         else:
-            return {'size': "{}B".format(self.size)}
+            return {"size": "{}B".format(self.size)}
 
     def available(self):
         if self._constructed_device is not None:
@@ -976,23 +982,22 @@ class LVM_LogicalVolume(_Formattable):
     ok_for_lvm_vg = False
 
 
-LUKS_OVERHEAD = 16*(2**20)
+LUKS_OVERHEAD = 16 * (2**20)
 
 
 @fsobj("dm_crypt")
 class DM_Crypt:
     volume: _Formattable = attributes.ref(backlink="_constructed_device")
-    key: Optional[str] = attr.ib(metadata={'redact': True}, default=None)
+    key: Optional[str] = attr.ib(metadata={"redact": True}, default=None)
     keyfile: Optional[str] = None
     path: Optional[str] = None
 
     def serialize_key(self):
         if self.key and not self.keyfile:
-            f = tempfile.NamedTemporaryFile(
-                prefix='luks-key-', mode='w', delete=False)
+            f = tempfile.NamedTemporaryFile(prefix="luks-key-", mode="w", delete=False)
             f.write(self.key)
             f.close()
-            return {'keyfile': f.name}
+            return {"keyfile": f.name}
         else:
             return {}
 
@@ -1061,6 +1066,7 @@ class Mount:
 
     def can_delete(self):
         from subiquity.common.filesystem import boot
+
         # Can't delete mount of /boot/efi or swap, anything else is fine.
         if not self.path:
             # swap mount
@@ -1081,13 +1087,13 @@ def get_canmount(properties: Optional[dict], default: bool) -> bool:
     if properties is None:
         return default
     vals = {
-        'on': True,
-        'off': False,
-        'noauto': False,
+        "on": True,
+        "off": False,
+        "noauto": False,
         True: True,
         False: False,
     }
-    result = vals.get(properties.get('canmount', default))
+    result = vals.get(properties.get("canmount", default))
     if result is None:
         raise ValueError('canmount must be one of "on", "off", or "noauto"')
     return result
@@ -1096,7 +1102,8 @@ def get_canmount(properties: Optional[dict], default: bool) -> bool:
 @fsobj("zpool")
 class ZPool:
     vdevs: List[Union[Disk, Partition]] = attributes.reflist(
-        backlink="_constructed_device")
+        backlink="_constructed_device"
+    )
     pool: str
     mountpoint: str
 
@@ -1111,7 +1118,7 @@ class ZPool:
 
     @property
     def fstype(self):
-        return 'zfs'
+        return "zfs"
 
     @property
     def name(self):
@@ -1137,7 +1144,7 @@ class ZFS:
 
     @property
     def fstype(self):
-        return 'zfs'
+        return "zfs"
 
     @property
     def canmount(self):
@@ -1146,7 +1153,7 @@ class ZFS:
     @property
     def path(self):
         if self.canmount:
-            return self.properties.get('mountpoint', self.volume)
+            return self.properties.get("mountpoint", self.volume)
         else:
             return None
 
@@ -1156,7 +1163,7 @@ ConstructedDevice = Union[Raid, LVM_VolGroup, ZPool]
 # A Mountlike is a literal Mount object, or one similar enough in behavior.
 # Mountlikes have a path property that may return None if that given object is
 # not actually mountable.
-MountlikeNames = ('mount', 'zpool', 'zfs')
+MountlikeNames = ("mount", "zpool", "zfs")
 
 
 def align_up(size, block_size=1 << 20):
@@ -1198,36 +1205,38 @@ class ActionRenderMode(enum.Enum):
 
 
 class FilesystemModel(object):
-
     target = None
 
     _partition_alignment_data = {
-        'gpt': PartitionAlignmentData(
+        "gpt": PartitionAlignmentData(
             part_align=MiB,
             min_gap_size=MiB,
-            min_start_offset=GPT_OVERHEAD//2,
-            min_end_offset=GPT_OVERHEAD//2,
-            primary_part_limit=128),
-        'msdos': PartitionAlignmentData(
+            min_start_offset=GPT_OVERHEAD // 2,
+            min_end_offset=GPT_OVERHEAD // 2,
+            primary_part_limit=128,
+        ),
+        "msdos": PartitionAlignmentData(
             part_align=MiB,
             min_gap_size=MiB,
-            min_start_offset=GPT_OVERHEAD//2,
+            min_start_offset=GPT_OVERHEAD // 2,
             min_end_offset=0,
             ebr_space=MiB,
-            primary_part_limit=4),
+            primary_part_limit=4,
+        ),
         # XXX check this one!!
-        'vtoc': PartitionAlignmentData(
+        "vtoc": PartitionAlignmentData(
             part_align=MiB,
             min_gap_size=MiB,
-            min_start_offset=GPT_OVERHEAD//2,
+            min_start_offset=GPT_OVERHEAD // 2,
             min_end_offset=0,
             ebr_space=MiB,
-            primary_part_limit=3),
-        }
+            primary_part_limit=3,
+        ),
+    }
 
     @classmethod
     def is_mounted_filesystem(self, fstype):
-        if fstype in [None, 'swap']:
+        if fstype in [None, "swap"]:
             return False
         else:
             return True
@@ -1235,7 +1244,7 @@ class FilesystemModel(object):
     def _probe_bootloader(self):
         # This will at some point change to return a list so that we can
         # configure BIOS _and_ UEFI on amd64 systems.
-        if os.path.exists('/sys/firmware/efi'):
+        if os.path.exists("/sys/firmware/efi"):
             return Bootloader.UEFI
         elif platform.machine().startswith("ppc64"):
             return Bootloader.PREP
@@ -1274,38 +1283,40 @@ class FilesystemModel(object):
         return orig_model
 
     def process_probe_data(self):
-        self._orig_config = storage_config.extract_storage_config(
-            self._probe_data)["storage"]["config"]
+        self._orig_config = storage_config.extract_storage_config(self._probe_data)[
+            "storage"
+        ]["config"]
         self._actions = self._actions_from_config(
             self._orig_config,
-            blockdevs=self._probe_data['blockdev'],
-            is_probe_data=True)
+            blockdevs=self._probe_data["blockdev"],
+            is_probe_data=True,
+        )
 
         majmin_to_dev = {}
 
         for obj in self._actions:
-            if not hasattr(obj, '_info'):
+            if not hasattr(obj, "_info"):
                 continue
-            major = obj._info.raw.get('MAJOR')
-            minor = obj._info.raw.get('MINOR')
+            major = obj._info.raw.get("MAJOR")
+            minor = obj._info.raw.get("MINOR")
             if major is None or minor is None:
                 continue
-            majmin_to_dev[f'{major}:{minor}'] = obj
+            majmin_to_dev[f"{major}:{minor}"] = obj
 
         log.debug("majmin_to_dev %s", majmin_to_dev)
 
-        mounts = list(self._probe_data.get('mount', []))
+        mounts = list(self._probe_data.get("mount", []))
         while mounts:
             mount = mounts.pop(0)
-            mounts.extend(mount.get('children', []))
-            if mount['target'].startswith(self.target):
+            mounts.extend(mount.get("children", []))
+            if mount["target"].startswith(self.target):
                 # Completely ignore mounts under /target, they are probably
                 # leftovers from a previous install attempt.
                 continue
-            if 'maj:min' not in mount:
+            if "maj:min" not in mount:
                 continue
-            log.debug("considering mount of %s", mount['maj:min'])
-            obj = majmin_to_dev.get(mount['maj:min'])
+            log.debug("considering mount of %s", mount["maj:min"])
+            obj = majmin_to_dev.get(mount["maj:min"])
             if obj is None:
                 continue
             obj._is_in_use = True
@@ -1322,7 +1333,7 @@ class FilesystemModel(object):
         # the partition will show up as having a filesystem. Casper should
         # preferentially mount it as a partition though and if it looks like
         # that has happened, we ignore the filesystem on the drive itself.
-        for disk in self._all(type='disk'):
+        for disk in self._all(type="disk"):
             if disk._fs is None:
                 continue
             if not disk._partitions:
@@ -1330,81 +1341,76 @@ class FilesystemModel(object):
             p1 = disk._partitions[0]
             if p1._fs is None:
                 continue
-            if disk._fs.fstype == p1._fs.fstype == 'iso9660':
+            if disk._fs.fstype == p1._fs.fstype == "iso9660":
                 if p1._is_in_use and not disk._is_in_use:
                     self.remove_filesystem(disk._fs)
 
         for o in self._actions:
             if o.type == "partition" and o.flag == "swap":
                 if o._fs is None:
-                    self._actions.append(Filesystem(
-                        m=self, fstype="swap", volume=o, preserve=True))
+                    self._actions.append(
+                        Filesystem(m=self, fstype="swap", volume=o, preserve=True)
+                    )
 
     def load_server_data(self, status):
-        log.debug('load_server_data %s', status)
+        log.debug("load_server_data %s", status)
         self._all_ids = set()
         self.storage_version = status.storage_version
         self._orig_config = status.orig_config
         self._probe_data = {
-            'dasd': status.dasd,
-            }
+            "dasd": status.dasd,
+        }
         self._actions = self._actions_from_config(
-            status.config,
-            blockdevs=None,
-            is_probe_data=False)
+            status.config, blockdevs=None, is_probe_data=False
+        )
 
     def _make_matchers(self, match):
         matchers = []
 
         def _udev_val(disk, key):
-            return self._probe_data['blockdev'].get(disk.path, {}).get(key, '')
+            return self._probe_data["blockdev"].get(disk.path, {}).get(key, "")
 
         def match_serial(disk):
-            return fnmatch.fnmatchcase(
-               _udev_val(disk, "ID_SERIAL"), match['serial'])
+            return fnmatch.fnmatchcase(_udev_val(disk, "ID_SERIAL"), match["serial"])
 
         def match_model(disk):
-            return fnmatch.fnmatchcase(
-                _udev_val(disk, "ID_MODEL"), match['model'])
+            return fnmatch.fnmatchcase(_udev_val(disk, "ID_MODEL"), match["model"])
 
         def match_vendor(disk):
-            return fnmatch.fnmatchcase(
-                _udev_val(disk, "ID_VENDOR"), match['vendor'])
+            return fnmatch.fnmatchcase(_udev_val(disk, "ID_VENDOR"), match["vendor"])
 
         def match_path(disk):
-            return fnmatch.fnmatchcase(disk.path, match['path'])
+            return fnmatch.fnmatchcase(disk.path, match["path"])
 
         def match_id_path(disk):
-            return fnmatch.fnmatchcase(
-                _udev_val(disk, "ID_PATH"), match['id_path'])
+            return fnmatch.fnmatchcase(_udev_val(disk, "ID_PATH"), match["id_path"])
 
         def match_devpath(disk):
-            return fnmatch.fnmatchcase(
-                _udev_val(disk, "DEVPATH"), match['devpath'])
+            return fnmatch.fnmatchcase(_udev_val(disk, "DEVPATH"), match["devpath"])
 
         def match_ssd(disk):
-            is_ssd = disk.info_for_display()['rotational'] == 'false'
-            return is_ssd == match['ssd']
+            is_ssd = disk.info_for_display()["rotational"] == "false"
+            return is_ssd == match["ssd"]
 
         def match_install_media(disk):
             return disk._has_in_use_partition
 
-        if match.get('install-media', False):
+        if match.get("install-media", False):
             matchers.append(match_install_media)
 
-        if 'serial' in match:
+        if "serial" in match:
             matchers.append(match_serial)
-        if 'model' in match:
+        if "model" in match:
             matchers.append(match_model)
-        if 'vendor' in match:
+        if "vendor" in match:
             matchers.append(match_vendor)
-        if 'path' in match:
+        if "path" in match:
             matchers.append(match_path)
-        if 'id_path' in match:
+        if "id_path" in match:
             matchers.append(match_id_path)
-        if 'devpath' in match:
+        if "devpath" in match:
             matchers.append(match_devpath)
-        if 'ssd' in match:
+        if "ssd" in match:
             matchers.append(match_ssd)
 
         return matchers
@@ -1420,20 +1426,19 @@ class FilesystemModel(object):
                     break
             else:
                 candidates.append(candidate)
-        if 'size' in match or 'ssd' in match:
-            candidates = [
-                c for c in candidates if not c._has_in_use_partition]
-        if match.get('size') == 'smallest':
+        if "size" in match or "ssd" in match:
+            candidates = [c for c in candidates if not c._has_in_use_partition]
+        if match.get("size") == "smallest":
             candidates.sort(key=lambda d: d.size)
-        if match.get('size') == 'largest':
+        if match.get("size") == "largest":
             candidates.sort(key=lambda d: d.size, reverse=True)
         if candidates:
             return candidates[0]
         return None
 
     def assign_omitted_offsets(self):
-        """ Assign offsets to partitions that do not already have one.
-        This method does nothing for storage version 1. """
+        """Assign offsets to partitions that do not already have one.
+        This method does nothing for storage version 1."""
         if self.storage_version != 2:
             return
 
@@ -1451,9 +1456,9 @@ class FilesystemModel(object):
                 return v - v % info.part_align
 
             # Extended is considered a primary partition too.
-            primary_parts, logical_parts = map(list, more_itertools.partition(
-                is_logical_partition,
-                disk.partitions()))
+            primary_parts, logical_parts = map(
+                list, more_itertools.partition(is_logical_partition, disk.partitions())
+            )
 
             prev_end = info.min_start_offset
             for part in primary_parts:
@@ -1465,7 +1470,8 @@ class FilesystemModel(object):
                 return
 
             extended_part = next(
-                    filter(lambda x: x.flag == "extended", disk.partitions()))
+                filter(lambda x: x.flag == "extended", disk.partitions())
+            )
 
             prev_end = extended_part.offset
             for part in logical_parts:
@@ -1476,30 +1482,29 @@ class FilesystemModel(object):
     def apply_autoinstall_config(self, ai_config):
         disks = self.all_disks()
         for action in ai_config:
-            if action['type'] == 'disk':
+            if action["type"] == "disk":
                 disk = None
-                if 'serial' in action:
-                    disk = self._one(type='disk', serial=action['serial'])
-                elif 'path' in action:
-                    disk = self._one(type='disk', path=action['path'])
+                if "serial" in action:
+                    disk = self._one(type="disk", serial=action["serial"])
+                elif "path" in action:
+                    disk = self._one(type="disk", path=action["path"])
                 else:
-                    match = action.pop('match', {})
+                    match = action.pop("match", {})
                     disk = self.disk_for_match(disks, match)
                     if disk is None:
-                        action['match'] = match
+                        action["match"] = match
                 if disk is None:
                     raise Exception("{} matched no disk".format(action))
                 if disk not in disks:
                     raise Exception(
-                        "{} matched {} which was already used".format(
-                            action, disk))
+                        "{} matched {} which was already used".format(action, disk)
+                    )
                 disks.remove(disk)
-                action['path'] = disk.path
-                action['serial'] = disk.serial
+                action["path"] = disk.path
+                action["serial"] = disk.serial
         self._actions = self._actions_from_config(
-            ai_config,
-            blockdevs=self._probe_data['blockdev'],
-            is_probe_data=False)
+            ai_config, blockdevs=self._probe_data["blockdev"], is_probe_data=False
+        )
 
         self.assign_omitted_offsets()
 
@@ -1513,32 +1518,39 @@ class FilesystemModel(object):
                         # For extended partitions, we use this filter to create
                         # a temporary copy of the disk that excludes all
                         # logical partitions.
-                        def filter_(x): return not is_logical_partition(x)
+                        def filter_(x):
+                            return not is_logical_partition(x)
+
                     else:
-                        def filter_(x): return True
+
+                        def filter_(x):
+                            return True
+
                     filtered_parent = copy.copy(parent)
-                    filtered_parent._partitions = list(filter(
-                        filter_, parent.partitions()))
+                    filtered_parent._partitions = list(
+                        filter(filter_, parent.partitions())
+                    )
                     if p is not filtered_parent.partitions()[-1]:
                         raise NotFinalPartitionError(
                             "{} has negative size but is not final partition "
-                            "of {}".format(p, parent))
+                            "of {}".format(p, parent)
+                        )
 
                     # Exclude the current partition itself so that its
                     # incomplete size is not used as is.
                     filtered_parent._partitions.remove(p)
 
-                    from subiquity.common.filesystem.gaps import (
-                        largest_gap_size,
-                        )
+                    from subiquity.common.filesystem.gaps import largest_gap_size
+
                     p.size = largest_gap_size(
-                            filtered_parent,
-                            in_extended=is_logical_partition(p))
+                        filtered_parent, in_extended=is_logical_partition(p)
+                    )
             elif isinstance(p.size, str):
                 if p.size.endswith("%"):
                     percentage = int(p.size[:-1])
                     p.size = align_down(
-                        parent.available_for_partitions*percentage//100)
+                        parent.available_for_partitions * percentage // 100
+                    )
                 else:
                     p.size = dehumanize_size(p.size)
 
@@ -1567,9 +1579,9 @@ class FilesystemModel(object):
         byid = {}
         objs = []
         for action in config:
-            if is_probe_data and action['type'] == 'mount':
+            if is_probe_data and action["type"] == "mount":
                 continue
-            c = _type_to_cls.get(action['type'], None)
+            c = _type_to_cls.get(action["type"], None)
             if c is None:
                 # Ignore any action we do not know how to process yet
                 # (e.g. bcache)
@@ -1578,15 +1590,15 @@ class FilesystemModel(object):
             kw = {}
             field_names = set()
             for f in attr.fields(c):
-                n = f.name.lstrip('_')
+                n = f.name.lstrip("_")
                 field_names.add(f.name)
                 if n not in action:
                     continue
                 v = action[n]
                 try:
-                    if f.metadata.get('ref', False):
+                    if f.metadata.get("ref", False):
                         kw[n] = byid[v]
-                    elif f.metadata.get('reflist', False):
+                    elif f.metadata.get("reflist", False):
                         kw[n] = [byid[id] for id in v]
                     else:
                         kw[n] = v
@@ -1595,21 +1607,20 @@ class FilesystemModel(object):
                     # ignored, we need to ignore the current action too
                     # (e.g. a bcache's filesystem).
                     continue
-            if '_info' in field_names:
-                if 'info' in kw:
-                    kw['info'] = StorageInfo(kw['info'])
-                elif 'path' in kw:
-                    path = kw['path']
-                    kw['info'] = StorageInfo({path: blockdevs[path]})
+            if "_info" in field_names:
+                if "info" in kw:
+                    kw["info"] = StorageInfo(kw["info"])
+                elif "path" in kw:
+                    path = kw["path"]
+                    kw["info"] = StorageInfo({path: blockdevs[path]})
             if is_probe_data:
-                kw['preserve'] = True
-            obj = byid[action['id']] = c(m=self, **kw)
+                kw["preserve"] = True
+            obj = byid[action["id"]] = c(m=self, **kw)
             objs.append(obj)
 
         return objs
 
-    def _render_actions(self,
-                        mode: ActionRenderMode = ActionRenderMode.DEFAULT):
+    def _render_actions(self, mode: ActionRenderMode = ActionRenderMode.DEFAULT):
         # The curtin storage config has the constraint that an action must be
         # preceded by all the things that it depends on.  We handle this by
         # repeatedly iterating over all actions and checking if we can emit
@@ -1624,7 +1635,10 @@ class FilesystemModel(object):
             if isinstance(obj, Raid):
                 log.debug(
                     "FilesystemModel: estimated size of %s %s is %s",
-                    obj.raidlevel, obj.name, obj.size)
+                    obj.raidlevel,
+                    obj.name,
+                    obj.size,
+                )
             r.append(asdict(obj, for_api=mode == ActionRenderMode.FOR_API))
             emitted_ids.add(obj.id)
 
@@ -1644,7 +1658,7 @@ class FilesystemModel(object):
                 if dep.id not in emitted_ids:
                     if dep not in work and dep not in next_work:
                         next_work.append(dep)
-                        if dep.type in ['disk', 'raid']:
+                        if dep.type in ["disk", "raid"]:
                             ensure_partitions(dep)
                     return False
             if obj.type in MountlikeNames and obj.path is not None:
@@ -1656,19 +1670,20 @@ class FilesystemModel(object):
                         if mountpoints[parent] not in emitted_ids:
                             log.debug(
                                 "cannot emit action to mount %s until that "
-                                "for %s is emitted", obj.path, parent)
+                                "for %s is emitted",
+                                obj.path,
+                                parent,
+                            )
                             return False
             return True
 
         mountpoints = {m.path: m.id for m in self.all_mountlikes()}
-        log.debug('mountpoints %s', mountpoints)
+        log.debug("mountpoints %s", mountpoints)
 
         if mode == ActionRenderMode.FOR_API:
             work = list(self._actions)
         else:
-            work = [
-                a for a in self._actions if not getattr(a, 'preserve', False)
-            ]
+            work = [a for a in self._actions if not getattr(a, "preserve", False)]
 
         while work:
             next_work = []
@@ -1685,57 +1700,55 @@ class FilesystemModel(object):
             work = next_work
 
         if mode == ActionRenderMode.DEVICES:
-            r = [act for act in r if act['type'] not in ('format', 'mount')]
+            r = [act for act in r if act["type"] not in ("format", "mount")]
         if mode == ActionRenderMode.FORMAT_MOUNT:
-            r = [act for act in r if act['type'] in ('format', 'mount')]
+            r = [act for act in r if act["type"] in ("format", "mount")]
             devices = []
             for act in r:
-                if act['type'] == 'format':
+                if act["type"] == "format":
                     device = {
-                        'type': 'device',
-                        'id': 'synth-device-{}'.format(len(devices)),
-                        'path': self._one(id=act['volume']).path,
-                        }
+                        "type": "device",
+                        "id": "synth-device-{}".format(len(devices)),
+                        "path": self._one(id=act["volume"]).path,
+                    }
                     devices.append(device)
-                    act['volume'] = device['id']
+                    act["volume"] = device["id"]
             r = devices + r
 
         return r
 
     def render(self, mode: ActionRenderMode = ActionRenderMode.DEFAULT):
         config = {
-            'storage': {
-                'version': self.storage_version,
-                'config': self._render_actions(mode=mode),
-                },
-            }
+            "storage": {
+                "version": self.storage_version,
+                "config": self._render_actions(mode=mode),
+            },
+        }
         if self.swap is not None:
-            config['swap'] = self.swap
+            config["swap"] = self.swap
         elif not self.should_add_swapfile():
-            config['swap'] = {'size': 0}
+            config["swap"] = {"size": 0}
         if self.grub is not None:
-            config['grub'] = self.grub
+            config["grub"] = self.grub
         return config
 
     def load_probe_data(self, probe_data):
-        for devname, devdata in probe_data['blockdev'].items():
-            if int(devdata['attrs']['size']) != 0:
+        for devname, devdata in probe_data["blockdev"].items():
+            if int(devdata["attrs"]["size"]) != 0:
                 continue
             # An unformatted (ECKD) dasd reports a size of 0 via e.g. blockdev
             # --getsize64. So figuring out how big it is requires a bit more
             # work.
-            data = probe_data.get('dasd', {}).get(devname)
-            if data is None or data['type'] != 'ECKD':
+            data = probe_data.get("dasd", {}).get(devname)
+            if data is None or data["type"] != "ECKD":
                 continue
-            tracks_per_cylinder = data['tracks_per_cylinder']
-            cylinders = data['cylinders']
+            tracks_per_cylinder = data["tracks_per_cylinder"]
+            cylinders = data["cylinders"]
             blocksize = 4096  # hard coded for us!
             blocks_per_track = 12  # just a mystery fact that has to be known
-            size = \
-                blocksize * blocks_per_track * tracks_per_cylinder * cylinders
-            log.debug(
-                "computing size on unformatted dasd from %s as %s", data, size)
-            devdata['attrs']['size'] = str(size)
+            size = blocksize * blocks_per_track * tracks_per_cylinder * cylinders
+            log.debug("computing size on unformatted dasd from %s as %s", data, size)
+            devdata["attrs"]["size"] = str(size)
         self._probe_data = probe_data
         self.reset()
 
@@ -1757,7 +1770,7 @@ class FilesystemModel(object):
         return list(self._matcher(kw))
 
     def all_mounts(self):
-        return self._all(type='mount')
+        return self._all(type="mount")
 
     def all_mountlikes(self):
         ret = []
@@ -1772,51 +1785,69 @@ class FilesystemModel(object):
         disks = []
         compounds = []
         for a in self._actions:
-            if a.type == 'disk':
+            if a.type == "disk":
                 disks.append(a)
             elif isinstance(a, _Device):
                 compounds.append(a)
         compounds.reverse()
         from subiquity.common.filesystem import labels
+
         disks.sort(key=labels.label)
         return compounds + disks
 
     def all_disks(self):
         from subiquity.common.filesystem import labels
-        return sorted(self._all(type='disk'), key=labels.label)
+
+        return sorted(self._all(type="disk"), key=labels.label)
 
     def all_raids(self):
-        return self._all(type='raid')
+        return self._all(type="raid")
 
     def all_volgroups(self):
-        return self._all(type='lvm_volgroup')
+        return self._all(type="lvm_volgroup")
 
     def _remove(self, obj):
         _remove_backlinks(obj)
         self._actions.remove(obj)
 
-    def add_partition(self, device, *, size, offset, flag="", wipe=None,
-                      grub_device=None, partition_name=None,
-                      check_alignment=True):
+    def add_partition(
+        self,
+        device,
+        *,
+        size,
+        offset,
+        flag="",
+        wipe=None,
+        grub_device=None,
+        partition_name=None,
+        check_alignment=True,
+    ):
         align = device.alignment_data().part_align
         if check_alignment:
             if offset % align != 0 or size % align != 0:
                 raise Exception(
-                    "size %s or offset %s not aligned to %s",
-                    size, offset, align)
+                    "size %s or offset %s not aligned to %s", size, offset, align
+                )
         from subiquity.common.filesystem import boot
+
         if device._fs is not None:
             raise Exception("%s is already formatted" % (device,))
         p = Partition(
-            m=self, device=device, size=size, flag=flag, wipe=wipe,
-            grub_device=grub_device, offset=offset,
-            partition_name=partition_name)
+            m=self,
+            device=device,
+            size=size,
+            flag=flag,
+            wipe=wipe,
+            grub_device=grub_device,
+            offset=offset,
+            partition_name=partition_name,
+        )
         if boot.is_bootloader_partition(p):
             device._partitions.insert(0, device._partitions.pop())
         device.ptable = device.ptable_for_new_partition()
         dasd = device.dasd()
         if dasd is not None:
-            dasd.disk_layout = 'cdl'
+            dasd.disk_layout = "cdl"
             dasd.blocksize = 4096
             dasd.preserve = False
         self._actions.append(p)
@@ -1827,7 +1858,8 @@ class FilesystemModel(object):
             raise Exception("can only remove empty partition")
         from subiquity.common.filesystem.gaps import (
             movable_trailing_partitions_and_gap_size,
-            )
+        )
+
         for p2 in movable_trailing_partitions_and_gap_size(part)[0]:
             p2.offset -= part.size
         self._remove(part)
@@ -1841,7 +1873,8 @@ class FilesystemModel(object):
             name=name,
             raidlevel=raidlevel,
             devices=devices,
-            spare_devices=spare_devices)
+            spare_devices=spare_devices,
+        )
         self._actions.append(r)
         return r
 
@@ -1884,14 +1917,15 @@ class FilesystemModel(object):
         log.debug("adding %s to %s", fstype, volume)
         if not volume.available:
             if not isinstance(volume, Partition):
-                if (volume.flag == 'prep' or (
-                        volume.flag == 'bios_grub' and fstype == 'fat32')):
+                if volume.flag == "prep" or (
+                    volume.flag == "bios_grub" and fstype == "fat32"
+                ):
                     raise Exception("{} is not available".format(volume))
         if volume._fs is not None:
             raise Exception(f"{volume} is already formatted")
         fs = Filesystem(
-            m=self, volume=volume, fstype=fstype, preserve=preserve,
-            label=label)
+            m=self, volume=volume, fstype=fstype, preserve=preserve, label=label
+        )
         self._actions.append(fs)
         return fs
 
@@ -1911,23 +1945,22 @@ class FilesystemModel(object):
         self._remove(mount)
 
     def needs_bootloader_partition(self):
-        '''true if no disk have a boot partition, and one is needed'''
+        """true if no disk have a boot partition, and one is needed"""
         # s390x has no such thing
         if self.bootloader == Bootloader.NONE:
             return False
         elif self.bootloader == Bootloader.BIOS:
-            return self._one(type='disk', grub_device=True) is None
+            return self._one(type="disk", grub_device=True) is None
         elif self.bootloader == Bootloader.UEFI:
-            for esp in self._all(type='partition', grub_device=True):
+            for esp in self._all(type="partition", grub_device=True):
                 if esp.fs() and esp.fs().mount():
-                    if esp.fs().mount().path == '/boot/efi':
+                    if esp.fs().mount().path == "/boot/efi":
                         return False
             return True
         elif self.bootloader == Bootloader.PREP:
-            return self._one(type='partition', grub_device=True) is None
+            return self._one(type="partition", grub_device=True) is None
         else:
-            raise AssertionError(
-                "unknown bootloader type {}".format(self.bootloader))
+            raise AssertionError("unknown bootloader type {}".format(self.bootloader))
 
     def _mount_for_path(self, path):
         for typename in MountlikeNames:
@@ -1937,30 +1970,31 @@ class FilesystemModel(object):
         return None
 
     def is_root_mounted(self):
-        return self._mount_for_path('/') is not None
+        return self._mount_for_path("/") is not None
 
     def can_install(self):
-        return (self.is_root_mounted()
-                and not self.needs_bootloader_partition())
+        return self.is_root_mounted() and not self.needs_bootloader_partition()
 
     def should_add_swapfile(self):
-        mount = self._mount_for_path('/')
+        mount = self._mount_for_path("/")
         if mount is not None:
-            if not can_use_swapfile('/', mount.fstype):
+            if not can_use_swapfile("/", mount.fstype):
                 return False
-        for swap in self._all(type='format', fstype='swap'):
+        for swap in self._all(type="format", fstype="swap"):
             if swap.mount():
                 return False
         return True
 
-    def add_zpool(self, device, pool, mountpoint, *,
-                  fs_properties=None, pool_properties=None):
+    def add_zpool(
+        self, device, pool, mountpoint, *, fs_properties=None, pool_properties=None
+    ):
         zpool = ZPool(
             m=self,
             vdevs=[device],
             pool=pool,
             mountpoint=mountpoint,
             pool_properties=pool_properties,
-            fs_properties=fs_properties)
+            fs_properties=fs_properties,
+        )
         self._actions.append(zpool)
         return zpool

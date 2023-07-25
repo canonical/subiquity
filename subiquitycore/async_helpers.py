@@ -17,7 +17,6 @@ import asyncio
 import concurrent.futures
 import logging
 
-
 log = logging.getLogger("subiquitycore.async_helpers")
 
 
@@ -48,7 +47,7 @@ background_tasks = set()
 
 
 def run_bg_task(coro, *args, **kwargs) -> None:
-    """ Run a background task in a fire-and-forget style. """
+    """Run a background task in a fire-and-forget style."""
     task = asyncio.create_task(coro, *args, **kwargs)
     background_tasks.add(task)
     task.add_done_callback(background_tasks.discard)
@@ -65,11 +64,11 @@ async def run_in_thread(func, *args):
 class TaskAlreadyRunningError(Exception):
     """Used to let callers know that a task hasn't been started due to
     cancel_restart == False and the task already running."""
+
     pass
 
 
 class SingleInstanceTask:
-
     def __init__(self, func, propagate_errors=True, cancel_restart=True):
         self.func = func
         self.propagate_errors = propagate_errors
@@ -96,7 +95,8 @@ class SingleInstanceTask:
         if not self.cancel_restart:
             if self.task is not None and not self.task.done():
                 raise TaskAlreadyRunningError(
-                    'Skipping invocation of task - already running')
+                    "Skipping invocation of task - already running"
+                )
         old = self.task
         coro = self.func(*args, **kw)
         if asyncio.iscoroutine(coro):

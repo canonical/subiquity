@@ -24,7 +24,7 @@ from subiquity.common.serialize import Serializer
 
 from .defs import Payload
 
-log = logging.getLogger('subiquity.common.api.server')
+log = logging.getLogger("subiquity.common.api.server")
 
 
 class BindError(Exception):
@@ -47,24 +47,26 @@ class SignatureMisatchError(BindError):
         self.actual = actual
 
     def __str__(self):
-        return (f"implementation of {self.methname} has wrong signature, "
-                f"should be {self.expected} but is {self.actual}")
+        return (
+            f"implementation of {self.methname} has wrong signature, "
+            f"should be {self.expected} but is {self.actual}"
+        )
 
 
 def trim(text):
     if text is None:
-        return ''
+        return ""
     elif len(text) > 80:
-        return text[:77] + '...'
+        return text[:77] + "..."
     else:
         return text
 
 
 async def check_controllers_started(definition, controller, request):
-    if not hasattr(controller, 'app'):
+    if not hasattr(controller, "app"):
         return
 
-    if getattr(definition, 'allowed_before_start', False):
+    if getattr(definition, "allowed_before_start", False):
         return
 
     # Most endpoints should not be responding to requests
@@ -76,13 +78,14 @@ async def check_controllers_started(definition, controller, request):
     if controller.app.controllers_have_started.is_set():
         return
 
-    log.debug(f'{request.path} waiting on start')
+    log.debug(f"{request.path} waiting on start")
     await controller.app.controllers_have_started.wait()
-    log.debug(f'{request.path} resuming')
+    log.debug(f"{request.path} resuming")
 
 
-def _make_handler(controller, definition, implementation, serializer,
-                  serialize_query_args):
+def _make_handler(
+    controller, definition, implementation, serializer, serialize_query_args
+):
     def_sig = inspect.signature(definition)
     def_ret_ann = def_sig.return_annotation
     def_params = def_sig.parameters
@@ -99,45 +102,46 @@ def _make_handler(controller, definition, implementation, serializer,
     for param_name in definition.__path_params__:
         check_def_params.append(
             inspect.Parameter(
-                param_name,
-                inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                annotation=str))
+                param_name, inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=str
+            )
+        )
 
     for param_name, param in def_params.items():
-        if param_name in ('request', 'context'):
+        if param_name in ("request", "context"):
             raise Exception(
                 "api method {} cannot have parameter called request or "
-                "context".format(definition))
-        if getattr(param.annotation, '__origin__', None) is Payload:
+                "context".format(definition)
+            )
+        if getattr(param.annotation, "__origin__", None) is Payload:
             data_arg = param_name
             data_annotation = param.annotation.__args__[0]
             check_def_params.append(param.replace(annotation=data_annotation))
         else:
-            query_args_anns.append(
-                (param_name, param.annotation, param.default))
+            query_args_anns.append((param_name, param.annotation, param.default))
             check_def_params.append(param)
 
     check_impl_params = [
-        p for p in impl_params.values()
-        if p.name not in ('context', 'request')
-        ]
+        p for p in impl_params.values() if p.name not in ("context", "request")
+    ]
     check_impl_sig = impl_sig.replace(parameters=check_impl_params)
 
     check_def_sig = def_sig.replace(parameters=check_def_params)
 
     if check_impl_sig != check_def_sig:
         raise SignatureMisatchError(
-            definition.__qualname__, check_def_sig, check_impl_sig)
+            definition.__qualname__, check_def_sig, check_impl_sig
+        )
 
     async def handler(request):
         context = controller.context.child(implementation.__name__)
         with context:
-            context.set('request', request)
+            context.set("request", request)
             args = {}
             try:
                 if data_annotation is not None:
                     args[data_arg] = serializer.from_json(
-                        data_annotation, await request.text())
+                        data_annotation, await request.text()
+                    )
                 for arg, ann, default in query_args_anns:
                     if arg in request.query:
                         v = request.query[arg]
@@ -146,34 +150,35 @@ def _make_handler(controller, definition, implementation, serializer,
                     elif default != inspect._empty:
                         v = default
                     else:
-                        raise TypeError(
-                            'missing required argument "{}"'.format(arg))
+                        raise TypeError('missing required argument "{}"'.format(arg))
                     args[arg] = v
                 for param_name in definition.__path_params__:
                     args[param_name] = request.match_info[param_name]
-                if 'context' in impl_params:
-                    args['context'] = context
-                if 'request' in impl_params:
-                    args['request'] = request
-                await check_controllers_started(
-                        definition, controller, request)
+                if "context" in impl_params:
+                    args["context"] = context
+                if "request" in impl_params:
+                    args["request"] = request
+                await check_controllers_started(definition, controller, request)
                 result = await implementation(**args)
                 resp = web.json_response(
                     serializer.serialize(def_ret_ann, result),
-                    headers={'x-status': 'ok'})
+                    headers={"x-status": "ok"},
+                )
             except Exception as exc:
                 tb = traceback.TracebackException.from_exception(exc)
                 resp = web.Response(
                     text="".join(tb.format()),
                     status=500,
                     headers={
-                        'x-status': 'error',
-                        'x-error-type': type(exc).__name__,
-                        'x-error-msg': str(exc),
-                        })
-                resp['exception'] = exc
-            context.description = '{} {}'.format(resp.status, trim(resp.text))
+                        "x-status": "error",
+                        "x-error-type": type(exc).__name__,
+                        "x-error-msg": str(exc),
+                    },
+                )
+                resp["exception"] = exc
+            context.description = "{} {}".format(resp.status, trim(resp.text))
             return resp
+
     handler.controller = controller
 
     return handler
@@ -181,7 +186,7 @@ def _make_handler(controller, definition, implementation, serializer,
 
 async def controller_for_request(request):
     match_info = await request.app.router.resolve(request)
-    return getattr(match_info.handler, 'controller', None)
+    return getattr(match_info.handler, "controller", None)
 
 
 def bind(router, endpoint, controller, serializer=None, _depth=None):
@@ -203,8 +208,9 @@ def bind(router, endpoint, controller, serializer=None, _depth=None):
                 method=method,
                 path=endpoint.fullpath,
                 handler=_make_handler(
-                    controller, v, impl, serializer,
-                    endpoint.serialize_query_args))
+                    controller, v, impl, serializer, endpoint.serialize_query_args
+                ),
+            )
 
 
 async def make_server_at_path(socket_path, endpoint, controller, **kw):

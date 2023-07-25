@@ -20,8 +20,6 @@ from typing import List, Optional
 
 import attr
 
-from subiquitycore.context import with_context
-
 from subiquity.common.apidef import API
 from subiquity.common.types import (
     MirrorCheckResponse,
@@ -30,27 +28,24 @@ from subiquity.common.types import (
     MirrorPost,
     MirrorPostResponse,
     MirrorSelectionFallback,
-    )
+)
 from subiquity.models.mirror import filter_candidates
-from subiquity.server.apt import (
-    AptConfigCheckError,
-    AptConfigurer,
-    get_apt_configurer,
-    )
+from subiquity.server.apt import AptConfigCheckError, AptConfigurer, get_apt_configurer
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
+from subiquitycore.context import with_context
 
-log = logging.getLogger('subiquity.server.controllers.mirror')
+log = logging.getLogger("subiquity.server.controllers.mirror")
 
 
 class NoUsableMirrorError(Exception):
-    """ Exception to be raised when none of the candidate mirrors passed the
-    test. """
+    """Exception to be raised when none of the candidate mirrors passed the
+    test."""
 
 
 class MirrorCheckNotStartedError(Exception):
-    """ Exception to be raised when trying to cancel a mirror
-    check that was not started. """
+    """Exception to be raised when trying to cancel a mirror
+    check that was not started."""
 
 
 @attr.s(auto_attribs=True)
@@ -61,50 +56,55 @@ class MirrorCheck:
 
 
 class MirrorController(SubiquityController):
-
     endpoint = API.mirror
 
     autoinstall_key = "apt"
     autoinstall_schema = {  # This is obviously incomplete.
-        'type': 'object',
-        'properties': {
-            'preserve_sources_list': {'type': 'boolean'},
-            'primary': {'type': 'array'},  # Legacy format defined by curtin.
-            'mirror-selection': {
-                'type': 'object',
-                'properties': {
-                    'primary': {
-                        'type': 'array',
-                        'items': {
-                            'anyOf': [
+        "type": "object",
+        "properties": {
+            "preserve_sources_list": {"type": "boolean"},
+            "primary": {"type": "array"},  # Legacy format defined by curtin.
+            "mirror-selection": {
+                "type": "object",
+                "properties": {
+                    "primary": {
+                        "type": "array",
+                        "items": {
+                            "anyOf": [
                                 {
-                                    'type': 'string',
-                                    'const': 'country-mirror',
-                                }, {
-                                    'type': 'object',
-                                    'properties': {
-                                        'uri': {'type': 'string'},
-                                        'arches': {
-                                            'type': 'array',
-                                            'items': {'type': 'string'},
+                                    "type": "string",
+                                    "const": "country-mirror",
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "uri": {"type": "string"},
+                                        "arches": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
                                         },
                                     },
-                                    'required': ['uri'],
+                                    "required": ["uri"],
                                 },
                             ],
                         },
                     },
                 },
             },
-            'geoip':  {'type': 'boolean'},
-            'sources': {'type': 'object'},
-            'disable_components': {
-                'type': 'array',
-                'items': {
-                    'type': 'string',
-                    'enum': ['universe', 'multiverse', 'restricted',
-                             'contrib', 'non-free']
-                }
+            "geoip": {"type": "boolean"},
+            "sources": {"type": "object"},
+            "disable_components": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "enum": [
+                        "universe",
+                        "multiverse",
+                        "restricted",
+                        "contrib",
+                        "non-free",
+                    ],
+                },
             },
             "preferences": {
                 "type": "array",
@@ -126,13 +126,13 @@ class MirrorController(SubiquityController):
                         "pin",
                         "pin-priority",
                     ],
-                }
+                },
             },
             "fallback": {
                 "type": "string",
                 "enum": [fb.value for fb in MirrorSelectionFallback],
             },
-        }
+        },
     }
     model_name = "mirror"
 
@@ -144,14 +144,13 @@ class MirrorController(SubiquityController):
         self.network_configured_event = asyncio.Event()
         self.proxy_configured_event = asyncio.Event()
         self.app.hub.subscribe(InstallerChannels.GEOIP, self.on_geoip)
+        self.app.hub.subscribe((InstallerChannels.CONFIGURED, "source"), self.on_source)
         self.app.hub.subscribe(
-            (InstallerChannels.CONFIGURED, 'source'), self.on_source)
+            (InstallerChannels.CONFIGURED, "network"), self.network_configured_event.set
+        )
         self.app.hub.subscribe(
-            (InstallerChannels.CONFIGURED, 'network'),
-            self.network_configured_event.set)
-        self.app.hub.subscribe(
-            (InstallerChannels.CONFIGURED, 'proxy'),
-            self.proxy_configured_event.set)
+            (InstallerChannels.CONFIGURED, "proxy"), self.proxy_configured_event.set
+        )
         self._apt_config_key = None
         self.test_apt_configurer: Optional[AptConfigurer] = None
         self.final_apt_configurer: Optional[AptConfigurer] = None
@@ -161,12 +160,12 @@ class MirrorController(SubiquityController):
     def load_autoinstall_data(self, data):
         if data is None:
             return
-        geoip = data.pop('geoip', True)
+        geoip = data.pop("geoip", True)
         self.model.load_autoinstall_data(data)
         self.geoip_enabled = geoip and self.model.wants_geoip()
 
     async def try_mirror_checking_once(self) -> None:
-        """ Try mirror checking and log result. """
+        """Try mirror checking and log result."""
         output = io.StringIO()
         try:
             await self.run_mirror_testing(output)
@@ -188,7 +187,7 @@ class MirrorController(SubiquityController):
         await self.proxy_configured_event.wait()
         if self.geoip_enabled:
             try:
-                with context.child('waiting'):
+                with context.child("waiting"):
                     await asyncio.wait_for(self.cc_event.wait(), 10)
             except asyncio.TimeoutError:
                 pass
@@ -232,8 +231,7 @@ class MirrorController(SubiquityController):
         fallback = self.model.fallback
 
         if fallback == MirrorSelectionFallback.ABORT:
-            log.error("aborting the install since no primary mirror is"
-                      " usable")
+            log.error("aborting the install since no primary mirror is" " usable")
             # TODO there is no guarantee that raising this exception will
             # actually abort the install. If this is raised from a request
             # handler, for instance, it will just return a HTTP 500 error. For
@@ -241,8 +239,9 @@ class MirrorController(SubiquityController):
             # request handlers.
             raise RuntimeError("aborting install since no mirror is usable")
         elif fallback == MirrorSelectionFallback.OFFLINE_INSTALL:
-            log.warning("reverting to an offline install since no primary"
-                        " mirror is usable")
+            log.warning(
+                "reverting to an offline install since no primary" " mirror is usable"
+            )
             self.app.base_model.network.force_offline = True
         elif fallback == MirrorSelectionFallback.CONTINUE_ANYWAY:
             log.warning("continuing the install despite no usable mirror")
@@ -253,21 +252,25 @@ class MirrorController(SubiquityController):
                 lambda c: c.supports_arch(self.model.architecture),
             ]
             try:
-                candidate = next(filter_candidates(
-                    self.model.primary_candidates, filters=filters))
+                candidate = next(
+                    filter_candidates(self.model.primary_candidates, filters=filters)
+                )
             except StopIteration:
-                candidate = next(filter_candidates(
-                    self.model.get_default_primary_candidates(),
-                    filters=filters))
-            log.warning("deciding to elect primary mirror %s",
-                        candidate.serialize_for_ai())
+                candidate = next(
+                    filter_candidates(
+                        self.model.get_default_primary_candidates(), filters=filters
+                    )
+                )
+            log.warning(
+                "deciding to elect primary mirror %s", candidate.serialize_for_ai()
+            )
             candidate.elect()
         else:
             raise RuntimeError(f"invalid fallback value: {fallback}")
 
     async def run_mirror_selection_or_fallback(self, context):
-        """ Perform the mirror selection and apply the configured fallback
-        method if no mirror is usable. """
+        """Perform the mirror selection and apply the configured fallback
+        method if no mirror is usable."""
         try:
             await self.find_and_elect_candidate_mirror(context=context)
         except NoUsableMirrorError:
@@ -287,14 +290,17 @@ class MirrorController(SubiquityController):
         if self.autoinstall_apply_started:
             # Alternatively, we should cancel and restart the
             # apply_autoinstall_config but this is out of scope.
-            raise RuntimeError("source model has changed but autoinstall"
-                               " configuration is already being applied")
+            raise RuntimeError(
+                "source model has changed but autoinstall"
+                " configuration is already being applied"
+            )
         source_entry = self.app.base_model.source.current
-        if source_entry.variant == 'core':
+        if source_entry.variant == "core":
             self.test_apt_configurer = None
         else:
             self.test_apt_configurer = get_apt_configurer(
-                self.app, self.app.controllers.Source.get_handler())
+                self.app, self.app.controllers.Source.get_handler()
+            )
         self.source_configured_event.set()
 
     def serialize(self):
@@ -310,7 +316,7 @@ class MirrorController(SubiquityController):
 
     def make_autoinstall(self):
         config = self.model.make_autoinstall()
-        config['geoip'] = self.geoip_enabled
+        config["geoip"] = self.geoip_enabled
         return config
 
     async def _promote_mirror(self):
@@ -321,8 +327,7 @@ class MirrorController(SubiquityController):
             # null as the body instead.
             await self.run_mirror_selection_or_fallback(self.context)
         assert self.final_apt_configurer is not None
-        await self.final_apt_configurer.apply_apt_config(
-            self.context, final=True)
+        await self.final_apt_configurer.apply_apt_config(self.context, final=True)
 
     async def run_mirror_testing(self, output: io.StringIO) -> None:
         await self.source_configured_event.wait()
@@ -334,13 +339,13 @@ class MirrorController(SubiquityController):
         if configurer is None:
             # i.e. core
             return
-        await configurer.apply_apt_config(
-            self.context, final=False)
+        await configurer.apply_apt_config(self.context, final=False)
         await configurer.run_apt_config_check(output)
 
     async def wait_config(self, variation_name: str) -> AptConfigurer:
         self.final_apt_configurer = get_apt_configurer(
-            self.app, self.app.controllers.Source.get_handler(variation_name))
+            self.app, self.app.controllers.Source.get_handler(variation_name)
+        )
         await self._promote_mirror()
         assert self.final_apt_configurer is not None
         return self.final_apt_configurer
@@ -350,7 +355,7 @@ class MirrorController(SubiquityController):
         staged: Optional[str] = None
         candidates: List[str] = []
         source_entry = self.app.base_model.source.current
-        if source_entry.variant == 'core':
+        if source_entry.variant == "core":
             relevant = False
         else:
             relevant = True
@@ -363,10 +368,8 @@ class MirrorController(SubiquityController):
             # Skip the country-mirrors if they have not been resolved yet.
             candidates = [c.uri for c in compatibles if c.uri is not None]
         return MirrorGet(
-            relevant=relevant,
-            elected=elected,
-            candidates=candidates,
-            staged=staged)
+            relevant=relevant, elected=elected, candidates=candidates, staged=staged
+        )
 
     async def POST(self, data: Optional[MirrorPost]) -> MirrorPostResponse:
         log.debug(data)
@@ -379,8 +382,10 @@ class MirrorController(SubiquityController):
             try:
                 await self.find_and_elect_candidate_mirror(self.context)
             except NoUsableMirrorError:
-                log.warning("found no usable mirror, expecting the client to"
-                            " give up or to adjust the settings and retry")
+                log.warning(
+                    "found no usable mirror, expecting the client to"
+                    " give up or to adjust the settings and retry"
+                )
                 return MirrorPostResponse.NO_USABLE_MIRROR
             else:
                 await self.configured()
@@ -390,8 +395,9 @@ class MirrorController(SubiquityController):
             if not data.candidates:
                 raise ValueError("cannot specify an empty list of candidates")
             uris = data.candidates
-            self.model.primary_candidates = \
-                [self.model.create_primary_candidate(uri) for uri in uris]
+            self.model.primary_candidates = [
+                self.model.create_primary_candidate(uri) for uri in uris
+            ]
 
         if data.staged is not None:
             self.model.create_primary_candidate(data.staged).stage()
@@ -404,11 +410,11 @@ class MirrorController(SubiquityController):
             # ability to use a mirror for one install without it ending up in
             # the autoinstall config. Is it worth it though?
             def ensure_elected_in_candidates():
-                if any(map(lambda c: c.uri == data.elected,
-                           self.model.primary_candidates)):
+                if any(
+                    map(lambda c: c.uri == data.elected, self.model.primary_candidates)
+                ):
                     return
-                self.model.primary_candidates.insert(
-                        0, self.model.primary_elected)
+                self.model.primary_candidates.insert(0, self.model.primary_elected)
 
             if data.candidates is None:
                 ensure_elected_in_candidates()
@@ -423,8 +429,7 @@ class MirrorController(SubiquityController):
         log.debug(data)
         self.model.disabled_components = set(data)
 
-    async def check_mirror_start_POST(
-            self, cancel_ongoing: bool = False) -> None:
+    async def check_mirror_start_POST(self, cancel_ongoing: bool = False) -> None:
         if self.mirror_check is not None and not self.mirror_check.task.done():
             if cancel_ongoing:
                 await self.check_mirror_abort_POST()
@@ -432,17 +437,19 @@ class MirrorController(SubiquityController):
                 assert False
         output = io.StringIO()
         self.mirror_check = MirrorCheck(
-                uri=self.model.primary_staged.uri,
-                task=asyncio.create_task(self.run_mirror_testing(output)),
-                output=output)
+            uri=self.model.primary_staged.uri,
+            task=asyncio.create_task(self.run_mirror_testing(output)),
+            output=output,
+        )
 
     async def check_mirror_progress_GET(self) -> Optional[MirrorCheckResponse]:
         if self.mirror_check is None:
             return None
         if self.mirror_check.task.done():
             if self.mirror_check.task.exception():
-                log.warning("Mirror check failed: %r",
-                            self.mirror_check.task.exception())
+                log.warning(
+                    "Mirror check failed: %r", self.mirror_check.task.exception()
+                )
                 status = MirrorCheckStatus.FAILED
             else:
                 status = MirrorCheckStatus.OK
@@ -450,9 +457,10 @@ class MirrorController(SubiquityController):
             status = MirrorCheckStatus.RUNNING
 
         return MirrorCheckResponse(
-                url=self.mirror_check.uri,
-                status=status,
-                output=self.mirror_check.output.getvalue())
+            url=self.mirror_check.uri,
+            status=status,
+            output=self.mirror_check.output.getvalue(),
+        )
 
     async def check_mirror_abort_POST(self) -> None:
         if self.mirror_check is None:

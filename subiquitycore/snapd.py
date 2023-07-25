@@ -14,24 +14,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-from functools import partial
 import glob
 import json
 import logging
 import os
 import time
-from urllib.parse import (
-    quote_plus,
-    urlencode,
-    )
+from functools import partial
+from urllib.parse import quote_plus, urlencode
+
+import requests_unixsocket
 
 from subiquitycore.async_helpers import run_in_thread
 from subiquitycore.utils import run_command
 
-import requests_unixsocket
-
-
-log = logging.getLogger('subiquitycore.snapd')
+log = logging.getLogger("subiquitycore.snapd")
 
 # Every method in this module blocks. Do not call them from the main thread!
 
@@ -43,38 +39,34 @@ class SnapdConnection:
 
     def get(self, path, **args):
         if args:
-            path += '?' + urlencode(args)
+            path += "?" + urlencode(args)
         with requests_unixsocket.Session() as session:
             return session.get(self.url_base + path, timeout=60)
 
     def post(self, path, body, **args):
         if args:
-            path += '?' + urlencode(args)
+            path += "?" + urlencode(args)
         with requests_unixsocket.Session() as session:
-            return session.post(
-                self.url_base + path, data=json.dumps(body),
-                timeout=60)
+            return session.post(self.url_base + path, data=json.dumps(body), timeout=60)
 
     def configure_proxy(self, proxy):
         log.debug("restarting snapd to pick up proxy config")
-        dropin_dir = os.path.join(
-            self.root, 'etc/systemd/system/snapd.service.d')
+        dropin_dir = os.path.join(self.root, "etc/systemd/system/snapd.service.d")
         os.makedirs(dropin_dir, exist_ok=True)
-        with open(os.path.join(dropin_dir, 'snap_proxy.conf'), 'w') as fp:
+        with open(os.path.join(dropin_dir, "snap_proxy.conf"), "w") as fp:
             fp.write(proxy.proxy_systemd_dropin())
-        if self.root == '/':
+        if self.root == "/":
             cmds = [
-                ['systemctl', 'daemon-reload'],
-                ['systemctl', 'restart', 'snapd.service'],
-                ]
+                ["systemctl", "daemon-reload"],
+                ["systemctl", "restart", "snapd.service"],
+            ]
         else:
-            cmds = [['sleep', '2']]
+            cmds = [["sleep", "2"]]
         for cmd in cmds:
             run_command(cmd)
 
 
 class _FakeFileResponse:
-
     def __init__(self, path):
         self.path = path
 
@@ -87,7 +79,6 @@ class _FakeFileResponse:
 
 
 class _FakeMemoryResponse:
-
     def __init__(self, data):
         self.data = data
 
@@ -128,59 +119,65 @@ class FakeSnapdConnection:
 
     def configure_proxy(self, proxy):
         log.debug("pretending to restart snapd to pick up proxy config")
-        time.sleep(2/self.scale_factor)
+        time.sleep(2 / self.scale_factor)
 
     def post(self, path, body, **args):
-        if path == "v2/snaps/subiquity" and body['action'] == 'refresh':
+        if path == "v2/snaps/subiquity" and body["action"] == "refresh":
             # The post-refresh hook does this in the real world.
-            update_marker_file = self.output_base + '/run/subiquity/updating'
-            open(update_marker_file, 'w').close()
-            return _FakeMemoryResponse({
-                "type": "async",
-                "change": "7",
-                "status-code": 200,
-                "status": "OK",
-                })
+            update_marker_file = self.output_base + "/run/subiquity/updating"
+            open(update_marker_file, "w").close()
+            return _FakeMemoryResponse(
+                {
+                    "type": "async",
+                    "change": "7",
+                    "status-code": 200,
+                    "status": "OK",
+                }
+            )
         change = None
-        if path == "v2/snaps/subiquity" and body['action'] == 'switch':
+        if path == "v2/snaps/subiquity" and body["action"] == "switch":
             change = "8"
-        if path.startswith('v2/systems/') and body['action'] == 'install':
-            system = path.split('/')[2]
-            step = body['step']
-            if step == 'finish':
-                if system == 'finish-fail':
+        if path.startswith("v2/systems/") and body["action"] == "install":
+            system = path.split("/")[2]
+            step = body["step"]
+            if step == "finish":
+                if system == "finish-fail":
                     change = "15"
                 else:
                     change = "5"
-            elif step == 'setup-storage-encryption':
+            elif step == "setup-storage-encryption":
                 change = "6"
         if change is not None:
-            return _FakeMemoryResponse({
-                "type": "async",
-                "change": change,
-                "status-code": 200,
-                "status": "Accepted",
-                })
+            return _FakeMemoryResponse(
+                {
+                    "type": "async",
+                    "change": change,
+                    "status-code": 200,
+                    "status": "Accepted",
+                }
+            )
         raise Exception(
-            "Don't know how to fake POST response to {}".format((path, args)))
+            "Don't know how to fake POST response to {}".format((path, args))
+        )
 
     def get(self, path, **args):
-        if 'change' not in path:
-            time.sleep(1/self.scale_factor)
-        filename = path.replace('/', '-')
+        if "change" not in path:
+            time.sleep(1 / self.scale_factor)
+        filename = path.replace("/", "-")
         if args:
-            filename += '-' + urlencode(sorted(args.items()))
+            filename += "-" + urlencode(sorted(args.items()))
         if filename in self.response_sets:
             return self.response_sets[filename].next()
         filepath = os.path.join(self.snap_data_dir, filename)
-        if os.path.exists(filepath + '.json'):
-            return _FakeFileResponse(filepath + '.json')
+        if os.path.exists(filepath + ".json"):
+            return _FakeFileResponse(filepath + ".json")
         if os.path.isdir(filepath):
-            files = sorted(glob.glob(os.path.join(filepath, '*.json')))
+            files = sorted(glob.glob(os.path.join(filepath, "*.json")))
             rs = self.response_sets[filename] = ResponseSet(files)
             return rs.next()
         raise Exception(
-            "Don't know how to fake GET response to {}".format((path, args)))
+            "Don't know how to fake GET response to {}".format((path, args))
+        )
 
 
 def get_fake_connection(scale_factor=1000, output_base=None):
@@ -188,30 +185,29 @@ def get_fake_connection(scale_factor=1000, output_base=None):
     if output_base is None:
         output_base = os.path.join(proj_dir, ".subiquity")
     return FakeSnapdConnection(
-        os.path.join(proj_dir, "examples", "snaps"),
-        scale_factor, output_base)
+        os.path.join(proj_dir, "examples", "snaps"), scale_factor, output_base
+    )
 
 
 class AsyncSnapd:
-
     def __init__(self, connection):
         self.connection = connection
 
     async def get(self, path, **args):
-        response = await run_in_thread(
-            partial(self.connection.get, path, **args))
+        response = await run_in_thread(partial(self.connection.get, path, **args))
         response.raise_for_status()
         return response.json()
 
     async def post(self, path, body, **args):
         response = await run_in_thread(
-            partial(self.connection.post, path, body, **args))
+            partial(self.connection.post, path, body, **args)
+        )
         response.raise_for_status()
         return response.json()
 
     async def post_and_wait(self, path, body, **args):
-        change = (await self.post(path, body, **args))['change']
-        change_path = 'v2/changes/{}'.format(change)
+        change = (await self.post(path, body, **args))["change"]
+        change_path = "v2/changes/{}".format(change)
         while True:
             result = await self.get(change_path)
             if result["result"]["status"] == "Done":

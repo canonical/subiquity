@@ -14,9 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+
 import attr
 
-log = logging.getLogger('system_setup.models.wslsetupoptions')
+log = logging.getLogger("system_setup.models.wslsetupoptions")
 
 
 @attr.s
@@ -25,8 +26,7 @@ class WSLSetupOptions(object):
 
 
 class WSLSetupOptionsModel(object):
-    """ Model representing basic wsl configuration
-    """
+    """Model representing basic wsl configuration"""
 
     def __init__(self):
         self._wslsetupoptions = None

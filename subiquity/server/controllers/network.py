@@ -19,91 +19,74 @@ from typing import List, Optional
 
 import aiohttp
 
-from subiquitycore.async_helpers import (
-    run_bg_task,
-    schedule_task,
-    )
+from subiquity.common.api.client import make_client_for_conn
+from subiquity.common.apidef import API, LinkAction, NetEventAPI
+from subiquity.common.errorreport import ErrorReportKind
+from subiquity.common.types import NetworkStatus, PackageInstallState
+from subiquity.server.controller import SubiquityController
+from subiquitycore.async_helpers import run_bg_task, schedule_task
 from subiquitycore.context import with_context
 from subiquitycore.controllers.network import BaseNetworkController
-from subiquitycore.models.network import (
-    BondConfig,
-    StaticConfig,
-    WLANConfig,
-    )
-
-from subiquity.common.api.client import make_client_for_conn
-from subiquity.common.apidef import (
-    API,
-    LinkAction,
-    NetEventAPI,
-    )
-from subiquity.common.errorreport import ErrorReportKind
-from subiquity.common.types import (
-    NetworkStatus,
-    PackageInstallState,
-    )
-from subiquity.server.controller import SubiquityController
-
+from subiquitycore.models.network import BondConfig, StaticConfig, WLANConfig
 
 log = logging.getLogger("subiquity.server.controllers.network")
 
 MATCH = {
-    'type': 'object',
-    'properties': {
-        'name': {'type': 'string'},
-        'macaddress': {'type': 'string'},
-        'driver': {'type': 'string'},
-        },
-    'additionalProperties': False,
-    }
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "macaddress": {"type": "string"},
+        "driver": {"type": "string"},
+    },
+    "additionalProperties": False,
+}
 
 NETPLAN_SCHEMA = {
-    'type': 'object',
-    'properties': {
-        'version': {
-            'type': 'integer',
-            'minimum': 2,
-            'maximum': 2,
-            },
-        'ethernets': {
-            'type': 'object',
-            'properties': {
-                'match': MATCH,
-                }
-            },
-        'wifis': {
-            'type': 'object',
-            'properties': {
-                'match': MATCH,
-                }
-            },
-        'bridges': {'type': 'object'},
-        'bonds': {'type': 'object'},
-        'tunnels': {'type': 'object'},
-        'vlans': {'type': 'object'},
+    "type": "object",
+    "properties": {
+        "version": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 2,
         },
-    'required': ['version'],
-    }
+        "ethernets": {
+            "type": "object",
+            "properties": {
+                "match": MATCH,
+            },
+        },
+        "wifis": {
+            "type": "object",
+            "properties": {
+                "match": MATCH,
+            },
+        },
+        "bridges": {"type": "object"},
+        "bonds": {"type": "object"},
+        "tunnels": {"type": "object"},
+        "vlans": {"type": "object"},
+    },
+    "required": ["version"],
+}
 
 
 class NetworkController(BaseNetworkController, SubiquityController):
-
     endpoint = API.network
 
     ai_data = None
     autoinstall_key = "network"
     autoinstall_schema = {
-        'oneOf': [
+        "oneOf": [
             NETPLAN_SCHEMA,
             {
-                'type': 'object',
-                'properties': {
-                    'network': NETPLAN_SCHEMA,
-                    },
-                'required': ['network'],
+                "type": "object",
+                "properties": {
+                    "network": NETPLAN_SCHEMA,
+                },
+                "required": ["network"],
             },
-            ],
-        }
+        ],
+    }
 
     def __init__(self, app):
         super().__init__(app)
@@ -114,25 +97,26 @@ class NetworkController(BaseNetworkController, SubiquityController):
         self.pending_wlan_devices = set()
 
     def maybe_start_install_wpasupplicant(self):
-        log.debug('maybe_start_install_wpasupplicant')
+        log.debug("maybe_start_install_wpasupplicant")
         if self.install_wpasupplicant_task is not None:
             return
         self.install_wpasupplicant_task = asyncio.create_task(
-            self._install_wpasupplicant())
+            self._install_wpasupplicant()
+        )
 
     def wlan_support_install_state(self):
-        return self.app.package_installer.state_for_pkg('wpasupplicant')
+        return self.app.package_installer.state_for_pkg("wpasupplicant")
 
     async def _install_wpasupplicant(self):
         if self.opts.dry_run:
-            await asyncio.sleep(10/self.app.scale_factor)
-            a = 'DONE'
+            await asyncio.sleep(10 / self.app.scale_factor)
+            a = "DONE"
             for k in self.app.debug_flags:
-                if k.startswith('wlan_install='):
-                    a = k.split('=', 2)[1]
+                if k.startswith("wlan_install="):
+                    a = k.split("=", 2)[1]
             r = getattr(PackageInstallState, a)
         else:
-            r = await self.app.package_installer.install_pkg('wpasupplicant')
+            r = await self.app.package_installer.install_pkg("wpasupplicant")
         log.debug("wlan_support_install_finished %s", r)
         self._call_clients("wlan_support_install_finished", r)
         if r == PackageInstallState.DONE:
@@ -153,12 +137,12 @@ class NetworkController(BaseNetworkController, SubiquityController):
             #
             # in your autoinstall config. Continue to support that for
             # backwards compatibility.
-            if 'network' in self.ai_data:
-                self.ai_data = self.ai_data['network']
+            if "network" in self.ai_data:
+                self.ai_data = self.ai_data["network"]
 
     def start(self):
         if self.ai_data is not None:
-            self.model.override_config = {'network': self.ai_data}
+            self.model.override_config = {"network": self.ai_data}
             self.apply_config()
             if self.interactive():
                 # If interactive, we want edits in the UI to override
@@ -193,8 +177,8 @@ class NetworkController(BaseNetworkController, SubiquityController):
         with context.child("wait_dhcp"):
             try:
                 await asyncio.wait_for(
-                    asyncio.wait({e.wait() for e in dhcp_events}),
-                    10)
+                    asyncio.wait({e.wait() for e in dhcp_events}), 10
+                )
             except asyncio.TimeoutError:
                 pass
 
@@ -208,9 +192,11 @@ class NetworkController(BaseNetworkController, SubiquityController):
                 self.update_initial_configs()
                 self.apply_config(context)
             else:
-                log.debug("NetworkManager is enabled and no network"
-                          " autoinstall section was found. Not applying"
-                          " network settings.")
+                log.debug(
+                    "NetworkManager is enabled and no network"
+                    " autoinstall section was found. Not applying"
+                    " network settings."
+                )
                 want_apply_config = False
         if want_apply_config:
             with context.child("wait_for_apply"):
@@ -233,33 +219,34 @@ class NetworkController(BaseNetworkController, SubiquityController):
             log.exception("_apply_config failed")
             self.model.has_network = False
             self.app.make_apport_report(
-                ErrorReportKind.NETWORK_FAIL, "applying network")
+                ErrorReportKind.NETWORK_FAIL, "applying network"
+            )
             if not self.interactive():
                 raise
 
     def make_autoinstall(self):
-        return self.model.render_config()['network']
+        return self.model.render_config()["network"]
 
     async def GET(self) -> NetworkStatus:
         if not self.view_shown:
             self.apply_config(silent=True)
             self.view_shown = True
-        if self.wlan_support_install_state() == \
-           PackageInstallState.DONE:
+        if self.wlan_support_install_state() == PackageInstallState.DONE:
             devices = self.model.get_all_netdevs()
         else:
             devices = [
-                dev for dev in self.model.get_all_netdevs()
-                if dev.type != 'wlan'
-                ]
+                dev for dev in self.model.get_all_netdevs() if dev.type != "wlan"
+            ]
         return NetworkStatus(
             devices=[dev.netdev_info() for dev in devices],
-            wlan_support_install_state=self.wlan_support_install_state())
+            wlan_support_install_state=self.wlan_support_install_state(),
+        )
 
     async def configured(self):
         self.model.has_network = self.network_event_receiver.has_default_route
         self.model.needs_wpasupplicant = (
-            self.wlan_support_install_state() == PackageInstallState.DONE)
+            self.wlan_support_install_state() == PackageInstallState.DONE
+        )
         await super().configured()
 
     async def POST(self) -> None:
@@ -272,20 +259,25 @@ class NetworkController(BaseNetworkController, SubiquityController):
         return ips
 
     async def subscription_PUT(self, socket_path: str) -> None:
-        log.debug('added subscription %s', socket_path)
+        log.debug("added subscription %s", socket_path)
         conn = aiohttp.UnixConnector(socket_path)
         client = make_client_for_conn(NetEventAPI, conn)
         lock = asyncio.Lock()
         self.clients[socket_path] = (client, conn, lock)
         run_bg_task(
             self._call_client(
-                client, conn, lock, "route_watch",
-                self.network_event_receiver.has_default_route))
+                client,
+                conn,
+                lock,
+                "route_watch",
+                self.network_event_receiver.has_default_route,
+            )
+        )
 
     async def subscription_DELETE(self, socket_path: str) -> None:
         if socket_path not in self.clients:
             return
-        log.debug('removed subscription %s', socket_path)
+        log.debug("removed subscription %s", socket_path)
         client, conn, lock = self.clients.pop(socket_path)
         async with lock:
             await conn.close()
@@ -294,7 +286,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
         async with lock:
             log.debug("_call_client %s %s", meth_name, conn.path)
             if conn.closed:
-                log.debug('closed')
+                log.debug("closed")
                 return
             try:
                 await getattr(client, meth_name).POST(*args)
@@ -303,9 +295,8 @@ class NetworkController(BaseNetworkController, SubiquityController):
 
     def _call_clients(self, meth_name, *args):
         for client, conn, lock in self.clients.values():
-            log.debug('creating _call_client task %s %s', conn.path, meth_name)
-            run_bg_task(
-                self._call_client(client, conn, lock, meth_name, *args))
+            log.debug("creating _call_client task %s %s", conn.path, meth_name)
+            run_bg_task(self._call_client(client, conn, lock, meth_name, *args))
 
     def apply_starting(self):
         super().apply_starting()
@@ -324,22 +315,23 @@ class NetworkController(BaseNetworkController, SubiquityController):
         self._call_clients("route_watch", has_default_route)
 
     def _send_update(self, act, dev):
-        with self.context.child(
-                "_send_update", "{} {}".format(act.name, dev.name)):
+        with self.context.child("_send_update", "{} {}".format(act.name, dev.name)):
             log.debug("dev_info {} {}".format(dev.name, dev.config))
             dev_info = dev.netdev_info()
             self._call_clients("update_link", act, dev_info)
 
     def new_link(self, dev):
         super().new_link(dev)
-        if dev.type == 'wlan':
+        if dev.type == "wlan":
             self.maybe_start_install_wpasupplicant()
             state = self.wlan_support_install_state()
             if state == PackageInstallState.INSTALLING:
                 self.pending_wlan_devices.add(dev)
                 return
-            elif state in [PackageInstallState.FAILED,
-                           PackageInstallState.NOT_AVAILABLE]:
+            elif state in [
+                PackageInstallState.FAILED,
+                PackageInstallState.NOT_AVAILABLE,
+            ]:
                 return
             # PackageInstallState.DONE falls through
         self._send_update(LinkAction.NEW, dev)
@@ -352,8 +344,9 @@ class NetworkController(BaseNetworkController, SubiquityController):
         super().del_link(dev)
         self._send_update(LinkAction.DEL, dev)
 
-    async def set_static_config_POST(self, dev_name: str, ip_version: int,
-                                     static_config: StaticConfig) -> None:
+    async def set_static_config_POST(
+        self, dev_name: str, ip_version: int, static_config: StaticConfig
+    ) -> None:
         self.set_static_config(dev_name, ip_version, static_config)
 
     async def enable_dhcp_POST(self, dev_name: str, ip_version: int) -> None:
@@ -365,9 +358,9 @@ class NetworkController(BaseNetworkController, SubiquityController):
     async def vlan_PUT(self, dev_name: str, vlan_id: int) -> None:
         self.add_vlan(dev_name, vlan_id)
 
-    async def add_or_edit_bond_POST(self, existing_name: Optional[str],
-                                    new_name: str,
-                                    bond_config: BondConfig) -> None:
+    async def add_or_edit_bond_POST(
+        self, existing_name: Optional[str], new_name: str, bond_config: BondConfig
+    ) -> None:
         self.add_or_update_bond(existing_name, new_name, bond_config)
 
     async def set_wlan_POST(self, dev_name: str, wlan: WLANConfig) -> None:

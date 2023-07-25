@@ -17,13 +17,12 @@ from subiquity.server.controller import NonInteractiveController
 
 
 class DebconfController(NonInteractiveController):
-
     model_name = "debconf_selections"
     autoinstall_key = "debconf-selections"
     autoinstall_default = ""
     autoinstall_schema = {
-        'type': 'string',
-        }
+        "type": "string",
+    }
 
     def load_autoinstall_data(self, data):
         self.model.selections = data

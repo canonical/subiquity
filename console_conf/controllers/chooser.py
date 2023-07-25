@@ -15,18 +15,16 @@
 import logging
 
 from console_conf.ui.views import (
-    ChooserView,
-    ChooserCurrentSystemView,
     ChooserConfirmView,
-    )
-
+    ChooserCurrentSystemView,
+    ChooserView,
+)
 from subiquitycore.tuicontroller import TuiController
 
 log = logging.getLogger("console_conf.controllers.chooser")
 
 
 class RecoveryChooserBaseController(TuiController):
-
     def __init__(self, app):
         super().__init__(app)
         self.model = app.base_model
@@ -40,7 +38,6 @@ class RecoveryChooserBaseController(TuiController):
 
 
 class RecoveryChooserController(RecoveryChooserBaseController):
-
     def __init__(self, app):
         super().__init__(app)
         self._model_view, self._all_view = self._make_views()
@@ -64,9 +61,9 @@ class RecoveryChooserController(RecoveryChooserBaseController):
         if self.model.current and self.model.current.actions:
             # only when we have a current system and it has actions available
             more = len(self.model.systems) > 1
-            current_view = ChooserCurrentSystemView(self,
-                                                    self.model.current,
-                                                    has_more=more)
+            current_view = ChooserCurrentSystemView(
+                self, self.model.current, has_more=more
+            )
 
         all_view = ChooserView(self, self.model.systems)
         return current_view, all_view
@@ -80,8 +77,7 @@ class RecoveryChooserController(RecoveryChooserBaseController):
         self.ui.set_body(self._all_view)
 
     def back(self):
-        if self._current_view == self._all_view and \
-           self._model_view is not None:
+        if self._current_view == self._all_view and self._model_view is not None:
             # back in the all-systems screen goes back to the current model
             # screen, provided we have one
             self._current_view = self._model_view

@@ -15,30 +15,38 @@
 
 import asyncio
 
-from urwid import (
-    Text,
-    )
+from urwid import Text
 
 styles = {
-    'dots': {
-        'texts': [t.replace('*', '\N{bullet}')
-                  for t in ['|*----|', '|-*---|', '|--*--|', '|---*-|',
-                            '|----*|', '|---*-|', '|--*--|', '|-*---|']],
-        'rate': 0.2,
-        },
-    'spin': {
-        'texts': ['-', '\\', '|', '/'],
-        'rate': 0.1,
-        },
-    }
+    "dots": {
+        "texts": [
+            t.replace("*", "\N{bullet}")
+            for t in [
+                "|*----|",
+                "|-*---|",
+                "|--*--|",
+                "|---*-|",
+                "|----*|",
+                "|---*-|",
+                "|--*--|",
+                "|-*---|",
+            ]
+        ],
+        "rate": 0.2,
+    },
+    "spin": {
+        "texts": ["-", "\\", "|", "/"],
+        "rate": 0.1,
+    },
+}
 
 
 class Spinner(Text):
-    def __init__(self, style='spin', align='center'):
+    def __init__(self, style="spin", align="center"):
         self.spin_index = 0
-        self.spin_text = styles[style]['texts']
-        self.rate = styles[style]['rate']
-        super().__init__('', align=align)
+        self.spin_text = styles[style]["texts"]
+        self.rate = styles[style]["rate"]
+        super().__init__("", align=align)
         self._spin_task = None
 
     def spin(self):
@@ -55,7 +63,7 @@ class Spinner(Text):
         self._spin_task = asyncio.create_task(self._spin())
 
     def stop(self):
-        self.set_text('')
+        self.set_text("")
         if self._spin_task is not None:
             self._spin_task.cancel()
             self._spin_task = None

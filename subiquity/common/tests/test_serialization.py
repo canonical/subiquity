@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import attr
 import datetime
 import enum
 import inspect
@@ -22,11 +21,9 @@ import string
 import typing
 import unittest
 
-from subiquity.common.serialize import (
-    named_field,
-    Serializer,
-    SerializationError,
-    )
+import attr
+
+from subiquity.common.serialize import SerializationError, Serializer, named_field
 
 
 @attr.s(auto_attribs=True)
@@ -36,9 +33,7 @@ class Data:
 
     @staticmethod
     def make_random():
-        return Data(
-            random.choice(string.ascii_letters),
-            random.randint(0, 1000))
+        return Data(random.choice(string.ascii_letters), random.randint(0, 1000))
 
 
 @attr.s(auto_attribs=True)
@@ -50,8 +45,8 @@ class Container:
     def make_random():
         return Container(
             data=Data.make_random(),
-            data_list=[Data.make_random()
-                       for i in range(random.randint(10, 20))])
+            data_list=[Data.make_random() for i in range(random.randint(10, 20))],
+        )
 
 
 @attr.s(auto_attribs=True)
@@ -67,27 +62,23 @@ class MyEnum(enum.Enum):
 
 
 class CommonSerializerTests:
-
     simple_examples = [
         (int, 1),
         (str, "v"),
         (list, [1]),
         (dict, {"2": 3}),
         (type(None), None),
-        ]
+    ]
 
     def assertSerializesTo(self, annotation, value, expected):
-        self.assertEqual(
-            self.serializer.serialize(annotation, value), expected)
+        self.assertEqual(self.serializer.serialize(annotation, value), expected)
 
     def assertDeserializesTo(self, annotation, value, expected):
-        self.assertEqual(
-            self.serializer.deserialize(annotation, value), expected)
+        self.assertEqual(self.serializer.deserialize(annotation, value), expected)
 
     def assertRoundtrips(self, annotation, value):
         serialized = self.serializer.to_json(annotation, value)
-        self.assertEqual(
-            self.serializer.from_json(annotation, serialized), value)
+        self.assertEqual(self.serializer.from_json(annotation, serialized), value)
 
     def assertSerialization(self, annotation, value, expected):
         self.assertSerializesTo(annotation, value, expected)
@@ -114,8 +105,7 @@ class CommonSerializerTests:
             self.assertSerialization(typ, val, val)
 
     def test_non_string_key_dict(self):
-        self.assertRaises(
-            Exception, self.serializer.serialize, dict, {1: 2})
+        self.assertRaises(Exception, self.serializer.serialize, dict, {1: 2})
 
     def test_roundtrip_dict(self):
         ann = typing.Dict[int, str]
@@ -141,7 +131,8 @@ class CommonSerializerTests:
 
     def test_enums_by_value(self):
         self.serializer = type(self.serializer)(
-            compact=self.serializer.compact, serialize_enums_by="value")
+            compact=self.serializer.compact, serialize_enums_by="value"
+        )
         self.assertSerialization(MyEnum, MyEnum.name, "value")
 
     def test_serialize_any(self):
@@ -151,19 +142,19 @@ class CommonSerializerTests:
 
 
 class TestSerializer(CommonSerializerTests, unittest.TestCase):
-
     serializer = Serializer()
 
     def test_datetime(self):
         @attr.s
         class C:
-            d: datetime.datetime = attr.ib(metadata={'time_fmt': '%Y-%m-%d'})
+            d: datetime.datetime = attr.ib(metadata={"time_fmt": "%Y-%m-%d"})
+
         c = C(datetime.datetime(2022, 1, 1))
         self.assertSerialization(C, c, {"d": "2022-01-01"})
 
     def test_serialize_attr(self):
         data = Data.make_random()
-        expected = {'field1': data.field1, 'field2': data.field2}
+        expected = {"field1": data.field1, "field2": data.field2}
         self.assertSerialization(Data, data, expected)
 
     def test_serialize_container(self):
@@ -171,20 +162,20 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
         data2 = Data.make_random()
         container = Container(data1, [data2])
         expected = {
-            'data': {'field1': data1.field1, 'field2': data1.field2},
-            'data_list': [
-                {'field1': data2.field1, 'field2': data2.field2},
-                ],
-            }
+            "data": {"field1": data1.field1, "field2": data1.field2},
+            "data_list": [
+                {"field1": data2.field1, "field2": data2.field2},
+            ],
+        }
         self.assertSerialization(Container, container, expected)
 
     def test_serialize_union(self):
         data = Data.make_random()
         expected = {
-            '$type': 'Data',
-            'field1': data.field1,
-            'field2': data.field2,
-            }
+            "$type": "Data",
+            "field1": data.field1,
+            "field2": data.field2,
+        }
         self.assertSerialization(typing.Union[Data, Container], data, expected)
 
     def test_arbitrary_types_may_have_type_field(self):
@@ -193,18 +184,18 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
         # API entrypoint, one that isn't taking a Union, it must be cool with
         # the excess $type field.
         data = {
-            '$type': 'Data',
-            'field1': '1',
-            'field2': 2,
+            "$type": "Data",
+            "field1": "1",
+            "field2": 2,
         }
-        expected = Data(field1='1', field2=2)
+        expected = Data(field1="1", field2=2)
         self.assertDeserializesTo(Data, data, expected)
 
     def test_reject_unknown_fields_by_default(self):
         serializer = Serializer()
         data = Data.make_random()
         serialized = serializer.serialize(Data, data)
-        serialized['foobar'] = 'baz'
+        serialized["foobar"] = "baz"
         with self.assertRaises(KeyError):
             serializer.deserialize(Data, serialized)
 
@@ -212,11 +203,10 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
         serializer = Serializer(ignore_unknown_fields=True)
         data = Data.make_random()
         serialized = serializer.serialize(Data, data)
-        serialized['foobar'] = 'baz'
+        serialized["foobar"] = "baz"
         self.assertEqual(serializer.deserialize(Data, serialized), data)
 
     def test_override_field_name(self):
-
         @attr.s(auto_attribs=True)
         class Object:
             x: int
@@ -224,10 +214,10 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
             z: int = named_field("field-z", 0)
 
         self.assertSerialization(
-            Object, Object(1, 2), {"x": 1, "field-y": 2, "field-z": 0})
+            Object, Object(1, 2), {"x": 1, "field-y": 2, "field-z": 0}
+        )
 
     def test_embedding(self):
-
         @attr.s(auto_attribs=True)
         class Base1:
             x: str
@@ -249,28 +239,28 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
         self.assertSerialization(
             Derived2,
             Derived2(b=Derived1(x="a", y=1), c=2),
-            {"b": {"x": "a", "y": 1}, "c": 2})
+            {"b": {"x": "a", "y": 1}, "c": 2},
+        )
 
     def test_error_paths(self):
         with self.assertRaises(SerializationError) as catcher:
             self.serializer.serialize(str, 1)
-        self.assertEqual(catcher.exception.path, '')
+        self.assertEqual(catcher.exception.path, "")
 
         @attr.s(auto_attribs=True)
         class Type:
-            field1: str = named_field('field-1')
+            field1: str = named_field("field-1")
             field2: int
 
         with self.assertRaises(SerializationError) as catcher:
             self.serializer.serialize(Type, Data(2, 3))
-        self.assertEqual(catcher.exception.path, '.field1')
+        self.assertEqual(catcher.exception.path, ".field1")
         with self.assertRaises(SerializationError) as catcher:
-            self.serializer.deserialize(Type, {'field-1': 1, 'field2': 2})
+            self.serializer.deserialize(Type, {"field-1": 1, "field2": 2})
         self.assertEqual(catcher.exception.path, "['field-1']")
 
 
 class TestCompactSerializer(CommonSerializerTests, unittest.TestCase):
-
     serializer = Serializer(compact=True)
 
     def test_serialize_attr(self):
@@ -285,75 +275,62 @@ class TestCompactSerializer(CommonSerializerTests, unittest.TestCase):
         expected = [
             [data1.field1, data1.field2],
             [[data2.field1, data2.field2]],
-            ]
+        ]
         self.assertSerialization(Container, container, expected)
 
     def test_serialize_union(self):
         data = Data.make_random()
-        expected = ['Data', data.field1, data.field2]
+        expected = ["Data", data.field1, data.field2]
         self.assertSerialization(typing.Union[Data, Container], data, expected)
 
 
 class TestOptionalAndDefault(CommonSerializerTests, unittest.TestCase):
-
     serializer = Serializer()
 
     def test_happy(self):
         data = {
-            'int': 11,
-            'optional_int': 12,
-            'int_default': 3,
-            'optional_int_default': 4
+            "int": 11,
+            "optional_int": 12,
+            "int_default": 3,
+            "optional_int_default": 4,
         }
         expected = OptionalAndDefault(11, 12)
         self.assertDeserializesTo(OptionalAndDefault, data, expected)
 
     def test_skip_int(self):
-        data = {
-            'optional_int': 12,
-            'int_default': 13,
-            'optional_int_default': 14
-        }
+        data = {"optional_int": 12, "int_default": 13, "optional_int_default": 14}
 
         with self.assertRaises(TypeError):
             self.serializer.deserialize(OptionalAndDefault, data)
 
     def test_skip_optional_int(self):
-        data = {
-            'int': 11,
-            'int_default': 13,
-            'optional_int_default': 14
-        }
+        data = {"int": 11, "int_default": 13, "optional_int_default": 14}
 
         with self.assertRaises(TypeError):
             self.serializer.deserialize(OptionalAndDefault, data)
 
     def test_optional_int_none(self):
         data = {
-            'int': 11,
-            'optional_int': None,
-            'int_default': 13,
-            'optional_int_default': 14
+            "int": 11,
+            "optional_int": None,
+            "int_default": 13,
+            "optional_int_default": 14,
         }
 
         expected = OptionalAndDefault(11, None, 13, 14)
         self.assertDeserializesTo(OptionalAndDefault, data, expected)
 
     def test_skip_int_default(self):
-        data = {
-            'int': 11,
-            'optional_int': 12,
-            'optional_int_default': 14
-        }
+        data = {"int": 11, "optional_int": 12, "optional_int_default": 14}
 
         expected = OptionalAndDefault(11, 12, 3, 14)
         self.assertDeserializesTo(OptionalAndDefault, data, expected)
 
     def test_skip_optional_int_default(self):
         data = {
-            'int': 11,
-            'optional_int': 12,
-            'int_default': 13,
+            "int": 11,
+            "optional_int": 12,
+            "int_default": 13,
         }
 
         expected = OptionalAndDefault(11, 12, 13, 4)
@@ -361,10 +338,10 @@ class TestOptionalAndDefault(CommonSerializerTests, unittest.TestCase):
 
     def test_optional_int_default_none(self):
         data = {
-            'int': 11,
-            'optional_int': 12,
-            'int_default': 13,
-            'optional_int_default': None,
+            "int": 11,
+            "optional_int": 12,
+            "int_default": 13,
+            "optional_int_default": None,
         }
 
         expected = OptionalAndDefault(11, 12, 13, None)
@@ -372,11 +349,11 @@ class TestOptionalAndDefault(CommonSerializerTests, unittest.TestCase):
 
     def test_extra(self):
         data = {
-            'int': 11,
-            'optional_int': 12,
-            'int_default': 13,
-            'optional_int_default': 14,
-            'extra': 15
+            "int": 11,
+            "optional_int": 12,
+            "int_default": 13,
+            "optional_int_default": 14,
+            "extra": 15,
         }
 
         with self.assertRaises(KeyError):

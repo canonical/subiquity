@@ -18,8 +18,8 @@
 #    Copyright (C) 2021 Canonical Ltd.
 
 import collections
-import os
 import logging
+import os
 from configparser import ConfigParser
 
 log = logging.getLogger("system_setup.common.wsl_conf")
@@ -28,30 +28,16 @@ WSL_SYSTEMD_BOOT_COMMAND = "/usr/libexec/wsl-systemd"
 
 config_base_default = {
     "wsl": {
-        "automount": {
-            "root": "/mnt/",
-            "options": ""
-        },
-        "network": {
-            "generatehosts": "true",
-            "generateresolvconf": "true"
-        }
+        "automount": {"root": "/mnt/", "options": ""},
+        "network": {"generatehosts": "true", "generateresolvconf": "true"},
     }
 }
 
 config_adv_default = {
     "wsl": {
-        "automount": {
-            "enabled": "true",
-            "mountfstab": "true"
-        },
-        "interop": {
-            "enabled": "true",
-            "appendwindowspath": "true"
-        },
-        "boot": {
-            "command": ""
-        }
+        "automount": {"enabled": "true", "mountfstab": "true"},
+        "interop": {"enabled": "true", "appendwindowspath": "true"},
+        "boot": {"command": ""},
     }
 }
 
@@ -78,17 +64,15 @@ def wsl_config_loader(pathname, config_ref, id):
             for conf_item in conf_sec_list:
                 if conf_item in config_ref[id][conf_sec]:
                     # Handle systemd experimental feature (string -> bool)
-                    if (
-                            conf_sec.lower() == "boot" and
-                            conf_item.lower() == "command"):
+                    if conf_sec.lower() == "boot" and conf_item.lower() == "command":
                         v = conf_sec_list[conf_item]
                         data["systemd_enabled"] = "false"
                         if v == WSL_SYSTEMD_BOOT_COMMAND:
                             data["systemd_enabled"] = "true"
                         continue
-                    data[conf_sec.lower()
-                         + "_" + conf_item.lower()] = \
-                        conf_sec_list[conf_item]
+                    data[conf_sec.lower() + "_" + conf_item.lower()] = conf_sec_list[
+                        conf_item
+                    ]
     # This is the systemd value we converted
     data.pop("boot_command", None)
     return data
@@ -145,13 +129,14 @@ def wsl_config_update(config_class, root_dir):
             config_settings = config_sections[config_section]
             for config_setting in config_settings:
                 config_default_value = config_settings[config_setting]
-                config_api_name = \
-                    config_section.lower() + "_" + config_setting.lower()
+                config_api_name = config_section.lower() + "_" + config_setting.lower()
 
                 # on systemd, select correct API endpoint
                 systemd_experimental_section = False
-                if (config_section.lower() == "boot" and
-                   config_setting.lower() == "command"):
+                if (
+                    config_section.lower() == "boot"
+                    and config_setting.lower() == "command"
+                ):
                     systemd_experimental_section = True
                     config_api_name = "systemd_enabled"
 
@@ -165,8 +150,10 @@ def wsl_config_update(config_class, root_dir):
                     v = ""
                     # Keep previous value set by user if the option is kept
                     # disabled and they set their own boot command.
-                    if (config.has_option("boot", "command") and
-                       config["boot"]["command"] != WSL_SYSTEMD_BOOT_COMMAND):
+                    if (
+                        config.has_option("boot", "command")
+                        and config["boot"]["command"] != WSL_SYSTEMD_BOOT_COMMAND
+                    ):
                         v = config["boot"]["command"]
                     if config_value == "true":
                         v = WSL_SYSTEMD_BOOT_COMMAND
@@ -176,8 +163,7 @@ def wsl_config_update(config_class, root_dir):
                 if config_default_value == config_value:
                     if config_section in config:
                         if config_setting in config[config_section]:
-                            config.remove_option(config_section,
-                                                 config_setting)
+                            config.remove_option(config_section, config_setting)
                         # drop the section if it become empty
                         if config[config_section] == {}:
                             config.remove_section(config_section)
@@ -188,15 +174,14 @@ def wsl_config_update(config_class, root_dir):
 
         # sort config in ascii order
         for section in config._sections:
-            config._sections[section] = \
-                collections.OrderedDict(
-                    sorted(config._sections[section].items(),
-                           key=lambda t: t[0]))
-        config._sections = \
-            collections.OrderedDict(sorted(config._sections.items(),
-                                           key=lambda t: t[0]))
+            config._sections[section] = collections.OrderedDict(
+                sorted(config._sections[section].items(), key=lambda t: t[0])
+            )
+        config._sections = collections.OrderedDict(
+            sorted(config._sections.items(), key=lambda t: t[0])
+        )
 
-        with open(conf_file + ".new", 'w+') as configfile:
+        with open(conf_file + ".new", "w+") as configfile:
             config.write(configfile)
 
         os.rename(conf_file + ".new", conf_file)

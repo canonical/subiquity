@@ -19,19 +19,18 @@ from subiquity.common.apidef import API
 from subiquity.common.types import CodecsData
 from subiquity.server.controller import SubiquityController
 
-log = logging.getLogger('subiquity.server.controllers.codecs')
+log = logging.getLogger("subiquity.server.controllers.codecs")
 
 
 class CodecsController(SubiquityController):
-
     endpoint = API.codecs
 
     autoinstall_key = model_name = "codecs"
     autoinstall_schema = {
-        'type': 'object',
-        'properties': {
-            'install': {
-                'type': 'boolean',
+        "type": "object",
+        "properties": {
+            "install": {
+                "type": "boolean",
             },
         },
     }

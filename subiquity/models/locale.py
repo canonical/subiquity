@@ -19,11 +19,11 @@ import subprocess
 
 from subiquitycore.utils import arun_command, split_cmd_output
 
-log = logging.getLogger('subiquity.models.locale')
+log = logging.getLogger("subiquity.models.locale")
 
 
 class LocaleModel:
-    """ Model representing locale selection
+    """Model representing locale selection
 
     XXX Only represents *language* selection for now.
     """
@@ -38,11 +38,7 @@ class LocaleModel:
         self.selected_language = code
 
     async def localectl_set_locale(self) -> None:
-        cmd = [
-            'localectl',
-            'set-locale',
-            locale.normalize(self.selected_language)
-        ]
+        cmd = ["localectl", "set-locale", locale.normalize(self.selected_language)]
         await arun_command(cmd, check=True)
 
     async def try_localectl_set_locale(self) -> None:
@@ -60,18 +56,19 @@ class LocaleModel:
         if self.locale_support == "none":
             return {}
         locale = self.selected_language
-        if '.' not in locale and '_' in locale:
-            locale += '.UTF-8'
-        return {'locale': locale}
+        if "." not in locale and "_" in locale:
+            locale += ".UTF-8"
+        return {"locale": locale}
 
     async def target_packages(self):
         if self.selected_language is None:
             return []
         if self.locale_support != "langpack":
             return []
-        lang = self.selected_language.split('.')[0]
+        lang = self.selected_language.split(".")[0]
         if lang == "C":
             return []
 
         return await split_cmd_output(
-            self.chroot_prefix + ['check-language-support', '-l', lang], None)
+            self.chroot_prefix + ["check-language-support", "-l", lang], None
+        )

@@ -15,46 +15,26 @@
 
 import logging
 
-from urwid import (
-    CheckBox,
-    connect_signal,
-    Padding as UrwidPadding,
-    Text,
-    )
-
-from subiquitycore.ui.container import (
-    WidgetWrap,
-    )
-from subiquitycore.ui.form import (
-    Form,
-    simple_field,
-    Toggleable,
-    WantsToKnowFormField,
-    )
-from subiquitycore.ui.selector import (
-    Selector,
-    )
-from subiquitycore.ui.table import (
-    TablePile,
-    TableRow,
-    )
-from subiquitycore.ui.utils import (
-    Color,
-    )
+from urwid import CheckBox
+from urwid import Padding as UrwidPadding
+from urwid import Text, connect_signal
 
 from subiquity.common.filesystem import labels
-from subiquity.models.filesystem import (
-    humanize_size,
-    )
+from subiquity.models.filesystem import humanize_size
+from subiquitycore.ui.container import WidgetWrap
+from subiquitycore.ui.form import Form, Toggleable, WantsToKnowFormField, simple_field
+from subiquitycore.ui.selector import Selector
+from subiquitycore.ui.table import TablePile, TableRow
+from subiquitycore.ui.utils import Color
 
-log = logging.getLogger('subiquity.ui.views.filesystem.compound')
+log = logging.getLogger("subiquity.ui.views.filesystem.compound")
 
 
 LABEL, DEVICE, PART = range(3)
 
 
 class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
-    signals = ['change']
+    signals = ["change"]
 
     def __init__(self):
         self.table = TablePile([], spacing=1)
@@ -85,13 +65,11 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
 
     @property
     def active_devices(self):
-        return {device for device, status in self.devices.items()
-                if status == 'active'}
+        return {device for device, status in self.devices.items() if status == "active"}
 
     @property
     def spare_devices(self):
-        return {device for device, status in self.devices.items()
-                if status == 'spare'}
+        return {device for device, status in self.devices.items() if status == "spare"}
 
     def set_supports_spares(self, val):
         if val == self.supports_spares:
@@ -106,7 +84,7 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
         else:
             for device in list(self.devices):
                 self.device_to_selector[device].enabled = False
-                self.devices[device] = 'active'
+                self.devices[device] = "active"
             self.table.set_contents(self.no_selector_rows)
 
     def _state_change_device(self, sender, state, device):
@@ -118,11 +96,11 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
         else:
             self.device_to_selector[device].enabled = False
             del self.devices[device]
-        self._emit('change', self.devices)
+        self._emit("change", self.devices)
 
     def _select_active_spare(self, sender, value, device):
         self.devices[device] = value
-        self._emit('change', self.devices)
+        self._emit("change", self.devices)
 
     def _summarize(self, prefix, device):
         if device.fs() is not None:
@@ -133,8 +111,7 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
             else:
                 text += _(", not mounted")
         else:
-            text = prefix + _("unused {device}").format(
-                device=labels.desc(device))
+            text = prefix + _("unused {device}").format(device=labels.desc(device))
         return TableRow([(2, Color.info_minor(Text(text)))])
 
     def set_bound_form_field(self, bff):
@@ -142,14 +119,20 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
         self.all_rows = []
         for kind, device in bff.form.possible_components:
             if kind == LABEL:
-                self.all_rows.append(TableRow([
-                    Text("    " + labels.label(device)),
-                    Text(humanize_size(device.size), align='right')
-                ]))
+                self.all_rows.append(
+                    TableRow(
+                        [
+                            Text("    " + labels.label(device)),
+                            Text(humanize_size(device.size), align="right"),
+                        ]
+                    )
+                )
                 self.no_selector_rows.append(self.all_rows[-1])
-                self.all_rows.append(TableRow([
-                    (2, Color.info_minor(Text("      " + labels.desc(device))))
-                ]))
+                self.all_rows.append(
+                    TableRow(
+                        [(2, Color.info_minor(Text("      " + labels.desc(device))))]
+                    )
+                )
                 self.no_selector_rows.append(self.all_rows[-1])
             else:
                 label = labels.label(device, short=True)
@@ -161,20 +144,17 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
                 else:
                     raise Exception("unexpected kind {}".format(kind))
                 box = CheckBox(
-                    label,
-                    on_state_change=self._state_change_device,
-                    user_data=device)
+                    label, on_state_change=self._state_change_device, user_data=device
+                )
                 self.device_to_checkbox[device] = box
-                size = Text(humanize_size(device.size), align='right')
+                size = Text(humanize_size(device.size), align="right")
                 self.all_rows.append(Color.menu_button(TableRow([box, size])))
                 self.no_selector_rows.append(self.all_rows[-1])
-                selector = Selector(['active', 'spare'])
-                connect_signal(
-                    selector, 'select', self._select_active_spare, device)
+                selector = Selector(["active", "spare"])
+                connect_signal(selector, "select", self._select_active_spare, device)
                 selector = Toggleable(
-                    UrwidPadding(
-                        Color.menu_button(selector),
-                        left=len(prefix)))
+                    UrwidPadding(Color.menu_button(selector), left=len(prefix))
+                )
                 selector.enabled = False
                 self.device_to_selector[device] = selector
                 self.all_rows.append(TableRow([(2, selector)]))
@@ -189,7 +169,6 @@ MultiDeviceField.takes_default_style = False
 
 
 class CompoundDiskForm(Form):
-
     def __init__(self, model, possible_components, initial):
         self.model = model
         self.possible_components = possible_components
@@ -214,9 +193,11 @@ class CompoundDiskForm(Form):
                     # reuse)
                     potential_boot_disks.add(d)
             if not potential_boot_disks - set(mdc.value):
-                return _("\
+                return _(
+                    "\
 If you put all disks into RAIDs or LVM VGs, there will be nowhere \
-to put the boot partition.")
+to put the boot partition."
+                )
 
 
 def get_possible_components(model, existing, cur_devices, device_ok):

@@ -24,7 +24,7 @@ from urwid import Text
 
 from subiquitycore.ui.buttons import done_btn
 from subiquitycore.ui.container import ListBox, Pile
-from subiquitycore.ui.utils import button_pile, Padding
+from subiquitycore.ui.utils import Padding, button_pile
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("console_conf.ui.views.login")
@@ -41,15 +41,23 @@ class LoginView(BaseView):
         self.items = []
 
         super().__init__(
-            Pile([
-                ('pack', Text("")),
-                Padding.center_79(ListBox(self._build_model_inputs())),
-                ('pack', Pile([
-                    ('pack', Text("")),
-                    button_pile(self._build_buttons()),
-                    ('pack', Text("")),
-                    ])),
-                ]))
+            Pile(
+                [
+                    ("pack", Text("")),
+                    Padding.center_79(ListBox(self._build_model_inputs())),
+                    (
+                        "pack",
+                        Pile(
+                            [
+                                ("pack", Text("")),
+                                button_pile(self._build_buttons()),
+                                ("pack", Text("")),
+                            ]
+                        ),
+                    ),
+                ]
+            )
+        )
 
     def _build_buttons(self):
         return [
@@ -68,19 +76,19 @@ class LoginView(BaseView):
             sl.append(Text("no owner"))
             return sl
 
-        local_tpl = (
-            "This device is registered to {realname}.")
+        local_tpl = "This device is registered to {realname}."
 
         remote_tpl = (
             "\n\nRemote access was enabled via authentication with SSO user"
             " <{username}>.\nPublic SSH keys were added to the device "
             "for remote access.\n\n{realname} can connect remotely to this "
-            "device via SSH:")
+            "device via SSH:"
+        )
 
         sl = []
         login_info = {
-            'realname': user.realname,
-            'username': user.username,
+            "realname": user.realname,
+            "username": user.username,
         }
         login_text = local_tpl.format(**login_info)
         login_text += remote_tpl.format(**login_info)

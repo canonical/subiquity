@@ -56,10 +56,13 @@ class parameterized(_parameterized):
     @classmethod
     def param_as_standalone_func(cls, p, func, name):
         if inspect.iscoroutinefunction(func):
+
             @wraps(func)
             async def standalone_func(*a):
                 return await func(*(a + p.args), **p.kwargs)
+
         else:
+
             @wraps(func)
             def standalone_func(*a):
                 return func(*(a + p.args), **p.kwargs)

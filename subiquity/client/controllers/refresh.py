@@ -18,25 +18,16 @@ import logging
 
 import aiohttp
 
-from subiquitycore.tuicontroller import (
-    Skip,
-    )
-
-from subiquity.common.types import (
-    RefreshCheckState,
-    )
-from subiquity.client.controller import (
-    SubiquityTuiController,
-    )
+from subiquity.client.controller import SubiquityTuiController
+from subiquity.common.types import RefreshCheckState
 from subiquity.ui.views.refresh import RefreshView
+from subiquitycore.tuicontroller import Skip
 
-
-log = logging.getLogger('subiquity.client.controllers.refresh')
+log = logging.getLogger("subiquity.client.controllers.refresh")
 
 
 class RefreshController(SubiquityTuiController):
-
-    endpoint_name = 'refresh'
+    endpoint_name = "refresh"
 
     def __init__(self, app):
         super().__init__(app)
@@ -61,8 +52,10 @@ class RefreshController(SubiquityTuiController):
                 self.offered_first_time = True
         elif index == 2:
             if not self.offered_first_time:
-                if self.status.availability in [RefreshCheckState.UNKNOWN,
-                                                RefreshCheckState.AVAILABLE]:
+                if self.status.availability in [
+                    RefreshCheckState.UNKNOWN,
+                    RefreshCheckState.AVAILABLE,
+                ]:
                     show = True
         else:
             raise AssertionError("unexpected index {}".format(index))

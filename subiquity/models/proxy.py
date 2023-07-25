@@ -15,17 +15,16 @@
 
 import logging
 
-log = logging.getLogger('subiquity.models.proxy')
+log = logging.getLogger("subiquity.models.proxy")
 
-dropin_template = '''\
+dropin_template = """\
 [Service]
 Environment="HTTP_PROXY={proxy}"
 Environment="HTTPS_PROXY={proxy}"
-'''
+"""
 
 
 class ProxyModel(object):
-
     def __init__(self):
         self.proxy = ""
 
@@ -35,8 +34,8 @@ class ProxyModel(object):
     def get_apt_config(self, final: bool, has_network: bool):
         if self.proxy:
             return {
-                'http_proxy': self.proxy,
-                'https_proxy': self.proxy,
+                "http_proxy": self.proxy,
+                "https_proxy": self.proxy,
             }
         else:
             return {}
@@ -44,18 +43,19 @@ class ProxyModel(object):
     def render(self):
         if self.proxy:
             return {
-                'proxy': {
-                    'http_proxy': self.proxy,
-                    'https_proxy': self.proxy,
+                "proxy": {
+                    "http_proxy": self.proxy,
+                    "https_proxy": self.proxy,
+                },
+                "write_files": {
+                    "snapd_dropin": {
+                        "path": (
+                            "etc/systemd/system/" "snapd.service.d/snap_proxy.conf"
+                        ),
+                        "content": self.proxy_systemd_dropin(),
+                        "permissions": 0o644,
                     },
-                'write_files': {
-                    'snapd_dropin': {
-                        'path': ('etc/systemd/system/'
-                                 'snapd.service.d/snap_proxy.conf'),
-                        'content': self.proxy_systemd_dropin(),
-                        'permissions': 0o644,
-                        },
-                    },
-                }
+                },
+            }
         else:
             return {}

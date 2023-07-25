@@ -16,115 +16,98 @@
 
 COLORS = [
     # black
-    ("bg",        (0x11, 0x11, 0x11)),
+    ("bg", (0x11, 0x11, 0x11)),
     # dark red
-    ("danger",    (0xff, 0x00, 0x00)),
+    ("danger", (0xFF, 0x00, 0x00)),
     # dark green
-    ("good",      (0x0e, 0x84, 0x20)),
+    ("good", (0x0E, 0x84, 0x20)),
     # brown
-    ("orange",    (0xe9, 0x54, 0x20)),
+    ("orange", (0xE9, 0x54, 0x20)),
     # dark blue
-    ("neutral",   (0x00, 0x7a, 0xa6)),
+    ("neutral", (0x00, 0x7A, 0xA6)),
     # dark magenta
-    ("brand",     (0x33, 0x33, 0x33)),
+    ("brand", (0x33, 0x33, 0x33)),
     # dark cyan
-    ("gray",      (0x80, 0x80, 0x80)),
+    ("gray", (0x80, 0x80, 0x80)),
     # light gray
-    ("fg",        (0xff, 0xff, 0xff)),
+    ("fg", (0xFF, 0xFF, 0xFF)),
 ]
 
 PALETTE_COLOR = [
-    ('frame_header_fringe', 'orange',  'bg'),
-    ('frame_header',        'fg',      'orange'),
-    ('body',                'fg',      'bg'),
-
-    ('done_button',         'fg',      'bg'),
-    ('danger_button',       'fg',      'bg'),
-    ('other_button',        'fg',      'bg'),
-    ('done_button focus',   'fg',      'good'),
-    ('danger_button focus', 'fg',      'danger'),
-    ('other_button focus',  'fg',      'gray'),
-
-    ('menu_button',         'fg',      'bg'),
-    ('menu_button focus',   'fg',      'gray'),
-
-    ('frame_button',        'fg',      'orange'),
-    ('frame_button focus',  'orange',  'fg'),
-
-    ('info_primary',        'fg',      'bg'),
-    ('info_minor',          'gray',    'bg'),
-    ('info_minor header',   'gray',    'orange'),
-    ('info_error',          'danger',  'bg'),
-
-    ('string_input',        'bg',      'fg'),
-    ('string_input focus',  'fg',      'gray'),
-
-    ('progress_incomplete', 'fg',      'gray'),
-    ('progress_complete',   'fg',      'neutral'),
-    ('scrollbar',           'brand',   'bg'),
-    ('scrollbar focus',     'gray',    'bg'),
-
-    ('verified',            'good',    'bg'),
-    ('verified focus',      'good',    'gray'),
-    ('verified invisible',  'bg',      'bg'),
-    ('verified inv focus',  'gray',    'gray'),
-
-    ('starred',             'orange',  'bg'),
-    ('starred focus',       'orange',  'gray'),
-
-    ('user_code',           'fg',      'good'),
+    ("frame_header_fringe", "orange", "bg"),
+    ("frame_header", "fg", "orange"),
+    ("body", "fg", "bg"),
+    ("done_button", "fg", "bg"),
+    ("danger_button", "fg", "bg"),
+    ("other_button", "fg", "bg"),
+    ("done_button focus", "fg", "good"),
+    ("danger_button focus", "fg", "danger"),
+    ("other_button focus", "fg", "gray"),
+    ("menu_button", "fg", "bg"),
+    ("menu_button focus", "fg", "gray"),
+    ("frame_button", "fg", "orange"),
+    ("frame_button focus", "orange", "fg"),
+    ("info_primary", "fg", "bg"),
+    ("info_minor", "gray", "bg"),
+    ("info_minor header", "gray", "orange"),
+    ("info_error", "danger", "bg"),
+    ("string_input", "bg", "fg"),
+    ("string_input focus", "fg", "gray"),
+    ("progress_incomplete", "fg", "gray"),
+    ("progress_complete", "fg", "neutral"),
+    ("scrollbar", "brand", "bg"),
+    ("scrollbar focus", "gray", "bg"),
+    ("verified", "good", "bg"),
+    ("verified focus", "good", "gray"),
+    ("verified invisible", "bg", "bg"),
+    ("verified inv focus", "gray", "gray"),
+    ("starred", "orange", "bg"),
+    ("starred focus", "orange", "gray"),
+    ("user_code", "fg", "good"),
 ]
 
 PALETTE_MONO = [
-    ('frame_header_fringe', 'white',   'black'),
-    ('frame_header',        'black',   'white'),
-    ('body',                'white',   'black'),
-
-    ('done_button',         'white',   'black'),
-    ('danger_button',       'white',   'black'),
-    ('other_button',        'white',   'black'),
-    ('done_button focus',   'black',   'white'),
-    ('danger_button focus', 'black',   'white'),
-    ('other_button focus',  'black',   'white'),
-
-    ('menu_button',         'white',   'black'),
-    ('menu_button focus',   'black',   'white'),
-    ('frame_button',        'black',   'white'),
-    ('frame_button focus',  'white',   'black'),
-
-    ('info_primary',        'white',   'black'),
-    ('info_minor',          'white',   'black'),
-    ('info_minor header',   'black',   'white'),
-    ('info_error',          'white',   'black'),
-
-    ('string_input',        'white',   'black'),
-    ('string_input focus',  'black',   'white'),
-
-    ('progress_incomplete', 'white',   'black'),
-    ('progress_complete',   'black',   'white'),
-    ('scrollbar_fg',        'white',   'black'),
-    ('scrollbar_bg',        'white',   'black'),
-
-    ('verified',            'white',   'black'),
-    ('verified focus',      'black',   'white'),
-    ('verified invisible',  'white',   'black'),
-    ('verified inv focus',  'black',   'white'),
-
-    ('starred',             'white',   'black'),
-    ('starred focus',       'black',   'white'),
-
-    ('user_code',           'white',   'black'),
+    ("frame_header_fringe", "white", "black"),
+    ("frame_header", "black", "white"),
+    ("body", "white", "black"),
+    ("done_button", "white", "black"),
+    ("danger_button", "white", "black"),
+    ("other_button", "white", "black"),
+    ("done_button focus", "black", "white"),
+    ("danger_button focus", "black", "white"),
+    ("other_button focus", "black", "white"),
+    ("menu_button", "white", "black"),
+    ("menu_button focus", "black", "white"),
+    ("frame_button", "black", "white"),
+    ("frame_button focus", "white", "black"),
+    ("info_primary", "white", "black"),
+    ("info_minor", "white", "black"),
+    ("info_minor header", "black", "white"),
+    ("info_error", "white", "black"),
+    ("string_input", "white", "black"),
+    ("string_input focus", "black", "white"),
+    ("progress_incomplete", "white", "black"),
+    ("progress_complete", "black", "white"),
+    ("scrollbar_fg", "white", "black"),
+    ("scrollbar_bg", "white", "black"),
+    ("verified", "white", "black"),
+    ("verified focus", "black", "white"),
+    ("verified invisible", "white", "black"),
+    ("verified inv focus", "black", "white"),
+    ("starred", "white", "black"),
+    ("starred focus", "black", "white"),
+    ("user_code", "white", "black"),
 ]
 
 urwid_8_names = (
-    'black',
-    'dark red',
-    'dark green',
-    'brown',
-    'dark blue',
-    'dark magenta',
-    'dark cyan',
-    'light gray',
+    "black",
+    "dark red",
+    "dark green",
+    "brown",
+    "dark blue",
+    "dark magenta",
+    "dark cyan",
+    "light gray",
 )
 
 
@@ -142,8 +125,7 @@ def _urwidize_palette(colors, styles):
     # an urwid palette by mapping the names in colors to the standard
     # name.
     if len(colors) != 8:
-        raise Exception(
-            "make_palette must be passed a list of exactly 8 colors")
+        raise Exception("make_palette must be passed a list of exactly 8 colors")
     urwid_name = dict(zip([c[0] for c in colors], urwid_8_names))
 
     urwid_palette = []

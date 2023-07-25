@@ -19,48 +19,56 @@ import logging
 import os
 import sys
 
+from subiquity.cmd.common import LOGDIR, setup_environment
 from subiquitycore.log import setup_logger
-
-from subiquity.cmd.common import (
-    LOGDIR,
-    setup_environment,
-    )
 
 
 def make_server_args_parser():
     parser = argparse.ArgumentParser(
-        description='System Setup - Initial Boot Setup',
-        prog='system_setup')
-    parser.add_argument('--dry-run', action='store_true',
-                        dest='dry_run',
-                        help='menu-only, do not call installer function')
-    parser.add_argument('--socket')
-    parser.add_argument('--autoinstall', action='store')
-    parser.add_argument('--prefill',
-                        dest='prefill',
-                        help='Prefills UI models with data provided in'
-                        ' a prefill.yaml file yet allowing overrides.')
-    parser.add_argument('--output-base', action='store', dest='output_base',
-                        default='.subiquity',
-                        help='in dryrun, control basedir of files')
-    parser.add_argument('--tcp-port',
-                        dest='tcp_port',
-                        type=int,
-                        choices=range(49152, 60999),
-                        metavar="[49152 to 60999]",
-                        help='The TCP port Subiquity must listen to. It means '
-                        'TCP will be used instead of Unix domain sockets. '
-                        'Only localhost connections are accepted.')
+        description="System Setup - Initial Boot Setup", prog="system_setup"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        dest="dry_run",
+        help="menu-only, do not call installer function",
+    )
+    parser.add_argument("--socket")
+    parser.add_argument("--autoinstall", action="store")
+    parser.add_argument(
+        "--prefill",
+        dest="prefill",
+        help="Prefills UI models with data provided in"
+        " a prefill.yaml file yet allowing overrides.",
+    )
+    parser.add_argument(
+        "--output-base",
+        action="store",
+        dest="output_base",
+        default=".subiquity",
+        help="in dryrun, control basedir of files",
+    )
+    parser.add_argument(
+        "--tcp-port",
+        dest="tcp_port",
+        type=int,
+        choices=range(49152, 60999),
+        metavar="[49152 to 60999]",
+        help="The TCP port Subiquity must listen to. It means "
+        "TCP will be used instead of Unix domain sockets. "
+        "Only localhost connections are accepted.",
+    )
     return parser
 
 
 def main():
-    print('starting server')
+    print("starting server")
     setup_environment()
     # setup_environment sets $APPORT_DATA_DIR which must be set before
     # apport is imported, which is done by this import:
-    from system_setup.server.server import SystemSetupServer
     from subiquity.server.server import NOPROBERARG
+    from system_setup.server.server import SystemSetupServer
+
     parser = make_server_args_parser()
     opts = parser.parse_args(sys.argv[1:])
     logdir = LOGDIR
@@ -71,21 +79,22 @@ def main():
         logdir = opts.output_base
     if opts.socket is None:
         if opts.dry_run:
-            opts.socket = opts.output_base + '/socket'
+            opts.socket = opts.output_base + "/socket"
         else:
-            opts.socket = '/run/subiquity/socket'
+            opts.socket = "/run/subiquity/socket"
     os.makedirs(os.path.dirname(opts.socket), exist_ok=True)
 
     block_log_dir = os.path.join(logdir, "block")
     os.makedirs(block_log_dir, exist_ok=True)
-    handler = logging.FileHandler(os.path.join(block_log_dir, 'discover.log'))
-    handler.setLevel('DEBUG')
+    handler = logging.FileHandler(os.path.join(block_log_dir, "discover.log"))
+    handler.setLevel("DEBUG")
     handler.setFormatter(
-        logging.Formatter("%(asctime)s %(name)s:%(lineno)d %(message)s"))
+        logging.Formatter("%(asctime)s %(name)s:%(lineno)d %(message)s")
+    )
 
-    logfiles = setup_logger(dir=logdir, base='systemsetup-server')
+    logfiles = setup_logger(dir=logdir, base="systemsetup-server")
 
-    logger = logging.getLogger('systemsetup-server')
+    logger = logging.getLogger("systemsetup-server")
     version = "unknown"
     logger.info("Starting System Setup server revision {}".format(version))
     logger.info("Arguments passed: {}".format(sys.argv))
@@ -93,20 +102,19 @@ def main():
     prefillFile = opts.prefill
     if prefillFile:
         if not os.path.isfile(prefillFile):
-            logger.error('"File {}" is invalid. Option will be ignored.'
-                         .format(prefillFile))
+            logger.error(
+                '"File {}" is invalid. Option will be ignored.'.format(prefillFile)
+            )
             opts.prefill = None
 
     async def run_with_loop():
         server = SystemSetupServer(opts, block_log_dir)
-        server.note_file_for_apport(
-            "InstallerServerLog", logfiles['debug'])
-        server.note_file_for_apport(
-            "InstallerServerLogInfo", logfiles['info'])
+        server.note_file_for_apport("InstallerServerLog", logfiles["debug"])
+        server.note_file_for_apport("InstallerServerLogInfo", logfiles["info"])
         await server.run()
 
     asyncio.run(run_with_loop())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

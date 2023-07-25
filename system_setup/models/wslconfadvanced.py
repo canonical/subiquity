@@ -14,9 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+
 import attr
 
-log = logging.getLogger('system_setup.models.wslconfadvanced')
+log = logging.getLogger("system_setup.models.wslconfadvanced")
 
 
 @attr.s
@@ -29,8 +30,7 @@ class WSLConfigurationAdvanced(object):
 
 
 class WSLConfigurationAdvancedModel(object):
-    """ Model representing integration
-    """
+    """Model representing integration"""
 
     def __init__(self):
         self._wslconfadvanced = None

@@ -18,13 +18,7 @@ import logging
 from typing import List
 
 import attr
-
 import requests.exceptions
-
-from subiquitycore.async_helpers import (
-    schedule_task,
-    )
-from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
 from subiquity.common.types import (
@@ -32,22 +26,20 @@ from subiquity.common.types import (
     SnapInfo,
     SnapListResponse,
     SnapSelection,
-    )
-from subiquity.server.controller import (
-    SubiquityController,
-    )
+)
+from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
+from subiquitycore.async_helpers import schedule_task
+from subiquitycore.context import with_context
 
-
-log = logging.getLogger('subiquity.server.controllers.snaplist')
+log = logging.getLogger("subiquity.server.controllers.snaplist")
 
 
 class SnapListFetchError(Exception):
-    """ Exception to raise when the list of snaps could not be fetched. """
+    """Exception to raise when the list of snaps could not be fetched."""
 
 
 class SnapdSnapInfoLoader:
-
     def __init__(self, model, snapd, store_section, context):
         self.model = model
         self.store_section = store_section
@@ -62,8 +54,8 @@ class SnapdSnapInfoLoader:
         self.load_list_task_created = asyncio.Event()
 
     def _fetch_list_ended(self) -> bool:
-        """ Tells whether the snap list fetch task has ended without being
-        cancelled. """
+        """Tells whether the snap list fetch task has ended without being
+        cancelled."""
         if None not in self.tasks:
             return False
         task = self.get_snap_list_task()
@@ -72,13 +64,13 @@ class SnapdSnapInfoLoader:
         return task.done()
 
     def fetch_list_completed(self) -> bool:
-        """ Tells whether the snap list fetch task has completed. """
+        """Tells whether the snap list fetch task has completed."""
         if not self._fetch_list_ended():
             return False
         return not self.get_snap_list_task().exception()
 
     def fetch_list_failed(self) -> bool:
-        """ Tells whether the snap list fetch task has failed. """
+        """Tells whether the snap list fetch task has failed."""
         if not self._fetch_list_ended():
             return False
         return bool(self.get_snap_list_task().exception())
@@ -101,14 +93,14 @@ class SnapdSnapInfoLoader:
             while self.pending_snaps:
                 snap = self.pending_snaps.pop(0)
                 task = self.tasks[snap] = schedule_task(
-                    self._fetch_info_for_snap(snap=snap))
+                    self._fetch_info_for_snap(snap=snap)
+                )
                 await task
 
     @with_context(name="list")
     async def _load_list(self, context=None):
         try:
-            result = await self.snapd.get(
-                'v2/find', section=self.store_section)
+            result = await self.snapd.get("v2/find", section=self.store_section)
         except requests.exceptions.RequestException:
             raise SnapListFetchError
         self.model.load_find_data(result)
@@ -120,7 +112,7 @@ class SnapdSnapInfoLoader:
     @with_context(name="fetch/{snap.name}")
     async def _fetch_info_for_snap(self, snap, context=None):
         try:
-            data = await self.snapd.get('v2/find', name=snap.name)
+            data = await self.snapd.get("v2/find", name=snap.name)
         except requests.exceptions.RequestException:
             log.exception("loading snap info failed")
             # XXX something better here?
@@ -134,52 +126,57 @@ class SnapdSnapInfoLoader:
         if snap not in self.tasks:
             if snap in self.pending_snaps:
                 self.pending_snaps.remove(snap)
-            self.tasks[snap] = schedule_task(
-                self._fetch_info_for_snap(snap=snap))
+            self.tasks[snap] = schedule_task(self._fetch_info_for_snap(snap=snap))
         return self.tasks[snap]
 
 
 class SnapListController(SubiquityController):
-
     endpoint = API.snaplist
 
     autoinstall_key = "snaps"
     autoinstall_default = []
     autoinstall_schema = {
-        'type': 'array',
-        'items': {
-            'type': 'object',
-            'properties': {
-                'name': {'type': 'string'},
-                'channel': {'type': 'string'},
-                'classic': {'type': 'boolean'},
-                },
-            'required': ['name'],
-            'additionalProperties': False,
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "channel": {"type": "string"},
+                "classic": {"type": "boolean"},
             },
-        }
+            "required": ["name"],
+            "additionalProperties": False,
+        },
+    }
     model_name = "snaplist"
 
-    interactive_for_variants = {'server'}
+    interactive_for_variants = {"server"}
 
     def _make_loader(self):
         return SnapdSnapInfoLoader(
-            self.model, self.app.snapd, self.opts.snap_section,
-            self.context.child("loader"))
+            self.model,
+            self.app.snapd,
+            self.opts.snap_section,
+            self.context.child("loader"),
+        )
 
     def __init__(self, app):
         super().__init__(app)
         self.loader = self._make_loader()
         self.app.hub.subscribe(
-            InstallerChannels.SNAPD_NETWORK_CHANGE, self.snapd_network_changed)
+            InstallerChannels.SNAPD_NETWORK_CHANGE, self.snapd_network_changed
+        )
 
     def load_autoinstall_data(self, ai_data):
         to_install = []
         for snap in ai_data:
-            to_install.append(SnapSelection(
-                name=snap['name'],
-                channel=snap.get('channel', 'stable'),
-                classic=snap.get('classic', False)))
+            to_install.append(
+                SnapSelection(
+                    name=snap["name"],
+                    channel=snap.get("channel", "stable"),
+                    classic=snap.get("classic", False),
+                )
+            )
         self.model.set_installed_list(to_install)
 
     def snapd_network_changed(self):
@@ -198,8 +195,10 @@ class SnapListController(SubiquityController):
         return [attr.asdict(sel) for sel in self.model.selections]
 
     async def GET(self, wait: bool = False) -> SnapListResponse:
-        if self.loader.fetch_list_failed() \
-                or not self.app.base_model.network.has_network:
+        if (
+            self.loader.fetch_list_failed()
+            or not self.app.base_model.network.has_network
+        ):
             return SnapListResponse(status=SnapCheckState.FAILED)
         if not self.loader.fetch_list_completed() and not wait:
             return SnapListResponse(status=SnapCheckState.LOADING)
@@ -218,7 +217,8 @@ class SnapListController(SubiquityController):
         return SnapListResponse(
             status=SnapCheckState.DONE,
             snaps=self.model.get_snap_list(),
-            selections=self.model.selections)
+            selections=self.model.selections,
+        )
 
     async def POST(self, data: List[SnapSelection]):
         log.debug(data)

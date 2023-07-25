@@ -13,30 +13,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import (
-    ACTIVATE,
-    AttrWrap,
-    CompositeCanvas,
-    connect_signal,
-    LineBox,
-    Padding as UrwidPadding,
-    PopUpLauncher,
-    Text,
-    )
+from urwid import ACTIVATE, AttrWrap, CompositeCanvas, LineBox
+from urwid import Padding as UrwidPadding
+from urwid import PopUpLauncher, Text, connect_signal
 
-from subiquitycore.ui.container import (
-    Columns,
-    ListBox,
-    WidgetWrap,
-    )
-from subiquitycore.ui.utils import (
-    Color,
-    )
+from subiquitycore.ui.container import Columns, ListBox, WidgetWrap
+from subiquitycore.ui.utils import Color
 from subiquitycore.ui.width import widget_width
 
 
 class ClickableThing(WidgetWrap):
-    signals = ['click']
+    signals = ["click"]
 
     def selectable(self):
         return True
@@ -62,7 +49,7 @@ class ClickableThing(WidgetWrap):
     def keypress(self, size, key):
         if self._command_map[key] != ACTIVATE:
             return key
-        self._emit('click')
+        self._emit("click")
 
 
 class _PopUpSelectDialog(WidgetWrap):
@@ -74,23 +61,25 @@ class _PopUpSelectDialog(WidgetWrap):
         for i, option in enumerate(self.parent._options):
             if option.enabled:
                 btn = ClickableThing(option.label)
-                connect_signal(btn, 'click', self.click, i)
+                connect_signal(btn, "click", self.click, i)
                 if i == cur_index:
-                    rhs = '\N{BLACK LEFT-POINTING SMALL TRIANGLE} '
+                    rhs = "\N{BLACK LEFT-POINTING SMALL TRIANGLE} "
                 else:
-                    rhs = ''
+                    rhs = ""
             else:
                 btn = option.label
-                rhs = ''
-            row = Columns([
-                (1, Text("")),
-                btn,
-                (2, Text(rhs)),
-                ])
+                rhs = ""
+            row = Columns(
+                [
+                    (1, Text("")),
+                    btn,
+                    (2, Text(rhs)),
+                ]
+            )
             if option.enabled:
-                row = AttrWrap(row, 'menu_button', 'menu_button focus')
+                row = AttrWrap(row, "menu_button", "menu_button focus")
             else:
-                row = AttrWrap(row, 'info_minor')
+                row = AttrWrap(row, "info_minor")
             btn = UrwidPadding(row, width=self.parent._padding.width)
             group.append(btn)
         list_box = ListBox(group)
@@ -102,7 +91,7 @@ class _PopUpSelectDialog(WidgetWrap):
         self.parent.close_pop_up()
 
     def keypress(self, size, key):
-        if key == 'esc':
+        if key == "esc":
             self.parent.close_pop_up()
         else:
             return super().keypress(size, key)
@@ -113,7 +102,6 @@ class SelectorError(Exception):
 
 
 class Option:
-
     def __init__(self, val):
         if not isinstance(val, tuple):
             if isinstance(val, Option):
@@ -170,17 +158,24 @@ class Selector(WidgetWrap):
     (A bit like <select> in an HTML form).
     """
 
-    signals = ['select']
+    signals = ["select"]
 
     def __init__(self, opts, index=0):
         self._icon = ClickableThing(Text(""))
-        self._padding = UrwidPadding(AttrWrap(
-            Columns([
-                (1, Text('[')),
-                self._icon,
-                (3, Text('\N{BLACK DOWN-POINTING SMALL TRIANGLE} ]')),
-                ], dividechars=1),
-            'menu_button', 'menu_button focus'))
+        self._padding = UrwidPadding(
+            AttrWrap(
+                Columns(
+                    [
+                        (1, Text("[")),
+                        self._icon,
+                        (3, Text("\N{BLACK DOWN-POINTING SMALL TRIANGLE} ]")),
+                    ],
+                    dividechars=1,
+                ),
+                "menu_button",
+                "menu_button focus",
+            )
+        )
 
         options = []
         for opt in opts:
@@ -208,7 +203,7 @@ class Selector(WidgetWrap):
 
     @index.setter
     def index(self, val):
-        self._emit('select', self._options[val].value)
+        self._emit("select", self._options[val].value)
         self._set_index(val)
 
     @property
@@ -218,8 +213,7 @@ class Selector(WidgetWrap):
     @options.setter
     def options(self, val):
         self._options = val
-        self._padding.width = max(
-            [widget_width(o.label) for o in self._options]) + 6
+        self._padding.width = max([widget_width(o.label) for o in self._options]) + 6
 
     def option_by_label(self, label):
         for opt in self._options:
@@ -251,9 +245,12 @@ class Selector(WidgetWrap):
 
     def get_pop_up_parameters(self):
         # line on left, space, line on right
-        return {'left': 0, 'top': -self.index - 1,
-                'overlay_width': self._padding.width,
-                'overlay_height': len(self._options) + 2}
+        return {
+            "left": 0,
+            "top": -self.index - 1,
+            "overlay_width": self._padding.width,
+            "overlay_height": len(self._options) + 2,
+        }
 
     def open_pop_up(self):
         self._w.open_pop_up()

@@ -14,30 +14,29 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+
 from urwid import Text
 
+from subiquity.common.filesystem import labels
 from subiquitycore.ui.buttons import done_btn
-from subiquitycore.ui.utils import button_pile
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.table import ColSpec, TablePile, TableRow
+from subiquitycore.ui.utils import button_pile
 
-from subiquity.common.filesystem import labels
-
-
-log = logging.getLogger('subiquity.ui.views.filesystem.disk_info')
+log = logging.getLogger("subiquity.ui.views.filesystem.disk_info")
 
 
 labels_keys = [
-    ('Path:', 'devname'),
-    ('Multipath:', 'multipath'),
-    ('Vendor:', 'vendor'),
-    ('Model:', 'model'),
-    ('SerialNo:', 'serial'),
-    ('WWN:', 'wwn'),
-    ('Size:', 'size'),
-    ('Bus:', 'bus'),
-    ('Rotational:', 'rotational'),
-    ('Path:', 'devpath'),
+    ("Path:", "devname"),
+    ("Multipath:", "multipath"),
+    ("Vendor:", "vendor"),
+    ("Model:", "model"),
+    ("SerialNo:", "serial"),
+    ("WWN:", "wwn"),
+    ("Size:", "size"),
+    ("Bus:", "bus"),
+    ("Rotational:", "rotational"),
+    ("Path:", "devpath"),
 ]
 
 
@@ -48,12 +47,12 @@ class DiskInfoStretchy(Stretchy):
         rows = []
         for label, key in labels_keys:
             v = str(dinfo[key])
-            rows.append(TableRow([Text(label, align='right'), Text(v)]))
+            rows.append(TableRow([Text(label, align="right"), Text(v)]))
         widgets = [
             TablePile(rows, colspecs={1: ColSpec(can_shrink=True)}),
             Text(""),
             button_pile([done_btn(_("Close"), on_press=self.close)]),
-            ]
+        ]
         title = _("Info for {device}").format(device=labels.label(disk))
         super().__init__(title, widgets, 0, 2)
 

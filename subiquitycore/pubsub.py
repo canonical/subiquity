@@ -18,11 +18,10 @@ import inspect
 
 
 class CoreChannels:
-    NETWORK_UP = 'network-up'
+    NETWORK_UP = "network-up"
 
 
 class MessageHub:
-
     def __init__(self):
         self.subscriptions = {}
 

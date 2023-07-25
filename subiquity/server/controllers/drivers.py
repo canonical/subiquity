@@ -17,8 +17,6 @@ import asyncio
 import logging
 from typing import List, Optional
 
-from subiquitycore.context import with_context
-
 from subiquity.common.apidef import API
 from subiquity.common.types import DriversPayload, DriversResponse
 from subiquity.server.apt import OverlayCleanupError
@@ -28,21 +26,21 @@ from subiquity.server.ubuntu_drivers import (
     CommandNotFoundError,
     UbuntuDriversInterface,
     get_ubuntu_drivers_interface,
-    )
+)
+from subiquitycore.context import with_context
 
-log = logging.getLogger('subiquity.server.controllers.drivers')
+log = logging.getLogger("subiquity.server.controllers.drivers")
 
 
 class DriversController(SubiquityController):
-
     endpoint = API.drivers
 
     autoinstall_key = model_name = "drivers"
     autoinstall_schema = {
-        'type': 'object',
-        'properties': {
-            'install': {
-                'type': 'boolean',
+        "type": "object",
+        "properties": {
+            "install": {
+                "type": "boolean",
             },
         },
     }
@@ -70,17 +68,15 @@ class DriversController(SubiquityController):
 
     def start(self):
         self._wait_apt = asyncio.Event()
+        self.app.hub.subscribe(InstallerChannels.APT_CONFIGURED, self._wait_apt.set)
         self.app.hub.subscribe(
-            InstallerChannels.APT_CONFIGURED,
-            self._wait_apt.set)
-        self.app.hub.subscribe(
-            (InstallerChannels.CONFIGURED, "source"),
-            self.restart_querying_drivers_list)
+            (InstallerChannels.CONFIGURED, "source"), self.restart_querying_drivers_list
+        )
 
     def restart_querying_drivers_list(self):
-        """ Start querying the list of available drivers. This method can be
+        """Start querying the list of available drivers. This method can be
         invoked multiple times so we need to stop ongoing operations if the
-        variant changes. """
+        variant changes."""
 
         self.ubuntu_drivers = get_ubuntu_drivers_interface(self.app)
 
@@ -114,8 +110,8 @@ class DriversController(SubiquityController):
                     self.drivers = []
                 else:
                     self.drivers = await self.ubuntu_drivers.list_drivers(
-                        root_dir=d.mountpoint,
-                        context=context)
+                        root_dir=d.mountpoint, context=context
+                    )
         except OverlayCleanupError:
             log.exception("Failed to cleanup overlay. Continuing anyway.")
         self.list_drivers_done_event.set()
@@ -128,10 +124,12 @@ class DriversController(SubiquityController):
 
         search_drivers = self.app.controllers.Source.model.search_drivers
 
-        return DriversResponse(install=self.model.do_install,
-                               drivers=self.drivers,
-                               local_only=local_only,
-                               search_drivers=search_drivers)
+        return DriversResponse(
+            install=self.model.do_install,
+            drivers=self.drivers,
+            local_only=local_only,
+            search_drivers=search_drivers,
+        )
 
     async def POST(self, data: DriversPayload) -> None:
         self.model.do_install = data.install

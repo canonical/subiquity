@@ -72,33 +72,29 @@ primary entry
 """
 
 import abc
-import copy
 import contextlib
+import copy
 import logging
-from typing import (
-    Any, Callable, Dict, Iterator, List,
-    Optional, Sequence, Set, Union,
-    )
+from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Set, Union
 from urllib import parse
 
 import attr
-
-from subiquity.common.types import MirrorSelectionFallback
-
 from curtin.commands.apt_config import (
-    get_arch_mirrorconfig,
-    get_mirror,
     PORTS_ARCHES,
     PRIMARY_ARCHES,
-    )
+    get_arch_mirrorconfig,
+    get_mirror,
+)
 from curtin.config import merge_config
+
+from subiquity.common.types import MirrorSelectionFallback
 
 try:
     from curtin.distro import get_architecture
 except ImportError:
     from curtin.util import get_architecture
 
-log = logging.getLogger('subiquity.models.mirror')
+log = logging.getLogger("subiquity.models.mirror")
 
 DEFAULT_SUPPORTED_ARCHES_URI = "http://archive.ubuntu.com/ubuntu"
 DEFAULT_PORTS_ARCHES_URI = "http://ports.ubuntu.com/ubuntu-ports"
@@ -107,7 +103,8 @@ LEGACY_DEFAULT_PRIMARY_SECTION = [
     {
         "arches": PRIMARY_ARCHES,
         "uri": DEFAULT_SUPPORTED_ARCHES_URI,
-    }, {
+    },
+    {
         "arches": ["default"],
         "uri": DEFAULT_PORTS_ARCHES_URI,
     },
@@ -120,9 +117,10 @@ DEFAULT = {
 
 @attr.s(auto_attribs=True)
 class BasePrimaryEntry(abc.ABC):
-    """ Base class to represent an entry from the 'primary' autoinstall
+    """Base class to represent an entry from the 'primary' autoinstall
     section. A BasePrimaryEntry is expected to have a URI and therefore can be
-    used as a primary candidate. """
+    used as a primary candidate."""
+
     parent: "MirrorModel" = attr.ib(kw_only=True)
 
     def stage(self) -> None:
@@ -133,19 +131,20 @@ class BasePrimaryEntry(abc.ABC):
 
     @abc.abstractmethod
     def serialize_for_ai(self) -> Any:
-        """ Serialize the entry for autoinstall. """
+        """Serialize the entry for autoinstall."""
 
     @abc.abstractmethod
     def supports_arch(self, arch: str) -> bool:
-        """ Tells whether the mirror claims to support the architecture
-        specified. """
+        """Tells whether the mirror claims to support the architecture
+        specified."""
 
 
 @attr.s(auto_attribs=True)
 class PrimaryEntry(BasePrimaryEntry):
-    """ Represents a single primary mirror candidate; which can be converted
+    """Represents a single primary mirror candidate; which can be converted
     to/from an entry of the 'apt->mirror-selection->primary' autoinstall
-    section. """
+    section."""
+
     # Having uri set to None is only valid for a country mirror.
     uri: Optional[str] = None
     # When arches is None, it is assumed that the mirror is compatible with the
@@ -183,10 +182,11 @@ class PrimaryEntry(BasePrimaryEntry):
 
 
 class LegacyPrimaryEntry(BasePrimaryEntry):
-    """ Represents a single primary mirror candidate; which can be converted
+    """Represents a single primary mirror candidate; which can be converted
     to/from the whole 'apt->primary' autoinstall section (legacy format).
     The format is defined by curtin, so we make use of curtin to access
-    the elements. """
+    the elements."""
+
     def __init__(self, config: List[Any], *, parent: "MirrorModel") -> None:
         self.config = config
         super().__init__(parent=parent)
@@ -200,8 +200,8 @@ class LegacyPrimaryEntry(BasePrimaryEntry):
     @uri.setter
     def uri(self, uri: str) -> None:
         config = get_arch_mirrorconfig(
-                {"primary": self.config},
-                "primary", self.parent.architecture)
+            {"primary": self.config}, "primary", self.parent.architecture
+        )
         config["uri"] = uri
 
     def mirror_is_default(self) -> bool:
@@ -209,8 +209,7 @@ class LegacyPrimaryEntry(BasePrimaryEntry):
 
     @classmethod
     def new_from_default(cls, parent: "MirrorModel") -> "LegacyPrimaryEntry":
-        return cls(copy.deepcopy(LEGACY_DEFAULT_PRIMARY_SECTION),
-                   parent=parent)
+        return cls(copy.deepcopy(LEGACY_DEFAULT_PRIMARY_SECTION), parent=parent)
 
     def serialize_for_ai(self) -> List[Any]:
         return self.config
@@ -222,18 +221,18 @@ class LegacyPrimaryEntry(BasePrimaryEntry):
 
 
 def countrify_uri(uri: str, cc: str) -> str:
-    """ Return a URL where the host is prefixed with a country code. """
+    """Return a URL where the host is prefixed with a country code."""
     parsed = parse.urlparse(uri)
-    new = parsed._replace(netloc=cc + '.' + parsed.netloc)
+    new = parsed._replace(netloc=cc + "." + parsed.netloc)
     return parse.urlunparse(new)
 
 
 CandidateFilter = Callable[[BasePrimaryEntry], bool]
 
 
-def filter_candidates(candidates: List[BasePrimaryEntry],
-                      *, filters: Sequence[CandidateFilter]) \
-                              -> Iterator[BasePrimaryEntry]:
+def filter_candidates(
+    candidates: List[BasePrimaryEntry], *, filters: Sequence[CandidateFilter]
+) -> Iterator[BasePrimaryEntry]:
     candidates_iter = iter(candidates)
     for filt in filters:
         candidates_iter = filter(filt, candidates_iter)
@@ -241,21 +240,20 @@ def filter_candidates(candidates: List[BasePrimaryEntry],
 
 
 class MirrorModel(object):
-
     def __init__(self):
         self.config = copy.deepcopy(DEFAULT)
         self.legacy_primary = False
         self.disabled_components: Set[str] = set()
         self.primary_elected: Optional[BasePrimaryEntry] = None
-        self.primary_candidates: List[BasePrimaryEntry] = \
-            self._default_primary_entries()
+        self.primary_candidates: List[
+            BasePrimaryEntry
+        ] = self._default_primary_entries()
 
         self.primary_staged: Optional[BasePrimaryEntry] = None
 
         self.architecture = get_architecture()
         # Only useful for legacy primary sections
-        self.default_mirror = \
-            LegacyPrimaryEntry.new_from_default(parent=self).uri
+        self.default_mirror = LegacyPrimaryEntry.new_from_default(parent=self).uri
 
         # What to do if automatic mirror-selection fails.
         self.fallback = MirrorSelectionFallback.ABORT
@@ -263,14 +261,17 @@ class MirrorModel(object):
     def _default_primary_entries(self) -> List[PrimaryEntry]:
         return [
             PrimaryEntry(parent=self, country_mirror=True),
-            PrimaryEntry(uri=DEFAULT_SUPPORTED_ARCHES_URI,
-                         arches=PRIMARY_ARCHES, parent=self),
-            PrimaryEntry(uri=DEFAULT_PORTS_ARCHES_URI,
-                         arches=PORTS_ARCHES, parent=self),
+            PrimaryEntry(
+                uri=DEFAULT_SUPPORTED_ARCHES_URI, arches=PRIMARY_ARCHES, parent=self
+            ),
+            PrimaryEntry(
+                uri=DEFAULT_PORTS_ARCHES_URI, arches=PORTS_ARCHES, parent=self
+            ),
         ]
 
     def get_default_primary_candidates(
-            self, legacy: Optional[bool] = None) -> Sequence[BasePrimaryEntry]:
+        self, legacy: Optional[bool] = None
+    ) -> Sequence[BasePrimaryEntry]:
         want_legacy = legacy if legacy is not None else self.legacy_primary
         if want_legacy:
             return [LegacyPrimaryEntry.new_from_default(parent=self)]
@@ -282,15 +283,15 @@ class MirrorModel(object):
             self.disabled_components = set(data.pop("disable_components"))
 
         if "primary" in data and "mirror-selection" in data:
-            raise ValueError("apt->primary and apt->mirror-selection are"
-                             " mutually exclusive.")
+            raise ValueError(
+                "apt->primary and apt->mirror-selection are" " mutually exclusive."
+            )
         self.legacy_primary = "primary" in data
 
         primary_candidates = self.get_default_primary_candidates()
         if "primary" in data:
             # Legacy sections only support a single candidate
-            primary_candidates = \
-                [LegacyPrimaryEntry(data.pop("primary"), parent=self)]
+            primary_candidates = [LegacyPrimaryEntry(data.pop("primary"), parent=self)]
         if "mirror-selection" in data:
             mirror_selection = data.pop("mirror-selection")
             if "primary" in mirror_selection:
@@ -314,7 +315,8 @@ class MirrorModel(object):
         return config
 
     def _get_apt_config_using_candidate(
-            self, candidate: BasePrimaryEntry) -> Dict[str, Any]:
+        self, candidate: BasePrimaryEntry
+    ) -> Dict[str, Any]:
         config = self._get_apt_config_common()
         config["primary"] = candidate.config
         return config
@@ -327,8 +329,7 @@ class MirrorModel(object):
         assert self.primary_elected is not None
         return self._get_apt_config_using_candidate(self.primary_elected)
 
-    def get_apt_config(
-            self, final: bool, has_network: bool) -> Dict[str, Any]:
+    def get_apt_config(self, final: bool, has_network: bool) -> Dict[str, Any]:
         if not final:
             return self.get_apt_config_staged()
         if has_network:
@@ -347,15 +348,16 @@ class MirrorModel(object):
                 lambda c: c.uri is not None,
                 lambda c: c.supports_arch(self.architecture),
             ]
-            candidate = next(filter_candidates(self.primary_candidates,
-                                               filters=filters))
+            candidate = next(
+                filter_candidates(self.primary_candidates, filters=filters)
+            )
             return self._get_apt_config_using_candidate(candidate)
         # Our last resort is to include no primary section. Curtin will use
         # its own internal values.
         return self._get_apt_config_common()
 
     def set_country(self, cc):
-        """ Set the URI of country-mirror candidates. """
+        """Set the URI of country-mirror candidates."""
         for candidate in self.country_mirror_candidates():
             if self.legacy_primary:
                 candidate.uri = countrify_uri(candidate.uri, cc=cc)
@@ -367,8 +369,8 @@ class MirrorModel(object):
                 candidate.uri = countrify_uri(uri, cc=cc)
 
     def disable_components(self, comps, add: bool) -> None:
-        """ Add (or remove) a component (e.g., multiverse) from the list of
-        disabled components. """
+        """Add (or remove) a component (e.g., multiverse) from the list of
+        disabled components."""
         comps = set(comps)
         if add:
             self.disabled_components |= comps
@@ -376,19 +378,17 @@ class MirrorModel(object):
             self.disabled_components -= comps
 
     def create_primary_candidate(
-            self, uri: Optional[str],
-            country_mirror: bool = False) -> BasePrimaryEntry:
-
+        self, uri: Optional[str], country_mirror: bool = False
+    ) -> BasePrimaryEntry:
         if self.legacy_primary:
             entry = LegacyPrimaryEntry.new_from_default(parent=self)
             entry.uri = uri
             return entry
 
-        return PrimaryEntry(uri=uri, country_mirror=country_mirror,
-                            parent=self)
+        return PrimaryEntry(uri=uri, country_mirror=country_mirror, parent=self)
 
     def wants_geoip(self) -> bool:
-        """ Tell whether geoip results would be useful. """
+        """Tell whether geoip results would be useful."""
         return next(self.country_mirror_candidates(), None) is not None
 
     def country_mirror_candidates(self) -> Iterator[BasePrimaryEntry]:

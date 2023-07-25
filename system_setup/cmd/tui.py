@@ -16,18 +16,14 @@
 
 import argparse
 import asyncio
+import fcntl
 import logging
 import os
-import fcntl
 import subprocess
 import sys
 
+from subiquity.cmd.common import LOGDIR, setup_environment
 from subiquitycore.log import setup_logger
-
-from subiquity.cmd.common import (
-    LOGDIR,
-    setup_environment,
-    )
 from system_setup.cmd.server import make_server_args_parser
 
 
@@ -39,27 +35,36 @@ class ClickAction(argparse.Action):
 def make_client_args_parser():
     # TODO WSL: update this. We have already done it on the past…
     parser = argparse.ArgumentParser(
-        description='SUbiquity - Ubiquity for Servers',
-        prog='subiquity')
+        description="SUbiquity - Ubiquity for Servers", prog="subiquity"
+    )
     try:
         ascii_default = os.ttyname(0) == "/dev/ttysclp0"
     except OSError:
         ascii_default = False
     parser.set_defaults(ascii=ascii_default)
-    parser.add_argument('--dry-run', action='store_true',
-                        dest='dry_run',
-                        help='menu-only, do not call installer function')
-    parser.add_argument('--socket')
-    parser.add_argument('--answers')
-    parser.add_argument('--server-pid')
-    parser.add_argument('--autoinstall', action='store', dest='autoinstall')
-    parser.add_argument('--prefill',
-                        dest='prefill',
-                        help='Prefills UI models with data provided in'
-                        ' a prefill.yaml file yet allowing overrides.')
-    parser.add_argument('--output-base', action='store', dest='output_base',
-                        default='.subiquity',
-                        help='in dryrun, control basedir of files')
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        dest="dry_run",
+        help="menu-only, do not call installer function",
+    )
+    parser.add_argument("--socket")
+    parser.add_argument("--answers")
+    parser.add_argument("--server-pid")
+    parser.add_argument("--autoinstall", action="store", dest="autoinstall")
+    parser.add_argument(
+        "--prefill",
+        dest="prefill",
+        help="Prefills UI models with data provided in"
+        " a prefill.yaml file yet allowing overrides.",
+    )
+    parser.add_argument(
+        "--output-base",
+        action="store",
+        dest="output_base",
+        default=".subiquity",
+        help="in dryrun, control basedir of files",
+    )
     return parser
 
 
@@ -71,6 +76,7 @@ def main():
     # setup_environment sets $APPORT_DATA_DIR which must be set before
     # apport is imported, which is done by this import:
     from system_setup.client.client import SystemSetupClient
+
     parser = make_client_args_parser()
     args = sys.argv[1:]
 
@@ -79,42 +85,41 @@ def main():
     server_output_dir = "/var/log/installer"
     server_state_file = "/run/subiquity/server-state"
     opts, unknown = parser.parse_known_args(args)
-    if '--dry-run' in args:
+    if "--dry-run" in args:
         server_state_file = opts.output_base + "/run/subiquity/server-state"
         if opts.socket is None:
             need_start_server = True
             server_output_dir = opts.output_base
-            sock_path = os.path.join(server_output_dir, 'socket')
+            sock_path = os.path.join(server_output_dir, "socket")
             opts.socket = sock_path
-            server_args = ['--dry-run', '--socket=' + sock_path] + unknown
-            server_args += ['--output-base', opts.output_base]
+            server_args = ["--dry-run", "--socket=" + sock_path] + unknown
+            server_args += ["--output-base", opts.output_base]
 
     elif opts.socket is None:
         need_start_server = True
-        opts.socket = '/run/subiquity/socket'
+        opts.socket = "/run/subiquity/socket"
 
     if opts.prefill:
-        server_args += ['--prefill='+opts.prefill]
+        server_args += ["--prefill=" + opts.prefill]
 
     if opts.autoinstall:
-        server_args += ['--autoinstall='+opts.autoinstall]
+        server_args += ["--autoinstall=" + opts.autoinstall]
 
     os.makedirs(server_output_dir, exist_ok=True)
-    server_stdout = open(os.path.join(server_output_dir, 'server-stdout'), 'w')
-    server_stderr = open(os.path.join(server_output_dir, 'server-stderr'), 'w')
+    server_stdout = open(os.path.join(server_output_dir, "server-stdout"), "w")
+    server_stderr = open(os.path.join(server_output_dir, "server-stderr"), "w")
 
     if need_start_server:
         if os.path.exists(server_state_file):
             os.unlink(server_state_file)
         server_parser = make_server_args_parser()
         server_parser.parse_args(server_args)  # just to check
-        server_cmd = [sys.executable, '-m', 'system_setup.cmd.server'] + \
-            server_args
+        server_cmd = [sys.executable, "-m", "system_setup.cmd.server"] + server_args
         server_proc = subprocess.Popen(
-            server_cmd, stdout=server_stdout, stderr=server_stderr)
+            server_cmd, stdout=server_stdout, stderr=server_stderr
+        )
         opts.server_pid = str(server_proc.pid)
-        print("running server pid {} with args: {}"
-              .format(server_proc.pid, server_cmd))
+        print("running server pid {} with args: {}".format(server_proc.pid, server_cmd))
     elif opts.server_pid is not None:
         print("reconnecting to server pid {}".format(opts.server_pid))
 
@@ -122,9 +127,9 @@ def main():
     logdir = LOGDIR
     if opts.dry_run:
         logdir = opts.output_base
-    logfiles = setup_logger(dir=logdir, base='systemsetup-client')
+    logfiles = setup_logger(dir=logdir, base="systemsetup-client")
 
-    logger = logging.getLogger('subiquity')
+    logger = logging.getLogger("subiquity")
     version = "unknown"
     logger.info("Starting System Setup revision {}".format(version))
     logger.info("Arguments passed: {}".format(sys.argv))
@@ -142,21 +147,18 @@ def main():
         try:
             fcntl.flock(opts.answers, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except OSError:
-            logger.exception(
-                'Failed to lock auto answers file, proceding without it.')
+            logger.exception("Failed to lock auto answers file, proceding without it.")
             opts.answers.close()
             opts.answers = None
 
     async def run_with_loop():
         subiquity_interface = SystemSetupClient(opts)
-        subiquity_interface.note_file_for_apport(
-            "InstallerLog", logfiles['debug'])
-        subiquity_interface.note_file_for_apport(
-            "InstallerLogInfo", logfiles['info'])
+        subiquity_interface.note_file_for_apport("InstallerLog", logfiles["debug"])
+        subiquity_interface.note_file_for_apport("InstallerLogInfo", logfiles["info"])
         await subiquity_interface.run()
 
     asyncio.run(run_with_loop())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

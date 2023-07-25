@@ -19,11 +19,11 @@ from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import WSLSetupOptions
 from system_setup.ui.views.wslsetupoptions import WSLSetupOptionsView
 
-log = logging.getLogger('system_setup.client.controllers.wslsetupoptions')
+log = logging.getLogger("system_setup.client.controllers.wslsetupoptions")
 
 
 class WSLSetupOptionsController(SubiquityTuiController):
-    endpoint_name = 'wslsetupoptions'
+    endpoint_name = "wslsetupoptions"
 
     async def make_ui(self):
         data = await self.endpoint.GET()
@@ -32,15 +32,15 @@ class WSLSetupOptionsController(SubiquityTuiController):
         return WSLSetupOptionsView(self, data, cur_lang)
 
     def run_answers(self):
-        if all(elem in self.answers for elem in
-                ['install_language_support_packages']):
+        if all(elem in self.answers for elem in ["install_language_support_packages"]):
             configuration = WSLSetupOptions(**self.answers)
             self.done(configuration)
 
     def done(self, configuration_data):
         log.debug(
             "WSLSetupOptionsController.done next_screen user_spec=%s",
-            configuration_data)
+            configuration_data,
+        )
         self.app.next_screen(self.endpoint.POST(configuration_data))
 
     def cancel(self):

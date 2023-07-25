@@ -15,13 +15,13 @@
 
 import logging
 
-log = logging.getLogger('subiquity.models.timezone')
+log = logging.getLogger("subiquity.models.timezone")
 
 
 class TimeZoneModel(object):
-    """ Model representing timezone"""
+    """Model representing timezone"""
 
-    timezone = ''
+    timezone = ""
 
     def __init__(self):
         # This is the raw request from the API / autoinstall.
@@ -32,16 +32,16 @@ class TimeZoneModel(object):
         self._request = None
         # The actually timezone to set, possibly post-geoip lookup or
         # possibly manually specified.
-        self.timezone = ''
+        self.timezone = ""
         self.got_from_geoip = False
 
     def set(self, value):
         self._request = value
-        self.timezone = value if value != 'geoip' else ''
+        self.timezone = value if value != "geoip" else ""
 
     @property
     def detect_with_geoip(self):
-        return self._request == 'geoip'
+        return self._request == "geoip"
 
     @property
     def should_set_tz(self):
@@ -54,10 +54,15 @@ class TimeZoneModel(object):
     def make_cloudconfig(self):
         if not self.should_set_tz:
             return {}
-        return {'timezone': self.timezone}
+        return {"timezone": self.timezone}
 
     def __repr__(self):
-        return ("<TimeZone: request {} detect {} should_set {} " +
-                "timezone {} gfg {}>").format(
-            self.request, self.detect_with_geoip, self.should_set_tz,
-            self.timezone, self.got_from_geoip)
+        return (
+            "<TimeZone: request {} detect {} should_set {} " + "timezone {} gfg {}>"
+        ).format(
+            self.request,
+            self.detect_with_geoip,
+            self.should_set_tz,
+            self.timezone,
+            self.got_from_geoip,
+        )

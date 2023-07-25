@@ -2,7 +2,6 @@ import functools
 import os
 import shutil
 import tempfile
-
 from unittest import IsolatedAsyncioTestCase
 
 
@@ -10,8 +9,7 @@ class SubiTestCase(IsolatedAsyncioTestCase):
     def tmp_dir(self, dir=None, cleanup=True):
         # return a full path to a temporary directory that will be cleaned up.
         if dir is None:
-            tmpd = tempfile.mkdtemp(
-                prefix="subiquity-%s." % self.__class__.__name__)
+            tmpd = tempfile.mkdtemp(prefix="subiquity-%s." % self.__class__.__name__)
         else:
             tmpd = tempfile.mkdtemp(dir=dir)
         self.addCleanup(functools.partial(shutil.rmtree, tmpd))
@@ -26,7 +24,7 @@ class SubiTestCase(IsolatedAsyncioTestCase):
         return os.path.normpath(os.path.abspath(os.path.join(dir, path)))
 
     def assert_contents(self, path, expected_contents):
-        with open(path, 'r') as fp:
+        with open(path, "r") as fp:
             self.assertEqual(expected_contents, fp.read())
 
 
@@ -34,7 +32,7 @@ def populate_dir(path, files):
     if not os.path.exists(path):
         os.makedirs(path)
     ret = []
-    for (name, content) in files.items():
+    for name, content in files.items():
         p = os.path.sep.join([path, name])
         if not os.path.isdir(os.path.dirname(p)):
             os.makedirs(os.path.dirname(p))
@@ -42,7 +40,7 @@ def populate_dir(path, files):
             if isinstance(content, bytes):
                 fp.write(content)
             else:
-                fp.write(content.encode('utf-8'))
+                fp.write(content.encode("utf-8"))
             fp.close()
         ret.append(p)
     return ret

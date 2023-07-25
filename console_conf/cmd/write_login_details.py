@@ -17,20 +17,18 @@
 import logging
 import sys
 
-from subiquitycore.log import setup_logger
-from subiquitycore import __version__ as VERSION
-
 from console_conf.controllers.identity import write_login_details_standalone
+from subiquitycore import __version__ as VERSION
+from subiquitycore.log import setup_logger
 
 
 def main():
-    logger = setup_logger(dir='/var/log/console-conf')
-    logger = logging.getLogger('console_conf')
-    logger.info(
-        "Starting console-conf-write-login-details v{}".format(VERSION))
+    logger = setup_logger(dir="/var/log/console-conf")
+    logger = logging.getLogger("console_conf")
+    logger.info("Starting console-conf-write-login-details v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
     return write_login_details_standalone()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

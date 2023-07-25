@@ -15,18 +15,20 @@
 
 import fnmatch
 import json
+import re
 import unittest
 from unittest import mock
-import re
-import yaml
 
+import yaml
 from cloudinit.config.schema import SchemaValidationError
+
 try:
     from cloudinit.config.schema import SchemaProblem
 except ImportError:
-    def SchemaProblem(x, y): return (x, y)  # TODO(drop on cloud-init 22.3 SRU)
 
-from subiquitycore.pubsub import MessageHub
+    def SchemaProblem(x, y):
+        return (x, y)  # TODO(drop on cloud-init 22.3 SRU)
+
 
 from subiquity.common.types import IdentityData
 from subiquity.models.subiquity import (
@@ -35,13 +37,11 @@ from subiquity.models.subiquity import (
     ModelNames,
     SubiquityModel,
 )
-from subiquity.server.server import (
-    INSTALL_MODEL_NAMES,
-    POSTINSTALL_MODEL_NAMES,
-    )
+from subiquity.server.server import INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
 from subiquity.server.types import InstallerChannels
+from subiquitycore.pubsub import MessageHub
 
-getent_group_output = '''
+getent_group_output = """
 root:x:0:
 daemon:x:1:
 bin:x:2:
@@ -57,56 +57,55 @@ man:x:12:
 sudo:x:27:
 ssh:x:118:
 users:x:100:
-'''
+"""
 
 
 class TestModelNames(unittest.TestCase):
-
     def test_for_known_variant(self):
-        model_names = ModelNames({'a'}, var1={'b'}, var2={'c'})
-        self.assertEqual(model_names.for_variant('var1'), {'a', 'b'})
+        model_names = ModelNames({"a"}, var1={"b"}, var2={"c"})
+        self.assertEqual(model_names.for_variant("var1"), {"a", "b"})
 
     def test_for_unknown_variant(self):
-        model_names = ModelNames({'a'}, var1={'b'}, var2={'c'})
-        self.assertEqual(model_names.for_variant('var3'), {'a'})
+        model_names = ModelNames({"a"}, var1={"b"}, var2={"c"})
+        self.assertEqual(model_names.for_variant("var3"), {"a"})
 
     def test_all(self):
-        model_names = ModelNames({'a'}, var1={'b'}, var2={'c'})
-        self.assertEqual(model_names.all(), {'a', 'b', 'c'})
+        model_names = ModelNames({"a"}, var1={"b"}, var2={"c"})
+        self.assertEqual(model_names.all(), {"a", "b", "c"})
 
 
 class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
     maxDiff = None
 
     def writtenFiles(self, config):
-        for k, v in config.get('write_files', {}).items():
+        for k, v in config.get("write_files", {}).items():
             yield v
 
     def assertConfigWritesFile(self, config, path):
-        self.assertIn(path, [s['path'] for s in self.writtenFiles(config)])
+        self.assertIn(path, [s["path"] for s in self.writtenFiles(config)])
 
     def writtenFilesMatching(self, config, pattern):
         files = list(self.writtenFiles(config))
         matching = []
         for spec in files:
-            if fnmatch.fnmatch(spec['path'], pattern):
+            if fnmatch.fnmatch(spec["path"], pattern):
                 matching.append(spec)
         return matching
 
     def writtenFilesMatchingContaining(self, config, pattern, content):
         matching = []
         for spec in self.writtenFilesMatching(config, pattern):
-            if content in spec['content']:
+            if content in spec["content"]:
                 matching.append(content)
         return matching
 
     def configVal(self, config, path):
         cur = config
-        for component in path.split('.'):
+        for component in path.split("."):
             if not isinstance(cur, dict):
                 self.fail(
-                    "extracting {} reached non-dict {} too early".format(
-                        path, cur))
+                    "extracting {} reached non-dict {} too early".format(path, cur)
+                )
             if component not in cur:
                 self.fail("no value found for {}".format(path))
             cur = cur[component]
@@ -117,11 +116,11 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
 
     def assertConfigDoesNotHaveVal(self, config, path):
         cur = config
-        for component in path.split('.'):
+        for component in path.split("."):
             if not isinstance(cur, dict):
                 self.fail(
-                    "extracting {} reached non-dict {} too early".format(
-                        path, cur))
+                    "extracting {} reached non-dict {} too early".format(path, cur)
+                )
             if component not in cur:
                 return
             cur = cur[component]
@@ -129,157 +128,149 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
 
     async def test_configure(self):
         hub = MessageHub()
-        model = SubiquityModel(
-            'test', hub, ModelNames({'a', 'b'}), ModelNames(set()))
-        model.set_source_variant('var')
-        await hub.abroadcast((InstallerChannels.CONFIGURED, 'a'))
+        model = SubiquityModel("test", hub, ModelNames({"a", "b"}), ModelNames(set()))
+        model.set_source_variant("var")
+        await hub.abroadcast((InstallerChannels.CONFIGURED, "a"))
         self.assertFalse(model._install_event.is_set())
-        await hub.abroadcast((InstallerChannels.CONFIGURED, 'b'))
+        await hub.abroadcast((InstallerChannels.CONFIGURED, "b"))
         self.assertTrue(model._install_event.is_set())
 
     def make_model(self):
         return SubiquityModel(
-            'test', MessageHub(), INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES)
+            "test", MessageHub(), INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
+        )
 
     def test_proxy_set(self):
         model = self.make_model()
-        proxy_val = 'http://my-proxy'
+        proxy_val = "http://my-proxy"
         model.proxy.proxy = proxy_val
         config = model.render()
-        self.assertConfigHasVal(config, 'proxy.http_proxy', proxy_val)
-        self.assertConfigHasVal(config, 'proxy.https_proxy', proxy_val)
+        self.assertConfigHasVal(config, "proxy.http_proxy", proxy_val)
+        self.assertConfigHasVal(config, "proxy.https_proxy", proxy_val)
         confs = self.writtenFilesMatchingContaining(
             config,
-            'etc/systemd/system/snapd.service.d/*.conf',
-            'HTTP_PROXY=' + proxy_val)
+            "etc/systemd/system/snapd.service.d/*.conf",
+            "HTTP_PROXY=" + proxy_val,
+        )
         self.assertTrue(len(confs) > 0)
 
     def test_proxy_notset(self):
         model = self.make_model()
         config = model.render()
-        self.assertConfigDoesNotHaveVal(config, 'proxy.http_proxy')
-        self.assertConfigDoesNotHaveVal(config, 'proxy.https_proxy')
-        self.assertConfigDoesNotHaveVal(config, 'apt.http_proxy')
-        self.assertConfigDoesNotHaveVal(config, 'apt.https_proxy')
+        self.assertConfigDoesNotHaveVal(config, "proxy.http_proxy")
+        self.assertConfigDoesNotHaveVal(config, "proxy.https_proxy")
+        self.assertConfigDoesNotHaveVal(config, "apt.http_proxy")
+        self.assertConfigDoesNotHaveVal(config, "apt.https_proxy")
         confs = self.writtenFilesMatchingContaining(
-            config,
-            'etc/systemd/system/snapd.service.d/*.conf',
-            'HTTP_PROXY=')
+            config, "etc/systemd/system/snapd.service.d/*.conf", "HTTP_PROXY="
+        )
         self.assertTrue(len(confs) == 0)
 
     def test_keyboard(self):
         model = self.make_model()
         config = model.render()
-        self.assertConfigWritesFile(config, 'etc/default/keyboard')
+        self.assertConfigWritesFile(config, "etc/default/keyboard")
 
     def test_writes_machine_id_media_info(self):
         model_no_proxy = self.make_model()
         model_proxy = self.make_model()
-        model_proxy.proxy.proxy = 'http://something'
+        model_proxy.proxy.proxy = "http://something"
         for model in model_no_proxy, model_proxy:
             config = model.render()
-            self.assertConfigWritesFile(config, 'etc/machine-id')
-            self.assertConfigWritesFile(config, 'var/log/installer/media-info')
+            self.assertConfigWritesFile(config, "etc/machine-id")
+            self.assertConfigWritesFile(config, "var/log/installer/media-info")
 
     def test_storage_version(self):
         model = self.make_model()
         config = model.render()
-        self.assertConfigHasVal(config, 'storage.version', 1)
+        self.assertConfigHasVal(config, "storage.version", 1)
 
     def test_write_netplan(self):
         model = self.make_model()
         config = model.render()
         netplan_content = None
-        for fspec in config['write_files'].values():
-            if fspec['path'].startswith('etc/netplan'):
+        for fspec in config["write_files"].values():
+            if fspec["path"].startswith("etc/netplan"):
                 if netplan_content is not None:
                     self.fail("writing two files to netplan?")
-                netplan_content = fspec['content']
+                netplan_content = fspec["content"]
         self.assertIsNot(netplan_content, None)
         netplan = yaml.safe_load(netplan_content)
-        self.assertConfigHasVal(netplan, 'network.version', 2)
+        self.assertConfigHasVal(netplan, "network.version", 2)
 
     def test_sources(self):
         model = self.make_model()
         config = model.render()
-        self.assertNotIn('sources', config)
+        self.assertNotIn("sources", config)
 
     def test_mirror(self):
         model = self.make_model()
-        mirror_val = 'http://my-mirror'
+        mirror_val = "http://my-mirror"
         model.mirror.create_primary_candidate(mirror_val).elect()
         config = model.render()
-        self.assertNotIn('apt', config)
+        self.assertNotIn("apt", config)
 
-    @mock.patch('subiquitycore.utils.run_command')
+    @mock.patch("subiquitycore.utils.run_command")
     def test_cloud_init_user_list_merge(self, run_cmd):
         main_user = IdentityData(
-            username='mainuser',
-            crypted_password='sample_value',
-            hostname='somehost')
-        secondary_user = {'name': 'user2'}
+            username="mainuser", crypted_password="sample_value", hostname="somehost"
+        )
+        secondary_user = {"name": "user2"}
 
-        with self.subTest('Main user + secondary user'):
+        with self.subTest("Main user + secondary user"):
             model = self.make_model()
             model.identity.add_user(main_user)
-            model.userdata = {'users': [secondary_user]}
+            model.userdata = {"users": [secondary_user]}
 
             run_cmd.return_value.stdout = getent_group_output
             cloud_init_config = model._cloud_init_config()
-            self.assertEqual(len(cloud_init_config['users']), 2)
-            self.assertEqual(cloud_init_config['users'][0]['name'], 'mainuser')
-            self.assertEqual(
-                cloud_init_config['users'][0]['groups'],
-                'adm,sudo,users'
-            )
-            self.assertEqual(cloud_init_config['users'][1]['name'], 'user2')
-            run_cmd.assert_called_with(['getent', 'group'], check=True)
+            self.assertEqual(len(cloud_init_config["users"]), 2)
+            self.assertEqual(cloud_init_config["users"][0]["name"], "mainuser")
+            self.assertEqual(cloud_init_config["users"][0]["groups"], "adm,sudo,users")
+            self.assertEqual(cloud_init_config["users"][1]["name"], "user2")
+            run_cmd.assert_called_with(["getent", "group"], check=True)
 
-        with self.subTest('Secondary user only'):
+        with self.subTest("Secondary user only"):
             model = self.make_model()
-            model.userdata = {'users': [secondary_user]}
+            model.userdata = {"users": [secondary_user]}
             cloud_init_config = model._cloud_init_config()
-            self.assertEqual(len(cloud_init_config['users']), 1)
-            self.assertEqual(cloud_init_config['users'][0]['name'], 'user2')
+            self.assertEqual(len(cloud_init_config["users"]), 1)
+            self.assertEqual(cloud_init_config["users"][0]["name"], "user2")
 
-        with self.subTest('Invalid user-data raises error'):
+        with self.subTest("Invalid user-data raises error"):
             model = self.make_model()
-            model.userdata = {'bootcmd': "nope"}
+            model.userdata = {"bootcmd": "nope"}
             with self.assertRaises(SchemaValidationError) as ctx:
                 model._cloud_init_config()
             expected_error = (
-                "Cloud config schema errors: bootcmd: 'nope' is not of type"
-                " 'array'"
+                "Cloud config schema errors: bootcmd: 'nope' is not of type" " 'array'"
             )
             self.assertEqual(expected_error, str(ctx.exception))
 
-    @mock.patch('subiquity.models.subiquity.lsb_release')
-    @mock.patch('subiquitycore.file_util.datetime.datetime')
+    @mock.patch("subiquity.models.subiquity.lsb_release")
+    @mock.patch("subiquitycore.file_util.datetime.datetime")
     def test_cloud_init_files_emits_datasource_config_and_clean_script(
         self, datetime, lsb_release
     ):
         datetime.utcnow.return_value = "2004-03-05 ..."
         main_user = IdentityData(
-            username='mainuser',
-            crypted_password='sample_pass',
-            hostname='somehost')
+            username="mainuser", crypted_password="sample_pass", hostname="somehost"
+        )
 
         model = self.make_model()
         model.identity.add_user(main_user)
         model.userdata = {}
         expected_files = {
-            'etc/cloud/cloud.cfg.d/99-installer.cfg': re.compile(
-                'datasource:\n  None:\n    metadata:\n      instance-id: .*\n    userdata_raw: "#cloud-config\\\\ngrowpart:\\\\n  mode: \\\'off\\\'\\\\npreserve_hostname: true\\\\n\\\\\n'  # noqa
+            "etc/cloud/cloud.cfg.d/99-installer.cfg": re.compile(
+                "datasource:\n  None:\n    metadata:\n      instance-id: .*\n    userdata_raw: \"#cloud-config\\\\ngrowpart:\\\\n  mode: \\'off\\'\\\\npreserve_hostname: true\\\\n\\\\\n"  # noqa
             ),
-            'etc/hostname': 'somehost\n',
-            'etc/cloud/ds-identify.cfg': 'policy: enabled\n',
-            'etc/hosts': HOSTS_CONTENT.format(hostname='somehost'),
+            "etc/hostname": "somehost\n",
+            "etc/cloud/ds-identify.cfg": "policy: enabled\n",
+            "etc/hosts": HOSTS_CONTENT.format(hostname="somehost"),
         }
 
         # Avoid removing /etc/hosts and /etc/hostname in cloud-init clean
-        cfg_files = [
-            "/" + key for key in expected_files.keys() if "host" not in key
-        ]
+        cfg_files = ["/" + key for key in expected_files.keys() if "host" not in key]
         cfg_files.append(
             # Obtained from NetworkModel.render when cloud-init features
             # NETPLAN_CONFIG_ROOT_READ_ONLY is True
@@ -287,14 +278,14 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
         )
         header = "# Autogenerated by Subiquity: 2004-03-05 ... UTC\n"
         with self.subTest(
-            'Stable releases Jammy do not disable cloud-init.'
-            ' NETPLAN_ROOT_READ_ONLY=True uses cloud-init networking'
+            "Stable releases Jammy do not disable cloud-init."
+            " NETPLAN_ROOT_READ_ONLY=True uses cloud-init networking"
         ):
             lsb_release.return_value = {"release": "22.04"}
-            expected_files['etc/cloud/clean.d/99-installer'] = (
-                CLOUDINIT_CLEAN_FILE_TMPL.format(
-                    header=header, cfg_files=json.dumps(sorted(cfg_files))
-                )
+            expected_files[
+                "etc/cloud/clean.d/99-installer"
+            ] = CLOUDINIT_CLEAN_FILE_TMPL.format(
+                header=header, cfg_files=json.dumps(sorted(cfg_files))
             )
             with unittest.mock.patch(
                 "subiquity.cloudinit.open",
@@ -304,57 +295,52 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
                     )
                 ),
             ):
-                for (cpath, content, perms) in model._cloud_init_files():
+                for cpath, content, perms in model._cloud_init_files():
                     if isinstance(expected_files[cpath], re.Pattern):
-                        self.assertIsNotNone(
-                            expected_files[cpath].match(content)
-                        )
+                        self.assertIsNotNone(expected_files[cpath].match(content))
                     else:
                         self.assertEqual(expected_files[cpath], content)
 
         with self.subTest(
-            'Kinetic++ disables cloud-init post install.'
-            ' NETPLAN_ROOT_READ_ONLY=False avoids cloud-init networking'
+            "Kinetic++ disables cloud-init post install."
+            " NETPLAN_ROOT_READ_ONLY=False avoids cloud-init networking"
         ):
             lsb_release.return_value = {"release": "22.10"}
             cfg_files.append(
                 # Added by _cloud_init_files for 22.10 and later releases
-                '/etc/cloud/cloud-init.disabled',
+                "/etc/cloud/cloud-init.disabled",
             )
             # Obtained from NetworkModel.render
-            cfg_files.remove('/etc/cloud/cloud.cfg.d/90-installer-network.cfg')
-            cfg_files.append('/etc/netplan/00-installer-config.yaml')
+            cfg_files.remove("/etc/cloud/cloud.cfg.d/90-installer-network.cfg")
+            cfg_files.append("/etc/netplan/00-installer-config.yaml")
             cfg_files.append(
-                '/etc/cloud/cloud.cfg.d/'
-                'subiquity-disable-cloudinit-networking.cfg'
+                "/etc/cloud/cloud.cfg.d/" "subiquity-disable-cloudinit-networking.cfg"
             )
             expected_files[
-                'etc/cloud/clean.d/99-installer'
+                "etc/cloud/clean.d/99-installer"
             ] = CLOUDINIT_CLEAN_FILE_TMPL.format(
                 header=header, cfg_files=json.dumps(sorted(cfg_files))
             )
             with unittest.mock.patch(
-                'subiquity.cloudinit.open',
+                "subiquity.cloudinit.open",
                 mock.mock_open(
                     read_data=json.dumps(
-                        {'features': {'NETPLAN_CONFIG_ROOT_READ_ONLY': False}}
+                        {"features": {"NETPLAN_CONFIG_ROOT_READ_ONLY": False}}
                     )
                 ),
             ):
-                for (cpath, content, perms) in model._cloud_init_files():
+                for cpath, content, perms in model._cloud_init_files():
                     if isinstance(expected_files[cpath], re.Pattern):
-                        self.assertIsNotNone(
-                                expected_files[cpath].match(content)
-                        )
+                        self.assertIsNotNone(expected_files[cpath].match(content))
                     else:
                         self.assertEqual(expected_files[cpath], content)
 
     def test_validatecloudconfig_schema(self):
         model = self.make_model()
-        with self.subTest('Valid cloud-config does not error'):
+        with self.subTest("Valid cloud-config does not error"):
             model.validate_cloudconfig_schema(
                 data={"ssh_import_id": ["chad.smith"]},
-                data_source="autoinstall.user-data"
+                data_source="autoinstall.user-data",
             )
 
         # Create our own subclass for focal as schema_deprecations
@@ -367,22 +353,18 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
                 self.schema_deprecations = schema_deprecations
 
         problem = SchemaProblem(
-            "bogus",
-            "'bogus' is deprecated, use 'notbogus' instead"
+            "bogus", "'bogus' is deprecated, use 'notbogus' instead"
         )
-        with self.subTest('Deprecated cloud-config warns'):
+        with self.subTest("Deprecated cloud-config warns"):
             with unittest.mock.patch(
                 "subiquity.models.subiquity.validate_cloudconfig_schema"
             ) as validate:
-                validate.side_effect = SchemaDeprecation(
-                    schema_deprecations=(problem,)
-                )
+                validate.side_effect = SchemaDeprecation(schema_deprecations=(problem,))
                 with self.assertLogs(
                     "subiquity.models.subiquity", level="INFO"
                 ) as logs:
                     model.validate_cloudconfig_schema(
-                        data={"bogus": True},
-                        data_source="autoinstall.user-data"
+                        data={"bogus": True}, data_source="autoinstall.user-data"
                     )
             expected = (
                 "WARNING:subiquity.models.subiquity:The cloud-init"
@@ -391,22 +373,20 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
             )
             self.assertEqual(logs.output, [expected])
 
-        with self.subTest('Invalid cloud-config schema errors'):
+        with self.subTest("Invalid cloud-config schema errors"):
             with self.assertRaises(SchemaValidationError) as ctx:
                 model.validate_cloudconfig_schema(
                     data={"bootcmd": "nope"}, data_source="system info"
                 )
             expected_error = (
-                "Cloud config schema errors: bootcmd: 'nope' is not of"
-                " type 'array'"
+                "Cloud config schema errors: bootcmd: 'nope' is not of" " type 'array'"
             )
             self.assertEqual(expected_error, str(ctx.exception))
 
-        with self.subTest('Prefix autoinstall.user-data cloud-config errors'):
+        with self.subTest("Prefix autoinstall.user-data cloud-config errors"):
             with self.assertRaises(SchemaValidationError) as ctx:
                 model.validate_cloudconfig_schema(
-                    data={"bootcmd": "nope"},
-                    data_source="autoinstall.user-data"
+                    data={"bootcmd": "nope"}, data_source="autoinstall.user-data"
                 )
             expected_error = (
                 "Cloud config schema errors:"

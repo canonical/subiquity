@@ -14,24 +14,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from typing import List, Optional, TypedDict
-import yaml
 
 import attr
+import yaml
 
 
 class DryRunController:
-
     def __init__(self, app):
         self.app = app
         self.context = app.context.child("DryRun")
 
     async def crash_GET(self) -> None:
-        1/0
+        1 / 0
 
 
 class KnownMirror(TypedDict, total=False):
-    """ Dictionary type hints for a known mirror. Either url or pattern should
-    be specified. """
+    """Dictionary type hints for a known mirror. Either url or pattern should
+    be specified."""
+
     url: str
     pattern: str
 
@@ -39,16 +39,17 @@ class KnownMirror(TypedDict, total=False):
 
 
 class SSHImport(TypedDict, total=True):
-    """ Dictionary type hints for a SSH key import. """
+    """Dictionary type hints for a SSH key import."""
+
     strategy: str
     username: str
 
 
 @attr.s(auto_attribs=True)
 class DRConfig:
-    """ Configuration for dry-run-only executions.
+    """Configuration for dry-run-only executions.
     All variables here should have default values ; to indicate the behavior we
-    want by default in dry-run mode. """
+    want by default in dry-run mode."""
 
     # Tells whether "$source"/var/lib/snapd/seed/systems exists on the source.
     systems_dir_exists: bool = False
@@ -61,14 +62,15 @@ class DRConfig:
 
     apt_mirror_check_default_strategy: str = "run-on-host"
     apt_mirrors_known: List[KnownMirror] = [
-            {"pattern": r"https?://archive\.ubuntu\.com/ubuntu/?",
-             "strategy": "success"},
-            {"pattern": r"https?://[a-z]{2,}\.archive\.ubuntu\.com/ubuntu/?",
-             "strategy": "success"},
-            {"pattern": r"/success/?$", "strategy": "success"},
-            {"pattern": r"/rand(om)?/?$", "strategy": "random"},
-            {"pattern": r"/host/?$", "strategy": "run-on-host"},
-            {"pattern": r"/fail(ed)?/?$", "strategy": "failure"},
+        {"pattern": r"https?://archive\.ubuntu\.com/ubuntu/?", "strategy": "success"},
+        {
+            "pattern": r"https?://[a-z]{2,}\.archive\.ubuntu\.com/ubuntu/?",
+            "strategy": "success",
+        },
+        {"pattern": r"/success/?$", "strategy": "success"},
+        {"pattern": r"/rand(om)?/?$", "strategy": "random"},
+        {"pattern": r"/host/?$", "strategy": "run-on-host"},
+        {"pattern": r"/fail(ed)?/?$", "strategy": "failure"},
     ]
 
     ssh_import_default_strategy: str = "run-on-host"
@@ -79,8 +81,9 @@ class DRConfig:
 
     # If running ubuntu-drivers on the host, supply a file to
     # umockdev-wrapper.py
-    ubuntu_drivers_run_on_host_umockdev: Optional[str] = \
-        "examples/umockdev/dell-certified+nvidia.yaml"
+    ubuntu_drivers_run_on_host_umockdev: Optional[
+        str
+    ] = "examples/umockdev/dell-certified+nvidia.yaml"
 
     @classmethod
     def load(cls, stream):

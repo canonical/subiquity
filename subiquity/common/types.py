@@ -56,7 +56,7 @@ class ErrorReportRef:
 
 
 class ApplicationState(enum.Enum):
-    """ Represents the state of the application at a given time. """
+    """Represents the state of the application at a given time."""
 
     # States reported during the initial stages of the installation.
     STARTING_UP = enum.auto()
@@ -125,8 +125,8 @@ class RefreshCheckState(enum.Enum):
 @attr.s(auto_attribs=True)
 class RefreshStatus:
     availability: RefreshCheckState
-    current_snap_version: str = ''
-    new_snap_version: str = ''
+    current_snap_version: str = ""
+    new_snap_version: str = ""
 
 
 @attr.s(auto_attribs=True)
@@ -163,7 +163,7 @@ class KeyboardSetting:
     # Ideally, we would internally represent a keyboard setting as a
     # toggle + a list of [layout, variant].
     layout: str
-    variant: str = ''
+    variant: str = ""
     toggle: Optional[str] = None
 
 
@@ -216,7 +216,7 @@ class ZdevInfo:
 
     @classmethod
     def from_row(cls, row):
-        row = dict((k.split('=', 1) for k in shlex.split(row)))
+        row = dict((k.split("=", 1) for k in shlex.split(row)))
         for k, v in row.items():
             if v == "yes":
                 row[k] = True
@@ -228,8 +228,8 @@ class ZdevInfo:
 
     @property
     def typeclass(self):
-        if self.type.startswith('zfcp'):
-            return 'zfcp'
+        if self.type.startswith("zfcp"):
+            return "zfcp"
         return self.type
 
 
@@ -352,22 +352,25 @@ class GuidedCapability(enum.Enum):
     CORE_BOOT_PREFER_UNENCRYPTED = enum.auto()
 
     def is_lvm(self) -> bool:
-        return self in [GuidedCapability.LVM,
-                        GuidedCapability.LVM_LUKS]
+        return self in [GuidedCapability.LVM, GuidedCapability.LVM_LUKS]
 
     def is_core_boot(self) -> bool:
-        return self in [GuidedCapability.CORE_BOOT_ENCRYPTED,
-                        GuidedCapability.CORE_BOOT_UNENCRYPTED,
-                        GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
-                        GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED]
+        return self in [
+            GuidedCapability.CORE_BOOT_ENCRYPTED,
+            GuidedCapability.CORE_BOOT_UNENCRYPTED,
+            GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+            GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
+        ]
 
     def supports_manual_customization(self) -> bool:
         # After posting this capability to guided_POST, is it possible
         # for the user to customize the layout further?
-        return self in [GuidedCapability.MANUAL,
-                        GuidedCapability.DIRECT,
-                        GuidedCapability.LVM,
-                        GuidedCapability.LVM_LUKS]
+        return self in [
+            GuidedCapability.MANUAL,
+            GuidedCapability.DIRECT,
+            GuidedCapability.LVM,
+            GuidedCapability.LVM_LUKS,
+        ]
 
     def is_zfs(self) -> bool:
         return self in [GuidedCapability.ZFS]
@@ -414,11 +417,11 @@ class SizingPolicy(enum.Enum):
 
     @classmethod
     def from_string(cls, value):
-        if value is None or value == 'scaled':
+        if value is None or value == "scaled":
             return cls.SCALED
-        if value == 'all':
+        if value == "all":
             return cls.ALL
-        raise Exception(f'Unknown SizingPolicy value {value}')
+        raise Exception(f"Unknown SizingPolicy value {value}")
 
 
 @attr.s(auto_attribs=True)
@@ -450,14 +453,14 @@ class GuidedStorageTargetResize:
     @staticmethod
     def from_recommendations(part, resize_vals, allowed):
         return GuidedStorageTargetResize(
-                disk_id=part.device.id,
-                partition_number=part.number,
-                new_size=resize_vals.recommended,
-                minimum=resize_vals.minimum,
-                recommended=resize_vals.recommended,
-                maximum=resize_vals.maximum,
-                allowed=allowed,
-                )
+            disk_id=part.device.id,
+            partition_number=part.number,
+            new_size=resize_vals.recommended,
+            minimum=resize_vals.minimum,
+            recommended=resize_vals.recommended,
+            maximum=resize_vals.maximum,
+            allowed=allowed,
+        )
 
 
 @attr.s(auto_attribs=True)
@@ -470,15 +473,16 @@ class GuidedStorageTargetUseGap:
 
 @attr.s(auto_attribs=True)
 class GuidedStorageTargetManual:
-    allowed: List[GuidedCapability] = attr.Factory(
-        lambda: [GuidedCapability.MANUAL])
+    allowed: List[GuidedCapability] = attr.Factory(lambda: [GuidedCapability.MANUAL])
     disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
 
 
-GuidedStorageTarget = Union[GuidedStorageTargetReformat,
-                            GuidedStorageTargetResize,
-                            GuidedStorageTargetUseGap,
-                            GuidedStorageTargetManual]
+GuidedStorageTarget = Union[
+    GuidedStorageTargetReformat,
+    GuidedStorageTargetResize,
+    GuidedStorageTargetUseGap,
+    GuidedStorageTargetManual,
+]
 
 
 @attr.s(auto_attribs=True)
@@ -519,10 +523,10 @@ class ReformatDisk:
 
 @attr.s(auto_attribs=True)
 class IdentityData:
-    realname: str = ''
-    username: str = ''
-    crypted_password: str = attr.ib(default='', repr=False)
-    hostname: str = ''
+    realname: str = ""
+    username: str = ""
+    crypted_password: str = attr.ib(default="", repr=False)
+    hostname: str = ""
 
 
 class UsernameValidation(enum.Enum):
@@ -542,7 +546,8 @@ class SSHData:
 
 @attr.s(auto_attribs=True)
 class SSHIdentity:
-    """ Represents a SSH identity (public key + fingerprint). """
+    """Represents a SSH identity (public key + fingerprint)."""
+
     key_type: str
     key: str
     key_comment: str
@@ -579,25 +584,26 @@ class ChannelSnapInfo:
     version: str
     size: int
     released_at: datetime.datetime = attr.ib(
-        metadata={'time_fmt': '%Y-%m-%dT%H:%M:%S.%fZ'})
+        metadata={"time_fmt": "%Y-%m-%dT%H:%M:%S.%fZ"}
+    )
 
 
 @attr.s(auto_attribs=True, eq=False)
 class SnapInfo:
     name: str
-    summary: str = ''
-    publisher: str = ''
+    summary: str = ""
+    publisher: str = ""
     verified: bool = False
     starred: bool = False
-    description: str = ''
-    confinement: str = ''
-    license: str = ''
+    description: str = ""
+    confinement: str = ""
+    license: str = ""
     channels: List[ChannelSnapInfo] = attr.Factory(list)
 
 
 @attr.s(auto_attribs=True)
 class DriversResponse:
-    """ Response to GET request to drivers.
+    """Response to GET request to drivers.
     :install: tells whether third-party drivers will be installed (if any is
     available).
     :drivers: tells what third-party drivers will be installed should we decide
@@ -606,6 +612,7 @@ class DriversResponse:
     :local_only: tells if we are looking for drivers only from the ISO.
     :search_drivers: enables or disables drivers listing.
     """
+
     install: bool
     drivers: Optional[List[str]]
     local_only: bool
@@ -654,7 +661,8 @@ class UbuntuProInfo:
 
 @attr.s(auto_attribs=True)
 class UbuntuProResponse:
-    """ Response to GET request to /ubuntu_pro """
+    """Response to GET request to /ubuntu_pro"""
+
     token: str = attr.ib(repr=False)
     has_network: bool
 
@@ -668,7 +676,8 @@ class UbuntuProCheckTokenStatus(enum.Enum):
 
 @attr.s(auto_attribs=True)
 class UPCSInitiateResponse:
-    """ Response to Ubuntu Pro contract selection initiate request. """
+    """Response to Ubuntu Pro contract selection initiate request."""
+
     user_code: str
     validity_seconds: int
 
@@ -680,7 +689,8 @@ class UPCSWaitStatus(enum.Enum):
 
 @attr.s(auto_attribs=True)
 class UPCSWaitResponse:
-    """ Response to Ubuntu Pro contract selection wait request. """
+    """Response to Ubuntu Pro contract selection wait request."""
+
     status: UPCSWaitStatus
 
     contract_token: Optional[str]
@@ -715,19 +725,19 @@ class ShutdownMode(enum.Enum):
 
 @attr.s(auto_attribs=True)
 class WSLConfigurationBase:
-    automount_root: str = attr.ib(default='/mnt/')
-    automount_options: str = ''
+    automount_root: str = attr.ib(default="/mnt/")
+    automount_options: str = ""
     network_generatehosts: bool = attr.ib(default=True)
     network_generateresolvconf: bool = attr.ib(default=True)
 
 
 @attr.s(auto_attribs=True)
 class WSLConfigurationAdvanced:
-    automount_enabled:  bool = attr.ib(default=True)
-    automount_mountfstab:  bool = attr.ib(default=True)
-    interop_enabled:  bool = attr.ib(default=True)
+    automount_enabled: bool = attr.ib(default=True)
+    automount_mountfstab: bool = attr.ib(default=True)
+    interop_enabled: bool = attr.ib(default=True)
     interop_appendwindowspath: bool = attr.ib(default=True)
-    systemd_enabled:  bool = attr.ib(default=False)
+    systemd_enabled: bool = attr.ib(default=False)
 
 
 # Options that affect the setup experience itself, but won't reflect in the
@@ -750,7 +760,7 @@ class TaskStatus(enum.Enum):
 
 @attr.s(auto_attribs=True)
 class TaskProgress:
-    label: str = ''
+    label: str = ""
     done: int = 0
     total: int = 0
 
@@ -777,10 +787,10 @@ class Change:
 
 
 class CasperMd5Results(enum.Enum):
-    UNKNOWN = 'unknown'
-    FAIL = 'fail'
-    PASS = 'pass'
-    SKIP = 'skip'
+    UNKNOWN = "unknown"
+    FAIL = "fail"
+    PASS = "pass"
+    SKIP = "skip"
 
 
 class MirrorCheckStatus(enum.Enum):
@@ -817,9 +827,9 @@ class MirrorGet:
 
 
 class MirrorSelectionFallback(enum.Enum):
-    ABORT = 'abort'
-    CONTINUE_ANYWAY = 'continue-anyway'
-    OFFLINE_INSTALL = 'offline-install'
+    ABORT = "abort"
+    CONTINUE_ANYWAY = "continue-anyway"
+    OFFLINE_INSTALL = "offline-install"
 
 
 @attr.s(auto_attribs=True)
@@ -830,32 +840,32 @@ class AdConnectionInfo:
 
 
 class AdAdminNameValidation(enum.Enum):
-    OK = 'OK'
-    EMPTY = 'Empty'
-    INVALID_CHARS = 'Contains invalid characters'
+    OK = "OK"
+    EMPTY = "Empty"
+    INVALID_CHARS = "Contains invalid characters"
 
 
 class AdDomainNameValidation(enum.Enum):
-    OK = 'OK'
-    EMPTY = 'Empty'
-    TOO_LONG = 'Too long'
-    INVALID_CHARS = 'Contains invalid characters'
-    START_DOT = 'Starts with a dot'
-    END_DOT = 'Ends with a dot'
-    START_HYPHEN = 'Starts with a hyphen'
-    END_HYPHEN = 'Ends with a hyphen'
-    MULTIPLE_DOTS = 'Contains multiple dots'
-    REALM_NOT_FOUND = 'Could not find the domain controller'
+    OK = "OK"
+    EMPTY = "Empty"
+    TOO_LONG = "Too long"
+    INVALID_CHARS = "Contains invalid characters"
+    START_DOT = "Starts with a dot"
+    END_DOT = "Ends with a dot"
+    START_HYPHEN = "Starts with a hyphen"
+    END_HYPHEN = "Ends with a hyphen"
+    MULTIPLE_DOTS = "Contains multiple dots"
+    REALM_NOT_FOUND = "Could not find the domain controller"
 
 
 class AdPasswordValidation(enum.Enum):
-    OK = 'OK'
-    EMPTY = 'Empty'
+    OK = "OK"
+    EMPTY = "Empty"
 
 
 class AdJoinResult(enum.Enum):
-    OK = 'OK'
-    JOIN_ERROR = 'Failed to join'
-    EMPTY_HOSTNAME = 'Target hostname cannot be empty'
-    PAM_ERROR = 'Failed to update pam-auth'
+    OK = "OK"
+    JOIN_ERROR = "Failed to join"
+    EMPTY_HOSTNAME = "Target hostname cannot be empty"
+    PAM_ERROR = "Failed to update pam-auth"
     UNKNOWN = "Didn't attempt to join yet"

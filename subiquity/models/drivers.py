@@ -15,7 +15,7 @@
 
 import logging
 
-log = logging.getLogger('subiquity.models.drivers')
+log = logging.getLogger("subiquity.models.drivers")
 
 
 class DriversModel:

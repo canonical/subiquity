@@ -15,21 +15,13 @@
 
 import logging
 
-from urwid import (
-    int_scale,
-    SolidFill,
-    Text,
-    )
+from urwid import SolidFill, Text, int_scale
 
-from subiquitycore.ui.container import (
-    Columns,
-    Pile,
-    WidgetWrap,
-    )
+from subiquitycore.ui.container import Columns, Pile, WidgetWrap
 from subiquitycore.ui.utils import Color
 from subiquitycore.ui.width import widget_width
 
-log = logging.getLogger('subiquitycore.ui.anchors')
+log = logging.getLogger("subiquitycore.ui.anchors")
 
 
 class HeaderColumns(Columns):
@@ -53,7 +45,7 @@ class HeaderColumns(Columns):
 
         center = max(int_scale(79, 101, maxcol + 1), 76)
         message = center - btn
-        pad = (maxcol - center)//2
+        pad = (maxcol - center) // 2
         if pad <= 0:
             pad = 1
             message = maxcol - 2 - btn
@@ -61,22 +53,25 @@ class HeaderColumns(Columns):
 
 
 class Header(WidgetWrap):
-    """ Header Widget """
+    """Header Widget"""
 
     def __init__(self, title, right_icon):
         if isinstance(title, str):
             title = Text(title)
-        title = HeaderColumns([
-            Text(""),
-            title,
-            right_icon,
-            Text(""),
-            ])
+        title = HeaderColumns(
+            [
+                Text(""),
+                title,
+                right_icon,
+                Text(""),
+            ]
+        )
         super().__init__(
-                Pile([
-                    (1, Color.frame_header_fringe(
-                        SolidFill("\N{lower half block}"))),
+            Pile(
+                [
+                    (1, Color.frame_header_fringe(SolidFill("\N{lower half block}"))),
                     Color.frame_header(title),
-                    (1, Color.frame_header_fringe(
-                        SolidFill("\N{upper half block}"))),
-                    ]))
+                    (1, Color.frame_header_fringe(SolidFill("\N{upper half block}"))),
+                ]
+            )
+        )

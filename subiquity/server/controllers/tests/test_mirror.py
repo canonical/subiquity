@@ -15,17 +15,17 @@
 
 import contextlib
 import io
-import jsonschema
 import unittest
 from unittest import mock
 
-from subiquitycore.tests.mocks import make_app
+import jsonschema
+
 from subiquity.common.types import MirrorSelectionFallback
 from subiquity.models.mirror import MirrorModel
 from subiquity.server.apt import AptConfigCheckError
-from subiquity.server.controllers.mirror import MirrorController
+from subiquity.server.controllers.mirror import MirrorController, NoUsableMirrorError
 from subiquity.server.controllers.mirror import log as MirrorLogger
-from subiquity.server.controllers.mirror import NoUsableMirrorError
+from subiquitycore.tests.mocks import make_app
 
 
 class TestMirrorSchema(unittest.TestCase):
@@ -36,15 +36,15 @@ class TestMirrorSchema(unittest.TestCase):
         self.validate({})
 
     def test_disable_components(self):
-        self.validate({'disable_components': ['universe']})
+        self.validate({"disable_components": ["universe"]})
 
     def test_no_disable_main(self):
         with self.assertRaises(jsonschema.ValidationError):
-            self.validate({'disable_components': ['main']})
+            self.validate({"disable_components": ["main"]})
 
     def test_no_disable_random_junk(self):
         with self.assertRaises(jsonschema.ValidationError):
-            self.validate({'disable_components': ['not-a-component']})
+            self.validate({"disable_components": ["not-a-component"]})
 
 
 class TestMirrorController(unittest.IsolatedAsyncioTestCase):
@@ -66,8 +66,9 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
     def test_make_autoinstall_legacy(self):
         self.controller.model = MirrorModel()
         self.controller.model.legacy_primary = True
-        self.controller.model.primary_candidates = \
+        self.controller.model.primary_candidates = (
             self.controller.model.get_default_primary_candidates()
+        )
         self.controller.model.primary_candidates[0].elect()
         config = self.controller.make_autoinstall()
         self.assertIn("disable_components", config.keys())
@@ -86,19 +87,24 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
 
         output = io.StringIO()
         mock_source_configured = mock.patch.object(
-                self.controller.source_configured_event, "wait")
+            self.controller.source_configured_event, "wait"
+        )
 
         mock_run_apt_config_check = mock.patch.object(
-                self.controller.test_apt_configurer, "run_apt_config_check",
-                side_effect=fake_mirror_check_success)
+            self.controller.test_apt_configurer,
+            "run_apt_config_check",
+            side_effect=fake_mirror_check_success,
+        )
         with mock_source_configured, mock_run_apt_config_check:
             await self.controller.run_mirror_testing(output)
         self.assertEqual(output.getvalue(), "test is successful!")
 
         output = io.StringIO()
         mock_run_apt_config_check = mock.patch.object(
-                self.controller.test_apt_configurer, "run_apt_config_check",
-                side_effect=fake_mirror_check_failure)
+            self.controller.test_apt_configurer,
+            "run_apt_config_check",
+            side_effect=fake_mirror_check_failure,
+        )
         with mock_source_configured, mock_run_apt_config_check:
             with self.assertRaises(AptConfigCheckError):
                 await self.controller.run_mirror_testing(output)
@@ -109,21 +115,22 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
         with run_test:
             with self.assertLogs(MirrorLogger, "DEBUG") as debug:
                 await self.controller.try_mirror_checking_once()
-        self.assertIn("Mirror checking successful",
-                      [record.msg for record in debug.records])
-        self.assertIn("APT output follows",
-                      [record.msg for record in debug.records])
+        self.assertIn(
+            "Mirror checking successful", [record.msg for record in debug.records]
+        )
+        self.assertIn("APT output follows", [record.msg for record in debug.records])
 
-        run_test = mock.patch.object(self.controller, "run_mirror_testing",
-                                     side_effect=AptConfigCheckError)
+        run_test = mock.patch.object(
+            self.controller, "run_mirror_testing", side_effect=AptConfigCheckError
+        )
         with run_test:
             with self.assertLogs(MirrorLogger, "DEBUG") as debug:
                 with self.assertRaises(AptConfigCheckError):
                     await self.controller.try_mirror_checking_once()
-        self.assertIn("Mirror checking failed",
-                      [record.msg for record in debug.records])
-        self.assertIn("APT output follows",
-                      [record.msg for record in debug.records])
+        self.assertIn(
+            "Mirror checking failed", [record.msg for record in debug.records]
+        )
+        self.assertIn("APT output follows", [record.msg for record in debug.records])
 
     @mock.patch("subiquity.server.controllers.mirror.asyncio.sleep")
     async def test_find_and_elect_candidate_mirror(self, mock_sleep):
@@ -139,39 +146,48 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
         self.controller.model.primary_candidates = []
         with self.assertRaises(NoUsableMirrorError):
             await self.controller.find_and_elect_candidate_mirror(
-                    self.controller.app.context)
+                self.controller.app.context
+            )
         self.assertIsNone(self.controller.model.primary_elected)
 
         # Test one succeeding candidate
         self.controller.model.primary_elected = None
-        self.controller.model.primary_candidates = \
-            [self.controller.model.create_primary_candidate("http://mirror")]
+        self.controller.model.primary_candidates = [
+            self.controller.model.create_primary_candidate("http://mirror")
+        ]
         with mock.patch.object(self.controller, "try_mirror_checking_once"):
             await self.controller.find_and_elect_candidate_mirror(
-                    self.controller.app.context)
-        self.assertEqual(self.controller.model.primary_elected.uri,
-                         "http://mirror")
+                self.controller.app.context
+            )
+        self.assertEqual(self.controller.model.primary_elected.uri, "http://mirror")
 
         # Test one succeeding candidate, on second try
         self.controller.model.primary_elected = None
-        self.controller.model.primary_candidates = \
-            [self.controller.model.create_primary_candidate("http://mirror")]
-        with mock.patch.object(self.controller, "try_mirror_checking_once",
-                               side_effect=(AptConfigCheckError, None)):
+        self.controller.model.primary_candidates = [
+            self.controller.model.create_primary_candidate("http://mirror")
+        ]
+        with mock.patch.object(
+            self.controller,
+            "try_mirror_checking_once",
+            side_effect=(AptConfigCheckError, None),
+        ):
             await self.controller.find_and_elect_candidate_mirror(
-                    self.controller.app.context)
-        self.assertEqual(self.controller.model.primary_elected.uri,
-                         "http://mirror")
+                self.controller.app.context
+            )
+        self.assertEqual(self.controller.model.primary_elected.uri, "http://mirror")
 
         # Test with a single candidate, failing twice
         self.controller.model.primary_elected = None
-        self.controller.model.primary_candidates = \
-            [self.controller.model.create_primary_candidate("http://mirror")]
-        with mock.patch.object(self.controller, "try_mirror_checking_once",
-                               side_effect=AptConfigCheckError):
+        self.controller.model.primary_candidates = [
+            self.controller.model.create_primary_candidate("http://mirror")
+        ]
+        with mock.patch.object(
+            self.controller, "try_mirror_checking_once", side_effect=AptConfigCheckError
+        ):
             with self.assertRaises(NoUsableMirrorError):
                 await self.controller.find_and_elect_candidate_mirror(
-                        self.controller.app.context)
+                    self.controller.app.context
+                )
         self.assertIsNone(self.controller.model.primary_elected)
 
         # Test with one candidate failing twice, then one succeeding
@@ -181,25 +197,28 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
             self.controller.model.create_primary_candidate("http://success"),
         ]
         with mock.patch.object(
-                self.controller, "try_mirror_checking_once",
-                side_effect=(AptConfigCheckError, AptConfigCheckError, None)):
+            self.controller,
+            "try_mirror_checking_once",
+            side_effect=(AptConfigCheckError, AptConfigCheckError, None),
+        ):
             await self.controller.find_and_elect_candidate_mirror(
-                    self.controller.app.context)
-        self.assertEqual(self.controller.model.primary_elected.uri,
-                         "http://success")
+                self.controller.app.context
+            )
+        self.assertEqual(self.controller.model.primary_elected.uri, "http://success")
 
         # Test with an unresolved country mirror
         self.controller.model.primary_elected = None
         self.controller.model.primary_candidates = [
             self.controller.model.create_primary_candidate(
-                uri=None, country_mirror=True),
+                uri=None, country_mirror=True
+            ),
             self.controller.model.create_primary_candidate("http://success"),
         ]
         with mock.patch.object(self.controller, "try_mirror_checking_once"):
             await self.controller.find_and_elect_candidate_mirror(
-                    self.controller.app.context)
-        self.assertEqual(self.controller.model.primary_elected.uri,
-                         "http://success")
+                self.controller.app.context
+            )
+        self.assertEqual(self.controller.model.primary_elected.uri, "http://success")
 
     async def test_find_and_elect_candidate_mirror_no_network(self):
         self.controller.app.context.child = contextlib.nullcontext
@@ -210,7 +229,8 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
         self.controller.cc_event.set()
 
         await self.controller.find_and_elect_candidate_mirror(
-                self.controller.app.context)
+            self.controller.app.context
+        )
         self.assertIsNone(self.controller.model.primary_elected)
 
     async def test_apply_fallback(self):
@@ -235,9 +255,11 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
         controller = self.controller
 
         with mock.patch.object(controller, "apply_fallback") as mock_fallback:
-            with mock.patch.object(controller,
-                                   "find_and_elect_candidate_mirror",
-                                   side_effect=[None, NoUsableMirrorError]):
+            with mock.patch.object(
+                controller,
+                "find_and_elect_candidate_mirror",
+                side_effect=[None, NoUsableMirrorError],
+            ):
                 await controller.run_mirror_selection_or_fallback(context=None)
                 mock_fallback.assert_not_called()
                 await controller.run_mirror_selection_or_fallback(context=None)

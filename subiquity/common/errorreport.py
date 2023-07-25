@@ -27,33 +27,20 @@ from typing import Iterable, Set
 import apport
 import apport.crashdb
 import apport.hookutils
-
 import attr
-
 import bson
-
 import requests
-
 import urwid
 
-from subiquitycore.async_helpers import (
-    run_in_thread,
-    schedule_task,
-    )
+from subiquity.common.types import ErrorReportKind, ErrorReportRef, ErrorReportState
+from subiquitycore.async_helpers import run_in_thread, schedule_task
 
-from subiquity.common.types import (
-    ErrorReportKind,
-    ErrorReportRef,
-    ErrorReportState,
-    )
-
-
-log = logging.getLogger('subiquity.common.errorreport')
+log = logging.getLogger("subiquity.common.errorreport")
 
 
 @attr.s(eq=False)
 class Upload(metaclass=urwid.MetaSignals):
-    signals = ['progress']
+    signals = ["progress"]
 
     bytes_to_send = attr.ib()
     bytes_sent = attr.ib(default=0)
@@ -68,13 +55,13 @@ class Upload(metaclass=urwid.MetaSignals):
 
     def _progress(self):
         os.read(self.pipe_r, 4096)
-        urwid.emit_signal(self, 'progress')
+        urwid.emit_signal(self, "progress")
 
     def _bg_update(self, sent, to_send=None):
         self.bytes_sent = sent
         if to_send is not None:
             self.bytes_to_send = to_send
-        os.write(self.pipe_w, b'x')
+        os.write(self.pipe_w, b"x")
 
     def stop(self):
         asyncio.get_running_loop().remove_reader(self.pipe_r)
@@ -84,7 +71,6 @@ class Upload(metaclass=urwid.MetaSignals):
 
 @attr.s(eq=False)
 class ErrorReport(metaclass=urwid.MetaSignals):
-
     signals = ["changed"]
 
     reporter = attr.ib()
@@ -101,17 +87,19 @@ class ErrorReport(metaclass=urwid.MetaSignals):
     @classmethod
     def new(cls, reporter, kind):
         base = "{:.9f}.{}".format(time.time(), kind.name.lower())
-        crash_file = open(
-            os.path.join(reporter.crash_directory, base + ".crash"),
-            'wb')
+        crash_file = open(os.path.join(reporter.crash_directory, base + ".crash"), "wb")
 
-        pr = apport.Report('Bug')
-        pr['CrashDB'] = repr(reporter.crashdb_spec)
+        pr = apport.Report("Bug")
+        pr["CrashDB"] = repr(reporter.crashdb_spec)
 
         r = cls(
-            reporter=reporter, base=base, pr=pr, file=crash_file,
+            reporter=reporter,
+            base=base,
+            pr=pr,
+            file=crash_file,
             state=ErrorReportState.INCOMPLETE,
-            context=reporter.context.child(base))
+            context=reporter.context.child(base),
+        )
         r.set_meta("kind", kind.name)
         return r
 
@@ -119,11 +107,15 @@ class ErrorReport(metaclass=urwid.MetaSignals):
     def from_file(cls, reporter, fpath):
         base = os.path.splitext(os.path.basename(fpath))[0]
         report = cls(
-            reporter, base, pr=apport.Report(date='???'),
-            state=ErrorReportState.LOADING, file=open(fpath, 'rb'),
-            context=reporter.context.child(base))
+            reporter,
+            base,
+            pr=apport.Report(date="???"),
+            state=ErrorReportState.LOADING,
+            file=open(fpath, "rb"),
+            context=reporter.context.child(base),
+        )
         try:
-            fp = open(report.meta_path, 'r')
+            fp = open(report.meta_path, "r")
         except FileNotFoundError:
             pass
         else:
@@ -140,26 +132,27 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             if not self.reporter.dry_run:
                 self.pr.add_hooks_info(None)
                 apport.hookutils.attach_hardware(self.pr)
-            self.pr['Syslog'] = apport.hookutils.recent_syslog(re.compile('.'))
-            snap_name = os.environ.get('SNAP_NAME', '')
-            if snap_name != '':
+            self.pr["Syslog"] = apport.hookutils.recent_syslog(re.compile("."))
+            snap_name = os.environ.get("SNAP_NAME", "")
+            if snap_name != "":
                 self.add_tags([snap_name])
             # Because apport-cli will in general be run on a different
             # machine, we make some slightly obscure alterations to the report
             # to make this go better.
 
             # apport-cli gets upset if neither of these are present.
-            self.pr['Package'] = 'subiquity ' + os.environ.get(
-                "SNAP_REVISION", "SNAP_REVISION")
-            self.pr['SourcePackage'] = 'subiquity'
+            self.pr["Package"] = "subiquity " + os.environ.get(
+                "SNAP_REVISION", "SNAP_REVISION"
+            )
+            self.pr["SourcePackage"] = "subiquity"
 
             # If ExecutableTimestamp is present, apport-cli will try to check
             # that ExecutablePath hasn't changed. But it won't be there.
-            del self.pr['ExecutableTimestamp']
+            del self.pr["ExecutableTimestamp"]
             # apport-cli gets upset at the probert C extensions it sees in
             # here.  /proc/maps is very unlikely to be interesting for us
             # anyway.
-            del self.pr['ProcMaps']
+            del self.pr["ProcMaps"]
             self.pr.write(self._file)
 
         async def add_info():
@@ -175,6 +168,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
                 self._file.close()
                 self._file = None
                 urwid.emit_signal(self, "changed")
+
         if wait:
             with self._context.child("add_info") as context:
                 _bg_add_info()
@@ -210,19 +204,17 @@ class ErrorReport(metaclass=urwid.MetaSignals):
                 if uploader.cancelled:
                     log.debug("upload for %s cancelled", self.base)
                     return
-                yield data[i:i+chunk_size]
+                yield data[i : i + chunk_size]
                 uploader._bg_update(uploader.bytes_sent + chunk_size)
 
         def _bg_upload():
-            for_upload = {
-                "Kind": self.kind.value
-                }
+            for_upload = {"Kind": self.kind.value}
             for k, v in self.pr.items():
                 if len(v) < 1024 or k in {
-                        "InstallerLogInfo",
-                        "Traceback",
-                        "ProcCpuinfoMinimal",
-                        }:
+                    "InstallerLogInfo",
+                    "Traceback",
+                    "ProcCpuinfoMinimal",
+                }:
                     for_upload[k] = v
                 else:
                     log.debug("dropping %s of length %s", k, len(v))
@@ -236,9 +228,10 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             data = bson.BSON().encode(for_upload)
             self.uploader._bg_update(0, len(data))
             headers = {
-                'user-agent': 'subiquity/{}'.format(
-                    os.environ.get("SNAP_VERSION", "SNAP_VERSION")),
-                }
+                "user-agent": "subiquity/{}".format(
+                    os.environ.get("SNAP_VERSION", "SNAP_VERSION")
+                ),
+            }
             response = requests.post(url, data=chunk(data), headers=headers)
             response.raise_for_status()
             return response.text.split()[0]
@@ -254,28 +247,27 @@ class ErrorReport(metaclass=urwid.MetaSignals):
                     context.description = oops_id
                 uploader.stop()
                 self.uploader = None
-                urwid.emit_signal(self, 'changed')
+                urwid.emit_signal(self, "changed")
 
-        urwid.emit_signal(self, 'changed')
+        urwid.emit_signal(self, "changed")
         uploader.start()
 
         schedule_task(upload())
 
     def _path_with_ext(self, ext):
-        return os.path.join(
-            self.reporter.crash_directory, self.base + '.' + ext)
+        return os.path.join(self.reporter.crash_directory, self.base + "." + ext)
 
     @property
     def meta_path(self):
-        return self._path_with_ext('meta')
+        return self._path_with_ext("meta")
 
     @property
     def path(self):
-        return self._path_with_ext('crash')
+        return self._path_with_ext("crash")
 
     def set_meta(self, key, value):
         self.meta[key] = value
-        with open(self.meta_path, 'w') as fp:
+        with open(self.meta_path, "w") as fp:
             json.dump(self.meta, fp, indent=4)
 
     def mark_seen(self):
@@ -300,9 +292,8 @@ class ErrorReport(metaclass=urwid.MetaSignals):
         """Return fs-label, path-on-fs to report."""
         # Not sure if this is more or less sane than shelling out to
         # findmnt(1).
-        looking_for = os.path.abspath(
-            os.path.normpath(self.reporter.crash_directory))
-        for line in open('/proc/self/mountinfo').readlines():
+        looking_for = os.path.abspath(os.path.normpath(self.reporter.crash_directory))
+        for line in open("/proc/self/mountinfo").readlines():
             parts = line.strip().split()
             if os.path.normpath(parts[4]) == looking_for:
                 devname = parts[9]
@@ -310,19 +301,19 @@ class ErrorReport(metaclass=urwid.MetaSignals):
                 break
         else:
             if self.reporter.dry_run:
-                path = ('install-logs/2019-11-06.0/crash/' +
-                        self.base +
-                        '.crash')
+                path = "install-logs/2019-11-06.0/crash/" + self.base + ".crash"
                 return "casper-rw", path
             return None, None
         import pyudev
+
         c = pyudev.Context()
-        devs = list(c.list_devices(
-            subsystem='block', DEVNAME=os.path.realpath(devname)))
+        devs = list(
+            c.list_devices(subsystem="block", DEVNAME=os.path.realpath(devname))
+        )
         if not devs:
             return None, None
-        label = devs[0].get('ID_FS_LABEL_ENC', '')
-        return label, root[1:] + '/' + self.base + '.crash'
+        label = devs[0].get("ID_FS_LABEL_ENC", "")
+        return label, root[1:] + "/" + self.base + ".crash"
 
     def ref(self):
         return ErrorReportRef(
@@ -331,7 +322,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             kind=self.kind,
             seen=self.seen,
             oops_id=self.oops_id,
-            )
+        )
 
     # with core24 these tag methods can be dropped for equivalent methods
     # that will be on the report object
@@ -349,22 +340,21 @@ class ErrorReport(metaclass=urwid.MetaSignals):
 
 
 class ErrorReporter(object):
-
     def __init__(self, context, dry_run, root, client=None):
         self.context = context
         self.dry_run = dry_run
-        self.crash_directory = os.path.join(root, 'var/crash')
+        self.crash_directory = os.path.join(root, "var/crash")
         self.client = client
 
         self.reports = []
         self._reports_by_base = {}
         self._reports_by_exception = {}
         self.crashdb_spec = {
-            'impl': 'launchpad',
-            'project': 'subiquity',
-            }
+            "impl": "launchpad",
+            "project": "subiquity",
+        }
         if dry_run:
-            self.crashdb_spec['launchpad_instance'] = 'staging'
+            self.crashdb_spec["launchpad_instance"] = "staging"
         self._apport_data = []
         self._apport_files = []
 
@@ -398,7 +388,7 @@ class ErrorReporter(object):
         return self._reports_by_exception.get(exc)
 
     def make_apport_report(self, kind, thing, *, wait=False, exc=None, **kw):
-        if not self.dry_run and not os.path.exists('/cdrom/.disk/info'):
+        if not self.dry_run and not os.path.exists("/cdrom/.disk/info"):
             return None
 
         log.debug("generating crash report")
@@ -415,16 +405,14 @@ class ErrorReporter(object):
         if exc is None:
             exc = sys.exc_info()[1]
         if exc is not None:
-            report.pr["Title"] = "{} crashed with {}".format(
-                thing, type(exc).__name__)
+            report.pr["Title"] = "{} crashed with {}".format(thing, type(exc).__name__)
             tb = traceback.TracebackException.from_exception(exc)
-            report.pr['Traceback'] = "".join(tb.format())
+            report.pr["Traceback"] = "".join(tb.format())
             self._reports_by_exception[exc] = report
         else:
             report.pr["Title"] = thing
 
-        log.info(
-            "saving crash report %r to %s", report.pr["Title"], report.path)
+        log.info("saving crash report %r to %s", report.pr["Title"], report.path)
 
         apport_files = self._apport_files[:]
         apport_data = self._apport_data.copy()
@@ -456,8 +444,7 @@ class ErrorReporter(object):
 
         await self.client.errors.wait.GET(error_ref)
 
-        path = os.path.join(
-            self.crash_directory, error_ref.base + '.crash')
+        path = os.path.join(self.crash_directory, error_ref.base + ".crash")
         report = ErrorReport.from_file(self, path)
         self.reports.insert(0, report)
         self._reports_by_base[error_ref.base] = report

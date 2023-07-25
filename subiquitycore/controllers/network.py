@@ -23,11 +23,12 @@ from typing import Optional
 
 import pyroute2
 import yaml
-
 from probert.network import IFF_UP, NetworkEventReceiver
 
+from subiquitycore import netplan
 from subiquitycore.async_helpers import SingleInstanceTask
 from subiquitycore.context import with_context
+from subiquitycore.controller import BaseController
 from subiquitycore.file_util import write_file
 from subiquitycore.models.network import (
     BondConfig,
@@ -35,21 +36,12 @@ from subiquitycore.models.network import (
     NetDevAction,
     StaticConfig,
     WLANConfig,
-    )
-from subiquitycore import netplan
-from subiquitycore.controller import BaseController
+)
 from subiquitycore.pubsub import CoreChannels
 from subiquitycore.tuicontroller import TuiController
 from subiquitycore.ui.stretchy import StretchyOverlay
-from subiquitycore.ui.views.network import (
-    NetworkView,
-    )
-from subiquitycore.utils import (
-    arun_command,
-    orig_environ,
-    run_command,
-    )
-
+from subiquitycore.ui.views.network import NetworkView
+from subiquitycore.utils import arun_command, orig_environ, run_command
 
 log = logging.getLogger("subiquitycore.controllers.network")
 
@@ -84,20 +76,20 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
 
     def route_change(self, action, data):
         super().route_change(action, data)
-        if data['dst'] != 'default':
+        if data["dst"] != "default":
             return
-        if data['table'] != 254:
+        if data["table"] != 254:
             return
         self.probe_default_routes()
         self.controller.update_has_default_route(self.has_default_route)
 
     def _default_route_exists(self, routes):
         for route in routes:
-            if int(route['table']) != 254:
+            if int(route["table"]) != 254:
                 continue
-            if route['dst']:
+            if route["dst"]:
                 continue
-            if int(route['priority']) >= 20000:
+            if int(route["priority"]) >= 20000:
                 # network manager probes routes by creating one at 20000 +
                 # the real metric, but those aren't necessarily valid.
                 continue
@@ -107,11 +99,12 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
     def probe_default_routes(self):
         with pyroute2.NDB() as ndb:
             self.has_default_route = self._default_route_exists(ndb.routes)
-        log.debug('default routes %s', self.has_default_route)
+        log.debug("default routes %s", self.has_default_route)
 
     @staticmethod
-    def create(controller: BaseController, dry_run: bool) \
-            -> "SubiquityNetworkEventReceiver":
+    def create(
+        controller: BaseController, dry_run: bool
+    ) -> "SubiquityNetworkEventReceiver":
         if dry_run:
             return DryRunSubiquityNetworkEventReceiver(controller)
         else:
@@ -121,10 +114,10 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
 class DryRunSubiquityNetworkEventReceiver(SubiquityNetworkEventReceiver):
     def probe_default_routes(self):
         self.has_default_route = True
-        log.debug('dryrun default routes %s', self.has_default_route)
+        log.debug("dryrun default routes %s", self.has_default_route)
 
 
-default_netplan = '''
+default_netplan = """
 network:
   version: 2
   ethernets:
@@ -153,11 +146,10 @@ network:
        access-points:
          "some-ap":
             password: password
-'''
+"""
 
 
 class BaseNetworkController(BaseController):
-
     model_name = "network"
     root = "/"
 
@@ -170,23 +162,26 @@ class BaseNetworkController(BaseController):
             netplan_dir = os.path.dirname(netplan_path)
             if os.path.exists(netplan_dir):
                 import shutil
+
                 shutil.rmtree(netplan_dir)
             os.makedirs(netplan_dir)
-            with open(netplan_path, 'w') as fp:
+            with open(netplan_path, "w") as fp:
                 fp.write(default_netplan)
         self.parse_netplan_configs()
 
         self._watching = False
-        self.network_event_receiver = \
-            SubiquityNetworkEventReceiver.create(self, self.opts.dry_run)
+        self.network_event_receiver = SubiquityNetworkEventReceiver.create(
+            self, self.opts.dry_run
+        )
 
     def parse_netplan_configs(self):
         self.model.parse_netplan_configs(self.root)
 
     def start(self):
         self._observer_handles = []
-        self.observer, self._observer_fds = (
-            self.app.prober.probe_network(self.network_event_receiver))
+        self.observer, self._observer_fds = self.app.prober.probe_network(
+            self.network_event_receiver
+        )
         self.start_watching()
 
     def stop_watching(self):
@@ -206,7 +201,7 @@ class BaseNetworkController(BaseController):
         self._watching = True
 
     def _data_ready(self, fd):
-        cp = run_command(['udevadm', 'settle', '-t', '0'])
+        cp = run_command(["udevadm", "settle", "-t", "0"])
         if cp.returncode != 0:
             log.debug("waiting 0.1 to let udev event queue settle")
             self.stop_watching()
@@ -237,10 +232,10 @@ class BaseNetworkController(BaseController):
     @property
     def netplan_path(self):
         if self.opts.project == "subiquity":
-            netplan_config_file_name = '00-installer-config.yaml'
+            netplan_config_file_name = "00-installer-config.yaml"
         else:
-            netplan_config_file_name = '00-snapd-config.yaml'
-        return os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
+            netplan_config_file_name = "00-snapd-config.yaml"
+        return os.path.join(self.root, "etc/netplan", netplan_config_file_name)
 
     def apply_config(self, context=None, silent=False):
         self.apply_config_task.start_sync(context=context, silent=silent)
@@ -248,17 +243,17 @@ class BaseNetworkController(BaseController):
     async def _down_devs(self, devs):
         for dev in devs:
             try:
-                log.debug('downing %s', dev.name)
+                log.debug("downing %s", dev.name)
                 self.observer.rtlistener.unset_link_flags(dev.ifindex, IFF_UP)
             except RuntimeError:
                 # We don't actually care very much about this
-                log.exception('unset_link_flags failed for %s', dev.name)
+                log.exception("unset_link_flags failed for %s", dev.name)
 
     async def _delete_devs(self, devs):
         for dev in devs:
             # XXX would be nicer to do this via rtlistener eventually.
-            log.debug('deleting %s', dev.name)
-            cmd = ['ip', 'link', 'delete', 'dev', dev.name]
+            log.debug("deleting %s", dev.name)
+            cmd = ["ip", "link", "delete", "dev", dev.name]
             try:
                 await arun_command(cmd, check=True)
             except subprocess.CalledProcessError as cp:
@@ -267,10 +262,10 @@ class BaseNetworkController(BaseController):
     def _write_config(self):
         config = self.model.render_config()
 
-        log.debug("network config: \n%s",
-                  yaml.dump(
-                      netplan.sanitize_config(config),
-                      default_flow_style=False))
+        log.debug(
+            "network config: \n%s",
+            yaml.dump(netplan.sanitize_config(config), default_flow_style=False),
+        )
 
         for p in netplan.configs_in_root(self.root, masked=True):
             if p == self.netplan_path:
@@ -281,8 +276,7 @@ class BaseNetworkController(BaseController):
 
         self.parse_netplan_configs()
 
-    @with_context(
-        name="apply_config", description="silent={silent}", level="INFO")
+    @with_context(name="apply_config", description="silent={silent}", level="INFO")
     async def _apply_config(self, *, context, silent):
         devs_to_delete = []
         devs_to_down = []
@@ -294,8 +288,7 @@ class BaseNetworkController(BaseController):
                 if dev.dhcp_enabled(v):
                     if not silent:
                         dev.set_dhcp_state(v, DHCPState.PENDING)
-                        self.network_event_receiver.update_link(
-                            dev.ifindex)
+                        self.network_event_receiver.update_link(dev.ifindex)
                     else:
                         dev.set_dhcp_state(v, DHCPState.RECONFIGURE)
                     dev.dhcp_events[v] = e = asyncio.Event()
@@ -314,14 +307,15 @@ class BaseNetworkController(BaseController):
             self.apply_starting()
 
         try:
+
             def error(stage):
                 if not silent:
                     self.apply_error(stage)
 
             if self.opts.dry_run:
-                delay = 1/self.app.scale_factor
-                await arun_command(['sleep', str(delay)])
-                if os.path.exists('/lib/netplan/generate'):
+                delay = 1 / self.app.scale_factor
+                await arun_command(["sleep", str(delay)])
+                if os.path.exists("/lib/netplan/generate"):
                     # If netplan appears to be installed, run generate to
                     # at least test that what we wrote is acceptable to
                     # netplan but clear the SNAP environment variable to
@@ -329,23 +323,34 @@ class BaseNetworkController(BaseController):
                     # tries to call netplan over the system bus.
                     env = os.environ.copy()
                     with contextlib.suppress(KeyError):
-                        del env['SNAP']
+                        del env["SNAP"]
                     await arun_command(
-                        ['netplan', 'generate', '--root', self.root],
-                        check=True, env=env)
+                        ["netplan", "generate", "--root", self.root],
+                        check=True,
+                        env=env,
+                    )
             else:
                 if devs_to_down or devs_to_delete:
                     try:
                         await arun_command(
-                            ['systemctl', 'mask', '--runtime',
-                             'systemd-networkd.service',
-                             'systemd-networkd.socket'],
-                            check=True)
+                            [
+                                "systemctl",
+                                "mask",
+                                "--runtime",
+                                "systemd-networkd.service",
+                                "systemd-networkd.socket",
+                            ],
+                            check=True,
+                        )
                         await arun_command(
-                            ['systemctl', 'stop',
-                             'systemd-networkd.service',
-                             'systemd-networkd.socket'],
-                            check=True)
+                            [
+                                "systemctl",
+                                "stop",
+                                "systemd-networkd.service",
+                                "systemd-networkd.socket",
+                            ],
+                            check=True,
+                        )
                     except subprocess.CalledProcessError:
                         error("stop-networkd")
                         raise
@@ -355,24 +360,30 @@ class BaseNetworkController(BaseController):
                     await self._delete_devs(devs_to_delete)
                 if devs_to_down or devs_to_delete:
                     await arun_command(
-                        ['systemctl', 'unmask', '--runtime',
-                         'systemd-networkd.service',
-                         'systemd-networkd.socket'],
-                        check=True)
+                        [
+                            "systemctl",
+                            "unmask",
+                            "--runtime",
+                            "systemd-networkd.service",
+                            "systemd-networkd.socket",
+                        ],
+                        check=True,
+                    )
                 env = orig_environ(None)
                 try:
-                    await arun_command(['netplan', 'apply'],
-                                       env=env, check=True)
+                    await arun_command(["netplan", "apply"], env=env, check=True)
                 except subprocess.CalledProcessError as cpe:
-                    log.debug('CalledProcessError: '
-                              f'stdout[{cpe.stdout}] stderr[{cpe.stderr}]')
+                    log.debug(
+                        "CalledProcessError: "
+                        f"stdout[{cpe.stdout}] stderr[{cpe.stderr}]"
+                    )
                     error("apply")
                     raise
                 if devs_to_down or devs_to_delete:
                     # It's probably running already, but just in case.
                     await arun_command(
-                        ['systemctl', 'start', 'systemd-networkd.socket'],
-                        check=False)
+                        ["systemctl", "start", "systemd-networkd.socket"], check=False
+                    )
         finally:
             if not silent:
                 self.apply_stopping()
@@ -381,9 +392,7 @@ class BaseNetworkController(BaseController):
             return
 
         try:
-            await asyncio.wait_for(
-                asyncio.wait({e.wait() for e in dhcp_events}),
-                10)
+            await asyncio.wait_for(asyncio.wait({e.wait() for e in dhcp_events}), 10)
         except asyncio.TimeoutError:
             pass
 
@@ -393,28 +402,26 @@ class BaseNetworkController(BaseController):
                 dev.set_dhcp_state(v, DHCPState.TIMED_OUT)
                 self.network_event_receiver.update_link(dev.ifindex)
 
-    def set_static_config(self, dev_name: str, ip_version: int,
-                          static_config: StaticConfig) -> None:
+    def set_static_config(
+        self, dev_name: str, ip_version: int, static_config: StaticConfig
+    ) -> None:
         dev = self.model.get_netdev_by_name(dev_name)
         dev.remove_ip_networks_for_version(ip_version)
-        dev.config.setdefault('addresses', []).extend(static_config.addresses)
+        dev.config.setdefault("addresses", []).extend(static_config.addresses)
         if static_config.gateway:
-            dev.config['routes'] = [{
-                'to': 'default',
-                'via': static_config.gateway
-            }]
+            dev.config["routes"] = [{"to": "default", "via": static_config.gateway}]
         else:
             dev.remove_routes(ip_version)
-        ns = dev.config.setdefault('nameservers', {})
-        ns.setdefault('addresses', []).extend(static_config.nameservers)
-        ns.setdefault('search', []).extend(static_config.searchdomains)
+        ns = dev.config.setdefault("nameservers", {})
+        ns.setdefault("addresses", []).extend(static_config.nameservers)
+        ns.setdefault("search", []).extend(static_config.searchdomains)
         self.update_link(dev)
         self.apply_config()
 
     def enable_dhcp(self, dev_name: str, ip_version: int) -> None:
         dev = self.model.get_netdev_by_name(dev_name)
         dev.remove_ip_networks_for_version(ip_version)
-        dhcpkey = 'dhcp{v}'.format(v=ip_version)
+        dhcpkey = "dhcp{v}".format(v=ip_version)
         dev.config[dhcpkey] = True
         self.update_link(dev)
         self.apply_config()
@@ -436,11 +443,11 @@ class BaseNetworkController(BaseController):
         dev = self.model.get_netdev_by_name(dev_name)
         touched_devices = set()
         if dev.type == "bond":
-            for device_name in dev.config['interfaces']:
+            for device_name in dev.config["interfaces"]:
                 interface = self.model.get_netdev_by_name(device_name)
                 touched_devices.add(interface)
         elif dev.type == "vlan":
-            link = self.model.get_netdev_by_name(dev.config['link'])
+            link = self.model.get_netdev_by_name(dev.config["link"])
             touched_devices.add(link)
         dev.config = None
         self.del_link(dev)
@@ -448,8 +455,9 @@ class BaseNetworkController(BaseController):
             self.update_link(dev)
         self.apply_config()
 
-    def add_or_update_bond(self, existing_name: Optional[str],
-                           new_name: str, new_info: BondConfig) -> None:
+    def add_or_update_bond(
+        self, existing_name: Optional[str], new_name: str, new_info: BondConfig
+    ) -> None:
         get_netdev_by_name = self.model.get_netdev_by_name
         touched_devices = set()
         for device_name in new_info.interfaces:
@@ -461,7 +469,7 @@ class BaseNetworkController(BaseController):
             self.new_link(new_dev)
         else:
             existing = get_netdev_by_name(existing_name)
-            for interface in existing.config['interfaces']:
+            for interface in existing.config["interfaces"]:
                 touched_devices.add(get_netdev_by_name(interface))
             existing.config.update(new_info.to_config())
             if existing.name != new_name:
@@ -480,11 +488,11 @@ class BaseNetworkController(BaseController):
     async def get_info_for_netdev(self, dev_name: str) -> str:
         device = self.model.get_netdev_by_name(dev_name)
         if device.info is not None:
-            return yaml.dump(
-                device.info.serialize(), default_flow_style=False)
+            return yaml.dump(device.info.serialize(), default_flow_style=False)
         else:
             return "Configured but not yet created {type} interface.".format(
-                type=device.type)
+                type=device.type
+            )
 
     def set_wlan(self, dev_name: str, wlan: WLANConfig) -> None:
         device = self.model.get_netdev_by_name(dev_name)
@@ -492,7 +500,7 @@ class BaseNetworkController(BaseController):
         if wlan.ssid and not cur_ssid:
             # Turn DHCP4 on by default when specifying an SSID for
             # the first time...
-            device.config['dhcp4'] = True
+            device.config["dhcp4"] = True
         device.set_ssid_psk(wlan.ssid, wlan.psk)
         self.update_link(device)
         self.apply_config()
@@ -502,7 +510,7 @@ class BaseNetworkController(BaseController):
         try:
             self.observer.trigger_scan(device.ifindex)
         except RuntimeError as r:
-            device.info.wlan['scan_state'] = 'error %s' % (r,)
+            device.info.wlan["scan_state"] = "error %s" % (r,)
         self.update_link(device)
 
     @abc.abstractmethod
@@ -540,12 +548,11 @@ class BaseNetworkController(BaseController):
 
 
 class NetworkAnswersMixin:
-
     async def run_answers(self):
-        if self.answers.get('accept-default', False):
+        if self.answers.get("accept-default", False):
             self.done()
-        elif self.answers.get('actions', False):
-            actions = self.answers['actions']
+        elif self.answers.get("actions", False):
+            actions = self.answers["actions"]
             self.answers.clear()
             await self._run_actions(actions)
 
@@ -566,54 +573,49 @@ class NetworkAnswersMixin:
 
     async def _answers_action(self, action):
         log.debug("_answers_action %r", action)
-        if 'obj' in action:
-            table = self._action_get(action['obj'])
-            meth = getattr(
-                self.ui.body,
-                "_action_{}".format(action['action']))
-            action_obj = getattr(NetDevAction, action['action'])
+        if "obj" in action:
+            table = self._action_get(action["obj"])
+            meth = getattr(self.ui.body, "_action_{}".format(action["action"]))
+            action_obj = getattr(NetDevAction, action["action"])
             self.ui.body._action(None, (action_obj, meth), table)
             yield
             body = self.ui.body._w
-            if action['action'] == "DELETE":
+            if action["action"] == "DELETE":
                 t = 0.0
                 while table.dev_info.name in self.view.cur_netdev_names:
                     await asyncio.sleep(0.1)
                     t += 0.1
                     if t > 5.0:
-                        raise Exception(
-                            "interface did not disappear in 5 secs")
+                        raise Exception("interface did not disappear in 5 secs")
                 log.debug("waited %s for interface to disappear", t)
             if not isinstance(body, StretchyOverlay):
                 return
             for k, v in action.items():
-                if not k.endswith('data'):
+                if not k.endswith("data"):
                     continue
                 form_name = "form"
                 submit_key = "submit"
-                if '-' in k:
-                    prefix = k.split('-')[0]
+                if "-" in k:
+                    prefix = k.split("-")[0]
                     form_name = prefix + "_form"
                     submit_key = prefix + "-submit"
                 async for _ in self._enter_form_data(
-                        getattr(body.stretchy, form_name),
-                        v,
-                        action.get(submit_key, True)):
+                    getattr(body.stretchy, form_name), v, action.get(submit_key, True)
+                ):
                     pass
-        elif action['action'] == 'create-bond':
+        elif action["action"] == "create-bond":
             self.ui.body._create_bond()
             yield
             body = self.ui.body._w
-            data = action['data'].copy()
-            if 'devices' in data:
-                data['interfaces'] = data.pop('devices')
+            data = action["data"].copy()
+            if "devices" in data:
+                data["interfaces"] = data.pop("devices")
                 async for _ in self._enter_form_data(
-                        body.stretchy.form,
-                        data,
-                        action.get("submit", True)):
+                    body.stretchy.form, data, action.get("submit", True)
+                ):
                     pass
             t = 0.0
-            while data['name'] not in self.view.cur_netdev_names:
+            while data["name"] not in self.view.cur_netdev_names:
                 await asyncio.sleep(0.1)
                 t += 0.1
                 if t > 5.0:
@@ -621,15 +623,13 @@ class NetworkAnswersMixin:
             if t > 0:
                 log.debug("waited %s for bond to appear", t)
             yield
-        elif action['action'] == 'done':
+        elif action["action"] == "done":
             self.ui.body.done()
         else:
             raise Exception("could not process action {}".format(action))
 
 
-class NetworkController(BaseNetworkController, TuiController,
-                        NetworkAnswersMixin):
-
+class NetworkController(BaseNetworkController, TuiController, NetworkAnswersMixin):
     def __init__(self, app):
         super().__init__(app)
         self.view = None
@@ -638,15 +638,14 @@ class NetworkController(BaseNetworkController, TuiController,
     def make_ui(self):
         if not self.view_shown:
             self.update_initial_configs()
-        netdev_infos = [
-            dev.netdev_info() for dev in self.model.get_all_netdevs()
-            ]
+        netdev_infos = [dev.netdev_info() for dev in self.model.get_all_netdevs()]
         self.view = NetworkView(self, netdev_infos)
         if not self.view_shown:
             self.apply_config(silent=True)
             self.view_shown = True
         self.view.update_has_default_route(
-            self.network_event_receiver.has_default_route)
+            self.network_event_receiver.has_default_route
+        )
         return self.view
 
     def end_ui(self):

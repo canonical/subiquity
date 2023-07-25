@@ -15,7 +15,7 @@
 
 import logging
 
-log = logging.getLogger('subiquity.models.codecs')
+log = logging.getLogger("subiquity.models.codecs")
 
 
 class CodecsModel:

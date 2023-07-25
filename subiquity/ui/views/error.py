@@ -16,137 +16,175 @@
 import asyncio
 import logging
 
-from urwid import (
-    connect_signal,
-    disconnect_signal,
-    Padding,
-    ProgressBar,
-    Text,
-    )
+from urwid import Padding, ProgressBar, Text, connect_signal, disconnect_signal
 
+from subiquity.common.errorreport import ErrorReportKind, ErrorReportState
+from subiquity.common.types import CasperMd5Results
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.ui.buttons import other_btn
-from subiquitycore.ui.container import (
-    Pile,
-    )
+from subiquitycore.ui.container import Pile
 from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.stretchy import Stretchy
-from subiquitycore.ui.table import (
-    ColSpec,
-    TablePile,
-    TableRow,
-    )
-from subiquitycore.ui.utils import (
-    button_pile,
-    ClickableIcon,
-    Color,
-    disabled,
-    rewrap,
-    )
-from subiquitycore.ui.width import (
-    widget_width,
-    )
+from subiquitycore.ui.table import ColSpec, TablePile, TableRow
+from subiquitycore.ui.utils import ClickableIcon, Color, button_pile, disabled, rewrap
+from subiquitycore.ui.width import widget_width
 
-from subiquity.common.errorreport import (
-    ErrorReportKind,
-    ErrorReportState,
-    )
-
-from subiquity.common.types import CasperMd5Results
-
-
-log = logging.getLogger('subiquity.ui.views.error')
+log = logging.getLogger("subiquity.ui.views.error")
 
 
 def close_btn(stretchy, label=None):
     if label is None:
         label = _("Close")
     return other_btn(
-        label,
-        on_press=lambda sender: stretchy.app.remove_global_overlay(stretchy))
+        label, on_press=lambda sender: stretchy.app.remove_global_overlay(stretchy)
+    )
 
 
 error_report_intros = {
-    ErrorReportKind.BLOCK_PROBE_FAIL: _("""
+    ErrorReportKind.BLOCK_PROBE_FAIL: _(
+        """
 Sorry, there was a problem examining the storage devices on this system.
-"""),
-    ErrorReportKind.DISK_PROBE_FAIL: _("""
+"""
+    ),
+    ErrorReportKind.DISK_PROBE_FAIL: _(
+        """
 Sorry, there was a problem examining the storage devices on this system.
-"""),
-    ErrorReportKind.INSTALL_FAIL: _("""
+"""
+    ),
+    ErrorReportKind.INSTALL_FAIL: _(
+        """
 Sorry, there was a problem completing the installation.
-"""),
-    ErrorReportKind.NETWORK_FAIL: _("""
+"""
+    ),
+    ErrorReportKind.NETWORK_FAIL: _(
+        """
 Sorry, there was a problem applying the network configuration.
-"""),
-    ErrorReportKind.SERVER_REQUEST_FAIL: _("""
+"""
+    ),
+    ErrorReportKind.SERVER_REQUEST_FAIL: _(
+        """
 Sorry, the installer has encountered an internal error.
-"""),
-    ErrorReportKind.UI: _("""
+"""
+    ),
+    ErrorReportKind.UI: _(
+        """
 Sorry, the installer has restarted because of an error.
-"""),
-    ErrorReportKind.UNKNOWN: _("""
+"""
+    ),
+    ErrorReportKind.UNKNOWN: _(
+        """
 Sorry, an unknown error occurred.
-"""),
+"""
+    ),
 }
 
 error_report_state_descriptions = {
-    ErrorReportState.INCOMPLETE: (_("""
+    ErrorReportState.INCOMPLETE: (
+        _(
+            """
 Information is being collected from the system that will help the
 developers diagnose the report.
-"""), True),
-    ErrorReportState.LOADING: (_("""
+"""
+        ),
+        True,
+    ),
+    ErrorReportState.LOADING: (
+        _(
+            """
 Loading report...
-"""), True),
-    ErrorReportState.ERROR_GENERATING: (_("""
+"""
+        ),
+        True,
+    ),
+    ErrorReportState.ERROR_GENERATING: (
+        _(
+            """
 Collecting information from the system failed. See the files in
 /var/log/installer for more.
-"""), False),
-    ErrorReportState.ERROR_LOADING: (_("""
+"""
+        ),
+        False,
+    ),
+    ErrorReportState.ERROR_LOADING: (
+        _(
+            """
 Loading the report failed. See the files in /var/log/installer for more.
-"""), False),
+"""
+        ),
+        False,
+    ),
 }
 
 error_report_options = {
-    ErrorReportKind.BLOCK_PROBE_FAIL: (_("""
+    ErrorReportKind.BLOCK_PROBE_FAIL: (
+        _(
+            """
 You can continue and the installer will just present the disks present
 in the system and not other block devices, or you may be able to fix
 the issue by switching to a shell and reconfiguring the system's block
 devices manually.
-"""), ['debug_shell', 'continue']),
-    ErrorReportKind.DISK_PROBE_FAIL: (_("""
+"""
+        ),
+        ["debug_shell", "continue"],
+    ),
+    ErrorReportKind.DISK_PROBE_FAIL: (
+        _(
+            """
 You may be able to fix the issue by switching to a shell and
 reconfiguring the system's block devices manually.
-"""), ['debug_shell', 'continue']),
-    ErrorReportKind.NETWORK_FAIL: (_("""
+"""
+        ),
+        ["debug_shell", "continue"],
+    ),
+    ErrorReportKind.NETWORK_FAIL: (
+        _(
+            """
 You can continue with the installation but it will be assumed the network
 is not functional.
-"""), ['continue']),
-    ErrorReportKind.SERVER_REQUEST_FAIL: (_("""
+"""
+        ),
+        ["continue"],
+    ),
+    ErrorReportKind.SERVER_REQUEST_FAIL: (
+        _(
+            """
 You can continue or restart the installer.
-"""), ['continue', 'restart']),
-    ErrorReportKind.INSTALL_FAIL: (_("""
+"""
+        ),
+        ["continue", "restart"],
+    ),
+    ErrorReportKind.INSTALL_FAIL: (
+        _(
+            """
 Do you want to try starting the installation again?
-"""), ['restart', 'close']),
+"""
+        ),
+        ["restart", "close"],
+    ),
     ErrorReportKind.UI: (
-        _("Select continue to try the installation again."), ['continue']),
-    ErrorReportKind.UNKNOWN: ("", ['close']),
+        _("Select continue to try the installation again."),
+        ["continue"],
+    ),
+    ErrorReportKind.UNKNOWN: ("", ["close"]),
 }
 
 
-submit_text = _("""
+submit_text = _(
+    """
 If you want to help improve the installer, you can send an error report.
-""")
+"""
+)
 
-integrity_check_fail_text = _("""
+integrity_check_fail_text = _(
+    """
 The install media checksum verification failed.  It's possible that this crash
 is related to that checksum failure.  Consider verifying the install media and
 retrying the install.
-""")
+"""
+)
 
 
 class ErrorReportStretchy(Stretchy):
-
     def __init__(self, app, ref, interrupting=True):
         self.app = app
         self.error_ref = ref
@@ -156,58 +194,55 @@ class ErrorReportStretchy(Stretchy):
         if self.report is None:
             run_bg_task(self._wait())
         else:
-            connect_signal(self.report, 'changed', self._report_changed)
+            connect_signal(self.report, "changed", self._report_changed)
             self.report.mark_seen()
         self.interrupting = interrupting
         self.min_wait = asyncio.create_task(asyncio.sleep(0.1))
 
         self.btns = {
-            'cancel': other_btn(
-                _("Cancel upload"), on_press=self.cancel_upload),
-            'close': close_btn(self, _("Close report")),
-            'continue': close_btn(self, _("Continue")),
-            'debug_shell': other_btn(
-                _("Switch to a shell"), on_press=self.debug_shell),
-            'restart': other_btn(
-                _("Restart the installer"), on_press=self.restart),
-            'submit': other_btn(
-                _("Send to Canonical"), on_press=self.submit),
-            'submitted': disabled(other_btn(_("Sent to Canonical"))),
-            'view': other_btn(
-                _("View full report"), on_press=self.view_report),
-            }
+            "cancel": other_btn(_("Cancel upload"), on_press=self.cancel_upload),
+            "close": close_btn(self, _("Close report")),
+            "continue": close_btn(self, _("Continue")),
+            "debug_shell": other_btn(_("Switch to a shell"), on_press=self.debug_shell),
+            "restart": other_btn(_("Restart the installer"), on_press=self.restart),
+            "submit": other_btn(_("Send to Canonical"), on_press=self.submit),
+            "submitted": disabled(other_btn(_("Sent to Canonical"))),
+            "view": other_btn(_("View full report"), on_press=self.view_report),
+        }
         w = 0
         for n, b in self.btns.items():
             w = max(w, widget_width(b))
         for n, b in self.btns.items():
-            self.btns[n] = Padding(b, width=w, align='center')
+            self.btns[n] = Padding(b, width=w, align="center")
 
-        self.spinner = Spinner(style='dots')
+        self.spinner = Spinner(style="dots")
         self.pile = Pile([])
         self.pile.contents[:] = [
-            (w, self.pile.options('pack')) for w in self._pile_elements()]
+            (w, self.pile.options("pack")) for w in self._pile_elements()
+        ]
         super().__init__("", [self.pile], 0, 0)
-        connect_signal(self, 'closed', self.spinner.stop)
+        connect_signal(self, "closed", self.spinner.stop)
 
     async def _wait(self):
-        self.report = await self.app.error_reporter.get_wait(
-            self.error_ref)
+        self.report = await self.app.error_reporter.get_wait(self.error_ref)
         self.error_ref = self.report.ref()
-        connect_signal(self.report, 'changed', self._report_changed)
+        connect_signal(self.report, "changed", self._report_changed)
         self.report.mark_seen()
         await self._report_changed_()
 
     def pb(self, upload):
         pb = ProgressBar(
-            normal='progress_incomplete',
-            complete='progress_complete',
+            normal="progress_incomplete",
+            complete="progress_complete",
             current=upload.bytes_sent,
-            done=upload.bytes_to_send)
+            done=upload.bytes_to_send,
+        )
 
         def _progress():
             pb.done = upload.bytes_to_send
             pb.current = upload.bytes_sent
-        connect_signal(upload, 'progress', _progress)
+
+        connect_signal(upload, "progress", _progress)
 
         return pb
 
@@ -217,13 +252,13 @@ class ErrorReportStretchy(Stretchy):
         widgets = [
             Text(rewrap(_(error_report_intros[self.error_ref.kind]))),
             Text(""),
-            ]
+        ]
 
         self.spinner.stop()
 
         if self.error_ref.state == ErrorReportState.DONE:
             assert self.report
-            widgets.append(btns['view'])
+            widgets.append(btns["view"])
             widgets.append(Text(""))
             widgets.append(Text(rewrap(_(submit_text))))
             widgets.append(Text(""))
@@ -234,36 +269,36 @@ class ErrorReportStretchy(Stretchy):
                 widgets.append(self.upload_pb)
             else:
                 if self.report.oops_id:
-                    widgets.append(btns['submitted'])
+                    widgets.append(btns["submitted"])
                 else:
-                    widgets.append(btns['submit'])
+                    widgets.append(btns["submit"])
                 self.upload_pb = None
 
             fs_label, fs_loc = self.report.persistent_details
             if fs_label is not None:
                 location_text = _(
                     "The error report has been saved to\n\n  {loc}\n\non the "
-                    "filesystem with label {label!r}.").format(
-                        loc=fs_loc, label=fs_label)
-                widgets.extend([
-                    Text(""),
-                    Text(location_text),
-                    ])
+                    "filesystem with label {label!r}."
+                ).format(loc=fs_loc, label=fs_label)
+                widgets.extend(
+                    [
+                        Text(""),
+                        Text(location_text),
+                    ]
+                )
         else:
             text, spin = error_report_state_descriptions[self.error_ref.state]
             widgets.append(Text(rewrap(_(text))))
             if spin:
                 self.spinner.start()
-                widgets.extend([
-                    Text(""),
-                    self.spinner])
+                widgets.extend([Text(""), self.spinner])
 
         if self.integrity_check_result == CasperMd5Results.FAIL:
             widgets.append(Text(""))
             widgets.append(Text(rewrap(_(integrity_check_fail_text))))
 
         if self.report and self.report.uploader:
-            widgets.extend([Text(""), btns['cancel']])
+            widgets.extend([Text(""), btns["cancel"]])
         elif self.interrupting:
             if self.error_ref.state != ErrorReportState.INCOMPLETE:
                 text, btn_names = error_report_options[self.error_ref.kind]
@@ -272,10 +307,12 @@ class ErrorReportStretchy(Stretchy):
                 for b in btn_names:
                     widgets.extend([Text(""), btns[b]])
         else:
-            widgets.extend([
-                Text(""),
-                btns['close'],
-                ])
+            widgets.extend(
+                [
+                    Text(""),
+                    btns["close"],
+                ]
+            )
 
         return widgets
 
@@ -283,8 +320,7 @@ class ErrorReportStretchy(Stretchy):
         if self.pending:
             self.pending.cancel()
         self.pending = asyncio.create_task(asyncio.sleep(0.1))
-        self.change_task = asyncio.create_task(
-            self._report_changed_())
+        self.change_task = asyncio.create_task(self._report_changed_())
 
     async def _report_changed_(self):
         await self.pending
@@ -295,7 +331,8 @@ class ErrorReportStretchy(Stretchy):
             self.error_ref = self.report.ref()
         self.integrity_check_result = await self.app.client.integrity.GET()
         self.pile.contents[:] = [
-            (w, self.pile.options('pack')) for w in self._pile_elements()]
+            (w, self.pile.options("pack")) for w in self._pile_elements()
+        ]
         if self.pile.selectable():
             while not self.pile.focus.selectable():
                 self.pile.focus_position += 1
@@ -319,21 +356,23 @@ class ErrorReportStretchy(Stretchy):
 
     def closed(self):
         if self.report:
-            disconnect_signal(self.report, 'changed', self._report_changed)
+            disconnect_signal(self.report, "changed", self._report_changed)
 
 
 class ErrorReportListStretchy(Stretchy):
-
     def __init__(self, app):
         self.app = app
         rows = [
-            TableRow([
-                Text(""),
-                Text(_("DATE")),
-                Text(_("KIND")),
-                Text(_("STATUS")),
-                Text(""),
-            ])]
+            TableRow(
+                [
+                    Text(""),
+                    Text(_("DATE")),
+                    Text(_("KIND")),
+                    Text(_("STATUS")),
+                    Text(""),
+                ]
+            )
+        ]
         self.report_to_row = {}
         self.app.error_reporter.load_reports()
         for report in self.app.error_reporter.reports:
@@ -347,12 +386,11 @@ class ErrorReportListStretchy(Stretchy):
             self.table,
             Text(""),
             button_pile([close_btn(self)]),
-            ]
+        ]
         super().__init__("", widgets, 2, 2)
 
     def open_report(self, sender, report):
-        self.app.add_global_overlay(
-            ErrorReportStretchy(self.app, report, False))
+        self.app.add_global_overlay(ErrorReportStretchy(self.app, report, False))
 
     def state_for_report(self, report):
         if report.seen:
@@ -362,18 +400,17 @@ class ErrorReportListStretchy(Stretchy):
     def cells_for_report(self, report):
         date = report.pr.get("Date", "???")
         icon = ClickableIcon(date)
-        connect_signal(icon, 'click', self.open_report, report)
+        connect_signal(icon, "click", self.open_report, report)
         return [
             Text("["),
             icon,
             Text(_(report.kind.value)),
             Text(_(self.state_for_report(report))),
             Text("]"),
-            ]
+        ]
 
     def row_for_report(self, report):
-        return Color.menu_button(
-            TableRow(self.cells_for_report(report)))
+        return Color.menu_button(TableRow(self.cells_for_report(report)))
 
     def _report_changed(self, report):
         old_r = self.report_to_row.get(report)

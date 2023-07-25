@@ -20,18 +20,17 @@ import pwd
 import shlex
 import sys
 
-from subiquitycore.ssh import host_key_info, get_ips_standalone
+from console_conf.ui.views import IdentityView, LoginView
 from subiquitycore.snapd import SnapdConnection
+from subiquitycore.ssh import get_ips_standalone, host_key_info
 from subiquitycore.tuicontroller import TuiController
 from subiquitycore.utils import disable_console_conf, run_command
 
-from console_conf.ui.views import IdentityView, LoginView
-
-log = logging.getLogger('console_conf.controllers.identity')
+log = logging.getLogger("console_conf.controllers.identity")
 
 
 def get_core_version():
-    """ For a ubuntu-core system, return its version or None """
+    """For a ubuntu-core system, return its version or None"""
 
     path = "/usr/lib/os-release"
     try:
@@ -53,33 +52,33 @@ def get_core_version():
 
 
 def get_managed():
-    """ Check if device is managed """
-    con = SnapdConnection('', '/run/snapd.socket')
-    return con.get('v2/system-info').json()['result']['managed']
+    """Check if device is managed"""
+    con = SnapdConnection("", "/run/snapd.socket")
+    return con.get("v2/system-info").json()["result"]["managed"]
 
 
 def get_realname(username):
     try:
         info = pwd.getpwnam(username)
     except KeyError:
-        return ''
-    return info.pw_gecos.split(',', 1)[0]
+        return ""
+    return info.pw_gecos.split(",", 1)[0]
 
 
 def get_device_owner():
-    """ Get device owner, if any """
-    con = SnapdConnection('', '/run/snapd.socket')
-    for user in con.get('v2/users').json()['result']:
-        if 'username' not in user:
+    """Get device owner, if any"""
+    con = SnapdConnection("", "/run/snapd.socket")
+    for user in con.get("v2/users").json()["result"]:
+        if "username" not in user:
             continue
-        username = user['username']
-        homedir = '/home/' + username
+        username = user["username"]
+        homedir = "/home/" + username
         if os.path.isdir(homedir):
             return {
-                'username': username,
-                'realname': get_realname(username),
-                'homedir': homedir,
-                }
+                "username": username,
+                "realname": get_realname(username),
+                "homedir": homedir,
+            }
     return None
 
 
@@ -110,15 +109,22 @@ def write_login_details(fp, username, ips):
     tty_name = os.ttyname(0)[5:]  # strip off the /dev/
     version = get_core_version() or "16"
     if len(ips) == 0:
-        fp.write(login_details_tmpl_no_ip.format(
-            sshcommands=sshcommands, tty_name=tty_name, version=version))
+        fp.write(
+            login_details_tmpl_no_ip.format(
+                sshcommands=sshcommands, tty_name=tty_name, version=version
+            )
+        )
     else:
         first_ip = ips[0]
-        fp.write(login_details_tmpl.format(sshcommands=sshcommands,
-                                           host_key_info=host_key_info(),
-                                           tty_name=tty_name,
-                                           first_ip=first_ip,
-                                           version=version))
+        fp.write(
+            login_details_tmpl.format(
+                sshcommands=sshcommands,
+                host_key_info=host_key_info(),
+                tty_name=tty_name,
+                first_ip=first_ip,
+                version=version,
+            )
+        )
 
 
 def write_login_details_standalone():
@@ -131,18 +137,16 @@ def write_login_details_standalone():
         else:
             tty_name = os.ttyname(0)[5:]
             version = get_core_version() or "16"
-            print(login_details_tmpl_no_ip.format(
-                tty_name=tty_name, version=version))
+            print(login_details_tmpl_no_ip.format(tty_name=tty_name, version=version))
             return 2
     if owner is None:
-        print("device managed without user @ {}".format(', '.join(ips)))
+        print("device managed without user @ {}".format(", ".join(ips)))
     else:
-        write_login_details(sys.stdout, owner['username'], ips)
+        write_login_details(sys.stdout, owner["username"], ips)
     return 0
 
 
 class IdentityController(TuiController):
-
     def __init__(self, app):
         super().__init__(app)
         self.model = app.base_model.identity
@@ -152,11 +156,9 @@ class IdentityController(TuiController):
             device_owner = get_device_owner()
             if device_owner:
                 self.model.add_user(device_owner)
-                key_file = os.path.join(device_owner['homedir'],
-                                        ".ssh/authorized_keys")
-                cp = run_command(['ssh-keygen', '-lf', key_file])
-                self.model.user.fingerprints = (
-                    cp.stdout.replace('\r', '').splitlines())
+                key_file = os.path.join(device_owner["homedir"], ".ssh/authorized_keys")
+                cp = run_command(["ssh-keygen", "-lf", key_file])
+                self.model.user.fingerprints = cp.stdout.replace("\r", "").splitlines()
             return self.make_login_view()
         else:
             return IdentityView(self.model, self)
@@ -164,35 +166,35 @@ class IdentityController(TuiController):
     def identity_done(self, email):
         if self.opts.dry_run:
             result = {
-                'realname': email,
-                'username': email,
-                }
+                "realname": email,
+                "username": email,
+            }
             self.model.add_user(result)
-            login_details_path = self.opts.output_base + '/login-details.txt'
+            login_details_path = self.opts.output_base + "/login-details.txt"
         else:
             self.app.urwid_loop.draw_screen()
-            cp = run_command(
-                ["snap", "create-user", "--sudoer", "--json", email])
+            cp = run_command(["snap", "create-user", "--sudoer", "--json", email])
             if cp.returncode != 0:
                 if isinstance(self.ui.body, IdentityView):
                     self.ui.body.snap_create_user_failed(
-                        "Creating user failed:", cp.stderr)
+                        "Creating user failed:", cp.stderr
+                    )
                 return
             else:
                 data = json.loads(cp.stdout)
                 result = {
-                    'realname': email,
-                    'username': data['username'],
-                    }
-                os.makedirs('/run/console-conf', exist_ok=True)
-                login_details_path = '/run/console-conf/login-details.txt'
+                    "realname": email,
+                    "username": data["username"],
+                }
+                os.makedirs("/run/console-conf", exist_ok=True)
+                login_details_path = "/run/console-conf/login-details.txt"
                 self.model.add_user(result)
         ips = []
         net_model = self.app.base_model.network
         for dev in net_model.get_all_netdevs():
             ips.extend(dev.actual_global_ip_addresses)
-        with open(login_details_path, 'w') as fp:
-            write_login_details(fp, result['username'], ips)
+        with open(login_details_path, "w") as fp:
+            write_login_details(fp, result["username"], ips)
         self.login()
 
     def cancel(self):

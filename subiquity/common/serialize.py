@@ -15,19 +15,19 @@
 
 import datetime
 import enum
-import json
 import inspect
+import json
 import typing
 
 import attr
 
 
 def named_field(name, default=attr.NOTHING):
-    return attr.ib(metadata={'name': name}, default=default)
+    return attr.ib(metadata={"name": name}, default=default)
 
 
 def _field_name(field):
-    return field.metadata.get('name', field.name)
+    return field.metadata.get("name", field.name)
 
 
 class SerializationError(Exception):
@@ -39,7 +39,7 @@ class SerializationError(Exception):
     def __str__(self):
         p = self.path
         if not p:
-            p = 'top-level'
+            p = "top-level"
         return f"processing {self.obj}: at {p}, {self.message}"
 
 
@@ -53,13 +53,12 @@ class SerializationContext:
 
     @classmethod
     def new(cls, obj, *, serializing):
-        return SerializationContext(obj, obj, '', {}, serializing)
+        return SerializationContext(obj, obj, "", {}, serializing)
 
     def child(self, path, cur, metadata=None):
         if metadata is None:
             metadata = self.metadata
-        return attr.evolve(
-            self, path=self.path + path, cur=cur, metadata=metadata)
+        return attr.evolve(self, path=self.path + path, cur=cur, metadata=metadata)
 
     def error(self, message):
         raise SerializationError(self.obj, self.path, message)
@@ -74,9 +73,9 @@ class SerializationContext:
 
 
 class Serializer:
-
-    def __init__(self, *, compact=False, ignore_unknown_fields=False,
-                 serialize_enums_by="name"):
+    def __init__(
+        self, *, compact=False, ignore_unknown_fields=False, serialize_enums_by="name"
+    ):
         self.compact = compact
         self.ignore_unknown_fields = ignore_unknown_fields
         assert serialize_enums_by in ("value", "name")
@@ -87,7 +86,7 @@ class Serializer:
             typing.List: self._walk_List,
             dict: self._walk_Dict,
             typing.Dict: self._walk_Dict,
-            }
+        }
         self.type_serializers = {}
         self.type_deserializers = {}
         for typ in int, str, bool, list, type(None):
@@ -119,14 +118,14 @@ class Serializer:
                         if self.compact:
                             r.insert(0, a.__name__)
                         else:
-                            r['$type'] = a.__name__
+                            r["$type"] = a.__name__
                         return r
                 context.error(f"type of {context.cur} not found in {args}")
             else:
                 if self.compact:
                     n = context.cur.pop(0)
                 else:
-                    n = context.cur.pop('$type')
+                    n = context.cur.pop("$type")
                 for a in args:
                     if a.__name__ == n:
                         return meth(a, context)
@@ -135,9 +134,8 @@ class Serializer:
 
     def _walk_List(self, meth, args, context):
         return [
-            meth(args[0], context.child(f'[{i}]', v))
-            for i, v in enumerate(context.cur)
-            ]
+            meth(args[0], context.child(f"[{i}]", v)) for i, v in enumerate(context.cur)
+        ]
 
     def _walk_Dict(self, meth, args, context):
         k_ann, v_ann = args
@@ -145,10 +143,13 @@ class Serializer:
             input_items = context.cur
         else:
             input_items = context.cur.items()
-        output_items = [[
-            meth(k_ann, context.child(f'/{k}', k)),
-            meth(v_ann, context.child(f'[{k}]', v))
-            ] for k, v in input_items]
+        output_items = [
+            [
+                meth(k_ann, context.child(f"/{k}", k)),
+                meth(v_ann, context.child(f"[{k}]", v)),
+            ]
+            for k, v in input_items
+        ]
         if context.serializing and k_ann is not str:
             return output_items
         return dict(output_items)
@@ -156,12 +157,12 @@ class Serializer:
     def _serialize_dict(self, annotation, context):
         context.assert_type(annotation)
         for k in context.cur:
-            context.child(f'/{k}', k).assert_type(str)
+            context.child(f"/{k}", k).assert_type(str)
         return context.cur
 
     def _serialize_datetime(self, annotation, context):
         context.assert_type(annotation)
-        fmt = context.metadata.get('time_fmt')
+        fmt = context.metadata.get("time_fmt")
         if fmt is not None:
             return context.cur.strftime(fmt)
         else:
@@ -170,15 +171,19 @@ class Serializer:
     def _serialize_attr(self, annotation, context):
         serialized = []
         for field in attr.fields(annotation):
-            serialized.append((
-                _field_name(field),
-                self._serialize(
-                    field.type,
-                    context.child(
-                        f'.{field.name}',
-                        getattr(context.cur, field.name),
-                        field.metadata)),
-                ))
+            serialized.append(
+                (
+                    _field_name(field),
+                    self._serialize(
+                        field.type,
+                        context.child(
+                            f".{field.name}",
+                            getattr(context.cur, field.name),
+                            field.metadata,
+                        ),
+                    ),
+                )
+            )
         if self.compact:
             return [s[1] for s in serialized]
         else:
@@ -196,7 +201,7 @@ class Serializer:
             return context.cur
         if attr.has(annotation):
             return self._serialize_attr(annotation, context)
-        origin = getattr(annotation, '__origin__', None)
+        origin = getattr(annotation, "__origin__", None)
         if origin is not None:
             args = annotation.__args__
             return self.typing_walkers[origin](self._serialize, args, context)
@@ -214,7 +219,7 @@ class Serializer:
         return self._serialize(annotation, context)
 
     def _deserialize_datetime(self, annotation, context):
-        fmt = context.metadata.get('time_fmt')
+        fmt = context.metadata.get("time_fmt")
         if fmt is None:
             context.error("cannot serialize datetime without format")
         return datetime.datetime.strptime(context.cur, fmt)
@@ -224,19 +229,19 @@ class Serializer:
             context.assert_type(list)
             args = []
             for field, value in zip(attr.fields(annotation), context.cur):
-                args.append(self._deserialize(
-                    field.type,
-                    context.child(f'[{field.name!r}]', value, field.metadata)))
+                args.append(
+                    self._deserialize(
+                        field.type,
+                        context.child(f"[{field.name!r}]", value, field.metadata),
+                    )
+                )
             return annotation(*args)
         else:
             context.assert_type(dict)
             args = {}
-            fields = {
-                _field_name(field): field for field in attr.fields(annotation)
-                }
+            fields = {_field_name(field): field for field in attr.fields(annotation)}
             for key, value in context.cur.items():
-                if key not in fields and (
-                        key == '$type' or self.ignore_unknown_fields):
+                if key not in fields and (key == "$type" or self.ignore_unknown_fields):
                     # Union types can contain a '$type' field that is not
                     # actually one of the keys.  This happens if a object is
                     # serialized as part of a Union, sent to an API caller,
@@ -245,8 +250,8 @@ class Serializer:
                     continue
                 field = fields[key]
                 args[field.name] = self._deserialize(
-                    field.type,
-                    context.child(f'[{key!r}]', value, field.metadata))
+                    field.type, context.child(f"[{key!r}]", value, field.metadata)
+                )
             return annotation(**args)
 
     def _deserialize_enum(self, annotation, context):
@@ -263,10 +268,11 @@ class Serializer:
             return context.cur
         if attr.has(annotation):
             return self._deserialize_attr(annotation, context)
-        origin = getattr(annotation, '__origin__', None)
+        origin = getattr(annotation, "__origin__", None)
         if origin is not None:
             return self.typing_walkers[origin](
-                self._deserialize, annotation.__args__, context)
+                self._deserialize, annotation.__args__, context
+            )
         if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
             return self._deserialize_enum(annotation, context)
         return self.type_deserializers[annotation](annotation, context)

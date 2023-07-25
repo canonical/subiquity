@@ -19,7 +19,7 @@ import os
 from subiquitycore.file_util import set_log_perms
 
 
-def setup_logger(dir, base='subiquity'):
+def setup_logger(dir, base="subiquity"):
     os.makedirs(dir, exist_ok=True)
     # Create the log directory in such a way that users in the group may
     # write to this directory in the installation environment.
@@ -30,7 +30,7 @@ def setup_logger(dir, base='subiquity'):
 
     r = {}
 
-    for level in 'info', 'debug':
+    for level in "info", "debug":
         nopid_file = os.path.join(dir, "{}-{}.log".format(base, level))
         logfile = "{}.{}".format(nopid_file, os.getpid())
         handler = logging.FileHandler(logfile)
@@ -44,7 +44,9 @@ def setup_logger(dir, base='subiquity'):
         handler.setLevel(getattr(logging, level.upper()))
         handler.setFormatter(
             logging.Formatter(
-                "%(asctime)s %(levelname)s %(name)s:%(lineno)d %(message)s"))
+                "%(asctime)s %(levelname)s %(name)s:%(lineno)d %(message)s"
+            )
+        )
 
         logger.addHandler(handler)
         r[level] = logfile

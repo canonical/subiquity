@@ -13,20 +13,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from aiohttp import web
-
-from system_setup.common.wsl_utils import is_reconfigure
-from subiquity.server.server import SubiquityServer
-from system_setup.models.system_setup import SystemSetupModel
-from subiquity.models.subiquity import ModelNames
-
 import logging
-import yaml
 import os
 
-log = logging.getLogger('system_setup.server.server')
+import yaml
+from aiohttp import web
 
-INSTALL_MODEL_NAMES = ModelNames({
+from subiquity.models.subiquity import ModelNames
+from subiquity.server.server import SubiquityServer
+from system_setup.common.wsl_utils import is_reconfigure
+from system_setup.models.system_setup import SystemSetupModel
+
+log = logging.getLogger("system_setup.server.server")
+
+INSTALL_MODEL_NAMES = ModelNames(
+    {
         "locale",
     },
     wsl_setup={
@@ -35,7 +36,8 @@ INSTALL_MODEL_NAMES = ModelNames({
     wsl_configuration={
         "wslconfbase",
         "wslconfadvanced",
-    })
+    },
+)
 
 POSTINSTALL_MODEL_NAMES = ModelNames(set())
 
@@ -46,6 +48,7 @@ class SystemSetupServer(SubiquityServer):
     prefillInfo = None
 
     from system_setup.server import controllers as controllers_mod
+
     controllers = [
         "Early",
         "Reporting",
@@ -70,22 +73,25 @@ class SystemSetupServer(SubiquityServer):
         if is_reconfigure(opts.dry_run):
             self.set_source_variant("wsl_configuration")
         if self.opts.prefill:
-            with open(self.opts.prefill, 'r') as stream:
+            with open(self.opts.prefill, "r") as stream:
                 try:
                     # Shared with controllers thru self.app.
                     self.prefillInfo = yaml.safe_load(stream)
                 except yaml.YAMLError as exc:
-                    log.error('Exception while parsing prefill file: {}.'
-                              ' Ignoring file.'.format(self.opts.prefill))
+                    log.error(
+                        "Exception while parsing prefill file: {}."
+                        " Ignoring file.".format(self.opts.prefill)
+                    )
                     log.error(exc)
                     self.prefillInfo = None
 
     def make_model(self):
-        root = '/'
+        root = "/"
         if self.opts.dry_run:
             root = os.path.abspath(self.opts.output_base)
-        model = SystemSetupModel(root, self.hub, INSTALL_MODEL_NAMES,
-                                 POSTINSTALL_MODEL_NAMES)
+        model = SystemSetupModel(
+            root, self.hub, INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
+        )
         model.set_source_variant(self.variant)
         return model
 

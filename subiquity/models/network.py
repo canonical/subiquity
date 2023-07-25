@@ -20,11 +20,10 @@ from subiquity import cloudinit
 from subiquitycore.models.network import NetworkModel as CoreNetworkModel
 from subiquitycore.utils import arun_command
 
-log = logging.getLogger('subiquity.models.network')
+log = logging.getLogger("subiquity.models.network")
 
 
 class NetworkModel(CoreNetworkModel):
-
     def __init__(self):
         super().__init__("subiquity")
         self.override_config = None
@@ -46,59 +45,57 @@ class NetworkModel(CoreNetworkModel):
         # If host cloud-init version has no readable combined-cloud-config,
         # default to False.
         cloud_cfg = cloudinit.get_host_combined_cloud_config()
-        use_cloudinit_net = cloud_cfg.get('features', {}).get(
-            'NETPLAN_CONFIG_ROOT_READ_ONLY', False
+        use_cloudinit_net = cloud_cfg.get("features", {}).get(
+            "NETPLAN_CONFIG_ROOT_READ_ONLY", False
         )
 
         if use_cloudinit_net:
             r = {
-                'write_files': {
-                    'etc_netplan_installer': {
-                        'path': (
-                            'etc/cloud/cloud.cfg.d/90-installer-network.cfg'
-                        ),
-                        'content': self.stringify_config(netplan),
-                        'permissions': '0600',
+                "write_files": {
+                    "etc_netplan_installer": {
+                        "path": ("etc/cloud/cloud.cfg.d/90-installer-network.cfg"),
+                        "content": self.stringify_config(netplan),
+                        "permissions": "0600",
                     },
                 }
             }
         else:
             # Separate sensitive wifi config from world-readable config
-            wifis = netplan['network'].pop('wifis', None)
+            wifis = netplan["network"].pop("wifis", None)
             r = {
-                'write_files': {
+                "write_files": {
                     # Disable cloud-init networking
-                    'no_cloudinit_net': {
-                        'path': (
-                            'etc/cloud/cloud.cfg.d/'
-                            'subiquity-disable-cloudinit-networking.cfg'
+                    "no_cloudinit_net": {
+                        "path": (
+                            "etc/cloud/cloud.cfg.d/"
+                            "subiquity-disable-cloudinit-networking.cfg"
                         ),
-                        'content': 'network: {config: disabled}\n',
+                        "content": "network: {config: disabled}\n",
                     },
                     # World-readable netplan without sensitive wifi config
-                    'etc_netplan_installer': {
-                        'path': 'etc/netplan/00-installer-config.yaml',
-                        'content': self.stringify_config(netplan),
+                    "etc_netplan_installer": {
+                        "path": "etc/netplan/00-installer-config.yaml",
+                        "content": self.stringify_config(netplan),
                     },
                 },
             }
             if wifis is not None:
                 netplan_wifi = {
-                    'network': {
-                        'version': 2,
-                        'wifis': wifis,
+                    "network": {
+                        "version": 2,
+                        "wifis": wifis,
                     },
                 }
-                r['write_files']['etc_netplan_installer_wifi'] = {
-                    'path': 'etc/netplan/00-installer-config-wifi.yaml',
-                    'content': self.stringify_config(netplan_wifi),
-                    'permissions': '0600',
+                r["write_files"]["etc_netplan_installer_wifi"] = {
+                    "path": "etc/netplan/00-installer-config-wifi.yaml",
+                    "content": self.stringify_config(netplan_wifi),
+                    "permissions": "0600",
                 }
         return r
 
     async def target_packages(self):
         if self.needs_wpasupplicant:
-            return ['wpasupplicant']
+            return ["wpasupplicant"]
         else:
             return []
 

@@ -20,11 +20,10 @@ from typing import Dict, Optional
 
 import apt
 
+from subiquity.common.types import PackageInstallState
 from subiquitycore.utils import arun_command
 
-from subiquity.common.types import PackageInstallState
-
-log = logging.getLogger('subiquity.server.pkghelper')
+log = logging.getLogger("subiquity.server.pkghelper")
 
 
 class PackageInstaller:
@@ -56,37 +55,36 @@ class PackageInstaller:
 
     def start_installing_pkg(self, pkgname: str) -> None:
         if pkgname not in self.pkgs:
-            self.pkgs[pkgname] = asyncio.create_task(
-                self._install_pkg(pkgname))
+            self.pkgs[pkgname] = asyncio.create_task(self._install_pkg(pkgname))
 
     async def install_pkg(self, pkgname) -> PackageInstallState:
         self.start_installing_pkg(pkgname)
         return await self.pkgs[pkgname]
 
     async def _install_pkg(self, pkgname: str) -> PackageInstallState:
-        log.debug('checking if %s is available', pkgname)
+        log.debug("checking if %s is available", pkgname)
         binpkg = self.cache.get(pkgname)
         if not binpkg:
-            log.debug('%s not found', pkgname)
+            log.debug("%s not found", pkgname)
             return PackageInstallState.NOT_AVAILABLE
         if binpkg.installed:
-            log.debug('%s already installed', pkgname)
+            log.debug("%s already installed", pkgname)
             return PackageInstallState.DONE
-        if not binpkg.candidate.uri.startswith('cdrom:'):
+        if not binpkg.candidate.uri.startswith("cdrom:"):
             log.debug(
-                '%s not available from cdrom (rather %s)',
-                pkgname, binpkg.candidate.uri)
+                "%s not available from cdrom (rather %s)", pkgname, binpkg.candidate.uri
+            )
             return PackageInstallState.NOT_AVAILABLE
         env = os.environ.copy()
-        env['DEBIAN_FRONTEND'] = 'noninteractive'
+        env["DEBIAN_FRONTEND"] = "noninteractive"
         apt_opts = [
-            '--quiet', '--assume-yes',
-            '--option=Dpkg::Options::=--force-unsafe-io',
-            '--option=Dpkg::Options::=--force-confold',
-            ]
-        cp = await arun_command(
-            ['apt-get', 'install'] + apt_opts + [pkgname], env=env)
-        log.debug('apt-get install %s returned %s', pkgname, cp)
+            "--quiet",
+            "--assume-yes",
+            "--option=Dpkg::Options::=--force-unsafe-io",
+            "--option=Dpkg::Options::=--force-confold",
+        ]
+        cp = await arun_command(["apt-get", "install"] + apt_opts + [pkgname], env=env)
+        log.debug("apt-get install %s returned %s", pkgname, cp)
         if cp.returncode == 0:
             return PackageInstallState.DONE
         else:

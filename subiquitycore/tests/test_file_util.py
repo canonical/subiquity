@@ -19,13 +19,13 @@ from subiquitycore.tests import SubiTestCase
 
 class TestCopy(SubiTestCase):
     def test_copied_to_non_exist_dir(self):
-        data = 'stuff things'
-        src = self.tmp_path('src')
-        tgt = self.tmp_path('create-me/target')
-        with open(src, 'w') as fp:
+        data = "stuff things"
+        src = self.tmp_path("src")
+        tgt = self.tmp_path("create-me/target")
+        with open(src, "w") as fp:
             fp.write(data)
         copy_file_if_exists(src, tgt)
         self.assert_contents(tgt, data)
 
     def test_copied_non_exist_src(self):
-        copy_file_if_exists('/does/not/exist', '/ditto')
+        copy_file_if_exists("/does/not/exist", "/ditto")

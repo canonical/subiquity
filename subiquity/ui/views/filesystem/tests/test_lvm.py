@@ -18,14 +18,11 @@ from unittest import mock
 
 import urwid
 
-from subiquitycore.testing import view_helpers
-from subiquitycore.view import BaseView
-
 from subiquity.client.controllers.filesystem import FilesystemController
 from subiquity.ui.views.filesystem.lvm import VolGroupStretchy
-from subiquity.ui.views.filesystem.tests.test_partition import (
-    make_model_and_disk,
-    )
+from subiquity.ui.views.filesystem.tests.test_partition import make_model_and_disk
+from subiquitycore.testing import view_helpers
+from subiquitycore.view import BaseView
 
 
 def make_view(model, existing=None):
@@ -40,45 +37,42 @@ def make_view(model, existing=None):
 
 
 class LVMViewTests(unittest.TestCase):
-
     def test_create_vg(self):
         model, disk = make_model_and_disk()
-        part1 = model.add_partition(disk, size=10*(2**30), offset=0)
-        part2 = model.add_partition(disk, size=10*(2**30), offset=10*(2**30))
+        part1 = model.add_partition(disk, size=10 * (2**30), offset=0)
+        part2 = model.add_partition(disk, size=10 * (2**30), offset=10 * (2**30))
         view, stretchy = make_view(model)
         form_data = {
-            'name': 'vg1',
-            'devices': {part1: 'active', part2: 'active'},
-            }
+            "name": "vg1",
+            "devices": {part1: "active", part2: "active"},
+        }
         expected_data = {
-            'name': 'vg1',
-            'devices': {part1, part2},
-            'encrypt': False,
-            }
+            "name": "vg1",
+            "devices": {part1, part2},
+            "encrypt": False,
+        }
         view_helpers.enter_data(stretchy.form, form_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)
-        view.controller.volgroup_handler.assert_called_once_with(
-            None, expected_data)
+        view.controller.volgroup_handler.assert_called_once_with(None, expected_data)
 
     def test_create_vg_encrypted(self):
         model, disk = make_model_and_disk()
-        part1 = model.add_partition(disk, size=10*(2**30), offset=0)
-        part2 = model.add_partition(disk, size=10*(2**30), offset=10*(2**30))
+        part1 = model.add_partition(disk, size=10 * (2**30), offset=0)
+        part2 = model.add_partition(disk, size=10 * (2**30), offset=10 * (2**30))
         view, stretchy = make_view(model)
         form_data = {
-            'name': 'vg1',
-            'devices': {part1: 'active', part2: 'active'},
-            'encrypt': True,
-            'passphrase': 'passw0rd',
-            'confirm_passphrase': 'passw0rd',
-            }
+            "name": "vg1",
+            "devices": {part1: "active", part2: "active"},
+            "encrypt": True,
+            "passphrase": "passw0rd",
+            "confirm_passphrase": "passw0rd",
+        }
         expected_data = {
-            'name': 'vg1',
-            'devices': {part1, part2},
-            'encrypt': True,
-            'passphrase': 'passw0rd',
-            }
+            "name": "vg1",
+            "devices": {part1, part2},
+            "encrypt": True,
+            "passphrase": "passw0rd",
+        }
         view_helpers.enter_data(stretchy.form, form_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)
-        view.controller.volgroup_handler.assert_called_once_with(
-            None, expected_data)
+        view.controller.volgroup_handler.assert_called_once_with(None, expected_data)

@@ -19,34 +19,34 @@ from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import IdentityData
 from subiquity.ui.views import IdentityView
 
-log = logging.getLogger('subiquity.client.controllers.identity')
+log = logging.getLogger("subiquity.client.controllers.identity")
 
 
 class IdentityController(SubiquityTuiController):
-
-    endpoint_name = 'identity'
+    endpoint_name = "identity"
 
     async def make_ui(self):
         data = await self.endpoint.GET()
         return IdentityView(self, data)
 
     def run_answers(self):
-        if all(elem in self.answers for elem in
-               ['realname', 'username', 'password', 'hostname']):
+        if all(
+            elem in self.answers
+            for elem in ["realname", "username", "password", "hostname"]
+        ):
             identity = IdentityData(
-                realname=self.answers['realname'],
-                username=self.answers['username'],
-                hostname=self.answers['hostname'],
-                crypted_password=self.answers['password'])
+                realname=self.answers["realname"],
+                username=self.answers["username"],
+                hostname=self.answers["hostname"],
+                crypted_password=self.answers["password"],
+            )
             self.done(identity)
 
     def cancel(self):
         self.app.prev_screen()
 
     def done(self, identity_data):
-        log.debug(
-            "IdentityController.done next_screen user_spec=%s",
-            identity_data)
+        log.debug("IdentityController.done next_screen user_spec=%s", identity_data)
         self.app.next_screen(self.endpoint.POST(identity_data))
 
     async def validate_username(self, username):

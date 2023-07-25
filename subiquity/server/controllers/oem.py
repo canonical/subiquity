@@ -17,8 +17,6 @@ import asyncio
 import logging
 from typing import List, Optional
 
-from subiquitycore.context import with_context
-
 from subiquity.common.apidef import API
 from subiquity.common.types import OEMResponse
 from subiquity.models.oem import OEMMetaPkg
@@ -30,13 +28,13 @@ from subiquity.server.types import InstallerChannels
 from subiquity.server.ubuntu_drivers import (
     CommandNotFoundError,
     get_ubuntu_drivers_interface,
-    )
+)
+from subiquitycore.context import with_context
 
-log = logging.getLogger('subiquity.server.controllers.oem')
+log = logging.getLogger("subiquity.server.controllers.oem")
 
 
 class OEMController(SubiquityController):
-
     endpoint = API.oem
 
     autoinstall_key = model_name = "oem"
@@ -71,23 +69,20 @@ class OEMController(SubiquityController):
     def start(self) -> None:
         self._wait_confirmation = asyncio.Event()
         self.app.hub.subscribe(
-            InstallerChannels.INSTALL_CONFIRMED,
-            self._wait_confirmation.set)
+            InstallerChannels.INSTALL_CONFIRMED, self._wait_confirmation.set
+        )
         self._wait_apt = asyncio.Event()
+        self.app.hub.subscribe(InstallerChannels.APT_CONFIGURED, self._wait_apt.set)
         self.app.hub.subscribe(
-            InstallerChannels.APT_CONFIGURED,
-            self._wait_apt.set)
-        self.app.hub.subscribe(
-            (InstallerChannels.CONFIGURED, "kernel"),
-            self.kernel_configured_event.set)
+            (InstallerChannels.CONFIGURED, "kernel"), self.kernel_configured_event.set
+        )
 
         async def list_and_mark_configured() -> None:
             await self.load_metapackages_list()
             await self.ensure_no_kernel_conflict()
             await self.configured()
 
-        self.load_metapkgs_task = asyncio.create_task(
-                list_and_mark_configured())
+        self.load_metapkgs_task = asyncio.create_task(list_and_mark_configured())
 
     def make_autoinstall(self):
         return self.model.make_autoinstall()
@@ -95,17 +90,24 @@ class OEMController(SubiquityController):
     def load_autoinstall_data(self, *args, **kwargs) -> None:
         self.model.load_autoinstall_data(*args, **kwargs)
 
-    async def wants_oem_kernel(self, pkgname: str,
-                               *, context, overlay) -> bool:
-        """ For a given package, tell whether it wants the OEM or the default
+    async def wants_oem_kernel(self, pkgname: str, *, context, overlay) -> bool:
+        """For a given package, tell whether it wants the OEM or the default
         kernel flavor. We look for the Ubuntu-Oem-Kernel-Flavour attribute in
         the package meta-data. If the attribute is present and has the value
-        "default", then return False. Otherwise, return True. """
+        "default", then return False. Otherwise, return True."""
         result = await run_curtin_command(
-            self.app, context,
-            "in-target", "-t", overlay.mountpoint, "--",
-            "apt-cache", "show", pkgname,
-            capture=True, private_mounts=True)
+            self.app,
+            context,
+            "in-target",
+            "-t",
+            overlay.mountpoint,
+            "--",
+            "apt-cache",
+            "show",
+            pkgname,
+            capture=True,
+            private_mounts=True,
+        )
         for line in result.stdout.decode("utf-8").splitlines():
             if not line.startswith("Ubuntu-Oem-Kernel-Flavour:"):
                 continue
@@ -116,8 +118,7 @@ class OEMController(SubiquityController):
             elif flavor == "oem":
                 return True
             else:
-                log.warning("%s wants unexpected kernel flavor: %s",
-                            pkgname, flavor)
+                log.warning("%s wants unexpected kernel flavor: %s", pkgname, flavor)
                 return True
 
         log.warning("%s has no Ubuntu-Oem-Kernel-Flavour", pkgname)
@@ -133,8 +134,7 @@ class OEMController(SubiquityController):
         variant: str = self.app.base_model.source.current.variant
         fs_controller = self.app.controllers.Filesystem
         if fs_controller.is_core_boot_classic():
-            log.debug("listing of OEM meta-packages disabled on core boot"
-                      " classic")
+            log.debug("listing of OEM meta-packages disabled on core boot" " classic")
             self.model.metapkgs = []
             return
         if not self.model.install_on[variant]:
@@ -155,14 +155,17 @@ class OEMController(SubiquityController):
                     self.model.metapkgs = []
                 else:
                     metapkgs: List[str] = await self.ubuntu_drivers.list_oem(
-                        root_dir=d.mountpoint,
-                        context=context)
+                        root_dir=d.mountpoint, context=context
+                    )
                     self.model.metapkgs = [
                         OEMMetaPkg(
                             name=name,
                             wants_oem_kernel=await self.wants_oem_kernel(
-                                name, context=context, overlay=d),
-                        ) for name in metapkgs]
+                                name, context=context, overlay=d
+                            ),
+                        )
+                        for name in metapkgs
+                    ]
 
         except OverlayCleanupError:
             log.exception("Failed to cleanup overlay. Continuing anyway.")
@@ -171,7 +174,8 @@ class OEMController(SubiquityController):
             if pkg.wants_oem_kernel:
                 kernel_model = self.app.base_model.kernel
                 kernel_model.metapkg_name_override = flavor_to_pkgname(
-                        pkg.name, dry_run=self.app.opts.dry_run)
+                    pkg.name, dry_run=self.app.opts.dry_run
+                )
 
                 log.debug("overriding kernel flavor because of OEM")
 
@@ -187,7 +191,8 @@ class OEMController(SubiquityController):
             # This should be a dialog or something rather than the content of
             # an exception, really. But this is a simple way to print out
             # something in autoinstall.
-            msg = _("""\
+            msg = _(
+                """\
 A specific kernel flavor was requested but it cannot be satistified when \
 installing on certified hardware.
 You should either disable the installation of OEM meta-packages using the \
@@ -195,7 +200,8 @@ following autoinstall snippet or let the installer decide which kernel to
 install.
   oem:
     install: false
-""")
+"""
+            )
             raise RuntimeError(msg)
 
     @with_context()

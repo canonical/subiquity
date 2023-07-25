@@ -14,13 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from unittest.mock import patch, AsyncMock
+from unittest.mock import AsyncMock, patch
 
 from subiquity.server.contract_selection import (
     ContractSelection,
     UnknownError,
     UPCSExpiredError,
-    )
+)
 
 
 class TestContractSelection(unittest.IsolatedAsyncioTestCase):
@@ -28,13 +28,15 @@ class TestContractSelection(unittest.IsolatedAsyncioTestCase):
         self.client = AsyncMock()
 
     async def test_init(self):
-        with patch.object(ContractSelection, "_run_polling",
-                          return_value=None) as run_polling:
-
-            cs = ContractSelection(client=self.client,
-                                   magic_token="magic",
-                                   user_code="user-code",
-                                   validity_seconds=200)
+        with patch.object(
+            ContractSelection, "_run_polling", return_value=None
+        ) as run_polling:
+            cs = ContractSelection(
+                client=self.client,
+                magic_token="magic",
+                user_code="user-code",
+                validity_seconds=200,
+            )
 
         self.assertIs(cs.client, self.client)
         self.assertEqual(cs.magic_token, "magic")
@@ -49,9 +51,7 @@ class TestContractSelection(unittest.IsolatedAsyncioTestCase):
             "errors": ["Initiate failed"],
             "result": "failure",
         }
-        with patch.object(self.client.strategy,
-                          "magic_initiate_v1", return_value=ret):
-
+        with patch.object(self.client.strategy, "magic_initiate_v1", return_value=ret):
             with self.assertRaises(UnknownError) as cm:
                 await ContractSelection.initiate(self.client)
             self.assertIn("Initiate failed", cm.exception.errors)
@@ -68,9 +68,7 @@ class TestContractSelection(unittest.IsolatedAsyncioTestCase):
                 },
             },
         }
-        with patch.object(self.client.strategy,
-                          "magic_initiate_v1", return_value=ret):
-
+        with patch.object(self.client.strategy, "magic_initiate_v1", return_value=ret):
             cs = await ContractSelection.initiate(self.client)
 
         self.assertEqual(cs.magic_token, "magic-12345")
@@ -87,17 +85,17 @@ class TestContractSelection(unittest.IsolatedAsyncioTestCase):
                 },
             ],
         }
-        with patch.object(ContractSelection,
-                          "_run_polling", return_value=None):
-            cs = ContractSelection(client=self.client,
-                                   magic_token="magic-token",
-                                   user_code="ABCDEF",
-                                   validity_seconds=200)
+        with patch.object(ContractSelection, "_run_polling", return_value=None):
+            cs = ContractSelection(
+                client=self.client,
+                magic_token="magic-token",
+                user_code="ABCDEF",
+                validity_seconds=200,
+            )
         await cs.task
 
         self.client.strategy.scale_factor = 1
-        with patch.object(self.client.strategy,
-                          "magic_wait_v1", return_value=ret):
+        with patch.object(self.client.strategy, "magic_wait_v1", return_value=ret):
             # 100 seconds elapsed, should be considered a timeout
             with patch("time.monotonic", side_effect=[100, 200]):
                 with self.assertRaises(UPCSExpiredError):
@@ -118,15 +116,15 @@ class TestContractSelection(unittest.IsolatedAsyncioTestCase):
                 },
             },
         }
-        with patch.object(ContractSelection,
-                          "_run_polling", return_value=None):
-            cs = ContractSelection(client=self.client,
-                                   magic_token="magic-token",
-                                   user_code="ABCDEF",
-                                   validity_seconds=200)
+        with patch.object(ContractSelection, "_run_polling", return_value=None):
+            cs = ContractSelection(
+                client=self.client,
+                magic_token="magic-token",
+                user_code="ABCDEF",
+                validity_seconds=200,
+            )
         await cs.task
 
         self.client.strategy.scale_factor = 1
-        with patch.object(self.client.strategy,
-                          "magic_wait_v1", return_value=ret):
+        with patch.object(self.client.strategy, "magic_wait_v1", return_value=ret):
             self.assertEqual((await cs._run_polling()), "C12345257")

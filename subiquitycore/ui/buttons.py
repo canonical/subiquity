@@ -26,13 +26,15 @@ def _stylized_button(left, right, style):
             btn = Btn(label, on_press=on_press, user_data=user_arg)
             btn._w.contents[2] = (
                 btn._w.contents[2][0],
-                btn._w.options('given', len(right)))
-            super().__init__(btn, style + '_button', style + '_button focus')
+                btn._w.options("given", len(right)),
+            )
+            super().__init__(btn, style + "_button", style + "_button focus")
+
     return StyleAttrMap
 
 
 def action_button(style):
-    return _stylized_button('[', ']', style)
+    return _stylized_button("[", "]", style)
 
 
 _forward_rhs = "\N{BLACK RIGHT-POINTING SMALL TRIANGLE} ]"

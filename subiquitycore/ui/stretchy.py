@@ -52,8 +52,7 @@ from subiquitycore.ui.container import ListBox, Pile
 
 
 class Stretchy(metaclass=urwid.MetaSignals):
-
-    signals = ['opened', 'closed']
+    signals = ["opened", "closed"]
 
     def __init__(self, title, widgets, stretchy_index, focus_index):
         """
@@ -79,8 +78,8 @@ class Stretchy(metaclass=urwid.MetaSignals):
         return self.widgets[self.stretchy_index]
 
     def attach_context(self, context):
-        urwid.connect_signal(self, 'opened', lambda: context.enter("opened"))
-        urwid.connect_signal(self, 'closed', lambda: context.exit("closed"))
+        urwid.connect_signal(self, "opened", lambda: context.enter("opened"))
+        urwid.connect_signal(self, "closed", lambda: context.exit("closed"))
 
 
 class StretchyOverlay(urwid.Widget):
@@ -94,12 +93,11 @@ class StretchyOverlay(urwid.Widget):
 
         def entry(i, w):
             if i == stretchy.stretchy_index:
-                return ('weight', 1, self.listbox)
+                return ("weight", 1, self.listbox)
             else:
-                return ('pack', w)
+                return ("pack", w)
 
-        inner_pile = Pile(
-            [entry(i, w) for (i, w) in enumerate(stretchy.widgets)])
+        inner_pile = Pile([entry(i, w) for (i, w) in enumerate(stretchy.widgets)])
         inner_pile.focus_position = stretchy.focus_index
         # this Filler/Padding/LineBox/Filler/Padding construction
         # seems ridiculous but it works.
@@ -107,13 +105,20 @@ class StretchyOverlay(urwid.Widget):
             urwid.Padding(
                 urwid.LineBox(
                     urwid.Filler(
-                        urwid.Padding(
-                            inner_pile,
-                            left=2, right=2),
-                        top=1, bottom=1, height=('relative', 100)),
-                    title=stretchy.title),
-                left=3, right=3),
-            top=1, bottom=1, height=('relative', 100))
+                        urwid.Padding(inner_pile, left=2, right=2),
+                        top=1,
+                        bottom=1,
+                        height=("relative", 100),
+                    ),
+                    title=stretchy.title,
+                ),
+                left=3,
+                right=3,
+            ),
+            top=1,
+            bottom=1,
+            height=("relative", 100),
+        )
 
     def _top_size(self, size, focus):
         # Returns the size of the top widget and whether
@@ -155,7 +160,8 @@ class StretchyOverlay(urwid.Widget):
     def keypress(self, size, key):
         top_size, scrollbar_visible = self._top_size(size, True)
         self.listbox.base_widget._selectable = (
-            scrollbar_visible or self.stretchy.stretchy_w.selectable())
+            scrollbar_visible or self.stretchy.stretchy_w.selectable()
+        )
         return self.top_w.keypress(top_size, key)
 
     def render(self, size, focus):

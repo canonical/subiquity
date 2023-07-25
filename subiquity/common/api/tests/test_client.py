@@ -17,12 +17,7 @@ import contextlib
 import unittest
 
 from subiquity.common.api.client import make_client
-from subiquity.common.api.defs import (
-    api,
-    InvalidQueryArgs,
-    path_parameter,
-    Payload,
-    )
+from subiquity.common.api.defs import InvalidQueryArgs, Payload, api, path_parameter
 
 
 def extract(c):
@@ -46,20 +41,21 @@ class FakeResponse:
 
 
 class TestClient(unittest.TestCase):
-
     def test_simple(self):
-
         @api
         class API:
             class endpoint:
-                def GET() -> str: ...
-                def POST(data: Payload[str]) -> None: ...
+                def GET() -> str:
+                    ...
+
+                def POST(data: Payload[str]) -> None:
+                    ...
 
         @contextlib.asynccontextmanager
         async def make_request(method, path, *, params, json):
             requests.append((method, path, params, json))
             if method == "GET":
-                v = 'value'
+                v = "value"
             else:
                 v = None
             yield FakeResponse(v)
@@ -68,85 +64,95 @@ class TestClient(unittest.TestCase):
 
         requests = []
         r = extract(client.endpoint.GET())
-        self.assertEqual(r, 'value')
-        self.assertEqual(requests, [("GET", '/endpoint', {}, None)])
+        self.assertEqual(r, "value")
+        self.assertEqual(requests, [("GET", "/endpoint", {}, None)])
 
         requests = []
-        r = extract(client.endpoint.POST('value'))
+        r = extract(client.endpoint.POST("value"))
         self.assertEqual(r, None)
-        self.assertEqual(
-            requests, [("POST", '/endpoint', {}, 'value')])
+        self.assertEqual(requests, [("POST", "/endpoint", {}, "value")])
 
     def test_args(self):
-
         @api
         class API:
-            def GET(arg: str) -> str: ...
+            def GET(arg: str) -> str:
+                ...
 
         @contextlib.asynccontextmanager
         async def make_request(method, path, *, params, json):
             requests.append((method, path, params, json))
-            yield FakeResponse(params['arg'])
+            yield FakeResponse(params["arg"])
 
         client = make_client(API, make_request)
 
         requests = []
-        r = extract(client.GET(arg='v'))
+        r = extract(client.GET(arg="v"))
         self.assertEqual(r, '"v"')
-        self.assertEqual(requests, [("GET", '/', {'arg': '"v"'}, None)])
+        self.assertEqual(requests, [("GET", "/", {"arg": '"v"'}, None)])
 
     def test_path_params(self):
-
         @api
         class API:
             @path_parameter
             class param:
-                def GET(arg: str) -> str: ...
+                def GET(arg: str) -> str:
+                    ...
 
         @contextlib.asynccontextmanager
         async def make_request(method, path, *, params, json):
             requests.append((method, path, params, json))
-            yield FakeResponse(params['arg'])
+            yield FakeResponse(params["arg"])
 
         client = make_client(API, make_request)
 
         requests = []
-        r = extract(client['foo'].GET(arg='v'))
+        r = extract(client["foo"].GET(arg="v"))
         self.assertEqual(r, '"v"')
-        self.assertEqual(requests, [("GET", '/foo', {'arg': '"v"'}, None)])
+        self.assertEqual(requests, [("GET", "/foo", {"arg": '"v"'}, None)])
 
     def test_serialize_query_args(self):
         @api
         class API:
             serialize_query_args = False
-            def GET(arg: str) -> str: ...
+
+            def GET(arg: str) -> str:
+                ...
 
             class meth:
-                def GET(arg: str, payload: Payload[int]) -> str: ...
+                def GET(arg: str, payload: Payload[int]) -> str:
+                    ...
 
                 class more:
                     serialize_query_args = True
-                    def GET(arg: str) -> str: ...
+
+                    def GET(arg: str) -> str:
+                        ...
 
         @contextlib.asynccontextmanager
         async def make_request(method, path, *, params, json):
             requests.append((method, path, params, json))
-            yield FakeResponse(params['arg'])
+            yield FakeResponse(params["arg"])
 
         client = make_client(API, make_request)
 
         requests = []
-        extract(client.GET(arg='v'))
-        extract(client.meth.GET(arg='v', payload=1))
-        extract(client.meth.more.GET(arg='v'))
-        self.assertEqual(requests, [
-            ("GET", '/', {'arg': 'v'}, None),
-            ("GET", '/meth', {'arg': 'v'}, 1),
-            ("GET", '/meth/more', {'arg': '"v"'}, None)])
+        extract(client.GET(arg="v"))
+        extract(client.meth.GET(arg="v", payload=1))
+        extract(client.meth.more.GET(arg="v"))
+        self.assertEqual(
+            requests,
+            [
+                ("GET", "/", {"arg": "v"}, None),
+                ("GET", "/meth", {"arg": "v"}, 1),
+                ("GET", "/meth/more", {"arg": '"v"'}, None),
+            ],
+        )
 
         class API2:
             serialize_query_args = False
-            def GET(arg: int) -> str: ...
+
+            def GET(arg: int) -> str:
+                ...
 
         with self.assertRaises(InvalidQueryArgs):
             api(API2)

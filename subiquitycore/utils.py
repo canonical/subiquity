@@ -30,7 +30,7 @@ def _clean_env(env, *, locale=True):
     else:
         env = env.copy()
     if locale:
-        env['LC_ALL'] = 'C'
+        env["LC_ALL"] = "C"
     # Maaaybe want to remove SNAP here too.
     return env
 
@@ -42,33 +42,47 @@ def orig_environ(env):
         env = os.environ
     ret = env.copy()
     for key, val in env.items():
-        if key.endswith('_ORIG'):
-            key_to_restore = key[:-len('_ORIG')]
+        if key.endswith("_ORIG"):
+            key_to_restore = key[: -len("_ORIG")]
             if val:
                 ret[key_to_restore] = val
             else:
                 del ret[key_to_restore]
             del ret[key]
-    ret.pop('LD_LIBRARY_PATH', None)
+    ret.pop("LD_LIBRARY_PATH", None)
     return ret
 
 
-def run_command(cmd: Sequence[str], *, input=None, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, encoding='utf-8', errors='replace',
-                env=None, clean_locale=True,
-                **kw) -> subprocess.CompletedProcess:
+def run_command(
+    cmd: Sequence[str],
+    *,
+    input=None,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    encoding="utf-8",
+    errors="replace",
+    env=None,
+    clean_locale=True,
+    **kw,
+) -> subprocess.CompletedProcess:
     """A wrapper around subprocess.run with logging and different defaults.
 
     We never ever want a subprocess to inherit our file descriptors!
     """
     if input is None:
-        kw['stdin'] = subprocess.DEVNULL
+        kw["stdin"] = subprocess.DEVNULL
     else:
         input = input.encode(encoding)
     log.debug("run_command called: %s", cmd)
     try:
-        cp = subprocess.run(cmd, input=input, stdout=stdout, stderr=stderr,
-                            env=_clean_env(env, locale=clean_locale), **kw)
+        cp = subprocess.run(
+            cmd,
+            input=input,
+            stdout=stdout,
+            stderr=stderr,
+            env=_clean_env(env, locale=clean_locale),
+            **kw,
+        )
         if encoding:
             if isinstance(cp.stdout, bytes):
                 cp.stdout = cp.stdout.decode(encoding)
@@ -82,21 +96,33 @@ def run_command(cmd: Sequence[str], *, input=None, stdout=subprocess.PIPE,
         return cp
 
 
-async def arun_command(cmd: Sequence[str], *,
-                       stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                       encoding='utf-8', input=None, errors='replace',
-                       env=None, clean_locale=True, check=False, **kw) \
-                       -> subprocess.CompletedProcess:
+async def arun_command(
+    cmd: Sequence[str],
+    *,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    encoding="utf-8",
+    input=None,
+    errors="replace",
+    env=None,
+    clean_locale=True,
+    check=False,
+    **kw,
+) -> subprocess.CompletedProcess:
     if input is None:
-        if 'stdin' not in kw:
-            kw['stdin'] = subprocess.DEVNULL
+        if "stdin" not in kw:
+            kw["stdin"] = subprocess.DEVNULL
     else:
-        kw['stdin'] = subprocess.PIPE
+        kw["stdin"] = subprocess.PIPE
         input = input.encode(encoding)
     log.debug("arun_command called: %s", cmd)
     proc = await asyncio.create_subprocess_exec(
-        *cmd, stdout=stdout, stderr=stderr,
-        env=_clean_env(env, locale=clean_locale), **kw)
+        *cmd,
+        stdout=stdout,
+        stderr=stderr,
+        env=_clean_env(env, locale=clean_locale),
+        **kw,
+    )
     stdout, stderr = await proc.communicate(input=input)
     if encoding:
         if stdout is not None:
@@ -107,21 +133,30 @@ async def arun_command(cmd: Sequence[str], *,
     # .communicate() forces returncode to be set to a value
     assert proc.returncode is not None
     if check and proc.returncode != 0:
-        raise subprocess.CalledProcessError(proc.returncode, cmd,
-                                            stdout, stderr)
+        raise subprocess.CalledProcessError(proc.returncode, cmd, stdout, stderr)
     else:
-        return subprocess.CompletedProcess(
-            cmd, proc.returncode, stdout, stderr)
+        return subprocess.CompletedProcess(cmd, proc.returncode, stdout, stderr)
 
 
-async def astart_command(cmd: Sequence[str], *, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE, stdin=subprocess.DEVNULL,
-                         env=None, clean_locale=True,
-                         **kw) -> asyncio.subprocess.Process:
+async def astart_command(
+    cmd: Sequence[str],
+    *,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    stdin=subprocess.DEVNULL,
+    env=None,
+    clean_locale=True,
+    **kw,
+) -> asyncio.subprocess.Process:
     log.debug("astart_command called: %s", cmd)
     return await asyncio.create_subprocess_exec(
-        *cmd, stdout=stdout, stderr=stderr, stdin=stdin,
-        env=_clean_env(env, locale=clean_locale), **kw)
+        *cmd,
+        stdout=stdout,
+        stderr=stderr,
+        stdin=stdin,
+        env=_clean_env(env, locale=clean_locale),
+        **kw,
+    )
 
 
 async def split_cmd_output(cmd: Sequence[str], split_on: str) -> List[str]:
@@ -129,77 +164,108 @@ async def split_cmd_output(cmd: Sequence[str], split_on: str) -> List[str]:
     return cp.stdout.split(split_on)
 
 
-def start_command(cmd: Sequence[str], *,
-                  stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE, encoding='utf-8', errors='replace',
-                  env=None, clean_locale=True, **kw) -> subprocess.Popen:
+def start_command(
+    cmd: Sequence[str],
+    *,
+    stdin=subprocess.DEVNULL,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    encoding="utf-8",
+    errors="replace",
+    env=None,
+    clean_locale=True,
+    **kw,
+) -> subprocess.Popen:
     """A wrapper around subprocess.Popen with logging and different defaults.
 
     We never ever want a subprocess to inherit our file descriptors!
     """
-    log.debug('start_command called: %s', cmd)
-    return subprocess.Popen(cmd, stdin=stdin, stdout=stdout, stderr=stderr,
-                            env=_clean_env(env, locale=clean_locale), **kw)
+    log.debug("start_command called: %s", cmd)
+    return subprocess.Popen(
+        cmd,
+        stdin=stdin,
+        stdout=stdout,
+        stderr=stderr,
+        env=_clean_env(env, locale=clean_locale),
+        **kw,
+    )
 
 
 def _log_stream(level: int, stream, name: str):
     if stream:
-        log.log(level, f'{name}: ------------------------------------------')
+        log.log(level, f"{name}: ------------------------------------------")
         for line in stream.splitlines():
             log.log(level, line)
     elif stream is None:
-        log.log(level, f'<{name} is None>')
+        log.log(level, f"<{name} is None>")
     else:
-        log.log(level, f'<{name} is empty>')
+        log.log(level, f"<{name} is empty>")
 
 
-def log_process_streams(level: int,
-                        cpe: subprocess.CalledProcessError,
-                        command_msg: str):
-    log.log(level, f'{command_msg} exited with result: {cpe.returncode}')
-    _log_stream(level, cpe.stdout, 'stdout')
-    _log_stream(level, cpe.stderr, 'stderr')
-    log.log(level, '--------------------------------------------------')
+def log_process_streams(
+    level: int, cpe: subprocess.CalledProcessError, command_msg: str
+):
+    log.log(level, f"{command_msg} exited with result: {cpe.returncode}")
+    _log_stream(level, cpe.stdout, "stdout")
+    _log_stream(level, cpe.stderr, "stderr")
+    log.log(level, "--------------------------------------------------")
 
 
 # FIXME: replace with passlib and update package deps
-def crypt_password(passwd, algo='SHA-512'):
+def crypt_password(passwd, algo="SHA-512"):
     # encryption algo - id pairs for crypt()
-    algos = {'SHA-512': '$6$', 'SHA-256': '$5$', 'MD5': '$1$', 'DES': ''}
+    algos = {"SHA-512": "$6$", "SHA-256": "$5$", "MD5": "$1$", "DES": ""}
     if algo not in algos:
-        raise Exception('Invalid algo({}), must be one of: {}. '.format(
-            algo, ','.join(algos.keys())))
+        raise Exception(
+            "Invalid algo({}), must be one of: {}. ".format(
+                algo, ",".join(algos.keys())
+            )
+        )
 
-    salt_set = ('abcdefghijklmnopqrstuvwxyz'
-                'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-                '0123456789./')
-    salt = 16 * ' '
-    salt = ''.join([random.choice(salt_set) for c in salt])
+    salt_set = "abcdefghijklmnopqrstuvwxyz" "ABCDEFGHIJKLMNOPQRSTUVWXYZ" "0123456789./"
+    salt = 16 * " "
+    salt = "".join([random.choice(salt_set) for c in salt])
     return crypt.crypt(passwd, algos[algo] + salt)
 
 
 def disable_console_conf():
-    """ Stop console-conf service; which also restores getty service """
-    log.info('disabling console-conf service')
-    run_command(["systemctl", "stop", "--no-block", "console-conf@*.service",
-                 "serial-console-conf@*.service"])
+    """Stop console-conf service; which also restores getty service"""
+    log.info("disabling console-conf service")
+    run_command(
+        [
+            "systemctl",
+            "stop",
+            "--no-block",
+            "console-conf@*.service",
+            "serial-console-conf@*.service",
+        ]
+    )
     return
 
 
 def disable_subiquity():
-    """ Stop subiquity service; which also restores getty service """
-    log.info('disabling subiquity service')
+    """Stop subiquity service; which also restores getty service"""
+    log.info("disabling subiquity service")
     run_command(["mkdir", "-p", "/run/subiquity"])
     run_command(["touch", "/run/subiquity/complete"])
     run_command(["systemctl", "start", "--no-block", "getty@tty1.service"])
-    run_command(["systemctl", "stop", "--no-block",
-                 "snap.subiquity.subiquity-service.service",
-                 "serial-subiquity@*.service"])
+    run_command(
+        [
+            "systemctl",
+            "stop",
+            "--no-block",
+            "snap.subiquity.subiquity-service.service",
+            "serial-subiquity@*.service",
+        ]
+    )
     return
 
 
 def matching_dicts(items: Sequence[Dict[Any, Any]], **criteria):
     """Given an input sequence of dictionaries, return a list of dicts where
     the supplied keyword arguments all match those items."""
-    return [item for item in items
-            if all(k in item and item[k] == v for k, v in criteria.items())]
+    return [
+        item
+        for item in items
+        if all(k in item and item[k] == v for k, v in criteria.items())
+    ]

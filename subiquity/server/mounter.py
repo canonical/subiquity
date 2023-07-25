@@ -17,20 +17,19 @@ import contextlib
 import functools
 import logging
 import os
-from pathlib import Path
 import shutil
 import tempfile
+from pathlib import Path
 from typing import List, Optional, Union
 
 import attr
 
 from subiquitycore.utils import arun_command
 
-log = logging.getLogger('subiquity.server.mounter')
+log = logging.getLogger("subiquity.server.mounter")
 
 
 class TmpFileSet:
-
     def __init__(self):
         self._tdirs: List[str] = []
 
@@ -45,23 +44,22 @@ class TmpFileSet:
                 shutil.rmtree(d)
                 self._tdirs.remove(d)
             except OSError as ose:
-                log.warning(f'failed to rmtree {d}: {ose}')
+                log.warning(f"failed to rmtree {d}: {ose}")
 
 
 class OverlayCleanupError(Exception):
-    """ Exception to raise when an overlay could not be cleaned up. """
+    """Exception to raise when an overlay could not be cleaned up."""
 
 
 class _MountBase:
-
     def p(self, *args: str) -> str:
         for a in args:
-            if a.startswith('/'):
-                raise Exception('no absolute paths here please')
+            if a.startswith("/"):
+                raise Exception("no absolute paths here please")
         return os.path.join(self.mountpoint, *args)
 
     def write(self, path, content):
-        with open(self.p(path), 'w') as fp:
+        with open(self.p(path), "w") as fp:
             fp.write(content)
 
 
@@ -108,11 +106,10 @@ def _lowerdir_for_ovmnt(ovmnt):
 
 @lowerdir_for.register(list)
 def _lowerdir_for_lst(lst):
-    return ':'.join(reversed([lowerdir_for(item) for item in lst]))
+    return ":".join(reversed([lowerdir_for(item) for item in lst]))
 
 
 class Mounter:
-
     def __init__(self, app):
         self.app = app
         self.tmpfiles = TmpFileSet()
@@ -121,9 +118,9 @@ class Mounter:
     async def mount(self, device, mountpoint=None, options=None, type=None):
         opts = []
         if options is not None:
-            opts.extend(['-o', options])
+            opts.extend(["-o", options])
         if type is not None:
-            opts.extend(['-t', type])
+            opts.extend(["-t", type])
         if mountpoint is None:
             mountpoint = tempfile.mkdtemp()
             created = True
@@ -131,13 +128,14 @@ class Mounter:
             created = False
         else:
             path = Path(device)
-            if options == 'bind' and not path.is_dir():
+            if options == "bind" and not path.is_dir():
                 Path(mountpoint).touch(exist_ok=False)
             else:
                 os.makedirs(mountpoint, exist_ok=False)
             created = True
         await self.app.command_runner.run(
-            ['mount'] + opts + [device, mountpoint], private_mounts=False)
+            ["mount"] + opts + [device, mountpoint], private_mounts=False
+        )
         m = Mountpoint(mountpoint=mountpoint, created=created)
         self._mounts.append(m)
         return m
@@ -146,8 +144,8 @@ class Mounter:
         if remove:
             self._mounts.remove(mountpoint)
         await self.app.command_runner.run(
-                ['umount', mountpoint.mountpoint],
-                private_mounts=False)
+            ["umount", mountpoint.mountpoint], private_mounts=False
+        )
         if mountpoint.created:
             path = Path(mountpoint.mountpoint)
             if path.is_dir():
@@ -158,22 +156,18 @@ class Mounter:
 
     async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
         tdir = self.tmpfiles.tdir()
-        target = f'{tdir}/mount'
+        target = f"{tdir}/mount"
         lowerdir = lowerdir_for(lowers)
-        upperdir = f'{tdir}/upper'
-        workdir = f'{tdir}/work'
+        upperdir = f"{tdir}/upper"
+        workdir = f"{tdir}/work"
         for d in target, workdir, upperdir:
             os.mkdir(d)
 
-        options = f'lowerdir={lowerdir},upperdir={upperdir},workdir={workdir}'
+        options = f"lowerdir={lowerdir},upperdir={upperdir},workdir={workdir}"
 
-        mount = await self.mount(
-            'overlay', target, options=options, type='overlay')
+        mount = await self.mount("overlay", target, options=options, type="overlay")
 
-        return OverlayMountpoint(
-            lowers=lowers,
-            mountpoint=mount.p(),
-            upperdir=upperdir)
+        return OverlayMountpoint(lowers=lowers, mountpoint=mount.p(), upperdir=upperdir)
 
     async def cleanup(self):
         for m in reversed(self._mounts):
@@ -184,7 +178,7 @@ class Mounter:
         """bind-mount files and directories from src that are not already
         present into dst"""
         if not os.path.exists(dst):
-            await self.mount(src, dst, options='bind')
+            await self.mount(src, dst, options="bind")
             return
         for src_dirpath, dirnames, filenames in os.walk(src):
             dst_dirpath = src_dirpath.replace(src, dst)
@@ -193,7 +187,7 @@ class Mounter:
                 if os.path.exists(dst_path):
                     continue
                 src_path = os.path.join(src_dirpath, name)
-                await self.mount(src_path, dst_path, options='bind')
+                await self.mount(src_path, dst_path, options="bind")
                 if name in dirnames:
                     dirnames.remove(name)
 
@@ -207,7 +201,6 @@ class Mounter:
 
 
 class DryRunMounter(Mounter):
-
     async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
         # XXX This implementation expects that:
         # - on first invocation, the lowers list contains a single string
@@ -223,11 +216,14 @@ class DryRunMounter(Mounter):
         else:
             source = lowerdir
         target = self.tmpfiles.tdir()
-        os.mkdir(f'{target}/etc')
-        await arun_command([
-            'cp', '-aT', f'{source}/etc/apt', f'{target}/etc/apt',
-            ], check=True)
-        return OverlayMountpoint(
-            lowers=[source],
-            mountpoint=target,
-            upperdir=None)
+        os.mkdir(f"{target}/etc")
+        await arun_command(
+            [
+                "cp",
+                "-aT",
+                f"{source}/etc/apt",
+                f"{target}/etc/apt",
+            ],
+            check=True,
+        )
+        return OverlayMountpoint(lowers=[source], mountpoint=target, upperdir=None)

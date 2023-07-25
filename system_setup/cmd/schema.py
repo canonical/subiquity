@@ -20,19 +20,19 @@ import sys
 
 import jsonschema
 
-from system_setup.cmd.server import make_server_args_parser
-from system_setup.server.server import SystemSetupServer
 from subiquity.cmd.schema import make_schema
 from subiquity.server.server import NOPROBERARG
+from system_setup.cmd.server import make_server_args_parser
+from system_setup.server.server import SystemSetupServer
 
 
 def make_app():
     parser = make_server_args_parser()
-    opts, unknown = parser.parse_known_args(['--dry-run'])
+    opts, unknown = parser.parse_known_args(["--dry-run"])
     opts.machine_config = NOPROBERARG
     opts.kernel_cmdline = {}
     opts.snaps_from_examples = False
-    app = SystemSetupServer(opts, '')
+    app = SystemSetupServer(opts, "")
     app.base_model = app.make_model()
     app.controllers.load_all()
     return app
@@ -47,5 +47,5 @@ def main():
     asyncio.run(run_with_loop())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

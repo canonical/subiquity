@@ -17,9 +17,7 @@ import subprocess
 import unittest
 from unittest import mock
 
-from subiquity.models.network import (
-    NetworkModel,
-)
+from subiquity.models.network import NetworkModel
 
 
 class TestNetworkModel(unittest.IsolatedAsyncioTestCase):
@@ -42,6 +40,5 @@ class TestNetworkModel(unittest.IsolatedAsyncioTestCase):
             self.assertFalse(await self.model.is_nm_enabled())
 
         with mock.patch("subiquity.models.network.arun_command") as arun:
-            arun.side_effect = subprocess.CalledProcessError(
-                    1, [], None, "error")
+            arun.side_effect = subprocess.CalledProcessError(1, [], None, "error")
             self.assertFalse(await self.model.is_nm_enabled())

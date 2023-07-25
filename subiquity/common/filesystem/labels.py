@@ -18,18 +18,18 @@ import functools
 from subiquity.common import types
 from subiquity.common.filesystem import boot, gaps
 from subiquity.models.filesystem import (
+    ZFS,
     Disk,
     LVM_LogicalVolume,
     LVM_VolGroup,
     Partition,
     Raid,
-    ZFS,
     ZPool,
-    )
+)
 
 
 def _annotations_generic(device):
-    preserve = getattr(device, 'preserve', None)
+    preserve = getattr(device, "preserve", None)
     if preserve is None:
         return []
     elif preserve:
@@ -128,16 +128,15 @@ def _desc_partition(partition):
 @desc.register(Raid)
 def _desc_raid(raid):
     level = raid.raidlevel
-    if level.lower().startswith('raid'):
+    if level.lower().startswith("raid"):
         level = level[4:]
     if raid.container:
         raid_type = raid.container.metadata
     elif raid.metadata == "imsm":
-        raid_type = 'imsm'  # maybe VROC?
+        raid_type = "imsm"  # maybe VROC?
     else:
         raid_type = _("software")
-    return _("{type} RAID {level}").format(
-        type=raid_type, level=level)
+    return _("{type} RAID {level}").format(type=raid_type, level=level)
 
 
 @desc.register(LVM_VolGroup)
@@ -199,7 +198,8 @@ def _label_partition(partition, *, short=False):
         return p + _("partition {number}").format(number=partition.number)
     else:
         return p + _("partition {number} of {device}").format(
-            number=partition.number, device=label(partition.device))
+            number=partition.number, device=label(partition.device)
+        )
 
 
 @label.register(gaps.Gap)
@@ -215,10 +215,9 @@ def _usage_labels_generic(device, *, exclude_final_unused=False):
     if cd is not None:
         return [
             _("{component_name} of {desc} {name}").format(
-                component_name=cd.component_name,
-                desc=desc(cd),
-                name=cd.name),
-            ]
+                component_name=cd.component_name, desc=desc(cd), name=cd.name
+            ),
+        ]
     fs = device.fs()
     if fs is not None:
         if fs.preserve:
@@ -279,11 +278,12 @@ def _usage_labels_disk(disk):
 
 @usage_labels.register(Raid)
 def _usage_labels_raid(raid):
-    if raid.metadata == 'imsm' and raid._subvolumes:
+    if raid.metadata == "imsm" and raid._subvolumes:
         return [
-            _('container for {devices}').format(
-                devices=', '.join([label(v) for v in raid._subvolumes]))
-            ]
+            _("container for {devices}").format(
+                devices=", ".join([label(v) for v in raid._subvolumes])
+            )
+        ]
     return _usage_labels_generic(raid)
 
 
@@ -309,7 +309,7 @@ def _for_client_disk(disk, *, min_size=0):
     return types.Disk(
         id=disk.id,
         label=label(disk),
-        path=getattr(disk, 'path', None),
+        path=getattr(disk, "path", None),
         type=desc(disk),
         size=disk.size,
         ptable=disk.ptable,
@@ -319,9 +319,10 @@ def _for_client_disk(disk, *, min_size=0):
         boot_device=boot.is_boot_device(disk),
         can_be_boot_device=boot.can_be_boot_device(disk),
         ok_for_guided=disk.size >= min_size,
-        model=getattr(disk, 'model', None),
-        vendor=getattr(disk, 'vendor', None),
-        has_in_use_partition=disk._has_in_use_partition)
+        model=getattr(disk, "model", None),
+        vendor=getattr(disk, "vendor", None),
+        has_in_use_partition=disk._has_in_use_partition,
+    )
 
 
 @for_client.register(Partition)
@@ -341,7 +342,8 @@ def _for_client_partition(partition, *, min_size=0):
         estimated_min_size=partition.estimated_min_size,
         mount=partition.mount,
         format=partition.format,
-        is_in_use=partition._is_in_use)
+        is_in_use=partition._is_in_use,
+    )
 
 
 @for_client.register(gaps.Gap)
@@ -357,7 +359,7 @@ def _for_client_zpool(zpool, *, min_size=0):
         zfses=[for_client(zfs) for zfs in zpool.zfses],
         pool_properties=zpool.pool_properties,
         fs_properties=zpool.fs_properties,
-        )
+    )
 
 
 @for_client.register(ZFS)

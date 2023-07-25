@@ -20,7 +20,7 @@ import logging
 import os
 from typing import List
 
-log = logging.getLogger('subiquity.common.resources')
+log = logging.getLogger("subiquity.common.resources")
 
 
 def resource_path(relative_path):
@@ -31,17 +31,17 @@ def get_users_and_groups(chroot_prefix=[]) -> List:
     # prevent import when calling just resource_path
     from subiquitycore.utils import run_command
 
-    users_and_groups_path = resource_path('users-and-groups')
-    groups = ['admin']
+    users_and_groups_path = resource_path("users-and-groups")
+    groups = ["admin"]
     if os.path.exists(users_and_groups_path):
         with open(users_and_groups_path) as f:
             groups = f.read().split()
-    groups.append('sudo')
+    groups.append("sudo")
 
-    command = chroot_prefix + ['getent', 'group']
+    command = chroot_prefix + ["getent", "group"]
     cp = run_command(command, check=True)
     target_groups = set()
     for line in cp.stdout.splitlines():
-        target_groups.add(line.split(':')[0])
+        target_groups.add(line.split(":")[0])
 
     return list(target_groups.intersection(groups))

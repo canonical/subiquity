@@ -1,4 +1,5 @@
 import re
+
 import urwid
 
 from subiquitycore.ui.stretchy import StretchyOverlay
@@ -7,13 +8,12 @@ from subiquitycore.ui.stretchy import StretchyOverlay
 def find_with_pred(w, pred, return_path=False):
     def _walk(w, path):
         if not isinstance(w, urwid.Widget):
-            raise RuntimeError(
-                "_walk walked to non-widget %r via %r" % (w, path))
+            raise RuntimeError("_walk walked to non-widget %r via %r" % (w, path))
         if pred(w):
             return w, path
-        if hasattr(w, '_wrapped_widget'):
+        if hasattr(w, "_wrapped_widget"):
             return _walk(w._wrapped_widget, (w,) + path)
-        if hasattr(w, 'original_widget'):
+        if hasattr(w, "original_widget"):
             return _walk(w.original_widget, (w,) + path)
         if isinstance(w, urwid.ListBox):
             for w in w.body:
@@ -25,7 +25,7 @@ def find_with_pred(w, pred, return_path=False):
                 r, p = _walk(w, (w,) + path)
                 if r:
                     return r, p
-        elif hasattr(w, 'contents'):
+        elif hasattr(w, "contents"):
             contents = w.contents
             for w, _ in contents:
                 r, p = _walk(w, (w,) + path)
@@ -36,6 +36,7 @@ def find_with_pred(w, pred, return_path=False):
             if r:
                 return r, p
         return None, None
+
     r, p = _walk(w, ())
     if return_path:
         return r, p
@@ -46,11 +47,12 @@ def find_with_pred(w, pred, return_path=False):
 def find_button_matching(w, pat, return_path=False):
     def pred(w):
         return isinstance(w, urwid.Button) and re.match(pat, w.label)
+
     return find_with_pred(w, pred, return_path)
 
 
 def click(but):
-    but._emit('click')
+    but._emit("click")
 
 
 def keypress(w, key, size=(30, 1)):
@@ -61,8 +63,7 @@ def get_focus_path(w):
     path = []
     while True:
         path.append(w)
-        if isinstance(w, urwid.ListBox) and (w.set_focus_pending ==
-                                             "first selectable"):
+        if isinstance(w, urwid.ListBox) and (w.set_focus_pending == "first selectable"):
             for w2 in w.body:
                 if w2.selectable():
                     w = w2
@@ -71,9 +72,9 @@ def get_focus_path(w):
                 break
         if w.focus is not None:
             w = w.focus
-        elif hasattr(w, '_wrapped_widget'):
+        elif hasattr(w, "_wrapped_widget"):
             w = w._wrapped_widget
-        elif hasattr(w, 'original_widget'):
+        elif hasattr(w, "original_widget"):
             w = w.original_widget
         else:
             break

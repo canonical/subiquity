@@ -21,16 +21,9 @@ from typing import Any, Optional
 import attr
 
 from subiquity.common.filesystem import gaps, sizes
-from subiquity.models.filesystem import (
-    align_up,
-    Disk,
-    Raid,
-    Bootloader,
-    Partition,
-    )
+from subiquity.models.filesystem import Bootloader, Disk, Partition, Raid, align_up
 
-
-log = logging.getLogger('subiquity.common.filesystem.boot')
+log = logging.getLogger("subiquity.common.filesystem.boot")
 
 
 @functools.singledispatch
@@ -55,7 +48,7 @@ def _is_boot_device_raid(raid):
     bl = raid._m.bootloader
     if bl != Bootloader.UEFI:
         return False
-    if not raid.container or raid.container.metadata != 'imsm':
+    if not raid.container or raid.container.metadata != "imsm":
         return False
     return any(p.grub_device for p in raid._partitions)
 
@@ -85,8 +78,7 @@ class CreatePartPlan(MakeBootDevicePlan):
     args: dict = attr.ib(factory=dict)
 
     def apply(self, manipulator):
-        manipulator.create_partition(
-            self.gap.device, self.gap, self.spec, **self.args)
+        manipulator.create_partition(self.gap.device, self.gap, self.spec, **self.args)
 
 
 def _can_resize_part(inst, field, part):
@@ -166,34 +158,39 @@ class MultiStepPlan(MakeBootDevicePlan):
 
 
 def get_boot_device_plan_bios(device) -> Optional[MakeBootDevicePlan]:
-    attr_plan = SetAttrPlan(device, 'grub_device', True)
-    if device.ptable == 'msdos':
+    attr_plan = SetAttrPlan(device, "grub_device", True)
+    if device.ptable == "msdos":
         return attr_plan
     pgs = gaps.parts_and_gaps(device)
     if len(pgs) > 0:
         if isinstance(pgs[0], Partition) and pgs[0].flag == "bios_grub":
             return attr_plan
 
-    gap = gaps.Gap(device=device,
-                   offset=device.alignment_data().min_start_offset,
-                   size=sizes.BIOS_GRUB_SIZE_BYTES)
+    gap = gaps.Gap(
+        device=device,
+        offset=device.alignment_data().min_start_offset,
+        size=sizes.BIOS_GRUB_SIZE_BYTES,
+    )
     create_part_plan = CreatePartPlan(
         gap=gap,
         spec=dict(size=sizes.BIOS_GRUB_SIZE_BYTES, fstype=None, mount=None),
-        args=dict(flag='bios_grub'))
+        args=dict(flag="bios_grub"),
+    )
 
     movable = []
 
     for pg in pgs:
         if isinstance(pg, gaps.Gap):
             if pg.size >= sizes.BIOS_GRUB_SIZE_BYTES:
-                return MultiStepPlan(plans=[
-                    SlidePlan(
-                        parts=movable,
-                        offset_delta=sizes.BIOS_GRUB_SIZE_BYTES),
-                    create_part_plan,
-                    attr_plan,
-                    ])
+                return MultiStepPlan(
+                    plans=[
+                        SlidePlan(
+                            parts=movable, offset_delta=sizes.BIOS_GRUB_SIZE_BYTES
+                        ),
+                        create_part_plan,
+                        attr_plan,
+                    ]
+                )
             else:
                 return None
         elif pg.preserve:
@@ -204,23 +201,21 @@ def get_boot_device_plan_bios(device) -> Optional[MakeBootDevicePlan]:
     if not movable:
         return None
 
-    largest_i, largest_part = max(
-        enumerate(movable),
-        key=lambda i_p: i_p[1].size)
-    return MultiStepPlan(plans=[
-        ResizePlan(
-            part=largest_part,
-            size_delta=-sizes.BIOS_GRUB_SIZE_BYTES),
-        SlidePlan(
-            parts=movable[:largest_i+1],
-            offset_delta=sizes.BIOS_GRUB_SIZE_BYTES),
-        create_part_plan,
-        attr_plan,
-        ])
+    largest_i, largest_part = max(enumerate(movable), key=lambda i_p: i_p[1].size)
+    return MultiStepPlan(
+        plans=[
+            ResizePlan(part=largest_part, size_delta=-sizes.BIOS_GRUB_SIZE_BYTES),
+            SlidePlan(
+                parts=movable[: largest_i + 1], offset_delta=sizes.BIOS_GRUB_SIZE_BYTES
+            ),
+            create_part_plan,
+            attr_plan,
+        ]
+    )
 
 
 def get_add_part_plan(device, *, spec, args, resize_partition=None):
-    size = spec['size']
+    size = spec["size"]
     partitions = device.partitions()
 
     create_part_plan = CreatePartPlan(gap=None, spec=spec, args=args)
@@ -238,70 +233,79 @@ def get_add_part_plan(device, *, spec, args, resize_partition=None):
             return None
 
         offset = resize_partition.offset + resize_partition.size - size
-        create_part_plan.gap = gaps.Gap(
-                device=device, offset=offset, size=size)
-        return MultiStepPlan(plans=[
-            ResizePlan(
-                part=resize_partition,
-                size_delta=-size,
-                allow_resize_preserved=True,
+        create_part_plan.gap = gaps.Gap(device=device, offset=offset, size=size)
+        return MultiStepPlan(
+            plans=[
+                ResizePlan(
+                    part=resize_partition,
+                    size_delta=-size,
+                    allow_resize_preserved=True,
                 ),
-            create_part_plan,
-            ])
+                create_part_plan,
+            ]
+        )
     else:
-        new_primaries = [p for p in partitions
-                         if not p.preserve
-                         if p.flag not in ('extended', 'logical')]
+        new_primaries = [
+            p
+            for p in partitions
+            if not p.preserve
+            if p.flag not in ("extended", "logical")
+        ]
         if not new_primaries:
             return None
         largest_part = max(new_primaries, key=lambda p: p.size)
         if size > largest_part.size // 2:
             return None
         create_part_plan.gap = gaps.Gap(
-                device=device, offset=largest_part.offset, size=size)
-        return MultiStepPlan(plans=[
-            ResizePlan(
-                part=largest_part,
-                size_delta=-size),
-            SlidePlan(
-                parts=[largest_part],
-                offset_delta=size),
-            create_part_plan,
-            ])
+            device=device, offset=largest_part.offset, size=size
+        )
+        return MultiStepPlan(
+            plans=[
+                ResizePlan(part=largest_part, size_delta=-size),
+                SlidePlan(parts=[largest_part], offset_delta=size),
+                create_part_plan,
+            ]
+        )
 
 
 def get_boot_device_plan_uefi(device, resize_partition):
     for part in device.partitions():
         if is_esp(part):
-            plans = [SetAttrPlan(part, 'grub_device', True)]
-            if device._m._mount_for_path('/boot/efi') is None:
+            plans = [SetAttrPlan(part, "grub_device", True)]
+            if device._m._mount_for_path("/boot/efi") is None:
                 plans.append(MountBootEfiPlan(part))
             return MultiStepPlan(plans=plans)
 
     part_align = device.alignment_data().part_align
     size = align_up(sizes.get_efi_size(device.size), part_align)
-    spec = dict(size=size, fstype='fat32', mount=None)
+    spec = dict(size=size, fstype="fat32", mount=None)
     if device._m._mount_for_path("/boot/efi") is None:
-        spec['mount'] = '/boot/efi'
+        spec["mount"] = "/boot/efi"
 
     return get_add_part_plan(
-        device, spec=spec, args=dict(flag='boot', grub_device=True),
-        resize_partition=resize_partition)
+        device,
+        spec=spec,
+        args=dict(flag="boot", grub_device=True),
+        resize_partition=resize_partition,
+    )
 
 
 def get_boot_device_plan_prep(device, resize_partition):
     for part in device.partitions():
         if part.flag == "prep":
-            return MultiStepPlan(plans=[
-                SetAttrPlan(part, 'grub_device', True),
-                SetAttrPlan(part, 'wipe', 'zero')
-                ])
+            return MultiStepPlan(
+                plans=[
+                    SetAttrPlan(part, "grub_device", True),
+                    SetAttrPlan(part, "wipe", "zero"),
+                ]
+            )
 
     return get_add_part_plan(
         device,
         spec=dict(size=sizes.PREP_GRUB_SIZE_BYTES, fstype=None, mount=None),
-        args=dict(flag='prep', grub_device=True, wipe='zero'),
-        resize_partition=resize_partition)
+        args=dict(flag="prep", grub_device=True, wipe="zero"),
+        resize_partition=resize_partition,
+    )
 
 
 def get_boot_device_plan(device, resize_partition=None):
@@ -317,12 +321,11 @@ def get_boot_device_plan(device, resize_partition=None):
         return get_boot_device_plan_prep(device, resize_partition)
     if bl == Bootloader.NONE:
         return NoOpBootPlan()
-    raise Exception(f'unexpected bootloader {bl} here')
+    raise Exception(f"unexpected bootloader {bl} here")
 
 
 @functools.singledispatch
-def can_be_boot_device(device, *,
-                       resize_partition=None, with_reformatting=False):
+def can_be_boot_device(device, *, resize_partition=None, with_reformatting=False):
     """Can `device` be made into a boot device?
 
     If with_reformatting=True, return true if the device can be made
@@ -332,8 +335,7 @@ def can_be_boot_device(device, *,
 
 
 @can_be_boot_device.register(Disk)
-def _can_be_boot_device_disk(disk, *,
-                             resize_partition=None, with_reformatting=False):
+def _can_be_boot_device_disk(disk, *, resize_partition=None, with_reformatting=False):
     if with_reformatting:
         disk = disk._reformatted()
     plan = get_boot_device_plan(disk, resize_partition=resize_partition)
@@ -341,12 +343,11 @@ def _can_be_boot_device_disk(disk, *,
 
 
 @can_be_boot_device.register(Raid)
-def _can_be_boot_device_raid(raid, *,
-                             resize_partition=None, with_reformatting=False):
+def _can_be_boot_device_raid(raid, *, resize_partition=None, with_reformatting=False):
     bl = raid._m.bootloader
     if bl != Bootloader.UEFI:
         return False
-    if not raid.container or raid.container.metadata != 'imsm':
+    if not raid.container or raid.container.metadata != "imsm":
         return False
     if with_reformatting:
         return True
@@ -376,7 +377,7 @@ def _is_esp_partition(partition):
         if typecode is None:
             return False
         try:
-            return int(typecode, 0) == 0xef
+            return int(typecode, 0) == 0xEF
         except ValueError:
             # In case there was garbage in the udev entry...
             return False

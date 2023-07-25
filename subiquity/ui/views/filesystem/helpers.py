@@ -16,9 +16,7 @@
 from urwid import Text
 
 from subiquity.common.filesystem import gaps, labels
-from subiquity.models.filesystem import (
-    humanize_size,
-    )
+from subiquity.models.filesystem import humanize_size
 
 
 def summarize_device(device, part_filter=lambda p: True):
@@ -34,20 +32,29 @@ def summarize_device(device, part_filter=lambda p: True):
     anns = labels.annotations(device) + labels.usage_labels(device)
     if anns:
         label = "{} ({})".format(label, ", ".join(anns))
-    rows = [(device, [
-        (2, Text(label)),
-        Text(labels.desc(device)),
-        Text(humanize_size(device.size), align="right"),
-        ])]
+    rows = [
+        (
+            device,
+            [
+                (2, Text(label)),
+                Text(labels.desc(device)),
+                Text(humanize_size(device.size), align="right"),
+            ],
+        )
+    ]
     partitions = gaps.parts_and_gaps(device)
     for part in partitions:
         if not part_filter(part):
             continue
-        details = ", ".join(
-            labels.annotations(part) + labels.usage_labels(part))
-        rows.append((part, [
-            Text(labels.label(part, short=True)),
-            (2, Text(details)),
-            Text(humanize_size(part.size), align="right"),
-            ]))
+        details = ", ".join(labels.annotations(part) + labels.usage_labels(part))
+        rows.append(
+            (
+                part,
+                [
+                    Text(labels.label(part, short=True)),
+                    (2, Text(details)),
+                    Text(humanize_size(part.size), align="right"),
+                ],
+            )
+        )
     return rows

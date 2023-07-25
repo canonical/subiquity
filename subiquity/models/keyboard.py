@@ -14,17 +14,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import re
 import os
+import re
 
 import yaml
 
 from subiquity.common.resources import resource_path
 from subiquity.common.serialize import Serializer
-from subiquity.common.types import (
-    KeyboardLayout,
-    KeyboardSetting,
-)
+from subiquity.common.types import KeyboardLayout, KeyboardSetting
 
 log = logging.getLogger("subiquity.models.keyboard")
 
@@ -44,12 +41,13 @@ BACKSPACE="guess"
 
 
 class InconsistentMultiLayoutError(ValueError):
-    """ Exception to raise when a multi layout has a different number of
-    layouts and variants. """
+    """Exception to raise when a multi layout has a different number of
+    layouts and variants."""
+
     def __init__(self, layouts: str, variants: str) -> None:
         super().__init__(
-                f'inconsistent multi-layout: layouts="{layouts}"'
-                f' variants="{variants}"')
+            f'inconsistent multi-layout: layouts="{layouts}"' f' variants="{variants}"'
+        )
 
 
 def from_config_file(config_file):
@@ -57,10 +55,10 @@ def from_config_file(config_file):
         content = fp.read()
 
     def optval(opt, default):
-        match = re.search(r'(?m)^\s*%s=(.*)$' % (opt,), content)
+        match = re.search(r"(?m)^\s*%s=(.*)$" % (opt,), content)
         if match:
             r = match.group(1).strip('"')
-            if r != '':
+            if r != "":
                 return r
         return default
 
@@ -68,24 +66,22 @@ def from_config_file(config_file):
     XKBVARIANT = optval("XKBVARIANT", "")
     XKBOPTIONS = optval("XKBOPTIONS", "")
     toggle = None
-    for option in XKBOPTIONS.split(','):
-        if option.startswith('grp:'):
+    for option in XKBOPTIONS.split(","):
+        if option.startswith("grp:"):
             toggle = option[4:]
     return KeyboardSetting(layout=XKBLAYOUT, variant=XKBVARIANT, toggle=toggle)
 
 
 class KeyboardModel:
-
     def __init__(self, root):
-        self.config_path = os.path.join(
-            root, 'etc', 'default', 'keyboard')
+        self.config_path = os.path.join(root, "etc", "default", "keyboard")
         self.layout_for_lang = self.load_layout_suggestions()
         if os.path.exists(self.config_path):
             self.default_setting = from_config_file(self.config_path)
         else:
-            self.default_setting = self.layout_for_lang['en_US.UTF-8']
+            self.default_setting = self.layout_for_lang["en_US.UTF-8"]
         self.keyboard_list = KeyboardList()
-        self.keyboard_list.load_language('C')
+        self.keyboard_list.load_language("C")
         self._setting = None
 
     @property
@@ -105,44 +101,50 @@ class KeyboardModel:
 
         if len(layout_tokens) != len(variant_tokens):
             raise InconsistentMultiLayoutError(
-                    layouts=setting.layout, variants=setting.variant)
+                layouts=setting.layout, variants=setting.variant
+            )
 
         for layout, variant in zip(layout_tokens, variant_tokens):
             kbd_layout = self.keyboard_list.layout_map.get(layout)
             if kbd_layout is None:
                 raise ValueError(f'Unknown keyboard layout "{layout}"')
-            if not any(kbd_variant.code == variant
-                       for kbd_variant in kbd_layout.variants):
-                raise ValueError(f'Unknown keyboard variant "{variant}" '
-                                 f'for layout "{layout}"')
+            if not any(
+                kbd_variant.code == variant for kbd_variant in kbd_layout.variants
+            ):
+                raise ValueError(
+                    f'Unknown keyboard variant "{variant}" ' f'for layout "{layout}"'
+                )
 
     def render_config_file(self):
         options = ""
         if self.setting.toggle:
             options = "grp:" + self.setting.toggle
         return etc_default_keyboard_template.format(
-            layout=self.setting.layout,
-            variant=self.setting.variant,
-            options=options)
+            layout=self.setting.layout, variant=self.setting.variant, options=options
+        )
 
     def render(self):
         return {
-            'write_files': {
-                'etc_default_keyboard': {
-                    'path': 'etc/default/keyboard',
-                    'content': self.render_config_file(),
-                    'permissions': 0o644,
-                    },
+            "write_files": {
+                "etc_default_keyboard": {
+                    "path": "etc/default/keyboard",
+                    "content": self.render_config_file(),
+                    "permissions": 0o644,
                 },
-            'curthooks_commands': {
+            },
+            "curthooks_commands": {
                 # The below command must be run after updating
                 # etc/default/keyboard on the target so that the initramfs uses
                 # the keyboard mapping selected by the user.  See LP #1894009
-                '002-setupcon-save-only': [
-                    'curtin', 'in-target', '--', 'setupcon', '--save-only',
-                    ],
-                },
-            }
+                "002-setupcon-save-only": [
+                    "curtin",
+                    "in-target",
+                    "--",
+                    "setupcon",
+                    "--save-only",
+                ],
+            },
+        }
 
     def setting_for_lang(self, lang):
         if self._setting is not None:
@@ -154,7 +156,7 @@ class KeyboardModel:
 
     def load_layout_suggestions(self, path=None):
         if path is None:
-            path = resource_path('kbds') + '/keyboard-configuration.yaml'
+            path = resource_path("kbds") + "/keyboard-configuration.yaml"
 
         with open(path) as fp:
             data = yaml.safe_load(fp)
@@ -166,25 +168,24 @@ class KeyboardModel:
 
 
 class KeyboardList:
-
     def __init__(self):
-        self._kbnames_dir = resource_path('kbds')
+        self._kbnames_dir = resource_path("kbds")
         self.serializer = Serializer(compact=True)
         self._clear()
 
     def _file_for_lang(self, code):
-        return os.path.join(self._kbnames_dir, code + '.jsonl')
+        return os.path.join(self._kbnames_dir, code + ".jsonl")
 
     def _has_language(self, code):
         return os.path.exists(self._file_for_lang(code))
 
     def load_language(self, code):
-        if '.' in code:
-            code = code.split('.')[0]
+        if "." in code:
+            code = code.split(".")[0]
         if not self._has_language(code):
-            code = code.split('_')[0]
+            code = code.split("_")[0]
         if not self._has_language(code):
-            code = 'C'
+            code = "C"
 
         if code == self.current_lang:
             return

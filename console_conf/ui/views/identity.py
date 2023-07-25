@@ -14,20 +14,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+
 from urwid import connect_signal
 
-from subiquitycore.view import BaseView
+from subiquitycore.ui.form import EmailField, Form
 from subiquitycore.ui.utils import SomethingFailed
-from subiquitycore.ui.form import (
-    Form,
-    EmailField,
-)
-
+from subiquitycore.view import BaseView
 
 log = logging.getLogger("console_conf.ui.views.identity")
 
-sso_help = ("If you do not have an account, visit "
-            "https://login.ubuntu.com to create one.")
+sso_help = (
+    "If you do not have an account, visit " "https://login.ubuntu.com to create one."
+)
 
 
 class IdentityForm(Form):
@@ -45,11 +43,12 @@ class IdentityView(BaseView):
         self.controller = controller
         self.form = IdentityForm()
 
-        connect_signal(self.form, 'submit', self.done)
-        connect_signal(self.form, 'cancel', self.cancel)
+        connect_signal(self.form, "submit", self.done)
+        connect_signal(self.form, "cancel", self.cancel)
 
-        super().__init__(self.form.as_screen(focus_buttons=False,
-                                             excerpt=_(self.excerpt)))
+        super().__init__(
+            self.form.as_screen(focus_buttons=False, excerpt=_(self.excerpt))
+        )
 
     def cancel(self, button=None):
         self.controller.cancel()

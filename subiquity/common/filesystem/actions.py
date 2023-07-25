@@ -27,8 +27,7 @@ from subiquity.models.filesystem import (
     Partition,
     Raid,
     raidlevels_by_value,
-    )
-
+)
 
 _checkers = {}
 
@@ -37,8 +36,9 @@ def make_checker(action):
     @functools.singledispatch
     def impl(device):
         raise NotImplementedError(
-            "checker for %s on %s not implemented" % (
-                action, device))
+            "checker for %s on %s not implemented" % (action, device)
+        )
+
     _checkers[action] = impl
     return impl
 
@@ -75,8 +75,7 @@ class DeviceAction(enum.Enum):
 
 @functools.singledispatch
 def _supported_actions(device):
-    raise NotImplementedError(
-        "_supported_actions({}) not defined".format(device))
+    raise NotImplementedError("_supported_actions({}) not defined".format(device))
 
 
 @_supported_actions.register(Disk)
@@ -86,7 +85,7 @@ def _disk_actions(disk):
         DeviceAction.REFORMAT,
         DeviceAction.FORMAT,
         DeviceAction.REMOVE,
-        ]
+    ]
     if disk._m.bootloader != Bootloader.NONE:
         actions.append(DeviceAction.TOGGLE_BOOT)
     return actions
@@ -98,7 +97,7 @@ def _part_actions(part):
         DeviceAction.EDIT,
         DeviceAction.REMOVE,
         DeviceAction.DELETE,
-        ]
+    ]
 
 
 @_supported_actions.register(Raid)
@@ -107,7 +106,7 @@ def _raid_actions(raid):
         return [
             DeviceAction.EDIT,
             DeviceAction.DELETE,
-            ]
+        ]
     else:
         actions = [
             DeviceAction.EDIT,
@@ -115,9 +114,9 @@ def _raid_actions(raid):
             DeviceAction.REMOVE,
             DeviceAction.DELETE,
             DeviceAction.REFORMAT,
-            ]
+        ]
         if raid._m.bootloader == Bootloader.UEFI:
-            if raid.container and raid.container.metadata == 'imsm':
+            if raid.container and raid.container.metadata == "imsm":
                 actions.append(DeviceAction.TOGGLE_BOOT)
         return actions
 
@@ -127,7 +126,7 @@ def _vg_actions(vg):
     return [
         DeviceAction.EDIT,
         DeviceAction.DELETE,
-        ]
+    ]
 
 
 @_supported_actions.register(LVM_LogicalVolume)
@@ -135,14 +134,14 @@ def _lv_actions(lv):
     return [
         DeviceAction.EDIT,
         DeviceAction.DELETE,
-        ]
+    ]
 
 
 @_supported_actions.register(gaps.Gap)
 def _gap_actions(lv):
     return [
         DeviceAction.PARTITION,
-        ]
+    ]
 
 
 _can_info = make_checker(DeviceAction.INFO)
@@ -161,11 +160,10 @@ def _can_edit_generic(device):
     if cd is None:
         return True
     return _(
-        "Cannot edit {selflabel} as it is part of the {cdtype} "
-        "{cdname}.").format(
-            selflabel=labels.label(device),
-            cdtype=labels.desc(cd),
-            cdname=labels.label(cd))
+        "Cannot edit {selflabel} as it is part of the {cdtype} " "{cdname}."
+    ).format(
+        selflabel=labels.label(device), cdtype=labels.desc(cd), cdname=labels.label(cd)
+    )
 
 
 @_can_edit.register(Partition)
@@ -183,9 +181,9 @@ def _can_edit_raid(raid):
     if raid.preserve:
         return _("Cannot edit pre-existing RAIDs.")
     elif len(raid._partitions) > 0:
-        return _(
-            "Cannot edit {raidlabel} because it has partitions.").format(
-                raidlabel=labels.label(raid))
+        return _("Cannot edit {raidlabel} because it has partitions.").format(
+            raidlabel=labels.label(raid)
+        )
     else:
         return _can_edit_generic(raid)
 
@@ -195,10 +193,9 @@ def _can_edit_vg(vg):
     if vg.preserve:
         return _("Cannot edit pre-existing volume groups.")
     elif len(vg._partitions) > 0:
-        return _(
-            "Cannot edit {vglabel} because it has logical "
-            "volumes.").format(
-                vglabel=labels.label(vg))
+        return _("Cannot edit {vglabel} because it has logical " "volumes.").format(
+            vglabel=labels.label(vg)
+        )
     else:
         return _can_edit_generic(vg)
 
@@ -251,11 +248,13 @@ def _can_remove_device(device):
     if cd is None:
         return False
     if cd.preserve:
-        return _("Cannot remove {selflabel} from pre-existing {cdtype} "
-                 "{cdlabel}.").format(
-                    selflabel=labels.label(device),
-                    cdtype=labels.desc(cd),
-                    cdlabel=labels.label(cd))
+        return _(
+            "Cannot remove {selflabel} from pre-existing {cdtype} " "{cdlabel}."
+        ).format(
+            selflabel=labels.label(device),
+            cdtype=labels.desc(cd),
+            cdlabel=labels.label(cd),
+        )
     if isinstance(cd, Raid):
         if device in cd.spare_devices:
             return True
@@ -263,19 +262,23 @@ def _can_remove_device(device):
         if len(cd.devices) == min_devices:
             return _(
                 "Removing {selflabel} would leave the {cdtype} {cdlabel} with "
-                "less than {min_devices} devices.").format(
-                    selflabel=labels.label(device),
-                    cdtype=labels.desc(cd),
-                    cdlabel=labels.label(cd),
-                    min_devices=min_devices)
+                "less than {min_devices} devices."
+            ).format(
+                selflabel=labels.label(device),
+                cdtype=labels.desc(cd),
+                cdlabel=labels.label(cd),
+                min_devices=min_devices,
+            )
     elif isinstance(cd, LVM_VolGroup):
         if len(cd.devices) == 1:
             return _(
                 "Removing {selflabel} would leave the {cdtype} {cdlabel} with "
-                "no devices.").format(
-                    selflabel=labels.label(device),
-                    cdtype=labels.desc(cd),
-                    cdlabel=labels.label(cd))
+                "no devices."
+            ).format(
+                selflabel=labels.label(device),
+                cdtype=labels.desc(cd),
+                cdlabel=labels.label(cd),
+            )
     return True
 
 
@@ -287,11 +290,10 @@ def _can_delete_generic(device):
     if cd is None:
         return True
     return _(
-        "Cannot delete {selflabel} as it is part of the {cdtype} "
-        "{cdname}.").format(
-            selflabel=labels.label(device),
-            cdtype=labels.desc(cd),
-            cdname=labels.label(cd))
+        "Cannot delete {selflabel} as it is part of the {cdtype} " "{cdname}."
+    ).format(
+        selflabel=labels.label(device), cdtype=labels.desc(cd), cdname=labels.label(cd)
+    )
 
 
 @_can_delete.register(Partition)
@@ -299,8 +301,10 @@ def _can_delete_partition(partition):
     if partition._is_in_use:
         return False
     if partition.device._has_preexisting_partition():
-        return _("Cannot delete a single partition from a device that "
-                 "already has partitions.")
+        return _(
+            "Cannot delete a single partition from a device that "
+            "already has partitions."
+        )
     if boot.is_bootloader_partition(partition):
         return _("Cannot delete required bootloader partition")
     return _can_delete_generic(partition)
@@ -317,22 +321,21 @@ def _can_delete_raid_vg(device):
             cd = p.constructed_device()
             return _(
                 "Cannot delete {devicelabel} as partition {partnum} is part "
-                "of the {cdtype} {cdname}.").format(
-                    devicelabel=labels.label(device),
-                    partnum=p.number,
-                    cdtype=labels.desc(cd),
-                    cdname=labels.label(cd),
-                    )
+                "of the {cdtype} {cdname}."
+            ).format(
+                devicelabel=labels.label(device),
+                partnum=p.number,
+                cdtype=labels.desc(cd),
+                cdname=labels.label(cd),
+            )
     if mounted_partitions > 1:
         return _(
-            "Cannot delete {devicelabel} because it has {count} mounted "
-            "partitions.").format(
-                devicelabel=labels.label(device),
-                count=mounted_partitions)
+            "Cannot delete {devicelabel} because it has {count} mounted " "partitions."
+        ).format(devicelabel=labels.label(device), count=mounted_partitions)
     elif mounted_partitions == 1:
         return _(
             "Cannot delete {devicelabel} because it has 1 mounted partition."
-            ).format(devicelabel=labels.label(device))
+        ).format(devicelabel=labels.label(device))
     else:
         return _can_delete_generic(device)
 
@@ -340,8 +343,10 @@ def _can_delete_raid_vg(device):
 @_can_delete.register(LVM_LogicalVolume)
 def _can_delete_lv(lv):
     if lv.volgroup._has_preexisting_partition():
-        return _("Cannot delete a single logical volume from a volume "
-                 "group that already has logical volumes.")
+        return _(
+            "Cannot delete a single logical volume from a volume "
+            "group that already has logical volumes."
+        )
     return True
 
 

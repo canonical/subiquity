@@ -15,20 +15,19 @@
 
 import os
 import pathlib
-from unittest.mock import AsyncMock, call, Mock, patch
+from unittest.mock import AsyncMock, Mock, call, patch
 
-from subiquitycore.tests import SubiTestCase
-from subiquitycore.tests.mocks import make_app
 from subiquity.server.mounter import (
-    lowerdir_for,
     Mounter,
     Mountpoint,
     OverlayMountpoint,
+    lowerdir_for,
 )
+from subiquitycore.tests import SubiTestCase
+from subiquitycore.tests.mocks import make_app
 
 
 class TestMounter(SubiTestCase):
-
     def setUp(self):
         self.model = Mock()
         self.app = make_app(self.model)
@@ -36,8 +35,9 @@ class TestMounter(SubiTestCase):
     async def test_mount_unmount(self):
         mounter = Mounter(self.app)
         # Make sure we can unmount something that we mounted before.
-        with patch.object(self.app, "command_runner",
-                          create=True, new_callable=AsyncMock):
+        with patch.object(
+            self.app, "command_runner", create=True, new_callable=AsyncMock
+        ):
             m = await mounter.mount("/dev/cdrom", self.tmp_dir())
             await mounter.unmount(m)
 
@@ -50,10 +50,10 @@ class TestMounter(SubiTestCase):
 
         def touch(*paths):
             for p in paths:
-                if p.endswith('/'):
+                if p.endswith("/"):
                     os.mkdir(p)
                 else:
-                    with open(p, 'w'):
+                    with open(p, "w"):
                         pass
 
         # Create the following situation:
@@ -75,31 +75,29 @@ class TestMounter(SubiTestCase):
         #   * src/only-src-dir           -> dst/only-src-dir
         #   * src/only-src-file          -> dst/only-src-file
 
-        touch(f'{src}/only-src-file')
-        touch(f'{dst}/only-dst-file')
-        touch(f'{src}/both-file', f'{dst}/both-file')
-        touch(f'{src}/only-src-dir/', f'{src}/only-src-dir/file')
-        touch(f'{dst}/only-dst-dir/', f'{dst}/only-dst-dir/file')
-        touch(f'{src}/both-dir/', f'{dst}/both-dir/')
-        touch(f'{src}/both-dir/only-src-file', f'{src}/both-dir/both-file')
-        touch(f'{dst}/both-dir/only-dst-file', f'{dst}/both-dir/both-file')
+        touch(f"{src}/only-src-file")
+        touch(f"{dst}/only-dst-file")
+        touch(f"{src}/both-file", f"{dst}/both-file")
+        touch(f"{src}/only-src-dir/", f"{src}/only-src-dir/file")
+        touch(f"{dst}/only-dst-dir/", f"{dst}/only-dst-dir/file")
+        touch(f"{src}/both-dir/", f"{dst}/both-dir/")
+        touch(f"{src}/both-dir/only-src-file", f"{src}/both-dir/both-file")
+        touch(f"{dst}/both-dir/only-dst-file", f"{dst}/both-dir/both-file")
 
         with patch.object(mounter, "mount", new_callable=AsyncMock) as mocked:
             await mounter.bind_mount_tree(src, dst)
-        mocked.assert_has_calls([
-            call(
-                f'{src}/only-src-file',
-                f'{dst}/only-src-file',
-                options='bind'),
-            call(
-                f'{src}/only-src-dir',
-                f'{dst}/only-src-dir',
-                options='bind'),
-            call(
-                f'{src}/both-dir/only-src-file',
-                f'{dst}/both-dir/only-src-file',
-                options='bind'),
-            ], any_order=True)
+        mocked.assert_has_calls(
+            [
+                call(f"{src}/only-src-file", f"{dst}/only-src-file", options="bind"),
+                call(f"{src}/only-src-dir", f"{dst}/only-src-dir", options="bind"),
+                call(
+                    f"{src}/both-dir/only-src-file",
+                    f"{dst}/both-dir/only-src-file",
+                    options="bind",
+                ),
+            ],
+            any_order=True,
+        )
         self.assertEqual(mocked.call_count, 3)
 
     async def test_bind_mount_tree_no_target(self):
@@ -107,18 +105,18 @@ class TestMounter(SubiTestCase):
         # check bind_mount_tree behaviour when the passed dst does not
         # exist.
         src = self.tmp_dir()
-        dst = os.path.join(self.tmp_dir(), 'dst')
+        dst = os.path.join(self.tmp_dir(), "dst")
 
         with patch.object(mounter, "mount", new_callable=AsyncMock) as mocked:
             await mounter.bind_mount_tree(src, dst)
-        mocked.assert_called_once_with(src, dst, options='bind')
+        mocked.assert_called_once_with(src, dst, options="bind")
 
     async def test_bind_mount_creates_dest_dir(self):
         mounter = Mounter(self.app)
         # When we are bind mounting a directory, the destination should be
         # created as a directory.
         src = self.tmp_dir()
-        dst = pathlib.Path(self.tmp_dir()) / 'dst'
+        dst = pathlib.Path(self.tmp_dir()) / "dst"
 
         self.app.command_runner = AsyncMock()
         await mounter.bind_mount_tree(src, dst)
@@ -128,9 +126,9 @@ class TestMounter(SubiTestCase):
         mounter = Mounter(self.app)
         # When we are bind mounting a file, the destination should be created
         # as a file.
-        src = pathlib.Path(self.tmp_dir()) / 'src'
+        src = pathlib.Path(self.tmp_dir()) / "src"
         src.touch()
-        dst = pathlib.Path(self.tmp_dir()) / 'dst'
+        dst = pathlib.Path(self.tmp_dir()) / "dst"
 
         self.app.command_runner = AsyncMock()
         await mounter.bind_mount_tree(src, dst)
@@ -140,9 +138,9 @@ class TestMounter(SubiTestCase):
         mounter = Mounter(self.app)
         # When we are mounting a device, the destination should be created
         # as a directory.
-        src = pathlib.Path(self.tmp_dir()) / 'src'
+        src = pathlib.Path(self.tmp_dir()) / "src"
         src.touch()
-        dst = pathlib.Path(self.tmp_dir()) / 'dst'
+        dst = pathlib.Path(self.tmp_dir()) / "dst"
 
         self.app.command_runner = AsyncMock()
         await mounter.mount(src, dst)
@@ -151,51 +149,46 @@ class TestMounter(SubiTestCase):
 
 class TestLowerDirFor(SubiTestCase):
     def test_lowerdir_for_str(self):
-        self.assertEqual(
-                lowerdir_for("/tmp/lower1"),
-                "/tmp/lower1")
+        self.assertEqual(lowerdir_for("/tmp/lower1"), "/tmp/lower1")
 
     def test_lowerdir_for_str_list(self):
         self.assertEqual(
-                lowerdir_for(["/tmp/lower1", "/tmp/lower2"]),
-                "/tmp/lower2:/tmp/lower1")
+            lowerdir_for(["/tmp/lower1", "/tmp/lower2"]), "/tmp/lower2:/tmp/lower1"
+        )
 
     def test_lowerdir_for_mountpoint(self):
-        self.assertEqual(
-                lowerdir_for(Mountpoint(mountpoint="/mnt")),
-                "/mnt")
+        self.assertEqual(lowerdir_for(Mountpoint(mountpoint="/mnt")), "/mnt")
 
     def test_lowerdir_for_simple_overlay(self):
         overlay = OverlayMountpoint(
-                lowers=["/tmp/lower1"],
-                upperdir="/tmp/upper1",
-                mountpoint="/mnt",
+            lowers=["/tmp/lower1"],
+            upperdir="/tmp/upper1",
+            mountpoint="/mnt",
         )
         self.assertEqual(lowerdir_for(overlay), "/tmp/upper1:/tmp/lower1")
 
     def test_lowerdir_for_overlay(self):
         overlay = OverlayMountpoint(
-                lowers=["/tmp/lower1", "/tmp/lower2"],
-                upperdir="/tmp/upper1",
-                mountpoint="/mnt",
+            lowers=["/tmp/lower1", "/tmp/lower2"],
+            upperdir="/tmp/upper1",
+            mountpoint="/mnt",
         )
-        self.assertEqual(
-                lowerdir_for(overlay),
-                "/tmp/upper1:/tmp/lower2:/tmp/lower1")
+        self.assertEqual(lowerdir_for(overlay), "/tmp/upper1:/tmp/lower2:/tmp/lower1")
 
     def test_lowerdir_for_list(self):
         overlay = OverlayMountpoint(
-                lowers=["/tmp/overlaylower1", "/tmp/overlaylower2"],
-                upperdir="/tmp/overlayupper1",
-                mountpoint="/mnt/overlay",
+            lowers=["/tmp/overlaylower1", "/tmp/overlaylower2"],
+            upperdir="/tmp/overlayupper1",
+            mountpoint="/mnt/overlay",
         )
         mountpoint = Mountpoint(mountpoint="/mnt/mountpoint")
         lowers = ["/tmp/lower1", "/tmp/lower2"]
         self.assertEqual(
-                lowerdir_for([overlay, mountpoint, lowers]),
-                "/tmp/lower2:/tmp/lower1" +
-                ":/mnt/mountpoint" +
-                ":/tmp/overlayupper1:/tmp/overlaylower2:/tmp/overlaylower1")
+            lowerdir_for([overlay, mountpoint, lowers]),
+            "/tmp/lower2:/tmp/lower1"
+            + ":/mnt/mountpoint"
+            + ":/tmp/overlayupper1:/tmp/overlaylower2:/tmp/overlaylower1",
+        )
 
     def test_lowerdir_for_other(self):
         with self.assertRaises(NotImplementedError):

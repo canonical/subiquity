@@ -18,25 +18,16 @@ import logging
 
 import aiohttp
 
+from subiquity.client.controller import SubiquityTuiController
+from subiquity.common.types import ApplicationState, ShutdownMode
+from subiquity.ui.views.installprogress import InstallRunning, ProgressView
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.context import with_context
-
-from subiquity.client.controller import SubiquityTuiController
-from subiquity.common.types import (
-    ApplicationState,
-    ShutdownMode,
-    )
-from subiquity.ui.views.installprogress import (
-    InstallRunning,
-    ProgressView,
-    )
-
 
 log = logging.getLogger("subiquity.client.controllers.progress")
 
 
 class ProgressController(SubiquityTuiController):
-
     def __init__(self, app):
         super().__init__(app)
         self.progress_view = ProgressView(self)
@@ -49,13 +40,13 @@ class ProgressController(SubiquityTuiController):
             self.progress_view.event_start(
                 event["SUBIQUITY_CONTEXT_ID"],
                 event.get("SUBIQUITY_CONTEXT_PARENT_ID"),
-                event["MESSAGE"])
+                event["MESSAGE"],
+            )
         elif event["SUBIQUITY_EVENT_TYPE"] == "finish":
-            self.progress_view.event_finish(
-                event["SUBIQUITY_CONTEXT_ID"])
+            self.progress_view.event_finish(event["SUBIQUITY_CONTEXT_ID"])
 
     def log_line(self, event):
-        log_line = event['MESSAGE']
+        log_line = event["MESSAGE"]
         self.progress_view.add_log_line(log_line)
 
     def cancel(self):
@@ -79,8 +70,7 @@ class ProgressController(SubiquityTuiController):
         install_running = None
         while True:
             try:
-                app_status = await self.app.client.meta.status.GET(
-                    cur=self.app_state)
+                app_status = await self.app.client.meta.status.GET(cur=self.app_state)
             except aiohttp.ClientError:
                 await asyncio.sleep(1)
                 continue
@@ -103,7 +93,8 @@ class ProgressController(SubiquityTuiController):
             if self.app_state == ApplicationState.RUNNING:
                 if app_status.confirming_tty != self.app.our_tty:
                     install_running = InstallRunning(
-                        self.app, app_status.confirming_tty)
+                        self.app, app_status.confirming_tty
+                    )
                     self.app.add_global_overlay(install_running)
             else:
                 if install_running is not None:
@@ -111,7 +102,7 @@ class ProgressController(SubiquityTuiController):
                     install_running = None
 
             if self.app_state == ApplicationState.DONE:
-                if self.answers.get('reboot', False):
+                if self.answers.get("reboot", False):
                     self.click_reboot()
 
     def make_ui(self):

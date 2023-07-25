@@ -16,15 +16,8 @@
 import copy
 import logging
 
-from curtin.reporter import (
-    available_handlers,
-    update_configuration,
-    )
-from curtin.reporter.events import (
-    report_finish_event,
-    report_start_event,
-    status,
-    )
+from curtin.reporter import available_handlers, update_configuration
+from curtin.reporter.events import report_finish_event, report_start_event, status
 from curtin.reporter.handlers import LogHandler as CurtinLogHandler
 
 from subiquity.server.controller import NonInteractiveController
@@ -33,33 +26,32 @@ from subiquity.server.controller import NonInteractiveController
 class LogHandler(CurtinLogHandler):
     def publish_event(self, event):
         level = getattr(logging, event.level)
-        logger = logging.getLogger('')
+        logger = logging.getLogger("")
         logger.log(level, event.as_string())
 
 
-available_handlers.unregister_item('log')
-available_handlers.register_item('log', LogHandler)
+available_handlers.unregister_item("log")
+available_handlers.register_item("log", LogHandler)
 
 INITIAL_CONFIG = {
-    'logging': {'type': 'log'},
-    }
-NON_INTERACTIVE_CONFIG = {'builtin': {'type': 'print'}}
+    "logging": {"type": "log"},
+}
+NON_INTERACTIVE_CONFIG = {"builtin": {"type": "print"}}
 
 
 class ReportingController(NonInteractiveController):
-
     autoinstall_key = "reporting"
     autoinstall_schema = {
-        'type': 'object',
-        'additionalProperties': {
-            'type': 'object',
-            'properties': {
-                'type': {'type': 'string'},
-                },
-            'required': ['type'],
-            'additionalProperties': True,
+        "type": "object",
+        "additionalProperties": {
+            "type": "object",
+            "properties": {
+                "type": {"type": "string"},
             },
-        }
+            "required": ["type"],
+            "additionalProperties": True,
+        },
+    }
 
     def __init__(self, app):
         super().__init__(app)
@@ -77,10 +69,10 @@ class ReportingController(NonInteractiveController):
         update_configuration(self.config)
 
     def report_start_event(self, context, description):
-        report_start_event(
-            context.full_name(), description, level=context.level)
+        report_start_event(context.full_name(), description, level=context.level)
 
     def report_finish_event(self, context, description, result):
         result = getattr(status, result.name, status.WARN)
         report_finish_event(
-            context.full_name(), description, result, level=context.level)
+            context.full_name(), description, result, level=context.level
+        )
