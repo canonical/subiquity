@@ -1005,7 +1005,6 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         # Disks with "in use" partitions do not allow a reformat if
         # there is not enough space on the rest of the disk.
         await self._setup(bootloader, ptable, fix_bios=True, size=25 << 30)
-        print(bootloader, ptable)
         make_partition(
             self.model, self.disk, preserve=True, size=23 << 30, is_in_use=True
         )
