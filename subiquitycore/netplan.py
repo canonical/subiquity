@@ -1,17 +1,18 @@
 import copy
-import glob
 import fnmatch
-import os
+import glob
 import logging
+import os
+
 import yaml
 
 log = logging.getLogger("subiquitycore.netplan")
 
 
 def _sanitize_inteface_config(iface_config):
-    for ap, ap_config in iface_config.get('access-points', {}).items():
-        if 'password' in ap_config:
-            ap_config['password'] = '<REDACTED>'
+    for ap, ap_config in iface_config.get("access-points", {}).items():
+        if "password" in ap_config:
+            ap_config["password"] = "<REDACTED>"
 
 
 def sanitize_interface_config(iface_config):
@@ -23,7 +24,7 @@ def sanitize_interface_config(iface_config):
 def sanitize_config(config):
     """Return a copy of config with passwords redacted."""
     config = copy.deepcopy(config)
-    interfaces = config.get('network', {}).get('wifis', {}).items()
+    interfaces = config.get("network", {}).get("wifis", {}).items()
     for iface, iface_config in interfaces:
         _sanitize_inteface_config(iface_config)
     return config
@@ -48,7 +49,7 @@ class Config:
         except yaml.ReaderError as e:
             log.info("could not parse config: %s", e)
             return
-        network = config.get('network')
+        network = config.get("network")
         if network is None:
             log.info("no 'network' key in config")
             return
@@ -56,10 +57,10 @@ class Config:
         if version != 2:
             log.info("network has no/unexpected version %s", version)
             return
-        for phys_key in 'ethernets', 'wifis':
+        for phys_key in "ethernets", "wifis":
             for dev, dev_config in network.get(phys_key, {}).items():
                 self.physical_devices.append(_PhysicalDevice(dev, dev_config))
-        for virt_key in 'bonds', 'vlans':
+        for virt_key in "bonds", "vlans":
             for dev, dev_config in network.get(virt_key, {}).items():
                 self.virtual_devices.append(_VirtualDevice(dev, dev_config))
 
@@ -69,14 +70,17 @@ class Config:
                 if dev.name == link.name:
                     return copy.deepcopy(dev.config)
         else:
-            allowed_matches = ('macaddress',)
-            match_key = 'match'
+            allowed_matches = ("macaddress",)
+            match_key = "match"
             for dev in self.physical_devices:
                 if dev.matches_link(link):
                     config = copy.deepcopy(dev.config)
                     if match_key in config:
-                        match = {k: v for k, v in config[match_key].items()
-                                 if k in allowed_matches}
+                        match = {
+                            k: v
+                            for k, v in config[match_key].items()
+                            if k in allowed_matches
+                        }
                         if match:
                             config[match_key] = match
                         else:
@@ -96,19 +100,17 @@ class Config:
 
 class _PhysicalDevice:
     def __init__(self, name, config):
-        match = config.get('match')
+        match = config.get("match")
         if match is None:
             self.match_name = name
             self.match_mac = None
             self.match_driver = None
         else:
-            self.match_name = match.get('name')
-            self.match_mac = match.get('macaddress')
-            self.match_driver = match.get('driver')
+            self.match_name = match.get("name")
+            self.match_mac = match.get("macaddress")
+            self.match_driver = match.get("driver")
         self.config = config
-        log.debug(
-            "config for %s = %s" % (
-                name, sanitize_interface_config(self.config)))
+        log.debug("config for %s = %s" % (name, sanitize_interface_config(self.config)))
 
     def matches_link(self, link):
         if self.match_name is not None:
@@ -130,9 +132,7 @@ class _VirtualDevice:
     def __init__(self, name, config):
         self.name = name
         self.config = config
-        log.debug(
-            "config for %s = %s" % (
-                name, sanitize_interface_config(self.config)))
+        log.debug("config for %s = %s" % (name, sanitize_interface_config(self.config)))
 
 
 def configs_in_root(root, masked=False):
@@ -155,7 +155,7 @@ def configs_in_root(root, masked=False):
         """returned key is basename + string-precidence based on dir."""
         bname = os.path.basename(path)
         bdir = path[rootlen + 1]
-        bdir = bdir[:bdir.find(os.path.sep)]
+        bdir = bdir[: bdir.find(os.path.sep)]
         return "%s/%s" % (bname, bdir)
 
     if not masked:

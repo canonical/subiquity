@@ -14,24 +14,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import attr
-
 from urwid import (
     ACTIVATE,
     AttrWrap,
     Button,
-    connect_signal,
     LineBox,
     PopUpLauncher,
     SelectableIcon,
     Text,
     Widget,
-    )
-
-from subiquitycore.ui.container import (
-    Columns,
-    ListBox,
-    WidgetWrap,
+    connect_signal,
 )
+
+from subiquitycore.ui.container import Columns, ListBox, WidgetWrap
 from subiquitycore.ui.utils import Color
 
 
@@ -69,8 +64,7 @@ class _ActionMenuDialog(WidgetWrap):
                 else:
                     btn = Color.menu_button(ActionMenuButton(action.label))
                 width = max(width, len(btn.base_widget.label))
-                connect_signal(
-                    btn.base_widget, 'click', self.click, action.value)
+                connect_signal(btn.base_widget, "click", self.click, action.value)
             else:
                 label = action.label
                 if isinstance(label, Widget):
@@ -80,12 +74,15 @@ class _ActionMenuDialog(WidgetWrap):
                     rhs = "\N{BLACK RIGHT-POINTING SMALL TRIANGLE}"
                 else:
                     rhs = ""
-                btn = Columns([
-                    ('fixed', 1, Text("")),
-                    Text(label),
-                    ('fixed', 1, Text(rhs)),
-                    ], dividechars=1)
-                btn = AttrWrap(btn, 'info_minor')
+                btn = Columns(
+                    [
+                        ("fixed", 1, Text("")),
+                        Text(label),
+                        ("fixed", 1, Text(rhs)),
+                    ],
+                    dividechars=1,
+                )
+                btn = AttrWrap(btn, "info_minor")
             group.append(btn)
         self.width = width
         super().__init__(Color.body(LineBox(ListBox(group))))
@@ -98,7 +95,7 @@ class _ActionMenuDialog(WidgetWrap):
         self.parent.close_pop_up()
 
     def keypress(self, size, key):
-        if key == 'esc':
+        if key == "esc":
             self.parent.close_pop_up()
         else:
             return super().keypress(size, key)
@@ -116,11 +113,9 @@ class Action:
 
 
 class ActionMenu(PopUpLauncher):
+    signals = ["action", "open", "close"]
 
-    signals = ['action', 'open', 'close']
-
-    def __init__(self, opts,
-                 icon="\N{BLACK RIGHT-POINTING SMALL TRIANGLE}"):
+    def __init__(self, opts, icon="\N{BLACK RIGHT-POINTING SMALL TRIANGLE}"):
         self._actions = []
         for opt in opts:
             if not isinstance(opt, Action):
@@ -157,8 +152,8 @@ class ActionMenu(PopUpLauncher):
     def get_pop_up_parameters(self):
         width = self._dialog.width + 7
         return {
-            'left': 1,
-            'top': -1,
-            'overlay_width': width,
-            'overlay_height': len(self._actions) + 3,
-            }
+            "left": 1,
+            "top": -1,
+            "overlay_width": width,
+            "overlay_height": len(self._actions) + 3,
+        }

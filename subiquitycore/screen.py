@@ -23,7 +23,7 @@ import urwid
 
 from subiquitycore.palette import COLORS, urwid_8_names
 
-log = logging.getLogger('subiquitycore.screen')
+log = logging.getLogger("subiquitycore.screen")
 
 
 # From uapi/linux/kd.h:
@@ -31,11 +31,10 @@ KDGKBTYPE = 0x4B33  # get keyboard type
 
 GIO_CMAP = 0x4B70  # gets colour palette on VGA+
 PIO_CMAP = 0x4B71  # sets colour palette on VGA+
-UO_R, UO_G, UO_B = 0xe9, 0x54, 0x20
+UO_R, UO_G, UO_B = 0xE9, 0x54, 0x20
 
 
 class SubiquityScreen(urwid.raw_display.Screen):
-
     # This class fixes a bug in urwid's screen:
     #
     # Calling screen.stop() sends the INPUT_DESCRIPTORS_CHANGED signal. This
@@ -68,18 +67,17 @@ class SubiquityScreen(urwid.raw_display.Screen):
 
 
 class LinuxScreen(SubiquityScreen):
-
     def __init__(self, colors, **kwargs):
         self._colors = colors
         super().__init__(**kwargs)
 
     def start(self):
-        self.curpal = bytearray(16*3)
+        self.curpal = bytearray(16 * 3)
         fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, self.curpal)
         newpal = self.curpal.copy()
         for i in range(8):
             for j in range(3):
-                newpal[i*3+j] = self._colors[i][1][j]
+                newpal[i * 3 + j] = self._colors[i][1][j]
         fcntl.ioctl(self._term_input_file.fileno(), PIO_CMAP, newpal)
         super().start()
 
@@ -89,10 +87,8 @@ class LinuxScreen(SubiquityScreen):
 
 
 class TwentyFourBitScreen(SubiquityScreen):
-
     def __init__(self, colors, **kwargs):
-        self._urwid_name_to_rgb = {
-            n: colors[i][1] for i, n in enumerate(urwid_8_names)}
+        self._urwid_name_to_rgb = {n: colors[i][1] for i, n in enumerate(urwid_8_names)}
         super().__init__(**kwargs)
 
     def _cc(self, color):
@@ -103,22 +99,20 @@ class TwentyFourBitScreen(SubiquityScreen):
         maximum compatibility; they are the only colors used when the
         mono palette is selected.
         """
-        if color == 'white':
-            return '7'
-        elif color == 'black':
-            return '0'
-        elif color == 'default':
-            return '9'
+        if color == "white":
+            return "7"
+        elif color == "black":
+            return "0"
+        elif color == "default":
+            return "9"
         else:
             # This is almost but not quite a ISO 8613-3 code -- that
             # would use colons to separate the rgb values instead. But
             # it's what xterm, and hence everything else, supports.
-            return '8;2;{};{};{}'.format(*self._urwid_name_to_rgb[color])
+            return "8;2;{};{};{}".format(*self._urwid_name_to_rgb[color])
 
     def _attrspec_to_escape(self, a):
-        return '\x1b[0;3{};4{}m'.format(
-            self._cc(a.foreground),
-            self._cc(a.background))
+        return "\x1b[0;3{};4{}m".format(self._cc(a.foreground), self._cc(a.background))
 
 
 _is_linux_tty = None
@@ -128,12 +122,12 @@ def is_linux_tty():
     global _is_linux_tty
     if _is_linux_tty is None:
         try:
-            r = fcntl.ioctl(sys.stdout.fileno(), KDGKBTYPE, ' ')
+            r = fcntl.ioctl(sys.stdout.fileno(), KDGKBTYPE, " ")
         except IOError as e:
             log.debug("KDGKBTYPE failed %r", e)
             return False
-        log.debug("KDGKBTYPE returned %r, is_linux_tty %s", r, r == b'\x02')
-        _is_linux_tty = r == b'\x02'
+        log.debug("KDGKBTYPE returned %r, is_linux_tty %s", r, r == b"\x02")
+        _is_linux_tty = r == b"\x02"
     return _is_linux_tty
 
 

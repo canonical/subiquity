@@ -17,17 +17,16 @@ import asyncio
 import functools
 import logging
 
-from subiquity.models.subiquity import SubiquityModel
-from subiquity.models.locale import LocaleModel
 from subiquity.models.identity import IdentityModel
+from subiquity.models.locale import LocaleModel
+from subiquity.models.subiquity import SubiquityModel
 from subiquity.server.types import InstallerChannels
 
-from .wslconfbase import WSLConfigurationBaseModel
 from .wslconfadvanced import WSLConfigurationAdvancedModel
+from .wslconfbase import WSLConfigurationBaseModel
 from .wslsetupoptions import WSLSetupOptionsModel
 
-
-log = logging.getLogger('system_setup.models.system_setup')
+log = logging.getLogger("system_setup.models.system_setup")
 
 HOSTS_CONTENT = """\
 127.0.0.1 localhost
@@ -45,13 +44,12 @@ ff02::2 ip6-allrouters
 class SystemSetupModel(SubiquityModel):
     """The overall model for subiquity."""
 
-    target = '/'
+    target = "/"
 
-    def __init__(self, root, hub, install_model_names,
-                 postinstall_model_names):
+    def __init__(self, root, hub, install_model_names, postinstall_model_names):
         # Parent class init is not called to not load models we don't need.
         self.root = root
-        if root != '/':
+        if root != "/":
             self.target = root
             self.chroot_prefix = []
 
@@ -71,8 +69,7 @@ class SystemSetupModel(SubiquityModel):
         self._install_model_names = install_model_names
         self._postinstall_model_names = postinstall_model_names
         self._cur_install_model_names = install_model_names.default_names
-        self._cur_postinstall_model_names = \
-            postinstall_model_names.default_names
+        self._cur_postinstall_model_names = postinstall_model_names.default_names
         self._install_event = asyncio.Event()
         self._postinstall_event = asyncio.Event()
         all_names = set()
@@ -81,4 +78,5 @@ class SystemSetupModel(SubiquityModel):
         for name in all_names:
             hub.subscribe(
                 (InstallerChannels.CONFIGURED, name),
-                functools.partial(self._configured, name))
+                functools.partial(self._configured, name),
+            )

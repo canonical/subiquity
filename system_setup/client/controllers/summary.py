@@ -1,24 +1,18 @@
-import aiohttp
 import asyncio
 import logging
 
-from subiquitycore.async_helpers import run_bg_task
-from subiquitycore.context import with_context
+import aiohttp
 
 from subiquity.client.controller import SubiquityTuiController
-from subiquity.common.types import (
-    ApplicationState,
-    ShutdownMode
-    )
-
+from subiquity.common.types import ApplicationState, ShutdownMode
+from subiquitycore.async_helpers import run_bg_task
+from subiquitycore.context import with_context
 from system_setup.ui.views.summary import SummaryView
 
-
-log = logging.getLogger('system_setup.client.controllers.summary')
+log = logging.getLogger("system_setup.client.controllers.summary")
 
 
 class SummaryController(SubiquityTuiController):
-
     def __init__(self, app):
         super().__init__(app)
         self.app_state = None
@@ -48,8 +42,7 @@ class SummaryController(SubiquityTuiController):
     async def _wait_status(self, context):
         while True:
             try:
-                app_status = await self.app.client.meta.status.GET(
-                    cur=self.app_state)
+                app_status = await self.app.client.meta.status.GET(cur=self.app_state)
             except aiohttp.ClientError:
                 await asyncio.sleep(1)
                 continue
@@ -65,7 +58,7 @@ class SummaryController(SubiquityTuiController):
                     self.app.show_error_report(self.crash_report_ref)
 
             if self.app_state == ApplicationState.DONE:
-                if self.answers.get('reboot', False):
+                if self.answers.get("reboot", False):
                     self.click_reboot()
 
     async def make_ui(self):

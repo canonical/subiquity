@@ -17,50 +17,37 @@ import asyncio
 import logging
 from typing import Callable, Optional
 
-from subiquitycore.async_helpers import run_bg_task
-from subiquitycore.lsb_release import lsb_release
-from subiquitycore.view import BaseView
-
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.filesystem import gaps
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.common.types import (
-    ProbeStatus,
     GuidedCapability,
     GuidedChoiceV2,
     GuidedStorageResponseV2,
     GuidedStorageTargetManual,
+    ProbeStatus,
     StorageResponseV2,
-    )
-from subiquity.models.filesystem import (
-    Bootloader,
-    FilesystemModel,
-    raidlevels_by_value,
-    )
-from subiquity.ui.views import (
-    FilesystemView,
-    GuidedDiskSelectionView,
-    )
-from subiquity.ui.views.filesystem.probing import (
-    SlowProbing,
-    ProbingFailed,
-    )
-
+)
+from subiquity.models.filesystem import Bootloader, FilesystemModel, raidlevels_by_value
+from subiquity.ui.views import FilesystemView, GuidedDiskSelectionView
+from subiquity.ui.views.filesystem.probing import ProbingFailed, SlowProbing
+from subiquitycore.async_helpers import run_bg_task
+from subiquitycore.lsb_release import lsb_release
+from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquity.client.controllers.filesystem")
 
 
 class FilesystemController(SubiquityTuiController, FilesystemManipulator):
-
-    endpoint_name = 'storage'
+    endpoint_name = "storage"
 
     def __init__(self, app):
         super().__init__(app)
         self.model = None
-        self.answers.setdefault('guided', False)
-        self.answers.setdefault('tpm-default', False)
-        self.answers.setdefault('guided-index', 0)
-        self.answers.setdefault('manual', [])
+        self.answers.setdefault("guided", False)
+        self.answers.setdefault("tpm-default", False)
+        self.answers.setdefault("guided-index", 0)
+        self.answers.setdefault("manual", [])
         self.current_view: Optional[BaseView] = None
 
     async def make_ui(self) -> Callable[[], BaseView]:
@@ -90,23 +77,19 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         if isinstance(self.ui.body, SlowProbing):
             self.ui.set_body(self.current_view)
         else:
-            log.debug("not refreshing the display. Current display is %r",
-                      self.ui.body)
+            log.debug("not refreshing the display. Current display is %r", self.ui.body)
 
     async def make_guided_ui(
-            self,
-            status: GuidedStorageResponseV2,
-            ) -> GuidedDiskSelectionView:
+        self,
+        status: GuidedStorageResponseV2,
+    ) -> GuidedDiskSelectionView:
         if status.status == ProbeStatus.FAILED:
             self.app.show_error_report(status.error_report)
             return ProbingFailed(self, status.error_report)
 
-        response: StorageResponseV2 = await self.endpoint.v2.GET(
-            include_raid=True)
+        response: StorageResponseV2 = await self.endpoint.v2.GET(include_raid=True)
 
-        disk_by_id = {
-            disk.id: disk for disk in response.disks
-            }
+        disk_by_id = {disk.id: disk for disk in response.disks}
 
         if status.error_report:
             self.app.show_error_report(status.error_report)
@@ -118,48 +101,46 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         while not isinstance(self.ui.body, GuidedDiskSelectionView):
             await asyncio.sleep(0.1)
 
-        if self.answers['tpm-default']:
-            self.app.answers['filesystem-confirmed'] = True
+        if self.answers["tpm-default"]:
+            self.app.answers["filesystem-confirmed"] = True
             self.ui.body.done(self.ui.body.form)
-        if self.answers['guided']:
+        if self.answers["guided"]:
             targets = self.ui.body.form.targets
-            if 'guided-index' in self.answers:
-                target = targets[self.answers['guided-index']]
-            elif 'guided-label' in self.answers:
-                label = self.answers['guided-label']
+            if "guided-index" in self.answers:
+                target = targets[self.answers["guided-index"]]
+            elif "guided-label" in self.answers:
+                label = self.answers["guided-label"]
                 disk_by_id = self.ui.body.form.disk_by_id
-                [target] = [
-                    t
-                    for t in targets
-                    if disk_by_id[t.disk_id].label == label
-                    ]
-            method = self.answers.get('guided-method')
+                [target] = [t for t in targets if disk_by_id[t.disk_id].label == label]
+            method = self.answers.get("guided-method")
             value = {
-                'disk': target,
-                'use_lvm': method == "lvm",
-                }
-            passphrase = self.answers.get('guided-passphrase')
+                "disk": target,
+                "use_lvm": method == "lvm",
+            }
+            passphrase = self.answers.get("guided-passphrase")
             if passphrase is not None:
-                value['lvm_options'] = {
-                    'encrypt': True,
-                    'luks_options': {
-                        'passphrase': passphrase,
-                        'confirm_passphrase': passphrase,
-                        }
-                    }
+                value["lvm_options"] = {
+                    "encrypt": True,
+                    "luks_options": {
+                        "passphrase": passphrase,
+                        "confirm_passphrase": passphrase,
+                    },
+                }
             self.ui.body.form.guided_choice.value = value
             self.ui.body.done(None)
-            self.app.answers['filesystem-confirmed'] = True
+            self.app.answers["filesystem-confirmed"] = True
             while not isinstance(self.ui.body, FilesystemView):
                 await asyncio.sleep(0.1)
             self.finish()
-        elif self.answers['manual']:
+        elif self.answers["manual"]:
             await self._guided_choice(
                 GuidedChoiceV2(
                     target=GuidedStorageTargetManual(),
-                    capability=GuidedCapability.MANUAL))
-            await self._run_actions(self.answers['manual'])
-            self.answers['manual'] = []
+                    capability=GuidedCapability.MANUAL,
+                )
+            )
+            await self._run_actions(self.answers["manual"])
+            self.answers["manual"] = []
 
     def _action_get(self, id):
         dev_spec = id[0].split()
@@ -168,7 +149,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             if dev_spec[1] == "index":
                 dev = self.model.all_disks()[int(dev_spec[2])]
             elif dev_spec[1] == "serial":
-                dev = self.model._one(type='disk', serial=dev_spec[2])
+                dev = self.model._one(type="disk", serial=dev_spec[2])
         elif dev_spec[0] == "raid":
             if dev_spec[1] == "name":
                 for r in self.model.all_raids():
@@ -192,16 +173,13 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         raise Exception("could not resolve {}".format(id))
 
     def _action_clean_devices_raid(self, devices):
-        r = {
-            self._action_get(d): v
-            for d, v in zip(devices[::2], devices[1::2])
-            }
+        r = {self._action_get(d): v for d, v in zip(devices[::2], devices[1::2])}
         for d in r:
             assert d.ok_for_raid
         return r
 
     def _action_clean_devices_vg(self, devices):
-        r = {self._action_get(d): 'active' for d in devices}
+        r = {self._action_get(d): "active" for d in devices}
         for d in r:
             assert d.ok_for_lvm_vg
         return r
@@ -210,12 +188,13 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         return raidlevels_by_value[level]
 
     async def _answers_action(self, action):
-        from subiquitycore.ui.stretchy import StretchyOverlay
         from subiquity.ui.views.filesystem.delete import ConfirmDeleteStretchy
+        from subiquitycore.ui.stretchy import StretchyOverlay
+
         log.debug("_answers_action %r", action)
-        if 'obj' in action:
-            obj = self._action_get(action['obj'])
-            action_name = action['action']
+        if "obj" in action:
+            obj = self._action_get(action["obj"])
+            action_name = action["action"]
             if action_name == "MAKE_BOOT":
                 action_name = "TOGGLE_BOOT"
             if action_name == "CREATE_LV":
@@ -223,8 +202,8 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             if action_name == "PARTITION":
                 obj = gaps.largest_gap(obj)
             meth = getattr(
-                self.ui.body.avail_list,
-                "_{}_{}".format(obj.type, action_name))
+                self.ui.body.avail_list, "_{}_{}".format(obj.type, action_name)
+            )
             meth(obj)
             yield
             body = self.ui.body._w
@@ -235,34 +214,35 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
                     body.stretchy.done()
             else:
                 async for _ in self._enter_form_data(
-                        body.stretchy.form,
-                        action['data'],
-                        action.get("submit", True)):
+                    body.stretchy.form, action["data"], action.get("submit", True)
+                ):
                     pass
-        elif action['action'] == 'create-raid':
+        elif action["action"] == "create-raid":
             self.ui.body.create_raid()
             yield
             body = self.ui.body._w
             async for _ in self._enter_form_data(
-                    body.stretchy.form,
-                    action['data'],
-                    action.get("submit", True),
-                    clean_suffix='raid'):
+                body.stretchy.form,
+                action["data"],
+                action.get("submit", True),
+                clean_suffix="raid",
+            ):
                 pass
-        elif action['action'] == 'create-vg':
+        elif action["action"] == "create-vg":
             self.ui.body.create_vg()
             yield
             body = self.ui.body._w
             async for _ in self._enter_form_data(
-                    body.stretchy.form,
-                    action['data'],
-                    action.get("submit", True),
-                    clean_suffix='vg'):
+                body.stretchy.form,
+                action["data"],
+                action.get("submit", True),
+                clean_suffix="vg",
+            ):
                 pass
-        elif action['action'] == 'done':
+        elif action["action"] == "done":
             if not self.ui.body.done_btn.enabled:
                 raise Exception("answers did not provide complete fs config")
-            self.app.answers['filesystem-confirmed'] = True
+            self.app.answers["filesystem-confirmed"] = True
             self.finish()
         else:
             raise Exception("could not process action {}".format(action))
@@ -278,8 +258,8 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         if self.model.bootloader == Bootloader.PREP:
             self.supports_resilient_boot = False
         else:
-            release = lsb_release(dry_run=self.app.opts.dry_run)['release']
-            self.supports_resilient_boot = release >= '20.04'
+            release = lsb_release(dry_run=self.app.opts.dry_run)["release"]
+            self.supports_resilient_boot = release >= "20.04"
         self.ui.set_body(FilesystemView(self.model, self))
 
     def guided_choice(self, choice):

@@ -15,16 +15,17 @@
 
 import unittest
 
-from subiquity.server.controllers.userdata import (
-    UserdataController,
-)
+from cloudinit.config.schema import SchemaValidationError
+
+from subiquity.server.controllers.userdata import UserdataController
 from subiquitycore.tests.mocks import make_app
 
-from cloudinit.config.schema import SchemaValidationError
 try:
     from cloudinit.config.schema import SchemaProblem
 except ImportError:
-    def SchemaProblem(x, y): return (x, y)  # TODO(drop on cloud-init 22.3 SRU)
+
+    def SchemaProblem(x, y):
+        return (x, y)  # TODO(drop on cloud-init 22.3 SRU)
 
 
 class TestUserdataController(unittest.TestCase):
@@ -32,7 +33,7 @@ class TestUserdataController(unittest.TestCase):
         self.controller = UserdataController(make_app())
 
     def test_load_autoinstall_data(self):
-        with self.subTest('Valid user-data resets userdata model'):
+        with self.subTest("Valid user-data resets userdata model"):
             valid_schema = {"ssh_import_id": ["you"]}
             self.controller.model = {"some": "old userdata"}
             self.controller.load_autoinstall_data(valid_schema)
@@ -40,16 +41,13 @@ class TestUserdataController(unittest.TestCase):
 
         fake_error = SchemaValidationError(
             schema_errors=(
-                SchemaProblem(
-                    "ssh_import_id",
-                    "'wrong' is not of type 'array'"
-                ),
+                SchemaProblem("ssh_import_id", "'wrong' is not of type 'array'"),
             ),
         )
         invalid_schema = {"ssh_import_id": "wrong"}
         validate = self.controller.app.base_model.validate_cloudconfig_schema
         validate.side_effect = fake_error
-        with self.subTest('Invalid user-data raises error'):
+        with self.subTest("Invalid user-data raises error"):
             with self.assertRaises(SchemaValidationError) as ctx:
                 self.controller.load_autoinstall_data(invalid_schema)
             expected_error = (
@@ -58,6 +56,5 @@ class TestUserdataController(unittest.TestCase):
             )
             self.assertEqual(expected_error, str(ctx.exception))
             validate.assert_called_with(
-                data=invalid_schema,
-                data_source="autoinstall.user-data"
+                data=invalid_schema, data_source="autoinstall.user-data"
             )

@@ -16,28 +16,18 @@
 import asyncio
 import logging
 
-from urwid import (
-    LineBox,
-    Text,
-    )
+from urwid import LineBox, Text
 
+from subiquity.common.types import ApplicationState
 from subiquitycore.async_helpers import run_bg_task
-from subiquitycore.view import BaseView
-from subiquitycore.ui.buttons import (
-    cancel_btn,
-    danger_btn,
-    ok_btn,
-    other_btn,
-    )
+from subiquitycore.ui.buttons import cancel_btn, danger_btn, ok_btn, other_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.form import Toggleable
 from subiquitycore.ui.spinner import Spinner
-from subiquitycore.ui.utils import button_pile, Padding, rewrap
 from subiquitycore.ui.stretchy import Stretchy
+from subiquitycore.ui.utils import Padding, button_pile, rewrap
 from subiquitycore.ui.width import widget_width
-
-from subiquity.common.types import ApplicationState
-
+from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquity.ui.views.installprogress")
 
@@ -51,40 +41,36 @@ class MyLineBox(LineBox):
 
 
 class ProgressView(BaseView):
-
     title = _("Install progress")
 
     def __init__(self, controller):
         self.controller = controller
         self.ongoing = {}  # context_id -> line containing a spinner
 
-        self.reboot_btn = Toggleable(ok_btn(
-            _("Reboot Now"), on_press=self.reboot))
+        self.reboot_btn = Toggleable(ok_btn(_("Reboot Now"), on_press=self.reboot))
         self.view_error_btn = cancel_btn(
-            _("View error report"), on_press=self.view_error)
-        self.view_log_btn = other_btn(
-            _("View full log"), on_press=self.view_log)
-        self.continue_btn = other_btn(
-            _("Continue"), on_press=self.continue_)
+            _("View error report"), on_press=self.view_error
+        )
+        self.view_log_btn = other_btn(_("View full log"), on_press=self.view_log)
+        self.continue_btn = other_btn(_("Continue"), on_press=self.continue_)
 
         self.event_listbox = ListBox()
         self.event_linebox = MyLineBox(self.event_listbox)
         self.event_buttons = button_pile([self.view_log_btn])
         event_body = [
-            ('weight', 1, Padding.center_79(self.event_linebox, min_width=76)),
-            ('pack', Text("")),
-            ('pack', self.event_buttons),
-            ('pack', Text("")),
+            ("weight", 1, Padding.center_79(self.event_linebox, min_width=76)),
+            ("pack", Text("")),
+            ("pack", self.event_buttons),
+            ("pack", Text("")),
         ]
         self.event_pile = Pile(event_body)
 
         self.log_listbox = ListBox()
         log_linebox = MyLineBox(self.log_listbox, _("Full installer output"))
         log_body = [
-            ('weight', 1, log_linebox),
-            ('pack', button_pile([other_btn(_("Close"),
-                                  on_press=self.close_log)])),
-            ]
+            ("weight", 1, log_linebox),
+            ("pack", button_pile([other_btn(_("Close"), on_press=self.close_log)])),
+        ]
         self.log_pile = Pile(log_body)
 
         super().__init__(self.event_pile)
@@ -96,17 +82,20 @@ class ProgressView(BaseView):
         walker.append(line)
         if at_end:
             lb.set_focus(len(walker) - 1)
-            lb.set_focus_valign('bottom')
+            lb.set_focus_valign("bottom")
 
     def event_start(self, context_id, context_parent_id, message):
         self.event_finish(context_parent_id)
         walker = self.event_listbox.base_widget.body
         spinner = Spinner()
         spinner.start()
-        new_line = Columns([
-            ('pack', Text(message)),
-            ('pack', spinner),
-            ], dividechars=1)
+        new_line = Columns(
+            [
+                ("pack", Text(message)),
+                ("pack", spinner),
+            ],
+            dividechars=1,
+        )
         self.ongoing[context_id] = len(walker)
         self._add_line(self.event_listbox, new_line)
 
@@ -137,7 +126,7 @@ class ProgressView(BaseView):
 
     def _set_buttons(self, buttons):
         p = self.event_buttons.original_widget
-        p.contents[:] = [(b, p.options('pack')) for b in buttons]
+        p.contents[:] = [(b, p.options("pack")) for b in buttons]
         self._set_button_width()
 
     def update_for_state(self, state):
@@ -161,12 +150,11 @@ class ProgressView(BaseView):
             btns = [self.view_log_btn]
         elif state == ApplicationState.UU_RUNNING:
             self.title = _("Install complete!")
-            self.reboot_btn.base_widget.set_label(
-                _("Cancel update and reboot"))
+            self.reboot_btn.base_widget.set_label(_("Cancel update and reboot"))
             btns = [
                 self.view_log_btn,
                 self.reboot_btn,
-                ]
+            ]
         elif state == ApplicationState.UU_CANCELLING:
             self.title = _("Install complete!")
             self.reboot_btn.base_widget.set_label(_("Rebooting..."))
@@ -174,25 +162,25 @@ class ProgressView(BaseView):
             btns = [
                 self.view_log_btn,
                 self.reboot_btn,
-                ]
+            ]
         elif state == ApplicationState.DONE:
             self.title = _("Install complete!")
             self.reboot_btn.base_widget.set_label(_("Reboot Now"))
             btns = [
                 self.view_log_btn,
                 self.reboot_btn,
-                ]
+            ]
         elif state == ApplicationState.ERROR:
-            self.title = _('An error occurred during installation')
+            self.title = _("An error occurred during installation")
             self.reboot_btn.base_widget.set_label(_("Reboot Now"))
             self.reboot_btn.enabled = True
             btns = [
                 self.view_log_btn,
                 self.view_error_btn,
                 self.reboot_btn,
-                ]
+            ]
         elif state == ApplicationState.EXITED:
-            self.title = _('Subiquity server process has exited')
+            self.title = _("Subiquity server process has exited")
             btns = [self.view_log_btn]
         else:
             raise Exception(state)
@@ -219,7 +207,7 @@ class ProgressView(BaseView):
         self.event_pile.base_widget.focus_position = 2
 
     def reboot(self, btn):
-        log.debug('reboot clicked')
+        log.debug("reboot clicked")
         self.reboot_btn.base_widget.set_label(_("Rebooting..."))
         self.reboot_btn.enabled = False
         self.event_buttons.original_widget._select_first_selectable()
@@ -236,14 +224,16 @@ class ProgressView(BaseView):
         self._w = self.event_pile
 
 
-confirmation_text = _("""\
+confirmation_text = _(
+    """\
 Selecting Continue below will begin the installation process and
 result in the loss of data on the disks selected to be formatted.
 
 You will not be able to return to this or a previous screen once
 the installation has started.
 
-Are you sure you want to continue?""")
+Are you sure you want to continue?"""
+)
 
 
 class InstallConfirmation(Stretchy):
@@ -252,15 +242,16 @@ class InstallConfirmation(Stretchy):
         widgets = [
             Text(rewrap(_(confirmation_text))),
             Text(""),
-            button_pile([
-                cancel_btn(_("No"), on_press=self.cancel),
-                danger_btn(_("Continue"), on_press=self.ok)]),
-            ]
+            button_pile(
+                [
+                    cancel_btn(_("No"), on_press=self.cancel),
+                    danger_btn(_("Continue"), on_press=self.ok),
+                ]
+            ),
+        ]
         super().__init__(
-            _("Confirm destructive action"),
-            widgets,
-            stretchy_index=0,
-            focus_index=2)
+            _("Confirm destructive action"), widgets, stretchy_index=0, focus_index=2
+        )
 
     def ok(self, sender):
         if isinstance(self.app.ui.body, ProgressView):
@@ -277,30 +268,29 @@ class InstallConfirmation(Stretchy):
             self.app.ui.body.show_continue()
 
 
-running_text = _("""\
+running_text = _(
+    """\
 The installer running on {tty} is currently installing the system.
 
 You can wait for this to complete or switch to a shell.
-""")
+"""
+)
 
 
 class InstallRunning(Stretchy):
     def __init__(self, app, tty):
         self.app = app
-        self.btn = Toggleable(other_btn(
-                _("Switch to a shell"), on_press=self._debug_shell))
+        self.btn = Toggleable(
+            other_btn(_("Switch to a shell"), on_press=self._debug_shell)
+        )
         self.btn.enabled = False
         self._enable_task = asyncio.create_task(self._enable())
         widgets = [
             Text(rewrap(_(running_text).format(tty=tty))),
-            Text(''),
+            Text(""),
             button_pile([self.btn]),
-            ]
-        super().__init__(
-            "",
-            widgets,
-            stretchy_index=0,
-            focus_index=2)
+        ]
+        super().__init__("", widgets, stretchy_index=0, focus_index=2)
 
     async def _enable(self):
         await asyncio.sleep(0.5)

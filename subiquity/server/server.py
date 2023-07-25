@@ -20,44 +20,17 @@ import sys
 import time
 from typing import List, Optional
 
+import jsonschema
+import yaml
 from aiohttp import web
-
 from cloudinit import safeyaml, stages
 from cloudinit.config.cc_set_passwords import rand_user_password
 from cloudinit.distros import ug_util
-
-import jsonschema
-
 from systemd import journal
 
-import yaml
-
-from subiquitycore.async_helpers import (
-    run_bg_task,
-    run_in_thread,
-    )
-from subiquitycore.context import with_context
-from subiquitycore.core import Application
-from subiquitycore.file_util import (
-    copy_file_if_exists,
-    write_file,
-    )
-from subiquitycore.prober import Prober
-from subiquitycore.ssh import (
-    host_key_fingerprints,
-    user_key_fingerprints,
-    )
-from subiquitycore.utils import arun_command, run_command
-
-from subiquity.common.api.server import (
-    bind,
-    controller_for_request,
-    )
+from subiquity.common.api.server import bind, controller_for_request
 from subiquity.common.apidef import API
-from subiquity.common.errorreport import (
-    ErrorReportKind,
-    ErrorReporter,
-    )
+from subiquity.common.errorreport import ErrorReporter, ErrorReportKind
 from subiquity.common.serialize import to_json
 from subiquity.common.types import (
     ApplicationState,
@@ -66,47 +39,43 @@ from subiquity.common.types import (
     KeyFingerprint,
     LiveSessionSSHInfo,
     PasswordKind,
-    )
-from subiquity.models.subiquity import (
-    ModelNames,
-    SubiquityModel,
-    )
-from subiquity.server.dryrun import DRConfig
+)
+from subiquity.models.subiquity import ModelNames, SubiquityModel
 from subiquity.server.controller import SubiquityController
-from subiquity.server.geoip import (
-    GeoIP,
-    DryRunGeoIPStrategy,
-    HTTPGeoIPStrategy,
-    )
+from subiquity.server.dryrun import DRConfig
 from subiquity.server.errors import ErrorController
+from subiquity.server.geoip import DryRunGeoIPStrategy, GeoIP, HTTPGeoIPStrategy
 from subiquity.server.pkghelper import PackageInstaller
 from subiquity.server.runner import get_command_runner
 from subiquity.server.snapdapi import make_api_client
 from subiquity.server.types import InstallerChannels
-from subiquitycore.snapd import (
-    AsyncSnapd,
-    get_fake_connection,
-    SnapdConnection,
-    )
+from subiquitycore.async_helpers import run_bg_task, run_in_thread
+from subiquitycore.context import with_context
+from subiquitycore.core import Application
+from subiquitycore.file_util import copy_file_if_exists, write_file
+from subiquitycore.prober import Prober
+from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
+from subiquitycore.ssh import host_key_fingerprints, user_key_fingerprints
+from subiquitycore.utils import arun_command, run_command
 
 NOPROBERARG = "NOPROBER"
 
-iso_autoinstall_path = 'cdrom/autoinstall.yaml'
-root_autoinstall_path = 'autoinstall.yaml'
-cloud_autoinstall_path = 'run/subiquity/cloud.autoinstall.yaml'
+iso_autoinstall_path = "cdrom/autoinstall.yaml"
+root_autoinstall_path = "autoinstall.yaml"
+cloud_autoinstall_path = "run/subiquity/cloud.autoinstall.yaml"
 
-log = logging.getLogger('subiquity.server.server')
+log = logging.getLogger("subiquity.server.server")
 
 
 class MetaController:
-
     def __init__(self, app):
         self.app = app
         self.context = app.context.child("Meta")
         self.free_only = False
 
-    async def status_GET(self, cur: Optional[ApplicationState] = None) \
-            -> ApplicationStatus:
+    async def status_GET(
+        self, cur: Optional[ApplicationState] = None
+    ) -> ApplicationStatus:
         if cur == self.app.state:
             await self.app.state_event.wait()
         return ApplicationStatus(
@@ -117,7 +86,8 @@ class MetaController:
             interactive=self.app.interactive,
             echo_syslog_id=self.app.echo_syslog_id,
             event_syslog_id=self.app.event_syslog_id,
-            log_syslog_id=self.app.log_syslog_id)
+            log_syslog_id=self.app.log_syslog_id,
+        )
 
     async def confirm_POST(self, tty: str) -> None:
         self.app.confirming_tty = tty
@@ -134,7 +104,7 @@ class MetaController:
 
     async def client_variant_POST(self, variant: str) -> None:
         if variant not in self.app.supported_variants:
-            raise ValueError(f'unrecognized client variant {variant}')
+            raise ValueError(f"unrecognized client variant {variant}")
         self.app.base_model.set_source_variant(variant)
         self.app.set_source_variant(variant)
 
@@ -154,28 +124,29 @@ class MetaController:
         user_fingerprints = [
             KeyFingerprint(keytype, fingerprint)
             for keytype, fingerprint in user_key_fingerprints(username)
-            ]
+        ]
         if self.app.installer_user_passwd_kind == PasswordKind.NONE:
             if not user_key_fingerprints:
                 return None
         host_fingerprints = [
             KeyFingerprint(keytype, fingerprint)
             for keytype, fingerprint in host_key_fingerprints()
-            ]
+        ]
         return LiveSessionSSHInfo(
             username=username,
             password_kind=self.app.installer_user_passwd_kind,
             password=self.app.installer_user_passwd,
             authorized_key_fingerprints=user_fingerprints,
             ips=ips,
-            host_key_fingerprints=host_fingerprints)
+            host_key_fingerprints=host_fingerprints,
+        )
 
     async def free_only_GET(self) -> bool:
         return self.free_only
 
     async def free_only_POST(self, enable: bool) -> None:
         self.free_only = enable
-        to_disable = {'restricted', 'multiverse'}
+        to_disable = {"restricted", "multiverse"}
         # enabling free only mode means disabling components
         self.app.base_model.mirror.disable_components(to_disable, enable)
 
@@ -183,14 +154,15 @@ class MetaController:
         if self.app.autoinstall_config is None:
             return None
 
-        i_sections = self.app.autoinstall_config.get(
-                'interactive-sections', None)
-        if i_sections == ['*']:
+        i_sections = self.app.autoinstall_config.get("interactive-sections", None)
+        if i_sections == ["*"]:
             # expand the asterisk to the actual controller key names
-            return [controller.autoinstall_key
-                    for controller in self.app.controllers.instances
-                    if controller.interactive()
-                    if controller.autoinstall_key is not None]
+            return [
+                controller.autoinstall_key
+                for controller in self.app.controllers.instances
+                if controller.interactive()
+                if controller.autoinstall_key is not None
+            ]
 
         return i_sections
 
@@ -204,56 +176,60 @@ def get_installer_password_from_cloudinit_log():
     with fp:
         for line in fp:
             if line.startswith("installer:"):
-                return line[len("installer:"):].strip()
+                return line[len("installer:") :].strip()
 
     return None
 
 
-INSTALL_MODEL_NAMES = ModelNames({
-    "debconf_selections",
-    "filesystem",
-    "kernel",
-    "keyboard",
-    "network",
-    "proxy",
-    "source",
+INSTALL_MODEL_NAMES = ModelNames(
+    {
+        "debconf_selections",
+        "filesystem",
+        "kernel",
+        "keyboard",
+        "network",
+        "proxy",
+        "source",
     },
-    desktop={'mirror'},
-    server={'mirror'})
+    desktop={"mirror"},
+    server={"mirror"},
+)
 
-POSTINSTALL_MODEL_NAMES = ModelNames({
-    "drivers",
-    "identity",
-    "locale",
-    "network",
-    "packages",
-    "snaplist",
-    "ssh",
-    "ubuntu_pro",
-    "userdata",
+POSTINSTALL_MODEL_NAMES = ModelNames(
+    {
+        "drivers",
+        "identity",
+        "locale",
+        "network",
+        "packages",
+        "snaplist",
+        "ssh",
+        "ubuntu_pro",
+        "userdata",
     },
-    desktop={"timezone", "codecs", "active_directory"})
+    desktop={"timezone", "codecs", "active_directory"},
+)
 
 
 class SubiquityServer(Application):
-
-    snapd_socket_path = '/run/snapd.socket'
+    snapd_socket_path = "/run/snapd.socket"
 
     base_schema = {
-        'type': 'object',
-        'properties': {
-            'version': {
-                'type': 'integer',
-                'minimum': 1,
-                'maximum': 1,
-                },
+        "type": "object",
+        "properties": {
+            "version": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1,
             },
-        'required': ['version'],
-        'additionalProperties': True,
-        }
+        },
+        "required": ["version"],
+        "additionalProperties": True,
+    }
 
     project = "subiquity"
     from subiquity.server import controllers as controllers_mod
+
     controllers = [
         "Early",
         "Reporting",
@@ -285,16 +261,17 @@ class SubiquityServer(Application):
         "Updates",
         "Late",
         "Shutdown",
-        ]
+    ]
 
     supported_variants = ["server", "desktop"]
 
     def make_model(self):
-        root = '/'
+        root = "/"
         if self.opts.dry_run:
             root = os.path.abspath(self.opts.output_base)
         return SubiquityModel(
-            root, self.hub, INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES)
+            root, self.hub, INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
+        )
 
     def __init__(self, opts, block_log_dir):
         super().__init__(opts)
@@ -306,29 +283,29 @@ class SubiquityServer(Application):
         self.state_event = asyncio.Event()
         self.update_state(ApplicationState.STARTING_UP)
         self.interactive = None
-        self.confirming_tty = ''
+        self.confirming_tty = ""
         self.fatal_error = None
         self.running_error_commands = False
         self.installer_user_name = None
         self.installer_user_passwd_kind = PasswordKind.NONE
         self.installer_user_passwd = None
 
-        self.echo_syslog_id = 'subiquity_echo.{}'.format(os.getpid())
-        self.event_syslog_id = 'subiquity_event.{}'.format(os.getpid())
-        self.log_syslog_id = 'subiquity_log.{}'.format(os.getpid())
+        self.echo_syslog_id = "subiquity_echo.{}".format(os.getpid())
+        self.event_syslog_id = "subiquity_event.{}".format(os.getpid())
+        self.log_syslog_id = "subiquity_log.{}".format(os.getpid())
         self.command_runner = get_command_runner(self)
         self.package_installer = PackageInstaller()
 
         self.error_reporter = ErrorReporter(
-            self.context.child("ErrorReporter"), self.opts.dry_run, self.root)
+            self.context.child("ErrorReporter"), self.opts.dry_run, self.root
+        )
         if opts.machine_config == NOPROBERARG:
             self.prober = None
         else:
             self.prober = Prober(opts.machine_config, self.debug_flags)
         self.kernel_cmdline = opts.kernel_cmdline
         if opts.snaps_from_examples:
-            connection = get_fake_connection(
-                self.scale_factor, opts.output_base)
+            connection = get_fake_connection(self.scale_factor, opts.output_base)
             self.snapd = AsyncSnapd(connection)
             self.snapdapi = make_api_client(self.snapd)
         elif os.path.exists(self.snapd_socket_path):
@@ -342,8 +319,7 @@ class SubiquityServer(Application):
         self.event_listeners = []
         self.autoinstall_config = None
         self.hub.subscribe(InstallerChannels.NETWORK_UP, self._network_change)
-        self.hub.subscribe(InstallerChannels.NETWORK_PROXY_SET,
-                           self._proxy_set)
+        self.hub.subscribe(InstallerChannels.NETWORK_PROXY_SET, self._proxy_set)
         if self.opts.dry_run:
             geoip_strategy = DryRunGeoIPStrategy()
         else:
@@ -362,26 +338,25 @@ class SubiquityServer(Application):
         self.event_listeners.append(listener)
 
     def _maybe_push_to_journal(self, event_type, context, description):
-        if not context.get('is-install-context') and \
-          self.interactive in [True, None]:
-            controller = context.get('controller')
+        if not context.get("is-install-context") and self.interactive in [True, None]:
+            controller = context.get("controller")
             if controller is None or controller.interactive():
                 return
-        if context.get('request'):
+        if context.get("request"):
             return
-        indent = context.full_name().count('/') - 2
-        if context.get('is-install-context') and self.interactive:
+        indent = context.full_name().count("/") - 2
+        if context.get("is-install-context") and self.interactive:
             indent -= 1
             msg = context.description
         else:
             msg = context.full_name()
             if description:
-                msg += ': ' + description
-        msg = '  ' * indent + msg
+                msg += ": " + description
+        msg = "  " * indent + msg
         if context.parent:
             parent_id = str(context.parent.id)
         else:
-            parent_id = ''
+            parent_id = ""
         journal.send(
             msg,
             PRIORITY=context.level,
@@ -389,17 +364,18 @@ class SubiquityServer(Application):
             SUBIQUITY_CONTEXT_NAME=context.full_name(),
             SUBIQUITY_EVENT_TYPE=event_type,
             SUBIQUITY_CONTEXT_ID=str(context.id),
-            SUBIQUITY_CONTEXT_PARENT_ID=parent_id)
+            SUBIQUITY_CONTEXT_PARENT_ID=parent_id,
+        )
 
     def report_start_event(self, context, description):
         for listener in self.event_listeners:
             listener.report_start_event(context, description)
-        self._maybe_push_to_journal('start', context, description)
+        self._maybe_push_to_journal("start", context, description)
 
     def report_finish_event(self, context, description, status):
         for listener in self.event_listeners:
             listener.report_finish_event(context, description, status)
-        self._maybe_push_to_journal('finish', context, description)
+        self._maybe_push_to_journal("finish", context, description)
 
     @property
     def state(self):
@@ -418,8 +394,7 @@ class SubiquityServer(Application):
         self.error_reporter.note_data_for_apport(key, value)
 
     def make_apport_report(self, kind, thing, *, wait=False, **kw):
-        return self.error_reporter.make_apport_report(
-            kind, thing, wait=wait, **kw)
+        return self.error_reporter.make_apport_report(kind, thing, wait=wait, **kw)
 
     async def _run_error_cmds(self, report):
         await report._info_task
@@ -433,7 +408,7 @@ class SubiquityServer(Application):
             self.update_state(ApplicationState.ERROR)
 
     def _exception_handler(self, loop, context):
-        exc = context.get('exception')
+        exc = context.get("exception")
         if exc is None:
             super()._exception_handler(loop, context)
             return
@@ -441,8 +416,8 @@ class SubiquityServer(Application):
         log.error("top level error", exc_info=exc)
         if not report:
             report = self.make_apport_report(
-                ErrorReportKind.UNKNOWN, "unknown error",
-                exc=exc)
+                ErrorReportKind.UNKNOWN, "unknown error", exc=exc
+            )
         self.fatal_error = report
         if self.interactive:
             self.update_state(ApplicationState.ERROR)
@@ -455,31 +430,29 @@ class SubiquityServer(Application):
         override_status = None
         controller = await controller_for_request(request)
         if isinstance(controller, SubiquityController):
-            if request.headers.get('x-make-view-request') == 'yes':
+            if request.headers.get("x-make-view-request") == "yes":
                 if not controller.interactive():
-                    override_status = 'skip'
+                    override_status = "skip"
                 elif self.state == ApplicationState.NEEDS_CONFIRMATION:
-                    if self.base_model.is_postinstall_only(
-                            controller.model_name):
-                        override_status = 'confirm'
+                    if self.base_model.is_postinstall_only(controller.model_name):
+                        override_status = "confirm"
         if override_status is not None:
-            resp = web.Response(headers={'x-status': override_status})
+            resp = web.Response(headers={"x-status": override_status})
         else:
             resp = await handler(request)
         if self.updated:
-            resp.headers['x-updated'] = 'yes'
+            resp.headers["x-updated"] = "yes"
         else:
-            resp.headers['x-updated'] = 'no'
-        if resp.get('exception'):
-            exc = resp['exception']
-            log.debug(
-                'request to {} crashed'.format(request.raw_path), exc_info=exc)
+            resp.headers["x-updated"] = "no"
+        if resp.get("exception"):
+            exc = resp["exception"]
+            log.debug("request to {} crashed".format(request.raw_path), exc_info=exc)
             report = self.make_apport_report(
                 ErrorReportKind.SERVER_REQUEST_FAIL,
                 "request to {}".format(request.raw_path),
-                exc=exc)
-            resp.headers['x-error-report'] = to_json(
-                ErrorReportRef, report.ref())
+                exc=exc,
+            )
+            resp.headers["x-error-report"] = to_json(ErrorReportRef, report.ref())
         return resp
 
     @with_context()
@@ -488,14 +461,18 @@ class SubiquityServer(Application):
             if controller.interactive():
                 log.debug(
                     "apply_autoinstall_config: skipping %s as interactive",
-                    controller.name)
+                    controller.name,
+                )
                 continue
             await controller.apply_autoinstall_config()
             await controller.configured()
 
     def load_autoinstall_config(self, *, only_early):
-        log.debug('load_autoinstall_config only_early %s file %s',
-                  only_early, self.autoinstall)
+        log.debug(
+            "load_autoinstall_config only_early %s file %s",
+            only_early,
+            self.autoinstall,
+        )
         if not self.autoinstall:
             return
         with open(self.autoinstall) as fp:
@@ -517,10 +494,11 @@ class SubiquityServer(Application):
         bind(app.router, API.errors, ErrorController(self))
         if self.opts.dry_run:
             from .dryrun import DryRunController
+
             bind(app.router, API.dry_run, DryRunController(self))
         for controller in self.controllers.instances:
             controller.add_routes(app)
-        runner = web.AppRunner(app, keepalive_timeout=0xffffffff)
+        runner = web.AppRunner(app, keepalive_timeout=0xFFFFFFFF)
         await runner.setup()
         await self.start_site(runner)
 
@@ -542,7 +520,7 @@ class SubiquityServer(Application):
         try:
             status_cp = await asyncio.wait_for(status_coro, 600)
         except asyncio.TimeoutError:
-            status_txt = '<timeout>'
+            status_txt = "<timeout>"
             self.cloud_init_ok = False
         else:
             status_txt = status_cp.stdout
@@ -554,14 +532,12 @@ class SubiquityServer(Application):
             init.read_cfg()
             init.fetch(existing="trust")
             self.cloud = init.cloudify()
-            if 'autoinstall' in self.cloud.cfg:
-                cfg = self.cloud.cfg['autoinstall']
+            if "autoinstall" in self.cloud.cfg:
+                cfg = self.cloud.cfg["autoinstall"]
                 target = self.base_relative(cloud_autoinstall_path)
                 write_file(target, safeyaml.dumps(cfg))
         else:
-            log.debug(
-                "cloud-init status: %r, assumed disabled",
-                status_txt)
+            log.debug("cloud-init status: %r, assumed disabled", status_txt)
 
     def select_autoinstall(self):
         # precedence
@@ -574,15 +550,17 @@ class SubiquityServer(Application):
         # autoinstall has been explicitly disabled.
         if self.opts.autoinstall == "":
             return None
-        if self.opts.autoinstall is not None and not \
-                os.path.exists(self.opts.autoinstall):
-            raise Exception(
-                f'Autoinstall argument {self.opts.autoinstall} not found')
+        if self.opts.autoinstall is not None and not os.path.exists(
+            self.opts.autoinstall
+        ):
+            raise Exception(f"Autoinstall argument {self.opts.autoinstall} not found")
 
-        locations = (self.base_relative(root_autoinstall_path),
-                     self.opts.autoinstall,
-                     self.base_relative(cloud_autoinstall_path),
-                     self.base_relative(iso_autoinstall_path))
+        locations = (
+            self.base_relative(root_autoinstall_path),
+            self.opts.autoinstall,
+            self.base_relative(cloud_autoinstall_path),
+            self.base_relative(iso_autoinstall_path),
+        )
 
         for loc in locations:
             if loc is not None and os.path.exists(loc):
@@ -595,7 +573,7 @@ class SubiquityServer(Application):
         return rootpath
 
     def _user_has_password(self, username):
-        with open('/etc/shadow') as fp:
+        with open("/etc/shadow") as fp:
             for line in fp:
                 if line.startswith(username + ":$"):
                     return True
@@ -611,23 +589,25 @@ class SubiquityServer(Application):
             with open(passfile) as fp:
                 contents = fp.read()
             self.installer_user_passwd_kind = PasswordKind.KNOWN
-            self.installer_user_name, self.installer_user_passwd = \
-                contents.split(':', 1)
+            self.installer_user_name, self.installer_user_passwd = contents.split(
+                ":", 1
+            )
             return
 
         def use_passwd(passwd):
             self.installer_user_passwd = passwd
             self.installer_user_passwd_kind = PasswordKind.KNOWN
-            with open(passfile, 'w') as fp:
-                fp.write(self.installer_user_name + ':' + passwd)
+            with open(passfile, "w") as fp:
+                fp.write(self.installer_user_name + ":" + passwd)
 
         if self.opts.dry_run:
-            self.installer_user_name = os.environ['USER']
+            self.installer_user_name = os.environ["USER"]
             use_passwd(rand_user_password())
             return
 
         (users, _groups) = ug_util.normalize_users_groups(
-            self.cloud.cfg, self.cloud.distro)
+            self.cloud.cfg, self.cloud.distro
+        )
         (username, _user_config) = ug_util.extract_default(users)
 
         self.installer_user_name = username
@@ -646,7 +626,7 @@ class SubiquityServer(Application):
                 self.installer_user_passwd_kind = PasswordKind.UNKNOWN
         elif not user_key_fingerprints(username):
             passwd = rand_user_password()
-            cp = run_command('chpasswd', input=username + ':'+passwd+'\n')
+            cp = run_command("chpasswd", input=username + ":" + passwd + "\n")
             if cp.returncode == 0:
                 use_passwd(passwd)
             else:
@@ -671,16 +651,15 @@ class SubiquityServer(Application):
                 # output.
                 await asyncio.sleep(1)
                 await self.controllers.Early.run()
-                open(stamp_file, 'w').close()
+                open(stamp_file, "w").close()
                 await asyncio.sleep(1)
         self.load_autoinstall_config(only_early=False)
         if self.autoinstall_config:
-            self.interactive = bool(
-                self.autoinstall_config.get('interactive-sections'))
+            self.interactive = bool(self.autoinstall_config.get("interactive-sections"))
         else:
             self.interactive = True
         if not self.interactive and not self.opts.dry_run:
-            open('/run/casper-no-prompt', 'w').close()
+            open("/run/casper-no-prompt", "w").close()
         self.load_serialized_state()
         self.update_state(ApplicationState.WAITING)
         await super().start()
@@ -699,21 +678,24 @@ class SubiquityServer(Application):
         if not self.snapd:
             return
         await run_in_thread(
-            self.snapd.connection.configure_proxy, self.base_model.proxy)
+            self.snapd.connection.configure_proxy, self.base_model.proxy
+        )
         self.hub.broadcast(InstallerChannels.SNAPD_NETWORK_CHANGE)
 
     def restart(self):
         if not self.snapd:
             return
-        cmdline = ['snap', 'run', 'subiquity.subiquity-server']
+        cmdline = ["snap", "run", "subiquity.subiquity-server"]
         if self.opts.dry_run:
             cmdline = [
-                sys.executable, '-m', 'subiquity.cmd.server',
-                ] + sys.argv[1:]
+                sys.executable,
+                "-m",
+                "subiquity.cmd.server",
+            ] + sys.argv[1:]
         os.execvp(cmdline[0], cmdline)
 
     def make_autoinstall(self):
-        config = {'version': 1}
+        config = {"version": 1}
         for controller in self.controllers.instances:
             controller_conf = controller.make_autoinstall()
             if controller_conf:

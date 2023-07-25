@@ -17,31 +17,26 @@
 
 import logging
 
-from urwid import (
-    Text,
-    )
+from urwid import Text
+
 from subiquitycore.ui.anchors import Header
-from subiquitycore.ui.container import (
-    ListBox,
-    Pile,
-    WidgetWrap,
-    )
+from subiquitycore.ui.container import ListBox, Pile, WidgetWrap
 from subiquitycore.ui.utils import Color
 
-
-log = logging.getLogger('subiquitycore.ui.frame')
+log = logging.getLogger("subiquitycore.ui.frame")
 
 
 class SubiquityCoreUI(WidgetWrap):
-
     right_icon = Text("")
 
     def __init__(self):
         self.header = Header("", self.right_icon)
-        self.pile = Pile([
-            ('pack', self.header),
-            ListBox([Text("")]),
-            ])
+        self.pile = Pile(
+            [
+                ("pack", self.header),
+                ListBox([Text("")]),
+            ]
+        )
         self.pile.focus_position = 1
         super().__init__(Color.body(self.pile))
 

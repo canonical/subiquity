@@ -17,7 +17,6 @@ from typing import Optional
 
 
 class KernelModel:
-
     # The name of the kernel metapackage that we intend to install.
     metapkg_name: Optional[str] = None
     # During the installation, if we detect that a different kernel version is
@@ -42,10 +41,10 @@ class KernelModel:
 
     def render(self):
         if self.curthooks_no_install:
-            return {'kernel': None}
+            return {"kernel": None}
 
         return {
-            'kernel': {
-                'package': self.needed_kernel,
-                },
-            }
+            "kernel": {
+                "package": self.needed_kernel,
+            },
+        }

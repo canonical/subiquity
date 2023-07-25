@@ -29,16 +29,16 @@ from subiquity.server.server import SubiquityServer
 def make_schema(app):
     schema = copy.deepcopy(app.base_schema)
     for controller in app.controllers.instances:
-        ckey = getattr(controller, 'autoinstall_key', None)
+        ckey = getattr(controller, "autoinstall_key", None)
         if ckey is None:
             continue
         cschema = getattr(controller, "autoinstall_schema", None)
         if cschema is None:
             continue
 
-        schema['properties'][ckey] = cschema
+        schema["properties"][ckey] = cschema
 
-        ckey_alias = getattr(controller, 'autoinstall_key_alias', None)
+        ckey_alias = getattr(controller, "autoinstall_key_alias", None)
         if ckey_alias is None:
             continue
 
@@ -46,15 +46,15 @@ def make_schema(app):
         cschema["deprecated"] = True
         cschema["description"] = f"Compatibility only - use {ckey} instead"
 
-        schema['properties'][ckey_alias] = cschema
+        schema["properties"][ckey_alias] = cschema
 
     return schema
 
 
 def make_app():
     parser = make_server_args_parser()
-    opts, unknown = parser.parse_known_args(['--dry-run'])
-    app = SubiquityServer(opts, '')
+    opts, unknown = parser.parse_known_args(["--dry-run"])
+    app = SubiquityServer(opts, "")
     # This is needed because the ubuntu-pro server controller accesses dr_cfg
     # in the initializer.
     app.dr_cfg = DRConfig()
@@ -72,5 +72,5 @@ def main():
     asyncio.run(run_with_loop())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

@@ -14,31 +14,28 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
-from typing import Any, Optional
 import os
+from typing import Any, Optional
 
 from curtin.commands.extract import (
     AbstractSourceHandler,
-    get_handler_for_source,
     TrivialSourceHandler,
-    )
+    get_handler_for_source,
+)
 from curtin.util import sanitize_source
 
 from subiquity.common.apidef import API
-from subiquity.common.types import (
-    SourceSelection,
-    SourceSelectionAndSetting,
-    )
+from subiquity.common.types import SourceSelection, SourceSelectionAndSetting
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
 
 
 def _translate(d, lang):
     if lang:
-        for lang in lang, lang.split('_', 1)[0]:
+        for lang in lang, lang.split("_", 1)[0]:
             if lang in d:
                 return d[lang]
-    return _(d['en'])
+    return _(d["en"])
 
 
 def convert_source(source, lang):
@@ -49,26 +46,26 @@ def convert_source(source, lang):
         id=source.id,
         size=size,
         variant=source.variant,
-        default=source.default)
+        default=source.default,
+    )
 
 
 class SourceController(SubiquityController):
-
     model_name = "source"
 
     endpoint = API.source
 
     autoinstall_key = "source"
     autoinstall_schema = {
-         "type": "object",
-         "properties": {
-             "search_drivers": {
-                 "type": "boolean",
-             },
-             "id": {
-                 "type": "string",
-             },
-         },
+        "type": "object",
+        "properties": {
+            "search_drivers": {
+                "type": "boolean",
+            },
+            "id": {
+                "type": "string",
+            },
+        },
     }
     # Defaults to true for backward compatibility with existing autoinstall
     # configurations. Back then, then users were able to install third-party
@@ -83,9 +80,9 @@ class SourceController(SubiquityController):
 
     def make_autoinstall(self):
         return {
-                "search_drivers": self.model.search_drivers,
-                "id": self.model.current.id,
-               }
+            "search_drivers": self.model.search_drivers,
+            "id": self.model.current.id,
+        }
 
     def load_autoinstall_data(self, data: Any) -> None:
         if data is None:
@@ -103,7 +100,7 @@ class SourceController(SubiquityController):
         self.ai_source_id = data.get("id")
 
     def start(self):
-        path = '/cdrom/casper/install-sources.yaml'
+        path = "/cdrom/casper/install-sources.yaml"
         if self.app.opts.source_catalog is not None:
             path = self.app.opts.source_catalog
         if not os.path.exists(path):
@@ -112,41 +109,40 @@ class SourceController(SubiquityController):
             self.model.load_from_file(fp)
         # Assign the current source if hinted by autoinstall.
         if self.ai_source_id is not None:
-            self.model.current = self.model.get_matching_source(
-                    self.ai_source_id)
+            self.model.current = self.model.get_matching_source(self.ai_source_id)
         self.app.hub.subscribe(
-            (InstallerChannels.CONFIGURED, 'locale'), self._set_locale)
+            (InstallerChannels.CONFIGURED, "locale"), self._set_locale
+        )
 
     def _set_locale(self):
         current = self.app.base_model.locale.selected_language
-        self.model.lang = current.split('_')[0]
+        self.model.lang = current.split("_")[0]
 
     async def GET(self) -> SourceSelectionAndSetting:
         cur_lang = self.app.base_model.locale.selected_language
-        cur_lang = cur_lang.rsplit('.', 1)[0]
+        cur_lang = cur_lang.rsplit(".", 1)[0]
 
         return SourceSelectionAndSetting(
-            [
-                convert_source(source, cur_lang)
-                for source in self.model.sources
-            ],
+            [convert_source(source, cur_lang) for source in self.model.sources],
             self.model.current.id,
-            search_drivers=self.model.search_drivers)
+            search_drivers=self.model.search_drivers,
+        )
 
-    def get_handler(self, variation_name: Optional[str] = None) \
-            -> AbstractSourceHandler:
+    def get_handler(
+        self, variation_name: Optional[str] = None
+    ) -> AbstractSourceHandler:
         handler = get_handler_for_source(
-            sanitize_source(self.model.get_source(variation_name)))
+            sanitize_source(self.model.get_source(variation_name))
+        )
         if self.app.opts.dry_run:
-            handler = TrivialSourceHandler('/')
+            handler = TrivialSourceHandler("/")
         return handler
 
     async def configured(self):
         await super().configured()
         self.app.base_model.set_source_variant(self.model.current.variant)
 
-    async def POST(self, source_id: str,
-                   search_drivers: bool = False) -> None:
+    async def POST(self, source_id: str, search_drivers: bool = False) -> None:
         self.model.search_drivers = search_drivers
         with contextlib.suppress(KeyError):
             self.model.current = self.model.get_matching_source(source_id)

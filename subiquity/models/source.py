@@ -16,13 +16,13 @@
 import logging
 import os
 import typing
-import yaml
 
 import attr
+import yaml
 
 from subiquity.common.serialize import Serializer
 
-log = logging.getLogger('subiquity.models.source')
+log = logging.getLogger("subiquity.models.source")
 
 
 @attr.s(auto_attribs=True)
@@ -49,33 +49,32 @@ class CatalogEntry:
 
     def __attrs_post_init__(self):
         if not self.variations:
-            self.variations['default'] = CatalogEntryVariation(
+            self.variations["default"] = CatalogEntryVariation(
                 path=self.path,
                 size=self.size,
-                snapd_system_label=self.snapd_system_label)
+                snapd_system_label=self.snapd_system_label,
+            )
 
 
 legacy_server_entry = CatalogEntry(
-    variant='server',
-    id='synthesized',
-    name={'en': 'Ubuntu Server'},
-    description={'en': 'the default'},
-    path='/media/filesystem',
-    type='cp',
+    variant="server",
+    id="synthesized",
+    name={"en": "Ubuntu Server"},
+    description={"en": "the default"},
+    path="/media/filesystem",
+    type="cp",
     default=True,
     size=2 << 30,
     locale_support="locale-only",
     variations={
-        'default': CatalogEntryVariation(
-            path='/media/filesystem',
-            size=2 << 30),
-    })
+        "default": CatalogEntryVariation(path="/media/filesystem", size=2 << 30),
+    },
+)
 
 
 class SourceModel:
-
     def __init__(self):
-        self._dir = '/cdrom/casper'
+        self._dir = "/cdrom/casper"
         self.current = legacy_server_entry
         self.sources = [self.current]
         self.lang = None
@@ -86,8 +85,8 @@ class SourceModel:
         self.sources = []
         self.current = None
         self.sources = Serializer(ignore_unknown_fields=True).deserialize(
-            typing.List[CatalogEntry],
-            yaml.safe_load(fp))
+            typing.List[CatalogEntry], yaml.safe_load(fp)
+        )
         for entry in self.sources:
             if entry.default:
                 self.current = entry
@@ -96,7 +95,7 @@ class SourceModel:
             self.current = self.sources[0]
 
     def get_matching_source(self, id_: str) -> CatalogEntry:
-        """ Return a source object that has the ID requested. """
+        """Return a source object that has the ID requested."""
         for source in self.sources:
             if source.id == id_:
                 return source
@@ -113,10 +112,10 @@ class SourceModel:
             if self.lang in self.current.preinstalled_langs:
                 suffix = self.lang
             else:
-                suffix = 'no-languages'
-            path = base + '.' + suffix + ext
+                suffix = "no-languages"
+            path = base + "." + suffix + ext
         scheme = self.current.type
-        return f'{scheme}://{path}'
+        return f"{scheme}://{path}"
 
     def render(self):
         return {}

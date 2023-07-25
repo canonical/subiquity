@@ -15,42 +15,25 @@
 
 """ UI utilities """
 
-from functools import partialmethod
 import logging
+from functools import partialmethod
 
-from urwid import (
-    ACTIVATE,
-    AttrMap,
-    CompositeCanvas,
-    connect_signal,
-    LineBox,
-    Padding as _Padding,
-    SelectableIcon,
-    Text,
-    WidgetDecoration,
-    WidgetDisable,
-    )
+from urwid import ACTIVATE, AttrMap, CompositeCanvas, LineBox
+from urwid import Padding as _Padding
+from urwid import SelectableIcon, Text, WidgetDecoration, WidgetDisable, connect_signal
 
-from subiquitycore.ui.buttons import (
-    cancel_btn,
-    other_btn,
-    )
-from subiquitycore.ui.container import (
-    ListBox,
-    Pile,
-    WidgetWrap,
-    )
+from subiquitycore.ui.buttons import cancel_btn, other_btn
+from subiquitycore.ui.container import ListBox, Pile, WidgetWrap
 from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.table import TableRow
 from subiquitycore.ui.width import widget_width
 
-
 log = logging.getLogger("subiquitycore.ui.utils")
 
 
 def apply_padders(cls):
-    """ Decorator for generating useful padding methods
+    """Decorator for generating useful padding methods
 
     Loops through and generates methods like:
 
@@ -69,26 +52,34 @@ def apply_padders(cls):
     padding_count = 100
 
     for i in range(1, padding_count):
-        setattr(cls, 'push_{}'.format(i), partialmethod(_Padding, left=i))
-        setattr(cls, 'pull_{}'.format(i), partialmethod(_Padding, right=i))
-        setattr(cls, 'fixed_{}'.format(i),
-                partialmethod(_Padding, align='center',
-                              width=i, min_width=i))
-        setattr(cls, 'center_{}'.format(i),
-                partialmethod(_Padding, align='center',
-                              width=('relative', i)))
-        setattr(cls, 'left_{}'.format(i),
-                partialmethod(_Padding, align='left',
-                              width=('relative', i)))
-        setattr(cls, 'right_{}'.format(i),
-                partialmethod(_Padding, align='right',
-                              width=('relative', i)))
+        setattr(cls, "push_{}".format(i), partialmethod(_Padding, left=i))
+        setattr(cls, "pull_{}".format(i), partialmethod(_Padding, right=i))
+        setattr(
+            cls,
+            "fixed_{}".format(i),
+            partialmethod(_Padding, align="center", width=i, min_width=i),
+        )
+        setattr(
+            cls,
+            "center_{}".format(i),
+            partialmethod(_Padding, align="center", width=("relative", i)),
+        )
+        setattr(
+            cls,
+            "left_{}".format(i),
+            partialmethod(_Padding, align="left", width=("relative", i)),
+        )
+        setattr(
+            cls,
+            "right_{}".format(i),
+            partialmethod(_Padding, align="right", width=("relative", i)),
+        )
     return cls
 
 
 @apply_padders
 class Padding:
-    """ Padding methods
+    """Padding methods
 
     .. py:meth:: push_X(:class:`urwid.Widget`)
 
@@ -150,41 +141,44 @@ class Padding:
                                 "width of 10 columns"))
 
     """
+
     line_break = partialmethod(Text)
 
 
 # This makes assumptions about the style names defined by both
 # subiquity and console_conf. The fix is to stop using the Color class
 # below, I think.
-STYLE_NAMES = set([
-    'body',
-    'danger_button focus',
-    'danger_button',
-    'done_button focus',
-    'done_button',
-    'frame_button focus',
-    'frame_button',
-    'frame_header',
-    'frame_header_fringe',
-    'info_error',
-    'info_minor',
-    'info_primary',
-    'menu_button focus',
-    'menu_button',
-    'other_button focus',
-    'other_button',
-    'progress_complete',
-    'progress_incomplete',
-    'scrollbar focus',
-    'scrollbar',
-    'string_input focus',
-    'string_input',
-    'user_code',
-])
+STYLE_NAMES = set(
+    [
+        "body",
+        "danger_button focus",
+        "danger_button",
+        "done_button focus",
+        "done_button",
+        "frame_button focus",
+        "frame_button",
+        "frame_header",
+        "frame_header_fringe",
+        "info_error",
+        "info_minor",
+        "info_primary",
+        "menu_button focus",
+        "menu_button",
+        "other_button focus",
+        "other_button",
+        "progress_complete",
+        "progress_incomplete",
+        "scrollbar focus",
+        "scrollbar",
+        "string_input focus",
+        "string_input",
+        "user_code",
+    ]
+)
 
 
 def apply_style_map(cls):
-    """ Applies AttrMap attributes to Color class
+    """Applies AttrMap attributes to Color class
 
     Eg:
 
@@ -192,7 +186,7 @@ def apply_style_map(cls):
       Color.body(Text("Im text in wrapped with the body color"))
     """
     for k in STYLE_NAMES:
-        kf = k + ' focus'
+        kf = k + " focus"
         if kf in STYLE_NAMES:
             setattr(cls, k, partialmethod(AttrMap, attr_map=k, focus_map=kf))
         else:
@@ -202,7 +196,7 @@ def apply_style_map(cls):
 
 @apply_style_map
 class Color:
-    """ Partial methods for :class:`~subiquity.palette.STYLES`
+    """Partial methods for :class:`~subiquity.palette.STYLES`
 
     .. py:meth:: frame_header(:class:`urwid.Widget`)
 
@@ -214,10 +208,11 @@ class Color:
                                   "defined from the STYLES attribute"))
 
     """
+
     pass
 
 
-_disable_everything_map = {k: 'info_minor' for k in STYLE_NAMES | set([None])}
+_disable_everything_map = {k: "info_minor" for k in STYLE_NAMES | set([None])}
 
 
 def disabled(w):
@@ -236,12 +231,10 @@ def button_pile(buttons):
     width = 14
     for button in buttons:
         width = max(widget_width(button), width)
-    return _Padding(
-        Pile(buttons), min_width=width, width=width, align='center')
+    return _Padding(Pile(buttons), min_width=width, width=width, align="center")
 
 
-def screen(rows, buttons=None, focus_buttons=True, excerpt=None,
-           narrow_rows=False):
+def screen(rows, buttons=None, focus_buttons=True, excerpt=None, narrow_rows=False):
     """Helper to create a common screen layout.
 
     The commonest screen layout in subiquity is:
@@ -267,18 +260,20 @@ def screen(rows, buttons=None, focus_buttons=True, excerpt=None,
     excerpt_rows = []
     if excerpt is not None:
         excerpt_rows = [
-            ('pack', Text(excerpt)),
-            ('pack', Text("")),
-            ]
+            ("pack", Text(excerpt)),
+            ("pack", Text("")),
+        ]
     body = [
         rows,
-        ('pack', Text("")),
+        ("pack", Text("")),
     ]
     if buttons is not None:
-        body.extend([
-            ('pack', buttons),
-            ('pack', Text("")),
-        ])
+        body.extend(
+            [
+                ("pack", buttons),
+                ("pack", Text("")),
+            ]
+        )
     pile = Pile(excerpt_rows + body)
     if focus_buttons:
         pile.focus_position = len(excerpt_rows) + 2
@@ -286,8 +281,7 @@ def screen(rows, buttons=None, focus_buttons=True, excerpt=None,
 
 
 class CursorOverride(WidgetDecoration):
-    """Decoration to override where the cursor goes when a widget is focused.
-    """
+    """Decoration to override where the cursor goes when a widget is focused."""
 
     has_original_width = True
 
@@ -314,75 +308,69 @@ class CursorOverride(WidgetDecoration):
 
 
 class ClickableIcon(SelectableIcon):
-    """Like Button, but simpler. """
-    signals = ['click']
+    """Like Button, but simpler."""
+
+    signals = ["click"]
 
     def keypress(self, size, key):
         if self._command_map[key] != ACTIVATE:
             return key
-        self._emit('click')
+        self._emit("click")
 
 
 def make_action_menu_row(
-        cells,
-        menu,
-        attr_map='menu_button', focus_map='menu_button focus',
-        cursor_x=2):
+    cells, menu, attr_map="menu_button", focus_map="menu_button focus", cursor_x=2
+):
     row = TableRow(cells)
     if not isinstance(attr_map, dict):
         attr_map = {None: attr_map}
     if not isinstance(focus_map, dict):
         focus_map = {None: focus_map}
     am = AttrMap(CursorOverride(row, cursor_x=cursor_x), attr_map, focus_map)
-    connect_signal(menu, 'open', lambda menu: am.set_attr_map(focus_map))
-    connect_signal(menu, 'close', lambda menu: am.set_attr_map(attr_map))
+    connect_signal(menu, "open", lambda menu: am.set_attr_map(focus_map))
+    connect_signal(menu, "close", lambda menu: am.set_attr_map(attr_map))
     return am
 
 
 def rewrap(text):
     paras = text.split("\n\n")
-    return "\n\n".join([p.replace('\n', ' ') for p in paras]).strip()
+    return "\n\n".join([p.replace("\n", " ") for p in paras]).strip()
 
 
 class SomethingFailed(Stretchy):
-    def __init__(self, parent, msg, stderr,
-                 *, btn_label: str = _("Close")) -> None:
+    def __init__(self, parent, msg, stderr, *, btn_label: str = _("Close")) -> None:
         self.parent = parent
         ok = other_btn(label=btn_label, on_press=self.close)
         widgets = [
             Text(msg),
             Text(""),
-            Text(stderr.strip('\n')),
+            Text(stderr.strip("\n")),
             Text(""),
             button_pile([ok]),
-            ]
-        super().__init__(
-            "",
-            widgets,
-            2, 4)
+        ]
+        super().__init__("", widgets, 2, 4)
 
     def close(self, sender):
         self.parent.remove_overlay()
 
 
 class LoadingDialog(WidgetWrap):
-
     def __init__(self, parent, msg, task_to_cancel):
         self.parent = parent
-        self.spinner = Spinner(style='dots')
+        self.spinner = Spinner(style="dots")
         self.spinner.start()
         self.closed = False
         # | text |
         # 12    34
         self.width = len(msg) + 4
         widgets = [
-            ('pack', Text(' ' + msg)),
-            ('pack', self.spinner),
-            ]
+            ("pack", Text(" " + msg)),
+            ("pack", self.spinner),
+        ]
         if task_to_cancel is not None:
             self.task_to_cancel = task_to_cancel
             cancel = cancel_btn(label=_("Cancel"), on_press=self.close)
-            widgets.append(('pack', button_pile([cancel])))
+            widgets.append(("pack", button_pile([cancel])))
         super().__init__(LineBox(Pile(widgets)))
 
     def close(self, sender=None):

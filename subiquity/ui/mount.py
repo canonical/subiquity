@@ -1,40 +1,30 @@
-
 import re
 
-from urwid import (
-    connect_signal,
-    Text,
-    )
+from urwid import Text, connect_signal
 
-from subiquitycore.ui.container import (
-    Columns,
-    Pile,
-    WidgetWrap,
-    )
+from subiquitycore.ui.container import Columns, Pile, WidgetWrap
 from subiquitycore.ui.form import FormField
 from subiquitycore.ui.interactive import Selector, StringEditor
 from subiquitycore.ui.utils import Color
 
-
 common_mountpoints = [
-    '/',
-    '/boot',
-    '/home',
-    '/srv',
-    '/usr',
-    '/var',
-    '/var/lib',
-    ]
+    "/",
+    "/boot",
+    "/home",
+    "/srv",
+    "/usr",
+    "/var",
+    "/var/lib",
+]
 
 
 class _MountEditor(StringEditor):
-    """ Mountpoint input prompt with input rules
-    """
+    """Mountpoint input prompt with input rules"""
 
     def keypress(self, size, key):
-        ''' restrict what chars we allow for mountpoints '''
+        """restrict what chars we allow for mountpoints"""
 
-        mountpoint = r'[a-zA-Z0-9_/\.\-]'
+        mountpoint = r"[a-zA-Z0-9_/\.\-]"
         if re.match(mountpoint, key) is None:
             return False
 
@@ -45,16 +35,15 @@ OTHER = object()
 LEAVE_UNMOUNTED = object()
 
 suitable_mountpoints_for_existing_fs = [
-    '/home',
-    '/srv',
+    "/home",
+    "/srv",
     OTHER,
     LEAVE_UNMOUNTED,
-    ]
+]
 
 
 class MountSelector(WidgetWrap):
-
-    signals = ['change']
+    signals = ["change"]
 
     def __init__(self, mountpoints):
         opts = []
@@ -68,11 +57,11 @@ class MountSelector(WidgetWrap):
                 opts.append((mnt, False))
         if first_opt is None:
             first_opt = len(opts)
-        opts.append((_('Other'), True, OTHER))
-        opts.append(('---', False)),
-        opts.append((_('Leave unmounted'), True, LEAVE_UNMOUNTED))
+        opts.append((_("Other"), True, OTHER))
+        opts.append(("---", False)),
+        opts.append((_("Leave unmounted"), True, LEAVE_UNMOUNTED))
         self._selector = Selector(opts, first_opt)
-        connect_signal(self._selector, 'select', self._select_mount)
+        connect_signal(self._selector, "select", self._select_mount)
         self._other = _MountEditor()
         super().__init__(Pile([self._selector]))
         self._other_showing = False
@@ -93,8 +82,11 @@ class MountSelector(WidgetWrap):
     def _showhide_other(self, show):
         if show and not self._other_showing:
             self._w.contents.append(
-                (Columns([(1, Text("/")), Color.string_input(self._other)]),
-                 self._w.options('pack')))
+                (
+                    Columns([(1, Text("/")), Color.string_input(self._other)]),
+                    self._w.options("pack"),
+                )
+            )
             self._other_showing = True
         elif not show and self._other_showing:
             del self._w.contents[-1]
@@ -105,7 +97,7 @@ class MountSelector(WidgetWrap):
         if value == OTHER:
             self._w.focus_position = 1
             value = "/" + self._other.value
-        self._emit('change', value)
+        self._emit("change", value)
 
     @property
     def value(self):
@@ -128,13 +120,12 @@ class MountSelector(WidgetWrap):
         else:
             self._selector.value = OTHER
             self._showhide_other(True)
-            if not val.startswith('/'):
+            if not val.startswith("/"):
                 raise ValueError(f"{val} does not start with /")
             self._other.value = val[1:]
 
 
 class MountField(FormField):
-
     takes_default_style = False
 
     def _make_widget(self, form):

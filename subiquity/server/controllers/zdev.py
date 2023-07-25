@@ -17,21 +17,23 @@ import asyncio
 import logging
 import platform
 import random
-from typing import List
-
 from collections import OrderedDict
-
-from subiquitycore.utils import arun_command, run_command
+from typing import List
 
 from subiquity.common.apidef import API
 from subiquity.common.types import Bootloader, ZdevInfo
 from subiquity.server.controller import SubiquityController
-
+from subiquitycore.utils import arun_command, run_command
 
 log = logging.getLogger("subiquity.server.controllers.zdev")
 
-lszdev_cmd = ['lszdev', '--quiet', '--pairs', '--columns',
-              'id,type,on,exists,pers,auto,failed,names']
+lszdev_cmd = [
+    "lszdev",
+    "--quiet",
+    "--pairs",
+    "--columns",
+    "id,type,on,exists,pers,auto,failed,names",
+]
 
 lszdev_stock = '''id="0.0.1500" type="dasd-eckd" on="no" exists="yes" pers="no" auto="no" failed="no" names=""
 id="0.0.1501" type="dasd-eckd" on="yes" exists="yes" pers="auto" auto="yes" failed="no" names=""
@@ -591,13 +593,12 @@ id="0.0.c0fe" type="generic-ccw" on="no" exists="yes" pers="no" auto="no" failed
 
 
 class ZdevController(SubiquityController):
-
     endpoint = API.zdev
 
     def __init__(self, app):
         super().__init__(app)
         if self.opts.dry_run:
-            if platform.machine() == 's390x':
+            if platform.machine() == "s390x":
                 zdevinfos = self.lszdev()
             else:
                 devices = lszdev_stock.splitlines()
@@ -612,12 +613,12 @@ class ZdevController(SubiquityController):
 
     async def chzdev_POST(self, action: str, zdev: ZdevInfo) -> List[ZdevInfo]:
         if self.opts.dry_run:
-            await asyncio.sleep(random.random()*0.4)
-            on = action == 'enable'
+            await asyncio.sleep(random.random() * 0.4)
+            on = action == "enable"
             self.zdevinfos[zdev.id].on = on
             self.zdevinfos[zdev.id].pers = on
         else:
-            chzdev_cmd = ['chzdev', '--%s' % action, zdev.id]
+            chzdev_cmd = ["chzdev", "--%s" % action, zdev.id]
             await arun_command(chzdev_cmd)
         return await self.GET()
 

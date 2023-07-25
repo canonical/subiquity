@@ -23,15 +23,15 @@ from subiquitycore.tests.mocks import make_app
 
 
 class MockGeoIP:
-    text = ''
+    text = ""
 
     @property
     def timezone(self):
         return self.text
 
 
-tz_denver = 'America/Denver'
-tz_utc = 'Etc/UTC'
+tz_denver = "America/Denver"
+tz_utc = "Etc/UTC"
 
 
 class TestTimeZoneController(SubiTestCase):
@@ -44,68 +44,71 @@ class TestTimeZoneController(SubiTestCase):
         self.tzc.app.geoip = MockGeoIP()
         self.tzc.app.geoip.text = tz_denver
 
-    @mock.patch('subiquity.server.controllers.timezone.timedatectl_settz')
-    @mock.patch('subiquity.server.controllers.timezone.timedatectl_gettz')
-    @mock.patch('subiquity.server.controllers.timezone.generate_possible_tzs')
+    @mock.patch("subiquity.server.controllers.timezone.timedatectl_settz")
+    @mock.patch("subiquity.server.controllers.timezone.timedatectl_gettz")
+    @mock.patch("subiquity.server.controllers.timezone.generate_possible_tzs")
     async def test_good_tzs(self, generate_possible_tzs, tdc_gettz, tdc_settz):
-        generate_possible_tzs.return_value = \
-            ['', 'geoip', 'Pacific/Auckland', 'America/Denver']
+        generate_possible_tzs.return_value = [
+            "",
+            "geoip",
+            "Pacific/Auckland",
+            "America/Denver",
+        ]
         tdc_gettz.return_value = tz_utc
         goods = [
             # val - autoinstall value
             # |       settz - should system set timezone
             # |       |     geoip - did we get a value by geoip?
             # |       |     |     valid_lookup
-            ('geoip', True, True, True),
-            ('geoip', False, True, False),
+            ("geoip", True, True, True),
+            ("geoip", False, True, False),
             # empty val is valid and means to set no time zone
-            ('', False, False, True),
-            ('Pacific/Auckland', True, False, False),
-            ('America/Denver', True, False, False),
+            ("", False, False, True),
+            ("Pacific/Auckland", True, False, False),
+            ("America/Denver", True, False, False),
         ]
         for val, settz, geoip, valid_lookup in goods:
             self.tzc_init()
-            if not val or val == 'geoip':
+            if not val or val == "geoip":
                 if valid_lookup:
                     tz = TimeZoneInfo(tz_denver, True)
                 else:
                     tz = TimeZoneInfo(tz_utc, False)
-                    self.tzc.app.geoip.text = ''
+                    self.tzc.app.geoip.text = ""
             else:
                 tz = TimeZoneInfo(val, False)
             self.tzc.deserialize(val)
             self.assertEqual(val, self.tzc.serialize())
-            self.assertEqual(settz, self.tzc.model.should_set_tz,
-                             self.tzc.model)
-            self.assertEqual(geoip, self.tzc.model.detect_with_geoip,
-                             self.tzc.model)
+            self.assertEqual(settz, self.tzc.model.should_set_tz, self.tzc.model)
+            self.assertEqual(geoip, self.tzc.model.detect_with_geoip, self.tzc.model)
             self.assertEqual(tz, await self.tzc.GET(), self.tzc.model)
             cloudconfig = {}
             if self.tzc.model.should_set_tz:
-                cloudconfig = {'timezone': tz.timezone}
+                cloudconfig = {"timezone": tz.timezone}
                 tdc_settz.assert_called_with(self.tzc.app, tz.timezone)
-            self.assertEqual(cloudconfig, self.tzc.model.make_cloudconfig(),
-                             self.tzc.model)
+            self.assertEqual(
+                cloudconfig, self.tzc.model.make_cloudconfig(), self.tzc.model
+            )
 
     def test_bad_tzs(self):
         bads = [
-            'dhcp',  # possible future value, not supported yet
-            'notatimezone',
+            "dhcp",  # possible future value, not supported yet
+            "notatimezone",
         ]
         for b in bads:
             with self.assertRaises(ValueError):
                 self.tzc.deserialize(b)
 
-    @mock.patch('subprocess.run')
-    @mock.patch('subiquity.server.controllers.timezone.timedatectl_gettz')
+    @mock.patch("subprocess.run")
+    @mock.patch("subiquity.server.controllers.timezone.timedatectl_gettz")
     def test_set_tz_escape_dryrun(self, tdc_gettz, subprocess_run):
         tdc_gettz.return_value = tz_utc
         self.tzc.app.dry_run = True
-        self.tzc.possible = ['geoip']
-        self.tzc.deserialize('geoip')
-        self.assertEqual('sleep', subprocess_run.call_args.args[0][0])
+        self.tzc.possible = ["geoip"]
+        self.tzc.deserialize("geoip")
+        self.assertEqual("sleep", subprocess_run.call_args.args[0][0])
 
-    @mock.patch('subiquity.server.controllers.timezone.timedatectl_settz')
+    @mock.patch("subiquity.server.controllers.timezone.timedatectl_settz")
     async def test_get_tz_should_not_set(self, tdc_settz):
         await self.tzc.GET()
         self.assertFalse(self.tzc.model.should_set_tz)

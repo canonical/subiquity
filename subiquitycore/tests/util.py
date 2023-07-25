@@ -18,4 +18,4 @@ import string
 
 
 def random_string():
-    return ''.join(random.choice(string.ascii_letters) for _ in range(8))
+    return "".join(random.choice(string.ascii_letters) for _ in range(8))

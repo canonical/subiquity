@@ -14,24 +14,31 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import enum
-from gettext import pgettext
 import ipaddress
 import logging
-import yaml
+from gettext import pgettext
 from socket import AF_INET, AF_INET6
-import attr
 from typing import Dict, List, Optional
+
+import attr
+import yaml
 
 from subiquitycore import netplan
 
-
 NETDEV_IGNORED_IFACE_TYPES = [
-    'lo', 'bridge', 'tun', 'tap', 'dummy', 'sit', 'can', '???'
+    "lo",
+    "bridge",
+    "tun",
+    "tap",
+    "dummy",
+    "sit",
+    "can",
+    "???",
 ]
-NETDEV_ALLOWED_VIRTUAL_IFACE_TYPES = ['vlan', 'bond']
+NETDEV_ALLOWED_VIRTUAL_IFACE_TYPES = ["vlan", "bond"]
 
 
-log = logging.getLogger('subiquitycore.models.network')
+log = logging.getLogger("subiquitycore.models.network")
 
 
 def addr_version(ip):
@@ -103,21 +110,22 @@ class BondConfig:
     def to_config(self):
         mode = self.mode
         params = {
-            'mode': self.mode,
-            }
+            "mode": self.mode,
+        }
         if mode in BondParameters.supports_xmit_hash_policy:
-            params['transmit-hash-policy'] = self.xmit_hash_policy
+            params["transmit-hash-policy"] = self.xmit_hash_policy
         if mode in BondParameters.supports_lacp_rate:
-            params['lacp-rate'] = self.lacp_rate
+            params["lacp-rate"] = self.lacp_rate
         return {
-            'interfaces': self.interfaces,
-            'parameters': params,
-            }
+            "interfaces": self.interfaces,
+            "parameters": params,
+        }
 
 
 @attr.s(auto_attribs=True)
 class NetDevInfo:
     """All the information about a NetworkDev that the view code needs."""
+
     name: str
     type: str
 
@@ -148,41 +156,40 @@ class BondParameters:
     # configured.
 
     modes = [
-        'balance-rr',
-        'active-backup',
-        'balance-xor',
-        'broadcast',
-        '802.3ad',
-        'balance-tlb',
-        'balance-alb',
+        "balance-rr",
+        "active-backup",
+        "balance-xor",
+        "broadcast",
+        "802.3ad",
+        "balance-tlb",
+        "balance-alb",
     ]
 
     supports_xmit_hash_policy = {
-        'balance-xor',
-        '802.3ad',
-        'balance-tlb',
+        "balance-xor",
+        "802.3ad",
+        "balance-tlb",
     }
 
     xmit_hash_policies = [
-        'layer2',
-        'layer2+3',
-        'layer3+4',
-        'encap2+3',
-        'encap3+4',
+        "layer2",
+        "layer2+3",
+        "layer3+4",
+        "encap2+3",
+        "encap3+4",
     ]
 
     supports_lacp_rate = {
-        '802.3ad',
+        "802.3ad",
     }
 
     lacp_rates = [
-        'slow',
-        'fast',
+        "slow",
+        "fast",
     ]
 
 
 class NetworkDev(object):
-
     def __init__(self, model, name, typ):
         self._model = model
         self._name = name
@@ -194,10 +201,10 @@ class NetworkDev(object):
         self._dhcp_state = {
             4: None,
             6: None,
-            }
+        }
 
     def netdev_info(self) -> NetDevInfo:
-        if self.type == 'eth':
+        if self.type == "eth":
             is_connected = bool(self.info.is_connected)
         else:
             is_connected = True
@@ -205,34 +212,36 @@ class NetworkDev(object):
         for dev2 in self._model.get_all_netdevs():
             if dev2.type != "bond":
                 continue
-            if self.name in dev2.config.get('interfaces', []):
+            if self.name in dev2.config.get("interfaces", []):
                 bond_master = dev2.name
                 break
         bond: Optional[BondConfig] = None
-        if self.type == 'bond' and self.config is not None:
-            params = self.config['parameters']
+        if self.type == "bond" and self.config is not None:
+            params = self.config["parameters"]
             bond = BondConfig(
-                interfaces=self.config['interfaces'],
-                mode=params['mode'],
-                xmit_hash_policy=params.get('xmit-hash-policy'),
-                lacp_rate=params.get('lacp-rate'))
+                interfaces=self.config["interfaces"],
+                mode=params["mode"],
+                xmit_hash_policy=params.get("xmit-hash-policy"),
+                lacp_rate=params.get("lacp-rate"),
+            )
         vlan: Optional[VLANConfig] = None
-        if self.type == 'vlan' and self.config is not None:
-            vlan = VLANConfig(id=self.config['id'], link=self.config['link'])
+        if self.type == "vlan" and self.config is not None:
+            vlan = VLANConfig(id=self.config["id"], link=self.config["link"])
         wlan: Optional[WLANStatus] = None
-        if self.type == 'wlan':
+        if self.type == "wlan":
             ssid, psk = self.configured_ssid
             wlan = WLANStatus(
                 config=WLANConfig(ssid=ssid, psk=psk),
-                scan_state=self.info.wlan['scan_state'],
-                visible_ssids=self.info.wlan['visible_ssids'])
+                scan_state=self.info.wlan["scan_state"],
+                visible_ssids=self.info.wlan["visible_ssids"],
+            )
 
         dhcp_addresses = self.dhcp_addresses()
         configured_addresses: Dict[int, List[str]] = {4: [], 6: []}
         if self.config is not None:
-            for addr in self.config.get('addresses', []):
+            for addr in self.config.get("addresses", []):
                 configured_addresses[addr_version(addr)].append(addr)
-            ns = self.config.get('nameservers', {})
+            ns = self.config.get("nameservers", {})
         else:
             ns = {}
         dhcp_statuses = {}
@@ -241,16 +250,18 @@ class NetworkDev(object):
             dhcp_statuses[v] = DHCPStatus(
                 enabled=self.dhcp_enabled(v),
                 state=self._dhcp_state[v],
-                addresses=dhcp_addresses[v])
+                addresses=dhcp_addresses[v],
+            )
             if self.config is not None:
-                gateway = self.config.get('gateway' + str(v))
+                gateway = self.config.get("gateway" + str(v))
             else:
                 gateway = None
             static_configs[v] = StaticConfig(
                 addresses=configured_addresses[v],
                 gateway=gateway,
-                nameservers=ns.get('nameservers', []),
-                searchdomains=ns.get('search', []))
+                nameservers=ns.get("nameservers", []),
+                searchdomains=ns.get("search", []),
+            )
         return NetDevInfo(
             name=self.name,
             type=self.type,
@@ -266,14 +277,14 @@ class NetworkDev(object):
             is_used=self.is_used,
             disabled_reason=self.disabled_reason,
             enabled_actions=[
-                action for action in NetDevAction
-                if self.supports_action(action)
-                ],
-            hwaddr=getattr(self.info, 'hwaddr', None),
-            vendor=getattr(self.info, 'vendor', None),
-            model=getattr(self.info, 'model', None),
+                action for action in NetDevAction if self.supports_action(action)
+            ],
+            hwaddr=getattr(self.info, "hwaddr", None),
+            vendor=getattr(self.info, "vendor", None),
+            model=getattr(self.info, "model", None),
             is_virtual=self.is_virtual,
-            has_config=self.config is not None)
+            has_config=self.config is not None,
+        )
 
     def dhcp_addresses(self):
         r = {4: [], 6: []}
@@ -285,7 +296,7 @@ class NetworkDev(object):
                     v = 6
                 else:
                     continue
-                if a.source == 'dhcp':
+                if a.source == "dhcp":
                     r[v].append(str(a.address))
         return r
 
@@ -293,10 +304,10 @@ class NetworkDev(object):
         if self.config is None:
             return False
         else:
-            return self.config.get('dhcp{v}'.format(v=version), False)
+            return self.config.get("dhcp{v}".format(v=version), False)
 
     def dhcp_state(self, version):
-        if not self.config.get('dhcp{v}'.format(v=version), False):
+        if not self.config.get("dhcp{v}".format(v=version), False):
             return None
         return self._dhcp_state[version]
 
@@ -316,7 +327,9 @@ class NetworkDev(object):
             if new_name in self._model.devices_by_name:
                 raise RuntimeError(
                     "renaming {old_name} over {new_name}".format(
-                        old_name=self.name, new_name=new_name))
+                        old_name=self.name, new_name=new_name
+                    )
+                )
             self._model.devices_by_name[new_name] = self
             if self.info is not None:
                 dead_device = NetworkDev(self._model, self.name, self.type)
@@ -331,18 +344,18 @@ class NetworkDev(object):
 
     @property
     def configured_ssid(self):
-        for ssid, settings in self.config.get('access-points', {}).items():
-            psk = settings.get('password')
+        for ssid, settings in self.config.get("access-points", {}).items():
+            psk = settings.get("password")
             return ssid, psk
         return None, None
 
     def set_ssid_psk(self, ssid, psk):
-        aps = self.config.setdefault('access-points', {})
+        aps = self.config.setdefault("access-points", {})
         aps.clear()
         if ssid is not None:
             aps[ssid] = {}
             if psk is not None:
-                aps[ssid]['password'] = psk
+                aps[ssid]["password"] = psk
 
     @property
     def ifindex(self):
@@ -359,7 +372,7 @@ class NetworkDev(object):
     def is_bond_slave(self):
         for dev in self._model.get_all_netdevs():
             if dev.type == "bond":
-                if self.name in dev.config.get('interfaces', []):
+                if self.name in dev.config.get("interfaces", []):
                     return True
         return False
 
@@ -367,17 +380,20 @@ class NetworkDev(object):
     def is_used(self):
         for dev in self._model.get_all_netdevs():
             if dev.type == "bond":
-                if self.name in dev.config.get('interfaces', []):
+                if self.name in dev.config.get("interfaces", []):
                     return True
             if dev.type == "vlan":
-                if self.name == dev.config.get('link'):
+                if self.name == dev.config.get("link"):
                     return True
         return False
 
     @property
     def actual_global_ip_addresses(self):
-        return [addr.ip for _, addr in sorted(self.info.addresses.items())
-                if addr.scope == "global"]
+        return [
+            addr.ip
+            for _, addr in sorted(self.info.addresses.items())
+            if addr.scope == "global"
+        ]
 
     _supports_INFO = True
     _supports_EDIT_WLAN = property(lambda self: self.type == "wlan")
@@ -385,29 +401,32 @@ class NetworkDev(object):
     _supports_EDIT_IPV6 = True
     _supports_EDIT_BOND = property(lambda self: self.type == "bond")
     _supports_ADD_VLAN = property(
-        lambda self: self.type != "vlan" and not self.is_bond_slave)
-    _supports_DELETE = property(
-        lambda self: self.is_virtual and not self.is_used)
+        lambda self: self.type != "vlan" and not self.is_bond_slave
+    )
+    _supports_DELETE = property(lambda self: self.is_virtual and not self.is_used)
 
     def remove_ip_networks_for_version(self, version):
-        self.config.pop('dhcp{v}'.format(v=version), None)
+        self.config.pop("dhcp{v}".format(v=version), None)
         self.remove_routes(version)
         addrs = []
-        for ip in self.config.get('addresses', []):
+        for ip in self.config.get("addresses", []):
             if addr_version(ip) != version:
                 addrs.append(ip)
         if addrs:
-            self.config['addresses'] = addrs
+            self.config["addresses"] = addrs
         else:
-            self.config.pop('addresses', None)
+            self.config.pop("addresses", None)
 
     def remove_routes(self, version):
-        routes = [route for route in self.config.get('routes', [])
-                  if addr_version(route['via']) != version]
+        routes = [
+            route
+            for route in self.config.get("routes", [])
+            if addr_version(route["via"]) != version
+        ]
         if routes:
-            self.config['routes'] = routes
+            self.config["routes"] = routes
         else:
-            self.config.pop('routes', None)
+            self.config.pop("routes", None)
 
 
 class NetworkModel(object):
@@ -425,7 +444,7 @@ class NetworkModel(object):
 
     @has_network.setter
     def has_network(self, val):
-        log.debug('has_network %s', val)
+        log.debug("has_network %s", val)
         self._has_network = val
 
     def parse_netplan_configs(self, netplan_root):
@@ -435,7 +454,7 @@ class NetworkModel(object):
     def new_link(self, ifindex, link):
         log.debug("new_link %s %s %s", ifindex, link.name, link.type)
         if link.type in NETDEV_IGNORED_IFACE_TYPES:
-            log.debug('ignoring based on type')
+            log.debug("ignoring based on type")
             return
         is_virtual = link.is_virtual
         if link.type == "wlan":
@@ -443,7 +462,7 @@ class NetworkModel(object):
             # they are real for testing purposes.
             is_virtual = False
         if is_virtual and link.type not in NETDEV_ALLOWED_VIRTUAL_IFACE_TYPES:
-            log.debug('ignoring based on is_virtual')
+            log.debug("ignoring based on is_virtual")
             return
         dev = self.devices_by_name.get(link.name)
         if dev is not None:
@@ -459,14 +478,17 @@ class NetworkModel(object):
             if is_virtual and not config:
                 # If we see a virtual device without there already
                 # being a config for it, we just ignore it.
-                log.debug('ignoring virtual device with no config')
+                log.debug("ignoring virtual device with no config")
                 return
             dev = NetworkDev(self, link.name, link.type)
             dev.info = link
             dev.config = config
-            log.debug("new_link %s %s with config %s",
-                      ifindex, link.name,
-                      netplan.sanitize_interface_config(dev.config))
+            log.debug(
+                "new_link %s %s with config %s",
+                ifindex,
+                link.name,
+                netplan.sanitize_interface_config(dev.config),
+            )
             self.devices_by_name[link.name] = dev
         return dev
 
@@ -493,15 +515,15 @@ class NetworkModel(object):
 
     def new_vlan(self, device_name, tag):
         name = "{name}.{tag}".format(name=device_name, tag=tag)
-        dev = self.devices_by_name[name] = NetworkDev(self, name, 'vlan')
+        dev = self.devices_by_name[name] = NetworkDev(self, name, "vlan")
         dev.config = {
-            'link': device_name,
-            'id': tag,
-            }
+            "link": device_name,
+            "id": tag,
+        }
         return dev
 
     def new_bond(self, name, bond_config):
-        dev = self.devices_by_name[name] = NetworkDev(self, name, 'bond')
+        dev = self.devices_by_name[name] = NetworkDev(self, name, "bond")
         dev.config = bond_config.to_config()
         return dev
 
@@ -515,27 +537,28 @@ class NetworkModel(object):
         return self.devices_by_name[name]
 
     def stringify_config(self, config):
-        return '\n'.join([
-            "# This is the network config written by '{}'".format(
-                self.project),
-            yaml.dump(config, default_flow_style=False),
-            ])
+        return "\n".join(
+            [
+                "# This is the network config written by '{}'".format(self.project),
+                yaml.dump(config, default_flow_style=False),
+            ]
+        )
 
     def render_config(self):
         config = {
-            'network': {
-                'version': 2,
+            "network": {
+                "version": 2,
             },
         }
         type_to_key = {
-            'eth': 'ethernets',
-            'bond': 'bonds',
-            'wlan': 'wifis',
-            'vlan': 'vlans',
-            }
+            "eth": "ethernets",
+            "bond": "bonds",
+            "wlan": "wifis",
+            "vlan": "vlans",
+        }
         for dev in self.get_all_netdevs():
             key = type_to_key[dev.type]
-            configs = config['network'].setdefault(key, {})
+            configs = config["network"].setdefault(key, {})
             if dev.config or dev.is_used:
                 configs[dev.name] = dev.config
 
@@ -544,21 +567,23 @@ class NetworkModel(object):
     def rendered_config_paths(self):
         """Return a list of file paths rendered by this model."""
         return [
-            '/' + write_file['path']
-            for write_file in self.render().get('write_files').values()
+            "/" + write_file["path"]
+            for write_file in self.render().get("write_files").values()
         ]
 
     def render(self):
         return {
-            'write_files': {
-                'etc_netplan_installer': {
-                    'path': 'etc/netplan/00-installer-config.yaml',
-                    'content': self.stringify_config(self.render_config()),
-                    },
-                'nonet': {
-                    'path': ('etc/cloud/cloud.cfg.d/'
-                             'subiquity-disable-cloudinit-networking.cfg'),
-                    'content': 'network: {config: disabled}\n',
-                    },
+            "write_files": {
+                "etc_netplan_installer": {
+                    "path": "etc/netplan/00-installer-config.yaml",
+                    "content": self.stringify_config(self.render_config()),
                 },
-            }
+                "nonet": {
+                    "path": (
+                        "etc/cloud/cloud.cfg.d/"
+                        "subiquity-disable-cloudinit-networking.cfg"
+                    ),
+                    "content": "network: {config: disabled}\n",
+                },
+            },
+        }

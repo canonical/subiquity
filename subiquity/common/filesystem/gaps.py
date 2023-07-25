@@ -14,21 +14,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import functools
-from typing import Tuple, List
+from typing import List, Tuple
 
 import attr
 
 from subiquity.common.types import GapUsable
 from subiquity.models.filesystem import (
-    align_up,
-    align_down,
-    Disk,
     LVM_CHUNK_SIZE,
+    Disk,
     LVM_LogicalVolume,
     LVM_VolGroup,
     Partition,
     Raid,
-    )
+    align_down,
+    align_up,
+)
 
 
 # should also set on_setattr=None with attrs 20.1.0
@@ -40,11 +40,11 @@ class Gap:
     in_extended: bool = False
     usable: str = GapUsable.YES
 
-    type: str = 'gap'
+    type: str = "gap"
 
     @property
     def id(self):
-        return 'gap-' + self.device.id
+        return "gap-" + self.device.id
 
     @property
     def is_usable(self):
@@ -55,21 +55,25 @@ class Gap:
         the supplied size.  If size is equal to the gap size, the second gap is
         None.  The original gap is unmodified."""
         if size > self.size:
-            raise ValueError('requested size larger than gap')
+            raise ValueError("requested size larger than gap")
         if size == self.size:
             return (self, None)
-        first_gap = Gap(device=self.device,
-                        offset=self.offset,
-                        size=size,
-                        in_extended=self.in_extended,
-                        usable=self.usable)
+        first_gap = Gap(
+            device=self.device,
+            offset=self.offset,
+            size=size,
+            in_extended=self.in_extended,
+            usable=self.usable,
+        )
         if self.in_extended:
             size += self.device.alignment_data().ebr_space
-        rest_gap = Gap(device=self.device,
-                       offset=self.offset + size,
-                       size=self.size - size,
-                       in_extended=self.in_extended,
-                       usable=self.usable)
+        rest_gap = Gap(
+            device=self.device,
+            offset=self.offset + size,
+            size=self.size - size,
+            in_extended=self.in_extended,
+            usable=self.usable,
+        )
         return (first_gap, rest_gap)
 
     def within(self):
@@ -134,11 +138,15 @@ def find_disk_gaps_v2(device, info=None):
         else:
             usable = GapUsable.TOO_MANY_PRIMARY_PARTS
         if end - start >= info.min_gap_size:
-            result.append(Gap(device=device,
-                              offset=start,
-                              size=end - start,
-                              in_extended=in_extended,
-                              usable=usable))
+            result.append(
+                Gap(
+                    device=device,
+                    offset=start,
+                    size=end - start,
+                    in_extended=in_extended,
+                    usable=usable,
+                )
+            )
 
     prev_end = info.min_start_offset
 
@@ -158,8 +166,7 @@ def find_disk_gaps_v2(device, info=None):
         gap_start = au(prev_end)
 
         if extended_end is not None:
-            gap_start = min(
-                extended_end, au(gap_start + info.ebr_space))
+            gap_start = min(extended_end, au(gap_start + info.ebr_space))
 
         if extended_end is not None and gap_end >= extended_end:
             maybe_add_gap(gap_start, ad(extended_end), True)
@@ -247,7 +254,7 @@ def largest_gap_size(device, in_extended=None):
 
 @functools.singledispatch
 def movable_trailing_partitions_and_gap_size(partition):
-    """ For a given partition (or LVM logical volume), return the total,
+    """For a given partition (or LVM logical volume), return the total,
     potentially available, free space immediately following the partition.
     By potentially available, we mean that to claim that much free space, some
     other partitions might need to be moved.
@@ -259,13 +266,14 @@ def movable_trailing_partitions_and_gap_size(partition):
 
 
 @movable_trailing_partitions_and_gap_size.register
-def _movable_trailing_partitions_and_gap_size_partition(partition: Partition) \
-        -> Tuple[List[Partition], int]:
+def _movable_trailing_partitions_and_gap_size_partition(
+    partition: Partition,
+) -> Tuple[List[Partition], int]:
     pgs = parts_and_gaps(partition.device)
     part_idx = pgs.index(partition)
     trailing_partitions = []
     in_extended = partition.is_logical
-    for pg in pgs[part_idx + 1:]:
+    for pg in pgs[part_idx + 1 :]:
         if isinstance(pg, Partition):
             if pg.preserve:
                 break
@@ -281,8 +289,9 @@ def _movable_trailing_partitions_and_gap_size_partition(partition: Partition) \
 
 
 @movable_trailing_partitions_and_gap_size.register
-def _movable_trailing_partitions_and_gap_size_lvm(volume: LVM_LogicalVolume) \
-        -> Tuple[List[LVM_LogicalVolume], int]:
+def _movable_trailing_partitions_and_gap_size_lvm(
+    volume: LVM_LogicalVolume,
+) -> Tuple[List[LVM_LogicalVolume], int]:
     # In a Volume Group, there is no need to move partitions around, one can
     # always use the remaining space.
 

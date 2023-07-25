@@ -19,7 +19,6 @@ import pwd
 
 from subiquitycore.utils import run_command
 
-
 log = logging.getLogger("subiquitycore.ssh")
 
 
@@ -29,7 +28,7 @@ def host_key_fingerprints():
     Returns a sequence of (key-type, fingerprint) pairs.
     """
     try:
-        config = run_command(['sshd', '-T'])
+        config = run_command(["sshd", "-T"])
     except FileNotFoundError:
         log.debug("sshd not found")
         return []
@@ -38,7 +37,7 @@ def host_key_fingerprints():
         return []
     keyfiles = []
     for line in config.stdout.splitlines():
-        if line.startswith('hostkey '):
+        if line.startswith("hostkey "):
             keyfiles.append(line.split(None, 1)[1])
     info = []
     for keyfile in keyfiles:
@@ -48,29 +47,33 @@ def host_key_fingerprints():
 
 def fingerprints(keyfile):
     info = []
-    cp = run_command(['ssh-keygen', '-lf', keyfile])
+    cp = run_command(["ssh-keygen", "-lf", keyfile])
     if cp.returncode != 0:
         log.debug("ssh-keygen -lf %s failed %r", keyfile, cp.stderr)
         return info
     for line in cp.stdout.splitlines():
-        parts = line.strip().replace('\r', '').split()
+        parts = line.strip().replace("\r", "").split()
         fingerprint = parts[1]
-        keytype = parts[-1].strip('()')
+        keytype = parts[-1].strip("()")
         info.append((keytype, fingerprint))
     return info
 
 
-host_keys_intro = _("""\
+host_keys_intro = _(
+    """\
 The host key fingerprints are:
-""")
+"""
+)
 
 host_key_tmpl = """
     {keytype:{width}} {fingerprint}"""
 
-single_host_key_tmpl = _("""\
+single_host_key_tmpl = _(
+    """\
 The {keytype} host key fingerprint is:
     {fingerprint}
-""")
+"""
+)
 
 
 def host_key_info():
@@ -79,17 +82,18 @@ def host_key_info():
 
 def summarize_host_keys(fingerprints):
     if len(fingerprints) == 0:
-        return ''
+        return ""
     if len(fingerprints) == 1:
         [(keytype, fingerprint)] = fingerprints
-        return _(single_host_key_tmpl).format(keytype=keytype,
-                                              fingerprint=fingerprint)
+        return _(single_host_key_tmpl).format(keytype=keytype, fingerprint=fingerprint)
     lines = [_(host_keys_intro)]
     longest_type = max([len(keytype) for keytype, _ in fingerprints])
     for keytype, fingerprint in fingerprints:
-        lines.append(host_key_tmpl.format(keytype=keytype,
-                                          fingerprint=fingerprint,
-                                          width=longest_type))
+        lines.append(
+            host_key_tmpl.format(
+                keytype=keytype, fingerprint=fingerprint, width=longest_type
+            )
+        )
     return "".join(lines)
 
 
@@ -99,7 +103,7 @@ def user_key_fingerprints(username):
     except KeyError:
         log.exception("getpwnam(%s) failed", username)
         return []
-    user_key_file = '{}/.ssh/authorized_keys'.format(user_info.pw_dir)
+    user_key_file = "{}/.ssh/authorized_keys".format(user_info.pw_dir)
     if os.path.exists(user_key_file):
         return fingerprints(user_key_file)
     else:
@@ -108,15 +112,17 @@ def user_key_fingerprints(username):
 
 def get_ips_standalone():
     from probert.prober import Prober
+
     from subiquitycore.models.network import NETDEV_IGNORED_IFACE_TYPES
+
     prober = Prober()
     prober.probe_network()
-    links = prober.get_results()['network']['links']
+    links = prober.get_results()["network"]["links"]
     ips = []
-    for link in sorted(links, key=lambda link: link['netlink_data']['name']):
-        if link['type'] in NETDEV_IGNORED_IFACE_TYPES:
+    for link in sorted(links, key=lambda link: link["netlink_data"]["name"]):
+        if link["type"] in NETDEV_IGNORED_IFACE_TYPES:
             continue
-        for addr in link['addresses']:
-            if addr['scope'] == "global":
-                ips.append(addr['address'].split('/')[0])
+        for addr in link["addresses"]:
+            if addr["scope"] == "global":
+                ips.append(addr["address"].split("/")[0])
     return ips

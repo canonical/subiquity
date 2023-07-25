@@ -15,10 +15,8 @@
 
 import unittest
 
-from subiquity.common.filesystem.actions import (
-    DeviceAction,
-    )
 from subiquity.common.filesystem import gaps
+from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.models.filesystem import Bootloader
 from subiquity.models.tests.test_filesystem import (
     make_disk,
@@ -32,11 +30,10 @@ from subiquity.models.tests.test_filesystem import (
     make_partition,
     make_raid,
     make_vg,
-    )
+)
 
 
 class TestActions(unittest.TestCase):
-
     def assertActionNotSupported(self, obj, action):
         self.assertNotIn(action, DeviceAction.supported(obj))
 
@@ -51,7 +48,7 @@ class TestActions(unittest.TestCase):
     def _test_remove_action(self, model, objects):
         self.assertActionNotPossible(objects[0], DeviceAction.REMOVE)
 
-        vg = model.add_volgroup('vg1', {objects[0], objects[1]})
+        vg = model.add_volgroup("vg1", {objects[0], objects[1]})
         self.assertActionPossible(objects[0], DeviceAction.REMOVE)
 
         # Cannot remove a device from a preexisting VG
@@ -63,7 +60,7 @@ class TestActions(unittest.TestCase):
         vg.devices.remove(objects[1])
         objects[1]._constructed_device = None
         self.assertActionNotPossible(objects[0], DeviceAction.REMOVE)
-        raid = model.add_raid('md0', 'raid1', set(objects[2:]), set())
+        raid = model.add_raid("md0", "raid1", set(objects[2:]), set())
         self.assertActionPossible(objects[2], DeviceAction.REMOVE)
 
         # Cannot remove a device from a preexisting RAID
@@ -91,22 +88,22 @@ class TestActions(unittest.TestCase):
         self.assertActionNotPossible(disk1, DeviceAction.REFORMAT)
         disk1p1 = make_partition(model, disk1, preserve=False)
         self.assertActionPossible(disk1, DeviceAction.REFORMAT)
-        model.add_volgroup('vg0', {disk1p1})
+        model.add_volgroup("vg0", {disk1p1})
         self.assertActionNotPossible(disk1, DeviceAction.REFORMAT)
 
         disk2 = make_disk(model, preserve=True)
         self.assertActionNotPossible(disk2, DeviceAction.REFORMAT)
         disk2p1 = make_partition(model, disk2, preserve=True)
         self.assertActionPossible(disk2, DeviceAction.REFORMAT)
-        model.add_volgroup('vg1', {disk2p1})
+        model.add_volgroup("vg1", {disk2p1})
         self.assertActionNotPossible(disk2, DeviceAction.REFORMAT)
 
         disk3 = make_disk(model, preserve=False)
-        model.add_volgroup('vg2', {disk3})
+        model.add_volgroup("vg2", {disk3})
         self.assertActionNotPossible(disk3, DeviceAction.REFORMAT)
 
         disk4 = make_disk(model, preserve=True)
-        model.add_volgroup('vg2', {disk4})
+        model.add_volgroup("vg2", {disk4})
         self.assertActionNotPossible(disk4, DeviceAction.REFORMAT)
 
     def test_disk_action_PARTITION(self):
@@ -119,7 +116,7 @@ class TestActions(unittest.TestCase):
         make_partition(model, disk)
         self.assertActionNotPossible(disk, DeviceAction.FORMAT)
         disk2 = make_disk(model)
-        model.add_volgroup('vg1', {disk2})
+        model.add_volgroup("vg1", {disk2})
         self.assertActionNotPossible(disk2, DeviceAction.FORMAT)
 
     def test_disk_action_REMOVE(self):
@@ -138,18 +135,18 @@ class TestActions(unittest.TestCase):
     def test_disk_action_TOGGLE_BOOT_BIOS(self):
         model = make_model(Bootloader.BIOS)
         # Disks with msdos partition tables can always be the BIOS boot disk.
-        dos_disk = make_disk(model, ptable='msdos', preserve=True)
+        dos_disk = make_disk(model, ptable="msdos", preserve=True)
         self.assertActionPossible(dos_disk, DeviceAction.TOGGLE_BOOT)
         # Even if they have existing partitions
         make_partition(
-            model, dos_disk, size=gaps.largest_gap_size(dos_disk),
-            preserve=True)
+            model, dos_disk, size=gaps.largest_gap_size(dos_disk), preserve=True
+        )
         self.assertActionPossible(dos_disk, DeviceAction.TOGGLE_BOOT)
         # (we never create dos partition tables so no need to test
         # preserve=False case).
 
         # GPT disks with new partition tables can always be the BIOS boot disk
-        gpt_disk = make_disk(model, ptable='gpt', preserve=False)
+        gpt_disk = make_disk(model, ptable="gpt", preserve=False)
         self.assertActionPossible(gpt_disk, DeviceAction.TOGGLE_BOOT)
         # Even if they are filled with partitions (we resize partitions to fit)
         make_partition(model, gpt_disk, size=gaps.largest_gap_size(dos_disk))
@@ -157,25 +154,37 @@ class TestActions(unittest.TestCase):
 
         # GPT disks with existing partition tables but no partitions can be the
         # BIOS boot disk (in general we ignore existing empty partition tables)
-        gpt_disk2 = make_disk(model, ptable='gpt', preserve=True)
+        gpt_disk2 = make_disk(model, ptable="gpt", preserve=True)
         self.assertActionPossible(gpt_disk2, DeviceAction.TOGGLE_BOOT)
         # If there is an existing *partition* though, it cannot be the boot
         # disk
         make_partition(model, gpt_disk2, preserve=True)
         self.assertActionNotPossible(gpt_disk2, DeviceAction.TOGGLE_BOOT)
         # Unless there is already a bios_grub partition we can reuse
-        gpt_disk3 = make_disk(model, ptable='gpt', preserve=True)
-        make_partition(model, gpt_disk3, flag="bios_grub", preserve=True,
-                       offset=1 << 20, size=512 << 20)
-        make_partition(model, gpt_disk3, preserve=True,
-                       offset=513 << 20, size=8192 << 20)
+        gpt_disk3 = make_disk(model, ptable="gpt", preserve=True)
+        make_partition(
+            model,
+            gpt_disk3,
+            flag="bios_grub",
+            preserve=True,
+            offset=1 << 20,
+            size=512 << 20,
+        )
+        make_partition(
+            model, gpt_disk3, preserve=True, offset=513 << 20, size=8192 << 20
+        )
         self.assertActionPossible(gpt_disk3, DeviceAction.TOGGLE_BOOT)
         # Edge case city: the bios_grub partition has to be first
-        gpt_disk4 = make_disk(model, ptable='gpt', preserve=True)
-        make_partition(model, gpt_disk4, preserve=True,
-                       offset=1 << 20, size=8192 << 20)
-        make_partition(model, gpt_disk4, flag="bios_grub", preserve=True,
-                       offset=8193 << 20, size=512 << 20)
+        gpt_disk4 = make_disk(model, ptable="gpt", preserve=True)
+        make_partition(model, gpt_disk4, preserve=True, offset=1 << 20, size=8192 << 20)
+        make_partition(
+            model,
+            gpt_disk4,
+            flag="bios_grub",
+            preserve=True,
+            offset=8193 << 20,
+            size=512 << 20,
+        )
         self.assertActionNotPossible(gpt_disk4, DeviceAction.TOGGLE_BOOT)
 
     def _test_TOGGLE_BOOT_boot_partition(self, bl, flag):
@@ -188,20 +197,20 @@ class TestActions(unittest.TestCase):
         new_disk = make_disk(model, preserve=False)
         self.assertActionPossible(new_disk, DeviceAction.TOGGLE_BOOT)
         # Even if they are filled with partitions (we resize partitions to fit)
-        make_partition(
-            model, new_disk, size=gaps.largest_gap_size(new_disk))
+        make_partition(model, new_disk, size=gaps.largest_gap_size(new_disk))
         self.assertActionPossible(new_disk, DeviceAction.TOGGLE_BOOT)
 
         # A disk with an existing but empty partitions can also be the
         # UEFI/PREP boot disk.
-        old_disk = make_disk(model, preserve=True, ptable='gpt')
+        old_disk = make_disk(model, preserve=True, ptable="gpt")
         self.assertActionPossible(old_disk, DeviceAction.TOGGLE_BOOT)
         # If there is an existing partition though, it cannot.
         make_partition(model, old_disk, preserve=True)
         self.assertActionNotPossible(old_disk, DeviceAction.TOGGLE_BOOT)
         # If there is an existing ESP/PReP partition though, fine!
-        make_partition(model, old_disk, flag=flag, preserve=True,
-                       offset=1 << 20, size=512 << 20)
+        make_partition(
+            model, old_disk, flag=flag, preserve=True, offset=1 << 20, size=512 << 20
+        )
         self.assertActionPossible(old_disk, DeviceAction.TOGGLE_BOOT)
 
     def test_disk_action_TOGGLE_BOOT_UEFI(self):
@@ -217,7 +226,7 @@ class TestActions(unittest.TestCase):
     def test_partition_action_EDIT(self):
         model, part = make_model_and_partition()
         self.assertActionPossible(part, DeviceAction.EDIT)
-        model.add_volgroup('vg1', {part})
+        model.add_volgroup("vg1", {part})
         self.assertActionNotPossible(part, DeviceAction.EDIT)
 
     def test_partition_action_REFORMAT(self):
@@ -243,20 +252,20 @@ class TestActions(unittest.TestCase):
         model = make_model()
         part1 = make_partition(model)
         self.assertActionPossible(part1, DeviceAction.DELETE)
-        fs = model.add_filesystem(part1, 'ext4')
+        fs = model.add_filesystem(part1, "ext4")
         self.assertActionPossible(part1, DeviceAction.DELETE)
-        model.add_mount(fs, '/')
+        model.add_mount(fs, "/")
         self.assertActionPossible(part1, DeviceAction.DELETE)
 
         part2 = make_partition(model)
-        model.add_volgroup('vg1', {part2})
+        model.add_volgroup("vg1", {part2})
         self.assertActionNotPossible(part2, DeviceAction.DELETE)
 
-        part = make_partition(make_model(Bootloader.BIOS), flag='bios_grub')
+        part = make_partition(make_model(Bootloader.BIOS), flag="bios_grub")
         self.assertActionNotPossible(part, DeviceAction.DELETE)
-        part = make_partition(make_model(Bootloader.UEFI), flag='boot')
+        part = make_partition(make_model(Bootloader.UEFI), flag="boot")
         self.assertActionNotPossible(part, DeviceAction.DELETE)
-        part = make_partition(make_model(Bootloader.PREP), flag='prep')
+        part = make_partition(make_model(Bootloader.PREP), flag="prep")
         self.assertActionNotPossible(part, DeviceAction.DELETE)
 
         # You cannot delete a partition from a disk that has
@@ -277,7 +286,7 @@ class TestActions(unittest.TestCase):
         model = make_model()
         raid1 = make_raid(model)
         self.assertActionPossible(raid1, DeviceAction.EDIT)
-        model.add_volgroup('vg1', {raid1})
+        model.add_volgroup("vg1", {raid1})
         self.assertActionNotPossible(raid1, DeviceAction.EDIT)
         raid2 = make_raid(model)
         make_partition(model, raid2)
@@ -294,23 +303,23 @@ class TestActions(unittest.TestCase):
         self.assertActionNotPossible(raid1, DeviceAction.REFORMAT)
         raid1p1 = make_partition(model, raid1)
         self.assertActionPossible(raid1, DeviceAction.REFORMAT)
-        model.add_volgroup('vg0', {raid1p1})
+        model.add_volgroup("vg0", {raid1p1})
         self.assertActionNotPossible(raid1, DeviceAction.REFORMAT)
 
         raid2 = make_raid(model, preserve=True)
         self.assertActionNotPossible(raid2, DeviceAction.REFORMAT)
         raid2p1 = make_partition(model, raid2, preserve=True)
         self.assertActionPossible(raid2, DeviceAction.REFORMAT)
-        model.add_volgroup('vg1', {raid2p1})
+        model.add_volgroup("vg1", {raid2p1})
         self.assertActionNotPossible(raid2, DeviceAction.REFORMAT)
 
         raid3 = make_raid(model)
-        model.add_volgroup('vg2', {raid3})
+        model.add_volgroup("vg2", {raid3})
         self.assertActionNotPossible(raid3, DeviceAction.REFORMAT)
 
         raid4 = make_raid(model)
         raid4.preserve = True
-        model.add_volgroup('vg2', {raid4})
+        model.add_volgroup("vg2", {raid4})
         self.assertActionNotPossible(raid4, DeviceAction.REFORMAT)
 
     def test_raid_action_PARTITION(self):
@@ -323,7 +332,7 @@ class TestActions(unittest.TestCase):
         make_partition(model, raid)
         self.assertActionNotPossible(raid, DeviceAction.FORMAT)
         raid2 = make_raid(model)
-        model.add_volgroup('vg1', {raid2})
+        model.add_volgroup("vg1", {raid2})
         self.assertActionNotPossible(raid2, DeviceAction.FORMAT)
 
     def test_raid_action_REMOVE(self):
@@ -338,20 +347,20 @@ class TestActions(unittest.TestCase):
         self.assertActionPossible(raid1, DeviceAction.DELETE)
         part = make_partition(model, raid1)
         self.assertActionPossible(raid1, DeviceAction.DELETE)
-        fs = model.add_filesystem(part, 'ext4')
+        fs = model.add_filesystem(part, "ext4")
         self.assertActionPossible(raid1, DeviceAction.DELETE)
-        model.add_mount(fs, '/')
+        model.add_mount(fs, "/")
         self.assertActionNotPossible(raid1, DeviceAction.DELETE)
 
         raid2 = make_raid(model)
         self.assertActionPossible(raid2, DeviceAction.DELETE)
-        fs = model.add_filesystem(raid2, 'ext4')
+        fs = model.add_filesystem(raid2, "ext4")
         self.assertActionPossible(raid2, DeviceAction.DELETE)
-        model.add_mount(fs, '/')
+        model.add_mount(fs, "/")
         self.assertActionPossible(raid2, DeviceAction.DELETE)
 
         raid2 = make_raid(model)
-        model.add_volgroup('vg0', {raid2})
+        model.add_volgroup("vg0", {raid2})
         self.assertActionNotPossible(raid2, DeviceAction.DELETE)
 
     def test_raid_action_TOGGLE_BOOT(self):
@@ -365,7 +374,7 @@ class TestActions(unittest.TestCase):
     def test_vg_action_EDIT(self):
         model, vg = make_model_and_vg()
         self.assertActionPossible(vg, DeviceAction.EDIT)
-        model.add_logical_volume(vg, 'lv1', size=gaps.largest_gap_size(vg))
+        model.add_logical_volume(vg, "lv1", size=gaps.largest_gap_size(vg))
         self.assertActionNotPossible(vg, DeviceAction.EDIT)
 
         vg2 = make_vg(model)
@@ -392,12 +401,11 @@ class TestActions(unittest.TestCase):
         model, vg = make_model_and_vg()
         self.assertActionPossible(vg, DeviceAction.DELETE)
         self.assertActionPossible(vg, DeviceAction.DELETE)
-        lv = model.add_logical_volume(
-            vg, 'lv0', size=gaps.largest_gap_size(vg)//2)
+        lv = model.add_logical_volume(vg, "lv0", size=gaps.largest_gap_size(vg) // 2)
         self.assertActionPossible(vg, DeviceAction.DELETE)
-        fs = model.add_filesystem(lv, 'ext4')
+        fs = model.add_filesystem(lv, "ext4")
         self.assertActionPossible(vg, DeviceAction.DELETE)
-        model.add_mount(fs, '/')
+        model.add_mount(fs, "/")
         self.assertActionNotPossible(vg, DeviceAction.DELETE)
 
     def test_vg_action_TOGGLE_BOOT(self):
@@ -431,9 +439,9 @@ class TestActions(unittest.TestCase):
     def test_lv_action_DELETE(self):
         model, lv = make_model_and_lv()
         self.assertActionPossible(lv, DeviceAction.DELETE)
-        fs = model.add_filesystem(lv, 'ext4')
+        fs = model.add_filesystem(lv, "ext4")
         self.assertActionPossible(lv, DeviceAction.DELETE)
-        model.add_mount(fs, '/')
+        model.add_mount(fs, "/")
         self.assertActionPossible(lv, DeviceAction.DELETE)
 
         lv2 = make_lv(model)

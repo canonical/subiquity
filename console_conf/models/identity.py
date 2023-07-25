@@ -17,8 +17,7 @@ import logging
 
 import attr
 
-
-log = logging.getLogger('console_conf.models.identity')
+log = logging.getLogger("console_conf.models.identity")
 
 
 @attr.s
@@ -30,8 +29,7 @@ class User(object):
 
 
 class IdentityModel(object):
-    """ Model representing user identity
-    """
+    """Model representing user identity"""
 
     def __init__(self):
         self._user = None

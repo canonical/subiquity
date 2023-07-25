@@ -19,6 +19,7 @@ import inspect
 import aiohttp
 
 from subiquity.common.serialize import Serializer
+
 from .defs import Payload
 
 
@@ -27,7 +28,7 @@ def _wrap(make_request, path, meth, serializer, serialize_query_args):
     meth_params = sig.parameters
     payload_arg = None
     for name, param in meth_params.items():
-        if getattr(param.annotation, '__origin__', None) is Payload:
+        if getattr(param.annotation, "__origin__", None) is Payload:
             payload_arg = name
             payload_ann = param.annotation.__args__[0]
     r_ann = sig.return_annotation
@@ -41,14 +42,14 @@ def _wrap(make_request, path, meth, serializer, serialize_query_args):
                 data = serializer.serialize(payload_ann, value)
             else:
                 if serialize_query_args:
-                    value = serializer.to_json(
-                        meth_params[arg_name].annotation, value)
+                    value = serializer.to_json(meth_params[arg_name].annotation, value)
                 query_args[arg_name] = value
         async with make_request(
-                meth.__name__, path.format(**self.path_args),
-                json=data, params=query_args) as resp:
+            meth.__name__, path.format(**self.path_args), json=data, params=query_args
+        ) as resp:
             resp.raise_for_status()
             return serializer.deserialize(r_ann, await resp.json())
+
     return impl
 
 
@@ -73,19 +74,24 @@ def make_client_cls(endpoint_cls, make_request, serializer=None):
     if serializer is None:
         serializer = Serializer()
 
-    ns = {'__init__': client_init}
+    ns = {"__init__": client_init}
 
     for k, v in endpoint_cls.__dict__.items():
         if isinstance(v, type):
-            if getattr(v, '__parameter__', False):
-                ns['__getitem__'] = make_getitem(v, make_request, serializer)
+            if getattr(v, "__parameter__", False):
+                ns["__getitem__"] = make_getitem(v, make_request, serializer)
             else:
                 ns[k] = make_client(v, make_request, serializer)
         elif callable(v):
-            ns[k] = _wrap(make_request, endpoint_cls.fullpath, v, serializer,
-                          endpoint_cls.serialize_query_args)
+            ns[k] = _wrap(
+                make_request,
+                endpoint_cls.fullpath,
+                v,
+                serializer,
+                endpoint_cls.serialize_query_args,
+            )
 
-    return type('ClientFor({})'.format(endpoint_cls.__name__), (object,), ns)
+    return type("ClientFor({})".format(endpoint_cls.__name__), (object,), ns)
 
 
 def make_client(endpoint_cls, make_request, serializer=None, path_args=None):
@@ -93,10 +99,9 @@ def make_client(endpoint_cls, make_request, serializer=None, path_args=None):
 
 
 def make_client_for_conn(
-        endpoint_cls, conn, resp_hook=lambda r: r, serializer=None,
-        header_func=None):
-    session = aiohttp.ClientSession(
-        connector=conn, connector_owner=False)
+    endpoint_cls, conn, resp_hook=lambda r: r, serializer=None, header_func=None
+):
+    session = aiohttp.ClientSession(connector=conn, connector_owner=False)
 
     @contextlib.asynccontextmanager
     async def make_request(method, path, *, params, json):
@@ -105,14 +110,14 @@ def make_client_for_conn(
         # hardcode something here (I guess the "a" gets sent along to the
         # server in the Host: header and the server could in principle do
         # something like virtual host based selection but well....)
-        url = 'http://a' + path
+        url = "http://a" + path
         if header_func is not None:
             headers = header_func()
         else:
             headers = None
         async with session.request(
-                method, url, json=json, params=params,
-                headers=headers, timeout=0) as response:
+            method, url, json=json, params=params, headers=headers, timeout=0
+        ) as response:
             yield resp_hook(response)
 
     return make_client(endpoint_cls, make_request, serializer)

@@ -14,76 +14,75 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 import subprocess
+from shutil import which
 
 from subiquity.common.apidef import API
 from subiquity.common.types import TimeZoneInfo
 from subiquity.server.controller import SubiquityController
-from shutil import which
-import os
 
-log = logging.getLogger('subiquity.server.controllers.timezone')
+log = logging.getLogger("subiquity.server.controllers.timezone")
 
 
 def active_timedatectl():
-    return which('timedatectl') and os.path.exists('/run/systemd/system')
+    return which("timedatectl") and os.path.exists("/run/systemd/system")
 
 
 def generate_possible_tzs():
-    special_keys = ['', 'geoip']
+    special_keys = ["", "geoip"]
     if not active_timedatectl():
         return special_keys
-    tzcmd = ['timedatectl', 'list-timezones']
+    tzcmd = ["timedatectl", "list-timezones"]
     list_tz_out = subprocess.check_output(tzcmd, universal_newlines=True)
     real_tzs = list_tz_out.splitlines()
     return special_keys + real_tzs
 
 
 def timedatectl_settz(app, tz):
-    tzcmd = ['timedatectl', 'set-timezone', tz]
+    tzcmd = ["timedatectl", "set-timezone", tz]
     if app.opts.dry_run:
-        tzcmd = ['sleep', str(1/app.scale_factor)]
+        tzcmd = ["sleep", str(1 / app.scale_factor)]
 
     try:
         subprocess.run(tzcmd, universal_newlines=True)
     except subprocess.CalledProcessError as cpe:
-        log.error('Failed to set live system timezone: %r', cpe)
+        log.error("Failed to set live system timezone: %r", cpe)
 
 
 def timedatectl_gettz():
     # timedatectl show would be easier, but isn't on bionic
-    tzcmd = ['timedatectl', 'status']
-    env = {'LC_ALL': 'C'}
+    tzcmd = ["timedatectl", "status"]
+    env = {"LC_ALL": "C"}
     # ...
     #    Time zone: America/Denver (MDT, -0600)
     # ...
     try:
         out = subprocess.check_output(tzcmd, env=env, universal_newlines=True)
         for line in out.splitlines():
-            chunks = line.split(':')
+            chunks = line.split(":")
             label = chunks[0].strip()
-            if label != 'Time zone':
+            if label != "Time zone":
                 continue
-            chunks = chunks[1].split(' ')
+            chunks = chunks[1].split(" ")
             return chunks[1]
     except subprocess.CalledProcessError as cpe:
-        log.error('Failed to get live system timezone: %r', cpe)
+        log.error("Failed to get live system timezone: %r", cpe)
     except IndexError:
-        log.error('Failed to acquire system time zone')
-    log.debug('Failed to find Time zone in timedatectl output')
-    return 'Etc/UTC'
+        log.error("Failed to acquire system time zone")
+    log.debug("Failed to find Time zone in timedatectl output")
+    return "Etc/UTC"
 
 
 class TimeZoneController(SubiquityController):
-
     endpoint = API.timezone
 
-    autoinstall_key = model_name = 'timezone'
+    autoinstall_key = model_name = "timezone"
     autoinstall_schema = {
-        'type': 'string',
-        }
+        "type": "string",
+    }
 
-    autoinstall_default = ''
+    autoinstall_default = ""
 
     def __init__(self, *args, **kwargs):
         self.possible = None
@@ -123,8 +122,7 @@ class TimeZoneController(SubiquityController):
     async def GET(self) -> TimeZoneInfo:
         # if someone POSTed before, return that
         if self.model.timezone:
-            return TimeZoneInfo(self.model.timezone,
-                                self.model.got_from_geoip)
+            return TimeZoneInfo(self.model.timezone, self.model.got_from_geoip)
 
         # GET requests geoip results
         if self.app.geoip.timezone:

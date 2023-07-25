@@ -18,19 +18,17 @@ import unittest
 from unittest import mock
 
 from subiquity.common.filesystem.sizes import (
+    PartitionScaleFactors,
     bootfs_scale,
     calculate_guided_resize,
     calculate_suggested_install_min,
-    get_efi_size,
     get_bootfs_size,
-    PartitionScaleFactors,
+    get_efi_size,
     scale_partitions,
     uefi_scale,
-    )
+)
 from subiquity.common.types import GuidedResizeValues
-from subiquity.models.filesystem import (
-    MiB,
-    )
+from subiquity.models.filesystem import MiB
 
 
 class TestPartitionSizeScaling(unittest.TestCase):
@@ -87,46 +85,54 @@ class TestPartitionSizeScaling(unittest.TestCase):
 class TestCalculateGuidedResize(unittest.TestCase):
     def test_ignore_nonresizable(self):
         actual = calculate_guided_resize(
-                part_min=-1, part_size=100 << 30, install_min=10 << 30)
+            part_min=-1, part_size=100 << 30, install_min=10 << 30
+        )
         self.assertIsNone(actual)
 
     def test_too_small(self):
         actual = calculate_guided_resize(
-                part_min=95 << 30, part_size=100 << 30, install_min=10 << 30)
+            part_min=95 << 30, part_size=100 << 30, install_min=10 << 30
+        )
         self.assertIsNone(actual)
 
     def test_even_split(self):
         # 8 GiB * 1.25 == 10 GiB
         size = 10 << 30
         actual = calculate_guided_resize(
-                part_min=8 << 30, part_size=100 << 30, install_min=size)
+            part_min=8 << 30, part_size=100 << 30, install_min=size
+        )
         expected = GuidedResizeValues(
-                install_max=(100 << 30) - size,
-                minimum=size, recommended=50 << 30, maximum=(100 << 30) - size)
+            install_max=(100 << 30) - size,
+            minimum=size,
+            recommended=50 << 30,
+            maximum=(100 << 30) - size,
+        )
         self.assertEqual(expected, actual)
 
     def test_weighted_split(self):
         actual = calculate_guided_resize(
-                part_min=40 << 30, part_size=240 << 30, install_min=10 << 30)
+            part_min=40 << 30, part_size=240 << 30, install_min=10 << 30
+        )
         expected = GuidedResizeValues(
-                install_max=190 << 30,
-                minimum=50 << 30, recommended=200 << 30, maximum=230 << 30)
+            install_max=190 << 30,
+            minimum=50 << 30,
+            recommended=200 << 30,
+            maximum=230 << 30,
+        )
         self.assertEqual(expected, actual)
 
     def test_unaligned_size(self):
-
         def assertAligned(val):
             if val % MiB != 0:
                 self.fail(
-                    "val of %s not aligned (%s) with delta %s" % (
-                        val, val % MiB, delta))
+                    "val of %s not aligned (%s) with delta %s" % (val, val % MiB, delta)
+                )
 
         for i in range(1000):
             delta = random.randrange(MiB)
             actual = calculate_guided_resize(
-                part_min=40 << 30,
-                part_size=(240 << 30) + delta,
-                install_min=10 << 30)
+                part_min=40 << 30, part_size=(240 << 30) + delta, install_min=10 << 30
+            )
             assertAligned(actual.install_max)
             assertAligned(actual.minimum)
             assertAligned(actual.recommended)
@@ -134,8 +140,8 @@ class TestCalculateGuidedResize(unittest.TestCase):
 
 
 class TestCalculateInstallMin(unittest.TestCase):
-    @mock.patch('subiquity.common.filesystem.sizes.swap.suggested_swapsize')
-    @mock.patch('subiquity.common.filesystem.sizes.bootfs_scale')
+    @mock.patch("subiquity.common.filesystem.sizes.swap.suggested_swapsize")
+    @mock.patch("subiquity.common.filesystem.sizes.bootfs_scale")
     def test_small_setups(self, bootfs_scale, swapsize):
         swapsize.return_value = 1 << 30
         bootfs_scale.maximum = 1 << 30
@@ -143,24 +149,24 @@ class TestCalculateInstallMin(unittest.TestCase):
         # with a small source, we hit the default 2GiB padding
         self.assertEqual(5 << 30, calculate_suggested_install_min(source_min))
 
-    @mock.patch('subiquity.common.filesystem.sizes.swap.suggested_swapsize')
-    @mock.patch('subiquity.common.filesystem.sizes.bootfs_scale')
+    @mock.patch("subiquity.common.filesystem.sizes.swap.suggested_swapsize")
+    @mock.patch("subiquity.common.filesystem.sizes.bootfs_scale")
     def test_small_setups_big_swap(self, bootfs_scale, swapsize):
         swapsize.return_value = 10 << 30
         bootfs_scale.maximum = 1 << 30
         source_min = 1 << 30
         self.assertEqual(14 << 30, calculate_suggested_install_min(source_min))
 
-    @mock.patch('subiquity.common.filesystem.sizes.swap.suggested_swapsize')
-    @mock.patch('subiquity.common.filesystem.sizes.bootfs_scale')
+    @mock.patch("subiquity.common.filesystem.sizes.swap.suggested_swapsize")
+    @mock.patch("subiquity.common.filesystem.sizes.bootfs_scale")
     def test_small_setups_big_boot(self, bootfs_scale, swapsize):
         swapsize.return_value = 1 << 30
         bootfs_scale.maximum = 10 << 30
         source_min = 1 << 30
         self.assertEqual(14 << 30, calculate_suggested_install_min(source_min))
 
-    @mock.patch('subiquity.common.filesystem.sizes.swap.suggested_swapsize')
-    @mock.patch('subiquity.common.filesystem.sizes.bootfs_scale')
+    @mock.patch("subiquity.common.filesystem.sizes.swap.suggested_swapsize")
+    @mock.patch("subiquity.common.filesystem.sizes.bootfs_scale")
     def test_big_source(self, bootfs_scale, swapsize):
         swapsize.return_value = 1 << 30
         bootfs_scale.maximum = 2 << 30

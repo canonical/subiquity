@@ -15,13 +15,13 @@
 
 import logging
 
-log = logging.getLogger('subiquity.models.updates')
+log = logging.getLogger("subiquity.models.updates")
 
 
 class UpdatesModel(object):
-    """ Model representing updates selection"""
+    """Model representing updates selection"""
 
-    updates = 'security'
+    updates = "security"
 
     def __repr__(self):
         return "<Updates: {}>".format(self.updates)

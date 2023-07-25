@@ -16,41 +16,24 @@
 import locale
 import logging
 
-from urwid import (
-    connect_signal,
-    LineBox,
-    Text,
-    Padding as UrwidPadding
-    )
-
-from subiquitycore.async_helpers import run_bg_task
-from subiquitycore.ui.buttons import (
-    cancel_btn,
-    ok_btn,
-    other_btn,
-    )
-from subiquitycore.ui.container import (
-    Columns,
-    Pile,
-    WidgetWrap,
-    )
-from subiquitycore.ui.form import (
-    ChoiceField,
-    Form,
-    )
-from subiquitycore.ui.selector import Selector, Option
-from subiquitycore.ui.stretchy import (
-    Stretchy,
-    )
-from subiquitycore.ui.utils import button_pile, Color, Padding, screen
-from subiquitycore.view import BaseView
+from urwid import LineBox
+from urwid import Padding as UrwidPadding
+from urwid import Text, connect_signal
 
 from subiquity.common.types import (
     KeyboardSetting,
     StepKeyPresent,
     StepPressKey,
     StepResult,
-    )
+)
+from subiquitycore.async_helpers import run_bg_task
+from subiquitycore.ui.buttons import cancel_btn, ok_btn, other_btn
+from subiquitycore.ui.container import Columns, Pile, WidgetWrap
+from subiquitycore.ui.form import ChoiceField, Form
+from subiquitycore.ui.selector import Option, Selector
+from subiquitycore.ui.stretchy import Stretchy
+from subiquitycore.ui.utils import Color, Padding, button_pile, screen
+from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquity.ui.views.keyboard")
 
@@ -60,12 +43,15 @@ class AutoDetectBase(WidgetWrap):
         self.keyboard_detector = keyboard_detector
         self.step = step
         lb = LineBox(
-            Pile([
-                ('pack', Text("")),
-                ('pack', UrwidPadding(self.make_body(), left=2, right=2)),
-                ('pack', Text(""))
-            ]),
-            _("Keyboard auto-detection"))
+            Pile(
+                [
+                    ("pack", Text("")),
+                    ("pack", UrwidPadding(self.make_body(), left=2, right=2)),
+                    ("pack", Text("")),
+                ]
+            ),
+            _("Keyboard auto-detection"),
+        )
         super().__init__(lb)
 
     def start(self):
@@ -75,14 +61,13 @@ class AutoDetectBase(WidgetWrap):
         pass
 
     def keypress(self, size, key):
-        if key == 'esc':
+        if key == "esc":
             self.keyboard_detector.backup()
         else:
             return super().keypress(size, key)
 
 
 class AutoDetectIntro(AutoDetectBase):
-
     def ok(self, sender):
         self.keyboard_detector.do_step(None)
 
@@ -90,31 +75,42 @@ class AutoDetectIntro(AutoDetectBase):
         self.keyboard_detector.abort()
 
     def make_body(self):
-        return Pile([
-                Text(_("Keyboard detection starting. You will be asked a "
-                       "series of questions about your keyboard. Press escape "
-                       "at any time to go back to the previous screen.")),
+        return Pile(
+            [
+                Text(
+                    _(
+                        "Keyboard detection starting. You will be asked a "
+                        "series of questions about your keyboard. Press escape "
+                        "at any time to go back to the previous screen."
+                    )
+                ),
                 Text(""),
-                button_pile([
-                    ok_btn(label=_("OK"), on_press=self.ok),
-                    ok_btn(label=_("Cancel"), on_press=self.cancel),
-                    ]),
-                ])
+                button_pile(
+                    [
+                        ok_btn(label=_("OK"), on_press=self.ok),
+                        ok_btn(label=_("Cancel"), on_press=self.cancel),
+                    ]
+                ),
+            ]
+        )
 
 
 class AutoDetectResult(AutoDetectBase):
-
-    preamble = _("""\
+    preamble = _(
+        """\
 Keyboard auto detection completed.
 
 Your keyboard was detected as:
-""")
-    postamble = _("""\
+"""
+    )
+    postamble = _(
+        """\
 
 If this is correct, select Done on the next screen. If not you can select \
 another layout or run the automated detection again.
 
-""")
+"""
+    )
 
     @property
     def _kview(self):
@@ -125,17 +121,20 @@ another layout or run the automated detection again.
 
     def make_body(self):
         self.layout, self.variant = self._kview.lookup(
-            self.step.layout, self.step.variant)
+            self.step.layout, self.step.variant
+        )
         layout_text = _("Layout")
         var_text = _("Variant")
         width = max(len(layout_text), len(var_text), 12)
-        return Pile([
+        return Pile(
+            [
                 Text(_(self.preamble)),
                 Text("%*s: %s" % (width, layout_text, self.layout.name)),
                 Text("%*s: %s" % (width, var_text, self.variant.name)),
                 Text(_(self.postamble)),
                 button_pile([ok_btn(label=_("OK"), on_press=self.ok)]),
-                ])
+            ]
+        )
 
 
 class AutoDetectPressKey(AutoDetectBase):
@@ -149,12 +148,19 @@ class AutoDetectPressKey(AutoDetectBase):
 
     def make_body(self):
         self.error_text = Text("", align="center")
-        self.pile = Pile([
-            ('pack', Text(_("Please press one of the following keys:"))),
-            ('pack', Text("")),
-            ('pack', Columns([Text(s, align="center")
-                              for s in self.step.symbols], dividechars=1)),
-            ])
+        self.pile = Pile(
+            [
+                ("pack", Text(_("Please press one of the following keys:"))),
+                ("pack", Text("")),
+                (
+                    "pack",
+                    Columns(
+                        [Text(s, align="center") for s in self.step.symbols],
+                        dividechars=1,
+                    ),
+                ),
+            ]
+        )
         return self.pile
 
     @property
@@ -168,23 +174,25 @@ class AutoDetectPressKey(AutoDetectBase):
         self.input_filter.exit_keycodes_mode()
 
     def error(self, message):
-        t = Color.info_error(Text(message, align='center'))
-        self.pile.contents.extend([
-            (Text(""), self.pile.options('pack')),
-            (t,        self.pile.options('pack')),
-            ])
+        t = Color.info_error(Text(message, align="center"))
+        self.pile.contents.extend(
+            [
+                (Text(""), self.pile.options("pack")),
+                (t, self.pile.options("pack")),
+            ]
+        )
 
     def keypress(self, size, key):
-        log.debug('keypress %r', key)
-        if key.startswith('release '):
+        log.debug("keypress %r", key)
+        if key.startswith("release "):
             # Escape is key 1 on all keyboards and all layouts except
             # amigas and very old Macs so this seems safe enough.
-            if key == 'release 1':
-                return super().keypress(size, 'esc')
+            if key == "release 1":
+                return super().keypress(size, "esc")
             else:
                 return
-        elif key.startswith('press '):
-            code = int(key[len('press '):])
+        elif key.startswith("press "):
+            code = int(key[len("press ") :])
             if code not in self.step.keycodes:
                 self.error(_("Input was not recognized, try again"))
                 return
@@ -193,16 +201,16 @@ class AutoDetectPressKey(AutoDetectBase):
             # If we're not on a linux tty, the filtering won't have
             # happened and so there's no way to get the keycodes. Do
             # something literally random instead.
-            if key == 'e':
+            if key == "e":
                 self.error(_("Input was not recognized, try again"))
                 return
             import random
+
             v = random.choice(list(self.step.keycodes.values()))
         self.keyboard_detector.do_step(v)
 
 
 class AutoDetectKeyPresent(AutoDetectBase):
-
     def yes(self, sender):
         self.keyboard_detector.do_step(self.step.yes)
 
@@ -210,16 +218,20 @@ class AutoDetectKeyPresent(AutoDetectBase):
         self.keyboard_detector.do_step(self.step.no)
 
     def make_body(self):
-        return Pile([
-            Text(_("Is the following key present on your keyboard?")),
-            Text(""),
-            Text(self.step.symbol, align="center"),
-            Text(""),
-            button_pile([
-                ok_btn(label=_("Yes"), on_press=self.yes),
-                other_btn(label=_("No"), on_press=self.no),
-                ]),
-            ])
+        return Pile(
+            [
+                Text(_("Is the following key present on your keyboard?")),
+                Text(""),
+                Text(self.step.symbol, align="center"),
+                Text(""),
+                button_pile(
+                    [
+                        ok_btn(label=_("Yes"), on_press=self.yes),
+                        other_btn(label=_("No"), on_press=self.no),
+                    ]
+                ),
+            ]
+        )
 
 
 class Detector:
@@ -241,7 +253,7 @@ class Detector:
         StepResult: AutoDetectResult,
         StepPressKey: AutoDetectPressKey,
         StepKeyPresent: AutoDetectKeyPresent,
-        }
+    }
 
     def backup(self):
         if len(self.seen_steps) == 0:
@@ -264,8 +276,8 @@ class Detector:
     async def _do_step(self, step_index):
         log.debug("moving to step %s", step_index)
         step = await self.keyboard_view.controller.app.wait_with_text_dialog(
-            self.keyboard_view.controller.get_step(step_index),
-            "...")
+            self.keyboard_view.controller.get_step(step_index), "..."
+        )
         self.seen_steps.append(step_index)
         log.debug("step: %s", step)
         self.overlay = self.step_cls_to_view_cls[type(step)](self, step)
@@ -274,7 +286,8 @@ class Detector:
         self.keyboard_view.show_overlay(self.overlay)
 
 
-toggle_text = _("""\
+toggle_text = _(
+    """\
 You will need a way to toggle the keyboard between the national layout and \
 the standard Latin layout.
 
@@ -283,37 +296,37 @@ latter case, use the combination Shift+Caps Lock for normal Caps toggle). \
 Alt+Shift is also a popular combination; it will however lose its usual \
 behavior in Emacs and other programs that use it for specific needs.
 
-Not all listed keys are present on all keyboards. """)
+Not all listed keys are present on all keyboards. """
+)
 
 
 toggle_options = [
-    (_('Caps Lock'),               True, 'caps_toggle'),
-    (_('Right Alt (AltGr)'),       True, 'toggle'),
-    (_('Right Control'),           True, 'rctrl_toggle'),
-    (_('Right Shift'),             True, 'rshift_toggle'),
-    (_('Right Logo key'),          True, 'rwin_toggle'),
-    (_('Menu key'),                True, 'menu_toggle'),
-    (_('Alt+Shift'),               True, 'alt_shift_toggle'),
-    (_('Control+Shift'),           True, 'ctrl_shift_toggle'),
-    (_('Control+Alt'),             True, 'ctrl_alt_toggle'),
-    (_('Alt+Caps Lock'),           True, 'alt_caps_toggle'),
-    (_('Left Control+Left Shift'), True, 'lctrl_lshift_toggle'),
-    (_('Left Alt'),                True, 'lalt_toggle'),
-    (_('Left Control'),            True, 'lctrl_toggle'),
-    (_('Left Shift'),              True, 'lshift_toggle'),
-    (_('Left Logo key'),           True, 'lwin_toggle'),
-    (_('Scroll Lock key'),         True, 'sclk_toggle'),
-    (_('No toggling'),             True, None),
-    ]
+    (_("Caps Lock"), True, "caps_toggle"),
+    (_("Right Alt (AltGr)"), True, "toggle"),
+    (_("Right Control"), True, "rctrl_toggle"),
+    (_("Right Shift"), True, "rshift_toggle"),
+    (_("Right Logo key"), True, "rwin_toggle"),
+    (_("Menu key"), True, "menu_toggle"),
+    (_("Alt+Shift"), True, "alt_shift_toggle"),
+    (_("Control+Shift"), True, "ctrl_shift_toggle"),
+    (_("Control+Alt"), True, "ctrl_alt_toggle"),
+    (_("Alt+Caps Lock"), True, "alt_caps_toggle"),
+    (_("Left Control+Left Shift"), True, "lctrl_lshift_toggle"),
+    (_("Left Alt"), True, "lalt_toggle"),
+    (_("Left Control"), True, "lctrl_toggle"),
+    (_("Left Shift"), True, "lshift_toggle"),
+    (_("Left Logo key"), True, "lwin_toggle"),
+    (_("Scroll Lock key"), True, "sclk_toggle"),
+    (_("No toggling"), True, None),
+]
 
 
 class ToggleQuestion(Stretchy):
-
     def __init__(self, parent, setting):
         self.parent = parent
         self.setting = setting
         self.selector = Selector(toggle_options)
-        self.selector.value = 'alt_shift_toggle'
+        self.selector.value = "alt_shift_toggle"
         if self.parent.initial_setting.toggle:
             try:
                 self.selector.value = self.parent.initial_setting.toggle
@@ -323,21 +336,25 @@ class ToggleQuestion(Stretchy):
         widgets = [
             Text(_(toggle_text)),
             Text(""),
-            Padding.center_79(Columns([
-                ('pack', Text(_("Shortcut: "))),
-                self.selector,
-                ])),
+            Padding.center_79(
+                Columns(
+                    [
+                        ("pack", Text(_("Shortcut: "))),
+                        self.selector,
+                    ]
+                )
+            ),
             Text(""),
-            button_pile([
-                ok_btn(label=_("OK"), on_press=self.ok),
-                cancel_btn(label=_("Cancel"), on_press=self.cancel),
-                ]),
-            ]
+            button_pile(
+                [
+                    ok_btn(label=_("OK"), on_press=self.ok),
+                    cancel_btn(label=_("Cancel"), on_press=self.cancel),
+                ]
+            ),
+        ]
         super().__init__(
-            _("Select layout toggle"),
-            widgets,
-            stretchy_index=0,
-            focus_index=4)
+            _("Select layout toggle"), widgets, stretchy_index=0, focus_index=4
+        )
 
     def ok(self, sender):
         self.parent.remove_overlay()
@@ -349,7 +366,6 @@ class ToggleQuestion(Stretchy):
 
 
 class KeyboardForm(Form):
-
     cancel_label = _("Back")
 
     layout = ChoiceField(_("Layout:"), choices=["placeholder"])
@@ -357,7 +373,6 @@ class KeyboardForm(Form):
 
 
 class KeyboardView(BaseView):
-
     title = _("Keyboard configuration")
 
     def __init__(self, controller, setup):
@@ -370,35 +385,38 @@ class KeyboardView(BaseView):
         for layout in self.layouts:
             opts.append(Option((layout.name, True, layout)))
         opts.sort(key=lambda o: locale.strxfrm(o.label.text))
-        connect_signal(self.form, 'submit', self.done)
-        connect_signal(self.form, 'cancel', self.cancel)
+        connect_signal(self.form, "submit", self.done)
+        connect_signal(self.form, "cancel", self.cancel)
         connect_signal(self.form.layout.widget, "select", self.select_layout)
         self.form.layout.widget.options = opts
-        layout, variant = self.lookup(
-            setup.setting.layout, setup.setting.variant)
+        layout, variant = self.lookup(setup.setting.layout, setup.setting.variant)
         self.set_values(layout, variant)
 
         if self.controller.opts.run_on_serial:
-            excerpt = _('Please select the layout of the keyboard directly '
-                        'attached to the system, if any.')
+            excerpt = _(
+                "Please select the layout of the keyboard directly "
+                "attached to the system, if any."
+            )
         else:
-            excerpt = _('Please select your keyboard layout below, or select '
-                        '"Identify keyboard" to detect your layout '
-                        'automatically.')
+            excerpt = _(
+                "Please select your keyboard layout below, or select "
+                '"Identify keyboard" to detect your layout '
+                "automatically."
+            )
 
         lb_contents = self.form.as_rows()
         if not self.controller.opts.run_on_serial:
-            lb_contents.extend([
-                Text(""),
-                button_pile([
-                    other_btn(label=_("Identify keyboard"),
-                              on_press=self.detect)]),
-                ])
-        super().__init__(screen(
-            lb_contents,
-            self.form.buttons,
-            excerpt=excerpt,
-            narrow_rows=True))
+            lb_contents.extend(
+                [
+                    Text(""),
+                    button_pile(
+                        [other_btn(label=_("Identify keyboard"), on_press=self.detect)]
+                    ),
+                ]
+            )
+        super().__init__(
+            screen(lb_contents, self.form.buttons, excerpt=excerpt, narrow_rows=True)
+        )
 
     def detect(self, sender):
         Detector(self).start()
@@ -411,7 +429,8 @@ class KeyboardView(BaseView):
 
     async def _check_toggle(self, setting):
         needs_toggle = await self.controller.app.wait_with_text_dialog(
-            self.controller.needs_toggle(setting), "...")
+            self.controller.needs_toggle(setting), "..."
+        )
         if needs_toggle:
             self.show_stretchy_overlay(ToggleQuestion(self, setting))
         else:
@@ -419,14 +438,15 @@ class KeyboardView(BaseView):
 
     def done(self, result):
         data = result.as_data()
-        layout = data['layout']
-        variant = data.get('variant', layout.variants[0])
+        layout = data["layout"]
+        variant = data.get("variant", layout.variants[0])
         setting = KeyboardSetting(layout=layout.code, variant=variant.code)
         run_bg_task(self._check_toggle(setting))
 
     async def _apply(self, setting):
         await self.controller.app.wait_with_text_dialog(
-            self.controller.apply(setting), _("Applying config"))
+            self.controller.apply(setting), _("Applying config")
+        )
         self.controller.done()
 
     def really_done(self, setting):

@@ -15,14 +15,10 @@
 
 """ ConsoleConf UI Views """
 
+from .chooser import ChooserConfirmView, ChooserCurrentSystemView, ChooserView
 from .identity import IdentityView
 from .login import LoginView
-from .welcome import WelcomeView, ChooserWelcomeView
-from .chooser import (
-    ChooserView,
-    ChooserCurrentSystemView,
-    ChooserConfirmView
-    )
+from .welcome import ChooserWelcomeView, WelcomeView
 
 __all__ = [
     "IdentityView",

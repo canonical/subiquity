@@ -18,11 +18,12 @@ from typing import Optional
 
 from subiquity.common.types import AdConnectionInfo
 
-log = logging.getLogger('subiquity.models.ad')
+log = logging.getLogger("subiquity.models.ad")
 
 
 class AdModel:
-    """ Models the Active Directory feature """
+    """Models the Active Directory feature"""
+
     def __init__(self) -> None:
         self.do_join = False
         self.conn_info: Optional[AdConnectionInfo] = None

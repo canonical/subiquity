@@ -21,21 +21,21 @@ class TestRouteManagement(SubiTestCase):
     def setUp(self):
         self.nd = NetworkDev(None, None, None)
         self.ipv4s = [
-            {'to': 'default', 'via': '10.0.2.2'},
-            {'to': '1.2.3.0/24', 'via': '1.2.3.4'},
+            {"to": "default", "via": "10.0.2.2"},
+            {"to": "1.2.3.0/24", "via": "1.2.3.4"},
         ]
         self.ipv6s = [
-            {'to': 'default', 'via': '1111::2222'},
-            {'to': '3333::0/64', 'via': '3333::4444'},
+            {"to": "default", "via": "1111::2222"},
+            {"to": "3333::0/64", "via": "3333::4444"},
         ]
-        self.nd.config = {'routes': self.ipv4s + self.ipv6s}
+        self.nd.config = {"routes": self.ipv4s + self.ipv6s}
 
     def test_remove_v4(self):
         self.nd.remove_routes(4)
         expected = self.ipv6s
-        self.assertEqual(expected, self.nd.config['routes'])
+        self.assertEqual(expected, self.nd.config["routes"])
 
     def test_remove_v6(self):
         self.nd.remove_routes(6)
         expected = self.ipv4s
-        self.assertEqual(expected, self.nd.config['routes'])
+        self.assertEqual(expected, self.nd.config["routes"])

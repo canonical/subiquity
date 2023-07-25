@@ -19,43 +19,42 @@ Provides high level options for Ubuntu install
 
 """
 import logging
+
 from urwid import connect_signal
 
+from subiquitycore.ui.form import Form, URLField
 from subiquitycore.view import BaseView
-from subiquitycore.ui.form import (
-    Form,
-    URLField,
+
+log = logging.getLogger("subiquity.ui.views.proxy")
+
+proxy_help = _(
+    "If you need to use a HTTP proxy to access the outside world, "
+    "enter the proxy information here. Otherwise, leave this blank."
+    "\n\nThe proxy information should be given in the standard "
+    'form of "http://[[user][:pass]@]host[:port]/".'
 )
 
 
-log = logging.getLogger('subiquity.ui.views.proxy')
-
-proxy_help = _("If you need to use a HTTP proxy to access the outside world, "
-               "enter the proxy information here. Otherwise, leave this blank."
-               "\n\nThe proxy information should be given in the standard "
-               "form of \"http://[[user][:pass]@]host[:port]/\".")
-
-
 class ProxyForm(Form):
-
     cancel_label = _("Back")
 
     url = URLField(_("Proxy address:"), help=proxy_help)
 
 
 class ProxyView(BaseView):
-
     title = _("Configure proxy")
-    excerpt = _("If this system requires a proxy to connect to the internet, "
-                "enter its details here.")
+    excerpt = _(
+        "If this system requires a proxy to connect to the internet, "
+        "enter its details here."
+    )
 
     def __init__(self, controller, proxy):
         self.controller = controller
 
-        self.form = ProxyForm(initial={'url': proxy})
+        self.form = ProxyForm(initial={"url": proxy})
 
-        connect_signal(self.form, 'submit', self.done)
-        connect_signal(self.form, 'cancel', self.cancel)
+        connect_signal(self.form, "submit", self.done)
+        connect_signal(self.form, "cancel", self.cancel)
 
         super().__init__(self.form.as_screen(excerpt=_(self.excerpt)))
 

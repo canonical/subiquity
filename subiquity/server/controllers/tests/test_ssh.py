@@ -32,35 +32,42 @@ class TestSSHController(unittest.IsolatedAsyncioTestCase):
     async def test_fetch_id_GET_ok(self):
         key = "ssh-rsa AAAAA[..] user@host # ssh-import-id lp:user"
         mock_fetch_keys = mock.patch.object(
-                self.controller.fetcher, "fetch_keys_for_id",
-                return_value=[key])
+            self.controller.fetcher, "fetch_keys_for_id", return_value=[key]
+        )
 
         fp = "256 SHA256:rIR9[..] user@host # ssh-import-id lp:user (ED25519)"
         mock_gen_fingerprint = mock.patch.object(
-                self.controller.fetcher, "gen_fingerprint_for_key",
-                return_value=fp)
+            self.controller.fetcher, "gen_fingerprint_for_key", return_value=fp
+        )
 
         with mock_fetch_keys, mock_gen_fingerprint:
             response = await self.controller.fetch_id_GET(user_id="lp:user")
 
             self.assertIsInstance(response, SSHFetchIdResponse)
             self.assertEqual(response.status, SSHFetchIdStatus.OK)
-            self.assertEqual(response.identities, [SSHIdentity(
-                key_type="ssh-rsa",
-                key="AAAAA[..]",
-                key_comment="user@host # ssh-import-id lp:user",
-                key_fingerprint="256 SHA256:rIR9[..] user@host  (ED25519)",
-            )])
+            self.assertEqual(
+                response.identities,
+                [
+                    SSHIdentity(
+                        key_type="ssh-rsa",
+                        key="AAAAA[..]",
+                        key_comment="user@host # ssh-import-id lp:user",
+                        key_fingerprint="256 SHA256:rIR9[..] user@host  (ED25519)",
+                    )
+                ],
+            )
             self.assertIsNone(response.error)
 
     async def test_fetch_id_GET_import_error(self):
         stderr = "ERROR No matching keys found for [lp=test2]\n"
 
         mock_fetch_keys = mock.patch.object(
-                self.controller.fetcher, "fetch_keys_for_id",
-                side_effect=SSHFetchError(
-                    status=SSHFetchIdStatus.IMPORT_ERROR,
-                    reason=stderr))
+            self.controller.fetcher,
+            "fetch_keys_for_id",
+            side_effect=SSHFetchError(
+                status=SSHFetchIdStatus.IMPORT_ERROR, reason=stderr
+            ),
+        )
 
         with mock_fetch_keys:
             response = await self.controller.fetch_id_GET(user_id="test2")
@@ -72,21 +79,22 @@ class TestSSHController(unittest.IsolatedAsyncioTestCase):
     async def test_fetch_id_GET_fingerprint_error(self):
         key = "ssh-rsa AAAAA[..] user@host # ssh-import-id lp:user"
         mock_fetch_keys = mock.patch.object(
-                self.controller.fetcher, "fetch_keys_for_id",
-                return_value=[key])
+            self.controller.fetcher, "fetch_keys_for_id", return_value=[key]
+        )
 
         stderr = "(stdin) is not a public key file\n"
 
         mock_gen_fingerprint = mock.patch.object(
-                self.controller.fetcher, "gen_fingerprint_for_key",
-                side_effect=SSHFetchError(
-                    status=SSHFetchIdStatus.FINGERPRINT_ERROR,
-                    reason=stderr))
+            self.controller.fetcher,
+            "gen_fingerprint_for_key",
+            side_effect=SSHFetchError(
+                status=SSHFetchIdStatus.FINGERPRINT_ERROR, reason=stderr
+            ),
+        )
 
         with mock_fetch_keys, mock_gen_fingerprint:
             response = await self.controller.fetch_id_GET(user_id="test2")
 
-            self.assertEqual(response.status,
-                             SSHFetchIdStatus.FINGERPRINT_ERROR)
+            self.assertEqual(response.status, SSHFetchIdStatus.FINGERPRINT_ERROR)
             self.assertEqual(response.error, stderr)
             self.assertIsNone(response.identities)

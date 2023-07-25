@@ -79,7 +79,7 @@ class Context:
         while c is not None:
             names.append(c.name)
             c = c.parent
-        return '/'.join(reversed(names))
+        return "/".join(reversed(names))
 
     def enter(self, description=None):
         if description is None:
@@ -126,29 +126,31 @@ def with_context(name=None, description="", **context_kw):
             name = meth.__name__
 
         def convargs(self, kw):
-            context = kw.get('context')
+            context = kw.get("context")
             if context is None:
                 context = self.context
-            kw['context'] = context.child(
+            kw["context"] = context.child(
                 name=name.format(**kw),
                 description=description.format(self=self, **kw),
-                **context_kw)
+                **context_kw,
+            )
             return kw
 
         @functools.wraps(meth)
         def decorated_sync(self, **kw):
             kw = convargs(self, kw)
-            with kw['context']:
+            with kw["context"]:
                 return meth(self, **kw)
 
         @functools.wraps(meth)
         async def decorated_async(self, **kw):
             kw = convargs(self, kw)
-            with kw['context']:
+            with kw["context"]:
                 return await meth(self, **kw)
 
         if inspect.iscoroutinefunction(meth):
             return decorated_async
         else:
             return decorated_sync
+
     return decorate

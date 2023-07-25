@@ -18,12 +18,10 @@ import logging
 from subiquitycore.ui.frame import SubiquityCoreUI
 from subiquitycore.view import BaseView
 
-
-log = logging.getLogger('subiquity.ui.frame')
+log = logging.getLogger("subiquity.ui.frame")
 
 
 class SubiquityUI(SubiquityCoreUI):
-
     block_input = False
 
     def __init__(self, app, right_icon):

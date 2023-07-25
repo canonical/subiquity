@@ -15,30 +15,31 @@
 
 from subiquity.server.controllers.cmdlist import (
     EarlyController,
-    LateController,
     ErrorController,
-    )
+    LateController,
+)
 from subiquity.server.controllers.reporting import ReportingController
 from subiquity.server.controllers.userdata import UserdataController
+
+from .configure import ConfigureController
 from .identity import WSLIdentityController
 from .locale import WSLLocaleController
-from .wslconfbase import WSLConfigurationBaseController
-from .wslconfadvanced import WSLConfigurationAdvancedController
-from .configure import ConfigureController
 from .shutdown import SetupShutdownController
+from .wslconfadvanced import WSLConfigurationAdvancedController
+from .wslconfbase import WSLConfigurationBaseController
 from .wslsetupoptions import WSLSetupOptionsController
 
 __all__ = [
-    'EarlyController',
-    'ErrorController',
-    'WSLIdentityController',
-    'LateController',
-    'WSLLocaleController',
-    'ReportingController',
-    'SetupShutdownController',
-    'UserdataController',
-    'WSLConfigurationBaseController',
-    'WSLConfigurationAdvancedController',
-    'ConfigureController',
-    'WSLSetupOptionsController',
+    "EarlyController",
+    "ErrorController",
+    "WSLIdentityController",
+    "LateController",
+    "WSLLocaleController",
+    "ReportingController",
+    "SetupShutdownController",
+    "UserdataController",
+    "WSLConfigurationBaseController",
+    "WSLConfigurationAdvancedController",
+    "ConfigureController",
+    "WSLSetupOptionsController",
 ]

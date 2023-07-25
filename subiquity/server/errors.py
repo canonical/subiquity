@@ -13,11 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquity.common.types import ErrorReportState, ErrorReportRef
+from subiquity.common.types import ErrorReportRef, ErrorReportState
 
 
 class ErrorController:
-
     def __init__(self, app):
         self.context = app.context.child("Error")
         self.error_reporter = app.error_reporter

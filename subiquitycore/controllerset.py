@@ -15,7 +15,6 @@
 
 
 class ControllerSet:
-
     def __init__(self, controllers_mod, names, init_args=()):
         self.controllers_mod = controllers_mod
         self.controller_names = names[:]
@@ -24,7 +23,7 @@ class ControllerSet:
         self.instances = []
 
     def _get_controller_class(self, name):
-        cls_name = name+"Controller"
+        cls_name = name + "Controller"
         return getattr(self.controllers_mod, cls_name)
 
     def load(self, name):

@@ -23,7 +23,7 @@ def journald_listen(identifiers, callback, seek=False):
     reader = journal.Reader()
     args = []
     for identifier in identifiers:
-        if '=' in identifier:
+        if "=" in identifier:
             args.append(identifier)
         else:
             args.append("SYSLOG_IDENTIFIER={}".format(identifier))
@@ -37,6 +37,7 @@ def journald_listen(identifiers, callback, seek=False):
             return
         for event in reader:
             callback(event)
+
     loop = asyncio.get_running_loop()
     loop.add_reader(reader.fileno(), watch)
     return reader.fileno()

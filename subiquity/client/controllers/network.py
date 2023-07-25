@@ -21,6 +21,10 @@ from typing import Optional
 
 from aiohttp import web
 
+from subiquity.client.controller import SubiquityTuiController
+from subiquity.common.api.server import make_server_at_path
+from subiquity.common.apidef import LinkAction, NetEventAPI
+from subiquity.common.types import ErrorReportKind, PackageInstallState
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.controllers.network import NetworkAnswersMixin
 from subiquitycore.models.network import (
@@ -28,23 +32,14 @@ from subiquitycore.models.network import (
     NetDevInfo,
     StaticConfig,
     WLANConfig,
-    )
+)
 from subiquitycore.ui.views.network import NetworkView
 
-from subiquity.client.controller import SubiquityTuiController
-from subiquity.common.api.server import make_server_at_path
-from subiquity.common.apidef import LinkAction, NetEventAPI
-from subiquity.common.types import (
-    ErrorReportKind,
-    PackageInstallState,
-    )
-
-log = logging.getLogger('subiquity.client.controllers.network')
+log = logging.getLogger("subiquity.client.controllers.network")
 
 
 class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
-
-    endpoint_name = 'network'
+    endpoint_name = "network"
 
     def __init__(self, app):
         super().__init__(app)
@@ -53,18 +48,18 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
     @web.middleware
     async def middleware(self, request, handler):
         resp = await handler(request)
-        if resp.get('exception'):
-            exc = resp['exception']
-            log.debug(
-                'request to {} crashed'.format(request.raw_path), exc_info=exc)
+        if resp.get("exception"):
+            exc = resp["exception"]
+            log.debug("request to {} crashed".format(request.raw_path), exc_info=exc)
             self.app.make_apport_report(
                 ErrorReportKind.NETWORK_CLIENT_FAIL,
                 "request to {}".format(request.raw_path),
-                exc=exc, interrupt=True)
+                exc=exc,
+                interrupt=True,
+            )
         return resp
 
-    async def update_link_POST(self, act: LinkAction,
-                               info: NetDevInfo) -> None:
+    async def update_link_POST(self, act: LinkAction, info: NetDevInfo) -> None:
         if self.view is None:
             return
         if act == LinkAction.NEW:
@@ -91,15 +86,17 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
             self.view.show_network_error(stage)
 
     async def wlan_support_install_finished_POST(
-            self, state: PackageInstallState) -> None:
+        self, state: PackageInstallState
+    ) -> None:
         if self.view:
             self.view.update_for_wlan_support_install_state(state.name)
 
     async def subscribe(self):
         self.tdir = tempfile.mkdtemp()
-        self.sock_path = os.path.join(self.tdir, 'socket')
+        self.sock_path = os.path.join(self.tdir, "socket")
         self.site = await make_server_at_path(
-            self.sock_path, NetEventAPI, self, middlewares=[self.middleware])
+            self.sock_path, NetEventAPI, self, middlewares=[self.middleware]
+        )
         await self.endpoint.subscription.PUT(self.sock_path)
 
     async def unsubscribe(self):
@@ -110,8 +107,8 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
     async def make_ui(self):
         network_status = await self.endpoint.GET()
         self.view = NetworkView(
-            self, network_status.devices,
-            network_status.wlan_support_install_state.name)
+            self, network_status.devices, network_status.wlan_support_install_state.name
+        )
         await self.subscribe()
         return self.view
 
@@ -126,40 +123,37 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
     def done(self):
         self.app.next_screen(self.endpoint.POST())
 
-    def set_static_config(self, dev_name: str, ip_version: int,
-                          static_config: StaticConfig) -> None:
+    def set_static_config(
+        self, dev_name: str, ip_version: int, static_config: StaticConfig
+    ) -> None:
         run_bg_task(
-            self.endpoint.set_static_config.POST(
-                dev_name, ip_version, static_config))
+            self.endpoint.set_static_config.POST(dev_name, ip_version, static_config)
+        )
 
     def enable_dhcp(self, dev_name, ip_version: int) -> None:
-        run_bg_task(
-            self.endpoint.enable_dhcp.POST(dev_name, ip_version))
+        run_bg_task(self.endpoint.enable_dhcp.POST(dev_name, ip_version))
 
     def disable_network(self, dev_name: str, ip_version: int) -> None:
-        run_bg_task(
-            self.endpoint.disable.POST(dev_name, ip_version))
+        run_bg_task(self.endpoint.disable.POST(dev_name, ip_version))
 
     def add_vlan(self, dev_name: str, vlan_id: int):
-        run_bg_task(
-            self.endpoint.vlan.PUT(dev_name, vlan_id))
+        run_bg_task(self.endpoint.vlan.PUT(dev_name, vlan_id))
 
     def set_wlan(self, dev_name: str, wlan: WLANConfig) -> None:
-        run_bg_task(
-            self.endpoint.set_wlan.POST(dev_name, wlan))
+        run_bg_task(self.endpoint.set_wlan.POST(dev_name, wlan))
 
     def start_scan(self, dev_name: str) -> None:
-        run_bg_task(
-            self.endpoint.start_scan.POST(dev_name))
+        run_bg_task(self.endpoint.start_scan.POST(dev_name))
 
     def delete_link(self, dev_name: str):
         run_bg_task(self.endpoint.delete.POST(dev_name))
 
-    def add_or_update_bond(self, existing_name: Optional[str],
-                           new_name: str, new_info: BondConfig) -> None:
+    def add_or_update_bond(
+        self, existing_name: Optional[str], new_name: str, new_info: BondConfig
+    ) -> None:
         run_bg_task(
-            self.endpoint.add_or_edit_bond.POST(
-                existing_name, new_name, new_info))
+            self.endpoint.add_or_edit_bond.POST(existing_name, new_name, new_info)
+        )
 
     async def get_info_for_netdev(self, dev_name: str) -> str:
         return await self.endpoint.info.GET(dev_name)

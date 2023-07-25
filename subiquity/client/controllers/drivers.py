@@ -17,18 +17,16 @@ import asyncio
 import logging
 from typing import List
 
+from subiquity.client.controller import SubiquityTuiController
+from subiquity.common.types import DriversPayload, DriversResponse
+from subiquity.ui.views.drivers import DriversView, DriversViewStatus
 from subiquitycore.tuicontroller import Skip
 
-from subiquity.common.types import DriversPayload, DriversResponse
-from subiquity.client.controller import SubiquityTuiController
-from subiquity.ui.views.drivers import DriversView, DriversViewStatus
-
-log = logging.getLogger('subiquity.client.controllers.drivers')
+log = logging.getLogger("subiquity.client.controllers.drivers")
 
 
 class DriversController(SubiquityTuiController):
-
-    endpoint_name = 'drivers'
+    endpoint_name = "drivers"
 
     async def make_ui(self) -> DriversView:
         response: DriversResponse = await self.endpoint.GET()
@@ -37,8 +35,9 @@ class DriversController(SubiquityTuiController):
             await self.endpoint.POST(DriversPayload(install=False))
             raise Skip
 
-        return DriversView(self, response.drivers,
-                           response.install, response.local_only)
+        return DriversView(
+            self, response.drivers, response.install, response.local_only
+        )
 
     async def _wait_drivers(self) -> List[str]:
         response: DriversResponse = await self.endpoint.GET(wait=True)
@@ -46,12 +45,10 @@ class DriversController(SubiquityTuiController):
         return response.drivers
 
     async def run_answers(self):
-        if 'install' not in self.answers:
+        if "install" not in self.answers:
             return
 
-        from subiquitycore.testing.view_helpers import (
-            click,
-        )
+        from subiquitycore.testing.view_helpers import click
 
         view = self.app.ui.body
         while view.status == DriversViewStatus.WAITING:
@@ -60,7 +57,7 @@ class DriversController(SubiquityTuiController):
             click(view.cont_btn.base_widget)
             return
 
-        view.form.install.value = self.answers['install']
+        view.form.install.value = self.answers["install"]
 
         click(view.form.done_btn.base_widget)
 
@@ -69,5 +66,4 @@ class DriversController(SubiquityTuiController):
 
     def done(self, install: bool) -> None:
         log.debug("DriversController.done next_screen install=%s", install)
-        self.app.next_screen(
-                self.endpoint.POST(DriversPayload(install=install)))
+        self.app.next_screen(self.endpoint.POST(DriversPayload(install=install)))

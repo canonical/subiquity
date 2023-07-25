@@ -15,24 +15,23 @@
 
 import io
 import subprocess
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import AsyncMock, Mock, patch
 
 from curtin.commands.extract import TrivialSourceHandler
 
-from subiquitycore.tests import SubiTestCase
-from subiquitycore.tests.mocks import make_app
-from subiquitycore.utils import astart_command
-from subiquity.server.apt import (
-    AptConfigurer,
-    DryRunAptConfigurer,
-    AptConfigCheckError,
-    OverlayMountpoint,
-)
-from subiquity.server.dryrun import DRConfig
 from subiquity.models.mirror import MirrorModel
 from subiquity.models.proxy import ProxyModel
 from subiquity.models.subiquity import DebconfSelectionsModel
-
+from subiquity.server.apt import (
+    AptConfigCheckError,
+    AptConfigurer,
+    DryRunAptConfigurer,
+    OverlayMountpoint,
+)
+from subiquity.server.dryrun import DRConfig
+from subiquitycore.tests import SubiTestCase
+from subiquitycore.tests.mocks import make_app
+from subiquitycore.utils import astart_command
 
 APT_UPDATE_SUCCESS = """\
 Hit:1 http://mirror focal InRelease
@@ -67,8 +66,7 @@ class TestAptConfigurer(SubiTestCase):
         self.model.debconf_selections = DebconfSelectionsModel()
         self.model.locale.selected_language = "en_US.UTF-8"
         self.app = make_app(self.model)
-        self.configurer = AptConfigurer(
-            self.app, AsyncMock(), TrivialSourceHandler(''))
+        self.configurer = AptConfigurer(self.app, AsyncMock(), TrivialSourceHandler(""))
 
         self.astart_sym = "subiquity.server.apt.astart_command"
 
@@ -78,7 +76,7 @@ class TestAptConfigurer(SubiTestCase):
         self.assertNotIn("https_proxy", config["apt"])
 
     def test_apt_config_proxy(self):
-        proxy = 'http://apt-cacher-ng:3142'
+        proxy = "http://apt-cacher-ng:3142"
         self.model.proxy.proxy = proxy
 
         config = self.configurer.apt_config(final=True)
@@ -87,41 +85,44 @@ class TestAptConfigurer(SubiTestCase):
 
     async def test_overlay(self):
         self.configurer.install_tree = OverlayMountpoint(
-                upperdir="upperdir-install-tree",
-                lowers=["lowers1-install-tree"],
-                mountpoint="mountpoint-install-tree",
-                )
+            upperdir="upperdir-install-tree",
+            lowers=["lowers1-install-tree"],
+            mountpoint="mountpoint-install-tree",
+        )
         self.configurer.configured_tree = OverlayMountpoint(
-                upperdir="upperdir-install-tree",
-                lowers=["lowers1-install-tree"],
-                mountpoint="mountpoint-install-tree",
-                )
+            upperdir="upperdir-install-tree",
+            lowers=["lowers1-install-tree"],
+            mountpoint="mountpoint-install-tree",
+        )
         self.source = "source"
 
-        with patch.object(self.app, "command_runner",
-                          create=True, new_callable=AsyncMock):
+        with patch.object(
+            self.app, "command_runner", create=True, new_callable=AsyncMock
+        ):
             async with self.configurer.overlay():
                 pass
 
     async def test_run_apt_config_check(self):
         self.configurer.configured_tree = OverlayMountpoint(
-                upperdir="upperdir-install-tree",
-                lowers=["lowers1-install-tree"],
-                mountpoint="mountpoint-install-tree",
-                )
+            upperdir="upperdir-install-tree",
+            lowers=["lowers1-install-tree"],
+            mountpoint="mountpoint-install-tree",
+        )
 
         async def astart_success(cmd, **kwargs):
-            """ Simulates apt-get update behaving normally. """
-            proc = await astart_command(["sh", "-c", "cat"],
-                                        **kwargs, stdin=subprocess.PIPE)
+            """Simulates apt-get update behaving normally."""
+            proc = await astart_command(
+                ["sh", "-c", "cat"], **kwargs, stdin=subprocess.PIPE
+            )
             proc.stdin.write(APT_UPDATE_SUCCESS.encode("utf-8"))
             proc.stdin.write_eof()
             return proc
 
         async def astart_failure(cmd, **kwargs):
-            """ Simulates apt-get update failing. """
-            proc = await astart_command(["sh", "-c", "cat; exit 1"],
-                                        **kwargs, stdin=subprocess.PIPE)
+            """Simulates apt-get update failing."""
+            proc = await astart_command(
+                ["sh", "-c", "cat; exit 1"], **kwargs, stdin=subprocess.PIPE
+            )
             proc.stdin.write(APT_UPDATE_FAILURE.encode("utf-8"))
             proc.stdin.write_eof()
             return proc
@@ -152,30 +153,35 @@ class TestDRAptConfigurer(SubiTestCase):
             {"url": "http://run-on-host", "strategy": "run-on-host"},
             {"pattern": "/random$", "strategy": "random"},
         ]
-        self.configurer = DryRunAptConfigurer(self.app, AsyncMock(), '')
+        self.configurer = DryRunAptConfigurer(self.app, AsyncMock(), "")
         self.configurer.configured_tree = OverlayMountpoint(
-                upperdir="upperdir-install-tree",
-                lowers=["lowers1-install-tree"],
-                mountpoint="mountpoint-install-tree",
-                )
+            upperdir="upperdir-install-tree",
+            lowers=["lowers1-install-tree"],
+            mountpoint="mountpoint-install-tree",
+        )
 
     def test_get_mirror_check_strategy(self):
         Strategy = DryRunAptConfigurer.MirrorCheckStrategy
         self.assertEqual(
-                Strategy.SUCCESS,
-                self.configurer.get_mirror_check_strategy("http://success"))
+            Strategy.SUCCESS,
+            self.configurer.get_mirror_check_strategy("http://success"),
+        )
         self.assertEqual(
-                Strategy.FAILURE,
-                self.configurer.get_mirror_check_strategy("http://failure"))
-        self.assertEqual(Strategy.RUN_ON_HOST,
-                         self.configurer.get_mirror_check_strategy(
-                             "http://run-on-host"))
-        self.assertEqual(Strategy.RANDOM,
-                         self.configurer.get_mirror_check_strategy(
-                             "http://mirror/random"))
+            Strategy.FAILURE,
+            self.configurer.get_mirror_check_strategy("http://failure"),
+        )
         self.assertEqual(
-                Strategy.FAILURE,
-                self.configurer.get_mirror_check_strategy("http://default"))
+            Strategy.RUN_ON_HOST,
+            self.configurer.get_mirror_check_strategy("http://run-on-host"),
+        )
+        self.assertEqual(
+            Strategy.RANDOM,
+            self.configurer.get_mirror_check_strategy("http://mirror/random"),
+        )
+        self.assertEqual(
+            Strategy.FAILURE,
+            self.configurer.get_mirror_check_strategy("http://default"),
+        )
 
     async def test_run_apt_config_check_success(self):
         output = io.StringIO()
@@ -194,10 +200,14 @@ class TestDRAptConfigurer(SubiTestCase):
         output = io.StringIO()
         self.app.dr_cfg.apt_mirror_check_default_strategy = "random"
         self.candidate.uri = "http://default"
-        with patch("subiquity.server.apt.random.choice",
-                   return_value=self.configurer.apt_config_check_success):
+        with patch(
+            "subiquity.server.apt.random.choice",
+            return_value=self.configurer.apt_config_check_success,
+        ):
             await self.configurer.run_apt_config_check(output)
-        with patch("subiquity.server.apt.random.choice",
-                   return_value=self.configurer.apt_config_check_failure):
+        with patch(
+            "subiquity.server.apt.random.choice",
+            return_value=self.configurer.apt_config_check_failure,
+        ):
             with self.assertRaises(AptConfigCheckError):
                 await self.configurer.run_apt_config_check(output)

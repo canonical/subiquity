@@ -16,24 +16,22 @@
 import logging
 import os
 
-from subiquitycore.context import with_context
-
 from subiquity.common.apidef import API
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
+from subiquitycore.context import with_context
 
-log = logging.getLogger('subiquity.server.controllers.proxy')
+log = logging.getLogger("subiquity.server.controllers.proxy")
 
 
 class ProxyController(SubiquityController):
-
     endpoint = API.proxy
 
     autoinstall_key = model_name = "proxy"
     autoinstall_schema = {
-        'type': ['string', 'null'],
-        'format': 'uri',
-        }
+        "type": ["string", "null"],
+        "format": "uri",
+    }
 
     _set_task = None
 
@@ -43,10 +41,8 @@ class ProxyController(SubiquityController):
 
     def start(self):
         if self.model.proxy:
-            os.environ['http_proxy'] = os.environ['https_proxy'] = \
-              self.model.proxy
-            self._set_task = self.app.hub.broadcast(
-                InstallerChannels.NETWORK_PROXY_SET)
+            os.environ["http_proxy"] = os.environ["https_proxy"] = self.model.proxy
+            self._set_task = self.app.hub.broadcast(InstallerChannels.NETWORK_PROXY_SET)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
@@ -67,6 +63,6 @@ class ProxyController(SubiquityController):
 
     async def POST(self, data: str):
         self.model.proxy = data
-        os.environ['http_proxy'] = os.environ['https_proxy'] = data
+        os.environ["http_proxy"] = os.environ["https_proxy"] = data
         self.app.hub.broadcast(InstallerChannels.NETWORK_PROXY_SET)
         await self.configured()

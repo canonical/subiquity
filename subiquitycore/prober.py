@@ -15,45 +15,41 @@
 
 import asyncio
 import logging
+
 import yaml
+from probert.network import StoredDataObserver, UdevObserver
 
 from subiquitycore.async_helpers import run_in_thread
 
-from probert.network import (
-    StoredDataObserver,
-    UdevObserver,
-    )
-
-log = logging.getLogger('subiquitycore.prober')
+log = logging.getLogger("subiquitycore.prober")
 
 
-class Prober():
+class Prober:
     def __init__(self, machine_config, debug_flags):
         self.saved_config = None
         if machine_config:
             self.saved_config = yaml.safe_load(machine_config)
         self.debug_flags = debug_flags
-        log.debug('Prober() init finished, data:{}'.format(self.saved_config))
+        log.debug("Prober() init finished, data:{}".format(self.saved_config))
 
     def probe_network(self, receiver):
         if self.saved_config is not None:
-            observer = StoredDataObserver(
-                self.saved_config['network'], receiver)
+            observer = StoredDataObserver(self.saved_config["network"], receiver)
         else:
             observer = UdevObserver(receiver)
         return observer, observer.start()
 
     async def get_storage(self, probe_types=None):
         if self.saved_config is not None:
-            flag = 'bpfail-full'
+            flag = "bpfail-full"
             if probe_types is not None:
-                flag = 'bpfail-restricted'
+                flag = "bpfail-restricted"
             if flag in self.debug_flags:
                 await asyncio.sleep(2)
-                1/0
-            r = self.saved_config['storage'].copy()
-            if probe_types is not None and 'defaults' not in probe_types:
-                for k in self.saved_config['storage']:
+                1 / 0
+            r = self.saved_config["storage"].copy()
+            if probe_types is not None and "defaults" not in probe_types:
+                for k in self.saved_config["storage"]:
                     if k not in probe_types:
                         r[k] = {}
             return r
@@ -63,7 +59,8 @@ class Prober():
         # Until probert is completely free of blocking IO, we should continue
         # running it in a separate thread.
         def run_probert(probe_types):
-            return asyncio.run(Storage().probe(probe_types=probe_types,
-                                               parallelize=True))
+            return asyncio.run(
+                Storage().probe(probe_types=probe_types, parallelize=True)
+            )
 
         return await run_in_thread(run_probert, probe_types)

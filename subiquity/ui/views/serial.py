@@ -57,11 +57,11 @@ class SerialView(BaseView):
 
     def make_serial(self):
         self.rich_btn = forward_btn(
-                label="Continue in rich mode",
-                on_press=self.rich_mode)
+            label="Continue in rich mode", on_press=self.rich_mode
+        )
         self.basic_btn = forward_btn(
-                label="Continue in basic mode",
-                on_press=self.basic_mode)
+            label="Continue in basic mode", on_press=self.basic_mode
+        )
         btns = [self.rich_btn, self.basic_btn]
         widgets = [
             Text(""),
@@ -71,9 +71,9 @@ class SerialView(BaseView):
         if self.ssh_info:
             widgets.append(Text(rewrap(SSH_TEXT)))
             widgets.append(Text(""))
-            btns.append(other_btn(
-                label="View SSH instructions",
-                on_press=self.ssh_help))
+            btns.append(
+                other_btn(label="View SSH instructions", on_press=self.ssh_help)
+            )
         return screen(widgets, btns)
 
     def rich_mode(self, sender):

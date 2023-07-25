@@ -15,20 +15,15 @@
 
 from unittest import TestCase
 
-from subiquitycore.ui.form import (
-    Form,
-    StringField,
-    SubForm,
-    SubFormField,
-    )
+from subiquitycore.ui.form import Form, StringField, SubForm, SubFormField
 
 
 class TestForm(TestCase):
-
     def test_has_validation_error(self):
-        """ Make sure Form.has_validation_form() returns:
+        """Make sure Form.has_validation_form() returns:
         * True if any field is in error
-        * False otherwise. """
+        * False otherwise."""
+
         class SampleForm(Form):
             field1 = StringField("FieldOne", help="")
             field2 = StringField("FieldTwo", help="")
@@ -48,8 +43,9 @@ class TestForm(TestCase):
         self.assertTrue(form.has_validation_error())
 
     def test_has_validation_error_with_subform(self):
-        """ Make sure Form.has_validation_form() is affected by fields from
-        child forms (only if the child form is enabled). """
+        """Make sure Form.has_validation_form() is affected by fields from
+        child forms (only if the child form is enabled)."""
+
         class SampleSubForm(SubForm):
             field1 = StringField("FieldString", help="")
 
@@ -83,8 +79,9 @@ class TestForm(TestCase):
         self.assertFalse(form.has_validation_error())
 
     def test_has_validation_error_with_subsubform(self):
-        """ Make sure enabling/disabling parent forms also acts as if sub forms
-        are disabled. """
+        """Make sure enabling/disabling parent forms also acts as if sub forms
+        are disabled."""
+
         class SampleSubSubForm(SubForm):
             field1 = StringField("SampleString", help="")
 
@@ -113,8 +110,8 @@ class TestForm(TestCase):
         self.assertFalse(form.has_validation_error())
 
     def test_done_button_auto_toggle(self):
-        """ Make sure calling validated() enables or disables the Done button.
-        """
+        """Make sure calling validated() enables or disables the Done button."""
+
         class SampleForm(Form):
             field1 = StringField("SampleString", help="")
 
@@ -130,8 +127,9 @@ class TestForm(TestCase):
         self.assertFalse(done_button.enabled)
 
     def test_subform_validated_propagates(self):
-        """ Make sure calling validated() in a subform affects the Done button
-        in the parent form. """
+        """Make sure calling validated() in a subform affects the Done button
+        in the parent form."""
+
         class SampleSubForm(SubForm):
             field1 = StringField("SampleString", help="")
 

@@ -16,13 +16,11 @@
 import os
 import os.path
 
-from subiquitycore.tests.parameterized import parameterized
-
 from subiquity.models.kernel import KernelModel
 from subiquity.server.controllers.kernel import KernelController
-
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.parameterized import parameterized
 
 
 class TestMetapackageSelection(SubiTestCase):
@@ -33,49 +31,52 @@ class TestMetapackageSelection(SubiTestCase):
         self.controller.model = KernelModel()
 
     def setup_mpfile(self, dirpath, data):
-        runfile = self.tmp_path(f"{dirpath}/kernel-meta-package",
-                                dir=self.app.base_model.root)
+        runfile = self.tmp_path(
+            f"{dirpath}/kernel-meta-package", dir=self.app.base_model.root
+        )
         os.makedirs(os.path.dirname(runfile), exist_ok=True)
-        with open(runfile, 'w') as fp:
+        with open(runfile, "w") as fp:
             fp.write(data)
 
     def test_defaults(self):
         self.controller.start()
-        self.assertEqual('linux-generic', self.controller.model.metapkg_name)
+        self.assertEqual("linux-generic", self.controller.model.metapkg_name)
 
     def test_mpfile_run(self):
-        self.setup_mpfile('run', 'linux-aaaa')
+        self.setup_mpfile("run", "linux-aaaa")
         self.controller.start()
-        self.assertEqual('linux-aaaa', self.controller.model.metapkg_name)
+        self.assertEqual("linux-aaaa", self.controller.model.metapkg_name)
 
     def test_mpfile_etc(self):
-        self.setup_mpfile('etc/subiquity', 'linux-zzzz')
+        self.setup_mpfile("etc/subiquity", "linux-zzzz")
         self.controller.start()
-        self.assertEqual('linux-zzzz', self.controller.model.metapkg_name)
+        self.assertEqual("linux-zzzz", self.controller.model.metapkg_name)
 
     def test_mpfile_both(self):
-        self.setup_mpfile('run', 'linux-aaaa')
-        self.setup_mpfile('etc/subiquity', 'linux-zzzz')
+        self.setup_mpfile("run", "linux-aaaa")
+        self.setup_mpfile("etc/subiquity", "linux-zzzz")
         self.controller.start()
-        self.assertEqual('linux-aaaa', self.controller.model.metapkg_name)
+        self.assertEqual("linux-aaaa", self.controller.model.metapkg_name)
 
-    @parameterized.expand([
-        [None, None, 'linux-generic'],
-        [None, {}, 'linux-generic'],
-        # when the metapackage file is set, it should be used.
-        ['linux-zzzz', None, 'linux-zzzz'],
-        # when we have a metapackage file and autoinstall, use autoinstall.
-        ['linux-zzzz', {'package': 'linux-aaaa'}, 'linux-aaaa'],
-        [None, {'package': 'linux-aaaa'}, 'linux-aaaa'],
-        [None, {'package': 'linux-aaaa', 'flavor': 'bbbb'}, 'linux-aaaa'],
-        [None, {'flavor': None}, 'linux-generic'],
-        [None, {'flavor': 'generic'}, 'linux-generic'],
-        [None, {'flavor': 'hwe'}, 'linux-generic-hwe-20.04'],
-        [None, {'flavor': 'bbbb'}, 'linux-bbbb-20.04'],
-    ])
+    @parameterized.expand(
+        [
+            [None, None, "linux-generic"],
+            [None, {}, "linux-generic"],
+            # when the metapackage file is set, it should be used.
+            ["linux-zzzz", None, "linux-zzzz"],
+            # when we have a metapackage file and autoinstall, use autoinstall.
+            ["linux-zzzz", {"package": "linux-aaaa"}, "linux-aaaa"],
+            [None, {"package": "linux-aaaa"}, "linux-aaaa"],
+            [None, {"package": "linux-aaaa", "flavor": "bbbb"}, "linux-aaaa"],
+            [None, {"flavor": None}, "linux-generic"],
+            [None, {"flavor": "generic"}, "linux-generic"],
+            [None, {"flavor": "hwe"}, "linux-generic-hwe-20.04"],
+            [None, {"flavor": "bbbb"}, "linux-bbbb-20.04"],
+        ]
+    )
     def test_ai(self, mpfile_data, ai_data, metapkg_name):
         if mpfile_data is not None:
-            self.setup_mpfile('etc/subiquity', mpfile_data)
+            self.setup_mpfile("etc/subiquity", mpfile_data)
         self.controller.load_autoinstall_data(ai_data)
         self.controller.start()
         self.assertEqual(metapkg_name, self.controller.model.metapkg_name)

@@ -18,20 +18,19 @@ import logging
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.ui.views.proxy import ProxyView
 
-log = logging.getLogger('subiquity.client.controllers.proxy')
+log = logging.getLogger("subiquity.client.controllers.proxy")
 
 
 class ProxyController(SubiquityTuiController):
-
-    endpoint_name = 'proxy'
+    endpoint_name = "proxy"
 
     async def make_ui(self):
         proxy = await self.endpoint.GET()
         return ProxyView(self, proxy)
 
     def run_answers(self):
-        if 'proxy' in self.answers:
-            self.done(self.answers['proxy'])
+        if "proxy" in self.answers:
+            self.done(self.answers["proxy"])
 
     def cancel(self):
         self.app.prev_screen()

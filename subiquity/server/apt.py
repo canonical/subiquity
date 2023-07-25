@@ -28,13 +28,8 @@ import tempfile
 from typing import List, Optional
 
 import apt_pkg
-
-from curtin.config import merge_config
 from curtin.commands.extract import AbstractSourceHandler
-
-from subiquitycore.file_util import write_file, generate_config_yaml
-from subiquitycore.lsb_release import lsb_release
-from subiquitycore.utils import astart_command, orig_environ
+from curtin.config import merge_config
 
 from subiquity.server.curtin import run_curtin_command
 from subiquity.server.mounter import (
@@ -43,18 +38,21 @@ from subiquity.server.mounter import (
     Mountpoint,
     OverlayCleanupError,
     OverlayMountpoint,
-    )
+)
+from subiquitycore.file_util import generate_config_yaml, write_file
+from subiquitycore.lsb_release import lsb_release
+from subiquitycore.utils import astart_command, orig_environ
 
-log = logging.getLogger('subiquity.server.apt')
+log = logging.getLogger("subiquity.server.apt")
 
 
 class AptConfigCheckError(Exception):
-    """ Error to raise when apt-get update fails with the currently applied
-    configuration. """
+    """Error to raise when apt-get update fails with the currently applied
+    configuration."""
 
 
 def get_index_targets() -> List[str]:
-    """ Return the identifier of the data files that would be downloaded during
+    """Return the identifier of the data files that would be downloaded during
     apt-get update.
     NOTE: this uses the default configuration files from the host so this might
     slightly differ from what we would have in the overlay.
@@ -108,8 +106,7 @@ class AptConfigurer:
     #    system, or if it is not, just copy /var/lib/apt/lists from the
     #    'configured_tree' overlay.
 
-    def __init__(self, app, mounter: Mounter,
-                 source_handler: AbstractSourceHandler):
+    def __init__(self, app, mounter: Mounter, source_handler: AbstractSourceHandler):
         self.app = app
         self.mounter = mounter
         self.source_handler: AbstractSourceHandler = source_handler
@@ -133,30 +130,37 @@ class AptConfigurer:
             self.app.base_model.debconf_selections,
         ]
         for model in models:
-            merge_config(cfg, model.get_apt_config(
-                final=final, has_network=has_network))
-        return {'apt': cfg}
+            merge_config(
+                cfg, model.get_apt_config(final=final, has_network=has_network)
+            )
+        return {"apt": cfg}
 
     async def apply_apt_config(self, context, final: bool):
-        self.configured_tree = await self.mounter.setup_overlay(
-            [self.source_path])
+        self.configured_tree = await self.mounter.setup_overlay([self.source_path])
 
         config_location = os.path.join(
-            self.app.root, 'var/log/installer/subiquity-curtin-apt.conf')
+            self.app.root, "var/log/installer/subiquity-curtin-apt.conf"
+        )
         generate_config_yaml(config_location, self.apt_config(final))
         self.app.note_data_for_apport("CurtinAptConfig", config_location)
 
         await run_curtin_command(
-            self.app, context, 'apt-config', '-t', self.configured_tree.p(),
-            config=config_location, private_mounts=True)
+            self.app,
+            context,
+            "apt-config",
+            "-t",
+            self.configured_tree.p(),
+            config=config_location,
+            private_mounts=True,
+        )
 
     async def run_apt_config_check(self, output: io.StringIO) -> None:
-        """ Run apt-get update (with various options limiting the amount of
+        """Run apt-get update (with various options limiting the amount of
         data donwloaded) in the overlay where the apt configuration was
         previously deployed. The output of apt-get (stdout + stderr) will be
         written to the output parameter.
         Raises a AptConfigCheckError exception if the apt-get command exited
-        with non-zero. """
+        with non-zero."""
         assert self.configured_tree is not None
 
         pfx = pathlib.Path(self.configured_tree.p())
@@ -173,15 +177,15 @@ class AptConfigurer:
 
         # Need to ensure the "partial" directory exists.
         partial_dir = apt_dirs["State::Lists"] / "partial"
-        partial_dir.mkdir(
-                parents=True, exist_ok=True)
+        partial_dir.mkdir(parents=True, exist_ok=True)
         try:
             shutil.chown(partial_dir, user="_apt")
         except (PermissionError, LookupError) as exc:
             log.warning("could to set owner of file %s: %r", partial_dir, exc)
 
         apt_cmd = [
-            "apt-get", "update",
+            "apt-get",
+            "update",
             "-oAPT::Update::Error-Mode=any",
             # Workaround because the default sandbox user (i.e., _apt) does not
             # have access to the overlay.
@@ -201,8 +205,9 @@ class AptConfigurer:
             env["APT_CONFIG"] = config_file.name
             config_file.write(apt_config.dump())
             config_file.flush()
-            proc = await astart_command(apt_cmd, stderr=subprocess.STDOUT,
-                                        clean_locale=False, env=env)
+            proc = await astart_command(
+                apt_cmd, stderr=subprocess.STDOUT, clean_locale=False, env=env
+            )
 
             async def _reader():
                 while not proc.stdout.at_eof():
@@ -223,42 +228,51 @@ class AptConfigurer:
     async def configure_for_install(self, context):
         assert self.configured_tree is not None
 
-        self.install_tree = await self.mounter.setup_overlay(
-            [self.configured_tree])
+        self.install_tree = await self.mounter.setup_overlay([self.configured_tree])
 
-        os.mkdir(self.install_tree.p('cdrom'))
-        await self.mounter.mount(
-            '/cdrom', self.install_tree.p('cdrom'), options='bind')
+        os.mkdir(self.install_tree.p("cdrom"))
+        await self.mounter.mount("/cdrom", self.install_tree.p("cdrom"), options="bind")
 
         if self.app.base_model.network.has_network:
             os.rename(
-                self.install_tree.p('etc/apt/sources.list'),
-                self.install_tree.p('etc/apt/sources.list.d/original.list'))
+                self.install_tree.p("etc/apt/sources.list"),
+                self.install_tree.p("etc/apt/sources.list.d/original.list"),
+            )
         else:
-            proxy_path = self.install_tree.p(
-                'etc/apt/apt.conf.d/90curtin-aptproxy')
+            proxy_path = self.install_tree.p("etc/apt/apt.conf.d/90curtin-aptproxy")
             if os.path.exists(proxy_path):
                 os.unlink(proxy_path)
 
-        codename = lsb_release(dry_run=self.app.opts.dry_run)['codename']
+        codename = lsb_release(dry_run=self.app.opts.dry_run)["codename"]
 
         write_file(
-            self.install_tree.p('etc/apt/sources.list'),
-            f'deb [check-date=no] file:///cdrom {codename} main restricted\n')
+            self.install_tree.p("etc/apt/sources.list"),
+            f"deb [check-date=no] file:///cdrom {codename} main restricted\n",
+        )
 
         await run_curtin_command(
-            self.app, context, "in-target", "-t", self.install_tree.p(),
-            "--", "apt-get", "update", private_mounts=True)
+            self.app,
+            context,
+            "in-target",
+            "-t",
+            self.install_tree.p(),
+            "--",
+            "apt-get",
+            "update",
+            private_mounts=True,
+        )
 
         return self.install_tree.p()
 
     @contextlib.asynccontextmanager
     async def overlay(self):
-        overlay = await self.mounter.setup_overlay([
+        overlay = await self.mounter.setup_overlay(
+            [
                 self.install_tree.upperdir,
                 self.configured_tree.upperdir,
                 self.source_path,
-            ])
+            ]
+        )
         try:
             yield overlay
         finally:
@@ -269,8 +283,7 @@ class AptConfigurer:
             # compares equal to the one we discarded earlier.
             # But really, there should be better ways to handle this.
             try:
-                await self.mounter.unmount(
-                    Mountpoint(mountpoint=overlay.mountpoint))
+                await self.mounter.unmount(Mountpoint(mountpoint=overlay.mountpoint))
             except subprocess.CalledProcessError as exc:
                 raise OverlayCleanupError from exc
 
@@ -286,41 +299,53 @@ class AptConfigurer:
 
         async def _restore_dir(dir):
             shutil.rmtree(target_mnt.p(dir))
-            await self.app.command_runner.run([
-                'cp', '-aT', self.configured_tree.p(dir), target_mnt.p(dir),
-                ])
+            await self.app.command_runner.run(
+                [
+                    "cp",
+                    "-aT",
+                    self.configured_tree.p(dir),
+                    target_mnt.p(dir),
+                ]
+            )
 
         def _restore_file(path: str) -> None:
             shutil.copyfile(self.configured_tree.p(path), target_mnt.p(path))
 
         # The file only exists if we are online
         with contextlib.suppress(FileNotFoundError):
-            os.unlink(target_mnt.p('etc/apt/sources.list.d/original.list'))
-        _restore_file('etc/apt/sources.list')
+            os.unlink(target_mnt.p("etc/apt/sources.list.d/original.list"))
+        _restore_file("etc/apt/sources.list")
 
         with contextlib.suppress(FileNotFoundError):
-            _restore_file('etc/apt/apt.conf.d/90curtin-aptproxy')
+            _restore_file("etc/apt/apt.conf.d/90curtin-aptproxy")
 
         if self.app.base_model.network.has_network:
             await run_curtin_command(
-                self.app, context, "in-target", "-t", target_mnt.p(),
-                "--", "apt-get", "update", private_mounts=True)
+                self.app,
+                context,
+                "in-target",
+                "-t",
+                target_mnt.p(),
+                "--",
+                "apt-get",
+                "update",
+                private_mounts=True,
+            )
         else:
-            await _restore_dir('var/lib/apt/lists')
+            await _restore_dir("var/lib/apt/lists")
 
         await self.cleanup()
         try:
-            d = target_mnt.p('cdrom')
+            d = target_mnt.p("cdrom")
             os.rmdir(d)
         except OSError as ose:
-            log.warning(f'failed to rmdir {d}: {ose}')
+            log.warning(f"failed to rmdir {d}: {ose}")
 
     async def setup_target(self, context, target: str):
         # Call this after the rootfs has been extracted to the real target
         # system but before any configuration is applied to it.
         target_mnt = Mountpoint(mountpoint=target)
-        await self.mounter.mount(
-            '/cdrom', target_mnt.p('cdrom'), options='bind')
+        await self.mounter.mount("/cdrom", target_mnt.p("cdrom"), options="bind")
 
 
 class DryRunAptConfigurer(AptConfigurer):
@@ -339,8 +364,8 @@ class DryRunAptConfigurer(AptConfigurer):
         await self.cleanup()
 
     def get_mirror_check_strategy(self, url: str) -> "MirrorCheckStrategy":
-        """ For a given mirror URL, return the strategy that we should use to
-        perform mirror checking. """
+        """For a given mirror URL, return the strategy that we should use to
+        perform mirror checking."""
         for known in self.app.dr_cfg.apt_mirrors_known:
             if "url" in known:
                 if known["url"] != url:
@@ -354,16 +379,18 @@ class DryRunAptConfigurer(AptConfigurer):
             return self.MirrorCheckStrategy(known["strategy"])
 
         return self.MirrorCheckStrategy(
-                self.app.dr_cfg.apt_mirror_check_default_strategy)
+            self.app.dr_cfg.apt_mirror_check_default_strategy
+        )
 
     async def apt_config_check_failure(self, output: io.StringIO) -> None:
-        """ Pretend that the execution of the apt-get update command results in
-        a failure. """
+        """Pretend that the execution of the apt-get update command results in
+        a failure."""
         url = self.app.base_model.mirror.primary_staged.uri
         release = lsb_release(dry_run=True)["codename"]
         host = url.split("/")[2]
 
-        output.write(f"""\
+        output.write(
+            f"""\
 Ign:1 {url} {release} InRelease
 Ign:2 {url} {release}-updates InRelease
 Ign:3 {url} {release}-backports InRelease
@@ -389,28 +416,31 @@ E: Failed to fetch {url}/dists/{release}-security/InRelease\
   Temporary failure resolving '{host}'
 E: Some index files failed to download. They have been ignored,
  or old ones used instead.
-""")
+"""
+        )
         raise AptConfigCheckError
 
     async def apt_config_check_success(self, output: io.StringIO) -> None:
-        """ Pretend that the execution of the apt-get update command results in
-        a success. """
+        """Pretend that the execution of the apt-get update command results in
+        a success."""
         url = self.app.base_model.mirror.primary_staged.uri
         release = lsb_release(dry_run=True)["codename"]
 
-        output.write(f"""\
+        output.write(
+            f"""\
 Get:1 {url} {release} InRelease [267 kB]
 Get:2 {url} {release}-updates InRelease [109 kB]
 Get:3 {url} {release}-backports InRelease [99.9 kB]
 Get:4 {url} {release}-security InRelease [109 kB]
 Fetched 585 kB in 1s (1057 kB/s)
 Reading package lists...
-""")
+"""
+        )
 
     async def run_apt_config_check(self, output: io.StringIO) -> None:
-        """ Dry-run implementation of the Apt config check.
+        """Dry-run implementation of the Apt config check.
         The strategy used is based on the URL of the primary mirror. The
-        apt-get command can either run on the host or be faked entirely. """
+        apt-get command can either run on the host or be faked entirely."""
         assert self.configured_tree is not None
 
         failure = self.apt_config_check_failure

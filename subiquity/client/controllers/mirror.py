@@ -16,22 +16,16 @@
 import asyncio
 import logging
 
+from subiquity.client.controller import SubiquityTuiController
+from subiquity.common.types import MirrorCheckStatus, MirrorGet, MirrorPost
+from subiquity.ui.views.mirror import MirrorView
 from subiquitycore.tuicontroller import Skip
 
-from subiquity.common.types import (
-    MirrorCheckStatus,
-    MirrorGet,
-    MirrorPost,
-    )
-from subiquity.client.controller import SubiquityTuiController
-from subiquity.ui.views.mirror import MirrorView
-
-log = logging.getLogger('subiquity.client.controllers.mirror')
+log = logging.getLogger("subiquity.client.controllers.mirror")
 
 
 class MirrorController(SubiquityTuiController):
-
-    endpoint_name = 'mirror'
+    endpoint_name = "mirror"
 
     async def make_ui(self):
         mirror_response: MirrorGet = await self.endpoint.GET()
@@ -57,19 +51,18 @@ class MirrorController(SubiquityTuiController):
 
     async def run_answers(self):
         async def wait_mirror_check() -> None:
-            """ Wait until the mirror check has finished running. """
+            """Wait until the mirror check has finished running."""
             while True:
                 last_status = self.app.ui.body.last_status
                 if last_status not in [None, MirrorCheckStatus.RUNNING]:
                     return
-                await asyncio.sleep(.1)
+                await asyncio.sleep(0.1)
 
-        if 'mirror' in self.answers:
-            self.app.ui.body.form.url.value = self.answers['mirror']
+        if "mirror" in self.answers:
+            self.app.ui.body.form.url.value = self.answers["mirror"]
             await wait_mirror_check()
             self.app.ui.body.form._click_done(None)
-        elif 'country-code' in self.answers \
-             or 'accept-default' in self.answers:
+        elif "country-code" in self.answers or "accept-default" in self.answers:
             await wait_mirror_check()
             self.app.ui.body.form._click_done(None)
 
@@ -78,5 +71,4 @@ class MirrorController(SubiquityTuiController):
 
     def done(self, mirror):
         log.debug("MirrorController.done next_screen mirror=%s", mirror)
-        self.app.next_screen(self.endpoint.POST(
-            MirrorPost(elected=mirror)))
+        self.app.next_screen(self.endpoint.POST(MirrorPost(elected=mirror)))

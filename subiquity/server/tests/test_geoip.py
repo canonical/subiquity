@@ -16,14 +16,11 @@
 import aiohttp
 from aioresponses import aioresponses
 
+from subiquity.server.geoip import GeoIP, HTTPGeoIPStrategy
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
-from subiquity.server.geoip import (
-    GeoIP,
-    HTTPGeoIPStrategy,
-    )
 
-xml = '''
+xml = """
 <Response>
   <Ip>1.2.3.4</Ip>
   <Status>OK</Status>
@@ -39,12 +36,12 @@ xml = '''
   <AreaCode>707</AreaCode>
   <TimeZone>America/Los_Angeles</TimeZone>
 </Response>
-'''
-partial = '<Response>'
-incomplete = '<Longitude>-121.7016</Longitude>'
-long_cc = '<Response><CountryCode>USA</CountryCode></Response>'
-empty_tz = '<Response><TimeZone></TimeZone></Response>'
-empty_cc = '<Response><CountryCode></CountryCode></Response>'
+"""
+partial = "<Response>"
+incomplete = "<Longitude>-121.7016</Longitude>"
+long_cc = "<Response><CountryCode>USA</CountryCode></Response>"
+empty_tz = "<Response><TimeZone></TimeZone></Response>"
+empty_cc = "<Response><CountryCode></CountryCode></Response>"
 
 
 class TestGeoIP(SubiTestCase):
@@ -100,7 +97,9 @@ class TestGeoIPBadData(SubiTestCase):
 
     async def test_lookup_error(self):
         with aioresponses() as mocked:
-            mocked.get("https://geoip.ubuntu.com/lookup",
-                       exception=aiohttp.ClientError('lookup failure'))
+            mocked.get(
+                "https://geoip.ubuntu.com/lookup",
+                exception=aiohttp.ClientError("lookup failure"),
+            )
             self.assertFalse(await self.geoip.lookup())
         self.assertIsNone(self.geoip.timezone)

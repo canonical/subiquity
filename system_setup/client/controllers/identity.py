@@ -19,20 +19,19 @@ from subiquity.client.controllers import IdentityController
 from subiquity.common.types import IdentityData
 from system_setup.ui.views import WSLIdentityView
 
-log = logging.getLogger('system_setup.client.controllers.identity')
+log = logging.getLogger("system_setup.client.controllers.identity")
 
 
 class WSLIdentityController(IdentityController):
-
     async def make_ui(self):
         data = await self.endpoint.GET()
         return WSLIdentityView(self, data)
 
     def run_answers(self):
-        if all(elem in self.answers for elem in
-               ['realname', 'username', 'password']):
+        if all(elem in self.answers for elem in ["realname", "username", "password"]):
             identity = IdentityData(
-                realname=self.answers['realname'],
-                username=self.answers['username'],
-                crypted_password=self.answers['password'])
+                realname=self.answers["realname"],
+                username=self.answers["username"],
+                crypted_password=self.answers["password"],
+            )
             self.done(identity)

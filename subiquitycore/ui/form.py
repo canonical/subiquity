@@ -17,45 +17,29 @@ import abc
 import logging
 from urllib.parse import urlparse
 
+from urwid import CheckBox, MetaSignals
+from urwid import Padding as UrwidPadding
 from urwid import (
-    CheckBox,
-    connect_signal,
-    delegate_to_widget_mixin,
-    emit_signal,
-    MetaSignals,
-    Padding as UrwidPadding,
     RadioButton,
     Text,
     WidgetDecoration,
-    )
+    connect_signal,
+    delegate_to_widget_mixin,
+    emit_signal,
+)
 
 from subiquitycore.ui.buttons import cancel_btn, done_btn
-from subiquitycore.ui.container import (
-    Pile,
-    WidgetWrap,
-)
+from subiquitycore.ui.container import Pile, WidgetWrap
 from subiquitycore.ui.interactive import (
-    PasswordEditor,
-    IntegerEditor,
-    StringEditor,
     EmailEditor,
-    )
+    IntegerEditor,
+    PasswordEditor,
+    StringEditor,
+)
 from subiquitycore.ui.selector import Selector
-from subiquitycore.ui.table import (
-    ColSpec,
-    TablePile,
-    TableRow,
-    )
-from subiquitycore.ui.utils import (
-    button_pile,
-    Color,
-    disabled,
-    screen,
-    )
-from subiquitycore.ui.width import (
-    widget_width,
-    )
-
+from subiquitycore.ui.table import ColSpec, TablePile, TableRow
+from subiquitycore.ui.utils import Color, button_pile, disabled, screen
+from subiquitycore.ui.width import widget_width
 
 log = logging.getLogger("subiquitycore.ui.form")
 
@@ -71,9 +55,7 @@ NO_CAPTION = object()
 NO_HELP = object()
 
 
-class Toggleable(delegate_to_widget_mixin('_original_widget'),
-                 WidgetDecoration):
-
+class Toggleable(delegate_to_widget_mixin("_original_widget"), WidgetDecoration):
     has_original_width = True
 
     def __init__(self, original):
@@ -95,7 +77,6 @@ class Toggleable(delegate_to_widget_mixin('_original_widget'),
 
 
 class _Validator(WidgetWrap):
-
     def __init__(self, field, w):
         self.field = field
         super().__init__(w)
@@ -105,7 +86,7 @@ class _Validator(WidgetWrap):
 
     def lost_focus(self):
         self.field.showing_extra = False
-        lf = getattr(self._w.base_widget, 'lost_focus', None)
+        lf = getattr(self._w.base_widget, "lost_focus", None)
         if lf is not None:
             lf()
         self.field.validate()
@@ -113,6 +94,7 @@ class _Validator(WidgetWrap):
 
 class WantsToKnowFormField(object):
     """A marker class."""
+
     def set_bound_form_field(self, bff):
         self.bff = bff
 
@@ -121,7 +103,6 @@ form_colspecs = {1: ColSpec(pack=False)}
 
 
 class BoundFormField(object):
-
     def __init__(self, field, form, widget):
         self.field = field
         self.form = form
@@ -134,13 +115,13 @@ class BoundFormField(object):
 
         self._build_table()
 
-        if 'change' in getattr(widget, 'signals', []):
-            connect_signal(widget, 'change', self._change)
+        if "change" in getattr(widget, "signals", []):
+            connect_signal(widget, "change", self._change)
         if isinstance(widget, WantsToKnowFormField):
             widget.set_bound_form_field(self)
 
     def is_in_error(self) -> bool:
-        """ Tells whether this field is in error. """
+        """Tells whether this field is in error."""
         return self.in_error
 
     def _build_table(self):
@@ -159,17 +140,16 @@ class BoundFormField(object):
             self.caption_text = Text(_(self.field.caption))
 
             if self.field.caption_first:
-                self.caption_text.align = 'right'
+                self.caption_text.align = "right"
                 first_row = [self.caption_text, _Validator(self, widget)]
             else:
                 first_row = [
                     _Validator(
                         self,
-                        UrwidPadding(
-                            widget, align='right',
-                            width=widget_width(widget))),
+                        UrwidPadding(widget, align="right", width=widget_width(widget)),
+                    ),
                     self.caption_text,
-                    ]
+                ]
             second_row = [Text(""), self.under_text]
 
         rows = [first_row]
@@ -228,7 +208,7 @@ class BoundFormField(object):
         else:
             self.in_error = True
             if show_error:
-                self.show_extra(('info_error', r))
+                self.show_extra(("info_error", r))
         self.form.validated()
 
     def show_extra(self, extra_markup):
@@ -237,7 +217,7 @@ class BoundFormField(object):
 
     @property
     def value(self):
-        return self.clean(getattr(self, 'tmpval', self.widget.value))
+        return self.clean(getattr(self, "tmpval", self.widget.value))
 
     @value.setter
     def value(self, val):
@@ -249,7 +229,7 @@ class BoundFormField(object):
             return self._help
         elif self.field.help is not None:
             if isinstance(self.field.help, str):
-                return ('info_minor', _(self.field.help))
+                return ("info_minor", _(self.field.help))
             else:
                 return self.field.help
         else:
@@ -280,22 +260,23 @@ class BoundFormField(object):
         for row in self._rows:
             row.enabled = val
 
-    def use_as_confirmation(self, for_field: "BoundFormField", desc: str) \
-            -> None:
-        """ Mark this field as a confirmation field for another field.
+    def use_as_confirmation(self, for_field: "BoundFormField", desc: str) -> None:
+        """Mark this field as a confirmation field for another field.
         This will automatically compare the value of both fields when this
-        field (a.k.a., the confirmation field) is changed. """
+        field (a.k.a., the confirmation field) is changed."""
+
         def _check_confirmation(sender, new_text):
             if not for_field.value.startswith(new_text):
                 self.show_extra(("info_error", _(f"{desc} do not match")))
             else:
                 self.show_extra("")
+
         connect_signal(self.widget, "change", _check_confirmation)
 
 
 class BoundSubFormField(BoundFormField):
     def is_in_error(self):
-        """ Tells whether this field is in error. We will also check if the
+        """Tells whether this field is in error. We will also check if the
         subform (if enabled) reports an error.
         """
         if super().is_in_error():
@@ -308,7 +289,6 @@ class BoundSubFormField(BoundFormField):
 
 
 class FormField(abc.ABC):
-
     next_index = 0
     takes_default_style = True
     caption_first = True
@@ -318,7 +298,7 @@ class FormField(abc.ABC):
         self.caption = caption
         # Allows styling at instantiation
         if isinstance(help, str):
-            self.help = ('info_minor',  help)
+            self.help = ("info_minor", help)
         else:
             self.help = help
         self.index = FormField.next_index
@@ -337,6 +317,7 @@ def simple_field(widget_maker):
     class Field(FormField):
         def _make_widget(self, form):
             return widget_maker()
+
     return Field
 
 
@@ -347,7 +328,6 @@ EmailField = simple_field(EmailEditor)
 
 
 class RadioButtonEditor(RadioButton):
-
     reserve_columns = 3
 
     @property
@@ -360,7 +340,6 @@ class RadioButtonEditor(RadioButton):
 
 
 class RadioButtonField(FormField):
-
     caption_first = False
     takes_default_style = False
 
@@ -382,7 +361,7 @@ class RadioButtonField(FormField):
 
 
 class URLEditor(StringEditor, WantsToKnowFormField):
-    def __init__(self, allowed_schemes=frozenset(['http', 'https'])):
+    def __init__(self, allowed_schemes=frozenset(["http", "https"])):
         self.allowed_schemes = allowed_schemes
         super().__init__()
 
@@ -403,8 +382,8 @@ class URLEditor(StringEditor, WantsToKnowFormField):
             else:
                 schemes = schemes[0]
             raise ValueError(
-                _("This field must be a {schemes} URL.").format(
-                    schemes=schemes))
+                _("This field must be a {schemes} URL.").format(schemes=schemes)
+            )
         return v
 
 
@@ -412,7 +391,6 @@ URLField = simple_field(URLEditor)
 
 
 class ChoiceField(FormField):
-
     takes_default_style = False
 
     def __init__(self, caption=None, help=None, choices=[]):
@@ -424,7 +402,6 @@ class ChoiceField(FormField):
 
 
 class ReadOnlyWidget(Text):
-
     @property
     def value(self):
         return self.text
@@ -435,7 +412,6 @@ class ReadOnlyWidget(Text):
 
 
 class ReadOnlyField(FormField):
-
     takes_default_style = False
 
     def _make_widget(self, form):
@@ -443,7 +419,6 @@ class ReadOnlyField(FormField):
 
 
 class CheckBoxEditor(CheckBox):
-
     reserve_columns = 3
 
     @property
@@ -456,16 +431,14 @@ class CheckBoxEditor(CheckBox):
 
 
 class BooleanField(FormField):
-
     caption_first = False
     takes_default_style = False
 
     def _make_widget(self, form):
-        return CheckBoxEditor('')
+        return CheckBoxEditor("")
 
 
 class MetaForm(MetaSignals):
-
     def __init__(self, name, bases, attrs):
         super().__init__(name, bases, attrs)
         _unbound_fields = []
@@ -480,17 +453,18 @@ class MetaForm(MetaSignals):
 
 
 class Form(object, metaclass=MetaForm):
-
-    signals = ['submit', 'cancel']
+    signals = ["submit", "cancel"]
 
     ok_label = _("Done")
     cancel_label = _("Cancel")
 
     def __init__(self, initial={}):
-        self.done_btn = Toggleable(done_btn(_(self.ok_label),
-                                   on_press=self._click_done))
-        self.cancel_btn = Toggleable(cancel_btn(_(self.cancel_label),
-                                     on_press=self._click_cancel))
+        self.done_btn = Toggleable(
+            done_btn(_(self.ok_label), on_press=self._click_done)
+        )
+        self.cancel_btn = Toggleable(
+            cancel_btn(_(self.cancel_label), on_press=self._click_cancel)
+        )
         self.buttons = button_pile([self.done_btn, self.cancel_btn])
         self._fields = []
         for field in self._unbound_fields:
@@ -509,10 +483,10 @@ class Form(object, metaclass=MetaForm):
                 bf.field.value = data[bf.field.name]
 
     def _click_done(self, sender):
-        emit_signal(self, 'submit', self)
+        emit_signal(self, "submit", self)
 
     def _click_cancel(self, sender):
-        emit_signal(self, 'cancel', self)
+        emit_signal(self, "cancel", self)
 
     def remove_field(self, field_name):
         new_fields = []
@@ -535,12 +509,15 @@ class Form(object, metaclass=MetaForm):
 
     def as_screen(self, focus_buttons=True, excerpt=None, narrow_rows=False):
         return screen(
-            self.as_rows(), self.buttons,
-            focus_buttons=focus_buttons, excerpt=excerpt,
-            narrow_rows=narrow_rows)
+            self.as_rows(),
+            self.buttons,
+            focus_buttons=focus_buttons,
+            excerpt=excerpt,
+            narrow_rows=narrow_rows,
+        )
 
     def has_validation_error(self) -> bool:
-        """ Tells if any field is in error. """
+        """Tells if any field is in error."""
         return any(map(lambda f: f.is_in_error(), self._fields))
 
     def validated(self):
@@ -559,7 +536,6 @@ class Form(object, metaclass=MetaForm):
 
 
 class SubFormWidget(WidgetWrap):
-
     def __init__(self, form):
         self.form = form
         super().__init__(Pile(form.as_rows()))
@@ -575,7 +551,6 @@ class SubFormWidget(WidgetWrap):
 
 
 class SubFormField(FormField):
-
     takes_default_style = False
     bound_field_class = BoundSubFormField
 
@@ -589,12 +564,11 @@ class SubFormField(FormField):
 
 
 class SubForm(Form):
-
     def __init__(self, parent, **kw):
         self.parent = parent
         super().__init__(**kw)
 
     def validated(self):
-        """ Propagate the validation to the parent. """
+        """Propagate the validation to the parent."""
         self.parent.validated()
         super().validated()

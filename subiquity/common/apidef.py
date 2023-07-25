@@ -16,79 +16,79 @@
 import enum
 from typing import List, Optional
 
-from subiquitycore.models.network import (
-    BondConfig,
-    NetDevInfo,
-    StaticConfig,
-    WLANConfig,
-    )
-
 from subiquity.common.api.defs import (
+    Payload,
     allowed_before_start,
     api,
-    Payload,
     simple_endpoint,
-    )
+)
 from subiquity.common.types import (
-    AdConnectionInfo,
     AdAdminNameValidation,
+    AdConnectionInfo,
     AdDomainNameValidation,
+    AddPartitionV2,
     AdJoinResult,
     AdPasswordValidation,
-    AddPartitionV2,
     AnyStep,
     ApplicationState,
     ApplicationStatus,
     CasperMd5Results,
     Change,
+    CodecsData,
     Disk,
+    DriversPayload,
+    DriversResponse,
     ErrorReportRef,
     GuidedChoiceV2,
     GuidedStorageResponseV2,
+    IdentityData,
     KeyboardSetting,
     KeyboardSetup,
-    IdentityData,
-    NetworkStatus,
-    MirrorSelectionFallback,
+    LiveSessionSSHInfo,
+    MirrorCheckResponse,
     MirrorGet,
     MirrorPost,
     MirrorPostResponse,
-    MirrorCheckResponse,
+    MirrorSelectionFallback,
     ModifyPartitionV2,
+    NetworkStatus,
+    OEMResponse,
+    PackageInstallState,
     ReformatDisk,
     RefreshStatus,
     ShutdownMode,
-    CodecsData,
-    DriversResponse,
-    DriversPayload,
-    OEMResponse,
     SnapInfo,
     SnapListResponse,
     SnapSelection,
     SourceSelectionAndSetting,
     SSHData,
     SSHFetchIdResponse,
-    LiveSessionSSHInfo,
     StorageResponse,
     StorageResponseV2,
     TimeZoneInfo,
+    UbuntuProCheckTokenAnswer,
     UbuntuProInfo,
     UbuntuProResponse,
-    UbuntuProCheckTokenAnswer,
     UPCSInitiateResponse,
     UPCSWaitResponse,
     UsernameValidation,
-    PackageInstallState,
-    ZdevInfo,
-    WSLConfigurationBase,
     WSLConfigurationAdvanced,
+    WSLConfigurationBase,
     WSLSetupOptions,
-    )
+    ZdevInfo,
+)
+from subiquitycore.models.network import (
+    BondConfig,
+    NetDevInfo,
+    StaticConfig,
+    WLANConfig,
+)
 
 
 @api
 class API:
     """The API offered by the subiquity installer process."""
+
     locale = simple_endpoint(str)
     proxy = simple_endpoint(str)
     updates = simple_endpoint(str)
@@ -99,8 +99,7 @@ class API:
     class meta:
         class status:
             @allowed_before_start
-            def GET(cur: Optional[ApplicationState] = None) \
-                    -> ApplicationStatus:
+            def GET(cur: Optional[ApplicationState] = None) -> ApplicationStatus:
                 """Get the installer state."""
 
         class mark_configured:
@@ -111,6 +110,7 @@ class API:
             def POST(variant: str) -> None:
                 """Choose the install variant -
                 desktop/server/wsl_setup/wsl_reconfigure"""
+
             def GET() -> str:
                 """Get the install variant -
                 desktop/server/wsl_setup/wsl_reconfigure"""
@@ -124,10 +124,12 @@ class API:
                 """Restart the server process."""
 
         class ssh_info:
-            def GET() -> Optional[LiveSessionSSHInfo]: ...
+            def GET() -> Optional[LiveSessionSSHInfo]:
+                ...
 
         class free_only:
-            def GET() -> bool: ...
+            def GET() -> bool:
+                ...
 
             def POST(enable: bool) -> None:
                 """Enable or disable free-only mode.  Currently only controlls
@@ -135,7 +137,8 @@ class API:
                 confirmation of filesystem changes"""
 
         class interactive_sections:
-            def GET() -> Optional[List[str]]: ...
+            def GET() -> Optional[List[str]]:
+                ...
 
     class errors:
         class wait:
@@ -159,38 +162,55 @@ class API:
             """Start the update and return the change id."""
 
         class progress:
-            def GET(change_id: str) -> Change: ...
+            def GET(change_id: str) -> Change:
+                ...
 
     class keyboard:
-        def GET() -> KeyboardSetup: ...
-        def POST(data: Payload[KeyboardSetting]): ...
+        def GET() -> KeyboardSetup:
+            ...
+
+        def POST(data: Payload[KeyboardSetting]):
+            ...
 
         class needs_toggle:
-            def GET(layout_code: str, variant_code: str) -> bool: ...
+            def GET(layout_code: str, variant_code: str) -> bool:
+                ...
 
         class steps:
-            def GET(index: Optional[str]) -> AnyStep: ...
+            def GET(index: Optional[str]) -> AnyStep:
+                ...
 
         class input_source:
-            def POST(data: Payload[KeyboardSetting],
-                     user: Optional[str] = None) -> None: ...
+            def POST(
+                data: Payload[KeyboardSetting], user: Optional[str] = None
+            ) -> None:
+                ...
 
     class source:
-        def GET() -> SourceSelectionAndSetting: ...
-        def POST(source_id: str, search_drivers: bool = False) -> None: ...
+        def GET() -> SourceSelectionAndSetting:
+            ...
+
+        def POST(source_id: str, search_drivers: bool = False) -> None:
+            ...
 
     class zdev:
-        def GET() -> List[ZdevInfo]: ...
+        def GET() -> List[ZdevInfo]:
+            ...
 
         class chzdev:
-            def POST(action: str, zdev: ZdevInfo) -> List[ZdevInfo]: ...
+            def POST(action: str, zdev: ZdevInfo) -> List[ZdevInfo]:
+                ...
 
     class network:
-        def GET() -> NetworkStatus: ...
-        def POST() -> None: ...
+        def GET() -> NetworkStatus:
+            ...
+
+        def POST() -> None:
+            ...
 
         class has_network:
-            def GET() -> bool: ...
+            def GET() -> bool:
+                ...
 
         class global_addresses:
             def GET() -> List[str]:
@@ -201,8 +221,12 @@ class API:
 
             The socket must serve the NetEventAPI below.
             """
-            def PUT(socket_path: str) -> None: ...
-            def DELETE(socket_path: str) -> None: ...
+
+            def PUT(socket_path: str) -> None:
+                ...
+
+            def DELETE(socket_path: str) -> None:
+                ...
 
         # These methods could definitely be more RESTish, like maybe a
         # GET request to /network/interfaces/$name should return netplan
@@ -237,77 +261,100 @@ class API:
         # So methods on nics get an extra dev_name: str parameter)
 
         class set_static_config:
-            def POST(dev_name: str, ip_version: int,
-                     static_config: Payload[StaticConfig]) -> None: ...
+            def POST(
+                dev_name: str, ip_version: int, static_config: Payload[StaticConfig]
+            ) -> None:
+                ...
 
         class enable_dhcp:
-            def POST(dev_name: str, ip_version: int) -> None: ...
+            def POST(dev_name: str, ip_version: int) -> None:
+                ...
 
         class disable:
-            def POST(dev_name: str, ip_version: int) -> None: ...
+            def POST(dev_name: str, ip_version: int) -> None:
+                ...
 
         class vlan:
-            def PUT(dev_name: str, vlan_id: int) -> None: ...
+            def PUT(dev_name: str, vlan_id: int) -> None:
+                ...
 
         class add_or_edit_bond:
-            def POST(existing_name: Optional[str], new_name: str,
-                     bond_config: Payload[BondConfig]) -> None: ...
+            def POST(
+                existing_name: Optional[str],
+                new_name: str,
+                bond_config: Payload[BondConfig],
+            ) -> None:
+                ...
 
         class start_scan:
-            def POST(dev_name: str) -> None: ...
+            def POST(dev_name: str) -> None:
+                ...
 
         class set_wlan:
-            def POST(dev_name: str, wlan: WLANConfig) -> None: ...
+            def POST(dev_name: str, wlan: WLANConfig) -> None:
+                ...
 
         class delete:
-            def POST(dev_name: str) -> None: ...
+            def POST(dev_name: str) -> None:
+                ...
 
         class info:
-            def GET(dev_name: str) -> str: ...
+            def GET(dev_name: str) -> str:
+                ...
 
     class storage:
         class guided:
-            def POST(data: Payload[GuidedChoiceV2]) \
-                    -> StorageResponse:
+            def POST(data: Payload[GuidedChoiceV2]) -> StorageResponse:
                 pass
 
-        def GET(wait: bool = False, use_cached_result: bool = False) \
-            -> StorageResponse: ...
+        def GET(wait: bool = False, use_cached_result: bool = False) -> StorageResponse:
+            ...
 
-        def POST(config: Payload[list]): ...
+        def POST(config: Payload[list]):
+            ...
 
         class dry_run_wait_probe:
             """This endpoint only works in dry-run mode."""
-            def POST() -> None: ...
+
+            def POST() -> None:
+                ...
 
         class reset:
-            def POST() -> StorageResponse: ...
+            def POST() -> StorageResponse:
+                ...
 
         class has_rst:
             def GET() -> bool:
                 pass
 
         class has_bitlocker:
-            def GET() -> List[Disk]: ...
+            def GET() -> List[Disk]:
+                ...
 
         class v2:
             def GET(
-                    wait: bool = False,
-                    include_raid: bool = False,
-                    ) -> StorageResponseV2: ...
+                wait: bool = False,
+                include_raid: bool = False,
+            ) -> StorageResponseV2:
+                ...
 
-            def POST() -> StorageResponseV2: ...
+            def POST() -> StorageResponseV2:
+                ...
 
             class orig_config:
-                def GET() -> StorageResponseV2: ...
+                def GET() -> StorageResponseV2:
+                    ...
 
             class guided:
-                def GET(wait: bool = False) -> GuidedStorageResponseV2: ...
-                def POST(data: Payload[GuidedChoiceV2]) \
-                    -> GuidedStorageResponseV2: ...
+                def GET(wait: bool = False) -> GuidedStorageResponseV2:
+                    ...
+
+                def POST(data: Payload[GuidedChoiceV2]) -> GuidedStorageResponseV2:
+                    ...
 
             class reset:
-                def POST() -> StorageResponseV2: ...
+                def POST() -> StorageResponseV2:
+                    ...
 
             class ensure_transaction:
                 """This call will ensure that a transaction is initiated.
@@ -316,163 +363,218 @@ class API:
                 A transaction will also be initiated by any v2_storage POST
                 request that modifies the partitioning configuration (e.g.,
                 add_partition, edit_partition, ...) but ensure_transaction can
-                be called early if desired. """
-                def POST() -> None: ...
+                be called early if desired."""
+
+                def POST() -> None:
+                    ...
 
             class reformat_disk:
-                def POST(data: Payload[ReformatDisk]) \
-                    -> StorageResponseV2: ...
+                def POST(data: Payload[ReformatDisk]) -> StorageResponseV2:
+                    ...
 
             class add_boot_partition:
                 """Mark a given disk as bootable, which may cause a partition
                 to be added to the disk.  It is an error to call this for a
                 disk for which can_be_boot_device is False."""
-                def POST(disk_id: str) -> StorageResponseV2: ...
+
+                def POST(disk_id: str) -> StorageResponseV2:
+                    ...
 
             class add_partition:
                 """required field format and mount, optional field size
-                   default behavior expands partition to fill disk if size not
-                   supplied or -1.
-                   Other partition fields are ignored.
-                   adding a partion when there is not yet a boot partition can
-                   result in the boot partition being added automatically - see
-                   add_boot_partition for more control over this.
-                   format=None means an unformatted partition
+                default behavior expands partition to fill disk if size not
+                supplied or -1.
+                Other partition fields are ignored.
+                adding a partion when there is not yet a boot partition can
+                result in the boot partition being added automatically - see
+                add_boot_partition for more control over this.
+                format=None means an unformatted partition
                 """
-                def POST(data: Payload[AddPartitionV2]) \
-                    -> StorageResponseV2: ...
+
+                def POST(data: Payload[AddPartitionV2]) -> StorageResponseV2:
+                    ...
 
             class delete_partition:
                 """required field number
-                   It is an error to modify other Partition fields.
+                It is an error to modify other Partition fields.
                 """
-                def POST(data: Payload[ModifyPartitionV2]) \
-                    -> StorageResponseV2: ...
+
+                def POST(data: Payload[ModifyPartitionV2]) -> StorageResponseV2:
+                    ...
 
             class edit_partition:
                 """required field number
-                   optional fields wipe, mount, format, size
-                   It is an error to do wipe=null and change the format.
-                   It is an error to modify other Partition fields.
+                optional fields wipe, mount, format, size
+                It is an error to do wipe=null and change the format.
+                It is an error to modify other Partition fields.
                 """
-                def POST(data: Payload[ModifyPartitionV2]) \
-                    -> StorageResponseV2: ...
+
+                def POST(data: Payload[ModifyPartitionV2]) -> StorageResponseV2:
+                    ...
 
     class codecs:
-        def GET() -> CodecsData: ...
-        def POST(data: Payload[CodecsData]) -> None: ...
+        def GET() -> CodecsData:
+            ...
+
+        def POST(data: Payload[CodecsData]) -> None:
+            ...
 
     class drivers:
-        def GET(wait: bool = False) -> DriversResponse: ...
-        def POST(data: Payload[DriversPayload]) -> None: ...
+        def GET(wait: bool = False) -> DriversResponse:
+            ...
+
+        def POST(data: Payload[DriversPayload]) -> None:
+            ...
 
     class oem:
-        def GET(wait: bool = False) -> OEMResponse: ...
+        def GET(wait: bool = False) -> OEMResponse:
+            ...
 
     class snaplist:
-        def GET(wait: bool = False) -> SnapListResponse: ...
-        def POST(data: Payload[List[SnapSelection]]): ...
+        def GET(wait: bool = False) -> SnapListResponse:
+            ...
+
+        def POST(data: Payload[List[SnapSelection]]):
+            ...
 
         class snap_info:
-            def GET(snap_name: str) -> SnapInfo: ...
+            def GET(snap_name: str) -> SnapInfo:
+                ...
 
     class timezone:
-        def GET() -> TimeZoneInfo: ...
-        def POST(tz: str): ...
+        def GET() -> TimeZoneInfo:
+            ...
+
+        def POST(tz: str):
+            ...
 
     class shutdown:
-        def POST(mode: ShutdownMode, immediate: bool = False): ...
+        def POST(mode: ShutdownMode, immediate: bool = False):
+            ...
 
     class mirror:
-        def GET() -> MirrorGet: ...
+        def GET() -> MirrorGet:
+            ...
 
-        def POST(data: Payload[Optional[MirrorPost]]) \
-            -> MirrorPostResponse: ...
+        def POST(data: Payload[Optional[MirrorPost]]) -> MirrorPostResponse:
+            ...
 
         class disable_components:
-            def GET() -> List[str]: ...
-            def POST(data: Payload[List[str]]): ...
+            def GET() -> List[str]:
+                ...
+
+            def POST(data: Payload[List[str]]):
+                ...
 
         class check_mirror:
             class start:
-                def POST(cancel_ongoing: bool = False) -> None: ...
+                def POST(cancel_ongoing: bool = False) -> None:
+                    ...
 
             class progress:
-                def GET() -> Optional[MirrorCheckResponse]: ...
+                def GET() -> Optional[MirrorCheckResponse]:
+                    ...
 
             class abort:
-                def POST() -> None: ...
+                def POST() -> None:
+                    ...
 
         fallback = simple_endpoint(MirrorSelectionFallback)
 
     class ubuntu_pro:
-        def GET() -> UbuntuProResponse: ...
-        def POST(data: Payload[UbuntuProInfo]) -> None: ...
+        def GET() -> UbuntuProResponse:
+            ...
+
+        def POST(data: Payload[UbuntuProInfo]) -> None:
+            ...
 
         class skip:
-            def POST() -> None: ...
+            def POST() -> None:
+                ...
 
         class check_token:
-            def GET(token: Payload[str]) \
-                    -> UbuntuProCheckTokenAnswer: ...
+            def GET(token: Payload[str]) -> UbuntuProCheckTokenAnswer:
+                ...
 
         class contract_selection:
             class initiate:
-                def POST() -> UPCSInitiateResponse: ...
+                def POST() -> UPCSInitiateResponse:
+                    ...
 
             class wait:
-                def GET() -> UPCSWaitResponse: ...
+                def GET() -> UPCSWaitResponse:
+                    ...
 
             class cancel:
-                def POST() -> None: ...
+                def POST() -> None:
+                    ...
 
     class identity:
-        def GET() -> IdentityData: ...
-        def POST(data: Payload[IdentityData]): ...
+        def GET() -> IdentityData:
+            ...
+
+        def POST(data: Payload[IdentityData]):
+            ...
 
         class validate_username:
-            def GET(username: str) -> UsernameValidation: ...
+            def GET(username: str) -> UsernameValidation:
+                ...
 
     class ssh:
-        def GET() -> SSHData: ...
-        def POST(data: Payload[SSHData]) -> None: ...
+        def GET() -> SSHData:
+            ...
+
+        def POST(data: Payload[SSHData]) -> None:
+            ...
 
         class fetch_id:
-            def GET(user_id: str) -> SSHFetchIdResponse: ...
+            def GET(user_id: str) -> SSHFetchIdResponse:
+                ...
 
     class integrity:
-        def GET() -> CasperMd5Results: ...
+        def GET() -> CasperMd5Results:
+            ...
 
     class active_directory:
-        def GET() -> Optional[AdConnectionInfo]: ...
+        def GET() -> Optional[AdConnectionInfo]:
+            ...
+
         # POST expects input validated by the check methods below:
-        def POST(data: Payload[AdConnectionInfo]) -> None: ...
+        def POST(data: Payload[AdConnectionInfo]) -> None:
+            ...
 
         class has_support:
-            """ Whether the live system supports Active Directory or not.
-                Network status is not considered.
-                Clients should call this before showing the AD page. """
-            def GET() -> bool: ...
+            """Whether the live system supports Active Directory or not.
+            Network status is not considered.
+            Clients should call this before showing the AD page."""
+
+            def GET() -> bool:
+                ...
 
         class check_domain_name:
-            """ Applies basic validation to the candidate domain name,
-                without calling the domain network. """
-            def POST(domain_name: Payload[str]) \
-                -> List[AdDomainNameValidation]: ...
+            """Applies basic validation to the candidate domain name,
+            without calling the domain network."""
+
+            def POST(domain_name: Payload[str]) -> List[AdDomainNameValidation]:
+                ...
 
         class ping_domain_controller:
-            """ Attempts to contact the controller of the provided domain. """
-            def POST(domain_name: Payload[str]) \
-                -> AdDomainNameValidation: ...
+            """Attempts to contact the controller of the provided domain."""
+
+            def POST(domain_name: Payload[str]) -> AdDomainNameValidation:
+                ...
 
         class check_admin_name:
-            def POST(admin_name: Payload[str]) -> AdAdminNameValidation: ...
+            def POST(admin_name: Payload[str]) -> AdAdminNameValidation:
+                ...
 
         class check_password:
-            def POST(password: Payload[str]) -> AdPasswordValidation: ...
+            def POST(password: Payload[str]) -> AdPasswordValidation:
+                ...
 
         class join_result:
-            def GET(wait: bool = True) -> AdJoinResult: ...
+            def GET(wait: bool = True) -> AdJoinResult:
+                ...
 
 
 class LinkAction(enum.Enum):
@@ -484,19 +586,25 @@ class LinkAction(enum.Enum):
 @api
 class NetEventAPI:
     class wlan_support_install_finished:
-        def POST(state: PackageInstallState) -> None: ...
+        def POST(state: PackageInstallState) -> None:
+            ...
 
     class update_link:
-        def POST(act: LinkAction, info: Payload[NetDevInfo]) -> None: ...
+        def POST(act: LinkAction, info: Payload[NetDevInfo]) -> None:
+            ...
 
     class route_watch:
-        def POST(has_default_route: bool) -> None: ...
+        def POST(has_default_route: bool) -> None:
+            ...
 
     class apply_starting:
-        def POST() -> None: ...
+        def POST() -> None:
+            ...
 
     class apply_stopping:
-        def POST() -> None: ...
+        def POST() -> None:
+            ...
 
     class apply_error:
-        def POST(stage: str) -> None: ...
+        def POST(stage: str) -> None:
+            ...

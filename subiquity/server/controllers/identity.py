@@ -14,22 +14,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-
-import attr
 import re
 from typing import Set
 
-from subiquitycore.context import with_context
+import attr
 
 from subiquity.common.apidef import API
 from subiquity.common.resources import resource_path
 from subiquity.common.types import IdentityData, UsernameValidation
 from subiquity.server.controller import SubiquityController
+from subiquitycore.context import with_context
 
-log = logging.getLogger('subiquity.server.controllers.identity')
+log = logging.getLogger("subiquity.server.controllers.identity")
 
 USERNAME_MAXLEN = 32
-USERNAME_REGEX = r'[a-z_][a-z0-9_-]*'
+USERNAME_REGEX = r"[a-z_][a-z0-9_-]*"
 
 
 def _reserved_names_from_file(path: str) -> Set[str]:
@@ -38,7 +37,7 @@ def _reserved_names_from_file(path: str) -> Set[str]:
     with open(path, "r") as f:
         for line in f:
             line = line.strip()
-            if not line or line.startswith('#'):
+            if not line or line.startswith("#"):
                 continue
             names.add(line.split()[0])
 
@@ -46,48 +45,46 @@ def _reserved_names_from_file(path: str) -> Set[str]:
 
 
 class IdentityController(SubiquityController):
-
     endpoint = API.identity
 
     autoinstall_key = model_name = "identity"
     autoinstall_schema = {
-        'type': 'object',
-        'properties': {
-            'realname': {'type': 'string'},
-            'username': {'type': 'string'},
-            'hostname': {'type': 'string'},
-            'password': {'type': 'string'},
-            },
-        'required': ['username', 'hostname', 'password'],
-        'additionalProperties': False,
-        }
+        "type": "object",
+        "properties": {
+            "realname": {"type": "string"},
+            "username": {"type": "string"},
+            "hostname": {"type": "string"},
+            "password": {"type": "string"},
+        },
+        "required": ["username", "hostname", "password"],
+        "additionalProperties": False,
+    }
 
-    interactive_for_variants = {'desktop', 'server'}
+    interactive_for_variants = {"desktop", "server"}
 
     def __init__(self, app):
         super().__init__(app)
         core_reserved_path = resource_path("reserved-usernames")
-        self._system_reserved_names = \
-            _reserved_names_from_file(core_reserved_path)
+        self._system_reserved_names = _reserved_names_from_file(core_reserved_path)
 
         # Let this field be the customisation point for variants.
-        self.existing_usernames = {'root'}
+        self.existing_usernames = {"root"}
 
     def load_autoinstall_data(self, data):
         if data is not None:
             identity_data = IdentityData(
-                realname=data.get('realname', ''),
-                username=data['username'],
-                hostname=data['hostname'],
-                crypted_password=data['password'],
-                )
+                realname=data.get("realname", ""),
+                username=data["username"],
+                hostname=data["hostname"],
+                crypted_password=data["password"],
+            )
             self.model.add_user(identity_data)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
         if self.model.user:
             return
-        if 'user-data' in self.app.autoinstall_config:
+        if "user-data" in self.app.autoinstall_config:
             return
         if self.app.base_model.target is None:
             return
@@ -97,7 +94,7 @@ class IdentityController(SubiquityController):
         if self.model.user is None:
             return {}
         r = attr.asdict(self.model.user)
-        r['hostname'] = self.model.hostname
+        r["hostname"] = self.model.hostname
         return r
 
     async def GET(self) -> IdentityData:
@@ -112,8 +109,12 @@ class IdentityController(SubiquityController):
     async def POST(self, data: IdentityData):
         validated = await self.validate_username_GET(data.username)
         if validated != UsernameValidation.OK:
-            raise ValueError("Username <{}> is invalid and should not be"
-                             " submitted.".format(data.username), validated)
+            raise ValueError(
+                "Username <{}> is invalid and should not be submitted.".format(
+                    data.username
+                ),
+                validated,
+            )
 
         self.model.add_user(data)
         await self.configured()

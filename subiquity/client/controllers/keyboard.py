@@ -20,21 +20,20 @@ from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import KeyboardSetting
 from subiquity.ui.views import KeyboardView
 
-log = logging.getLogger('subiquity.client.controllers.keyboard')
+log = logging.getLogger("subiquity.client.controllers.keyboard")
 
 
 class KeyboardController(SubiquityTuiController):
-
-    endpoint_name = 'keyboard'
+    endpoint_name = "keyboard"
 
     async def make_ui(self):
         setup = await self.endpoint.GET()
         return KeyboardView(self, setup)
 
     async def run_answers(self):
-        if 'layout' in self.answers:
-            layout = self.answers['layout']
-            variant = self.answers.get('variant', '')
+        if "layout" in self.answers:
+            layout = self.answers["layout"]
+            variant = self.answers.get("variant", "")
             await self.apply(KeyboardSetting(layout=layout, variant=variant))
             self.done()
 
@@ -43,7 +42,8 @@ class KeyboardController(SubiquityTuiController):
 
     async def needs_toggle(self, setting):
         return await self.endpoint.needs_toggle.GET(
-            layout_code=setting.layout, variant_code=setting.variant)
+            layout_code=setting.layout, variant_code=setting.variant
+        )
 
     async def apply(self, setting):
         await self.endpoint.POST(setting)

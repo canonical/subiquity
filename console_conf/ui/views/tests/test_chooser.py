@@ -14,16 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import unittest
 
-from console_conf.models.systems import (
-    SystemAction,
-    )
-from console_conf.ui.views.chooser import (
-    by_preferred_action_type,
-    )
+from console_conf.models.systems import SystemAction
+from console_conf.ui.views.chooser import by_preferred_action_type
 
 
 class TestSorting(unittest.TestCase):
-
     def test_simple(self):
         data = [
             SystemAction(title="b-other", mode="unknown"),
@@ -39,5 +34,4 @@ class TestSorting(unittest.TestCase):
             SystemAction(title="a-other", mode="some-other"),
             SystemAction(title="b-other", mode="unknown"),
         ]
-        self.assertSequenceEqual(sorted(data, key=by_preferred_action_type),
-                                 exp)
+        self.assertSequenceEqual(sorted(data, key=by_preferred_action_type), exp)

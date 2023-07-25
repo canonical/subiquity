@@ -18,36 +18,33 @@ import random
 import shutil
 import tempfile
 import unittest
+
 import yaml
 
+from subiquity.models.source import SourceModel
 from subiquitycore.tests.util import random_string
-
-from subiquity.models.source import (
-    SourceModel,
-    )
 
 
 def make_entry(**fields):
     raw = {
-        'name': {
-            'en': random_string(),
-            },
-        'description': {
-            'en': random_string(),
-            },
-        'id': random_string(),
-        'type': random_string(),
-        'variant': random_string(),
-        'path': random_string(),
-        'size': random.randint(1000000, 2000000),
-        }
+        "name": {
+            "en": random_string(),
+        },
+        "description": {
+            "en": random_string(),
+        },
+        "id": random_string(),
+        "type": random_string(),
+        "variant": random_string(),
+        "path": random_string(),
+        "size": random.randint(1000000, 2000000),
+    }
     for k, v in fields.items():
         raw[k] = v
     return raw
 
 
 class TestSourceModel(unittest.TestCase):
-
     def tdir(self):
         tdir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tdir)
@@ -56,83 +53,78 @@ class TestSourceModel(unittest.TestCase):
     def write_and_load_entries(self, model, entries, dir=None):
         if dir is None:
             dir = self.tdir()
-        cat_path = os.path.join(dir, 'catalog.yaml')
-        with open(cat_path, 'w') as fp:
+        cat_path = os.path.join(dir, "catalog.yaml")
+        with open(cat_path, "w") as fp:
             yaml.dump(entries, fp)
         with open(cat_path) as fp:
             model.load_from_file(fp)
 
     def test_initially_server(self):
         model = SourceModel()
-        self.assertEqual(model.current.variant, 'server')
+        self.assertEqual(model.current.variant, "server")
 
     def test_load_from_file_simple(self):
-        entry = make_entry(id='id1')
+        entry = make_entry(id="id1")
         model = SourceModel()
         self.write_and_load_entries(model, [entry])
-        self.assertEqual(model.current.id, 'id1')
+        self.assertEqual(model.current.id, "id1")
 
     def test_load_from_file_ignores_extra_keys(self):
-        entry = make_entry(id='id1', foobarbaz=random_string())
+        entry = make_entry(id="id1", foobarbaz=random_string())
         model = SourceModel()
         self.write_and_load_entries(model, [entry])
-        self.assertEqual(model.current.id, 'id1')
+        self.assertEqual(model.current.id, "id1")
 
     def test_default(self):
         entries = [
-            make_entry(id='id1'),
-            make_entry(id='id2', default=True),
-            make_entry(id='id3'),
-            ]
+            make_entry(id="id1"),
+            make_entry(id="id2", default=True),
+            make_entry(id="id3"),
+        ]
         model = SourceModel()
         self.write_and_load_entries(model, entries)
-        self.assertEqual(model.current.id, 'id2')
+        self.assertEqual(model.current.id, "id2")
 
     def test_get_source_absolute(self):
         entry = make_entry(
-            type='scheme',
-            path='/foo/bar/baz',
-            )
+            type="scheme",
+            path="/foo/bar/baz",
+        )
         model = SourceModel()
         self.write_and_load_entries(model, [entry])
-        self.assertEqual(
-            model.get_source(), 'scheme:///foo/bar/baz')
+        self.assertEqual(model.get_source(), "scheme:///foo/bar/baz")
 
     def test_get_source_relative(self):
         dir = self.tdir()
         entry = make_entry(
-            type='scheme',
-            path='foo/bar/baz',
-            )
+            type="scheme",
+            path="foo/bar/baz",
+        )
         model = SourceModel()
         self.write_and_load_entries(model, [entry], dir)
-        self.assertEqual(
-            model.get_source(),
-            f'scheme://{dir}/foo/bar/baz')
+        self.assertEqual(model.get_source(), f"scheme://{dir}/foo/bar/baz")
 
     def test_get_source_initial(self):
         model = SourceModel()
-        self.assertEqual(
-            model.get_source(),
-            'cp:///media/filesystem')
+        self.assertEqual(model.get_source(), "cp:///media/filesystem")
 
     def test_render(self):
         model = SourceModel()
         self.assertEqual(model.render(), {})
 
     def test_canary(self):
-        with open('examples/sources/install-canary.yaml') as fp:
+        with open("examples/sources/install-canary.yaml") as fp:
             model = SourceModel()
             model.load_from_file(fp)
         self.assertEqual(2, len(model.sources))
 
-        minimal = model.get_matching_source('ubuntu-desktop-minimal')
+        minimal = model.get_matching_source("ubuntu-desktop-minimal")
         self.assertIsNotNone(minimal.variations)
-        self.assertEqual(minimal.size, minimal.variations['default'].size)
-        self.assertEqual(minimal.path, minimal.variations['default'].path)
-        self.assertIsNone(minimal.variations['default'].snapd_system_label)
+        self.assertEqual(minimal.size, minimal.variations["default"].size)
+        self.assertEqual(minimal.path, minimal.variations["default"].path)
+        self.assertIsNone(minimal.variations["default"].snapd_system_label)
 
-        standard = model.get_matching_source('ubuntu-desktop')
+        standard = model.get_matching_source("ubuntu-desktop")
         self.assertIsNotNone(standard.variations)
         self.assertEqual(2, len(standard.variations))
 

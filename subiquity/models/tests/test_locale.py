@@ -41,16 +41,16 @@ class TestLocaleModel(unittest.IsolatedAsyncioTestCase):
         self.model.selected_language = "fr_FR"
         with mock.patch("subiquity.models.locale.arun_command") as arun_cmd:
             # Currently, the default for fr_FR is fr_FR.ISO8859-1
-            with mock.patch("subiquity.models.locale.locale.normalize",
-                            return_value="fr_FR.UTF-8"):
+            with mock.patch(
+                "subiquity.models.locale.locale.normalize", return_value="fr_FR.UTF-8"
+            ):
                 await self.model.localectl_set_locale()
         arun_cmd.assert_called_once_with(expected_cmd, check=True)
 
     async def test_try_localectl_set_locale(self):
         self.model.selected_language = "fr_FR.UTF-8"
         exc = subprocess.CalledProcessError(returncode=1, cmd=["localedef"])
-        with mock.patch("subiquity.models.locale.arun_command",
-                        side_effect=exc):
+        with mock.patch("subiquity.models.locale.arun_command", side_effect=exc):
             await self.model.try_localectl_set_locale()
         with mock.patch("subiquity.models.locale.arun_command"):
             await self.model.try_localectl_set_locale()

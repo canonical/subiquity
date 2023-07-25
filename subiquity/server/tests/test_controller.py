@@ -14,13 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
-
 from unittest.mock import patch
 
+from subiquity.server.controller import SubiquityController
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
-
-from subiquity.server.controller import SubiquityController
 
 
 class TestController(SubiTestCase):

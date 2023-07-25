@@ -20,19 +20,15 @@ from typing import Any, Optional
 
 import jsonschema
 
-from subiquitycore.context import with_context
-from subiquitycore.controller import (
-    BaseController,
-    )
-
 from subiquity.common.api.server import bind
 from subiquity.server.types import InstallerChannels
+from subiquitycore.context import with_context
+from subiquitycore.controller import BaseController
 
 log = logging.getLogger("subiquity.server.controller")
 
 
 class SubiquityController(BaseController):
-
     autoinstall_key: Optional[str] = None
     autoinstall_schema: Any = None
     autoinstall_default: Any = None
@@ -48,10 +44,9 @@ class SubiquityController(BaseController):
 
     def __init__(self, app):
         super().__init__(app)
-        self.context.set('controller', self)
+        self.context.set("controller", self)
         if self.interactive_for_variants is not None:
-            self.app.hub.subscribe(
-                InstallerChannels.INSTALL_CONFIRMED, self._confirmed)
+            self.app.hub.subscribe(InstallerChannels.INSTALL_CONFIRMED, self._confirmed)
 
     async def _confirmed(self):
         variant = self.app.base_model.source.current.variant
@@ -102,8 +97,7 @@ class SubiquityController(BaseController):
     def interactive(self):
         if not self.app.autoinstall_config:
             return self._active
-        i_sections = self.app.autoinstall_config.get(
-            'interactive-sections', [])
+        i_sections = self.app.autoinstall_config.get("interactive-sections", [])
 
         if "*" in i_sections:
             return self._active
@@ -111,21 +105,23 @@ class SubiquityController(BaseController):
         if self.autoinstall_key in i_sections:
             return self._active
 
-        if self.autoinstall_key_alias is not None \
-           and self.autoinstall_key_alias in i_sections:
+        if (
+            self.autoinstall_key_alias is not None
+            and self.autoinstall_key_alias in i_sections
+        ):
             return self._active
 
     async def configured(self):
-        """Let the world know that this controller's model is now configured.
-        """
-        with open(self.app.state_path('states', self.name), 'w') as fp:
+        """Let the world know that this controller's model is now configured."""
+        with open(self.app.state_path("states", self.name), "w") as fp:
             json.dump(self.serialize(), fp)
         if self.model_name is not None:
             await self.app.hub.abroadcast(
-                (InstallerChannels.CONFIGURED, self.model_name))
+                (InstallerChannels.CONFIGURED, self.model_name)
+            )
 
     def load_state(self):
-        state_path = self.app.state_path('states', self.name)
+        state_path = self.app.state_path("states", self.name)
         if not os.path.exists(state_path):
             return
         with open(state_path) as fp:
@@ -143,6 +139,5 @@ class SubiquityController(BaseController):
 
 
 class NonInteractiveController(SubiquityController):
-
     def interactive(self):
         return False

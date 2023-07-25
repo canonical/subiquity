@@ -18,20 +18,18 @@ import logging
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.ui.views import ZdevView
 
-
 log = logging.getLogger("subiquity.client.controllers.zdev")
 
 
 class ZdevController(SubiquityTuiController):
-
-    endpoint_name = 'zdev'
+    endpoint_name = "zdev"
 
     async def make_ui(self):
         infos = await self.endpoint.GET()
         return ZdevView(self, infos)
 
     def run_answers(self):
-        if 'accept-default' in self.answers:
+        if "accept-default" in self.answers:
             self.done()
 
     def cancel(self):

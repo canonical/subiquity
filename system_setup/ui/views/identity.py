@@ -14,77 +14,75 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from urwid import (
-    connect_signal,
-    )
 
+from urwid import connect_signal
 
+from subiquity.common.resources import resource_path
 from subiquity.common.types import IdentityData
-from subiquity.ui.views.identity import (
-    IdentityForm,
-    IdentityView,
-    )
+from subiquity.ui.views.identity import IdentityForm, IdentityView
 from subiquitycore.ui.utils import screen
 from subiquitycore.utils import crypt_password
 from subiquitycore.view import BaseView
 
-from subiquity.common.resources import resource_path
-
 
 class WSLIdentityForm(IdentityForm):
-
     realname = IdentityForm.realname
     username = IdentityForm.username
-    username.help = \
-        _("The username does not need to match your Windows username")
+    username.help = _("The username does not need to match your Windows username")
     password = IdentityForm.password
     confirm_password = IdentityForm.confirm_password
 
 
 class WSLIdentityView(BaseView):
     title = IdentityView.title
-    excerpt = _("Please create a default UNIX user account. "
-                "For more information visit: https://aka.ms/wslusers")
+    excerpt = _(
+        "Please create a default UNIX user account. "
+        "For more information visit: https://aka.ms/wslusers"
+    )
 
     def __init__(self, controller, identity_data):
         self.controller = controller
 
-        reserved_usernames_path = resource_path('reserved-usernames')
+        reserved_usernames_path = resource_path("reserved-usernames")
         reserved_usernames = set()
         if os.path.exists(reserved_usernames_path):
             with open(reserved_usernames_path) as fp:
                 for line in fp:
                     line = line.strip()
-                    if line.startswith('#') or not line:
+                    if line.startswith("#") or not line:
                         continue
                     reserved_usernames.add(line)
         else:
-            reserved_usernames.add('root')
+            reserved_usernames.add("root")
 
         initial = {
-            'realname': identity_data.realname,
-            'username': identity_data.username,
-            }
+            "realname": identity_data.realname,
+            "username": identity_data.username,
+        }
 
         # This is the different form model with IdentityView
         # which prevents us from inheriting it
         self.form = WSLIdentityForm(controller, initial)
 
-        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, "submit", self.done)
         self.form.confirm_password.use_as_confirmation(
-                for_field=self.form.password,
-                desc=_("Passwords"))
+            for_field=self.form.password, desc=_("Passwords")
+        )
 
         super().__init__(
             screen(
                 self.form.as_rows(),
                 [self.form.done_btn],
                 excerpt=_(self.excerpt),
-                focus_buttons=False))
+                focus_buttons=False,
+            )
+        )
 
     def done(self, result):
-        self.controller.done(IdentityData(
-            realname=self.form.realname.value,
-            username=self.form.username.value,
-            crypted_password=crypt_password(self.form.password.value),
-            ))
+        self.controller.done(
+            IdentityData(
+                realname=self.form.realname.value,
+                username=self.form.username.value,
+                crypted_password=crypt_password(self.form.password.value),
+            )
+        )

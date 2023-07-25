@@ -19,17 +19,14 @@ import logging
 import os
 
 from subiquitycore.async_helpers import run_bg_task
-from subiquitycore.context import (
-    Context,
-    )
+from subiquitycore.context import Context
 from subiquitycore.controllerset import ControllerSet
 from subiquitycore.pubsub import MessageHub
 
-log = logging.getLogger('subiquitycore.core')
+log = logging.getLogger("subiquitycore.core")
 
 
 class Application:
-
     # A concrete subclass must set project and controllers attributes, e.g.:
     #
     # project = "subiquity"
@@ -56,38 +53,36 @@ class Application:
             #    subiquitycore/prober.py
             #  - copy-logs-fail: makes post-install copying of logs fail, see
             #    subiquity/controllers/installprogress.py
-            self.debug_flags = os.environ.get('SUBIQUITY_DEBUG', '').split(',')
+            self.debug_flags = os.environ.get("SUBIQUITY_DEBUG", "").split(",")
 
         self.opts = opts
         opts.project = self.project
 
-        self.root = '/'
+        self.root = "/"
         if opts.dry_run:
             self.root = opts.output_base
-        self.state_dir = os.path.join(self.root, 'run', self.project)
-        os.makedirs(self.state_path('states'), exist_ok=True)
+        self.state_dir = os.path.join(self.root, "run", self.project)
+        os.makedirs(self.state_path("states"), exist_ok=True)
 
-        self.scale_factor = float(
-            os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1"))
-        self.updated = os.path.exists(self.state_path('updating'))
+        self.scale_factor = float(os.environ.get("SUBIQUITY_REPLAY_TIMESCALE", "1"))
+        self.updated = os.path.exists(self.state_path("updating"))
         self.hub = MessageHub()
-        asyncio.get_running_loop().set_exception_handler(
-            self._exception_handler)
+        asyncio.get_running_loop().set_exception_handler(self._exception_handler)
         self.load_controllers(self.controllers)
         self.context = Context.new(self)
         self.exit_event = asyncio.Event()
         self.controllers_have_started = asyncio.Event()
 
     def load_controllers(self, controllers):
-        """ Load the corresponding list of controllers
+        """Load the corresponding list of controllers
 
-        Those will need to be restarted if already started """
+        Those will need to be restarted if already started"""
         self.controllers = ControllerSet(
-            self.controllers_mod, controllers,
-            init_args=(self,))
+            self.controllers_mod, controllers, init_args=(self,)
+        )
 
     def _exception_handler(self, loop, context):
-        exc = context.get('exception')
+        exc = context.get("exception")
         if exc:
             self.exit_event.set()
             self._exc = exc
@@ -101,7 +96,7 @@ class Application:
         cur = self.controllers.cur
         if cur is None:
             return
-        with open(self.state_path('states', cur.name), 'w') as fp:
+        with open(self.state_path("states", cur.name), "w") as fp:
             json.dump(cur.serialize(), fp)
 
     def report_start_event(self, context, description):
@@ -114,7 +109,7 @@ class Application:
         level = getattr(logging, context.level)
         log.log(level, "finish: %s %s", description, status.name)
 
-# EventLoop -------------------------------------------------------------------
+    # EventLoop -------------------------------------------------------------------
 
     def exit(self):
         self.exit_event.set()

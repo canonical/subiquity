@@ -21,44 +21,43 @@ from typing import List, Sequence, Union
 import attr
 from systemd import journal
 
+from subiquity.common.types import ApplicationState
+from subiquity.server.controller import NonInteractiveController
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command
 
-from subiquity.common.types import ApplicationState
-from subiquity.server.controller import NonInteractiveController
-
 
 @attr.s(auto_attribs=True)
 class Command:
-    """ Represents a command, specified either as a list of arguments or as a
-    single string. """
+    """Represents a command, specified either as a list of arguments or as a
+    single string."""
+
     args: Union[str, Sequence[str]]
     check: bool
 
     def desc(self) -> str:
-        """ Return a user-friendly representation of the command. """
+        """Return a user-friendly representation of the command."""
         if isinstance(self.args, str):
             return self.args
         return shlex.join(self.args)
 
     def as_args_list(self) -> List[str]:
-        """ Return the command as a list of arguments. """
+        """Return the command as a list of arguments."""
         if isinstance(self.args, str):
-            return ['sh', '-c', self.args]
+            return ["sh", "-c", self.args]
         return list(self.args)
 
 
 class CmdListController(NonInteractiveController):
-
     autoinstall_default = []
     autoinstall_schema = {
-        'type': 'array',
-        'items': {
-            'type': ['string', 'array'],
-            'items': {'type': 'string'},
-            },
-        }
+        "type": "array",
+        "items": {
+            "type": ["string", "array"],
+            "items": {"type": "string"},
+        },
+    }
     builtin_cmds: Sequence[Command] = ()
     cmds: Sequence[Command] = ()
     cmd_check = True
@@ -82,22 +81,20 @@ class CmdListController(NonInteractiveController):
             with context.child("command_{}".format(i), desc):
                 args = cmd.as_args_list()
                 if self.syslog_id:
-                    journal.send(
-                        "  running " + desc, SYSLOG_IDENTIFIER=self.syslog_id)
+                    journal.send("  running " + desc, SYSLOG_IDENTIFIER=self.syslog_id)
                     args = [
-                        'systemd-cat', '--level-prefix=false',
-                        '--identifier=' + self.syslog_id,
-                        ] + args
+                        "systemd-cat",
+                        "--level-prefix=false",
+                        "--identifier=" + self.syslog_id,
+                    ] + args
                 await arun_command(
-                    args, env=env,
-                    stdin=None, stdout=None, stderr=None,
-                    check=cmd.check)
+                    args, env=env, stdin=None, stdout=None, stderr=None, check=cmd.check
+                )
         self.run_event.set()
 
 
 class EarlyController(CmdListController):
-
-    autoinstall_key = 'early-commands'
+    autoinstall_key = "early-commands"
 
     def __init__(self, app):
         super().__init__(app)
@@ -105,8 +102,7 @@ class EarlyController(CmdListController):
 
 
 class LateController(CmdListController):
-
-    autoinstall_key = 'late-commands'
+    autoinstall_key = "late-commands"
 
     def __init__(self, app):
         super().__init__(app)
@@ -130,7 +126,7 @@ class LateController(CmdListController):
     def env(self):
         env = super().env()
         if self.app.base_model.target is not None:
-            env['TARGET_MOUNT_POINT'] = self.app.base_model.target
+            env["TARGET_MOUNT_POINT"] = self.app.base_model.target
         return env
 
     def start(self):
@@ -144,8 +140,7 @@ class LateController(CmdListController):
 
 
 class ErrorController(CmdListController):
-
-    autoinstall_key = 'error-commands'
+    autoinstall_key = "error-commands"
     cmd_check = False
 
     @with_context()

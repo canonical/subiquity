@@ -15,20 +15,14 @@
 
 import os
 import unittest
-
 from unittest.mock import Mock, patch
 
+from subiquity.common.types import KeyboardSetting
+from subiquity.models.keyboard import KeyboardModel
+from subiquity.server.controllers.keyboard import KeyboardController
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized
-
-from subiquity.models.keyboard import (
-    KeyboardModel,
-    )
-from subiquity.server.controllers.keyboard import (
-    KeyboardController,
-    )
-from subiquity.common.types import KeyboardSetting
 
 
 class opts:
@@ -36,10 +30,9 @@ class opts:
 
 
 class TestSubiquityModel(SubiTestCase):
-
     async def test_write_config(self):
-        os.environ['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
-        new_setting = KeyboardSetting('fr', 'azerty')
+        os.environ["SUBIQUITY_REPLAY_TIMESCALE"] = "100"
+        new_setting = KeyboardSetting("fr", "azerty")
         tmpdir = self.tmp_dir()
         model = KeyboardModel(tmpdir)
         model.setting = new_setting
@@ -56,27 +49,36 @@ class TestInputSource(unittest.IsolatedAsyncioTestCase):
         self.app = make_app()
         self.controller = KeyboardController(self.app)
 
-    @parameterized.expand([
-        ('us', '', "[('xkb','us')]"),
-        ('fr', 'latin9', "[('xkb','fr+latin9')]"),
-    ])
+    @parameterized.expand(
+        [
+            ("us", "", "[('xkb','us')]"),
+            ("fr", "latin9", "[('xkb','fr+latin9')]"),
+        ]
+    )
     async def test_input_source(self, layout, variant, expected_xkb):
-        with patch('subiquity.server.controllers.keyboard.arun_command') as \
-                mock_arun_command, patch('pwd.getpwnam') as mock_getpwnam:
+        with patch(
+            "subiquity.server.controllers.keyboard.arun_command"
+        ) as mock_arun_command, patch("pwd.getpwnam") as mock_getpwnam:
             m = Mock()
-            m.pw_uid = '99'
+            m.pw_uid = "99"
             mock_getpwnam.return_value = m
             self.app.opts.dry_run = False
-            await self.controller.set_input_source(layout, variant, user='bar')
+            await self.controller.set_input_source(layout, variant, user="bar")
             gsettings = [
-                'gsettings', 'set', 'org.gnome.desktop.input-sources',
-                'sources', expected_xkb
-                ]
+                "gsettings",
+                "set",
+                "org.gnome.desktop.input-sources",
+                "sources",
+                expected_xkb,
+            ]
             cmd = [
-                'systemd-run', '--wait', '--uid=99',
+                "systemd-run",
+                "--wait",
+                "--uid=99",
                 f'--setenv=DISPLAY={os.environ.get("DISPLAY", ":0")}',
-                '--setenv=XDG_RUNTIME_DIR=/run/user/99',
-                '--setenv=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/99/bus',
-                '--', *gsettings
-                ]
+                "--setenv=XDG_RUNTIME_DIR=/run/user/99",
+                "--setenv=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/99/bus",
+                "--",
+                *gsettings,
+            ]
             mock_arun_command.assert_called_once_with(cmd)

@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from abc import abstractmethod
 import asyncio
 import logging
+from abc import abstractmethod
 
 from subiquitycore.controller import BaseController
 
@@ -61,17 +61,17 @@ class TuiController(BaseController):
     # Stuff for fine grained actions, used by filesystem and network
     # controller at time of writing this comment.
 
-    async def _enter_form_data(self, form, data, submit, clean_suffix=''):
+    async def _enter_form_data(self, form, data, submit, clean_suffix=""):
         for k, v in data.items():
-            c = getattr(
-                self, '_action_clean_{}_{}'.format(k, clean_suffix), None)
+            c = getattr(self, "_action_clean_{}_{}".format(k, clean_suffix), None)
             if c is None:
-                c = getattr(self, '_action_clean_{}'.format(k), lambda x: x)
+                c = getattr(self, "_action_clean_{}".format(k), lambda x: x)
             field = getattr(form, k)
             from subiquitycore.ui.selector import Selector
+
             v = c(v)
             if isinstance(field.widget, Selector):
-                field.widget._emit('select', v)
+                field.widget._emit("select", v)
             field.value = v
             yield
         for bf in form._fields:
@@ -83,7 +83,7 @@ class TuiController(BaseController):
             form._click_done(None)
 
     async def _run_actions(self, actions):
-        delay = 0.2/self.app.scale_factor
+        delay = 0.2 / self.app.scale_factor
         for action in actions:
             async for _ in self._answers_action(action):
                 await asyncio.sleep(delay)
@@ -91,7 +91,6 @@ class TuiController(BaseController):
 
 
 class RepeatedController(BaseController):
-
     def __init__(self, orig, index):
         self.name = "{}-{}".format(orig.name, index)
         self.orig = orig

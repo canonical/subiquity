@@ -30,5 +30,5 @@ def lsb_release(path=None, dry_run: bool = False) -> Dict[str, str]:
     return ret
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(lsb_release())

@@ -16,22 +16,20 @@
 import logging
 import os
 
-from subiquitycore import async_helpers as async_helpers
 from subiquity.common.apidef import API
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
+from subiquitycore import async_helpers as async_helpers
 
-
-log = logging.getLogger('subiquity.server.controllers.locale')
+log = logging.getLogger("subiquity.server.controllers.locale")
 
 
 class LocaleController(SubiquityController):
-
     endpoint = API.locale
 
     autoinstall_key = model_name = "locale"
-    autoinstall_schema = {'type': 'string'}
-    autoinstall_default = 'en_US.UTF-8'
+    autoinstall_schema = {"type": "string"}
+    autoinstall_default = "en_US.UTF-8"
 
     def load_autoinstall_data(self, data):
         os.environ["LANG"] = data
@@ -41,12 +39,14 @@ class LocaleController(SubiquityController):
         # But for autoinstall (not interactive), someone else
         # initializing to a different value would be unexpected behavior.
         if not self.interactive() or (self.model.selected_language is None):
-            self.model.selected_language = os.environ.get("LANG") \
-                or self.autoinstall_default
+            self.model.selected_language = (
+                os.environ.get("LANG") or self.autoinstall_default
+            )
 
         async_helpers.run_bg_task(self.configured())
         self.app.hub.subscribe(
-            (InstallerChannels.CONFIGURED, 'source'), self._set_source)
+            (InstallerChannels.CONFIGURED, "source"), self._set_source
+        )
 
     def _set_source(self):
         current = self.app.base_model.source.current

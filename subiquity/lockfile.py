@@ -18,11 +18,10 @@ import logging
 
 from subiquitycore.async_helpers import run_in_thread
 
-log = logging.getLogger('subiquity.lockfile')
+log = logging.getLogger("subiquity.lockfile")
 
 
 class _LockContext:
-
     def __init__(self, lockfile, flags):
         self.lockfile = lockfile
         self.flags = flags
@@ -49,10 +48,9 @@ class _LockContext:
 
 
 class Lockfile:
-
     def __init__(self, path):
         self.path = path
-        self.fp = open(path, 'a+')
+        self.fp = open(path, "a+")
 
     def read_content(self):
         self.fp.seek(0)

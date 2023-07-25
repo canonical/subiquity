@@ -17,13 +17,12 @@ from subiquity.server.controller import NonInteractiveController
 
 
 class PackageController(NonInteractiveController):
-
     model_name = autoinstall_key = "packages"
     autoinstall_default = []
     autoinstall_schema = {
-        'type': 'array',
-        'items': {'type': 'string'},
-        }
+        "type": "array",
+        "items": {"type": "string"},
+    }
 
     def load_autoinstall_data(self, data):
         self.model[:] = data

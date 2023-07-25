@@ -16,17 +16,10 @@
 import math
 
 import attr
-
 from curtin import swap
 
-from subiquity.models.filesystem import (
-    align_up,
-    align_down,
-    MiB,
-    GiB,
-    )
 from subiquity.common.types import GuidedResizeValues
-
+from subiquity.models.filesystem import GiB, MiB, align_down, align_up
 
 BIOS_GRUB_SIZE_BYTES = 1 * MiB
 PREP_GRUB_SIZE_BYTES = 8 * MiB
@@ -39,18 +32,11 @@ class PartitionScaleFactors:
     maximum: int
 
 
-uefi_scale = PartitionScaleFactors(
-        minimum=538 * MiB,
-        priority=538,
-        maximum=1075 * MiB)
+uefi_scale = PartitionScaleFactors(minimum=538 * MiB, priority=538, maximum=1075 * MiB)
 bootfs_scale = PartitionScaleFactors(
-        minimum=1792 * MiB,
-        priority=1024,
-        maximum=2048 * MiB)
-rootfs_scale = PartitionScaleFactors(
-        minimum=900 * MiB,
-        priority=10000,
-        maximum=-1)
+    minimum=1792 * MiB, priority=1024, maximum=2048 * MiB
+)
+rootfs_scale = PartitionScaleFactors(minimum=900 * MiB, priority=10000, maximum=-1)
 
 
 def scale_partitions(all_factors, available_space):
@@ -96,14 +82,15 @@ def get_bootfs_size(available_space):
 #    decide to keep with the existing partition, or allocate to the new install
 # 4) Assume that the installs will grow proportionally to their minimum sizes,
 #    and split according to the ratio of the minimum sizes
-def calculate_guided_resize(part_min: int, part_size: int, install_min: int,
-                            part_align: int = MiB) -> GuidedResizeValues:
+def calculate_guided_resize(
+    part_min: int, part_size: int, install_min: int, part_align: int = MiB
+) -> GuidedResizeValues:
     if part_min < 0:
         return None
 
     part_size = align_up(part_size, part_align)
 
-    other_room_to_grow = max(2 * GiB, math.ceil(.25 * part_min))
+    other_room_to_grow = max(2 * GiB, math.ceil(0.25 * part_min))
     padded_other_min = part_min + other_room_to_grow
     other_min = min(align_up(padded_other_min, part_align), part_size)
 
@@ -117,8 +104,11 @@ def calculate_guided_resize(part_min: int, part_size: int, install_min: int,
     raw_recommended = math.ceil(resize_window * ratio) + other_min
     recommended = align_up(raw_recommended, part_align)
     return GuidedResizeValues(
-            install_max=plausible_free_space,
-            minimum=other_min, recommended=recommended, maximum=other_max)
+        install_max=plausible_free_space,
+        minimum=other_min,
+        recommended=recommended,
+        maximum=other_max,
+    )
 
 
 # Factors for suggested minimum install size:
@@ -142,10 +132,9 @@ def calculate_guided_resize(part_min: int, part_size: int, install_min: int,
 # 4) Swap - Ubuntu policy recommends swap, either in the form of a partition or
 #    a swapfile.  Curtin has an existing swap size recommendation at
 #    curtin.swap.suggested_swapsize().
-def calculate_suggested_install_min(source_min: int,
-                                    part_align: int = MiB) -> int:
+def calculate_suggested_install_min(source_min: int, part_align: int = MiB) -> int:
     room_for_boot = bootfs_scale.maximum
-    room_to_grow = max(2 * GiB, math.ceil(.8 * source_min))
+    room_to_grow = max(2 * GiB, math.ceil(0.8 * source_min))
     room_for_swap = swap.suggested_swapsize()
     total = source_min + room_for_boot + room_to_grow + room_for_swap
     return align_up(total, part_align)

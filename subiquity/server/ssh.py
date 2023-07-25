@@ -19,10 +19,8 @@ import os
 import subprocess
 from typing import List
 
+from subiquity.common.types import SSHFetchIdStatus
 from subiquitycore.utils import arun_command
-from subiquity.common.types import (
-    SSHFetchIdStatus,
-    )
 
 log = logging.getLogger("subiquity.server.ssh")
 
@@ -39,7 +37,7 @@ class SSHKeyFetcher:
         self.app = app
 
     async def fetch_keys_for_id(self, user_id: str) -> List[str]:
-        cmd = ('ssh-import-id', '--output', '-', '--', user_id)
+        cmd = ("ssh-import-id", "--output", "-", "--", user_id)
         env = None
         if self.app.base_model.proxy.proxy:
             env = os.environ.copy()
@@ -49,24 +47,24 @@ class SSHKeyFetcher:
             cp = await arun_command(cmd, check=True, env=env)
         except subprocess.CalledProcessError as exc:
             log.exception("ssh-import-id failed. stderr: %s", exc.stderr)
-            raise SSHFetchError(status=SSHFetchIdStatus.IMPORT_ERROR,
-                                reason=exc.stderr)
-        keys_material: str = cp.stdout.replace('\r', '').strip()
+            raise SSHFetchError(status=SSHFetchIdStatus.IMPORT_ERROR, reason=exc.stderr)
+        keys_material: str = cp.stdout.replace("\r", "").strip()
         return [mat for mat in keys_material.splitlines() if mat]
 
     async def gen_fingerprint_for_key(self, key: str) -> str:
-        """ For a given key, generate the fingerprint. """
+        """For a given key, generate the fingerprint."""
 
         # ssh-keygen supports multiple keys at once, but it is simpler to
         # associate each key with its resulting fingerprint if we call
         # ssh-keygen multiple times.
-        cmd = ('ssh-keygen', '-l', '-f', '-')
+        cmd = ("ssh-keygen", "-l", "-f", "-")
         try:
             cp = await arun_command(cmd, check=True, input=key)
         except subprocess.CalledProcessError as exc:
             log.exception("ssh-import-id failed. stderr: %s", exc.stderr)
-            raise SSHFetchError(status=SSHFetchIdStatus.FINGERPRINT_ERROR,
-                                reason=exc.stderr)
+            raise SSHFetchError(
+                status=SSHFetchIdStatus.FINGERPRINT_ERROR, reason=exc.stderr
+            )
         return cp.stdout.strip()
 
 
@@ -79,20 +77,23 @@ class DryRunSSHKeyFetcher(SSHKeyFetcher):
 
     async def fetch_keys_fake_success(self, user_id: str) -> List[str]:
         unused, username = user_id.split(":", maxsplit=1)
-        return [f"""\
+        return [
+            f"""\
 ssh-ed25519\
  AAAAC3NzaC1lZDI1NTE5AAAAIMM/qhS3hS3+IjpJBYXZWCqPKPH9Zag8QYbS548iEjoZ\
- {username}@earth # ssh-import-id {user_id}"""]
+ {username}@earth # ssh-import-id {user_id}"""
+        ]
 
     async def fetch_keys_fake_failure(self, user_id: str) -> List[str]:
         unused, username = user_id.split(":", maxsplit=1)
-        raise SSHFetchError(status=SSHFetchIdStatus.IMPORT_ERROR,
-                            reason=f"ERROR Username {username} not found.")
+        raise SSHFetchError(
+            status=SSHFetchIdStatus.IMPORT_ERROR,
+            reason=f"ERROR Username {username} not found.",
+        )
 
     async def fetch_keys_for_id(self, user_id: str) -> List[str]:
         service, username = user_id.split(":", maxsplit=1)
-        strategy = self.SSHImportStrategy(
-                self.app.dr_cfg.ssh_import_default_strategy)
+        strategy = self.SSHImportStrategy(self.app.dr_cfg.ssh_import_default_strategy)
         for entry in self.app.dr_cfg.ssh_imports:
             if entry["username"] != username:
                 continue

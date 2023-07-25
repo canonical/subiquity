@@ -21,42 +21,38 @@ import signal
 from typing import Callable, Optional, Union
 
 import urwid
-
 import yaml
 
-from subiquitycore.async_helpers import (
-    run_bg_task,
-    schedule_task,
-    )
+from subiquitycore.async_helpers import run_bg_task, schedule_task
 from subiquitycore.core import Application
-from subiquitycore.palette import (
-    PALETTE_COLOR,
-    PALETTE_MONO,
-    )
+from subiquitycore.palette import PALETTE_COLOR, PALETTE_MONO
 from subiquitycore.screen import make_screen
 from subiquitycore.tuicontroller import Skip
-from subiquitycore.ui.utils import LoadingDialog
 from subiquitycore.ui.frame import SubiquityCoreUI
+from subiquitycore.ui.utils import LoadingDialog
 from subiquitycore.utils import astart_command
 from subiquitycore.view import BaseView
 
-log = logging.getLogger('subiquitycore.tui')
+log = logging.getLogger("subiquitycore.tui")
 
 
 def extend_dec_special_charmap():
-    urwid.escape.DEC_SPECIAL_CHARMAP.update({
-        ord('\N{BLACK RIGHT-POINTING SMALL TRIANGLE}'): '>',
-        ord('\N{BLACK LEFT-POINTING SMALL TRIANGLE}'): '<',
-        ord('\N{BLACK DOWN-POINTING SMALL TRIANGLE}'): 'v',
-        ord('\N{BLACK UP-POINTING SMALL TRIANGLE}'): '^',
-        ord('\N{check mark}'): '*',
-        ord('\N{circled white star}'): '*',
-        ord('\N{bullet}'): '*',
-        ord('\N{lower half block}'): '=',
-        ord('\N{upper half block}'): '=',
-        ord('\N{FULL BLOCK}'): urwid.escape.DEC_SPECIAL_CHARMAP[
-            ord('\N{BOX DRAWINGS LIGHT VERTICAL}')],
-    })
+    urwid.escape.DEC_SPECIAL_CHARMAP.update(
+        {
+            ord("\N{BLACK RIGHT-POINTING SMALL TRIANGLE}"): ">",
+            ord("\N{BLACK LEFT-POINTING SMALL TRIANGLE}"): "<",
+            ord("\N{BLACK DOWN-POINTING SMALL TRIANGLE}"): "v",
+            ord("\N{BLACK UP-POINTING SMALL TRIANGLE}"): "^",
+            ord("\N{check mark}"): "*",
+            ord("\N{circled white star}"): "*",
+            ord("\N{bullet}"): "*",
+            ord("\N{lower half block}"): "=",
+            ord("\N{upper half block}"): "=",
+            ord("\N{FULL BLOCK}"): urwid.escape.DEC_SPECIAL_CHARMAP[
+                ord("\N{BOX DRAWINGS LIGHT VERTICAL}")
+            ],
+        }
+    )
 
 
 # When waiting for something of unknown duration, block the UI for at
@@ -68,7 +64,6 @@ MIN_SHOW_PROGRESS_TIME = 1.0
 
 
 class TuiApplication(Application):
-
     make_ui = SubiquityCoreUI
 
     def __init__(self, opts):
@@ -80,7 +75,7 @@ class TuiApplication(Application):
             self.answers = yaml.safe_load(opts.answers.read())
             log.debug("Loaded answers %s", self.answers)
             if not opts.dry_run:
-                open('/run/casper-no-prompt', 'w').close()
+                open("/run/casper-no-prompt", "w").close()
 
         # Set rich_mode to the opposite of what we want, so we can
         # call toggle_rich to get the right things set up.
@@ -89,15 +84,15 @@ class TuiApplication(Application):
         self.cur_screen = None
         self.fg_proc = None
 
-    def run_command_in_foreground(self, cmd, before_hook=None, after_hook=None,
-                                  **kw):
+    def run_command_in_foreground(self, cmd, before_hook=None, after_hook=None, **kw):
         if self.fg_proc is not None:
             raise Exception("cannot run two fg processes at once")
         screen = self.urwid_loop.screen
 
         async def _run():
             self.fg_proc = proc = await astart_command(
-                cmd, stdin=None, stdout=None, stderr=None, **kw)
+                cmd, stdin=None, stdout=None, stderr=None, **kw
+            )
             await proc.communicate()
             self.fg_proc = None
             # One of the main use cases for this function is to run interactive
@@ -122,14 +117,14 @@ class TuiApplication(Application):
                 after_hook()
 
         screen.stop()
-        urwid.emit_signal(
-            screen, urwid.display_common.INPUT_DESCRIPTORS_CHANGED)
+        urwid.emit_signal(screen, urwid.display_common.INPUT_DESCRIPTORS_CHANGED)
         if before_hook is not None:
             before_hook()
         schedule_task(_run())
 
-    async def make_view_for_controller(self, new) \
-            -> Union[BaseView, Callable[[], BaseView]]:
+    async def make_view_for_controller(
+        self, new
+    ) -> Union[BaseView, Callable[[], BaseView]]:
         new.context.enter("starting UI")
         if self.opts.screens and new.name not in self.opts.screens:
             raise Skip
@@ -161,8 +156,7 @@ class TuiApplication(Application):
             await asyncio.sleep(MAX_BLOCK_TIME)
             self.ui.block_input = False
             nonlocal min_show_task
-            min_show_task = asyncio.create_task(
-                asyncio.sleep(MIN_SHOW_PROGRESS_TIME))
+            min_show_task = asyncio.create_task(asyncio.sleep(MIN_SHOW_PROGRESS_TIME))
             show()
 
         self.ui.block_input = True
@@ -183,8 +177,7 @@ class TuiApplication(Application):
     def show_progress(self):
         raise NotImplementedError
 
-    async def wait_with_text_dialog(self, awaitable, message,
-                                    *, can_cancel=False):
+    async def wait_with_text_dialog(self, awaitable, message, *, can_cancel=False):
         ld = None
 
         task_to_cancel = None
@@ -194,6 +187,7 @@ class TuiApplication(Application):
 
                 async def w():
                     return await orig
+
                 awaitable = task_to_cancel = asyncio.create_task(w())
             else:
                 task_to_cancel = None
@@ -206,14 +200,14 @@ class TuiApplication(Application):
         def hide_load():
             ld.close()
 
-        return await self._wait_with_indication(
-            awaitable, show_load, hide_load)
+        return await self._wait_with_indication(awaitable, show_load, hide_load)
 
     async def wait_with_progress(self, awaitable):
         return await self._wait_with_indication(awaitable, self.show_progress)
 
-    async def _move_screen(self, increment, coro) \
-            -> Optional[Union[BaseView, Callable[[], BaseView]]]:
+    async def _move_screen(
+        self, increment, coro
+    ) -> Optional[Union[BaseView, Callable[[], BaseView]]]:
         if coro is not None:
             await coro
         old, self.cur_screen = self.cur_screen, None
@@ -241,7 +235,8 @@ class TuiApplication(Application):
 
     async def move_screen(self, increment, coro):
         view_or_callable = await self.wait_with_progress(
-            self._move_screen(increment, coro))
+            self._move_screen(increment, coro)
+        )
         if view_or_callable is not None:
             if callable(view_or_callable):
                 view = view_or_callable()
@@ -265,11 +260,11 @@ class TuiApplication(Application):
 
     def toggle_rich(self):
         if self.rich_mode:
-            urwid.util.set_encoding('ascii')
+            urwid.util.set_encoding("ascii")
             new_palette = PALETTE_MONO
             self.rich_mode = False
         else:
-            urwid.util.set_encoding('utf-8')
+            urwid.util.set_encoding("utf-8")
             new_palette = PALETTE_COLOR
             self.rich_mode = True
         urwid.CanvasCache.clear()
@@ -277,11 +272,11 @@ class TuiApplication(Application):
         self.urwid_loop.screen.clear()
 
     def unhandled_input(self, key):
-        if self.opts.dry_run and key == 'ctrl x':
+        if self.opts.dry_run and key == "ctrl x":
             self.exit()
-        elif key == 'f3':
+        elif key == "f3":
             self.urwid_loop.screen.clear()
-        elif self.opts.run_on_serial and key in ['ctrl t', 'f4']:
+        elif self.opts.run_on_serial and key in ["ctrl t", "f4"]:
             self.toggle_rich()
 
     def extra_urwid_loop_args(self):
@@ -297,12 +292,14 @@ class TuiApplication(Application):
         screen = self.make_screen(input, output)
         screen.register_palette(PALETTE_COLOR)
         self.urwid_loop = urwid.MainLoop(
-            self.ui, screen=screen,
-            handle_mouse=False, pop_ups=True,
+            self.ui,
+            screen=screen,
+            handle_mouse=False,
+            pop_ups=True,
             unhandled_input=self.unhandled_input,
             event_loop=urwid.AsyncioEventLoop(loop=asyncio.get_running_loop()),
-            **self.extra_urwid_loop_args()
-            )
+            **self.extra_urwid_loop_args(),
+        )
         extend_dec_special_charmap()
         self.toggle_rich()
         self.urwid_loop.start()

@@ -66,7 +66,7 @@ import operator
 
 import urwid
 
-log = logging.getLogger('subiquitycore.ui.container')
+log = logging.getLogger("subiquitycore.ui.container")
 
 # The theory of tab-cycling:
 #
@@ -111,12 +111,12 @@ def _has_other_selectable(widgets, cur_focus):
 
 
 for key, command in list(urwid.command_map._command.items()):
-    if command in ('next selectable', 'prev selectable', urwid.ACTIVATE):
-        urwid.command_map[key + ' no wrap'] = command
+    if command in ("next selectable", "prev selectable", urwid.ACTIVATE):
+        urwid.command_map[key + " no wrap"] = command
 
 enter_advancing_command_map = urwid.command_map.copy()
-enter_advancing_command_map['enter'] = 'next selectable'
-enter_advancing_command_map['enter no wrap'] = 'next selectable'
+enter_advancing_command_map["enter"] = "next selectable"
+enter_advancing_command_map["enter no wrap"] = "next selectable"
 
 
 class TabCyclingPile(urwid.Pile):
@@ -159,11 +159,11 @@ class TabCyclingPile(urwid.Pile):
 
         # start subiquity change: new code
         downkey = key
-        if not key.endswith(' no wrap') and (self._command_map[key] in
-                                             ('next selectable',
-                                              'prev selectable')):
+        if not key.endswith(" no wrap") and (
+            self._command_map[key] in ("next selectable", "prev selectable")
+        ):
             if _has_other_selectable(self._widgets(), self.focus_position):
-                downkey += ' no wrap'
+                downkey += " no wrap"
         # end subiquity change
 
         item_rows = None
@@ -176,40 +176,43 @@ class TabCyclingPile(urwid.Pile):
             # start subiquity change: pass downkey to focus, not key,
             # do not return if command_map[upkey] is next/prev selectable
             upkey = self.focus.keypress(tsize, downkey)
-            if self._command_map[upkey] not in ('cursor up', 'cursor down',
-                                                'next selectable',
-                                                'prev selectable'):
+            if self._command_map[upkey] not in (
+                "cursor up",
+                "cursor down",
+                "next selectable",
+                "prev selectable",
+            ):
                 return upkey
             # end subiquity change
 
         # begin subiquity change: new code
-        if self._command_map[key] == 'next selectable':
+        if self._command_map[key] == "next selectable":
             next_fp = self.focus_position + 1
             for i, (w, o) in enumerate(self._contents[next_fp:], next_fp):
                 if w.selectable():
                     self.set_focus(i)
                     _maybe_call(w, "_select_first_selectable")
                     return
-            if not key.endswith(' no wrap'):
+            if not key.endswith(" no wrap"):
                 self._select_first_selectable()
             return key
-        elif self._command_map[key] == 'prev selectable':
-            positions = self._contents[:self.focus_position]
+        elif self._command_map[key] == "prev selectable":
+            positions = self._contents[: self.focus_position]
             for i, (w, o) in reversed(list(enumerate(positions))):
                 if w.selectable():
                     self.set_focus(i)
                     _maybe_call(w, "_select_last_selectable")
                     return
-            if not key.endswith(' no wrap'):
+            if not key.endswith(" no wrap"):
                 self._select_last_selectable()
             return key
         # continued subiquity change: set 'meth' appropriately
-        elif self._command_map[key] == 'cursor up':
-            candidates = list(range(i-1, -1, -1))  # count backwards to 0
-            meth = '_select_last_selectable'
+        elif self._command_map[key] == "cursor up":
+            candidates = list(range(i - 1, -1, -1))  # count backwards to 0
+            meth = "_select_last_selectable"
         else:  # self._command_map[key] == 'cursor down'
-            candidates = list(range(i+1, len(self.contents)))
-            meth = '_select_first_selectable'
+            candidates = list(range(i + 1, len(self.contents)))
+            meth = "_select_first_selectable"
         # end subiquity change
 
         if not item_rows:
@@ -224,18 +227,17 @@ class TabCyclingPile(urwid.Pile):
             # begin subiquity change: new code
             _maybe_call(self.focus, meth)
             # end subiquity change
-            if not hasattr(self.focus, 'move_cursor_to_coords'):
+            if not hasattr(self.focus, "move_cursor_to_coords"):
                 return
 
             rows = item_rows[j]
-            if self._command_map[key] == 'cursor up':
-                rowlist = list(range(rows-1, -1, -1))
+            if self._command_map[key] == "cursor up":
+                rowlist = list(range(rows - 1, -1, -1))
             else:  # self._command_map[key] == 'cursor down'
                 rowlist = list(range(rows))
             for row in rowlist:
                 tsize = self.get_item_size(size, j, True, item_rows)
-                if self.focus_item.move_cursor_to_coords(
-                        tsize, self.pref_col, row):
+                if self.focus_item.move_cursor_to_coords(tsize, self.pref_col, row):
                     break
             return
 
@@ -244,17 +246,21 @@ class TabCyclingPile(urwid.Pile):
 
 
 class OneSelectableColumns(urwid.Columns):
-    def __init__(self, widget_list, dividechars=0, focus_column=None,
-                 min_width=1, box_columns=None):
-        super().__init__(widget_list, dividechars, focus_column,
-                         min_width, box_columns)
+    def __init__(
+        self,
+        widget_list,
+        dividechars=0,
+        focus_column=None,
+        min_width=1,
+        box_columns=None,
+    ):
+        super().__init__(widget_list, dividechars, focus_column, min_width, box_columns)
         selectables = 0
         for w, o in self._contents:
             if w.selectable():
                 selectables += 1
         if selectables > 1:
-            raise Exception(
-                "subiquity only supports one selectable in a Columns")
+            raise Exception("subiquity only supports one selectable in a Columns")
 
     def _select_first_selectable(self):
         """Select first selectable child (possibily recursively)."""
@@ -279,7 +285,7 @@ class TabCyclingListBox(urwid.ListBox):
     def __init__(self, body):
         # urwid.ListBox converts an arbitrary sequence argument to a
         # PollingListWalker, which doesn't work with the below code.
-        if getattr(body, 'get_focus', None) is None:
+        if getattr(body, "get_focus", None) is None:
             body = urwid.SimpleFocusListWalker(body)
         super().__init__(body)
 
@@ -313,11 +319,11 @@ class TabCyclingListBox(urwid.ListBox):
 
     def keypress(self, size, key):
         downkey = key
-        if not key.endswith(' no wrap') and (self._command_map[key] in
-                                             ('next selectable',
-                                              'prev selectable')):
+        if not key.endswith(" no wrap") and (
+            self._command_map[key] in ("next selectable", "prev selectable")
+        ):
             if _has_other_selectable(self.body, self.focus_position):
-                downkey += ' no wrap'
+                downkey += " no wrap"
         upkey = super().keypress(size, downkey)
         if upkey != downkey:
             key = upkey
@@ -325,24 +331,24 @@ class TabCyclingListBox(urwid.ListBox):
         if len(self.body) == 0:
             return key
 
-        if self._command_map[key] == 'next selectable':
+        if self._command_map[key] == "next selectable":
             next_fp = self.focus_position + 1
             for i, w in enumerate(self.body[next_fp:], next_fp):
                 if w.selectable():
                     self.set_focus(i)
                     _maybe_call(w, "_select_first_selectable")
                     return None
-            if not key.endswith(' no wrap'):
+            if not key.endswith(" no wrap"):
                 self._select_first_selectable()
             return key
-        elif self._command_map[key] == 'prev selectable':
-            positions = self.body[:self.focus_position]
+        elif self._command_map[key] == "prev selectable":
+            positions = self.body[: self.focus_position]
             for i, w in reversed(list(enumerate(positions))):
                 if w.selectable():
                     self.set_focus(i)
                     _maybe_call(w, "_select_last_selectable")
                     return None
-            if not key.endswith(' no wrap'):
+            if not key.endswith(" no wrap"):
                 self._select_last_selectable()
             return key
         else:
@@ -350,7 +356,6 @@ class TabCyclingListBox(urwid.ListBox):
 
 
 class FocusTrackingMixin:
-
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self._contents.set_focus_changed_callback(self._focus_changed)
@@ -361,10 +366,10 @@ class FocusTrackingMixin:
         except IndexError:
             pass
         else:
-            _maybe_call(cur_focus, 'lost_focus')
+            _maybe_call(cur_focus, "lost_focus")
 
     def gained_focus(self):
-        _maybe_call(self.focus, 'gained_focus')
+        _maybe_call(self.focus, "gained_focus")
 
     def _focus_changed(self, new_focus):
         try:
@@ -372,8 +377,8 @@ class FocusTrackingMixin:
         except IndexError:
             pass
         else:
-            _maybe_call(cur_focus, 'lost_focus')
-        _maybe_call(self[new_focus], 'gained_focus')
+            _maybe_call(cur_focus, "lost_focus")
+        _maybe_call(self[new_focus], "gained_focus")
         self._invalidate()
 
 
@@ -386,7 +391,6 @@ class FocusTrackingColumns(FocusTrackingMixin, OneSelectableColumns):
 
 
 class FocusTrackingListBox(TabCyclingListBox):
-
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.body.set_focus_changed_callback(self._focus_changed)
@@ -394,15 +398,15 @@ class FocusTrackingListBox(TabCyclingListBox):
 
     def _focus_changed(self, new_focus):
         if not self._in_set_focus_complete:
-            _maybe_call(self.focus, 'lost_focus')
-            _maybe_call(self.body[new_focus], 'gained_focus')
+            _maybe_call(self.focus, "lost_focus")
+            _maybe_call(self.body[new_focus], "gained_focus")
             self._invalidate()
 
     def lost_focus(self):
-        _maybe_call(self.focus, 'lost_focus')
+        _maybe_call(self.focus, "lost_focus")
 
     def gained_focus(self):
-        _maybe_call(self.focus, 'gained_focus')
+        _maybe_call(self.focus, "gained_focus")
 
     def _set_focus_complete(self, size, focus):
         self._in_set_focus_complete = True
@@ -417,21 +421,22 @@ Pile = FocusTrackingPile
 
 
 class ScrollBarListBox(urwid.WidgetDecoration):
-
     top = urwid.SolidFill("\N{BLACK UP-POINTING SMALL TRIANGLE}")
     box = urwid.SolidFill("\N{FULL BLOCK}")
     bg = urwid.SolidFill(" ")
     bot = urwid.SolidFill("\N{BLACK DOWN-POINTING SMALL TRIANGLE}")
 
     def __init__(self, lb, *, always_scroll=False):
-        pile = Pile([
-                ('fixed',  1, self.top),
-                ('weight', 1, self.bg),
-                ('weight', 1, self.box),
-                ('weight', 1, self.bg),
-                ('fixed',  1, self.bot),
-            ])
-        self.bar = urwid.AttrMap(pile, 'scrollbar', 'scrollbar focus')
+        pile = Pile(
+            [
+                ("fixed", 1, self.top),
+                ("weight", 1, self.bg),
+                ("weight", 1, self.box),
+                ("weight", 1, self.bg),
+                ("fixed", 1, self.bot),
+            ]
+        )
+        self.bar = urwid.AttrMap(pile, "scrollbar", "scrollbar focus")
         self._always_scroll = always_scroll
         super().__init__(lb)
 
@@ -443,7 +448,7 @@ class ScrollBarListBox(urwid.WidgetDecoration):
     def keypress(self, size, key):
         lb = self.original_widget
         if not self._scroll(size, True):
-            size = (size[0]-1, size[1])
+            size = (size[0] - 1, size[1])
         return lb.keypress(size, key)
 
     def render(self, size, focus=False):
@@ -474,11 +479,11 @@ class ScrollBarListBox(urwid.WidgetDecoration):
 
             # Calculate the number of rows off the top and bottom of
             # the listbox.
-            if 'top' in visible:
+            if "top" in visible:
                 top = 0
             else:
                 top = height_before_focus + inset - offset
-            if 'bottom' in visible:
+            if "bottom" in visible:
                 bottom = 0
             else:
                 bottom = height - top - maxrow
@@ -494,30 +499,32 @@ class ScrollBarListBox(urwid.WidgetDecoration):
             # rows and that being < 1 simplifies to the below.
             o = self.bar.base_widget.options
             if maxrow < top + bottom:
-                boxopt = o('given', 1)
+                boxopt = o("given", 1)
             else:
-                boxopt = o('weight', maxrow)
+                boxopt = o("weight", maxrow)
 
             top_arrow = self.top
             if top == 0:
-                top_arrow = urwid.AttrMap(top_arrow, 'scrollbar')
+                top_arrow = urwid.AttrMap(top_arrow, "scrollbar")
             bot_arrow = self.bot
             if bottom == 0:
-                bot_arrow = urwid.AttrMap(bot_arrow, 'scrollbar')
+                bot_arrow = urwid.AttrMap(bot_arrow, "scrollbar")
 
             self.bar.base_widget.contents[:] = [
-                (top_arrow, o('given', 1)),
-                (self.bg,  o('weight', top)),
+                (top_arrow, o("given", 1)),
+                (self.bg, o("weight", top)),
                 (self.box, boxopt),
-                (self.bg,  o('weight', bottom)),
-                (bot_arrow, o('given', 1)),
-                ]
+                (self.bg, o("weight", bottom)),
+                (bot_arrow, o("given", 1)),
+            ]
             lb_canvas = lb.render((maxcol - 1, maxrow), focus)
             bar_canvas = self.bar.render((1, maxrow), focus)
-            return urwid.CanvasJoin([
-                (lb_canvas,  lb.focus_position, True,  maxcol - 1),
-                (bar_canvas, None,              False, 1),
-            ])
+            return urwid.CanvasJoin(
+                [
+                    (lb_canvas, lb.focus_position, True, maxcol - 1),
+                    (bar_canvas, None, False, 1),
+                ]
+            )
 
 
 def ListBox(body=None, *, always_scroll=False):
@@ -525,11 +532,9 @@ def ListBox(body=None, *, always_scroll=False):
     # PollingListWalker, which doesn't work with our code.
     if body is None:
         body = []
-    if body is getattr(body, 'get_focus', None) is None:
+    if body is getattr(body, "get_focus", None) is None:
         body = urwid.SimpleFocusListWalker(body)
-    return ScrollBarListBox(
-        FocusTrackingListBox(body),
-        always_scroll=always_scroll)
+    return ScrollBarListBox(FocusTrackingListBox(body), always_scroll=always_scroll)
 
 
 get_delegate = operator.attrgetter("_wrapped_widget.base_widget")
@@ -543,9 +548,11 @@ class OurWidgetWrap(urwid.WidgetWrap):
     # does.
 
     _select_first_selectable = property(
-        lambda self: get_delegate(self)._select_first_selectable)
+        lambda self: get_delegate(self)._select_first_selectable
+    )
     _select_last_selectable = property(
-        lambda self: get_delegate(self)._select_last_selectable)
+        lambda self: get_delegate(self)._select_last_selectable
+    )
     lost_focus = property(lambda self: get_delegate(self).lost_focus)
     gained_focus = property(lambda self: get_delegate(self).gained_focus)
 

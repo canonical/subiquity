@@ -14,18 +14,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+
 from subiquity.server.controllers.locale import LocaleController
 
-log = logging.getLogger('system_setup.server.controllers.locale')
+log = logging.getLogger("system_setup.server.controllers.locale")
 
 
 class WSLLocaleController(LocaleController):
     def __init__(self, app):
         super().__init__(app)
         if self.app.prefillInfo:
-            welcome = self.app.prefillInfo.get('Welcome', {'lang': None})
-            win_lang = welcome.get('lang')
+            welcome = self.app.prefillInfo.get("Welcome", {"lang": None})
+            win_lang = welcome.get("lang")
             if win_lang:
                 self.model.selected_language = win_lang
-                log.debug('Prefilled Language: {}'
-                          .format(self.model.selected_language))
+                log.debug("Prefilled Language: {}".format(self.model.selected_language))
