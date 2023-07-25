@@ -83,7 +83,7 @@ class FilesystemManipulator:
         if gap.in_extended:
             if flag not in (None, "logical"):
                 log.debug(
-                    f"overriding flag {flag} " "due to being in an extended partition"
+                    f"overriding flag {flag} due to being in an extended partition"
                 )
             flag = "logical"
         part = self.model.add_partition(

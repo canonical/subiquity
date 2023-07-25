@@ -134,7 +134,7 @@ class OEMController(SubiquityController):
         variant: str = self.app.base_model.source.current.variant
         fs_controller = self.app.controllers.Filesystem
         if fs_controller.is_core_boot_classic():
-            log.debug("listing of OEM meta-packages disabled on core boot" " classic")
+            log.debug("listing of OEM meta-packages disabled on core boot classic")
             self.model.metapkgs = []
             return
         if not self.model.install_on[variant]:

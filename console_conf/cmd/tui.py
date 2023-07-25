@@ -27,7 +27,7 @@ from subiquitycore.log import setup_logger
 
 def parse_options(argv):
     parser = argparse.ArgumentParser(
-        description=("console-conf - Pre-Ownership Configuration for Ubuntu Core"),
+        description="console-conf - Pre-Ownership Configuration for Ubuntu Core",
         prog="console-conf",
     )
     parser.add_argument(

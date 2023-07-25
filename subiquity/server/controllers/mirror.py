@@ -231,7 +231,7 @@ class MirrorController(SubiquityController):
         fallback = self.model.fallback
 
         if fallback == MirrorSelectionFallback.ABORT:
-            log.error("aborting the install since no primary mirror is" " usable")
+            log.error("aborting the install since no primary mirror is usable")
             # TODO there is no guarantee that raising this exception will
             # actually abort the install. If this is raised from a request
             # handler, for instance, it will just return a HTTP 500 error. For
@@ -240,7 +240,7 @@ class MirrorController(SubiquityController):
             raise RuntimeError("aborting install since no mirror is usable")
         elif fallback == MirrorSelectionFallback.OFFLINE_INSTALL:
             log.warning(
-                "reverting to an offline install since no primary" " mirror is usable"
+                "reverting to an offline install since no primary mirror is usable"
             )
             self.app.base_model.network.force_offline = True
         elif fallback == MirrorSelectionFallback.CONTINUE_ANYWAY:

@@ -194,9 +194,8 @@ class CompoundDiskForm(Form):
                     potential_boot_disks.add(d)
             if not potential_boot_disks - set(mdc.value):
                 return _(
-                    "\
-If you put all disks into RAIDs or LVM VGs, there will be nowhere \
-to put the boot partition."
+                    "If you put all disks into RAIDs or LVM VGs, there will be nowhere"
+                    " to put the boot partition."
                 )
 
 

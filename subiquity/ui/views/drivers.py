@@ -155,8 +155,7 @@ class DriversView(BaseView):
         )
 
         excerpt = _(
-            "The following third-party drivers were found. "
-            "Do you want to install them?"
+            "The following third-party drivers were found. Do you want to install them?"
         )
 
         def on_cancel(_: DriversForm) -> None:

@@ -154,8 +154,10 @@ class MockedUAInterfaceStrategy(UAInterfaceStrategy):
             "result": "failure",
             "errors": [
                 {
-                    "title": "The magic attach token is invalid, has "
-                    " expired or never existed",
+                    "title": (
+                        "The magic attach token is invalid, has "
+                        " expired or never existed"
+                    ),
                     "code": "magic-attach-token-error",
                 },
             ],

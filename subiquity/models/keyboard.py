@@ -46,7 +46,7 @@ class InconsistentMultiLayoutError(ValueError):
 
     def __init__(self, layouts: str, variants: str) -> None:
         super().__init__(
-            f'inconsistent multi-layout: layouts="{layouts}"' f' variants="{variants}"'
+            f'inconsistent multi-layout: layouts="{layouts}" variants="{variants}"'
         )
 
 
@@ -112,7 +112,7 @@ class KeyboardModel:
                 kbd_variant.code == variant for kbd_variant in kbd_layout.variants
             ):
                 raise ValueError(
-                    f'Unknown keyboard variant "{variant}" ' f'for layout "{layout}"'
+                    f'Unknown keyboard variant "{variant}" for layout "{layout}"'
                 )
 
     def render_config_file(self):

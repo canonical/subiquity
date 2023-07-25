@@ -110,8 +110,9 @@ class IdentityController(SubiquityController):
         validated = await self.validate_username_GET(data.username)
         if validated != UsernameValidation.OK:
             raise ValueError(
-                "Username <{}> is invalid and should not be"
-                " submitted.".format(data.username),
+                "Username <{}> is invalid and should not be submitted.".format(
+                    data.username
+                ),
                 validated,
             )
 

@@ -88,7 +88,7 @@ class VolGroupForm(CompoundDiskForm):
 
     def validate_devices(self):
         if len(self.devices.value) < 1:
-            return _("Select at least one device to be part of the volume " "group.")
+            return _("Select at least one device to be part of the volume group.")
 
     def validate_name(self):
         v = self.name.value
@@ -102,9 +102,7 @@ class VolGroupForm(CompoundDiskForm):
             )
         if v in (".", "..", "md") or os.path.exists("/dev/" + v):
             if v not in self.deleted_vg_names:
-                return _("{name} is not a valid name for a volume " "group").format(
-                    name=v
-                )
+                return _("{name} is not a valid name for a volume group").format(name=v)
 
     def validate_passphrase(self):
         if self.encrypt.value and len(self.passphrase.value) < 1:

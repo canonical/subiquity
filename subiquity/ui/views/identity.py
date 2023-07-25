@@ -45,7 +45,7 @@ class RealnameEditor(StringEditor, WantsToKnowFormField):
             self.bff.show_extra(
                 (
                     "info_error",
-                    _("The characters : , and = are not permitted" " in this field"),
+                    _("The characters : , and = are not permitted in this field"),
                 )
             )
             return False
@@ -91,7 +91,7 @@ class UsernameEditor(StringEditor, _AsyncValidatedMixin, WantsToKnowFormField):
     def __init__(self):
         self.valid_char_pat = r"[-a-z0-9_]"
         self.error_invalid_char = _(
-            "The only characters permitted in this " "field are a-z, 0-9, _ and -"
+            "The only characters permitted in this field are a-z, 0-9, _ and -"
         )
         super().__init__()
 

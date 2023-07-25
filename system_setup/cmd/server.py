@@ -38,8 +38,10 @@ def make_server_args_parser():
     parser.add_argument(
         "--prefill",
         dest="prefill",
-        help="Prefills UI models with data provided in"
-        " a prefill.yaml file yet allowing overrides.",
+        help=(
+            "Prefills UI models with data provided in"
+            " a prefill.yaml file yet allowing overrides."
+        ),
     )
     parser.add_argument(
         "--output-base",
@@ -54,9 +56,11 @@ def make_server_args_parser():
         type=int,
         choices=range(49152, 60999),
         metavar="[49152 to 60999]",
-        help="The TCP port Subiquity must listen to. It means "
-        "TCP will be used instead of Unix domain sockets. "
-        "Only localhost connections are accepted.",
+        help=(
+            "The TCP port Subiquity must listen to. It means "
+            "TCP will be used instead of Unix domain sockets. "
+            "Only localhost connections are accepted."
+        ),
     )
     return parser
 

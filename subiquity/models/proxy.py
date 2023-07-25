@@ -49,9 +49,7 @@ class ProxyModel(object):
                 },
                 "write_files": {
                     "snapd_dropin": {
-                        "path": (
-                            "etc/systemd/system/" "snapd.service.d/snap_proxy.conf"
-                        ),
+                        "path": "etc/systemd/system/snapd.service.d/snap_proxy.conf",
                         "content": self.proxy_systemd_dropin(),
                         "permissions": 0o644,
                     },

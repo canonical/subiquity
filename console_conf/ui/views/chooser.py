@@ -93,7 +93,7 @@ class ChooserCurrentSystemView(ChooserBaseView):
 
 class ChooserView(ChooserBaseView):
     excerpt = (
-        "Select one of available recovery systems and a desired " "action to execute."
+        "Select one of available recovery systems and a desired action to execute."
     )
 
     def __init__(self, controller, systems):
@@ -173,7 +173,7 @@ class ChooserView(ChooserBaseView):
 class ChooserConfirmView(ChooserBaseView):
     canned_summary = {
         "run": "Continue running the system without any changes.",
-        "recover": ("You have requested to reboot the system into recovery " "mode."),
+        "recover": "You have requested to reboot the system into recovery mode.",
         "install": (
             "You are about to {action_lower} the system version "
             "{version} for {model} from {publisher}.\n\n"

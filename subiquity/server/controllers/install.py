@@ -666,7 +666,7 @@ class InstallController(SubiquityController):
                 [
                     "chroot",
                     self.tpath(),
-                    "/usr/share/unattended-upgrades/" "unattended-upgrade-shutdown",
+                    "/usr/share/unattended-upgrades/unattended-upgrade-shutdown",
                     "--stop-only",
                 ]
             )

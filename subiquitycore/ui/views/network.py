@@ -500,7 +500,7 @@ class NetworkView(BaseView):
             )
         elif action == "timeout":
             self.error.set_text(
-                "Network configuration timed out; " "please verify your settings."
+                "Network configuration timed out; please verify your settings."
             )
         elif action == "down":
             self.error.set_text("Downing network interfaces failed.")
@@ -510,7 +510,7 @@ class NetworkView(BaseView):
             self.error.set_text("Failed to delete a virtual interface.")
         else:
             self.error.set_text(
-                "An unexpected error has occurred; " "please verify your settings."
+                "An unexpected error has occurred; please verify your settings."
             )
 
     def done(self, result=None):

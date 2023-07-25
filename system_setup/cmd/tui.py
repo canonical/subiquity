@@ -55,8 +55,10 @@ def make_client_args_parser():
     parser.add_argument(
         "--prefill",
         dest="prefill",
-        help="Prefills UI models with data provided in"
-        " a prefill.yaml file yet allowing overrides.",
+        help=(
+            "Prefills UI models with data provided in"
+            " a prefill.yaml file yet allowing overrides."
+        ),
     )
     parser.add_argument(
         "--output-base",

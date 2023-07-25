@@ -55,7 +55,7 @@ class RaidnameEditor(StringEditor, WantsToKnowFormField):
         if len(ch) == 1 and ch == "/":
             self.bff.in_error = True
             self.bff.show_extra(
-                ("info_error", _("/ is not permitted " "in the name of a RAID device"))
+                ("info_error", _("/ is not permitted in the name of a RAID device"))
             )
             return False
         elif len(ch) == 1 and ch.isspace():
@@ -63,7 +63,7 @@ class RaidnameEditor(StringEditor, WantsToKnowFormField):
             self.bff.show_extra(
                 (
                     "info_error",
-                    _("Whitespace is not permitted in the " "name of a RAID device"),
+                    _("Whitespace is not permitted in the name of a RAID device"),
                 )
             )
             return False
@@ -104,7 +104,7 @@ class RaidForm(CompoundDiskForm):
         active_device_count = len(self.devices.widget.active_devices)
         if active_device_count < self.level.value.min_devices:
             return _(
-                'RAID Level "{level}" requires at least {min_active} active' " devices"
+                'RAID Level "{level}" requires at least {min_active} active devices'
             ).format(
                 level=self.level.value.name, min_active=self.level.value.min_devices
             )

@@ -35,7 +35,7 @@ from subiquitycore.view import BaseView
 log = logging.getLogger("subiquity.ui.views.mirror")
 
 mirror_help = _(
-    "You may provide an archive mirror that will be used instead " "of the default."
+    "You may provide an archive mirror that will be used instead of the default."
 )
 
 MIRROR_CHECK_CONFIRMATION_TEXTS = {
@@ -80,11 +80,10 @@ class MirrorForm(Form):
 #  * the status of the mirror check (or None if it hasn't started yet)
 MIRROR_CHECK_STATUS_TEXTS = {
     (False, None): _(
-        "The mirror location cannot be checked because no network"
-        " has been configured."
+        "The mirror location cannot be checked because no network has been configured."
     ),
     (True, None): _("The mirror location has not yet started."),
-    (True, MirrorCheckStatus.RUNNING): _("The mirror location is being" " tested."),
+    (True, MirrorCheckStatus.RUNNING): _("The mirror location is being tested."),
     (True, MirrorCheckStatus.OK): _("This mirror location passed tests."),
     (True, MirrorCheckStatus.FAILED): _(
         """\
@@ -98,9 +97,7 @@ explain the problem. You can try again once the issue has been fixed
 
 class MirrorView(BaseView):
     title = _("Configure Ubuntu archive mirror")
-    excerpt = _(
-        "If you use an alternative mirror for Ubuntu, enter its " "details here."
-    )
+    excerpt = _("If you use an alternative mirror for Ubuntu, enter its details here.")
 
     def __init__(
         self,

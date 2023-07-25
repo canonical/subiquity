@@ -159,9 +159,7 @@ def _can_edit_generic(device):
     cd = device.constructed_device()
     if cd is None:
         return True
-    return _(
-        "Cannot edit {selflabel} as it is part of the {cdtype} " "{cdname}."
-    ).format(
+    return _("Cannot edit {selflabel} as it is part of the {cdtype} {cdname}.").format(
         selflabel=labels.label(device), cdtype=labels.desc(cd), cdname=labels.label(cd)
     )
 
@@ -193,7 +191,7 @@ def _can_edit_vg(vg):
     if vg.preserve:
         return _("Cannot edit pre-existing volume groups.")
     elif len(vg._partitions) > 0:
-        return _("Cannot edit {vglabel} because it has logical " "volumes.").format(
+        return _("Cannot edit {vglabel} because it has logical volumes.").format(
             vglabel=labels.label(vg)
         )
     else:
@@ -249,7 +247,7 @@ def _can_remove_device(device):
         return False
     if cd.preserve:
         return _(
-            "Cannot remove {selflabel} from pre-existing {cdtype} " "{cdlabel}."
+            "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
         ).format(
             selflabel=labels.label(device),
             cdtype=labels.desc(cd),
@@ -290,7 +288,7 @@ def _can_delete_generic(device):
     if cd is None:
         return True
     return _(
-        "Cannot delete {selflabel} as it is part of the {cdtype} " "{cdname}."
+        "Cannot delete {selflabel} as it is part of the {cdtype} {cdname}."
     ).format(
         selflabel=labels.label(device), cdtype=labels.desc(cd), cdname=labels.label(cd)
     )
@@ -330,7 +328,7 @@ def _can_delete_raid_vg(device):
             )
     if mounted_partitions > 1:
         return _(
-            "Cannot delete {devicelabel} because it has {count} mounted " "partitions."
+            "Cannot delete {devicelabel} because it has {count} mounted partitions."
         ).format(devicelabel=labels.label(device), count=mounted_partitions)
     elif mounted_partitions == 1:
         return _(

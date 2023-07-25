@@ -374,8 +374,7 @@ class BaseNetworkController(BaseController):
                     await arun_command(["netplan", "apply"], env=env, check=True)
                 except subprocess.CalledProcessError as cpe:
                     log.debug(
-                        "CalledProcessError: "
-                        f"stdout[{cpe.stdout}] stderr[{cpe.stderr}]"
+                        f"CalledProcessError: stdout[{cpe.stdout}] stderr[{cpe.stderr}]"
                     )
                     error("apply")
                     raise

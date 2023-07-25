@@ -49,9 +49,9 @@ class ConfirmDeleteStretchy(Stretchy):
             if m is not None:
                 lines.append(
                     Text(
-                        _(
-                            "It is formatted as {fstype} and mounted at " "{path}"
-                        ).format(fstype=fs.fstype, path=m.path)
+                        _("It is formatted as {fstype} and mounted at {path}").format(
+                            fstype=fs.fstype, path=m.path
+                        )
                     )
                 )
             else:
@@ -127,7 +127,7 @@ class ConfirmReformatStretchy(Stretchy):
             m = fs.mount()
             if m is not None:
                 lines.append(
-                    _("It is formatted as {fstype} and mounted at " "{path}").format(
+                    _("It is formatted as {fstype} and mounted at {path}").format(
                         fstype=fs.fstype, path=m.path
                     )
                 )
@@ -147,7 +147,7 @@ class ConfirmReformatStretchy(Stretchy):
                 things=things, obj=labels.desc(obj)
             )
             lines = [
-                _("Do you really want to remove all {things} from " "{obj}?").format(
+                _("Do you really want to remove all {things} from {obj}?").format(
                     things=things, obj=labels.label(obj)
                 ),
                 "",

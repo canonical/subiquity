@@ -243,7 +243,7 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(SchemaValidationError) as ctx:
                 model._cloud_init_config()
             expected_error = (
-                "Cloud config schema errors: bootcmd: 'nope' is not of type" " 'array'"
+                "Cloud config schema errors: bootcmd: 'nope' is not of type 'array'"
             )
             self.assertEqual(expected_error, str(ctx.exception))
 
@@ -314,7 +314,7 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
             cfg_files.remove("/etc/cloud/cloud.cfg.d/90-installer-network.cfg")
             cfg_files.append("/etc/netplan/00-installer-config.yaml")
             cfg_files.append(
-                "/etc/cloud/cloud.cfg.d/" "subiquity-disable-cloudinit-networking.cfg"
+                "/etc/cloud/cloud.cfg.d/subiquity-disable-cloudinit-networking.cfg"
             )
             expected_files[
                 "etc/cloud/clean.d/99-installer"
@@ -379,7 +379,7 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
                     data={"bootcmd": "nope"}, data_source="system info"
                 )
             expected_error = (
-                "Cloud config schema errors: bootcmd: 'nope' is not of" " type 'array'"
+                "Cloud config schema errors: bootcmd: 'nope' is not of type 'array'"
             )
             self.assertEqual(expected_error, str(ctx.exception))
 

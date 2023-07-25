@@ -222,7 +222,7 @@ def crypt_password(passwd, algo="SHA-512"):
             )
         )
 
-    salt_set = "abcdefghijklmnopqrstuvwxyz" "ABCDEFGHIJKLMNOPQRSTUVWXYZ" "0123456789./"
+    salt_set = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./"
     salt = 16 * " "
     salt = "".join([random.choice(salt_set) for c in salt])
     return crypt.crypt(passwd, algos[algo] + salt)

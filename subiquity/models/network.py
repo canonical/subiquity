@@ -53,7 +53,7 @@ class NetworkModel(CoreNetworkModel):
             r = {
                 "write_files": {
                     "etc_netplan_installer": {
-                        "path": ("etc/cloud/cloud.cfg.d/90-installer-network.cfg"),
+                        "path": "etc/cloud/cloud.cfg.d/90-installer-network.cfg",
                         "content": self.stringify_config(netplan),
                         "permissions": "0600",
                     },
@@ -104,8 +104,7 @@ class NetworkModel(CoreNetworkModel):
             cp = await arun_command(("nmcli", "networking"), check=True)
         except subprocess.CalledProcessError as exc:
             log.warning(
-                "failed to run nmcli networking,"
-                " considering NetworkManager disabled."
+                "failed to run nmcli networking, considering NetworkManager disabled."
             )
             log.debug("stderr: %s", exc.stderr)
             return False

@@ -193,7 +193,7 @@ class UpgradeYesNoForm(Form):
         group,
         _("Skip for now"),
         help="\n"
-        + _("You can always enable Ubuntu Pro later via the" " 'pro attach' command."),
+        + _("You can always enable Ubuntu Pro later via the 'pro attach' command."),
     )
 
 
@@ -388,9 +388,7 @@ class UbuntuProView(BaseView):
             " STIG, HIPAA and other compliance or hardening"
             " requirements."
         )
-        excerpt_no_net = _(
-            "An Internet connection is required to enable" " Ubuntu Pro."
-        )
+        excerpt_no_net = _("An Internet connection is required to enable Ubuntu Pro.")
 
         about_pro_btn = menu_btn(
             _("About Ubuntu Pro"), on_press=lambda unused: self.show_about_ubuntu_pro()
@@ -688,7 +686,7 @@ class ExpiredTokenWidget(Stretchy):
         self.parent = parent
         cont = done_btn(label=_("Okay"), on_press=lambda unused: self.close())
         widgets = [
-            Text(_("Your token has expired. Please use another token" " to continue.")),
+            Text(_("Your token has expired. Please use another token to continue.")),
             Text(""),
             button_pile([cont]),
         ]
@@ -814,7 +812,7 @@ class AboutProWidget(Stretchy):
             _("10 years of security patch coverage (extended from 5 years)."),
             _("Kernel Livepatch to reduce required reboots."),
             _("Ubuntu Security Guide for CIS and DISA-STIG hardening."),
-            _("FIPS 140-2 NIST-certified crypto-modules for FedRAMP" " compliance"),
+            _("FIPS 140-2 NIST-certified crypto-modules for FedRAMP compliance"),
         ]
 
         def itemize(item: str, marker: str = "•") -> Columns:
@@ -834,7 +832,7 @@ class AboutProWidget(Stretchy):
             Text(""),
             Pile([itemize(svc, marker="  •") for svc in services]),
             Text(""),
-            Text(_("Ubuntu Pro is free for personal use on up to 3" " machines.")),
+            Text(_("Ubuntu Pro is free for personal use on up to 3 machines.")),
             Text(_("More information is at ubuntu.com/pro")),
             Text(""),
             button_pile([ok]),

@@ -24,7 +24,7 @@ from subiquitycore.view import BaseView
 log = logging.getLogger("console_conf.ui.views.identity")
 
 sso_help = (
-    "If you do not have an account, visit " "https://login.ubuntu.com to create one."
+    "If you do not have an account, visit https://login.ubuntu.com to create one."
 )
 
 

@@ -38,21 +38,21 @@ class WSLConfBaseForm(Form):
         _("Mount Location"), help=_("Location for the automount")
     )
     automount_options = StringField(
-        _("Mount Option"), help=_("Mount option passed " "for the automount")
+        _("Mount Option"), help=_("Mount option passed for the automount")
     )
     network_generatehosts = BooleanField(
         _("Enable Host Generation"),
-        help=_("Selecting enables /etc/host re-generation at" " every start"),
+        help=_("Selecting enables /etc/host re-generation at every start"),
     )
     network_generateresolvconf = BooleanField(
         _("Enable resolv.conf Generation"),
-        help=_("Selecting enables /etc/resolv.conf re-generation" " at every start"),
+        help=_("Selecting enables /etc/resolv.conf re-generation at every start"),
     )
 
     def validate_automount_root(self):
         p = self.automount_root.value
         if p != "" and (re.fullmatch(r"(/[^/ ]*)+/?", p) is None):
-            return _("Mount location must be a absolute UNIX path" " without space.")
+            return _("Mount location must be a absolute UNIX path without space.")
 
     def validate_automount_options(self):
         o = self.automount_options.value

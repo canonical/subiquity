@@ -137,7 +137,7 @@ class RefreshController(SubiquityController):
             and snap.channel != expected_channel
         ):
             log.debug(
-                f"snap tracking {snap.channel}, not resetting based " "on .disk/info"
+                f"snap tracking {snap.channel}, not resetting based on .disk/info"
             )
             return
         desc = "switching {} to {}".format(self.snap_name, channel)

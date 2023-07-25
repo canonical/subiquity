@@ -109,8 +109,9 @@ def _make_handler(
     for param_name, param in def_params.items():
         if param_name in ("request", "context"):
             raise Exception(
-                "api method {} cannot have parameter called request or "
-                "context".format(definition)
+                "api method {} cannot have parameter called request or context".format(
+                    definition
+                )
             )
         if getattr(param.annotation, "__origin__", None) is Payload:
             data_arg = param_name

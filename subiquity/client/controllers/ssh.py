@@ -82,10 +82,7 @@ class SSHController(SubiquityTuiController):
             elif response.status == SSHFetchIdStatus.FINGERPRINT_ERROR:
                 if isinstance(self.ui.body, SSHView):
                     self.ui.body.fetching_ssh_keys_failed(
-                        _(
-                            "ssh-keygen failed to show fingerprint of"
-                            " downloaded keys:"
-                        ),
+                        _("ssh-keygen failed to show fingerprint of downloaded keys:"),
                         response.error,
                     )
                 return

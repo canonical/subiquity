@@ -258,7 +258,7 @@ class PartitionForm(Form):
         ]:
             if substring in v:
                 return _(
-                    "The name of a logical volume may not contain " '"{substring}"'
+                    'The name of a logical volume may not contain "{substring}"'
                 ).format(substring=substring)
         if v in self.lvm_names:
             return _("There is already a logical volume named {name}.").format(

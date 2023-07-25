@@ -284,7 +284,7 @@ class MirrorModel(object):
 
         if "primary" in data and "mirror-selection" in data:
             raise ValueError(
-                "apt->primary and apt->mirror-selection are" " mutually exclusive."
+                "apt->primary and apt->mirror-selection are mutually exclusive."
             )
         self.legacy_primary = "primary" in data
 

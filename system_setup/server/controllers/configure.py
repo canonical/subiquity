@@ -166,7 +166,7 @@ class ConfigureController(SubiquityController):
         envcp = None
         if not os.path.exists(data_dir):
             log.error(
-                "Language selector data dir %s seems not to be part" " of the snap.",
+                "Language selector data dir %s seems not to be part of the snap.",
                 data_dir,
             )
             # Try seeded L-S-C
@@ -405,7 +405,7 @@ class ConfigureController(SubiquityController):
         assign_grp_proc = await arun_command(assign_grp_cmd, env=env)
         if assign_grp_proc.returncode != 0:
             raise Exception(
-                ("Failed to assign group to user %s: %s")
+                "Failed to assign group to user %s: %s"
                 % (username, assign_grp_proc.stderr)
             )
 

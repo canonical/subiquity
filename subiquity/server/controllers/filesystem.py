@@ -401,7 +401,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise Exception("autoinstall config did not mount root")
         if self.model.needs_bootloader_partition():
             raise Exception(
-                "autoinstall config did not create needed bootloader " "partition"
+                "autoinstall config did not create needed bootloader partition"
             )
 
     def update_devices(self, device_map):
@@ -1160,7 +1160,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     core_boot_caps.update(variation.capability_info.allowed)
             if not core_boot_caps:
                 raise Exception(
-                    "can only use name: hybrid when installing core boot " "classic"
+                    "can only use name: hybrid when installing core boot classic"
                 )
             if "mode" in layout:
                 raise Exception("cannot use 'mode' when installing core boot classic")
@@ -1196,7 +1196,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     break
             else:
                 raise Exception(
-                    "must use name: hybrid when installing core boot " "classic"
+                    "must use name: hybrid when installing core boot classic"
                 )
             mode = layout.get("mode", "reformat_disk")
             self.validate_layout_mode(mode)

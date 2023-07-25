@@ -47,7 +47,7 @@ _ssh_import_data = {
         "help": _("Enter your GitHub username."),
         "valid_char": r"[a-zA-Z0-9\-]",
         "error_invalid_char": _(
-            "A GitHub username may only contain " "alphanumeric characters or hyphens."
+            "A GitHub username may only contain alphanumeric characters or hyphens."
         ),
     },
     "lp": {
