@@ -26,6 +26,7 @@ from typing import Any, Dict, List, Optional
 
 import attr
 import pyudev
+from curtin import swap
 from curtin.commands.extract import AbstractSourceHandler
 from curtin.storage_config import ptable_part_type_to_flag
 
@@ -458,9 +459,17 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         part_align = device.alignment_data().part_align
         bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
         gap_boot, gap_rest = gap.split(bootfs_size)
-
         bpool_part = self.create_partition(device, gap_boot, dict(fstype=None))
-        rpool_part = self.create_partition(device, gap_rest, dict(fstype=None))
+
+        avail = gap_rest.size - self._info.min_size
+        swap_size = swap.suggested_swapsize(avail=avail)
+        if swap_size > 0:
+            gap_swap, gap_rootfs = gap_rest.split(swap_size)
+            self.create_partition(device, gap_swap, dict(fstype="swap"))
+            gap = gap_rootfs
+        else:
+            gap = gap_rest
+        rpool_part = self.create_partition(device, gap, dict(fstype=None))
 
         self.create_zpool(bpool_part, "bpool", "/boot")
         self.create_zpool(rpool_part, "rpool", "/")

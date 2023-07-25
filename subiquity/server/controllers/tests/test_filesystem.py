@@ -479,17 +479,21 @@ class TestGuided(IsolatedAsyncioTestCase):
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.ZFS)
         )
-        [d1p1, d1p2, d1p3] = self.d1.partitions()
-        self.assertEqual(p1mnt, d1p1.mount)
-        self.assertEqual(None, d1p2.mount)
-        self.assertEqual(None, d1p3.mount)
-        self.assertFalse(d1p1.preserve)
-        self.assertFalse(d1p2.preserve)
-        self.assertFalse(d1p3.preserve)
+        [firmware, boot, swap, root] = self.d1.partitions()
+        self.assertEqual(p1mnt, firmware.mount)
+        self.assertIsNone(boot.mount)
+        self.assertIsNone(root.mount)
+        self.assertFalse(firmware.preserve)
+        self.assertFalse(boot.preserve)
+        self.assertFalse(swap.preserve)
+        self.assertFalse(root.preserve)
+        self.assertEqual("swap", swap.fs().fstype)
         [rpool] = self.model._all(type="zpool", pool="rpool")
         self.assertEqual("/", rpool.path)
+        self.assertEqual([root], rpool.vdevs)
         [bpool] = self.model._all(type="zpool", pool="bpool")
         self.assertEqual("/boot", bpool.path)
+        self.assertEqual([boot], bpool.vdevs)
 
     async def test_guided_zfs_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
@@ -499,15 +503,19 @@ class TestGuided(IsolatedAsyncioTestCase):
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.ZFS)
         )
-        [d1p1, d1p2] = self.d1.partitions()
-        self.assertEqual(None, d1p1.mount)
-        self.assertEqual(None, d1p2.mount)
-        self.assertFalse(d1p1.preserve)
-        self.assertFalse(d1p2.preserve)
+        [boot, swap, root] = self.d1.partitions()
+        self.assertIsNone(boot.mount)
+        self.assertIsNone(root.mount)
+        self.assertFalse(boot.preserve)
+        self.assertFalse(swap.preserve)
+        self.assertFalse(root.preserve)
+        self.assertEqual("swap", swap.fs().fstype)
         [rpool] = self.model._all(type="zpool", pool="rpool")
         self.assertEqual("/", rpool.path)
+        self.assertEqual([root], rpool.vdevs)
         [bpool] = self.model._all(type="zpool", pool="bpool")
         self.assertEqual("/boot", bpool.path)
+        self.assertEqual([boot], bpool.vdevs)
 
     async def _guided_side_by_side(self, bl, ptable):
         await self._guided_setup(bl, ptable, storage_version=2)
@@ -997,7 +1005,6 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         # Disks with "in use" partitions do not allow a reformat if
         # there is not enough space on the rest of the disk.
         await self._setup(bootloader, ptable, fix_bios=True, size=25 << 30)
-        print(bootloader, ptable)
         make_partition(
             self.model, self.disk, preserve=True, size=23 << 30, is_in_use=True
         )
