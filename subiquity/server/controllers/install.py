@@ -395,13 +395,14 @@ class InstallController(SubiquityController):
         rp = fs_controller.reset_partition
         if rp is not None:
             mounter = Mounter(self.app)
-            async with mounter.mounted(rp.path) as mp:
-                await run_curtin_step(
-                    name="populate recovery",
-                    stages=["extract"],
-                    step_config=self.rp_config(logs_dir, mp.p()),
-                    source="cp:///cdrom",
-                )
+            rp_target = os.path.join(self.app.root, "factory-reset")
+            mp = await mounter.mount(rp.path, mountpoint=rp_target)
+            await run_curtin_step(
+                name="populate recovery",
+                stages=["extract"],
+                step_config=self.rp_config(logs_dir, mp.p()),
+                source="cp:///cdrom",
+            )
             await self.create_rp_boot_entry(context=context, rp=rp)
 
     @with_context(description="creating boot entry for reset partition")
