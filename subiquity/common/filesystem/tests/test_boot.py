@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from subiquity.common.filesystem import boot
 from subiquity.models.filesystem import Bootloader
@@ -26,7 +26,9 @@ class TestBootDevRaid(unittest.TestCase):
         raid = make_raid(make_model(Bootloader.BIOS))
         self.assertFalse(boot.can_be_boot_device(raid))
 
-    def test_UEFI_no_container(self):
+    @patch("subiquity.common.filesystem.boot.dmidecode_get")
+    def test_UEFI_no_container(self, dmi_get):
+        dmi_get.return_value = ""
         raid = make_raid(make_model(Bootloader.UEFI))
         raid.container = None
         self.assertFalse(boot.can_be_boot_device(raid))
@@ -37,8 +39,24 @@ class TestBootDevRaid(unittest.TestCase):
         raid.container.metadata = "imsm"
         self.assertTrue(boot.can_be_boot_device(raid))
 
-    def test_UEFI_container_non_imsm(self):
+    @patch("subiquity.common.filesystem.boot.dmidecode_get")
+    def test_UEFI_container_non_imsm(self, dmi_get):
+        dmi_get.return_value = ""
         raid = make_raid(make_model(Bootloader.UEFI))
         raid.container = Mock()
         raid.container.metadata = "something else"
+        self.assertFalse(boot.can_be_boot_device(raid))
+
+    @patch("subiquity.common.filesystem.boot.dmidecode_get")
+    def test_UEFI_spn_poweredge(self, dmi_get):
+        dmi_get.return_value = "CompanyName PowerEdge 1234"
+        raid = make_raid(make_model(Bootloader.UEFI))
+        raid.container = None
+        self.assertTrue(boot.can_be_boot_device(raid))
+
+    @patch("subiquity.common.filesystem.boot.dmidecode_get")
+    def test_UEFI_spn_other(self, dmi_get):
+        dmi_get.return_value = "CompanyName ProductName 1227"
+        raid = make_raid(make_model(Bootloader.UEFI))
+        raid.container = None
         self.assertFalse(boot.can_be_boot_device(raid))
