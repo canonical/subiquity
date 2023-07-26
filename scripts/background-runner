@@ -1,0 +1,35 @@
+#!/usr/bin/python3
+
+# Use screen to run a terminal program in the background until it exists.
+# This process stays around in the forground.
+# Exit code from the program being run is returned here.
+
+import argparse
+import subprocess
+import sys
+import tempfile
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--logfile', default=None,
+                        help='append output to logfile')
+    args, program = parser.parse_known_args()
+
+    cmd = [
+        'screen',
+        '-c', '/dev/null',  # ignore any user configuration
+        '-D', '-m',         # run detached from a terminal perspective,
+                            # but the screen process doesn't background
+    ]
+    if args.logfile:
+        cmd.extend(('-L', '-Logfile', args.logfile))
+
+    with tempfile.NamedTemporaryFile() as exitfile:
+        cmd.extend(('./scripts/capture-exit-code', exitfile.name, *program))
+        subprocess.run(cmd, check=True)
+        sys.exit(int(exitfile.read()))
+
+
+if __name__ == '__main__':
+    main()
