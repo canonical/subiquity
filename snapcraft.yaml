@@ -10,7 +10,7 @@ contact: https://bugs.launchpad.net/subiquity/+filebug
 
 apps:
   subiquity:
-    command: usr/bin/subiquity-cmd
+    command: usr/bin/subiquity-cmd $SNAP/usr/bin/python3.10 -m subiquity
     environment:
       # Save original values of environment variables, we want to restore them
       # for the debug shell (LP: #1975629) and restart (LP: #1978139)
@@ -23,7 +23,16 @@ apps:
       PYTHON_ORIG: $PYTHON
       PYTHON: $SNAP/usr/bin/python3.10
   probert:
-    command: bin/probert
+    command: usr/bin/subiquity-cmd $SNAP/usr/bin/python3.10 $SNAP/bin/probert
+    environment:
+      PYTHON: $SNAP/usr/bin/python3.10
+  curtin:
+    command: usr/bin/subiquity-cmd $SNAP/bin/curtin
+    environment:
+      PYTHONIOENCODING: utf-8
+      PYTHON: $SNAP/usr/bin/python3.10
+      PY3OR2_PYTHON: $SNAP/usr/bin/python3.10
+      PATH: $PATH:$SNAP/bin
   subiquity-server:
     command: usr/bin/subiquity-server
     daemon: simple
