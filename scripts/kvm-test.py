@@ -70,6 +70,7 @@ class Context:
         self.iso = f'/tmp/kvm-test/{self.release}-test.iso'
         self.hostname = f'{self.release}-test'
         self.target = f'/tmp/kvm-test/{self.hostname}.img'
+        self.extra_disk_fmt = f'/tmp/kvm-test/{self.hostname}-' + '{id}.img'
         self.password = salted_crypt('ubuntu')
         self.cloudconfig = f'''\
 #cloud-config
@@ -145,6 +146,9 @@ parser.add_argument('-c', '--channel', action='store',
                     help='build iso with snap from channel')
 parser.add_argument('-d', '--disksize', default='12G', action='store',
                     help='size of disk to create (12G default)')
+parser.add_argument('--extra-disk-size', action='append', dest='extra_disks',
+                    default=[],
+                    help='size of extra disk to create (repeat for multiple)')
 parser.add_argument('-i', '--img', action='store', help='use this img')
 parser.add_argument('-n', '--nets', action='store', default=1, type=int,
                     help='''number of network interfaces.
@@ -496,9 +500,18 @@ def install(ctx):
         if ctx.args.update:
             appends.append('subiquity-channel=' + ctx.args.update)
 
+        def create_disk(path: str, size: str):
+            run(['qemu-img', 'create', '-f', 'qcow2', path, size])
+
         kvm.extend(drive(ctx.target))
         if not os.path.exists(ctx.target) or ctx.args.overwrite:
-            run(f'qemu-img create -f qcow2 {ctx.target} {ctx.args.disksize}')
+            create_disk(path=ctx.target, size=ctx.args.disksize)
+
+        for idx, size in enumerate(ctx.args.extra_disks, start=1):
+            path = ctx.extra_disk_fmt.format(id=idx)
+            kvm.extend(drive(path))
+            if not os.path.exists(path) or ctx.args.overwrite:
+                create_disk(path=path, size=size)
 
         if len(appends) > 0:
             with mounter(iso, mntdir):
