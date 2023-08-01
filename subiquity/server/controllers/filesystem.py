@@ -932,6 +932,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             install_minimum_size=minsize,
         )
 
+    async def generate_recovery_key_GET(self) -> str:
+        return self.model.generate_recovery_key()
+
     async def v2_GET(
         self,
         wait: bool = False,

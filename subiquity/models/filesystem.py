@@ -22,6 +22,7 @@ import math
 import os
 import pathlib
 import platform
+import secrets
 import tempfile
 from abc import ABC, abstractmethod
 from typing import List, Optional, Set, Tuple, Union
@@ -2047,3 +2048,10 @@ class FilesystemModel(object):
         if self.reset_partition is not None:
             during.add("efibootmgr")
         return (before, during)
+
+    @staticmethod
+    def generate_recovery_key() -> str:
+        """Return a new recovery key suitable for LUKS encryption. The key will
+        consist of 48 decimal digits."""
+        digits = 48
+        return str(secrets.randbelow(10**digits)).zfill(digits)
