@@ -27,6 +27,7 @@ from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.context import with_context
 from subiquitycore.file_util import open_perms, set_log_perms
+from subiquitycore.utils import run_command
 
 log = logging.getLogger("subiquity.server.controllers.shutdown")
 
@@ -130,10 +131,12 @@ class ShutdownController(SubiquityController):
         if self.opts.dry_run:
             self.app.exit()
         else:
+            # On shutdown, it seems that the asynchronous command runners are not
+            # reliable.  Best to keep using the traditional sort.
             if self.app.state == ApplicationState.DONE:
                 if platform.machine() == "s390x":
-                    await self.app.command_runner.run(["chreipl", "/target/boot"])
+                    run_command(["chreipl", "/target/boot"])
             if self.mode == ShutdownMode.REBOOT:
-                await self.app.command_runner.run(["/sbin/reboot"])
+                run_command(["/sbin/reboot"])
             elif self.mode == ShutdownMode.POWEROFF:
-                await self.app.command_runner.run(["/sbin/poweroff"])
+                run_command(["/sbin/poweroff"])
