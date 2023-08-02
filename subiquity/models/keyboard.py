@@ -132,18 +132,6 @@ class KeyboardModel:
                     "permissions": 0o644,
                 },
             },
-            "curthooks_commands": {
-                # The below command must be run after updating
-                # etc/default/keyboard on the target so that the initramfs uses
-                # the keyboard mapping selected by the user.  See LP #1894009
-                "002-setupcon-save-only": [
-                    "curtin",
-                    "in-target",
-                    "--",
-                    "setupcon",
-                    "--save-only",
-                ],
-            },
         }
 
     def setting_for_lang(self, lang):
