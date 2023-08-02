@@ -1,4 +1,3 @@
 #!/bin/sh
-
 export PYTHONPATH=$PYTHONPATH:$SNAP/lib/python3.10/site-packages
-$PYTHON -m subiquity "$@"
+exec "$@"
