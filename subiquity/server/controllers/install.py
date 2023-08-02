@@ -173,6 +173,8 @@ class InstallController(SubiquityController):
             return
         mirror = self.app.controllers.Mirror
         await mirror.final_apt_configurer.setup_target(context, self.tpath())
+        keyboard = self.app.controllers.Keyboard
+        await keyboard.setup_target(context=context)
 
     @with_context(description="executing curtin install {name} step")
     async def run_curtin_step(

@@ -25,6 +25,7 @@ from subiquity.common.resources import resource_path
 from subiquity.common.serialize import Serializer
 from subiquity.common.types import AnyStep, KeyboardSetting, KeyboardSetup
 from subiquity.server.controller import SubiquityController
+from subiquity.server.curtin import run_curtin_command
 from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command
 
@@ -255,6 +256,20 @@ class KeyboardController(SubiquityController):
             f"[('xkb','{xkb_value}')]",
         ]
         await self._run_gui_command(gsettings, **kwargs)
+
+    @with_context(description="configuring keyboard")
+    async def setup_target(self, context):
+        await run_curtin_command(
+            self.app,
+            context,
+            "in-target",
+            "-t",
+            self.app.base_model.target,
+            "--",
+            "setupcon",
+            "--save-only",
+            private_mounts=False,
+        )
 
     async def _run_gui_command(
         self, command: Sequence[str], user: Optional[str] = None
