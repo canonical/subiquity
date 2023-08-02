@@ -1,0 +1,32 @@
+#source-catalog: examples/sources/desktop.yaml
+Source:
+  source: ubuntu-desktop
+Welcome:
+  lang: en_US
+Refresh:
+  update: no
+Keyboard:
+  layout: us
+Zdev:
+  accept-default: yes
+Network:
+  accept-default: yes
+Proxy:
+  proxy: ""
+Mirror:
+  country-code: us
+Filesystem:
+  guided: yes
+  guided-index: 0
+Identity:
+  realname: Ubuntu
+  username: ubuntu
+  hostname: ubuntu-server
+  # ubuntu
+  password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
+UbuntuPro:
+  token: ""
+InstallProgress:
+  reboot: yes
+Drivers:
+  install: no
