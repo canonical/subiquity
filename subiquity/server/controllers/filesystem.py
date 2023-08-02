@@ -186,6 +186,19 @@ class VariationInfo:
             ),
         )
 
+    @classmethod
+    def dd(cls, name: str, min_size: int):
+        return cls(
+            name=name,
+            label=None,
+            min_size=min_size,
+            capability_info=CapabilityInfo(
+                allowed=[
+                    GuidedCapability.DD,
+                ]
+            ),
+        )
+
 
 class FilesystemController(SubiquityController, FilesystemManipulator):
     endpoint = API.storage
@@ -363,6 +376,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 info = self.info_for_system(name, label, system)
                 if info is not None:
                     self._variation_info[name] = info
+            elif catalog_entry.type.startswith("dd-"):
+                min_size = variation.size
+                self._variation_info[name] = VariationInfo.dd(
+                    name=name, min_size=min_size
+                )
             else:
                 self._variation_info[name] = VariationInfo.classic(
                     name=name, min_size=variation.size
@@ -417,6 +435,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     def guided_direct(self, gap):
         spec = dict(fstype="ext4", mount="/")
         self.create_partition(device=gap.device, gap=gap, spec=spec)
+
+    def guided_dd(self, disk: ModelDisk):
+        self.model.dd_target = disk
 
     def guided_lvm(self, gap, choice: GuidedChoiceV2):
         device = gap.device
@@ -552,6 +573,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def guided(
         self, choice: GuidedChoiceV2, reset_partition_only: bool = False
     ) -> None:
+        self.model.dd_target = None
         if choice.capability == GuidedCapability.MANUAL:
             return
 
@@ -602,6 +624,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self.guided_zfs(gap, choice)
         elif choice.capability == GuidedCapability.DIRECT:
             self.guided_direct(gap)
+        elif choice.capability == GuidedCapability.DD:
+            self.guided_dd(disk)
         else:
             raise ValueError("cannot process capability")
 
@@ -1218,6 +1242,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     capability = GuidedCapability.LVM_LUKS
                 else:
                     capability = GuidedCapability.LVM
+            elif name == "dd":
+                capability = GuidedCapability.DD
+                assert mode == "reformat_disk"
             elif name == "zfs":
                 capability = GuidedCapability.ZFS
             else:
@@ -1274,6 +1301,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 )
             await self.run_autoinstall_guided(self.ai_data["layout"])
         elif "config" in self.ai_data:
+            if self.app.base_model.source.current.type.startswith("dd-"):
+                raise Exception("must not use config: when installing a disk image")
             # XXX in principle should there be a way to influence the
             # variation chosen here? Not with current use cases for
             # variations anyway.
@@ -1342,10 +1371,20 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.ensure_probing()
 
     def make_autoinstall(self):
-        rendered = self.model.render()
-        r = {"config": rendered["storage"]["config"]}
-        if "swap" in rendered:
-            r["swap"] = rendered["swap"]
+        if self.model.dd_target is None:
+            rendered = self.model.render()
+            r = {"config": rendered["storage"]["config"]}
+            if "swap" in rendered:
+                r["swap"] = rendered["swap"]
+        else:
+            r = {
+                "layout": {
+                    "name": "dd",
+                    "match": {
+                        "path": self.model.dd_target.path,
+                    },
+                },
+            }
         return r
 
     async def _pre_shutdown(self):

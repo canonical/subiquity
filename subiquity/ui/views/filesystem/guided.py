@@ -381,7 +381,10 @@ class GuidedDiskSelectionView(BaseView):
                 else:
                     capability = GuidedCapability.LVM
             else:
-                capability = GuidedCapability.DIRECT
+                if GuidedCapability.DD in target.allowed:
+                    capability = GuidedCapability.DD
+                else:
+                    capability = GuidedCapability.DIRECT
             choice = GuidedChoiceV2(
                 target=target,
                 capability=capability,

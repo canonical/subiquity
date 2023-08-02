@@ -242,7 +242,7 @@ def _compute_widths_for_size(maxcol, table_rows, colspecs, default_spacing):
             widths[underlying_i] = max(w, widths.get(underlying_i, 0))
 
     # count the columns...
-    colcount = max(widths.keys()) // 2 + 1
+    colcount = max(widths.keys(), default=1) // 2 + 1
     if unpacked_user_indices:
         colcount = max(colcount, max(unpacked_user_indices) + 1)
 

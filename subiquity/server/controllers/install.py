@@ -125,7 +125,7 @@ class InstallController(SubiquityController):
         """Return configuration to be used as part of a curtin 'block-meta'
         step."""
         cfg = self.model.filesystem.render(mode=mode)
-        if device_map_path is not None:
+        if "storage" in cfg and device_map_path is not None:
             cfg["storage"]["device_map_path"] = str(device_map_path)
         return cfg
 
@@ -318,6 +318,7 @@ class InstallController(SubiquityController):
                 step_config=self.filesystem_config(
                     device_map_path=logs_dir / "device-map.json",
                 ),
+                source=source,
             )
             await run_curtin_step(
                 name="extract",

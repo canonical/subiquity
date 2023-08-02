@@ -4,7 +4,7 @@
   locale_support: none
   name:
     en: Ubuntu Server
-  path: ubuntu-core.squashfs
+  path: pc.img
   size: 530485248
-  type: fsimage
+  type: 'dd-raw:file'
   variant: core
