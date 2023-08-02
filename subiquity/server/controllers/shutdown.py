@@ -89,6 +89,9 @@ class ShutdownController(SubiquityController):
             raise PermissionError()
         if self.app.controllers.Filesystem.reset_partition_only:
             return
+        if self.app.base_model.source.current.variant == "core":
+            # Possibly should copy logs somewhere else in this case?
+            return
         target_logs = os.path.join(self.app.base_model.target, "var/log/installer")
         if self.opts.dry_run:
             os.makedirs(target_logs, exist_ok=True)
