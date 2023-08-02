@@ -22,6 +22,8 @@ from unittest import mock
 import yaml
 from cloudinit.config.schema import SchemaValidationError
 
+from subiquitycore.tests.parameterized import parameterized
+
 try:
     from cloudinit.config.schema import SchemaProblem
 except ImportError:
@@ -185,18 +187,33 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
         config = model.render()
         self.assertConfigHasVal(config, "storage.version", 1)
 
-    def test_write_netplan(self):
-        model = self.make_model()
-        config = model.render()
-        netplan_content = None
-        for fspec in config["write_files"].values():
-            if fspec["path"].startswith("etc/netplan"):
-                if netplan_content is not None:
-                    self.fail("writing two files to netplan?")
-                netplan_content = fspec["content"]
-        self.assertIsNot(netplan_content, None)
-        netplan = yaml.safe_load(netplan_content)
-        self.assertConfigHasVal(netplan, "network.version", 2)
+    @parameterized.expand(
+        [
+            [{}, True],
+            [{"NETPLAN_CONFIG_ROOT_READ_ONLY": False}, True],
+            [{"NETPLAN_CONFIG_ROOT_READ_ONLY": True}, False],
+        ]
+    )
+    def test_write_netplan(self, features, np_content_expected):
+        with mock.patch(
+            "subiquity.cloudinit.open",
+            mock.mock_open(read_data=json.dumps({"features": features})),
+        ):
+            model = self.make_model()
+            config = model.render()
+            netplan_content = None
+
+            for fspec in config["write_files"].values():
+                if fspec["path"].startswith("etc/netplan"):
+                    if netplan_content is not None:
+                        self.fail("writing two files to netplan?")
+                    netplan_content = fspec["content"]
+            if np_content_expected:
+                self.assertIsNotNone(netplan_content)
+                netplan = yaml.safe_load(netplan_content)
+                self.assertConfigHasVal(netplan, "network.version", 2)
+            else:
+                self.assertIsNone(netplan_content)
 
     def test_sources(self):
         model = self.make_model()
