@@ -120,7 +120,10 @@ class ShutdownController(SubiquityController):
         try:
             with open_perms(journal_txt) as output:
                 await self.app.command_runner.run(
-                    ["journalctl", "-b"], stdout=output, stderr=subprocess.STDOUT
+                    ["journalctl", "-b"],
+                    capture=True,
+                    stdout=output,
+                    stderr=subprocess.STDOUT,
                 )
         except Exception:
             log.exception("saving journal failed")
