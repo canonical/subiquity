@@ -351,6 +351,8 @@ class GuidedCapability(enum.Enum):
     CORE_BOOT_PREFER_ENCRYPTED = enum.auto()
     CORE_BOOT_PREFER_UNENCRYPTED = enum.auto()
 
+    DD = enum.auto()
+
     def is_lvm(self) -> bool:
         return self in [GuidedCapability.LVM, GuidedCapability.LVM_LUKS]
 

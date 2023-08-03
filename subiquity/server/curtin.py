@@ -148,6 +148,7 @@ class _DryRunCurtinCommand(_CurtinCommand):
 
     def make_command(self, command, *args, config=None):
         if command == "install":
+            log.debug("creating substitute for curtin install %s", args)
             # Lookup the log file from the config if specified
             try:
                 with open(config, mode="r") as fh:

@@ -1259,6 +1259,7 @@ class FilesystemModel(object):
         self.bootloader = bootloader
         self.storage_version = 1
         self._probe_data = None
+        self.dd_target: Optional[Disk] = None
         self.reset()
 
     def reset(self):
@@ -1718,6 +1719,18 @@ class FilesystemModel(object):
         return r
 
     def render(self, mode: ActionRenderMode = ActionRenderMode.DEFAULT):
+        if self.dd_target is not None:
+            return {
+                "partitioning_commands": {
+                    "builtin": [
+                        "curtin",
+                        "block-meta",
+                        "simple",
+                        "--devices",
+                        self.dd_target.path,
+                    ],
+                },
+            }
         config = {
             "storage": {
                 "version": self.storage_version,

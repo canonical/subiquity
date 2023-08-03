@@ -134,7 +134,7 @@ class SourceController(SubiquityController):
         handler = get_handler_for_source(
             sanitize_source(self.model.get_source(variation_name))
         )
-        if self.app.opts.dry_run:
+        if handler is not None and self.app.opts.dry_run:
             handler = TrivialSourceHandler("/")
         return handler
 
