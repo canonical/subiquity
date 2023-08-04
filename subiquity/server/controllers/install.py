@@ -273,12 +273,6 @@ class InstallController(SubiquityController):
         ) as child:
             await install_oem_metapackages(child)
 
-        # If we already have a kernel installed, don't bother requesting
-        # curthooks to install it again or we might end up with two
-        # kernels.
-        if await list_installed_kernels(Path(self.tpath())):
-            self.model.kernel.curthooks_no_install = True
-
     @with_context(description="installing system", level="INFO", childlevel="DEBUG")
     async def curtin_install(self, *, context, source):
         if self.app.opts.dry_run:
@@ -400,6 +394,12 @@ class InstallController(SubiquityController):
 
             if self.supports_apt():
                 await self.pre_curthooks_oem_configuration(context=context)
+
+                # If we already have a kernel installed, don't bother requesting
+                # curthooks to install it again or we might end up with two
+                # kernels.
+                if await list_installed_kernels(Path(self.tpath())):
+                    self.model.kernel.curthooks_no_install = True
 
             await run_curtin_step(
                 name="curthooks",
