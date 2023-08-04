@@ -14,7 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from unittest.mock import patch
+import subprocess
+from unittest.mock import ANY, patch
 
 from subiquity.server.runner import DryRunCommandRunner, LoggedCommandRunner
 from subiquitycore.tests import SubiTestCase
@@ -102,6 +103,15 @@ class TestLoggedCommandRunner(SubiTestCase):
             "/root",
         ]
         self.assertEqual(cmd, expected)
+
+    async def test_start(self):
+        runner = LoggedCommandRunner(ident="my-id", use_systemd_user=False)
+
+        with patch("subiquity.server.runner.astart_command") as astart_mock:
+            await runner.start(["/bin/ls"], stdout=subprocess.PIPE)
+
+        expected_cmd = ANY
+        astart_mock.assert_called_once_with(expected_cmd, stdout=subprocess.PIPE)
 
 
 class TestDryRunCommandRunner(SubiTestCase):

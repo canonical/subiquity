@@ -70,12 +70,17 @@ class LoggedCommandRunner:
         return prefix + cmd
 
     async def start(
-        self, cmd: List[str], *, private_mounts: bool = False, capture: bool = False
+        self,
+        cmd: List[str],
+        *,
+        private_mounts: bool = False,
+        capture: bool = False,
+        **astart_kwargs,
     ) -> asyncio.subprocess.Process:
         forged: List[str] = self._forge_systemd_cmd(
             cmd, private_mounts=private_mounts, capture=capture
         )
-        proc = await astart_command(forged)
+        proc = await astart_command(forged, **astart_kwargs)
         proc.args = forged
         return proc
 
@@ -128,10 +133,17 @@ class DryRunCommandRunner(LoggedCommandRunner):
             return self.delay
 
     async def start(
-        self, cmd: List[str], *, private_mounts: bool = False, capture: bool = False
+        self,
+        cmd: List[str],
+        *,
+        private_mounts: bool = False,
+        capture: bool = False,
+        **astart_kwargs,
     ) -> asyncio.subprocess.Process:
         delay = self._get_delay_for_cmd(cmd)
-        proc = await super().start(cmd, private_mounts=private_mounts, capture=capture)
+        proc = await super().start(
+            cmd, private_mounts=private_mounts, capture=capture, **astart_kwargs
+        )
         await asyncio.sleep(delay)
         return proc
 
