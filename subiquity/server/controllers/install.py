@@ -224,6 +224,55 @@ class InstallController(SubiquityController):
                 device_map = json.load(fp)
             self.app.controllers.Filesystem.update_devices(device_map)
 
+    async def pre_curthooks_oem_configuration(self, context):
+        async def install_oem_metapackages(ctx):
+            # For OEM, we basically mimic what ubuntu-drivers does:
+            # 1. Install each package with apt-get install
+            # 2. For each package, run apt-get update using only the source
+            # installed by said package.
+            # 3. Run apt-get install again for each package. This will upgrade
+            # them to the version found in the OEM archive.
+
+            # NOTE In ubuntu-drivers, this is done in a single call to apt-get
+            # install.
+            for pkg in self.model.oem.metapkgs:
+                await self.install_package(package=pkg.name, context=ctx)
+
+            if not self.model.network.has_network:
+                return
+
+            for pkg in self.model.oem.metapkgs:
+                source_list = f"/etc/apt/sources.list.d/{pkg.name}.list"
+                await run_curtin_command(
+                    self.app,
+                    context,
+                    "in-target",
+                    "-t",
+                    self.tpath(),
+                    "--",
+                    "apt-get",
+                    "update",
+                    "-o",
+                    f"Dir::Etc::SourceList={source_list}",
+                    "-o",
+                    "Dir::Etc::SourceParts=/dev/null",
+                    "--no-list-cleanup",
+                    private_mounts=False,
+                )
+
+            # NOTE In ubuntu-drivers, this is done in a single call to
+            # apt-get install.
+            for pkg in self.model.oem.metapkgs:
+                await self.install_package(package=pkg.name)
+
+        if not self.model.oem.metapkgs:
+            return
+
+        with context.child(
+            "install_oem_metapackages", "installing applicable OEM metapackages"
+        ) as child:
+            await install_oem_metapackages(child)
+
     @with_context(description="installing system", level="INFO", childlevel="DEBUG")
     async def curtin_install(self, *, context, source):
         if self.app.opts.dry_run:
@@ -343,48 +392,14 @@ class InstallController(SubiquityController):
                 )
             await self.setup_target(context=context)
 
-            # For OEM, we basically mimic what ubuntu-drivers does:
-            # 1. Install each package with apt-get install
-            # 2. For each package, run apt-get update using only the source
-            # installed by said package.
-            # 3. Run apt-get install again for each package. This will upgrade
-            # them to the version found in the OEM archive.
+            if self.supports_apt():
+                await self.pre_curthooks_oem_configuration(context=context)
 
-            # NOTE In ubuntu-drivers, this is done in a single call to apt-get
-            # install.
-            for pkg in self.model.oem.metapkgs:
-                await self.install_package(package=pkg.name)
-
-            if self.model.network.has_network:
-                for pkg in self.model.oem.metapkgs:
-                    source_list = f"/etc/apt/sources.list.d/{pkg.name}.list"
-                    await run_curtin_command(
-                        self.app,
-                        context,
-                        "in-target",
-                        "-t",
-                        self.tpath(),
-                        "--",
-                        "apt-get",
-                        "update",
-                        "-o",
-                        f"Dir::Etc::SourceList={source_list}",
-                        "-o",
-                        "Dir::Etc::SourceParts=/dev/null",
-                        "--no-list-cleanup",
-                        private_mounts=False,
-                    )
-
-                # NOTE In ubuntu-drivers, this is done in a single call to
-                # apt-get install.
-                for pkg in self.model.oem.metapkgs:
-                    await self.install_package(package=pkg.name)
-
-            # If we already have a kernel installed, don't bother requesting
-            # curthooks to install it again or we might end up with two
-            # kernels.
-            if await list_installed_kernels(Path(self.tpath())):
-                self.model.kernel.curthooks_no_install = True
+                # If we already have a kernel installed, don't bother requesting
+                # curthooks to install it again or we might end up with two
+                # kernels.
+                if await list_installed_kernels(Path(self.tpath())):
+                    self.model.kernel.curthooks_no_install = True
 
             await run_curtin_step(
                 name="curthooks",
