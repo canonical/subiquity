@@ -277,7 +277,6 @@ class SubiquityServer(Application):
         self.dr_cfg: Optional[DRConfig] = None
         self.set_source_variant(self.supported_variants[0])
         self.block_log_dir = block_log_dir
-        self.cloud = None
         self.cloud_init_ok = None
         self.state_event = asyncio.Event()
         self.update_state(ApplicationState.STARTING_UP)
@@ -613,7 +612,8 @@ class SubiquityServer(Application):
         return False
 
     def set_installer_password(self):
-        if self.cloud is None:
+        if self.installer_user_name is None:
+            # there was no default user or cloud-init was disabled.
             return
 
         passfile = self.state_path("installer-user-passwd")
@@ -640,10 +640,7 @@ class SubiquityServer(Application):
 
         username = self.installer_user_name
 
-        if username is None:
-            # extract_default can return None, if there is no default user
-            self.installer_user_passwd_kind = PasswordKind.NONE
-        elif self._user_has_password(username):
+        if self._user_has_password(username):
             # Was the password set to a random password by a version of
             # cloud-init that records the username in the log?  (This is the
             # case we hit on upgrading the subiquity snap)
