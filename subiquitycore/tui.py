@@ -15,6 +15,7 @@
 
 import asyncio
 import inspect
+import json
 import logging
 import os
 import signal
@@ -77,9 +78,7 @@ class TuiApplication(Application):
             if not opts.dry_run:
                 open("/run/casper-no-prompt", "w").close()
 
-        # Set rich_mode to the opposite of what we want, so we can
-        # call toggle_rich to get the right things set up.
-        self.rich_mode = opts.run_on_serial
+        self.rich_mode = None
         self.urwid_loop = None
         self.cur_screen = None
         self.fg_proc = None
@@ -256,20 +255,22 @@ class TuiApplication(Application):
     def set_rich(self, rich):
         if rich == self.rich_mode:
             return
-        self.toggle_rich()
-
-    def toggle_rich(self):
-        if self.rich_mode:
-            urwid.util.set_encoding("ascii")
-            new_palette = PALETTE_MONO
-            self.rich_mode = False
-        else:
+        if rich:
             urwid.util.set_encoding("utf-8")
             new_palette = PALETTE_COLOR
             self.rich_mode = True
+        else:
+            urwid.util.set_encoding("ascii")
+            new_palette = PALETTE_MONO
+            self.rich_mode = False
+        with open(self.state_path("rich-mode"), "w") as fp:
+            json.dump(self.rich_mode, fp)
         urwid.CanvasCache.clear()
         self.urwid_loop.screen.register_palette(new_palette)
         self.urwid_loop.screen.clear()
+
+    def toggle_rich(self):
+        self.set_rich(not self.rich_mode)
 
     def unhandled_input(self, key):
         if self.opts.dry_run and key == "ctrl x":
@@ -301,7 +302,14 @@ class TuiApplication(Application):
             **self.extra_urwid_loop_args(),
         )
         extend_dec_special_charmap()
-        self.toggle_rich()
+        try:
+            fp = open(self.state_path("rich-mode"))
+        except FileNotFoundError:
+            initial_rich_mode = not self.opts.run_on_serial
+        else:
+            with fp:
+                initial_rich_mode = json.load(fp)
+        self.set_rich(initial_rich_mode)
         self.urwid_loop.start()
         self.select_initial_screen()
 
