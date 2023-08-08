@@ -15,6 +15,7 @@
 
 import asyncio
 import inspect
+import json
 import logging
 import os
 import signal
@@ -262,6 +263,8 @@ class TuiApplication(Application):
             urwid.util.set_encoding("ascii")
             new_palette = PALETTE_MONO
             self.rich_mode = False
+        with open(self.state_path("rich-mode"), "w") as fp:
+            json.dump(self.rich_mode, fp)
         urwid.CanvasCache.clear()
         self.urwid_loop.screen.register_palette(new_palette)
         self.urwid_loop.screen.clear()
@@ -299,7 +302,14 @@ class TuiApplication(Application):
             **self.extra_urwid_loop_args(),
         )
         extend_dec_special_charmap()
-        self.set_rich(not self.opts.run_on_serial)
+        try:
+            fp = open(self.state_path("rich-mode"))
+        except FileNotFoundError:
+            initial_rich_mode = not self.opts.run_on_serial
+        else:
+            with fp:
+                initial_rich_mode = json.load(fp)
+        self.set_rich(initial_rich_mode)
         self.urwid_loop.start()
         self.select_initial_screen()
 
