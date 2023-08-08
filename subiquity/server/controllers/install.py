@@ -473,24 +473,33 @@ class InstallController(SubiquityController):
             return
         new_bootnum = new_bootnums.pop()
         new_entry = efi_state_after.entries[new_bootnum]
-        was_dup = False
-        for entry in efi_state_before.entries.values():
+        orig_num = None
+        for num, entry in efi_state_before.entries.items():
             if entry.path == new_entry.path and entry.name == new_entry.name:
-                was_dup = True
-        if was_dup:
+                orig_num = num
+        if orig_num is not None:
             cmd = [
                 "efibootmgr",
                 "--delete-bootnum",
                 "--bootnum",
                 new_bootnum,
             ]
+            rp_bootnum = orig_num
         else:
             cmd = [
                 "efibootmgr",
                 "--bootorder",
                 ",".join(efi_state_before.order),
             ]
+            rp_bootnum = new_bootnum
         await self.app.command_runner.run(cmd)
+        if not fs_controller.reset_partition_only:
+            cmd = [
+                "efibootmgr",
+                "--bootnext",
+                rp_bootnum,
+            ]
+            await self.app.command_runner.run(cmd)
 
     @with_context(description="creating fstab")
     async def create_core_boot_classic_fstab(self, *, context):
