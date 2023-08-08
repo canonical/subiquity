@@ -468,6 +468,7 @@ class SubiquityModel:
                 "terminal": "unmodified",
                 "probe_additional_os": True,
                 "reorder_uefi": False,
+                "remove_old_uefi_loaders": False,
             },
             "install": {
                 "unmount": "disabled",
