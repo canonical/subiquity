@@ -161,7 +161,6 @@ class TestDefaultUser(SubiTestCase):
         opts.output_base = self.tmp_dir()
         opts.machine_config = "examples/machines/simple.json"
         server = SubiquityServer(opts, None)
-        server.cloud = Mock()
         server._user_has_password = Mock(side_effect=Exception("should not be called"))
 
         opts.dry_run = False  # exciting!
