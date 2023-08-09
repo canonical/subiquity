@@ -21,6 +21,7 @@ configuration.
 """
 import logging
 import re
+from typing import Optional
 
 from urwid import connect_signal, Text
 
@@ -91,6 +92,7 @@ class FSTypeField(FormField):
 class SizeWidget(StringEditor):
     def __init__(self, form):
         self.form = form
+        self.accurate_value: Optional[int] = None
         super().__init__()
 
     def lost_focus(self):
@@ -112,6 +114,9 @@ class SizeWidget(StringEditor):
                 ('info_minor',
                  _("Capped partition size at {size}").format(
                      size=self.form.size_str)))
+            # This will invoke self.form.clean_size() and it is expected that
+            # size_str (and therefore self.value) are propertly aligned.
+            self.accurate_value = self.form.size
         else:
             aligned_sz = align_up(sz, self.form.alignment)
             aligned_sz_str = humanize_size(aligned_sz)
@@ -120,6 +125,7 @@ class SizeWidget(StringEditor):
                 self.form.size.show_extra(
                     ('info_minor', _("Rounded size up to {size}").format(
                         size=aligned_sz_str)))
+            self.accurate_value = aligned_sz
 
 
 class SizeField(FormField):
