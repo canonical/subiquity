@@ -5,7 +5,7 @@ import urwid
 
 from subiquity.client.controllers.filesystem import FilesystemController
 from subiquity.common.filesystem import gaps
-from subiquity.models.filesystem import dehumanize_size
+from subiquity.models.filesystem import MiB, dehumanize_size
 from subiquity.models.tests.test_filesystem import make_model_and_disk
 from subiquity.ui.views.filesystem.partition import (
     FormatEntireStretchy,
@@ -58,6 +58,7 @@ class PartitionViewTests(unittest.TestCase):
         gap = gaps.Gap(device=disk, offset=1 << 20, size=99 << 30)
         view, stretchy = make_partition_view(model, disk, gap=gap)
         view_helpers.enter_data(stretchy.form, valid_data)
+        stretchy.form.size.widget.lost_focus()
         view_helpers.click(stretchy.form.done_btn.base_widget)
         valid_data["mount"] = "/"
         valid_data["size"] = dehumanize_size(valid_data["size"])
@@ -77,6 +78,7 @@ class PartitionViewTests(unittest.TestCase):
         view, stretchy = make_partition_view(model, disk, partition=partition)
         self.assertTrue(stretchy.form.done_btn.enabled)
         view_helpers.enter_data(stretchy.form, form_data)
+        stretchy.form.size.widget.lost_focus()
         view_helpers.click(stretchy.form.done_btn.base_widget)
         expected_data = {
             "size": dehumanize_size(form_data["size"]),
@@ -111,6 +113,7 @@ class PartitionViewTests(unittest.TestCase):
         self.assertFalse(stretchy.form.size.enabled)
         self.assertTrue(stretchy.form.done_btn.enabled)
         view_helpers.enter_data(stretchy.form, form_data)
+        stretchy.form.size.widget.lost_focus()
         view_helpers.click(stretchy.form.done_btn.base_widget)
         expected_data = {
             "fstype": "xfs",
@@ -177,6 +180,7 @@ class PartitionViewTests(unittest.TestCase):
         self.assertEqual(stretchy.form.mount.value, "/boot/efi")
 
         view_helpers.enter_data(stretchy.form, form_data)
+        stretchy.form.size.widget.lost_focus()
         view_helpers.click(stretchy.form.done_btn.base_widget)
         expected_data = {
             "size": dehumanize_size(form_data["size"]),
@@ -246,3 +250,26 @@ class PartitionViewTests(unittest.TestCase):
         model._orig_config = model._render_actions()
         view, stretchy = make_format_entire_view(model, disk)
         self.assertEqual(stretchy.form.fstype.value, None)
+
+    def test_create_partition_unaligned_size(self):
+        # In LP: #2013201, the user would type in 1.1G and the partition
+        # created would not be aligned to a MiB boundary.
+        unaligned_data = {
+            "size": "1.1G",  # Corresponds to 1181116006.4 bytes (not an int)
+            "fstype": "ext4",
+        }
+        valid_data = {
+            "mount": "/",
+            "size": 1127 * MiB,  # ~1.10058 GiB
+            "use_swap": False,
+            "fstype": "ext4",
+        }
+        model, disk = make_model_and_disk()
+        gap = gaps.Gap(device=disk, offset=1 << 20, size=99 << 30)
+        view, stretchy = make_partition_view(model, disk, gap=gap)
+        view_helpers.enter_data(stretchy.form, unaligned_data)
+        stretchy.form.size.widget.lost_focus()
+        view_helpers.click(stretchy.form.done_btn.base_widget)
+        view.controller.partition_disk_handler.assert_called_once_with(
+            stretchy.disk, valid_data, partition=None, gap=gap
+        )

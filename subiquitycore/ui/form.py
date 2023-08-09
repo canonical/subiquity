@@ -531,7 +531,11 @@ class Form(object, metaclass=MetaForm):
         data = {}
         for field in self._fields:
             if field.enabled:
-                data[field.field.name] = field.value
+                accurate_value = getattr(field.widget, "accurate_value", None)
+                if accurate_value is not None:
+                    data[field.field.name] = accurate_value
+                else:
+                    data[field.field.name] = field.value
         return data
 
 
