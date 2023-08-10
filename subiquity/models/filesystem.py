@@ -747,6 +747,7 @@ class Partition(_Formattable):
     partition_type: Optional[str] = None
     partition_name: Optional[str] = None
     path: Optional[str] = None
+    uuid: Optional[str] = None
 
     _info: Optional[StorageInfo] = attributes.for_api(default=None)
 
