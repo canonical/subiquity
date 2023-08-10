@@ -13,7 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import shutil
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import ANY, AsyncMock, Mock, call, mock_open, patch
@@ -198,7 +201,9 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
         self.controller = InstallController(make_app())
         self.controller.app.report_start_event = Mock()
         self.controller.app.report_finish_event = Mock()
-        self.controller.model.target = "/target"
+        self.controller.model.target = tempfile.mkdtemp()
+        os.makedirs(os.path.join(self.controller.model.target, "etc/grub.d"))
+        self.addCleanup(shutil.rmtree, self.controller.model.target)
 
     @patch("asyncio.sleep")
     async def test_install_package(self, m_sleep):
@@ -221,23 +226,25 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(subprocess.CalledProcessError):
                 await self.controller.install_package(package="git")
 
-    def setup_rp_test(self):
+    def setup_rp_test(self, lsblk_output=b"lsblk_output"):
         app = self.controller.app
         app.opts.dry_run = False
         fsc = app.controllers.Filesystem
         fsc.reset_partition_only = True
         app.package_installer = Mock()
-        app.command_runner = Mock()
-        self.run = app.command_runner.run = AsyncMock()
+        app.command_runner = AsyncMock()
+        self.run = app.command_runner.run = AsyncMock(
+            return_value=subprocess.CompletedProcess((), 0, stdout=lsblk_output)
+        )
         app.package_installer.install_pkg = AsyncMock()
         app.package_installer.install_pkg.return_value = PackageInstallState.DONE
         fsm, self.part = make_model_and_partition()
 
     @patch("subiquity.server.controllers.install.get_efibootmgr")
-    async def test_create_rp_boot_entry_add(self, m_get_efibootmgr):
+    async def test_configure_rp_boot_uefi_add(self, m_get_efibootmgr):
         m_get_efibootmgr.side_effect = iter([efi_state_no_rp, efi_state_with_rp])
         self.setup_rp_test()
-        await self.controller.create_rp_boot_entry(rp=self.part)
+        await self.controller.configure_rp_boot_uefi(rp=self.part)
         calls = [
             call(
                 [
@@ -264,10 +271,41 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
         self.run.assert_has_awaits(calls)
 
     @patch("subiquity.server.controllers.install.get_efibootmgr")
-    async def test_create_rp_boot_entry_dup(self, m_get_efibootmgr):
+    async def test_configure_rp_boot_uefi_bootnext(self, m_get_efibootmgr):
+        m_get_efibootmgr.side_effect = iter([efi_state_no_rp, efi_state_with_rp])
+        self.setup_rp_test()
+        self.controller.app.base_model.target = None
+        await self.controller.configure_rp_boot_uefi(rp=self.part)
+        calls = [
+            call(
+                [
+                    "efibootmgr",
+                    "--create",
+                    "--loader",
+                    "\\EFI\\boot\\shimx64.efi",
+                    "--disk",
+                    self.part.device.path,
+                    "--part",
+                    str(self.part.number),
+                    "--label",
+                    "Restore Ubuntu to factory state",
+                ]
+            ),
+            call(
+                [
+                    "efibootmgr",
+                    "--bootorder",
+                    "0000,0002",
+                ]
+            ),
+        ]
+        self.run.assert_has_awaits(calls)
+
+    @patch("subiquity.server.controllers.install.get_efibootmgr")
+    async def test_configure_rp_boot_uefi_dup(self, m_get_efibootmgr):
         m_get_efibootmgr.side_effect = iter([efi_state_with_rp, efi_state_with_dup_rp])
         self.setup_rp_test()
-        await self.controller.create_rp_boot_entry(rp=self.part)
+        await self.controller.configure_rp_boot_uefi(rp=self.part)
         calls = [
             call(
                 [
@@ -293,3 +331,15 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
             ),
         ]
         self.run.assert_has_awaits(calls)
+
+    async def test_configure_rp_boot_grub(self):
+        fsuuid, partuuid = "fsuuid", "partuuid"
+        self.setup_rp_test(f"{fsuuid}\t{partuuid}".encode("ascii"))
+        await self.controller.configure_rp_boot_grub(
+            rp=self.part, casper_uuid="casper-uuid"
+        )
+        with open(self.controller.tpath("etc/grub.d/99_reset")) as fp:
+            cfg = fp.read()
+        self.assertIn("--fs-uuid fsuuid", cfg)
+        self.assertIn("rp-partuuid=partuuid", cfg)
+        self.assertIn("uuid=casper-uuid", cfg)
