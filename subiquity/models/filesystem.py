@@ -1821,15 +1821,7 @@ class FilesystemModel(object):
         return self._all(type="lvm_volgroup")
 
     def partition_by_partuuid(self, partuuid: str) -> Optional[Partition]:
-        # This can be simplified when
-        # https://code.launchpad.net/~mwhudson/curtin/+git/curtin/+merge/448842
-        # lands.
-        for part in self.app.base_model.filesystem._all(type="partition"):
-            if part._info is None:
-                continue
-            if part._info.raw.get("ID_PART_ENTRY_UUID") == partuuid:
-                return part
-        return None
+        return self._one(type="partition", uuid=partuuid)
 
     def _remove(self, obj):
         _remove_backlinks(obj)
