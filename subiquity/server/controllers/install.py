@@ -525,7 +525,7 @@ class InstallController(SubiquityController):
             "efibootmgr",
             "--create",
             "--loader",
-            "\\EFI\\boot\\shimx64.efi",
+            "\\EFI\\boot\\bootx64.efi",
             "--disk",
             rp.device.path,
             "--part",
