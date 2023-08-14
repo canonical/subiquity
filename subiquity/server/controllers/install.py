@@ -499,16 +499,16 @@ class InstallController(SubiquityController):
         with open(self.tpath("etc/grub.d/99_reset"), "w") as fp:
             os.chmod(fp.fileno(), 0o755)
             fp.write(conf)
-            await run_curtin_command(
-                self.app,
-                context,
-                "in-target",
-                "-t",
-                self.tpath(),
-                "--",
-                "update-grub",
-                private_mounts=False,
-            )
+        await run_curtin_command(
+            self.app,
+            context,
+            "in-target",
+            "-t",
+            self.tpath(),
+            "--",
+            "update-grub",
+            private_mounts=False,
+        )
 
     @with_context(description="configuring UEFI menu entry for factory reset")
     async def configure_rp_boot_uefi(self, context, rp: Partition):
