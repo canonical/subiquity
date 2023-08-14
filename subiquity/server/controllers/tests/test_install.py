@@ -264,7 +264,7 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
                 [
                     "efibootmgr",
                     "--bootorder",
-                    "0000,0002",
+                    "0000,0002,0003",
                 ]
             ),
         ]
@@ -295,7 +295,14 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
                 [
                     "efibootmgr",
                     "--bootorder",
-                    "0000,0002",
+                    "0000,0002,0003",
+                ]
+            ),
+            call(
+                [
+                    "efibootmgr",
+                    "--bootnext",
+                    "0003",
                 ]
             ),
         ]
