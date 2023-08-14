@@ -557,7 +557,7 @@ class InstallController(SubiquityController):
             cmd = [
                 "efibootmgr",
                 "--bootorder",
-                ",".join(efi_state_before.order),
+                ",".join(efi_state_before.order + [new_bootnum]),
             ]
             rp_bootnum = new_bootnum
         await self.app.command_runner.run(cmd)
