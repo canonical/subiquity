@@ -435,7 +435,7 @@ class InstallController(SubiquityController):
                     casper_uuid = fp.read().strip()
             rp_partuuid = self.app.kernel_cmdline.get("rp-partuuid")
             if casper_uuid is not None and rp_partuuid is not None:
-                rp = self.app.base_model.partition_by_partuuid(rp_partuuid)
+                rp = self.app.base_model.filesystem.partition_by_partuuid(rp_partuuid)
                 if rp is not None:
                     await self.configure_rp_boot(
                         context=context, rp=rp, casper_uuid=casper_uuid
