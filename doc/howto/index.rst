@@ -12,8 +12,20 @@ understand and adapt the steps to fit your specific requirements.
 
 -----
 
-How do I...?
-============
+Getting started with Autoinstall
+================================
 
 .. toctree::
    :maxdepth: 1
+   
+   Autoinstall quick-start guide <autoinstall-quickstart>
+   Autoinstall quick-start guide for s390x <autoinstall-quickstart-s390x>
+
+
+Found a problem?
+================
+
+.. toctree::
+   :maxdepth: 1
+   
+   report-bugs

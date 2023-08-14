@@ -7,5 +7,11 @@ knowledge and become better at using and configuring Subiquity.
 
 -----
 
+About the Server installer
+==========================
+
 .. toctree::
    :maxdepth: 1
+   
+   operate-server-installer
+   configure-storage
