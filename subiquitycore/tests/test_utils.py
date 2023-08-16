@@ -16,7 +16,7 @@
 # from unittest.mock import Mock
 
 from subiquitycore.tests import SubiTestCase
-from subiquitycore.utils import orig_environ
+from subiquitycore.utils import _zsys_uuid_charset, gen_zsys_uuid, orig_environ
 
 
 class TestOrigEnviron(SubiTestCase):
@@ -68,3 +68,23 @@ class TestOrigEnviron(SubiTestCase):
             "PATH": "/usr/bin:/bin",
         }
         self.assertEqual(expected, orig_environ(env))
+
+
+class TestZsysUUID(SubiTestCase):
+    def test_charset(self):
+        charset = _zsys_uuid_charset()
+        for c in "0", "9", "a", "z":
+            self.assertIn(c, charset)
+        bads = [
+            chr(ord("0") - 1),
+            chr(ord("9") + 1),
+            chr(ord("a") - 1),
+            chr(ord("z") + 1),
+        ]
+        for c in bads:
+            self.assertNotIn(c, charset)
+
+    def test_zsys_uuid(self):
+        for i in range(10):
+            uuid = gen_zsys_uuid()
+            self.assertEqual(6, len(uuid), uuid)
