@@ -25,7 +25,7 @@ import platform
 import secrets
 import tempfile
 from abc import ABC, abstractmethod
-from typing import List, Optional, Set, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 import attr
 import more_itertools
@@ -46,6 +46,67 @@ GiB = 1024 * 1024 * 1024
 class NotFinalPartitionError(Exception):
     """Exception to raise when guessing the size of a partition that is not
     the last one."""
+
+
+@attr.s(auto_attribs=True)
+class RecoveryKeyHandler:
+    # Where to store the key on the live system
+    live_location: Optional[pathlib.Path]
+    # Where to store the key in the target system. /target will automatically
+    # be prefixed.
+    backup_location: pathlib.Path
+
+    _key: Optional[str] = attr.ib(repr=False, default=None)
+
+    def load_key_from_file(self, location: pathlib.Path) -> None:
+        """Load the key from the file specified"""
+        with location.open(mode="r", encoding="utf-8") as fh:
+            self._key = fh.read().strip()
+
+    def generate(self):
+        """Generate a key and store internally"""
+        self._key = FilesystemModel.generate_recovery_key()
+
+    def _expose_key(
+        self,
+        location: pathlib.Path,
+        root: pathlib.Path,
+        parents_perm: int,
+        key_perm: int,
+    ) -> None:
+        full_location = root / location.relative_to(location.root)
+
+        if not full_location.resolve().is_relative_to(root):
+            raise RuntimeError(
+                "Trying to copy recovery key outside of" " designated root directory"
+            )
+
+        full_location.parent.mkdir(mode=parents_perm, parents=True, exist_ok=True)
+
+        with full_location.open(mode="w", encoding="utf-8") as fh:
+            fh.write(self._key)
+        full_location.chmod(key_perm)
+
+    def expose_key_to_live_system(self, root: Optional[pathlib.Path] = None) -> None:
+        """Write the key to the live system - so it can be retrieved by the
+        user of the installer."""
+        if root is None:
+            root = pathlib.Path("/")
+
+        self._expose_key(
+            location=self.live_location, root=root, parents_perm=0o755, key_perm=0o644
+        )
+
+    def copy_key_to_target_system(self, target: pathlib.Path) -> None:
+        """Write the key to the target system - so it can be retrieved after
+        the install by an admin."""
+
+        self._expose_key(
+            location=self.backup_location,
+            root=target,
+            parents_perm=0o700,
+            key_perm=0o600,
+        )
 
 
 def _set_backlinks(obj):
