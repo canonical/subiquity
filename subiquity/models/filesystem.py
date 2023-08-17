@@ -1820,6 +1820,9 @@ class FilesystemModel(object):
     def all_volgroups(self):
         return self._all(type="lvm_volgroup")
 
+    def partition_by_partuuid(self, partuuid: str) -> Optional[Partition]:
+        return self._one(type="partition", uuid=partuuid)
+
     def _remove(self, obj):
         _remove_backlinks(obj)
         self._actions.remove(obj)

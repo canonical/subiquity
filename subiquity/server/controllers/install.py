@@ -15,13 +15,16 @@
 
 import asyncio
 import copy
+import glob
 import json
 import logging
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import tempfile
+import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -32,11 +35,11 @@ from curtin.util import get_efibootmgr, is_uefi_bootable
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.types import ApplicationState, PackageInstallState
 from subiquity.journald import journald_listen
-from subiquity.models.filesystem import ActionRenderMode
+from subiquity.models.filesystem import ActionRenderMode, Partition
 from subiquity.server.controller import SubiquityController
 from subiquity.server.curtin import run_curtin_command, start_curtin_command
 from subiquity.server.kernel import list_installed_kernels
-from subiquity.server.mounter import Mounter
+from subiquity.server.mounter import Mounter, Mountpoint
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import run_bg_task, run_in_thread
 from subiquitycore.context import with_context
@@ -421,35 +424,89 @@ class InstallController(SubiquityController):
                 step_config=self.rp_config(logs_dir, mp.p()),
                 source="cp:///cdrom",
             )
-            await self.create_rp_boot_entry(context=context, rp=rp)
+            new_casper_uuid = await self.adjust_rp(rp, mp)
+            await self.configure_rp_boot(
+                context=context, rp=rp, casper_uuid=new_casper_uuid
+            )
+        else:
+            await self.maybe_configure_exiting_rp_boot(context=context)
 
-    @with_context(description="creating boot entry for reset partition")
-    async def create_rp_boot_entry(self, context, rp):
-        fs_controller = self.app.controllers.Filesystem
-        if not fs_controller.reset_partition_only:
-            cp = await self.app.command_runner.run(
-                ["lsblk", "-n", "-o", "UUID", rp.path], capture=True
-            )
-            uuid = cp.stdout.decode("ascii").strip()
-            conf = grub_reset_conf.format(
-                HEADER=generate_timestamped_header(), PARTITION=rp.number, UUID=uuid
-            )
-            with open(self.tpath("etc/grub.d/99_reset"), "w") as fp:
-                os.chmod(fp.fileno(), 0o755)
-                fp.write(conf)
-            await run_curtin_command(
-                self.app,
-                context,
-                "in-target",
-                "-t",
-                self.tpath(),
-                "--",
-                "update-grub",
-                private_mounts=False,
-            )
-        if self.app.opts.dry_run and not is_uefi_bootable():
-            # Can't even run efibootmgr in this case.
+    async def adjust_rp(self, rp: Partition, mp: Mountpoint) -> str:
+        if self.app.opts.dry_run:
             return
+        # Once the installer has been copied to the RP, we need to make two
+        # adjustments:
+        #
+        # 1. set a new "casper uuid" so that booting from the install
+        #    media again, or booting from the RP but with the install
+        #    media still attached, does not get confused about which
+        #    device to use as /cdrom.
+        #
+        # 2. add "rp-partuuid" to the kernel command line in grub.cfg
+        #    so that subiquity can identify when it is running from
+        #    the recovery partition and add a reference to it to
+        #    grub.cfg on the target system in that case.
+        grub_cfg_path = mp.p("boot/grub/grub.cfg")
+        new_cfg = []
+        new_casper_uuid = str(uuid.uuid4())
+        cp = await self.app.command_runner.run(
+            ["lsblk", "-n", "-o", "PARTUUID", rp.path], capture=True
+        )
+        rp_uuid = cp.stdout.decode("ascii").strip()
+        with open(grub_cfg_path) as fp:
+            for line in fp:
+                words = shlex.split(line)
+                if words and words[0] == "linux" and "---" in words:
+                    index = words.index("---")
+                    words[index - 1 : index - 1] = [
+                        "uuid=" + new_casper_uuid,
+                        "rp-partuuid=" + rp_uuid,
+                    ]
+                    new_cfg.append(shlex.join(words) + "\n")
+                else:
+                    new_cfg.append(line)
+        with open(grub_cfg_path, "w") as fp:
+            fp.write("".join(new_cfg))
+        for casper_uuid_file in glob.glob(mp.p(".disk/casper-uuid-*")):
+            with open(casper_uuid_file, "w") as fp:
+                fp.write(new_casper_uuid + "\n")
+        return new_casper_uuid
+
+    @with_context(description="configuring grub menu entry for factory reset")
+    async def configure_rp_boot_grub(self, context, rp: Partition, casper_uuid: str):
+        # Add a grub menu entry to boot from the RP
+        cp = await self.app.command_runner.run(
+            ["lsblk", "-n", "-o", "UUID,PARTUUID", rp.path], capture=True
+        )
+        fs_uuid, rp_uuid = cp.stdout.decode("ascii").strip().split()
+        conf = grub_reset_conf.format(
+            HEADER=generate_timestamped_header(),
+            PARTITION=rp.number,
+            FS_UUID=fs_uuid,
+            CASPER_UUID=casper_uuid,
+            RP_UUID=rp_uuid,
+        )
+        with open(self.tpath("etc/grub.d/99_reset"), "w") as fp:
+            os.chmod(fp.fileno(), 0o755)
+            fp.write(conf)
+        await run_curtin_command(
+            self.app,
+            context,
+            "in-target",
+            "-t",
+            self.tpath(),
+            "--",
+            "update-grub",
+            private_mounts=False,
+        )
+
+    @with_context(description="configuring UEFI menu entry for factory reset")
+    async def configure_rp_boot_uefi(self, context, rp: Partition):
+        # Add an UEFI boot entry to point at the RP
+        # Details:
+        # 1. Do not leave duplicate entries
+        # 2. Do not leave the boot entry in BootOrder
+        # 3. Set BootNext to boot from RP in the reset-partition-only case.
         state = await self.app.package_installer.install_pkg("efibootmgr")
         if state != PackageInstallState.DONE:
             raise RuntimeError("could not install efibootmgr")
@@ -458,7 +515,7 @@ class InstallController(SubiquityController):
             "efibootmgr",
             "--create",
             "--loader",
-            "\\EFI\\boot\\shimx64.efi",
+            "\\EFI\\boot\\bootx64.efi",
             "--disk",
             rp.device.path,
             "--part",
@@ -470,6 +527,7 @@ class InstallController(SubiquityController):
         efi_state_after = get_efibootmgr("/")
         new_bootnums = set(efi_state_after.entries) - set(efi_state_before.entries)
         if not new_bootnums:
+            # Will probably only happen in dry-run mode.
             return
         new_bootnum = new_bootnums.pop()
         new_entry = efi_state_after.entries[new_bootnum]
@@ -489,17 +547,50 @@ class InstallController(SubiquityController):
             cmd = [
                 "efibootmgr",
                 "--bootorder",
-                ",".join(efi_state_before.order),
+                ",".join(efi_state_before.order + [new_bootnum]),
             ]
             rp_bootnum = new_bootnum
         await self.app.command_runner.run(cmd)
-        if not fs_controller.reset_partition_only:
+        if self.model.target is None:
             cmd = [
                 "efibootmgr",
                 "--bootnext",
                 rp_bootnum,
             ]
             await self.app.command_runner.run(cmd)
+
+    async def configure_rp_boot(self, context, rp: Partition, casper_uuid: str):
+        if self.model.target is not None and not self.opts.dry_run:
+            await self.configure_rp_boot_grub(
+                context=context, rp=rp, casper_uuid=casper_uuid
+            )
+        if self.app.opts.dry_run and not is_uefi_bootable():
+            # Can't even run efibootmgr in this case.
+            return
+        await self.configure_rp_boot_uefi(context=context, rp=rp)
+
+    async def maybe_configure_exiting_rp_boot(self, context):
+        # We are not creating a reset partition here if we are running
+        # from one we still want to configure booting from it.
+
+        # Look for the command line argument added in adjust_rp)
+        # above.
+        rp_partuuid = self.app.kernel_cmdline.get("rp-partuuid")
+        if rp_partuuid is None:
+            # Most likely case: we are not running from an reset partition
+            return
+        rp = self.app.base_model.filesystem.partition_by_partuuid(rp_partuuid)
+        if rp is None:
+            # This shouldn't happen, but don't crash.
+            return
+        casper_uuid = None
+        for casper_uuid_file in glob.glob("/cdrom/.disk/casper-uuid-*"):
+            with open(casper_uuid_file) as fp:
+                casper_uuid = fp.read().strip()
+        if casper_uuid is None:
+            # This also shouldn't happen, but, again, don't crash.
+            return
+        await self.configure_rp_boot(context=context, rp=rp, casper_uuid=casper_uuid)
 
     @with_context(description="creating fstab")
     async def create_core_boot_classic_fstab(self, *, context):
@@ -739,10 +830,10 @@ grub_reset_conf = """\
 set -e
 
 cat << EOF
-menuentry "Restore Ubuntu to factory state" {
-      search --no-floppy --hint '(hd0,{PARTITION})' --set --fs-uuid {UUID}
-      linux  /casper/vmlinuz uuid={UUID} nopersistent
+menuentry "Restore Ubuntu to factory state" {{
+      search --no-floppy --hint '(hd0,{PARTITION})' --set --fs-uuid {FS_UUID}
+      linux  /casper/vmlinuz uuid={CASPER_UUID} rp-partuuid={RP_UUID} nopersistent
       initrd /casper/initrd
-}
+}}
 EOF
 """
