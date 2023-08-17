@@ -224,7 +224,7 @@ def get_add_part_plan(device, *, spec, args, resize_partition=None):
     # is a bad idea.  So avoid putting any sort of boot stuff on a logical -
     # it's probably a bad idea for all cases.
 
-    gap = gaps.largest_gap(device, in_extended=False)
+    gap = gaps.gap_with_size(device, size, in_extended=False)
     if gap is not None and gap.size >= size and gap.is_usable:
         create_part_plan.gap = gap.split(size)[0]
         return create_part_plan
