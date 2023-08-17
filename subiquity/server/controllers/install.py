@@ -489,16 +489,16 @@ class InstallController(SubiquityController):
         with open(self.tpath("etc/grub.d/99_reset"), "w") as fp:
             os.chmod(fp.fileno(), 0o755)
             fp.write(conf)
-            await run_curtin_command(
-                self.app,
-                context,
-                "in-target",
-                "-t",
-                self.tpath(),
-                "--",
-                "update-grub",
-                private_mounts=False,
-            )
+        await run_curtin_command(
+            self.app,
+            context,
+            "in-target",
+            "-t",
+            self.tpath(),
+            "--",
+            "update-grub",
+            private_mounts=False,
+        )
 
     @with_context(description="configuring UEFI menu entry for factory reset")
     async def configure_rp_boot_uefi(self, context, rp: Partition):
@@ -547,7 +547,7 @@ class InstallController(SubiquityController):
             cmd = [
                 "efibootmgr",
                 "--bootorder",
-                ",".join(efi_state_before.order),
+                ",".join(efi_state_before.order + [new_bootnum]),
             ]
             rp_bootnum = new_bootnum
         await self.app.command_runner.run(cmd)
@@ -579,7 +579,7 @@ class InstallController(SubiquityController):
         if rp_partuuid is None:
             # Most likely case: we are not running from an reset partition
             return
-        rp = self.app.base_model.partition_by_partuuid(rp_partuuid)
+        rp = self.app.base_model.filesystem.partition_by_partuuid(rp_partuuid)
         if rp is None:
             # This shouldn't happen, but don't crash.
             return
