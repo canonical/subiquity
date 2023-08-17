@@ -429,17 +429,7 @@ class InstallController(SubiquityController):
                 context=context, rp=rp, casper_uuid=new_casper_uuid
             )
         else:
-            casper_uuid = None
-            for casper_uuid_file in glob.glob("/cdrom/.disk/casper-uuid-*"):
-                with open(casper_uuid_file) as fp:
-                    casper_uuid = fp.read().strip()
-            rp_partuuid = self.app.kernel_cmdline.get("rp-partuuid")
-            if casper_uuid is not None and rp_partuuid is not None:
-                rp = self.app.base_model.partition_by_partuuid(rp_partuuid)
-                if rp is not None:
-                    await self.configure_rp_boot(
-                        context=context, rp=rp, casper_uuid=casper_uuid
-                    )
+            await self.maybe_configure_exiting_rp_boot(context=context)
 
     async def adjust_rp(self, rp: Partition, mp: Mountpoint) -> str:
         if self.app.opts.dry_run:
@@ -578,6 +568,29 @@ class InstallController(SubiquityController):
             # Can't even run efibootmgr in this case.
             return
         await self.configure_rp_boot_uefi(context=context, rp=rp)
+
+    async def maybe_configure_exiting_rp_boot(self, context):
+        # We are not creating a reset partition here if we are running
+        # from one we still want to configure booting from it.
+
+        # Look for the command line argument added in adjust_rp)
+        # above.
+        rp_partuuid = self.app.kernel_cmdline.get("rp-partuuid")
+        if rp_partuuid is None:
+            # Most likely case: we are not running from an reset partition
+            return
+        rp = self.app.base_model.partition_by_partuuid(rp_partuuid)
+        if rp is None:
+            # This shouldn't happen, but don't crash.
+            return
+        casper_uuid = None
+        for casper_uuid_file in glob.glob("/cdrom/.disk/casper-uuid-*"):
+            with open(casper_uuid_file) as fp:
+                casper_uuid = fp.read().strip()
+        if casper_uuid is None:
+            # This also shouldn't happen, but, again, don't crash.
+            return
+        await self.configure_rp_boot(context=context, rp=rp, casper_uuid=casper_uuid)
 
     @with_context(description="creating fstab")
     async def create_core_boot_classic_fstab(self, *, context):
