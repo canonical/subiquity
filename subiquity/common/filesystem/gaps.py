@@ -252,10 +252,11 @@ def largest_gap_size(device, in_extended=None):
     return 0
 
 
-def gap_with_size(device, size):
+def gap_with_size(device, size, *, in_extended=None):
     for pg in parts_and_gaps(device):
         if isinstance(pg, Gap) and pg.size >= size and pg.is_usable:
-            return pg
+            if in_extended is None or in_extended == pg.in_extended:
+                return pg
     return None
 
 
