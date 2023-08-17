@@ -35,7 +35,7 @@ from curtin.swap import can_use_swapfile
 from curtin.util import human2bytes
 from probert.storage import StorageInfo
 
-from subiquity.common.types import Bootloader, OsProber
+from subiquity.common.types import Bootloader, OsProber, RecoveryKey
 
 log = logging.getLogger("subiquity.models.filesystem")
 
@@ -57,6 +57,25 @@ class RecoveryKeyHandler:
     backup_location: pathlib.Path
 
     _key: Optional[str] = attr.ib(repr=False, default=None)
+
+    @classmethod
+    def from_post_data(
+        cls, data: Optional[RecoveryKey], default_suffix="recovery-key.txt"
+    ) -> Optional["RecoveryKeyHandler"]:
+        """Create RecoveryKeyHandler instance from POST-ed RecoveryKey data."""
+        if data is None:
+            return None
+
+        # Set default values for unspecified settings.
+        live_location = pathlib.Path("~").expanduser() / default_suffix
+        backup_location = pathlib.Path("/var/log/installer") / default_suffix
+
+        if data.live_location is not None:
+            live_location = pathlib.Path(data.live_location)
+        if data.backup_location is not None:
+            backup_location = pathlib.Path(data.backup_location)
+
+        return cls(live_location=live_location, backup_location=backup_location)
 
     def load_key_from_file(self, location: pathlib.Path) -> None:
         """Load the key from the file specified"""
@@ -1053,7 +1072,24 @@ class DM_Crypt:
     volume: _Formattable = attributes.ref(backlink="_constructed_device")
     key: Optional[str] = attr.ib(metadata={"redact": True}, default=None)
     keyfile: Optional[str] = None
+    recovery_key: Optional[RecoveryKeyHandler] = None
+    _recovery_keyfile: Optional[str] = None
+    _recovery_live_location: Optional[str] = None
+    _recovery_backup_location: Optional[str] = None
     path: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        # When the object is created using _actions_from_config, we should
+        # build the recovery_key object.
+        if self._recovery_keyfile is None or self.recovery_key is not None:
+            return
+
+        props: Dict[str, pathlib.Path] = {}
+        if self._recovery_live_location:
+            props["live_location"] = pathlib.Path(self._recovery_live_location)
+        if self._recovery_backup_location:
+            props["backup_location"] = pathlib.Path(self._recovery_backup_location)
+        self.recovery_key = RecoveryKeyHandler(**props)
 
     def serialize_key(self):
         if self.key and not self.keyfile:
@@ -1063,6 +1099,36 @@ class DM_Crypt:
             return {"keyfile": f.name}
         else:
             return {}
+
+    def serialize_recovery_key(self) -> str:
+        if self.recovery_key is None:
+            return {"recovery_keyfile": None}
+
+        # A bit of a hack to make sure the recovery key gets created when
+        # converting the DM_Crypt object to a dict.
+        if self._recovery_keyfile is None:
+            self.assign_recovery_key()
+
+        props = {"recovery_keyfile": self._recovery_keyfile}
+
+        if self.recovery_key.live_location is not None:
+            props["recovery_live_location"] = str(self.recovery_key.live_location)
+        if self.recovery_key.backup_location is not None:
+            props["recovery_backup_location"] = str(self.recovery_key.backup_location)
+
+        return props
+
+    def assign_recovery_key(self):
+        """Create the recovery key and temporary store it in a keyfile."""
+        f = tempfile.NamedTemporaryFile(
+            prefix="luks-recovery-key-", mode="w", delete=False
+        )
+        if self.recovery_key._key is None:
+            self.recovery_key.generate()
+
+        f.write(self.recovery_key._key)
+        f.close()
+        self._recovery_keyfile = f.name
 
     dm_name: Optional[str] = None
     preserve: bool = False
@@ -1898,6 +1964,9 @@ class FilesystemModel:
     def all_volgroups(self):
         return self._all(type="lvm_volgroup")
 
+    def all_dm_crypts(self):
+        return self._all(type="dm_crypt")
+
     def partition_by_partuuid(self, partuuid: str) -> Optional[Partition]:
         return self._one(type="partition", uuid=partuuid)
 
@@ -1998,10 +2067,23 @@ class FilesystemModel:
             raise Exception("can only remove empty LV")
         self._remove(lv)
 
-    def add_dm_crypt(self, volume, key):
+    def add_dm_crypt(
+        self,
+        volume,
+        key,
+        *,
+        recovery_key: Optional[RecoveryKeyHandler],
+        root: Optional[pathlib.Path] = None,
+    ):
         if not volume.available:
             raise Exception("{} is not available".format(volume))
-        dm_crypt = DM_Crypt(m=self, volume=volume, key=key)
+
+        dm_crypt = DM_Crypt(
+            m=self,
+            volume=volume,
+            key=key,
+            recovery_key=recovery_key,
+        )
         self._actions.append(dm_crypt)
         return dm_crypt
 
@@ -2117,3 +2199,37 @@ class FilesystemModel:
         consist of 48 decimal digits."""
         digits = 48
         return str(secrets.randbelow(10**digits)).zfill(digits)
+
+    def load_or_generate_recovery_keys(self) -> None:
+        for dm_crypt in self.all_dm_crypts():
+            if dm_crypt.recovery_key is None:
+                continue
+            if dm_crypt.recovery_key._key is not None:
+                continue
+            if dm_crypt._recovery_keyfile is not None:
+                dm_crypt.recovery_key.load_key_from_file(
+                    pathlib.Path(dm_crypt._recovery_keyfile)
+                )
+            else:
+                dm_crypt.recovery_key.generate()
+
+    def expose_recovery_keys(self) -> None:
+        for dm_crypt in self.all_dm_crypts():
+            if dm_crypt.recovery_key is None:
+                continue
+            handler = dm_crypt.recovery_key
+
+            if handler.live_location is None:
+                continue
+
+            handler.expose_key_to_live_system(root=self.root)
+
+    def copy_artifacts_to_target(self) -> None:
+        for dm_crypt in self.all_dm_crypts():
+            if dm_crypt.recovery_key is None:
+                continue
+
+            log.debug(
+                "Copying recovery key for %s to target: %s", dm_crypt, self.target
+            )
+            dm_crypt.recovery_key.copy_key_to_target_system(target=self.target)

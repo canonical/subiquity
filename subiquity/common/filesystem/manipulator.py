@@ -139,10 +139,15 @@ class FilesystemManipulator:
     def create_volgroup(self, spec):
         devices = set()
         key = spec.get("passphrase")
+
         for device in spec["devices"]:
             self.clear(device)
             if key:
-                device = self.model.add_dm_crypt(device, key)
+                device = self.model.add_dm_crypt(
+                    device,
+                    key,
+                    recovery_key=spec.get("recovery-key"),
+                )
             devices.add(device)
         return self.model.add_volgroup(name=spec["name"], devices=devices)
 
@@ -334,7 +339,11 @@ class FilesystemManipulator:
             for d in spec["devices"]:
                 self.clear(d)
                 if key:
-                    d = self.model.add_dm_crypt(d, key)
+                    d = self.model.add_dm_crypt(
+                        d,
+                        key,
+                        recovery_key=spec.get("recovery-key"),
+                    )
                 d._constructed_device = existing
                 devices.add(d)
             existing.name = spec["name"]

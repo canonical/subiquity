@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import pathlib
 import unittest
 from unittest import mock
 
@@ -20,6 +21,7 @@ import attr
 import yaml
 
 from subiquity.common.filesystem import gaps
+from subiquity.common.types import RecoveryKey
 from subiquity.models.filesystem import (
     LVM_CHUNK_SIZE,
     ZFS,
@@ -30,6 +32,7 @@ from subiquity.models.filesystem import (
     FilesystemModel,
     NotFinalPartitionError,
     Partition,
+    RecoveryKeyHandler,
     ZPool,
     align_down,
     dehumanize_size,
@@ -1558,3 +1561,50 @@ class TestLivePackages(SubiTestCase):
         (before, during) = await m.live_packages()
         self.assertEqual(set(["zfsutils-linux"]), before)
         self.assertEqual(set(["efibootmgr"]), during)
+
+
+class TestRecoveryKeyHandler(SubiTestCase):
+    def test_from_post_data_none(self):
+        self.assertIsNone(RecoveryKeyHandler.from_post_data(None))
+
+    def test_form_post_data_all_set(self):
+        live_location = "/home/ubuntu/recovery-ubuntu-vg.txt"
+        backup_location = "/var/log/installer/recovery-ubuntu-vg.txt"
+
+        data = RecoveryKey(live_location=live_location, backup_location=backup_location)
+
+        expected = RecoveryKeyHandler(
+            live_location=pathlib.Path(live_location),
+            backup_location=pathlib.Path(backup_location),
+        )
+
+        self.assertEqual(RecoveryKeyHandler.from_post_data(data), expected)
+
+    def test_form_post_data_backup_use_default_suffix(self):
+        live_location = "/home/ubuntu/recovery-ubuntu-vg.txt"
+
+        data = RecoveryKey(live_location=live_location)
+
+        expected = RecoveryKeyHandler(
+            live_location=pathlib.Path(live_location),
+            backup_location=pathlib.Path("/var/log/installer/recovery-key.txt"),
+        )
+
+        self.assertEqual(RecoveryKeyHandler.from_post_data(data), expected)
+
+    def test_form_post_data_backup_override_default_suffix(self):
+        live_location = "/home/ubuntu/recovery-ubuntu-vg.txt"
+
+        data = RecoveryKey(live_location=live_location)
+
+        expected = RecoveryKeyHandler(
+            live_location=pathlib.Path(live_location),
+            backup_location=pathlib.Path("/var/log/installer/mykey-ubuntu-vg.txt"),
+        )
+
+        self.assertEqual(
+            RecoveryKeyHandler.from_post_data(
+                data, default_suffix="mykey-ubuntu-vg.txt"
+            ),
+            expected,
+        )
