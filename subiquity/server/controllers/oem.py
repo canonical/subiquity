@@ -112,7 +112,7 @@ class OEMController(SubiquityController):
             if not line.startswith("Ubuntu-Oem-Kernel-Flavour:"):
                 continue
 
-            flavor = line.split("=", maxsplit=1)[1].strip()
+            flavor = line.split(":", maxsplit=1)[1].strip()
             if flavor == "default":
                 return False
             elif flavor == "oem":
