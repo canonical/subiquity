@@ -225,7 +225,7 @@ def get_add_part_plan(device, *, spec, args, resize_partition=None):
     # it's probably a bad idea for all cases.
 
     gap = gaps.gap_with_size(device, size, in_extended=False)
-    if gap is not None and gap.size >= size and gap.is_usable:
+    if gap is not None:
         create_part_plan.gap = gap.split(size)[0]
         return create_part_plan
     elif resize_partition is not None and not resize_partition.is_logical:
