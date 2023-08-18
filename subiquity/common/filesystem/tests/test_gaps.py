@@ -789,19 +789,19 @@ class TestGapWithSize(GapTestCase):
     def test_empty_disk(self):
         d = make_disk(size=10 * MiB)
         [g1] = gaps.parts_and_gaps(d)
-        self.assertEqual(g1, gaps.gap_with_size(d, MiB))
+        self.assertEqual(g1, gaps.first_gap_with_size(d, MiB))
 
     def test_half_full(self):
         d = make_disk(size=10 * MiB)
         make_partition(device=d, size=d.size // 2)
         [p1, g1] = gaps.parts_and_gaps(d)
-        self.assertEqual(g1, gaps.gap_with_size(d, MiB))
+        self.assertEqual(g1, gaps.first_gap_with_size(d, MiB))
 
     def test_half_full_too_big(self):
         d = make_disk(size=10 * MiB)
         make_partition(device=d, size=d.size // 2)
         [p1, g1] = gaps.parts_and_gaps(d)
-        self.assertIs(None, gaps.gap_with_size(d, 10 * MiB))
+        self.assertIs(None, gaps.first_gap_with_size(d, 10 * MiB))
 
     def test_one_gap_too_small(self):
         self.use_alignment_data(
@@ -818,7 +818,7 @@ class TestGapWithSize(GapTestCase):
         d = make_disk(size=100)
         make_partition(device=d, size=10, offset=20)
         [g1, p1, g2] = gaps.parts_and_gaps(d)
-        self.assertEqual(g2, gaps.gap_with_size(d, 20))
+        self.assertEqual(g2, gaps.first_gap_with_size(d, 20))
 
     def test_unusable(self):
         self.use_alignment_data(
@@ -834,7 +834,7 @@ class TestGapWithSize(GapTestCase):
         # #####     [ p1 ]                             #####
         d = make_disk(size=100)
         make_partition(device=d, size=10, offset=2)
-        self.assertIs(None, gaps.gap_with_size(d, 10))
+        self.assertIs(None, gaps.first_gap_with_size(d, 10))
 
     def test_in_extended(self):
         self.use_alignment_data(
@@ -854,6 +854,6 @@ class TestGapWithSize(GapTestCase):
         make_partition(device=d, size=50, offset=20, flag="extended")
         make_partition(device=d, size=18, offset=22, flag="logical")
         [g1, p1, p5, g2, g3] = gaps.parts_and_gaps(d)
-        self.assertEqual(g2, gaps.gap_with_size(d, 20))
-        self.assertEqual(g3, gaps.gap_with_size(d, 20, in_extended=False))
-        self.assertEqual(g2, gaps.gap_with_size(d, 10, in_extended=True))
+        self.assertEqual(g2, gaps.first_gap_with_size(d, 20))
+        self.assertEqual(g3, gaps.first_gap_with_size(d, 20, in_extended=False))
+        self.assertEqual(g2, gaps.first_gap_with_size(d, 10, in_extended=True))
