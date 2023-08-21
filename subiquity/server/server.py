@@ -186,12 +186,11 @@ INSTALL_MODEL_NAMES = ModelNames(
         "filesystem",
         "kernel",
         "keyboard",
-        "network",
         "proxy",
         "source",
     },
-    desktop={"mirror"},
-    server={"mirror"},
+    desktop={"mirror", "network"},
+    server={"mirror", "network"},
 )
 
 POSTINSTALL_MODEL_NAMES = ModelNames(
@@ -199,14 +198,14 @@ POSTINSTALL_MODEL_NAMES = ModelNames(
         "drivers",
         "identity",
         "locale",
-        "network",
         "packages",
         "snaplist",
         "ssh",
         "ubuntu_pro",
         "userdata",
     },
-    desktop={"timezone", "codecs", "active_directory"},
+    desktop={"timezone", "codecs", "active_directory", "network"},
+    server={"network"},
 )
 
 
