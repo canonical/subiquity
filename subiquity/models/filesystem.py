@@ -1115,6 +1115,8 @@ class ZPool:
     # default dataset options for the zfses in the pool
     fs_properties: Optional[dict] = None
 
+    default_features: Optional[bool] = True
+
     component_name = "vdev"
 
     @property
@@ -2003,13 +2005,21 @@ class FilesystemModel(object):
         return True
 
     def add_zpool(
-        self, device, pool, mountpoint, *, fs_properties=None, pool_properties=None
+        self,
+        device,
+        pool,
+        mountpoint,
+        *,
+        default_features=True,
+        fs_properties=None,
+        pool_properties=None,
     ):
         zpool = ZPool(
             m=self,
             vdevs=[device],
             pool=pool,
             mountpoint=mountpoint,
+            default_features=default_features,
             pool_properties=pool_properties,
             fs_properties=fs_properties,
         )

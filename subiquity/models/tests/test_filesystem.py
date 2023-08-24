@@ -1403,6 +1403,7 @@ class TestZPool(SubiTestCase):
         a_zp = dict(matching_dicts(actions, type="zpool")[0])
         a_zfs = dict(matching_dicts(actions, type="zfs")[0])
         e_zp = {
+            "default_features": True,
             "vdevs": [d.id],
             "pool": "p1",
             "mountpoint": "/",
