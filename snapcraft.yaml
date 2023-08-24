@@ -70,7 +70,7 @@ parts:
 
     source: https://git.launchpad.net/curtin
     source-type: git
-    source-commit: 09899c713ce135f4d3e97ad2b434836049643d55
+    source-commit: 7ed8b10e88d1a8a879c6805b487a29477afdafd5
 
     override-pull: |
       craftctl default
@@ -131,6 +131,7 @@ parts:
       - python3-apport
       - python3-attr
       - python3-bson
+      - python3-debian
       - python3-jsonschema
       - python3-minimal
       - python3-oauthlib
