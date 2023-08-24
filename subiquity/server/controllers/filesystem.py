@@ -81,7 +81,7 @@ from subiquitycore.async_helpers import (
 )
 from subiquitycore.context import with_context
 from subiquitycore.lsb_release import lsb_release
-from subiquitycore.utils import arun_command, run_command
+from subiquitycore.utils import arun_command, gen_zsys_uuid, run_command
 
 log = logging.getLogger("subiquity.server.controllers.filesystem")
 block_discover_log = logging.getLogger("block-discover")
@@ -480,7 +480,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         part_align = device.alignment_data().part_align
         bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
         gap_boot, gap_rest = gap.split(bootfs_size)
-        bpool_part = self.create_partition(device, gap_boot, dict(fstype=None))
+        bpart = self.create_partition(device, gap_boot, dict(fstype=None))
 
         avail = gap_rest.size - self._info.min_size
         swap_size = swap.suggested_swapsize(avail=avail)
@@ -490,10 +490,33 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             gap = gap_rootfs
         else:
             gap = gap_rest
-        rpool_part = self.create_partition(device, gap, dict(fstype=None))
+        rpart = self.create_partition(device, gap, dict(fstype=None))
 
-        self.create_zpool(bpool_part, "bpool", "/boot")
-        self.create_zpool(rpool_part, "rpool", "/")
+        uuid = gen_zsys_uuid()
+
+        bpool = self.create_zpool(bpart, "bpool", "/boot", boot=True, canmount="off")
+        bpool.create_zfs("BOOT", canmount="off", mountpoint="none")
+        bpool.create_zfs(f"BOOT/ubuntu_{uuid}", mountpoint="/boot")
+
+        rpool = self.create_zpool(rpart, "rpool", "/", canmount="off")
+        rpool.create_zfs("ROOT", canmount="off", mountpoint="none")
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}", mountpoint="/")
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}/var", canmount="off")
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}/var/lib")
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}/var/lib/AccountsService")
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}/var/lib/apt")
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}/var/lib/dpkg")
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}/var/lib/NetworkManager")
+
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}/srv")
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}/usr", canmount="off")
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}/usr/local")
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}/var/games")
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}/var/log")
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}/var/mail")
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}/var/snap")
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}/var/spool")
+        rpool.create_zfs(f"ROOT/ubuntu_{uuid}/var/www")
 
     @functools.singledispatchmethod
     def start_guided(self, target: GuidedStorageTarget, disk: ModelDisk) -> gaps.Gap:
