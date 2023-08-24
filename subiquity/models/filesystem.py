@@ -1137,6 +1137,18 @@ class ZPool:
             return self.mountpoint
         return None
 
+    def create_zfs(self, volume, canmount="on", mountpoint=None):
+        properties = {}
+        if canmount is not None:
+            properties["canmount"] = canmount
+        if mountpoint is not None:
+            properties["mountpoint"] = mountpoint
+        if len(properties) < 1:
+            properties = None
+        zfs = ZFS(m=self._m, pool=self, volume=volume, properties=properties)
+        self._m._actions.append(zfs)
+        return zfs
+
 
 @fsobj("zfs")
 class ZFS:
