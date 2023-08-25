@@ -129,6 +129,13 @@ def make_server_args_parser():
         default=".subiquity",
         help="in dryrun, control basedir of files",
     )
+    parser.add_argument(
+        "--no-enhanced-secureboot",
+        dest="enhanced_secureboot",
+        action="store_false",
+        default=True,
+    )
+
     parser.add_argument("--storage-version", action="store", type=int)
     parser.add_argument("--use-os-prober", action="store_true", default=False)
     parser.add_argument(
