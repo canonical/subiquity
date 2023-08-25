@@ -2043,4 +2043,6 @@ class FilesystemModel(object):
         r = []
         if self.reset_partition is not None:
             r.append("efibootmgr")
+        if self._one(type="zpool") is not None:
+            r.append("zfsutils-linux")
         return r
