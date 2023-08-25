@@ -597,6 +597,11 @@ class InstallController(SubiquityController):
         with open(self.tpath("etc/fstab"), "w") as fp:
             fp.write("/run/mnt/ubuntu-boot/EFI/ubuntu /boot/grub none bind\n")
 
+    @with_context(description="installing packages to live system")
+    async def install_live_packages(self, *, context):
+        for package in await self.model.live_packages():
+            await self.app.package_installer.install_pkg(package)
+
     @with_context()
     async def install(self, *, context):
         context.set("is-install-context", True)
@@ -627,8 +632,7 @@ class InstallController(SubiquityController):
                 fsc = self.app.controllers.Filesystem
                 for_install_path = self.model.source.get_source(fsc._info.name)
 
-            if self.app.base_model.filesystem.reset_partition:
-                self.app.package_installer.start_installing_pkg("efibootmgr")
+            await self.install_live_packages()
 
             if self.model.target is not None:
                 if os.path.exists(self.model.target):

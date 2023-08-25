@@ -390,6 +390,14 @@ class SubiquityModel:
                 packages.extend(await meth())
         return packages
 
+    async def live_packages(self):
+        packages = []
+        for model_name in self._install_model_names.all():
+            meth = getattr(getattr(self, model_name), "live_packages", None)
+            if meth is not None:
+                packages.extend(await meth())
+        return packages
+
     def _cloud_init_files(self):
         # TODO, this should be moved to the in-target cloud-config seed so on
         # first boot of the target, it reconfigures datasource_list to none

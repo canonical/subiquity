@@ -2038,3 +2038,9 @@ class FilesystemModel(object):
         )
         self._actions.append(zpool)
         return zpool
+
+    async def live_packages(self):
+        r = []
+        if self.reset_partition is not None:
+            r.append("efibootmgr")
+        return r
