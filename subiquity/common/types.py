@@ -305,6 +305,7 @@ class ZPool:
     zfses: Optional[ZFS] = None
     pool_properties: Optional[dict] = None
     fs_properties: Optional[dict] = None
+    default_features: Optional[bool] = True
 
 
 class GapUsable(enum.Enum):

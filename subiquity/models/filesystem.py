@@ -1115,6 +1115,8 @@ class ZPool:
     # default dataset options for the zfses in the pool
     fs_properties: Optional[dict] = None
 
+    default_features: Optional[bool] = True
+
     component_name = "vdev"
 
     @property
@@ -1134,6 +1136,18 @@ class ZPool:
         if self.canmount:
             return self.mountpoint
         return None
+
+    def create_zfs(self, volume, canmount="on", mountpoint=None):
+        properties = {}
+        if canmount is not None:
+            properties["canmount"] = canmount
+        if mountpoint is not None:
+            properties["mountpoint"] = mountpoint
+        if len(properties) < 1:
+            properties = None
+        zfs = ZFS(m=self._m, pool=self, volume=volume, properties=properties)
+        self._m._actions.append(zfs)
+        return zfs
 
 
 @fsobj("zfs")
@@ -2003,13 +2017,21 @@ class FilesystemModel(object):
         return True
 
     def add_zpool(
-        self, device, pool, mountpoint, *, fs_properties=None, pool_properties=None
+        self,
+        device,
+        pool,
+        mountpoint,
+        *,
+        default_features=True,
+        fs_properties=None,
+        pool_properties=None,
     ):
         zpool = ZPool(
             m=self,
             vdevs=[device],
             pool=pool,
             mountpoint=mountpoint,
+            default_features=default_features,
             pool_properties=pool_properties,
             fs_properties=fs_properties,
         )

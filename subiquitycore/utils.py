@@ -269,3 +269,16 @@ def matching_dicts(items: Sequence[Dict[Any, Any]], **criteria):
         for item in items
         if all(k in item and item[k] == v for k, v in criteria.items())
     ]
+
+
+def _zsys_uuid_charset() -> list:
+    charset = [chr(c) for c in range(ord("0"), ord("9") + 1)]
+    charset += [chr(c) for c in range(ord("a"), ord("z") + 1)]
+    # random.choice wants a list
+    return charset
+
+
+def gen_zsys_uuid():
+    """Create a 6 character identifier.  Functionally equivalent to
+    `head -100 /dev/urandom | tr -dc 'a-z0-9' | head -c6`"""
+    return "".join([random.choice(_zsys_uuid_charset()) for i in range(6)])

@@ -359,6 +359,7 @@ def _for_client_zpool(zpool, *, min_size=0):
         zfses=[for_client(zfs) for zfs in zpool.zfses],
         pool_properties=zpool.pool_properties,
         fs_properties=zpool.fs_properties,
+        default_features=zpool.default_features,
     )
 
 

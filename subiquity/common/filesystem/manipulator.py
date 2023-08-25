@@ -23,6 +23,20 @@ from subiquity.models.filesystem import Partition, align_up
 
 log = logging.getLogger("subiquity.common.filesystem.manipulator")
 
+zfs_boot_features = [
+    "async_destroy",
+    "bookmarks",
+    "embedded_data",
+    "empty_bpobj",
+    "enabled_txg",
+    "extensible_dataset",
+    "filesystem_limits",
+    "hole_birth",
+    "large_blocks",
+    "lz4_compress",
+    "spacemap_histogram",
+]
+
 
 class FilesystemManipulator:
     def create_mount(self, fs, spec):
@@ -158,21 +172,33 @@ class FilesystemManipulator:
 
     delete_lvm_partition = delete_logical_volume
 
-    def create_zpool(self, device, pool, mountpoint):
+    def create_zpool(self, device, pool, mountpoint, boot=False, canmount="on"):
         fs_properties = dict(
+            atime=None,
             acltype="posixacl",
-            relatime="on",
-            canmount="on",
-            compression="gzip",
+            canmount=canmount,
+            compression="lz4",
             devices="off",
+            normalization="formD",
+            relatime="on",
+            sync="standard",
             xattr="sa",
         )
-        pool_properties = dict(ashift=12)
 
-        self.model.add_zpool(
+        pool_properties = dict(ashift=12, autotrim="on", version=None)
+        default_features = True
+        if boot:
+            default_features = False
+            for feat in zfs_boot_features:
+                pool_properties[f"feature@{feat}"] = "enabled"
+        else:
+            fs_properties["dnodesize"] = "auto"
+
+        return self.model.add_zpool(
             device,
             pool,
             mountpoint,
+            default_features=default_features,
             fs_properties=fs_properties,
             pool_properties=pool_properties,
         )
