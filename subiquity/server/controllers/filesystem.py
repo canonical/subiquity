@@ -373,6 +373,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 system = await self._get_system(name, label)
             log.debug("got system %s for variation %s", system, name)
             if system is not None and len(system.volumes) > 0:
+                if not self.app.opts.enhanced_secureboot:
+                    log.debug("Not offering enhanced_secureboot: commandline disabled")
+                    continue
                 info = self.info_for_system(name, label, system)
                 if info is not None:
                     self._variation_info[name] = info
@@ -607,6 +610,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         disk = self.model._one(id=choice.target.disk_id)
 
         if self.is_core_boot_classic():
+            if not self.app.opts.enhanced_secureboot:
+                raise ValueError(
+                    "Not using enhanced_secureboot: disabled on commandline"
+                )
             assert isinstance(choice.target, GuidedStorageTargetReformat)
             self.use_tpm = choice.capability == GuidedCapability.CORE_BOOT_ENCRYPTED
             await self.guided_core_boot(disk)

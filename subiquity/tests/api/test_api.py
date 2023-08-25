@@ -644,6 +644,34 @@ class TestCore(TestAPI):
             self.assertDictSubset(dict(mount=None), p3)
             self.assertDictSubset(dict(mount="/"), p4)
 
+    @timeout()
+    async def test_basic_core_boot_cmdline_disable(self):
+        cfg = self.machineConfig("examples/machines/simple.json")
+        with cfg.edit() as data:
+            attrs = data["storage"]["blockdev"]["/dev/sda"]["attrs"]
+            attrs["size"] = str(25 << 30)
+        kw = dict(
+            bootloader="uefi",
+            extra_args=[
+                "--storage-version",
+                "2",
+                "--source-catalog",
+                "examples/sources/install-canary.yaml",
+                "--dry-run-config",
+                "examples/dry-run-configs/tpm.yaml",
+                "--no-enhanced-secureboot",
+            ],
+        )
+        async with start_server(cfg, **kw) as inst:
+            await inst.post("/source", source_id="ubuntu-desktop")
+            resp = await inst.get("/storage/v2/guided", wait=True)
+            [reformat, manual] = resp["targets"]
+            for capability in reformat["allowed"]:
+                self.assertNotIn("CORE_BOOT", capability)
+            data = dict(target=reformat, capability="CORE_BOOT_ENCRYPTED")
+            with self.assertRaises(ClientResponseError):
+                await inst.post("/storage/v2/guided", data)
+
 
 class TestAdd(TestAPI):
     @timeout()
