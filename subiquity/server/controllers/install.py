@@ -413,7 +413,7 @@ class InstallController(SubiquityController):
             # really write recovery_system={snapd_system_label} to
             # {target}/var/lib/snapd/modeenv to get snapd to pick it up on
             # first boot. But not needed for now.
-        rp = fs_controller.reset_partition
+        rp = fs_controller.model.reset_partition
         if rp is not None:
             mounter = Mounter(self.app)
             rp_target = os.path.join(self.app.root, "factory-reset")
@@ -627,7 +627,7 @@ class InstallController(SubiquityController):
                 fsc = self.app.controllers.Filesystem
                 for_install_path = self.model.source.get_source(fsc._info.name)
 
-            if self.app.controllers.Filesystem.reset_partition:
+            if self.app.base_model.filesystem.reset_partition:
                 self.app.package_installer.start_installing_pkg("efibootmgr")
 
             if self.model.target is not None:

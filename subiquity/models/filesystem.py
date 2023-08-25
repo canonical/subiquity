@@ -1275,6 +1275,7 @@ class FilesystemModel(object):
         self.storage_version = 1
         self._probe_data = None
         self.dd_target: Optional[Disk] = None
+        self.reset_partition: Optional[Partition] = None
         self.reset()
 
     def reset(self):
