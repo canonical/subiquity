@@ -1526,3 +1526,35 @@ class TestRootfs(SubiTestCase):
         m = make_model()
         make_zpool(model=m, mountpoint="/srv")
         self.assertFalse(m.is_root_mounted())
+
+
+class TestLivePackages(SubiTestCase):
+    async def test_defaults(self):
+        m = make_model()
+        (before, during) = await m.live_packages()
+        self.assertEqual(set(), before)
+        self.assertEqual(set(), during)
+
+    async def test_zfs(self):
+        m = make_model()
+        make_zpool(model=m, mountpoint="/")
+        (before, during) = await m.live_packages()
+        self.assertEqual(set(["zfsutils-linux"]), before)
+        self.assertEqual(set(), during)
+
+    async def test_efibootmgr(self):
+        m = make_model()
+        d = make_disk(m)
+        m.reset_partition = make_partition(m, d)
+        (before, during) = await m.live_packages()
+        self.assertEqual(set(), before)
+        self.assertEqual(set(["efibootmgr"]), during)
+
+    async def test_both(self):
+        m = make_model()
+        d = make_disk(m)
+        make_zpool(model=m, mountpoint="/")
+        m.reset_partition = make_partition(m, d)
+        (before, during) = await m.live_packages()
+        self.assertEqual(set(["zfsutils-linux"]), before)
+        self.assertEqual(set(["efibootmgr"]), during)

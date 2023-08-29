@@ -62,9 +62,7 @@ from subiquity.models.filesystem import (
     ArbitraryDevice,
 )
 from subiquity.models.filesystem import Disk as ModelDisk
-from subiquity.models.filesystem import MiB
-from subiquity.models.filesystem import Partition as ModelPartition
-from subiquity.models.filesystem import Raid, _Device, align_down, align_up
+from subiquity.models.filesystem import MiB, Raid, _Device, align_down, align_up
 from subiquity.server import snapdapi
 from subiquity.server.controller import SubiquityController
 from subiquity.server.mounter import Mounter
@@ -244,7 +242,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # If probe data come in while we are doing partitioning, store it in
         # this variable. It will be picked up on next reset.
         self.queued_probe_data: Optional[Dict[str, Any]] = None
-        self.reset_partition: Optional[ModelPartition] = None
         self.reset_partition_only: bool = False
 
     def is_core_boot_classic(self):
@@ -635,7 +632,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 reset_size = int(cp.stdout.strip().split()[0])
                 reset_size = align_up(int(reset_size * 1.10), 256 * MiB)
             reset_gap, gap = gap.split(reset_size)
-            self.reset_partition = self.create_partition(
+            self.model.reset_partition = self.create_partition(
                 device=reset_gap.device,
                 gap=reset_gap,
                 spec={"fstype": "fat32"},

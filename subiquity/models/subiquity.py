@@ -20,7 +20,7 @@ import logging
 import os
 import uuid
 from collections import OrderedDict
-from typing import Any, Dict, Set
+from typing import Any, Dict, Set, Tuple
 
 import yaml
 from cloudinit.config.schema import (
@@ -389,6 +389,21 @@ class SubiquityModel:
             if meth is not None:
                 packages.extend(await meth())
         return packages
+
+    async def live_packages(self) -> Tuple[Set, Set]:
+        """return a tuple of sets of packages to install into the live environment.
+        The first set must be installed before partitioning, the second set may be
+        allowed to run in parallel with partitioning.
+        """
+        before = set()
+        during = set()
+        for model_name in self._install_model_names.all():
+            meth = getattr(getattr(self, model_name), "live_packages", None)
+            if meth is not None:
+                packages = await meth()
+                before |= packages[0]
+                during |= packages[1]
+        return (before, during)
 
     def _cloud_init_files(self):
         # TODO, this should be moved to the in-target cloud-config seed so on

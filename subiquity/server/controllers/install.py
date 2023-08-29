@@ -413,7 +413,7 @@ class InstallController(SubiquityController):
             # really write recovery_system={snapd_system_label} to
             # {target}/var/lib/snapd/modeenv to get snapd to pick it up on
             # first boot. But not needed for now.
-        rp = fs_controller.reset_partition
+        rp = fs_controller.model.reset_partition
         if rp is not None:
             mounter = Mounter(self.app)
             rp_target = os.path.join(self.app.root, "factory-reset")
@@ -597,6 +597,19 @@ class InstallController(SubiquityController):
         with open(self.tpath("etc/fstab"), "w") as fp:
             fp.write("/run/mnt/ubuntu-boot/EFI/ubuntu /boot/grub none bind\n")
 
+    async def install_live_packages(self, *, context):
+        before, during = await self.model.live_packages()
+        if len(before) < 1 and len(during) < 1:
+            return
+
+        with context.child("live-packages", "installing packages to live system"):
+            for package in before:
+                state = await self.app.package_installer.install_pkg(package)
+                if state != PackageInstallState.DONE:
+                    raise RuntimeError(f"could not install {package}")
+            for package in during:
+                self.app.package_installer.start_installing_pkg(package)
+
     @with_context()
     async def install(self, *, context):
         context.set("is-install-context", True)
@@ -627,8 +640,7 @@ class InstallController(SubiquityController):
                 fsc = self.app.controllers.Filesystem
                 for_install_path = self.model.source.get_source(fsc._info.name)
 
-            if self.app.controllers.Filesystem.reset_partition:
-                self.app.package_installer.start_installing_pkg("efibootmgr")
+            await self.install_live_packages(context=context)
 
             if self.model.target is not None:
                 if os.path.exists(self.model.target):

@@ -34,9 +34,10 @@ class PackageInstaller:
     by the server installer.
     """
 
-    def __init__(self):
+    def __init__(self, app):
         self.pkgs: Dict[str, asyncio.Task] = {}
         self._cache: Optional[apt.Cache] = None
+        self.app = app
 
     @property
     def cache(self):
@@ -69,6 +70,10 @@ class PackageInstaller:
             return PackageInstallState.NOT_AVAILABLE
         if binpkg.installed:
             log.debug("%s already installed", pkgname)
+            return PackageInstallState.DONE
+        if self.app.opts.dry_run:
+            log.debug("dry-run apt-get install %s", pkgname)
+            await asyncio.sleep(2 / self.app.scale_factor)
             return PackageInstallState.DONE
         if not binpkg.candidate.uri.startswith("cdrom:"):
             log.debug(

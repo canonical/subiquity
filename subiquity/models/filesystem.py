@@ -24,7 +24,7 @@ import pathlib
 import platform
 import tempfile
 from abc import ABC, abstractmethod
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Set, Tuple, Union
 
 import attr
 import more_itertools
@@ -1275,6 +1275,7 @@ class FilesystemModel(object):
         self.storage_version = 1
         self._probe_data = None
         self.dd_target: Optional[Disk] = None
+        self.reset_partition: Optional[Partition] = None
         self.reset()
 
     def reset(self):
@@ -2037,3 +2038,12 @@ class FilesystemModel(object):
         )
         self._actions.append(zpool)
         return zpool
+
+    async def live_packages(self) -> Tuple[Set, Set]:
+        before = set()
+        during = set()
+        if self._one(type="zpool") is not None:
+            before.add("zfsutils-linux")
+        if self.reset_partition is not None:
+            during.add("efibootmgr")
+        return (before, during)

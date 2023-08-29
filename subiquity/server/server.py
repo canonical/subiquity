@@ -291,7 +291,7 @@ class SubiquityServer(Application):
         self.event_syslog_id = "subiquity_event.{}".format(os.getpid())
         self.log_syslog_id = "subiquity_log.{}".format(os.getpid())
         self.command_runner = get_command_runner(self)
-        self.package_installer = PackageInstaller()
+        self.package_installer = PackageInstaller(self)
 
         self.error_reporter = ErrorReporter(
             self.context.child("ErrorReporter"), self.opts.dry_run, self.root

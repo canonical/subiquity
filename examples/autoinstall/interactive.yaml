@@ -26,5 +26,8 @@ packages:
 snaps:
   - name: etcd
     channel: 3.2/stable
+storage:
+  layout:
+    name: zfs
 debconf-selections: |
   wtf wtf
