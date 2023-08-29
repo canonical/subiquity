@@ -168,6 +168,8 @@ def main():
         if opts.snaps_from_examples is None:
             opts.snaps_from_examples = True
         logdir = opts.output_base
+        if opts.bootloader is None:
+            opts.bootloader = "uefi"
     else:
         dr_cfg = None
     if opts.socket is None:
