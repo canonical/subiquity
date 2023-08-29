@@ -349,6 +349,7 @@ class TestFlow(TestAPI):
 
             resp = await inst.get("/storage/v2/guided?wait=true")
             [reformat, manual] = resp["targets"]
+            self.assertEqual("DIRECT", reformat["allowed"][0])
             await inst.post(
                 "/storage/v2/guided",
                 {

@@ -128,6 +128,8 @@ class CapabilityInfo:
             new_disallowed.append(disallowed_cap)
             seen_disallowed.add(disallowed_cap.capability)
         self.disallowed = new_disallowed
+        self.allowed.sort()
+        self.disallowed.sort()
 
 
 @attr.s(auto_attribs=True)
@@ -967,7 +969,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 continue
             if not info.is_core_boot_classic():
                 classic_capabilities.update(info.capability_info.allowed)
-        return sorted(classic_capabilities, key=lambda x: x.name)
+        return sorted(classic_capabilities)
 
     async def v2_guided_GET(self, wait: bool = False) -> GuidedStorageResponseV2:
         """Acquire a list of possible guided storage configuration scenarios.

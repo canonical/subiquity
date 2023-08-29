@@ -340,6 +340,8 @@ class Disk:
 
 
 class GuidedCapability(enum.Enum):
+    # The order listed here is the order they will be presented as options
+
     MANUAL = enum.auto()
     DIRECT = enum.auto()
     LVM = enum.auto()
@@ -353,6 +355,9 @@ class GuidedCapability(enum.Enum):
     CORE_BOOT_PREFER_UNENCRYPTED = enum.auto()
 
     DD = enum.auto()
+
+    def __lt__(self, other) -> bool:
+        return self.value < other.value
 
     def is_lvm(self) -> bool:
         return self in [GuidedCapability.LVM, GuidedCapability.LVM_LUKS]
