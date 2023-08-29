@@ -673,6 +673,33 @@ class TestCore(TestAPI):
             with self.assertRaises(ClientResponseError):
                 await inst.post("/storage/v2/guided", data)
 
+    @timeout()
+    async def test_basic_no_core_boot_bios(self):
+        cfg = self.machineConfig("examples/machines/simple.json")
+        with cfg.edit() as data:
+            attrs = data["storage"]["blockdev"]["/dev/sda"]["attrs"]
+            attrs["size"] = str(25 << 30)
+        kw = dict(
+            bootloader="bios",
+            extra_args=[
+                "--storage-version",
+                "2",
+                "--source-catalog",
+                "examples/sources/install-canary.yaml",
+                "--dry-run-config",
+                "examples/dry-run-configs/tpm.yaml",
+            ],
+        )
+        async with start_server(cfg, **kw) as inst:
+            await inst.post("/source", source_id="ubuntu-desktop")
+            resp = await inst.get("/storage/v2/guided", wait=True)
+            [reformat, manual] = resp["targets"]
+            for capability in reformat["allowed"]:
+                self.assertNotIn("CORE_BOOT", capability)
+            data = dict(target=reformat, capability="CORE_BOOT_ENCRYPTED")
+            with self.assertRaises(ClientResponseError):
+                await inst.post("/storage/v2/guided", data)
+
 
 class TestAdd(TestAPI):
     @timeout()

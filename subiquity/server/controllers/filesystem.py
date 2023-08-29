@@ -375,6 +375,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if not self.app.opts.enhanced_secureboot:
                     log.debug("Not offering enhanced_secureboot: commandline disabled")
                     continue
+                if self.model.bootloader != Bootloader.UEFI:
+                    log.debug("Not offering core boot based install: not a UEFI system")
+                    continue
                 info = self.info_for_system(name, label, system)
                 if info is not None:
                     self._variation_info[name] = info
