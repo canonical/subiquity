@@ -229,7 +229,7 @@ class RefreshController(SubiquityController):
         return change
 
     async def GET(self, wait: bool = False) -> RefreshStatus:
-        if wait:
+        if self.active and wait:
             await self.check_task.wait()
         return self.status
 
