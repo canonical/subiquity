@@ -253,7 +253,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             self.app.next_screen(coro)
             return
         status = await self.app.wait_with_progress(coro)
-        self.model = FilesystemModel(status.bootloader)
+        self.model = FilesystemModel(status.bootloader, root="/")
         self.model.load_server_data(status)
         if self.model.bootloader == Bootloader.PREP:
             self.supports_resilient_boot = False

@@ -1281,7 +1281,7 @@ class ActionRenderMode(enum.Enum):
     FORMAT_MOUNT = enum.auto()
 
 
-class FilesystemModel(object):
+class FilesystemModel:
     target = None
 
     _partition_alignment_data = {
@@ -1330,10 +1330,11 @@ class FilesystemModel(object):
         else:
             return Bootloader.BIOS
 
-    def __init__(self, bootloader=None):
+    def __init__(self, bootloader=None, *, root: str):
         if bootloader is None:
             bootloader = self._probe_bootloader()
         self.bootloader = bootloader
+        self.root = root
         self.storage_version = 1
         self._probe_data = None
         self.dd_target: Optional[Disk] = None
@@ -1356,7 +1357,7 @@ class FilesystemModel(object):
         # the original state.  _orig_config plays a similar role, but is
         # expressed in terms of curtin actions, which are not what we want to
         # use on the V2 storage API.
-        orig_model = FilesystemModel(self.bootloader)
+        orig_model = FilesystemModel(self.bootloader, root=self.root)
         orig_model.target = self.target
         orig_model.load_probe_data(self._probe_data)
         return orig_model

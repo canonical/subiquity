@@ -135,7 +135,7 @@ class FakeStorageInfo:
 
 
 def make_model(bootloader=None, storage_version=None):
-    model = FilesystemModel()
+    model = FilesystemModel(root="/tmp")
     if bootloader is not None:
         model.bootloader = bootloader
     if storage_version is not None:
