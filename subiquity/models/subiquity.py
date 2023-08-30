@@ -180,7 +180,7 @@ class SubiquityModel:
         self.codecs = CodecsModel()
         self.debconf_selections = DebconfSelectionsModel()
         self.drivers = DriversModel()
-        self.filesystem = FilesystemModel()
+        self.filesystem = FilesystemModel(root=root)
         self.identity = IdentityModel()
         self.integrity = IntegrityModel()
         self.kernel = KernelModel()

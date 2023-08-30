@@ -22,7 +22,7 @@ import os
 import pathlib
 import select
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import attr
 import pyudev
@@ -51,6 +51,7 @@ from subiquity.common.types import (
     GuidedStorageTargetUseGap,
     ModifyPartitionV2,
     ProbeStatus,
+    RecoveryKey,
     ReformatDisk,
     SizingPolicy,
     StorageResponse,
@@ -62,7 +63,14 @@ from subiquity.models.filesystem import (
     ArbitraryDevice,
 )
 from subiquity.models.filesystem import Disk as ModelDisk
-from subiquity.models.filesystem import MiB, Raid, _Device, align_down, align_up
+from subiquity.models.filesystem import (
+    MiB,
+    Raid,
+    RecoveryKeyHandler,
+    _Device,
+    align_down,
+    align_up,
+)
 from subiquity.server import snapdapi
 from subiquity.server.controller import SubiquityController
 from subiquity.server.mounter import Mounter
@@ -461,6 +469,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         spec = dict(name=vg_name, devices=set([part]))
         if choice.password is not None:
             spec["passphrase"] = choice.password
+        if choice.recovery_key and not choice.password:
+            raise Exception("Cannot have a recovery key without encryption")
+        spec["recovery-key"] = RecoveryKeyHandler.from_post_data(
+            choice.recovery_key, default_suffix=f"recovery-key-{vg_name}.txt"
+        )
+
         vg = self.create_volgroup(spec)
         if choice.sizing_policy == SizingPolicy.SCALED:
             lv_size = sizes.scaled_rootfs_size(vg.size)
@@ -479,6 +493,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 mount="/",
             ),
         )
+        self.model.load_or_generate_recovery_keys()
+        self.model.expose_recovery_keys()
 
     def guided_zfs(self, gap, choice: GuidedChoiceV2):
         device = gap.device
@@ -710,6 +726,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.model._actions = self.model._actions_from_config(
             config, blockdevs=self.model._probe_data["blockdev"], is_probe_data=False
         )
+        self.model.load_or_generate_recovery_keys()
+        self.model.expose_recovery_keys()
         await self.configured()
 
     def potential_boot_disks(self, check_boot=True, with_reformatting=False):
@@ -931,6 +949,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             need_boot=model.needs_bootloader_partition(),
             install_minimum_size=minsize,
         )
+
+    async def generate_recovery_key_GET(self) -> str:
+        return self.model.generate_recovery_key()
 
     async def v2_GET(
         self,
@@ -1213,6 +1234,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         name = layout["name"]
         password = None
         sizing_policy = None
+        guided_recovery_key: Union[bool, RecoveryKey] = False
 
         if name == "hybrid":
             # this check is conceptually unnecessary but results in a
@@ -1266,6 +1288,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             mode = layout.get("mode", "reformat_disk")
             self.validate_layout_mode(mode)
             password = layout.get("password", None)
+            recovery_key = layout.get("recovery-key", False)
             if name == "lvm":
                 sizing_policy = SizingPolicy.from_string(
                     layout.get("sizing-policy", None)
@@ -1274,6 +1297,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     capability = GuidedCapability.LVM_LUKS
                 else:
                     capability = GuidedCapability.LVM
+                if recovery_key and password is None:
+                    raise Exception(
+                        "recovery_key can only be used if password is specified"
+                    )
+                guided_recovery_key = RecoveryKey.from_autoinstall(recovery_key)
+
             elif name == "dd":
                 capability = GuidedCapability.DD
                 assert mode == "reformat_disk"
@@ -1311,6 +1340,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 target=target,
                 capability=capability,
                 password=password,
+                recovery_key=guided_recovery_key,
                 sizing_policy=sizing_policy,
                 reset_partition=layout.get("reset-partition", False),
             ),

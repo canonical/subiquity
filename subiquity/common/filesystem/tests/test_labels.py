@@ -88,7 +88,7 @@ class TestAnnotations(unittest.TestCase):
 
     def test_vg_encrypted_annotations(self):
         model, disk = make_model_and_disk()
-        dm_crypt = model.add_dm_crypt(disk, key="passw0rd")
+        dm_crypt = model.add_dm_crypt(disk, key="passw0rd", recovery_key=None)
         vg = model.add_volgroup("vg-0", {dm_crypt})
         self.assertEqual(annotations(vg), ["new", "encrypted"])
 

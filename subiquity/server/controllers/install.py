@@ -700,6 +700,7 @@ class InstallController(SubiquityController):
                     hostname = f.read().strip()
 
             await self.app.controllers.Ad.join_domain(hostname, context)
+        self.model.filesystem.copy_artifacts_to_target()
 
     @with_context(description="configuring cloud-init")
     async def configure_cloud_init(self, context):

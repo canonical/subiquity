@@ -494,10 +494,39 @@ GuidedStorageTarget = Union[
 
 
 @attr.s(auto_attribs=True)
+class RecoveryKey:
+    # Where to store the key in the live system.
+    live_location: Optional[str] = None
+    # Where to copy the key in the target system. /target will automatically be
+    # prefixed.
+    backup_location: Optional[str] = None
+
+    @classmethod
+    def from_autoinstall(
+        cls, config: Union[bool, Dict[str, Any]]
+    ) -> Optional["RecoveryKey"]:
+        if config is False:
+            return None
+
+        # Recovery key with default values
+        if config is True:
+            return cls()
+
+        return cls(
+            backup_location=config.get("backup-location"),
+            live_location=config.get("live-location"),
+        )
+
+
+@attr.s(auto_attribs=True)
 class GuidedChoiceV2:
     target: GuidedStorageTarget
     capability: GuidedCapability
+
+    # Those two fields are only used when using LVM+LUKS
     password: Optional[str] = attr.ib(default=None, repr=False)
+    recovery_key: Optional[RecoveryKey] = None
+
     sizing_policy: Optional[SizingPolicy] = SizingPolicy.SCALED
     reset_partition: bool = False
 

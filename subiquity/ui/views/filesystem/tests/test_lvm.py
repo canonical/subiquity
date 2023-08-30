@@ -13,12 +13,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import pathlib
 import unittest
 from unittest import mock
 
 import urwid
 
 from subiquity.client.controllers.filesystem import FilesystemController
+from subiquity.models.filesystem import RecoveryKeyHandler
 from subiquity.ui.views.filesystem.lvm import VolGroupStretchy
 from subiquity.ui.views.filesystem.tests.test_partition import make_model_and_disk
 from subiquitycore.testing import view_helpers
@@ -66,6 +69,7 @@ class LVMViewTests(unittest.TestCase):
             "encrypt": True,
             "passphrase": "passw0rd",
             "confirm_passphrase": "passw0rd",
+            "create_recovery_key": False,
         }
         expected_data = {
             "name": "vg1",
@@ -75,4 +79,32 @@ class LVMViewTests(unittest.TestCase):
         }
         view_helpers.enter_data(stretchy.form, form_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)
+        view.controller.volgroup_handler.assert_called_once_with(None, expected_data)
+
+    def test_create_vg_encrypted_with_recovery(self):
+        model, disk = make_model_and_disk()
+        part1 = model.add_partition(disk, size=10 * (2**30), offset=0)
+        part2 = model.add_partition(disk, size=10 * (2**30), offset=10 * (2**30))
+        view, stretchy = make_view(model)
+        form_data = {
+            "name": "vg1",
+            "devices": {part1: "active", part2: "active"},
+            "encrypt": True,
+            "passphrase": "passw0rd",
+            "confirm_passphrase": "passw0rd",
+            "create_recovery_key": True,
+        }
+        expected_data = {
+            "name": "vg1",
+            "devices": {part1, part2},
+            "encrypt": True,
+            "passphrase": "passw0rd",
+            "recovery-key": RecoveryKeyHandler(
+                live_location=pathlib.Path("/home/ubuntu/recovery-key-vg1.txt"),
+                backup_location=pathlib.Path("/var/log/installer/recovery-key-vg1.txt"),
+            ),
+        }
+        view_helpers.enter_data(stretchy.form, form_data)
+        with mock.patch.dict(os.environ, {"HOME": "/home/ubuntu"}):
+            view_helpers.click(stretchy.form.done_btn.base_widget)
         view.controller.volgroup_handler.assert_called_once_with(None, expected_data)

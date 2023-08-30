@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import pathlib
+from typing import Optional
 
 import attr
 from urwid import Text, connect_signal
@@ -26,6 +28,7 @@ from subiquity.common.types import (
     GuidedStorageTargetManual,
     GuidedStorageTargetReformat,
     Partition,
+    RecoveryKey,
 )
 from subiquity.models.filesystem import humanize_size
 from subiquitycore.ui.buttons import other_btn
@@ -53,6 +56,15 @@ subtitle = _("Configure a guided storage layout, or create a custom one:")
 class LUKSOptionsForm(SubForm):
     passphrase = PasswordField(_("Passphrase:"))
     confirm_passphrase = PasswordField(_("Confirm passphrase:"))
+    recovery_key = BooleanField(
+        ("Also create a recovery key"),
+        help=_(
+            "The key will be stored as"
+            " ~/recovery-key.txt in the live system and will"
+            " be copied to /var/log/installer/ in the target"
+            " system."
+        ),
+    )
 
     def validate_passphrase(self):
         if len(self.passphrase.value) < 1:
@@ -368,6 +380,7 @@ class GuidedDiskSelectionView(BaseView):
             target = guided_choice["disk"]
             tpm_choice = self.form.guided_choice.widget.form.tpm_choice
             password = None
+            recovery_key: Optional[RecoveryKey] = None
             if tpm_choice is not None:
                 if guided_choice.get("use_tpm", tpm_choice.default):
                     capability = GuidedCapability.CORE_BOOT_ENCRYPTED
@@ -378,6 +391,16 @@ class GuidedDiskSelectionView(BaseView):
                 if opts.get("encrypt", False):
                     capability = GuidedCapability.LVM_LUKS
                     password = opts["luks_options"]["passphrase"]
+                    if opts["luks_options"]["recovery_key"]:
+                        # There is only one encrypted LUKS (at max) in guided
+                        # so no need to prefix the locations with the name of
+                        # the VG.
+                        recovery_key = RecoveryKey(
+                            live_location=str(
+                                pathlib.Path("~/recovery-key.txt").expanduser()
+                            ),
+                            backup_location="var/log/installer/recovery-key.txt",
+                        )
                 else:
                     capability = GuidedCapability.LVM
             else:
@@ -389,6 +412,7 @@ class GuidedDiskSelectionView(BaseView):
                 target=target,
                 capability=capability,
                 password=password,
+                recovery_key=recovery_key,
             )
         else:
             choice = GuidedChoiceV2(

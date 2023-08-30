@@ -331,6 +331,10 @@ class API:
             def GET() -> List[Disk]:
                 ...
 
+        class generate_recovery_key:
+            def GET() -> str:
+                ...
+
         class v2:
             def GET(
                 wait: bool = False,

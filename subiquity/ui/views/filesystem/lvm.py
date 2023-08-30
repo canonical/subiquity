@@ -15,11 +15,12 @@
 
 import logging
 import os
+import pathlib
 import re
 
 from urwid import Text, connect_signal
 
-from subiquity.models.filesystem import get_lvm_size, humanize_size
+from subiquity.models.filesystem import RecoveryKeyHandler, get_lvm_size, humanize_size
 from subiquity.ui.views.filesystem.compound import (
     CompoundDiskForm,
     MultiDeviceField,
@@ -78,10 +79,22 @@ class VolGroupForm(CompoundDiskForm):
     encrypt = BooleanField(_("Create encrypted volume"))
     passphrase = PasswordField(_("Passphrase:"))
     confirm_passphrase = PasswordField(_("Confirm passphrase:"))
+    # TODO replace the placeholders in the help - also potentially replacing
+    # "~" with the actual home directory.
+    create_recovery_key = BooleanField(
+        _("Also create a recovery key:"),
+        help=_(
+            "The key will be stored as"
+            " ~/recovery-key-{name}.txt in the live system and will"
+            " be copied to /var/log/installer/ in the target"
+            " system."
+        ),
+    )
 
     def _change_encrypt(self, sender, new_value):
         self.passphrase.enabled = new_value
         self.confirm_passphrase.enabled = new_value
+        self.create_recovery_key.enabled = new_value
         if not new_value:
             self.passphrase.validate()
             self.confirm_passphrase.validate()
@@ -147,6 +160,7 @@ class VolGroupStretchy(Stretchy):
             devices = {}
             key = ""
             encrypt = False
+            create_recovery_key = False
             for d in existing.devices:
                 if d.type == "dm_crypt":
                     encrypt = True
@@ -161,6 +175,7 @@ class VolGroupStretchy(Stretchy):
                     # TODO make this more user friendly.
                     if d.key is not None:
                         key = d.key
+                    create_recovery_key = d.recovery_key is not None
                     d = d.volume
                 devices[d] = "active"
             initial = {
@@ -169,6 +184,7 @@ class VolGroupStretchy(Stretchy):
                 "encrypt": encrypt,
                 "passphrase": key,
                 "confirm_passphrase": key,
+                "create_recovery_key": create_recovery_key,
             }
 
         possible_components = get_possible_components(
@@ -205,6 +221,15 @@ class VolGroupStretchy(Stretchy):
         del result["size"]
         mdc = self.form.devices.widget
         result["devices"] = mdc.active_devices
+        if "create_recovery_key" in result:
+            if result["create_recovery_key"]:
+                backup_prefix = pathlib.Path("/var/log/installer")
+                filename = pathlib.Path(f"recovery-key-{result['name']}.txt")
+                result["recovery-key"] = RecoveryKeyHandler(
+                    live_location=pathlib.Path("~").expanduser() / filename,
+                    backup_location=backup_prefix / filename,
+                )
+            del result["create_recovery_key"]
         if "confirm_passphrase" in result:
             del result["confirm_passphrase"]
         safe_result = result.copy()
