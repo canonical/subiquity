@@ -70,6 +70,7 @@ from subiquity.models.filesystem import (
     _Device,
     align_down,
     align_up,
+    humanize_size,
 )
 from subiquity.server import snapdapi
 from subiquity.server.controller import SubiquityController
@@ -926,7 +927,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         align = max(
             (pa.part_align for pa in self.model._partition_alignment_data.values())
         )
-        return sizes.calculate_suggested_install_min(source_min, align)
+        install_min = sizes.calculate_suggested_install_min(source_min, align)
+        log.debug(f"suggested install minimum size: {humanize_size(install_min)}")
+        return install_min
 
     async def get_v2_storage_response(self, model, wait, include_raid):
         probe_resp = await self._probe_response(wait, StorageResponseV2)
