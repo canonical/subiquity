@@ -140,37 +140,29 @@ class TestCalculateGuidedResize(unittest.TestCase):
 
 
 class TestCalculateInstallMin(unittest.TestCase):
-    @mock.patch("subiquity.common.filesystem.sizes.swap.suggested_swapsize")
+    @mock.patch("subiquity.common.filesystem.sizes.uefi_scale")
     @mock.patch("subiquity.common.filesystem.sizes.bootfs_scale")
-    def test_small_setups(self, bootfs_scale, swapsize):
-        swapsize.return_value = 1 << 30
-        bootfs_scale.maximum = 1 << 30
+    def test_small_setups(self, bootfs_scale, uefi_scale):
+        uefi_scale.minimum = 1 << 30
+        bootfs_scale.minimum = 1 << 30
         source_min = 1 << 30
         # with a small source, we hit the default 2GiB padding
         self.assertEqual(5 << 30, calculate_suggested_install_min(source_min))
 
-    @mock.patch("subiquity.common.filesystem.sizes.swap.suggested_swapsize")
+    @mock.patch("subiquity.common.filesystem.sizes.uefi_scale")
     @mock.patch("subiquity.common.filesystem.sizes.bootfs_scale")
-    def test_small_setups_big_swap(self, bootfs_scale, swapsize):
-        swapsize.return_value = 10 << 30
-        bootfs_scale.maximum = 1 << 30
+    def test_small_setups_big_boot(self, bootfs_scale, uefi_scale):
+        uefi_scale.minimum = 1 << 30
+        bootfs_scale.minimum = 10 << 30
         source_min = 1 << 30
         self.assertEqual(14 << 30, calculate_suggested_install_min(source_min))
 
-    @mock.patch("subiquity.common.filesystem.sizes.swap.suggested_swapsize")
+    @mock.patch("subiquity.common.filesystem.sizes.uefi_scale")
     @mock.patch("subiquity.common.filesystem.sizes.bootfs_scale")
-    def test_small_setups_big_boot(self, bootfs_scale, swapsize):
-        swapsize.return_value = 1 << 30
-        bootfs_scale.maximum = 10 << 30
-        source_min = 1 << 30
-        self.assertEqual(14 << 30, calculate_suggested_install_min(source_min))
-
-    @mock.patch("subiquity.common.filesystem.sizes.swap.suggested_swapsize")
-    @mock.patch("subiquity.common.filesystem.sizes.bootfs_scale")
-    def test_big_source(self, bootfs_scale, swapsize):
-        swapsize.return_value = 1 << 30
-        bootfs_scale.maximum = 2 << 30
+    def test_big_source(self, bootfs_scale, uefi_scale):
+        uefi_scale.minimum = 1 << 30
+        bootfs_scale.minimum = 2 << 30
         source_min = 10 << 30
-        # a bigger source should hit 80% padding
-        expected = (10 + 8 + 1 + 2) << 30
+        # a bigger source should hit 50% padding
+        expected = (10 + 5 + 1 + 2) << 30
         self.assertEqual(expected, calculate_suggested_install_min(source_min))
