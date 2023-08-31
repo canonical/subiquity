@@ -268,9 +268,9 @@ class AptConfigurer:
     async def overlay(self):
         overlay = await self.mounter.setup_overlay(
             [
-                self.install_tree.upperdir,
-                self.configured_tree.upperdir,
                 self.source_path,
+                self.configured_tree.upperdir,
+                self.install_tree.upperdir,
             ]
         )
         try:
