@@ -68,6 +68,15 @@ def get_index_targets() -> List[str]:
     return [key for key in targets if key.count("::") == 3]
 
 
+def apt_sourceparts_files(mp: Mountpoint) -> List[str]:
+    # Return the relative path of the files from
+    # mp("etc/apt/sources.list.d") that apt will read.
+    root = pathlib.Path(mp.p())
+    sources_list_d = root / "etc/apt/sources.list.d"
+    paths = list(sources_list_d.glob("*.list")) + list(sources_list_d.glob("*.sources"))
+    return [str(p.relative_to(root)) for p in paths]
+
+
 class AptConfigurer:
     # We configure apt during installation so that installs from the pool on
     # the cdrom are preferred during installation but remove this again in the
@@ -242,6 +251,8 @@ class AptConfigurer:
             proxy_path = self.install_tree.p("etc/apt/apt.conf.d/90curtin-aptproxy")
             if os.path.exists(proxy_path):
                 os.unlink(proxy_path)
+            for relpath in apt_sourceparts_files(self.configured_tree):
+                os.unlink(self.install_tree.p(relpath))
 
         codename = lsb_release(dry_run=self.app.opts.dry_run)["codename"]
 
@@ -332,6 +343,8 @@ class AptConfigurer:
                 private_mounts=True,
             )
         else:
+            for relpath in apt_sourceparts_files(self.configured_tree):
+                _restore_file(relpath)
             await _restore_dir("var/lib/apt/lists")
 
         await self.cleanup()
