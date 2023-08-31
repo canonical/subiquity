@@ -386,7 +386,7 @@ class TestFlow(TestAPI):
         cfg = self.machineConfig("examples/machines/simple.json")
         with cfg.edit() as data:
             attrs = data["storage"]["blockdev"]["/dev/sda"]["attrs"]
-            attrs["size"] = str(25 << 30)
+            attrs["size"] = str(10 << 30)
         extra_args = ["--source-catalog", "examples/sources/desktop.yaml"]
         async with start_server(cfg, extra_args=extra_args) as inst:
             disk_id = "disk-sda"
