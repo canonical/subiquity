@@ -155,6 +155,15 @@ class Mounter:
                 path.unlink(missing_ok=True)
 
     async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
+        """Setup a RW overlay FS over one or more lower layers.
+        Be careful, when multiple lower layers are specified, they are stacked
+        from the leftmost one and going right. This is the opposite of what the
+        lowerdir mount option expects.
+        Therefore, when calling setup_overlay([x, y, z]), the corresponding
+        mount command will look something like:
+        $ mount [...] -o lowerdir=z:y:x
+        Which means z will be top, y will be middle and x will be bottom.
+        """
         tdir = self.tmpfiles.tdir()
         target = f"{tdir}/mount"
         lowerdir = lowerdir_for(lowers)
