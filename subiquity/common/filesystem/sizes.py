@@ -16,7 +16,6 @@
 import math
 
 import attr
-from curtin import swap
 
 from subiquity.common.types import GuidedResizeValues
 from subiquity.models.filesystem import GiB, MiB, align_down, align_up
@@ -119,24 +118,17 @@ def calculate_guided_resize(
 # 2) Room for boot - we employ a scaling system to help select the recommended
 #    size of a dedicated /boot and/or efi system partition (see above).  If
 #    /boot is not actually a separate partition, this space needs to be
-#    accounted for as part of the planned rootfs size.  The files that would
-#    otherwise be stored in a dedicated UEFI partition are presumed to be
-#    negligible on non-UEFI systems.  As /boot itself uses a scaling sizing
-#    system, use the bootfs_scale.maximum value for the purposes of finding
-#    minimum suggested size.  The maximum value is to be used instead of the
-#    minimum as the boot scaling system will also make adjustments, and we
-#    don’t want to short change the other calculations.
-# 3) Room to grow - while meaningful work can sometimes be possible on a full
+#    accounted for as part of the planned rootfs size.
+# 3) room for esp - similar to boot.  Included in all calculations, even if
+#    we're not UEFI boot.
+# 4) Room to grow - while meaningful work can sometimes be possible on a full
 #    disk, it’s not the sort of thing to suggest in a guided install.
-#    Suggest for room to grow max(2GiB, 80% of source minimum).
-# 4) Swap - Ubuntu policy recommends swap, either in the form of a partition or
-#    a swapfile.  Curtin has an existing swap size recommendation at
-#    curtin.swap.suggested_swapsize().
+#    Suggest for room to grow max(2GiB, 50% of source minimum).
 def calculate_suggested_install_min(source_min: int, part_align: int = MiB) -> int:
-    room_for_boot = bootfs_scale.maximum
-    room_to_grow = max(2 * GiB, math.ceil(0.8 * source_min))
-    room_for_swap = swap.suggested_swapsize()
-    total = source_min + room_for_boot + room_to_grow + room_for_swap
+    room_for_boot = bootfs_scale.minimum
+    room_for_esp = uefi_scale.minimum
+    room_to_grow = max(2 * GiB, math.ceil(0.5 * source_min))
+    total = source_min + room_for_boot + room_for_esp + room_to_grow
     return align_up(total, part_align)
 
 

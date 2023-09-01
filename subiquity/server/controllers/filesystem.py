@@ -70,6 +70,7 @@ from subiquity.models.filesystem import (
     _Device,
     align_down,
     align_up,
+    humanize_size,
 )
 from subiquity.server import snapdapi
 from subiquity.server.controller import SubiquityController
@@ -157,13 +158,8 @@ class VariationInfo:
     def capability_info_for_gap(
         self,
         gap: gaps.Gap,
+        install_min: int,
     ) -> CapabilityInfo:
-        if self.label is None:
-            install_min = sizes.calculate_suggested_install_min(
-                self.min_size, gap.device.alignment_data().part_align
-            )
-        else:
-            install_min = self.min_size
         r = CapabilityInfo()
         r.disallowed = list(self.capability_info.disallowed)
         if self.capability_info.allowed and gap.size < install_min:
@@ -931,7 +927,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         align = max(
             (pa.part_align for pa in self.model._partition_alignment_data.values())
         )
-        return sizes.calculate_suggested_install_min(source_min, align)
+        install_min = sizes.calculate_suggested_install_min(source_min, align)
+        log.debug(f"suggested install minimum size: {humanize_size(install_min)}")
+        return install_min
 
     async def get_v2_storage_response(self, model, wait, include_raid):
         probe_resp = await self._probe_response(wait, StorageResponseV2)
@@ -1015,7 +1013,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             capability_info = CapabilityInfo()
             for variation in self._variation_info.values():
                 gap = gaps.largest_gap(disk._reformatted())
-                capability_info.combine(variation.capability_info_for_gap(gap))
+                capability_info.combine(
+                    variation.capability_info_for_gap(gap, install_min)
+                )
             reformat = GuidedStorageTargetReformat(
                 disk_id=disk.id,
                 allowed=capability_info.allowed,
@@ -1042,7 +1042,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             for variation in self._variation_info.values():
                 if variation.is_core_boot_classic():
                     continue
-                capability_info.combine(variation.capability_info_for_gap(gap))
+                capability_info.combine(
+                    variation.capability_info_for_gap(gap, install_min)
+                )
             api_gap = labels.for_client(gap)
             use_gap = GuidedStorageTargetUseGap(
                 disk_id=disk.id,
