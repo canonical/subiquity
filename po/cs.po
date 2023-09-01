@@ -8,15 +8,15 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-04-12 09:48+1200\n"
-"PO-Revision-Date: 2022-04-13 15:22+0000\n"
+"PO-Revision-Date: 2022-04-30 18:26+0000\n"
 "Last-Translator: Pavel Borecki <Unknown>\n"
 "Language-Team: Czech <cs@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2022-05-01 04:51+0000\n"
+"X-Generator: Launchpad (build 3e6ca301c25bad9ef395a0234df16d711b3dff61)\n"
 "Language: cs\n"
 
 #: ../subiquity/client/client.py:72
@@ -1203,7 +1203,7 @@ msgstr "Vytvořit skupinu svazků (LVM)"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:451
 msgid "FILE SYSTEM SUMMARY"
-msgstr "SOUHRN SOUBOROVÉHO SYSTÉMU"
+msgstr "SOUHRN SOUBOROVÝCH SYSTÉMŮ"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:456
 msgid "AVAILABLE DEVICES"
@@ -2396,7 +2396,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:394
 msgid "Identify keyboard"
-msgstr "Identifikujte klávesnici"
+msgstr "Identifikovat klávesnici"
 
 #: ../subiquity/ui/views/keyboard.py:429
 msgid "Applying config"

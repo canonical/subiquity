@@ -7,15 +7,15 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-04-12 09:48+1200\n"
-"PO-Revision-Date: 2021-06-04 01:14+0000\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2022-05-09 17:56+0000\n"
+"Last-Translator: Kevin Kandlbinder <Unknown>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2022-05-10 06:41+0000\n"
+"X-Generator: Launchpad (build a1979342dd08d6250d2d30773ae8aa97bed37b43)\n"
 "Language: en_US\n"
 
 #: ../subiquity/client/client.py:72
@@ -827,6 +827,9 @@ msgid ""
 "You may be able to fix the issue by switching to a shell and\n"
 "reconfiguring the system's block devices manually.\n"
 msgstr ""
+"\n"
+"You may be able to fix the issue by switching to a shell and\n"
+"reconfiguring the systems block devices manually.\n"
 
 #: ../subiquity/ui/views/error.py:118
 msgid ""
@@ -1423,12 +1426,16 @@ msgid ""
 "If this disk is selected as a boot device, GRUB will be installed onto\n"
 "the target disk's MBR."
 msgstr ""
+"If this disk is selected as a boot device, GRUB will be installed onto\n"
+"the target disks MBR."
 
 #: ../subiquity/ui/views/filesystem/partition.py:304
 msgid ""
 "As this disk has been selected as a boot device, GRUB will be\n"
 "installed onto the target disk's MBR."
 msgstr ""
+"As this disk has been selected as a boot device, GRUB will be\n"
+"installed onto the target disks MBR."
 
 #: ../subiquity/ui/views/filesystem/partition.py:308
 msgid ""
@@ -1821,7 +1828,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:92
 msgid "Your server's name:"
-msgstr ""
+msgstr "Your servers name:"
 
 #: ../subiquity/ui/views/identity.py:93
 msgid "The name it uses when it talks to other computers."

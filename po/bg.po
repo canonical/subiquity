@@ -1,23 +1,22 @@
-# Kabyle translation for subiquity
-# Copyright (c) 2020 Rosetta Contributors and Canonical Ltd 2020
+# Bulgarian translation for subiquity
+# Copyright (c) 2022 Rosetta Contributors and Canonical Ltd 2022
 # This file is distributed under the same license as the subiquity package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: subiquity\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2022-04-12 09:48+1200\n"
-"PO-Revision-Date: 2020-01-29 15:19+0000\n"
-"Last-Translator: ButterflyOfFire <Unknown>\n"
-"Language-Team: Kabyle <kab@li.org>\n"
+"PO-Revision-Date: 2022-10-09 09:23+0000\n"
+"Last-Translator: cybercop <cybercop_montana@abv.bg>\n"
+"Language-Team: Bulgarian <bg@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Launchpad-Export-Date: 2022-04-12 05:28+0000\n"
-"X-Generator: Launchpad (build 4c58cf79c82ce3fbd42288b21369cc838fb5b9e0)\n"
-"Language: kab\n"
+"X-Launchpad-Export-Date: 2022-10-10 06:57+0000\n"
+"X-Generator: Launchpad (build 762fb15a975e8b23af6a1f86e44e46bfd0451459)\n"
 
 #: ../subiquity/client/client.py:72
 msgid ""
@@ -31,104 +30,114 @@ msgid ""
 "environment will not survive a reboot. If the install has started, the\n"
 "installed system will be mounted at /target."
 msgstr ""
+"Сесията на инсталатора е активирана.\n"
+"Тази сесия на обвивката се изпълнява в средата на инсталатора. Вие\n"
+"ще бъдете върнати в инсталатора, когато излезете от тази обвивка, \n"
+"например чрез въвеждане на Control-D или „exit“.\n"
+"Имайте предвид, че това е ефимерна среда. Промени в тази\n"
+"среда няма да се запази след рестартиране. Ако инсталацията е започнала,\n"
+"инсталираната система ще бъде монтирана в /target."
 
 #: ../subiquity/client/client.py:234
 msgid "yes"
-msgstr "ih"
+msgstr "да"
 
 #: ../subiquity/client/client.py:235
 msgid "no"
-msgstr "ala"
+msgstr "не"
 
 #: ../subiquity/client/client.py:237
 msgid "Confirmation is required to continue."
-msgstr ""
+msgstr "Необходимо е потвърждение, за да продължите."
 
 #: ../subiquity/client/client.py:238
 msgid "Add 'autoinstall' to your kernel command line to avoid this"
 msgstr ""
+"Добавете „autoinstall“ към командния ред на ядрото, за да избегнете това"
 
 #: ../subiquity/client/client.py:241
 msgid "Continue with autoinstall?"
-msgstr ""
+msgstr "Продължаване с автоматичното инсталиране?"
 
 #: ../subiquity/client/controllers/ssh.py:91
 msgid "Importing keys failed:"
-msgstr ""
+msgstr "Внасянето на ключ е неуспешно"
 
 #: ../subiquity/client/controllers/ssh.py:100
 msgid "ssh-keygen failed to show fingerprint of downloaded keys:"
-msgstr ""
+msgstr "ssh-keygen не успя да покаже отпечатък на изтеглените ключове:"
 
 #. Information about a drive
 #: ../subiquity/common/filesystem/actions.py:47
 msgctxt "DeviceAction"
 msgid "Info"
-msgstr ""
+msgstr "Информация"
 
 #. Edit a device (partition, logical volume, RAID, etc)
 #: ../subiquity/common/filesystem/actions.py:49
 msgctxt "DeviceAction"
 msgid "Edit"
-msgstr ""
+msgstr "Редактиране"
 
 #: ../subiquity/common/filesystem/actions.py:50
 msgctxt "DeviceAction"
 msgid "Reformat"
-msgstr ""
+msgstr "Преформатиране"
 
 #: ../subiquity/common/filesystem/actions.py:51
 msgctxt "DeviceAction"
 msgid "Add Partition"
-msgstr ""
+msgstr "Добавяне на дял"
 
 #: ../subiquity/common/filesystem/actions.py:52
 msgctxt "DeviceAction"
 msgid "Format"
-msgstr ""
+msgstr "Форматиране"
 
 #: ../subiquity/common/filesystem/actions.py:53
 msgctxt "DeviceAction"
 msgid "Remove from RAID/LVM"
-msgstr ""
+msgstr "Премахване от RAID/LVM"
 
 #: ../subiquity/common/filesystem/actions.py:54
 msgctxt "DeviceAction"
 msgid "Delete"
-msgstr ""
+msgstr "Изтриване"
 
 #: ../subiquity/common/filesystem/actions.py:55
 msgctxt "DeviceAction"
 msgid "Make Boot Device"
-msgstr ""
+msgstr "Създаване на Boot устройство"
 
 #: ../subiquity/common/filesystem/actions.py:163
 #, python-brace-format
 msgid "Cannot edit {selflabel} as it is part of the {cdtype} {cdname}."
 msgstr ""
+"Не може да се редактира {selflabel}, тъй като е част от {cdtype} {cdname}."
 
 #: ../subiquity/common/filesystem/actions.py:177
 msgid "Cannot edit pre-existing RAIDs."
-msgstr ""
+msgstr "Не можете да редактирате вече съществуващи RAID масиви."
 
 #: ../subiquity/common/filesystem/actions.py:180
 #, python-brace-format
 msgid "Cannot edit {raidlabel} because it has partitions."
-msgstr ""
+msgstr "Не може да се редактира {raidlabel}, защото има дялове."
 
 #: ../subiquity/common/filesystem/actions.py:189
 msgid "Cannot edit pre-existing volume groups."
-msgstr ""
+msgstr "Не могат да се редактират вече съществуващи групи с дялове."
 
 #: ../subiquity/common/filesystem/actions.py:192
 #, python-brace-format
 msgid "Cannot edit {vglabel} because it has logical volumes."
-msgstr ""
+msgstr "Не може да се редактира {vglabel}, защото има логически дялове."
 
 #: ../subiquity/common/filesystem/actions.py:241
 #, python-brace-format
 msgid "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
 msgstr ""
+"Не може да се премахне {selflabel} от вече съществуващ {cdtype} {cdlabel}."
 
 #: ../subiquity/common/filesystem/actions.py:252
 #, python-brace-format
@@ -136,26 +145,30 @@ msgid ""
 "Removing {selflabel} would leave the {cdtype} {cdlabel} with less than "
 "{min_devices} devices."
 msgstr ""
+"Премахването на {selflabel} ще остави {cdtype} {cdlabel} с по-малко от "
+"{min_devices} устройства."
 
 #: ../subiquity/common/filesystem/actions.py:261
 #, python-brace-format
 msgid ""
 "Removing {selflabel} would leave the {cdtype} {cdlabel} with no devices."
 msgstr ""
+"Премахването на {selflabel} ще остави {cdtype} {cdlabel} без устройства."
 
 #: ../subiquity/common/filesystem/actions.py:277
 #, python-brace-format
 msgid "Cannot delete {selflabel} as it is part of the {cdtype} {cdname}."
 msgstr ""
+"Не може да изтриете {selflabel}, тъй като е част от {cdtype} {cdname}."
 
 #: ../subiquity/common/filesystem/actions.py:287
 msgid ""
 "Cannot delete a single partition from a device that already has partitions."
-msgstr ""
+msgstr "Не може да се изтрие един дял от устройство, което вече има дялове."
 
 #: ../subiquity/common/filesystem/actions.py:290
 msgid "Cannot delete required bootloader partition"
-msgstr ""
+msgstr "Не може да се изтрие необходимият дял за зареждане"
 
 #: ../subiquity/common/filesystem/actions.py:304
 #, python-brace-format
@@ -163,250 +176,255 @@ msgid ""
 "Cannot delete {devicelabel} as partition {partnum} is part of the {cdtype} "
 "{cdname}."
 msgstr ""
+"Не може да се изтрие {devicelabel}, тъй като дял {partnum} е част от "
+"{cdtype} {cdname}."
 
 #: ../subiquity/common/filesystem/actions.py:313
 #, python-brace-format
 msgid ""
 "Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
+"Не може да се изтрие {devicelabel}, защото има {count} монтирани дяла."
 
 #: ../subiquity/common/filesystem/actions.py:319
 #, python-brace-format
 msgid "Cannot delete {devicelabel} because it has 1 mounted partition."
-msgstr ""
+msgstr "Не може да се изтрие {devicelabel}, защото има 1 монтиран дял."
 
 #: ../subiquity/common/filesystem/actions.py:328
 msgid ""
 "Cannot delete a single logical volume from a volume group that already has "
 "logical volumes."
 msgstr ""
+"Не може да се изтрие единичен логически том от група томове, която вече има "
+"логически томове."
 
 #. A pre-existing device such as a partition or RAID
 #: ../subiquity/common/filesystem/labels.py:35
 msgid "existing"
-msgstr ""
+msgstr "съществуващи"
 
 #. A newly created device such as a partition or RAID
 #: ../subiquity/common/filesystem/labels.py:38
 msgid "new"
-msgstr ""
+msgstr "нов"
 
 #: ../subiquity/common/filesystem/labels.py:62
 msgid "PReP"
-msgstr ""
+msgstr "PReP"
 
 #. boot loader partition
 #: ../subiquity/common/filesystem/labels.py:66
 #: ../subiquity/common/filesystem/labels.py:80
 msgid "configured"
-msgstr ""
+msgstr "конфигуриран"
 
 #. boot loader partition
 #: ../subiquity/common/filesystem/labels.py:69
 #: ../subiquity/common/filesystem/labels.py:82
 msgid "unconfigured"
-msgstr ""
+msgstr "неконфигуриран"
 
 #: ../subiquity/common/filesystem/labels.py:72
 msgid "primary ESP"
-msgstr ""
+msgstr "главен ESP"
 
 #: ../subiquity/common/filesystem/labels.py:74
 msgid "backup ESP"
-msgstr ""
+msgstr "резервен ESP"
 
 #: ../subiquity/common/filesystem/labels.py:76
 msgid "unused ESP"
-msgstr ""
+msgstr "неизползван ESP"
 
 #: ../subiquity/common/filesystem/labels.py:83
 msgid "BIOS grub spacer"
-msgstr ""
+msgstr "BIOS grub spacer"
 
 #. extended partition
 #: ../subiquity/common/filesystem/labels.py:86
 msgid "extended"
-msgstr ""
+msgstr "разширен"
 
 #. logical partition
 #: ../subiquity/common/filesystem/labels.py:89
 msgid "logical"
-msgstr "ameẓẓul"
+msgstr "логически"
 
 #. Flag for a LVM volume group
 #: ../subiquity/common/filesystem/labels.py:99
 msgid "encrypted"
-msgstr ""
+msgstr "криптиран"
 
 #: ../subiquity/common/filesystem/labels.py:115
 msgid "multipath device"
-msgstr ""
+msgstr "многонишково устройство"
 
 #: ../subiquity/common/filesystem/labels.py:116
 msgid "local disk"
-msgstr ""
+msgstr "локален диск"
 
 #: ../subiquity/common/filesystem/labels.py:121
 #, python-brace-format
 msgid "partition of {device}"
-msgstr ""
+msgstr "дял на {device}"
 
 #: ../subiquity/common/filesystem/labels.py:134
 msgid "software"
-msgstr ""
+msgstr "Софтуер"
 
 #: ../subiquity/common/filesystem/labels.py:135
 #, python-brace-format
 msgid "{type} RAID {level}"
-msgstr ""
+msgstr "{type} RAID {level}"
 
 #: ../subiquity/common/filesystem/labels.py:141
 msgid "LVM volume group"
-msgstr ""
+msgstr "LVM група томове"
 
 #: ../subiquity/common/filesystem/labels.py:146
 msgid "LVM logical volume"
-msgstr ""
+msgstr "LVM логически томове"
 
 #: ../subiquity/common/filesystem/labels.py:180
 #: ../subiquity/ui/views/filesystem/guided.py:100
 #, python-brace-format
 msgid "partition {number}"
-msgstr ""
+msgstr "дял {number}"
 
 #: ../subiquity/common/filesystem/labels.py:182
 #, python-brace-format
 msgid "partition {number} of {device}"
-msgstr ""
+msgstr "дял {number} на {device}"
 
 #: ../subiquity/common/filesystem/labels.py:188
 msgid "free space"
-msgstr ""
+msgstr "свободно пространство"
 
 #: ../subiquity/common/filesystem/labels.py:195
 #, python-brace-format
 msgid "{component_name} of {desc} {name}"
-msgstr ""
+msgstr "{component_name} на {desc} {name}"
 
 #: ../subiquity/common/filesystem/labels.py:203
 #, python-brace-format
 msgid "already formatted as {fstype}"
-msgstr ""
+msgstr "вече е форматирано, като {fstype}"
 
 #: ../subiquity/common/filesystem/labels.py:205
 #, python-brace-format
 msgid "to be reformatted as {fstype}"
-msgstr ""
+msgstr "да бъде преформатирано, като {fstype}"
 
 #: ../subiquity/common/filesystem/labels.py:207
 #, python-brace-format
 msgid "to be formatted as {fstype}"
-msgstr ""
+msgstr "да бъде форматирано, като {fstype}"
 
 #. A filesytem
 #: ../subiquity/common/filesystem/labels.py:213
 #, python-brace-format
 msgid "mounted at {path}"
-msgstr ""
+msgstr "монтирано в {path}"
 
 #. A filesytem
 #: ../subiquity/common/filesystem/labels.py:216
 msgid "not mounted"
-msgstr ""
+msgstr "не е монтирано"
 
 #. A filesytem that cannot be mounted (i.e. swap)
 #. is used or unused
 #: ../subiquity/common/filesystem/labels.py:221
 #: ../subiquity/common/filesystem/labels.py:231
 msgid "unused"
-msgstr "ur ituseqdac ara"
+msgstr "неизползван"
 
 #. A filesytem that cannot be mounted (i.e. swap)
 #. is used or unused
 #: ../subiquity/common/filesystem/labels.py:225
 msgid "used"
-msgstr "yettwaseqdec"
+msgstr "използван"
 
 #: ../subiquity/common/filesystem/labels.py:260
 #, python-brace-format
 msgid "container for {devices}"
-msgstr ""
+msgstr "контейнер за {devices}"
 
 #: ../subiquity/common/types.py:39
 msgid "Block device probe failure"
-msgstr ""
+msgstr "Неуспешна проверка на блоковото устройство"
 
 #: ../subiquity/common/types.py:40
 msgid "Disk probe failure"
-msgstr ""
+msgstr "Неуспешна проверка на диска"
 
 #: ../subiquity/common/types.py:41
 msgid "Install failure"
-msgstr ""
+msgstr "Неуспешна инсталация"
 
 #: ../subiquity/common/types.py:42
 msgid "Installer crash"
-msgstr ""
+msgstr "Срив на инсталатора"
 
 #: ../subiquity/common/types.py:43
 msgid "Network error"
-msgstr "Tuccḍa deg uẓeṭṭa"
+msgstr "Грешка в мрежата"
 
 #: ../subiquity/common/types.py:44
 msgid "Network client error"
-msgstr ""
+msgstr "Грешка в мрежовия клиент"
 
 #: ../subiquity/common/types.py:45
 msgid "Server request failure"
-msgstr ""
+msgstr "Неуспешна заявка на сървъра"
 
 #: ../subiquity/common/types.py:46
 msgid "Unknown error"
-msgstr "Erreur inconnue"
+msgstr "Неизвестна грешка"
 
 #: ../subiquitycore/controllers/network.py:203
 msgid "autoconfiguration failed"
-msgstr ""
+msgstr "Автоматичното конфигуриране е неуспешно"
 
 #. Information about a network interface
 #: ../subiquitycore/models/network.py:43
 msgctxt "NetDevAction"
 msgid "Info"
-msgstr ""
+msgstr "Информация"
 
 #: ../subiquitycore/models/network.py:44
 msgctxt "NetDevAction"
 msgid "Edit Wifi"
-msgstr ""
+msgstr "Редактиране на Wifi"
 
 #: ../subiquitycore/models/network.py:45
 msgctxt "NetDevAction"
 msgid "Edit IPv4"
-msgstr ""
+msgstr "Редактиране на IPv4"
 
 #: ../subiquitycore/models/network.py:46
 msgctxt "NetDevAction"
 msgid "Edit IPv6"
-msgstr ""
+msgstr "Редактиране на IPv6"
 
 #: ../subiquitycore/models/network.py:47
 msgctxt "NetDevAction"
 msgid "Edit bond"
-msgstr ""
+msgstr "Редактиране на свързването"
 
 #: ../subiquitycore/models/network.py:48
 msgctxt "NetDevAction"
 msgid "Add a VLAN tag"
-msgstr ""
+msgstr "Добавяне на VLAN tag"
 
 #: ../subiquitycore/models/network.py:49
 msgctxt "NetDevAction"
 msgid "Delete"
-msgstr ""
+msgstr "Изтриване"
 
 #: ../subiquitycore/ssh.py:59
 msgid "The host key fingerprints are:\n"
-msgstr ""
+msgstr "Ключовите отпечатъци на хоста са:\n"
 
 #: ../subiquitycore/ssh.py:66
 #, python-brace-format
@@ -414,25 +432,27 @@ msgid ""
 "The {keytype} host key fingerprint is:\n"
 "    {fingerprint}\n"
 msgstr ""
+"Отпечатъкът на ключ на хост {keytype} е:\n"
+"     {fingerprint}\n"
 
 #: ../subiquitycore/ui/form.py:365
 msgid ", or "
-msgstr ", neγ "
+msgstr ", или "
 
 #: ../subiquitycore/ui/form.py:367
 msgid " or "
-msgstr " neγ "
+msgstr " или "
 
 #: ../subiquitycore/ui/form.py:371
 #, python-brace-format
 msgid "This field must be a {schemes} URL."
-msgstr ""
+msgstr "Това поле трябва да бъде {schemes} URL."
 
 #: ../subiquitycore/ui/form.py:451 ../subiquitycore/ui/views/network.py:330
 #: ../subiquity/ui/views/filesystem/filesystem.py:498
 #: ../subiquity/ui/views/snaplist.py:456
 msgid "Done"
-msgstr "Immed"
+msgstr "Готово"
 
 #: ../subiquitycore/ui/form.py:452 ../subiquitycore/ui/utils.py:382
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:33
@@ -441,19 +461,19 @@ msgstr "Immed"
 #: ../subiquity/ui/views/keyboard.py:99 ../subiquity/ui/views/keyboard.py:333
 #: ../subiquity/ui/views/snaplist.py:266 ../subiquity/ui/views/ssh.py:162
 msgid "Cancel"
-msgstr "Sefsex"
+msgstr "Отмяна"
 
 #: ../subiquitycore/ui/interactive.py:109 ../subiquity/ui/views/keyboard.py:218
 #: ../subiquity/ui/views/ssh.py:185
 msgid "Yes"
-msgstr "Ih"
+msgstr "Да"
 
 #: ../subiquitycore/ui/interactive.py:109
 #: ../subiquity/ui/views/installprogress.py:247
 #: ../subiquity/ui/views/keyboard.py:219 ../subiquity/ui/views/ssh.py:98
 #: ../subiquity/ui/views/ssh.py:186
 msgid "No"
-msgstr "Uhu"
+msgstr "Не"
 
 #: ../subiquitycore/ui/utils.py:349
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:319
@@ -463,7 +483,7 @@ msgstr "Uhu"
 #: ../subiquity/ui/views/help.py:66 ../subiquity/ui/views/installprogress.py:82
 #: ../subiquity/ui/views/snaplist.py:316 ../subiquity/ui/views/welcome.py:115
 msgid "Close"
-msgstr "Mdel"
+msgstr "Затваряне"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:86
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:152
@@ -474,65 +494,65 @@ msgstr "Mdel"
 #: ../subiquity/ui/views/filesystem/partition.py:395
 #: ../subiquity/ui/views/filesystem/raid.py:147
 msgid "Save"
-msgstr "Sekles"
+msgstr "Запазване"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:88
 msgid "Subnet:"
-msgstr ""
+msgstr "Подмрежа:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:89
 msgid "Address:"
-msgstr "Tansa:"
+msgstr "Адрес:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:90
 msgid "Gateway:"
-msgstr "Tawwurt:"
+msgstr "Шлюз:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:91
 msgid "Name servers:"
-msgstr ""
+msgstr "Име на сървъри:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:92
 msgid "IP addresses, comma separated"
-msgstr ""
+msgstr "IP адреси, разделени със запетая"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:93
 msgid "Search domains:"
-msgstr ""
+msgstr "Домейни за търсене:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:94
 msgid "Domains, comma separated"
-msgstr ""
+msgstr "Домейни, разделени със запетая"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:102
 #, python-brace-format
 msgid "should be in CIDR form ({example})"
-msgstr ""
+msgstr "трябва да бъде във форма CIDR ({example})"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:114
 #, python-brace-format
 msgid "'{address}' is not contained in '{subnet}'"
-msgstr ""
+msgstr "'{address}' не се съдържа в '{subnet}'"
 
 #. A choice for how to configure a network interface
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:143
 msgid "Automatic (DHCP)"
-msgstr ""
+msgstr "Автоматично (DHCP)"
 
 #. A choice for how to configure a network interface
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:145
 msgid "Manual"
-msgstr "Awfus"
+msgstr "Ръчно"
 
 #. A choice for how to configure a network interface
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:147
 msgid "Disabled"
-msgstr "Yensa"
+msgstr "Изключено"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:165
 #, python-brace-format
 msgid "IPv{v} Method: "
-msgstr ""
+msgstr "IPv{v} метод: "
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:263
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:410
@@ -540,149 +560,157 @@ msgstr ""
 #: ../subiquity/ui/views/filesystem/partition.py:381
 #: ../subiquity/ui/views/filesystem/raid.py:130
 msgid "Create"
-msgstr "Rnu"
+msgstr "Създаване"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:270
 msgid "VLAN ID:"
-msgstr ""
+msgstr "VLAN ID:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:279
 msgid "VLAN ID must be between 1 and 4095"
-msgstr ""
+msgstr "VLAN ID трябва да бъде между 1 и 4095"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:285
 #, python-brace-format
 msgid "{netdev} already exists"
-msgstr ""
+msgstr "{netdev} вече съществува"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:297
 msgid "Add a VLAN tag"
-msgstr ""
+msgstr "Добавяне на VLAN tag"
 
 #. {device} is the name of a network device
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:322
 #: ../subiquity/ui/views/filesystem/disk_info.py:57
 #, python-brace-format
 msgid "Info for {device}"
-msgstr ""
+msgstr "Информация за {device}"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:376
 #: ../subiquity/ui/views/filesystem/lvm.py:89
 #: ../subiquity/ui/views/filesystem/raid.py:93
 msgid "Name:"
-msgstr "Isem:"
+msgstr "Име:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:377
 msgid "Devices: "
-msgstr ""
+msgstr "Устройства: "
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:378
 msgid "Bond mode:"
-msgstr ""
+msgstr "Режим на свързване:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:380
 msgid "XMIT hash policy:"
-msgstr ""
+msgstr "Хеш политика на XMIT:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:381
 msgid "LACP rate:"
-msgstr ""
+msgstr "Честота на LACP:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:394
 #, python-brace-format
 msgid "There is already a network device named \"{netdev}\""
-msgstr ""
+msgstr "Вече има мрежово устройство с име \"{netdev}\""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:397
 msgid "Name cannot be empty"
-msgstr ""
+msgstr "Името не може да е празно"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:399
 msgid "Name cannot be more than 16 characters long"
-msgstr ""
+msgstr "Името не може да бъде по- дълго от 16 символа"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:409
 #: ../subiquitycore/ui/views/network.py:263
 msgid "Create bond"
-msgstr ""
+msgstr "Създаване на връзка"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:424
 msgid "Edit bond"
-msgstr ""
+msgstr "Редактиране на връзка"
 
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:38
 msgid "Select a network"
-msgstr ""
+msgstr "Изберете мрежа"
 
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:70
 #, python-brace-format
 msgid "Network interface {nic} WIFI configuration"
-msgstr ""
+msgstr "Мрежов интерфейс {nic} WIFI конфигурация"
 
 #: ../subiquitycore/ui/views/network.py:119
 #, python-brace-format
 msgid "VLAN {id} on interface {link}"
-msgstr ""
+msgstr "VLAN {id} на интерфейс {link}"
 
 #: ../subiquitycore/ui/views/network.py:122
 #, python-brace-format
 msgid "bond master for {interfaces}"
-msgstr ""
+msgstr "master връзка for {interfaces}"
 
 #: ../subiquitycore/ui/views/network.py:142
 #, python-brace-format
 msgid "ssid: {ssid}"
-msgstr ""
+msgstr "ssid: {ssid}"
 
 #: ../subiquitycore/ui/views/network.py:144
 #: ../subiquitycore/ui/views/network.py:146
 msgid "not connected"
-msgstr ""
+msgstr "не е свързано"
 
 #: ../subiquitycore/ui/views/network.py:149
 #, python-brace-format
 msgid "enslaved to {device}"
-msgstr ""
+msgstr "подчинено на {device}"
 
 #: ../subiquitycore/ui/views/network.py:176
 msgid "timed out"
-msgstr ""
+msgstr "времето изтече"
 
 #: ../subiquitycore/ui/views/network.py:181
 msgid "static"
-msgstr ""
+msgstr "статична"
 
 #: ../subiquitycore/ui/views/network.py:188
 msgid "disabled"
-msgstr "Ittwasens"
+msgstr "изключено"
 
 #: ../subiquitycore/ui/views/network.py:213
 msgid ""
 "A wifi device was detected but the necessary support packages were not\n"
 "available.\n"
 msgstr ""
+"Беше открито wifi устройство, но необходимите пакети за поддръжка не са "
+"налични.\n"
 
 #: ../subiquitycore/ui/views/network.py:217
 msgid "Wifi support packages are being installed.\n"
-msgstr ""
+msgstr "Пакетите за поддръжка на Wifi се инсталират.\n"
 
 #: ../subiquitycore/ui/views/network.py:220
 msgid "Wifi support packages failed to install. Please check the logs.\n"
 msgstr ""
+"Пакетите за поддръжка на Wifi не можаха да се инсталират. Моля, проверете "
+"логовете.\n"
 
 #: ../subiquitycore/ui/views/network.py:223
 msgid "Wifi support packages will be installed in the target system.\n"
 msgstr ""
+"Пакетите за поддръжка на Wifi ще бъдат инсталирани в целевата система.\n"
 
 #: ../subiquitycore/ui/views/network.py:230
 msgid "Network connections"
-msgstr ""
+msgstr "Мрежови връзки"
 
 #: ../subiquitycore/ui/views/network.py:231
 msgid ""
 "Configure at least one interface this server can use to talk to other "
 "machines, and which preferably provides sufficient access for updates."
 msgstr ""
+"Конфигурирайте поне един интерфейс, който този сървър може да използва за "
+"комуникация с други машини и който за предпочитане осигурява достатъчен "
+"достъп за актуализации."
 
 #. See _route_watcher
 #: ../subiquitycore/ui/views/network.py:274
@@ -697,25 +725,25 @@ msgstr ""
 #: ../subiquity/ui/views/ssh.py:108 ../subiquity/ui/views/welcome.py:93
 #: ../subiquity/ui/views/zdev.py:163
 msgid "Back"
-msgstr "Retour"
+msgstr "Назад"
 
 #: ../subiquitycore/ui/views/network.py:332
 msgid "Continue without network"
-msgstr ""
+msgstr "Продължаване без мрежа"
 
 #: ../subiquitycore/ui/views/network.py:345
 msgid "Applying changes"
-msgstr ""
+msgstr "Прилагане на промените"
 
 #. for translators: this is a description of a RAID level
 #: ../subiquity/models/filesystem.py:171
 msgid "0 (striped)"
-msgstr ""
+msgstr "0 (striped)"
 
 #. for translators: this is a description of a RAID level
 #: ../subiquity/models/filesystem.py:173
 msgid "1 (mirrored)"
-msgstr ""
+msgstr "1 (mirrored)"
 
 #: ../subiquity/models/filesystem.py:174
 msgid "5"
@@ -731,61 +759,74 @@ msgstr "10"
 
 #: ../subiquity/models/filesystem.py:177
 msgid "Container"
-msgstr ""
+msgstr "Контейнер"
 
 #. Attempting to convert input to a size
 #: ../subiquity/models/filesystem.py:212
 msgid "input cannot be empty"
-msgstr ""
+msgstr "въведеното не може да бъде празно"
 
 #. Attempting to convert input to a size
 #: ../subiquity/models/filesystem.py:224 ../subiquity/models/filesystem.py:236
 msgid "{input!r} is not valid input"
-msgstr ""
+msgstr "{input!r} не е валидно въвеждане"
 
 #: ../subiquity/ui/mount.py:71
 msgid "Other"
-msgstr "Nniḍen"
+msgstr "Други"
 
 #: ../subiquity/ui/mount.py:73
 msgid "Leave unmounted"
-msgstr ""
+msgstr "Оставяне немонтирано"
 
 #: ../subiquity/ui/views/error.py:67 ../subiquity/ui/views/error.py:70
 msgid ""
 "\n"
 "Sorry, there was a problem examining the storage devices on this system.\n"
 msgstr ""
+"\n"
+"За съжаление възникна проблем при проверката на устройствата за съхранение "
+"на тази система.\n"
 
 #: ../subiquity/ui/views/error.py:73
 msgid ""
 "\n"
 "Sorry, there was a problem completing the installation.\n"
 msgstr ""
+"\n"
+"Съжаляваме, възникна проблем при завършване на инсталацията.\n"
 
 #: ../subiquity/ui/views/error.py:76
 msgid ""
 "\n"
 "Sorry, there was a problem applying the network configuration.\n"
 msgstr ""
+"\n"
+"Съжаляваме, възникна проблем при прилагането на мрежовата конфигурация.\n"
 
 #: ../subiquity/ui/views/error.py:79
 msgid ""
 "\n"
 "Sorry, the installer has encountered an internal error.\n"
 msgstr ""
+"\n"
+"Съжаляваме, инсталаторът е открил вътрешна грешка.\n"
 
 #: ../subiquity/ui/views/error.py:82
 msgid ""
 "\n"
 "Sorry, the installer has restarted because of an error.\n"
 msgstr ""
+"\n"
+"За съжаление инсталаторът се рестартира поради грешка.\n"
 
 #: ../subiquity/ui/views/error.py:85
 msgid ""
 "\n"
 "Sorry, an unknown error occurred.\n"
 msgstr ""
+"\n"
+"Съжаляваме, възникна неизвестна грешка.\n"
 
 #: ../subiquity/ui/views/error.py:91
 msgid ""
@@ -793,12 +834,17 @@ msgid ""
 "Information is being collected from the system that will help the\n"
 "developers diagnose the report.\n"
 msgstr ""
+"\n"
+"От системата се събира информация, която ще помогне на\n"
+"разработчиците диагностицират доклада.\n"
 
 #: ../subiquity/ui/views/error.py:95
 msgid ""
 "\n"
 "Loading report...\n"
 msgstr ""
+"\n"
+"Зареждане на доклад...\n"
 
 #: ../subiquity/ui/views/error.py:98
 msgid ""
@@ -806,12 +852,18 @@ msgid ""
 "Collecting information from the system failed. See the files in\n"
 "/var/log/installer for more.\n"
 msgstr ""
+"\n"
+"Събирането на информация от системата не бе успешно. Вижте файловете във\n"
+"/var/log/installer за повече.\n"
 
 #: ../subiquity/ui/views/error.py:102
 msgid ""
 "\n"
 "Loading the report failed. See the files in /var/log/installer for more.\n"
 msgstr ""
+"\n"
+"Зареждането на доклада не бе успешно. Вижте файловете в /var/log/installer "
+"за повече.\n"
 
 #: ../subiquity/ui/views/error.py:108
 msgid ""
@@ -821,6 +873,12 @@ msgid ""
 "the issue by switching to a shell and reconfiguring the system's block\n"
 "devices manually.\n"
 msgstr ""
+"\n"
+"Можете да продължите и инсталаторът просто ще представи наличните дискове\n"
+"в системата, а не други блокови устройства, или може да успеете да "
+"поправите\n"
+"проблема, като преминете към обвивка и ръчно преконфигурирате блоковите \n"
+"устройства на системата.\n"
 
 #: ../subiquity/ui/views/error.py:114
 msgid ""
@@ -828,6 +886,9 @@ msgid ""
 "You may be able to fix the issue by switching to a shell and\n"
 "reconfiguring the system's block devices manually.\n"
 msgstr ""
+"\n"
+"Може да успеете да коригирате проблема, като преминете към обвивка и\n"
+"ръчно преконфигуриране на блоковите устройства на системата.\n"
 
 #: ../subiquity/ui/views/error.py:118
 msgid ""
@@ -835,36 +896,46 @@ msgid ""
 "You can continue with the installation but it will be assumed the network\n"
 "is not functional.\n"
 msgstr ""
+"\n"
+"Можете да продължите с инсталацията, но ще се приеме, че мрежата\n"
+"не е функционална.\n"
 
 #: ../subiquity/ui/views/error.py:122
 msgid ""
 "\n"
 "You can continue or restart the installer.\n"
 msgstr ""
+"\n"
+"Можете да продължите или да рестартирате инсталатора.\n"
 
 #: ../subiquity/ui/views/error.py:125
 msgid ""
 "\n"
 "Do you want to try starting the installation again?\n"
 msgstr ""
+"\n"
+"Искате ли да опитате да стартирате инсталацията отново?\n"
 
 #: ../subiquity/ui/views/error.py:129
 msgid "Select continue to try the installation again."
-msgstr ""
+msgstr "Изберете продължи, за да опитате инсталацията отново."
 
 #: ../subiquity/ui/views/error.py:134
 msgid ""
 "\n"
 "If you want to help improve the installer, you can send an error report.\n"
 msgstr ""
+"\n"
+"Ако искате да помогнете за подобряването на инсталатора, можете да изпратите "
+"доклад за грешка.\n"
 
 #: ../subiquity/ui/views/error.py:156
 msgid "Cancel upload"
-msgstr ""
+msgstr "Отказ от качване"
 
 #: ../subiquity/ui/views/error.py:157
 msgid "Close report"
-msgstr ""
+msgstr "Отказ от доклад"
 
 #: ../subiquity/ui/views/error.py:158
 #: ../subiquity/ui/views/installprogress.py:65
@@ -872,29 +943,29 @@ msgstr ""
 #: ../subiquity/ui/views/snaplist.py:354 ../subiquity/ui/views/snaplist.py:379
 #: ../subiquity/ui/views/zdev.py:162
 msgid "Continue"
-msgstr "Kemmel"
+msgstr "Продължаване"
 
 #: ../subiquity/ui/views/error.py:160
 #: ../subiquity/ui/views/installprogress.py:282
 #: ../subiquity/ui/views/welcome.py:113
 msgid "Switch to a shell"
-msgstr ""
+msgstr "Превключване към обвивката"
 
 #: ../subiquity/ui/views/error.py:162
 msgid "Restart the installer"
-msgstr ""
+msgstr "Рестартиране на инсталатора"
 
 #: ../subiquity/ui/views/error.py:164
 msgid "Send to Canonical"
-msgstr ""
+msgstr "Изпращане на Canonical"
 
 #: ../subiquity/ui/views/error.py:165
 msgid "Sent to Canonical"
-msgstr ""
+msgstr "Изпращане на Canonical"
 
 #: ../subiquity/ui/views/error.py:167
 msgid "View full report"
-msgstr ""
+msgstr "Преглед на пълният доклад"
 
 #: ../subiquity/ui/views/error.py:235
 msgid ""
@@ -904,290 +975,299 @@ msgid ""
 "\n"
 "on the filesystem with label {label!r}."
 msgstr ""
+"Докладът за грешка е запазен в\n"
+"  {loc}\n"
+"\n"
+"във файловата система с етикет {label!r}."
 
 #: ../subiquity/ui/views/error.py:317
 msgid "DATE"
-msgstr "AZEMZ"
+msgstr "ДАТА"
 
 #: ../subiquity/ui/views/error.py:318
 msgid "KIND"
-msgstr ""
+msgstr "ВИД"
 
 #: ../subiquity/ui/views/error.py:319
 msgid "STATUS"
-msgstr ""
+msgstr "СТАТУС"
 
 #: ../subiquity/ui/views/error.py:330
 msgid "Select an error report to view:"
-msgstr ""
+msgstr "Изберете доклад за грешка, който да видите:"
 
 #: ../subiquity/ui/views/error.py:344
 msgid "VIEWED"
-msgstr ""
+msgstr "ПРЕГЛЕДАНО"
 
 #: ../subiquity/ui/views/error.py:345
 msgid "UNVIEWED"
-msgstr ""
+msgstr "НЕПРЕГЛЕДАНО"
 
 #: ../subiquity/ui/views/filesystem/compound.py:130
 #, python-brace-format
 msgid "formatted as {fstype}"
-msgstr ""
+msgstr "форматиран като {fstype}"
 
 #: ../subiquity/ui/views/filesystem/compound.py:132
 #, python-brace-format
 msgid ", mounted at {path}"
-msgstr ""
+msgstr ", монтиран в {path}"
 
 #: ../subiquity/ui/views/filesystem/compound.py:134
 msgid ", not mounted"
-msgstr ""
+msgstr ", не е монтиран"
 
 #: ../subiquity/ui/views/filesystem/compound.py:136
 #, python-brace-format
 msgid "unused {device}"
-msgstr ""
+msgstr "неизползвано {device}"
 
 #: ../subiquity/ui/views/filesystem/compound.py:217
 msgid ""
 "If you put all disks into RAIDs or LVM VGs, there will be nowhere to put the "
 "boot partition."
 msgstr ""
+"Ако поставите всички дискове в RAID или LVM VG, няма да има къде да "
+"поставите boot дяла."
 
 #: ../subiquity/ui/views/filesystem/delete.py:44
 #, python-brace-format
 msgid "Do you really want to delete the {desc} {label}?"
-msgstr ""
+msgstr "Наистина ли искате да изтриете {desc} {label}?"
 
 #: ../subiquity/ui/views/filesystem/delete.py:54
 #: ../subiquity/ui/views/filesystem/delete.py:133
 #, python-brace-format
 msgid "It is formatted as {fstype} and mounted at {path}"
-msgstr ""
+msgstr "Той е форматиран като {fstype} и е монтиран на {path}"
 
 #: ../subiquity/ui/views/filesystem/delete.py:60
 #: ../subiquity/ui/views/filesystem/delete.py:139
 #, python-brace-format
 msgid "It is formatted as {fstype} and not mounted."
-msgstr ""
+msgstr "Той е форматиран като {fstype} и не е монтиран."
 
 #: ../subiquity/ui/views/filesystem/delete.py:66
 #, python-brace-format
 msgid "It contains 1 logical volume"
 msgid_plural "It contains {n} logical volumes"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Съдържа 1 логически том"
+msgstr[1] "Съдържа {n} логически тома"
 
 #: ../subiquity/ui/views/filesystem/delete.py:71
 #, python-brace-format
 msgid "It contains 1 partition"
 msgid_plural "It contains {n} partitions"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Съдържа 1 дял"
+msgstr[1] "Съдържа {n} дяла"
 
 #: ../subiquity/ui/views/filesystem/delete.py:85
 #, python-brace-format
 msgid "It contains 1 volume."
 msgid_plural "It contains {n} volumes."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Съдържа 1 том."
+msgstr[1] "Съдържа  {n} тома."
 
 #: ../subiquity/ui/views/filesystem/delete.py:91
 msgid "It is not formatted or mounted."
-msgstr ""
+msgstr "Не е форматиран или монтиран."
 
 #: ../subiquity/ui/views/filesystem/delete.py:93
 msgid "Delete"
-msgstr "Kkes"
+msgstr "Изтриване"
 
 #: ../subiquity/ui/views/filesystem/delete.py:121
 #, python-brace-format
 msgid "Remove filesystem from {device}"
-msgstr ""
+msgstr "Премахване на файловата система от  {device}"
 
 #: ../subiquity/ui/views/filesystem/delete.py:125
 #, python-brace-format
 msgid "Do you really want to remove the existing filesystem from {device}?"
 msgstr ""
+"Наистина ли искате да премахнете съществуващата файлова система от {device}?"
 
 #: ../subiquity/ui/views/filesystem/delete.py:143
 msgid "logical volumes"
-msgstr ""
+msgstr "логически томове"
 
 #: ../subiquity/ui/views/filesystem/delete.py:145
 msgid "partitions"
-msgstr ""
+msgstr "дялове"
 
 #. things is either "logical volumes" or "partitions"
 #: ../subiquity/ui/views/filesystem/delete.py:147
 #, python-brace-format
 msgid "Remove all {things} from {obj}"
-msgstr ""
+msgstr "Премахване на всички {things} от {obj}"
 
 #: ../subiquity/ui/views/filesystem/delete.py:151
 #, python-brace-format
 msgid "Do you really want to remove all {things} from {obj}?"
-msgstr ""
+msgstr "Наистина ли искате да премахнете всички {things} от {obj}?"
 
 #. XXX summarize partitions here?
 #: ../subiquity/ui/views/filesystem/delete.py:158
 msgid "Reformat"
-msgstr ""
+msgstr "Преформатиране"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:101
 #, python-brace-format
 msgid "existing {fstype}"
-msgstr ""
+msgstr "съществуваща {fstype}"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:103
 #, python-brace-format
 msgid "new {fstype}"
-msgstr ""
+msgstr "нов {fstype}"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:135
 msgid "No disks or partitions mounted."
-msgstr ""
+msgstr "Няма монтирани дискове или дялове."
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:160
 msgid "MOUNT POINT"
-msgstr ""
+msgstr "ТОЧКА НА МОНТИРАНЕ"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:161
 #: ../subiquity/ui/views/filesystem/filesystem.py:393
 #: ../subiquity/ui/views/snaplist.py:163
 msgid "SIZE"
-msgstr ""
+msgstr "РАЗМЕР"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:162
 #: ../subiquity/ui/views/filesystem/filesystem.py:392
 msgid "TYPE"
-msgstr ""
+msgstr "ТИП"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:163
 msgid "DEVICE TYPE"
-msgstr ""
+msgstr "ТИП НА УСТРОЙСТВО"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:186
 msgid "Unmount"
-msgstr ""
+msgstr "Демонтиране"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:260
 msgid "No available devices"
-msgstr ""
+msgstr "Няма налични устройства"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:262
 msgid "No used devices"
-msgstr ""
+msgstr "Няма използвани устройства"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:326
 #, python-brace-format
 msgid "Remove from {device}"
-msgstr ""
+msgstr "Премахване от {device}"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:333
 msgid "Create Logical Volume"
-msgstr ""
+msgstr "Създаване на логически том"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:335
 #, python-brace-format
 msgid "Add {ptype} Partition"
-msgstr ""
+msgstr "Добавяне на {ptype} дял"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:340
 msgid "Stop Using As Boot Device"
-msgstr ""
+msgstr "Спиране на използването като Boot устройство"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:344
 msgid "Add As Another Boot Device"
-msgstr ""
+msgstr "Добавяне, като друго Boot устройство"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:345
 msgid "Use As Boot Device"
-msgstr ""
+msgstr "Използване, като Boot устройство"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:391
 msgid "DEVICE"
-msgstr ""
+msgstr "УСТРОЙСТВО"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:430
 msgid "Storage configuration"
-msgstr ""
+msgstr "Конфигурация за съхранение"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:441
 msgid "Create software RAID (md)"
-msgstr ""
+msgstr "Създаване на софтуерен RAID (md)"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:444
 msgid "Create volume group (LVM)"
-msgstr ""
+msgstr "Създаване на група томове  (LVM)"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:451
 msgid "FILE SYSTEM SUMMARY"
-msgstr ""
+msgstr "РЕЗЮМЕ НА ФАЙЛОВАТА СИСТЕМА"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:456
 msgid "AVAILABLE DEVICES"
-msgstr ""
+msgstr "НАЛИЧНИ УСТРОЙСТВА"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:463
 msgid "USED DEVICES"
-msgstr ""
+msgstr "ИЗПОЛЗВАНИ УСТРОЙСТВА"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:481
 msgid "Mount a filesystem at /"
-msgstr ""
+msgstr "Монтиране на файлова система в /"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:483
 msgid "Select a boot disk"
-msgstr ""
+msgstr "Изберете диск за Boot"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:488
 msgid "To continue you need to:"
-msgstr ""
+msgstr "За да продължите трябва да:"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:502
 msgid "Reset"
-msgstr "Ales asbadu"
+msgstr "Нулиране"
 
 #: ../subiquity/ui/views/filesystem/guided.py:57
 msgid "Configure a guided storage layout, or create a custom one:"
 msgstr ""
+"Водено конфигуриране на подредбата на устройствата за съхранение или "
+"създаване на персонализирана:"
 
 #: ../subiquity/ui/views/filesystem/guided.py:62
 #: ../subiquity/ui/views/filesystem/lvm.py:93
 msgid "Passphrase:"
-msgstr ""
+msgstr "Парола:"
 
 #: ../subiquity/ui/views/filesystem/guided.py:63
 #: ../subiquity/ui/views/filesystem/lvm.py:94
 msgid "Confirm passphrase:"
-msgstr ""
+msgstr "Потвърдете паролата:"
 
 #: ../subiquity/ui/views/filesystem/guided.py:67
 #: ../subiquity/ui/views/identity.py:138
 msgid "Password must be set"
-msgstr ""
+msgstr "Трябва да бъде зададена парола"
 
 #: ../subiquity/ui/views/filesystem/guided.py:71
 #: ../subiquity/ui/views/identity.py:142
 msgid "Passwords do not match"
-msgstr "Awalen n unekcum ur nmeɣran ara"
+msgstr "Паролите не съвпадат"
 
 #: ../subiquity/ui/views/filesystem/guided.py:84
 msgid "Encrypt the LVM group with LUKS"
-msgstr ""
+msgstr "Криптиране на LVM групата с LUKS"
 
 #: ../subiquity/ui/views/filesystem/guided.py:121
 msgid "Set up this disk as an LVM group"
-msgstr ""
+msgstr "Задаване на този диск като LVM група"
 
 #: ../subiquity/ui/views/filesystem/guided.py:155
 msgid "Use an entire disk"
-msgstr ""
+msgstr "Използване на целият диск"
 
 #: ../subiquity/ui/views/filesystem/guided.py:157
 msgid "Custom storage layout"
-msgstr ""
+msgstr "Персонализирано оформление на устройствата за съхранение"
 
 #: ../subiquity/ui/views/filesystem/guided.py:170
 msgid ""
@@ -1222,6 +1302,39 @@ msgid ""
 "at /.\n"
 "\n"
 msgstr ""
+"\n"
+"\n"
+"Опцията „Използване на цял диск“ инсталира Ubuntu на избрания диск,\n"
+"заменя всички дялове и данни, които вече са там.\n"
+"\n"
+"Ако платформата го изисква, на диска се създава дял за зареждане.\n"
+"\n"
+"Ако решите да използвате LVM, тогава се създават два допълнителни дяла,\n"
+"един за /boot и един покриващ останалата част от диска. Том на LVM\n"
+"създава се група, съдържаща големия дял. Логичен обем е\n"
+"създаден за основната файлова система, оразмерен с помощта на някаква проста "
+"евристика. То\n"
+"може лесно да се увеличи със стандартните инструменти на командния ред на "
+"LVM (или на\n"
+"следващия екран).\n"
+"\n"
+"Можете също така да изберете да шифровате LVM том група. Това ще изисква\n"
+"задаване на парола, която ще трябва да въвеждате при всяко зареждане преди "
+"системата да зареди.\n"
+"\n"
+"Ако не изберете да използвате LVM, се създава един дял, покриващ\n"
+"останалата част от диска, който след това се форматира като ext4 и се "
+"монтира в /.\n"
+"\n"
+"И в двата случая пак ще имате възможност да прегледате и промените "
+"резултатите.\n"
+"\n"
+"Ако изберете да използвате персонализирано оформление на устройствата за "
+"съхранение, няма да се правят промени в дисковете\n"
+"и ще трябва най-малкото да изберете диск за зареждане и да монтирате файлова "
+"система\n"
+"в /.\n"
+"\n"
 
 #: ../subiquity/ui/views/filesystem/guided.py:200
 msgid ""
@@ -1230,6 +1343,10 @@ msgid ""
 "storage\n"
 "configuration. Manual configuration may still be possible.\n"
 msgstr ""
+"\n"
+"Блоковото тестване не откри никакви дискове, достатъчно големи, за да "
+"поддържат направлявано съхранение\n"
+"конфигурация. Все още може да е възможна ръчна конфигурация.\n"
 
 #: ../subiquity/ui/views/filesystem/guided.py:206
 msgid ""
@@ -1237,166 +1354,173 @@ msgid ""
 "Block probing did not discover any disks. Unfortunately this means that\n"
 "installation will not be possible.\n"
 msgstr ""
+"\n"
+"Блоковото тестване не откри никакви дискове. За съжаление това означава, че\n"
+"инсталирането няма да бъде възможно.\n"
 
 #: ../subiquity/ui/views/filesystem/guided.py:214
 msgid "Guided storage configuration"
-msgstr ""
+msgstr "Водена конфигурация на устройствата за съхранение"
 
 #: ../subiquity/ui/views/filesystem/guided.py:233
 #: ../subiquity/ui/views/filesystem/partition.py:432
 #: ../subiquity/ui/views/keyboard.py:98 ../subiquity/ui/views/keyboard.py:136
 #: ../subiquity/ui/views/keyboard.py:332
 msgid "OK"
-msgstr "Γas"
+msgstr "OK"
 
 #: ../subiquity/ui/views/filesystem/guided.py:241
 msgid "Help on guided storage configuration"
-msgstr ""
+msgstr "Помощ за конфигуриране на воденото оразмеряване"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:61
 msgid ""
 "The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
 "9, +, _, . and -"
 msgstr ""
+"Единствените знаци, разрешени в името на група томове, са a-z, A-Z, 0-9, +, "
+"_, . и -"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:86
 msgid "passphrases"
-msgstr ""
+msgstr "пароли"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:90
 #: ../subiquity/ui/views/filesystem/raid.py:95
 msgid "Devices:"
-msgstr ""
+msgstr "Устройства:"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:91
 #: ../subiquity/ui/views/filesystem/raid.py:96
 msgid "Size:"
-msgstr "Teɣzi:"
+msgstr "Размер:"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:92
 msgid "Create encrypted volume"
-msgstr ""
+msgstr "Създаване на криптиран дял"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:105
 msgid "Select at least one device to be part of the volume group."
-msgstr ""
+msgstr "Изберете поне едно устройство, което да бъде част от групата томове."
 
 #: ../subiquity/ui/views/filesystem/lvm.py:111
 msgid "The name of a volume group cannot be empty"
-msgstr ""
+msgstr "Името на групата томове не може да бъде празно"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:113
 msgid "The name of a volume group cannot start with a hyphen"
-msgstr ""
+msgstr "Името на група томове не може да започва с тире"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:115
 #, python-brace-format
 msgid "There is already a volume group named '{name}'"
-msgstr ""
+msgstr "Вече има група томове с име „{name}“"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:119
 #, python-brace-format
 msgid "{name} is not a valid name for a volume group"
-msgstr ""
+msgstr "{name} не е валидно име за група томове"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:124
 msgid "Passphrase must be set"
-msgstr ""
+msgstr "Трябва да се зададе парола"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:129
 msgid "Passphrases do not match"
-msgstr ""
+msgstr "Паролите не съвпадат"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:142
 msgid "Create LVM volume group"
-msgstr ""
+msgstr "Създаване на LVM група томове"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:157
 #, python-brace-format
 msgid "Edit volume group \"{name}\""
-msgstr ""
+msgstr "Редактиране на група томове \"{name}\""
 
 #: ../subiquity/ui/views/filesystem/partition.py:77
 msgid "Leave unformatted"
-msgstr ""
+msgstr "Оставяне неформатирано"
 
 #: ../subiquity/ui/views/filesystem/partition.py:80
 #, python-brace-format
 msgid "Leave formatted as {fstype}"
-msgstr ""
+msgstr "Оставете форматиран като {fstype}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:113
 #, python-brace-format
 msgid "Capped partition size at {size}"
-msgstr ""
+msgstr "Ограничен размер на дяла на {size}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:121
 #, python-brace-format
 msgid "Rounded size up to {size}"
-msgstr ""
+msgstr "Закръглен размер до {size}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:133
 msgid ""
 "The only characters permitted in the name of a logical volume are a-z, A-Z, "
 "0-9, +, _, . and -"
 msgstr ""
+"Единствените знаци, разрешени в името на логически том, са a-z, A-Z, 0-9, +, "
+"_, . и -"
 
 #: ../subiquity/ui/views/filesystem/partition.py:167
 #, python-brace-format
 msgid "Size (max {size}):"
-msgstr ""
+msgstr "Размер (макс. {size}):"
 
 #: ../subiquity/ui/views/filesystem/partition.py:205
 msgid "Name: "
-msgstr ""
+msgstr "Име: "
 
 #: ../subiquity/ui/views/filesystem/partition.py:207
 msgid "Format:"
-msgstr "Amasal:"
+msgstr "Формат:"
 
 #: ../subiquity/ui/views/filesystem/partition.py:208
 msgid "Mount:"
-msgstr ""
+msgstr "Монтиране:"
 
 #: ../subiquity/ui/views/filesystem/partition.py:210
 msgid "Use as swap"
-msgstr ""
+msgstr "Използване, като swap"
 
 #: ../subiquity/ui/views/filesystem/partition.py:211
 msgid "Use this swap partition in the installed system."
-msgstr ""
+msgstr "Използване на този swap дял в инсталираната система"
 
 #: ../subiquity/ui/views/filesystem/partition.py:235
 msgid "The name of a logical volume cannot be empty"
-msgstr ""
+msgstr "Името на логическият том не може да бъде празно"
 
 #: ../subiquity/ui/views/filesystem/partition.py:237
 msgid "The name of a logical volume cannot start with a hyphen"
-msgstr ""
+msgstr "Името на логически том не може да започва с тире"
 
 #: ../subiquity/ui/views/filesystem/partition.py:240
 #, python-brace-format
 msgid "A logical volume may not be called {name}"
-msgstr ""
+msgstr "Логически том не може да се нарича {name}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:247
 #, python-brace-format
 msgid "The name of a logical volume may not contain \"{substring}\""
-msgstr ""
+msgstr "Името на логически том не може да съдържа \"{substring}\""
 
 #: ../subiquity/ui/views/filesystem/partition.py:252
 #, python-brace-format
 msgid "There is already a logical volume named {name}."
-msgstr ""
+msgstr "Вече има логически том с име {name}."
 
 #: ../subiquity/ui/views/filesystem/partition.py:261
 msgid "Path exceeds PATH_MAX"
-msgstr ""
+msgstr "Пътят надвишава PATH_MAX"
 
 #: ../subiquity/ui/views/filesystem/partition.py:264
 #, python-brace-format
 msgid "{device} is already mounted at {path}."
-msgstr ""
+msgstr "{device} вече е монтирано на {path}."
 
 #: ../subiquity/ui/views/filesystem/partition.py:272
 #, python-brace-format
@@ -1404,6 +1528,8 @@ msgid ""
 "Mounting an existing filesystem at {mountpoint} is usually a bad idea, "
 "proceed only with caution."
 msgstr ""
+"Монтирането на съществуваща файлова система на {mountpoint} обикновено е "
+"лоша идея, продължете с повишено внимание."
 
 #: ../subiquity/ui/views/filesystem/partition.py:288
 #, python-brace-format
@@ -1418,18 +1544,32 @@ msgid ""
 "will not contain a filesystem and will not be mounted, and cannot be\n"
 "edited here.\n"
 msgstr ""
+"Зареждащ (boot) дял\n"
+"\n"
+"{middle}\n"
+"\n"
+"На диск с GPT таблица на дяловете обаче няма достатъчно\n"
+"място след MBR за GRUB, за да съхранява своя втори етап core.img, така,\n"
+" че е необходим малък неформатиран дял в началото на диска. Той\n"
+"няма да съдържа файлова система, няма да бъде монтиран и не може да бъде\n"
+"редактиран тук.\n"
 
 #: ../subiquity/ui/views/filesystem/partition.py:300
 msgid ""
 "If this disk is selected as a boot device, GRUB will be installed onto\n"
 "the target disk's MBR."
 msgstr ""
+"Ако този диск е избран като устройство за зареждане, GRUB ще бъде инсталиран "
+"в\n"
+"MBR на целевия диск."
 
 #: ../subiquity/ui/views/filesystem/partition.py:304
 msgid ""
 "As this disk has been selected as a boot device, GRUB will be\n"
 "installed onto the target disk's MBR."
 msgstr ""
+"Тъй- като този диск е избран като устройство за зареждане, GRUB ще бъде\n"
+"инсталиран в MBR на целевия диск."
 
 #: ../subiquity/ui/views/filesystem/partition.py:308
 msgid ""
@@ -1439,6 +1579,12 @@ msgid ""
 "disk is selected as a boot device, Grub will be installed onto this\n"
 "partition, which must be formatted as fat32.\n"
 msgstr ""
+"Зареждащ (boot) дял\n"
+"\n"
+"Това е ESP / \"EFI системен дял\", както се изисква от UEFI. Ако този\n"
+"диск е избран като устройство за стартиране, Grub ще бъде инсталиран на "
+"този\n"
+"дял, който трябва да бъде форматиран като fat32.\n"
 
 #: ../subiquity/ui/views/filesystem/partition.py:316
 msgid ""
@@ -1448,16 +1594,26 @@ msgid ""
 "disk has been selected as a boot device, Grub will be installed onto\n"
 "this partition, which must be formatted as fat32.\n"
 msgstr ""
+"Зареждащ (boot) дял\n"
+"\n"
+"Това е ESP / \"EFI системен дял\", както се изисква от UEFI. Ако този\n"
+"диск е избран като устройство за стартиране, Grub ще бъде инсталиран на "
+"този\n"
+"дял, който трябва да бъде форматиран като fat32.\n"
 
 #: ../subiquity/ui/views/filesystem/partition.py:324
 msgid "The only aspect of this partition that can be edited is the size.\n"
 msgstr ""
+"Единственият аспект на този дял, който може да се редактира, е размерът.\n"
 
 #: ../subiquity/ui/views/filesystem/partition.py:328
 msgid ""
 "You can choose whether to use the existing filesystem on this\n"
 "partition or reformat it.\n"
 msgstr ""
+"Можете да изберете, дали да използвате съществуващата файлова система за "
+"този\n"
+"дял или го преформатирате.\n"
 
 #: ../subiquity/ui/views/filesystem/partition.py:333
 msgid ""
@@ -1466,6 +1622,10 @@ msgid ""
 "This is the PReP partion which is required on POWER. If this disk is\n"
 "selected as a boot device, Grub will be installed onto this partition.\n"
 msgstr ""
+"Необходим е дял за зареждане\n"
+"\n"
+"Това е PReP дялът, който се изисква на POWER. Ако този диск е\n"
+"избран като устройство за зареждане, Grub ще бъде инсталиран на този дял.\n"
 
 #: ../subiquity/ui/views/filesystem/partition.py:340
 msgid ""
@@ -1475,55 +1635,63 @@ msgid ""
 "been selected as a boot device, Grub will be installed onto this\n"
 "partition.\n"
 msgstr ""
+"Необходим е дял за зареждане\n"
+"\n"
+"Това е PReP дялът, който се изисква на POWER. Ако този диск е\n"
+"избран като устройство за зареждане, Grub ще бъде инсталиран на този дял.\n"
 
 #: ../subiquity/ui/views/filesystem/partition.py:439
 msgid "Use existing fat32 filesystem"
-msgstr ""
+msgstr "Използване на съществуваща  fat32 файлова система"
 
 #: ../subiquity/ui/views/filesystem/partition.py:445
 msgid "Reformat as fresh fat32 filesystem"
-msgstr ""
+msgstr "Преформатиране, като нова  fat32 файлова система"
 
 #: ../subiquity/ui/views/filesystem/partition.py:523
 #, python-brace-format
 msgid "Adding logical volume to {vgname}"
-msgstr ""
+msgstr "Добавяне на логически том към {vgname}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:526
 #, python-brace-format
 msgid "Adding {ptype} partition to {device}"
-msgstr ""
+msgstr "Добавяне на {ptype} дял към {device}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:532
 #, python-brace-format
 msgid "Editing logical volume {lvname} of {vgname}"
-msgstr ""
+msgstr "Редактиране на логически том {lvname} на {vgname}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:537
 #, python-brace-format
 msgid "Editing partition {number} of {device}"
-msgstr ""
+msgstr "Редактиране на дял {number} на {device}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:592
 msgid ""
 "Formatting and mounting a disk directly is unusual. You probably want to add "
 "a partition instead."
 msgstr ""
+"Директното форматиране и монтиране на диск е необичайно. Вероятно, вместо "
+"това искате да добавите дял."
 
 #: ../subiquity/ui/views/filesystem/partition.py:604
 #, python-brace-format
 msgid "Format and/or mount {device}"
-msgstr ""
+msgstr "Форматирайте и/или монтирайте {device}"
 
 #: ../subiquity/ui/views/filesystem/probing.py:40
 msgid "Waiting for storage probing to complete"
-msgstr ""
+msgstr "Изчаква се завършване на проучването на носителя"
 
 #: ../subiquity/ui/views/filesystem/probing.py:48
 msgid ""
 "The installer is probing for block devices to install to. Please wait until "
 "it completes."
 msgstr ""
+"Инсталаторът проучва за блокови устройства, на които да се инсталира. Моля, "
+"изчакайте, докато завърши."
 
 #: ../subiquity/ui/views/filesystem/probing.py:61
 msgid ""
@@ -1531,49 +1699,52 @@ msgid ""
 "on Launchpad, and if possible include the contents of the /var/log/installer "
 "directory."
 msgstr ""
+"За съжаление, проучването на устройства за инсталиране не успя. Моля, "
+"докладвайте за грешка в Launchpad и, ако е възможно, включете съдържанието "
+"на директорията /var/log/installer."
 
 #: ../subiquity/ui/views/filesystem/probing.py:68
 msgid "Probing for devices to install to failed"
-msgstr ""
+msgstr "Проучването за устройства за инсталиране е неуспешно"
 
 #: ../subiquity/ui/views/filesystem/probing.py:77
 msgid "Show Error Report"
-msgstr ""
+msgstr "Покажи доклада за грешки"
 
 #: ../subiquity/ui/views/filesystem/raid.py:70
 msgid "/ is not permitted in the name of a RAID device"
-msgstr ""
+msgstr "/ не е разрешено в името на RAID устройство"
 
 #: ../subiquity/ui/views/filesystem/raid.py:76
 msgid "Whitespace is not permitted in the name of a RAID device"
-msgstr ""
+msgstr "Празното пространство не е разрешено в името на RAID устройство"
 
 #: ../subiquity/ui/views/filesystem/raid.py:94
 msgid "RAID Level:"
-msgstr ""
+msgstr "RAID ниво:"
 
 #: ../subiquity/ui/views/filesystem/raid.py:107
 #, python-brace-format
 msgid "There is already a RAID named '{name}'"
-msgstr ""
+msgstr "Вече има RAID с име '{name}'"
 
 #: ../subiquity/ui/views/filesystem/raid.py:110
 msgid ". and .. are not valid names for RAID devices"
-msgstr ""
+msgstr ". и .. не са валидни имена за RAID устройства"
 
 #: ../subiquity/ui/views/filesystem/raid.py:116
 #, python-brace-format
 msgid "RAID Level \"{level}\" requires at least {min_active} active devices"
-msgstr ""
+msgstr "RAID ниво \"{level}\" изисква поне {min_active} активни устройства"
 
 #: ../subiquity/ui/views/filesystem/raid.py:129
 msgid "Create software RAID (\"MD\") disk"
-msgstr ""
+msgstr "Създайте софтуерен RAID (\"MD\") диск"
 
 #: ../subiquity/ui/views/filesystem/raid.py:145
 #, python-brace-format
 msgid "Edit software RAID disk \"{name}\""
-msgstr ""
+msgstr "Редактиране на софтуерен RAID диск \"{name}\""
 
 #: ../subiquity/ui/views/help.py:70
 #, python-brace-format
@@ -1592,6 +1763,25 @@ msgid ""
 "\n"
 "This is version {snap_version} of the installer.\n"
 msgstr ""
+"\n"
+"Добре дошли в Ubuntu Server Installer!\n"
+"\n"
+"\n"
+"Най-популярният Linux сървър в облака и център за данни, това\n"
+"издание на Ubuntu ще получава актуализации в продължение на 9 месеца след "
+"пускането.\n"
+"\n"
+"\n"
+"Инсталаторът ще ви преведе през инсталирането на Ubuntu Server\n"
+"{release}.\n"
+"\n"
+"\n"
+"Инсталаторът изисква ползването само на клавишите със стрелки нагоре и "
+"надолу, интервал \n"
+"(или връщане) и евентуално, малко писане.\n"
+"\n"
+"\n"
+"Това е версия {snap_version} на инсталатора.\n"
 
 #: ../subiquity/ui/views/help.py:86
 #, python-brace-format
@@ -1610,6 +1800,22 @@ msgid ""
 "\n"
 "This is version {snap_version} of the installer.\n"
 msgstr ""
+"\n"
+"Добре дошли в Ubuntu Server Installer!\n"
+"\n"
+"\n"
+"Най-популярният Linux сървър в облака и център за данни, вие можете\n"
+"да разчитате на Ubuntu Server и неговите пет години безплатна поддръжка.\n"
+"\n"
+"\n"
+"Инсталаторът ще ви преведе през инсталирането на Ubuntu Server\n"
+"{release} LTS.\n"
+"\n"
+"Инсталаторът изисква ползването само на клавишите със стрелки нагоре и "
+"надолу, интервал \n"
+"(или връщане) и евентуално, малко писане.\n"
+"\n"
+"Това е версия {snap_version} на инсталатора.\n"
 
 #: ../subiquity/ui/views/help.py:102
 msgid ""
@@ -1618,12 +1824,19 @@ msgid ""
 "might allow the use of a more capable terminal and can offer more languages\n"
 "than can be rendered in the Linux console."
 msgstr ""
+"\n"
+"Възможно е да се свържете с инсталатора през мрежата, което\n"
+"може да позволи използването на по-способен терминал и може да предложи "
+"повече езици\n"
+"отколкото могат да бъдат изобразени в конзолата на Linux."
 
 #: ../subiquity/ui/views/help.py:107
 msgid ""
 "\n"
 "To connect, SSH to any of these addresses:\n"
 msgstr ""
+"\n"
+"За да се свържете, SSH към някой от тези адреси:\n"
 
 #: ../subiquity/ui/views/help.py:111
 #, python-brace-format
@@ -1631,15 +1844,19 @@ msgid ""
 "\n"
 "To connect, SSH to {username}@{ip}."
 msgstr ""
+"\n"
+"За да се свържете, SSH към {username}@{ip}."
 
 #: ../subiquity/ui/views/help.py:114
 #, python-brace-format
 msgid "The password you should use is \"{password}\"."
-msgstr ""
+msgstr "Паролата, която трябва да използвате, е \"{password}\"."
 
 #: ../subiquity/ui/views/help.py:117
 msgid "You should use the preconfigured password passed to cloud-init."
 msgstr ""
+"Трябва да използвате предварително конфигурираната парола, предадена на "
+"cloud-init."
 
 #: ../subiquity/ui/views/help.py:120
 #, python-brace-format
@@ -1648,10 +1865,12 @@ msgid ""
 "\n"
 "    {fingerprint}\n"
 msgstr ""
+"Можете да влезете с ключа {keytype} с пръстов отпечатък:\n"
+"    {fingerprint}\n"
 
 #: ../subiquity/ui/views/help.py:126
 msgid "You can log in with one of the following keys:\n"
-msgstr ""
+msgstr "Можете да влезете с един от следните ключове:\n"
 
 #: ../subiquity/ui/views/help.py:130
 #, python-brace-format
@@ -1659,12 +1878,17 @@ msgid ""
 "\n"
 "Or you can use the password \"{password}\"."
 msgstr ""
+"\n"
+"Или можете да използвате паролата \"{password}\"."
 
 #: ../subiquity/ui/views/help.py:133
 msgid ""
 "\n"
 "Or you can use the preconfigured password passed to cloud-init."
 msgstr ""
+"\n"
+"Или можете да използвате предварително конфигурираната парола, предадена на "
+"cloud-init."
 
 #: ../subiquity/ui/views/help.py:136
 msgid ""
@@ -1672,6 +1896,8 @@ msgid ""
 "Unfortunately this system seems to have no global IP addresses at this\n"
 "time.\n"
 msgstr ""
+"\n"
+"За съжаление тази система изглежда няма глобални IP адреси в момента.\n"
 
 #: ../subiquity/ui/views/help.py:141
 msgid ""
@@ -1679,18 +1905,20 @@ msgid ""
 "Unfortunately the installer was unable to detect the password that has\n"
 "been set.\n"
 msgstr ""
+"\n"
+"За съжаление инсталаторът не успя да открие зададената парола.\n"
 
 #: ../subiquity/ui/views/help.py:217
 msgid "The following keys can be used at any time:"
-msgstr ""
+msgstr "Следните ключове могат да се използват по всяко време:"
 
 #: ../subiquity/ui/views/help.py:221
 msgid "ESC"
-msgstr ""
+msgstr "ESC"
 
 #: ../subiquity/ui/views/help.py:221
 msgid "go back"
-msgstr ""
+msgstr "отиване назад"
 
 #: ../subiquity/ui/views/help.py:222
 msgid "F1"
@@ -1698,193 +1926,194 @@ msgstr "F1"
 
 #: ../subiquity/ui/views/help.py:222
 msgid "open help menu"
-msgstr ""
+msgstr "отваряне на помощното меню"
 
 #: ../subiquity/ui/views/help.py:223
 msgid "Control-Z, F2"
-msgstr ""
+msgstr "Control-Z, F2"
 
 #: ../subiquity/ui/views/help.py:223
 msgid "switch to shell"
-msgstr ""
+msgstr "прехвърляне към обвивка"
 
 #: ../subiquity/ui/views/help.py:224
 msgid "Control-L, F3"
-msgstr ""
+msgstr "Control-L, F3"
 
 #: ../subiquity/ui/views/help.py:224
 msgid "redraw screen"
-msgstr ""
+msgstr "преначертаване на екрана"
 
 #: ../subiquity/ui/views/help.py:228
 msgid "Control-T, F4"
-msgstr ""
+msgstr "Control-T, F4"
 
 #: ../subiquity/ui/views/help.py:228
 msgid "toggle rich mode (colour, unicode) on and off"
-msgstr ""
+msgstr "включване и изключване на екстра режим (цвят, уникод)."
 
 #: ../subiquity/ui/views/help.py:232
 msgid "Control-X"
-msgstr ""
+msgstr "Control-X"
 
 #: ../subiquity/ui/views/help.py:232
 msgid "quit"
-msgstr ""
+msgstr "изход"
 
 #: ../subiquity/ui/views/help.py:233
 msgid "Control-E"
-msgstr ""
+msgstr "Control-E"
 
 #: ../subiquity/ui/views/help.py:233
 msgid "generate noisy error report"
-msgstr ""
+msgstr "генерира показен доклад за грешка"
 
 #: ../subiquity/ui/views/help.py:234
 msgid "Control-R"
-msgstr ""
+msgstr "Control-R"
 
 #: ../subiquity/ui/views/help.py:234
 msgid "generate quiet error report"
-msgstr ""
+msgstr "генерира дискретен доклад за грешки"
 
 #: ../subiquity/ui/views/help.py:235
 msgid "Control-G"
-msgstr ""
+msgstr "Control-G"
 
 #: ../subiquity/ui/views/help.py:235
 msgid "pretend to run an install"
-msgstr ""
+msgstr "симулиране, че изпълнявате инсталация"
 
 #: ../subiquity/ui/views/help.py:236
 msgid "Control-U"
-msgstr ""
+msgstr "Control-U"
 
 #: ../subiquity/ui/views/help.py:236
 msgid "crash the ui"
-msgstr ""
+msgstr "срив на потр. интерфейс"
 
 #: ../subiquity/ui/views/help.py:250
 msgid "(dry-run only)"
-msgstr ""
+msgstr "(само сухо стартиране)"
 
 #: ../subiquity/ui/views/help.py:266
 msgid "Shortcut Keys"
-msgstr ""
+msgstr "Бързи клавиши"
 
 #: ../subiquity/ui/views/help.py:292
 msgid "About this installer"
-msgstr ""
+msgstr "За инсталатора"
 
 #: ../subiquity/ui/views/help.py:294
 msgid "Keyboard shortcuts"
-msgstr "Inegzumen n unasiw"
+msgstr "Клавишни комбинации"
 
 #: ../subiquity/ui/views/help.py:296
 msgid "Enter shell"
-msgstr ""
+msgstr "Влизане в обвивката"
 
 #: ../subiquity/ui/views/help.py:305 ../subiquity/ui/views/help.py:465
 msgid "Help on SSH access"
-msgstr ""
+msgstr "Помощ за SSH достъп"
 
 #: ../subiquity/ui/views/help.py:309
 msgid "Toggle rich mode"
-msgstr ""
+msgstr "Превключване на екстра режим"
 
 #: ../subiquity/ui/views/help.py:321
 msgid "Help on this screen"
-msgstr ""
+msgstr "Помощ на този екран"
 
 #: ../subiquity/ui/views/help.py:326 ../subiquity/ui/views/help.py:331
 msgid "View error reports"
-msgstr ""
+msgstr "Преглед на отчетите за грешки"
 
 #: ../subiquity/ui/views/help.py:399
 msgid "Help"
-msgstr "Tallalt"
+msgstr "Помощ"
 
 #: ../subiquity/ui/views/help.py:456
 msgid "About the installer"
-msgstr ""
+msgstr "За инсталатора"
 
 #: ../subiquity/ui/views/identity.py:56
 msgid "The characters : , and = are not permitted in this field"
-msgstr ""
+msgstr "Знаците : и = не са разрешени в това поле"
 
 #: ../subiquity/ui/views/identity.py:66
 msgid "The only characters permitted in this field are a-z, 0-9, _ and -"
-msgstr ""
+msgstr "Единствените позволени знаци в това поле са a-z, 0-9, _ и -"
 
 #: ../subiquity/ui/views/identity.py:90
 msgid "Your name:"
-msgstr ""
+msgstr "Вашето име:"
 
 #: ../subiquity/ui/views/identity.py:92
 msgid "Your server's name:"
-msgstr ""
+msgstr "Името на Вашият сървър:"
 
 #: ../subiquity/ui/views/identity.py:93
 msgid "The name it uses when it talks to other computers."
-msgstr ""
+msgstr "Името, което се използва при комуникация с други компютри."
 
 #: ../subiquity/ui/views/identity.py:94
 msgid "Pick a username:"
-msgstr ""
+msgstr "Изберете потребителско име:"
 
 #: ../subiquity/ui/views/identity.py:95
 msgid "Choose a password:"
-msgstr ""
+msgstr "Изберете парола:"
 
 #: ../subiquity/ui/views/identity.py:96
 msgid "Confirm your password:"
-msgstr ""
+msgstr "Повторете парола си:"
 
 #: ../subiquity/ui/views/identity.py:101
 #, python-brace-format
 msgid "Name too long, must be less than {limit}"
-msgstr ""
+msgstr "Името е твърде дълго, трябва да е по-малко от {limit}"
 
 #: ../subiquity/ui/views/identity.py:106
 msgid "Server name must not be empty"
-msgstr ""
+msgstr "Името на сървъра не трябва да е празно"
 
 #: ../subiquity/ui/views/identity.py:110
 #, python-brace-format
 msgid "Server name too long, must be less than {limit}"
-msgstr ""
+msgstr "Името на сървъра е твърде дълго, трябва да е по-малко от {limit}"
 
 #: ../subiquity/ui/views/identity.py:115
 msgid "Hostname must match HOSTNAME_REGEX: "
-msgstr ""
+msgstr "Името на хоста трябва да съвпада с HOSTNAME_REGEX: "
 
 #: ../subiquity/ui/views/identity.py:120
 msgid "Username missing"
-msgstr ""
+msgstr "Липсва потребителско име"
 
 #: ../subiquity/ui/views/identity.py:124
 #, python-brace-format
 msgid "Username too long, must be less than {limit}"
-msgstr ""
+msgstr "Потребителското име е твърде дълго, трябва да е по-малко от {limit}"
 
 #: ../subiquity/ui/views/identity.py:129
 msgid "Username must match USERNAME_REGEX: "
-msgstr ""
+msgstr "Потребителското име трябва да съответства на USERNAME_REGEX: "
 
 #: ../subiquity/ui/views/identity.py:133
 #, python-brace-format
 msgid "The username \"{username}\" is reserved for use by the system."
 msgstr ""
+"Потребителското име \"{username}\" е запазено за използване от системата."
 
 #. desc is "passwords" or "passphrases"
 #: ../subiquity/ui/views/identity.py:151
 #, python-brace-format
 msgid "{desc} do not match"
-msgstr ""
+msgstr "{desc} не съвпадат"
 
 #: ../subiquity/ui/views/identity.py:159
 msgid "Profile setup"
-msgstr ""
+msgstr "Настройка на профила"
 
 #: ../subiquity/ui/views/identity.py:160
 msgid ""
@@ -1892,32 +2121,35 @@ msgid ""
 "can configure SSH access on the next screen but a password is still needed "
 "for sudo."
 msgstr ""
+"Въведете потребителското име и паролата, които ще използвате за влизане в "
+"системата. Можете да конфигурирате SSH достъп на следващия екран, но все още "
+"е необходима парола за sudo."
 
 #: ../subiquity/ui/views/identity.py:188
 msgid "passwords"
-msgstr ""
+msgstr "пароли"
 
 #: ../subiquity/ui/views/installprogress.py:52
 msgid "Install progress"
-msgstr ""
+msgstr "Напредък на инсталирането"
 
 #: ../subiquity/ui/views/installprogress.py:59
 #: ../subiquity/ui/views/installprogress.py:174
 #: ../subiquity/ui/views/installprogress.py:181
 msgid "Reboot Now"
-msgstr ""
+msgstr "Рестартирай сега"
 
 #: ../subiquity/ui/views/installprogress.py:61
 msgid "View error report"
-msgstr ""
+msgstr "Преглед на отчета за грешка"
 
 #: ../subiquity/ui/views/installprogress.py:63
 msgid "View full log"
-msgstr "Ẓeṛ aɣmis ummid"
+msgstr "Вижте пълния дневник"
 
 #: ../subiquity/ui/views/installprogress.py:79
 msgid "Full installer output"
-msgstr ""
+msgstr "Пълен изход на инсталатора"
 
 #: ../subiquity/ui/views/installprogress.py:142
 #: ../subiquity/ui/views/installprogress.py:145
@@ -1925,26 +2157,26 @@ msgstr ""
 #: ../subiquity/ui/views/installprogress.py:151
 #: ../subiquity/ui/views/installprogress.py:154
 msgid "Installing system"
-msgstr "Asebded n unagraw"
+msgstr "Инсталиране на системата"
 
 #: ../subiquity/ui/views/installprogress.py:157
 #: ../subiquity/ui/views/installprogress.py:165
 #: ../subiquity/ui/views/installprogress.py:173
 msgid "Install complete!"
-msgstr ""
+msgstr "Инсталирането е завършено!"
 
 #: ../subiquity/ui/views/installprogress.py:159
 msgid "Cancel update and reboot"
-msgstr ""
+msgstr "Отменете актуализацията и рестартирайте"
 
 #: ../subiquity/ui/views/installprogress.py:166
 #: ../subiquity/ui/views/installprogress.py:214
 msgid "Rebooting..."
-msgstr ""
+msgstr "Рестартиране..."
 
 #: ../subiquity/ui/views/installprogress.py:180
 msgid "An error occurred during installation"
-msgstr ""
+msgstr "Възникна грешка по време на инсталацията"
 
 #: ../subiquity/ui/views/installprogress.py:230
 msgid ""
@@ -1956,10 +2188,17 @@ msgid ""
 "\n"
 "Are you sure you want to continue?"
 msgstr ""
+"Избирането на Продължи по-долу ще стартира инсталационния процес и ще\n"
+"доведе до загуба на данни на дисковете, избрани за форматиране.\n"
+"\n"
+"Няма да можете да се върнете към този или предишен екран след, като\n"
+"инсталацията е започнала.\n"
+"\n"
+"Сигурни ли сте, че искате да продължите?"
 
 #: ../subiquity/ui/views/installprogress.py:251
 msgid "Confirm destructive action"
-msgstr ""
+msgstr "Потвърдете деструктивното действие"
 
 #: ../subiquity/ui/views/installprogress.py:271
 #, python-brace-format
@@ -1968,16 +2207,23 @@ msgid ""
 "\n"
 "You can wait for this to complete or switch to a shell.\n"
 msgstr ""
+"Инсталаторът, работещ на {tty}, в момента инсталира системата.\n"
+"\n"
+"\n"
+"Можете да изчакате това да завърши или да преминете към обвивка.\n"
 
 #: ../subiquity/ui/views/keyboard.py:67
 msgid "Keyboard auto-detection"
-msgstr ""
+msgstr "Автоматично откриване на клавиатура"
 
 #: ../subiquity/ui/views/keyboard.py:93
 msgid ""
 "Keyboard detection starting. You will be asked a series of questions about "
 "your keyboard. Press escape at any time to go back to the previous screen."
 msgstr ""
+"Откриването на клавиатурата започва. Ще ви бъдат зададени поредица от "
+"въпроси относно вашата клавиатура. Натиснете Escape по всяко време, за да се "
+"върнете към предишния екран."
 
 #: ../subiquity/ui/views/keyboard.py:106
 msgid ""
@@ -1985,6 +2231,9 @@ msgid ""
 "\n"
 "Your keyboard was detected as:\n"
 msgstr ""
+"Автоматичното откриване на клавиатурата е завършено.\n"
+"\n"
+"Вашата клавиатура беше разпозната като:\n"
 
 #: ../subiquity/ui/views/keyboard.py:111
 msgid ""
@@ -1993,26 +2242,30 @@ msgid ""
 "another layout or run the automated detection again.\n"
 "\n"
 msgstr ""
+"\n"
+"Ако това е правилно, изберете Готово на следващия екран. Ако не, можете да "
+"изберете друга подредба или да стартирате автоматичното откриване отново.\n"
+"\n"
 
 #: ../subiquity/ui/views/keyboard.py:128
 msgid "Layout"
-msgstr "Asettef"
+msgstr "Подредба"
 
 #: ../subiquity/ui/views/keyboard.py:129
 msgid "Variant"
-msgstr ""
+msgstr "Вариант"
 
 #: ../subiquity/ui/views/keyboard.py:152
 msgid "Please press one of the following keys:"
-msgstr ""
+msgstr "Моля, натиснете един от следните клавиши:"
 
 #: ../subiquity/ui/views/keyboard.py:188 ../subiquity/ui/views/keyboard.py:196
 msgid "Input was not recognized, try again"
-msgstr ""
+msgstr "Въведеното не беше разпознато, опитайте отново"
 
 #: ../subiquity/ui/views/keyboard.py:213
 msgid "Is the following key present on your keyboard?"
-msgstr ""
+msgstr "Следният клавиш има ли го на вашата клавиатура?"
 
 #: ../subiquity/ui/views/keyboard.py:277
 msgid ""
@@ -2026,131 +2279,148 @@ msgid ""
 "\n"
 "Not all listed keys are present on all keyboards. "
 msgstr ""
+"Ще ви е необходим начин за превключване на клавиатурата между националната "
+"подредба стандартната подредба на латиница.\n"
+"\n"
+"Десните клавиши Alt или Caps Lock често се избират поради ергономични "
+"причини (в последния случай използвайте комбинацията Shift+Caps Lock за "
+"нормално превключване на главни букви). Alt+Shift също е популярна "
+"комбинация; той обаче ще загуби обичайното си поведение в Emacs и други "
+"програми, които го използват за специфични нужди.\n"
+"\n"
+"Не всички изброени клавиши присъстват на всички клавиатури. "
 
 #: ../subiquity/ui/views/keyboard.py:290
 msgid "Caps Lock"
-msgstr "Asekkeṛ n yisekkilen imeqqranen"
+msgstr "Caps Lock"
 
 #: ../subiquity/ui/views/keyboard.py:291
 msgid "Right Alt (AltGr)"
-msgstr ""
+msgstr "Десен Alt (AltGr)"
 
 #: ../subiquity/ui/views/keyboard.py:292
 msgid "Right Control"
-msgstr ""
+msgstr "Десен Control"
 
 #: ../subiquity/ui/views/keyboard.py:293
 msgid "Right Shift"
-msgstr ""
+msgstr "Десен Shift"
 
 #: ../subiquity/ui/views/keyboard.py:294
 msgid "Right Logo key"
-msgstr "Tasarut n ulugu tayeffust"
+msgstr "Десен клавиш с лого"
 
 #: ../subiquity/ui/views/keyboard.py:295
 msgid "Menu key"
-msgstr "Tasarut n wumuɣ"
+msgstr "Клавиш Menu"
 
 #: ../subiquity/ui/views/keyboard.py:296
 msgid "Alt+Shift"
-msgstr ""
+msgstr "Alt+Shift"
 
 #: ../subiquity/ui/views/keyboard.py:297
 msgid "Control+Shift"
-msgstr ""
+msgstr "Control+Shift"
 
 #: ../subiquity/ui/views/keyboard.py:298
 msgid "Control+Alt"
-msgstr ""
+msgstr "Control+Alt"
 
 #: ../subiquity/ui/views/keyboard.py:299
 msgid "Alt+Caps Lock"
-msgstr "Alt+Taqeffalt n Usekkil Meqqren"
+msgstr "Alt+Caps Lock"
 
 #: ../subiquity/ui/views/keyboard.py:300
 msgid "Left Control+Left Shift"
-msgstr ""
+msgstr "Ляв Control+Ляв Shift"
 
 #: ../subiquity/ui/views/keyboard.py:301
 msgid "Left Alt"
-msgstr ""
+msgstr "Ляв Alt"
 
 #: ../subiquity/ui/views/keyboard.py:302
 msgid "Left Control"
-msgstr ""
+msgstr "Ляв Control"
 
 #: ../subiquity/ui/views/keyboard.py:303
 msgid "Left Shift"
-msgstr ""
+msgstr "Ляв Shift"
 
 #: ../subiquity/ui/views/keyboard.py:304
 msgid "Left Logo key"
-msgstr "Tasarut n ulugu tazelmaḍt"
+msgstr "Ляв клавиш с лого"
 
 #: ../subiquity/ui/views/keyboard.py:305
 msgid "Scroll Lock key"
-msgstr "Adrurel n tsarut n usekkeṛ"
+msgstr "Клавиш Scroll Lock"
 
 #: ../subiquity/ui/views/keyboard.py:306
 msgid "No toggling"
-msgstr "Ulac aqluqel"
+msgstr "Без превключване"
 
 #: ../subiquity/ui/views/keyboard.py:327
 msgid "Shortcut: "
-msgstr ""
+msgstr "Клавишни комбинации: "
 
 #: ../subiquity/ui/views/keyboard.py:337
 msgid "Select layout toggle"
-msgstr ""
+msgstr "Избор на превключване на подредбата"
 
 #: ../subiquity/ui/views/keyboard.py:355
 msgid "Layout:"
-msgstr ""
+msgstr "Подредба:"
 
 #: ../subiquity/ui/views/keyboard.py:356
 msgid "Variant:"
-msgstr ""
+msgstr "Вариант:"
 
 #: ../subiquity/ui/views/keyboard.py:361
 msgid "Keyboard configuration"
-msgstr ""
+msgstr "Конфигурация на клавиатурата"
 
 #: ../subiquity/ui/views/keyboard.py:382
 msgid ""
 "Please select the layout of the keyboard directly attached to the system, if "
 "any."
 msgstr ""
+"Моля, изберете подредба на клавиатурата, директно прикачена към системата, "
+"ако има такава."
 
 #: ../subiquity/ui/views/keyboard.py:385
 msgid ""
 "Please select your keyboard layout below, or select \"Identify keyboard\" to "
 "detect your layout automatically."
 msgstr ""
+"Моля, изберете вашата клавиатурна подредба по-долу или изберете "
+"„Идентифициране на клавиатурата“, за да откриете автоматично вашата подредба."
 
 #: ../subiquity/ui/views/keyboard.py:394
 msgid "Identify keyboard"
-msgstr ""
+msgstr "Идентифициране на клавиатурата"
 
 #: ../subiquity/ui/views/keyboard.py:429
 msgid "Applying config"
-msgstr ""
+msgstr "Прилагане на конфигурацията"
 
 #: ../subiquity/ui/views/mirror.py:32
 msgid ""
 "You may provide an archive mirror that will be used instead of the default."
 msgstr ""
+"Вие можете да предоставите архивно огледало, което ще се използва вместо "
+"стандартното."
 
 #: ../subiquity/ui/views/mirror.py:40
 msgid "Mirror address:"
-msgstr ""
+msgstr "Адрес на огледалото:"
 
 #: ../subiquity/ui/views/mirror.py:45
 msgid "Configure Ubuntu archive mirror"
-msgstr ""
+msgstr "Конфигуриране на архивното огледало на Ubuntu"
 
 #: ../subiquity/ui/views/mirror.py:46
 msgid "If you use an alternative mirror for Ubuntu, enter its details here."
 msgstr ""
+"Ако използвате алтернативно огледало за Ubuntu, въведете неговите данни тук."
 
 #: ../subiquity/ui/views/proxy.py:33
 msgid ""
@@ -2160,42 +2430,51 @@ msgid ""
 "The proxy information should be given in the standard form of "
 "\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
+"Ако трябва да използвате HTTP прокси за достъп до външния свят, въведете "
+"информацията за проксито тук. В противен случай оставете това празно.\n"
+"\n"
+"Информацията за проксито трябва да бъде предоставена в стандартната форма на "
+"„http://[[user][:pass]@]host[:port]/“."
 
 #: ../subiquity/ui/views/proxy.py:43
 msgid "Proxy address:"
-msgstr ""
+msgstr "Адрес на прокси"
 
 #: ../subiquity/ui/views/proxy.py:48
 msgid "Configure proxy"
-msgstr ""
+msgstr "Конфигуриране на прокси"
 
 #: ../subiquity/ui/views/proxy.py:49
 msgid ""
 "If this system requires a proxy to connect to the internet, enter its "
 "details here."
 msgstr ""
+"Ако тази система изисква прокси за свързване с интернет, въведете неговите "
+"данни тук."
 
 #: ../subiquity/ui/views/refresh.py:111
 msgid "Checking for installer update..."
-msgstr ""
+msgstr "Проверка за актуализация на инсталатора..."
 
 #: ../subiquity/ui/views/refresh.py:113
 msgid ""
 "Contacting the snap store to check if a new version of the installer is "
 "available."
 msgstr ""
+"Свържете се със Snap Store, за да проверите дали е налична нова версия на "
+"инсталатора."
 
 #: ../subiquity/ui/views/refresh.py:117
 msgid "Contacting the snap store failed"
-msgstr ""
+msgstr "Свързването със snap store не е успешно"
 
 #: ../subiquity/ui/views/refresh.py:119
 msgid "Contacting the snap store failed:"
-msgstr ""
+msgstr "Свързването със snap store не е успешно:"
 
 #: ../subiquity/ui/views/refresh.py:122
 msgid "Installer update available"
-msgstr ""
+msgstr "Налична е актуализация на инсталатора"
 
 #: ../subiquity/ui/views/refresh.py:124
 #, python-brace-format
@@ -2203,135 +2482,141 @@ msgid ""
 "Version {new} of the installer is now available ({current} is currently "
 "running)."
 msgstr ""
+"Вече е налична версия {new} на инсталатора (в момента се изпълнява "
+"{current})."
 
 #: ../subiquity/ui/views/refresh.py:128
 msgid "Downloading update..."
-msgstr "Asali n lqem..."
+msgstr "Актуализацията се изтегля..."
 
 #: ../subiquity/ui/views/refresh.py:130
 msgid ""
 "Please wait while the updated installer is being downloaded. The installer "
 "will restart automatically when the download is complete."
 msgstr ""
+"Моля, изчакайте, докато актуализираната инсталационна програма се изтегли. "
+"Инсталаторът ще се рестартира автоматично, когато изтеглянето приключи."
 
 #: ../subiquity/ui/views/refresh.py:134
 msgid "Update failed"
-msgstr ""
+msgstr "Актуализирането е неуспешно"
 
 #: ../subiquity/ui/views/refresh.py:136
 msgid "Downloading and applying the update:"
-msgstr ""
+msgstr "Изтегляне и прилагане на актуализацията:"
 
 #: ../subiquity/ui/views/refresh.py:157 ../subiquity/ui/views/refresh.py:184
 #: ../subiquity/ui/views/refresh.py:214 ../subiquity/ui/views/refresh.py:277
 msgid "Continue without updating"
-msgstr ""
+msgstr "Продължаване без актуализиране"
 
 #: ../subiquity/ui/views/refresh.py:183 ../subiquity/ui/views/refresh.py:276
 #: ../subiquity/ui/views/snaplist.py:265 ../subiquity/ui/views/snaplist.py:378
 msgid "Try again"
-msgstr "Ɛreḍ tikkelt-nniḍen"
+msgstr "Нов опит"
 
 #: ../subiquity/ui/views/refresh.py:200
 msgid "You can read the release notes for each version at:"
-msgstr ""
+msgstr "Можете да прочетете бележките по изданието за всяка версия на:"
 
 #: ../subiquity/ui/views/refresh.py:207
 msgid ""
 "If you choose to update, the update will be downloaded and the installation "
 "will continue from here."
 msgstr ""
+"Ако изберете да актуализирате, актуализацията ще бъде изтеглена и "
+"инсталирането ще продължи от тук."
 
 #: ../subiquity/ui/views/refresh.py:213
 msgid "Update to the new installer"
-msgstr ""
+msgstr "Актуализиране до новия инсталатор"
 
 #: ../subiquity/ui/views/refresh.py:240
 msgid "Cancel update"
-msgstr ""
+msgstr "Отказ от актуализация"
 
 #: ../subiquity/ui/views/snaplist.py:83
 msgid "just now"
-msgstr "Tura kan"
+msgstr "току-що"
 
 #: ../subiquity/ui/views/snaplist.py:87
 msgid "minute"
-msgstr "tasdat"
+msgstr "минута"
 
 #: ../subiquity/ui/views/snaplist.py:89
 msgid "minutes"
-msgstr "tisdatin"
+msgstr "минути"
 
 #: ../subiquity/ui/views/snaplist.py:93
 msgid "hour"
-msgstr "asrag"
+msgstr "час"
 
 #: ../subiquity/ui/views/snaplist.py:95
 msgid "hours"
-msgstr "isragen"
+msgstr "часа"
 
 #: ../subiquity/ui/views/snaplist.py:99
 msgid "day"
-msgstr "ass"
+msgstr "ден"
 
 #: ../subiquity/ui/views/snaplist.py:101
 msgid "days"
-msgstr "ussan"
+msgstr "дни"
 
 #: ../subiquity/ui/views/snaplist.py:104
 #, python-brace-format
 msgid "{amount:2} {unit} ago"
-msgstr ""
+msgstr "преди {amount:2} {unit}"
 
 #: ../subiquity/ui/views/snaplist.py:151
 msgid "LICENSE: "
-msgstr ""
+msgstr "ЛИЦЕНЗ: "
 
 #: ../subiquity/ui/views/snaplist.py:156
 msgid "LAST UPDATED: "
-msgstr ""
+msgstr "ПОСЛЕДНА АКТУАЛИЗАЦИЯ: "
 
 #: ../subiquity/ui/views/snaplist.py:161
 msgid "CHANNEL"
-msgstr ""
+msgstr "КАНАЛ"
 
 #: ../subiquity/ui/views/snaplist.py:162
 msgid "VERSION"
-msgstr ""
+msgstr "ВЕРСИЯ"
 
 #: ../subiquity/ui/views/snaplist.py:164
 msgid "PUBLISHED"
-msgstr ""
+msgstr "ПУБЛИКУВАНО"
 
 #: ../subiquity/ui/views/snaplist.py:165
 msgid "CONFINEMENT"
-msgstr ""
+msgstr "ОГРАНИЧЕНИЕ"
 
 #: ../subiquity/ui/views/snaplist.py:183
 msgid "by: "
-msgstr ""
+msgstr "от: "
 
 #: ../subiquity/ui/views/snaplist.py:261
 #, python-brace-format
 msgid "Fetching info for {snap} failed"
-msgstr ""
+msgstr "Извличането на информация за {snap} не бе успешно"
 
 #: ../subiquity/ui/views/snaplist.py:302
 #, python-brace-format
 msgid "Fetching info for {snap}"
-msgstr ""
+msgstr "Извлича се информация за {snap}"
 
 #: ../subiquity/ui/views/snaplist.py:340
 msgid "Featured Server Snaps"
-msgstr ""
+msgstr "Предоставени сървърни Snap пакети"
 
 #: ../subiquity/ui/views/snaplist.py:355
 msgid "Loading server snaps from store, please wait..."
-msgstr ""
+msgstr "Зареждат се snap пакети на сървъра от магазина, моля, изчакайте..."
 
 #: ../subiquity/ui/views/snaplist.py:376
 msgid "Sorry, loading snaps from the store failed."
-msgstr ""
+msgstr "Съжаляваме, зареждането на snap пакети от магазина е неуспешно."
 
 #: ../subiquity/ui/views/snaplist.py:462
 msgid ""
@@ -2339,65 +2624,72 @@ msgid ""
 "SPACE, press ENTER to see more details of the package, publisher and "
 "versions available."
 msgstr ""
+"Това са популярни snap изображения на сървърни среди. Изберете или "
+"премахнете отметката с интервал, натиснете ENTER, за да видите повече "
+"подробности за пакета, издателя и наличните версии."
 
 #: ../subiquity/ui/views/ssh.py:67
 msgid "Import Username:"
-msgstr ""
+msgstr "Внасяне на Потребителско име:"
 
 #: ../subiquity/ui/views/ssh.py:74
 msgid "GitHub Username:"
-msgstr ""
+msgstr "Потребителско име в GitHub:"
 
 #: ../subiquity/ui/views/ssh.py:75
 msgid "Enter your GitHub username."
-msgstr ""
+msgstr "Въведете вашето потребителско име в GitHub:"
 
 #: ../subiquity/ui/views/ssh.py:77
 msgid ""
 "A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
+"Потребителското име на GitHub може да съдържа само буквено-цифрови знаци или "
+"тирета."
 
 #: ../subiquity/ui/views/ssh.py:81
 msgid "Launchpad Username:"
-msgstr ""
+msgstr "Потребителско име в Launchpad:"
 
 #: ../subiquity/ui/views/ssh.py:84
 msgid ""
 "A Launchpad username may only contain lower-case alphanumeric characters, "
 "hyphens, plus, or periods."
 msgstr ""
+"Потребителското име на Launchpad може да съдържа само малки букви и цифри, "
+"тирета, плюс или точки."
 
 #: ../subiquity/ui/views/ssh.py:93
 msgid "Install OpenSSH server"
-msgstr ""
+msgstr "Инсталиране на OpenSSH сървър"
 
 #: ../subiquity/ui/views/ssh.py:96
 msgid "Import SSH identity:"
-msgstr ""
+msgstr "Импортиране на SSH идентификатор:"
 
 #: ../subiquity/ui/views/ssh.py:99
 msgid "from GitHub"
-msgstr ""
+msgstr "от GitHub"
 
 #: ../subiquity/ui/views/ssh.py:100
 msgid "from Launchpad"
-msgstr ""
+msgstr "от Launchpad"
 
 #: ../subiquity/ui/views/ssh.py:102
 msgid "You can import your SSH keys from GitHub or Launchpad."
-msgstr ""
+msgstr "Можете да импортирате вашите SSH ключове от GitHub или Launchpad."
 
 #: ../subiquity/ui/views/ssh.py:106
 msgid "Allow password authentication over SSH"
-msgstr ""
+msgstr "Разрешете удостоверяване на парола през SSH"
 
 #: ../subiquity/ui/views/ssh.py:139
 msgid "This field must not be blank."
-msgstr ""
+msgstr "Това поле не трябва да е празно."
 
 #: ../subiquity/ui/views/ssh.py:141
 msgid "SSH id too long, must be < "
-msgstr ""
+msgstr "SSH идентификаторът е твърде дълъг, трябва да е < "
 
 #: ../subiquity/ui/views/ssh.py:145
 msgid ""
@@ -2405,44 +2697,50 @@ msgid ""
 "lower-case. The characters +, - and . are also allowed after the first "
 "character."
 msgstr ""
+"Потребителското име на Launchpad трябва да започва с буква или цифра. Всички "
+"букви трябва да са малки. Знаците +, - и . са разрешени и след първия знак."
 
 #: ../subiquity/ui/views/ssh.py:151
 msgid ""
 "A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
 msgstr ""
+"Потребителското име на GitHub може да съдържа само буквено-цифрови знаци или "
+"единични тирета и не може да започва или завършва с тире."
 
 #: ../subiquity/ui/views/ssh.py:161
 msgid "Fetching SSH keys..."
-msgstr ""
+msgstr "Извличат се SSH ключове..."
 
 #: ../subiquity/ui/views/ssh.py:189
 msgid "Confirm SSH keys"
-msgstr ""
+msgstr "Потвърдете SSH ключовете"
 
 #: ../subiquity/ui/views/ssh.py:190
 msgid ""
 "Keys with the following fingerprints were fetched. Do you want to use them?"
 msgstr ""
+"Бяха извлечени ключове със следните пръстови отпечатъци. Искате ли да ги "
+"използвате?"
 
 #: ../subiquity/ui/views/ssh.py:193
 msgid "Confirm SSH key"
-msgstr ""
+msgstr "Потвърждаване на SSH ключа"
 
 #: ../subiquity/ui/views/ssh.py:194
 msgid ""
 "A key with the following fingerprint was fetched. Do you want to use it?"
-msgstr ""
+msgstr "Потвърдете SSH ключа"
 
 #: ../subiquity/ui/views/ssh.py:220
 msgid "SSH Setup"
-msgstr ""
+msgstr "Настройка на SSH"
 
 #: ../subiquity/ui/views/ssh.py:221
 msgid ""
 "You can choose to install the OpenSSH server package to enable secure remote "
 "access to your server."
-msgstr ""
+msgstr "Настройка на SSH"
 
 #: ../subiquity/ui/views/welcome.py:37
 msgid ""
@@ -2450,73 +2748,58 @@ msgid ""
 "Select the language to use for the installer and to be configured in the\n"
 "installed system.\n"
 msgstr ""
+"\n"
+"Изберете езика, който да използвате за инсталатора и да бъде конфигуриран в\n"
+"инсталирана система.\n"
 
 #: ../subiquity/ui/views/welcome.py:99
 msgid "Use UP, DOWN and ENTER keys to select your language."
 msgstr ""
+"Използвайте бутоните НАГОРЕ, НАДОЛУ и ENTER, за да изберете вашия език."
 
 #: ../subiquity/ui/views/welcome.py:106
 msgid "Help choosing a language"
-msgstr ""
+msgstr "Помощ при избора на език"
 
 #. for translator: failed is a zdev device status
 #: ../subiquity/ui/views/zdev.py:56
 msgid "failed"
-msgstr "ixṣar"
+msgstr "неуспешно"
 
 #. for translator: auto is a zdev device status
 #: ../subiquity/ui/views/zdev.py:59
 msgid "auto"
-msgstr "auto"
+msgstr "автоматично"
 
 #. for translator: online is a zdev device status
 #: ../subiquity/ui/views/zdev.py:62
 msgid "online"
-msgstr ""
+msgstr "онлайн"
 
 #: ../subiquity/ui/views/zdev.py:77
 msgid "No zdev devices found."
-msgstr ""
+msgstr "Няма намерени zdev устройства."
 
 #: ../subiquity/ui/views/zdev.py:92
 msgid "ID"
-msgstr "ID"
+msgstr "ИДЕНТИФИКАТОР"
 
 #: ../subiquity/ui/views/zdev.py:93
 msgid "ONLINE"
-msgstr ""
+msgstr "ОНЛАЙН"
 
 #: ../subiquity/ui/views/zdev.py:94
 msgid "NAMES"
-msgstr ""
+msgstr "ИМЕНА"
 
 #: ../subiquity/ui/views/zdev.py:118
 msgid "Enable"
-msgstr "Rmed"
+msgstr "Активиране"
 
 #: ../subiquity/ui/views/zdev.py:119
 msgid "Disable"
-msgstr "Sens"
+msgstr "Деактивиране"
 
 #: ../subiquity/ui/views/zdev.py:144
 msgid "Zdev setup"
-msgstr ""
-
-#~ msgid "An error has occurred"
-#~ msgstr "Teḍra-d tuccḍa"
-
-#~ msgid "Edit IPv4"
-#~ msgstr "Ẓreg IPv4"
-
-#~ msgid "Edit Wifi"
-#~ msgstr "Ẓreg Wifi"
-
-#~ msgid "Edit IPv6"
-#~ msgstr "Ẓreg IPv6"
-
-#, python-format
-#~ msgid "%s already exists"
-#~ msgstr "%s yella ya kan"
-
-#~ msgid "Reboot"
-#~ msgstr "Alles asekker"
+msgstr "Настройка на Zdev"

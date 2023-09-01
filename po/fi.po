@@ -8,15 +8,15 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-04-12 09:48+1200\n"
-"PO-Revision-Date: 2018-04-22 17:46+0000\n"
-"Last-Translator: Jiri Grönroos <Unknown>\n"
+"PO-Revision-Date: 2022-04-14 08:45+0000\n"
+"Last-Translator: Timo Jyrinki <Unknown>\n"
 "Language-Team: Finnish <fi@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2022-04-15 04:47+0000\n"
+"X-Generator: Launchpad (build 5cc3bd61c85a328825183f316ddd801c0f7d7ef2)\n"
 "Language: fi\n"
 
 #: ../subiquity/client/client.py:72
@@ -34,11 +34,11 @@ msgstr ""
 
 #: ../subiquity/client/client.py:234
 msgid "yes"
-msgstr ""
+msgstr "kyllä"
 
 #: ../subiquity/client/client.py:235
 msgid "no"
-msgstr ""
+msgstr "ei"
 
 #: ../subiquity/client/client.py:237
 msgid "Confirmation is required to continue."
@@ -70,22 +70,22 @@ msgstr ""
 #: ../subiquity/common/filesystem/actions.py:49
 msgctxt "DeviceAction"
 msgid "Edit"
-msgstr ""
+msgstr "Muokkaa"
 
 #: ../subiquity/common/filesystem/actions.py:50
 msgctxt "DeviceAction"
 msgid "Reformat"
-msgstr ""
+msgstr "Alusta uudelleen"
 
 #: ../subiquity/common/filesystem/actions.py:51
 msgctxt "DeviceAction"
 msgid "Add Partition"
-msgstr ""
+msgstr "Lisää osio"
 
 #: ../subiquity/common/filesystem/actions.py:52
 msgctxt "DeviceAction"
 msgid "Format"
-msgstr ""
+msgstr "Alusta"
 
 #: ../subiquity/common/filesystem/actions.py:53
 msgctxt "DeviceAction"
@@ -95,7 +95,7 @@ msgstr ""
 #: ../subiquity/common/filesystem/actions.py:54
 msgctxt "DeviceAction"
 msgid "Delete"
-msgstr ""
+msgstr "Poista"
 
 #: ../subiquity/common/filesystem/actions.py:55
 msgctxt "DeviceAction"
@@ -184,16 +184,16 @@ msgstr ""
 #. A pre-existing device such as a partition or RAID
 #: ../subiquity/common/filesystem/labels.py:35
 msgid "existing"
-msgstr ""
+msgstr "olemassa oleva"
 
 #. A newly created device such as a partition or RAID
 #: ../subiquity/common/filesystem/labels.py:38
 msgid "new"
-msgstr ""
+msgstr "uusi"
 
 #: ../subiquity/common/filesystem/labels.py:62
 msgid "PReP"
-msgstr ""
+msgstr "PReP"
 
 #. boot loader partition
 #: ../subiquity/common/filesystem/labels.py:66
@@ -226,34 +226,34 @@ msgstr ""
 #. extended partition
 #: ../subiquity/common/filesystem/labels.py:86
 msgid "extended"
-msgstr ""
+msgstr "laajennettu"
 
 #. logical partition
 #: ../subiquity/common/filesystem/labels.py:89
 msgid "logical"
-msgstr ""
+msgstr "looginen"
 
 #. Flag for a LVM volume group
 #: ../subiquity/common/filesystem/labels.py:99
 msgid "encrypted"
-msgstr ""
+msgstr "salattu"
 
 #: ../subiquity/common/filesystem/labels.py:115
 msgid "multipath device"
-msgstr ""
+msgstr "multipath-laite"
 
 #: ../subiquity/common/filesystem/labels.py:116
 msgid "local disk"
-msgstr ""
+msgstr "paikallinen levy"
 
 #: ../subiquity/common/filesystem/labels.py:121
 #, python-brace-format
 msgid "partition of {device}"
-msgstr ""
+msgstr "laitteen {device} osio"
 
 #: ../subiquity/common/filesystem/labels.py:134
 msgid "software"
-msgstr ""
+msgstr "ohjelmisto"
 
 #: ../subiquity/common/filesystem/labels.py:135
 #, python-brace-format
@@ -262,26 +262,26 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/labels.py:141
 msgid "LVM volume group"
-msgstr ""
+msgstr "LVM-taltioryhmä"
 
 #: ../subiquity/common/filesystem/labels.py:146
 msgid "LVM logical volume"
-msgstr ""
+msgstr "looginen LVM-taltio"
 
 #: ../subiquity/common/filesystem/labels.py:180
 #: ../subiquity/ui/views/filesystem/guided.py:100
 #, python-brace-format
 msgid "partition {number}"
-msgstr ""
+msgstr "osio {number}"
 
 #: ../subiquity/common/filesystem/labels.py:182
 #, python-brace-format
 msgid "partition {number} of {device}"
-msgstr ""
+msgstr "osio {number} laitteella {device}"
 
 #: ../subiquity/common/filesystem/labels.py:188
 msgid "free space"
-msgstr ""
+msgstr "vapaata tilaa"
 
 #: ../subiquity/common/filesystem/labels.py:195
 #, python-brace-format
@@ -319,13 +319,13 @@ msgstr ""
 #: ../subiquity/common/filesystem/labels.py:221
 #: ../subiquity/common/filesystem/labels.py:231
 msgid "unused"
-msgstr ""
+msgstr "käyttämätön"
 
 #. A filesytem that cannot be mounted (i.e. swap)
 #. is used or unused
 #: ../subiquity/common/filesystem/labels.py:225
 msgid "used"
-msgstr ""
+msgstr "käytössä"
 
 #: ../subiquity/common/filesystem/labels.py:260
 #, python-brace-format
@@ -350,7 +350,7 @@ msgstr ""
 
 #: ../subiquity/common/types.py:43
 msgid "Network error"
-msgstr ""
+msgstr "Verkkovirhe"
 
 #: ../subiquity/common/types.py:44
 msgid "Network client error"
@@ -362,7 +362,7 @@ msgstr ""
 
 #: ../subiquity/common/types.py:46
 msgid "Unknown error"
-msgstr ""
+msgstr "Tuntematon virhe"
 
 #: ../subiquitycore/controllers/network.py:203
 msgid "autoconfiguration failed"
@@ -372,12 +372,12 @@ msgstr ""
 #: ../subiquitycore/models/network.py:43
 msgctxt "NetDevAction"
 msgid "Info"
-msgstr ""
+msgstr "Tiedot"
 
 #: ../subiquitycore/models/network.py:44
 msgctxt "NetDevAction"
 msgid "Edit Wifi"
-msgstr ""
+msgstr "Muokkaa langatonta verkkoa"
 
 #: ../subiquitycore/models/network.py:45
 msgctxt "NetDevAction"
@@ -402,7 +402,7 @@ msgstr ""
 #: ../subiquitycore/models/network.py:49
 msgctxt "NetDevAction"
 msgid "Delete"
-msgstr ""
+msgstr "Poista"
 
 #: ../subiquitycore/ssh.py:59
 msgid "The host key fingerprints are:\n"
