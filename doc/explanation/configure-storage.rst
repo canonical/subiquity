@@ -173,5 +173,4 @@ with desired parameters, and then select these partitions or devices as mount
 points in the installer. Any changes you make while the installer is running
 but before altering the storage configuration will reflected in the installer.
 
-The installer cannot yet configure iSCSI mounts, ZFS at all, or btrfs
-subvolumes.
+The installer cannot yet configure iSCSI mounts, ZFS, or btrfs subvolumes.

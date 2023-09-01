@@ -6,10 +6,9 @@ Autoinstall quick start
 The intent of this page is to provide simple instructions to perform an
 autoinstall in a VM on your machine.
 
-This page assumes that you are willing to install the latest Ubuntu release
-available i.e., 22.10 at the time of writing. For other releases, you would
-need to substitute the name of the ISO image but the instructions should
-otherwise remain the same.
+This page assumes that you are installing a recent Ubuntu release. However,
+for older releases, you can substitute the name of the ISO image but the
+instructions should otherwise be the same.
 
 This page also assumes you are on the AMD64 architecture. There is a
 :ref:`version for s390x<autoinstall-quickstart-s390x>` too.
@@ -24,7 +23,7 @@ installed.
 Download the ISO
 ----------------
 
-Go to the `22.10 ISO download page`_ and download the latest Ubuntu 22.10
+Go to the `Ubuntu ISO download page`_ and download the latest Ubuntu
 live-server ISO.
 
 Mount the ISO
@@ -32,7 +31,11 @@ Mount the ISO
 
 .. code-block:: bash
 
-    sudo mount -r ~/Downloads/ubuntu-22.10-live-server-amd64.iso /mnt
+    sudo mount -r ~/Downloads/ubuntu-<release-number>-live-server-amd64.iso /mnt
+
+Where you should change `<release-number>` to match the number of the LTS or
+release you have downloaded (e.g., `22.04.3` for Jammy or `23.04` for the Lunar
+interim release).
 
 Write your autoinstall config
 -----------------------------
@@ -76,11 +79,14 @@ Create a target disk
 Run the install!
 ----------------
 
+As before, you will need to change `<release-number>` in the following command
+to match the release ISO you downloaded.
+
 .. code-block:: bash
 
     kvm -no-reboot -m 2048 \
         -drive file=image.img,format=raw,cache=none,if=virtio \
-        -cdrom ~/Downloads/ubuntu-22.10-live-server-amd64.iso \
+        -cdrom ~/Downloads/ubuntu-<release-number>-live-server-amd64.iso \
         -kernel /mnt/casper/vmlinuz \
         -initrd /mnt/casper/initrd \
         -append 'autoinstall ds=nocloud-net;s=http://_gateway:3003/'
@@ -110,7 +116,7 @@ into a system to have it be installed.
 Download the live-server ISO
 ----------------------------
 
-Go to the `22.10 ISO download page`_ and download the latest Ubuntu 22.10
+Go to the `Ubuntu ISO download page`_ and download the latest Ubuntu
 live-server ISO.
 
 Create your user-data and meta-data files
@@ -151,12 +157,15 @@ Create a target disk
 Run the install!
 ----------------
 
+As before, you will need to change `<release-number>` in the following command
+to match the release ISO you downloaded.
+
 .. code-block:: bash
 
     kvm -no-reboot -m 2048 \
         -drive file=image.img,format=raw,cache=none,if=virtio \
         -drive file=~/seed.iso,format=raw,cache=none,if=virtio \
-        -cdrom ~/Downloads/ubuntu-22.10-live-server-amd64.iso
+        -cdrom ~/Downloads/ubuntu-<release-number>-live-server-amd64.iso
 
 This will boot and run the install. Unless you interrupt boot to add
 'autoinstall' to the kernel command line, the installer will prompt for
@@ -180,4 +189,4 @@ in as ``ubuntu/ubuntu``.
 
 .. LINKS
 
-.. _22.10 ISO download page: https://releases.ubuntu.com/22.10/
+.. _Ubuntu ISO download page: https://releases.ubuntu.com/

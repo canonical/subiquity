@@ -145,7 +145,7 @@ does not matter.
 
 The mapping's keys correspond to settings in the :file:`/etc/default/keyboard`
 configuration file. See
-`its manual page <http://manpages.ubuntu.com/manpages/bionic/en/man5/keyboard.5.html>`_
+`its manual page <http://manpages.ubuntu.com/manpages/keyboard.5.html>`_
 for more details.
 
 The mapping contains keys:
@@ -635,7 +635,7 @@ The password for the new user, encrypted. This is required for use with
 ``sudo``, even if SSH access is configured.
 
 The crypted password string must conform to what
-`passwd <https://manpages.ubuntu.com/manpages/jammy/en/man1/passwd.1.html>`_
+`passwd <https://manpages.ubuntu.com/manpages/passwd.1.html>`_
 expects. Depending on the special characters in the password hash, quoting may
 be required, so it's safest to just always include the quotes around the hash.
 

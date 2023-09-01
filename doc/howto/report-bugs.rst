@@ -12,11 +12,9 @@ up to date as the installer changes.
 Update Subiquity
 ================
 
-The first thing to do is to update your Subiquity snap. Not only because we
-fix issues that cause failures over time but also because we've been working on
-features to make failure reporting easier.
-
-<command here? What if the snap isn't installed?>
+The first thing to do is to update your Subiquity snap using `snap refresh`.
+Not only because we fix issues that cause failures over time but also because
+we've been working on features to make failure reporting easier.
 
 Crash reports
 =============
