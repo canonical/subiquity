@@ -22,7 +22,7 @@ import os
 import pathlib
 import select
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import attr
 import pyudev
@@ -123,7 +123,7 @@ class CapabilityInfo:
     allowed: List[GuidedCapability] = attr.Factory(list)
     disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
 
-    def combine(self, other: "CapabilityInfo"):
+    def combine(self, other: "CapabilityInfo") -> None:
         for allowed_cap in other.allowed:
             if allowed_cap not in self.allowed:
                 self.allowed.append(allowed_cap)
@@ -139,6 +139,26 @@ class CapabilityInfo:
         self.disallowed = new_disallowed
         self.allowed.sort()
         self.disallowed.sort()
+
+    def disallow_if(
+        self,
+        filter: Callable[[GuidedCapability], bool],
+        reason: GuidedDisallowedCapabilityReason,
+        message: Optional[str] = None,
+    ) -> None:
+        new_allowed = []
+        for cap in self.allowed:
+            if filter(cap):
+                self.disallowed.append(
+                    GuidedDisallowedCapability(
+                        capability=cap,
+                        reason=reason,
+                        message=message,
+                    )
+                )
+            else:
+                new_allowed.append(cap)
+        self.allowed = new_allowed
 
 
 @attr.s(auto_attribs=True)
@@ -383,12 +403,19 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if not self.app.opts.enhanced_secureboot:
                     log.debug("Not offering enhanced_secureboot: commandline disabled")
                     continue
-                if self.model.bootloader != Bootloader.UEFI:
-                    log.debug("Not offering core boot based install: not a UEFI system")
-                    continue
                 info = self.info_for_system(name, label, system)
-                if info is not None:
-                    self._variation_info[name] = info
+                if info is None:
+                    continue
+                if self.model.bootloader != Bootloader.UEFI:
+                    log.debug(
+                        "Disabling core boot based install options on non-UEFI "
+                        "system"
+                    )
+                    info.capability_info.disallow_if(
+                        lambda cap: cap.is_core_boot(),
+                        GuidedDisallowedCapabilityReason.NOT_UEFI,
+                    )
+                self._variation_info[name] = info
             elif catalog_entry.type.startswith("dd-"):
                 min_size = variation.size
                 self._variation_info[name] = VariationInfo.dd(

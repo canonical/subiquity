@@ -387,6 +387,7 @@ class GuidedCapability(enum.Enum):
 class GuidedDisallowedCapabilityReason(enum.Enum):
     TOO_SMALL = enum.auto()
     CORE_BOOT_ENCRYPTION_UNAVAILABLE = enum.auto()
+    NOT_UEFI = enum.auto()
 
 
 @attr.s(auto_attribs=True)
