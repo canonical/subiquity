@@ -419,6 +419,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     info.capability_info.disallow_if(
                         lambda cap: cap.is_core_boot(),
                         GuidedDisallowedCapabilityReason.NOT_UEFI,
+                        "Enhanced secure boot options only available on UEFI systems.",
                     )
                 self._variation_info[name] = info
             elif catalog_entry.type.startswith("dd-"):
