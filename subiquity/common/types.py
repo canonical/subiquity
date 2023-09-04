@@ -388,6 +388,7 @@ class GuidedDisallowedCapabilityReason(enum.Enum):
     TOO_SMALL = enum.auto()
     CORE_BOOT_ENCRYPTION_UNAVAILABLE = enum.auto()
     NOT_UEFI = enum.auto()
+    THIRD_PARTY_DRIVERS = enum.auto()
 
 
 @attr.s(auto_attribs=True)

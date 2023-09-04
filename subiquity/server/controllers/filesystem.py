@@ -419,7 +419,23 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     info.capability_info.disallow_if(
                         lambda cap: cap.is_core_boot(),
                         GuidedDisallowedCapabilityReason.NOT_UEFI,
-                        "Enhanced secure boot options only available on UEFI systems.",
+                        _(
+                            "Enhanced secure boot options only available on UEFI "
+                            "systems."
+                        ),
+                    )
+                if self.app.base_model.source.search_drivers:
+                    log.debug(
+                        "Disabling core boot based install options as third-party "
+                        "drivers selected"
+                    )
+                    info.capability_info.disallow_if(
+                        lambda cap: cap.is_core_boot(),
+                        GuidedDisallowedCapabilityReason.THIRD_PARTY_DRIVERS,
+                        _(
+                            "Enhanced secure boot options cannot currently install "
+                            "third party drivers."
+                        ),
                     )
                 self._variation_info[name] = info
             elif catalog_entry.type.startswith("dd-"):
