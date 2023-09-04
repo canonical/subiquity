@@ -16,7 +16,7 @@
 import asyncio
 import logging
 import os
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional
 
 import apt
 
@@ -24,6 +24,9 @@ from subiquity.common.types import PackageInstallState
 from subiquitycore.utils import arun_command
 
 log = logging.getLogger("subiquity.server.pkghelper")
+
+
+InstallCoroutine = Optional[Callable[[str], PackageInstallState]]
 
 
 class PackageInstaller:
@@ -54,12 +57,22 @@ class PackageInstaller:
         else:
             return PackageInstallState.INSTALLING
 
-    def start_installing_pkg(self, pkgname: str) -> None:
+    def start_installing_pkg(
+        self, pkgname: str, *, install_coro: InstallCoroutine = None
+    ) -> None:
         if pkgname not in self.pkgs:
-            self.pkgs[pkgname] = asyncio.create_task(self._install_pkg(pkgname))
+            if install_coro is None:
+                install_coro = self._install_pkg
+            self.pkgs[pkgname] = asyncio.create_task(install_coro(pkgname))
 
-    async def install_pkg(self, pkgname) -> PackageInstallState:
-        self.start_installing_pkg(pkgname)
+    async def install_pkg(
+        self, pkgname: str, *, install_coro: InstallCoroutine = None
+    ) -> PackageInstallState:
+        """Install the requested package. The default implementation runs
+        apt-get (or will consider the package installed after two seconds in
+        dry-run mode). If a different implementation is wanted, one can specify
+        an alternative install coroutine"""
+        self.start_installing_pkg(pkgname, install_coro=install_coro)
         return await self.pkgs[pkgname]
 
     async def _install_pkg(self, pkgname: str) -> PackageInstallState:
