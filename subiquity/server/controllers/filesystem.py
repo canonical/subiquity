@@ -140,6 +140,11 @@ class CapabilityInfo:
         self.allowed.sort()
         self.disallowed.sort()
 
+    def copy(self) -> "CapabilityInfo":
+        return CapabilityInfo(
+            allowed=list(self.allowed), disallowed=list(self.disallowed)
+        )
+
     def disallow_if(
         self,
         filter: Callable[[GuidedCapability], bool],
@@ -159,6 +164,13 @@ class CapabilityInfo:
             else:
                 new_allowed.append(cap)
         self.allowed = new_allowed
+
+    def disallow_all(
+        self,
+        reason: GuidedDisallowedCapabilityReason,
+        message: Optional[str] = None,
+    ) -> None:
+        self.disallow_if(lambda cap: True, reason, message)
 
 
 @attr.s(auto_attribs=True)
@@ -180,22 +192,15 @@ class VariationInfo:
         gap: gaps.Gap,
         install_min: int,
     ) -> CapabilityInfo:
-        r = CapabilityInfo()
-        r.disallowed = list(self.capability_info.disallowed)
         if gap is None:
             gap_size = 0
         else:
             gap_size = gap.size
-        if self.capability_info.allowed and gap_size < install_min:
-            for capability in self.capability_info.allowed:
-                r.disallowed.append(
-                    GuidedDisallowedCapability(
-                        capability=capability,
-                        reason=GuidedDisallowedCapabilityReason.TOO_SMALL,
-                    )
-                )
-        else:
-            r.allowed = list(self.capability_info.allowed)
+        r = self.capability_info.copy()
+        if gap_size < install_min:
+            r.disallow_all(
+                reason=GuidedDisallowedCapabilityReason.TOO_SMALL,
+            )
         return r
 
     @classmethod
