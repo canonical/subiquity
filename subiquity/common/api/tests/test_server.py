@@ -122,7 +122,7 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(resp.headers["x-status"], "error")
             self.assertEqual(resp.headers["x-error-type"], "TypeError")
             self.assertEqual(
-                resp.headers["x-error-msg"], 'missing required argument "arg"'
+                resp.headers["x-error-msg"], '"missing required argument \\"arg\\""'
             )
 
     async def test_error(self):

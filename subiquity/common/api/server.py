@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import inspect
+import json
 import logging
 import os
 import traceback
@@ -173,7 +174,10 @@ def _make_handler(
                     headers={
                         "x-status": "error",
                         "x-error-type": type(exc).__name__,
-                        "x-error-msg": str(exc),
+                        # aiohttp will reject a header if its value contains a
+                        # "\r" or "\n" character. By using compact JSON, we
+                        # ensure those characters are escaped.
+                        "x-error-msg": json.dumps(str(exc), indent=None),
                     },
                 )
                 resp["exception"] = exc
