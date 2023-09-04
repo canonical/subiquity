@@ -140,13 +140,13 @@ UEFI mode
 
 In UEFI mode, the bootloader loaded from a "EFI System Partition" (ESP), which
 is a partition with a particular type GUID. The installer automatically creates
-a 512MiB ESP on a disk when it is selected as a boot device and will install
-GRUB there (a disk with an existing partition table can only be used as a boot
-device if it has an ESP -- bootloaders for multiple operating systems can be
-installed into a single ESP). UEFI defines a standard way to configure the way
-in which the operating system is chosen on boot, and the installer uses this to
-configure the system to boot the just-installed operating system. One of the
-ESPs must be mounted at ``/boot/efi``.
+an ESP (with minimum size 538 MiB) on a disk when it is selected as a boot
+device and will install GRUB there (a disk with an existing partition table can
+only be used as a boot device if it has an ESP -- bootloaders for multiple
+operating systems can be installed into a single ESP). UEFI defines a standard
+way to configure the way in which the operating system is chosen on boot, and
+the installer uses this to configure the system to boot the just-installed
+operating system. One of the ESPs must be mounted at ``/boot/efi``.
 
 Supported arm64 servers boot using UEFI, and are configured the same way as an
 UEFI-booting amd64 system.
@@ -173,4 +173,4 @@ with desired parameters, and then select these partitions or devices as mount
 points in the installer. Any changes you make while the installer is running
 but before altering the storage configuration will reflected in the installer.
 
-The installer cannot yet configure iSCSI mounts, ZFS, or btrfs subvolumes.
+The installer cannot yet configure iSCSI mounts or btrfs subvolumes.

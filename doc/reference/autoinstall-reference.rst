@@ -55,10 +55,10 @@ A list of config keys to still show in the UI. So for example:
 
     version: 1
     interactive-sections:
-     - network
+      - network
     identity:
-     username: ubuntu
-     password: $crypted_pass
+      username: ubuntu
+      password: $crypted_pass
 
 Would stop on the network screen and allow the user to change the defaults. If
 a value is provided for an interactive section it is used as the default.
@@ -234,8 +234,9 @@ For example, to run DHCPv6 on a particular NIC:
         enp0s31f6:
           dhcp6: true
 
-Note that because of a bug, the version of Subiquity released with 20.04 GA
-forces you to write this with an extra ``network:`` key like so:
+Note that in the 20.04 GA release of Subiquity, the behaviour is slightly
+different and requires you to write this with an extra ``network:`` key, like
+so:
 
 .. code-block:: yaml
 
@@ -246,7 +247,7 @@ forces you to write this with an extra ``network:`` key like so:
           enp0s31f6:
             dhcp6: true
 
-Later versions support this syntax too for compatibility but if you can
+Later versions support this syntax too (for compatibility) but if you can
 assume a newer version you should use the former.
 
 .. _ai-proxy:
@@ -294,16 +295,16 @@ The default is:
 .. code-block:: yaml
 
     apt:
-        preserve_sources_list: false
-        mirror-selection:
-            primary:
-                - country-mirror
-                - arches: [i386, amd64]
-                  uri: "http://archive.ubuntu.com/ubuntu"
-                - arches: [s390x, arm64, armhf, powerpc, ppc64el, riscv64]
-                  uri: "http://ports.ubuntu.com/ubuntu-ports"
-        fallback: abort
-        geoip: true
+      preserve_sources_list: false
+      mirror-selection:
+        primary:
+          - country-mirror
+          - arches: [i386, amd64]
+            uri: "http://archive.ubuntu.com/ubuntu"
+          - arches: [s390x, arm64, armhf, powerpc, ppc64el, riscv64]
+            uri: "http://ports.ubuntu.com/ubuntu-ports"
+      fallback: abort
+      geoip: true
 
 
 mirror-selection
@@ -362,20 +363,20 @@ If you just want to specify a mirror, you can use a configuration like this:
 .. code-block:: yaml
 
     apt:
-        mirror-selection:
-            primary:
-                - uri: YOUR_MIRROR_GOES_HERE
-                - country-mirror
-                - uri: http://archive.ubuntu.com/ubuntu
+      mirror-selection:
+        primary:
+          - uri: YOUR_MIRROR_GOES_HERE
+          - country-mirror
+          - uri: http://archive.ubuntu.com/ubuntu
 
 To add a ppa:
 
 .. code-block:: yaml
 
     apt:
-        sources:
-            curtin-ppa:
-                source: ppa:curtin-dev/test-archive
+      sources:
+        curtin-ppa:
+          source: ppa:curtin-dev/test-archive
 
 .. _ai-storage:
 
@@ -492,14 +493,14 @@ curtin config items can be put here. So a storage section might look like:
 .. code-block:: yaml
 
     storage:
-        swap:
-            size: 0
-        config:
-            - type: disk
-              id: disk0
-              serial: ADATA_SX8200PNP_XXXXXXXXXXX
-            - type: partition
-              ...
+      swap:
+        size: 0
+      config:
+        - type: disk
+          id: disk0
+          serial: ADATA_SX8200PNP_XXXXXXXXXXX
+        - type: partition
+          ...
 
 
 The extensions to the curtin syntax are around disk selection and
@@ -547,27 +548,27 @@ So for example, to match an arbitrary disk it is simply:
 
 .. code-block:: yaml
 
-     - type: disk
-       id: disk0
+   - type: disk
+     id: disk0
 
 To match the largest SSD:
 
 .. code-block:: yaml
 
-     - type: disk
-       id: big-fast-disk
-       match:
-         ssd: true
-         size: largest
+   - type: disk
+     id: big-fast-disk
+     match:
+       ssd: true
+       size: largest
 
 To match a Seagate drive:
 
 .. code-block:: yaml
 
-     - type: disk
-       id: data-disk
-       match:
-         model: Seagate
+   - type: disk
+     id: data-disk
+     match:
+       model: Seagate
 
 
 Partition/logical volume extensions
@@ -586,17 +587,17 @@ bytes. The autoinstall config is more flexible:
 
 .. code-block:: yaml
 
-     - type: partition
-       id: boot-partition
-       device: root-disk
-       size: 10%
-     - type: partition
-       id: root-partition
-       size: 20G
-     - type: partition
-       id: data-partition
-       device: root-disk
-       size: -1
+   - type: partition
+     id: boot-partition
+     device: root-disk
+     size: 10%
+   - type: partition
+     id: root-partition
+     size: 20G
+   - type: partition
+     id: data-partition
+     device: root-disk
+     size: -1
 
 .. _ai-identity:
 
@@ -798,9 +799,9 @@ A list of snaps to install. Each snap is represented as a mapping with required
 .. code-block: yaml
 
     snaps:
-        - name: etcd
-          channel: edge
-          classic: false
+      - name: etcd
+        channel: edge
+        classic: false
 
 .. _ai-debconf-selections:
 
@@ -963,41 +964,41 @@ The default configuration is:
 
 .. code-block:: yaml
 
-    reporting:
+   reporting:
      builtin:
-      type: print
+       type: print
 
 Report to rsyslog:
 
 .. code-block:: yaml
 
-    reporting:
+   reporting:
      central:
-      type: rsyslog
-      destination: @192.168.0.1
+       type: rsyslog
+       destination: @192.168.0.1
 
 
 Suppress the default output:
 
 .. code-block:: yaml
 
-    reporting:
+   reporting:
      builtin:
-      type: none
+       type: none
 
 Report to a curtin-style webhook:
 
 .. code-block:: yaml
 
-    reporting:
+   reporting:
      hook:
-      type: webhook
-      endpoint: http://example.com/endpoint/path
-      consumer_key: "ck_foo"
-      consumer_secret: "cs_foo"
-      token_key: "tk_foo"
-      token_secret: "tk_secret"
-      level: INFO
+       type: webhook
+       endpoint: http://example.com/endpoint/path
+       consumer_key: "ck_foo"
+       consumer_secret: "cs_foo"
+       token_key: "tk_foo"
+       token_secret: "tk_secret"
+       level: INFO
 
 
 .. _ai-user-data:
