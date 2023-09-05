@@ -695,7 +695,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual([reformat, manual], guided_get_resp.targets)
 
     @parameterized.expand(bootloaders_and_ptables)
-    async def test_small_blank_disk(self, bootloader, ptable):
+    async def test_small_blank_disk_1GiB(self, bootloader, ptable):
         await self._setup(bootloader, ptable, size=1 << 30)
         resp = await self.fsc.v2_guided_GET()
         expected = [
@@ -707,6 +707,28 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             GuidedStorageTargetManual(),
         ]
         self.assertEqual(expected, resp.targets)
+
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_small_blank_disk_1MiB(self, bootloader, ptable):
+        await self._setup(bootloader, ptable, size=1 << 20)
+        resp = await self.fsc.v2_guided_GET()
+
+        reformat = GuidedStorageTargetReformat(
+            disk_id=self.disk.id,
+            allowed=[],
+            disallowed=default_capabilities_disallowed_too_small,
+        )
+        manual = GuidedStorageTargetManual()
+
+        # depending on bootloader/ptable combo, GuidedStorageTargetReformat may
+        # show up but it will all be disallowed.
+        for target in resp.targets:
+            if isinstance(target, GuidedStorageTargetManual):
+                self.assertEqual(target, manual)
+            elif isinstance(target, GuidedStorageTargetReformat):
+                self.assertEqual(target, reformat)
+            else:
+                raise Exception(f"unexpected target {target}")
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_used_half_disk(self, bootloader, ptable):

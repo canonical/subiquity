@@ -162,7 +162,11 @@ class VariationInfo:
     ) -> CapabilityInfo:
         r = CapabilityInfo()
         r.disallowed = list(self.capability_info.disallowed)
-        if self.capability_info.allowed and gap.size < install_min:
+        if gap is None:
+            gap_size = 0
+        else:
+            gap_size = gap.size
+        if self.capability_info.allowed and gap_size < install_min:
             for capability in self.capability_info.allowed:
                 r.disallowed.append(
                     GuidedDisallowedCapability(
