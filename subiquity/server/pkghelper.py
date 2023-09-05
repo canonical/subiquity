@@ -16,7 +16,7 @@
 import asyncio
 import logging
 import os
-from typing import Callable, Dict, Optional
+from typing import Dict, List, Optional
 
 import apt
 
@@ -24,9 +24,6 @@ from subiquity.common.types import PackageInstallState
 from subiquitycore.utils import arun_command
 
 log = logging.getLogger("subiquity.server.pkghelper")
-
-
-InstallCoroutine = Optional[Callable[[str], PackageInstallState]]
 
 
 class PackageInstaller:
@@ -37,10 +34,9 @@ class PackageInstaller:
     by the server installer.
     """
 
-    def __init__(self, app):
+    def __init__(self):
         self.pkgs: Dict[str, asyncio.Task] = {}
         self._cache: Optional[apt.Cache] = None
-        self.app = app
 
     @property
     def cache(self):
@@ -57,22 +53,12 @@ class PackageInstaller:
         else:
             return PackageInstallState.INSTALLING
 
-    def start_installing_pkg(
-        self, pkgname: str, *, install_coro: InstallCoroutine = None
-    ) -> None:
+    def start_installing_pkg(self, pkgname: str) -> None:
         if pkgname not in self.pkgs:
-            if install_coro is None:
-                install_coro = self._install_pkg
-            self.pkgs[pkgname] = asyncio.create_task(install_coro(pkgname))
+            self.pkgs[pkgname] = asyncio.create_task(self._install_pkg(pkgname))
 
-    async def install_pkg(
-        self, pkgname: str, *, install_coro: InstallCoroutine = None
-    ) -> PackageInstallState:
-        """Install the requested package. The default implementation runs
-        apt-get (or will consider the package installed after two seconds in
-        dry-run mode). If a different implementation is wanted, one can specify
-        an alternative install coroutine"""
-        self.start_installing_pkg(pkgname, install_coro=install_coro)
+    async def install_pkg(self, pkgname: str) -> PackageInstallState:
+        self.start_installing_pkg(pkgname)
         return await self.pkgs[pkgname]
 
     async def _install_pkg(self, pkgname: str) -> PackageInstallState:
@@ -83,10 +69,6 @@ class PackageInstaller:
             return PackageInstallState.NOT_AVAILABLE
         if binpkg.installed:
             log.debug("%s already installed", pkgname)
-            return PackageInstallState.DONE
-        if self.app.opts.dry_run:
-            log.debug("dry-run apt-get install %s", pkgname)
-            await asyncio.sleep(2 / self.app.scale_factor)
             return PackageInstallState.DONE
         if not binpkg.candidate.uri.startswith("cdrom:"):
             log.debug(
@@ -107,3 +89,46 @@ class PackageInstaller:
             return PackageInstallState.DONE
         else:
             return PackageInstallState.FAILED
+
+
+class DryRunPackageInstaller(PackageInstaller):
+    def __init__(self, app) -> None:
+        super().__init__()
+        self.scale_factor: float = app.scale_factor
+        self.debug_flags: List[str] = app.debug_flags
+        self.package_specific_impl = {
+            "wpasupplicant": self._install_wpa_supplicant,
+        }
+
+    async def _install_wpa_supplicant(self) -> PackageInstallState:
+        """Special implementation for wpasupplicant (used by code related to
+        Wi-Fi interfaces)."""
+        await asyncio.sleep(10 / self.scale_factor)
+        status = "DONE"
+        for flag in self.debug_flags:
+            if flag.startswith("wlan_install="):
+                status = flag.split("=", 2)[1]
+        return getattr(PackageInstallState, status)
+
+    async def _install_pkg(self, pkgname: str) -> PackageInstallState:
+        if pkgname in self.package_specific_impl:
+            return await self.package_specific_impl[pkgname]()
+
+        log.debug("checking if %s is available", pkgname)
+        binpkg = self.cache.get(pkgname)
+        if not binpkg:
+            log.debug("%s not found", pkgname)
+            return PackageInstallState.NOT_AVAILABLE
+        if binpkg.installed:
+            log.debug("%s already installed", pkgname)
+            return PackageInstallState.DONE
+        log.debug("dry-run apt-get install %s", pkgname)
+        await asyncio.sleep(2 / self.scale_factor)
+        return PackageInstallState.DONE
+
+
+def get_package_installer(app):
+    if app.opts.dry_run:
+        return DryRunPackageInstaller(app)
+    else:
+        return PackageInstaller()

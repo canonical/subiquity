@@ -18,30 +18,36 @@ from unittest.mock import Mock, patch
 
 import attr
 
-from subiquity.server.pkghelper import PackageInstaller, PackageInstallState
+from subiquity.server.pkghelper import (
+    DryRunPackageInstaller,
+    PackageInstaller,
+    PackageInstallState,
+)
+from subiquity.server.pkghelper import log as PkgHelperLogger
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 
 
+class MockPackage:
+    @attr.s(auto_attribs=True)
+    class Candidate:
+        uri: str
+
+    def __init__(
+        self, installed: bool, name: str, candidate_uri: Optional[str] = None
+    ) -> None:
+        self.installed = installed
+        self.name = name
+        if candidate_uri is None:
+            self.candidate = None
+        else:
+            self.candidate = self.Candidate(uri=candidate_uri)
+
+
 @patch("apt.Cache", Mock(return_value={}))
 class TestPackageInstaller(SubiTestCase):
-    class Package:
-        @attr.s(auto_attribs=True)
-        class Candidate:
-            uri: str
-
-        def __init__(
-            self, installed: bool, name: str, candidate_uri: Optional[str] = None
-        ) -> None:
-            self.installed = installed
-            self.name = name
-            if candidate_uri is None:
-                self.candidate = None
-            else:
-                self.candidate = self.Candidate(uri=candidate_uri)
-
     def setUp(self):
-        self.pkginstaller = PackageInstaller(make_app())
+        self.pkginstaller = PackageInstaller()
 
     async def test_install_pkg_not_found(self):
         self.assertEqual(
@@ -52,50 +58,73 @@ class TestPackageInstaller(SubiTestCase):
     async def test_install_pkg_already_installed(self):
         with patch.dict(
             self.pkginstaller.cache,
-            {"util-linux": self.Package(installed=True, name="util-linux")},
+            {"util-linux": MockPackage(installed=True, name="util-linux")},
         ):
             self.assertEqual(
                 await self.pkginstaller.install_pkg("util-linux"),
                 PackageInstallState.DONE,
             )
 
-    async def test_install_pkg_dr_install(self):
-        with patch.dict(
-            self.pkginstaller.cache,
-            {"python3-attr": self.Package(installed=False, name="python3-attr")},
-        ):
-            with patch("subiquity.server.pkghelper.asyncio.sleep") as sleep:
-                self.assertEqual(
-                    await self.pkginstaller.install_pkg("python3-attr"),
-                    PackageInstallState.DONE,
-                )
-        sleep.assert_called_once()
-
     async def test_install_pkg_not_from_cdrom(self):
         with patch.dict(
             self.pkginstaller.cache,
             {
-                "python3-attr": self.Package(
+                "python3-attr": MockPackage(
                     installed=False,
                     name="python3-attr",
                     candidate_uri="http://archive.ubuntu.com",
                 )
             },
         ):
-            with patch.object(self.pkginstaller.app.opts, "dry_run", False):
-                self.assertEqual(
-                    await self.pkginstaller.install_pkg("python3-attr"),
-                    PackageInstallState.NOT_AVAILABLE,
-                )
-
-    async def test_install_pkg_alternative_impl(self):
-        async def impl(pkgname: str) -> PackageInstallState:
-            return PackageInstallState.FAILED
-
-        with patch.object(self.pkginstaller, "_install_pkg") as default_impl:
             self.assertEqual(
-                await self.pkginstaller.install_pkg("python3-attr", install_coro=impl),
-                PackageInstallState.FAILED,
+                await self.pkginstaller.install_pkg("python3-attr"),
+                PackageInstallState.NOT_AVAILABLE,
             )
 
-        default_impl.assert_not_called()
+
+@patch("apt.Cache", Mock(return_value={}))
+@patch("subiquity.server.pkghelper.asyncio.sleep")
+class TestDryRunPackageInstaller(SubiTestCase):
+    def setUp(self):
+        app = make_app()
+        app.debug_flags = []
+        self.pkginstaller = DryRunPackageInstaller(app)
+
+    async def test_install_pkg(self, sleep):
+        with patch.dict(
+            self.pkginstaller.cache,
+            {"python3-attr": MockPackage(installed=False, name="python3-attr")},
+        ):
+            with self.assertLogs(PkgHelperLogger, "DEBUG") as debug:
+                self.assertEqual(
+                    await self.pkginstaller.install_pkg("python3-attr"),
+                    PackageInstallState.DONE,
+                )
+        sleep.assert_called_once()
+        self.assertIn(
+            "dry-run apt-get install %s", [record.msg for record in debug.records]
+        )
+
+    async def test_install_pkg_wpasupplicant_default_impl(self, sleep):
+        with patch.object(self.pkginstaller, "debug_flags", []):
+            self.assertEqual(
+                await self.pkginstaller.install_pkg("wpasupplicant"),
+                PackageInstallState.DONE,
+            )
+        sleep.assert_called_once()
+
+    async def test_install_pkg_wpasupplicant_done(self, sleep):
+        with patch.object(self.pkginstaller, "debug_flags", ["wlan_install=DONE"]):
+            self.assertEqual(
+                await self.pkginstaller.install_pkg("wpasupplicant"),
+                PackageInstallState.DONE,
+            )
+        sleep.assert_called_once()
+
+    async def test_install_pkg_wpasupplicant_failed(self, sleep):
+        with patch.object(self.pkginstaller, "debug_flags", ["wlan_install=FAILED"]):
+            self.assertEqual(
+                await self.pkginstaller.install_pkg("wpasupplicant"),
+                PackageInstallState.FAILED,
+            )
+        sleep.assert_called_once()
