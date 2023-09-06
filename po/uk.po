@@ -8,10 +8,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-04-12 09:48+1200\n"
+"POT-Creation-Date: 2023-09-06 15:13-0600\n"
 "PO-Revision-Date: 2022-04-12 17:15+0000\n"
 "Last-Translator: yurchor <Unknown>\n"
 "Language-Team: Ukrainian <uk@li.org>\n"
+"Language: uk\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -19,9 +20,8 @@ msgstr ""
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 "X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
 "X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
-"Language: uk\n"
 
-#: ../subiquity/client/client.py:72
+#: ../subiquity/client/client.py:58
 msgid ""
 "Installer shell session activated.\n"
 "\n"
@@ -43,107 +43,72 @@ msgstr ""
 "не переживуть перезавантаження. Якщо було розпочато встановлення,\n"
 "встановлену систему буде змонтовано до /target."
 
-#: ../subiquity/client/client.py:234
+#: ../subiquity/client/client.py:214
 msgid "yes"
 msgstr "так"
 
-#: ../subiquity/client/client.py:235
+#: ../subiquity/client/client.py:215
 msgid "no"
 msgstr "ні"
 
-#: ../subiquity/client/client.py:237
+#: ../subiquity/client/client.py:217
 msgid "Confirmation is required to continue."
 msgstr "Для продовження потрібне підтвердження."
 
-#: ../subiquity/client/client.py:238
+#: ../subiquity/client/client.py:218
 msgid "Add 'autoinstall' to your kernel command line to avoid this"
-msgstr ""
-"Додайте «autoinstall» до вашого рядка команди ядра, щоб уникнути цього"
+msgstr "Додайте «autoinstall» до вашого рядка команди ядра, щоб уникнути цього"
 
-#: ../subiquity/client/client.py:241
+#: ../subiquity/client/client.py:220
 msgid "Continue with autoinstall?"
 msgstr "Продовжити автовстановлення?"
 
-#: ../subiquity/client/controllers/ssh.py:91
+#: ../subiquity/client/controllers/ssh.py:79
 msgid "Importing keys failed:"
 msgstr "Не вдалося імпортувати ключі:"
 
-#: ../subiquity/client/controllers/ssh.py:100
+#: ../subiquity/client/controllers/ssh.py:85
 msgid "ssh-keygen failed to show fingerprint of downloaded keys:"
 msgstr "ssh-keygen не вдалося показати відбиток отриманих ключів:"
 
-#. Information about a drive
-#: ../subiquity/common/filesystem/actions.py:47
-msgctxt "DeviceAction"
-msgid "Info"
-msgstr "Інформація"
-
-#. Edit a device (partition, logical volume, RAID, etc)
-#: ../subiquity/common/filesystem/actions.py:49
-msgctxt "DeviceAction"
-msgid "Edit"
-msgstr "Змінити"
-
-#: ../subiquity/common/filesystem/actions.py:50
-msgctxt "DeviceAction"
-msgid "Reformat"
-msgstr "Переформатувати"
-
-#: ../subiquity/common/filesystem/actions.py:51
-msgctxt "DeviceAction"
-msgid "Add Partition"
-msgstr "Додати розділ"
-
-#: ../subiquity/common/filesystem/actions.py:52
-msgctxt "DeviceAction"
-msgid "Format"
-msgstr "Формат"
-
-#: ../subiquity/common/filesystem/actions.py:53
-msgctxt "DeviceAction"
-msgid "Remove from RAID/LVM"
-msgstr "Вилучити з RAID/LVM"
-
-#: ../subiquity/common/filesystem/actions.py:54
-msgctxt "DeviceAction"
-msgid "Delete"
-msgstr "Вилучити"
-
-#: ../subiquity/common/filesystem/actions.py:55
-msgctxt "DeviceAction"
-msgid "Make Boot Device"
-msgstr "Створити завантажувальний пристрій"
-
-#: ../subiquity/common/filesystem/actions.py:163
+#: ../subiquity/common/filesystem/actions.py:162
 #, python-brace-format
 msgid "Cannot edit {selflabel} as it is part of the {cdtype} {cdname}."
 msgstr ""
 "Не можна редагувати {selflabel}, оскільки він є частиною {cdtype} {cdname}."
 
-#: ../subiquity/common/filesystem/actions.py:177
+#: ../subiquity/common/filesystem/actions.py:180
 msgid "Cannot edit pre-existing RAIDs."
 msgstr "Не можна редагувати вже наявні RAID."
 
-#: ../subiquity/common/filesystem/actions.py:180
+#: ../subiquity/common/filesystem/actions.py:182
 #, python-brace-format
 msgid "Cannot edit {raidlabel} because it has partitions."
 msgstr "Не можна редагувати {raidlabel}, оскільки на ньому є розділи."
 
-#: ../subiquity/common/filesystem/actions.py:189
+#: ../subiquity/common/filesystem/actions.py:192
 msgid "Cannot edit pre-existing volume groups."
 msgstr "Не можна редагувати наявні групи томів."
 
-#: ../subiquity/common/filesystem/actions.py:192
+#: ../subiquity/common/filesystem/actions.py:194
 #, python-brace-format
 msgid "Cannot edit {vglabel} because it has logical volumes."
 msgstr "Не можна редагувати {vglabel}, оскільки на ньому є логічні томи."
 
-#: ../subiquity/common/filesystem/actions.py:241
+#: ../subiquity/common/filesystem/actions.py:225
+msgid "Primary partition limit reached"
+msgstr ""
+
+#: ../subiquity/common/filesystem/actions.py:226
+msgid "Unusable space"
+msgstr ""
+
+#: ../subiquity/common/filesystem/actions.py:250
 #, python-brace-format
 msgid "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
 msgstr "Не можна вилучати {selflabel} з наявного {cdtype} {cdlabel}."
 
-#: ../subiquity/common/filesystem/actions.py:252
+#: ../subiquity/common/filesystem/actions.py:262
 #, python-brace-format
 msgid ""
 "Removing {selflabel} would leave the {cdtype} {cdlabel} with less than "
@@ -152,28 +117,28 @@ msgstr ""
 "Вилучення {selflabel} лишить {cdtype} {cdlabel} із менше, ніж {min_devices} "
 "пристроїв."
 
-#: ../subiquity/common/filesystem/actions.py:261
+#: ../subiquity/common/filesystem/actions.py:273
 #, python-brace-format
 msgid ""
 "Removing {selflabel} would leave the {cdtype} {cdlabel} with no devices."
 msgstr "Вилучення {selflabel} лишить {cdtype} {cdlabel} без пристроїв."
 
-#: ../subiquity/common/filesystem/actions.py:277
+#: ../subiquity/common/filesystem/actions.py:291
 #, python-brace-format
 msgid "Cannot delete {selflabel} as it is part of the {cdtype} {cdname}."
 msgstr ""
 "Не можна вилучати {selflabel}, оскільки він є частиною {cdtype} {cdname}."
 
-#: ../subiquity/common/filesystem/actions.py:287
+#: ../subiquity/common/filesystem/actions.py:303
 msgid ""
 "Cannot delete a single partition from a device that already has partitions."
 msgstr "Не можна вилучати єдиний розділ з пристрою, на якому вже є розділи."
 
-#: ../subiquity/common/filesystem/actions.py:290
+#: ../subiquity/common/filesystem/actions.py:307
 msgid "Cannot delete required bootloader partition"
 msgstr "Не можна вилучити обов'язковий розділ завантажувача"
 
-#: ../subiquity/common/filesystem/actions.py:304
+#: ../subiquity/common/filesystem/actions.py:321
 #, python-brace-format
 msgid ""
 "Cannot delete {devicelabel} as partition {partnum} is part of the {cdtype} "
@@ -182,21 +147,20 @@ msgstr ""
 "Не можна вилучати {devicelabel}, оскільки розділ {partnum} є частиною "
 "{cdtype} {cdname}."
 
-#: ../subiquity/common/filesystem/actions.py:313
+#: ../subiquity/common/filesystem/actions.py:331
 #, python-brace-format
-msgid ""
-"Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
 "Не можна вилучати {devicelabel}, оскільки на ньому {count} є змонтовані "
 "розділи."
 
-#: ../subiquity/common/filesystem/actions.py:319
+#: ../subiquity/common/filesystem/actions.py:335
 #, python-brace-format
 msgid "Cannot delete {devicelabel} because it has 1 mounted partition."
 msgstr ""
 "Не можна вилучати {devicelabel}, оскільки на ньому є один змонтований розділ."
 
-#: ../subiquity/common/filesystem/actions.py:328
+#: ../subiquity/common/filesystem/actions.py:345
 msgid ""
 "Cannot delete a single logical volume from a volume group that already has "
 "logical volumes."
@@ -205,152 +169,165 @@ msgstr ""
 "томи."
 
 #. A pre-existing device such as a partition or RAID
-#: ../subiquity/common/filesystem/labels.py:35
+#: ../subiquity/common/filesystem/labels.py:37
 msgid "existing"
 msgstr "наявний"
 
 #. A newly created device such as a partition or RAID
-#: ../subiquity/common/filesystem/labels.py:38
+#: ../subiquity/common/filesystem/labels.py:40
 msgid "new"
 msgstr "новий"
 
-#: ../subiquity/common/filesystem/labels.py:62
+#: ../subiquity/common/filesystem/labels.py:64
 msgid "PReP"
 msgstr "PReP"
 
 #. boot loader partition
-#: ../subiquity/common/filesystem/labels.py:66
-#: ../subiquity/common/filesystem/labels.py:80
+#: ../subiquity/common/filesystem/labels.py:68
+#: ../subiquity/common/filesystem/labels.py:82
 msgid "configured"
 msgstr "налаштований"
 
 #. boot loader partition
-#: ../subiquity/common/filesystem/labels.py:69
-#: ../subiquity/common/filesystem/labels.py:82
+#: ../subiquity/common/filesystem/labels.py:71
+#: ../subiquity/common/filesystem/labels.py:84
 msgid "unconfigured"
 msgstr "неналаштований"
 
-#: ../subiquity/common/filesystem/labels.py:72
+#: ../subiquity/common/filesystem/labels.py:74
 msgid "primary ESP"
 msgstr "основний ESP"
 
-#: ../subiquity/common/filesystem/labels.py:74
+#: ../subiquity/common/filesystem/labels.py:76
 msgid "backup ESP"
 msgstr "резервна копія ESP"
 
-#: ../subiquity/common/filesystem/labels.py:76
+#: ../subiquity/common/filesystem/labels.py:78
 msgid "unused ESP"
 msgstr "невикористаний ESP"
 
-#: ../subiquity/common/filesystem/labels.py:83
+#: ../subiquity/common/filesystem/labels.py:85
 msgid "BIOS grub spacer"
 msgstr "роздільник grub BIOS"
 
 #. extended partition
-#: ../subiquity/common/filesystem/labels.py:86
+#: ../subiquity/common/filesystem/labels.py:88
 msgid "extended"
 msgstr "розширений"
 
 #. logical partition
-#: ../subiquity/common/filesystem/labels.py:89
+#: ../subiquity/common/filesystem/labels.py:92
 msgid "logical"
 msgstr "логічний"
 
 #. Flag for a LVM volume group
-#: ../subiquity/common/filesystem/labels.py:99
+#: ../subiquity/common/filesystem/labels.py:103
 msgid "encrypted"
 msgstr "зашифрований"
 
-#: ../subiquity/common/filesystem/labels.py:115
+#: ../subiquity/common/filesystem/labels.py:119
 msgid "multipath device"
 msgstr "пристрій з багатьма шляхами"
 
-#: ../subiquity/common/filesystem/labels.py:116
+#: ../subiquity/common/filesystem/labels.py:120
 msgid "local disk"
 msgstr "локальний диск"
 
-#: ../subiquity/common/filesystem/labels.py:121
+#: ../subiquity/common/filesystem/labels.py:125
 #, python-brace-format
 msgid "partition of {device}"
 msgstr "розділ {device}"
 
-#: ../subiquity/common/filesystem/labels.py:134
+#: ../subiquity/common/filesystem/labels.py:138
 msgid "software"
 msgstr "програмне забезпечення"
 
-#: ../subiquity/common/filesystem/labels.py:135
+#: ../subiquity/common/filesystem/labels.py:139
 #, python-brace-format
 msgid "{type} RAID {level}"
 msgstr "{type} RAID {level}"
 
-#: ../subiquity/common/filesystem/labels.py:141
+#: ../subiquity/common/filesystem/labels.py:144
 msgid "LVM volume group"
 msgstr "Група томів LVM"
 
-#: ../subiquity/common/filesystem/labels.py:146
+#: ../subiquity/common/filesystem/labels.py:149
 msgid "LVM logical volume"
 msgstr "Логічний том LVM"
 
-#: ../subiquity/common/filesystem/labels.py:180
-#: ../subiquity/ui/views/filesystem/guided.py:100
+#. This is only used in text "cannot add partition {desc}"... bit hackish.
+#: ../subiquity/common/filesystem/labels.py:155
+msgid "to gap"
+msgstr ""
+
+#: ../subiquity/common/filesystem/labels.py:160
+msgid "zpool"
+msgstr ""
+
+#: ../subiquity/common/filesystem/labels.py:198
+#: ../subiquity/ui/views/filesystem/guided.py:112
 #, python-brace-format
 msgid "partition {number}"
 msgstr "розділ {number}"
 
-#: ../subiquity/common/filesystem/labels.py:182
+#: ../subiquity/common/filesystem/labels.py:200
 #, python-brace-format
 msgid "partition {number} of {device}"
 msgstr "розділ {number} з {device}"
 
-#: ../subiquity/common/filesystem/labels.py:188
+#: ../subiquity/common/filesystem/labels.py:207
 msgid "free space"
 msgstr "вільне місце"
 
-#: ../subiquity/common/filesystem/labels.py:195
+#: ../subiquity/common/filesystem/labels.py:217
 #, python-brace-format
 msgid "{component_name} of {desc} {name}"
 msgstr "{component_name} {desc} {name}"
 
-#: ../subiquity/common/filesystem/labels.py:203
+#: ../subiquity/common/filesystem/labels.py:224
 #, python-brace-format
 msgid "already formatted as {fstype}"
 msgstr "вже форматовано у {fstype}"
 
-#: ../subiquity/common/filesystem/labels.py:205
+#: ../subiquity/common/filesystem/labels.py:226
 #, python-brace-format
 msgid "to be reformatted as {fstype}"
 msgstr "буде переформатовано у {fstype}"
 
-#: ../subiquity/common/filesystem/labels.py:207
+#: ../subiquity/common/filesystem/labels.py:228
 #, python-brace-format
 msgid "to be formatted as {fstype}"
 msgstr "буде форматовано у {fstype}"
 
 #. A filesytem
-#: ../subiquity/common/filesystem/labels.py:213
+#: ../subiquity/common/filesystem/labels.py:234
 #, python-brace-format
 msgid "mounted at {path}"
 msgstr "змонтовано до {path}"
 
+#: ../subiquity/common/filesystem/labels.py:236
+msgid "in use"
+msgstr ""
+
 #. A filesytem
-#: ../subiquity/common/filesystem/labels.py:216
+#: ../subiquity/common/filesystem/labels.py:239
 msgid "not mounted"
 msgstr "не змонтовано"
 
 #. A filesytem that cannot be mounted (i.e. swap)
 #. is used or unused
-#: ../subiquity/common/filesystem/labels.py:221
-#: ../subiquity/common/filesystem/labels.py:231
+#: ../subiquity/common/filesystem/labels.py:244
+#: ../subiquity/common/filesystem/labels.py:254
 msgid "unused"
 msgstr "не використовується"
 
 #. A filesytem that cannot be mounted (i.e. swap)
 #. is used or unused
-#: ../subiquity/common/filesystem/labels.py:225
+#: ../subiquity/common/filesystem/labels.py:248
 msgid "used"
 msgstr "використовується"
 
-#: ../subiquity/common/filesystem/labels.py:260
+#: ../subiquity/common/filesystem/labels.py:283
 #, python-brace-format
 msgid "container for {devices}"
 msgstr "контейнер для {devices}"
@@ -387,51 +364,15 @@ msgstr "Помилка запиту до сервера"
 msgid "Unknown error"
 msgstr "Невідома помилка"
 
-#: ../subiquitycore/controllers/network.py:203
+#: ../subiquitycore/controllers/network.py:230
 msgid "autoconfiguration failed"
 msgstr "помилка автоконфігурації"
 
-#. Information about a network interface
-#: ../subiquitycore/models/network.py:43
-msgctxt "NetDevAction"
-msgid "Info"
-msgstr "Інформація"
-
-#: ../subiquitycore/models/network.py:44
-msgctxt "NetDevAction"
-msgid "Edit Wifi"
-msgstr "Редагувати Wifi"
-
-#: ../subiquitycore/models/network.py:45
-msgctxt "NetDevAction"
-msgid "Edit IPv4"
-msgstr "Редагувати IPv4"
-
-#: ../subiquitycore/models/network.py:46
-msgctxt "NetDevAction"
-msgid "Edit IPv6"
-msgstr "Редагувати IPv6"
-
-#: ../subiquitycore/models/network.py:47
-msgctxt "NetDevAction"
-msgid "Edit bond"
-msgstr "Редагувати прив'язку"
-
-#: ../subiquitycore/models/network.py:48
-msgctxt "NetDevAction"
-msgid "Add a VLAN tag"
-msgstr "Додати мітку VLAN"
-
-#: ../subiquitycore/models/network.py:49
-msgctxt "NetDevAction"
-msgid "Delete"
-msgstr "Вилучити"
-
-#: ../subiquitycore/ssh.py:59
+#: ../subiquitycore/ssh.py:63
 msgid "The host key fingerprints are:\n"
 msgstr "Відбитки ключа вузла є:\n"
 
-#: ../subiquitycore/ssh.py:66
+#: ../subiquitycore/ssh.py:72
 #, python-brace-format
 msgid ""
 "The {keytype} host key fingerprint is:\n"
@@ -440,248 +381,254 @@ msgstr ""
 "Відбиток ключа вузла {keytype} є:\n"
 "    {fingerprint}\n"
 
-#: ../subiquitycore/ui/form.py:365
+#: ../subiquitycore/ui/form.py:270
+#, python-brace-format
+msgid "{desc} do not match"
+msgstr "{desc} не збігається"
+
+#: ../subiquitycore/ui/form.py:379
 msgid ", or "
 msgstr ", або "
 
-#: ../subiquitycore/ui/form.py:367
+#: ../subiquitycore/ui/form.py:381
 msgid " or "
 msgstr " або "
 
-#: ../subiquitycore/ui/form.py:371
+#: ../subiquitycore/ui/form.py:385
 #, python-brace-format
 msgid "This field must be a {schemes} URL."
 msgstr "У цьому полі має бути адреса {schemes}."
 
-#: ../subiquitycore/ui/form.py:451 ../subiquitycore/ui/views/network.py:330
-#: ../subiquity/ui/views/filesystem/filesystem.py:498
-#: ../subiquity/ui/views/snaplist.py:456
+#: ../subiquitycore/ui/form.py:458 ../subiquitycore/ui/views/network.py:353
+#: ../subiquity/ui/views/filesystem/filesystem.py:509
+#: ../subiquity/ui/views/snaplist.py:504
 msgid "Done"
 msgstr "Виконано"
 
-#: ../subiquitycore/ui/form.py:452 ../subiquitycore/ui/utils.py:382
-#: ../subiquitycore/ui/views/network_configure_wlan_interface.py:33
-#: ../subiquity/ui/views/filesystem/delete.py:98
+#: ../subiquitycore/ui/form.py:459 ../subiquitycore/ui/utils.py:372
+#: ../subiquitycore/ui/views/network_configure_wlan_interface.py:18
+#: ../subiquity/ui/views/filesystem/delete.py:97
 #: ../subiquity/ui/views/filesystem/delete.py:164
-#: ../subiquity/ui/views/keyboard.py:99 ../subiquity/ui/views/keyboard.py:333
-#: ../subiquity/ui/views/snaplist.py:266 ../subiquity/ui/views/ssh.py:162
+#: ../subiquity/ui/views/keyboard.py:91 ../subiquity/ui/views/keyboard.py:351
+#: ../subiquity/ui/views/mirror.py:228 ../subiquity/ui/views/snaplist.py:289
+#: ../subiquity/ui/views/ssh.py:141
 msgid "Cancel"
 msgstr "Скасувати"
 
-#: ../subiquitycore/ui/interactive.py:109 ../subiquity/ui/views/keyboard.py:218
-#: ../subiquity/ui/views/ssh.py:185
+#: ../subiquitycore/ui/interactive.py:103 ../subiquity/ui/views/keyboard.py:229
+#: ../subiquity/ui/views/ssh.py:168
 msgid "Yes"
 msgstr "Так"
 
-#: ../subiquitycore/ui/interactive.py:109
+#: ../subiquitycore/ui/interactive.py:103
 #: ../subiquity/ui/views/installprogress.py:247
-#: ../subiquity/ui/views/keyboard.py:219 ../subiquity/ui/views/ssh.py:98
-#: ../subiquity/ui/views/ssh.py:186
+#: ../subiquity/ui/views/keyboard.py:230 ../subiquity/ui/views/ssh.py:72
+#: ../subiquity/ui/views/ssh.py:169
 msgid "No"
 msgstr "Ні"
 
-#: ../subiquitycore/ui/utils.py:349
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:319
-#: ../subiquity/ui/views/error.py:60
-#: ../subiquity/ui/views/filesystem/disk_info.py:55
-#: ../subiquity/ui/views/filesystem/filesystem.py:232
-#: ../subiquity/ui/views/help.py:66 ../subiquity/ui/views/installprogress.py:82
-#: ../subiquity/ui/views/snaplist.py:316 ../subiquity/ui/views/welcome.py:115
+#: ../subiquitycore/ui/utils.py:341
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:308
+#: ../subiquity/ui/views/error.py:37
+#: ../subiquity/ui/views/filesystem/disk_info.py:54
+#: ../subiquity/ui/views/filesystem/filesystem.py:217
+#: ../subiquity/ui/views/help.py:38 ../subiquity/ui/views/installprogress.py:72
+#: ../subiquity/ui/views/snaplist.py:344 ../subiquity/ui/views/welcome.py:117
 msgid "Close"
 msgstr "Закрити"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:86
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:152
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:382
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:425
-#: ../subiquitycore/ui/views/network_configure_wlan_interface.py:51
-#: ../subiquity/ui/views/filesystem/lvm.py:158
-#: ../subiquity/ui/views/filesystem/partition.py:395
-#: ../subiquity/ui/views/filesystem/raid.py:147
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:74
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:144
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:370
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:412
+#: ../subiquitycore/ui/views/network_configure_wlan_interface.py:35
+#: ../subiquity/ui/views/filesystem/lvm.py:159
+#: ../subiquity/ui/views/filesystem/partition.py:436
+#: ../subiquity/ui/views/filesystem/raid.py:137
 msgid "Save"
 msgstr "Зберегти"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:88
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:76
 msgid "Subnet:"
 msgstr "Підмережа:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:89
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:77
 msgid "Address:"
 msgstr "Адреса:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:90
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:78
 msgid "Gateway:"
 msgstr "Шлюз:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:91
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:80
 msgid "Name servers:"
 msgstr "Сервери назв:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:92
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:80
 msgid "IP addresses, comma separated"
 msgstr "IP-адреси, відокремлені комами"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:93
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:83
 msgid "Search domains:"
 msgstr "Домени пошуку:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:94
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:83
 msgid "Domains, comma separated"
 msgstr "Домени, відокремлені комами"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:102
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:93
 #, python-brace-format
 msgid "should be in CIDR form ({example})"
 msgstr "має бути у формі CIDR ({example})"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:114
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:105
 #, python-brace-format
 msgid "'{address}' is not contained in '{subnet}'"
 msgstr "«{address}» не міститься у «{subnet}»"
 
 #. A choice for how to configure a network interface
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:143
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:135
 msgid "Automatic (DHCP)"
 msgstr "Автоматичний (DHCP)"
 
 #. A choice for how to configure a network interface
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:145
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:137
 msgid "Manual"
 msgstr "Вручну"
 
 #. A choice for how to configure a network interface
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:147
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:139
 msgid "Disabled"
 msgstr "Вимкнено"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:165
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:155
 #, python-brace-format
 msgid "IPv{v} Method: "
 msgstr "Метод IPv{v}: "
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:263
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:410
-#: ../subiquity/ui/views/filesystem/lvm.py:143
-#: ../subiquity/ui/views/filesystem/partition.py:381
-#: ../subiquity/ui/views/filesystem/raid.py:130
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:255
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:397
+#: ../subiquity/ui/views/filesystem/lvm.py:144
+#: ../subiquity/ui/views/filesystem/partition.py:422
+#: ../subiquity/ui/views/filesystem/raid.py:121
 msgid "Create"
 msgstr "Створити"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:270
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:262
 msgid "VLAN ID:"
 msgstr "Ідентифікатор VLAN:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:279
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:270
 msgid "VLAN ID must be between 1 and 4095"
 msgstr "Ідентифікатор VLAN має бути числом від 1 до 4095"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:285
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:276
 #, python-brace-format
 msgid "{netdev} already exists"
 msgstr "{netdev} вже існує"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:297
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:287
 msgid "Add a VLAN tag"
 msgstr "Додати мітку VLAN"
 
 #. {device} is the name of a network device
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:322
-#: ../subiquity/ui/views/filesystem/disk_info.py:57
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:311
+#: ../subiquity/ui/views/filesystem/disk_info.py:56
 #, python-brace-format
 msgid "Info for {device}"
 msgstr "Інформація щодо {device}"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:376
-#: ../subiquity/ui/views/filesystem/lvm.py:89
-#: ../subiquity/ui/views/filesystem/raid.py:93
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:363
+#: ../subiquity/ui/views/filesystem/lvm.py:76
+#: ../subiquity/ui/views/filesystem/raid.py:83
 msgid "Name:"
 msgstr "Ім'я:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:377
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:364
 msgid "Devices: "
 msgstr "Пристрої: "
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:378
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:365
 msgid "Bond mode:"
 msgstr "Режим зв'язку:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:380
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:367
 msgid "XMIT hash policy:"
 msgstr "Правила хешування XMIT:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:381
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:369
 msgid "LACP rate:"
 msgstr "Швидкість LACP:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:394
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:381
 #, python-brace-format
 msgid "There is already a network device named \"{netdev}\""
 msgstr "Вже існує мережевий пристрій із назвою «{netdev}»"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:397
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:385
 msgid "Name cannot be empty"
 msgstr "Назва не може бути поржня"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:399
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:387
 msgid "Name cannot be more than 16 characters long"
 msgstr "Назва не може бути довжиною у понад 16 символів"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:409
-#: ../subiquitycore/ui/views/network.py:263
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:396
+#: ../subiquitycore/ui/views/network.py:280
 msgid "Create bond"
 msgstr "Створити прив'язку"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:424
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:411
 msgid "Edit bond"
 msgstr "Редагувати прив'язку"
 
-#: ../subiquitycore/ui/views/network_configure_wlan_interface.py:38
+#: ../subiquitycore/ui/views/network_configure_wlan_interface.py:23
 msgid "Select a network"
 msgstr "Вибрати мережу"
 
-#: ../subiquitycore/ui/views/network_configure_wlan_interface.py:70
+#: ../subiquitycore/ui/views/network_configure_wlan_interface.py:54
 #, python-brace-format
 msgid "Network interface {nic} WIFI configuration"
 msgstr "Налаштування WIFI мережевого інтерфейсу {nic}"
 
-#: ../subiquitycore/ui/views/network.py:119
+#: ../subiquitycore/ui/views/network.py:110
 #, python-brace-format
 msgid "VLAN {id} on interface {link}"
 msgstr "VLAN {id} на інтерфейсі {link}"
 
-#: ../subiquitycore/ui/views/network.py:122
+#: ../subiquitycore/ui/views/network.py:114
 #, python-brace-format
 msgid "bond master for {interfaces}"
 msgstr "основна прив'язка для {interfaces}"
 
-#: ../subiquitycore/ui/views/network.py:142
+#: ../subiquitycore/ui/views/network.py:139
 #, python-brace-format
 msgid "ssid: {ssid}"
 msgstr "ssid: {ssid}"
 
-#: ../subiquitycore/ui/views/network.py:144
-#: ../subiquitycore/ui/views/network.py:146
+#: ../subiquitycore/ui/views/network.py:141
+#: ../subiquitycore/ui/views/network.py:143
 msgid "not connected"
 msgstr "не з’єднано"
 
-#: ../subiquitycore/ui/views/network.py:149
+#: ../subiquitycore/ui/views/network.py:146
 #, python-brace-format
 msgid "enslaved to {device}"
 msgstr "є підлеглим для {device}"
 
-#: ../subiquitycore/ui/views/network.py:176
+#: ../subiquitycore/ui/views/network.py:171
 msgid "timed out"
 msgstr "вийшов час очікування"
 
-#: ../subiquitycore/ui/views/network.py:181
+#: ../subiquitycore/ui/views/network.py:177
 msgid "static"
 msgstr "статична"
 
-#: ../subiquitycore/ui/views/network.py:188
+#: ../subiquitycore/ui/views/network.py:185
 msgid "disabled"
 msgstr "вимкнено"
 
-#: ../subiquitycore/ui/views/network.py:213
+#: ../subiquitycore/ui/views/network.py:211
 msgid ""
 "A wifi device was detected but the necessary support packages were not\n"
 "available.\n"
@@ -693,21 +640,21 @@ msgstr ""
 msgid "Wifi support packages are being installed.\n"
 msgstr "Встановлюємо пакунки підтримки Wifi.\n"
 
-#: ../subiquitycore/ui/views/network.py:220
+#: ../subiquitycore/ui/views/network.py:222
 msgid "Wifi support packages failed to install. Please check the logs.\n"
 msgstr ""
 "Не вдалося встановити пакунки підтримки Wifi. Будь ласка, ознайомтеся із "
 "журналом.\n"
 
-#: ../subiquitycore/ui/views/network.py:223
+#: ../subiquitycore/ui/views/network.py:227
 msgid "Wifi support packages will be installed in the target system.\n"
 msgstr "Пакунки підтримки Wifi буде встановлено у системі призначення.\n"
 
-#: ../subiquitycore/ui/views/network.py:230
+#: ../subiquitycore/ui/views/network.py:235
 msgid "Network connections"
 msgstr "З'єднання із мережею"
 
-#: ../subiquitycore/ui/views/network.py:231
+#: ../subiquitycore/ui/views/network.py:237
 msgid ""
 "Configure at least one interface this server can use to talk to other "
 "machines, and which preferably provides sufficient access for updates."
@@ -717,73 +664,99 @@ msgstr ""
 "достатній доступ для отримання оновлень."
 
 #. See _route_watcher
-#: ../subiquitycore/ui/views/network.py:274
-#: ../subiquity/ui/views/filesystem/filesystem.py:503
-#: ../subiquity/ui/views/filesystem/guided.py:159
-#: ../subiquity/ui/views/filesystem/probing.py:53
-#: ../subiquity/ui/views/filesystem/probing.py:79
-#: ../subiquity/ui/views/keyboard.py:353 ../subiquity/ui/views/mirror.py:38
-#: ../subiquity/ui/views/proxy.py:41 ../subiquity/ui/views/refresh.py:158
-#: ../subiquity/ui/views/refresh.py:185 ../subiquity/ui/views/refresh.py:216
-#: ../subiquity/ui/views/refresh.py:279 ../subiquity/ui/views/snaplist.py:457
-#: ../subiquity/ui/views/ssh.py:108 ../subiquity/ui/views/welcome.py:93
+#: ../subiquitycore/ui/views/network.py:292
+#: ../subiquity/ui/views/filesystem/filesystem.py:514
+#: ../subiquity/ui/views/filesystem/guided.py:252
+#: ../subiquity/ui/views/filesystem/guided.py:356
+#: ../subiquity/ui/views/filesystem/guided.py:366
+#: ../subiquity/ui/views/filesystem/probing.py:47
+#: ../subiquity/ui/views/filesystem/probing.py:77
+#: ../subiquity/ui/views/keyboard.py:369 ../subiquity/ui/views/mirror.py:69
+#: ../subiquity/ui/views/proxy.py:39 ../subiquity/ui/views/refresh.py:148
+#: ../subiquity/ui/views/refresh.py:176 ../subiquity/ui/views/refresh.py:208
+#: ../subiquity/ui/views/refresh.py:279 ../subiquity/ui/views/snaplist.py:505
+#: ../subiquity/ui/views/ssh.py:83 ../subiquity/ui/views/welcome.py:94
 #: ../subiquity/ui/views/zdev.py:163
 msgid "Back"
 msgstr "Назад"
 
-#: ../subiquitycore/ui/views/network.py:332
+#: ../subiquitycore/ui/views/network.py:355
 msgid "Continue without network"
 msgstr "Продовжити без мережі"
 
-#: ../subiquitycore/ui/views/network.py:345
+#: ../subiquitycore/ui/views/network.py:370
 msgid "Applying changes"
 msgstr "Застосування змін"
 
 #. for translators: this is a description of a RAID level
-#: ../subiquity/models/filesystem.py:171
+#: ../subiquity/models/filesystem.py:281
 msgid "0 (striped)"
 msgstr "0 (смуговий)"
 
 #. for translators: this is a description of a RAID level
-#: ../subiquity/models/filesystem.py:173
+#: ../subiquity/models/filesystem.py:283
 msgid "1 (mirrored)"
 msgstr "1 (дзеркальний)"
 
-#: ../subiquity/models/filesystem.py:174
+#: ../subiquity/models/filesystem.py:284
 msgid "5"
 msgstr "5"
 
-#: ../subiquity/models/filesystem.py:175
+#: ../subiquity/models/filesystem.py:285
 msgid "6"
 msgstr "6"
 
-#: ../subiquity/models/filesystem.py:176
+#: ../subiquity/models/filesystem.py:286
 msgid "10"
 msgstr "10"
 
-#: ../subiquity/models/filesystem.py:177
+#: ../subiquity/models/filesystem.py:287
 msgid "Container"
 msgstr "Контейнер"
 
 #. Attempting to convert input to a size
-#: ../subiquity/models/filesystem.py:212
+#: ../subiquity/models/filesystem.py:322
 msgid "input cannot be empty"
 msgstr "вхідні дані не можуть бути порожніми"
 
 #. Attempting to convert input to a size
-#: ../subiquity/models/filesystem.py:224 ../subiquity/models/filesystem.py:236
+#: ../subiquity/models/filesystem.py:334 ../subiquity/models/filesystem.py:347
 msgid "{input!r} is not valid input"
 msgstr "{input!r} не є коректним джерелом вхідних даних"
 
-#: ../subiquity/ui/mount.py:71
+#: ../subiquity/server/controllers/filesystem.py:99
+#: ../subiquity/ui/views/filesystem/guided.py:149
+#, python-brace-format
+msgid ""
+"TPM backed full-disk encryption is not available on this device (the reason "
+"given was \"{reason}\")."
+msgstr ""
+
+#: ../subiquity/server/controllers/filesystem.py:104
+msgid ""
+"TPM backed full-disk encryption is not yet supported when the target spans "
+"multiple volumes."
+msgstr ""
+
+#: ../subiquity/server/controllers/filesystem.py:109
+msgid ""
+"TPM backed full-disk encryption is only supported with a target volume "
+"partition table of GPT."
+msgstr ""
+
+#: ../subiquity/server/controllers/filesystem.py:353
+msgid "TPM backed full-disk encryption has been disabled"
+msgstr ""
+
+#: ../subiquity/ui/mount.py:60
 msgid "Other"
 msgstr "Інше"
 
-#: ../subiquity/ui/mount.py:73
+#: ../subiquity/ui/mount.py:62
 msgid "Leave unmounted"
 msgstr "Лишити незмонтованим"
 
-#: ../subiquity/ui/views/error.py:67 ../subiquity/ui/views/error.py:70
+#: ../subiquity/ui/views/error.py:45 ../subiquity/ui/views/error.py:50
 msgid ""
 "\n"
 "Sorry, there was a problem examining the storage devices on this system.\n"
@@ -792,7 +765,7 @@ msgstr ""
 "Вибачте, виникли проблеми із інспектуванням пристроїв для зберігання даних у "
 "цій системі.\n"
 
-#: ../subiquity/ui/views/error.py:73
+#: ../subiquity/ui/views/error.py:55
 msgid ""
 "\n"
 "Sorry, there was a problem completing the installation.\n"
@@ -800,7 +773,7 @@ msgstr ""
 "\n"
 "Вибачте, виникли проблеми із завершенням встановлення.\n"
 
-#: ../subiquity/ui/views/error.py:76
+#: ../subiquity/ui/views/error.py:60
 msgid ""
 "\n"
 "Sorry, there was a problem applying the network configuration.\n"
@@ -808,7 +781,7 @@ msgstr ""
 "\n"
 "Вибачте, виникла проблема із застосуванням налаштувань мережі.\n"
 
-#: ../subiquity/ui/views/error.py:79
+#: ../subiquity/ui/views/error.py:65
 msgid ""
 "\n"
 "Sorry, the installer has encountered an internal error.\n"
@@ -816,7 +789,7 @@ msgstr ""
 "\n"
 "Вибачте, у засобі для встановлення сталася внутрішня помилка.\n"
 
-#: ../subiquity/ui/views/error.py:82
+#: ../subiquity/ui/views/error.py:70
 msgid ""
 "\n"
 "Sorry, the installer has restarted because of an error.\n"
@@ -824,7 +797,7 @@ msgstr ""
 "\n"
 "Вибачте, засіб для встановлення було перезапущено через помилку.\n"
 
-#: ../subiquity/ui/views/error.py:85
+#: ../subiquity/ui/views/error.py:75
 msgid ""
 "\n"
 "Sorry, an unknown error occurred.\n"
@@ -832,7 +805,7 @@ msgstr ""
 "\n"
 "Вибачте, сталася невідома помилка.\n"
 
-#: ../subiquity/ui/views/error.py:91
+#: ../subiquity/ui/views/error.py:84
 msgid ""
 "\n"
 "Information is being collected from the system that will help the\n"
@@ -842,7 +815,7 @@ msgstr ""
 "Збираємо відомості щодо системи. Ці відомості допоможуть розробникам\n"
 "у виявленні причини проблеми.\n"
 
-#: ../subiquity/ui/views/error.py:95
+#: ../subiquity/ui/views/error.py:93
 msgid ""
 "\n"
 "Loading report...\n"
@@ -850,7 +823,7 @@ msgstr ""
 "\n"
 "Завантажуємо звіт...\n"
 
-#: ../subiquity/ui/views/error.py:98
+#: ../subiquity/ui/views/error.py:101
 msgid ""
 "\n"
 "Collecting information from the system failed. See the files in\n"
@@ -860,7 +833,7 @@ msgstr ""
 "Не вдалося зібрати відомості щодо системи. Див. файли у\n"
 "/var/log/installer, щоб дізнатися більше.\n"
 
-#: ../subiquity/ui/views/error.py:102
+#: ../subiquity/ui/views/error.py:110
 msgid ""
 "\n"
 "Loading the report failed. See the files in /var/log/installer for more.\n"
@@ -869,7 +842,7 @@ msgstr ""
 "Не вдалося завантажити звіт. Див. файли у /var/log/installer, щоб дізнатися "
 "більше.\n"
 
-#: ../subiquity/ui/views/error.py:108
+#: ../subiquity/ui/views/error.py:121
 msgid ""
 "\n"
 "You can continue and the installer will just present the disks present\n"
@@ -883,7 +856,7 @@ msgstr ""
 "перемкнувшись на команду оболонку і переналаштувавши блокові пристрої\n"
 "системи вручну.\n"
 
-#: ../subiquity/ui/views/error.py:114
+#: ../subiquity/ui/views/error.py:132
 msgid ""
 "\n"
 "You may be able to fix the issue by switching to a shell and\n"
@@ -893,7 +866,7 @@ msgstr ""
 "Ви можете виправити проблему, перемкнувшись на команду оболонку\n"
 "і переналаштувавши блокові пристрої системи вручну.\n"
 
-#: ../subiquity/ui/views/error.py:118
+#: ../subiquity/ui/views/error.py:141
 msgid ""
 "\n"
 "You can continue with the installation but it will be assumed the network\n"
@@ -903,7 +876,7 @@ msgstr ""
 "Ви можете продовжити встановлення, але програма припускатиме, що мережа\n"
 "є непрацездатною.\n"
 
-#: ../subiquity/ui/views/error.py:122
+#: ../subiquity/ui/views/error.py:150
 msgid ""
 "\n"
 "You can continue or restart the installer.\n"
@@ -911,7 +884,7 @@ msgstr ""
 "\n"
 "Ви можете продовжити або перезапустити засіб для встановлення.\n"
 
-#: ../subiquity/ui/views/error.py:125
+#: ../subiquity/ui/views/error.py:158
 msgid ""
 "\n"
 "Do you want to try starting the installation again?\n"
@@ -919,11 +892,11 @@ msgstr ""
 "\n"
 "Хочете спробувати розпочати встановлення знову?\n"
 
-#: ../subiquity/ui/views/error.py:129
+#: ../subiquity/ui/views/error.py:165
 msgid "Select continue to try the installation again."
 msgstr "Виберіть «Продовжити», щоб спробувати повторити встановлення."
 
-#: ../subiquity/ui/views/error.py:134
+#: ../subiquity/ui/views/error.py:173
 msgid ""
 "\n"
 "If you want to help improve the installer, you can send an error report.\n"
@@ -932,45 +905,55 @@ msgstr ""
 "Якщо ви хочете допомогти в удосконаленні засобу для встановлення, ви\n"
 "можете надіслати звіт щодо вади.\n"
 
-#: ../subiquity/ui/views/error.py:156
+#: ../subiquity/ui/views/error.py:179
+msgid ""
+"\n"
+"The install media checksum verification failed.  It's possible that this "
+"crash\n"
+"is related to that checksum failure.  Consider verifying the install media "
+"and\n"
+"retrying the install.\n"
+msgstr ""
+
+#: ../subiquity/ui/views/error.py:203
 msgid "Cancel upload"
 msgstr "Скасувати вивантаження"
 
-#: ../subiquity/ui/views/error.py:157
+#: ../subiquity/ui/views/error.py:204
 msgid "Close report"
 msgstr "Закрити звіт"
 
-#: ../subiquity/ui/views/error.py:158
-#: ../subiquity/ui/views/installprogress.py:65
+#: ../subiquity/ui/views/error.py:205
+#: ../subiquity/ui/views/installprogress.py:55
 #: ../subiquity/ui/views/installprogress.py:248
-#: ../subiquity/ui/views/snaplist.py:354 ../subiquity/ui/views/snaplist.py:379
-#: ../subiquity/ui/views/zdev.py:162
+#: ../subiquity/ui/views/mirror.py:227 ../subiquity/ui/views/snaplist.py:386
+#: ../subiquity/ui/views/snaplist.py:415 ../subiquity/ui/views/zdev.py:162
 msgid "Continue"
 msgstr "Продовжити"
 
-#: ../subiquity/ui/views/error.py:160
-#: ../subiquity/ui/views/installprogress.py:282
-#: ../subiquity/ui/views/welcome.py:113
+#: ../subiquity/ui/views/error.py:206
+#: ../subiquity/ui/views/installprogress.py:284
+#: ../subiquity/ui/views/welcome.py:116
 msgid "Switch to a shell"
 msgstr "Перемкнутися на оболонку"
 
-#: ../subiquity/ui/views/error.py:162
+#: ../subiquity/ui/views/error.py:207
 msgid "Restart the installer"
 msgstr "Перезапустити засіб для встановлення"
 
-#: ../subiquity/ui/views/error.py:164
+#: ../subiquity/ui/views/error.py:208
 msgid "Send to Canonical"
 msgstr "Надіслати Canonical"
 
-#: ../subiquity/ui/views/error.py:165
+#: ../subiquity/ui/views/error.py:209
 msgid "Sent to Canonical"
 msgstr "Надіслано Canonical"
 
-#: ../subiquity/ui/views/error.py:167
+#: ../subiquity/ui/views/error.py:210
 msgid "View full report"
 msgstr "Переглянути повний звіт"
 
-#: ../subiquity/ui/views/error.py:235
+#: ../subiquity/ui/views/error.py:280
 msgid ""
 "The error report has been saved to\n"
 "\n"
@@ -984,50 +967,50 @@ msgstr ""
 "\n"
 "на файловій системі із міткою {label!r}."
 
-#: ../subiquity/ui/views/error.py:317
+#: ../subiquity/ui/views/error.py:369
 msgid "DATE"
 msgstr "ДАТА"
 
-#: ../subiquity/ui/views/error.py:318
+#: ../subiquity/ui/views/error.py:370
 msgid "KIND"
 msgstr "ТИП"
 
-#: ../subiquity/ui/views/error.py:319
+#: ../subiquity/ui/views/error.py:371
 msgid "STATUS"
 msgstr "СТАН"
 
-#: ../subiquity/ui/views/error.py:330
+#: ../subiquity/ui/views/error.py:384
 msgid "Select an error report to view:"
 msgstr "Виберіть звіт щодо помилки для перегляду:"
 
-#: ../subiquity/ui/views/error.py:344
+#: ../subiquity/ui/views/error.py:397
 msgid "VIEWED"
 msgstr "ПЕРЕГЛЯНУТИЙ"
 
-#: ../subiquity/ui/views/error.py:345
+#: ../subiquity/ui/views/error.py:398
 msgid "UNVIEWED"
 msgstr "НЕ ПЕРЕГЛЯНУТИЙ"
 
-#: ../subiquity/ui/views/filesystem/compound.py:130
+#: ../subiquity/ui/views/filesystem/compound.py:108
 #, python-brace-format
 msgid "formatted as {fstype}"
 msgstr "форматовано у {fstype}"
 
-#: ../subiquity/ui/views/filesystem/compound.py:132
+#: ../subiquity/ui/views/filesystem/compound.py:110
 #, python-brace-format
 msgid ", mounted at {path}"
 msgstr ", змонтовано до {path}"
 
-#: ../subiquity/ui/views/filesystem/compound.py:134
+#: ../subiquity/ui/views/filesystem/compound.py:112
 msgid ", not mounted"
 msgstr ", не змонтовано"
 
-#: ../subiquity/ui/views/filesystem/compound.py:136
+#: ../subiquity/ui/views/filesystem/compound.py:114
 #, python-brace-format
 msgid "unused {device}"
 msgstr "невикористаний {device}"
 
-#: ../subiquity/ui/views/filesystem/compound.py:217
+#: ../subiquity/ui/views/filesystem/compound.py:197
 msgid ""
 "If you put all disks into RAIDs or LVM VGs, there will be nowhere to put the "
 "boot partition."
@@ -1035,24 +1018,24 @@ msgstr ""
 "Якщо ви розташуєте усі диски у RAID або групах томів LVM, ніде буде "
 "розмістити розділ для завантаження."
 
-#: ../subiquity/ui/views/filesystem/delete.py:44
+#: ../subiquity/ui/views/filesystem/delete.py:39
 #, python-brace-format
 msgid "Do you really want to delete the {desc} {label}?"
 msgstr "Ви справді хочете вилучити {desc} {label}?"
 
-#: ../subiquity/ui/views/filesystem/delete.py:54
-#: ../subiquity/ui/views/filesystem/delete.py:133
+#: ../subiquity/ui/views/filesystem/delete.py:52
+#: ../subiquity/ui/views/filesystem/delete.py:130
 #, python-brace-format
 msgid "It is formatted as {fstype} and mounted at {path}"
 msgstr "Форматовано у {fstype} і змонтовано до {path}"
 
 #: ../subiquity/ui/views/filesystem/delete.py:60
-#: ../subiquity/ui/views/filesystem/delete.py:139
+#: ../subiquity/ui/views/filesystem/delete.py:136
 #, python-brace-format
 msgid "It is formatted as {fstype} and not mounted."
 msgstr "Форматовано у {fstype} і не змонтовано."
 
-#: ../subiquity/ui/views/filesystem/delete.py:66
+#: ../subiquity/ui/views/filesystem/delete.py:69
 #, python-brace-format
 msgid "It contains 1 logical volume"
 msgid_plural "It contains {n} logical volumes"
@@ -1060,7 +1043,7 @@ msgstr[0] "Містить {n} логічний том"
 msgstr[1] "Містить {n} логічних томи"
 msgstr[2] "Містить {n} логічних томів"
 
-#: ../subiquity/ui/views/filesystem/delete.py:71
+#: ../subiquity/ui/views/filesystem/delete.py:73
 #, python-brace-format
 msgid "It contains 1 partition"
 msgid_plural "It contains {n} partitions"
@@ -1076,205 +1059,226 @@ msgstr[0] "Містить {n} том."
 msgstr[1] "Містить {n} томи."
 msgstr[2] "Містить {n} томів."
 
-#: ../subiquity/ui/views/filesystem/delete.py:91
+#: ../subiquity/ui/views/filesystem/delete.py:89
 msgid "It is not formatted or mounted."
 msgstr "Його не форматовано і не змонтовано."
 
-#: ../subiquity/ui/views/filesystem/delete.py:93
+#: ../subiquity/ui/views/filesystem/delete.py:91
 msgid "Delete"
 msgstr "Вилучити"
 
-#: ../subiquity/ui/views/filesystem/delete.py:121
+#: ../subiquity/ui/views/filesystem/delete.py:119
 #, python-brace-format
 msgid "Remove filesystem from {device}"
 msgstr "Вилучити файлову систему з {device}"
 
-#: ../subiquity/ui/views/filesystem/delete.py:125
+#: ../subiquity/ui/views/filesystem/delete.py:122
 #, python-brace-format
 msgid "Do you really want to remove the existing filesystem from {device}?"
 msgstr "Ви справді хочете вилучити наявну файлову систему з {device}?"
 
-#: ../subiquity/ui/views/filesystem/delete.py:143
+#: ../subiquity/ui/views/filesystem/delete.py:142
 msgid "logical volumes"
 msgstr "логічні томи"
 
-#: ../subiquity/ui/views/filesystem/delete.py:145
+#: ../subiquity/ui/views/filesystem/delete.py:144
 msgid "partitions"
 msgstr "розділи"
 
 #. things is either "logical volumes" or "partitions"
-#: ../subiquity/ui/views/filesystem/delete.py:147
+#: ../subiquity/ui/views/filesystem/delete.py:146
 #, python-brace-format
 msgid "Remove all {things} from {obj}"
 msgstr "Вилучити усі {things} з {obj}"
 
-#: ../subiquity/ui/views/filesystem/delete.py:151
+#: ../subiquity/ui/views/filesystem/delete.py:150
 #, python-brace-format
 msgid "Do you really want to remove all {things} from {obj}?"
 msgstr "Ви справді хочете вилучити усі {things} з {obj}?"
 
 #. XXX summarize partitions here?
-#: ../subiquity/ui/views/filesystem/delete.py:158
+#: ../subiquity/ui/views/filesystem/delete.py:157
 msgid "Reformat"
 msgstr "Переформатувати"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:101
+#: ../subiquity/ui/views/filesystem/filesystem.py:75
 #, python-brace-format
 msgid "existing {fstype}"
 msgstr "наявна {fstype}"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:103
+#: ../subiquity/ui/views/filesystem/filesystem.py:77
 #, python-brace-format
 msgid "new {fstype}"
 msgstr "нова {fstype}"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:135
+#: ../subiquity/ui/views/filesystem/filesystem.py:112
 msgid "No disks or partitions mounted."
 msgstr "Дисків чи розділів не змонтовано."
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:160
+#: ../subiquity/ui/views/filesystem/filesystem.py:141
 msgid "MOUNT POINT"
 msgstr "ТОЧКА МОНТУВАННЯ"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:161
-#: ../subiquity/ui/views/filesystem/filesystem.py:393
-#: ../subiquity/ui/views/snaplist.py:163
+#: ../subiquity/ui/views/filesystem/filesystem.py:142
+#: ../subiquity/ui/views/filesystem/filesystem.py:394
+#: ../subiquity/ui/views/snaplist.py:175
 msgid "SIZE"
 msgstr "РОЗМІР"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:162
-#: ../subiquity/ui/views/filesystem/filesystem.py:392
+#: ../subiquity/ui/views/filesystem/filesystem.py:143
+#: ../subiquity/ui/views/filesystem/filesystem.py:393
 msgid "TYPE"
 msgstr "ТИП"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:163
+#: ../subiquity/ui/views/filesystem/filesystem.py:144
 msgid "DEVICE TYPE"
 msgstr "ТИП ПРИСТРОЮ"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:186
+#: ../subiquity/ui/views/filesystem/filesystem.py:169
 msgid "Unmount"
 msgstr "Розмонтувати"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:260
+#: ../subiquity/ui/views/filesystem/filesystem.py:250
 msgid "No available devices"
 msgstr "Немає доступних пристроїв"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:262
+#: ../subiquity/ui/views/filesystem/filesystem.py:252
 msgid "No used devices"
 msgstr "Немає використаних пристроїв"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:326
+#: ../subiquity/ui/views/filesystem/filesystem.py:317
 #, python-brace-format
 msgid "Remove from {device}"
 msgstr "Вилучити з {device}"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:333
+#: ../subiquity/ui/views/filesystem/filesystem.py:324
 msgid "Create Logical Volume"
 msgstr "Створити логічний том"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:335
+#: ../subiquity/ui/views/filesystem/filesystem.py:326
 #, python-brace-format
 msgid "Add {ptype} Partition"
 msgstr "Додати розділ {ptype}"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:340
+#: ../subiquity/ui/views/filesystem/filesystem.py:332
 msgid "Stop Using As Boot Device"
 msgstr "Припинити використання як пристрою для завантаження"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:344
+#: ../subiquity/ui/views/filesystem/filesystem.py:336
 msgid "Add As Another Boot Device"
 msgstr "Додати як інший пристрій для завантаження"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:345
+#: ../subiquity/ui/views/filesystem/filesystem.py:337
 msgid "Use As Boot Device"
 msgstr "Використати як диск для завантаження"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:391
+#: ../subiquity/ui/views/filesystem/filesystem.py:392
 msgid "DEVICE"
 msgstr "ПРИСТРІЙ"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:430
+#: ../subiquity/ui/views/filesystem/filesystem.py:437
 msgid "Storage configuration"
 msgstr "Налаштування сховища даних"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:441
+#: ../subiquity/ui/views/filesystem/filesystem.py:448
 msgid "Create software RAID (md)"
 msgstr "Створити програмний RAID (md)"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:444
+#: ../subiquity/ui/views/filesystem/filesystem.py:451
 msgid "Create volume group (LVM)"
 msgstr "Створити групу томів (LVM)"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:451
+#: ../subiquity/ui/views/filesystem/filesystem.py:458
 msgid "FILE SYSTEM SUMMARY"
 msgstr "РЕЗЮМЕ ФАЙЛОВОЇ СИСТЕМИ"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:456
+#: ../subiquity/ui/views/filesystem/filesystem.py:463
 msgid "AVAILABLE DEVICES"
 msgstr "ДОСТУПНІ ПРИСТРОЇ"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:463
+#: ../subiquity/ui/views/filesystem/filesystem.py:470
 msgid "USED DEVICES"
 msgstr "ВИКОРИСТАНІ ПРИСТРОЇ"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:481
+#: ../subiquity/ui/views/filesystem/filesystem.py:490
 msgid "Mount a filesystem at /"
 msgstr "Змонтувати файлову систему до /"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:483
+#: ../subiquity/ui/views/filesystem/filesystem.py:492
 msgid "Select a boot disk"
 msgstr "Вибрати диск для завантаження"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:488
+#: ../subiquity/ui/views/filesystem/filesystem.py:498
 msgid "To continue you need to:"
 msgstr "Щоб продовжити, вам слід:"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:502
+#: ../subiquity/ui/views/filesystem/filesystem.py:513
 msgid "Reset"
 msgstr "Скинути"
 
-#: ../subiquity/ui/views/filesystem/guided.py:57
+#: ../subiquity/ui/views/filesystem/guided.py:53
 msgid "Configure a guided storage layout, or create a custom one:"
 msgstr ""
 "Налаштувати спрямоване компонування сховища даних або створити нетипове:"
 
-#: ../subiquity/ui/views/filesystem/guided.py:62
-#: ../subiquity/ui/views/filesystem/lvm.py:93
+#: ../subiquity/ui/views/filesystem/guided.py:57
+#: ../subiquity/ui/views/filesystem/lvm.py:80
 msgid "Passphrase:"
 msgstr "Парольна фраза:"
 
-#: ../subiquity/ui/views/filesystem/guided.py:63
-#: ../subiquity/ui/views/filesystem/lvm.py:94
+#: ../subiquity/ui/views/filesystem/guided.py:58
+#: ../subiquity/ui/views/filesystem/lvm.py:81
 msgid "Confirm passphrase:"
 msgstr "Схвалити пароль:"
 
-#: ../subiquity/ui/views/filesystem/guided.py:67
-#: ../subiquity/ui/views/identity.py:138
-msgid "Password must be set"
-msgstr "Слід встановити пароль"
+#: ../subiquity/ui/views/filesystem/guided.py:62
+msgid ""
+"The key will be stored as ~/recovery-key.txt in the live system and will be "
+"copied to /var/log/installer/ in the target system."
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:71
-#: ../subiquity/ui/views/identity.py:142
-msgid "Passwords do not match"
+#: ../subiquity/ui/views/filesystem/lvm.py:122
+msgid "Passphrase must be set"
+msgstr "Має бути встановлено пароль"
+
+#: ../subiquity/ui/views/filesystem/guided.py:75
+#: ../subiquity/ui/views/filesystem/lvm.py:129
+msgid "Passphrases do not match"
 msgstr "Паролі не збігаються"
 
-#: ../subiquity/ui/views/filesystem/guided.py:84
+#: ../subiquity/ui/views/filesystem/guided.py:88
 msgid "Encrypt the LVM group with LUKS"
 msgstr "Зашифрувати групу LVM за допомогою LUKS"
 
-#: ../subiquity/ui/views/filesystem/guided.py:121
+#: ../subiquity/ui/views/filesystem/guided.py:139
+msgid ""
+"The entire disk will be encrypted and protected by the TPM. If this option "
+"is deselected, the disk will be unencrypted and without any protection."
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/guided.py:144
+msgid "The entire disk will be encrypted and protected by the TPM."
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/guided.py:174
 msgid "Set up this disk as an LVM group"
 msgstr "Налаштувати цей диск як групу LVM"
 
-#: ../subiquity/ui/views/filesystem/guided.py:155
+#: ../subiquity/ui/views/filesystem/guided.py:176
+msgid "Full disk encryption with TPM"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/guided.py:248
 msgid "Use an entire disk"
 msgstr "Використати увесь диск"
 
-#: ../subiquity/ui/views/filesystem/guided.py:157
+#: ../subiquity/ui/views/filesystem/guided.py:250
 msgid "Custom storage layout"
 msgstr "Нетипове компонування сховища даних"
 
-#: ../subiquity/ui/views/filesystem/guided.py:170
+#: ../subiquity/ui/views/filesystem/guided.py:266
+#, fuzzy
 msgid ""
 "\n"
 "\n"
@@ -1291,7 +1295,7 @@ msgid ""
 "next screen).\n"
 "\n"
 "You can also choose to encrypt LVM volume group. This will require\n"
-"setting a password, that one will need to type on every boot before\n"
+"setting a passphrase, that one will need to type on every boot before\n"
 "the system boots.\n"
 "\n"
 "If you do not choose to use LVM, a single partition is created covering the\n"
@@ -1336,7 +1340,7 @@ msgstr ""
 "диск і змонтувати файлову систему до /.\n"
 "\n"
 
-#: ../subiquity/ui/views/filesystem/guided.py:200
+#: ../subiquity/ui/views/filesystem/guided.py:298
 msgid ""
 "\n"
 "Block probing did not discover any disks big enough to support guided "
@@ -1348,7 +1352,7 @@ msgstr ""
 "великим для спрямованого налаштовування сховища даних. Втім,\n"
 "можливе налаштовування вручну.\n"
 
-#: ../subiquity/ui/views/filesystem/guided.py:206
+#: ../subiquity/ui/views/filesystem/guided.py:306
 msgid ""
 "\n"
 "Block probing did not discover any disks. Unfortunately this means that\n"
@@ -1358,106 +1362,119 @@ msgstr ""
 "Зондуванням блокових пристроїв не вдалося виявити жодних дисків. На жаль,\n"
 "це означає, що встановити систему не вдасться.\n"
 
-#: ../subiquity/ui/views/filesystem/guided.py:214
+#: ../subiquity/ui/views/filesystem/guided.py:314
 msgid "Guided storage configuration"
 msgstr "Спрямоване налаштовування сховища даних"
 
-#: ../subiquity/ui/views/filesystem/guided.py:233
-#: ../subiquity/ui/views/filesystem/partition.py:432
-#: ../subiquity/ui/views/keyboard.py:98 ../subiquity/ui/views/keyboard.py:136
-#: ../subiquity/ui/views/keyboard.py:332
+#: ../subiquity/ui/views/filesystem/guided.py:342
+#, fuzzy
+msgid "Choose a disk to install to:"
+msgstr "Виберіть диск для встановлення:"
+
+#: ../subiquity/ui/views/filesystem/guided.py:357
+msgid "Cannot install core boot classic system"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/guided.py:365
+#: ../subiquity/ui/views/filesystem/partition.py:476
+#: ../subiquity/ui/views/keyboard.py:90 ../subiquity/ui/views/keyboard.py:135
+#: ../subiquity/ui/views/keyboard.py:350
 msgid "OK"
 msgstr "Гаразд"
 
-#: ../subiquity/ui/views/filesystem/guided.py:241
+#: ../subiquity/ui/views/filesystem/guided.py:374
 msgid "Help on guided storage configuration"
 msgstr "Довідка щодо спрямованого налаштовування сховища даних"
 
-#: ../subiquity/ui/views/filesystem/lvm.py:61
+#: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
-"9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, "
+"0-9, +, _, . and -"
 msgstr ""
-"У назві групи томів можна використовувати лише символи a-z, A-Z, 0-9, +, _, "
-". і -"
+"У назві групи томів можна використовувати лише символи a-z, A-Z, 0-9, +, "
+"_, . і -"
 
-#: ../subiquity/ui/views/filesystem/lvm.py:86
-msgid "passphrases"
-msgstr "паролі"
+#: ../subiquity/ui/views/filesystem/lvm.py:72
+#, fuzzy
+msgid "Passphrases"
+msgstr "Парольна фраза:"
 
-#: ../subiquity/ui/views/filesystem/lvm.py:90
-#: ../subiquity/ui/views/filesystem/raid.py:95
+#: ../subiquity/ui/views/filesystem/lvm.py:77
+#: ../subiquity/ui/views/filesystem/raid.py:85
 msgid "Devices:"
 msgstr "Пристрої:"
 
-#: ../subiquity/ui/views/filesystem/lvm.py:91
-#: ../subiquity/ui/views/filesystem/raid.py:96
+#: ../subiquity/ui/views/filesystem/lvm.py:78
+#: ../subiquity/ui/views/filesystem/raid.py:86
 msgid "Size:"
 msgstr "Розмір:"
 
-#: ../subiquity/ui/views/filesystem/lvm.py:92
+#: ../subiquity/ui/views/filesystem/lvm.py:79
 msgid "Create encrypted volume"
 msgstr "Створити зашифрований том"
 
-#: ../subiquity/ui/views/filesystem/lvm.py:105
+#: ../subiquity/ui/views/filesystem/lvm.py:85
+msgid "Also create a recovery key:"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/lvm.py:87
+#, python-brace-format
+msgid ""
+"The key will be stored as ~/recovery-key-{name}.txt in the live system and "
+"will be copied to /var/log/installer/ in the target system."
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/lvm.py:104
 msgid "Select at least one device to be part of the volume group."
 msgstr "Виберіть принаймні один пристрій, який буде частиною групи томів."
 
-#: ../subiquity/ui/views/filesystem/lvm.py:111
+#: ../subiquity/ui/views/filesystem/lvm.py:109
 msgid "The name of a volume group cannot be empty"
 msgstr "Назва групи томів не може бути порожньою"
 
-#: ../subiquity/ui/views/filesystem/lvm.py:113
+#: ../subiquity/ui/views/filesystem/lvm.py:111
 msgid "The name of a volume group cannot start with a hyphen"
 msgstr "Назва групи томів не може починатися з дефіса"
 
-#: ../subiquity/ui/views/filesystem/lvm.py:115
+#: ../subiquity/ui/views/filesystem/lvm.py:113
 #, python-brace-format
 msgid "There is already a volume group named '{name}'"
 msgstr "Група томів із назвою {name} вже існує'"
 
-#: ../subiquity/ui/views/filesystem/lvm.py:119
+#: ../subiquity/ui/views/filesystem/lvm.py:118
 #, python-brace-format
 msgid "{name} is not a valid name for a volume group"
 msgstr "{name} не є коректною назвою групи томів"
 
-#: ../subiquity/ui/views/filesystem/lvm.py:124
-msgid "Passphrase must be set"
-msgstr "Має бути встановлено пароль"
-
-#: ../subiquity/ui/views/filesystem/lvm.py:129
-msgid "Passphrases do not match"
-msgstr "Паролі не збігаються"
-
-#: ../subiquity/ui/views/filesystem/lvm.py:142
+#: ../subiquity/ui/views/filesystem/lvm.py:143
 msgid "Create LVM volume group"
 msgstr "Створити групу томів LVM"
 
-#: ../subiquity/ui/views/filesystem/lvm.py:157
+#: ../subiquity/ui/views/filesystem/lvm.py:158
 #, python-brace-format
 msgid "Edit volume group \"{name}\""
 msgstr "Редагувати групу томів «{name}»"
 
-#: ../subiquity/ui/views/filesystem/partition.py:77
+#: ../subiquity/ui/views/filesystem/partition.py:75
 msgid "Leave unformatted"
 msgstr "Лишити неформатованим"
 
-#: ../subiquity/ui/views/filesystem/partition.py:80
+#: ../subiquity/ui/views/filesystem/partition.py:78
 #, python-brace-format
 msgid "Leave formatted as {fstype}"
 msgstr "Лишити форматування {fstype}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:113
+#: ../subiquity/ui/views/filesystem/partition.py:114
 #, python-brace-format
 msgid "Capped partition size at {size}"
 msgstr "Покритий розмір розділу у {size}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:121
+#: ../subiquity/ui/views/filesystem/partition.py:130
 #, python-brace-format
 msgid "Rounded size up to {size}"
 msgstr "Округлений розмір аж до {size}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:133
+#: ../subiquity/ui/views/filesystem/partition.py:145
 msgid ""
 "The only characters permitted in the name of a logical volume are a-z, A-Z, "
 "0-9, +, _, . and -"
@@ -1465,64 +1482,64 @@ msgstr ""
 "У назві логічних томів можна використовувати лише символи a-z, A-Z, 0-9, +, "
 "_, . і -"
 
-#: ../subiquity/ui/views/filesystem/partition.py:167
+#: ../subiquity/ui/views/filesystem/partition.py:181
 #, python-brace-format
 msgid "Size (max {size}):"
 msgstr "Розмір (макс. {size}):"
 
-#: ../subiquity/ui/views/filesystem/partition.py:205
+#: ../subiquity/ui/views/filesystem/partition.py:217
 msgid "Name: "
 msgstr "Ім’я: "
 
-#: ../subiquity/ui/views/filesystem/partition.py:207
+#: ../subiquity/ui/views/filesystem/partition.py:219
 msgid "Format:"
 msgstr "Формат:"
 
-#: ../subiquity/ui/views/filesystem/partition.py:208
+#: ../subiquity/ui/views/filesystem/partition.py:220
 msgid "Mount:"
 msgstr "Монтування:"
 
-#: ../subiquity/ui/views/filesystem/partition.py:210
+#: ../subiquity/ui/views/filesystem/partition.py:222
 msgid "Use as swap"
 msgstr "Використати як резервну пам'ять"
 
-#: ../subiquity/ui/views/filesystem/partition.py:211
+#: ../subiquity/ui/views/filesystem/partition.py:222
 msgid "Use this swap partition in the installed system."
 msgstr "Використати цей розділ резервної пам'яті у встановленій системі."
 
-#: ../subiquity/ui/views/filesystem/partition.py:235
+#: ../subiquity/ui/views/filesystem/partition.py:247
 msgid "The name of a logical volume cannot be empty"
 msgstr "Назва логічного тому не може бути порожньою"
 
-#: ../subiquity/ui/views/filesystem/partition.py:237
+#: ../subiquity/ui/views/filesystem/partition.py:249
 msgid "The name of a logical volume cannot start with a hyphen"
 msgstr "Назва логічного тому не може починатися з дефіса"
 
-#: ../subiquity/ui/views/filesystem/partition.py:240
+#: ../subiquity/ui/views/filesystem/partition.py:251
 #, python-brace-format
 msgid "A logical volume may not be called {name}"
 msgstr "Логічний том не може мати назви {name}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:247
+#: ../subiquity/ui/views/filesystem/partition.py:267
 #, python-brace-format
 msgid "The name of a logical volume may not contain \"{substring}\""
 msgstr "Назва логічного тому не може містити «{substring}»"
 
-#: ../subiquity/ui/views/filesystem/partition.py:252
+#: ../subiquity/ui/views/filesystem/partition.py:270
 #, python-brace-format
 msgid "There is already a logical volume named {name}."
 msgstr "Логічний том із назвою {name} вже існує."
 
-#: ../subiquity/ui/views/filesystem/partition.py:261
+#: ../subiquity/ui/views/filesystem/partition.py:280
 msgid "Path exceeds PATH_MAX"
 msgstr "Шлях перевищує PATH_MAX"
 
-#: ../subiquity/ui/views/filesystem/partition.py:264
+#: ../subiquity/ui/views/filesystem/partition.py:283
 #, python-brace-format
 msgid "{device} is already mounted at {path}."
 msgstr "{device} вже змонтовано до {path}."
 
-#: ../subiquity/ui/views/filesystem/partition.py:272
+#: ../subiquity/ui/views/filesystem/partition.py:294
 #, python-brace-format
 msgid ""
 "Mounting an existing filesystem at {mountpoint} is usually a bad idea, "
@@ -1531,7 +1548,7 @@ msgstr ""
 "Зазвичай, не варто монтувати наявну файлову систему до {mountpoint}. Робіть "
 "це, лише якщо впевнені у наслідках дій."
 
-#: ../subiquity/ui/views/filesystem/partition.py:288
+#: ../subiquity/ui/views/filesystem/partition.py:313
 #, python-brace-format
 msgid ""
 "Bootloader partition\n"
@@ -1554,7 +1571,7 @@ msgstr ""
 "файлової системи, і його не буде змонтовано, а також його не можна\n"
 "тут редагувати.\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:300
+#: ../subiquity/ui/views/filesystem/partition.py:327
 msgid ""
 "If this disk is selected as a boot device, GRUB will be installed onto\n"
 "the target disk's MBR."
@@ -1562,7 +1579,7 @@ msgstr ""
 "Якщо цей диск буде вибрано як завантажувальний пристрій, GRUB буде\n"
 "встановлено до MBR диска призначення."
 
-#: ../subiquity/ui/views/filesystem/partition.py:304
+#: ../subiquity/ui/views/filesystem/partition.py:333
 msgid ""
 "As this disk has been selected as a boot device, GRUB will be\n"
 "installed onto the target disk's MBR."
@@ -1570,7 +1587,7 @@ msgstr ""
 "Оскільки цей диск було вибрано як завантажувальний пристрій, GRUB буде\n"
 "встановлено до MBR диска призначення."
 
-#: ../subiquity/ui/views/filesystem/partition.py:308
+#: ../subiquity/ui/views/filesystem/partition.py:339
 msgid ""
 "Bootloader partition\n"
 "\n"
@@ -1584,7 +1601,7 @@ msgstr ""
 "буде вибрано як завантажувальний пристрій, Grub буде встановлено на\n"
 "цей розділ, який має бути форматовано як fat32.\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:316
+#: ../subiquity/ui/views/filesystem/partition.py:349
 msgid ""
 "Bootloader partition\n"
 "\n"
@@ -1598,11 +1615,11 @@ msgstr ""
 "диск було вибрано як завантажувальний пристрій, Grub буде встановлено на\n"
 "цей розділ, який має бути форматовано як fat32.\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:324
+#: ../subiquity/ui/views/filesystem/partition.py:359
 msgid "The only aspect of this partition that can be edited is the size.\n"
 msgstr "Єдиним параметром цього розділу, який можна редагувати, є розмір.\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:328
+#: ../subiquity/ui/views/filesystem/partition.py:365
 msgid ""
 "You can choose whether to use the existing filesystem on this\n"
 "partition or reformat it.\n"
@@ -1610,7 +1627,7 @@ msgstr ""
 "Ви можете визначити, слід використовувати наявну файлову систему\n"
 "на цьому розділі, чи його слід повторно форматувати.\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:333
+#: ../subiquity/ui/views/filesystem/partition.py:372
 msgid ""
 "Required bootloader partition\n"
 "\n"
@@ -1622,7 +1639,7 @@ msgstr ""
 "Це розділ PReP, який потрібен на POWER. Якщо цей диск буде вибрано як\n"
 "завантажувальний пристрій, на цей розділ буде встановлено Grub.\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:340
+#: ../subiquity/ui/views/filesystem/partition.py:381
 msgid ""
 "Required bootloader partition\n"
 "\n"
@@ -1635,35 +1652,35 @@ msgstr ""
 "Це розділ PReP, який потрібен на POWER. Оскільки цей диск було вибрано\n"
 "як завантажувальний пристрій, на цей розділ буде встановлено Grub.\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:439
+#: ../subiquity/ui/views/filesystem/partition.py:482
 msgid "Use existing fat32 filesystem"
 msgstr "Використати наявну файлову систему fat32"
 
-#: ../subiquity/ui/views/filesystem/partition.py:445
+#: ../subiquity/ui/views/filesystem/partition.py:485
 msgid "Reformat as fresh fat32 filesystem"
 msgstr "Повторно форматувати як нову файлову систему fat32"
 
-#: ../subiquity/ui/views/filesystem/partition.py:523
+#: ../subiquity/ui/views/filesystem/partition.py:567
 #, python-brace-format
 msgid "Adding logical volume to {vgname}"
 msgstr "Додавання логічного тому до {vgname}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:526
+#: ../subiquity/ui/views/filesystem/partition.py:571
 #, python-brace-format
 msgid "Adding {ptype} partition to {device}"
 msgstr "Додавання розділу {ptype} до {device}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:532
+#: ../subiquity/ui/views/filesystem/partition.py:577
 #, python-brace-format
 msgid "Editing logical volume {lvname} of {vgname}"
 msgstr "Редагування логічного тому {lvname} {vgname}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:537
+#: ../subiquity/ui/views/filesystem/partition.py:581
 #, python-brace-format
 msgid "Editing partition {number} of {device}"
 msgstr "Редагування розділу {number} {device}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:592
+#: ../subiquity/ui/views/filesystem/partition.py:641
 msgid ""
 "Formatting and mounting a disk directly is unusual. You probably want to add "
 "a partition instead."
@@ -1671,16 +1688,16 @@ msgstr ""
 "Форматування і монтування диска безпосередньо є незвичайною справою. Вам, "
 "ймовірно, варто просто додати розділ."
 
-#: ../subiquity/ui/views/filesystem/partition.py:604
+#: ../subiquity/ui/views/filesystem/partition.py:655
 #, python-brace-format
 msgid "Format and/or mount {device}"
 msgstr "Форматувати і/або змонтувати {device}"
 
-#: ../subiquity/ui/views/filesystem/probing.py:40
+#: ../subiquity/ui/views/filesystem/probing.py:29
 msgid "Waiting for storage probing to complete"
 msgstr "Очікуємо на завершення зондування пристроїв для зберігання даних"
 
-#: ../subiquity/ui/views/filesystem/probing.py:48
+#: ../subiquity/ui/views/filesystem/probing.py:40
 msgid ""
 "The installer is probing for block devices to install to. Please wait until "
 "it completes."
@@ -1688,7 +1705,7 @@ msgstr ""
 "Засіб для встановлення виконує зондування блокових пристроїв для "
 "встановлення. Будь ласка, зачекайте, доки дію буде завершено."
 
-#: ../subiquity/ui/views/filesystem/probing.py:61
+#: ../subiquity/ui/views/filesystem/probing.py:56
 msgid ""
 "Unfortunately probing for devices to install to failed. Please report a bug "
 "on Launchpad, and if possible include the contents of the /var/log/installer "
@@ -1698,51 +1715,51 @@ msgstr ""
 "повідомте про ваду на Launchpad і, якщо можна, включіть до звіту вміст "
 "каталогу /var/log/installer."
 
-#: ../subiquity/ui/views/filesystem/probing.py:68
+#: ../subiquity/ui/views/filesystem/probing.py:63
 msgid "Probing for devices to install to failed"
 msgstr "Помилка під час зондування щодо пристроїв для встановлення"
 
-#: ../subiquity/ui/views/filesystem/probing.py:77
+#: ../subiquity/ui/views/filesystem/probing.py:74
 msgid "Show Error Report"
 msgstr "Показати звіт щодо помилки"
 
-#: ../subiquity/ui/views/filesystem/raid.py:70
+#: ../subiquity/ui/views/filesystem/raid.py:58
 msgid "/ is not permitted in the name of a RAID device"
 msgstr "/ не можна використовувати у назві пристрою RAID"
 
-#: ../subiquity/ui/views/filesystem/raid.py:76
+#: ../subiquity/ui/views/filesystem/raid.py:66
 msgid "Whitespace is not permitted in the name of a RAID device"
 msgstr "Пробіли не можна використовувати у назві пристрою RAID"
 
-#: ../subiquity/ui/views/filesystem/raid.py:94
+#: ../subiquity/ui/views/filesystem/raid.py:84
 msgid "RAID Level:"
 msgstr "Рівень RAID:"
 
-#: ../subiquity/ui/views/filesystem/raid.py:107
+#: ../subiquity/ui/views/filesystem/raid.py:97
 #, python-brace-format
 msgid "There is already a RAID named '{name}'"
 msgstr "RAID із назвою «{name} вже існує"
 
-#: ../subiquity/ui/views/filesystem/raid.py:110
+#: ../subiquity/ui/views/filesystem/raid.py:101
 msgid ". and .. are not valid names for RAID devices"
 msgstr ". і .. не є коректними назвами для пристроїв RAID"
 
-#: ../subiquity/ui/views/filesystem/raid.py:116
+#: ../subiquity/ui/views/filesystem/raid.py:107
 #, python-brace-format
 msgid "RAID Level \"{level}\" requires at least {min_active} active devices"
 msgstr ""
 "Рівень RAID «{level}» потребує принаймні {min_active} активних пристроїв"
 
-#: ../subiquity/ui/views/filesystem/raid.py:129
+#: ../subiquity/ui/views/filesystem/raid.py:120
 msgid "Create software RAID (\"MD\") disk"
 msgstr "Створити програмний диск RAID («MD»)"
 
-#: ../subiquity/ui/views/filesystem/raid.py:145
+#: ../subiquity/ui/views/filesystem/raid.py:136
 #, python-brace-format
 msgid "Edit software RAID disk \"{name}\""
 msgstr "Редагувати програмний диск RAID «{name}»"
 
-#: ../subiquity/ui/views/help.py:70
+#: ../subiquity/ui/views/help.py:43
 #, python-brace-format
 msgid ""
 "\n"
@@ -1773,7 +1790,7 @@ msgstr ""
 "\n"
 "Це версія {snap_version} засобу для встановлення.\n"
 
-#: ../subiquity/ui/views/help.py:86
+#: ../subiquity/ui/views/help.py:61
 #, python-brace-format
 msgid ""
 "\n"
@@ -1805,7 +1822,7 @@ msgstr ""
 "\n"
 "Це версія {snap_version} засобу для встановлення.\n"
 
-#: ../subiquity/ui/views/help.py:102
+#: ../subiquity/ui/views/help.py:79
 msgid ""
 "\n"
 "It is possible to connect to the installer over the network, which\n"
@@ -1817,7 +1834,7 @@ msgstr ""
 "З'єднання може уможливити використання потужнішого термінала та ширшого\n"
 "діапазону мов, якими може бути показано повідомлення у консолі Linux."
 
-#: ../subiquity/ui/views/help.py:107
+#: ../subiquity/ui/views/help.py:86
 msgid ""
 "\n"
 "To connect, SSH to any of these addresses:\n"
@@ -1825,7 +1842,7 @@ msgstr ""
 "\n"
 "Щоб з'єднатися, запустіть SSH на будь-якій з цих адрес:\n"
 
-#: ../subiquity/ui/views/help.py:111
+#: ../subiquity/ui/views/help.py:92
 #, python-brace-format
 msgid ""
 "\n"
@@ -1834,18 +1851,18 @@ msgstr ""
 "\n"
 "Щоб з'єднатися, запустіть SSH для {username}@{ip}."
 
-#: ../subiquity/ui/views/help.py:114
+#: ../subiquity/ui/views/help.py:97
 #, python-brace-format
 msgid "The password you should use is \"{password}\"."
 msgstr "Пароль, яким слід користуватися — «{password}»."
 
-#: ../subiquity/ui/views/help.py:117
+#: ../subiquity/ui/views/help.py:102
 msgid "You should use the preconfigured password passed to cloud-init."
 msgstr ""
 "Вам слід скористатися попередньо налаштованим паролем, який буде передано "
 "cloud-init."
 
-#: ../subiquity/ui/views/help.py:120
+#: ../subiquity/ui/views/help.py:107
 #, python-brace-format
 msgid ""
 "You can log in with the {keytype} key with fingerprint:\n"
@@ -1857,11 +1874,11 @@ msgstr ""
 "\n"
 "    {fingerprint}\n"
 
-#: ../subiquity/ui/views/help.py:126
+#: ../subiquity/ui/views/help.py:115
 msgid "You can log in with one of the following keys:\n"
 msgstr "Ви можете увійти за допомогою одного з таких ключів:\n"
 
-#: ../subiquity/ui/views/help.py:130
+#: ../subiquity/ui/views/help.py:121
 #, python-brace-format
 msgid ""
 "\n"
@@ -1870,7 +1887,7 @@ msgstr ""
 "\n"
 "Або можете скористатися паролем «{password}»."
 
-#: ../subiquity/ui/views/help.py:133
+#: ../subiquity/ui/views/help.py:126
 msgid ""
 "\n"
 "Or you can use the preconfigured password passed to cloud-init."
@@ -1879,7 +1896,7 @@ msgstr ""
 "Або ви можете скористатися попередньо налаштованим паролем, який буде "
 "передано cloud-init."
 
-#: ../subiquity/ui/views/help.py:136
+#: ../subiquity/ui/views/help.py:131
 msgid ""
 "\n"
 "Unfortunately this system seems to have no global IP addresses at this\n"
@@ -1889,7 +1906,7 @@ msgstr ""
 "На жаль, здається, у цієї системи немає загальних IP-адрес на цей\n"
 "момент.\n"
 
-#: ../subiquity/ui/views/help.py:141
+#: ../subiquity/ui/views/help.py:138
 msgid ""
 "\n"
 "Unfortunately the installer was unable to detect the password that has\n"
@@ -1899,214 +1916,220 @@ msgstr ""
 "На жаль, засобу для встановлення не вдалося виявити пароль, який\n"
 "було встановлено.\n"
 
-#: ../subiquity/ui/views/help.py:217
+#: ../subiquity/ui/views/help.py:234
 msgid "The following keys can be used at any time:"
 msgstr "Будь-коли можна скористатися такими клавіатурними скороченнями:"
 
-#: ../subiquity/ui/views/help.py:221
+#: ../subiquity/ui/views/help.py:239
 msgid "ESC"
 msgstr "ESC"
 
-#: ../subiquity/ui/views/help.py:221
+#: ../subiquity/ui/views/help.py:239
 msgid "go back"
 msgstr "назад"
 
-#: ../subiquity/ui/views/help.py:222
+#: ../subiquity/ui/views/help.py:240
 msgid "F1"
 msgstr "F1"
 
-#: ../subiquity/ui/views/help.py:222
+#: ../subiquity/ui/views/help.py:240
 msgid "open help menu"
 msgstr "відкрити меню довідки"
 
-#: ../subiquity/ui/views/help.py:223
+#: ../subiquity/ui/views/help.py:241
 msgid "Control-Z, F2"
 msgstr "Ctrl-Z, F2"
 
-#: ../subiquity/ui/views/help.py:223
+#: ../subiquity/ui/views/help.py:241
 msgid "switch to shell"
 msgstr "перемкнутися на оболонку"
 
-#: ../subiquity/ui/views/help.py:224
+#: ../subiquity/ui/views/help.py:242
 msgid "Control-L, F3"
 msgstr "Ctrl-L, F3"
 
-#: ../subiquity/ui/views/help.py:224
+#: ../subiquity/ui/views/help.py:242
 msgid "redraw screen"
 msgstr "перемалювати екран"
 
-#: ../subiquity/ui/views/help.py:228
+#: ../subiquity/ui/views/help.py:246
 msgid "Control-T, F4"
 msgstr "Ctrl-T, F4"
 
-#: ../subiquity/ui/views/help.py:228
+#: ../subiquity/ui/views/help.py:246
 msgid "toggle rich mode (colour, unicode) on and off"
 msgstr "увімкнути або вимкнути розширений режим (колір, unicode)"
 
-#: ../subiquity/ui/views/help.py:232
+#: ../subiquity/ui/views/help.py:250
 msgid "Control-X"
 msgstr "Ctrl-X"
 
-#: ../subiquity/ui/views/help.py:232
+#: ../subiquity/ui/views/help.py:250
 msgid "quit"
 msgstr "вийти"
 
-#: ../subiquity/ui/views/help.py:233
+#: ../subiquity/ui/views/help.py:251
 msgid "Control-E"
 msgstr "Ctrl-E"
 
-#: ../subiquity/ui/views/help.py:233
+#: ../subiquity/ui/views/help.py:251
 msgid "generate noisy error report"
 msgstr "створити докладний звіт щодо помилки"
 
-#: ../subiquity/ui/views/help.py:234
+#: ../subiquity/ui/views/help.py:252
 msgid "Control-R"
 msgstr "Ctrl-R"
 
-#: ../subiquity/ui/views/help.py:234
+#: ../subiquity/ui/views/help.py:252
 msgid "generate quiet error report"
 msgstr "створити короткий звіт щодо помилки"
 
-#: ../subiquity/ui/views/help.py:235
+#: ../subiquity/ui/views/help.py:253
 msgid "Control-G"
 msgstr "Ctrl-G"
 
-#: ../subiquity/ui/views/help.py:235
+#: ../subiquity/ui/views/help.py:253
 msgid "pretend to run an install"
 msgstr "фіктивне встановлення"
 
-#: ../subiquity/ui/views/help.py:236
+#: ../subiquity/ui/views/help.py:254
 msgid "Control-U"
 msgstr "Ctrl-U"
 
-#: ../subiquity/ui/views/help.py:236
+#: ../subiquity/ui/views/help.py:254
 msgid "crash the ui"
 msgstr "аварійне завершення роботи інтерфейсу"
 
-#: ../subiquity/ui/views/help.py:250
+#: ../subiquity/ui/views/help.py:267
 msgid "(dry-run only)"
 msgstr "(лише фіктивний запуск)"
 
-#: ../subiquity/ui/views/help.py:266
+#: ../subiquity/ui/views/help.py:282
 msgid "Shortcut Keys"
 msgstr "Клавіатурні скорочення"
 
-#: ../subiquity/ui/views/help.py:292
+#: ../subiquity/ui/views/help.py:306
 msgid "About this installer"
 msgstr "Про цей засіб встановлення"
 
-#: ../subiquity/ui/views/help.py:294
+#: ../subiquity/ui/views/help.py:307
 msgid "Keyboard shortcuts"
 msgstr "Клавіатурні скорочення"
 
-#: ../subiquity/ui/views/help.py:296
+#: ../subiquity/ui/views/help.py:308
 msgid "Enter shell"
 msgstr "Увійти до оболонки"
 
-#: ../subiquity/ui/views/help.py:305 ../subiquity/ui/views/help.py:465
+#: ../subiquity/ui/views/help.py:316 ../subiquity/ui/views/help.py:493
 msgid "Help on SSH access"
 msgstr "Довідка щодо доступу з SSH"
 
-#: ../subiquity/ui/views/help.py:309
+#: ../subiquity/ui/views/help.py:319
 msgid "Toggle rich mode"
 msgstr "Увімкнути або вимкнути режим редагування"
 
-#: ../subiquity/ui/views/help.py:321
+#: ../subiquity/ui/views/help.py:330
 msgid "Help on this screen"
 msgstr "Довідка на цій сторінці"
 
-#: ../subiquity/ui/views/help.py:326 ../subiquity/ui/views/help.py:331
+#: ../subiquity/ui/views/help.py:335 ../subiquity/ui/views/help.py:341
 msgid "View error reports"
 msgstr "Переглянути звіти щодо помилок"
 
-#: ../subiquity/ui/views/help.py:399
+#: ../subiquity/ui/views/help.py:420
 msgid "Help"
 msgstr "Довідка"
 
-#: ../subiquity/ui/views/help.py:456
+#: ../subiquity/ui/views/help.py:484
 msgid "About the installer"
 msgstr "Про засіб для встановлення"
 
-#: ../subiquity/ui/views/identity.py:56
+#: ../subiquity/ui/views/identity.py:48
 msgid "The characters : , and = are not permitted in this field"
 msgstr "Не можна використовувати у цьому полі символи «:», «,» і «=»"
 
-#: ../subiquity/ui/views/identity.py:66
+#: ../subiquity/ui/views/identity.py:94
 msgid "The only characters permitted in this field are a-z, 0-9, _ and -"
 msgstr "У цьому полі можна використовувати лише символи a-z, 0-9, _ та -"
 
-#: ../subiquity/ui/views/identity.py:90
+#: ../subiquity/ui/views/identity.py:120
 msgid "Your name:"
 msgstr "Ваше ім'я:"
 
-#: ../subiquity/ui/views/identity.py:92
+#: ../subiquity/ui/views/identity.py:122
 msgid "Your server's name:"
 msgstr "Назва вашого сервера:"
 
-#: ../subiquity/ui/views/identity.py:93
+#: ../subiquity/ui/views/identity.py:123
 msgid "The name it uses when it talks to other computers."
 msgstr "Назва, яка використовується для зв'язку з іншими комп'ютерами."
 
-#: ../subiquity/ui/views/identity.py:94
+#: ../subiquity/ui/views/identity.py:125
 msgid "Pick a username:"
 msgstr "Вкажіть ім'я користувача:"
 
-#: ../subiquity/ui/views/identity.py:95
+#: ../subiquity/ui/views/identity.py:126
 msgid "Choose a password:"
 msgstr "Виберіть пароль:"
 
-#: ../subiquity/ui/views/identity.py:96
+#: ../subiquity/ui/views/identity.py:127
 msgid "Confirm your password:"
 msgstr "Підтвердження пароля:"
 
-#: ../subiquity/ui/views/identity.py:101
+#: ../subiquity/ui/views/identity.py:131
 #, python-brace-format
 msgid "Name too long, must be less than {limit}"
 msgstr "Назва є надто довгою. Має бути менше за {limit}"
 
-#: ../subiquity/ui/views/identity.py:106
+#: ../subiquity/ui/views/identity.py:137
 msgid "Server name must not be empty"
 msgstr "Назва сервера не може бути порожньою"
 
-#: ../subiquity/ui/views/identity.py:110
+#: ../subiquity/ui/views/identity.py:140
 #, python-brace-format
 msgid "Server name too long, must be less than {limit}"
 msgstr "Назва сервера є надто довгою. Має бути менше за {limit}"
 
-#: ../subiquity/ui/views/identity.py:115
+#: ../subiquity/ui/views/identity.py:145
 msgid "Hostname must match HOSTNAME_REGEX: "
 msgstr "Назва вузла має відповідати взірцю HOSTNAME_REGEX: "
 
-#: ../subiquity/ui/views/identity.py:120
+#: ../subiquity/ui/views/identity.py:150
 msgid "Username missing"
 msgstr "Не вказано імені користувача"
 
-#: ../subiquity/ui/views/identity.py:124
+#: ../subiquity/ui/views/identity.py:153
 #, python-brace-format
 msgid "Username too long, must be less than {limit}"
 msgstr "Ім'я користувача є надто довгим. Має бути менше за {limit}"
 
-#: ../subiquity/ui/views/identity.py:129
+#: ../subiquity/ui/views/identity.py:158
 msgid "Username must match USERNAME_REGEX: "
 msgstr "Ім'я користувача має відповідати взірцю USERNAME_REGEX: "
 
-#: ../subiquity/ui/views/identity.py:133
+#: ../subiquity/ui/views/identity.py:163
 #, python-brace-format
 msgid "The username \"{username}\" is reserved for use by the system."
-msgstr ""
-"Ім'я користувача «{username}» зарезервовано для використання системою."
+msgstr "Ім'я користувача «{username}» зарезервовано для використання системою."
 
-#. desc is "passwords" or "passphrases"
-#: ../subiquity/ui/views/identity.py:151
-#, python-brace-format
-msgid "{desc} do not match"
-msgstr "{desc} не збігається"
+#: ../subiquity/ui/views/identity.py:167
+#, fuzzy, python-brace-format
+msgid "The username \"{username}\" is already in use."
+msgstr "Ім'я користувача «{username}» зарезервовано для використання системою."
 
-#: ../subiquity/ui/views/identity.py:159
+#: ../subiquity/ui/views/identity.py:173
+msgid "Password must be set"
+msgstr "Слід встановити пароль"
+
+#: ../subiquity/ui/views/identity.py:177
+msgid "Passwords do not match"
+msgstr "Паролі не збігаються"
+
+#: ../subiquity/ui/views/identity.py:181
 msgid "Profile setup"
 msgstr "Налаштування профілю"
 
-#: ../subiquity/ui/views/identity.py:160
+#: ../subiquity/ui/views/identity.py:183
 msgid ""
 "Enter the username and password you will use to log in to the system. You "
 "can configure SSH access on the next screen but a password is still needed "
@@ -2116,60 +2139,77 @@ msgstr ""
 "системи. Ви можете налаштувати доступ із використанням SSH на наступній "
 "сторінці, але для доступу до sudo все одно знадобиться пароль."
 
-#: ../subiquity/ui/views/identity.py:188
-msgid "passwords"
+#: ../subiquity/ui/views/identity.py:212
+#, fuzzy
+msgid "Passwords"
 msgstr "паролі"
 
-#: ../subiquity/ui/views/installprogress.py:52
+#: ../subiquity/ui/views/installprogress.py:44
 msgid "Install progress"
 msgstr "Поступ встановлення"
 
-#: ../subiquity/ui/views/installprogress.py:59
-#: ../subiquity/ui/views/installprogress.py:174
-#: ../subiquity/ui/views/installprogress.py:181
+#. context_id -> line containing a spinner
+#: ../subiquity/ui/views/installprogress.py:50
+#: ../subiquity/ui/views/installprogress.py:168
+#: ../subiquity/ui/views/installprogress.py:175
 msgid "Reboot Now"
 msgstr "Перезавантажити"
 
-#: ../subiquity/ui/views/installprogress.py:61
+#: ../subiquity/ui/views/installprogress.py:52
 msgid "View error report"
 msgstr "Переглянути звіт про помилку"
 
-#: ../subiquity/ui/views/installprogress.py:63
+#: ../subiquity/ui/views/installprogress.py:54
 msgid "View full log"
 msgstr "Переглянути увесь журнал"
 
-#: ../subiquity/ui/views/installprogress.py:79
+#: ../subiquity/ui/views/installprogress.py:69
 msgid "Full installer output"
 msgstr "Усі дані, які виведено засобом встановлення"
 
-#: ../subiquity/ui/views/installprogress.py:142
-#: ../subiquity/ui/views/installprogress.py:145
-#: ../subiquity/ui/views/installprogress.py:148
-#: ../subiquity/ui/views/installprogress.py:151
-#: ../subiquity/ui/views/installprogress.py:154
+#: ../subiquity/ui/views/installprogress.py:134
+#: ../subiquity/ui/views/installprogress.py:146
+#: ../subiquity/ui/views/installprogress.py:149
 msgid "Installing system"
 msgstr "Встановлюємо систему"
 
-#: ../subiquity/ui/views/installprogress.py:157
-#: ../subiquity/ui/views/installprogress.py:165
-#: ../subiquity/ui/views/installprogress.py:173
+#: ../subiquity/ui/views/installprogress.py:137
+#, fuzzy
+msgid "Starting installer"
+msgstr "Перезапустити засіб для встановлення"
+
+#: ../subiquity/ui/views/installprogress.py:140
+msgid "Waiting on cloud-init"
+msgstr ""
+
+#: ../subiquity/ui/views/installprogress.py:143
+msgid "Running early-commands"
+msgstr ""
+
+#: ../subiquity/ui/views/installprogress.py:152
+#: ../subiquity/ui/views/installprogress.py:159
+#: ../subiquity/ui/views/installprogress.py:167
 msgid "Install complete!"
 msgstr "Встановлення завершено!"
 
-#: ../subiquity/ui/views/installprogress.py:159
+#: ../subiquity/ui/views/installprogress.py:153
 msgid "Cancel update and reboot"
 msgstr "Скасувати оновлення і перезавантажити"
 
-#: ../subiquity/ui/views/installprogress.py:166
-#: ../subiquity/ui/views/installprogress.py:214
+#: ../subiquity/ui/views/installprogress.py:160
+#: ../subiquity/ui/views/installprogress.py:211
 msgid "Rebooting..."
 msgstr "Перезавантажуємо систему…"
 
-#: ../subiquity/ui/views/installprogress.py:180
+#: ../subiquity/ui/views/installprogress.py:174
 msgid "An error occurred during installation"
 msgstr "Під час спроби встановлення сталася помилка"
 
-#: ../subiquity/ui/views/installprogress.py:230
+#: ../subiquity/ui/views/installprogress.py:183
+msgid "Subiquity server process has exited"
+msgstr ""
+
+#: ../subiquity/ui/views/installprogress.py:228
 msgid ""
 "Selecting Continue below will begin the installation process and\n"
 "result in the loss of data on the disks selected to be formatted.\n"
@@ -2187,11 +2227,11 @@ msgstr ""
 "\n"
 "Ви справді хочете продовжувати?"
 
-#: ../subiquity/ui/views/installprogress.py:251
+#: ../subiquity/ui/views/installprogress.py:253
 msgid "Confirm destructive action"
 msgstr "Підтвердження руйнівної дії"
 
-#: ../subiquity/ui/views/installprogress.py:271
+#: ../subiquity/ui/views/installprogress.py:272
 #, python-brace-format
 msgid ""
 "The installer running on {tty} is currently installing the system.\n"
@@ -2203,11 +2243,11 @@ msgstr ""
 "Ви можете зачекати на завершення встановлення або перемкнутися на командну "
 "оболонку.\n"
 
-#: ../subiquity/ui/views/keyboard.py:67
+#: ../subiquity/ui/views/keyboard.py:53
 msgid "Keyboard auto-detection"
 msgstr "Автовизначення клавіатури"
 
-#: ../subiquity/ui/views/keyboard.py:93
+#: ../subiquity/ui/views/keyboard.py:82
 msgid ""
 "Keyboard detection starting. You will be asked a series of questions about "
 "your keyboard. Press escape at any time to go back to the previous screen."
@@ -2216,7 +2256,7 @@ msgstr ""
 "вашої клавіатури. Ви можете будь-коли натиснути клавішу Esc, щоб повернутися "
 "до попередньої сторінки."
 
-#: ../subiquity/ui/views/keyboard.py:106
+#: ../subiquity/ui/views/keyboard.py:100
 msgid ""
 "Keyboard auto detection completed.\n"
 "\n"
@@ -2226,7 +2266,7 @@ msgstr ""
 "\n"
 "Виявлено таку клавіатуру:\n"
 
-#: ../subiquity/ui/views/keyboard.py:111
+#: ../subiquity/ui/views/keyboard.py:107
 msgid ""
 "\n"
 "If this is correct, select Done on the next screen. If not you can select "
@@ -2239,27 +2279,27 @@ msgstr ""
 "автоматичного визначення.\n"
 "\n"
 
-#: ../subiquity/ui/views/keyboard.py:128
+#: ../subiquity/ui/views/keyboard.py:126
 msgid "Layout"
 msgstr "Розкладка"
 
-#: ../subiquity/ui/views/keyboard.py:129
+#: ../subiquity/ui/views/keyboard.py:127
 msgid "Variant"
 msgstr "Варіант"
 
-#: ../subiquity/ui/views/keyboard.py:152
+#: ../subiquity/ui/views/keyboard.py:153
 msgid "Please press one of the following keys:"
 msgstr "Будь ласка, натисніть одну з таких клавіш:"
 
-#: ../subiquity/ui/views/keyboard.py:188 ../subiquity/ui/views/keyboard.py:196
+#: ../subiquity/ui/views/keyboard.py:197 ../subiquity/ui/views/keyboard.py:205
 msgid "Input was not recognized, try again"
 msgstr "Не розпізнано введені дані, повторіть спробу"
 
-#: ../subiquity/ui/views/keyboard.py:213
+#: ../subiquity/ui/views/keyboard.py:223
 msgid "Is the following key present on your keyboard?"
 msgstr "Чи є вказана нижче клавіша на вашій клавіатурі?"
 
-#: ../subiquity/ui/views/keyboard.py:277
+#: ../subiquity/ui/views/keyboard.py:290
 msgid ""
 "You will need a way to toggle the keyboard between the national layout and "
 "the standard Latin layout.\n"
@@ -2282,95 +2322,95 @@ msgstr ""
 "\n"
 "Клавіші з наведеного списку не обов'язково є на кожній клавіатурі. "
 
-#: ../subiquity/ui/views/keyboard.py:290
+#: ../subiquity/ui/views/keyboard.py:304
 msgid "Caps Lock"
 msgstr "Caps Lock"
 
-#: ../subiquity/ui/views/keyboard.py:291
+#: ../subiquity/ui/views/keyboard.py:305
 msgid "Right Alt (AltGr)"
 msgstr "Правий Alt (AltGr)"
 
-#: ../subiquity/ui/views/keyboard.py:292
+#: ../subiquity/ui/views/keyboard.py:306
 msgid "Right Control"
 msgstr "Правий Ctrl"
 
-#: ../subiquity/ui/views/keyboard.py:293
+#: ../subiquity/ui/views/keyboard.py:307
 msgid "Right Shift"
 msgstr "Правий Shift"
 
-#: ../subiquity/ui/views/keyboard.py:294
+#: ../subiquity/ui/views/keyboard.py:308
 msgid "Right Logo key"
 msgstr "Права клавіша з віконцем"
 
-#: ../subiquity/ui/views/keyboard.py:295
+#: ../subiquity/ui/views/keyboard.py:309
 msgid "Menu key"
 msgstr "Клавіша Menu"
 
-#: ../subiquity/ui/views/keyboard.py:296
+#: ../subiquity/ui/views/keyboard.py:310
 msgid "Alt+Shift"
 msgstr "Alt+Shift"
 
-#: ../subiquity/ui/views/keyboard.py:297
+#: ../subiquity/ui/views/keyboard.py:311
 msgid "Control+Shift"
 msgstr "Ctrl+Shift"
 
-#: ../subiquity/ui/views/keyboard.py:298
+#: ../subiquity/ui/views/keyboard.py:312
 msgid "Control+Alt"
 msgstr "Ctrl+Alt"
 
-#: ../subiquity/ui/views/keyboard.py:299
+#: ../subiquity/ui/views/keyboard.py:313
 msgid "Alt+Caps Lock"
 msgstr "Alt+Caps Lock"
 
-#: ../subiquity/ui/views/keyboard.py:300
+#: ../subiquity/ui/views/keyboard.py:314
 msgid "Left Control+Left Shift"
 msgstr "Лівий Ctrl+Лівий Shift"
 
-#: ../subiquity/ui/views/keyboard.py:301
+#: ../subiquity/ui/views/keyboard.py:315
 msgid "Left Alt"
 msgstr "Лівий Alt"
 
-#: ../subiquity/ui/views/keyboard.py:302
+#: ../subiquity/ui/views/keyboard.py:316
 msgid "Left Control"
 msgstr "Лівий Ctrl"
 
-#: ../subiquity/ui/views/keyboard.py:303
+#: ../subiquity/ui/views/keyboard.py:317
 msgid "Left Shift"
 msgstr "Лівий Shift"
 
-#: ../subiquity/ui/views/keyboard.py:304
+#: ../subiquity/ui/views/keyboard.py:318
 msgid "Left Logo key"
 msgstr "Ліва клавіша з віконцем"
 
-#: ../subiquity/ui/views/keyboard.py:305
+#: ../subiquity/ui/views/keyboard.py:319
 msgid "Scroll Lock key"
 msgstr "Клавіша Scroll Lock"
 
-#: ../subiquity/ui/views/keyboard.py:306
+#: ../subiquity/ui/views/keyboard.py:320
 msgid "No toggling"
 msgstr "Без перемикання"
 
-#: ../subiquity/ui/views/keyboard.py:327
+#: ../subiquity/ui/views/keyboard.py:342
 msgid "Shortcut: "
 msgstr "Скорочення: "
 
-#: ../subiquity/ui/views/keyboard.py:337
+#: ../subiquity/ui/views/keyboard.py:356
 msgid "Select layout toggle"
 msgstr "Виберіть перемикач розкладок"
 
-#: ../subiquity/ui/views/keyboard.py:355
+#: ../subiquity/ui/views/keyboard.py:371
 msgid "Layout:"
 msgstr "Розкладка:"
 
-#: ../subiquity/ui/views/keyboard.py:356
+#: ../subiquity/ui/views/keyboard.py:372
 msgid "Variant:"
 msgstr "Варіант:"
 
-#: ../subiquity/ui/views/keyboard.py:361
+#: ../subiquity/ui/views/keyboard.py:376
 msgid "Keyboard configuration"
 msgstr "Налаштування клавіатури"
 
-#: ../subiquity/ui/views/keyboard.py:382
+#: ../subiquity/ui/views/keyboard.py:397
 msgid ""
 "Please select the layout of the keyboard directly attached to the system, if "
 "any."
@@ -2378,7 +2418,7 @@ msgstr ""
 "Будь ласка, виберіть розкладку клавіатури, з'єднаної із вашим комп'ютером, "
 "якщо така існує."
 
-#: ../subiquity/ui/views/keyboard.py:385
+#: ../subiquity/ui/views/keyboard.py:402
 msgid ""
 "Please select your keyboard layout below, or select \"Identify keyboard\" to "
 "detect your layout automatically."
@@ -2387,57 +2427,116 @@ msgstr ""
 "«Визначити клавіатуру», щоб програма спробувала автоматично визначити "
 "розкладку."
 
-#: ../subiquity/ui/views/keyboard.py:394
+#: ../subiquity/ui/views/keyboard.py:413
 msgid "Identify keyboard"
 msgstr "Визначити клавіатуру"
 
-#: ../subiquity/ui/views/keyboard.py:429
+#: ../subiquity/ui/views/keyboard.py:448
 msgid "Applying config"
 msgstr "Застосовуємо налаштування"
 
-#: ../subiquity/ui/views/mirror.py:32
+#: ../subiquity/ui/views/mirror.py:38
 msgid ""
 "You may provide an archive mirror that will be used instead of the default."
 msgstr ""
 "Ви можете надати дзеркало архіву, яке буде використано замість типового."
 
-#: ../subiquity/ui/views/mirror.py:40
+#: ../subiquity/ui/views/mirror.py:43
+msgid "Mirror check still running"
+msgstr ""
+
+#: ../subiquity/ui/views/mirror.py:45
+msgid ""
+"The check of the mirror URL is still running. You can continue but there is "
+"a chance that the installation will fail."
+msgstr ""
+
+#: ../subiquity/ui/views/mirror.py:50
+msgid "Mirror check failed"
+msgstr ""
+
+#: ../subiquity/ui/views/mirror.py:52
+msgid ""
+"The check of the mirror URL failed. You can continue but it is very likely "
+"that the installation will fail."
+msgstr ""
+
+#: ../subiquity/ui/views/mirror.py:57
+msgid "Mirror check has not run"
+msgstr ""
+
+#: ../subiquity/ui/views/mirror.py:59
+msgid ""
+"The check of the mirror has not yet started. You can continue but there is a "
+"chance that the installation will fail."
+msgstr ""
+
+#: ../subiquity/ui/views/mirror.py:71
 msgid "Mirror address:"
 msgstr "Адреса дзеркала:"
 
-#: ../subiquity/ui/views/mirror.py:45
+#: ../subiquity/ui/views/mirror.py:83
+msgid ""
+"The mirror location cannot be checked because no network has been configured."
+msgstr ""
+
+#: ../subiquity/ui/views/mirror.py:85
+msgid "The mirror location has not yet started."
+msgstr ""
+
+#: ../subiquity/ui/views/mirror.py:86
+msgid "The mirror location is being tested."
+msgstr ""
+
+#: ../subiquity/ui/views/mirror.py:87
+msgid "This mirror location passed tests."
+msgstr ""
+
+#: ../subiquity/ui/views/mirror.py:89
+msgid ""
+"This mirror location does not seem to work. The output below may help\n"
+"explain the problem. You can try again once the issue has been fixed\n"
+"(common problems are network issues or the system clock being wrong).\n"
+msgstr ""
+
+#: ../subiquity/ui/views/mirror.py:99
 msgid "Configure Ubuntu archive mirror"
 msgstr "Налаштувати дзеркало архіву Ubuntu"
 
-#: ../subiquity/ui/views/mirror.py:46
+#: ../subiquity/ui/views/mirror.py:100
 msgid "If you use an alternative mirror for Ubuntu, enter its details here."
 msgstr ""
 "Якщо ви хочете скористатися альтернативним дзеркалом для Ubuntu, введіть "
 "його параметри."
 
-#: ../subiquity/ui/views/proxy.py:33
+#: ../subiquity/ui/views/mirror.py:125
+#, fuzzy
+msgid "Try again now"
+msgstr "Повторити спробу"
+
+#: ../subiquity/ui/views/proxy.py:31
 msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of "
-"\"http://[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of \"http://"
+"[[user][:pass]@]host[:port]/\"."
 msgstr ""
 "Якщо для доступу до зовнішньої мережі вам потрібен HTTP-проксі, вкажіть тут "
 "його дані. Якщо проксі не потрібен, не заповнюйте це поле.\n"
 "\n"
-"Дані щодо проксі-сервера слід вказати у стандартній формі: "
-"«http://[[користувач][:пароль]@]вузол[:порт]/»."
+"Дані щодо проксі-сервера слід вказати у стандартній формі: «http://"
+"[[користувач][:пароль]@]вузол[:порт]/»."
 
-#: ../subiquity/ui/views/proxy.py:43
+#: ../subiquity/ui/views/proxy.py:41
 msgid "Proxy address:"
 msgstr "Адреса проксі:"
 
-#: ../subiquity/ui/views/proxy.py:48
+#: ../subiquity/ui/views/proxy.py:45
 msgid "Configure proxy"
 msgstr "Налаштувати проксі"
 
-#: ../subiquity/ui/views/proxy.py:49
+#: ../subiquity/ui/views/proxy.py:47
 msgid ""
 "If this system requires a proxy to connect to the internet, enter its "
 "details here."
@@ -2445,11 +2544,11 @@ msgstr ""
 "Якщо для встановлення з'єднання із інтернетом цій системі слід "
 "використовувати проксі, тут ви можете вказати його параметри."
 
-#: ../subiquity/ui/views/refresh.py:111
+#: ../subiquity/ui/views/refresh.py:105
 msgid "Checking for installer update..."
 msgstr "Шукаємо оновлення засобу для встановлення..."
 
-#: ../subiquity/ui/views/refresh.py:113
+#: ../subiquity/ui/views/refresh.py:107
 msgid ""
 "Contacting the snap store to check if a new version of the installer is "
 "available."
@@ -2457,19 +2556,19 @@ msgstr ""
 "Встановлюємо зв'язок із крамницею snap для пошуку доступної нової версії "
 "засобу для встановлення."
 
-#: ../subiquity/ui/views/refresh.py:117
+#: ../subiquity/ui/views/refresh.py:111
 msgid "Contacting the snap store failed"
 msgstr "Не вдалося встановити зв'язок із крамницею snap"
 
-#: ../subiquity/ui/views/refresh.py:119
+#: ../subiquity/ui/views/refresh.py:112
 msgid "Contacting the snap store failed:"
 msgstr "Не вдалося встановити зв'язок із крамницею snap:"
 
-#: ../subiquity/ui/views/refresh.py:122
+#: ../subiquity/ui/views/refresh.py:114
 msgid "Installer update available"
 msgstr "Доступне оновлення встановлювача"
 
-#: ../subiquity/ui/views/refresh.py:124
+#: ../subiquity/ui/views/refresh.py:116
 #, python-brace-format
 msgid ""
 "Version {new} of the installer is now available ({current} is currently "
@@ -2478,11 +2577,11 @@ msgstr ""
 "Доступна версія {new} засобу для встановлення (зараз запущено версію "
 "{current})."
 
-#: ../subiquity/ui/views/refresh.py:128
+#: ../subiquity/ui/views/refresh.py:120
 msgid "Downloading update..."
 msgstr "Завантаження оновлення ..."
 
-#: ../subiquity/ui/views/refresh.py:130
+#: ../subiquity/ui/views/refresh.py:122
 msgid ""
 "Please wait while the updated installer is being downloaded. The installer "
 "will restart automatically when the download is complete."
@@ -2491,29 +2590,29 @@ msgstr ""
 "Після завершення отримання даних засіб для встановлення буде автоматично "
 "перезапущено."
 
-#: ../subiquity/ui/views/refresh.py:134
+#: ../subiquity/ui/views/refresh.py:126
 msgid "Update failed"
 msgstr "Спроба оновлення завершилася невдало"
 
-#: ../subiquity/ui/views/refresh.py:136
+#: ../subiquity/ui/views/refresh.py:127
 msgid "Downloading and applying the update:"
 msgstr "Отримання і застосування оновлення:"
 
-#: ../subiquity/ui/views/refresh.py:157 ../subiquity/ui/views/refresh.py:184
-#: ../subiquity/ui/views/refresh.py:214 ../subiquity/ui/views/refresh.py:277
+#: ../subiquity/ui/views/refresh.py:147 ../subiquity/ui/views/refresh.py:175
+#: ../subiquity/ui/views/refresh.py:207 ../subiquity/ui/views/refresh.py:278
 msgid "Continue without updating"
 msgstr "Продовжувати без оновлення"
 
-#: ../subiquity/ui/views/refresh.py:183 ../subiquity/ui/views/refresh.py:276
-#: ../subiquity/ui/views/snaplist.py:265 ../subiquity/ui/views/snaplist.py:378
+#: ../subiquity/ui/views/refresh.py:174 ../subiquity/ui/views/refresh.py:277
+#: ../subiquity/ui/views/snaplist.py:288 ../subiquity/ui/views/snaplist.py:414
 msgid "Try again"
 msgstr "Повторити спробу"
 
-#: ../subiquity/ui/views/refresh.py:200
+#: ../subiquity/ui/views/refresh.py:192
 msgid "You can read the release notes for each version at:"
 msgstr "Ви можете ознайомитися із нотатками щодо випуск для усіх версій тут:"
 
-#: ../subiquity/ui/views/refresh.py:207
+#: ../subiquity/ui/views/refresh.py:198
 msgid ""
 "If you choose to update, the update will be downloaded and the installation "
 "will continue from here."
@@ -2521,98 +2620,94 @@ msgstr ""
 "Якщо ви виберете оновлення, буде отримано оновлену версію, і встановлення "
 "продовжиться з цього кроку."
 
-#: ../subiquity/ui/views/refresh.py:213
+#: ../subiquity/ui/views/refresh.py:206
 msgid "Update to the new installer"
 msgstr "Оновлення до нового встановлювача"
 
-#: ../subiquity/ui/views/refresh.py:240
-msgid "Cancel update"
-msgstr "Скасувати оновлення"
-
-#: ../subiquity/ui/views/snaplist.py:83
+#: ../subiquity/ui/views/snaplist.py:61
 msgid "just now"
 msgstr "щойно"
 
-#: ../subiquity/ui/views/snaplist.py:87
+#: ../subiquity/ui/views/snaplist.py:65
 msgid "minute"
 msgstr "хвилина"
 
-#: ../subiquity/ui/views/snaplist.py:89
+#: ../subiquity/ui/views/snaplist.py:67
 msgid "minutes"
 msgstr "хвилин(и)"
 
-#: ../subiquity/ui/views/snaplist.py:93
+#: ../subiquity/ui/views/snaplist.py:71
 msgid "hour"
 msgstr "година"
 
-#: ../subiquity/ui/views/snaplist.py:95
+#: ../subiquity/ui/views/snaplist.py:73
 msgid "hours"
 msgstr "годин(и)"
 
-#: ../subiquity/ui/views/snaplist.py:99
+#: ../subiquity/ui/views/snaplist.py:77
 msgid "day"
 msgstr "день"
 
-#: ../subiquity/ui/views/snaplist.py:101
+#: ../subiquity/ui/views/snaplist.py:79
 msgid "days"
 msgstr "дні(в)"
 
-#: ../subiquity/ui/views/snaplist.py:104
+#: ../subiquity/ui/views/snaplist.py:82
 #, python-brace-format
 msgid "{amount:2} {unit} ago"
 msgstr "{amount:2} {unit} тому"
 
-#: ../subiquity/ui/views/snaplist.py:151
+#: ../subiquity/ui/views/snaplist.py:153
 msgid "LICENSE: "
 msgstr "ЛІЦЕНЗУВАННЯ: "
 
-#: ../subiquity/ui/views/snaplist.py:156
+#: ../subiquity/ui/views/snaplist.py:163
 msgid "LAST UPDATED: "
 msgstr "ОСТАННЄ ОНОВЛЕННЯ: "
 
-#: ../subiquity/ui/views/snaplist.py:161
+#: ../subiquity/ui/views/snaplist.py:173
 msgid "CHANNEL"
 msgstr "КАНАЛ"
 
-#: ../subiquity/ui/views/snaplist.py:162
+#: ../subiquity/ui/views/snaplist.py:174
 msgid "VERSION"
 msgstr "ВЕРСІЯ"
 
-#: ../subiquity/ui/views/snaplist.py:164
+#: ../subiquity/ui/views/snaplist.py:176
 msgid "PUBLISHED"
 msgstr "ОПРИЛЮДНЕНО"
 
-#: ../subiquity/ui/views/snaplist.py:165
+#: ../subiquity/ui/views/snaplist.py:177
 msgid "CONFINEMENT"
 msgstr "СХОВИЩЕ"
 
-#: ../subiquity/ui/views/snaplist.py:183
+#: ../subiquity/ui/views/snaplist.py:199
 msgid "by: "
 msgstr "автор: "
 
-#: ../subiquity/ui/views/snaplist.py:261
+#: ../subiquity/ui/views/snaplist.py:284
 #, python-brace-format
 msgid "Fetching info for {snap} failed"
 msgstr "Не вдалося отримати відомості щодо {snap}"
 
-#: ../subiquity/ui/views/snaplist.py:302
+#: ../subiquity/ui/views/snaplist.py:327
 #, python-brace-format
 msgid "Fetching info for {snap}"
 msgstr "Отримуємо відомості щодо {snap}"
 
-#: ../subiquity/ui/views/snaplist.py:340
+#: ../subiquity/ui/views/snaplist.py:371
 msgid "Featured Server Snaps"
 msgstr "Рекомендовані snap сервера"
 
-#: ../subiquity/ui/views/snaplist.py:355
+#: ../subiquity/ui/views/snaplist.py:387
 msgid "Loading server snaps from store, please wait..."
 msgstr "Завантажуємо snap сервера з крамниці. Будь ласка, зачекайте..."
 
-#: ../subiquity/ui/views/snaplist.py:376
+#: ../subiquity/ui/views/snaplist.py:412
 msgid "Sorry, loading snaps from the store failed."
 msgstr "Вибачте, не вдалося завантажити snap з крамниці."
 
-#: ../subiquity/ui/views/snaplist.py:462
+#: ../subiquity/ui/views/snaplist.py:511
 msgid ""
 "These are popular snaps in server environments. Select or deselect with "
 "SPACE, press ENTER to see more details of the package, publisher and "
@@ -2622,28 +2717,27 @@ msgstr ""
 "допомогою клавіші пробіл, натисніть ENTER, щоб переглянути подробиці щодо "
 "пакунка, його авторів та доступних версій."
 
-#: ../subiquity/ui/views/ssh.py:67
+#: ../subiquity/ui/views/ssh.py:39
 msgid "Import Username:"
 msgstr "Користувач імпортування:"
 
-#: ../subiquity/ui/views/ssh.py:74
+#: ../subiquity/ui/views/ssh.py:46
 msgid "GitHub Username:"
 msgstr "Користувач GitHub:"
 
-#: ../subiquity/ui/views/ssh.py:75
+#: ../subiquity/ui/views/ssh.py:47
 msgid "Enter your GitHub username."
 msgstr "Введіть ваше ім'я користувача GitHub."
 
-#: ../subiquity/ui/views/ssh.py:77
-msgid ""
-"A GitHub username may only contain alphanumeric characters or hyphens."
+#: ../subiquity/ui/views/ssh.py:50
+msgid "A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr "У імені користувача GitHub можуть бути лише літери, цифри і дефіси."
 
-#: ../subiquity/ui/views/ssh.py:81
+#: ../subiquity/ui/views/ssh.py:54
 msgid "Launchpad Username:"
 msgstr "Користувач Launchpad:"
 
-#: ../subiquity/ui/views/ssh.py:84
+#: ../subiquity/ui/views/ssh.py:58
 msgid ""
 "A Launchpad username may only contain lower-case alphanumeric characters, "
 "hyphens, plus, or periods."
@@ -2651,39 +2745,39 @@ msgstr ""
 "У імені користувача Launchpad можуть бути лише літери, цифри, дефіси, "
 "символи «плюс» та крапки."
 
-#: ../subiquity/ui/views/ssh.py:93
+#: ../subiquity/ui/views/ssh.py:67
 msgid "Install OpenSSH server"
 msgstr "Встановити сервер OpenSSH"
 
-#: ../subiquity/ui/views/ssh.py:96
+#: ../subiquity/ui/views/ssh.py:70
 msgid "Import SSH identity:"
 msgstr "Імпортувати профіль SSH:"
 
-#: ../subiquity/ui/views/ssh.py:99
+#: ../subiquity/ui/views/ssh.py:73
 msgid "from GitHub"
 msgstr "з GitHub"
 
-#: ../subiquity/ui/views/ssh.py:100
+#: ../subiquity/ui/views/ssh.py:74
 msgid "from Launchpad"
 msgstr "з Launchpad"
 
-#: ../subiquity/ui/views/ssh.py:102
+#: ../subiquity/ui/views/ssh.py:76
 msgid "You can import your SSH keys from GitHub or Launchpad."
 msgstr "Ви можете імпортувати ваші ключі SSH з GitHub або Launchpad."
 
-#: ../subiquity/ui/views/ssh.py:106
+#: ../subiquity/ui/views/ssh.py:81
 msgid "Allow password authentication over SSH"
 msgstr "Дозволити розпізнавання за паролем із використанням SSH"
 
-#: ../subiquity/ui/views/ssh.py:139
+#: ../subiquity/ui/views/ssh.py:113
 msgid "This field must not be blank."
 msgstr "Це поле не може бути порожнім."
 
-#: ../subiquity/ui/views/ssh.py:141
+#: ../subiquity/ui/views/ssh.py:115
 msgid "SSH id too long, must be < "
 msgstr "Надто довгий ідентифікатор SSH, має бути < "
 
-#: ../subiquity/ui/views/ssh.py:145
+#: ../subiquity/ui/views/ssh.py:120
 msgid ""
 "A Launchpad username must start with a letter or number. All letters must be "
 "lower-case. The characters +, - and . are also allowed after the first "
@@ -2693,7 +2787,7 @@ msgstr ""
 "мають бути літерами нижнього регістру. Можна також використовувати символи "
 "+, - і . після першого символу."
 
-#: ../subiquity/ui/views/ssh.py:151
+#: ../subiquity/ui/views/ssh.py:129
 msgid ""
 "A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
@@ -2701,35 +2795,35 @@ msgstr ""
 "У імені користувача GitHub можуть бути лише літери, цифри і одинарні дефіси, "
 "а також не може починатися і завершуватися дефісом."
 
-#: ../subiquity/ui/views/ssh.py:161
+#: ../subiquity/ui/views/ssh.py:140
 msgid "Fetching SSH keys..."
 msgstr "Отримуємо ключі SSH..."
 
-#: ../subiquity/ui/views/ssh.py:189
+#: ../subiquity/ui/views/ssh.py:172
 msgid "Confirm SSH keys"
 msgstr "Підтвердити ключі SSH"
 
-#: ../subiquity/ui/views/ssh.py:190
+#: ../subiquity/ui/views/ssh.py:174
 msgid ""
 "Keys with the following fingerprints were fetched. Do you want to use them?"
 msgstr ""
 "Отримано ключі із вказаними нижче відбитками. Хочете скористатися ними?"
 
-#: ../subiquity/ui/views/ssh.py:193
+#: ../subiquity/ui/views/ssh.py:178
 msgid "Confirm SSH key"
 msgstr "Підтвердити ключ SSH"
 
-#: ../subiquity/ui/views/ssh.py:194
+#: ../subiquity/ui/views/ssh.py:180
 msgid ""
 "A key with the following fingerprint was fetched. Do you want to use it?"
 msgstr ""
 "Було отримано ключ із вказаним нижче відбитком. Хочете скористатися ним?"
 
-#: ../subiquity/ui/views/ssh.py:220
+#: ../subiquity/ui/views/ssh.py:210
 msgid "SSH Setup"
 msgstr "Налаштування SSH"
 
-#: ../subiquity/ui/views/ssh.py:221
+#: ../subiquity/ui/views/ssh.py:212
 msgid ""
 "You can choose to install the OpenSSH server package to enable secure remote "
 "access to your server."
@@ -2747,42 +2841,42 @@ msgstr ""
 "Виберіть мову, яку слід використати у засобі для встановлення і налаштувати\n"
 "у встановленій системі.\n"
 
-#: ../subiquity/ui/views/welcome.py:99
+#: ../subiquity/ui/views/welcome.py:102
 msgid "Use UP, DOWN and ENTER keys to select your language."
 msgstr "Скористайтеся клавішами ↑, ↓ та ENTER для вибору мови."
 
-#: ../subiquity/ui/views/welcome.py:106
+#: ../subiquity/ui/views/welcome.py:110
 msgid "Help choosing a language"
 msgstr "Допомога у виборі мови"
 
 #. for translator: failed is a zdev device status
-#: ../subiquity/ui/views/zdev.py:56
+#: ../subiquity/ui/views/zdev.py:39
 msgid "failed"
 msgstr "помилка"
 
 #. for translator: auto is a zdev device status
-#: ../subiquity/ui/views/zdev.py:59
+#: ../subiquity/ui/views/zdev.py:42
 msgid "auto"
 msgstr "авто"
 
 #. for translator: online is a zdev device status
-#: ../subiquity/ui/views/zdev.py:62
+#: ../subiquity/ui/views/zdev.py:45
 msgid "online"
 msgstr "у мережі"
 
-#: ../subiquity/ui/views/zdev.py:77
+#: ../subiquity/ui/views/zdev.py:62
 msgid "No zdev devices found."
 msgstr "Не знайдено жодного пристрою zdev."
 
-#: ../subiquity/ui/views/zdev.py:92
+#: ../subiquity/ui/views/zdev.py:80
 msgid "ID"
 msgstr "Ід."
 
-#: ../subiquity/ui/views/zdev.py:93
+#: ../subiquity/ui/views/zdev.py:81
 msgid "ONLINE"
 msgstr "У МЕРЕЖІ"
 
-#: ../subiquity/ui/views/zdev.py:94
+#: ../subiquity/ui/views/zdev.py:82
 msgid "NAMES"
 msgstr "НАЗВИ"
 
@@ -2794,9 +2888,75 @@ msgstr "Увімкнути"
 msgid "Disable"
 msgstr "Вимкнути"
 
-#: ../subiquity/ui/views/zdev.py:144
+#: ../subiquity/ui/views/zdev.py:146
 msgid "Zdev setup"
 msgstr "Налаштування Zdev"
+
+#~ msgctxt "DeviceAction"
+#~ msgid "Info"
+#~ msgstr "Інформація"
+
+#~ msgctxt "DeviceAction"
+#~ msgid "Edit"
+#~ msgstr "Змінити"
+
+#~ msgctxt "DeviceAction"
+#~ msgid "Reformat"
+#~ msgstr "Переформатувати"
+
+#~ msgctxt "DeviceAction"
+#~ msgid "Add Partition"
+#~ msgstr "Додати розділ"
+
+#~ msgctxt "DeviceAction"
+#~ msgid "Format"
+#~ msgstr "Формат"
+
+#~ msgctxt "DeviceAction"
+#~ msgid "Remove from RAID/LVM"
+#~ msgstr "Вилучити з RAID/LVM"
+
+#~ msgctxt "DeviceAction"
+#~ msgid "Delete"
+#~ msgstr "Вилучити"
+
+#~ msgctxt "DeviceAction"
+#~ msgid "Make Boot Device"
+#~ msgstr "Створити завантажувальний пристрій"
+
+#~ msgctxt "NetDevAction"
+#~ msgid "Info"
+#~ msgstr "Інформація"
+
+#~ msgctxt "NetDevAction"
+#~ msgid "Edit Wifi"
+#~ msgstr "Редагувати Wifi"
+
+#~ msgctxt "NetDevAction"
+#~ msgid "Edit IPv4"
+#~ msgstr "Редагувати IPv4"
+
+#~ msgctxt "NetDevAction"
+#~ msgid "Edit IPv6"
+#~ msgstr "Редагувати IPv6"
+
+#~ msgctxt "NetDevAction"
+#~ msgid "Edit bond"
+#~ msgstr "Редагувати прив'язку"
+
+#~ msgctxt "NetDevAction"
+#~ msgid "Add a VLAN tag"
+#~ msgstr "Додати мітку VLAN"
+
+#~ msgctxt "NetDevAction"
+#~ msgid "Delete"
+#~ msgstr "Вилучити"
+
+#~ msgid "passphrases"
+#~ msgstr "паролі"
+
+#~ msgid "Cancel update"
+#~ msgstr "Скасувати оновлення"
 
 #~ msgid "Filesystem setup"
 #~ msgstr "Налаштування файлової системи"
@@ -2827,8 +2987,8 @@ msgstr "Налаштування Zdev"
 
 #~ msgid "Select an interface to configure it or select Done to continue"
 #~ msgstr ""
-#~ "Виберіть інтерфейс для налаштовування або натисніть кнопку «Виконано», щоб "
-#~ "продовжити"
+#~ "Виберіть інтерфейс для налаштовування або натисніть кнопку «Виконано», "
+#~ "щоб продовжити"
 
 #~ msgid "Use UP, DOWN and ENTER keys to select your keyboard."
 #~ msgstr "Скористайтеся клавішами ↑, ↓  та ENTER для вибору клавіатури."
@@ -2839,9 +2999,6 @@ msgstr "Налаштування Zdev"
 
 #~ msgid "Use An Entire Disk"
 #~ msgstr "Використати увесь диск"
-
-#~ msgid "Choose the disk to install to:"
-#~ msgstr "Виберіть диск для встановлення:"
 
 #~ msgid "Github Username:"
 #~ msgstr "Користувач github:"
@@ -2863,7 +3020,8 @@ msgstr "Налаштування Zdev"
 
 #~ msgid "Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
-#~ "Ім'я користувача має відповідати взірцю NAME_REGEX, тобто [a-z_][a-z0-9_-]*"
+#~ "Ім'я користувача має відповідати взірцю NAME_REGEX, тобто [a-z_][a-"
+#~ "z0-9_-]*"
 
 #~ msgid "Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
@@ -2896,26 +3054,26 @@ msgstr "Налаштування Zdev"
 #~ "\n"
 #~ "GRUB буде встановлено до MBR диска призначення.\n"
 #~ "\n"
-#~ "Втім, на диску із таблицею розділів GPT недостаньо місця після MBR для того, "
-#~ "щоб GRUB між зберігати core.img другого етапу завантаження. Отже, потрібен "
-#~ "невеличкий неформатований розділ на початку диска. На ньому не буде файлової "
-#~ "системи, його не буде змонтовано, і його пункту не буде у списку для "
-#~ "редагування на цій сторінці."
+#~ "Втім, на диску із таблицею розділів GPT недостаньо місця після MBR для "
+#~ "того, щоб GRUB між зберігати core.img другого етапу завантаження. Отже, "
+#~ "потрібен невеличкий неформатований розділ на початку диска. На ньому не "
+#~ "буде файлової системи, його не буде змонтовано, і його пункту не буде у "
+#~ "списку для редагування на цій сторінці."
 
 #~ msgid ""
-#~ "Selecting Continue below will begin the installation process and result in "
-#~ "the loss of data on the disks selected to be formatted.\n"
+#~ "Selecting Continue below will begin the installation process and result "
+#~ "in the loss of data on the disks selected to be formatted.\n"
 #~ "\n"
 #~ "You will not be able to return to this or a previous screen once the "
 #~ "installation has started.\n"
 #~ "\n"
 #~ "Are you sure you want to continue?"
 #~ msgstr ""
-#~ "Натискання кнопки «Продовжити» призведе до запуску процедури встановлення і, "
-#~ "отже, втрати даних на дисках, які було позначено для форматування.\n"
+#~ "Натискання кнопки «Продовжити» призведе до запуску процедури встановлення "
+#~ "і, отже, втрати даних на дисках, які було позначено для форматування.\n"
 #~ "\n"
-#~ "Щойно встановлення буде розпочато, ви вже не зможете повернутися до цієї або "
-#~ "попередніх сторінок.\n"
+#~ "Щойно встановлення буде розпочато, ви вже не зможете повернутися до цієї "
+#~ "або попередніх сторінок.\n"
 #~ "\n"
 #~ "Ви справді хочете продовжити процедуру встановлення?"
 
