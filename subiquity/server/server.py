@@ -114,6 +114,8 @@ class MetaController:
         ips: List[str] = []
         if self.app.base_model.network:
             for dev in self.app.base_model.network.get_all_netdevs():
+                if dev.info is None:
+                    continue
                 ips.extend(map(str, dev.actual_global_ip_addresses))
         if not ips:
             return None

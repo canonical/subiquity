@@ -255,6 +255,8 @@ class NetworkController(BaseNetworkController, SubiquityController):
     async def global_addresses_GET(self) -> List[str]:
         ips: List[str] = []
         for dev in self.model.get_all_netdevs():
+            if dev.info is None:
+                continue
             ips.extend(map(str, dev.actual_global_ip_addresses))
         return ips
 
