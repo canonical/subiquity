@@ -290,3 +290,52 @@ class TestMirrorModel(unittest.TestCase):
         )
         with country_mirror_candidates:
             self.assertTrue(self.model.wants_geoip())
+
+    def test_get_apt_config_staged_default_config(self):
+        self.model.legacy_primary = False
+        self.model.primary_candidates = [
+            PrimaryEntry(
+                uri="http://mirror.local/ubuntu", arches=None, parent=self.model
+            ),
+        ]
+        self.model.primary_candidates[0].stage()
+        config = self.model.get_apt_config_staged()
+        self.assertEqual(
+            config["primary"],
+            [
+                {
+                    "uri": "http://mirror.local/ubuntu",
+                    "arches": ["default"],
+                }
+            ],
+        )
+        self.assertEqual(
+            set(config["disable_components"]), set(self.model.disabled_components)
+        )
+        self.assertEqual(set(config["disable_suites"]), {"security"})
+
+    def test_get_apt_config_staged_with_config(self):
+        self.model.legacy_primary = False
+        self.model.primary_candidates = [
+            PrimaryEntry(
+                uri="http://mirror.local/ubuntu", arches=None, parent=self.model
+            ),
+        ]
+        self.model.primary_candidates[0].stage()
+        self.model.config = {
+            "disable_suites": ["updates"],
+        }
+        config = self.model.get_apt_config_staged()
+        self.assertEqual(
+            config["primary"],
+            [
+                {
+                    "uri": "http://mirror.local/ubuntu",
+                    "arches": ["default"],
+                }
+            ],
+        )
+        self.assertEqual(
+            set(config["disable_components"]), set(self.model.disabled_components)
+        )
+        self.assertEqual(set(config["disable_suites"]), {"security", "updates"})
