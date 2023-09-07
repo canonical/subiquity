@@ -209,7 +209,12 @@ class NetworkDev:
 
     def netdev_info(self) -> NetDevInfo:
         if self.type == "eth":
-            is_connected = bool(self.info.is_connected)
+            if self.info is not None:
+                is_connected = bool(self.info.is_connected)
+            else:
+                # If the device has just disappeared, let's pretend it's not
+                # connected.
+                is_connected = False
         else:
             is_connected = True
         bond_master = None
@@ -234,10 +239,17 @@ class NetworkDev:
         wlan: Optional[WLANStatus] = None
         if self.type == "wlan":
             ssid, psk = self.configured_ssid
+            # If the device has just disappeared, let's pretend it's not
+            # scanning and has no visible SSID.
+            scan_state = None
+            visible_ssids: List[str] = []
+            if self.info is not None:
+                scan_state = self.info.wlan["scan_state"]
+                visible_ssids = self.info.wlan["visible_ssids"]
             wlan = WLANStatus(
                 config=WLANConfig(ssid=ssid, psk=psk),
-                scan_state=self.info.wlan["scan_state"],
-                visible_ssids=self.info.wlan["visible_ssids"],
+                scan_state=scan_state,
+                visible_ssids=visible_ssids,
             )
 
         dhcp_addresses = self.dhcp_addresses()
