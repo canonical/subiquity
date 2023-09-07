@@ -19,6 +19,7 @@ from unittest import mock
 
 from subiquity.models.mirror import (
     countrify_uri,
+    DEFAULT_SECURITY_SECTION,
     LEGACY_DEFAULT_PRIMARY_SECTION,
     MirrorModel,
     MirrorSelectionFallback,
@@ -150,7 +151,7 @@ class TestMirrorModel(unittest.TestCase):
                 self.assertIn(
                     country_mirror_candidate.uri,
                     [
-                        "http://CC.archive.ubuntu.com/ubuntu",
+                        "http://CC.archive.ubuntu.com/ubuntu/",
                         "http://CC.ports.ubuntu.com/ubuntu-ports",
                     ])
 
@@ -293,7 +294,9 @@ class TestMirrorModel(unittest.TestCase):
         self.model.legacy_primary = False
         self.model.primary_candidates = [
             PrimaryEntry(
-                uri="http://mirror.local/ubuntu", arches=None, parent=self.model
+                uri="http://mirror.local/ubuntu",
+                arches=None,
+                parent=self.model
             ),
         ]
         self.model.primary_candidates[0].stage()
@@ -308,20 +311,31 @@ class TestMirrorModel(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            set(config["disable_components"]), set(self.model.disabled_components)
+            set(config["disable_components"]),
+            set(self.model.disabled_components)
         )
         self.assertEqual(set(config["disable_suites"]), {"security"})
+        self.assertEqual(config["security"], DEFAULT_SECURITY_SECTION)
 
     def test_get_apt_config_staged_with_config(self):
         self.model.legacy_primary = False
         self.model.primary_candidates = [
             PrimaryEntry(
-                uri="http://mirror.local/ubuntu", arches=None, parent=self.model
+                uri="http://mirror.local/ubuntu",
+                arches=None,
+                parent=self.model
             ),
         ]
         self.model.primary_candidates[0].stage()
+        security_config = [
+            {
+                "arches": ["default"],
+                "uri": "http://security.ubuntu.com/ubuntu",
+            },
+        ]
         self.model.config = {
             "disable_suites": ["updates"],
+            "security": security_config,
         }
         config = self.model.get_apt_config_staged()
         self.assertEqual(
@@ -334,6 +348,37 @@ class TestMirrorModel(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            set(config["disable_components"]), set(self.model.disabled_components)
+            set(config["disable_components"]),
+            set(self.model.disabled_components)
         )
-        self.assertEqual(set(config["disable_suites"]), {"security", "updates"})
+        self.assertEqual(
+            set(config["disable_suites"]),
+            {"security", "updates"}
+        )
+        self.assertEqual(config["security"], security_config)
+
+    def test_get_apt_config_elected_default_config(self):
+        self.model.legacy_primary = False
+        self.model.primary_candidates = [
+            PrimaryEntry(
+                uri="http://mirror.local/ubuntu",
+                arches=None,
+                parent=self.model
+            ),
+        ]
+        self.model.primary_candidates[0].elect()
+        config = self.model.get_apt_config_elected()
+        self.assertEqual(
+            config["primary"],
+            [
+                {
+                    "uri": "http://mirror.local/ubuntu",
+                    "arches": ["default"],
+                }
+            ],
+        )
+        self.assertEqual(
+            set(config["disable_components"]),
+            set(self.model.disabled_components)
+        )
+        self.assertEqual(config["security"], DEFAULT_SECURITY_SECTION)

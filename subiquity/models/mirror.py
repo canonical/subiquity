@@ -89,7 +89,9 @@ from curtin.commands.apt_config import (
     get_arch_mirrorconfig,
     get_mirror,
     PORTS_ARCHES,
+    PORTS_MIRRORS,
     PRIMARY_ARCHES,
+    PRIMARY_ARCH_MIRRORS,
     )
 from curtin.config import merge_config
 
@@ -100,8 +102,8 @@ except ImportError:
 
 log = logging.getLogger('subiquity.models.mirror')
 
-DEFAULT_SUPPORTED_ARCHES_URI = "http://archive.ubuntu.com/ubuntu"
-DEFAULT_PORTS_ARCHES_URI = "http://ports.ubuntu.com/ubuntu-ports"
+DEFAULT_SUPPORTED_ARCHES_URI = PRIMARY_ARCH_MIRRORS["PRIMARY"]
+DEFAULT_PORTS_ARCHES_URI = PORTS_MIRRORS["PRIMARY"]
 
 LEGACY_DEFAULT_PRIMARY_SECTION = [
     {
@@ -110,6 +112,17 @@ LEGACY_DEFAULT_PRIMARY_SECTION = [
     }, {
         "arches": ["default"],
         "uri": DEFAULT_PORTS_ARCHES_URI,
+    },
+]
+
+DEFAULT_SECURITY_SECTION = [
+    {
+        "arches": PRIMARY_ARCHES,
+        "uri": PRIMARY_ARCH_MIRRORS["SECURITY"],
+    },
+    {
+        "arches": PORTS_ARCHES,
+        "uri": PORTS_MIRRORS["SECURITY"],
     },
 ]
 
@@ -311,6 +324,10 @@ class MirrorModel(object):
 
         config = copy.deepcopy(self.config)
         config["disable_components"] = sorted(self.disabled_components)
+
+        if "security" not in config:
+            config["security"] = DEFAULT_SECURITY_SECTION
+
         return config
 
     def _get_apt_config_using_candidate(
