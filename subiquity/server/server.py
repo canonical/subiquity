@@ -44,7 +44,7 @@ from subiquity.server.controller import SubiquityController
 from subiquity.server.dryrun import DRConfig
 from subiquity.server.errors import ErrorController
 from subiquity.server.geoip import DryRunGeoIPStrategy, GeoIP, HTTPGeoIPStrategy
-from subiquity.server.pkghelper import PackageInstaller
+from subiquity.server.pkghelper import get_package_installer
 from subiquity.server.runner import get_command_runner
 from subiquity.server.snapdapi import make_api_client
 from subiquity.server.types import InstallerChannels
@@ -293,7 +293,7 @@ class SubiquityServer(Application):
         self.event_syslog_id = "subiquity_event.{}".format(os.getpid())
         self.log_syslog_id = "subiquity_log.{}".format(os.getpid())
         self.command_runner = get_command_runner(self)
-        self.package_installer = PackageInstaller(self)
+        self.package_installer = get_package_installer(self)
 
         self.error_reporter = ErrorReporter(
             self.context.child("ErrorReporter"), self.opts.dry_run, self.root

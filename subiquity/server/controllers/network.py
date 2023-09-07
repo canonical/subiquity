@@ -108,15 +108,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
         return self.app.package_installer.state_for_pkg("wpasupplicant")
 
     async def _install_wpasupplicant(self):
-        if self.opts.dry_run:
-            await asyncio.sleep(10 / self.app.scale_factor)
-            a = "DONE"
-            for k in self.app.debug_flags:
-                if k.startswith("wlan_install="):
-                    a = k.split("=", 2)[1]
-            r = getattr(PackageInstallState, a)
-        else:
-            r = await self.app.package_installer.install_pkg("wpasupplicant")
+        r = await self.app.package_installer.install_pkg("wpasupplicant")
         log.debug("wlan_support_install_finished %s", r)
         self._call_clients("wlan_support_install_finished", r)
         if r == PackageInstallState.DONE:

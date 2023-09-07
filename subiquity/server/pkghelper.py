@@ -16,7 +16,7 @@
 import asyncio
 import logging
 import os
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import apt
 
@@ -34,10 +34,9 @@ class PackageInstaller:
     by the server installer.
     """
 
-    def __init__(self, app):
+    def __init__(self):
         self.pkgs: Dict[str, asyncio.Task] = {}
         self._cache: Optional[apt.Cache] = None
-        self.app = app
 
     @property
     def cache(self):
@@ -58,7 +57,7 @@ class PackageInstaller:
         if pkgname not in self.pkgs:
             self.pkgs[pkgname] = asyncio.create_task(self._install_pkg(pkgname))
 
-    async def install_pkg(self, pkgname) -> PackageInstallState:
+    async def install_pkg(self, pkgname: str) -> PackageInstallState:
         self.start_installing_pkg(pkgname)
         return await self.pkgs[pkgname]
 
@@ -70,10 +69,6 @@ class PackageInstaller:
             return PackageInstallState.NOT_AVAILABLE
         if binpkg.installed:
             log.debug("%s already installed", pkgname)
-            return PackageInstallState.DONE
-        if self.app.opts.dry_run:
-            log.debug("dry-run apt-get install %s", pkgname)
-            await asyncio.sleep(2 / self.app.scale_factor)
             return PackageInstallState.DONE
         if not binpkg.candidate.uri.startswith("cdrom:"):
             log.debug(
@@ -94,3 +89,46 @@ class PackageInstaller:
             return PackageInstallState.DONE
         else:
             return PackageInstallState.FAILED
+
+
+class DryRunPackageInstaller(PackageInstaller):
+    def __init__(self, app) -> None:
+        super().__init__()
+        self.scale_factor: float = app.scale_factor
+        self.debug_flags: List[str] = app.debug_flags
+        self.package_specific_impl = {
+            "wpasupplicant": self._install_wpa_supplicant,
+        }
+
+    async def _install_wpa_supplicant(self) -> PackageInstallState:
+        """Special implementation for wpasupplicant (used by code related to
+        Wi-Fi interfaces)."""
+        await asyncio.sleep(10 / self.scale_factor)
+        status = "DONE"
+        for flag in self.debug_flags:
+            if flag.startswith("wlan_install="):
+                status = flag.split("=", 2)[1]
+        return getattr(PackageInstallState, status)
+
+    async def _install_pkg(self, pkgname: str) -> PackageInstallState:
+        if pkgname in self.package_specific_impl:
+            return await self.package_specific_impl[pkgname]()
+
+        log.debug("checking if %s is available", pkgname)
+        binpkg = self.cache.get(pkgname)
+        if not binpkg:
+            log.debug("%s not found", pkgname)
+            return PackageInstallState.NOT_AVAILABLE
+        if binpkg.installed:
+            log.debug("%s already installed", pkgname)
+            return PackageInstallState.DONE
+        log.debug("dry-run apt-get install %s", pkgname)
+        await asyncio.sleep(2 / self.scale_factor)
+        return PackageInstallState.DONE
+
+
+def get_package_installer(app):
+    if app.opts.dry_run:
+        return DryRunPackageInstaller(app)
+    else:
+        return PackageInstaller()
