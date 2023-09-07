@@ -321,7 +321,15 @@ class MirrorModel(object):
 
     def get_apt_config_staged(self) -> Dict[str, Any]:
         assert self.primary_staged is not None
-        return self._get_apt_config_using_candidate(self.primary_staged)
+        config = self._get_apt_config_using_candidate(self.primary_staged)
+
+        # For mirror testing, we disable the -security suite - so that we only
+        # test the primary mirror, not the security archive.
+        if "disable_suites" not in config:
+            config["disable_suites"]: List[str] = []
+        if "security" not in config["disable_suites"]:
+            config["disable_suites"].append("security")
+        return config
 
     def get_apt_config_elected(self) -> Dict[str, Any]:
         assert self.primary_elected is not None
