@@ -139,9 +139,15 @@ The version of Subiquity released with 20.04 GA does not accept `null` for this 
 
 #### search_drivers
 **type:** boolean
-**default:** `true`
+**default:** `true` (mostly, see below)
 
-Whether the installer should search for available third-party drivers. When set to `false`, it disables the drivers screen and [section](#drivers).
+Whether the installer should search for available third-party
+drivers. When set to `false`, it disables the drivers screen and
+[section](#drivers).
+
+The default is true for most installs but false when a "core boot" or
+"enhanced secure boot" method is selected (where third-party drivers
+cannot currently be installed).
 
 #### id
 **type:** string
