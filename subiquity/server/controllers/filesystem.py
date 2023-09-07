@@ -74,6 +74,7 @@ from subiquity.models.filesystem import (
 )
 from subiquity.server import snapdapi
 from subiquity.server.controller import SubiquityController
+from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
 from subiquity.server.mounter import Mounter
 from subiquity.server.snapdapi import (
     StorageEncryptionSupport,
@@ -292,6 +293,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._configured = True
         if self._info is None:
             self.set_info_for_capability(GuidedCapability.DIRECT)
+        if (
+            self.app.base_model.source.search_drivers
+            is SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
+        ):
+            self.app.base_model.source.search_drivers = not self.is_core_boot_classic()
         await super().configured()
         self.stop_listening_udev()
 
@@ -424,7 +430,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                             "systems."
                         ),
                     )
-                if self.app.base_model.source.search_drivers:
+                search_drivers = self.app.base_model.source.search_drivers
+                if (
+                    search_drivers is not SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
+                    and search_drivers
+                ):
                     log.debug(
                         "Disabling core boot based install options as third-party "
                         "drivers selected"
