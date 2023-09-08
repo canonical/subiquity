@@ -235,6 +235,15 @@ class GuidedChoiceForm(SubForm):
             self.use_tpm.help = self.tpm_choice.help
             self.use_tpm.help = self.tpm_choice.help.format(reason=reason)
         else:
+            self.use_tpm.enabled = False
+            core_boot_disallowed = [
+                d for d in val.disallowed if d.capability.is_core_boot()
+            ]
+            if core_boot_disallowed:
+                self.use_tpm.help = core_boot_disallowed[0].message
+            else:
+                self.use_tpm.help = ""
+
             self.tpm_choice = None
 
     def _toggle_lvm(self, sender, val):

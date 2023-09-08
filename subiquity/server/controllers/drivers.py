@@ -21,6 +21,7 @@ from subiquity.common.apidef import API
 from subiquity.common.types import DriversPayload, DriversResponse
 from subiquity.server.apt import OverlayCleanupError
 from subiquity.server.controller import SubiquityController
+from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
 from subiquity.server.types import InstallerChannels
 from subiquity.server.ubuntu_drivers import (
     CommandNotFoundError,
@@ -123,6 +124,8 @@ class DriversController(SubiquityController):
             await self.list_drivers_done_event.wait()
 
         search_drivers = self.app.controllers.Source.model.search_drivers
+        if search_drivers is SEARCH_DRIVERS_AUTOINSTALL_DEFAULT:
+            search_drivers = True
 
         return DriversResponse(
             install=self.model.do_install,

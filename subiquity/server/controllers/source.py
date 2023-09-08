@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
+import logging
 import os
 from typing import Any, Optional
 
@@ -28,6 +29,8 @@ from subiquity.common.apidef import API
 from subiquity.common.types import SourceSelection, SourceSelectionAndSetting
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
+
+log = logging.getLogger("subiquity.server.controllers.source")
 
 
 def _translate(d, lang):
@@ -50,6 +53,9 @@ def convert_source(source, lang):
     )
 
 
+SEARCH_DRIVERS_AUTOINSTALL_DEFAULT = object()
+
+
 class SourceController(SubiquityController):
     model_name = "source"
 
@@ -67,10 +73,6 @@ class SourceController(SubiquityController):
             },
         },
     }
-    # Defaults to true for backward compatibility with existing autoinstall
-    # configurations. Back then, then users were able to install third-party
-    # drivers without this field.
-    autoinstall_default = {"search_drivers": True}
 
     def __init__(self, app):
         super().__init__(app)
@@ -86,13 +88,15 @@ class SourceController(SubiquityController):
 
     def load_autoinstall_data(self, data: Any) -> None:
         if data is None:
-            # NOTE: The JSON schema does not allow data to be null in this
-            # context. However, Subiquity bypasses the schema validation when
-            # a section is set to null. So in practice, we can have data = None
-            # here.
-            data = {**self.autoinstall_default, "id": None}
+            data = {}
 
-        self.model.search_drivers = data.get("search_drivers", True)
+        # Defaults to almost-true for backward compatibility with existing autoinstall
+        # configurations. Back then, then users were able to install third-party drivers
+        # without this field. The "almost-true" part is that search_drivers defaults to
+        # False for core boot classic installs.
+        self.model.search_drivers = data.get(
+            "search_drivers", SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
+        )
 
         # At this point, the model has not yet loaded the sources from the
         # catalog. So we store the ID and lean on self.start to select the
@@ -122,10 +126,14 @@ class SourceController(SubiquityController):
         cur_lang = self.app.base_model.locale.selected_language
         cur_lang = cur_lang.rsplit(".", 1)[0]
 
+        search_drivers = self.model.search_drivers
+        if search_drivers is SEARCH_DRIVERS_AUTOINSTALL_DEFAULT:
+            search_drivers = True
+
         return SourceSelectionAndSetting(
             [convert_source(source, cur_lang) for source in self.model.sources],
             self.model.current.id,
-            search_drivers=self.model.search_drivers,
+            search_drivers=search_drivers,
         )
 
     def get_handler(

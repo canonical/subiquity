@@ -22,7 +22,7 @@ import os
 import pathlib
 import select
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import attr
 import pyudev
@@ -74,6 +74,7 @@ from subiquity.models.filesystem import (
 )
 from subiquity.server import snapdapi
 from subiquity.server.controller import SubiquityController
+from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
 from subiquity.server.mounter import Mounter
 from subiquity.server.snapdapi import (
     StorageEncryptionSupport,
@@ -123,7 +124,7 @@ class CapabilityInfo:
     allowed: List[GuidedCapability] = attr.Factory(list)
     disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
 
-    def combine(self, other: "CapabilityInfo"):
+    def combine(self, other: "CapabilityInfo") -> None:
         for allowed_cap in other.allowed:
             if allowed_cap not in self.allowed:
                 self.allowed.append(allowed_cap)
@@ -139,6 +140,38 @@ class CapabilityInfo:
         self.disallowed = new_disallowed
         self.allowed.sort()
         self.disallowed.sort()
+
+    def copy(self) -> "CapabilityInfo":
+        return CapabilityInfo(
+            allowed=list(self.allowed), disallowed=list(self.disallowed)
+        )
+
+    def disallow_if(
+        self,
+        filter: Callable[[GuidedCapability], bool],
+        reason: GuidedDisallowedCapabilityReason,
+        message: Optional[str] = None,
+    ) -> None:
+        new_allowed = []
+        for cap in self.allowed:
+            if filter(cap):
+                self.disallowed.append(
+                    GuidedDisallowedCapability(
+                        capability=cap,
+                        reason=reason,
+                        message=message,
+                    )
+                )
+            else:
+                new_allowed.append(cap)
+        self.allowed = new_allowed
+
+    def disallow_all(
+        self,
+        reason: GuidedDisallowedCapabilityReason,
+        message: Optional[str] = None,
+    ) -> None:
+        self.disallow_if(lambda cap: True, reason, message)
 
 
 @attr.s(auto_attribs=True)
@@ -160,22 +193,15 @@ class VariationInfo:
         gap: gaps.Gap,
         install_min: int,
     ) -> CapabilityInfo:
-        r = CapabilityInfo()
-        r.disallowed = list(self.capability_info.disallowed)
         if gap is None:
             gap_size = 0
         else:
             gap_size = gap.size
-        if self.capability_info.allowed and gap_size < install_min:
-            for capability in self.capability_info.allowed:
-                r.disallowed.append(
-                    GuidedDisallowedCapability(
-                        capability=capability,
-                        reason=GuidedDisallowedCapabilityReason.TOO_SMALL,
-                    )
-                )
-        else:
-            r.allowed = list(self.capability_info.allowed)
+        r = self.capability_info.copy()
+        if gap_size < install_min:
+            r.disallow_all(
+                reason=GuidedDisallowedCapabilityReason.TOO_SMALL,
+            )
         return r
 
     @classmethod
@@ -267,6 +293,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._configured = True
         if self._info is None:
             self.set_info_for_capability(GuidedCapability.DIRECT)
+        if (
+            self.app.base_model.source.search_drivers
+            is SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
+        ):
+            self.app.base_model.source.search_drivers = not self.is_core_boot_classic()
         await super().configured()
         self.stop_listening_udev()
 
@@ -383,12 +414,40 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if not self.app.opts.enhanced_secureboot:
                     log.debug("Not offering enhanced_secureboot: commandline disabled")
                     continue
-                if self.model.bootloader != Bootloader.UEFI:
-                    log.debug("Not offering core boot based install: not a UEFI system")
-                    continue
                 info = self.info_for_system(name, label, system)
-                if info is not None:
-                    self._variation_info[name] = info
+                if info is None:
+                    continue
+                if self.model.bootloader != Bootloader.UEFI:
+                    log.debug(
+                        "Disabling core boot based install options on non-UEFI "
+                        "system"
+                    )
+                    info.capability_info.disallow_if(
+                        lambda cap: cap.is_core_boot(),
+                        GuidedDisallowedCapabilityReason.NOT_UEFI,
+                        _(
+                            "Enhanced secure boot options only available on UEFI "
+                            "systems."
+                        ),
+                    )
+                search_drivers = self.app.base_model.source.search_drivers
+                if (
+                    search_drivers is not SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
+                    and search_drivers
+                ):
+                    log.debug(
+                        "Disabling core boot based install options as third-party "
+                        "drivers selected"
+                    )
+                    info.capability_info.disallow_if(
+                        lambda cap: cap.is_core_boot(),
+                        GuidedDisallowedCapabilityReason.THIRD_PARTY_DRIVERS,
+                        _(
+                            "Enhanced secure boot options cannot currently install "
+                            "third party drivers."
+                        ),
+                    )
+                self._variation_info[name] = info
             elif catalog_entry.type.startswith("dd-"):
                 min_size = variation.size
                 self._variation_info[name] = VariationInfo.dd(

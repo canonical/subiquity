@@ -1144,6 +1144,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.app.dr_cfg = DRConfig()
         self.app.dr_cfg.systems_dir_exists = True
         self.app.controllers.Source.get_handler.return_value = TrivialSourceHandler("")
+        self.app.base_model.source.search_drivers = False
         self.fsc = FilesystemController(app=self.app)
         self.fsc._configured = True
         self.fsc.model = make_model(Bootloader.UEFI)
