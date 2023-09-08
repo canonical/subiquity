@@ -81,6 +81,8 @@ from urllib import parse
 import attr
 from curtin.commands.apt_config import (
     PORTS_ARCHES,
+    PORTS_MIRRORS,
+    PRIMARY_ARCH_MIRRORS,
     PRIMARY_ARCHES,
     get_arch_mirrorconfig,
     get_mirror,
@@ -96,8 +98,8 @@ except ImportError:
 
 log = logging.getLogger("subiquity.models.mirror")
 
-DEFAULT_SUPPORTED_ARCHES_URI = "http://archive.ubuntu.com/ubuntu"
-DEFAULT_PORTS_ARCHES_URI = "http://ports.ubuntu.com/ubuntu-ports"
+DEFAULT_SUPPORTED_ARCHES_URI = PRIMARY_ARCH_MIRRORS["PRIMARY"]
+DEFAULT_PORTS_ARCHES_URI = PORTS_MIRRORS["PRIMARY"]
 
 LEGACY_DEFAULT_PRIMARY_SECTION = [
     {
@@ -107,6 +109,17 @@ LEGACY_DEFAULT_PRIMARY_SECTION = [
     {
         "arches": ["default"],
         "uri": DEFAULT_PORTS_ARCHES_URI,
+    },
+]
+
+DEFAULT_SECURITY_SECTION = [
+    {
+        "arches": PRIMARY_ARCHES,
+        "uri": PRIMARY_ARCH_MIRRORS["SECURITY"],
+    },
+    {
+        "arches": PORTS_ARCHES,
+        "uri": PORTS_MIRRORS["SECURITY"],
     },
 ]
 
@@ -312,6 +325,10 @@ class MirrorModel(object):
 
         config = copy.deepcopy(self.config)
         config["disable_components"] = sorted(self.disabled_components)
+
+        if "security" not in config:
+            config["security"] = DEFAULT_SECURITY_SECTION
+
         return config
 
     def _get_apt_config_using_candidate(
@@ -323,7 +340,15 @@ class MirrorModel(object):
 
     def get_apt_config_staged(self) -> Dict[str, Any]:
         assert self.primary_staged is not None
-        return self._get_apt_config_using_candidate(self.primary_staged)
+        config = self._get_apt_config_using_candidate(self.primary_staged)
+
+        # For mirror testing, we disable the -security suite - so that we only
+        # test the primary mirror, not the security archive.
+        if "disable_suites" not in config:
+            config["disable_suites"]: List[str] = []
+        if "security" not in config["disable_suites"]:
+            config["disable_suites"].append("security")
+        return config
 
     def get_apt_config_elected(self) -> Dict[str, Any]:
         assert self.primary_elected is not None
