@@ -76,6 +76,7 @@ constructive feedback.
    :hidden:
    :maxdepth: 2
 
+   Introduction to Autoinstall<intro-to-autoinstall>
    tutorial/index
    howto/index
    reference/index

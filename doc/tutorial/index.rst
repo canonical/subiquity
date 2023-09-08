@@ -11,8 +11,8 @@ capable of.
 
 -----
 
-Introduction to autoinstall
-===========================
+For Ubuntu Server
+=================
 
 This tutorial introduces the core concepts of autoinstall and is recommended as
 the first step.
@@ -20,4 +20,6 @@ the first step.
 .. toctree::
    :maxdepth: 1
 
-   intro-to-autoinstall.rst
+   basic-server-installation
+   screen-by-screen
+
