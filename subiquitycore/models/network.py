@@ -21,7 +21,6 @@ from socket import AF_INET, AF_INET6
 from typing import Dict, List, Optional
 
 import attr
-import probert.network
 import yaml
 
 from subiquitycore import netplan
@@ -196,10 +195,15 @@ class NetworkDev:
         self._name = name
         self.type = typ
         self.config = {}
+
+        # import done here to break a chain where anybody importing
+        # subiquity.common.types has to have probert
+        from probert.network import Link
+
         # Devices that have been configured in Subiquity but do not (yet) exist
         # on the system have their "info" field set to None. Once they exist,
         # probert should pass on the information through a call to new_link().
-        self.info: Optional[probert.network.Link] = None
+        self.info: Optional[Link] = None
         self.disabled_reason = None
         self.dhcp_events = {}
         self._dhcp_state = {
