@@ -14,7 +14,7 @@ jobs:
           - ubuntu-daily:lunar
           - ubuntu-daily:mantic
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: run
       run: sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make check"
 
@@ -27,14 +27,14 @@ jobs:
           - ubuntu-daily:jammy    # match the core snap we're running against
           - ubuntu-daily:mantic   # latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: lint
       run: sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make lint"
 
   format-black:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: psf/black@stable
         with:
           version: "~= 23.0"
@@ -43,7 +43,7 @@ jobs:
   format-isort:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: isort/isort-action@v1
         with:
           isort-version: "5.12.0"
@@ -57,7 +57,7 @@ jobs:
       - name: Install mypy and typeshed
         run: sudo apt-get install -y python3-mypy python3-typeshed
       - name: Checkout the pull request branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # When no ref is specified, a merge commit (from PR branch to target
           # branch) will be checked out. Use the last commit of the PR branch
@@ -78,7 +78,7 @@ jobs:
               "${{ github.event.pull_request.head.sha }}")
           echo "base_commit=$ancestor" >> "$GITHUB_OUTPUT"
       - name: Checkout the base commit (most recent common ancestor)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ steps.determine_base_commit.outputs.base_commit }}
       - run: git show
