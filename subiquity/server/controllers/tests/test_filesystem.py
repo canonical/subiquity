@@ -526,6 +526,19 @@ class TestGuided(IsolatedAsyncioTestCase):
         zfs_boot = self.model._mount_for_path("/boot")
         self.assertEqual("zfs", zfs_boot.type)
 
+    @mock.patch("subiquity.server.controllers.filesystem.swap.suggested_swapsize")
+    async def test_guided_zfs_swap_size_lp_2034939(self, suggested):
+        suggested.return_value = (1 << 30) + 1
+        # crash due to add_partition for swap with unaligned size
+        await self._guided_setup(Bootloader.UEFI, "gpt")
+        target = GuidedStorageTargetReformat(
+            disk_id=self.d1.id, allowed=default_capabilities
+        )
+        await self.controller.guided(
+            GuidedChoiceV2(target=target, capability=GuidedCapability.ZFS)
+        )
+        # just checking that this doesn't throw
+
     async def _guided_side_by_side(self, bl, ptable):
         await self._guided_setup(bl, ptable, storage_version=2)
         self.controller.add_boot_disk(self.d1)

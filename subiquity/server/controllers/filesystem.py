@@ -563,7 +563,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         bpart = self.create_partition(device, gap_boot, dict(fstype=None))
 
         avail = gap_rest.size - self._info.min_size
-        swap_size = swap.suggested_swapsize(avail=avail)
+        swap_size = align_down(swap.suggested_swapsize(avail=avail), part_align)
         if swap_size > 0:
             gap_swap, gap_rootfs = gap_rest.split(swap_size)
             self.create_partition(device, gap_swap, dict(fstype="swap"))
