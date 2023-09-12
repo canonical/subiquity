@@ -41,6 +41,18 @@ validate () {
             echo "password leaked into log file"
             exit 1
         fi
+        # After the lunar release and the introduction of mirror testing, it
+        # came to our attention that new Ubuntu installations have the security
+        # repository configured with the primary mirror URL (i.e.,
+        # http://<cc>.archive.ubuntu.com/ubuntu) instead of
+        # http://security.ubuntu.com/ubuntu. Let's ensure we instruct curtin
+        # not to do that.
+        # If we run an autoinstall that customizes the security section as part
+        # of the test-suite, we will need to adapt this test.
+        python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/subiquity-curtin-apt.conf \
+            apt.security[0].uri='"http://security.ubuntu.com/ubuntu/"' \
+            apt.security[0].arches='["amd64", "i386"]' \
+            apt.security[1].uri='"http://ports.ubuntu.com/ubuntu-ports"'
         netplan generate --root $tmpdir
     elif [ "${mode}" = "system_setup" ]; then
         setup_mode="$2"
