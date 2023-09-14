@@ -68,6 +68,9 @@ validate () {
                     apt.security[1].uri='"http://ports.ubuntu.com/ubuntu-ports"'
                 ;;
         esac
+        if [ "$testname" == autoinstall-fallback-offline ]; then
+            grep -F -- 'skipping installation of package ubuntu-restricted-addons' "$tmpdir"/subiquity-server-debug.log
+        fi
         netplan generate --root $tmpdir
     elif [ "${mode}" = "system_setup" ]; then
         setup_mode="$2"
@@ -315,6 +318,18 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --output-base "$tmpdir" \
     --machine-config examples/machines/simple.json \
     --autoinstall examples/autoinstall/reset-only.yaml \
+    --kernel-cmdline autoinstall \
+    --source-catalog examples/sources/install.yaml
+validate install
+
+clean
+testname=autoinstall-fallback-offline
+LANG=C.UTF-8 timeout --foreground 60 \
+    python3 -m subiquity.cmd.tui \
+    --dry-run \
+    --output-base "$tmpdir" \
+    --machine-config examples/machines/simple.json \
+    --autoinstall examples/autoinstall/fallback-offline.yaml \
     --kernel-cmdline autoinstall \
     --source-catalog examples/sources/install.yaml
 validate install
