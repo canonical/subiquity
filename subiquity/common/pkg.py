@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical, Ltd.
+# Copyright 2023 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -13,20 +13,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquity.common.pkg import TargetPkg
-from subiquity.server.controller import NonInteractiveController
+import attr
 
 
-class PackageController(NonInteractiveController):
-    model_name = autoinstall_key = "packages"
-    autoinstall_default = []
-    autoinstall_schema = {
-        "type": "array",
-        "items": {"type": "string"},
-    }
-
-    def load_autoinstall_data(self, data):
-        self.model[:] = [TargetPkg(name=pkg, skip_when_offline=False) for pkg in data]
-
-    def make_autoinstall(self):
-        return [pkg.name for pkg in self.model]
+@attr.s(auto_attribs=True)
+class TargetPkg:
+    name: str
+    # Some packages are not present in the pool and require a working network
+    # connection to be downloaded. By marking them with "skip_when_offline", we
+    # can skip them when running an offline install.
+    skip_when_offline: bool

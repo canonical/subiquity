@@ -2133,7 +2133,7 @@ class TestActiveDirectory(TestAPI):
         to be installed in the target system and whether they were
         referred to or not in the server log."""
         expected_packages = await self.target_packages()
-        packages_lookup = {p: False for p in expected_packages}
+        packages_lookup = {p.name: False for p in expected_packages}
         log_path = os.path.join(log_dir, "subiquity-server-debug.log")
         find_start = "finish: subiquity/Install/install/postinstall/install_{}:"
         log_status = " SUCCESS: installing {}"

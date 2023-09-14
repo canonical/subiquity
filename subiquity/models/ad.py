@@ -14,8 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import Optional
+from typing import List, Optional
 
+from subiquity.common.pkg import TargetPkg
 from subiquity.common.types import AdConnectionInfo
 
 log = logging.getLogger("subiquity.models.ad")
@@ -42,10 +43,14 @@ class AdModel:
         else:
             self.conn_info = AdConnectionInfo(domain_name=domain)
 
-    async def target_packages(self):
+    async def target_packages(self) -> List[TargetPkg]:
         # NOTE Those packages must be present in the target system to allow
         # joining to a domain.
         if self.do_join:
-            return ["adcli", "realmd", "sssd"]
+            return [
+                TargetPkg(name="adcli", skip_when_offline=False),
+                TargetPkg(name="realmd", skip_when_offline=False),
+                TargetPkg(name="sssd", skip_when_offline=False),
+            ]
 
         return []
