@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical, Ltd.
+# Copyright 2023 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -13,20 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquity.common.pkg import TargetPkg
-from subiquity.server.controller import NonInteractiveController
+import attr
 
 
-class PackageController(NonInteractiveController):
-    model_name = autoinstall_key = "packages"
-    autoinstall_default = []
-    autoinstall_schema = {
-        "type": "array",
-        "items": {"type": "string"},
-    }
-
-    def load_autoinstall_data(self, data):
-        self.model[:] = [TargetPkg(name=pkg, fallback_first_boot=False) for pkg in data]
-
-    def make_autoinstall(self):
-        return [pkg.name for pkg in self.model]
+@attr.s(auto_attribs=True)
+class TargetPkg:
+    name: str
+    # If a failure to install the package should be followed by an attempt on
+    # first boot using cloud-init, this property should be set to True.
+    fallback_first_boot: bool

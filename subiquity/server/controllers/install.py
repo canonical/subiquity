@@ -33,6 +33,7 @@ from curtin.config import merge_config
 from curtin.util import get_efibootmgr, is_uefi_bootable
 
 from subiquity.common.errorreport import ErrorReportKind
+from subiquity.common.pkg import TargetPkg
 from subiquity.common.types import ApplicationState, PackageInstallState
 from subiquity.journald import journald_listen
 from subiquity.models.filesystem import ActionRenderMode, Partition
@@ -677,11 +678,27 @@ class InstallController(SubiquityController):
             {"autoinstall": self.app.make_autoinstall()}
         )
         write_file(autoinstall_path, autoinstall_config)
-        await self.configure_cloud_init(context=context)
+        try:
+            if self.supports_apt():
+                packages = await self.get_target_packages(context=context)
+                for package in packages:
+                    try:
+                        await self.install_package(
+                            context=context, package=package.name
+                        )
+                    except subprocess.CalledProcessError:
+                        if not package.fallback_first_boot:
+                            raise
+                        log.warning(
+                            "unable to install package %s,"
+                            " installation will be retried using cloud-init",
+                            package.name,
+                        )
+                        self.model.cloud_init_packages.append(package.name)
+        finally:
+            await self.configure_cloud_init(context=context)
+
         if self.supports_apt():
-            packages = await self.get_target_packages(context=context)
-            for package in packages:
-                await self.install_package(context=context, package=package)
             if self.model.drivers.do_install:
                 with context.child(
                     "ubuntu-drivers-install", "installing third-party drivers"
@@ -707,7 +724,7 @@ class InstallController(SubiquityController):
         await run_in_thread(self.model.configure_cloud_init)
 
     @with_context(description="calculating extra packages to install")
-    async def get_target_packages(self, context):
+    async def get_target_packages(self, context) -> List[TargetPkg]:
         return await self.app.base_model.target_packages()
 
     @with_context(name="install_{package}", description="installing {package}")
