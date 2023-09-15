@@ -28,7 +28,12 @@ from subiquity.common.types import (
     ProbeStatus,
     StorageResponseV2,
 )
-from subiquity.models.filesystem import Bootloader, FilesystemModel, raidlevels_by_value
+from subiquity.models.filesystem import (
+    ActionRenderMode,
+    Bootloader,
+    FilesystemModel,
+    raidlevels_by_value,
+)
 from subiquity.ui.views import FilesystemView, GuidedDiskSelectionView
 from subiquity.ui.views.filesystem.probing import ProbingFailed, SlowProbing
 from subiquitycore.async_helpers import run_bg_task
@@ -288,4 +293,8 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
 
     def finish(self):
         log.debug("FilesystemController.finish next_screen")
-        self.app.next_screen(self.endpoint.POST(self.model._render_actions()))
+        self.app.next_screen(
+            self.endpoint.POST(
+                self.model._render_actions(mode=ActionRenderMode.FOR_API_CLIENT)
+            )
+        )

@@ -1336,6 +1336,10 @@ class ActionRenderMode(enum.Enum):
     # information that is only used by client/server communication,
     # not curtin.
     FOR_API = enum.auto()
+    # FOR_API_CLIENT means render actions for devices that have
+    # changes and include information that is only used by
+    # client/server communication, not curtin.
+    FOR_API_CLIENT = enum.auto()
     # DEVICES means to just render actions for setting up block
     # devices, e.g. partitioning disks and assembling RAIDs but not
     # any format or mount actions.
@@ -1345,6 +1349,12 @@ class ActionRenderMode(enum.Enum):
     # by "type: device" actions that just refer to the block devices
     # by path.
     FORMAT_MOUNT = enum.auto()
+
+    def is_api(self):
+        return self in [ActionRenderMode.FOR_API, ActionRenderMode.FOR_API_CLIENT]
+
+    def include_all(self):
+        return self in [ActionRenderMode.FOR_API]
 
 
 class FilesystemModel:
@@ -1785,7 +1795,7 @@ class FilesystemModel:
                     obj.name,
                     obj.size,
                 )
-            r.append(asdict(obj, for_api=mode == ActionRenderMode.FOR_API))
+            r.append(asdict(obj, for_api=mode.is_api()))
             emitted_ids.add(obj.id)
 
         def ensure_partitions(dev):
@@ -1826,7 +1836,7 @@ class FilesystemModel:
         mountpoints = {m.path: m.id for m in self.all_mountlikes()}
         log.debug("mountpoints %s", mountpoints)
 
-        if mode == ActionRenderMode.FOR_API:
+        if mode.include_all():
             work = list(self._actions)
         else:
             work = [a for a in self._actions if not getattr(a, "preserve", False)]
