@@ -811,6 +811,14 @@ uu_apt_conf = b"""\
 # a metered connection.
 Unattended-Upgrade::OnlyOnACPower "false";
 Unattended-Upgrade::Skip-Updates-On-Metered-Connections "true";
+
+# Set MinimalSteps to false to speedup install times. "true", the default, will
+# atmoize updates to enable interrupts between downloads, but this causes the
+# install to slow down considerably. This is a major bottleneck of the install.
+# Some testing shows a 3-4x speedup on the unattended-upgrades section of the
+# install when this is set to false. However, this will make interrupting
+# this section of the install process difficult.
+Unattended-Upgrade::MinimalSteps "false";
 """
 
 uu_apt_conf_update_security = b"""\
