@@ -10,3 +10,7 @@ jobs:
         uses: canonical/has-signed-canonical-cla@v1
         with:
           accept-existing-contributors: true
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
