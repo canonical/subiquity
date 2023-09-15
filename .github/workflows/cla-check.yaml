@@ -6,6 +6,8 @@ jobs:
   cla-check:
     runs-on: ubuntu-20.04
     steps:
+      - name: debug action
+        uses: hmarr/debug-action@v2
       - name: Check if CLA signed
         uses: canonical/has-signed-canonical-cla@v1
         with:
