@@ -350,3 +350,41 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
         self.assertIn("--fs-uuid fsuuid", cfg)
         self.assertIn("rp-partuuid=partuuid", cfg)
         self.assertIn("uuid=casper-uuid", cfg)
+
+    @patch("platform.machine", return_value="s390x")
+    @patch("subiquity.server.controllers.install.arun_command")
+    async def test_postinstall_platform_s390x(self, arun, machine):
+        await self.controller.platform_postinstall()
+        arun.assert_called_once_with(["chreipl", "/target/boot"])
+
+    @patch("platform.machine", return_value="s390x")
+    async def test_postinstall_platform_s390x_fail(self, machine):
+        cpe = subprocess.CalledProcessError(
+            cmd=["chreipl", "/target/boot"],
+            returncode=1,
+            stderr="chreipl: No valid target specified",
+        )
+
+        arun_patch = patch(
+            "subiquity.server.controllers.install.arun_command", side_effect=cpe
+        )
+
+        assert_logs = self.assertLogs(
+            "subiquity.server.controllers.install", level="WARNING"
+        )
+        assert_raises = self.assertRaises(subprocess.CalledProcessError)
+
+        with assert_logs as errors, assert_raises, arun_patch as arun:
+            await self.controller.platform_postinstall()
+
+        arun.assert_called_once_with(["chreipl", "/target/boot"])
+        self.assertIn(
+            ("chreipl stderr:\n%s", ["chreipl: No valid target specified"]),
+            [(record.msg, list(record.args)) for record in errors.records],
+        )
+
+    @patch("platform.machine", return_value="amd64")
+    @patch("subiquity.server.controllers.install.arun_command")
+    async def test_postinstall_platform_amd64(self, arun, machine):
+        await self.controller.platform_postinstall()
+        arun.assert_not_called()

@@ -16,7 +16,6 @@
 import asyncio
 import logging
 import os
-import platform
 import subprocess
 
 from subiquity.common.apidef import API
@@ -137,11 +136,6 @@ class ShutdownController(SubiquityController):
         if self.opts.dry_run:
             self.app.exit()
         else:
-            # On shutdown, it seems that the asynchronous command runners are not
-            # reliable.  Best to keep using the traditional sort.
-            if self.app.state == ApplicationState.DONE:
-                if platform.machine() == "s390x":
-                    run_command(["chreipl", "/target/boot"])
             if self.mode == ShutdownMode.REBOOT:
                 run_command(["/sbin/reboot"])
             elif self.mode == ShutdownMode.POWEROFF:

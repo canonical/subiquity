@@ -19,6 +19,7 @@ import glob
 import json
 import logging
 import os
+import platform
 import re
 import shlex
 import shutil
@@ -666,6 +667,17 @@ class InstallController(SubiquityController):
             )
             raise
 
+    async def platform_postinstall(self):
+        """Run architecture specific commands/quirks"""
+        if platform.machine() == "s390x":
+            try:
+                # Ensure we boot from the installed system.
+                await arun_command(["chreipl", "/target/boot"])
+            except subprocess.CalledProcessError as cpe:
+                if cpe.stderr is not None:
+                    log.warning("chreipl stderr:\n%s", cpe.stderr)
+                raise
+
     @with_context(
         description="final system configuration", level="INFO", childlevel="DEBUG"
     )
@@ -700,6 +712,7 @@ class InstallController(SubiquityController):
                     hostname = f.read().strip()
 
             await self.app.controllers.Ad.join_domain(hostname, context)
+        await self.platform_postinstall()
         self.model.filesystem.copy_artifacts_to_target()
 
     @with_context(description="configuring cloud-init")
