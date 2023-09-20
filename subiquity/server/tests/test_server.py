@@ -54,31 +54,46 @@ class TestAutoinstallLoad(SubiTestCase):
         return path
 
     def test_autoinstall_disabled(self):
+        self.server.opts.autoinstall = ""
+        self.server.kernel_cmdline = {"subiquity.autoinstallpath": "kernel"}
         self.create(root_autoinstall_path, "root")
         self.create(cloud_autoinstall_path, "cloud")
         self.create(iso_autoinstall_path, "iso")
-        self.server.opts.autoinstall = ""
         self.assertIsNone(self.server.select_autoinstall())
 
-    def test_root_wins(self):
-        root = self.create(root_autoinstall_path, "root")
-        autoinstall = self.create(self.path("arg.autoinstall.yaml"), "arg")
-        self.server.opts.autoinstall = autoinstall
-        self.create(cloud_autoinstall_path, "cloud")
-        self.create(iso_autoinstall_path, "iso")
-        self.assertEqual(root, self.server.select_autoinstall())
-        self.assert_contents(root, "root")
-
     def test_arg_wins(self):
-        root = self.path(root_autoinstall_path)
         arg = self.create(self.path("arg.autoinstall.yaml"), "arg")
         self.server.opts.autoinstall = arg
+        kernel = self.create(self.path("kernel.autoinstall.yaml"), "kernel")
+        self.server.kernel_cmdline = {"subiquity.autoinstallpath": kernel}
+        root = self.create(root_autoinstall_path, "root")
         self.create(cloud_autoinstall_path, "cloud")
         self.create(iso_autoinstall_path, "iso")
         self.assertEqual(root, self.server.select_autoinstall())
         self.assert_contents(root, "arg")
 
+    def test_kernel_wins(self):
+        self.server.opts.autoinstall = None
+        kernel = self.create(self.path("kernel.autoinstall.yaml"), "kernel")
+        self.server.kernel_cmdline = {"subiquity.autoinstallpath": kernel}
+        root = self.create(root_autoinstall_path, "root")
+        self.create(cloud_autoinstall_path, "cloud")
+        self.create(iso_autoinstall_path, "iso")
+        self.assertEqual(root, self.server.select_autoinstall())
+        self.assert_contents(root, "kernel")
+
+    def test_root_wins(self):
+        self.server.opts.autoinstall = None
+        self.server.kernel_cmdline = {}
+        root = self.create(root_autoinstall_path, "root")
+        self.create(cloud_autoinstall_path, "cloud")
+        self.create(iso_autoinstall_path, "iso")
+        self.assertEqual(root, self.server.select_autoinstall())
+        self.assert_contents(root, "root")
+
     def test_cloud_wins(self):
+        self.server.opts.autoinstall = None
+        self.server.kernel_cmdline = {}
         root = self.path(root_autoinstall_path)
         self.create(cloud_autoinstall_path, "cloud")
         self.create(iso_autoinstall_path, "iso")
@@ -86,7 +101,10 @@ class TestAutoinstallLoad(SubiTestCase):
         self.assert_contents(root, "cloud")
 
     def test_iso_wins(self):
+        self.server.opts.autoinstall = None
+        self.server.kernel_cmdline = {}
         root = self.path(root_autoinstall_path)
+        # No cloud config file
         self.create(iso_autoinstall_path, "iso")
         self.assertEqual(root, self.server.select_autoinstall())
         self.assert_contents(root, "iso")

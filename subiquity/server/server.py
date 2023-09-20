@@ -574,10 +574,11 @@ class SubiquityServer(Application):
 
     def select_autoinstall(self):
         # precedence
-        # 1. autoinstall at root of drive
-        # 2. command line argument autoinstall
-        # 3. autoinstall supplied by cloud config
-        # 4. autoinstall baked into the iso, found at /cdrom/autoinstall.yaml
+        # 1. command line argument autoinstall
+        # 2. kernel command line argument subiquity.autoinstallpath
+        # 3. autoinstall at root of drive
+        # 4. autoinstall supplied by cloud config
+        # 5. autoinstall baked into the iso, found at /cdrom/autoinstall.yaml
 
         # if opts.autoinstall is set and empty, that means
         # autoinstall has been explicitly disabled.
@@ -588,9 +589,12 @@ class SubiquityServer(Application):
         ):
             raise Exception(f"Autoinstall argument {self.opts.autoinstall} not found")
 
+        kernel_install_path = self.kernel_cmdline.get("subiquity.autoinstallpath", None)
+
         locations = (
-            self.base_relative(root_autoinstall_path),
             self.opts.autoinstall,
+            kernel_install_path,
+            self.base_relative(root_autoinstall_path),
             self.base_relative(cloud_autoinstall_path),
             self.base_relative(iso_autoinstall_path),
         )
