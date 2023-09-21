@@ -33,6 +33,11 @@ log = logging.getLogger("subiquitycore.snapd")
 
 
 class SnapdConnection:
+    # In LP: #2034715, we found that while some requests should be
+    # non-blocking, they are actually blocking and exceeding one minute.
+    # Extending the timeout helps.
+    default_timeout_seconds = 600
+
     def __init__(self, root, sock):
         self.root = root
         self.url_base = "http+unix://{}/".format(quote_plus(sock))
@@ -41,13 +46,19 @@ class SnapdConnection:
         if args:
             path += "?" + urlencode(args)
         with requests_unixsocket.Session() as session:
-            return session.get(self.url_base + path, timeout=60)
+            return session.get(
+                self.url_base + path, timeout=self.default_timeout_seconds
+            )
 
     def post(self, path, body, **args):
         if args:
             path += "?" + urlencode(args)
         with requests_unixsocket.Session() as session:
-            return session.post(self.url_base + path, data=json.dumps(body), timeout=60)
+            return session.post(
+                self.url_base + path,
+                data=json.dumps(body),
+                timeout=self.default_timeout_seconds,
+            )
 
     def configure_proxy(self, proxy):
         log.debug("restarting snapd to pick up proxy config")
