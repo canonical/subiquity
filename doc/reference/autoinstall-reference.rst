@@ -96,7 +96,7 @@ locale
 
 * **type:** string
 * **default:** ``en_US.UTF-8``
-* **can be interactive:** yes, always interactive if any section is
+* **can be interactive:** yes
 
 The locale to configure for the installed system.
 
@@ -779,7 +779,7 @@ install
 * **type:** boolean or string (special value ``auto``)
 * **default:**: ``auto``
 
-Whether to install the available OEM meta-packages. The special value ``auto`` 
+Whether to install the available OEM meta-packages. The special value ``auto``
 -- which is the default -- enables the installation on ubuntu-desktop but not
 on ubuntu-server. This option has no effect on core boot classic.
 

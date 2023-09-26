@@ -65,7 +65,7 @@ A list of shell commands to invoke as soon as the installer starts, in particula
 
 **type:** string
 **default:** `en_US.UTF-8`
-**can be interactive:** yes, always interactive if any section is
+**can be interactive:** yes
 
 The locale to configure for the installed system.
 
