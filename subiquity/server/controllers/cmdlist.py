@@ -16,6 +16,7 @@
 import asyncio
 import os
 import shlex
+import shutil
 from typing import List, Sequence, Union
 
 import attr
@@ -25,7 +26,7 @@ from subiquity.common.types import ApplicationState
 from subiquity.server.controller import NonInteractiveController
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.context import with_context
-from subiquitycore.utils import arun_command
+from subiquitycore.utils import arun_command, orig_environ
 
 
 @attr.s(auto_attribs=True)
@@ -78,6 +79,15 @@ class CmdListController(NonInteractiveController):
         env = self.env()
         for i, cmd in enumerate(tuple(self.builtin_cmds) + tuple(self.cmds)):
             desc = cmd.desc()
+
+            # If the path to the command isn't found on the snap we should
+            # drop the snap specific environment variables.
+            command = shlex.split(desc)[0]
+            path = shutil.which(command)
+            if path is not None:
+                if not path.startswith("/snap"):
+                    env = orig_environ(env)
+
             with context.child("command_{}".format(i), desc):
                 args = cmd.as_args_list()
                 if self.syslog_id:
