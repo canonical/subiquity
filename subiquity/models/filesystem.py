@@ -1435,7 +1435,8 @@ class FilesystemModel:
         # use on the V2 storage API.
         orig_model = FilesystemModel(self.bootloader, root=self.root)
         orig_model.target = self.target
-        orig_model.load_probe_data(self._probe_data)
+        if self._probe_data is not None:
+            orig_model.load_probe_data(self._probe_data)
         return orig_model
 
     def process_probe_data(self):
