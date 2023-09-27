@@ -20,7 +20,6 @@ import json
 import logging
 import os
 import pathlib
-import select
 import time
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -273,6 +272,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._system_mounter: Optional[Mounter] = None
         self._role_to_device: Dict[str, _Device] = {}
         self._device_to_structure: Dict[_Device, snapdapi.OnVolume] = {}
+        self._pyudev_context: Optional[pyudev.Context] = None
         self.use_tpm: bool = False
         self.locked_probe_data: bool = False
         # If probe data come in while we are doing partitioning, store it in
@@ -299,7 +299,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         ):
             self.app.base_model.source.search_drivers = not self.is_core_boot_classic()
         await super().configured()
-        self.stop_listening_udev()
+        self.stop_monitor()
 
     async def _mount_systems_dir(self, variation_name):
         self._source_handler = self.app.controllers.Source.get_handler(variation_name)
@@ -1293,6 +1293,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             finally:
                 elapsed = time.time() - start
                 log.debug(f"{short_label} probing took {elapsed:.1f} seconds")
+                # In the past, this start_monitor() equivalent was much sooner.
+                # We don't actually need the information it provides though
+                # until a probe has finished, so the start_monitor() is delayed
+                # to here. start_monitor() is allowed after a failed probe, in
+                # case of a hotplug event, perhaps to remove a problematic
+                # device.
+                self.start_monitor()
             break
 
     async def run_autoinstall_guided(self, layout):
@@ -1456,20 +1463,30 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._start_task = schedule_task(self._start())
 
     async def _start(self):
-        context = pyudev.Context()
-        self._monitor = pyudev.Monitor.from_netlink(context)
-        self._monitor.filter_by(subsystem="block")
-        self._monitor.enable_receiving()
-        self.start_listening_udev()
         await self._probe_task.start()
 
-    def start_listening_udev(self):
+    def start_monitor(self):
+        if self._configured:
+            return
+
+        log.debug("start_monitor")
+        if self._pyudev_context is None:
+            self._pyudev_context = pyudev.Context()
+        self._monitor = pyudev.Monitor.from_netlink(self._pyudev_context)
+        self._monitor.filter_by(subsystem="block")
+        self._monitor.start()
         loop = asyncio.get_running_loop()
         loop.add_reader(self._monitor.fileno(), self._udev_event)
 
-    def stop_listening_udev(self):
+    def stop_monitor(self):
+        if self._monitor is None:
+            return
+
+        log.debug("stop_monitor")
         loop = asyncio.get_running_loop()
         loop.remove_reader(self._monitor.fileno())
+
+        self._monitor = None
 
     def ensure_probing(self):
         try:
@@ -1480,21 +1497,20 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             log.debug("Triggered Probert run on udev event")
 
     def _udev_event(self):
+        # We outright stop monitoring because we're not super concerned about
+        # the specifics of the udev event, only that one happened and that when
+        # the events settle, we want to reprobe.  This is significantly faster
+        # than keeping a monitor around and draining the event queue.
+        # LP: #2009141
+        self.stop_monitor()
+
         cp = run_command(["udevadm", "settle", "-t", "0"])
+
         if cp.returncode != 0:
             log.debug("waiting 0.1 to let udev event queue settle")
-            self.stop_listening_udev()
             loop = asyncio.get_running_loop()
-            loop.call_later(0.1, self.start_listening_udev)
+            loop.call_later(0.1, self._udev_event)
             return
-        # Drain the udev events in the queue -- if we stopped listening to
-        # allow udev to settle, it's good bet there is more than one event to
-        # process and we don't want to kick off a full block probe for each
-        # one.  It's a touch unfortunate that pyudev doesn't have a
-        # non-blocking read so we resort to select().
-        while select.select([self._monitor.fileno()], [], [], 0)[0]:
-            action, dev = self._monitor.receive_device()
-            log.debug("_udev_event %s %s", action, dev)
         self.ensure_probing()
 
     def make_autoinstall(self):
