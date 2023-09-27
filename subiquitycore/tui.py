@@ -263,7 +263,11 @@ class TuiApplication(Application):
             urwid.util.set_encoding("ascii")
             new_palette = PALETTE_MONO
             self.rich_mode = False
-        with open(self.state_path("rich-mode"), "w") as fp:
+        if self.opts.run_on_serial:
+            rich_mode_file = "rich-mode-serial"
+        else:
+            rich_mode_file = "rich-mode-tty"
+        with open(self.state_path(rich_mode_file), "w") as fp:
             json.dump(self.rich_mode, fp)
         urwid.CanvasCache.clear()
         self.urwid_loop.screen.register_palette(new_palette)
@@ -286,6 +290,37 @@ class TuiApplication(Application):
     def make_screen(self, inputf=None, outputf=None):
         return make_screen(self.opts.ascii, inputf, outputf)
 
+    def get_initial_rich_mode(self) -> bool:
+        """Return the initial value for rich-mode, either loaded from an
+        exising state file or automatically determined. True means rich mode
+        and False means basic mode."""
+        if self.opts.run_on_serial:
+            rich_mode_file = "rich-mode-serial"
+        else:
+            rich_mode_file = "rich-mode-tty"
+        try:
+            fp = open(self.state_path(rich_mode_file))
+        except FileNotFoundError:
+            pass
+        else:
+            with fp:
+                return json.load(fp)
+
+        try:
+            # During the 23.10 development cycle, there was only one rich-mode
+            # state file. Let's handle the scenario where we just snap
+            # refresh-ed from a pre 23.10 release.
+            # Once mantic is EOL, let's remove this code.
+            fp = open(self.state_path("rich-mode"))
+        except FileNotFoundError:
+            pass
+        else:
+            with fp:
+                return json.load(fp)
+
+        # By default, basic on serial - rich otherwise.
+        return not self.opts.run_on_serial
+
     def start_urwid(self, input=None, output=None):
         # This stops the tcsetpgrp call in run_command_in_foreground from
         # suspending us. See the rant there for more details.
@@ -302,14 +337,7 @@ class TuiApplication(Application):
             **self.extra_urwid_loop_args(),
         )
         extend_dec_special_charmap()
-        try:
-            fp = open(self.state_path("rich-mode"))
-        except FileNotFoundError:
-            initial_rich_mode = not self.opts.run_on_serial
-        else:
-            with fp:
-                initial_rich_mode = json.load(fp)
-        self.set_rich(initial_rich_mode)
+        self.set_rich(self.get_initial_rich_mode())
         self.urwid_loop.start()
         self.select_initial_screen()
 

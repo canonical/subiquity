@@ -328,6 +328,15 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertFalse(lv.ok_for_raid)
         self.assertFalse(lv.ok_for_lvm_vg)
 
+    def test_get_orig_model_no_probe_data(self):
+        # When v2/get_orig_data gets called early, model._probe_data is still
+        # None. Ensure get_orig_model() does not fail.
+        model = make_model()
+
+        model._probe_data = None
+        orig_model = model.get_orig_model()
+        self.assertIsNone(orig_model._probe_data)
+
 
 def fake_up_blockdata_disk(disk, **kw):
     model = disk._m

@@ -78,24 +78,47 @@ Autoinstall on the install media
 Another option for supplying autoinstall to the Ubuntu installer is to place a
 file named :code:`autoinstall.yaml` on the install media itself.
 
-There are two potential locations for the :code:`autoinstall.yaml` file:
- * At the root of the "CD-ROM". When you write the installation ISO to a USB
-   Flash Drive, this can be done by copying the :code:`autoinstall.yaml` to the
-   partition containing the contents of the ISO - i.e.,
-   in the directory containing the ``casper`` sub-directory.
- * On the rootfs of the installation system - this option will typically
-   require modifying the installation ISO and is not suggested, but is
-   supported.
+There are two potential locations that subiquity will check for the
+:code:`autoinstall.yaml` file:
 
-Directly specifying autoinstall as a :code:`autoinstall.yaml` file does not
-require a :code:`#cloud-config` header, and does not use a top level
-``autoinstall:`` key. The autoinstall directives are placed at the top
-level. For example:
+* At the root of the "CD-ROM". When you write the installation ISO to a USB
+  Flash Drive, this can be done by copying the :code:`autoinstall.yaml` to the
+  partition containing the contents of the ISO - i.e.,
+  in the directory containing the ``casper`` sub-directory.
+* On the rootfs of the installation system - this option will typically
+  require modifying the installation ISO and is not suggested, but is
+  supported.
 
-.. code-block:: yaml
+Alternatively, you can pass the location of the autoinstall file on the kernel
+command line via the :code:`subiquity.autoinstallpath` parameter, where the
+path is relative to the rootfs of the installation system. For example:
 
-    version: 1
-    ....
+* :code:`subiquity.autoinstallpath=path/to/autoinstall.yaml`
+
+.. note::
+
+    Directly specifying autoinstall as a :code:`autoinstall.yaml` file does not
+    require a :code:`#cloud-config` header, and does not use a top level
+    ``autoinstall:`` key. The autoinstall directives are placed at the top
+    level. For example:
+
+    .. code-block:: yaml
+
+        version: 1
+        ....
+
+
+Order precedence of the autoinstall locations
+======================================
+
+Since there are many ways to specify the autoinstall file, it may happen that
+multiple locations are specified at once. Subiquity will look for the
+autoinstall file in the following order and pick the first existing one:
+
+1. Kernel command line
+2. Root of the installation system
+3. Cloud Config
+4. Root of the CD-ROM (ISO)
 
 
 Cloud-init and autoinstall interaction
