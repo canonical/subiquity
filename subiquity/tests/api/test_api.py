@@ -1820,6 +1820,38 @@ class TestOEM(TestAPI):
             source_id="ubuntu-desktop", expected=["oem-somerville-tentacool-meta"]
         )
 
+    async def test_confirmation_before_storage_configured(self):
+        # On ubuntu-desktop, the confirmation event sometimes comes before the
+        # storage configured event. This was known to cause OEM to fail with
+        # the following error:
+        #   File "server/controllers/oem.py", in load_metapackages_list
+        #     if fs_controller.is_core_boot_classic():
+        #   File "server/controllers/filesystem.py", in is_core_boot_classic
+        #     return self._info.is_core_boot_classic()
+        # AttributeError: 'NoneType' object has no attribute
+        # 'is_core_boot_classic'
+        with patch.dict(os.environ, {"SUBIQUITY_DEBUG": "has-drivers"}):
+            config = "examples/machines/simple.json"
+            args = ["--source-catalog", "examples/sources/mixed.yaml"]
+            async with start_server(config, extra_args=args) as inst:
+                await inst.post("/source", source_id="ubuntu-desktop")
+                names = [
+                    "locale",
+                    "keyboard",
+                    "source",
+                    "network",
+                    "proxy",
+                    "mirror",
+                    "storage",
+                ]
+                await inst.post("/meta/confirm", tty="/dev/tty1")
+                await inst.post("/meta/mark_configured", endpoint_names=names)
+
+                resp = await inst.get("/oem", wait=True)
+                self.assertEqual(
+                    ["oem-somerville-tentacool-meta"], resp["metapackages"]
+                )
+
 
 class TestSource(TestAPI):
     @timeout()

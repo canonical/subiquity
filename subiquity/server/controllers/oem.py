@@ -65,6 +65,7 @@ class OEMController(SubiquityController):
 
         self.load_metapkgs_task: Optional[asyncio.Task] = None
         self.kernel_configured_event = asyncio.Event()
+        self.fs_configured_event = asyncio.Event()
 
     def start(self) -> None:
         self._wait_confirmation = asyncio.Event()
@@ -75,6 +76,9 @@ class OEMController(SubiquityController):
         self.app.hub.subscribe(InstallerChannels.APT_CONFIGURED, self._wait_apt.set)
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, "kernel"), self.kernel_configured_event.set
+        )
+        self.app.hub.subscribe(
+            (InstallerChannels.CONFIGURED, "filesystem"), self.fs_configured_event.set
         )
 
         async def list_and_mark_configured() -> None:
@@ -128,6 +132,12 @@ class OEMController(SubiquityController):
     async def load_metapackages_list(self, context) -> None:
         with context.child("wait_confirmation"):
             await self._wait_confirmation.wait()
+        # In normal scenarios, the confirmation event comes after the
+        # storage/filesystem is configured. However, in semi automated desktop
+        # installs (especially in CI), it is possible that the events come in
+        # the reverse order. Let's be prepared for it by also waiting for the
+        # storage configured event.
+        await self.fs_configured_event.wait()
 
         # Only look for OEM meta-packages on supported variants and if we are
         # not running core boot.
