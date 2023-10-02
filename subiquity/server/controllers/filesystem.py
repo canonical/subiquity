@@ -20,6 +20,7 @@ import json
 import logging
 import os
 import pathlib
+import subprocess
 import time
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -1532,6 +1533,15 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def _pre_shutdown(self):
         if not self.reset_partition_only:
-            await self.app.command_runner.run(["umount", "--recursive", "/target"])
+            # /target is mounted only if the installation was actually started.
+            try:
+                await self.app.command_runner.run(["mountpoint", "/target"])
+            except subprocess.CalledProcessError:
+                log.debug(
+                    "/target does not exist or is not mounted,"
+                    " skipping call to umount --recursive"
+                )
+            else:
+                await self.app.command_runner.run(["umount", "--recursive", "/target"])
         if len(self.model._all(type="zpool")) > 0:
             await self.app.command_runner.run(["zpool", "export", "-a"])

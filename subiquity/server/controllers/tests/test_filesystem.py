@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import subprocess
 import uuid
 from unittest import IsolatedAsyncioTestCase, mock
 
@@ -89,6 +90,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
         self.app.opts.bootloader = "UEFI"
+        self.app.command_runner = mock.AsyncMock()
         self.app.report_start_event = mock.Mock()
         self.app.report_finish_event = mock.Mock()
         self.app.prober = mock.Mock()
@@ -342,6 +344,32 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
                 await self.fsc.v2_edit_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
         handler.assert_called_once()
+
+    async def test__pre_shutdown_install_started(self):
+        self.fsc.reset_partition_only = False
+        run = mock.patch.object(self.app.command_runner, "run")
+        _all = mock.patch.object(self.fsc.model, "_all")
+        with run as mock_run, _all:
+            await self.fsc._pre_shutdown()
+        mock_run.assert_has_calls(
+            [
+                mock.call(["mountpoint", "/target"]),
+                mock.call(["umount", "--recursive", "/target"]),
+            ]
+        )
+        self.assertEqual(len(mock_run.mock_calls), 2)
+
+    async def test__pre_shutdown_install_not_started(self):
+        async def fake_run(cmd, **kwargs):
+            if cmd == ["mountpoint", "/target"]:
+                raise subprocess.CalledProcessError(cmd=cmd, returncode=1)
+
+        self.fsc.reset_partition_only = False
+        run = mock.patch.object(self.app.command_runner, "run", side_effect=fake_run)
+        _all = mock.patch.object(self.fsc.model, "_all")
+        with run as mock_run, _all:
+            await self.fsc._pre_shutdown()
+        mock_run.assert_called_once_with(["mountpoint", "/target"])
 
 
 class TestGuided(IsolatedAsyncioTestCase):

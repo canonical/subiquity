@@ -16,6 +16,8 @@
 import logging
 from typing import List
 
+from subiquity.common.pkg import TargetPkg
+
 log = logging.getLogger("subiquity.models.ssh")
 
 
@@ -29,8 +31,8 @@ class SSHModel:
         # we go back to it.
         self.ssh_import_id = ""
 
-    async def target_packages(self):
-        if self.install_server:
-            return ["openssh-server"]
-        else:
+    async def target_packages(self) -> List[TargetPkg]:
+        if not self.install_server:
             return []
+
+        return [TargetPkg(name="openssh-server", skip_when_offline=False)]
