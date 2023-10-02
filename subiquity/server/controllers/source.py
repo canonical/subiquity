@@ -165,8 +165,9 @@ class SourceController(SubiquityController):
         try:
             new_source = self.model.get_matching_source(source_id)
         except KeyError:
-            # TODO going forward, we should probably stop silently ignoring
-            # unmatched sources.
+            # TODO going forward, we should probably stop ignoring unmatched
+            # sources.
+            log.warning("unable to find '%s' in sources catalog", source_id)
             pass
         else:
             if self.model.current != new_source:
