@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import contextlib
 import logging
 import os
 from typing import Any, Optional
@@ -79,6 +78,7 @@ class SourceController(SubiquityController):
         self._handler = None
         self.source_path: Optional[str] = None
         self.ai_source_id: Optional[str] = None
+        self._configured: bool = False
 
     def make_autoinstall(self):
         return {
@@ -148,10 +148,30 @@ class SourceController(SubiquityController):
 
     async def configured(self):
         await super().configured()
+        self._configured = True
         self.app.base_model.set_source_variant(self.model.current.variant)
 
     async def POST(self, source_id: str, search_drivers: bool = False) -> None:
-        self.model.search_drivers = search_drivers
-        with contextlib.suppress(KeyError):
-            self.model.current = self.model.get_matching_source(source_id)
-        await self.configured()
+        # Marking the source model configured has an effect on many of the
+        # other controllers. Oftentimes, it would involve cancelling and
+        # restarting various operations.
+        # Let's try not to trigger the event again if we are not changing any
+        # of the settings.
+        changed = False
+        if self.model.search_drivers != search_drivers:
+            changed = True
+            self.model.search_drivers = search_drivers
+
+        try:
+            new_source = self.model.get_matching_source(source_id)
+        except KeyError:
+            # TODO going forward, we should probably stop silently ignoring
+            # unmatched sources.
+            pass
+        else:
+            if self.model.current != new_source:
+                changed = True
+                self.model.current = new_source
+
+        if changed or not self._configured:
+            await self.configured()
