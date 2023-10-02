@@ -31,8 +31,6 @@ class TestSnapdSnapInfoLoader(unittest.IsolatedAsyncioTestCase):
         self.model = SnapListModel()
         self.app = make_app()
         self.app.snapd = AsyncMock()
-        self.app.report_start_event = Mock()
-        self.app.report_finish_event = Mock()
 
         self.loader = SnapdSnapInfoLoader(
             self.model, self.app.snapd, "server", self.app.context
