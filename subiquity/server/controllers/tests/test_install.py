@@ -34,8 +34,6 @@ class TestWriteConfig(unittest.IsolatedAsyncioTestCase):
         self.controller = InstallController(make_app())
         self.controller.write_config = unittest.mock.Mock()
         self.controller.app.note_file_for_apport = Mock()
-        self.controller.app.report_start_event = Mock()
-        self.controller.app.report_finish_event = Mock()
 
         self.controller.model.target = "/target"
 
@@ -199,8 +197,6 @@ efi_state_with_dup_rp = EFIBootState(
 class TestInstallController(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.controller = InstallController(make_app())
-        self.controller.app.report_start_event = Mock()
-        self.controller.app.report_finish_event = Mock()
         self.controller.model.target = tempfile.mkdtemp()
         os.makedirs(os.path.join(self.controller.model.target, "etc/grub.d"))
         self.addCleanup(shutil.rmtree, self.controller.model.target)
