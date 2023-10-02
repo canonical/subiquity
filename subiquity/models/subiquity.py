@@ -20,7 +20,7 @@ import logging
 import os
 import uuid
 from collections import OrderedDict
-from typing import Any, Dict, Set, Tuple
+from typing import Any, Dict, List, Set, Tuple
 
 import yaml
 from cloudinit.config.schema import (
@@ -39,6 +39,7 @@ except ImportError:
 
 from curtin.config import merge_config
 
+from subiquity.common.pkg import TargetPkg
 from subiquity.common.resources import get_users_and_groups
 from subiquity.server.types import InstallerChannels
 from subiquitycore.file_util import generate_timestamped_header, write_file
@@ -177,6 +178,9 @@ class SubiquityModel:
             self.chroot_prefix = []
 
         self.active_directory = AdModel()
+        # List of packages that will be installed using cloud-init on first
+        # boot.
+        self.cloud_init_packages: List[str] = []
         self.codecs = CodecsModel()
         self.debconf_selections = DebconfSelectionsModel()
         self.drivers = DriversModel()
@@ -189,7 +193,7 @@ class SubiquityModel:
         self.mirror = MirrorModel()
         self.network = NetworkModel()
         self.oem = OEMModel()
-        self.packages = []
+        self.packages: List[TargetPkg] = []
         self.proxy = ProxyModel()
         self.snaplist = SnapListModel()
         self.ssh = SSHModel()
@@ -376,13 +380,15 @@ class SubiquityModel:
             model = getattr(self, model_name)
             if getattr(model, "make_cloudconfig", None):
                 merge_config(config, model.make_cloudconfig())
+        for package in self.cloud_init_packages:
+            merge_config(config, {"packages": list(self.cloud_init_packages)})
         merge_cloud_init_config(config, self.userdata)
         if lsb_release()["release"] not in ("20.04", "22.04"):
             config.setdefault("write_files", []).append(CLOUDINIT_DISABLE_AFTER_INSTALL)
         self.validate_cloudconfig_schema(data=config, data_source="system install")
         return config
 
-    async def target_packages(self):
+    async def target_packages(self) -> List[TargetPkg]:
         packages = list(self.packages)
         for model_name in self._postinstall_model_names.all():
             meth = getattr(getattr(self, model_name), "target_packages", None)

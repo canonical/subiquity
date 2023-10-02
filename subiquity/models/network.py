@@ -15,8 +15,10 @@
 
 import logging
 import subprocess
+from typing import List
 
 from subiquity import cloudinit
+from subiquity.common.pkg import TargetPkg
 from subiquitycore.models.network import NetworkModel as CoreNetworkModel
 from subiquitycore.utils import arun_command
 
@@ -93,11 +95,11 @@ class NetworkModel(CoreNetworkModel):
                 }
         return r
 
-    async def target_packages(self):
-        if self.needs_wpasupplicant:
-            return ["wpasupplicant"]
-        else:
+    async def target_packages(self) -> List[TargetPkg]:
+        if not self.needs_wpasupplicant:
             return []
+
+        return [TargetPkg(name="wpasupplicant", skip_when_offline=False)]
 
     async def is_nm_enabled(self):
         try:

@@ -16,7 +16,9 @@
 import locale
 import logging
 import subprocess
+from typing import List
 
+from subiquity.common.pkg import TargetPkg
 from subiquitycore.utils import arun_command, split_cmd_output
 
 log = logging.getLogger("subiquity.models.locale")
@@ -60,7 +62,7 @@ class LocaleModel:
             locale += ".UTF-8"
         return {"locale": locale}
 
-    async def target_packages(self):
+    async def target_packages(self) -> List[TargetPkg]:
         if self.selected_language is None:
             return []
         if self.locale_support != "langpack":
@@ -69,6 +71,7 @@ class LocaleModel:
         if lang == "C":
             return []
 
-        return await split_cmd_output(
+        pkgs = await split_cmd_output(
             self.chroot_prefix + ["check-language-support", "-l", lang], None
         )
+        return [TargetPkg(name=pkg, skip_when_offline=False) for pkg in pkgs]
