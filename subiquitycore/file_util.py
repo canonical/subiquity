@@ -48,9 +48,9 @@ def set_log_perms(target, *, isdir=True, group_write=False, mode=None):
 
 
 @contextlib.contextmanager
-def open_perms(filename, *, cmode=None):
-    if cmode is None:
-        cmode = _DEF_PERMS_FILE
+def open_perms(filename, *, mode=None):
+    if mode is None:
+        mode = _DEF_PERMS_FILE
 
     tf = None
     try:
@@ -59,7 +59,7 @@ def open_perms(filename, *, cmode=None):
         tf = tempfile.NamedTemporaryFile(dir=dirname, delete=False, mode="w")
         yield tf
         tf.close()
-        set_log_perms(tf.name, mode=cmode)
+        set_log_perms(tf.name, mode=mode)
         os.rename(tf.name, filename)
     except OSError as e:
         if tf is not None:
