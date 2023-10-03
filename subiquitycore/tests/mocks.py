@@ -43,4 +43,9 @@ def make_app(model=None):
     app.opts = mock.Mock()
     app.opts.dry_run = True
     app.scale_factor = 1000
+    app.echo_syslog_id = None
+    app.log_syslog_id = None
+    app.report_start_event = mock.Mock()
+    app.report_finish_event = mock.Mock()
+
     return app
