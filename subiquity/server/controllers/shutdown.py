@@ -92,6 +92,7 @@ class ShutdownController(SubiquityController):
         for logfile in cloudinit_logs:
             if not os.path.exists(logfile):
                 continue
+            set_log_perms(logfile)
             await self.app.command_runner.run(
                 ["cp", "-a", logfile, "/var/log/installer"]
             )
