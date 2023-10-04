@@ -23,7 +23,7 @@ def setup_logger(dir, base="subiquity"):
     os.makedirs(dir, exist_ok=True)
     # Create the log directory in such a way that users in the group may
     # write to this directory in the installation environment.
-    set_log_perms(dir, isdir=True, group_write=True)
+    set_log_perms(dir, group_write=True)
 
     logger = logging.getLogger("")
     logger.setLevel(logging.DEBUG)
@@ -34,7 +34,7 @@ def setup_logger(dir, base="subiquity"):
         nopid_file = os.path.join(dir, "{}-{}.log".format(base, level))
         logfile = "{}.{}".format(nopid_file, os.getpid())
         handler = logging.FileHandler(logfile)
-        set_log_perms(logfile, isdir=False, group_write=False)
+        set_log_perms(logfile, group_write=False)
         # os.symlink cannot replace an existing file or symlink so create
         # it and then rename it over.
         tmplink = logfile + ".link"
