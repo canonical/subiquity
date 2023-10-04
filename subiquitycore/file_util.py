@@ -44,7 +44,7 @@ def set_log_perms(target, *, group_write=False, mode=None, group=_DEF_GROUP):
         if group_write:
             mode |= 0o020
     os.chmod(target, mode)
-    os.chown(target, -1, grp.getgrnam(group).gr_gid)
+    os.chown(target, 0, grp.getgrnam(group).gr_gid)
 
 
 @contextlib.contextmanager
