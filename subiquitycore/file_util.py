@@ -29,7 +29,7 @@ _DEF_GROUP = "adm"
 log = logging.getLogger("subiquitycore.file_util")
 
 
-def set_log_perms(target, *, isdir=True, group_write=False, mode=None):
+def set_log_perms(target, *, group_write=False, mode=None, group=_DEF_GROUP):
     if os.getuid() != 0:
         log.warning(
             "set_log_perms: running as non-root - not adjusting"
@@ -39,19 +39,16 @@ def set_log_perms(target, *, isdir=True, group_write=False, mode=None):
         return
     if mode is None:
         mode = _DEF_PERMS_FILE
-        if isdir:
+        if os.path.isdir(target):
             mode |= 0o110
         if group_write:
             mode |= 0o020
     os.chmod(target, mode)
-    os.chown(target, -1, grp.getgrnam(_DEF_GROUP).gr_gid)
+    os.chown(target, -1, grp.getgrnam(group).gr_gid)
 
 
 @contextlib.contextmanager
-def open_perms(filename, *, cmode=None):
-    if cmode is None:
-        cmode = _DEF_PERMS_FILE
-
+def open_perms(filename, **kwargs):
     tf = None
     try:
         dirname = os.path.dirname(filename)
@@ -59,7 +56,7 @@ def open_perms(filename, *, cmode=None):
         tf = tempfile.NamedTemporaryFile(dir=dirname, delete=False, mode="w")
         yield tf
         tf.close()
-        set_log_perms(tf.name, mode=cmode)
+        set_log_perms(tf.name, **kwargs)
         os.rename(tf.name, filename)
     except OSError as e:
         if tf is not None:
