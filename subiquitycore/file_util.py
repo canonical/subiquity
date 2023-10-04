@@ -29,9 +29,7 @@ _DEF_GROUP = "adm"
 log = logging.getLogger("subiquitycore.file_util")
 
 
-def set_log_perms(
-    target, *, isdir=True, group_write=False, mode=None, group=_DEF_GROUP
-):
+def set_log_perms(target, *, group_write=False, mode=None, group=_DEF_GROUP):
     if os.getuid() != 0:
         log.warning(
             "set_log_perms: running as non-root - not adjusting"
@@ -41,7 +39,7 @@ def set_log_perms(
         return
     if mode is None:
         mode = _DEF_PERMS_FILE
-        if isdir:
+        if os.path.isdir(target):
             mode |= 0o110
         if group_write:
             mode |= 0o020
