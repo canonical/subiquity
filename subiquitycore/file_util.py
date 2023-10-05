@@ -23,8 +23,8 @@ import tempfile
 
 import yaml
 
-_DEF_PERMS_FILE = 0o640
-_DEF_GROUP = "adm"
+_DEF_PERMS_FILE = 0o600
+_DEF_GROUP = "root"
 
 log = logging.getLogger("subiquitycore.file_util")
 
