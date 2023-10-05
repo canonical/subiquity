@@ -689,7 +689,9 @@ class InstallController(SubiquityController):
         autoinstall_config = "#cloud-config\n" + yaml.dump(
             {"autoinstall": self.app.make_autoinstall()}
         )
-        write_file(autoinstall_path, autoinstall_config)
+        # As autoinstall-user-data contains a password hash, we want this file
+        # to have a very restrictive mode and ownership.
+        write_file(autoinstall_path, autoinstall_config, mode=0o400, group="root")
         try:
             if self.supports_apt():
                 packages = await self.get_target_packages(context=context)

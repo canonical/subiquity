@@ -26,8 +26,6 @@ from subiquitycore.tests.mocks import make_app
 class TestRefreshController(SubiTestCase):
     def setUp(self):
         self.app = make_app()
-        self.app.report_start_event = mock.Mock()
-        self.app.report_finish_event = mock.Mock()
         self.app.note_data_for_apport = mock.Mock()
         self.app.prober = mock.Mock()
         self.app.snapdapi = snapdapi.make_api_client(AsyncSnapd(get_fake_connection()))

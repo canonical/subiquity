@@ -83,6 +83,20 @@ class ShutdownController(SubiquityController):
         elif self.app.state == ApplicationState.DONE:
             await self.shutdown()
 
+    async def copy_cloud_init_logs(self, target_logs):
+        # Preserve ephemeral boot cloud-init logs if applicable
+        cloudinit_logs = (
+            "/var/log/cloud-init.log",
+            "/var/log/cloud-init-output.log",
+        )
+        for logfile in cloudinit_logs:
+            if not os.path.exists(logfile):
+                continue
+            set_log_perms(logfile)
+            await self.app.command_runner.run(
+                ["cp", "-a", logfile, "/var/log/installer"]
+            )
+
     @with_context()
     async def copy_logs_to_target(self, context):
         if self.opts.dry_run and "copy-logs-fail" in self.app.debug_flags:
@@ -96,24 +110,12 @@ class ShutdownController(SubiquityController):
         if self.opts.dry_run:
             os.makedirs(target_logs, exist_ok=True)
         else:
-            # Preserve ephemeral boot cloud-init logs if applicable
-            cloudinit_logs = [
-                cloudinit_log
-                for cloudinit_log in (
-                    "/var/log/cloud-init.log",
-                    "/var/log/cloud-init-output.log",
-                )
-                if os.path.exists(cloudinit_log)
-            ]
-            if cloudinit_logs:
-                await self.app.command_runner.run(
-                    ["cp", "-a"] + cloudinit_logs + ["/var/log/installer"]
-                )
+            await self.copy_cloud_init_logs(target_logs)
             await self.app.command_runner.run(
                 ["cp", "-aT", "/var/log/installer", target_logs]
             )
             # Close the permissions from group writes on the target.
-            set_log_perms(target_logs, isdir=True, group_write=False)
+            set_log_perms(target_logs, group_write=False)
 
         journal_txt = os.path.join(target_logs, "installer-journal.txt")
         try:

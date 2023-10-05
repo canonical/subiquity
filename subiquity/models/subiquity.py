@@ -434,7 +434,7 @@ class SubiquityModel:
             ("etc/cloud/ds-identify.cfg", "policy: enabled\n", 0o644),
         ]
         # Add cloud-init clean hooks to support golden-image creation.
-        cfg_files = ["/" + path for (path, _content, _cmode) in files]
+        cfg_files = ["/" + path for (path, _content, _mode) in files]
         cfg_files.extend(self.network.rendered_config_paths())
         if lsb_release()["release"] not in ("20.04", "22.04"):
             cfg_files.append("/etc/cloud/cloud-init.disabled")
@@ -467,10 +467,10 @@ class SubiquityModel:
         if self.source.current.variant == "core":
             # can probably be supported but requires changes
             return
-        for path, content, cmode in self._cloud_init_files():
+        for path, content, mode in self._cloud_init_files():
             path = os.path.join(self.target, path)
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            write_file(path, content, cmode=cmode)
+            write_file(path, content, mode=mode)
 
     def _media_info(self):
         if os.path.exists("/cdrom/.disk/info"):

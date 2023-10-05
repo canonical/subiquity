@@ -91,8 +91,6 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.app = make_app()
         self.app.opts.bootloader = "UEFI"
         self.app.command_runner = mock.AsyncMock()
-        self.app.report_start_event = mock.Mock()
-        self.app.report_finish_event = mock.Mock()
         self.app.prober = mock.Mock()
         self.app.prober.get_storage = mock.AsyncMock()
         self.app.block_log_dir = "/inexistent"
@@ -1177,8 +1175,6 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.app = make_app()
         self.app.command_runner = mock.AsyncMock()
         self.app.opts.bootloader = "UEFI"
-        self.app.report_start_event = mock.Mock()
-        self.app.report_finish_event = mock.Mock()
         self.app.prober = mock.Mock()
         self.app.prober.get_storage = mock.AsyncMock()
         self.app.snapdapi = snapdapi.make_api_client(AsyncSnapd(get_fake_connection()))
