@@ -8,16 +8,16 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-09-06 15:13-0600\n"
-"PO-Revision-Date: 2021-12-27 04:47+0000\n"
-"Last-Translator: Yulin Yang <yylteam@icloud.com>\n"
+"PO-Revision-Date: 2023-06-24 23:09+0000\n"
+"Last-Translator: ulei01 <Unknown>\n"
 "Language-Team: Chinese (Simplified) <zh_CN@li.org>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2023-09-07 07:09+0000\n"
+"X-Generator: Launchpad (build cc7f0d837bf2751562eea8708e7cc6eb3f33ceab)\n"
+"Language: \n"
 
 #: ../subiquity/client/client.py:58
 msgid ""
@@ -90,7 +90,7 @@ msgstr "无法编辑预先存在的卷组。"
 #: ../subiquity/common/filesystem/actions.py:194
 #, python-brace-format
 msgid "Cannot edit {vglabel} because it has logical volumes."
-msgstr "无法编辑 {vglabel} ，因为它有逻辑卷。"
+msgstr "Cannot edit {vglabel} because it has logical volumes."
 
 #: ../subiquity/common/filesystem/actions.py:225
 msgid "Primary partition limit reached"
@@ -103,25 +103,28 @@ msgstr ""
 #: ../subiquity/common/filesystem/actions.py:250
 #, python-brace-format
 msgid "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
-msgstr "无法从预先存在的 {cdtype} {cdlabel} 中删除 {selflabel}。"
+msgstr "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
 
 #: ../subiquity/common/filesystem/actions.py:262
 #, python-brace-format
 msgid ""
 "Removing {selflabel} would leave the {cdtype} {cdlabel} with less than "
 "{min_devices} devices."
-msgstr "删除{selflabel}将使{cdtype} {cdlabel}的设备少于{min_devices}。"
+msgstr ""
+"Removing {selflabel} would leave the {cdtype} {cdlabel} with less than "
+"{min_devices} devices."
 
 #: ../subiquity/common/filesystem/actions.py:273
 #, python-brace-format
 msgid ""
 "Removing {selflabel} would leave the {cdtype} {cdlabel} with no devices."
-msgstr "删除{selflabel}将使{cdtype} {cdlabel}没有设备。"
+msgstr ""
+"Removing {selflabel} would leave the {cdtype} {cdlabel} with no devices."
 
 #: ../subiquity/common/filesystem/actions.py:291
 #, python-brace-format
 msgid "Cannot delete {selflabel} as it is part of the {cdtype} {cdname}."
-msgstr "无法删除{selflabel}，因为它是{cdtype} {cdname}的一部分。"
+msgstr "Cannot delete {selflabel} as it is part of the {cdtype} {cdname}."
 
 #: ../subiquity/common/filesystem/actions.py:303
 msgid ""
@@ -130,24 +133,28 @@ msgstr "无法从已具有分区的设备中删除单个分区。"
 
 #: ../subiquity/common/filesystem/actions.py:307
 msgid "Cannot delete required bootloader partition"
-msgstr "无法删除所需的引导加载程序分区"
+msgstr "Cannot delete required bootloader partition"
 
 #: ../subiquity/common/filesystem/actions.py:321
 #, python-brace-format
 msgid ""
 "Cannot delete {devicelabel} as partition {partnum} is part of the {cdtype} "
 "{cdname}."
-msgstr "无法删除{devicelabel}，因为分区{partnum}是{cdtype} {cdname}的一部分。"
+msgstr ""
+"Cannot delete {devicelabel} as partition {partnum} is part of the {cdtype} "
+"{cdname}."
 
 #: ../subiquity/common/filesystem/actions.py:331
 #, python-brace-format
-msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
-msgstr "无法删除{devicelabel}，因为它已装入{count}个分区。"
+msgid ""
+"Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgstr ""
+"Cannot delete {devicelabel} because it has {count} mounted partitions."
 
 #: ../subiquity/common/filesystem/actions.py:335
 #, python-brace-format
 msgid "Cannot delete {devicelabel} because it has 1 mounted partition."
-msgstr "无法删除{devicelabel}，因为它已装入1个分区。"
+msgstr "Cannot delete {devicelabel} because it has 1 mounted partition."
 
 #: ../subiquity/common/filesystem/actions.py:345
 msgid ""
@@ -227,12 +234,12 @@ msgstr "{device}的分区"
 
 #: ../subiquity/common/filesystem/labels.py:138
 msgid "software"
-msgstr ""
+msgstr "软件"
 
 #: ../subiquity/common/filesystem/labels.py:139
 #, python-brace-format
 msgid "{type} RAID {level}"
-msgstr ""
+msgstr "{type} RAID {level}"
 
 #: ../subiquity/common/filesystem/labels.py:144
 msgid "LVM volume group"
@@ -317,7 +324,7 @@ msgstr "已使用"
 #: ../subiquity/common/filesystem/labels.py:283
 #, python-brace-format
 msgid "container for {devices}"
-msgstr ""
+msgstr "{devices} 的容器"
 
 #: ../subiquity/common/types.py:39
 msgid "Block device probe failure"
@@ -619,19 +626,19 @@ msgstr "禁用"
 msgid ""
 "A wifi device was detected but the necessary support packages were not\n"
 "available.\n"
-msgstr ""
+msgstr "检测到 wifi 设备，但没有必要的支持包。\n"
 
 #: ../subiquitycore/ui/views/network.py:217
 msgid "Wifi support packages are being installed.\n"
-msgstr ""
+msgstr "正在安装 Wifi 支持包。\n"
 
 #: ../subiquitycore/ui/views/network.py:222
 msgid "Wifi support packages failed to install. Please check the logs.\n"
-msgstr ""
+msgstr "Wifi 支持包安装失败。请检查日志。\n"
 
 #: ../subiquitycore/ui/views/network.py:227
 msgid "Wifi support packages will be installed in the target system.\n"
-msgstr ""
+msgstr "Wifi 支持包将安装在目标系统中。\n"
 
 #: ../subiquitycore/ui/views/network.py:235
 msgid "Network connections"
@@ -641,9 +648,7 @@ msgstr "网络连接"
 msgid ""
 "Configure at least one interface this server can use to talk to other "
 "machines, and which preferably provides sufficient access for updates."
-msgstr ""
-"至少配置一个此服务器可用于与其他计算机对话的接口，最好提供足够的更新访问权"
-"限。"
+msgstr "至少配置一个此服务器可用于与其他计算机对话的接口，最好提供足够的更新访问权限。"
 
 #. See _route_watcher
 #: ../subiquitycore/ui/views/network.py:292
@@ -694,7 +699,7 @@ msgstr "10"
 
 #: ../subiquity/models/filesystem.py:287
 msgid "Container"
-msgstr ""
+msgstr "容器"
 
 #. Attempting to convert input to a size
 #: ../subiquity/models/filesystem.py:322
@@ -1025,8 +1030,7 @@ msgstr[0] "它包含{n}个分区"
 #, python-brace-format
 msgid "It contains 1 volume."
 msgid_plural "It contains {n} volumes."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "它包含 {n} 个卷"
 
 #: ../subiquity/ui/views/filesystem/delete.py:89
 msgid "It is not formatted or mounted."
@@ -1122,7 +1126,7 @@ msgstr "从{device}删除"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:324
 msgid "Create Logical Volume"
-msgstr ""
+msgstr "创建逻辑卷"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:326
 #, python-brace-format
@@ -1246,7 +1250,6 @@ msgid "Custom storage layout"
 msgstr "自定义存储布局"
 
 #: ../subiquity/ui/views/filesystem/guided.py:266
-#, fuzzy
 msgid ""
 "\n"
 "\n"
@@ -1279,33 +1282,6 @@ msgid ""
 "at /.\n"
 "\n"
 msgstr ""
-"\n"
-"\n"
-"“使用整个磁盘”选项将Ubuntu安装到所选磁盘上，\n"
-"并替换所有已经存在的分区和数据。\n"
-"\n"
-"如果平台需要，将在磁盘上创建引导加载程序分区。\n"
-"\n"
-"如果选择使用LVM，则会创建两个额外的分区，\n"
-"一个用于/boot，另一个用于覆盖磁盘的其余部分。\n"
-"将创建一个包含大分区的LVM卷组。为根文件系统\n"
-"创建一个逻辑卷，使用一些简单的启发式方法调整大小。\n"
-"可以使用标准LVM命令行工具（或在下一个屏幕上）\n"
-"轻松地扩大它。\n"
-"\n"
-"您还可以选择加密LVM卷组。这将需要设置\n"
-"一个密码，在系统启动之前，每次启动时\n"
-"都需要输入该密码。\n"
-"\n"
-"如果您不选择使用LVM，将创建一个覆盖\n"
-"磁盘其余部分的分区，然后将其格式化为ext4并装载在/。\n"
-"\n"
-"无论哪种情况，您都有机会查看和修改结果。\n"
-"\n"
-"如果您选择使用自定义存储布局，则不会对磁盘\n"
-"进行任何更改，您至少必须选择一个引导磁盘，\n"
-"并在/处安装一个文件系统。\n"
-"\n"
 
 #: ../subiquity/ui/views/filesystem/guided.py:298
 msgid ""
@@ -1353,14 +1329,13 @@ msgstr "有关引导式存储配置的帮助"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, "
-"0-9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
+"9, +, _, . and -"
 msgstr "卷组名称中唯一允许的字符是a-z、A-Z、0-9、+、_，.及-"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:72
-#, fuzzy
 msgid "Passphrases"
-msgstr "密码："
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:77
 #: ../subiquity/ui/views/filesystem/raid.py:85
@@ -1660,9 +1635,7 @@ msgid ""
 "Unfortunately probing for devices to install to failed. Please report a bug "
 "on Launchpad, and if possible include the contents of the /var/log/installer "
 "directory."
-msgstr ""
-"不幸的是，探测要安装到的设备失败。请在Launchpad上报告一个问题，如果可能，请包"
-"括/var/log/installer目录的内容。"
+msgstr "不幸的是，探测要安装到的设备失败。请在Launchpad上报告一个问题，如果可能，请包括/var/log/installer目录的内容。"
 
 #: ../subiquity/ui/views/filesystem/probing.py:63
 msgid "Probing for devices to install to failed"
@@ -2050,9 +2023,9 @@ msgid "The username \"{username}\" is reserved for use by the system."
 msgstr "用户名\"{username}\"为系统保留使用。"
 
 #: ../subiquity/ui/views/identity.py:167
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "The username \"{username}\" is already in use."
-msgstr "用户名\"{username}\"为系统保留使用。"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:173
 msgid "Password must be set"
@@ -2071,14 +2044,11 @@ msgid ""
 "Enter the username and password you will use to log in to the system. You "
 "can configure SSH access on the next screen but a password is still needed "
 "for sudo."
-msgstr ""
-"输入用于登录系统的用户名和密码。您可以在下一个屏幕上配置SSH访问，但是sudo命令"
-"仍然需要密码。"
+msgstr "输入用于登录系统的用户名和密码。您可以在下一个屏幕上配置SSH访问，但是sudo命令仍然需要密码。"
 
 #: ../subiquity/ui/views/identity.py:212
-#, fuzzy
 msgid "Passwords"
-msgstr "密码"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:44
 msgid "Install progress"
@@ -2110,9 +2080,8 @@ msgid "Installing system"
 msgstr "正在安装系统"
 
 #: ../subiquity/ui/views/installprogress.py:137
-#, fuzzy
 msgid "Starting installer"
-msgstr "重启安装程序"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:140
 msgid "Waiting on cloud-init"
@@ -2185,8 +2154,7 @@ msgstr "键盘自动检测"
 msgid ""
 "Keyboard detection starting. You will be asked a series of questions about "
 "your keyboard. Press escape at any time to go back to the previous screen."
-msgstr ""
-"键盘检测正在启动。您将被问及一系列关于键盘的问题。可随时按Esc键返回上一屏幕。"
+msgstr "键盘检测正在启动。您将被问及一系列关于键盘的问题。可随时按Esc键返回上一屏幕。"
 
 #: ../subiquity/ui/views/keyboard.py:100
 msgid ""
@@ -2206,8 +2174,7 @@ msgid ""
 "\n"
 msgstr ""
 "\n"
-"如果正确，请在下一屏幕上选择“完成”。如果没有，您可以选择其他布局或再次运行自"
-"动检测。\n"
+"如果正确，请在下一屏幕上选择“完成”。如果没有，您可以选择其他布局或再次运行自动检测。\n"
 "\n"
 
 #: ../subiquity/ui/views/keyboard.py:126
@@ -2244,9 +2211,8 @@ msgid ""
 msgstr ""
 "您需要一种在全国布局和标准拉丁布局之间切换键盘的方法。\n"
 "\n"
-"出于符合人体工程学的原因，通常选择右Alt键或Caps Lock键（在后一种情况下，使用"
-"Shift+Caps Lock组合键进行普通Caps切换）。Alt+Shift也是一种流行的组合；然而，"
-"在Emacs和其他针对特定需求使用它的程序中，它将失去通常的行为。\n"
+"出于符合人体工程学的原因，通常选择右Alt键或Caps Lock键（在后一种情况下，使用Shift+Caps "
+"Lock组合键进行普通Caps切换）。Alt+Shift也是一种流行的组合；然而，在Emacs和其他针对特定需求使用它的程序中，它将失去通常的行为。\n"
 "\n"
 "并非所有列出的键都出现在所有键盘上。 "
 
@@ -2430,20 +2396,18 @@ msgid "If you use an alternative mirror for Ubuntu, enter its details here."
 msgstr "如果你使用Ubuntu的另一个镜像，请在这里输入它的详细信息。"
 
 #: ../subiquity/ui/views/mirror.py:125
-#, fuzzy
 msgid "Try again now"
-msgstr "重试"
+msgstr ""
 
 #: ../subiquity/ui/views/proxy.py:31
 msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of \"http://"
-"[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of "
+"\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
-"如果需要使用HTTP代理访问外部世界，请在此处输入代理信息。否则，请将此项留"
-"空。\n"
+"如果需要使用HTTP代理访问外部世界，请在此处输入代理信息。否则，请将此项留空。\n"
 "\n"
 "代理信息应以“http://[[用户名][:密码]@]主机名[:端口号]/”的标准格式提供。"
 
@@ -2620,9 +2584,7 @@ msgid ""
 "These are popular snaps in server environments. Select or deselect with "
 "SPACE, press ENTER to see more details of the package, publisher and "
 "versions available."
-msgstr ""
-"这些是服务器环境中流行的快照。使用空格选择或取消选择，按回车键查看软件包、发"
-"布者和可用版本的更多详细信息。"
+msgstr "这些是服务器环境中流行的快照。使用空格选择或取消选择，按回车键查看软件包、发布者和可用版本的更多详细信息。"
 
 #: ../subiquity/ui/views/ssh.py:39
 msgid "Import Username:"
@@ -2630,15 +2592,16 @@ msgstr "导入用户名："
 
 #: ../subiquity/ui/views/ssh.py:46
 msgid "GitHub Username:"
-msgstr ""
+msgstr "GitHub 用户名："
 
 #: ../subiquity/ui/views/ssh.py:47
 msgid "Enter your GitHub username."
-msgstr ""
+msgstr "输入您的 GitHub 用户名。"
 
 #: ../subiquity/ui/views/ssh.py:50
-msgid "A GitHub username may only contain alphanumeric characters or hyphens."
-msgstr ""
+msgid ""
+"A GitHub username may only contain alphanumeric characters or hyphens."
+msgstr "GitHub 用户名只能包含字母数字字符或连字符。"
 
 #: ../subiquity/ui/views/ssh.py:54
 msgid "Launchpad Username:"
@@ -2660,7 +2623,7 @@ msgstr "导入SSH标识："
 
 #: ../subiquity/ui/views/ssh.py:73
 msgid "from GitHub"
-msgstr ""
+msgstr "来自 GitHub"
 
 #: ../subiquity/ui/views/ssh.py:74
 msgid "from Launchpad"
@@ -2668,7 +2631,7 @@ msgstr "来自Launchpad"
 
 #: ../subiquity/ui/views/ssh.py:76
 msgid "You can import your SSH keys from GitHub or Launchpad."
-msgstr ""
+msgstr "您可以从 GitHub 或 Launchpad 导入 SSH 密钥。"
 
 #: ../subiquity/ui/views/ssh.py:81
 msgid "Allow password authentication over SSH"
@@ -2687,15 +2650,13 @@ msgid ""
 "A Launchpad username must start with a letter or number. All letters must be "
 "lower-case. The characters +, - and . are also allowed after the first "
 "character."
-msgstr ""
-"Launchpad用户名必须以字母或数字开头。所有字母必须小写。第一个字符后面还允许"
-"有“+”、“-”和“.”。"
+msgstr "Launchpad用户名必须以字母或数字开头。所有字母必须小写。第一个字符后面还允许有“+”、“-”和“.”。"
 
 #: ../subiquity/ui/views/ssh.py:129
 msgid ""
 "A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
-msgstr ""
+msgstr "GitHub 用户名只能包含字母数字字符或单个连字符，不能以连字符开头或结尾。"
 
 #: ../subiquity/ui/views/ssh.py:140
 msgid "Fetching SSH keys..."
@@ -2789,75 +2750,78 @@ msgstr "禁用"
 msgid "Zdev setup"
 msgstr "Zdev设置"
 
-#~ msgctxt "DeviceAction"
 #~ msgid "Info"
 #~ msgstr "信息"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Edit"
-#~ msgstr "编辑"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Reformat"
-#~ msgstr "重新格式化"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Add Partition"
-#~ msgstr "添加分区"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Format"
-#~ msgstr "格式化"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Remove from RAID/LVM"
-#~ msgstr "从RAID/LVM中删除"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Delete"
-#~ msgstr "删除"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Make Boot Device"
-#~ msgstr "制作引导设备"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Info"
-#~ msgstr "信息"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Edit Wifi"
-#~ msgstr "编辑Wifi"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Edit IPv4"
-#~ msgstr "编辑IPv4"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Edit IPv6"
-#~ msgstr "编辑IPv6"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Edit bond"
-#~ msgstr "编辑捆绑"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Add a VLAN tag"
-#~ msgstr "添加VLAN标记"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Delete"
-#~ msgstr "删除"
-
-#~ msgid "passphrases"
-#~ msgstr "密码"
-
-#~ msgid "Cancel update"
-#~ msgstr "取消更新"
 
 #, python-brace-format
 #~ msgid "software RAID {level}"
 #~ msgstr "软件RAID{level}"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "The \"Use an entire disk\" option installs Ubuntu onto the selected disk,\n"
+#~ "replacing any partitions and data already there.\n"
+#~ "\n"
+#~ "If the platform requires it, a bootloader partition is created on the disk.\n"
+#~ "\n"
+#~ "If you choose to use LVM, two additional partitions are then created,\n"
+#~ "one for /boot and one covering the rest of the disk. An LVM volume\n"
+#~ "group is created containing the large partition. A logical volume is\n"
+#~ "created for the root filesystem, sized using some simple heuristic. It\n"
+#~ "can easily be enlarged with standard LVM command line tools (or on the\n"
+#~ "next screen).\n"
+#~ "\n"
+#~ "You can also choose to encrypt LVM volume group. This will require\n"
+#~ "setting a password, that one will need to type on every boot before\n"
+#~ "the system boots.\n"
+#~ "\n"
+#~ "If you do not choose to use LVM, a single partition is created covering the\n"
+#~ "rest of the disk which is then formatted as ext4 and mounted at /.\n"
+#~ "\n"
+#~ "In either case, you will still have a chance to review and modify the "
+#~ "results.\n"
+#~ "\n"
+#~ "If you choose to use a custom storage layout, no changes are made to the "
+#~ "disks\n"
+#~ "and you will have to, at a minimum, select a boot disk and mount a "
+#~ "filesystem\n"
+#~ "at /.\n"
+#~ "\n"
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "“使用整个磁盘”选项将Ubuntu安装到所选磁盘上，\n"
+#~ "并替换所有已经存在的分区和数据。\n"
+#~ "\n"
+#~ "如果平台需要，将在磁盘上创建引导加载程序分区。\n"
+#~ "\n"
+#~ "如果选择使用LVM，则会创建两个额外的分区，\n"
+#~ "一个用于/boot，另一个用于覆盖磁盘的其余部分。\n"
+#~ "将创建一个包含大分区的LVM卷组。为根文件系统\n"
+#~ "创建一个逻辑卷，使用一些简单的启发式方法调整大小。\n"
+#~ "可以使用标准LVM命令行工具（或在下一个屏幕上）\n"
+#~ "轻松地扩大它。\n"
+#~ "\n"
+#~ "您还可以选择加密LVM卷组。这将需要设置\n"
+#~ "一个密码，在系统启动之前，每次启动时\n"
+#~ "都需要输入该密码。\n"
+#~ "\n"
+#~ "如果您不选择使用LVM，将创建一个覆盖\n"
+#~ "磁盘其余部分的分区，然后将其格式化为ext4并装载在/。\n"
+#~ "\n"
+#~ "无论哪种情况，您都有机会查看和修改结果。\n"
+#~ "\n"
+#~ "如果您选择使用自定义存储布局，则不会对磁盘\n"
+#~ "进行任何更改，您至少必须选择一个引导磁盘，\n"
+#~ "并在/处安装一个文件系统。\n"
+#~ "\n"
+
+#~ msgid "passwords"
+#~ msgstr "密码"
+
+#~ msgid "Cancel update"
+#~ msgstr "取消更新"
 
 #~ msgid ""
 #~ "A Github username may only contain alphanumeric characters or hyphens."
@@ -2878,5 +2842,13 @@ msgstr "Zdev设置"
 #~ msgid ""
 #~ "A Github username may only contain alphanumeric characters or single "
 #~ "hyphens, and cannot begin or end with a hyphen."
-#~ msgstr ""
-#~ "Github用户名只能包含字母数字字符或单连字符，不能以连字符开头或结尾。"
+#~ msgstr "Github用户名只能包含字母数字字符或单连字符，不能以连字符开头或结尾。"
+
+#~ msgid "Edit Wifi"
+#~ msgstr "编辑 Wifi"
+
+#~ msgid "Edit IPv4"
+#~ msgstr "编辑 IPv4"
+
+#~ msgid "Edit IPv6"
+#~ msgstr "编辑 IPv6"

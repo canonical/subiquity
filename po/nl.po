@@ -11,13 +11,13 @@ msgstr ""
 "PO-Revision-Date: 2020-01-22 13:57+0000\n"
 "Last-Translator: Niek Wessels <Unknown>\n"
 "Language-Team: Dutch <nl@li.org>\n"
-"Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2023-09-07 07:07+0000\n"
+"X-Generator: Launchpad (build cc7f0d837bf2751562eea8708e7cc6eb3f33ceab)\n"
+"Language: nl\n"
 
 #: ../subiquity/client/client.py:58
 msgid ""
@@ -132,7 +132,8 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:331
 #, python-brace-format
-msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgid ""
+"Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:335
@@ -1250,9 +1251,8 @@ msgid "Guided storage configuration"
 msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:342
-#, fuzzy
 msgid "Choose a disk to install to:"
-msgstr "Kies de schijf waarnaar geïnstalleerd moet worden:"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:357
 msgid "Cannot install core boot classic system"
@@ -1271,8 +1271,8 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, "
-"0-9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
+"9, +, _, . and -"
 msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:72
@@ -2256,8 +2256,8 @@ msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of \"http://"
-"[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of "
+"\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
 
 #: ../subiquity/ui/views/proxy.py:41
@@ -2448,7 +2448,8 @@ msgid "Enter your GitHub username."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:50
-msgid "A GitHub username may only contain alphanumeric characters or hyphens."
+msgid ""
+"A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:54
@@ -2641,20 +2642,20 @@ msgstr ""
 #~ msgstr "{!r} is geen geldige invoer"
 
 #~ msgid ""
-#~ "Selecting Continue below will begin the installation process and result "
-#~ "in the loss of data on the disks selected to be formatted.\n"
+#~ "Selecting Continue below will begin the installation process and result in "
+#~ "the loss of data on the disks selected to be formatted.\n"
 #~ "\n"
 #~ "You will not be able to return to this or a previous screen once the "
 #~ "installation has started.\n"
 #~ "\n"
 #~ "Are you sure you want to continue?"
 #~ msgstr ""
-#~ "Met het hieronder selecteren van Volgende zal het installatieproces "
-#~ "beginnen en zullen gegevens op de schijven die gekozen zijn om te "
-#~ "formatteren verloren gaan.\n"
+#~ "Met het hieronder selecteren van Volgende zal het installatieproces beginnen "
+#~ "en zullen gegevens op de schijven die gekozen zijn om te formatteren "
+#~ "verloren gaan.\n"
 #~ "\n"
-#~ "U kunt niet terugkeren naar dit of een vorig scherm zodra de installatie "
-#~ "is gestart.\n"
+#~ "U kunt niet terugkeren naar dit of een vorig scherm zodra de installatie is "
+#~ "gestart.\n"
 #~ "\n"
 #~ "Weet u zeker dat u door wilt gaan?"
 
@@ -2676,10 +2677,13 @@ msgstr ""
 #~ "GRUB zal geïnstalleerd worden op het MBR van de doelschijf.\n"
 #~ "\n"
 #~ "Echter, op een schijf met een GPT-partitietabel is geen ruimte achter het "
-#~ "MBR waar GRUB het tweede deel van core.img kwijt kan, dus is er een "
-#~ "kleine, ongeformatteerde partitie nodig aan het begin van de schijf. Deze "
-#~ "zal geen bestandssysteem hebben en zal niet zijn aangekoppeld, en kan "
-#~ "niet worden bewerkt."
+#~ "MBR waar GRUB het tweede deel van core.img kwijt kan, dus is er een kleine, "
+#~ "ongeformatteerde partitie nodig aan het begin van de schijf. Deze zal geen "
+#~ "bestandssysteem hebben en zal niet zijn aangekoppeld, en kan niet worden "
+#~ "bewerkt."
+
+#~ msgid "Choose the disk to install to:"
+#~ msgstr "Kies de schijf waarnaar geïnstalleerd moet worden:"
 
 #~ msgid "Edit IPv4"
 #~ msgstr "Wijzig IPv4"
