@@ -11,14 +11,14 @@ msgstr ""
 "PO-Revision-Date: 2019-05-22 15:21+0000\n"
 "Last-Translator: Dimitri John Ledkov <dimitri.ledkov+lp@canonical.com>\n"
 "Language-Team: Russian <ru@li.org>\n"
-"Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2023-09-07 07:08+0000\n"
+"X-Generator: Launchpad (build cc7f0d837bf2751562eea8708e7cc6eb3f33ceab)\n"
+"Language: ru\n"
 
 #: ../subiquity/client/client.py:58
 msgid ""
@@ -133,7 +133,8 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:331
 #, python-brace-format
-msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgid ""
+"Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:335
@@ -724,7 +725,7 @@ msgstr ""
 
 #: ../subiquity/ui/mount.py:62
 msgid "Leave unmounted"
-msgstr ""
+msgstr "Оставить неподключённым"
 
 #: ../subiquity/ui/views/error.py:45 ../subiquity/ui/views/error.py:50
 msgid ""
@@ -1124,7 +1125,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:492
 msgid "Select a boot disk"
-msgstr ""
+msgstr "Выберите загрузочный диск"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:498
 msgid "To continue you need to:"
@@ -1268,8 +1269,8 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, "
-"0-9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
+"9, +, _, . and -"
 msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:72
@@ -2248,17 +2249,16 @@ msgid "If you use an alternative mirror for Ubuntu, enter its details here."
 msgstr ""
 
 #: ../subiquity/ui/views/mirror.py:125
-#, fuzzy
 msgid "Try again now"
-msgstr "Повторите снова"
+msgstr ""
 
 #: ../subiquity/ui/views/proxy.py:31
 msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of \"http://"
-"[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of "
+"\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
 
 #: ../subiquity/ui/views/proxy.py:41
@@ -2451,7 +2451,8 @@ msgid "Enter your GitHub username."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:50
-msgid "A GitHub username may only contain alphanumeric characters or hyphens."
+msgid ""
+"A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:54
@@ -2599,9 +2600,6 @@ msgstr ""
 msgid "Zdev setup"
 msgstr ""
 
-#~ msgid "Cancel update"
-#~ msgstr "Отменить обновление"
-
 #~ msgid "An error has occurred"
 #~ msgstr "Произошла ошибка"
 
@@ -2637,8 +2635,7 @@ msgstr ""
 #~ msgstr "раздел"
 
 #~ msgid "Do you really want to remove the existing filesystem from {}?"
-#~ msgstr ""
-#~ "Вы действительно хотите удалить существующую файловую систему на {}?"
+#~ msgstr "Вы действительно хотите удалить существующую файловую систему на {}?"
 
 #~ msgid "logical volume {}"
 #~ msgstr "логический том {}"
@@ -2648,3 +2645,6 @@ msgstr ""
 
 #~ msgid "Keyboard auto detection failed, sorry"
 #~ msgstr "Ошибка автоматического определения клавиатуры"
+
+#~ msgid "Cancel update"
+#~ msgstr "Отменить обновление"

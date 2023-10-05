@@ -11,13 +11,13 @@ msgstr ""
 "PO-Revision-Date: 2018-04-23 16:26+0000\n"
 "Last-Translator: Åka Sikrom <Unknown>\n"
 "Language-Team: Norwegian Bokmal <nb@li.org>\n"
-"Language: nb\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2023-09-07 07:08+0000\n"
+"X-Generator: Launchpad (build cc7f0d837bf2751562eea8708e7cc6eb3f33ceab)\n"
+"Language: nb\n"
 
 #: ../subiquity/client/client.py:58
 msgid ""
@@ -132,7 +132,8 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:331
 #, python-brace-format
-msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgid ""
+"Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:335
@@ -1250,9 +1251,8 @@ msgid "Guided storage configuration"
 msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:342
-#, fuzzy
 msgid "Choose a disk to install to:"
-msgstr "Velg enhet å installere på:"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:357
 msgid "Cannot install core boot classic system"
@@ -1271,8 +1271,8 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, "
-"0-9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
+"9, +, _, . and -"
 msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:72
@@ -1921,9 +1921,8 @@ msgid ""
 msgstr ""
 
 #: ../subiquity/ui/views/identity.py:212
-#, fuzzy
 msgid "Passwords"
-msgstr "Du må velge passord"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:44
 msgid "Install progress"
@@ -2276,15 +2275,15 @@ msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of \"http://"
-"[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of "
+"\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
 "Hvis du er avhengig av en HTTP-mellomtjener for å få tilgang til Internett, "
 "må du legge inn informasjon om mellomtjeneren her. Ellers kan feltet stå "
 "tomt.\n"
 "\n"
-"Feltet må evt. fylles ut i formatet «http://[[brukernavn][:"
-"passord]@]vertsnavn[:port]/»."
+"Feltet må evt. fylles ut i formatet "
+"«http://[[brukernavn][:passord]@]vertsnavn[:port]/»."
 
 #: ../subiquity/ui/views/proxy.py:41
 msgid "Proxy address:"
@@ -2476,7 +2475,8 @@ msgid "Enter your GitHub username."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:50
-msgid "A GitHub username may only contain alphanumeric characters or hyphens."
+msgid ""
+"A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:54
@@ -2650,14 +2650,16 @@ msgstr ""
 
 #~ msgid "Select an interface to configure it or select Done to continue"
 #~ msgstr ""
-#~ "Velg et grensesnitt som skal settes opp, eller trykk Ferdig for å "
-#~ "fortsette"
+#~ "Velg et grensesnitt som skal settes opp, eller trykk Ferdig for å fortsette"
 
 #~ msgid "Please report this error in Launchpad"
 #~ msgstr "Vi ber om at du rapporterer denne feilen via Launchpad"
 
 #~ msgid "Use An Entire Disk"
 #~ msgstr "Bruk en hel fysisk enhet"
+
+#~ msgid "Choose the disk to install to:"
+#~ msgstr "Velg enhet å installere på:"
 
 #~ msgid "from Github"
 #~ msgstr "fra Github"
@@ -2710,16 +2712,16 @@ msgstr ""
 #~ msgstr "{!r} er ikke gyldig inndata"
 
 #~ msgid ""
-#~ "Selecting Continue below will begin the installation process and result "
-#~ "in the loss of data on the disks selected to be formatted.\n"
+#~ "Selecting Continue below will begin the installation process and result in "
+#~ "the loss of data on the disks selected to be formatted.\n"
 #~ "\n"
 #~ "You will not be able to return to this or a previous screen once the "
 #~ "installation has started.\n"
 #~ "\n"
 #~ "Are you sure you want to continue?"
 #~ msgstr ""
-#~ "Hvis du velger Fortsett nedenfor, starter installasjonsprosessen. Alle "
-#~ "data på valgte lagringsenheter blir slettet under formatering.\n"
+#~ "Hvis du velger Fortsett nedenfor, starter installasjonsprosessen. Alle data "
+#~ "på valgte lagringsenheter blir slettet under formatering.\n"
 #~ "\n"
 #~ "Du får ingen muligheter til å gå tilbake til dette skjermbildet når "
 #~ "installasjonen har begynt.\n"
@@ -2743,8 +2745,8 @@ msgstr ""
 #~ "Enheter med GTP-partisjonstabell har ikke nok plass etter MBR til at GRUB "
 #~ "kan lagre «core.img». Installasjonsprogrammet oppretter derfor en liten, "
 #~ "uformatert ekstrapartisjon ved begynnelsen av enheten/disken. Denne "
-#~ "partisjonen vil ikke inneholde et filsystem. Den blir heller ikke "
-#~ "montert, og du kan ikke gjøre endringer på den her."
+#~ "partisjonen vil ikke inneholde et filsystem. Den blir heller ikke montert, "
+#~ "og du kan ikke gjøre endringer på den her."
 
 #~ msgid "Github Username:"
 #~ msgstr "Github-brukernavn:"
@@ -2756,8 +2758,8 @@ msgstr ""
 #~ "A Github username may only contain alphanumeric characters or single "
 #~ "hyphens, and cannot begin or end with a hyphen."
 #~ msgstr ""
-#~ "Github-brukernavn kan bare inneholde alfanumeriske tegn og bindestreker, "
-#~ "og de kan ikke begynne med bindestrek."
+#~ "Github-brukernavn kan bare inneholde alfanumeriske tegn og bindestreker, og "
+#~ "de kan ikke begynne med bindestrek."
 
 #~ msgid "Use UP, DOWN and ENTER keys to select your keyboard."
 #~ msgstr "Bruk OPP, NED og ENTER for å velge tastaturutforming."

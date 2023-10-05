@@ -11,13 +11,13 @@ msgstr ""
 "PO-Revision-Date: 2018-04-12 21:16+0000\n"
 "Last-Translator: Simos Xenitellis  <Unknown>\n"
 "Language-Team: Greek <el@li.org>\n"
-"Language: el\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2023-09-07 07:07+0000\n"
+"X-Generator: Launchpad (build cc7f0d837bf2751562eea8708e7cc6eb3f33ceab)\n"
+"Language: el\n"
 
 #: ../subiquity/client/client.py:58
 msgid ""
@@ -132,7 +132,8 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:331
 #, python-brace-format
-msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgid ""
+"Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:335
@@ -1250,9 +1251,8 @@ msgid "Guided storage configuration"
 msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:342
-#, fuzzy
 msgid "Choose a disk to install to:"
-msgstr "Επιλέξτε το δίσκο που θα γίνει η εγκατάσταση:"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:357
 msgid "Cannot install core boot classic system"
@@ -1271,8 +1271,8 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, "
-"0-9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
+"9, +, _, . and -"
 msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:72
@@ -1920,9 +1920,8 @@ msgid ""
 msgstr ""
 
 #: ../subiquity/ui/views/identity.py:212
-#, fuzzy
 msgid "Passwords"
-msgstr "Πρέπει να καθοριστεί κωδικός πρόσβασης"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:44
 msgid "Install progress"
@@ -2257,8 +2256,8 @@ msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of \"http://"
-"[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of "
+"\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
 
 #: ../subiquity/ui/views/proxy.py:41
@@ -2449,7 +2448,8 @@ msgid "Enter your GitHub username."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:50
-msgid "A GitHub username may only contain alphanumeric characters or hyphens."
+msgid ""
+"A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:54
@@ -2630,6 +2630,9 @@ msgstr ""
 #~ msgid "Username too long, must be < "
 #~ msgstr "Το όνομα χρήστη είναι πολύ μεγάλο, πρέπει να είναι < "
 
+#~ msgid "Choose the disk to install to:"
+#~ msgstr "Επιλέξτε το δίσκο που θα γίνει η εγκατάσταση:"
+
 #~ msgid "Choose guided or manual partitioning"
 #~ msgstr "Επιλογή καθοδηγούμενης ή χειροκίνητης δημιουργίας κατατμήσεων"
 
@@ -2641,13 +2644,11 @@ msgstr ""
 
 #~ msgid "Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
-#~ "Το όνομα υπολογιστή πρέπει να ταιριάζει με NAME_REGEX, i.e. [a-z_][a-"
-#~ "z0-9_-]*"
+#~ "Το όνομα υπολογιστή πρέπει να ταιριάζει με NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 
 #~ msgid "Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
-#~ "Το όνομα χρήστη πρέπει να ταιριάζει με NAME_REGEX, δηλαδή [a-z_][a-"
-#~ "z0-9_-]*"
+#~ "Το όνομα χρήστη πρέπει να ταιριάζει με NAME_REGEX, δηλαδή [a-z_][a-z0-9_-]*"
 
 #~ msgid "Exit To Shell"
 #~ msgstr "Έξοδος σε φλοιό"

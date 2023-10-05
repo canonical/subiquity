@@ -6,18 +6,17 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: subiquity\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2023-09-06 15:13-0600\n"
 "PO-Revision-Date: 2021-03-19 09:20+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: Galician <gl@li.org>\n"
-"Language: gl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2023-09-07 07:07+0000\n"
+"X-Generator: Launchpad (build cc7f0d837bf2751562eea8708e7cc6eb3f33ceab)\n"
 
 #: ../subiquity/client/client.py:58
 msgid ""
@@ -67,12 +66,14 @@ msgstr "Produciuse un erro ao importar as chaves:"
 
 #: ../subiquity/client/controllers/ssh.py:85
 msgid "ssh-keygen failed to show fingerprint of downloaded keys:"
-msgstr "ssh-keygen non deu mostrado a pegada dixital ou descargado as chaves:"
+msgstr ""
+"ssh-keygen non deu mostrado a pegada dixital ou descargado as chaves:"
 
 #: ../subiquity/common/filesystem/actions.py:162
 #, python-brace-format
 msgid "Cannot edit {selflabel} as it is part of the {cdtype} {cdname}."
-msgstr "Non é posíbel editar {selflabel} porque é parte de {cdtype} {cdname}."
+msgstr ""
+"Non é posíbel editar {selflabel} porque é parte de {cdtype} {cdname}."
 
 #: ../subiquity/common/filesystem/actions.py:180
 msgid "Cannot edit pre-existing RAIDs."
@@ -103,7 +104,8 @@ msgstr ""
 #: ../subiquity/common/filesystem/actions.py:250
 #, python-brace-format
 msgid "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
-msgstr "Non é posíbel retirar {selflabel} do {cdtype} {cdlabel} xa existente."
+msgstr ""
+"Non é posíbel retirar {selflabel} do {cdtype} {cdlabel} xa existente."
 
 #: ../subiquity/common/filesystem/actions.py:262
 #, python-brace-format
@@ -146,7 +148,8 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:331
 #, python-brace-format
-msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgid ""
+"Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:335
@@ -1259,7 +1262,6 @@ msgid "Custom storage layout"
 msgstr "Disposición de almacenamento personalizada"
 
 #: ../subiquity/ui/views/filesystem/guided.py:266
-#, fuzzy
 msgid ""
 "\n"
 "\n"
@@ -1292,30 +1294,6 @@ msgid ""
 "at /.\n"
 "\n"
 msgstr ""
-"\n"
-"\n"
-"A opción «Empregar un disco enteiro» instala Ubuntu no disco seleccionado,\n"
-"substituíndo todas as particións e datos que haxa.\n"
-"\n"
-"Se a plataforma o require, créanse dúas particións adicionais,\n"
-"unha para /boot e outra que ocupa o resto do disco. Créase un grupo de "
-"volumes\n"
-"de LVM que contén a partición grande. Créase un volume lóxico para\n"
-"o sistema de ficheiros raíz, cun tamaño calculado heuristicamente.\n"
-"Pódese aumentar facilmente coas ferramentas da liña de ordes habituais de "
-"LVM\n"
-"(ou na pantalla seguinte).\n"
-"\n"
-"Tamén pode escoller cifrar o grupo de volumes de LVM. Isto require "
-"configurar\n"
-"un contrasinal, o que faga falta escribir en cada arranque antes de que\n"
-"o sistema arranque. \n"
-"\n"
-"Se non escolle empregar LVM, créase unha única partición que ocupa o resto\n"
-"do disco e que se formata como ext4  e se monta en /.\n"
-"\n"
-"En calquera caso, aínda pode revisar e modificar os resultados.\n"
-"\n"
 
 #: ../subiquity/ui/views/filesystem/guided.py:298
 msgid ""
@@ -1364,11 +1342,11 @@ msgstr "Axuda para a configuración de almacenamento guiada"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, "
-"0-9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
+"9, +, _, . and -"
 msgstr ""
-"Os únicos caracteres permitidos no nome dun grupo de volumes son a-z, A-Z, "
-"0-9, +, _, . e -"
+"Os únicos caracteres permitidos no nome dun grupo de volumes son a-z, A-Z, 0-"
+"9, +, _, . e -"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:72
 msgid "Passphrases"
@@ -1594,7 +1572,8 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/partition.py:359
 msgid "The only aspect of this partition that can be edited is the size.\n"
-msgstr "O único aspecto desta partición que é posíbel editar é o seu tamaño.\n"
+msgstr ""
+"O único aspecto desta partición que é posíbel editar é o seu tamaño.\n"
 
 #: ../subiquity/ui/views/filesystem/partition.py:365
 msgid ""
@@ -1689,8 +1668,8 @@ msgid ""
 "directory."
 msgstr ""
 "Desafortunadamente, fallou a sondaxe de dispositivos para instalar. Informe "
-"dun erro en Launchpad e, de ser posíbel, inclúa o contido do directorio /var/"
-"log/installer."
+"dun erro en Launchpad e, de ser posíbel, inclúa o contido do directorio "
+"/var/log/installer."
 
 #: ../subiquity/ui/views/filesystem/probing.py:63
 msgid "Probing for devices to install to failed"
@@ -1706,7 +1685,8 @@ msgstr "/ non está permitido no nome dun dispositivo RAID"
 
 #: ../subiquity/ui/views/filesystem/raid.py:66
 msgid "Whitespace is not permitted in the name of a RAID device"
-msgstr "Os espazos en branco non están permitidos no nome dun dispositivo RAID"
+msgstr ""
+"Os espazos en branco non están permitidos no nome dun dispositivo RAID"
 
 #: ../subiquity/ui/views/filesystem/raid.py:84
 msgid "RAID Level:"
@@ -2080,11 +2060,9 @@ msgstr ""
 "sistema."
 
 #: ../subiquity/ui/views/identity.py:167
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "The username \"{username}\" is already in use."
 msgstr ""
-"O nome de usuario «{username}» está reservado para o seu uso por parte do "
-"sistema."
 
 #: ../subiquity/ui/views/identity.py:173
 msgid "Password must be set"
@@ -2109,9 +2087,8 @@ msgstr ""
 "mais o contrasinal é preciso para sudo."
 
 #: ../subiquity/ui/views/identity.py:212
-#, fuzzy
 msgid "Passwords"
-msgstr "contrasinais"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:44
 msgid "Install progress"
@@ -2143,9 +2120,8 @@ msgid "Installing system"
 msgstr "Estase a instalar o sistema"
 
 #: ../subiquity/ui/views/installprogress.py:137
-#, fuzzy
 msgid "Starting installer"
-msgstr "Reiniciar o instalador"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:140
 msgid "Waiting on cloud-init"
@@ -2477,24 +2453,23 @@ msgstr ""
 "Se emprega unha réplica alternativa para Ubuntu, introduza aquí os detalles."
 
 #: ../subiquity/ui/views/mirror.py:125
-#, fuzzy
 msgid "Try again now"
-msgstr "Tentar de novo"
+msgstr ""
 
 #: ../subiquity/ui/views/proxy.py:31
 msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of \"http://"
-"[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of "
+"\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
 "Se precisa empregar un proxy de HTTP para acceder ao mundo externo, "
 "introduza aquí a información do proxy. Caso contrario, deixe isto en "
 "branco.\n"
 "\n"
-"A información do proxy deberá darse na forma estándar de «http://[[usuario][:"
-"contrasinal]@]computador[:porto]/»."
+"A información do proxy deberá darse na forma estándar de "
+"«http://[[usuario][:contrasinal]@]computador[:porto]/»."
 
 #: ../subiquity/ui/views/proxy.py:41
 msgid "Proxy address:"
@@ -2697,7 +2672,8 @@ msgid "Enter your GitHub username."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:50
-msgid "A GitHub username may only contain alphanumeric characters or hyphens."
+msgid ""
+"A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:54
@@ -2771,7 +2747,8 @@ msgstr "Confirmar chaves de SSH"
 #: ../subiquity/ui/views/ssh.py:174
 msgid ""
 "Keys with the following fingerprints were fetched. Do you want to use them?"
-msgstr "Obtivéronse chaves coas pegadas dixitais seguintes. Desexa empregalas?"
+msgstr ""
+"Obtivéronse chaves coas pegadas dixitais seguintes. Desexa empregalas?"
 
 #: ../subiquity/ui/views/ssh.py:178
 msgid "Confirm SSH key"
@@ -2855,9 +2832,6 @@ msgstr "Desactivar"
 msgid "Zdev setup"
 msgstr "Configuración de Zdev"
 
-#~ msgid "Cancel update"
-#~ msgstr "Cancelar a actualización"
-
 #~ msgid "Info"
 #~ msgstr "Información"
 
@@ -2914,8 +2888,8 @@ msgstr "Configuración de Zdev"
 #~ "Cannot delete {selflabel} as partition {partnum} is part of the {cdtype} "
 #~ "{cdname}."
 #~ msgstr ""
-#~ "Non é posíbel eliminar {selflabel} porque a partición {partnum} é parte "
-#~ "de {cdtype} {cdname}."
+#~ "Non é posíbel eliminar {selflabel} porque a partición {partnum} é parte de "
+#~ "{cdtype} {cdname}."
 
 #, python-brace-format
 #~ msgid "Cannot delete {selflabel} because it has {count} mounted partitions."
@@ -2952,8 +2926,10 @@ msgstr "Configuración de Zdev"
 
 #~ msgid "Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
-#~ "O nome de usuario debe coincidir con NAME_REGEX, ou sexa, [a-z_][a-"
-#~ "z0-9_-]*"
+#~ "O nome de usuario debe coincidir con NAME_REGEX, ou sexa, [a-z_][a-z0-9_-]*"
+
+#~ msgid "passwords"
+#~ msgstr "contrasinais"
 
 #~ msgid "Info for {}"
 #~ msgstr "Información sobre {device}"
@@ -2990,6 +2966,66 @@ msgstr "Configuración de Zdev"
 
 #~ msgid "Do you really want to remove the existing filesystem from {}?"
 #~ msgstr "Confirma que desexa retirar o sistema de ficheiros existente de {}?"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "The \"Use an entire disk\" option installs Ubuntu onto the selected disk,\n"
+#~ "replacing any partitions and data already there.\n"
+#~ "\n"
+#~ "If the platform requires it, a bootloader partition is created on the disk.\n"
+#~ "\n"
+#~ "If you choose to use LVM, two additional partitions are then created,\n"
+#~ "one for /boot and one covering the rest of the disk. An LVM volume\n"
+#~ "group is created containing the large partition. A logical volume is\n"
+#~ "created for the root filesystem, sized using some simple heuristic. It\n"
+#~ "can easily be enlarged with standard LVM command line tools (or on the\n"
+#~ "next screen).\n"
+#~ "\n"
+#~ "You can also choose to encrypt LVM volume group. This will require\n"
+#~ "setting a password, that one will need to type on every boot before\n"
+#~ "the system boots.\n"
+#~ "\n"
+#~ "If you do not choose to use LVM, a single partition is created covering the\n"
+#~ "rest of the disk which is then formatted as ext4 and mounted at /.\n"
+#~ "\n"
+#~ "In either case, you will still have a chance to review and modify the "
+#~ "results.\n"
+#~ "\n"
+#~ "If you choose to use a custom storage layout, no changes are made to the "
+#~ "disks\n"
+#~ "and you will have to, at a minimum, select a boot disk and mount a "
+#~ "filesystem\n"
+#~ "at /.\n"
+#~ "\n"
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "A opción «Empregar un disco enteiro» instala Ubuntu no disco seleccionado,\n"
+#~ "substituíndo todas as particións e datos que haxa.\n"
+#~ "\n"
+#~ "Se a plataforma o require, créanse dúas particións adicionais,\n"
+#~ "unha para /boot e outra que ocupa o resto do disco. Créase un grupo de "
+#~ "volumes\n"
+#~ "de LVM que contén a partición grande. Créase un volume lóxico para\n"
+#~ "o sistema de ficheiros raíz, cun tamaño calculado heuristicamente.\n"
+#~ "Pódese aumentar facilmente coas ferramentas da liña de ordes habituais de "
+#~ "LVM\n"
+#~ "(ou na pantalla seguinte).\n"
+#~ "\n"
+#~ "Tamén pode escoller cifrar o grupo de volumes de LVM. Isto require "
+#~ "configurar\n"
+#~ "un contrasinal, o que faga falta escribir en cada arranque antes de que\n"
+#~ "o sistema arranque. \n"
+#~ "\n"
+#~ "Se non escolle empregar LVM, créase unha única partición que ocupa o resto\n"
+#~ "do disco e que se formata como ext4  e se monta en /.\n"
+#~ "\n"
+#~ "En calquera caso, aínda pode revisar e modificar os resultados.\n"
+#~ "\n"
+
+#~ msgid "Cancel update"
+#~ msgstr "Cancelar a actualización"
 
 #~ msgid "Github Username:"
 #~ msgstr "Nome de usuario de Github:"

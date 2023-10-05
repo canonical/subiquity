@@ -8,16 +8,16 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-09-06 15:13-0600\n"
-"PO-Revision-Date: 2022-04-13 15:22+0000\n"
-"Last-Translator: Pavel Borecki <Unknown>\n"
+"PO-Revision-Date: 2023-10-04 14:07+0000\n"
+"Last-Translator: Tomáš Marný <tomik.marny@gmail.com>\n"
 "Language-Team: Czech <cs@li.org>\n"
-"Language: cs\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2023-10-05 04:42+0000\n"
+"X-Generator: Launchpad (build bd6cfd0cfc024dbe1dcd7d5d91165fb4f6a6c596)\n"
+"Language: cs\n"
 
 #: ../subiquity/client/client.py:58
 msgid ""
@@ -74,7 +74,8 @@ msgstr "nástroji ssh-keygen se nepodařilo zobrazit otisk stažených klíčů:
 #: ../subiquity/common/filesystem/actions.py:162
 #, python-brace-format
 msgid "Cannot edit {selflabel} as it is part of the {cdtype} {cdname}."
-msgstr "{selflabel} není možné upravit, protože je součástí {cdtype} {cdname}."
+msgstr ""
+"{selflabel} není možné upravit, protože je součástí {cdtype} {cdname}."
 
 #: ../subiquity/common/filesystem/actions.py:180
 msgid "Cannot edit pre-existing RAIDs."
@@ -96,11 +97,11 @@ msgstr "Není možné upravit {vglabel} protože obsahuje logické svazky."
 
 #: ../subiquity/common/filesystem/actions.py:225
 msgid "Primary partition limit reached"
-msgstr ""
+msgstr "Byl dosažen limit primárního oddílu"
 
 #: ../subiquity/common/filesystem/actions.py:226
 msgid "Unusable space"
-msgstr ""
+msgstr "Nepoužitelné místo"
 
 #: ../subiquity/common/filesystem/actions.py:250
 #, python-brace-format
@@ -125,7 +126,8 @@ msgstr "Odebrání {selflabel} by zanechalo {cdtype} {cdlabel} bez zařízení."
 #: ../subiquity/common/filesystem/actions.py:291
 #, python-brace-format
 msgid "Cannot delete {selflabel} as it is part of the {cdtype} {cdname}."
-msgstr "{selflabel} není možné smazat, protože je součástí {cdtype} {cdname}."
+msgstr ""
+"{selflabel} není možné smazat, protože je součástí {cdtype} {cdname}."
 
 #: ../subiquity/common/filesystem/actions.py:303
 msgid ""
@@ -147,7 +149,8 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:331
 #, python-brace-format
-msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgid ""
+"Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
 "Není možné smazat {devicelabel}, protože je z něho připojeno {count} oddílů."
 
@@ -303,7 +306,7 @@ msgstr "připojeno v {path}"
 
 #: ../subiquity/common/filesystem/labels.py:236
 msgid "in use"
-msgstr ""
+msgstr "používá se"
 
 #. A filesytem
 #: ../subiquity/common/filesystem/labels.py:239
@@ -727,22 +730,28 @@ msgid ""
 "TPM backed full-disk encryption is not available on this device (the reason "
 "given was \"{reason}\")."
 msgstr ""
+"Šifrování celého disku založené na TPM není na tomto zařízení k dispozici "
+"(uvedený důvod byl „{reason}“)."
 
 #: ../subiquity/server/controllers/filesystem.py:104
 msgid ""
 "TPM backed full-disk encryption is not yet supported when the target spans "
 "multiple volumes."
 msgstr ""
+"Šifrování celého disku založené na TPM zatím není podporováno, pokud cíl "
+"zahrnuje více svazků."
 
 #: ../subiquity/server/controllers/filesystem.py:109
 msgid ""
 "TPM backed full-disk encryption is only supported with a target volume "
 "partition table of GPT."
 msgstr ""
+"Šifrování celého disku založené na TPM je podporováno pouze s tabulkou "
+"oddílů GPT cílového svazku."
 
 #: ../subiquity/server/controllers/filesystem.py:353
 msgid "TPM backed full-disk encryption has been disabled"
-msgstr ""
+msgstr "Šifrování celého disku založené na TPM bylo zakázáno"
 
 #: ../subiquity/ui/mount.py:60
 msgid "Other"
@@ -909,6 +918,10 @@ msgid ""
 "and\n"
 "retrying the install.\n"
 msgstr ""
+"\n"
+"Ověření kontrolního součtu instalačního média se nezdařilo. Je možné, že\n"
+"tento pád souvisí s tímto selháním kontrolního součtu. Zvažte ověření\n"
+"instalačního média a opakování instalace.\n"
 
 #: ../subiquity/ui/views/error.py:203
 msgid "Cancel upload"
@@ -1185,7 +1198,7 @@ msgstr "Vytvořit skupinu svazků (LVM)"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:458
 msgid "FILE SYSTEM SUMMARY"
-msgstr "SOUHRN SOUBOROVÉHO SYSTÉMU"
+msgstr "SOUHRN SOUBOROVÝCH SYSTÉMŮ"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:463
 msgid "AVAILABLE DEVICES"
@@ -1213,7 +1226,8 @@ msgstr "Vrátit na výchozí"
 
 #: ../subiquity/ui/views/filesystem/guided.py:53
 msgid "Configure a guided storage layout, or create a custom one:"
-msgstr "Nastavit rozvržení úložiště vedeně, nebo vytvořit uživatelsky určené:"
+msgstr ""
+"Nastavit rozvržení úložiště vedeně, nebo vytvořit uživatelsky určené:"
 
 #: ../subiquity/ui/views/filesystem/guided.py:57
 #: ../subiquity/ui/views/filesystem/lvm.py:80
@@ -1230,6 +1244,8 @@ msgid ""
 "The key will be stored as ~/recovery-key.txt in the live system and will be "
 "copied to /var/log/installer/ in the target system."
 msgstr ""
+"Klíč bude uložen jako ~/recovery-key.txt v aktivním živém systému a bude "
+"zkopírován do /var/log/installer/ v cílovém systému."
 
 #: ../subiquity/ui/views/filesystem/guided.py:71
 #: ../subiquity/ui/views/filesystem/lvm.py:122
@@ -1250,10 +1266,12 @@ msgid ""
 "The entire disk will be encrypted and protected by the TPM. If this option "
 "is deselected, the disk will be unencrypted and without any protection."
 msgstr ""
+"Celý disk bude zašifrován a chráněn modulem TPM. Pokud tato možnost není "
+"zaškrtnuta, disk bude nešifrovaný a bez jakékoli ochrany."
 
 #: ../subiquity/ui/views/filesystem/guided.py:144
 msgid "The entire disk will be encrypted and protected by the TPM."
-msgstr ""
+msgstr "Celý disk bude zašifrován a chráněn modulem TPM."
 
 #: ../subiquity/ui/views/filesystem/guided.py:174
 msgid "Set up this disk as an LVM group"
@@ -1261,7 +1279,7 @@ msgstr "Nastavit tento disk jako LVM skupinu"
 
 #: ../subiquity/ui/views/filesystem/guided.py:176
 msgid "Full disk encryption with TPM"
-msgstr ""
+msgstr "Šifrování celého disku pomocí TPM"
 
 #: ../subiquity/ui/views/filesystem/guided.py:248
 msgid "Use an entire disk"
@@ -1272,7 +1290,6 @@ msgid "Custom storage layout"
 msgstr "Uživatelsky určené rozvržení úložiště"
 
 #: ../subiquity/ui/views/filesystem/guided.py:266
-#, fuzzy
 msgid ""
 "\n"
 "\n"
@@ -1307,33 +1324,32 @@ msgid ""
 msgstr ""
 "\n"
 "\n"
-"Volba „Použít celý disk“ nainstaluje Ubuntu na vybraný disk,\n"
-"přičemž jakékoli oddíly a data budu přepsány.\n"
+"Možnost „Použít celý disk“ nainstaluje Ubuntu na vybraný disk a nahradí\n"
+"všechny oddíly a data, která zde již existují.\n"
 "\n"
-"Pokud to hardwarová platforma vyžaduje, bude na disku vytvořen oddíl\n"
-"pro zavaděč systému.\n"
+"Pokud to platforma vyžaduje, vytvoří se na disku oddíl bootloaderu.\n"
 "\n"
-"Pokud zvolíte použití LVM, budou vytvořeny dva další oddíly – jeden pro\n"
-"/boot a druhý pokrývající zbytek disku. Dále bude vytvořena LVM skupina\n"
-"svazků, zabírající velký oddíl. Bude vytvořen logický svazek pro kořenový\n"
-"souborový systém, s velikostí určenou pomocí jednoduché heuristiky. Je\n"
-"možné ho snadno zvětšit pomocí standardních LVM nástrojů pro příkazový\n"
-"řádek (nebo na následující obrazovce).\n"
+"Pokud se rozhodnete použít LVM, vytvoří se další dva oddíly,\n"
+"jeden pro /boot a jeden pokrývající zbytek disku. Vytvoří se skupina\n"
+"svazků LVM obsahující velký oddíl. Pro kořenový souborový systém\n"
+"je vytvořen logický svazek jehož velikost se určí pomocí jednoduché\n"
+"heuristiky. Lze jej snadno zvětšit pomocí standardních nástrojů\n"
+"příkazového řádku LVM (nebo na další obrazovce).\n"
 "\n"
-"Skupinu svazků je také možné zašifrovat LVM. To vyžaduje nastavení hesla,\n"
-"které bude třeba zadávat v rámci každého spouštění operačního systému.\n"
+"Můžete také zvolit šifrování skupiny svazků LVM. To bude vyžadovat\n"
+"nastavení přístupové heslové fráze, kterou budete muset zadat při každém\n"
+"zavádění před spouštěním systému.\n"
 "\n"
-"Pokud nezvolíte použití LVM, bude vytvořen jediný oddíl pokrývající zbytek "
-"disku\n"
-"a ten pak naformátován jako ext4 a připojen do /.\n"
+"Pokud se nerozhodnete používat LVM, vytvoří se jeden oddíl pokrývající\n"
+"zbytek disku, který je poté naformátován jako ext4 a připojen k /.\n"
 "\n"
-"V každém případě budete mít možnost zrevidovat a upravit výsledky.\n"
+"V obou případech budete mít stále možnost zkontrolovat a upravit výsledky.\n"
 "\n"
-"Pokud zvolíte uživatelsky určené rozvržení úložiště, nebudou provedeny "
-"žádné\n"
-"automatické změny na disku a bude třeba, abyste přinejmenším vybrali disk "
-"pro\n"
-"zavádění systému a připojili souborový systém jako /.\n"
+"Pokud se rozhodnete použít vlastní rozložení úložiště, na discích se "
+"neprovedou\n"
+"žádné změny a budete muset minimálně vybrat spouštěcí (bootovací) disk a "
+"připojit\n"
+"souborový systém na /.\n"
 "\n"
 
 #: ../subiquity/ui/views/filesystem/guided.py:298
@@ -1365,9 +1381,8 @@ msgid "Guided storage configuration"
 msgstr "Vedené uspořádání úložiště"
 
 #: ../subiquity/ui/views/filesystem/guided.py:342
-#, fuzzy
 msgid "Choose a disk to install to:"
-msgstr "Zvolte úložiště, na které nainstalovat:"
+msgstr "Vyberte disk, na který chcete instalovat:"
 
 #: ../subiquity/ui/views/filesystem/guided.py:357
 msgid "Cannot install core boot classic system"
@@ -1386,11 +1401,11 @@ msgstr "Nápověda k vedenému uspořádání úložiště"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, "
-"0-9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
+"9, +, _, . and -"
 msgstr ""
-"Jedinými znaky, povolenými v názvu skupiny svazků, jsou a-z, A-Z, 0-9, +, "
-"_, . a -"
+"Jedinými znaky, povolenými v názvu skupiny svazků, jsou a-z, A-Z, 0-9, +, _, "
+". a -"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:72
 msgid "Passphrases"
@@ -1412,7 +1427,7 @@ msgstr "Vytvořit šifrovaný svazek"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:85
 msgid "Also create a recovery key:"
-msgstr ""
+msgstr "Také vytvořit klíč pro obnovení:"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:87
 #, python-brace-format
@@ -1420,10 +1435,13 @@ msgid ""
 "The key will be stored as ~/recovery-key-{name}.txt in the live system and "
 "will be copied to /var/log/installer/ in the target system."
 msgstr ""
+"Klíč bude uložen jako ~/recovery-key-{name}.txt v aktivním živém systému a "
+"bude zkopírován do /var/log/installer/ v cílovém systému."
 
 #: ../subiquity/ui/views/filesystem/lvm.py:104
 msgid "Select at least one device to be part of the volume group."
-msgstr "Vyberte alespoň jedno zařízení, aby se stalo součástí skupiny svazků."
+msgstr ""
+"Vyberte alespoň jedno zařízení, aby se stalo součástí skupiny svazků."
 
 #: ../subiquity/ui/views/filesystem/lvm.py:109
 msgid "The name of a volume group cannot be empty"
@@ -1476,8 +1494,8 @@ msgid ""
 "The only characters permitted in the name of a logical volume are a-z, A-Z, "
 "0-9, +, _, . and -"
 msgstr ""
-"Jedinými povolenými znaky v názvu logického svazku jsou a-z, A-Z, 0-9, +, "
-"_, . a -"
+"Jedinými povolenými znaky v názvu logického svazku jsou a-z, A-Z, 0-9, +, _, "
+". a -"
 
 #: ../subiquity/ui/views/filesystem/partition.py:181
 #, python-brace-format
@@ -1747,7 +1765,8 @@ msgstr ". a .. nejsou platné názvy pro RAID zařízení"
 #: ../subiquity/ui/views/filesystem/raid.py:107
 #, python-brace-format
 msgid "RAID Level \"{level}\" requires at least {min_active} active devices"
-msgstr "RAID úroveň „{level}“ vyžaduje alespoň {min_active} aktivních zařízení"
+msgstr ""
+"RAID úroveň „{level}“ vyžaduje alespoň {min_active} aktivních zařízení"
 
 #: ../subiquity/ui/views/filesystem/raid.py:120
 msgid "Create software RAID (\"MD\") disk"
@@ -1876,7 +1895,8 @@ msgstr ""
 
 #: ../subiquity/ui/views/help.py:115
 msgid "You can log in with one of the following keys:\n"
-msgstr "Přihlásit se je možné prostřednictvím jednoho z následujících klíčů:\n"
+msgstr ""
+"Přihlásit se je možné prostřednictvím jednoho z následujících klíčů:\n"
 
 #: ../subiquity/ui/views/help.py:121
 #, python-brace-format
@@ -2091,7 +2111,8 @@ msgstr "Název serveru nemůže zůstat nevyplněný"
 #: ../subiquity/ui/views/identity.py:140
 #, python-brace-format
 msgid "Server name too long, must be less than {limit}"
-msgstr "Název serveru je příliš dlouhý, je třeba, aby byl kratší než  {limit}"
+msgstr ""
+"Název serveru je příliš dlouhý, je třeba, aby byl kratší než  {limit}"
 
 #: ../subiquity/ui/views/identity.py:145
 msgid "Hostname must match HOSTNAME_REGEX: "
@@ -2120,9 +2141,9 @@ msgid "The username \"{username}\" is reserved for use by the system."
 msgstr "Uživatelské jméno „{username}“ je vyhrazeno pro použití systémem."
 
 #: ../subiquity/ui/views/identity.py:167
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "The username \"{username}\" is already in use."
-msgstr "Uživatelské jméno „{username}“ je vyhrazeno pro použití systémem."
+msgstr "Uživatelské jméno „{username}“ se již používá."
 
 #: ../subiquity/ui/views/identity.py:173
 msgid "Password must be set"
@@ -2147,9 +2168,8 @@ msgstr ""
 "heslo je pořád potřebné pro sudo."
 
 #: ../subiquity/ui/views/identity.py:212
-#, fuzzy
 msgid "Passwords"
-msgstr "hesla"
+msgstr "Hesla"
 
 #: ../subiquity/ui/views/installprogress.py:44
 msgid "Install progress"
@@ -2181,17 +2201,16 @@ msgid "Installing system"
 msgstr "Instaluje se systém"
 
 #: ../subiquity/ui/views/installprogress.py:137
-#, fuzzy
 msgid "Starting installer"
-msgstr "Restartovat instalátor"
+msgstr "Spouštění instalátoru"
 
 #: ../subiquity/ui/views/installprogress.py:140
 msgid "Waiting on cloud-init"
-msgstr ""
+msgstr "Čekání na cloud-init"
 
 #: ../subiquity/ui/views/installprogress.py:143
 msgid "Running early-commands"
-msgstr ""
+msgstr "Spouštění časných příkazů"
 
 #: ../subiquity/ui/views/installprogress.py:152
 #: ../subiquity/ui/views/installprogress.py:159
@@ -2214,7 +2233,7 @@ msgstr "V průběhu instalace došlo k chybě"
 
 #: ../subiquity/ui/views/installprogress.py:183
 msgid "Subiquity server process has exited"
-msgstr ""
+msgstr "Proces serveru Subiquity byl ukončen"
 
 #: ../subiquity/ui/views/installprogress.py:228
 msgid ""
@@ -2430,7 +2449,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:413
 msgid "Identify keyboard"
-msgstr "Identifikujte klávesnici"
+msgstr "Identifikovat klávesnici"
 
 #: ../subiquity/ui/views/keyboard.py:448
 msgid "Applying config"
@@ -2444,33 +2463,39 @@ msgstr ""
 
 #: ../subiquity/ui/views/mirror.py:43
 msgid "Mirror check still running"
-msgstr ""
+msgstr "Kontrola zrcadla stále běží"
 
 #: ../subiquity/ui/views/mirror.py:45
 msgid ""
 "The check of the mirror URL is still running. You can continue but there is "
 "a chance that the installation will fail."
 msgstr ""
+"Kontrola adresy URL zrcadla stále probíhá. Můžete pokračovat, ale existuje "
+"šance, že instalace selže."
 
 #: ../subiquity/ui/views/mirror.py:50
 msgid "Mirror check failed"
-msgstr ""
+msgstr "Kontrola zrcadla se nezdařila"
 
 #: ../subiquity/ui/views/mirror.py:52
 msgid ""
 "The check of the mirror URL failed. You can continue but it is very likely "
 "that the installation will fail."
 msgstr ""
+"Kontrola adresy URL zrcadla se nezdařila. Můžete pokračovat, ale je velmi "
+"pravděpodobné, že instalace selže."
 
 #: ../subiquity/ui/views/mirror.py:57
 msgid "Mirror check has not run"
-msgstr ""
+msgstr "Kontrola zrcadla neproběhla"
 
 #: ../subiquity/ui/views/mirror.py:59
 msgid ""
 "The check of the mirror has not yet started. You can continue but there is a "
 "chance that the installation will fail."
 msgstr ""
+"Kontrola zrcadla ještě nezačala. Můžete pokračovat, ale existuje šance, že "
+"instalace selže."
 
 #: ../subiquity/ui/views/mirror.py:71
 msgid "Mirror address:"
@@ -2480,6 +2505,8 @@ msgstr "Adresa zrcadla:"
 msgid ""
 "The mirror location cannot be checked because no network has been configured."
 msgstr ""
+"Umístění zrcadla nelze zkontrolovat, protože nebyla nakonfigurována žádná "
+"síť."
 
 #: ../subiquity/ui/views/mirror.py:85
 msgid "The mirror location has not yet started."
@@ -2487,11 +2514,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/mirror.py:86
 msgid "The mirror location is being tested."
-msgstr ""
+msgstr "Testuje se umístění zrcadla."
 
 #: ../subiquity/ui/views/mirror.py:87
 msgid "This mirror location passed tests."
-msgstr ""
+msgstr "Toto umístění zrcadla prošlo testy."
 
 #: ../subiquity/ui/views/mirror.py:89
 msgid ""
@@ -2499,6 +2526,10 @@ msgid ""
 "explain the problem. You can try again once the issue has been fixed\n"
 "(common problems are network issues or the system clock being wrong).\n"
 msgstr ""
+"Zdá se, že toto umístění zrcadla nefunguje. Níže uvedený výstup může\n"
+"pomoci vysvětlit problém. Můžete to zkusit znovu, jakmile bude problém\n"
+"vyřešen (obvyklé problémy jsou problémy se sítí nebo nesprávně\n"
+"nastavené systémové hodiny).\n"
 
 #: ../subiquity/ui/views/mirror.py:99
 msgid "Configure Ubuntu archive mirror"
@@ -2511,7 +2542,6 @@ msgstr ""
 "sem."
 
 #: ../subiquity/ui/views/mirror.py:125
-#, fuzzy
 msgid "Try again now"
 msgstr "Zkusit znovu"
 
@@ -2520,14 +2550,14 @@ msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of \"http://"
-"[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of "
+"\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
 "Pokud pro přístup do okolního světa potřebujete HTTP proxy, zadejte "
 "informace o proxy sem. Jinak ponechte nevyplněné.\n"
 "\n"
-"Informace o proxy by měly být zadány ve standardní podobě „http://[[uzivatel]"
-"[:heslo]@]stroj[:port]/“."
+"Informace o proxy by měly být zadány ve standardní podobě "
+"„http://[[uzivatel][:heslo]@]stroj[:port]/“."
 
 #: ../subiquity/ui/views/proxy.py:41
 msgid "Proxy address:"
@@ -2728,7 +2758,8 @@ msgid "Enter your GitHub username."
 msgstr "Zadejte své uživatelské jméno na GitHub."
 
 #: ../subiquity/ui/views/ssh.py:50
-msgid "A GitHub username may only contain alphanumeric characters or hyphens."
+msgid ""
+"A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
 "Uživatelské jméno na GitHub může obsahovat pouze písmena a číslice nebo "
 "spojovníky."
@@ -2890,72 +2921,6 @@ msgstr "Vypnout"
 msgid "Zdev setup"
 msgstr "Nastavení Zdev zařízení"
 
-#~ msgctxt "DeviceAction"
-#~ msgid "Info"
-#~ msgstr "Informace"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Edit"
-#~ msgstr "Upravit"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Reformat"
-#~ msgstr "Znovu vytvořit souborový systém"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Add Partition"
-#~ msgstr "Přidat oddíl"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Format"
-#~ msgstr "Vytvořit souborový systém"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Remove from RAID/LVM"
-#~ msgstr "Odebrat z RAID/LVM"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Delete"
-#~ msgstr "Smazat"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Make Boot Device"
-#~ msgstr "Nastavit jako zařízení pro zavádění systému"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Info"
-#~ msgstr "Informace"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Edit Wifi"
-#~ msgstr "Upravit Wi-Fi"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Edit IPv4"
-#~ msgstr "Upravit IPv4"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Edit IPv6"
-#~ msgstr "Upravit IPv6"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Edit bond"
-#~ msgstr "Upravit spřažení (bond)"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Add a VLAN tag"
-#~ msgstr "Přidat VLAN štítek"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Delete"
-#~ msgstr "Smazat"
-
-#~ msgid "passphrases"
-#~ msgstr "Heslové fráze"
-
-#~ msgid "Cancel update"
-#~ msgstr "Zrušit aktualizaci"
-
 #~ msgid "Filesystem setup"
 #~ msgstr "Nastavení souborového systému"
 
@@ -3020,10 +2985,10 @@ msgstr "Nastavení Zdev zařízení"
 #~ "\n"
 #~ "GRUB bude nainstalován do MBR cílového disku.\n"
 #~ "\n"
-#~ "Nicméně, na disku s GPT tabulkou oddílů, není dostatek prostoru za MBR "
-#~ "pro uložení druhé fáze GRUB, core.img, takže je třeba malého, "
-#~ "nezformátovaného oddílu na začátku disku. Nebude obsahovat souborový "
-#~ "systém a nebude připojen a není možné ho zde upravit."
+#~ "Nicméně, na disku s GPT tabulkou oddílů, není dostatek prostoru za MBR pro "
+#~ "uložení druhé fáze GRUB, core.img, takže je třeba malého, nezformátovaného "
+#~ "oddílu na začátku disku. Nebude obsahovat souborový systém a nebude připojen "
+#~ "a není možné ho zde upravit."
 
 #~ msgid "Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
@@ -3034,8 +2999,8 @@ msgstr "Nastavení Zdev zařízení"
 #~ "A Github username may only contain alphanumeric characters or single "
 #~ "hyphens, and cannot begin or end with a hyphen."
 #~ msgstr ""
-#~ "Github uživatelské jméno může obsahovat pouze písmena a číslice a "
-#~ "jednotlivé spojovníky a nemůže začínat nebo končit na spojovník."
+#~ "Github uživatelské jméno může obsahovat pouze písmena a číslice a jednotlivé "
+#~ "spojovníky a nemůže začínat nebo končit na spojovník."
 
 #~ msgid "Keyboard auto detection failed, sorry"
 #~ msgstr "Automatické zjištění rozvržení klávesnice se nezdařilo, je nám líto"
@@ -3087,8 +3052,8 @@ msgstr "Nastavení Zdev zařízení"
 #, python-brace-format
 #~ msgid "Cannot delete {selflabel} because it has {count} mounted partitions."
 #~ msgstr ""
-#~ "{selflabel} není možné smazat, protože je z něho připojeno (mount) "
-#~ "{count} oddílů."
+#~ "{selflabel} není možné smazat, protože je z něho připojeno (mount) {count} "
+#~ "oddílů."
 
 #, python-brace-format
 #~ msgid "Cannot delete {selflabel} because it has 1 mounted partition."
@@ -3163,8 +3128,14 @@ msgstr "Nastavení Zdev zařízení"
 #~ msgid "There is already a RAID named '{}'"
 #~ msgstr "Už zde je RAID pole nazvané „{}“"
 
+#~ msgid "passwords"
+#~ msgstr "hesla"
+
 #~ msgid "Reboot"
 #~ msgstr "Restartovat"
+
+#~ msgid "Cancel update"
+#~ msgstr "Zrušit aktualizaci"
 
 #~ msgid "Please choose your preferred language."
 #~ msgstr "Vyberte vámi upřednostňovaný jazyk."
@@ -3184,8 +3155,8 @@ msgstr "Nastavení Zdev zařízení"
 #~ msgid ""
 #~ "Required bootloader partition\n"
 #~ "\n"
-#~ "This is the PReP partion which is required on POWER. Grub will be "
-#~ "installed onto this partition."
+#~ "This is the PReP partion which is required on POWER. Grub will be installed "
+#~ "onto this partition."
 #~ msgstr ""
 #~ "Vyžadován oddíl pro zavaděč systému\n"
 #~ "\n"
@@ -3199,22 +3170,22 @@ msgstr "Nastavení Zdev zařízení"
 #~ msgstr "Upravit softwarové RAID úložiště „{}“"
 
 #~ msgid ""
-#~ "The LVM guided partitioning scheme creates three partitions on the "
-#~ "selected disk: one as required by the bootloader, one for '/boot', and "
-#~ "one covering the rest of the disk.\n"
+#~ "The LVM guided partitioning scheme creates three partitions on the selected "
+#~ "disk: one as required by the bootloader, one for '/boot', and one covering "
+#~ "the rest of the disk.\n"
 #~ "\n"
-#~ "A LVM volume group is created containing the large partition. A 4 "
-#~ "gigabyte logical volume is created for the root filesystem. It can easily "
-#~ "be enlarged with standard LVM command line tools."
+#~ "A LVM volume group is created containing the large partition. A 4 gigabyte "
+#~ "logical volume is created for the root filesystem. It can easily be enlarged "
+#~ "with standard LVM command line tools."
 #~ msgstr ""
 #~ "LVM vedené schéma rozdělení na oddíly vytvoří na vybraném úložišti tři "
 #~ "oddíly: jednu pro zavaděč systému, jednu pro „/boot“ a jednu pokrývající "
 #~ "zbytek úložiště.\n"
 #~ "\n"
-#~ "Dále je vytvořena LVM skupina svazků, obsahující posledně zmíněný oddíl. "
-#~ "V ní je vytvořen 4 gigabajtový logický svazek pro kořenový souborový "
-#~ "systém. Ten je snadno možné zvětšit pomocí standardních LVM nástrojů pro "
-#~ "příkazový řádek."
+#~ "Dále je vytvořena LVM skupina svazků, obsahující posledně zmíněný oddíl. V "
+#~ "ní je vytvořen 4 gigabajtový logický svazek pro kořenový souborový systém. "
+#~ "Ten je snadno možné zvětšit pomocí standardních LVM nástrojů pro příkazový "
+#~ "řádek."
 
 #~ msgid "-"
 #~ msgstr "–"
@@ -3233,8 +3204,8 @@ msgstr "Nastavení Zdev zařízení"
 #~ "Cannot delete {selflabel} as partition {partnum} is part of the {cdtype} "
 #~ "{cdname}."
 #~ msgstr ""
-#~ "{selflabel} není možné smazat, protože oddíl {partnum} je součástí "
-#~ "{cdtype} {cdname}."
+#~ "{selflabel} není možné smazat, protože oddíl {partnum} je součástí {cdtype} "
+#~ "{cdname}."
 
 #~ msgid "Format"
 #~ msgstr "Vytvořit souborový systém"
@@ -3246,16 +3217,16 @@ msgstr "Nastavení Zdev zařízení"
 #~ msgstr "se souborovým systémem {}"
 
 #~ msgid ""
-#~ "Selecting Continue below will begin the installation process and result "
-#~ "in the loss of data on the disks selected to be formatted.\n"
+#~ "Selecting Continue below will begin the installation process and result in "
+#~ "the loss of data on the disks selected to be formatted.\n"
 #~ "\n"
 #~ "You will not be able to return to this or a previous screen once the "
 #~ "installation has started.\n"
 #~ "\n"
 #~ "Are you sure you want to continue?"
 #~ msgstr ""
-#~ "Vybrání Pokračovat (níže) zahájí proces instalace a povede ke ztrátě dat "
-#~ "na úložištích, na kterých mají být vytvořeny souborové systémy.\n"
+#~ "Vybrání Pokračovat (níže) zahájí proces instalace a povede ke ztrátě dat na "
+#~ "úložištích, na kterých mají být vytvořeny souborové systémy.\n"
 #~ "\n"
 #~ "Jakmile se instalace spustí, nebude už možné se vrátit na tuto nebo "
 #~ "předchozí obrazovky.\n"
@@ -3267,8 +3238,8 @@ msgstr "Nastavení Zdev zařízení"
 
 #~ msgid "Select available disks to format and mount"
 #~ msgstr ""
-#~ "Vyberte dostupná úložiště, na kterých vytvořit souborové systémy a "
-#~ "připojit je"
+#~ "Vyberte dostupná úložiště, na kterých vytvořit souborové systémy a připojit "
+#~ "je"
 
 #~ msgid "Use An Entire Disk"
 #~ msgstr "Využít celé úložiště"
@@ -3279,9 +3250,9 @@ msgstr "Nastavení Zdev zařízení"
 #~ "the rest of the disk, formatted as ext4 and mounted at '/'."
 #~ msgstr ""
 #~ "Zvolené schéma vedeného rozdělení na oddíly vytvoří potřebný oddíl pro "
-#~ "zavaděč systému na zvoleném úložišti a pak vytvoří jediný oddíl "
-#~ "pokrývající zbytek úložiště, na kterém bude vytvořen souborový systém "
-#~ "ext4 a připojen jako „/“."
+#~ "zavaděč systému na zvoleném úložišti a pak vytvoří jediný oddíl pokrývající "
+#~ "zbytek úložiště, na kterém bude vytvořen souborový systém ext4 a připojen "
+#~ "jako „/“."
 
 #~ msgid ""
 #~ "The installer can guide you through partitioning an entire disk either "
@@ -3293,8 +3264,11 @@ msgstr "Nastavení Zdev zařízení"
 #~ "Instalátor vás může provést rozdělením celého úložiště buď přímo, nebo s "
 #~ "použitím LVM. Nebo – pokud upřednostňujete – je možné to udělat ručně.\n"
 #~ "\n"
-#~ "Pokud zvolíte rozdělení celého úložiště, pořád máte možnost prohlédnout "
-#~ "si a upravit výsledky."
+#~ "Pokud zvolíte rozdělení celého úložiště, pořád máte možnost prohlédnout si a "
+#~ "upravit výsledky."
+
+#~ msgid "Choose the disk to install to:"
+#~ msgstr "Zvolte úložiště, na které nainstalovat:"
 
 #~ msgid "{} is already mounted at {}."
 #~ msgstr "{} už je připojeno do {}."
@@ -3323,18 +3297,18 @@ msgstr "Nastavení Zdev zařízení"
 #~ "Mounting an existing filesystem at {} is usually a bad idea, proceed only "
 #~ "with caution."
 #~ msgstr ""
-#~ "Připojování existujícího souborového systému do {} je obvykle špatný "
-#~ "nápad, pokračujte pouze s obezřetností."
+#~ "Připojování existujícího souborového systému do {} je obvykle špatný nápad, "
+#~ "pokračujte pouze s obezřetností."
 
 #~ msgid " The only aspect of this partition that can be edited is the size."
 #~ msgstr " Jediné hledisko tohoto oddílu, který je možné měnit, je velikost."
 
 #~ msgid ""
-#~ " You can choose whether to use the existing filesystem on this partition "
-#~ "or reformat it."
+#~ " You can choose whether to use the existing filesystem on this partition or "
+#~ "reformat it."
 #~ msgstr ""
-#~ " Je možné zvolit zda použít stávající souborový systém na tomto oddílu, "
-#~ "nebo ho vytvořit znovu."
+#~ " Je možné zvolit zda použít stávající souborový systém na tomto oddílu, nebo "
+#~ "ho vytvořit znovu."
 
 #~ msgid "Edit Wifi"
 #~ msgstr "Upravit Wi-Fi"
@@ -3353,8 +3327,8 @@ msgstr "Nastavení Zdev zařízení"
 
 #~ msgid "Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
-#~ "Je třeba, aby se název stroje odpovídal regulárnímu výrazu NAME_REGEX, "
-#~ "tj. [a-z_][a-z0-9_-]*"
+#~ "Je třeba, aby se název stroje odpovídal regulárnímu výrazu NAME_REGEX, tj. "
+#~ "[a-z_][a-z0-9_-]*"
 
 #~ msgid "Leave formatted as {}"
 #~ msgstr "Ponechat se souborovým systémem jako {}"
@@ -3368,8 +3342,8 @@ msgstr "Nastavení Zdev zařízení"
 #~ "Vyžadován oddíl pro zavaděč systému\n"
 #~ "\n"
 #~ "Toto je ESP / „EFI system partition“ vyžadované UEFI firmwarem. Grub bude "
-#~ "nainstalován na tento oddíl, na kterém je třeba, aby byl vytvořen "
-#~ "souborový systém fat32."
+#~ "nainstalován na tento oddíl, na kterém je třeba, aby byl vytvořen souborový "
+#~ "systém fat32."
 
 #~ msgid "from Github"
 #~ msgstr "z účtu na Github"
@@ -3387,5 +3361,68 @@ msgstr "Nastavení Zdev zařízení"
 #~ msgid ""
 #~ "A Github username may only contain alphanumeric characters or hyphens."
 #~ msgstr ""
-#~ "Uživatelské jméno z portálu Github může obsahovat pouze písmena a "
-#~ "číslice, případně ještě spojovníky."
+#~ "Uživatelské jméno z portálu Github může obsahovat pouze písmena a číslice, "
+#~ "případně ještě spojovníky."
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "The \"Use an entire disk\" option installs Ubuntu onto the selected disk,\n"
+#~ "replacing any partitions and data already there.\n"
+#~ "\n"
+#~ "If the platform requires it, a bootloader partition is created on the disk.\n"
+#~ "\n"
+#~ "If you choose to use LVM, two additional partitions are then created,\n"
+#~ "one for /boot and one covering the rest of the disk. An LVM volume\n"
+#~ "group is created containing the large partition. A logical volume is\n"
+#~ "created for the root filesystem, sized using some simple heuristic. It\n"
+#~ "can easily be enlarged with standard LVM command line tools (or on the\n"
+#~ "next screen).\n"
+#~ "\n"
+#~ "You can also choose to encrypt LVM volume group. This will require\n"
+#~ "setting a password, that one will need to type on every boot before\n"
+#~ "the system boots.\n"
+#~ "\n"
+#~ "If you do not choose to use LVM, a single partition is created covering the\n"
+#~ "rest of the disk which is then formatted as ext4 and mounted at /.\n"
+#~ "\n"
+#~ "In either case, you will still have a chance to review and modify the "
+#~ "results.\n"
+#~ "\n"
+#~ "If you choose to use a custom storage layout, no changes are made to the "
+#~ "disks\n"
+#~ "and you will have to, at a minimum, select a boot disk and mount a "
+#~ "filesystem\n"
+#~ "at /.\n"
+#~ "\n"
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "Volba „Použít celý disk“ nainstaluje Ubuntu na vybraný disk,\n"
+#~ "přičemž jakékoli oddíly a data budu přepsány.\n"
+#~ "\n"
+#~ "Pokud to hardwarová platforma vyžaduje, bude na disku vytvořen oddíl\n"
+#~ "pro zavaděč systému.\n"
+#~ "\n"
+#~ "Pokud zvolíte použití LVM, budou vytvořeny dva další oddíly – jeden pro\n"
+#~ "/boot a druhý pokrývající zbytek disku. Dále bude vytvořena LVM skupina\n"
+#~ "svazků, zabírající velký oddíl. Bude vytvořen logický svazek pro kořenový\n"
+#~ "souborový systém, s velikostí určenou pomocí jednoduché heuristiky. Je\n"
+#~ "možné ho snadno zvětšit pomocí standardních LVM nástrojů pro příkazový\n"
+#~ "řádek (nebo na následující obrazovce).\n"
+#~ "\n"
+#~ "Skupinu svazků je také možné zašifrovat LVM. To vyžaduje nastavení hesla,\n"
+#~ "které bude třeba zadávat v rámci každého spouštění operačního systému.\n"
+#~ "\n"
+#~ "Pokud nezvolíte použití LVM, bude vytvořen jediný oddíl pokrývající zbytek "
+#~ "disku\n"
+#~ "a ten pak naformátován jako ext4 a připojen do /.\n"
+#~ "\n"
+#~ "V každém případě budete mít možnost zrevidovat a upravit výsledky.\n"
+#~ "\n"
+#~ "Pokud zvolíte uživatelsky určené rozvržení úložiště, nebudou provedeny "
+#~ "žádné\n"
+#~ "automatické změny na disku a bude třeba, abyste přinejmenším vybrali disk "
+#~ "pro\n"
+#~ "zavádění systému a připojili souborový systém jako /.\n"
+#~ "\n"
