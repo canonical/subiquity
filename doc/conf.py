@@ -1,138 +1,128 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
-
-# -- Path setup --------------------------------------------------------------
-
-import datetime
-import os
 import sys
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown:
+sys.path.append('./')
+from custom_conf import *
 
-#sys.path.insert(0, os.path.abspath('../../'))
-#sys.path.insert(0, os.path.abspath('../'))
-#sys.path.insert(0, os.path.abspath('./'))
-#sys.path.insert(0, os.path.abspath('.'))
+# Configuration file for the Sphinx documentation builder.
+# You should not do any modifications to this file. Put your custom
+# configuration into the custom_conf.py file.
+# If you need to change this file, contribute the changes upstream.
+#
+# For the full list of built-in configuration values, see the documentation:
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# -- Project information -----------------------------------------------------
-
-project = 'Ubuntu Install Guide'
-copyright = 'Canonical Group Ltd'
-
-# -- General configuration ---------------------------------------------------
-
-# If your documentation needs a minimal Sphinx version, state it here.
-needs_sphinx = '5.1.1'
-
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
+############################################################
+### Extensions
+############################################################
 
 extensions = [
-    'sphinx.ext.intersphinx',
-    'sphinx_copybutton',
     'sphinx_design',
+    'sphinx_tabs.tabs',
+    'sphinx_reredirects',
+    'youtube-links',
+    'related-links',
+    'custom-rst-roles',
+    'terminal-output',
+    'sphinx_copybutton',
+    'sphinxext.opengraph',
+    'myst_parser',
+    'sphinxcontrib.jquery',
+    'notfound.extension'
+]
+extensions.extend(custom_extensions)
+
+### Configuration for extensions
+
+# Additional MyST syntax
+myst_enable_extensions = [
+    'substitution',
+    'deflist'
 ]
 
-intersphinx_mapping = {
-    'cloud-init': (
-        'https://canonical-cloud-init.readthedocs-hosted.com/en/latest',
-         None
-    )
+# Used for related links
+if 'discourse' in html_context:
+    html_context['discourse_prefix'] = html_context['discourse'] + '/t/'
+
+# The default for notfound_urls_prefix usually works, but not for
+# documentation on documentation.ubuntu.com
+if slug:
+    notfound_urls_prefix = '/' + slug + '/en/latest/'
+
+notfound_context = {
+    'title': 'Page not found',
+    'body': '<h1>Page not found</h1>\n\n<p>Sorry, but the documentation page that you are looking for was not found.</p>\n<p>Documentation changes over time, and pages are moved around. We try to redirect you to the updated content where possible, but unfortunately, that didn\'t work this time (maybe because the content you were looking for does not exist in this version of the documentation).</p>\n<p>You can try to use the navigation to locate the content you\'re looking for, or search for a similar page.</p>\n',
 }
 
-# Add any paths that contain templates here, relative to this directory.
+# Default image for OGP (to prevent font errors, see
+# https://github.com/canonical/sphinx-docs-starter-pack/pull/54 )
+if not 'ogp_image' in locals():
+    ogp_image = 'https://assets.ubuntu.com/v1/253da317-image-document-ubuntudocs.svg'
 
-templates_path = ['_templates']
-
-# The suffix of source filenames.
-source_suffix = '.rst'
-
-# The root toctree document.
-root_doc = 'index'
-
-# The version info for the project you're documenting, acts as replacement for
-# |version| and |release|, also used in various other places throughout the
-# built documents.
-
-# version = version.version_string()
-# release = version
-
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
+############################################################
+### General configuration
+############################################################
 
 exclude_patterns = [
-    '.sphinx/venv/*',
-    'README.md',
+    '_build',
+    'Thumbs.db',
+    '.DS_Store',
+    '.sphinx',
 ]
+exclude_patterns.extend(custom_excludes)
 
-# Sphinx-copybutton config options:
-# 1) prompt to be stripped from copied code.
-# 2) Set to copy all lines (not just prompt lines) to ensure multiline snippets
-# can be copied even if they don't contain an EOF line.
-copybutton_prompt_text = '$ '
-copybutton_only_copy_prompt_lines = False
+rst_epilog = '''
+.. include:: /reuse/links.txt
+'''
+if 'custom_rst_epilog' in locals():
+    rst_epilog = custom_rst_epilog
 
-# -- Options for HTML output -------------------------------------------------
-
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
-html_theme = 'furo'
-html_logo = '_static/ubuntu_logo.png'
-html_theme_options = {
-    'light_css_variables': {
-        'color-sidebar-background-border': 'none',
-        'font-stack': 'Ubuntu, -apple-system, Segoe UI, Roboto, Oxygen, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif',
-        'font-stack--monospace': 'Ubuntu Mono variable, Ubuntu Mono, Consolas, Monaco, Courier, monospace',
-        'color-foreground-primary': '#111',
-        'color-foreground-secondary': 'var(--color-foreground-primary)',
-        'color-foreground-muted': '#333',
-        'color-background-secondary': '#FFF',
-        'color-background-hover': '#f2f2f2',
-        'color-brand-primary': '#111',
-        'color-brand-content': '#06C',
-        'color-inline-code-background': 'rgba(0,0,0,.03)',
-        'color-sidebar-link-text': '#111',
-        'color-sidebar-item-background--current': '#ebebeb',
-        'color-sidebar-item-background--hover': '#f2f2f2',
-        'sidebar-item-line-height': '1.3rem',
-        'color-link-underline': 'var(--color-background-primary)',
-        'color-link-underline--hover': 'var(--color-background-primary)',
-    },
-    'dark_css_variables': {
-        'color-foreground-secondary': 'var(--color-foreground-primary)',
-        'color-foreground-muted': '#CDCDCD',
-        'color-background-secondary': 'var(--color-background-primary)',
-        'color-background-hover': '#666',
-        'color-brand-primary': '#fff',
-        'color-brand-content': '#06C',
-        'color-sidebar-link-text': '#f7f7f7',
-        'color-sidebar-item-background--current': '#666',
-        'color-sidebar-item-background--hover': '#333',
-    },
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown',
 }
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named 'default.css' will overwrite the builtin 'default.css'.
-html_static_path = ['_static']
+if not 'conf_py_path' in html_context and 'github_folder' in html_context:
+    html_context['conf_py_path'] = html_context['github_folder']
 
-# If you ever want to use the feedback button, turn on GH issues and then
-# uncomment the github_issue_links files
+# For ignoring specific links
+linkcheck_anchors_ignore_for_url = [
+    r'https://github\.com/.*'
+]
+linkcheck_anchors_ignore_for_url.extend(custom_linkcheck_anchors_ignore_for_url)
+
+############################################################
+### Styling
+############################################################
+
+# Find the current builder
+builder = 'dirhtml'
+if '-b' in sys.argv:
+    builder = sys.argv[sys.argv.index('-b')+1]
+
+# Setting templates_path for epub makes the build fail
+if builder == 'dirhtml' or builder == 'html':
+    templates_path = ['.sphinx/_templates']
+
+# Theme configuration
+html_theme = 'furo'
+html_last_updated_fmt = ''
+html_permalinks_icon = '¶'
+
+############################################################
+### Additional files
+############################################################
+
+html_static_path = ['.sphinx/_static']
 
 html_css_files = [
-    'css/logo.css',
-#    'css/github_issue_links.css',
-    'css/custom.css',
+    'custom.css',
+    'header.css',
+    'github_issue_links.css',
+    'furo_colors.css'
 ]
-html_js_files = [
-#    'js/github_issue_links.js',
-]
+html_css_files.extend(custom_html_css_files)
+
+html_js_files = ['header-nav.js']
+if 'github_issues' in html_context and html_context['github_issues'] and not disable_feedback_button:
+    html_js_files.append('github_issue_links.js')
+html_js_files.extend(custom_html_js_files)
