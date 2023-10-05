@@ -221,7 +221,7 @@ def bind(router, endpoint, controller, serializer=None, _depth=None):
 async def make_server_at_path(socket_path, endpoint, controller, **kw):
     app = web.Application(**kw)
     bind(app.router, endpoint, controller)
-    runner = web.AppRunner(app)
+    runner = web.AppRunner(app, access_log=None)
     await runner.setup()
     site = web.UnixSite(runner, socket_path)
     await site.start()
