@@ -8,16 +8,16 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-09-06 15:13-0600\n"
-"PO-Revision-Date: 2018-04-22 17:46+0000\n"
-"Last-Translator: Jiri Grönroos <Unknown>\n"
+"PO-Revision-Date: 2022-04-14 08:45+0000\n"
+"Last-Translator: Timo Jyrinki <Unknown>\n"
 "Language-Team: Finnish <fi@li.org>\n"
-"Language: fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2023-09-07 07:07+0000\n"
+"X-Generator: Launchpad (build cc7f0d837bf2751562eea8708e7cc6eb3f33ceab)\n"
+"Language: fi\n"
 
 #: ../subiquity/client/client.py:58
 msgid ""
@@ -34,11 +34,11 @@ msgstr ""
 
 #: ../subiquity/client/client.py:214
 msgid "yes"
-msgstr ""
+msgstr "kyllä"
 
 #: ../subiquity/client/client.py:215
 msgid "no"
-msgstr ""
+msgstr "ei"
 
 #: ../subiquity/client/client.py:217
 msgid "Confirmation is required to continue."
@@ -132,7 +132,8 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:331
 #, python-brace-format
-msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgid ""
+"Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:335
@@ -149,16 +150,16 @@ msgstr ""
 #. A pre-existing device such as a partition or RAID
 #: ../subiquity/common/filesystem/labels.py:37
 msgid "existing"
-msgstr ""
+msgstr "olemassa oleva"
 
 #. A newly created device such as a partition or RAID
 #: ../subiquity/common/filesystem/labels.py:40
 msgid "new"
-msgstr ""
+msgstr "uusi"
 
 #: ../subiquity/common/filesystem/labels.py:64
 msgid "PReP"
-msgstr ""
+msgstr "PReP"
 
 #. boot loader partition
 #: ../subiquity/common/filesystem/labels.py:68
@@ -191,34 +192,34 @@ msgstr ""
 #. extended partition
 #: ../subiquity/common/filesystem/labels.py:88
 msgid "extended"
-msgstr ""
+msgstr "laajennettu"
 
 #. logical partition
 #: ../subiquity/common/filesystem/labels.py:92
 msgid "logical"
-msgstr ""
+msgstr "looginen"
 
 #. Flag for a LVM volume group
 #: ../subiquity/common/filesystem/labels.py:103
 msgid "encrypted"
-msgstr ""
+msgstr "salattu"
 
 #: ../subiquity/common/filesystem/labels.py:119
 msgid "multipath device"
-msgstr ""
+msgstr "multipath-laite"
 
 #: ../subiquity/common/filesystem/labels.py:120
 msgid "local disk"
-msgstr ""
+msgstr "paikallinen levy"
 
 #: ../subiquity/common/filesystem/labels.py:125
 #, python-brace-format
 msgid "partition of {device}"
-msgstr ""
+msgstr "laitteen {device} osio"
 
 #: ../subiquity/common/filesystem/labels.py:138
 msgid "software"
-msgstr ""
+msgstr "ohjelmisto"
 
 #: ../subiquity/common/filesystem/labels.py:139
 #, python-brace-format
@@ -227,11 +228,11 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/labels.py:144
 msgid "LVM volume group"
-msgstr ""
+msgstr "LVM-taltioryhmä"
 
 #: ../subiquity/common/filesystem/labels.py:149
 msgid "LVM logical volume"
-msgstr ""
+msgstr "looginen LVM-taltio"
 
 #. This is only used in text "cannot add partition {desc}"... bit hackish.
 #: ../subiquity/common/filesystem/labels.py:155
@@ -246,16 +247,16 @@ msgstr ""
 #: ../subiquity/ui/views/filesystem/guided.py:112
 #, python-brace-format
 msgid "partition {number}"
-msgstr ""
+msgstr "osio {number}"
 
 #: ../subiquity/common/filesystem/labels.py:200
 #, python-brace-format
 msgid "partition {number} of {device}"
-msgstr ""
+msgstr "osio {number} laitteella {device}"
 
 #: ../subiquity/common/filesystem/labels.py:207
 msgid "free space"
-msgstr ""
+msgstr "vapaata tilaa"
 
 #: ../subiquity/common/filesystem/labels.py:217
 #, python-brace-format
@@ -297,13 +298,13 @@ msgstr ""
 #: ../subiquity/common/filesystem/labels.py:244
 #: ../subiquity/common/filesystem/labels.py:254
 msgid "unused"
-msgstr ""
+msgstr "käyttämätön"
 
 #. A filesytem that cannot be mounted (i.e. swap)
 #. is used or unused
 #: ../subiquity/common/filesystem/labels.py:248
 msgid "used"
-msgstr ""
+msgstr "käytössä"
 
 #: ../subiquity/common/filesystem/labels.py:283
 #, python-brace-format
@@ -328,7 +329,7 @@ msgstr ""
 
 #: ../subiquity/common/types.py:43
 msgid "Network error"
-msgstr ""
+msgstr "Verkkovirhe"
 
 #: ../subiquity/common/types.py:44
 msgid "Network client error"
@@ -340,7 +341,7 @@ msgstr ""
 
 #: ../subiquity/common/types.py:46
 msgid "Unknown error"
-msgstr ""
+msgstr "Tuntematon virhe"
 
 #: ../subiquitycore/controllers/network.py:230
 msgid "autoconfiguration failed"
@@ -1267,8 +1268,8 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, "
-"0-9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
+"9, +, _, . and -"
 msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:72
@@ -1916,9 +1917,8 @@ msgid ""
 msgstr ""
 
 #: ../subiquity/ui/views/identity.py:212
-#, fuzzy
 msgid "Passwords"
-msgstr "Salasana tulee olla asetettu"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:44
 msgid "Install progress"
@@ -2253,8 +2253,8 @@ msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of \"http://"
-"[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of "
+"\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
 
 #: ../subiquity/ui/views/proxy.py:41
@@ -2445,7 +2445,8 @@ msgid "Enter your GitHub username."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:50
-msgid "A GitHub username may only contain alphanumeric characters or hyphens."
+msgid ""
+"A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:54

@@ -6,18 +6,18 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: subiquity\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2023-09-06 15:13-0600\n"
 "PO-Revision-Date: 2020-02-21 21:54+0000\n"
-"Last-Translator: Meskó Balázs <Unknown>\n"
+"Last-Translator: Balázs Meskó <Unknown>\n"
 "Language-Team: Hungarian <hu@li.org>\n"
-"Language: hu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2023-09-07 07:08+0000\n"
+"X-Generator: Launchpad (build cc7f0d837bf2751562eea8708e7cc6eb3f33ceab)\n"
+"Language: hu\n"
 
 #: ../subiquity/client/client.py:58
 msgid ""
@@ -31,34 +31,48 @@ msgid ""
 "environment will not survive a reboot. If the install has started, the\n"
 "installed system will be mounted at /target."
 msgstr ""
+"A telepítő parancsértelmező-munkamenete aktiválva.\n"
+"\n"
+"Ez a parancsértelmező-munkamenet a telepítő környezetén belül fut.\n"
+"Akkor fog visszatérni a telepítőbe, ha kilép ebből a parancsértelmezőből,\n"
+"például a Ctrl+D vagy az „exit” beírásával.\n"
+"\n"
+"Tisztában kell lennie azzal, hogy ez egy rövid élettartamú környezet.\n"
+"A környezeten végrehajtott változtatások nem élik túl az újraindítást.\n"
+"Ha a telepítés elindult, a telepített rendszer a /target helyre lesz "
+"csatolva."
 
 #: ../subiquity/client/client.py:214
 msgid "yes"
-msgstr ""
+msgstr "igen"
 
 #: ../subiquity/client/client.py:215
 msgid "no"
-msgstr ""
+msgstr "nem"
 
 #: ../subiquity/client/client.py:217
 msgid "Confirmation is required to continue."
-msgstr ""
+msgstr "Megerősítés szükséges a folytatáshoz."
 
 #: ../subiquity/client/client.py:218
 msgid "Add 'autoinstall' to your kernel command line to avoid this"
 msgstr ""
+"Ennek elkerüléséhez adja hozzá az „autoinstall” paramétert a kernel "
+"parancssorához"
 
 #: ../subiquity/client/client.py:220
 msgid "Continue with autoinstall?"
-msgstr ""
+msgstr "Folytatja az automatikus telepítéssel?"
 
 #: ../subiquity/client/controllers/ssh.py:79
 msgid "Importing keys failed:"
-msgstr ""
+msgstr "A kulcsok importálása sikertelen:"
 
 #: ../subiquity/client/controllers/ssh.py:85
 msgid "ssh-keygen failed to show fingerprint of downloaded keys:"
 msgstr ""
+"Az SSH-kulcselőállító nem tudta megjeleníteni a letöltött kulcsok "
+"ujjlenyomatait:"
 
 #: ../subiquity/common/filesystem/actions.py:162
 #, python-brace-format
@@ -97,6 +111,7 @@ msgstr ""
 #, python-brace-format
 msgid "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
 msgstr ""
+"A(z) {selflabel} nem távolítható el a már meglévőből: {cdtype} {cdlabel}."
 
 #: ../subiquity/common/filesystem/actions.py:262
 #, python-brace-format
@@ -125,7 +140,8 @@ msgstr ""
 msgid ""
 "Cannot delete a single partition from a device that already has partitions."
 msgstr ""
-"Nem törölhet partíciót egy olyan eszközről, amelynek már vannak partíciói."
+"Nem törölhető egyetlen partíció egy olyan eszközről, amelynek már vannak "
+"partíciói."
 
 #: ../subiquity/common/filesystem/actions.py:307
 msgid "Cannot delete required bootloader partition"
@@ -140,7 +156,8 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:331
 #, python-brace-format
-msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgid ""
+"Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:335
@@ -174,25 +191,25 @@ msgstr ""
 #: ../subiquity/common/filesystem/labels.py:68
 #: ../subiquity/common/filesystem/labels.py:82
 msgid "configured"
-msgstr ""
+msgstr "beállítva"
 
 #. boot loader partition
 #: ../subiquity/common/filesystem/labels.py:71
 #: ../subiquity/common/filesystem/labels.py:84
 msgid "unconfigured"
-msgstr ""
+msgstr "nincs beállítva"
 
 #: ../subiquity/common/filesystem/labels.py:74
 msgid "primary ESP"
-msgstr ""
+msgstr "elsődleges ESP"
 
 #: ../subiquity/common/filesystem/labels.py:76
 msgid "backup ESP"
-msgstr ""
+msgstr "tartalék ESP"
 
 #: ../subiquity/common/filesystem/labels.py:78
 msgid "unused ESP"
-msgstr ""
+msgstr "nem használt ESP"
 
 #: ../subiquity/common/filesystem/labels.py:85
 msgid "BIOS grub spacer"
@@ -201,21 +218,21 @@ msgstr ""
 #. extended partition
 #: ../subiquity/common/filesystem/labels.py:88
 msgid "extended"
-msgstr ""
+msgstr "kiterjesztett"
 
 #. logical partition
 #: ../subiquity/common/filesystem/labels.py:92
 msgid "logical"
-msgstr ""
+msgstr "logikai"
 
 #. Flag for a LVM volume group
 #: ../subiquity/common/filesystem/labels.py:103
 msgid "encrypted"
-msgstr ""
+msgstr "titkosított"
 
 #: ../subiquity/common/filesystem/labels.py:119
 msgid "multipath device"
-msgstr ""
+msgstr "többutas eszköz"
 
 #: ../subiquity/common/filesystem/labels.py:120
 msgid "local disk"
@@ -224,7 +241,7 @@ msgstr "helyi lemez"
 #: ../subiquity/common/filesystem/labels.py:125
 #, python-brace-format
 msgid "partition of {device}"
-msgstr ""
+msgstr "a(z) {device} partíciója"
 
 #: ../subiquity/common/filesystem/labels.py:138
 msgid "software"
@@ -237,11 +254,11 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/labels.py:144
 msgid "LVM volume group"
-msgstr ""
+msgstr "LVM-kötetcsoport"
 
 #: ../subiquity/common/filesystem/labels.py:149
 msgid "LVM logical volume"
-msgstr ""
+msgstr "LVM logikai kötet"
 
 #. This is only used in text "cannot add partition {desc}"... bit hackish.
 #: ../subiquity/common/filesystem/labels.py:155
@@ -256,12 +273,12 @@ msgstr ""
 #: ../subiquity/ui/views/filesystem/guided.py:112
 #, python-brace-format
 msgid "partition {number}"
-msgstr ""
+msgstr "{number}. partíció"
 
 #: ../subiquity/common/filesystem/labels.py:200
 #, python-brace-format
 msgid "partition {number} of {device}"
-msgstr ""
+msgstr "a(z) {device} {number}. partíciója"
 
 #: ../subiquity/common/filesystem/labels.py:207
 msgid "free space"
@@ -291,7 +308,7 @@ msgstr "erre lesz formázva: {fstype}"
 #: ../subiquity/common/filesystem/labels.py:234
 #, python-brace-format
 msgid "mounted at {path}"
-msgstr "itt csatolva: {path}"
+msgstr "ide csatolva: {path}"
 
 #: ../subiquity/common/filesystem/labels.py:236
 msgid "in use"
@@ -307,7 +324,7 @@ msgstr "nincs csatolva"
 #: ../subiquity/common/filesystem/labels.py:244
 #: ../subiquity/common/filesystem/labels.py:254
 msgid "unused"
-msgstr "nincs használatban"
+msgstr "nem használt"
 
 #. A filesytem that cannot be mounted (i.e. swap)
 #. is used or unused
@@ -322,23 +339,23 @@ msgstr ""
 
 #: ../subiquity/common/types.py:39
 msgid "Block device probe failure"
-msgstr ""
+msgstr "A blokkeszköz felderítése sikertelen"
 
 #: ../subiquity/common/types.py:40
 msgid "Disk probe failure"
-msgstr ""
+msgstr "A lemez felderítése sikertelen"
 
 #: ../subiquity/common/types.py:41
 msgid "Install failure"
-msgstr ""
+msgstr "A telepítés sikertelen"
 
 #: ../subiquity/common/types.py:42
 msgid "Installer crash"
-msgstr ""
+msgstr "A telepítő összeomlott"
 
 #: ../subiquity/common/types.py:43
 msgid "Network error"
-msgstr ""
+msgstr "Hálózati hiba"
 
 #: ../subiquity/common/types.py:44
 msgid "Network client error"
@@ -350,7 +367,7 @@ msgstr ""
 
 #: ../subiquity/common/types.py:46
 msgid "Unknown error"
-msgstr ""
+msgstr "Ismeretlen hiba"
 
 #: ../subiquitycore/controllers/network.py:230
 msgid "autoconfiguration failed"
@@ -358,7 +375,7 @@ msgstr "automatikus konfiguráció sikertelen"
 
 #: ../subiquitycore/ssh.py:63
 msgid "The host key fingerprints are:\n"
-msgstr ""
+msgstr "A gép kulcsainak ujjlenyomatai:\n"
 
 #: ../subiquitycore/ssh.py:72
 #, python-brace-format
@@ -466,7 +483,7 @@ msgstr "Tartományok, vesszővel elválasztva"
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:93
 #, python-brace-format
 msgid "should be in CIDR form ({example})"
-msgstr ""
+msgstr "CIDR formában kell lennie ({example})"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:105
 #, python-brace-format
@@ -503,11 +520,11 @@ msgstr "Létrehozás"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:262
 msgid "VLAN ID:"
-msgstr "VLAN azonosító:"
+msgstr "VLAN-azonosító:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:270
 msgid "VLAN ID must be between 1 and 4095"
-msgstr "A VLAN azonosítónak 1 és 4095 között kell lennie"
+msgstr "A VLAN-azonosítónak 1 és 4095 között kell lennie"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:276
 #, python-brace-format
@@ -516,14 +533,14 @@ msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:287
 msgid "Add a VLAN tag"
-msgstr "VLAN címke hozzáadása"
+msgstr "VLAN-címke hozzáadása"
 
 #. {device} is the name of a network device
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:311
 #: ../subiquity/ui/views/filesystem/disk_info.py:56
 #, python-brace-format
 msgid "Info for {device}"
-msgstr ""
+msgstr "Információk a(z) {device} eszközhöz"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:363
 #: ../subiquity/ui/views/filesystem/lvm.py:76
@@ -541,7 +558,7 @@ msgstr "Párosítási mód:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:367
 msgid "XMIT hash policy:"
-msgstr "Átviteli hash házirend:"
+msgstr "Átviteli kivonat házirendje:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:369
 msgid "LACP rate:"
@@ -550,7 +567,7 @@ msgstr "LACP arány:"
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:381
 #, python-brace-format
 msgid "There is already a network device named \"{netdev}\""
-msgstr ""
+msgstr "Már van egy „{netdev}” nevű hálózati eszköz"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:385
 msgid "Name cannot be empty"
@@ -571,12 +588,12 @@ msgstr "Párosítás szerkesztése"
 
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:23
 msgid "Select a network"
-msgstr ""
+msgstr "Válasszon hálózatot"
 
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:54
 #, python-brace-format
 msgid "Network interface {nic} WIFI configuration"
-msgstr ""
+msgstr "A(z) {nic} hálózati csatoló Wi-Fi beállítása"
 
 #: ../subiquitycore/ui/views/network.py:110
 #, python-brace-format
@@ -586,7 +603,7 @@ msgstr "VLAN {id} a(z) {link} csatolón"
 #: ../subiquitycore/ui/views/network.py:114
 #, python-brace-format
 msgid "bond master for {interfaces}"
-msgstr ""
+msgstr "a(z) {interfaces} párosítási mestere"
 
 #: ../subiquitycore/ui/views/network.py:139
 #, python-brace-format
@@ -601,7 +618,7 @@ msgstr "nincs csatlakozva"
 #: ../subiquitycore/ui/views/network.py:146
 #, python-brace-format
 msgid "enslaved to {device}"
-msgstr ""
+msgstr "a(z) {device} alá rendelve"
 
 #: ../subiquitycore/ui/views/network.py:171
 msgid "timed out"
@@ -668,7 +685,7 @@ msgstr "Folytatás hálózat nélkül"
 
 #: ../subiquitycore/ui/views/network.py:370
 msgid "Applying changes"
-msgstr "Változások alkalmazások"
+msgstr "Változtatások alkalmazása"
 
 #. for translators: this is a description of a RAID level
 #: ../subiquity/models/filesystem.py:281
@@ -736,25 +753,32 @@ msgstr "Egyéb"
 
 #: ../subiquity/ui/mount.py:62
 msgid "Leave unmounted"
-msgstr "Ne csatolja"
+msgstr "Csatolatlanul hagyás"
 
 #: ../subiquity/ui/views/error.py:45 ../subiquity/ui/views/error.py:50
 msgid ""
 "\n"
 "Sorry, there was a problem examining the storage devices on this system.\n"
 msgstr ""
+"\n"
+"Sajnáljuk, probléma történt a rendszerben lévő tárolóeszközök "
+"vizsgálatakor.\n"
 
 #: ../subiquity/ui/views/error.py:55
 msgid ""
 "\n"
 "Sorry, there was a problem completing the installation.\n"
 msgstr ""
+"\n"
+"Sajnáljuk, probléma történt a telepítés befejezésekor.\n"
 
 #: ../subiquity/ui/views/error.py:60
 msgid ""
 "\n"
 "Sorry, there was a problem applying the network configuration.\n"
 msgstr ""
+"\n"
+"Sajnáljuk, probléma történt a hálózati beállítások alkalmazásakor.\n"
 
 #: ../subiquity/ui/views/error.py:65
 msgid ""
@@ -767,12 +791,16 @@ msgid ""
 "\n"
 "Sorry, the installer has restarted because of an error.\n"
 msgstr ""
+"\n"
+"Sajnáljuk, a telepítő egy hiba miatt újraindult.\n"
 
 #: ../subiquity/ui/views/error.py:75
 msgid ""
 "\n"
 "Sorry, an unknown error occurred.\n"
 msgstr ""
+"\n"
+"Sajnáljuk, ismeretlen hiba történt.\n"
 
 #: ../subiquity/ui/views/error.py:84
 msgid ""
@@ -780,12 +808,17 @@ msgid ""
 "Information is being collected from the system that will help the\n"
 "developers diagnose the report.\n"
 msgstr ""
+"\n"
+"Olyan információk kerülnek összegyűjtésre a rendszerből, amelyek segítenek\n"
+"a fejlesztőknek a jelentés diagnosztizálásában.\n"
 
 #: ../subiquity/ui/views/error.py:93
 msgid ""
 "\n"
 "Loading report...\n"
 msgstr ""
+"\n"
+"Jelentés betöltése…\n"
 
 #: ../subiquity/ui/views/error.py:101
 msgid ""
@@ -793,12 +826,19 @@ msgid ""
 "Collecting information from the system failed. See the files in\n"
 "/var/log/installer for more.\n"
 msgstr ""
+"\n"
+"A rendszerből történő információgyűjtés nem sikerült. További "
+"információkért\n"
+"nézze meg a /var/log/installer könyvtárban lévő fájlokat.\n"
 
 #: ../subiquity/ui/views/error.py:110
 msgid ""
 "\n"
 "Loading the report failed. See the files in /var/log/installer for more.\n"
 msgstr ""
+"\n"
+"A jelentés betöltése nem sikerült. További információkért nézze meg a\n"
+"/var/log/installer könyvtárban lévő fájlokat.\n"
 
 #: ../subiquity/ui/views/error.py:121
 msgid ""
@@ -808,6 +848,11 @@ msgid ""
 "the issue by switching to a shell and reconfiguring the system's block\n"
 "devices manually.\n"
 msgstr ""
+"\n"
+"Folytathatja, és a telepítő csak a rendszerben található lemezeket fogja\n"
+"megjeleníteni, más blokkeszközöket nem, vagy lehet, hogy meg tudja oldani\n"
+"a problémát, ha átvált egy parancsértelmezőre, és kézileg átkonfigurálja a\n"
+"rendszer blokkeszközeit.\n"
 
 #: ../subiquity/ui/views/error.py:132
 msgid ""
@@ -815,6 +860,9 @@ msgid ""
 "You may be able to fix the issue by switching to a shell and\n"
 "reconfiguring the system's block devices manually.\n"
 msgstr ""
+"\n"
+"Lehet, hogy meg tudja oldani a problémát, ha átvált egy parancsértelmezőre,\n"
+"és kézileg átkonfigurálja a rendszer blokkeszközeit.\n"
 
 #: ../subiquity/ui/views/error.py:141
 msgid ""
@@ -822,6 +870,9 @@ msgid ""
 "You can continue with the installation but it will be assumed the network\n"
 "is not functional.\n"
 msgstr ""
+"\n"
+"Folytathatja a telepítést, de azt feltételezzük, hogy a hálózat nem "
+"működik.\n"
 
 #: ../subiquity/ui/views/error.py:150
 msgid ""
@@ -834,16 +885,21 @@ msgid ""
 "\n"
 "Do you want to try starting the installation again?\n"
 msgstr ""
+"\n"
+"Szeretné megpróbálni újra elindítani a telepítést?\n"
 
 #: ../subiquity/ui/views/error.py:165
 msgid "Select continue to try the installation again."
-msgstr ""
+msgstr "Válassza a folytatást a telepítést újrapróbálásához."
 
 #: ../subiquity/ui/views/error.py:173
 msgid ""
 "\n"
 "If you want to help improve the installer, you can send an error report.\n"
 msgstr ""
+"\n"
+"Ha segíteni szeretne a telepítő továbbfejlesztésében, akkor küldhet\n"
+"hibajelentést.\n"
 
 #: ../subiquity/ui/views/error.py:179
 msgid ""
@@ -857,11 +913,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/error.py:203
 msgid "Cancel upload"
-msgstr ""
+msgstr "Feltöltés megszakítása"
 
 #: ../subiquity/ui/views/error.py:204
 msgid "Close report"
-msgstr ""
+msgstr "Jelentés bezárása"
 
 #: ../subiquity/ui/views/error.py:205
 #: ../subiquity/ui/views/installprogress.py:55
@@ -869,29 +925,29 @@ msgstr ""
 #: ../subiquity/ui/views/mirror.py:227 ../subiquity/ui/views/snaplist.py:386
 #: ../subiquity/ui/views/snaplist.py:415 ../subiquity/ui/views/zdev.py:162
 msgid "Continue"
-msgstr "Tovább"
+msgstr "Folytatás"
 
 #: ../subiquity/ui/views/error.py:206
 #: ../subiquity/ui/views/installprogress.py:284
 #: ../subiquity/ui/views/welcome.py:116
 msgid "Switch to a shell"
-msgstr ""
+msgstr "Átváltás egy parancsértelmezőre"
 
 #: ../subiquity/ui/views/error.py:207
 msgid "Restart the installer"
-msgstr ""
+msgstr "A telepítő újraindítása"
 
 #: ../subiquity/ui/views/error.py:208
 msgid "Send to Canonical"
-msgstr ""
+msgstr "Küldés a Canonical számára"
 
 #: ../subiquity/ui/views/error.py:209
 msgid "Sent to Canonical"
-msgstr ""
+msgstr "Elküldve a Canonical számára"
 
 #: ../subiquity/ui/views/error.py:210
 msgid "View full report"
-msgstr ""
+msgstr "Teljes jelentés megtekintése"
 
 #: ../subiquity/ui/views/error.py:280
 msgid ""
@@ -901,30 +957,34 @@ msgid ""
 "\n"
 "on the filesystem with label {label!r}."
 msgstr ""
+"A hibajelentés az alábbi helyre lett elmentve a fájlrendszeren\n"
+"{label!r} címkével:\n"
+"\n"
+"  {loc}"
 
 #: ../subiquity/ui/views/error.py:369
 msgid "DATE"
-msgstr ""
+msgstr "DÁTUM"
 
 #: ../subiquity/ui/views/error.py:370
 msgid "KIND"
-msgstr ""
+msgstr "FAJTA"
 
 #: ../subiquity/ui/views/error.py:371
 msgid "STATUS"
-msgstr ""
+msgstr "ÁLLAPOT"
 
 #: ../subiquity/ui/views/error.py:384
 msgid "Select an error report to view:"
-msgstr ""
+msgstr "Válasszon egy hibajelentést a megtekintéshez:"
 
 #: ../subiquity/ui/views/error.py:397
 msgid "VIEWED"
-msgstr ""
+msgstr "MEGTEKINTETT"
 
 #: ../subiquity/ui/views/error.py:398
 msgid "UNVIEWED"
-msgstr ""
+msgstr "MEGTEKINTETLEN"
 
 #: ../subiquity/ui/views/filesystem/compound.py:108
 #, python-brace-format
@@ -950,13 +1010,13 @@ msgid ""
 "If you put all disks into RAIDs or LVM VGs, there will be nowhere to put the "
 "boot partition."
 msgstr ""
-"Ha az összes lemezt RAID tömbbe vagy LVM kötetcsoportba szervezi, akkor nem "
-"lesz hova tenni a rendszerindító partíciót."
+"Ha az összes lemezt RAID-tömbökbe vagy LVM kötetcsoportokba szervezi, akkor "
+"nem lesz hova tenni a rendszerindító partíciót."
 
 #: ../subiquity/ui/views/filesystem/delete.py:39
 #, python-brace-format
 msgid "Do you really want to delete the {desc} {label}?"
-msgstr "Biztos, hogy törli a következőt: {desc} {label}?"
+msgstr "Valóban törölni szeretné a következőt: {desc} {label}?"
 
 #: ../subiquity/ui/views/filesystem/delete.py:52
 #: ../subiquity/ui/views/filesystem/delete.py:130
@@ -1028,7 +1088,7 @@ msgstr "Törölje az összes {things} innen: {obj}"
 #: ../subiquity/ui/views/filesystem/delete.py:150
 #, python-brace-format
 msgid "Do you really want to remove all {things} from {obj}?"
-msgstr "Biztos, hogy törli az összes {things} innen: {obj}?"
+msgstr "Valóban el szeretné távolítani az összes {things} innen: {obj}?"
 
 #. XXX summarize partitions here?
 #: ../subiquity/ui/views/filesystem/delete.py:157
@@ -1038,12 +1098,12 @@ msgstr "Újraformázás"
 #: ../subiquity/ui/views/filesystem/filesystem.py:75
 #, python-brace-format
 msgid "existing {fstype}"
-msgstr ""
+msgstr "meglévő {fstype}"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:77
 #, python-brace-format
 msgid "new {fstype}"
-msgstr ""
+msgstr "új {fstype}"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:112
 msgid "No disks or partitions mounted."
@@ -1083,7 +1143,7 @@ msgstr "Nincsenek használt eszközök"
 #: ../subiquity/ui/views/filesystem/filesystem.py:317
 #, python-brace-format
 msgid "Remove from {device}"
-msgstr ""
+msgstr "Eltávolítás a(z) {device} eszközről"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:324
 msgid "Create Logical Volume"
@@ -1092,19 +1152,19 @@ msgstr "Logikai kötet létrehozása"
 #: ../subiquity/ui/views/filesystem/filesystem.py:326
 #, python-brace-format
 msgid "Add {ptype} Partition"
-msgstr ""
+msgstr "{ptype} partíció hozzáadása"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:332
 msgid "Stop Using As Boot Device"
-msgstr ""
+msgstr "Rendszerindító-eszközként való használat abbahagyása"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:336
 msgid "Add As Another Boot Device"
-msgstr ""
+msgstr "Hozzáadás másik rendszerindító-eszközként"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:337
 msgid "Use As Boot Device"
-msgstr ""
+msgstr "Használat rendszerindító-eszközként"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:392
 msgid "DEVICE"
@@ -1112,7 +1172,7 @@ msgstr "ESZKÖZ"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:437
 msgid "Storage configuration"
-msgstr ""
+msgstr "Tároló beállításai"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:448
 msgid "Create software RAID (md)"
@@ -1140,11 +1200,11 @@ msgstr "Fájlrendszer csatolása ide: /"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:492
 msgid "Select a boot disk"
-msgstr "Válasszon indítólemezt"
+msgstr "Rendszerindító-lemez kiválasztása"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:498
 msgid "To continue you need to:"
-msgstr ""
+msgstr "A folytatáshoz a következőt kell tennie:"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:513
 msgid "Reset"
@@ -1153,6 +1213,7 @@ msgstr "Visszaállítás"
 #: ../subiquity/ui/views/filesystem/guided.py:53
 msgid "Configure a guided storage layout, or create a custom one:"
 msgstr ""
+"Irányított tárolóelrendezést beállítása vagy egyéni elrendezés létrehozása:"
 
 #: ../subiquity/ui/views/filesystem/guided.py:57
 #: ../subiquity/ui/views/filesystem/lvm.py:80
@@ -1178,11 +1239,11 @@ msgstr "A jelmondatot meg kell adni"
 #: ../subiquity/ui/views/filesystem/guided.py:75
 #: ../subiquity/ui/views/filesystem/lvm.py:129
 msgid "Passphrases do not match"
-msgstr "A jelmondatoknak egyezniük kell"
+msgstr "A jelmondatok nem egyeznek"
 
 #: ../subiquity/ui/views/filesystem/guided.py:88
 msgid "Encrypt the LVM group with LUKS"
-msgstr ""
+msgstr "Az LVM-csoport titkosítása LUKS használatával"
 
 #: ../subiquity/ui/views/filesystem/guided.py:139
 msgid ""
@@ -1196,7 +1257,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:174
 msgid "Set up this disk as an LVM group"
-msgstr ""
+msgstr "A lemez beállítása LVM-csoportként"
 
 #: ../subiquity/ui/views/filesystem/guided.py:176
 msgid "Full disk encryption with TPM"
@@ -1204,11 +1265,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:248
 msgid "Use an entire disk"
-msgstr ""
+msgstr "A teljes lemez használata"
 
 #: ../subiquity/ui/views/filesystem/guided.py:250
 msgid "Custom storage layout"
-msgstr ""
+msgstr "Egyéni tárolóelrendezés"
 
 #: ../subiquity/ui/views/filesystem/guided.py:266
 msgid ""
@@ -1251,6 +1312,9 @@ msgid ""
 "storage\n"
 "configuration. Manual configuration may still be possible.\n"
 msgstr ""
+"\n"
+"A blokkfelderítés nem talált elég nagy lemezeket ahhoz, hogy támogassa az\n"
+"irányított tárolóbeállítást. A kézi beállítás még mindig lehetséges.\n"
 
 #: ../subiquity/ui/views/filesystem/guided.py:306
 msgid ""
@@ -1258,15 +1322,17 @@ msgid ""
 "Block probing did not discover any disks. Unfortunately this means that\n"
 "installation will not be possible.\n"
 msgstr ""
+"\n"
+"A blokkfelderítés nem fedezett fel egyetlen lemezt sem. Ez sajnos azt\n"
+"jelenti, hogy a telepítés nem lesz lehetséges.\n"
 
 #: ../subiquity/ui/views/filesystem/guided.py:314
 msgid "Guided storage configuration"
-msgstr ""
+msgstr "Irányított tárolóbeállítás"
 
 #: ../subiquity/ui/views/filesystem/guided.py:342
-#, fuzzy
 msgid "Choose a disk to install to:"
-msgstr "Válassza ki a telepítés céllemezét:"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:357
 msgid "Cannot install core boot classic system"
@@ -1281,12 +1347,12 @@ msgstr "OK"
 
 #: ../subiquity/ui/views/filesystem/guided.py:374
 msgid "Help on guided storage configuration"
-msgstr ""
+msgstr "Súgó az irányított tárolóbeállításhoz"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, "
-"0-9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
+"9, +, _, . and -"
 msgstr ""
 "A kötetcsoport nevében csak a következő karakterek megengedettek: a-z, A-Z, "
 "0-9, +, _, . és -"
@@ -1335,12 +1401,12 @@ msgstr "A kötetcsoport neve nem kezdődhet kötőjellel"
 #: ../subiquity/ui/views/filesystem/lvm.py:113
 #, python-brace-format
 msgid "There is already a volume group named '{name}'"
-msgstr ""
+msgstr "Már létezik egy „{name}” nevű kötetcsoport"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:118
 #, python-brace-format
 msgid "{name} is not a valid name for a volume group"
-msgstr ""
+msgstr "A(z) {name} nem érvényes név egy kötetcsoportnak"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:143
 msgid "Create LVM volume group"
@@ -1349,7 +1415,7 @@ msgstr "LVM kötetcsoport létrehozása"
 #: ../subiquity/ui/views/filesystem/lvm.py:158
 #, python-brace-format
 msgid "Edit volume group \"{name}\""
-msgstr ""
+msgstr "A(z) „{name}” kötetcsoport szerkesztése"
 
 #: ../subiquity/ui/views/filesystem/partition.py:75
 msgid "Leave unformatted"
@@ -1358,17 +1424,17 @@ msgstr "Formázatlanul hagyás"
 #: ../subiquity/ui/views/filesystem/partition.py:78
 #, python-brace-format
 msgid "Leave formatted as {fstype}"
-msgstr ""
+msgstr "{fstype} formázottként hagyás"
 
 #: ../subiquity/ui/views/filesystem/partition.py:114
 #, python-brace-format
 msgid "Capped partition size at {size}"
-msgstr ""
+msgstr "Partíció mérete {size} méretűre korlátozva"
 
 #: ../subiquity/ui/views/filesystem/partition.py:130
 #, python-brace-format
 msgid "Rounded size up to {size}"
-msgstr ""
+msgstr "Méret felkerekítve {size} méretűre"
 
 #: ../subiquity/ui/views/filesystem/partition.py:145
 msgid ""
@@ -1381,7 +1447,7 @@ msgstr ""
 #: ../subiquity/ui/views/filesystem/partition.py:181
 #, python-brace-format
 msgid "Size (max {size}):"
-msgstr ""
+msgstr "Méret (legfeljebb {size}):"
 
 #: ../subiquity/ui/views/filesystem/partition.py:217
 msgid "Name: "
@@ -1401,7 +1467,7 @@ msgstr "Használat cserehelyként"
 
 #: ../subiquity/ui/views/filesystem/partition.py:222
 msgid "Use this swap partition in the installed system."
-msgstr "E partíció használata cserehelyként a telepített rendszeren."
+msgstr "A cserehely-partíció használata a telepített rendszeren."
 
 #: ../subiquity/ui/views/filesystem/partition.py:247
 msgid "The name of a logical volume cannot be empty"
@@ -1433,7 +1499,7 @@ msgstr "Az útvonal hossza túllépi a PATH_MAX értéket"
 #: ../subiquity/ui/views/filesystem/partition.py:283
 #, python-brace-format
 msgid "{device} is already mounted at {path}."
-msgstr ""
+msgstr "A(z) {device} már csatolva van ide: {path}."
 
 #: ../subiquity/ui/views/filesystem/partition.py:294
 #, python-brace-format
@@ -1441,6 +1507,8 @@ msgid ""
 "Mounting an existing filesystem at {mountpoint} is usually a bad idea, "
 "proceed only with caution."
 msgstr ""
+"Egy meglévő fájlrendszernek a(z) {mountpoint} helyre történő csatolása "
+"általában rossz ötlet, csak óvatosan járjon el."
 
 #: ../subiquity/ui/views/filesystem/partition.py:313
 #, python-brace-format
@@ -1455,18 +1523,30 @@ msgid ""
 "will not contain a filesystem and will not be mounted, and cannot be\n"
 "edited here.\n"
 msgstr ""
+"Rendszerbetöltő partíció\n"
+"\n"
+"{middle}\n"
+"\n"
+"Viszont egy GPT partíciós táblájú lemezen nincs elég hely az MBR után a\n"
+"GRUB-nak, hogy eltárolja a core.img fájl második fokozatát, így egy kis\n"
+"formázatlan partícióra van szükség a lemez elején. Nem fog fájlrendszert\n"
+"tartalmazni, és nem lesz csatolva, így itt nem szerkeszthető.\n"
 
 #: ../subiquity/ui/views/filesystem/partition.py:327
 msgid ""
 "If this disk is selected as a boot device, GRUB will be installed onto\n"
 "the target disk's MBR."
 msgstr ""
+"Ha ez a lemez van kiválasztva rendszerindító-eszközként, akkor a GRUB a\n"
+"céllemez fő rendszerindító rekordjába (MBR) lesz telepítve."
 
 #: ../subiquity/ui/views/filesystem/partition.py:333
 msgid ""
 "As this disk has been selected as a boot device, GRUB will be\n"
 "installed onto the target disk's MBR."
 msgstr ""
+"Mivel ez a lemez lett kiválasztva rendszerindító-eszközként, a GRUB\n"
+"a céllemez fő rendszerindító rekordjába (MBR) lesz telepítve."
 
 #: ../subiquity/ui/views/filesystem/partition.py:339
 msgid ""
@@ -1476,6 +1556,11 @@ msgid ""
 "disk is selected as a boot device, Grub will be installed onto this\n"
 "partition, which must be formatted as fat32.\n"
 msgstr ""
+"Rendszerbetöltő partíció\n"
+"\n"
+"Ez az UEFI számára szükséges ESP / „EFI rendszerpartíció”. Ha ez a lemez\n"
+"van kiválasztva rendszerindító-eszközként, akkor a GRUB erre a partícióra\n"
+"lesz telepítve, és FAT32-ként kell formázni.\n"
 
 #: ../subiquity/ui/views/filesystem/partition.py:349
 msgid ""
@@ -1485,16 +1570,23 @@ msgid ""
 "disk has been selected as a boot device, Grub will be installed onto\n"
 "this partition, which must be formatted as fat32.\n"
 msgstr ""
+"Rendszerbetöltő partíció\n"
+"\n"
+"Ez az UEFI számára szükséges ESP / „EFI rendszerpartíció”. Mivel ez a\n"
+"lemez lett kiválasztva rendszerindító-eszközként, a GRUB erre a partícióra\n"
+"lesz telepítve, és FAT32-ként kell formázni.\n"
 
 #: ../subiquity/ui/views/filesystem/partition.py:359
 msgid "The only aspect of this partition that can be edited is the size.\n"
-msgstr ""
+msgstr "Ennek a partíciónak az egyetlen szerkeszthető eleme a mérete.\n"
 
 #: ../subiquity/ui/views/filesystem/partition.py:365
 msgid ""
 "You can choose whether to use the existing filesystem on this\n"
 "partition or reformat it.\n"
 msgstr ""
+"Választhat, hogy a meglévő fájlrendszert használja ezen a partíción,\n"
+"vagy újraformázza azt.\n"
 
 #: ../subiquity/ui/views/filesystem/partition.py:372
 msgid ""
@@ -1503,6 +1595,10 @@ msgid ""
 "This is the PReP partion which is required on POWER. If this disk is\n"
 "selected as a boot device, Grub will be installed onto this partition.\n"
 msgstr ""
+"Szükséges rendszerbetöltő partíció\n"
+"\n"
+"Ez a POWER számára szükséges PReP partíció. Ha ez a lemez van kiválasztva\n"
+"rendszerindító-eszközként, akkor a GRUB erre a partícióra lesz telepítve.\n"
 
 #: ../subiquity/ui/views/filesystem/partition.py:381
 msgid ""
@@ -1512,6 +1608,11 @@ msgid ""
 "been selected as a boot device, Grub will be installed onto this\n"
 "partition.\n"
 msgstr ""
+"Szükséges rendszerbetöltő partíció\n"
+"\n"
+"Ez a POWER számára szükséges PReP partíció. Mivel ez a lemez lett\n"
+"kiválasztva rendszerindító-eszközként, a GRUB erre a partícióra lesz\n"
+"telepítve.\n"
 
 #: ../subiquity/ui/views/filesystem/partition.py:482
 msgid "Use existing fat32 filesystem"
@@ -1524,22 +1625,22 @@ msgstr "Újraformázás friss FAT32 fájlrendszerként"
 #: ../subiquity/ui/views/filesystem/partition.py:567
 #, python-brace-format
 msgid "Adding logical volume to {vgname}"
-msgstr ""
+msgstr "Logikai kötet hozzáadása ehhez: {vgname}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:571
 #, python-brace-format
 msgid "Adding {ptype} partition to {device}"
-msgstr ""
+msgstr "{ptype} partíció hozzáadása ehhez: {device}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:577
 #, python-brace-format
 msgid "Editing logical volume {lvname} of {vgname}"
-msgstr ""
+msgstr "A(z) {vgname} kötetcsoport {lvname} logikai kötetének szerkesztése"
 
 #: ../subiquity/ui/views/filesystem/partition.py:581
 #, python-brace-format
 msgid "Editing partition {number} of {device}"
-msgstr ""
+msgstr "A(z) {device} eszköz {number}. partíciójának szerkesztése"
 
 #: ../subiquity/ui/views/filesystem/partition.py:641
 msgid ""
@@ -1556,14 +1657,14 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/probing.py:29
 msgid "Waiting for storage probing to complete"
-msgstr "Várakozás a tárolófelderítés befejezésére"
+msgstr "Várakozás a tároló felderítésének befejezésére"
 
 #: ../subiquity/ui/views/filesystem/probing.py:40
 msgid ""
 "The installer is probing for block devices to install to. Please wait until "
 "it completes."
 msgstr ""
-"A telepítő a telepítéshez használható blokkeszközöket deríti fel. Várjon "
+"A telepítő a telepítéshez használható blokkeszközöket deríti fel. Várjon, "
 "amíg befejeződik."
 
 #: ../subiquity/ui/views/filesystem/probing.py:56
@@ -1582,7 +1683,7 @@ msgstr "A telepítéshez használható eszközök felderítése sikertelen"
 
 #: ../subiquity/ui/views/filesystem/probing.py:74
 msgid "Show Error Report"
-msgstr ""
+msgstr "Hibajelentés megjelenítése"
 
 #: ../subiquity/ui/views/filesystem/raid.py:58
 msgid "/ is not permitted in the name of a RAID device"
@@ -1590,7 +1691,7 @@ msgstr "A „/” nem engedélyezett a RAID-eszköz nevében"
 
 #: ../subiquity/ui/views/filesystem/raid.py:66
 msgid "Whitespace is not permitted in the name of a RAID device"
-msgstr "A szóközök nem engedélyezettek a RAID-eszköz nevében"
+msgstr "Az üres karakterek nem engedélyezettek a RAID-eszköz nevében"
 
 #: ../subiquity/ui/views/filesystem/raid.py:84
 msgid "RAID Level:"
@@ -1603,12 +1704,13 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/raid.py:101
 msgid ". and .. are not valid names for RAID devices"
-msgstr "A . és .. nem megfelelő név RAID-eszközökhöz"
+msgstr "A . és .. nem érvényes név RAID-eszközökhöz"
 
 #: ../subiquity/ui/views/filesystem/raid.py:107
 #, python-brace-format
 msgid "RAID Level \"{level}\" requires at least {min_active} active devices"
 msgstr ""
+"A(z) „{level}” RAID-szint legalább {min_active} aktív eszközt igényel"
 
 #: ../subiquity/ui/views/filesystem/raid.py:120
 msgid "Create software RAID (\"MD\") disk"
@@ -1617,7 +1719,7 @@ msgstr "Szoftveres RAID-lemez („MD”) létrehozása"
 #: ../subiquity/ui/views/filesystem/raid.py:136
 #, python-brace-format
 msgid "Edit software RAID disk \"{name}\""
-msgstr ""
+msgstr "A(z) „{name}” szoftveres RAID-lemez szerkesztése"
 
 #: ../subiquity/ui/views/help.py:43
 #, python-brace-format
@@ -1636,6 +1738,18 @@ msgid ""
 "\n"
 "This is version {snap_version} of the installer.\n"
 msgstr ""
+"\n"
+"Üdvözli az Ubuntu kiszolgáló telepítője!\n"
+"\n"
+"A felhőben és adatközpontokban legnépszerűbb Linux kiszolgáló, az Ubuntu\n"
+"ezen kiadása a megjelenéstől számított 9 hónapig kap frissítéseket.\n"
+"\n"
+"A telepítő végigvezeti Önt az Ubuntu {release} kiszolgáló telepítésén.\n"
+"\n"
+"A telepítő csak a fel és le nyílbillentyűket, a szóközt (vagy az Entert)\n"
+"és néha egy kis gépelést igényel.\n"
+"\n"
+"Ez a telepítő {snap_version} verziója.\n"
 
 #: ../subiquity/ui/views/help.py:61
 #, python-brace-format
@@ -1654,6 +1768,18 @@ msgid ""
 "\n"
 "This is version {snap_version} of the installer.\n"
 msgstr ""
+"\n"
+"Üdvözli az Ubuntu kiszolgáló telepítője!\n"
+"\n"
+"A felhőben és adatközpontokban legnépszerűbb Linux kiszolgáló, számíthat\n"
+"az Ubuntu kiszolgálóra és az öt évig garantáltan ingyenes frissítésekre.\n"
+"\n"
+"A telepítő végigvezeti Önt az Ubuntu {release} LTS kiszolgáló telepítésén.\n"
+"\n"
+"A telepítő csak a fel és le nyílbillentyűket, a szóközt (vagy az Entert)\n"
+"és néha egy kis gépelést igényel.\n"
+"\n"
+"Ez a telepítő {snap_version} verziója.\n"
 
 #: ../subiquity/ui/views/help.py:79
 msgid ""
@@ -1668,6 +1794,8 @@ msgid ""
 "\n"
 "To connect, SSH to any of these addresses:\n"
 msgstr ""
+"\n"
+"A kapcsolódáshoz SSH-zon be az alábbi címek bármelyikére:\n"
 
 #: ../subiquity/ui/views/help.py:92
 #, python-brace-format
@@ -1716,6 +1844,9 @@ msgid ""
 "Unfortunately this system seems to have no global IP addresses at this\n"
 "time.\n"
 msgstr ""
+"\n"
+"Sajnos úgy tűnik, hogy ennek a rendszernek jelenleg nincsenek globális\n"
+"IP-címei.\n"
 
 #: ../subiquity/ui/views/help.py:138
 msgid ""
@@ -1723,46 +1854,48 @@ msgid ""
 "Unfortunately the installer was unable to detect the password that has\n"
 "been set.\n"
 msgstr ""
+"\n"
+"Sajnos a telepítő nem tudta felismerni a beállított jelszót.\n"
 
 #: ../subiquity/ui/views/help.py:234
 msgid "The following keys can be used at any time:"
-msgstr ""
+msgstr "A következő billentyűk bármikor használhatók:"
 
 #: ../subiquity/ui/views/help.py:239
 msgid "ESC"
-msgstr ""
+msgstr "ESC"
 
 #: ../subiquity/ui/views/help.py:239
 msgid "go back"
-msgstr ""
+msgstr "visszalépés"
 
 #: ../subiquity/ui/views/help.py:240
 msgid "F1"
-msgstr ""
+msgstr "F1"
 
 #: ../subiquity/ui/views/help.py:240
 msgid "open help menu"
-msgstr ""
+msgstr "súgó menü megnyitása"
 
 #: ../subiquity/ui/views/help.py:241
 msgid "Control-Z, F2"
-msgstr ""
+msgstr "Ctrl+Z, F2"
 
 #: ../subiquity/ui/views/help.py:241
 msgid "switch to shell"
-msgstr ""
+msgstr "átváltás a parancsértelmezőre"
 
 #: ../subiquity/ui/views/help.py:242
 msgid "Control-L, F3"
-msgstr ""
+msgstr "Ctrl+L, F3"
 
 #: ../subiquity/ui/views/help.py:242
 msgid "redraw screen"
-msgstr ""
+msgstr "képernyő újrarajzolása"
 
 #: ../subiquity/ui/views/help.py:246
 msgid "Control-T, F4"
-msgstr ""
+msgstr "Ctrl+T, F4"
 
 #: ../subiquity/ui/views/help.py:246
 msgid "toggle rich mode (colour, unicode) on and off"
@@ -1770,67 +1903,67 @@ msgstr ""
 
 #: ../subiquity/ui/views/help.py:250
 msgid "Control-X"
-msgstr ""
+msgstr "Ctrl+X"
 
 #: ../subiquity/ui/views/help.py:250
 msgid "quit"
-msgstr ""
+msgstr "kilépés"
 
 #: ../subiquity/ui/views/help.py:251
 msgid "Control-E"
-msgstr ""
+msgstr "Ctrl+E"
 
 #: ../subiquity/ui/views/help.py:251
 msgid "generate noisy error report"
-msgstr ""
+msgstr "zajos hibajelentés előállítása"
 
 #: ../subiquity/ui/views/help.py:252
 msgid "Control-R"
-msgstr ""
+msgstr "Ctrl+R"
 
 #: ../subiquity/ui/views/help.py:252
 msgid "generate quiet error report"
-msgstr ""
+msgstr "csendes hibajelentés előállítása"
 
 #: ../subiquity/ui/views/help.py:253
 msgid "Control-G"
-msgstr ""
+msgstr "Ctrl+G"
 
 #: ../subiquity/ui/views/help.py:253
 msgid "pretend to run an install"
-msgstr ""
+msgstr "úgy tesz, mintha telepítést futtatna"
 
 #: ../subiquity/ui/views/help.py:254
 msgid "Control-U"
-msgstr ""
+msgstr "Ctrl+U"
 
 #: ../subiquity/ui/views/help.py:254
 msgid "crash the ui"
-msgstr ""
+msgstr "a felhasználói felület összeomlasztása"
 
 #: ../subiquity/ui/views/help.py:267
 msgid "(dry-run only)"
-msgstr ""
+msgstr "(csak tesztüzemmód)"
 
 #: ../subiquity/ui/views/help.py:282
 msgid "Shortcut Keys"
-msgstr ""
+msgstr "Gyorsbillentyűk"
 
 #: ../subiquity/ui/views/help.py:306
 msgid "About this installer"
-msgstr ""
+msgstr "A telepítő névjegye"
 
 #: ../subiquity/ui/views/help.py:307
 msgid "Keyboard shortcuts"
-msgstr ""
+msgstr "Gyorsbillentyűk"
 
 #: ../subiquity/ui/views/help.py:308
 msgid "Enter shell"
-msgstr ""
+msgstr "Belépés a parancsértelmezőbe"
 
 #: ../subiquity/ui/views/help.py:316 ../subiquity/ui/views/help.py:493
 msgid "Help on SSH access"
-msgstr ""
+msgstr "Súgó az SSH-hozzáféréshez"
 
 #: ../subiquity/ui/views/help.py:319
 msgid "Toggle rich mode"
@@ -1838,19 +1971,19 @@ msgstr ""
 
 #: ../subiquity/ui/views/help.py:330
 msgid "Help on this screen"
-msgstr ""
+msgstr "Súgó ehhez a képernyőhöz"
 
 #: ../subiquity/ui/views/help.py:335 ../subiquity/ui/views/help.py:341
 msgid "View error reports"
-msgstr ""
+msgstr "Hibajelentések megtekintése"
 
 #: ../subiquity/ui/views/help.py:420
 msgid "Help"
-msgstr ""
+msgstr "Súgó"
 
 #: ../subiquity/ui/views/help.py:484
 msgid "About the installer"
-msgstr ""
+msgstr "A telepítő névjegye"
 
 #: ../subiquity/ui/views/identity.py:48
 msgid "The characters : , and = are not permitted in this field"
@@ -1883,7 +2016,7 @@ msgstr "Válasszon jelszót:"
 
 #: ../subiquity/ui/views/identity.py:127
 msgid "Confirm your password:"
-msgstr "Jelszó megerősítése:"
+msgstr "Erősítse meg a jelszavát:"
 
 #: ../subiquity/ui/views/identity.py:131
 #, python-brace-format
@@ -1892,7 +2025,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:137
 msgid "Server name must not be empty"
-msgstr "A kiszolgálónév nem hagyható üresen"
+msgstr "A kiszolgálónév nem lehet üres"
 
 #: ../subiquity/ui/views/identity.py:140
 #, python-brace-format
@@ -1905,7 +2038,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:150
 msgid "Username missing"
-msgstr "A felhasználónév nem hagyható üresen"
+msgstr "A felhasználónév hiányzik"
 
 #: ../subiquity/ui/views/identity.py:153
 #, python-brace-format
@@ -1922,13 +2055,13 @@ msgid "The username \"{username}\" is reserved for use by the system."
 msgstr "A(z) „{username}” felhasználónév a rendszer számára van fenntartva."
 
 #: ../subiquity/ui/views/identity.py:167
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "The username \"{username}\" is already in use."
-msgstr "A(z) „{username}” felhasználónév a rendszer számára van fenntartva."
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:173
 msgid "Password must be set"
-msgstr "A jelszó nem hagyható üresen"
+msgstr "A jelszót meg kell adni"
 
 #: ../subiquity/ui/views/identity.py:177
 msgid "Passwords do not match"
@@ -1949,13 +2082,12 @@ msgstr ""
 "használatához továbbra is jelszó szükséges."
 
 #: ../subiquity/ui/views/identity.py:212
-#, fuzzy
 msgid "Passwords"
-msgstr "jelszavak"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:44
 msgid "Install progress"
-msgstr ""
+msgstr "Telepítés állapota"
 
 #. context_id -> line containing a spinner
 #: ../subiquity/ui/views/installprogress.py:50
@@ -1966,7 +2098,7 @@ msgstr "Újraindítás most"
 
 #: ../subiquity/ui/views/installprogress.py:52
 msgid "View error report"
-msgstr ""
+msgstr "Hibajelentés megtekintése"
 
 #: ../subiquity/ui/views/installprogress.py:54
 msgid "View full log"
@@ -2027,10 +2159,17 @@ msgid ""
 "\n"
 "Are you sure you want to continue?"
 msgstr ""
+"A lenti Folytatás választása elindítja a telepítési folyamatot, és a\n"
+"formázásra kijelölt lemezeken lévő adatok elvesztését eredményezi.\n"
+"\n"
+"A telepítés megkezdése után nem tud visszatérni erre vagy egy korábbi\n"
+"képernyőre.\n"
+"\n"
+"Biztosan folytatni szeretné?"
 
 #: ../subiquity/ui/views/installprogress.py:253
 msgid "Confirm destructive action"
-msgstr "Destruktív művelet jóváhagyása"
+msgstr "Romboló művelet megerősítése"
 
 #: ../subiquity/ui/views/installprogress.py:272
 #, python-brace-format
@@ -2039,19 +2178,22 @@ msgid ""
 "\n"
 "You can wait for this to complete or switch to a shell.\n"
 msgstr ""
+"A(z) {tty} címen futó telepítő jelenleg a rendszert telepíti.\n"
+"\n"
+"Megvárhatja, amíg befejeződik, vagy átválthat egy parancsértelmezőre.\n"
 
 #: ../subiquity/ui/views/keyboard.py:53
 msgid "Keyboard auto-detection"
-msgstr "Billentyűzet automatikus észlelése"
+msgstr "Billentyűzet automatikus felismerése"
 
 #: ../subiquity/ui/views/keyboard.py:82
 msgid ""
 "Keyboard detection starting. You will be asked a series of questions about "
 "your keyboard. Press escape at any time to go back to the previous screen."
 msgstr ""
-"A billentyűzet-észlelés elindult. Egy sor kérdés lesz feltéve a "
-"billentyűzetéről. Az előző képernyőhöz visszatéréshez bármikor megnyomhatja "
-"az Esc gombot."
+"A billentyűzet-felismerés elindult. Egy sor kérdés lesz feltéve a "
+"billentyűzetéről. Az előző képernyőhöz való visszatéréshez bármikor "
+"megnyomhatja az Esc billentyűt."
 
 #: ../subiquity/ui/views/keyboard.py:100
 msgid ""
@@ -2059,9 +2201,9 @@ msgid ""
 "\n"
 "Your keyboard was detected as:\n"
 msgstr ""
-"A billentyűzet automatikus észlelése kész.\n"
+"A billentyűzet automatikus felismerése kész.\n"
 "\n"
-"A billentyűzetét ekként észlelte:\n"
+"A billentyűzetét ekként lett felismerve:\n"
 
 #: ../subiquity/ui/views/keyboard.py:107
 msgid ""
@@ -2071,9 +2213,9 @@ msgid ""
 "\n"
 msgstr ""
 "\n"
-"Ha ez helyes, válassza a Kész lehetőséget a következő képernyőn. Ha nem, "
-"akkor választhat egy másik kiosztást, vagy újra futtathatja az automatikus "
-"észlelést.\n"
+"Ha ez helyes, akkor válassza a Kész lehetőséget a következő képernyőn. Ha "
+"nem, akkor választhat egy másik kiosztást, vagy újra futtathatja az "
+"automatikus felismerést.\n"
 "\n"
 
 #: ../subiquity/ui/views/keyboard.py:126
@@ -2090,11 +2232,11 @@ msgstr "Nyomja meg a következő billentyűk egyikét:"
 
 #: ../subiquity/ui/views/keyboard.py:197 ../subiquity/ui/views/keyboard.py:205
 msgid "Input was not recognized, try again"
-msgstr "A bemenet felismerése sikertelen, próbálja újra"
+msgstr "A bemenet nem lett felismerve, próbálja újra"
 
 #: ../subiquity/ui/views/keyboard.py:223
 msgid "Is the following key present on your keyboard?"
-msgstr "A következő billentyűk elérhetők a billentyűzetén?"
+msgstr "A következő billentyű rajta van a billentyűzetén?"
 
 #: ../subiquity/ui/views/keyboard.py:290
 msgid ""
@@ -2108,13 +2250,14 @@ msgid ""
 "\n"
 "Not all listed keys are present on all keyboards. "
 msgstr ""
-"Váltania kell majd tudni a nemzeti kiosztás és a szabványos Latin kiosztás "
-"között.\n"
+"Szüksége lesz arra, hogy a billentyűzetet a nemzeti kiosztás és a "
+"szabványos\n"
+"latin kiosztás között átállíthassa.\n"
 "\n"
 "A jobb Alt vagy Caps Lock billentyűket ergonómiai okokból gyakran választják "
 "(utóbbi esetben használja a Shift+Caps Lock kombinációt a normál Caps Lock "
 "helyett). Az Alt+Shift is népszerű kombináció; viszont ez elveszti a "
-"szokásos működését az Emacsben és más programokban, melyek más feladatokra "
+"szokásos működését az Emacsben és más programokban, amelyek más feladatokra "
 "használják.\n"
 "\n"
 "Az itt felsorolt billentyűk nem mindegyike található meg az összes "
@@ -2142,7 +2285,7 @@ msgstr "Jobb logó billentyű"
 
 #: ../subiquity/ui/views/keyboard.py:309
 msgid "Menu key"
-msgstr "Menügomb"
+msgstr "Menü billentyű"
 
 #: ../subiquity/ui/views/keyboard.py:310
 msgid "Alt+Shift"
@@ -2194,7 +2337,7 @@ msgstr "Gyorsbillentyű: "
 
 #: ../subiquity/ui/views/keyboard.py:356
 msgid "Select layout toggle"
-msgstr "Kiosztásváltó megadása"
+msgstr "Kiosztásváltó kiválasztása"
 
 #: ../subiquity/ui/views/keyboard.py:371
 msgid "Layout:"
@@ -2222,7 +2365,7 @@ msgid ""
 "detect your layout automatically."
 msgstr ""
 "Válassza ki a billentyűzete kiosztását lent, vagy válassza a „Billentyűzet "
-"azonosítása” lehetőséget az automatikus észleléshez."
+"azonosítása” lehetőséget az automatikus felismeréshez."
 
 #: ../subiquity/ui/views/keyboard.py:413
 msgid "Identify keyboard"
@@ -2230,14 +2373,14 @@ msgstr "Billentyűzet azonosítása"
 
 #: ../subiquity/ui/views/keyboard.py:448
 msgid "Applying config"
-msgstr "Konfiguráció alkalmazása"
+msgstr "Beállítás alkalmazása"
 
 #: ../subiquity/ui/views/mirror.py:38
 msgid ""
 "You may provide an archive mirror that will be used instead of the default."
 msgstr ""
-"Megadhat egy alternatív archívum-tükörkiszolgálót, melyet az alapértelmezett "
-"helyett használhat."
+"Megadhat egy alternatív archívum-tükörkiszolgálót, amely az alapértelmezett "
+"helyett lesz használva."
 
 #: ../subiquity/ui/views/mirror.py:43
 msgid "Mirror check still running"
@@ -2271,7 +2414,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/mirror.py:71
 msgid "Mirror address:"
-msgstr "Tükör címe:"
+msgstr "Tükörkiszolgáló címe:"
 
 #: ../subiquity/ui/views/mirror.py:83
 msgid ""
@@ -2299,31 +2442,31 @@ msgstr ""
 
 #: ../subiquity/ui/views/mirror.py:99
 msgid "Configure Ubuntu archive mirror"
-msgstr "Ubuntu archívumtükör beállítása"
+msgstr "Ubuntu archívum-tükörkiszolgáló beállítása"
 
 #: ../subiquity/ui/views/mirror.py:100
 msgid "If you use an alternative mirror for Ubuntu, enter its details here."
 msgstr ""
-"Ha egy alternatív tükröt használ az Ubuntuhoz, itt írja be a részleteit."
+"Ha alternatív tükörkiszolgálót használ az Ubuntuhoz, akkor itt írja be a "
+"részleteit."
 
 #: ../subiquity/ui/views/mirror.py:125
-#, fuzzy
 msgid "Try again now"
-msgstr "Próbálja újra"
+msgstr ""
 
 #: ../subiquity/ui/views/proxy.py:31
 msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of \"http://"
-"[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of "
+"\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
-"Ha HTTP proxyt kell használnia a külvilág eléréséhez, akkor itt adja meg a "
-"proxy információkat. Egyébként hagyja üresen.\n"
+"Ha HTTP-proxyt kell használnia a külvilág eléréséhez, akkor itt adja meg a "
+"proxy információit. Egyébként hagyja üresen.\n"
 "\n"
-"A proxyinformációkat a következő szabványos formában adja meg: „http://"
-"[[felhasználónév][:jelszó]@]kiszolgáló[:port]/”."
+"A proxyinformációkat a következő szabványos formában kell megadni: "
+"„http://[[felhasználónév][:jelszó]@]kiszolgáló[:port]/”."
 
 #: ../subiquity/ui/views/proxy.py:41
 msgid "Proxy address:"
@@ -2338,8 +2481,8 @@ msgid ""
 "If this system requires a proxy to connect to the internet, enter its "
 "details here."
 msgstr ""
-"Ha a rendszernek proxyra van szüksége az internethez csatlakozáshoz, akkor "
-"itt adja meg a részleteit."
+"Ha a rendszernek proxyra van szüksége az internethez való kapcsolódáshoz, "
+"akkor itt adja meg a részleteit."
 
 #: ../subiquity/ui/views/refresh.py:105
 msgid "Checking for installer update..."
@@ -2350,7 +2493,8 @@ msgid ""
 "Contacting the snap store to check if a new version of the installer is "
 "available."
 msgstr ""
-"Kapcsolatba lépés a snap áruházzal, hogy elérhető-e a telepítő új verziója."
+"Kapcsolatba lépés a snap áruházzal annak ellenőrzéséhez, hogy elérhető-e a "
+"telepítő új verziója."
 
 #: ../subiquity/ui/views/refresh.py:111
 msgid "Contacting the snap store failed"
@@ -2370,7 +2514,7 @@ msgid ""
 "Version {new} of the installer is now available ({current} is currently "
 "running)."
 msgstr ""
-"A telepítő új ({new}) verziója érhető el (a jelenlegi verzió: {current})."
+"A telepítő új ({new}) verziója már elérhető (a jelenlegi verzió: {current})."
 
 #: ../subiquity/ui/views/refresh.py:120
 msgid "Downloading update..."
@@ -2381,16 +2525,16 @@ msgid ""
 "Please wait while the updated installer is being downloaded. The installer "
 "will restart automatically when the download is complete."
 msgstr ""
-"Várjon amíg a frissített telepítő letöltődik. A telepítő a letöltés "
+"Várjon, amíg a frissített telepítő letöltődik. A telepítő a letöltés "
 "végeztével automatikusan újra fog indulni."
 
 #: ../subiquity/ui/views/refresh.py:126
 msgid "Update failed"
-msgstr ""
+msgstr "A frissítés sikertelen"
 
 #: ../subiquity/ui/views/refresh.py:127
 msgid "Downloading and applying the update:"
-msgstr ""
+msgstr "A frissítés letöltése és alkalmazása:"
 
 #: ../subiquity/ui/views/refresh.py:147 ../subiquity/ui/views/refresh.py:175
 #: ../subiquity/ui/views/refresh.py:207 ../subiquity/ui/views/refresh.py:278
@@ -2404,7 +2548,7 @@ msgstr "Próbálja újra"
 
 #: ../subiquity/ui/views/refresh.py:192
 msgid "You can read the release notes for each version at:"
-msgstr ""
+msgstr "Az egyes verziók kiadási megjegyzéseit a következő címen olvashatja:"
 
 #: ../subiquity/ui/views/refresh.py:198
 msgid ""
@@ -2412,7 +2556,7 @@ msgid ""
 "will continue from here."
 msgstr ""
 "Ha a frissítést választja, akkor a frissítés letöltésre kerül, és a "
-"telepítés onnan fog folytatódni."
+"telepítés innen fog folytatódni."
 
 #: ../subiquity/ui/views/refresh.py:206
 msgid "Update to the new installer"
@@ -2459,31 +2603,31 @@ msgstr "{amount:2} {unit} ezelőtt"
 
 #: ../subiquity/ui/views/snaplist.py:153
 msgid "LICENSE: "
-msgstr ""
+msgstr "LICENC: "
 
 #: ../subiquity/ui/views/snaplist.py:163
 msgid "LAST UPDATED: "
-msgstr ""
+msgstr "UTOLJÁRA FRISSÍTVE: "
 
 #: ../subiquity/ui/views/snaplist.py:173
 msgid "CHANNEL"
-msgstr ""
+msgstr "CSATORNA"
 
 #: ../subiquity/ui/views/snaplist.py:174
 msgid "VERSION"
-msgstr ""
+msgstr "VERZIÓ"
 
 #: ../subiquity/ui/views/snaplist.py:176
 msgid "PUBLISHED"
-msgstr ""
+msgstr "KÖZZÉTÉVE"
 
 #: ../subiquity/ui/views/snaplist.py:177
 msgid "CONFINEMENT"
-msgstr ""
+msgstr "ELSZIGETELÉS"
 
 #: ../subiquity/ui/views/snaplist.py:199
 msgid "by: "
-msgstr ""
+msgstr "ez által: "
 
 #: ../subiquity/ui/views/snaplist.py:284
 #, python-brace-format
@@ -2513,13 +2657,13 @@ msgid ""
 "SPACE, press ENTER to see more details of the package, publisher and "
 "versions available."
 msgstr ""
-"Ezek kiszolgálóoldali környezetben népszerű snap csomagok. Válasszon a SPACE "
-"billentyűvel, nyomjon ENTER-t, ha több részletre kíváncsi a csomagról, "
-"kiadóról és az elérhető verziókról."
+"Ezek kiszolgálóoldali környezetben népszerű snap csomagok. Válasszon vagy "
+"szüntesse meg a kiválasztást a SPACE billentyűvel, nyomjon ENTER-t, ha több "
+"részletre kíváncsi a csomagról, a kiadóról és az elérhető verziókról."
 
 #: ../subiquity/ui/views/ssh.py:39
 msgid "Import Username:"
-msgstr "Importált felhasználónév:"
+msgstr "Felhasználónév importálása:"
 
 #: ../subiquity/ui/views/ssh.py:46
 msgid "GitHub Username:"
@@ -2530,26 +2674,29 @@ msgid "Enter your GitHub username."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:50
-msgid "A GitHub username may only contain alphanumeric characters or hyphens."
+msgid ""
+"A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:54
 msgid "Launchpad Username:"
-msgstr "Launchpad felhasználónév:"
+msgstr "Launchpad-felhasználónév:"
 
 #: ../subiquity/ui/views/ssh.py:58
 msgid ""
 "A Launchpad username may only contain lower-case alphanumeric characters, "
 "hyphens, plus, or periods."
 msgstr ""
+"A Launchpad-felhasználónév csak kisbetűs alfanumerikus karaktereket, "
+"kötőjelet, pluszjelet vagy pontot tartalmazhat."
 
 #: ../subiquity/ui/views/ssh.py:67
 msgid "Install OpenSSH server"
-msgstr "OpenSSH kiszolgáló telepítése"
+msgstr "OpenSSH-kiszolgáló telepítése"
 
 #: ../subiquity/ui/views/ssh.py:70
 msgid "Import SSH identity:"
-msgstr "SSH azonosító importálása:"
+msgstr "SSH-személyazonosság importálása:"
 
 #: ../subiquity/ui/views/ssh.py:73
 msgid "from GitHub"
@@ -2569,11 +2716,11 @@ msgstr "Jelszavas hitelesítés engedélyezése SSH-n keresztül"
 
 #: ../subiquity/ui/views/ssh.py:113
 msgid "This field must not be blank."
-msgstr "A mező nem hagyható üresen."
+msgstr "Ez a mező nem lehet üres."
 
 #: ../subiquity/ui/views/ssh.py:115
 msgid "SSH id too long, must be < "
-msgstr "Az SSH azonosító túl hosszú, nem lehet hosszabb, mint "
+msgstr "Az SSH-azonosító túl hosszú, nem lehet hosszabb mint "
 
 #: ../subiquity/ui/views/ssh.py:120
 msgid ""
@@ -2603,8 +2750,8 @@ msgstr "SSH-kulcsok megerősítése"
 msgid ""
 "Keys with the following fingerprints were fetched. Do you want to use them?"
 msgstr ""
-"A következő ujjlenyomatokkal rendelkező kulcsok lettek lekérve. Biztos, hogy "
-"használja ezeket?"
+"A következő ujjlenyomatokkal rendelkező kulcsok lettek lekérve. Szeretné "
+"használni ezeket?"
 
 #: ../subiquity/ui/views/ssh.py:178
 msgid "Confirm SSH key"
@@ -2614,8 +2761,8 @@ msgstr "SSH-kulcs megerősítése"
 msgid ""
 "A key with the following fingerprint was fetched. Do you want to use it?"
 msgstr ""
-"A következő ujjlenyomattal rendelkező kulcs lett lekérve. Biztos, hogy "
-"használja ezt?"
+"A következő ujjlenyomattal rendelkező kulcs lett lekérve. Szeretné használni "
+"ezt?"
 
 #: ../subiquity/ui/views/ssh.py:210
 msgid "SSH Setup"
@@ -2636,62 +2783,59 @@ msgid ""
 "installed system.\n"
 msgstr ""
 "\n"
-"Válassza ki a telepítéshez használandó, és a telepített rendszerhez\n"
+"Válassza ki a telepítéshez használandó és a telepített rendszeren\n"
 "beállítandó nyelvet.\n"
 
 #: ../subiquity/ui/views/welcome.py:102
 msgid "Use UP, DOWN and ENTER keys to select your language."
-msgstr "Használja a FEL, LE és ENTER gombokat a nyelv kiválasztásához."
+msgstr "Használja a FEL, LE és ENTER billentyűket a nyelv kiválasztásához."
 
 #: ../subiquity/ui/views/welcome.py:110
 msgid "Help choosing a language"
-msgstr ""
+msgstr "Súgó egy nyelv kiválasztásához"
 
 #. for translator: failed is a zdev device status
 #: ../subiquity/ui/views/zdev.py:39
 msgid "failed"
-msgstr ""
+msgstr "sikertelen"
 
 #. for translator: auto is a zdev device status
 #: ../subiquity/ui/views/zdev.py:42
 msgid "auto"
-msgstr ""
+msgstr "automatikus"
 
 #. for translator: online is a zdev device status
 #: ../subiquity/ui/views/zdev.py:45
 msgid "online"
-msgstr ""
+msgstr "elérhető"
 
 #: ../subiquity/ui/views/zdev.py:62
 msgid "No zdev devices found."
-msgstr ""
+msgstr "Nem találhatók zdev eszközök."
 
 #: ../subiquity/ui/views/zdev.py:80
 msgid "ID"
-msgstr ""
+msgstr "AZONOSÍTÓ"
 
 #: ../subiquity/ui/views/zdev.py:81
 msgid "ONLINE"
-msgstr ""
+msgstr "ELÉRHETŐ"
 
 #: ../subiquity/ui/views/zdev.py:82
 msgid "NAMES"
-msgstr ""
+msgstr "NEVEK"
 
 #: ../subiquity/ui/views/zdev.py:118
 msgid "Enable"
-msgstr ""
+msgstr "Engedélyezés"
 
 #: ../subiquity/ui/views/zdev.py:119
 msgid "Disable"
-msgstr ""
+msgstr "Letiltás"
 
 #: ../subiquity/ui/views/zdev.py:146
 msgid "Zdev setup"
-msgstr ""
-
-#~ msgid "Cancel update"
-#~ msgstr "Frissítés megszakítása"
+msgstr "Zdev beállítás"
 
 #~ msgid "Choose the installation target"
 #~ msgstr "Válassza ki a telepítési célt"
@@ -2711,9 +2855,6 @@ msgstr ""
 #~ msgid "Finished install!"
 #~ msgstr "A telepítés befejeződött!"
 
-#~ msgid "Installation complete!"
-#~ msgstr "A telepítés befejeződött!"
-
 #~ msgid "Please report this error in Launchpad"
 #~ msgstr "Kérjük, jelentse ezt a hibát a Launchpadon"
 
@@ -2722,17 +2863,14 @@ msgstr ""
 #~ "Válasszon ki egy interfészt a konfiguráláshoz, vagy válassza a Kész "
 #~ "lehetőséget a folytatáshoz"
 
-#~ msgid "Realname too long, must be < "
-#~ msgstr "A valódi név túl hosszú, nem lehett hosszabb, mint "
+#~ msgid "Choose the disk to install to:"
+#~ msgstr "Válassza ki a telepítés céllemezét:"
 
 #~ msgid "An error has occurred"
 #~ msgstr "Hiba történt"
 
 #~ msgid "Info"
 #~ msgstr "Információ"
-
-#~ msgid "Edit Wifi"
-#~ msgstr "WiFi szerkesztése"
 
 #~ msgid "Edit IPv4"
 #~ msgstr "IPv4 szerkesztése"
@@ -2757,12 +2895,6 @@ msgstr ""
 
 #~ msgid "Info for {}"
 #~ msgstr "Információk ehhez: {}"
-
-#~ msgid "There is already a network device named \"{}\""
-#~ msgstr "Vár létezik „{}” nevű hálózati eszköz"
-
-#~ msgid "Network interface {} WIFI configuration"
-#~ msgstr "{} hálózati csatoló WiFi beállítása"
 
 #~ msgid "enslaved to {}"
 #~ msgstr "ezt szolgálja: {}"
@@ -2795,9 +2927,6 @@ msgstr ""
 #~ msgid "Remove from RAID/LVM"
 #~ msgstr "Eltávolítás a RAID/LVM-ből"
 
-#~ msgid "Make Boot Device"
-#~ msgstr "Indítóeszközzé tétel"
-
 #, python-brace-format
 #~ msgid ""
 #~ "Cannot delete {selflabel} as partition {partnum} is part of the {cdtype} "
@@ -2808,8 +2937,7 @@ msgstr ""
 
 #, python-brace-format
 #~ msgid "Cannot delete {selflabel} because it has {count} mounted partitions."
-#~ msgstr ""
-#~ "A(z) {selflabel} nem törölhető, mert {count} csatolt partíciója van."
+#~ msgstr "A(z) {selflabel} nem törölhető, mert {count} csatolt partíciója van."
 
 #, python-brace-format
 #~ msgid "Cannot delete {selflabel} because it has 1 mounted partition."
@@ -2859,20 +2987,17 @@ msgstr ""
 #~ msgid "Remove filesystem from {}"
 #~ msgstr "Fájlrendszer eltávolítása innen: {}"
 
-#~ msgid "Do you really want to remove the existing filesystem from {}?"
-#~ msgstr "Biztos, hogy törli a meglévő fájlrendszert innen: {}?"
-
 #~ msgid ""
-#~ "Selecting Continue below will begin the installation process and result "
-#~ "in the loss of data on the disks selected to be formatted.\n"
+#~ "Selecting Continue below will begin the installation process and result in "
+#~ "the loss of data on the disks selected to be formatted.\n"
 #~ "\n"
 #~ "You will not be able to return to this or a previous screen once the "
 #~ "installation has started.\n"
 #~ "\n"
 #~ "Are you sure you want to continue?"
 #~ msgstr ""
-#~ "A Folytatás választásával elindul a telepítési folyamat, és ez "
-#~ "adatvesztés okoz a formázásra kijelölt lemezeken.\n"
+#~ "A Folytatás választásával elindul a telepítési folyamat, és ez adatvesztés "
+#~ "okoz a formázásra kijelölt lemezeken.\n"
 #~ "\n"
 #~ "Amint a telepítés elindul, többé nem fog tudni visszatérni erre vagy egy "
 #~ "előző képernyőre.\n"
@@ -2889,8 +3014,8 @@ msgstr ""
 #~ "If you choose to partition an entire disk you will still have a chance to "
 #~ "review and modify the results."
 #~ msgstr ""
-#~ "A telepítő végigvezetheti a teljes lemez particionálásán, közvetlenül "
-#~ "vagy LVM használatával, vagy ha akarja, kézzel is megteheti.\n"
+#~ "A telepítő végigvezetheti a teljes lemez particionálásán, közvetlenül vagy "
+#~ "LVM használatával, vagy ha akarja, kézzel is megteheti.\n"
 #~ "\n"
 #~ "Ha a teljes lemez particionálását választja, akkor áttekintheti és "
 #~ "módosíthatja az eredményt."
@@ -2911,40 +3036,28 @@ msgstr ""
 #~ "partíciót, amely a „/” helyen lesz csatolva, és lefedi a lemez maradékát."
 
 #~ msgid ""
-#~ "The LVM guided partitioning scheme creates three partitions on the "
-#~ "selected disk: one as required by the bootloader, one for '/boot', and "
-#~ "one covering the rest of the disk.\n"
+#~ "The LVM guided partitioning scheme creates three partitions on the selected "
+#~ "disk: one as required by the bootloader, one for '/boot', and one covering "
+#~ "the rest of the disk.\n"
 #~ "\n"
-#~ "A LVM volume group is created containing the large partition. A 4 "
-#~ "gigabyte logical volume is created for the root filesystem. It can easily "
-#~ "be enlarged with standard LVM command line tools."
+#~ "A LVM volume group is created containing the large partition. A 4 gigabyte "
+#~ "logical volume is created for the root filesystem. It can easily be enlarged "
+#~ "with standard LVM command line tools."
 #~ msgstr ""
-#~ "Az irányított LVM particionálási séma három partíciót hoz létre a "
-#~ "lemezen: egyet, amely a rendszerbetöltőhöz szükséges, egyet a „/boot” "
-#~ "könyvtárnak, és egyet, amely lefedi a lemez maradékát.\n"
+#~ "Az irányított LVM particionálási séma három partíciót hoz létre a lemezen: "
+#~ "egyet, amely a rendszerbetöltőhöz szükséges, egyet a „/boot” könyvtárnak, és "
+#~ "egyet, amely lefedi a lemez maradékát.\n"
 #~ "\n"
 #~ "Egy LVM kötetcsoport lesz létrehozva, amely a nagy partíciót fogja "
 #~ "tartalmazni. A gyökérfájlrendszernek egy 4 gigabájtos logikai kötet lesz "
 #~ "létrehozva. Ez könnyedén megnövelhető az LVM szabványos parancssori "
 #~ "eszközeivel."
 
-#~ msgid "{} is not a valid name for a volume group"
-#~ msgstr "A(z) {} nem megfelelő név egy kötetcsoportnak"
-
-#~ msgid "There is already a volume group named '{}'"
-#~ msgstr "Már létezik egy meglévő „{}” kötetcsoport"
-
-#~ msgid "Edit volume group \"{}\""
-#~ msgstr "„{}” kötetcsoport szerkesztése"
-
 #~ msgid "Leave formatted as {}"
 #~ msgstr "Erre formázva hagyás: {}"
 
 #~ msgid "Capped partition size at {}"
 #~ msgstr "Partícióméret erre korlátozva: {}"
-
-#~ msgid "Rounded size up to {}"
-#~ msgstr "Méret erre felkerekítése: {}"
 
 #~ msgid "Size (max {}):"
 #~ msgstr "Méret (legfeljebb {}):"
@@ -2954,9 +3067,6 @@ msgstr ""
 
 #~ msgid "The name of a logical volume may not contain \"{}\""
 #~ msgstr "A logikai kötet neve nem tartalmazhatja ezt: „{}”"
-
-#~ msgid "There is already a logical volume named {}."
-#~ msgstr "Már létezik egy meglévő „{}” logikai kötet."
 
 #~ msgid "{} is already mounted at {}."
 #~ msgstr "A(z) {} már csatolva van itt: {}."
@@ -2982,8 +3092,8 @@ msgstr ""
 #~ "\n"
 #~ "A GRUB telepítve lesz a céllemez MBR-jébe.\n"
 #~ "\n"
-#~ "Viszont egy GPT partíciós táblájú lemezen nincs elég hely az MBR után a "
-#~ "GRUB-nak, hogy eltárolja a core.img fájl második fokozatát, így egy kis "
+#~ "Viszont egy GPT partíciós táblájú lemezen nincs elég hely az MBR után a GRUB-"
+#~ "nak, hogy eltárolja a core.img fájl második fokozatát, így egy kis "
 #~ "formázatlan partícióra van szükség a lemez elején. Nem fog fájlrendszert "
 #~ "tartalmazni, és nem lesz csatolva, így itt nem szerkeszthető."
 
@@ -3002,17 +3112,17 @@ msgstr ""
 #~ msgstr " E partíciónak csak a mérete szerkeszthető."
 
 #~ msgid ""
-#~ " You can choose whether to use the existing filesystem on this partition "
-#~ "or reformat it."
+#~ " You can choose whether to use the existing filesystem on this partition or "
+#~ "reformat it."
 #~ msgstr ""
-#~ " Választhat, hogy a meglévő fájlrendszert használja ezen a partíción, "
-#~ "vagy újraformázza azt."
+#~ " Választhat, hogy a meglévő fájlrendszert használja ezen a partíción, vagy "
+#~ "újraformázza azt."
 
 #~ msgid ""
 #~ "Required bootloader partition\n"
 #~ "\n"
-#~ "This is the PReP partion which is required on POWER. Grub will be "
-#~ "installed onto this partition."
+#~ "This is the PReP partion which is required on POWER. Grub will be installed "
+#~ "onto this partition."
 #~ msgstr ""
 #~ "Szükséges rendszerbetöltő partíció\n"
 #~ "\n"
@@ -3028,33 +3138,24 @@ msgstr ""
 #~ msgid "Editing {} of {}"
 #~ msgstr "A(z) {} szerkesztése ezen: {}"
 
-#~ msgid "Format and/or mount {}"
-#~ msgstr "A(z) {} formázása és csatolása"
-
 #~ msgid "There is already a RAID named '{}'"
 #~ msgstr "Már létezik „{}” nevű RAID-tömb"
-
-#~ msgid "RAID Level \"{}\" requires at least {} active devices"
-#~ msgstr "A RAID {} használatához legalább {} aktív eszköz szükséges"
 
 #~ msgid "Edit software RAID disk \"{}\""
 #~ msgstr "A(z) „{}” szoftveres RAID-lemez szerkesztése"
 
-#~ msgid "Server name too long, must be < "
-#~ msgstr "A kiszolgálónév túl hosszú, nem lehet hosszabb, mint "
-
 #~ msgid "Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
-#~ "A kiszolgálónévnek meg kell felelnie a NAME_REGEX kifejezésnek, például "
-#~ "[a-z_][a-z0-9_-]*"
-
-#~ msgid "Username too long, must be < "
-#~ msgstr "A felhasználónév túl hosszú, nem lehet hosszabb, mint "
+#~ "A kiszolgálónévnek meg kell felelnie a NAME_REGEX kifejezésnek, például [a-"
+#~ "z_][a-z0-9_-]*"
 
 #~ msgid "Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
-#~ "A felhasználónévnek meg kell felelnie a NAME_REGEX kifejezésnek, például "
-#~ "[a-z_][a-z0-9_-]*"
+#~ "A felhasználónévnek meg kell felelnie a NAME_REGEX kifejezésnek, például [a-"
+#~ "z_][a-z0-9_-]*"
+
+#~ msgid "passwords"
+#~ msgstr "jelszavak"
 
 #~ msgid "Exit To Shell"
 #~ msgstr "Kilépés a parancssorba"
@@ -3062,8 +3163,8 @@ msgstr ""
 #~ msgid "Reboot"
 #~ msgstr "Újraindítás"
 
-#~ msgid "Keyboard auto detection failed, sorry"
-#~ msgstr "A billentyűzet automatikus észlelése sikertelen, sajnáljuk"
+#~ msgid "Cancel update"
+#~ msgstr "Frissítés megszakítása"
 
 #~ msgid "Fetching info for {}"
 #~ msgstr "Információk lekérése a következőhöz: {}"
@@ -3071,19 +3172,147 @@ msgstr ""
 #~ msgid "Fetching info for {} failed"
 #~ msgstr "Információk lekérése a következőhöz sikertelen: {}"
 
-#~ msgid "Github Username:"
-#~ msgstr "GitHub felhasználónév:"
-
 #~ msgid "from Github"
 #~ msgstr "a GitHubról"
 
 #~ msgid "You can import your SSH keys from Github or Launchpad."
 #~ msgstr "Importálhatja az SSH-kulcsait a GitHubról vagy a Launchpadról."
 
+#~ msgid "Edit Wifi"
+#~ msgstr "Wi-Fi szerkesztése"
+
+#~ msgid "There is already a network device named \"{}\""
+#~ msgstr "Már létezik „{}” nevű hálózati eszköz"
+
+#~ msgid "Network interface {} WIFI configuration"
+#~ msgstr "A(z) {} hálózati csatoló Wi-Fi beállítása"
+
+#~ msgid "Installation complete!"
+#~ msgstr "A telepítés kész!"
+
+#~ msgid "RAID Level \"{}\" requires at least {} active devices"
+#~ msgstr "A „{}” RAID-szint legalább {} aktív eszközt igényel"
+
+#~ msgid "Rounded size up to {}"
+#~ msgstr "Méret felkerekítve erre: {}"
+
+#~ msgid "There is already a logical volume named {}."
+#~ msgstr "Már létezik egy „{}” nevű logikai kötet."
+
+#~ msgid "Format and/or mount {}"
+#~ msgstr "A(z) {} formázása és/vagy csatolása"
+
+#~ msgid "Do you really want to remove the existing filesystem from {}?"
+#~ msgstr "Valóban el szeretné távolítani a meglévő fájlrendszert innen: {}?"
+
+#~ msgid "{} is not a valid name for a volume group"
+#~ msgstr "A(z) {} nem érvényes név egy kötetcsoportnak"
+
+#~ msgid "There is already a volume group named '{}'"
+#~ msgstr "Már létezik egy „{}” nevű kötetcsoport"
+
+#~ msgid "Edit volume group \"{}\""
+#~ msgstr "A(z) „{}” kötetcsoport szerkesztése"
+
+#~ msgid "Make Boot Device"
+#~ msgstr "Rendszerindító-eszközzé tétel"
+
+#~ msgid "Realname too long, must be < "
+#~ msgstr "A valódi név túl hosszú, nem lehet hosszabb mint "
+
+#~ msgid "Server name too long, must be < "
+#~ msgstr "A kiszolgálónév túl hosszú, nem lehet hosszabb mint "
+
+#~ msgid "Username too long, must be < "
+#~ msgstr "A felhasználónév túl hosszú, nem lehet hosszabb mint "
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "The \"Use an entire disk\" option installs Ubuntu onto the selected disk,\n"
+#~ "replacing any partitions and data already there.\n"
+#~ "\n"
+#~ "If the platform requires it, a bootloader partition is created on the disk.\n"
+#~ "\n"
+#~ "If you choose to use LVM, two additional partitions are then created,\n"
+#~ "one for /boot and one covering the rest of the disk. An LVM volume\n"
+#~ "group is created containing the large partition. A logical volume is\n"
+#~ "created for the root filesystem, sized using some simple heuristic. It\n"
+#~ "can easily be enlarged with standard LVM command line tools (or on the\n"
+#~ "next screen).\n"
+#~ "\n"
+#~ "You can also choose to encrypt LVM volume group. This will require\n"
+#~ "setting a password, that one will need to type on every boot before\n"
+#~ "the system boots.\n"
+#~ "\n"
+#~ "If you do not choose to use LVM, a single partition is created covering the\n"
+#~ "rest of the disk which is then formatted as ext4 and mounted at /.\n"
+#~ "\n"
+#~ "In either case, you will still have a chance to review and modify the "
+#~ "results.\n"
+#~ "\n"
+#~ "If you choose to use a custom storage layout, no changes are made to the "
+#~ "disks\n"
+#~ "and you will have to, at a minimum, select a boot disk and mount a "
+#~ "filesystem\n"
+#~ "at /.\n"
+#~ "\n"
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "A „Teljes lemez használata” lehetőség az Ubuntut a kiválasztott lemezre\n"
+#~ "telepíti, lecserélve a már ott lévő partíciókat és adatokat.\n"
+#~ "\n"
+#~ "Ha a platform megköveteli, akkor egy rendszerbetöltő partíció is létrejön\n"
+#~ "a lemezen.\n"
+#~ "\n"
+#~ "Ha az LVM használatát választja, akkor két további partíció is létrehozásra\n"
+#~ "kerül, egy a /boot számára, egy pedig a lemez többi részét lefoglalva.\n"
+#~ "Létrejön egy LVM kötetcsoport, amely a nagy partíciót tartalmazza. Létrejön\n"
+#~ "egy logikai kötet a gyökér fájlrendszer számára, amelynek méretezése\n"
+#~ "valamilyen egyszerű heurisztika segítségével történik. Ez könnyen\n"
+#~ "megnövelhető a szokásos LVM parancssori eszközökkel (vagy a következő\n"
+#~ "képernyőn).\n"
+#~ "\n"
+#~ "Az LVM kötetcsoport titkosítását is választhatja. Ehhez be kell állítani "
+#~ "egy\n"
+#~ "jelszót, amelyet minden rendszerindításkor be kell írni, mielőtt a rendszer\n"
+#~ "elindul.\n"
+#~ "\n"
+#~ "Ha nem az LVM használatát választja, akkor egyetlen partíció kerül\n"
+#~ "létrehozásra, amely lefoglalja a lemez fennmaradó részét, majd ext4\n"
+#~ "formátumra lesz formázva, és a / helyre lesz csatolva.\n"
+#~ "\n"
+#~ "Mindkét esetben továbbra is lehetősége lesz az eredmények áttekintésére és\n"
+#~ "módosítására.\n"
+#~ "\n"
+#~ "Ha egyéni tárolóelrendezés használata mellett dönt, akkor nem történnek\n"
+#~ "változtatások a lemezeken, és legalább egy indítólemezt kell kiválasztania,\n"
+#~ "valamint egy fájlrendszert kell csatolnia a / helyre.\n"
+#~ "\n"
+
+#~ msgid "Github Username:"
+#~ msgstr "GitHub-felhasználónév:"
+
 #~ msgid ""
 #~ "A Github username may only contain alphanumeric characters or single "
 #~ "hyphens, and cannot begin or end with a hyphen."
 #~ msgstr ""
 #~ "A GitHub-felhasználónév csak alfanumerikus karaktereket és egyszeres "
-#~ "kötőjeleket tartalmazhat, valamint nem kezdődhet illetve végződhet "
-#~ "kötőjellel."
+#~ "kötőjeleket tartalmazhat, valamint nem kezdődhet vagy végződhet kötőjellel."
+
+#~ msgid "Keyboard auto detection failed, sorry"
+#~ msgstr "A billentyűzet automatikus felismerése sikertelen, sajnáljuk"
+
+#, python-brace-format
+#~ msgid "software RAID {level}"
+#~ msgstr "szoftveres RAID {level}"
+
+#~ msgid "Enter your Github username."
+#~ msgstr "Adja meg a GitHub-felhasználónevét."
+
+#~ msgid ""
+#~ "A Github username may only contain alphanumeric characters or hyphens."
+#~ msgstr ""
+#~ "A GitHub-felhasználónév csak alfanumerikus karaktereket vagy kötőjelet "
+#~ "tartalmazhat."

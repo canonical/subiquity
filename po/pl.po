@@ -11,14 +11,14 @@ msgstr ""
 "PO-Revision-Date: 2022-04-12 16:15+0000\n"
 "Last-Translator: Marek Adamski <Unknown>\n"
 "Language-Team: Polish <pl@li.org>\n"
-"Language: pl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2023-09-07 07:08+0000\n"
+"X-Generator: Launchpad (build cc7f0d837bf2751562eea8708e7cc6eb3f33ceab)\n"
+"Language: pl\n"
 
 #: ../subiquity/client/client.py:58
 msgid ""
@@ -124,7 +124,8 @@ msgstr "Usunięcie {selflabel} pozostawiłoby {cdtype} {cdlabel} bez urządzeń.
 #: ../subiquity/common/filesystem/actions.py:291
 #, python-brace-format
 msgid "Cannot delete {selflabel} as it is part of the {cdtype} {cdname}."
-msgstr "Nie można usunąć {selflabel} ponieważ jest częścią {cdtype} {cdname}."
+msgstr ""
+"Nie można usunąć {selflabel} ponieważ jest częścią {cdtype} {cdname}."
 
 #: ../subiquity/common/filesystem/actions.py:303
 msgid ""
@@ -148,7 +149,8 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:331
 #, python-brace-format
-msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgid ""
+"Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
 "Nie można usunąć {devicelabel} ponieważ zawiera {count} zamontowanych "
 "partycji."
@@ -1272,7 +1274,6 @@ msgid "Custom storage layout"
 msgstr "Własny układ partycji"
 
 #: ../subiquity/ui/views/filesystem/guided.py:266
-#, fuzzy
 msgid ""
 "\n"
 "\n"
@@ -1305,42 +1306,6 @@ msgid ""
 "at /.\n"
 "\n"
 msgstr ""
-"\n"
-"\n"
-"Opcja \"Wykorzystaj cały dysk\" instaluje Ubuntu na wybranym dysku,\n"
-"zastępując wszystkie znajdujące się tam partycje i dane.\n"
-"\n"
-"Jeśli platforma tego wymaga, na dysku tworzona jest partycja startowa.\n"
-"\n"
-"Jeśli zdecydujesz się na użycie LVM, zostaną utworzone dwie dodatkowe "
-"partycje,\n"
-"jedna dla /boot i jedna obejmująca resztę dysku. Tworzona jest grupa "
-"woluminów LVM\n"
-"zawierająca dużą partycję. Dla głównego systemu plików tworzony jest wolumin "
-"logiczny,\n"
-"którego wielkość jest ustalana za pomocą prostej heurystyki. Można go łatwo "
-"powiększyć\n"
-"za pomocą standardowych narzędzi wiersza poleceń LVM (lub na następnym "
-"ekranie).\n"
-"\n"
-"Możesz także wybrać szyfrowanie grupy woluminów LVM. Będzie to wymagało "
-"ustawienia hasła,\n"
-"które będzie trzeba wpisywać przy każdym uruchomieniu przed uruchomieniem "
-"systemu.\n"
-"\n"
-"Jeśli nie zdecydujesz się na użycie LVM, tworzona jest pojedyncza partycja "
-"obejmująca resztę dysku,\n"
-"która jest następnie formatowana jako ext4 i montowana w /.\n"
-"\n"
-"W obu przypadkach nadal będziesz mieć możliwość przejrzenia i modyfikacji "
-"wyników.\n"
-"\n"
-"Jeśli zdecydujesz się na użycie niestandardowego układu pamięci, nie zostaną "
-"wprowadzone\n"
-"żadne zmiany na dyskach i będzie trzeba wybrać przynajmniej dysk startowy i "
-"zamontować system\n"
-"plików w /.\n"
-"\n"
 
 #: ../subiquity/ui/views/filesystem/guided.py:298
 msgid ""
@@ -1370,9 +1335,8 @@ msgid "Guided storage configuration"
 msgstr "Konfiguracja pamięci masowej z przewodnikiem"
 
 #: ../subiquity/ui/views/filesystem/guided.py:342
-#, fuzzy
 msgid "Choose a disk to install to:"
-msgstr "Wybierz dysk do instalacji:"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:357
 msgid "Cannot install core boot classic system"
@@ -1391,8 +1355,8 @@ msgstr "Pomoc dotycząca konfiguracji pamięci masowej z przewodnikiem"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, "
-"0-9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
+"9, +, _, . and -"
 msgstr ""
 "Jedyne znaki dozwolone w nazwie grupy woluminów to a-z, A-Z, 0-9, +, _, . "
 "oraz -"
@@ -1482,8 +1446,8 @@ msgid ""
 "The only characters permitted in the name of a logical volume are a-z, A-Z, "
 "0-9, +, _, . and -"
 msgstr ""
-"Jedyne znaki dozwolone w nazwie woluminu logicznego to a-z, A-Z, 0-9, +, "
-"_, . oraz -"
+"Jedyne znaki dozwolone w nazwie woluminu logicznego to a-z, A-Z, 0-9, +, _, "
+". oraz -"
 
 #: ../subiquity/ui/views/filesystem/partition.py:181
 #, python-brace-format
@@ -2121,10 +2085,9 @@ msgstr ""
 "Nazwa użytkownika \"{username}\" jest zarezerwowana do użytku przez system."
 
 #: ../subiquity/ui/views/identity.py:167
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "The username \"{username}\" is already in use."
 msgstr ""
-"Nazwa użytkownika \"{username}\" jest zarezerwowana do użytku przez system."
 
 #: ../subiquity/ui/views/identity.py:173
 msgid "Password must be set"
@@ -2149,9 +2112,8 @@ msgstr ""
 "jest nadal potrzebne do sudo."
 
 #: ../subiquity/ui/views/identity.py:212
-#, fuzzy
 msgid "Passwords"
-msgstr "hasła"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:44
 msgid "Install progress"
@@ -2183,9 +2145,8 @@ msgid "Installing system"
 msgstr "Instalacja systemu"
 
 #: ../subiquity/ui/views/installprogress.py:137
-#, fuzzy
 msgid "Starting installer"
-msgstr "Zrestartuj instalator"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:140
 msgid "Waiting on cloud-init"
@@ -2516,24 +2477,23 @@ msgstr ""
 "jego szczegóły."
 
 #: ../subiquity/ui/views/mirror.py:125
-#, fuzzy
 msgid "Try again now"
-msgstr "Spróbuj ponownie"
+msgstr ""
 
 #: ../subiquity/ui/views/proxy.py:31
 msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of \"http://"
-"[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of "
+"\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
 "Jeśli potrzebujesz użyć serwera proxy HTTP, aby uzyskać dostęp do świata "
 "zewnętrznego, wprowadź tutaj informacje o serwerze proxy. W przeciwnym razie "
 "pozostaw to pole puste.\n"
 "\n"
-"Informacje o serwerze proxy należy podać w standardowej postaci \"http://"
-"[[user][:pass]@]host[:port]/\"."
+"Informacje o serwerze proxy należy podać w standardowej postaci "
+"\"http://[[user][:pass]@]host[:port]/\"."
 
 #: ../subiquity/ui/views/proxy.py:41
 msgid "Proxy address:"
@@ -2615,7 +2575,8 @@ msgstr "Spróbuj ponownie"
 
 #: ../subiquity/ui/views/refresh.py:192
 msgid "You can read the release notes for each version at:"
-msgstr "Możesz przeczytać informacje o wydaniu dla każdej wersji pod adresem:"
+msgstr ""
+"Możesz przeczytać informacje o wydaniu dla każdej wersji pod adresem:"
 
 #: ../subiquity/ui/views/refresh.py:198
 msgid ""
@@ -2735,7 +2696,8 @@ msgid "Enter your GitHub username."
 msgstr "Podaj nazwę użytkownika serwisu GitHub."
 
 #: ../subiquity/ui/views/ssh.py:50
-msgid "A GitHub username may only contain alphanumeric characters or hyphens."
+msgid ""
+"A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
 "Nazwa użytkownika serwisu GitHub może zawierać tylko znaki alfanumeryczne "
 "lub łączniki."
@@ -2898,72 +2860,6 @@ msgstr "Wyłącz"
 msgid "Zdev setup"
 msgstr "Konfiguracja zdev"
 
-#~ msgctxt "DeviceAction"
-#~ msgid "Info"
-#~ msgstr "Informacje"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Edit"
-#~ msgstr "Modyfikuj"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Reformat"
-#~ msgstr "Sformatuj ponownie"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Add Partition"
-#~ msgstr "Dodaj partycję"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Format"
-#~ msgstr "Formatuj"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Remove from RAID/LVM"
-#~ msgstr "Usuń z RAID/LVM"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Delete"
-#~ msgstr "Usuń"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Make Boot Device"
-#~ msgstr "Utwórz urządzenie startowe"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Info"
-#~ msgstr "Informacje"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Edit Wifi"
-#~ msgstr "Edytuj Wifi"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Edit IPv4"
-#~ msgstr "Edytuj IPv4"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Edit IPv6"
-#~ msgstr "Edytuj IPv6"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Edit bond"
-#~ msgstr "Edytuj powiązanie"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Add a VLAN tag"
-#~ msgstr "Dodaj znacznik VLAN"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Delete"
-#~ msgstr "Usuń"
-
-#~ msgid "passphrases"
-#~ msgstr "hasła"
-
-#~ msgid "Cancel update"
-#~ msgstr "Anuluj aktualizację"
-
 #~ msgid "Filesystem setup"
 #~ msgstr "Ustawienia systemu plików"
 
@@ -2990,6 +2886,9 @@ msgstr "Konfiguracja zdev"
 
 #~ msgid "Please report this error in Launchpad"
 #~ msgstr "Zgłoś ten błąd poprzez Launchpad"
+
+#~ msgid "Choose the disk to install to:"
+#~ msgstr "Wybierz dysk do instalacji:"
 
 #~ msgid "Server name too long, must be < "
 #~ msgstr "Nazwa serwera za długa, musi być < "
@@ -3051,15 +2950,90 @@ msgstr "Konfiguracja zdev"
 #~ msgid "Exit To Shell"
 #~ msgstr "Exit do Shell"
 
+#~ msgid "passwords"
+#~ msgstr "hasła"
+
 #~ msgid "partition"
 #~ msgstr "partycja"
 
 #~ msgid "Reboot"
 #~ msgstr "Uruchom ponownie"
 
+#~ msgid "Cancel update"
+#~ msgstr "Anuluj aktualizację"
+
 #, python-brace-format
 #~ msgid "software RAID {level}"
 #~ msgstr "RAID programowy {level}"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "The \"Use an entire disk\" option installs Ubuntu onto the selected disk,\n"
+#~ "replacing any partitions and data already there.\n"
+#~ "\n"
+#~ "If the platform requires it, a bootloader partition is created on the disk.\n"
+#~ "\n"
+#~ "If you choose to use LVM, two additional partitions are then created,\n"
+#~ "one for /boot and one covering the rest of the disk. An LVM volume\n"
+#~ "group is created containing the large partition. A logical volume is\n"
+#~ "created for the root filesystem, sized using some simple heuristic. It\n"
+#~ "can easily be enlarged with standard LVM command line tools (or on the\n"
+#~ "next screen).\n"
+#~ "\n"
+#~ "You can also choose to encrypt LVM volume group. This will require\n"
+#~ "setting a password, that one will need to type on every boot before\n"
+#~ "the system boots.\n"
+#~ "\n"
+#~ "If you do not choose to use LVM, a single partition is created covering the\n"
+#~ "rest of the disk which is then formatted as ext4 and mounted at /.\n"
+#~ "\n"
+#~ "In either case, you will still have a chance to review and modify the "
+#~ "results.\n"
+#~ "\n"
+#~ "If you choose to use a custom storage layout, no changes are made to the "
+#~ "disks\n"
+#~ "and you will have to, at a minimum, select a boot disk and mount a "
+#~ "filesystem\n"
+#~ "at /.\n"
+#~ "\n"
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "Opcja \"Wykorzystaj cały dysk\" instaluje Ubuntu na wybranym dysku,\n"
+#~ "zastępując wszystkie znajdujące się tam partycje i dane.\n"
+#~ "\n"
+#~ "Jeśli platforma tego wymaga, na dysku tworzona jest partycja startowa.\n"
+#~ "\n"
+#~ "Jeśli zdecydujesz się na użycie LVM, zostaną utworzone dwie dodatkowe "
+#~ "partycje,\n"
+#~ "jedna dla /boot i jedna obejmująca resztę dysku. Tworzona jest grupa "
+#~ "woluminów LVM\n"
+#~ "zawierająca dużą partycję. Dla głównego systemu plików tworzony jest wolumin "
+#~ "logiczny,\n"
+#~ "którego wielkość jest ustalana za pomocą prostej heurystyki. Można go łatwo "
+#~ "powiększyć\n"
+#~ "za pomocą standardowych narzędzi wiersza poleceń LVM (lub na następnym "
+#~ "ekranie).\n"
+#~ "\n"
+#~ "Możesz także wybrać szyfrowanie grupy woluminów LVM. Będzie to wymagało "
+#~ "ustawienia hasła,\n"
+#~ "które będzie trzeba wpisywać przy każdym uruchomieniu przed uruchomieniem "
+#~ "systemu.\n"
+#~ "\n"
+#~ "Jeśli nie zdecydujesz się na użycie LVM, tworzona jest pojedyncza partycja "
+#~ "obejmująca resztę dysku,\n"
+#~ "która jest następnie formatowana jako ext4 i montowana w /.\n"
+#~ "\n"
+#~ "W obu przypadkach nadal będziesz mieć możliwość przejrzenia i modyfikacji "
+#~ "wyników.\n"
+#~ "\n"
+#~ "Jeśli zdecydujesz się na użycie niestandardowego układu pamięci, nie zostaną "
+#~ "wprowadzone\n"
+#~ "żadne zmiany na dyskach i będzie trzeba wybrać przynajmniej dysk startowy i "
+#~ "zamontować system\n"
+#~ "plików w /.\n"
+#~ "\n"
 
 #~ msgid "Edit IPv6"
 #~ msgstr "Edytuj IPv6"

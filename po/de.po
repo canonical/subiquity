@@ -8,16 +8,16 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-09-06 15:13-0600\n"
-"PO-Revision-Date: 2019-12-30 09:29+0000\n"
-"Last-Translator: Dan Cooper <Unknown>\n"
+"PO-Revision-Date: 2023-03-20 13:35+0000\n"
+"Last-Translator: Jan-Philipp Jürgens <seemax1991@gmail.com>\n"
 "Language-Team: German <de@li.org>\n"
-"Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2023-09-07 07:07+0000\n"
+"X-Generator: Launchpad (build cc7f0d837bf2751562eea8708e7cc6eb3f33ceab)\n"
+"Language: de\n"
 
 #: ../subiquity/client/client.py:58
 msgid ""
@@ -31,17 +31,17 @@ msgid ""
 "environment will not survive a reboot. If the install has started, the\n"
 "installed system will be mounted at /target."
 msgstr ""
-"Shell-Sitzung des Installers aktiviert.\n"
+"Shell-Sitzung des Installationsprogramms aktiviert.\n"
 "\n"
-"Diese Shell-Sitzung läuft innerhalb der Installationsumgebung. Sie\n"
-"werden zur Installation zurückgeführt, wenn die Shell beendet wird, z. B.\n"
-"durch die Eingabe von Control-D oder »exit«.\n"
+"Diese Shell-Sitzung läuft innerhalb der Installationsumgebung.\n"
+"Sie werden zur Installation zurückgeführt, wenn die Shell beendet\n"
+"wird, z. B. durch die Eingabe der Tastenkombination Steuerung-D\n"
+"oder des Shell-Befehls »exit«.\n"
 "\n"
-"Seien Sie sich bewusst, das dies eine flüchtige Umgebung ist.  Änderungen "
-"dieser\n"
-"Umgebung werden einen Neustart nicht überstehen. Falls die Installation "
-"gestartet wurde, wird\n"
-"das installierte System am /target gemountet."
+"Seien Sie sich bewusst, dass dies eine temporäre Shell-Umgebung\n"
+"ist. Änderungen an dieser Umgebung werden einen Neustart nicht\n"
+"überstehen! Wenn die Installation gestartet wurde, wird das\n"
+"installierte System im Verzeichnis /target eingebunden."
 
 #: ../subiquity/client/client.py:214
 msgid "yes"
@@ -62,7 +62,7 @@ msgstr ""
 
 #: ../subiquity/client/client.py:220
 msgid "Continue with autoinstall?"
-msgstr "Fortfahren mit autoinstall?"
+msgstr "Mit automatischer Installation (autoinstall) fortfahren?"
 
 #: ../subiquity/client/controllers/ssh.py:79
 msgid "Importing keys failed:"
@@ -71,7 +71,7 @@ msgstr "Importieren der Schlüssel gescheitert:"
 #: ../subiquity/client/controllers/ssh.py:85
 msgid "ssh-keygen failed to show fingerprint of downloaded keys:"
 msgstr ""
-"ssh-keygen konnte nicht den Fingerprint des heruntergeladenen Schlüssels "
+"ssh-keygen konnte die Fingerabdrücke der heruntergeladenen Schlüssel nicht "
 "anzeigen:"
 
 #: ../subiquity/common/filesystem/actions.py:162
@@ -87,16 +87,17 @@ msgstr "Bereits vorhandene RAIDs können nicht bearbeitet werden."
 #: ../subiquity/common/filesystem/actions.py:182
 #, python-brace-format
 msgid "Cannot edit {raidlabel} because it has partitions."
-msgstr ""
+msgstr "Kann {raidlabel} nicht editieren, weil es Partitionen hat."
 
 #: ../subiquity/common/filesystem/actions.py:192
 msgid "Cannot edit pre-existing volume groups."
-msgstr "Bereits vorhandene Datenträgergruppen können nicht bearbeitet werden."
+msgstr ""
+"Bereits vorhandene Datenträgergruppen können nicht bearbeitet werden."
 
 #: ../subiquity/common/filesystem/actions.py:194
 #, python-brace-format
 msgid "Cannot edit {vglabel} because it has logical volumes."
-msgstr ""
+msgstr "Kann {vglabel} nicht editieren, weil es logische Volumen hat."
 
 #: ../subiquity/common/filesystem/actions.py:225
 msgid "Primary partition limit reached"
@@ -110,6 +111,8 @@ msgstr ""
 #, python-brace-format
 msgid "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
 msgstr ""
+"Konnte {selflabel} nicht aus der/dem bestehenden {cdtype} {cdlabel} "
+"entfernen."
 
 #: ../subiquity/common/filesystem/actions.py:262
 #, python-brace-format
@@ -126,12 +129,13 @@ msgid ""
 "Removing {selflabel} would leave the {cdtype} {cdlabel} with no devices."
 msgstr ""
 "Das Entfernen von {selflabel} würde das {cdtype} {cdlabel} ohne Geräte "
-"zurücklassen."
+"belassen."
 
 #: ../subiquity/common/filesystem/actions.py:291
 #, python-brace-format
 msgid "Cannot delete {selflabel} as it is part of the {cdtype} {cdname}."
-msgstr "Kann {selflabel} nicht löschen, da es Teil des {cdtype} {cdname} ist."
+msgstr ""
+"Kann {selflabel} nicht löschen, da es Teil des {cdtype} {cdname} ist."
 
 #: ../subiquity/common/filesystem/actions.py:303
 msgid ""
@@ -153,13 +157,17 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:331
 #, python-brace-format
-msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgid ""
+"Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
+"Gerät {devicelabel} kann, auf Grund von {count} noch eingebundenen "
+"Partition/en, nicht entfernt werden."
 
 #: ../subiquity/common/filesystem/actions.py:335
 #, python-brace-format
 msgid "Cannot delete {devicelabel} because it has 1 mounted partition."
 msgstr ""
+"Kann {devicelabel} nicht löschen, weil es 1 eingebundene Partition hat."
 
 #: ../subiquity/common/filesystem/actions.py:345
 msgid ""
@@ -181,7 +189,7 @@ msgstr "neu"
 
 #: ../subiquity/common/filesystem/labels.py:64
 msgid "PReP"
-msgstr ""
+msgstr "PReP"
 
 #. boot loader partition
 #: ../subiquity/common/filesystem/labels.py:68
@@ -197,19 +205,19 @@ msgstr "unkonfiguriert"
 
 #: ../subiquity/common/filesystem/labels.py:74
 msgid "primary ESP"
-msgstr ""
+msgstr "primäre ESP"
 
 #: ../subiquity/common/filesystem/labels.py:76
 msgid "backup ESP"
-msgstr ""
+msgstr "Ersatz-ESP"
 
 #: ../subiquity/common/filesystem/labels.py:78
 msgid "unused ESP"
-msgstr ""
+msgstr "unbenutzte ESP"
 
 #: ../subiquity/common/filesystem/labels.py:85
 msgid "BIOS grub spacer"
-msgstr ""
+msgstr "BIOS grub Grenzpartition"
 
 #. extended partition
 #: ../subiquity/common/filesystem/labels.py:88
@@ -228,7 +236,7 @@ msgstr "verschlüsselt"
 
 #: ../subiquity/common/filesystem/labels.py:119
 msgid "multipath device"
-msgstr ""
+msgstr "Mehrpfadgerät"
 
 #: ../subiquity/common/filesystem/labels.py:120
 msgid "local disk"
@@ -241,12 +249,12 @@ msgstr "Partition von {device}"
 
 #: ../subiquity/common/filesystem/labels.py:138
 msgid "software"
-msgstr ""
+msgstr "Software"
 
 #: ../subiquity/common/filesystem/labels.py:139
 #, python-brace-format
 msgid "{type} RAID {level}"
-msgstr ""
+msgstr "{type} RAID {level}"
 
 #: ../subiquity/common/filesystem/labels.py:144
 msgid "LVM volume group"
@@ -331,15 +339,15 @@ msgstr "verwendet"
 #: ../subiquity/common/filesystem/labels.py:283
 #, python-brace-format
 msgid "container for {devices}"
-msgstr ""
+msgstr "Container für {devices}"
 
 #: ../subiquity/common/types.py:39
 msgid "Block device probe failure"
-msgstr ""
+msgstr "Blockgerätetest fehlgeschlagen"
 
 #: ../subiquity/common/types.py:40
 msgid "Disk probe failure"
-msgstr ""
+msgstr "Festplattentest fehlgeschlagen"
 
 #: ../subiquity/common/types.py:41
 msgid "Install failure"
@@ -347,7 +355,7 @@ msgstr "Installations-Fehler"
 
 #: ../subiquity/common/types.py:42
 msgid "Installer crash"
-msgstr ""
+msgstr "Installerabsturz"
 
 #: ../subiquity/common/types.py:43
 msgid "Network error"
@@ -355,11 +363,11 @@ msgstr "Netzwerkfehler"
 
 #: ../subiquity/common/types.py:44
 msgid "Network client error"
-msgstr ""
+msgstr "Netzwerkfehler: Client"
 
 #: ../subiquity/common/types.py:45
 msgid "Server request failure"
-msgstr ""
+msgstr "Fehler während Serveranfrage"
 
 #: ../subiquity/common/types.py:46
 msgid "Unknown error"
@@ -379,6 +387,8 @@ msgid ""
 "The {keytype} host key fingerprint is:\n"
 "    {fingerprint}\n"
 msgstr ""
+"Der Fingerabdruck für den {keytype} Host-Schlüsse lautet:\n"
+"    {fingerprint}\n"
 
 #: ../subiquitycore/ui/form.py:270
 #, python-brace-format
@@ -396,7 +406,7 @@ msgstr " oder "
 #: ../subiquitycore/ui/form.py:385
 #, python-brace-format
 msgid "This field must be a {schemes} URL."
-msgstr ""
+msgstr "Dieses Feld muss eine {schemes} URL sein."
 
 #: ../subiquitycore/ui/form.py:458 ../subiquitycore/ui/views/network.py:353
 #: ../subiquity/ui/views/filesystem/filesystem.py:509
@@ -478,12 +488,12 @@ msgstr "Domänen, kommagetrennt"
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:93
 #, python-brace-format
 msgid "should be in CIDR form ({example})"
-msgstr ""
+msgstr "sollte im CIDR-Format sein ({example})"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:105
 #, python-brace-format
 msgid "'{address}' is not contained in '{subnet}'"
-msgstr ""
+msgstr "'{address}' ist nicht im Netz '{subnet}'"
 
 #. A choice for how to configure a network interface
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:135
@@ -524,7 +534,7 @@ msgstr "VLAN-ID muss zwischen 1 und 4095 liegen"
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:276
 #, python-brace-format
 msgid "{netdev} already exists"
-msgstr ""
+msgstr "{netdev} existiert schon"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:287
 msgid "Add a VLAN tag"
@@ -598,12 +608,12 @@ msgstr "VLAN {id} auf der Schnittstelle {link}"
 #: ../subiquitycore/ui/views/network.py:114
 #, python-brace-format
 msgid "bond master for {interfaces}"
-msgstr ""
+msgstr "Bond-Master für {interfaces}"
 
 #: ../subiquitycore/ui/views/network.py:139
 #, python-brace-format
 msgid "ssid: {ssid}"
-msgstr ""
+msgstr "ssid: {ssid}"
 
 #: ../subiquitycore/ui/views/network.py:141
 #: ../subiquitycore/ui/views/network.py:143
@@ -613,7 +623,7 @@ msgstr "nicht verbunden"
 #: ../subiquitycore/ui/views/network.py:146
 #, python-brace-format
 msgid "enslaved to {device}"
-msgstr ""
+msgstr "{device} untergeordnet"
 
 #: ../subiquitycore/ui/views/network.py:171
 msgid "timed out"
@@ -632,18 +642,22 @@ msgid ""
 "A wifi device was detected but the necessary support packages were not\n"
 "available.\n"
 msgstr ""
+"Ein Wifi-Gerät wurde erkannt, aber die notwendigen Pakete waren nicht "
+"verfügbar.\n"
 
 #: ../subiquitycore/ui/views/network.py:217
 msgid "Wifi support packages are being installed.\n"
-msgstr ""
+msgstr "Pakete für Wifi-Unterstützung werden installiert.\n"
 
 #: ../subiquitycore/ui/views/network.py:222
 msgid "Wifi support packages failed to install. Please check the logs.\n"
 msgstr ""
+"Pakete für Wifi-Unterstützung konnten nicht installiert werden. Bitte prüfen "
+"Sie die Logs.\n"
 
 #: ../subiquitycore/ui/views/network.py:227
 msgid "Wifi support packages will be installed in the target system.\n"
-msgstr ""
+msgstr "Pakete für Wifi-Unterstützung werden im Zielsystem installiert.\n"
 
 #: ../subiquitycore/ui/views/network.py:235
 msgid "Network connections"
@@ -686,7 +700,7 @@ msgstr "Änderungen werden übernommen"
 #. for translators: this is a description of a RAID level
 #: ../subiquity/models/filesystem.py:281
 msgid "0 (striped)"
-msgstr ""
+msgstr "0 (getreckt)"
 
 #. for translators: this is a description of a RAID level
 #: ../subiquity/models/filesystem.py:283
@@ -707,17 +721,17 @@ msgstr "10"
 
 #: ../subiquity/models/filesystem.py:287
 msgid "Container"
-msgstr ""
+msgstr "Container"
 
 #. Attempting to convert input to a size
 #: ../subiquity/models/filesystem.py:322
 msgid "input cannot be empty"
-msgstr ""
+msgstr "Eingabe darf nicht leer sein"
 
 #. Attempting to convert input to a size
 #: ../subiquity/models/filesystem.py:334 ../subiquity/models/filesystem.py:347
 msgid "{input!r} is not valid input"
-msgstr ""
+msgstr "{input!r} ist keine gültige Eingabe"
 
 #: ../subiquity/server/controllers/filesystem.py:99
 #: ../subiquity/ui/views/filesystem/guided.py:149
@@ -756,36 +770,52 @@ msgid ""
 "\n"
 "Sorry, there was a problem examining the storage devices on this system.\n"
 msgstr ""
+"\n"
+"Entschuldigung, es gab ein Problem dabei, die Speichergeräte des Systems zu "
+"untersuchen.\n"
 
 #: ../subiquity/ui/views/error.py:55
 msgid ""
 "\n"
 "Sorry, there was a problem completing the installation.\n"
 msgstr ""
+"\n"
+"Entschuldigung, es gab ein Problem dabei, die Installation abzuschließen.\n"
 
 #: ../subiquity/ui/views/error.py:60
 msgid ""
 "\n"
 "Sorry, there was a problem applying the network configuration.\n"
 msgstr ""
+"\n"
+"Entschuldigung, es gab ein Problem dabei, die Netzwerkkonfiguration "
+"anzuwenden.\n"
 
 #: ../subiquity/ui/views/error.py:65
 msgid ""
 "\n"
 "Sorry, the installer has encountered an internal error.\n"
 msgstr ""
+"\n"
+"Entschuldigung, das Installationsprogramm ist auf einen internen Fehler "
+"gestoßen.\n"
 
 #: ../subiquity/ui/views/error.py:70
 msgid ""
 "\n"
 "Sorry, the installer has restarted because of an error.\n"
 msgstr ""
+"\n"
+"Entschuldigung, der Installationsassistent wurde auf Grund eines Fehlers neu "
+"gestartet.\n"
 
 #: ../subiquity/ui/views/error.py:75
 msgid ""
 "\n"
 "Sorry, an unknown error occurred.\n"
 msgstr ""
+"\n"
+"Entschuldigung, ein unbekannter Fehler ist aufgetreten.\n"
 
 #: ../subiquity/ui/views/error.py:84
 msgid ""
@@ -793,12 +823,17 @@ msgid ""
 "Information is being collected from the system that will help the\n"
 "developers diagnose the report.\n"
 msgstr ""
+"\n"
+"Es werden Informationen vom gesammelt, die den Entwicklern helfen, das "
+"Problem zu diagnostizieren.\n"
 
 #: ../subiquity/ui/views/error.py:93
 msgid ""
 "\n"
 "Loading report...\n"
 msgstr ""
+"\n"
+"Lade Report...\n"
 
 #: ../subiquity/ui/views/error.py:101
 msgid ""
@@ -806,12 +841,18 @@ msgid ""
 "Collecting information from the system failed. See the files in\n"
 "/var/log/installer for more.\n"
 msgstr ""
+"\n"
+"Sammeln von Informationen aus dem System fehlgeschlagen. Bitte beachten Sie "
+"die Dateien in /var/log/installer.\n"
 
 #: ../subiquity/ui/views/error.py:110
 msgid ""
 "\n"
 "Loading the report failed. See the files in /var/log/installer for more.\n"
 msgstr ""
+"\n"
+"Laden des Berichtes fehlgeschlagen. Beachten Sie die Dateien in "
+"/var/log/installer.\n"
 
 #: ../subiquity/ui/views/error.py:121
 msgid ""
@@ -821,6 +862,12 @@ msgid ""
 "the issue by switching to a shell and reconfiguring the system's block\n"
 "devices manually.\n"
 msgstr ""
+"\n"
+"Du kannst fortfahren und der Installationsassistent wird einfach die\n"
+"Datenträger anzeigen, die aktuell im System erkannt und eingehängt\n"
+"wurden. Alternativ kannst du versuchen das Problem manuell über\n"
+"eine Shell-Sitzung zu lösen, indem du die Datenträgererkennung\n"
+"rekonfigurierst.\n"
 
 #: ../subiquity/ui/views/error.py:132
 msgid ""
@@ -828,6 +875,9 @@ msgid ""
 "You may be able to fix the issue by switching to a shell and\n"
 "reconfiguring the system's block devices manually.\n"
 msgstr ""
+"\n"
+"Sie können das Problem beheben, indem sie in eine Shell wechseln und die "
+"Blockgeräte des Systems manuell neukonfigurieren.\n"
 
 #: ../subiquity/ui/views/error.py:141
 msgid ""
@@ -835,28 +885,38 @@ msgid ""
 "You can continue with the installation but it will be assumed the network\n"
 "is not functional.\n"
 msgstr ""
+"\n"
+"Sie können mit der Installation fortfahren, jedoch wird das Netzwerk "
+"vermutlich nicht funktionsfähig sein.\n"
 
 #: ../subiquity/ui/views/error.py:150
 msgid ""
 "\n"
 "You can continue or restart the installer.\n"
 msgstr ""
+"\n"
+"Sie können fortfahren oder das Installationsprogramm neustarten.\n"
 
 #: ../subiquity/ui/views/error.py:158
 msgid ""
 "\n"
 "Do you want to try starting the installation again?\n"
 msgstr ""
+"\n"
+"Möchten Sie die Installation erneut versuchen?\n"
 
 #: ../subiquity/ui/views/error.py:165
 msgid "Select continue to try the installation again."
-msgstr ""
+msgstr "Wählen Sie Fortfahren, um die Installation erneut zu versuchen."
 
 #: ../subiquity/ui/views/error.py:173
 msgid ""
 "\n"
 "If you want to help improve the installer, you can send an error report.\n"
 msgstr ""
+"\n"
+"Wenn Sie mithelfen möchten, das Installationsprogramm zu verbessern, können "
+"Sie einen Fehlerbericht sendne.\n"
 
 #: ../subiquity/ui/views/error.py:179
 msgid ""
@@ -874,7 +934,7 @@ msgstr "Hochladen abbrechen"
 
 #: ../subiquity/ui/views/error.py:204
 msgid "Close report"
-msgstr ""
+msgstr "Bericht schließen"
 
 #: ../subiquity/ui/views/error.py:205
 #: ../subiquity/ui/views/installprogress.py:55
@@ -888,23 +948,23 @@ msgstr "Fortfahren"
 #: ../subiquity/ui/views/installprogress.py:284
 #: ../subiquity/ui/views/welcome.py:116
 msgid "Switch to a shell"
-msgstr ""
+msgstr "Zur Konsole wechseln"
 
 #: ../subiquity/ui/views/error.py:207
 msgid "Restart the installer"
-msgstr ""
+msgstr "Das Installationsprogramm neustarten"
 
 #: ../subiquity/ui/views/error.py:208
 msgid "Send to Canonical"
-msgstr ""
+msgstr "An Canonical senden"
 
 #: ../subiquity/ui/views/error.py:209
 msgid "Sent to Canonical"
-msgstr ""
+msgstr "An Canonical gesendent"
 
 #: ../subiquity/ui/views/error.py:210
 msgid "View full report"
-msgstr ""
+msgstr "Ganzen Bericht anzeigen"
 
 #: ../subiquity/ui/views/error.py:280
 msgid ""
@@ -914,6 +974,11 @@ msgid ""
 "\n"
 "on the filesystem with label {label!r}."
 msgstr ""
+"Der Fehlerbericht wurde nach\n"
+"\n"
+"  {loc}\n"
+"\n"
+"auf dem Dateisystem mit dem Label {label!r} gepeichert."
 
 #: ../subiquity/ui/views/error.py:369
 msgid "DATE"
@@ -921,7 +986,7 @@ msgstr "DATUM"
 
 #: ../subiquity/ui/views/error.py:370
 msgid "KIND"
-msgstr ""
+msgstr "FEHLERART"
 
 #: ../subiquity/ui/views/error.py:371
 msgid "STATUS"
@@ -929,25 +994,25 @@ msgstr "STATUS"
 
 #: ../subiquity/ui/views/error.py:384
 msgid "Select an error report to view:"
-msgstr ""
+msgstr "Einen Fehlerbericht auswählen, um ihn anzuzeigen:"
 
 #: ../subiquity/ui/views/error.py:397
 msgid "VIEWED"
-msgstr ""
+msgstr "ANGEZEIGT"
 
 #: ../subiquity/ui/views/error.py:398
 msgid "UNVIEWED"
-msgstr ""
+msgstr "UNGELESEN"
 
 #: ../subiquity/ui/views/filesystem/compound.py:108
 #, python-brace-format
 msgid "formatted as {fstype}"
-msgstr ""
+msgstr "formatiert als {fstype}"
 
 #: ../subiquity/ui/views/filesystem/compound.py:110
 #, python-brace-format
 msgid ", mounted at {path}"
-msgstr ""
+msgstr ", eingebunden nach {path}"
 
 #: ../subiquity/ui/views/filesystem/compound.py:112
 msgid ", not mounted"
@@ -956,7 +1021,7 @@ msgstr ", nicht eingehängt"
 #: ../subiquity/ui/views/filesystem/compound.py:114
 #, python-brace-format
 msgid "unused {device}"
-msgstr ""
+msgstr "unbenutzt {device}"
 
 #: ../subiquity/ui/views/filesystem/compound.py:197
 msgid ""
@@ -987,22 +1052,22 @@ msgstr "Es ist als {fstype} formatiert und nicht eingebunden"
 #, python-brace-format
 msgid "It contains 1 logical volume"
 msgid_plural "It contains {n} logical volumes"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Es beinhaltet 1 logisches Volumen"
+msgstr[1] "Es beinhaltet {n} logische Volumen"
 
 #: ../subiquity/ui/views/filesystem/delete.py:73
 #, python-brace-format
 msgid "It contains 1 partition"
 msgid_plural "It contains {n} partitions"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Es enthält 1 Partition."
+msgstr[1] "Es enthält {n} Partitionen."
 
 #: ../subiquity/ui/views/filesystem/delete.py:85
 #, python-brace-format
 msgid "It contains 1 volume."
 msgid_plural "It contains {n} volumes."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Es beinhaltet 1 Volumen."
+msgstr[1] "Es beinhaltet {n} Volumen."
 
 #: ../subiquity/ui/views/filesystem/delete.py:89
 msgid "It is not formatted or mounted."
@@ -1015,12 +1080,13 @@ msgstr "Löschen"
 #: ../subiquity/ui/views/filesystem/delete.py:119
 #, python-brace-format
 msgid "Remove filesystem from {device}"
-msgstr ""
+msgstr "Dateisystem von {device} entfernen"
 
 #: ../subiquity/ui/views/filesystem/delete.py:122
 #, python-brace-format
 msgid "Do you really want to remove the existing filesystem from {device}?"
 msgstr ""
+"Möchten Sie wirklich das existierende Dateisystem von {device} entfernen?"
 
 #: ../subiquity/ui/views/filesystem/delete.py:142
 msgid "logical volumes"
@@ -1222,7 +1288,6 @@ msgid "Custom storage layout"
 msgstr "Benutzerdefinierte Partitionierung"
 
 #: ../subiquity/ui/views/filesystem/guided.py:266
-#, fuzzy
 msgid ""
 "\n"
 "\n"
@@ -1255,45 +1320,6 @@ msgid ""
 "at /.\n"
 "\n"
 msgstr ""
-"\n"
-"\n"
-"Die \"Benutze die vollständige Platte\" Option installiert Ubuntu auf die "
-"ausgewählte Platte,\n"
-"löscht dabei alle vorhandenen Partitionen und Daten.\n"
-"\n"
-"Falls die Plattform es erfordert, wird eine Bootloader-Partition auf der "
-"Platte erstellt.\n"
-"\n"
-"Wenn Sie LVM zur Nutzung wählen, werden dann zwei zusätzliche Partitionen "
-"erstellt,\n"
-"eine für /boot und eine, die den Rest der Platte umfasst. Eine LVM-Volumen-\n"
-"Gruppe wird erstellt, die die große Partition enthält. Ein logisches Volumen "
-"wird\n"
-"für das Root-Dateisystem erstellt, deren Größe durch simple Heuristik "
-"bestimmt. Es\n"
-"kann leicht mit den Standard-Kommandozeilen-Tools des LVM vergrößert werden "
-"(oder auf dem\n"
-"nächsten Bildschirm).\n"
-"\n"
-"Sie können auch die Verschlüsselung der LVM Volumen-Gruppe auswählen. Das "
-"erfordert\n"
-"das Setzen eine Kennwortes, dass man bei jedem Bootvorgang eingeben muss, "
-"bevor\n"
-"das System bootet.\n"
-"\n"
-"Wenn Sie kein LVM zur Nutzung auswählen, wird eine einzelne Partition "
-"erstellt, die den Rest\n"
-"der Platte umfasst, die dann als ext4 formatiert und auf / gemountet wird. \n"
-"\n"
-"In beiden Fällen haben Sie noch die Chance die Ergebnisse zu begutachten und "
-"zu ändern.\n"
-"\n"
-"Wenn Sie gewählt haben, ein eigenes Speicher-Layout zu benutzen, werden "
-"keine Veränderungen an der Platte durchgeführt\n"
-"und Sie müssen zumindest eine Bootplatte auswählen und ein Dateisystem "
-"auf /\n"
-"mounten.\n"
-"\n"
 
 #: ../subiquity/ui/views/filesystem/guided.py:298
 msgid ""
@@ -1323,9 +1349,8 @@ msgid "Guided storage configuration"
 msgstr "Begleitete Speicherplatzkonfiguration"
 
 #: ../subiquity/ui/views/filesystem/guided.py:342
-#, fuzzy
 msgid "Choose a disk to install to:"
-msgstr "Wählen Sie den Datenträger, auf den installiert werden soll:"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:357
 msgid "Cannot install core boot classic system"
@@ -1344,8 +1369,8 @@ msgstr "Hilfe bei der geführten Speicherplatzkonfiguration"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, "
-"0-9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
+"9, +, _, . and -"
 msgstr ""
 "Die einzigen zulässigen Zeichen im Namen einer Datenträgergruppe sind a-z, A-"
 "Z, 0-9, +, _, . und -."
@@ -1476,17 +1501,18 @@ msgstr ""
 #: ../subiquity/ui/views/filesystem/partition.py:251
 #, python-brace-format
 msgid "A logical volume may not be called {name}"
-msgstr ""
+msgstr "Ein logisches Volumen darf nicht {name} genannt werden"
 
 #: ../subiquity/ui/views/filesystem/partition.py:267
 #, python-brace-format
 msgid "The name of a logical volume may not contain \"{substring}\""
 msgstr ""
+"Der Name eines logischen Volumens darf \"{substring}\" nicht beinhalten."
 
 #: ../subiquity/ui/views/filesystem/partition.py:270
 #, python-brace-format
 msgid "There is already a logical volume named {name}."
-msgstr ""
+msgstr "Es gibt bereits ein logisches Volumen mit dem Namen {name}."
 
 #: ../subiquity/ui/views/filesystem/partition.py:280
 msgid "Path exceeds PATH_MAX"
@@ -1661,7 +1687,7 @@ msgstr ""
 #: ../subiquity/ui/views/filesystem/partition.py:655
 #, python-brace-format
 msgid "Format and/or mount {device}"
-msgstr ""
+msgstr "{device} formatieren und/oder einbinden"
 
 #: ../subiquity/ui/views/filesystem/probing.py:29
 msgid "Waiting for storage probing to complete"
@@ -1708,7 +1734,7 @@ msgstr "RAID-Level:"
 #: ../subiquity/ui/views/filesystem/raid.py:97
 #, python-brace-format
 msgid "There is already a RAID named '{name}'"
-msgstr ""
+msgstr "Es gibt bereits ein RAID mit dem Namen '{name}'."
 
 #: ../subiquity/ui/views/filesystem/raid.py:101
 msgid ". and .. are not valid names for RAID devices"
@@ -1717,7 +1743,8 @@ msgstr ". und .. sind keine gültigen Namen für RAID-Geräte"
 #: ../subiquity/ui/views/filesystem/raid.py:107
 #, python-brace-format
 msgid "RAID Level \"{level}\" requires at least {min_active} active devices"
-msgstr "RAID-Level {level} verlangt mindestens {min_active} aktive Festplatten"
+msgstr ""
+"RAID-Level {level} verlangt mindestens {min_active} aktive Festplatten"
 
 #: ../subiquity/ui/views/filesystem/raid.py:120
 msgid "Create software RAID (\"MD\") disk"
@@ -1802,6 +1829,10 @@ msgid ""
 "might allow the use of a more capable terminal and can offer more languages\n"
 "than can be rendered in the Linux console."
 msgstr ""
+"\n"
+"Es ist möglich den Installationsassistenten via Netzwerk anzubinden,\n"
+"dies bietet die Möglichkeiten eines funktionsumfangsreicheren Terminals\n"
+"und ausgedehnterer Sprachunterstützung."
 
 #: ../subiquity/ui/views/help.py:86
 msgid ""
@@ -1817,15 +1848,19 @@ msgid ""
 "\n"
 "To connect, SSH to {username}@{ip}."
 msgstr ""
+"\n"
+"Um eine Verbindung herzustellen nutze: ssh {username}@{ip}."
 
 #: ../subiquity/ui/views/help.py:97
 #, python-brace-format
 msgid "The password you should use is \"{password}\"."
-msgstr ""
+msgstr "Das Kennwort, welches Sie nutzen sollen, ist \"{password}\"."
 
 #: ../subiquity/ui/views/help.py:102
 msgid "You should use the preconfigured password passed to cloud-init."
 msgstr ""
+"Es wird empfohlen, das an Cloud-Init weitergegebene, vorkonfigurierte "
+"Passwort zu benutzen."
 
 #: ../subiquity/ui/views/help.py:107
 #, python-brace-format
@@ -1834,10 +1869,14 @@ msgid ""
 "\n"
 "    {fingerprint}\n"
 msgstr ""
+"Es ist dir möglich dich mit dem {keytype} Schlüssel anzumelden, der den "
+"folgenden Fingerabdruck hat:\n"
+"\n"
+"    {fingerprint}\n"
 
 #: ../subiquity/ui/views/help.py:115
 msgid "You can log in with one of the following keys:\n"
-msgstr ""
+msgstr "Sie können sich mit einem der folgenden Schlüssel anmelden:\n"
 
 #: ../subiquity/ui/views/help.py:121
 #, python-brace-format
@@ -1845,12 +1884,17 @@ msgid ""
 "\n"
 "Or you can use the password \"{password}\"."
 msgstr ""
+"\n"
+"Oder Sie können das Kennwort \"{password}\" nutzen."
 
 #: ../subiquity/ui/views/help.py:126
 msgid ""
 "\n"
 "Or you can use the preconfigured password passed to cloud-init."
 msgstr ""
+"\n"
+"Oder du kannst das an Cloud-Init weitergegebene, vorkonfigurierte Passwort "
+"benutzen."
 
 #: ../subiquity/ui/views/help.py:131
 msgid ""
@@ -1914,7 +1958,7 @@ msgstr "STRG-T, F4"
 
 #: ../subiquity/ui/views/help.py:246
 msgid "toggle rich mode (colour, unicode) on and off"
-msgstr ""
+msgstr "Farbmodus (Farbe, Unicode) an- oder ausschalten"
 
 #: ../subiquity/ui/views/help.py:250
 msgid "Control-X"
@@ -1982,7 +2026,7 @@ msgstr "Hilfe bei SSH-Zugriff"
 
 #: ../subiquity/ui/views/help.py:319
 msgid "Toggle rich mode"
-msgstr ""
+msgstr "Farbunterstützung umschalten"
 
 #: ../subiquity/ui/views/help.py:330
 msgid "Help on this screen"
@@ -2036,7 +2080,7 @@ msgstr "Passwort bestätigen:"
 #: ../subiquity/ui/views/identity.py:131
 #, python-brace-format
 msgid "Name too long, must be less than {limit}"
-msgstr ""
+msgstr "Name zu lang, muss kleiner als {limit} sein"
 
 #: ../subiquity/ui/views/identity.py:137
 msgid "Server name must not be empty"
@@ -2045,11 +2089,11 @@ msgstr "Servername darf nicht leer sein"
 #: ../subiquity/ui/views/identity.py:140
 #, python-brace-format
 msgid "Server name too long, must be less than {limit}"
-msgstr ""
+msgstr "Servername zu lang, muss kleiner als {limit} sein"
 
 #: ../subiquity/ui/views/identity.py:145
 msgid "Hostname must match HOSTNAME_REGEX: "
-msgstr ""
+msgstr "Hostname muss HOSTNAME_REGEX entsprechen: "
 
 #: ../subiquity/ui/views/identity.py:150
 msgid "Username missing"
@@ -2058,11 +2102,11 @@ msgstr "Benutzername fehlt"
 #: ../subiquity/ui/views/identity.py:153
 #, python-brace-format
 msgid "Username too long, must be less than {limit}"
-msgstr ""
+msgstr "Benutzername zu lang, muss kleiner als {limit} sein"
 
 #: ../subiquity/ui/views/identity.py:158
 msgid "Username must match USERNAME_REGEX: "
-msgstr ""
+msgstr "Benutzername muss USERNAME_REGEX entsprechen: "
 
 #: ../subiquity/ui/views/identity.py:163
 #, python-brace-format
@@ -2072,11 +2116,9 @@ msgstr ""
 "reserviert."
 
 #: ../subiquity/ui/views/identity.py:167
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "The username \"{username}\" is already in use."
 msgstr ""
-"Der Benutzername \"{username}\" ist für die Nutzung durch das System "
-"reserviert."
 
 #: ../subiquity/ui/views/identity.py:173
 msgid "Password must be set"
@@ -2101,9 +2143,8 @@ msgstr ""
 "konfigurieren, aber für sudo wird weiterhin ein Passwort benötigt."
 
 #: ../subiquity/ui/views/identity.py:212
-#, fuzzy
 msgid "Passwords"
-msgstr "Passwörter"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:44
 msgid "Install progress"
@@ -2135,17 +2176,16 @@ msgid "Installing system"
 msgstr "Installation des Grundsystems"
 
 #: ../subiquity/ui/views/installprogress.py:137
-#, fuzzy
 msgid "Starting installer"
-msgstr "Über diesen Installer"
+msgstr "Starten des Installationsprogramms"
 
 #: ../subiquity/ui/views/installprogress.py:140
 msgid "Waiting on cloud-init"
-msgstr ""
+msgstr "Warten auf cloud-init Dienst"
 
 #: ../subiquity/ui/views/installprogress.py:143
 msgid "Running early-commands"
-msgstr ""
+msgstr "Ausführen von als vorgezogen eingetragene Befehlen"
 
 #: ../subiquity/ui/views/installprogress.py:152
 #: ../subiquity/ui/views/installprogress.py:159
@@ -2168,7 +2208,7 @@ msgstr "Ein Fehler ist während der Installation aufgetreten"
 
 #: ../subiquity/ui/views/installprogress.py:183
 msgid "Subiquity server process has exited"
-msgstr ""
+msgstr "Der Subiquity Serverprozess wurde beendet"
 
 #: ../subiquity/ui/views/installprogress.py:228
 msgid ""
@@ -2180,6 +2220,15 @@ msgid ""
 "\n"
 "Are you sure you want to continue?"
 msgstr ""
+"Wenn Sie unten Fortfahren wählen, wird der Installationsprozess beginnen "
+"und\n"
+"alle Daten auf den zur Formatierung ausgewählten Platten verloren gehen.\n"
+"\n"
+"Sie können nicht mehr zu diesem oder einem vorherigen Bildschirm "
+"zurückgehen,\n"
+"sobald die Installation gestartet wurde.\n"
+"\n"
+"Möchten Sie wirklich fortfahren?"
 
 #: ../subiquity/ui/views/installprogress.py:253
 msgid "Confirm destructive action"
@@ -2192,6 +2241,11 @@ msgid ""
 "\n"
 "You can wait for this to complete or switch to a shell.\n"
 msgstr ""
+"Der auf {tty} laufende Installationsassistent installiert gerade das "
+"System.\n"
+"\n"
+"Sie können auf den Abschluss des Prozesses warten oder zu einer Konsole "
+"wechseln.\n"
 
 #: ../subiquity/ui/views/keyboard.py:53
 msgid "Keyboard auto-detection"
@@ -2460,23 +2514,22 @@ msgstr ""
 "dessen Details hier an."
 
 #: ../subiquity/ui/views/mirror.py:125
-#, fuzzy
 msgid "Try again now"
-msgstr "Erneut versuchen"
+msgstr ""
 
 #: ../subiquity/ui/views/proxy.py:31
 msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of \"http://"
-"[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of "
+"\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
 "Wenn Sie einen HTTP-Proxy verwenden müssen, um die Außenwelt zu erreichen, "
 "geben Sie die Proxy-Informationen hier an. Ansonsten lassen Sie dies leer.\n"
 "\n"
-"Die Proxy-Informationen sollten in der Standardform von \"http://[[Benutzer]"
-"[:Kennwort]@]Host[:Port]/\" angegeben werden."
+"Die Proxy-Informationen sollten in der Standardform von "
+"\"http://[[Benutzer][:Kennwort]@]Host[:Port]/\" angegeben werden."
 
 #: ../subiquity/ui/views/proxy.py:41
 msgid "Proxy address:"
@@ -2637,12 +2690,12 @@ msgstr "von: "
 #: ../subiquity/ui/views/snaplist.py:284
 #, python-brace-format
 msgid "Fetching info for {snap} failed"
-msgstr ""
+msgstr "Beziehen von Informationen für {snap} fehlgeschlagen"
 
 #: ../subiquity/ui/views/snaplist.py:327
 #, python-brace-format
 msgid "Fetching info for {snap}"
-msgstr ""
+msgstr "Beziehe Informationen für {snap}"
 
 #: ../subiquity/ui/views/snaplist.py:371
 msgid "Featured Server Snaps"
@@ -2654,7 +2707,8 @@ msgstr "Lade Server-Snaps aus dem Store, bitte warten..."
 
 #: ../subiquity/ui/views/snaplist.py:412
 msgid "Sorry, loading snaps from the store failed."
-msgstr "Entschuldigung, das Laden der Snaps aus dem Store ist fehlgeschlagen."
+msgstr ""
+"Entschuldigung, das Laden der Snaps aus dem Store ist fehlgeschlagen."
 
 #: ../subiquity/ui/views/snaplist.py:511
 msgid ""
@@ -2672,15 +2726,18 @@ msgstr "Importiere Benutzername:"
 
 #: ../subiquity/ui/views/ssh.py:46
 msgid "GitHub Username:"
-msgstr ""
+msgstr "GitHub-Benutzername:"
 
 #: ../subiquity/ui/views/ssh.py:47
 msgid "Enter your GitHub username."
-msgstr ""
+msgstr "Geben Sie Ihren GitHub-Benutzernamen ein:"
 
 #: ../subiquity/ui/views/ssh.py:50
-msgid "A GitHub username may only contain alphanumeric characters or hyphens."
+msgid ""
+"A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
+"Ein GitHub-Benutzername darf nur alphanumerische Zeichen und Bindestriche "
+"enthalten."
 
 #: ../subiquity/ui/views/ssh.py:54
 msgid "Launchpad Username:"
@@ -2704,7 +2761,7 @@ msgstr "SSH-Identität importieren:"
 
 #: ../subiquity/ui/views/ssh.py:73
 msgid "from GitHub"
-msgstr ""
+msgstr "Quelle: GitHub"
 
 #: ../subiquity/ui/views/ssh.py:74
 msgid "from Launchpad"
@@ -2712,7 +2769,7 @@ msgstr "aus Launchpad"
 
 #: ../subiquity/ui/views/ssh.py:76
 msgid "You can import your SSH keys from GitHub or Launchpad."
-msgstr ""
+msgstr "Sie können Ihre SSH-Schlüssel von GitHub oder Launchpad importieren."
 
 #: ../subiquity/ui/views/ssh.py:81
 msgid "Allow password authentication over SSH"
@@ -2741,6 +2798,8 @@ msgid ""
 "A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
 msgstr ""
+"Ein GitHub-Benutzername darf nur alphanumerische Zeichen und Bindestriche "
+"enthalten und er darf nicht mit einem Bindestrich beginnen oder enden."
 
 #: ../subiquity/ui/views/ssh.py:140
 msgid "Fetching SSH keys..."
@@ -2816,11 +2875,11 @@ msgstr "online"
 
 #: ../subiquity/ui/views/zdev.py:62
 msgid "No zdev devices found."
-msgstr ""
+msgstr "Keine zdev-Geräte gefunden."
 
 #: ../subiquity/ui/views/zdev.py:80
 msgid "ID"
-msgstr ""
+msgstr "KENNUNG"
 
 #: ../subiquity/ui/views/zdev.py:81
 msgid "ONLINE"
@@ -2828,7 +2887,7 @@ msgstr "ONLINE"
 
 #: ../subiquity/ui/views/zdev.py:82
 msgid "NAMES"
-msgstr ""
+msgstr "NAMEN"
 
 #: ../subiquity/ui/views/zdev.py:118
 msgid "Enable"
@@ -2840,10 +2899,7 @@ msgstr "Deaktivieren"
 
 #: ../subiquity/ui/views/zdev.py:146
 msgid "Zdev setup"
-msgstr ""
-
-#~ msgid "Cancel update"
-#~ msgstr "Aktualisierung abbrechen"
+msgstr "Zdev Setup"
 
 #~ msgid "Filesystem setup"
 #~ msgstr "Dateisystem einrichten"
@@ -2902,6 +2958,9 @@ msgstr ""
 #~ msgid "Reboot"
 #~ msgstr "Neustart"
 
+#~ msgid "passwords"
+#~ msgstr "Passwörter"
+
 #~ msgid "Finished install!"
 #~ msgstr "Installation fertiggestellt!"
 
@@ -2959,6 +3018,9 @@ msgstr ""
 #~ msgid "Use An Entire Disk And Set Up LVM"
 #~ msgstr "Einen gesamten Datenträger nutzen und LVM einrichten"
 
+#~ msgid "Choose the disk to install to:"
+#~ msgstr "Wählen Sie den Datenträger, auf den installiert werden soll:"
+
 #~ msgid "{} is not a valid name for a volume group"
 #~ msgstr "{} ist kein gültiger Name für eine Volumengruppe"
 
@@ -2989,6 +3051,9 @@ msgstr ""
 #~ msgid "Server name too long, must be < "
 #~ msgstr "Servername zu lang, muss < sein "
 
+#~ msgid "Cancel update"
+#~ msgstr "Aktualisierung abbrechen"
+
 #~ msgid "from Github"
 #~ msgstr "aus Github"
 
@@ -2996,8 +3061,7 @@ msgstr ""
 #~ msgstr "Github-Benutzername:"
 
 #~ msgid "You can import your SSH keys from Github or Launchpad."
-#~ msgstr ""
-#~ "Sie können Ihre SSH-Schlüssel aus Github oder Launchpad importieren."
+#~ msgstr "Sie können Ihre SSH-Schlüssel aus Github oder Launchpad importieren."
 
 #~ msgid "There is already a network device named \"{}\""
 #~ msgstr "Es existiert bereits ein Netzwerk mit dem Namen \"{}\""
@@ -3061,8 +3125,7 @@ msgstr ""
 
 #~ msgid "Use UP, DOWN and ENTER keys to select your keyboard."
 #~ msgstr ""
-#~ "Nutzen Sie die Tasten HOCH, RUNTER und ENTER, um Ihre Tastatur "
-#~ "auszuwählen."
+#~ "Nutzen Sie die Tasten HOCH, RUNTER und ENTER, um Ihre Tastatur auszuwählen."
 
 #~ msgid "Fetching info for {}"
 #~ msgstr "Hole Info für {}"
@@ -3082,11 +3145,11 @@ msgstr ""
 #~ "Größe."
 
 #~ msgid ""
-#~ " You can choose whether to use the existing filesystem on this partition "
-#~ "or reformat it."
+#~ " You can choose whether to use the existing filesystem on this partition or "
+#~ "reformat it."
 #~ msgstr ""
-#~ " Sie können wählen, ob Sie das vorhandene Dateisystem auf dieser "
-#~ "Partition verwenden oder neu formatieren möchten."
+#~ " Sie können wählen, ob Sie das vorhandene Dateisystem auf dieser Partition "
+#~ "verwenden oder neu formatieren möchten."
 
 #~ msgid "should be in CIDR form ({})"
 #~ msgstr "sollte in CIDR-Form vorliegen ({})"
@@ -3096,14 +3159,13 @@ msgstr ""
 #~ "Cannot delete {selflabel} as partition {partnum} is part of the {cdtype} "
 #~ "{cdname}."
 #~ msgstr ""
-#~ "Kann {selflabel} nicht löschen, da die Partition {partnum} Teil des "
-#~ "{cdtype} {cdname} ist."
+#~ "Kann {selflabel} nicht löschen, da die Partition {partnum} Teil des {cdtype} "
+#~ "{cdname} ist."
 
 #, python-brace-format
 #~ msgid "Cannot delete {selflabel} because it has {count} mounted partitions."
 #~ msgstr ""
-#~ "Kann {selflabel} nicht löschen, da es {count} eingebundene Partitionen "
-#~ "hat."
+#~ "Kann {selflabel} nicht löschen, da es {count} eingebundene Partitionen hat."
 
 #, python-brace-format
 #~ msgid "Cannot delete {selflabel} because it has 1 mounted partition."
@@ -3129,8 +3191,8 @@ msgstr ""
 #~ "Mounting an existing filesystem at {} is usually a bad idea, proceed only "
 #~ "with caution."
 #~ msgstr ""
-#~ "Das Einbinden eines vorhandenen Dateisystems unter {} ist in der Regel "
-#~ "eine schlechte Idee, gehen Sie nur mit Vorsicht vor."
+#~ "Das Einbinden eines vorhandenen Dateisystems unter {} ist in der Regel eine "
+#~ "schlechte Idee, gehen Sie nur mit Vorsicht vor."
 
 #~ msgid ""
 #~ "The selected guided partitioning scheme creates the required bootloader "
@@ -3138,9 +3200,9 @@ msgstr ""
 #~ "the rest of the disk, formatted as ext4 and mounted at '/'."
 #~ msgstr ""
 #~ "Das ausgewählte geführte Partitionsschema erstellt die erforderliche "
-#~ "Bootloader-Partition auf der ausgewählten Festplatte und erstellt dann "
-#~ "eine einzige Partition, die den Rest der Festplatte abdeckt, als ext4 "
-#~ "formatiert und auf »/« eingebunden ist."
+#~ "Bootloader-Partition auf der ausgewählten Festplatte und erstellt dann eine "
+#~ "einzige Partition, die den Rest der Festplatte abdeckt, als ext4 formatiert "
+#~ "und auf »/« eingebunden ist."
 
 #~ msgid ""
 #~ "The installer can guide you through partitioning an entire disk either "
@@ -3150,16 +3212,15 @@ msgstr ""
 #~ "review and modify the results."
 #~ msgstr ""
 #~ "Der Installer kann Sie durch die Partitionierung einer ganzen Festplatte "
-#~ "führen, entweder direkt oder mit LVM, oder, wenn Sie es wünschen, "
-#~ "manuell.\n"
+#~ "führen, entweder direkt oder mit LVM, oder, wenn Sie es wünschen, manuell.\n"
 #~ "\n"
 #~ "Wenn Sie sich für die Partitionierung einer kompletten Festplatte "
-#~ "entscheiden, haben Sie dennoch die Möglichkeit, die Ergebnisse zu "
-#~ "überprüfen und zu ändern."
+#~ "entscheiden, haben Sie dennoch die Möglichkeit, die Ergebnisse zu überprüfen "
+#~ "und zu ändern."
 
 #~ msgid ""
-#~ "Selecting Continue below will begin the installation process and result "
-#~ "in the loss of data on the disks selected to be formatted.\n"
+#~ "Selecting Continue below will begin the installation process and result in "
+#~ "the loss of data on the disks selected to be formatted.\n"
 #~ "\n"
 #~ "You will not be able to return to this or a previous screen once the "
 #~ "installation has started.\n"
@@ -3178,33 +3239,32 @@ msgstr ""
 #~ msgstr "Möchten Sie wirklich das bestehende Dateisystem aus {} entfernen?"
 
 #~ msgid ""
-#~ "The LVM guided partitioning scheme creates three partitions on the "
-#~ "selected disk: one as required by the bootloader, one for '/boot', and "
-#~ "one covering the rest of the disk.\n"
+#~ "The LVM guided partitioning scheme creates three partitions on the selected "
+#~ "disk: one as required by the bootloader, one for '/boot', and one covering "
+#~ "the rest of the disk.\n"
 #~ "\n"
-#~ "A LVM volume group is created containing the large partition. A 4 "
-#~ "gigabyte logical volume is created for the root filesystem. It can easily "
-#~ "be enlarged with standard LVM command line tools."
+#~ "A LVM volume group is created containing the large partition. A 4 gigabyte "
+#~ "logical volume is created for the root filesystem. It can easily be enlarged "
+#~ "with standard LVM command line tools."
 #~ msgstr ""
 #~ "Das LVM-Partitionsschema erstellt drei Partitionen auf der ausgewählten "
-#~ "Festplatte: eine nach Bedarf des Bootloaders, eine für »/boot« und eine "
-#~ "für den Rest der Festplatte.\n"
+#~ "Festplatte: eine nach Bedarf des Bootloaders, eine für »/boot« und eine für "
+#~ "den Rest der Festplatte.\n"
 #~ "\n"
 #~ "Es wird eine LVM-Volumengruppe erstellt, die die große Partition enthält. "
-#~ "Für das Root-Dateisystem wird ein logisches Volumen von 4 Gigabyte "
-#~ "angelegt. Es kann einfach mit Standard LVM Kommandozeilenwerkzeugen "
-#~ "erweitert werden."
+#~ "Für das Root-Dateisystem wird ein logisches Volumen von 4 Gigabyte angelegt. "
+#~ "Es kann einfach mit Standard LVM Kommandozeilenwerkzeugen erweitert werden."
 
 #~ msgid ""
 #~ "Required bootloader partition\n"
 #~ "\n"
-#~ "This is the PReP partion which is required on POWER. Grub will be "
-#~ "installed onto this partition."
+#~ "This is the PReP partion which is required on POWER. Grub will be installed "
+#~ "onto this partition."
 #~ msgstr ""
 #~ "Erforderliche Bootloader-Partition\n"
 #~ "\n"
-#~ "Dies ist der PReP-Teil, der für POWER erforderlich ist. Grub wird auf "
-#~ "dieser Partition installiert."
+#~ "Dies ist der PReP-Teil, der für POWER erforderlich ist. Grub wird auf dieser "
+#~ "Partition installiert."
 
 #~ msgid ""
 #~ "Required bootloader partition\n"
@@ -3214,8 +3274,8 @@ msgstr ""
 #~ msgstr ""
 #~ "Erforderliche Bootloader-Partition\n"
 #~ "\n"
-#~ "Dies ist die von UEFI geforderte ESP / »EFI Systempartition«. Grub wird "
-#~ "auf dieser Partition installiert, die als fat32 formatiert werden muss."
+#~ "Dies ist die von UEFI geforderte ESP / »EFI Systempartition«. Grub wird auf "
+#~ "dieser Partition installiert, die als fat32 formatiert werden muss."
 
 #~ msgid ""
 #~ "Required bootloader partition\n"
@@ -3232,10 +3292,10 @@ msgstr ""
 #~ "GRUB wird auf dem MBR des Ziellaufwerks installiert.\n"
 #~ "\n"
 #~ "Auf einer Festplatte mit einer GPT-Partitionstabelle ist jedoch nicht "
-#~ "genügend Platz nach dem MBR vorhanden, damit GRUB seine zweite Stufe core."
-#~ "img speichern kann, so dass eine kleine unformatierte Partition am Anfang "
-#~ "der Festplatte benötigt wird. Es enthält kein Dateisystem und wird nicht "
-#~ "eingebunden und kann hier nicht bearbeitet werden."
+#~ "genügend Platz nach dem MBR vorhanden, damit GRUB seine zweite Stufe "
+#~ "core.img speichern kann, so dass eine kleine unformatierte Partition am "
+#~ "Anfang der Festplatte benötigt wird. Es enthält kein Dateisystem und wird "
+#~ "nicht eingebunden und kann hier nicht bearbeitet werden."
 
 #~ msgid "Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
@@ -3246,8 +3306,7 @@ msgstr ""
 
 #~ msgid "Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
-#~ "Der Benutzername muss mit NAME_REGEX übereinstimmen, d.h. [a-z_][a-"
-#~ "z0-9_-]*"
+#~ "Der Benutzername muss mit NAME_REGEX übereinstimmen, d.h. [a-z_][a-z0-9_-]*"
 
 #~ msgid "Exit To Shell"
 #~ msgstr "Beenden und zur Shell"
@@ -3260,8 +3319,7 @@ msgstr ""
 #~ "hyphens, and cannot begin or end with a hyphen."
 #~ msgstr ""
 #~ "Ein Github-Benutzername darf nur alphanumerische Zeichen oder einzelne "
-#~ "Bindestriche enthalten und nicht mit einem Bindestrich beginnen oder "
-#~ "enden."
+#~ "Bindestriche enthalten und nicht mit einem Bindestrich beginnen oder enden."
 
 #, python-brace-format
 #~ msgid "software RAID {level}"
@@ -3273,5 +3331,77 @@ msgstr ""
 #~ msgid ""
 #~ "A Github username may only contain alphanumeric characters or hyphens."
 #~ msgstr ""
-#~ "Ein Github-Benutzername darf nur alphanumerische Zeichen oder "
-#~ "Bindestriche enthalten."
+#~ "Ein Github-Benutzername darf nur alphanumerische Zeichen oder Bindestriche "
+#~ "enthalten."
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "The \"Use an entire disk\" option installs Ubuntu onto the selected disk,\n"
+#~ "replacing any partitions and data already there.\n"
+#~ "\n"
+#~ "If the platform requires it, a bootloader partition is created on the disk.\n"
+#~ "\n"
+#~ "If you choose to use LVM, two additional partitions are then created,\n"
+#~ "one for /boot and one covering the rest of the disk. An LVM volume\n"
+#~ "group is created containing the large partition. A logical volume is\n"
+#~ "created for the root filesystem, sized using some simple heuristic. It\n"
+#~ "can easily be enlarged with standard LVM command line tools (or on the\n"
+#~ "next screen).\n"
+#~ "\n"
+#~ "You can also choose to encrypt LVM volume group. This will require\n"
+#~ "setting a password, that one will need to type on every boot before\n"
+#~ "the system boots.\n"
+#~ "\n"
+#~ "If you do not choose to use LVM, a single partition is created covering the\n"
+#~ "rest of the disk which is then formatted as ext4 and mounted at /.\n"
+#~ "\n"
+#~ "In either case, you will still have a chance to review and modify the "
+#~ "results.\n"
+#~ "\n"
+#~ "If you choose to use a custom storage layout, no changes are made to the "
+#~ "disks\n"
+#~ "and you will have to, at a minimum, select a boot disk and mount a "
+#~ "filesystem\n"
+#~ "at /.\n"
+#~ "\n"
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "Die \"Benutze die vollständige Platte\" Option installiert Ubuntu auf die "
+#~ "ausgewählte Platte,\n"
+#~ "löscht dabei alle vorhandenen Partitionen und Daten.\n"
+#~ "\n"
+#~ "Falls die Plattform es erfordert, wird eine Bootloader-Partition auf der "
+#~ "Platte erstellt.\n"
+#~ "\n"
+#~ "Wenn Sie LVM zur Nutzung wählen, werden dann zwei zusätzliche Partitionen "
+#~ "erstellt,\n"
+#~ "eine für /boot und eine, die den Rest der Platte umfasst. Eine LVM-Volumen-\n"
+#~ "Gruppe wird erstellt, die die große Partition enthält. Ein logisches Volumen "
+#~ "wird\n"
+#~ "für das Root-Dateisystem erstellt, deren Größe durch simple Heuristik "
+#~ "bestimmt. Es\n"
+#~ "kann leicht mit den Standard-Kommandozeilen-Tools des LVM vergrößert werden "
+#~ "(oder auf dem\n"
+#~ "nächsten Bildschirm).\n"
+#~ "\n"
+#~ "Sie können auch die Verschlüsselung der LVM Volumen-Gruppe auswählen. Das "
+#~ "erfordert\n"
+#~ "das Setzen eine Kennwortes, dass man bei jedem Bootvorgang eingeben muss, "
+#~ "bevor\n"
+#~ "das System bootet.\n"
+#~ "\n"
+#~ "Wenn Sie kein LVM zur Nutzung auswählen, wird eine einzelne Partition "
+#~ "erstellt, die den Rest\n"
+#~ "der Platte umfasst, die dann als ext4 formatiert und auf / gemountet wird. \n"
+#~ "\n"
+#~ "In beiden Fällen haben Sie noch die Chance die Ergebnisse zu begutachten und "
+#~ "zu ändern.\n"
+#~ "\n"
+#~ "Wenn Sie gewählt haben, ein eigenes Speicher-Layout zu benutzen, werden "
+#~ "keine Veränderungen an der Platte durchgeführt\n"
+#~ "und Sie müssen zumindest eine Bootplatte auswählen und ein Dateisystem auf "
+#~ "/\n"
+#~ "mounten.\n"
+#~ "\n"
