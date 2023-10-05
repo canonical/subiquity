@@ -64,52 +64,52 @@ class TestLogPerms(SubiTestCase):
         Path(target).touch()
         set_log_perms(target)
         self.chmod.assert_called_once_with(target, _DEF_PERMS_FILE)
-        self.chown.assert_called_once_with(target, -1, self.mock_gid)
+        self.chown.assert_called_once_with(target, 0, self.mock_gid)
 
     def test_defaults_dir(self):
         target = self.tmp_dir()
         set_log_perms(target)
         self.chmod.assert_called_once_with(target, _DEF_PERMS_FILE | 0o110)
-        self.chown.assert_called_once_with(target, -1, self.mock_gid)
+        self.chown.assert_called_once_with(target, 0, self.mock_gid)
 
     def test_group_write_file(self):
         target = self.tmp_path("file")
         Path(target).touch()
         set_log_perms(target, group_write=True)
         self.chmod.assert_called_once_with(target, _DEF_PERMS_FILE | 0o020)
-        self.chown.assert_called_once_with(target, -1, self.mock_gid)
+        self.chown.assert_called_once_with(target, 0, self.mock_gid)
 
     def test_group_write_dir(self):
         target = self.tmp_dir()
         set_log_perms(target, group_write=True)
         self.chmod.assert_called_once_with(target, _DEF_PERMS_FILE | 0o130)
-        self.chown.assert_called_once_with(target, -1, self.mock_gid)
+        self.chown.assert_called_once_with(target, 0, self.mock_gid)
 
     def test_nogroup_write_file(self):
         target = self.tmp_path("file")
         Path(target).touch()
         set_log_perms(target, group_write=False)
         self.chmod.assert_called_once_with(target, _DEF_PERMS_FILE)
-        self.chown.assert_called_once_with(target, -1, self.mock_gid)
+        self.chown.assert_called_once_with(target, 0, self.mock_gid)
 
     def test_nogroup_write_dir(self):
         target = self.tmp_dir()
         set_log_perms(target, group_write=False)
         self.chmod.assert_called_once_with(target, _DEF_PERMS_FILE | 0o110)
-        self.chown.assert_called_once_with(target, -1, self.mock_gid)
+        self.chown.assert_called_once_with(target, 0, self.mock_gid)
 
     def test_mode_file(self):
         target = self.tmp_path("file")
         Path(target).touch()
         set_log_perms(target, mode=0o510)
         self.chmod.assert_called_once_with(target, 0o510)
-        self.chown.assert_called_once_with(target, -1, self.mock_gid)
+        self.chown.assert_called_once_with(target, 0, self.mock_gid)
 
     def test_mode_dir(self):
         target = self.tmp_dir()
         set_log_perms(target, mode=0o510)
         self.chmod.assert_called_once_with(target, 0o510)
-        self.chown.assert_called_once_with(target, -1, self.mock_gid)
+        self.chown.assert_called_once_with(target, 0, self.mock_gid)
 
     def test_group_file(self):
         self.getgrnam.return_value = Mock(gr_gid=11)
@@ -117,11 +117,11 @@ class TestLogPerms(SubiTestCase):
         Path(target).touch()
         set_log_perms(target, group="group1")
         self.chmod.assert_called_once_with(target, _DEF_PERMS_FILE)
-        self.chown.assert_called_once_with(target, -1, 11)
+        self.chown.assert_called_once_with(target, 0, 11)
 
     def test_group_dir(self):
         self.getgrnam.return_value = Mock(gr_gid=11)
         target = self.tmp_dir()
         set_log_perms(target, group="group1")
         self.chmod.assert_called_once_with(target, _DEF_PERMS_FILE | 0o110)
-        self.chown.assert_called_once_with(target, -1, 11)
+        self.chown.assert_called_once_with(target, 0, 11)
