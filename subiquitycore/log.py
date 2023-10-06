@@ -23,7 +23,7 @@ def setup_logger(dir, base="subiquity"):
     os.makedirs(dir, exist_ok=True)
     # Create the log directory in such a way that users in the group may
     # write to this directory in the installation environment.
-    set_log_perms(dir, group_write=True)
+    set_log_perms(dir, mode=0o700)
 
     logger = logging.getLogger("")
     logger.setLevel(logging.DEBUG)
