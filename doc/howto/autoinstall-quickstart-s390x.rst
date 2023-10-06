@@ -12,21 +12,19 @@ adapted for s390x.
 Download an ISO
 ===============
 
-At the time of writing (just after the Kinetic release), the best place to go
-is here:
-https://cdimage.ubuntu.com/ubuntu/releases/22.10/release/
+Download an ISO image of the latest release from the `release page <https://cdimage.ubuntu.com/ubuntu/releases/>`_ (currently |ubuntu-latest-version| (|ubuntu-latest-codename|)).
 
-..code-block:: bash
+.. parsed-literal::
 
-    wget https://cdimage.ubuntu.com/ubuntu/releases/22.10/release/ubuntu-22.10-live-server-s390x.iso -P ~/Downloads
+    wget https:\ //cdimage.ubuntu.com/ubuntu/releases/|ubuntu-latest-version|/release/ubuntu-|ubuntu-latest-version|-live-server-s390x.iso -P ~/Downloads
 
 Mount the ISO
 =============
 
-.. code-block:: bash
+.. parsed-literal::
 
     mkdir -p ~/iso
-    sudo mount -r ~/Downloads/ubuntu-22.10-live-server-s390x.iso ~/iso
+    sudo mount -r ~/Downloads/ubuntu-|ubuntu-latest-version|-live-server-s390x.iso ~/iso
 
 Write your autoinstall config
 =============================
