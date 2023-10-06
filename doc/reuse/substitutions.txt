@@ -1,0 +1,2 @@
+.. |ubuntu-latest-version| replace:: 23.04
+.. |ubuntu-latest-codename| replace:: Lunar Lobster
