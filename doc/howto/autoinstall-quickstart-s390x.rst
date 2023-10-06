@@ -1,13 +1,13 @@
 .. _autoinstall-quickstart-s390x:
 
-Autoinstall quick start for s390x
-*********************************
+Automatic installation quick start for s390x
+********************************************
 
-The intent of this page is to provide simple instructions to perform an
-autoinstall in a VM on your machine on s390x.
+This how-to provides basic instructions to perform an automatic installation
+in a virtual machine (VM) on a local machine on the s390x architecture.
 
-This page is just a slightly adapted page of the
-`autoinstall quickstart page<autoinstall_quickstart>` mapped to s390x.
+This how-to is a version of :ref:`autoinstall_quickstart`.
+adapted for s390x.
 
 Download an ISO
 ===============
@@ -31,9 +31,9 @@ Mount the ISO
 Write your autoinstall config
 =============================
 
-This means creating cloud-init config as follows:
+Create a cloud-init configuration:
 
-.. code-block:: bash
+.. code-block:: none
 
     mkdir -p ~/www
     cd ~/www
@@ -48,14 +48,14 @@ This means creating cloud-init config as follows:
     EOF
     touch meta-data
 
-The crypted password is just ``ubuntu``.
+The crypted password is ``ubuntu``.
 
 Serve the cloud-init config over HTTP
 =====================================
 
 Leave this running in one terminal window:
 
-.. code-block:: bash
+.. code-block:: none
 
     cd ~/www
     python3 -m http.server 3003
@@ -65,7 +65,7 @@ Create a target disk
 
 Proceed with a second terminal window:
 
-.. code-block:: bash
+.. code-block:: none
 
     sudo apt install qemu-utils
     ...
@@ -85,17 +85,17 @@ Proceed with a second terminal window:
         refcount bits: 16
         corrupt: false
 
-Run the install!
-================
+Run the installation
+====================
 
-.. code-block:: bash
+.. code-block:: none
 
     sudo apt install qemu-kvm
     ...
 
-You may need to add the default user to the ``kvm`` group:  <<BR>>
+Add the default user to the ``kvm`` group:
 
-.. code-block:: bash
+.. code-block:: none
 
     sudo usermod -a -G kvm ubuntu   # re-login to make the changes take effect
 
@@ -106,20 +106,19 @@ You may need to add the default user to the ``kvm`` group:  <<BR>>
         -initrd ~/iso/boot/initrd.ubuntu \
         -append 'autoinstall ds=nocloud-net;s=http://_gateway:3003/ console=ttysclp0'
 
-This will boot, download the config from the server (set up in the previous
-step) and run the install.
+The above commands boot the virtual machine, download the configuration from the server
+(prepared in the previous step) and run the installation.
 
-The installer reboots at the end but the ``-no-reboot`` flag to ``kvm`` means
-that ``kvm`` will exit when this happens. It should take about 5 minutes.
+The installer reboots at the end. The ``-no-reboot`` flag to ``kvm`` instructs ``kvm``
+to terminate on reboot. The procedure takes approximately 5 minutes.
 
 Boot the installed system
 =========================
 
-.. code-block:: bash
+.. code-block:: none
 
     kvm -no-reboot -name auto-inst-test -nographic -m 2048 \
         -drive file=disk-image.qcow2,format=qcow2,cache=none,if=virtio
 
-This will boot into the freshly installed system and you should be able to log
-in as ``ubuntu/ubuntu``.
-
+This command boots into the installed system. Log in using ``ubuntu`` for both the user
+name and password.
