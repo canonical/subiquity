@@ -6,18 +6,17 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: subiquity\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2023-09-06 15:13-0600\n"
 "PO-Revision-Date: 2021-02-18 02:14+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: Chinese (Traditional) <zh_TW@li.org>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2023-09-07 07:09+0000\n"
+"X-Generator: Launchpad (build cc7f0d837bf2751562eea8708e7cc6eb3f33ceab)\n"
 
 #: ../subiquity/client/client.py:58
 msgid ""
@@ -132,7 +131,8 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:331
 #, python-brace-format
-msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgid ""
+"Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:335
@@ -1308,8 +1308,8 @@ msgstr "關於引導式儲存空間設定的說明"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, "
-"0-9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
+"9, +, _, . and -"
 msgstr "邏輯卷宗群組名稱可用的字元為 a-z、A-Z、0-9、+、_、. 和 -"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:72
@@ -1562,7 +1562,7 @@ msgstr "使用現有 fat32 檔案系統"
 
 #: ../subiquity/ui/views/filesystem/partition.py:485
 msgid "Reformat as fresh fat32 filesystem"
-msgstr "重新格式化為新的 fat32 檔案系統"
+msgstr "重新格式化為新的 FAT32 檔案系統"
 
 #: ../subiquity/ui/views/filesystem/partition.py:567
 #, python-brace-format
@@ -1611,8 +1611,8 @@ msgid ""
 "on Launchpad, and if possible include the contents of the /var/log/installer "
 "directory."
 msgstr ""
-"很不幸的探測要安裝至哪個系統區塊裝置的工作失敗。請至 Launchpad 回報錯誤，若可"
-"能的話請附上 /var/log/installer 資料夾內的內容。"
+"很不幸的探測要安裝至哪個系統區塊裝置的工作失敗。請至 Launchpad 回報錯誤，若可能的話請附上 /var/log/installer "
+"資料夾內的內容。"
 
 #: ../subiquity/ui/views/filesystem/probing.py:63
 msgid "Probing for devices to install to failed"
@@ -1989,9 +1989,9 @@ msgid "The username \"{username}\" is reserved for use by the system."
 msgstr "使用者名稱「{username}」保留供系統使用。"
 
 #: ../subiquity/ui/views/identity.py:167
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "The username \"{username}\" is already in use."
-msgstr "使用者名稱「{username}」保留供系統使用。"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:173
 msgid "Password must be set"
@@ -2010,14 +2010,11 @@ msgid ""
 "Enter the username and password you will use to log in to the system. You "
 "can configure SSH access on the next screen but a password is still needed "
 "for sudo."
-msgstr ""
-"輸入您用來登入系統的帳號及密碼。您可以在下個畫面設定 SSH 存取，但 sudo 的密碼"
-"是必要的。"
+msgstr "輸入您用來登入系統的帳號及密碼。您可以在下個畫面設定 SSH 存取，但 sudo 的密碼是必要的。"
 
 #: ../subiquity/ui/views/identity.py:212
-#, fuzzy
 msgid "Passwords"
-msgstr "密碼"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:44
 msgid "Install progress"
@@ -2049,9 +2046,8 @@ msgid "Installing system"
 msgstr "正在安裝系統"
 
 #: ../subiquity/ui/views/installprogress.py:137
-#, fuzzy
 msgid "Starting installer"
-msgstr "重新啟動安裝程式"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:140
 msgid "Waiting on cloud-init"
@@ -2124,9 +2120,7 @@ msgstr "鍵盤配置自動偵測"
 msgid ""
 "Keyboard detection starting. You will be asked a series of questions about "
 "your keyboard. Press escape at any time to go back to the previous screen."
-msgstr ""
-"開始偵測鍵盤配置，您將會被問幾個與您鍵盤有關的問題。您可以隨時按下 Esc 鍵回到"
-"上一個畫面。"
+msgstr "開始偵測鍵盤配置，您將會被問幾個與您鍵盤有關的問題。您可以隨時按下 Esc 鍵回到上一個畫面。"
 
 #: ../subiquity/ui/views/keyboard.py:100
 msgid ""
@@ -2146,8 +2140,7 @@ msgid ""
 "\n"
 msgstr ""
 "\n"
-"若正確，請在下個畫面選擇「完成」。若不正確您可以選擇其他配置或重新執行自動偵"
-"測。\n"
+"若正確，請在下個畫面選擇「完成」。若不正確您可以選擇其他配置或重新執行自動偵測。\n"
 "\n"
 
 #: ../subiquity/ui/views/keyboard.py:126
@@ -2184,9 +2177,8 @@ msgid ""
 msgstr ""
 "您將會需要一個能夠在鍵盤的國際配置以及標準拉丁配置間切換的方法。\n"
 "\n"
-"右 Alt 或 Caps Lock 鍵通常是個較符合人體工學的選擇（或採用後者，請用 "
-"Shift+Caps Lock 鍵的組合來切換大小寫）。Alt+Shift 也是個很受歡迎的組合；不過"
-"這將會使這組合鍵在 Emacs 與其他程式中無法使用原本該有的特定功能。\n"
+"右 Alt 或 Caps Lock 鍵通常是個較符合人體工學的選擇（或採用後者，請用 Shift+Caps Lock "
+"鍵的組合來切換大小寫）。Alt+Shift 也是個很受歡迎的組合；不過這將會使這組合鍵在 Emacs 與其他程式中無法使用原本該有的特定功能。\n"
 "\n"
 "不是在所有鍵盤上都可找到所有列出來的按鍵。 "
 
@@ -2370,20 +2362,18 @@ msgid "If you use an alternative mirror for Ubuntu, enter its details here."
 msgstr "若您要使用 Ubuntu 的替代鏡像站，請在此輸入它的資訊。"
 
 #: ../subiquity/ui/views/mirror.py:125
-#, fuzzy
 msgid "Try again now"
-msgstr "重試"
+msgstr ""
 
 #: ../subiquity/ui/views/proxy.py:31
 msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of \"http://"
-"[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of "
+"\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
-"若您需要使用 HTTP 代理伺服器來存取網際網路，請在此輸入代理伺服器資訊。否則請"
-"將此處留白。\n"
+"若您需要使用 HTTP 代理伺服器來存取網際網路，請在此輸入代理伺服器資訊。否則請將此處留白。\n"
 "\n"
 "代理伺服器資訊應該符合後列標準格式「http://[[user][:pass]@]host[:port]/」。"
 
@@ -2561,8 +2551,7 @@ msgid ""
 "SPACE, press ENTER to see more details of the package, publisher and "
 "versions available."
 msgstr ""
-"這些是在伺服器環境下受歡迎的 snaps。用空白鍵來選擇或取消選擇，按下 ENTER 鍵來"
-"查閱關於此套件的更多詳細訊、發布者以及可用的版本。"
+"這些是在伺服器環境下受歡迎的 snaps。用空白鍵來選擇或取消選擇，按下 ENTER 鍵來查閱關於此套件的更多詳細訊、發布者以及可用的版本。"
 
 #: ../subiquity/ui/views/ssh.py:39
 msgid "Import Username:"
@@ -2577,7 +2566,8 @@ msgid "Enter your GitHub username."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:50
-msgid "A GitHub username may only contain alphanumeric characters or hyphens."
+msgid ""
+"A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:54
@@ -2627,9 +2617,7 @@ msgid ""
 "A Launchpad username must start with a letter or number. All letters must be "
 "lower-case. The characters +, - and . are also allowed after the first "
 "character."
-msgstr ""
-"Launchpad 使用者名稱必須由字母或數字開頭。所有字母必須是小寫。特殊符號 +、- "
-"以及 . 可以在第一個字元後使用。"
+msgstr "Launchpad 使用者名稱必須由字母或數字開頭。所有字母必須是小寫。特殊符號 +、- 以及 . 可以在第一個字元後使用。"
 
 #: ../subiquity/ui/views/ssh.py:129
 msgid ""
@@ -2729,9 +2717,6 @@ msgstr "停用"
 msgid "Zdev setup"
 msgstr "Zdev 設置"
 
-#~ msgid "Cancel update"
-#~ msgstr "取消更新"
-
 #~ msgid "Edit IPv6"
 #~ msgstr "編輯 IPv6"
 
@@ -2765,6 +2750,9 @@ msgstr "Zdev 設置"
 #~ msgid "There is already a RAID named '{}'"
 #~ msgstr "已有名為 {} 的 RAID"
 
+#~ msgid "Cancel update"
+#~ msgstr "取消更新"
+
 #~ msgid "Reboot"
 #~ msgstr "重新開機"
 
@@ -2796,6 +2784,9 @@ msgstr "Zdev 設置"
 #~ msgid "Username too long, must be < "
 #~ msgstr "使用者名稱過長，需少於 "
 
+#~ msgid "passwords"
+#~ msgstr "密碼"
+
 #~ msgid "Do you really want to remove the existing filesystem from {}?"
 #~ msgstr "確定要自 {} 刪除現有的檔案系統嗎？"
 
@@ -2826,8 +2817,7 @@ msgstr "Zdev 設置"
 #~ msgid ""
 #~ "Cannot delete {selflabel} as partition {partnum} is part of the {cdtype} "
 #~ "{cdname}."
-#~ msgstr ""
-#~ "無法刪除 {selflabel} 因為分割區 {partnum} 為 {cdtype} {cdname} 的一部分。"
+#~ msgstr "無法刪除 {selflabel} 因為分割區 {partnum} 為 {cdtype} {cdname} 的一部分。"
 
 #, python-brace-format
 #~ msgid "Cannot edit {selflabel} because it has partitions."
@@ -2880,8 +2870,7 @@ msgstr "Zdev 設置"
 #~ msgid ""
 #~ "A Github username may only contain alphanumeric characters or single "
 #~ "hyphens, and cannot begin or end with a hyphen."
-#~ msgstr ""
-#~ "Github 使用者名稱只能由字母、數字、或連字號組成，而且頭尾不能是連字號。"
+#~ msgstr "Github 使用者名稱只能由字母、數字、或連字號組成，而且頭尾不能是連字號。"
 
 #~ msgid "Fetching info for {}"
 #~ msgstr "取得 {} 的資訊中"

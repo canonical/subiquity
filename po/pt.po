@@ -6,18 +6,17 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: subiquity\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2023-09-06 15:13-0600\n"
 "PO-Revision-Date: 2021-08-12 14:49+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: Portuguese <pt@li.org>\n"
-"Language: pt\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2023-09-07 07:08+0000\n"
+"X-Generator: Launchpad (build cc7f0d837bf2751562eea8708e7cc6eb3f33ceab)\n"
 
 #: ../subiquity/client/client.py:58
 msgid ""
@@ -71,6 +70,7 @@ msgstr "Chaves importante falharam:"
 #: ../subiquity/client/controllers/ssh.py:85
 msgid "ssh-keygen failed to show fingerprint of downloaded keys:"
 msgstr ""
+"ssh-keygen falhou ao mostrar a impressão digital das chaves descarregadas:"
 
 #: ../subiquity/common/filesystem/actions.py:162
 #, python-brace-format
@@ -107,7 +107,8 @@ msgstr ""
 #: ../subiquity/common/filesystem/actions.py:250
 #, python-brace-format
 msgid "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
-msgstr "Não consegue remover {selflabel} de pre-existente {cdtype} {cdlabel}."
+msgstr ""
+"Não consegue remover {selflabel} de pre-existente {cdtype} {cdlabel}."
 
 #: ../subiquity/common/filesystem/actions.py:262
 #, python-brace-format
@@ -127,7 +128,8 @@ msgstr "Remover {selflabel} deixaria o {cdtype} {cdlabel} sem dispositivos."
 #: ../subiquity/common/filesystem/actions.py:291
 #, python-brace-format
 msgid "Cannot delete {selflabel} as it is part of the {cdtype} {cdname}."
-msgstr "Não pode eliminar {selflabel} visto que é parte de {cdtype} {cdname}."
+msgstr ""
+"Não pode eliminar {selflabel} visto que é parte de {cdtype} {cdname}."
 
 #: ../subiquity/common/filesystem/actions.py:303
 msgid ""
@@ -148,7 +150,8 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:331
 #, python-brace-format
-msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgid ""
+"Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:335
@@ -330,11 +333,11 @@ msgstr ""
 
 #: ../subiquity/common/types.py:39
 msgid "Block device probe failure"
-msgstr ""
+msgstr "Falha na sonda do dispositivo de bloqueio"
 
 #: ../subiquity/common/types.py:40
 msgid "Disk probe failure"
-msgstr ""
+msgstr "Falha na sonda de disco"
 
 #: ../subiquity/common/types.py:41
 msgid "Install failure"
@@ -593,7 +596,7 @@ msgstr "VLAN {id} em interfaçe {link}"
 #: ../subiquitycore/ui/views/network.py:114
 #, python-brace-format
 msgid "bond master for {interfaces}"
-msgstr ""
+msgstr "bond master para {interfaces}"
 
 #: ../subiquitycore/ui/views/network.py:139
 #, python-brace-format
@@ -608,7 +611,7 @@ msgstr "não conectado"
 #: ../subiquitycore/ui/views/network.py:146
 #, python-brace-format
 msgid "enslaved to {device}"
-msgstr ""
+msgstr "escravizado a {device}"
 
 #: ../subiquitycore/ui/views/network.py:171
 msgid "timed out"
@@ -681,12 +684,12 @@ msgstr "A aplicar as alterações"
 #. for translators: this is a description of a RAID level
 #: ../subiquity/models/filesystem.py:281
 msgid "0 (striped)"
-msgstr ""
+msgstr "0 (listrado)"
 
 #. for translators: this is a description of a RAID level
 #: ../subiquity/models/filesystem.py:283
 msgid "1 (mirrored)"
-msgstr ""
+msgstr "1 (espelhado)"
 
 #: ../subiquity/models/filesystem.py:284
 msgid "5"
@@ -1290,8 +1293,8 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, "
-"0-9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
+"9, +, _, . and -"
 msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:72
@@ -1955,10 +1958,9 @@ msgstr ""
 "O nome de utlizador \"{username}\" está reservado para o uso do sistema."
 
 #: ../subiquity/ui/views/identity.py:167
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "The username \"{username}\" is already in use."
 msgstr ""
-"O nome de utlizador \"{username}\" está reservado para o uso do sistema."
 
 #: ../subiquity/ui/views/identity.py:173
 msgid "Password must be set"
@@ -1983,9 +1985,8 @@ msgstr ""
 "passe continua a ser necessária para o sudo."
 
 #: ../subiquity/ui/views/identity.py:212
-#, fuzzy
 msgid "Passwords"
-msgstr "palavras-passes"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:44
 msgid "Install progress"
@@ -2320,8 +2321,8 @@ msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of \"http://"
-"[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of "
+"\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
 
 #: ../subiquity/ui/views/proxy.py:41
@@ -2512,7 +2513,8 @@ msgid "Enter your GitHub username."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:50
-msgid "A GitHub username may only contain alphanumeric characters or hyphens."
+msgid ""
+"A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:54
@@ -2713,8 +2715,7 @@ msgstr ""
 
 #, python-brace-format
 #~ msgid "Cannot delete {selflabel} because it has {count} mounted partitions."
-#~ msgstr ""
-#~ "Não pode eliminar {selflabel} porque tem {count} partições montadas."
+#~ msgstr "Não pode eliminar {selflabel} porque tem {count} partições montadas."
 
 #, python-brace-format
 #~ msgid "Cannot delete {selflabel} because it has 1 mounted partition."
@@ -2745,6 +2746,9 @@ msgstr ""
 
 #~ msgid "Server name too long, must be < "
 #~ msgstr "Nome do servidor demasiado cumprido, tem de ser < "
+
+#~ msgid "passwords"
+#~ msgstr "palavras-passes"
 
 #~ msgid "Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
@@ -2779,3 +2783,7 @@ msgstr ""
 
 #~ msgid "Format and/or mount {}"
 #~ msgstr "Formatar e/ou montar {}"
+
+#, python-brace-format
+#~ msgid "software RAID {level}"
+#~ msgstr "RAID {level} via software"

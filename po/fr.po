@@ -11,13 +11,13 @@ msgstr ""
 "PO-Revision-Date: 2022-04-12 13:56+0000\n"
 "Last-Translator: Jean-Marc <Unknown>\n"
 "Language-Team: French <fr@li.org>\n"
-"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Launchpad-Export-Date: 2022-04-13 21:32+0000\n"
-"X-Generator: Launchpad (build 560baff2f814495c0c140fb3d6c66875f2312c96)\n"
+"X-Launchpad-Export-Date: 2023-09-07 07:07+0000\n"
+"X-Generator: Launchpad (build cc7f0d837bf2751562eea8708e7cc6eb3f33ceab)\n"
+"Language: fr\n"
 
 #: ../subiquity/client/client.py:58
 msgid ""
@@ -132,7 +132,8 @@ msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:331
 #, python-brace-format
-msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgid ""
+"Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
 
 #: ../subiquity/common/filesystem/actions.py:335
@@ -1273,9 +1274,8 @@ msgid "Guided storage configuration"
 msgstr "Configuration de stockage guidée"
 
 #: ../subiquity/ui/views/filesystem/guided.py:342
-#, fuzzy
 msgid "Choose a disk to install to:"
-msgstr "Choisir le disque où installer:"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:357
 msgid "Cannot install core boot classic system"
@@ -1294,14 +1294,13 @@ msgstr "Aide sur la configuration de stockage guidée"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, "
-"0-9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
+"9, +, _, . and -"
 msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:72
-#, fuzzy
 msgid "Passphrases"
-msgstr "Phrase de passe :"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:77
 #: ../subiquity/ui/views/filesystem/raid.py:85
@@ -1415,7 +1414,8 @@ msgstr "Le nom d'un volume logique ne peut pas être vide"
 
 #: ../subiquity/ui/views/filesystem/partition.py:249
 msgid "The name of a logical volume cannot start with a hyphen"
-msgstr "Le nom d'un volume logique ne peut pas commencer par un trait d'union"
+msgstr ""
+"Le nom d'un volume logique ne peut pas commencer par un trait d'union"
 
 #: ../subiquity/ui/views/filesystem/partition.py:251
 #, python-brace-format
@@ -1589,7 +1589,8 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/raid.py:66
 msgid "Whitespace is not permitted in the name of a RAID device"
-msgstr "Les espaces ne sont pas autorisées dans le nom d'un périphérique RAID"
+msgstr ""
+"Les espaces ne sont pas autorisées dans le nom d'un périphérique RAID"
 
 #: ../subiquity/ui/views/filesystem/raid.py:84
 msgid "RAID Level:"
@@ -1917,12 +1918,13 @@ msgstr ""
 #: ../subiquity/ui/views/identity.py:163
 #, python-brace-format
 msgid "The username \"{username}\" is reserved for use by the system."
-msgstr "Le nom d'utilisateur « {username} » est réservé à l'usage du système."
+msgstr ""
+"Le nom d'utilisateur « {username} » est réservé à l'usage du système."
 
 #: ../subiquity/ui/views/identity.py:167
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "The username \"{username}\" is already in use."
-msgstr "Le nom d'utilisateur « {username} » est réservé à l'usage du système."
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:173
 msgid "Password must be set"
@@ -1944,9 +1946,8 @@ msgid ""
 msgstr ""
 
 #: ../subiquity/ui/views/identity.py:212
-#, fuzzy
 msgid "Passwords"
-msgstr "mots de passe"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:44
 msgid "Install progress"
@@ -1978,9 +1979,8 @@ msgid "Installing system"
 msgstr "Installation du système"
 
 #: ../subiquity/ui/views/installprogress.py:137
-#, fuzzy
 msgid "Starting installer"
-msgstr "Redémarrer le programme d'installation"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:140
 msgid "Waiting on cloud-init"
@@ -2300,17 +2300,16 @@ msgid "If you use an alternative mirror for Ubuntu, enter its details here."
 msgstr ""
 
 #: ../subiquity/ui/views/mirror.py:125
-#, fuzzy
 msgid "Try again now"
-msgstr "Réessayer"
+msgstr ""
 
 #: ../subiquity/ui/views/proxy.py:31
 msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of \"http://"
-"[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of "
+"\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
 "Si vous avez besoin d'utiliser un proxy HTTP pour accéder à l'extérieur, "
 "entrez les informations du proxy ici. Autrement, laissez vide.\n"
@@ -2508,7 +2507,8 @@ msgid "Enter your GitHub username."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:50
-msgid "A GitHub username may only contain alphanumeric characters or hyphens."
+msgid ""
+"A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:54
@@ -2658,48 +2658,6 @@ msgstr "Désactiver"
 msgid "Zdev setup"
 msgstr ""
 
-#~ msgctxt "DeviceAction"
-#~ msgid "Info"
-#~ msgstr "Informations"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Edit"
-#~ msgstr "Modifier"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Reformat"
-#~ msgstr "Reformater"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Add Partition"
-#~ msgstr "Ajouter une partition"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Format"
-#~ msgstr "Formater"
-
-#~ msgctxt "DeviceAction"
-#~ msgid "Delete"
-#~ msgstr "Supprimer"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Info"
-#~ msgstr "Informations"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Edit Wifi"
-#~ msgstr "Modifier le Wifi"
-
-#~ msgctxt "NetDevAction"
-#~ msgid "Delete"
-#~ msgstr "Supprimer"
-
-#~ msgid "passphrases"
-#~ msgstr "phrases de passe"
-
-#~ msgid "Cancel update"
-#~ msgstr "Annuler la mise à jour"
-
 #~ msgid "Filesystem setup"
 #~ msgstr "Configuration du système de fichiers"
 
@@ -2732,6 +2690,9 @@ msgstr ""
 #~ "Selectionnez une interface à configurer ou sélectionnez Terminé pour "
 #~ "continuer."
 
+#~ msgid "Choose the disk to install to:"
+#~ msgstr "Choisir le disque où installer:"
+
 #~ msgid "Realname too long, must be < "
 #~ msgstr "Le nom réel est trop long, doit être moins de   caractères "
 
@@ -2751,13 +2712,12 @@ msgstr ""
 
 #~ msgid "Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
-#~ "Le nom d'utilisateur doit correspondre à NAME_REGEX, c'est-à-dire [a-z_]"
-#~ "[a-z0-9_-]*"
+#~ "Le nom d'utilisateur doit correspondre à NAME_REGEX, c'est-à-dire [a-z_][a-"
+#~ "z0-9_-]*"
 
 #~ msgid "Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
-#~ "Le nom d'hôte doit correspondre à NAME_REGEX, c'est-à-dire [a-z_] [a-"
-#~ "z0-9_-]*"
+#~ "Le nom d'hôte doit correspondre à NAME_REGEX, c'est-à-dire [a-z_] [a-z0-9_-]*"
 
 #, python-format
 #~ msgid "This field must be a %s URL."
@@ -2778,8 +2738,8 @@ msgstr ""
 #~ "hyphens, and cannot begin or end with a hyphen."
 #~ msgstr ""
 #~ "Un nom d'utilisateur Github ne peut contenir que des caractères "
-#~ "alphanumériques ou des traits d'union simples et ne peut pas commencer ou "
-#~ "se terminer par un trait d'union."
+#~ "alphanumériques ou des traits d'union simples et ne peut pas commencer ou se "
+#~ "terminer par un trait d'union."
 
 #~ msgid "Keyboard auto detection failed, sorry"
 #~ msgstr "La détection automatique du clavier a échoué, désolé"
@@ -2810,17 +2770,16 @@ msgstr ""
 #~ msgstr "Sortir Du Shell"
 
 #~ msgid ""
-#~ "Selecting Continue below will begin the installation process and result "
-#~ "in the loss of data on the disks selected to be formatted.\n"
+#~ "Selecting Continue below will begin the installation process and result in "
+#~ "the loss of data on the disks selected to be formatted.\n"
 #~ "\n"
 #~ "You will not be able to return to this or a previous screen once the "
 #~ "installation has started.\n"
 #~ "\n"
 #~ "Are you sure you want to continue?"
 #~ msgstr ""
-#~ "Sélectionner Continuer ci-dessous va commencer le processus "
-#~ "d'installation dont va résulter une perte des données sur le disque "
-#~ "formaté.\n"
+#~ "Sélectionner Continuer ci-dessous va commencer le processus d'installation "
+#~ "dont va résulter une perte des données sur le disque formaté.\n"
 #~ "\n"
 #~ "Vous ne pourrez pas revenir ici ou à un écran précédent le lancement de "
 #~ "l'installation.\n"
@@ -2842,10 +2801,35 @@ msgstr ""
 #~ "GRUB sera installé sur le MBR du disque cible.\n"
 #~ "\n"
 #~ "Cependant, sur un disque avec une table de partition GPT, il n'y a pas "
-#~ "suffisamment d'espace après le MBR de GRUB pour stocker cette seconde "
-#~ "couche core.img, donc une petite partition non-formatée est nécessaire au "
-#~ "démarrage du disque. Elle ne contiendra pas de système de fichier et ne "
-#~ "sera pas montée, et ne peut pas être éditée ici."
+#~ "suffisamment d'espace après le MBR de GRUB pour stocker cette seconde couche "
+#~ "core.img, donc une petite partition non-formatée est nécessaire au démarrage "
+#~ "du disque. Elle ne contiendra pas de système de fichier et ne sera pas "
+#~ "montée, et ne peut pas être éditée ici."
 
 #~ msgid "Network interface {} WIFI configuration"
 #~ msgstr "Interface réseau {} configuration WIFI"
+
+#~ msgid "passwords"
+#~ msgstr "mots de passe"
+
+#~ msgid "Cancel update"
+#~ msgstr "Annuler la mise à jour"
+
+#~ msgid "Info"
+#~ msgstr "Informations"
+
+#~ msgid "Edit Wifi"
+#~ msgstr "Modifier le Wifi"
+
+#, python-format
+#~ msgid "%s already exists"
+#~ msgstr "%s existe déjà"
+
+#~ msgid "Add Partition"
+#~ msgstr "Ajouter une partition"
+
+#~ msgid "Format"
+#~ msgstr "Formater"
+
+#~ msgid "Reboot"
+#~ msgstr "Redémarrer"
