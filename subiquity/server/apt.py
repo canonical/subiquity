@@ -259,6 +259,7 @@ class AptConfigurer:
         write_file(
             self.install_tree.p("etc/apt/sources.list"),
             f"deb [check-date=no] file:///cdrom {codename} main restricted\n",
+            mode=0o644,
         )
 
         await run_curtin_command(
