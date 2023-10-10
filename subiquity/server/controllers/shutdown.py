@@ -114,8 +114,8 @@ class ShutdownController(SubiquityController):
             await self.app.command_runner.run(
                 ["cp", "-aT", "/var/log/installer", target_logs]
             )
-            # Close the permissions from group writes on the target.
-            set_log_perms(target_logs, group_write=False)
+            # explicitly setting the expected permissions on this dir
+            set_log_perms(target_logs, mode=0o770, group="adm")
 
         journal_txt = os.path.join(target_logs, "installer-journal.txt")
         try:
