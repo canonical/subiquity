@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import json
 import logging
 import os
 import pwd
@@ -178,18 +177,20 @@ class IdentityController(TuiController):
             login_details_path = self.opts.output_base + "/login-details.txt"
         else:
             self.app.urwid_loop.draw_screen()
-            cp = run_command(["snap", "create-user", "--sudoer", "--json", email])
-            if cp.returncode != 0:
+            con = SnapdConnection("", "/run/snapd.socket")
+            user_action = {"action": "create", "email": email, "sudoer": True}
+            res = con.post("v2/users", body=user_action)
+            if res.json()["status"] != "OK":
                 if isinstance(self.ui.body, IdentityView):
                     self.ui.body.snap_create_user_failed(
-                        "Creating user failed:", cp.stderr
+                        "Creating user failed:", res.json()["result"]["message"]
                     )
                 return
             else:
-                data = json.loads(cp.stdout)
+                username = res.json()["result"][0]["username"]
                 result = {
                     "realname": email,
-                    "username": data["username"],
+                    "username": username,
                 }
                 login_details_path = self.app.state_path("login-details.txt")
                 self.model.add_user(result)
