@@ -1,11 +1,11 @@
 - default: true
   description:
-    en: A full featured Ubuntu Desktop.
-  id: ubuntu-desktop
+    en: A minimal but usable Ubuntu Desktop.
+  id: ubuntu-desktop-minimal
   locale_support: langpack
   name:
-    en: Ubuntu Desktop
-  path: standard.squashfs
+    en: Ubuntu Desktop (minimized)
+  path: minimal.squashfs
   preinstalled_langs:
   - de
   - en
@@ -16,14 +16,42 @@
   - ru
   - zh
   - ''
-  size: 4033826816
+  size: 4015337472
+  type: fsimage-layered
+  variant: desktop
+  variations:
+    minimal:
+      path: minimal.squashfs
+      size: 4015337472
+    minimal-enhanced-secureboot:
+      path: minimal.enhanced-secureboot.squashfs
+      size: 4319010816
+      snapd_system_label: enhanced-secureboot-desktop
+- description:
+    en: A full featured Ubuntu Desktop.
+  id: ubuntu-desktop
+  locale_support: langpack
+  name:
+    en: Ubuntu Desktop
+  path: minimal.standard.squashfs
+  preinstalled_langs:
+  - de
+  - en
+  - es
+  - fr
+  - it
+  - pt
+  - ru
+  - zh
+  - ''
+  size: 5735194624
   type: fsimage-layered
   variant: desktop
   variations:
     enhanced-secureboot:
-      path: standard.enhanced-secureboot.squashfs
-      size: 4336062464
+      path: minimal.standard.enhanced-secureboot.squashfs
+      size: 6006235136
       snapd_system_label: enhanced-secureboot-desktop
     standard:
-      path: standard.squashfs
-      size: 4033826816
+      path: minimal.standard.squashfs
+      size: 5735194624

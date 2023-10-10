@@ -1,4 +1,4 @@
-#source-catalog: examples/sources/desktop.yaml
+#source-catalog: examples/sources/desktop-standard.yaml
 Source:
   source: ubuntu-desktop
 Welcome:
