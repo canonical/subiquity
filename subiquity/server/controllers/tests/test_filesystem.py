@@ -369,6 +369,36 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             await self.fsc._pre_shutdown()
         mock_run.assert_called_once_with(["mountpoint", "/target"])
 
+    async def test_examine_systems(self):
+        # In LP: #2037723 and other similar reports, the user selects the
+        # source 'ubuntu-desktop-minimal' first and then switches to
+        # 'ubuntu-desktop'. The variations of those two sources are different.
+        # Upon switching to the new source, we forgot to discard the old
+        # variations. This lead to a crash further in the install.
+        self.fsc.model = model = make_model(Bootloader.UEFI)
+        make_disk(model)
+        self.app.base_model.source.current.type = "fsimage"
+        self.app.base_model.source.current.variations = {
+            "minimal": CatalogEntryVariation(path="", size=1),
+        }
+
+        self.app.dr_cfg = DRConfig()
+        self.app.dr_cfg.systems_dir_exists = True
+
+        await self.fsc._examine_systems()
+
+        self.assertEqual(len(self.fsc._variation_info), 1)
+        self.assertEqual(self.fsc._variation_info["minimal"].name, "minimal")
+
+        self.app.base_model.source.current.variations = {
+            "default": CatalogEntryVariation(path="", size=1),
+        }
+
+        await self.fsc._examine_systems()
+
+        self.assertEqual(len(self.fsc._variation_info), 1)
+        self.assertEqual(self.fsc._variation_info["default"].name, "default")
+
 
 class TestGuided(IsolatedAsyncioTestCase):
     boot_expectations = [
