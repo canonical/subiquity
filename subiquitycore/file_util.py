@@ -30,6 +30,8 @@ log = logging.getLogger("subiquitycore.file_util")
 
 
 def set_log_perms(target, *, group_write=False, mode=None, group=_DEF_GROUP):
+    if os.getenv("SNAP_CONFINEMENT", "classic") == "strict":
+        return
     if os.getuid() != 0:
         log.warning(
             "set_log_perms: running as non-root - not adjusting"
