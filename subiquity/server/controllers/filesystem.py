@@ -404,6 +404,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return info
 
     async def _examine_systems(self):
+        self._variation_info.clear()
         catalog_entry = self.app.base_model.source.current
         for name, variation in catalog_entry.variations.items():
             system = None
