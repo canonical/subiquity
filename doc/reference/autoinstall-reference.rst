@@ -975,7 +975,7 @@ Report to rsyslog:
    reporting:
      central:
        type: rsyslog
-       destination: @192.168.0.1
+       destination: "@192.168.0.1"
 
 
 Suppress the default output:

@@ -109,7 +109,7 @@ path is relative to the rootfs of the installation system. For example:
 
 
 Order precedence of the autoinstall locations
-======================================
+=============================================
 
 Since there are many ways to specify the autoinstall file, it may happen that
 multiple locations are specified at once. Subiquity will look for the
