@@ -83,7 +83,7 @@ constructive feedback.
    development/index
 
 .. Links:
-.. _Code of Conduct: https://ubuntu.com/community/code-of-conduct
+.. _Code of Conduct: https://ubuntu.com/community/ethos/code-of-conduct
 .. _Ubuntu Foundations: https://discourse.ubuntu.com/c/foundations/
 .. _Libera.Chat: https://libera.chat/
 .. _CONTRIBUTING.md: https://github.com/canonical/subiquity/blob/main/CONTRIBUTING.md

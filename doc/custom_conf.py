@@ -122,6 +122,7 @@ custom_linkcheck_anchors_ignore_for_url = [
 # Add extensions
 custom_extensions = [
     'sphinx.ext.intersphinx',
+    'sphinx.ext.extlinks'
 ]
 
 # Add files or directories that should be excluded from processing.
@@ -172,3 +173,7 @@ root_doc = 'index'
 # can be copied even if they don't contain an EOF line.
 copybutton_prompt_text = '$ '
 copybutton_only_copy_prompt_lines = False
+
+extlinks = {
+    'manualpage': ( 'https://manpages.ubuntu.com/manpages/lunar/en/%s', '' )
+}

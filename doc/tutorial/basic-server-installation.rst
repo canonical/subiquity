@@ -65,7 +65,7 @@ Create a bootable USB
 
 There are many ways to boot the installer but the simplest and most common way
 is to
-`create a bootable USB stick <https://ubuntu.com/tutorials/tutorial-create-a-usb-stick-on-ubuntu>`_
+`create a bootable USB stick <https://ubuntu.com/tutorials/create-a-usb-stick-on-ubuntu>`_
 to boot the system to be installed with
 (`tutorials for other operating systems <https://ubuntu.com/search?q=%22create+a+bootable+USB+stick%22>`_
 are also available). 
