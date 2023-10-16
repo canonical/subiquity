@@ -394,11 +394,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 info.capability_info.allowed = [GuidedCapability.CORE_BOOT_ENCRYPTED]
             elif se.storage_safety == StorageSafety.PREFER_ENCRYPTED:
                 info.capability_info.allowed = [
-                    GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED
+                    GuidedCapability.CORE_BOOT_ENCRYPTED,
+                    GuidedCapability.CORE_BOOT_UNENCRYPTED,
                 ]
             elif se.storage_safety == StorageSafety.PREFER_UNENCRYPTED:
                 info.capability_info.allowed = [
-                    GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED
+                    GuidedCapability.CORE_BOOT_UNENCRYPTED,
+                    GuidedCapability.CORE_BOOT_ENCRYPTED,
                 ]
 
         return info
@@ -651,26 +653,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     def set_info_for_capability(self, capability: GuidedCapability):
         """Given a request for a capability, select the variation to use."""
-        if capability == GuidedCapability.CORE_BOOT_ENCRYPTED:
-            # If the request is for encryption, a variation with any
-            # of these capabilities is OK:
-            caps = {
-                GuidedCapability.CORE_BOOT_ENCRYPTED,
-                GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
-                GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
-            }
-        elif capability == GuidedCapability.CORE_BOOT_UNENCRYPTED:
-            # Similar if the request is for uncrypted
-            caps = {
-                GuidedCapability.CORE_BOOT_UNENCRYPTED,
-                GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
-                GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
-            }
-        else:
-            # Otherwise, just look for what we were asked for.
-            caps = {capability}
         for info in self._variation_info.values():
-            if caps & set(info.capability_info.allowed):
+            if capability in info.capability_info.allowed:
                 self._info = info
                 return
         raise Exception("could not find variation for {}".format(capability))
@@ -1313,12 +1297,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if name == "hybrid":
             # this check is conceptually unnecessary but results in a
             # much cleaner error message...
-            core_boot_caps = set()
+            core_boot_caps = []
             for variation in self._variation_info.values():
                 if not variation.is_valid():
                     continue
                 if variation.is_core_boot_classic():
-                    core_boot_caps.update(variation.capability_info.allowed)
+                    core_boot_caps.extend(variation.capability_info.allowed)
             if not core_boot_caps:
                 raise Exception(
                     "can only use name: hybrid when installing core boot classic"
@@ -1328,18 +1312,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             encrypted = layout.get("encrypted", None)
             GC = GuidedCapability
             if encrypted is None:
-                if (
-                    GC.CORE_BOOT_ENCRYPTED in core_boot_caps
-                    or GC.CORE_BOOT_PREFER_ENCRYPTED in core_boot_caps
-                ):
-                    capability = GC.CORE_BOOT_ENCRYPTED
-                else:
-                    capability = GC.CORE_BOOT_UNENCRYPTED
+                capability = core_boot_caps[0]
             elif encrypted:
                 capability = GC.CORE_BOOT_ENCRYPTED
             else:
                 if (
-                    core_boot_caps == {GuidedCapability.CORE_BOOT_ENCRYPTED}
+                    core_boot_caps == [GuidedCapability.CORE_BOOT_ENCRYPTED]
                     and not encrypted
                 ):
                     raise Exception("cannot install this model unencrypted")

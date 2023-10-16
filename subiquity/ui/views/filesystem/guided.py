@@ -134,16 +134,11 @@ class TPMChoice:
     help: str
 
 
-tpm_help_texts = {
-    "AVAILABLE_CAN_BE_DESELECTED": _(
-        "The entire disk will be encrypted and protected by the "
-        "TPM. If this option is deselected, the disk will be "
-        "unencrypted and without any protection."
-    ),
-    "AVAILABLE_CANNOT_BE_DESELECTED": _(
+tpm_help_texts_1 = {
+    GuidedCapability.CORE_BOOT_ENCRYPTED: _(
         "The entire disk will be encrypted and protected by the TPM."
     ),
-    "UNAVAILABLE":
+    GuidedCapability.CORE_BOOT_UNENCRYPTED:
     # for translators: 'reason' is the reason FDE is unavailable.
     _(
         "TPM backed full-disk encryption is not available "
@@ -151,22 +146,11 @@ tpm_help_texts = {
     ),
 }
 
-choices = {
-    GuidedCapability.CORE_BOOT_ENCRYPTED: TPMChoice(
-        enabled=False,
-        default=True,
-        help=tpm_help_texts["AVAILABLE_CANNOT_BE_DESELECTED"],
-    ),
-    GuidedCapability.CORE_BOOT_UNENCRYPTED: TPMChoice(
-        enabled=False, default=False, help=tpm_help_texts["UNAVAILABLE"]
-    ),
-    GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED: TPMChoice(
-        enabled=True, default=True, help=tpm_help_texts["AVAILABLE_CAN_BE_DESELECTED"]
-    ),
-    GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED: TPMChoice(
-        enabled=True, default=False, help=tpm_help_texts["AVAILABLE_CAN_BE_DESELECTED"]
-    ),
-}
+tpm_help_texts_can_be_deselected = _(
+    "The entire disk will be encrypted and protected by the "
+    "TPM. If this option is deselected, the disk will be "
+    "unencrypted and without any protection."
+)
 
 
 class GuidedChoiceForm(SubForm):
@@ -223,16 +207,28 @@ class GuidedChoiceForm(SubForm):
         self.use_lvm.enabled = GuidedCapability.LVM in val.allowed
         core_boot_caps = [c for c in val.allowed if c.is_core_boot()]
         if core_boot_caps:
-            assert len(val.allowed) == 1
-            cap = core_boot_caps[0]
+            assert len(val.allowed) == len(core_boot_caps)
+
             reason = ""
             for disallowed in val.disallowed:
                 if disallowed.capability == GuidedCapability.CORE_BOOT_ENCRYPTED:
                     reason = disallowed.message
-            self.tpm_choice = choices[cap]
+
+            cap0 = core_boot_caps[0]
+            if len(core_boot_caps) == 1:
+                self.tpm_choice = TPMChoice(
+                    enabled=False,
+                    default=cap0 == GuidedCapability.CORE_BOOT_ENCRYPTED,
+                    help=tpm_help_texts_1[cap0],
+                )
+            else:
+                self.tpm_choice = TPMChoice(
+                    enabled=True,
+                    default=cap0 == GuidedCapability.CORE_BOOT_ENCRYPTED,
+                    help=tpm_help_texts_can_be_deselected,
+                )
             self.use_tpm.enabled = self.tpm_choice.enabled
             self.use_tpm.value = self.tpm_choice.default
-            self.use_tpm.help = self.tpm_choice.help
             self.use_tpm.help = self.tpm_choice.help.format(reason=reason)
         else:
             self.use_tpm.enabled = False

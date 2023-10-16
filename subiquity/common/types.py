@@ -350,13 +350,12 @@ class GuidedCapability(enum.Enum):
 
     CORE_BOOT_ENCRYPTED = enum.auto()
     CORE_BOOT_UNENCRYPTED = enum.auto()
-    # These two are not valid as GuidedChoiceV2.capability:
-    CORE_BOOT_PREFER_ENCRYPTED = enum.auto()
-    CORE_BOOT_PREFER_UNENCRYPTED = enum.auto()
 
     DD = enum.auto()
 
     def __lt__(self, other) -> bool:
+        if self.is_core_boot() and other.is_core_boot():
+            return False
         return self.value < other.value
 
     def is_lvm(self) -> bool:
@@ -366,8 +365,6 @@ class GuidedCapability(enum.Enum):
         return self in [
             GuidedCapability.CORE_BOOT_ENCRYPTED,
             GuidedCapability.CORE_BOOT_UNENCRYPTED,
-            GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
-            GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
         ]
 
     def supports_manual_customization(self) -> bool:
