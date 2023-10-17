@@ -63,14 +63,13 @@ Project and community
 =====================
 
 Subiquity is a member of the Ubuntu family. It's an open source project that
-warmly welcomes community projects, contributions, suggestions, fixes, and
+warmly welcomes community projects, contributions, suggestions, fixes and
 constructive feedback.
 
-* Read our `Code of Conduct`_
-* IRC?
-* Discourse?
-* Contribute?
-* Roadmap?
+* Read our `Code of Conduct`_.
+* IRC: `Libera.Chat`_, the *#ubuntu-server* channel.
+* Discourse: `Ubuntu Foundations`_.
+* Contribute: See `CONTRIBUTING.md`_ on GitHub.
 
 .. toctree::
    :hidden:
@@ -85,3 +84,6 @@ constructive feedback.
 
 .. Links:
 .. _Code of Conduct: https://ubuntu.com/community/code-of-conduct
+.. _Ubuntu Foundations: https://discourse.ubuntu.com/c/foundations/
+.. _Libera.Chat: https://libera.chat/
+.. _CONTRIBUTING.md: https://github.com/canonical/subiquity/blob/main/CONTRIBUTING.md
