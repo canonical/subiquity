@@ -163,7 +163,7 @@ Identifier of the source to install (e.g., `"ubuntu-server-minimal"`).
 **default:** DHCP on interfaces named eth\* or en\*
 **can be interactive:** yes
 
-[Netplan-formatted](https://netplan.io/reference) network configuration. This will be applied during installation as well as in the installed system. The default is to interpret the config for the install media, which runs DHCPv4 on any interface with a name matching "eth\*" or "en\*" but then disables any interface that does not receive an address.
+[Netplan-formatted](https://netplan.readthedocs.io/en/stable/netplan-yaml/) network configuration. This will be applied during installation as well as in the installed system. The default is to interpret the config for the install media, which runs DHCPv4 on any interface with a name matching "eth\*" or "en\*" but then disables any interface that does not receive an address.
 
 For example, to run DHCPv6 on a particular NIC:
 
@@ -335,7 +335,7 @@ storage:
 
 The default is to use the `lvm` layout.
 
-#### Sizing-policy
+#### sizing-policy
 
 The lvm layout will, by default, attempt to leave room for snapshots and further expansion.  A sizing-policy key may be supplied to control this behavior.
 

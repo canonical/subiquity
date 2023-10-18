@@ -1,63 +1,63 @@
-# Automated Server Installs
-
 ## Introduction
 
-Since version 20.04, the server installer supports the automated installation mode, autoinstallation for short. You might also know this feature as unattended or handsoff or preseeded installation.
+Since version 20.04, the server installer supports automated installation mode (autoinstallation for short). You might also know this feature as *unattended*, *hands-off*, or *preseeded* installation.
 
-Autoinstallation lets you answer all those configuration questions ahead of time with an *autoinstall config* and lets the installation process run without any interaction.
+Autoinstallation lets you answer all those configuration questions ahead of time with an *autoinstall config*, and lets the installation process run without any interaction.
 
 ## Differences from debian-installer preseeding
 
-*preseeds* are the way to automate an installer based on debian-installer (aka d-i).
+*Preseeds* are the way to automate an installer based on debian-installer (a.k.a. *d-i*).
 
-autoinstalls for the new server installer differ from preseeds in the following main ways:
+Autoinstalls for the new server installer differ from preseeds in the following main ways:
 
- * the format is completely different (cloud-init config, usually yaml, vs debconf-set-selections format)
- * when the answer to a question is not present in a preseed, d-i   stops and asks the user for input. autoinstalls are not like this:   by default, if there is any autoinstall config at all, the   installer takes the default for any unanswered question (and fails if there is no default).
-    * You can designate particular sections in   the config as "interactive", which means the installer will still stop and ask about those.
+ * The format is completely different (cloud-init config, usually YAML, vs. `debconf-set-selections` format).
+ * When the answer to a question is not present in a preseed, d-i stops and asks the user for input. Autoinstalls are not like this: by default, if there is any autoinstall config at all, the installer takes the default for any unanswered question (and fails if there is no default).
+    * You can designate particular sections in the config as "interactive", which means the installer will still stop and ask about those.
 
-## Providing the autoinstall config
+## Provide the autoinstall config via cloud-init
 
-The autoinstall config is provided via cloud-init configuration, which is almost endlessly flexible. In most scenarios the easiest way will be to provide user-data via the [nocloud](https://cloudinit.readthedocs.io/en/latest/topics/datasources/nocloud.html) data source.
+The autoinstall config is provided via cloud-init configuration, which is almost endlessly flexible. In most scenarios, the easiest way will be to provide user data [via the NoCloud datasource](https://cloudinit.readthedocs.io/en/latest/reference/datasources/nocloud.html).
 
 The autoinstall config should be provided under the `autoinstall` key in the config. For example:
 
-    #cloud-config
-    autoinstall:
-      version: 1
-      ...
+```yaml
+#cloud-config
+autoinstall:
+  version: 1
+  ...
+```
 
-## Running a truly automatic autoinstall
+## Run a truly automatic autoinstall
 
-Even if a fully noninteractive autoinstall config is found, the server installer will ask for confirmation before writing to the disks unless `autoinstall` is present on the kernel command line. This is to make it harder to accidentally create a USB stick that will reformat a machine it is plugged into at boot. Many autoinstalls will be done via netboot, where the kernel command line is controlled by the netboot config -- just remember to put `autoinstall` in there!
+Even if a fully non-interactive autoinstall config is found, the server installer will ask for confirmation before writing to the disks unless `autoinstall` is present on the kernel command line. This is to make it harder to accidentally create a USB stick that will reformat the machine it is plugged into at boot. Many autoinstalls will be done via netboot, where the kernel command line is controlled by the netboot config -- just remember to put `autoinstall` in there!
 
-## Quick start
+### Quick start
 
 So you just want to try it out? Well we have [the page for you](autoinstall-quickstart.md).
 
-## Creating an autoinstall config
+### Create an autoinstall config
 
 When any system is installed using the server installer, an autoinstall file for repeating the install is created  at `/var/log/installer/autoinstall-user-data`.
 
-# Translating a preseed file
+### Translate a preseed file
 
-If you have a preseed file already, the [autoinstall-generator](https://snapcraft.io/autoinstall-generator) snap can assist in translating that preseed data to an autoinstall file.  See this [discussion](https://discourse.ubuntu.com/t/autoinstall-generator-tool-to-help-with-creation-of-autoinstall-files-based-on-preseed/21334) for more details.
+If you have a preseed file already, the [autoinstall-generator snap](https://snapcraft.io/autoinstall-generator) can help translate that preseed data to an autoinstall file. See this discussion on the [autoinstall generator tool](https://discourse.ubuntu.com/t/autoinstall-generator-tool-to-help-with-creation-of-autoinstall-files-based-on-preseed/21334) for more details on how to set this up.
 
-# The structure of an autoinstall config
+## The structure of an autoinstall config
 
 The autoinstall config has [full documentation](autoinstall-reference.md).
 
-Technically speaking the config is not defined as a textual format, but cloud-init config is usually provided as YAML so that is the syntax the documentation uses.
+Technically speaking, the config is not defined as a textual format, but cloud-init config is usually provided as YAML so that is the syntax the documentation uses. A minimal config consists of:
 
-A minimal config is:
+```yaml
+version: 1
+identity:
+    hostname: hostname
+    username: username
+    password: $crypted_pass
+```
 
-    version: 1
-    identity:
-        hostname: hostname
-        username: username
-        password: $crypted_pass
-
-Here is an example file that shows off most features:
+However, here is a more complete example file that shows off most features:
 
 <pre><code><a href="autoinstall-reference.md#version">version</a>: 1
 <a href="autoinstall-reference.md#reporting">reporting</a>:
@@ -127,30 +127,30 @@ Here is an example file that shows off most features:
 
 Many keys and values correspond straightforwardly to questions the installer asks (e.g. keyboard selection). See the reference for details of those that do not.
 
-# Error handling
+## Error handling
 
-Progress through the installer is reported via the [`reporting`](autoinstall-reference.md#reporting) system, including errors. In addition, when a fatal error occurs, the [`error-commands`](autoinstall-reference.md#error-commands) are executed and the traceback printed to the console. The server then just waits.
+Progress through the installer is reported via [the `reporting` system](/t/automated-server-install-reference/16613#reporting), including errors. In addition, when a fatal error occurs, the [`error-commands`](/t/automated-server-install-reference/16613#error-commands) are executed and the traceback printed to the console. The server then just waits.
 
-# Interactions between Autoinstall and Cloud-init
+## Interactions between Autoinstall and Cloud-init
 
-## Delivery of Autoinstall
+### Delivery of Autoinstall
 
-Cloud-config can be used to deliver the Autoinstall data to the installation environment. The [autoinstall quickstart](autoinstall-quickstart.md) has an [example](autoinstall-quickstart.md#write-your-autoinstall-config) demonstrating this.
+Cloud-config can be used to deliver the autoinstall data to the installation environment. The [autoinstall quickstart](/t/automated-server-install-quickstart/16614) has an example of [writing the autoinstall config](/t/automated-server-install-quickstart/16614#write-your-autoinstall-config).
 
-Note that Autoinstall is processed by Subiquity (not Cloud-init), so please direct defects in Autoinstall behavior to [Subiquity](https://bugs.launchpad.net/subiquity/+filebug).
+Note that autoinstall is processed by Subiquity (not cloud-init), so please direct defects in autoinstall behavior and [bug reports to Subiquity](https://bugs.launchpad.net/subiquity/+filebug).
 
-## The installation environment
+### The installation environment
 
-At install time, the live-server environment is just that, a live but ephemeral copy of Ubuntu Server.  This means that Cloud-init is present and running in that environment, and existing methods of interacting with Cloud-init can be used to configure the live-server ephemeral environment.  For example, any #cloud-config user-data keys are presented to the live-server containing [`ssh_import_id`](https://cloudinit.readthedocs.io/en/latest/topics/modules.html?highlight=ssh#ssh-import-id), then ssh keys will be added to the authorized_keys list for the ephemeral environment.
+At install time, the live-server environment is just that: a live but ephemeral copy of Ubuntu Server.  This means that cloud-init is present and running in that environment, and existing methods of interacting with cloud-init can be used to configure the live-server ephemeral environment. For example, any #cloud-config user data keys are presented to the live-server containing [`ssh_import_id`]( https://cloudinit.readthedocs.io/en/latest/reference/modules.html#ssh-import-id), then SSH keys will be added to the `authorized_keys` list for the ephemeral environment.
 
-## First boot configuation of the target system
+### First boot configuration of the target system
 
-Autoinstall data may optionally contain a [user-data](autoinstall-reference.md#user-data) sub-section, which is cloud-config data that is used to configure the target system on first boot.
+Autoinstall data may optionally contain a [user data sub-section](/t/automated-server-install-reference/16613#user-data), which is cloud-config data that is used to configure the target system on first boot.
 
-Subiquity itself delegates some configuration items to Cloud-init, and these items are processed on first boot.
+Subiquity itself delegates some configuration items to cloud-init, and these items are processed on first boot.
 
-Starting with Ubuntu 22.10, once Cloud-init has performed this first boot configuration, it will disable itself as cloud-init completes configuration in the target system on first boot.
+Starting with Ubuntu 22.10, once cloud-init has performed this first boot configuration, it will disable itself as cloud-init completes configuration in the target system on first boot.
 
-# Possible future directions
+### Possible future directions
 
 We might want to extend the 'match specs' for disks to cover other ways of selecting disks.

@@ -1,4 +1,3 @@
-# Autoinstall Quick Start for s390x
 
 The intent of this page is to provide simple instructions to perform an autoinstall in a VM on your machine on s390x.
 
@@ -9,18 +8,23 @@ This page is just a slightly adapted page of [the autoinstall quickstart page](a
 At the time of writing (just after the kinetic release), the best place to go is here:
 <https://cdimage.ubuntu.com/ubuntu/releases/22.10/release/>
 
-<pre><code>wget https://cdimage.ubuntu.com/ubuntu/releases/22.10/release/ubuntu-22.10-live-server-s390x.iso -P ~/Downloads</code></pre>
+```bash
+wget https://cdimage.ubuntu.com/ubuntu/releases/22.10/release/ubuntu-22.10-live-server-s390x.iso -P ~/Downloads
+```
 
 ## Mount the ISO
 
-<pre><code>mkdir -p ~/iso
-sudo mount -r ~/Downloads/ubuntu-22.10-live-server-s390x.iso ~/iso</code></pre>
+```bash
+mkdir -p ~/iso
+sudo mount -r ~/Downloads/ubuntu-22.10-live-server-s390x.iso ~/iso
+```
 
 ## Write your autoinstall config
 
-This means creating cloud-init config as follows:
+This means creating a cloud-init #cloud-config file as follows:
 
-<pre><code>mkdir -p ~/www
+```bash
+mkdir -p ~/www
 cd ~/www
 cat > user-data << 'EOF'
 #cloud-config
@@ -31,25 +35,30 @@ autoinstall:
     password: "$6$exDY1mhS4KUYCE/2$zmn9ToZwTKLhCw.b4/b.ZRTIZM30JZ4QrOQ2aOXJ8yk96xpcCof0kxKwuX1kqLG/ygbJ1f8wxED22bTL4F46P0"
     username: ubuntu
 EOF
-touch meta-data</code></pre>
+touch meta-data
+```
 
 The crypted password is just "ubuntu".
 
-## Serve the cloud-init config over http
+## Serve the cloud-init config over HTTP
 
-Leave this running in one terminal window:
+Leave this running in a new terminal window:
 
-<pre><code>cd ~/www
-python3 -m http.server 3003</code></pre>
+```bash
+cd ~/www
+python3 -m http.server 3003
+```
 
 ## Create a target disk
 
 Proceed with a second terminal window:
 
-<pre><code>sudo apt install qemu-utils
-...</code></pre>
+```bash
+sudo apt install qemu-utils
+```
 
-<pre><code>qemu-img create -f qcow2 disk-image.qcow2 10G
+```bash
+qemu-img create -f qcow2 disk-image.qcow2 10G
 Formatting 'disk-image.qcow2', fmt=qcow2 size=10737418240 cluster_size=65536 lazy_refcounts=off refcount_bits=16
 
 qemu-img info disk-image.qcow2
@@ -62,30 +71,40 @@ Format specific information:
     compat: 1.1
     lazy refcounts: false
     refcount bits: 16
-    corrupt: false</code></pre>
+    corrupt: false
+```
 
 ## Run the install!
 
-<pre><code>sudo apt install qemu-kvm
-...</code></pre>
+```bash
+sudo apt install qemu-kvm
+```
 
-You may need to add the default user to the kvm group:  <<BR>>
-`sudo usermod -a -G kvm ubuntu   # re-login to make the changes take effect`
+You may need to add the default user to the `kvm` group:
 
-<pre><code>kvm -no-reboot -name auto-inst-test -nographic -m 2048 \
+```bash
+sudo usermod -a -G kvm ubuntu
+```
+
+> **Note**:
+> You will need to re-login to make the changes take effect.
+
+```bash
+kvm -no-reboot -name auto-inst-test -nographic -m 2048 \
     -drive file=disk-image.qcow2,format=qcow2,cache=none,if=virtio \
     -cdrom ~/Downloads/ubuntu-22.10-live-server-s390x.iso \
     -kernel ~/iso/boot/kernel.ubuntu \
     -initrd ~/iso/boot/initrd.ubuntu \
-    -append 'autoinstall ds=nocloud-net;s=http://_gateway:3003/ console=ttysclp0'</code></pre>
+    -append 'autoinstall ds=nocloud-net;s=http://_gateway:3003/ console=ttysclp0'
+```
 
-This will boot, download the config from the server set up in the previous step and run the install.
-The installer reboots at the end but the -no-reboot flag to kvm means that kvm will exit when this happens.
-It should take about 5 minutes.
+This will boot, download the config from the server set up in the previous step and run the install. The installer reboots at the end but the `-no-reboot` flag to `kvm` means that `kvm` will exit when this happens. It should take about 5 minutes.
 
 ## Boot the installed system
 
-<pre><code>kvm -no-reboot -name auto-inst-test -nographic -m 2048 \
-    -drive file=disk-image.qcow2,format=qcow2,cache=none,if=virtio</code></pre>
+```bash
+kvm -no-reboot -name auto-inst-test -nographic -m 2048 \
+    -drive file=disk-image.qcow2,format=qcow2,cache=none,if=virtio
+```
 
-This will boot into the freshly installed system and you should be able to log in as ubuntu/ubuntu.
+This will boot into the freshly installed system and you should be able to log in as `ubuntu`/`ubuntu`.
