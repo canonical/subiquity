@@ -96,7 +96,7 @@ locale
 
 * **type:** string
 * **default:** ``en_US.UTF-8``
-* **can be interactive:** yes
+* **can be interactive:** true
 
 The locale to configure for the installed system.
 
@@ -107,7 +107,7 @@ refresh-installer
 
 * **type:** mapping
 * **default:** see below
-* **can be interactive:** yes
+* **can be interactive:** true
 
 Controls whether the installer updates to a new version available in the given
 channel before continuing.
@@ -137,7 +137,7 @@ keyboard
 
 * **type:** mapping, see below
 * **default:** US English keyboard
-* **can be interactive:** yes
+* **can be interactive:** true
 
 The layout of any attached keyboard. Often systems being automatically
 installed will not have a keyboard at all in which case the value used here
@@ -189,7 +189,7 @@ source
 
 * **type:** mapping, see below
 * **default:** see below
-* **can be interactive:** yes
+* **can be interactive:** true
 
 search_drivers
 ~~~~~~~~~~~~~~
@@ -219,7 +219,7 @@ network
 
 * **type:** Netplan-format mapping, see below
 * **default:** DHCP on interfaces named ``eth*`` or ``en*``
-* **can be interactive:** yes
+* **can be interactive:** true
 
 `Netplan-formatted <https://netplan.readthedocs.io/en/stable/netplan-yaml/>`_ network configuration.
 This will be applied during installation as well as in the installed system.
@@ -259,7 +259,7 @@ proxy
 
 * **type:** URL or ``null``
 * **default:** no proxy
-* **can be interactive:** yes
+* **can be interactive:** true
 
 The proxy to configure both during installation and for ``apt`` and for
 ``snapd`` in the target system.
@@ -271,7 +271,7 @@ apt
 
 * **type:** mapping
 * **default:** see below
-* **can be interactive:** yes
+* **can be interactive:** true
 
 APT configuration, used both during the installation and once booted into the target
 system.
@@ -388,7 +388,7 @@ storage
 * **type:** mapping, see below
 * **default:** use the ``lvm`` layout on single-disk systems; there is no default for
   multiple-disk systems
-* **can be interactive:** yes
+* **can be interactive:** true
 
 Storage configuration is a complex topic and the description of the desired
 configuration in the autoinstall file can also be complex. The installer
@@ -608,7 +608,7 @@ identity
 
 * **type:** mapping, see below
 * **default:** no default
-* **can be interactive:** yes
+* **can be interactive:** true
 
 Configure the initial user for the system. This is the only configuration key that
 must be present (unless the :ref:`user-data section <ai-user-data>` is present,
@@ -661,7 +661,7 @@ active-directory
 
 * **type:** mapping, see below
 * **default:** no default
-* **can be interactive:** yes
+* **can be interactive:** true
 
 Accepts data required to join the target system in an Active Directory domain.
 
@@ -685,7 +685,7 @@ ubuntu-pro
 
 * **type:** mapping, see below
 * **default:** see below
-* **can be interactive:** yes
+* **can be interactive:** true
 
 token
 ~~~~~
@@ -702,7 +702,7 @@ ssh
 
 * **type:** mapping, see below
 * **default:** see below
-* **can be interactive:** yes
+* **can be interactive:** true
 
 Configure SSH for the installed system. A mapping that can contain keys:
 
@@ -755,7 +755,7 @@ drivers
 
 * **type:** mapping, see below
 * **default:** see below
-* **can be interactive:** yes
+* **can be interactive:** true
 
 install
 ~~~~~~~
@@ -791,7 +791,7 @@ snaps
 
 * **type:** list
 * **default:** install no extra snaps
-* **can be interactive:** yes
+* **can be interactive:** true
 
 A list of snaps to install. Each snap is represented as a mapping with required
 ``name`` and optional ``channel`` (defaulting to ``stable``) and classic
