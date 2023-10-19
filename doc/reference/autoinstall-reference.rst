@@ -144,8 +144,7 @@ installed will not have a keyboard at all in which case the value used here
 does not matter.
 
 The mapping's keys correspond to settings in the :file:`/etc/default/keyboard`
-configuration file. See
-`its manual page <http://manpages.ubuntu.com/manpages/keyboard.5.html>`_
+configuration file. See the :manualpage:`keyboard(5) manual page <man5/keyboard.5.html>`
 for more details.
 
 The mapping contains keys:
@@ -635,10 +634,9 @@ password
 The password for the new user, encrypted. This is required for use with
 ``sudo``, even if SSH access is configured.
 
-The crypted password string must conform to what
-`passwd <https://manpages.ubuntu.com/manpages/passwd.1.html>`_
-expects. Depending on the special characters in the password hash, quoting may
-be required, so it's safest to just always include the quotes around the hash.
+The crypted password string must conform to what the
+``passwd`` command requires. See the :manualpage:`passwd(1) manual page <man1/passwd.1.html>`
+for details. Quote the password hash to ensure correct treatment of any special characters.
 
 Several tools can generate the crypted password, such as ``mkpasswd`` from the
 ``whois`` package, or ``openssl passwd``.

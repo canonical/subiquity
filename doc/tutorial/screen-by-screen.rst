@@ -15,7 +15,7 @@ This screen selects the language for the installer and the default language
 for the installed system.
 
 More languages can be displayed if you
-`connect via SSH <https://discourse.ubuntu.com/t/draft-using-the-server-installer/16689#connect-via-ssh>`_.
+`connect via SSH <https://discourse.ubuntu.com/t/how-to-operate-the-server-installer/16689#connect-via-ssh>`_.
 
 Refresh
 =======

@@ -5,7 +5,7 @@ Operating the Server installer
 
 This document explains how to use the installer in general terms. For a
 step-by-step guide through the screens of the installer, you can use our
-`screen-by-screen reference guide <https://discourse.ubuntu.com/t/draft-using-the-server-installer-step-by-step/16690>`_.
+`screen-by-screen reference guide <https://discourse.ubuntu.com/t/screen-by-screen-installer-guide/16690>`_.
 
 Get the installer
 =================
