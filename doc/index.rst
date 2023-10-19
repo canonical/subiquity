@@ -1,6 +1,6 @@
 .. _index:
 
-Ubuntu Installation documentation
+Ubuntu installation documentation
 #################################
 
 -----
