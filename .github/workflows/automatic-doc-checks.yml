@@ -1,0 +1,22 @@
+name: Main Documentation Checks
+
+on:
+  pull_request:
+    paths:
+      - 'doc/**'
+  push:
+    paths:
+      - 'doc/**'
+  workflow_dispatch:
+    paths:
+      - 'doc/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true  
+
+jobs:
+  documentation-checks:
+    uses: canonical/documentation-workflows/.github/workflows/documentation-checks.yaml@main
+    with:
+      working-directory: 'doc'
