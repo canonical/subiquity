@@ -148,7 +148,7 @@ class AptConfigurer:
         self.configured_tree = await self.mounter.setup_overlay([self.source_path])
 
         config_location = os.path.join(
-            self.app.root, "var/log/installer/subiquity-curtin-apt.conf"
+            self.app.root, "var/log/installer/curtin-install/subiquity-curtin-apt.conf"
         )
         generate_config_yaml(config_location, self.apt_config(final))
         self.app.note_data_for_apport("CurtinAptConfig", config_location)
