@@ -62,7 +62,7 @@ do this:
 1. Build your change into a snap:
 
    ```
-   $ snapcraft snap --output subiquity_test.snap
+   $ snapcraft pack --output subiquity_test.snap
    ```
 
 2. Grab the current version of the installer:
