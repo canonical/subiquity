@@ -34,6 +34,7 @@ import urwid
 
 from subiquity.common.types import ErrorReportKind, ErrorReportRef, ErrorReportState
 from subiquitycore.async_helpers import run_in_thread, schedule_task
+from subiquitycore.file_util import write_file
 
 log = logging.getLogger("subiquity.common.errorreport")
 
@@ -132,7 +133,9 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             if not self.reporter.dry_run:
                 self.pr.add_hooks_info(None)
                 apport.hookutils.attach_hardware(self.pr)
-            self.pr["Syslog"] = apport.hookutils.recent_syslog(re.compile("."))
+            self.pr["InstallerJournal"] = apport.hookutils.recent_syslog(
+                re.compile(".")
+            )
             snap_name = os.environ.get("SNAP_NAME", "")
             if snap_name != "":
                 self.add_tags([snap_name])
@@ -343,6 +346,7 @@ class ErrorReporter(object):
     def __init__(self, context, dry_run, root, client=None):
         self.context = context
         self.dry_run = dry_run
+        self.root = root
         self.crash_directory = os.path.join(root, "var/crash")
         self.client = client
 
@@ -408,6 +412,11 @@ class ErrorReporter(object):
             report.pr["Title"] = "{} crashed with {}".format(thing, type(exc).__name__)
             tb = traceback.TracebackException.from_exception(exc)
             report.pr["Traceback"] = "".join(tb.format())
+            # Write out traceback for apport consumption
+            traceback_log = os.path.join(
+                self.root, "var/log/installer", "subiquity-traceback.txt"
+            )
+            write_file(traceback_log, "".join(tb.format()))
             self._reports_by_exception[exc] = report
         else:
             report.pr["Title"] = thing

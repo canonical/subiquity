@@ -194,9 +194,13 @@ def main():
     logfiles = setup_logger(dir=logdir, base="subiquity-server")
 
     logger = logging.getLogger("subiquity")
-    version = os.environ.get("SNAP_REVISION", "unknown")
+    revision = os.environ.get("SNAP_REVISION", "unknown")
+    version = os.environ.get("SNAP_VERSION", "unknown")
     snap = os.environ.get("SNAP", "unknown")
-    logger.info(f"Starting Subiquity server revision {version} of snap {snap}")
+    logger.info(
+        f"Starting Subiquity server revision {revision} of snap {snap} "
+        f"of version {version}"
+    )
     logger.info(f"Arguments passed: {sys.argv}")
     logger.debug(f"Kernel commandline: {opts.kernel_cmdline}")
     logger.debug(f"Environment: {os.environ}")
