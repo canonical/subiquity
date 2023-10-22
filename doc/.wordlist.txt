@@ -25,7 +25,10 @@ VM
 YAML
 addons
 balancer
+<<<<<<< HEAD
 boolean
+=======
+>>>>>>> 1c4f2e4e (Fix spelling mistakes to pass spellcheck.)
 dropdown
 favicon
 installable
