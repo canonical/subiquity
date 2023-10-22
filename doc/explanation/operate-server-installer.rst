@@ -10,15 +10,15 @@ step-by-step guide through the screens of the installer, you can use our
 Get the installer
 =================
 
-Installer images are made (approximately) daily and are available from
-https://cdimage.ubuntu.com/ubuntu-server/daily-live/current/. These are not
+Installer images are created (approximately) daily and are available from the
+`Ubuntu release <https://cdimage.ubuntu.com/ubuntu-server/daily-live/current/>`_ page. These are not
 tested as extensively as the images from release day, but they contain the
-latest packages and installer, so fewer updates will be required during or
+latest packages and installer, so fewer updates are required during or
 after installation.
 
-You can download the server installer for amd64 from
-https://ubuntu.com/download/server and other architectures from
-http://cdimage.ubuntu.com/releases/20.04/release/.
+You can download the server installer for amd64 from the
+`Ubuntu Server <https://ubuntu.com/download/server>`_ page and other architectures from the
+`release directory <http://cdimage.ubuntu.com/releases/20.04/release/>`_.
 
 Installer UI navigation
 =======================
@@ -30,8 +30,8 @@ and :kbd:`space` or :kbd:`Enter` keys and a little typing.
 :kbd:`Home` / :kbd:`End` / :kbd:`Page Up` / :kbd:`Page Down` can be used to
 navigate through long lists more quickly in the usual way.
 
-Running the installer over serial
-=================================
+Running the installer over a serial port
+========================================
 
 By default, the installer runs on the first virtual terminal, ``tty1``. This
 is what is displayed on any connected monitor by default. However, servers do
@@ -42,10 +42,10 @@ the serial port. To do this, the kernel command line needs to
 specified on it -- a common value is ``console=ttyS0`` but this is not
 something that can be generically documented.
 
-When running on serial, the installer starts in a basic mode that uses only
+When running on a serial port, the installer starts in a basic mode that uses only
 the ASCII character set and black and white colours. If you are connecting from
-a terminal emulator such as gnome-terminal that supports Unicode and rich
-colours you can switch to "rich mode" which uses Unicode, colours and supports
+a terminal emulator, such as gnome-terminal, that supports Unicode and rich
+colours, you can switch to "rich mode" which uses Unicode and colours, and supports
 many languages.
 
 .. _connect-via-ssh:
@@ -88,7 +88,7 @@ There are some global keys you can press at any time:
 ====================================  =============================================
 Key                                   Action
 ====================================  =============================================
-:kbd:`ESC`                            Go back
+:kbd:`Esc`                            Go back
 :kbd:`F1`                             Open help menu
 :kbd:`Control` + :kbd:`Z`, :kbd:`F2`  Switch to shell
 :kbd:`Control` + :kbd:`L`, :kbd:`F3`  Redraw screen

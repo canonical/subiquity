@@ -3,24 +3,6 @@
 Ubuntu Installation documentation
 #################################
 
-A single sentence that says what the product is, succinctly and memorably
-consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
-dolore magna aliqua.
-
-A paragraph of one to three short sentences, that describe what the product
-does. Urna cursus eget nunc scelerisque viverra mauris in. Nibh mauris cursus
-mattis molestie a iaculis at vestibulum rhoncus est pellentesque elit. Diam
-phasellus vestibulum lorem sed.
-
-A third paragraph of similar length, this time explaining what need the product
-meets. Dui ut ornare lectus sit amet est. Nunc sed augue lacus viverra vitae
-congue eu consequat ac libero id faucibus nisl tincidunt eget nullam.
-
-Finally, a paragraph that describes whom the product is useful for. Nunc non
-blandit massa enim nec dui nunc mattis enim. Ornare arcu odio ut sem nulla
-pharetra diam porttitor leo a diam sollicitudin tempor id eu. Ipsum dolor sit
-amet consectetur adipiscing elit pellentesque habitant.
-
 -----
 
 .. grid:: 1 1 2 2
@@ -67,7 +49,7 @@ warmly welcomes community projects, contributions, suggestions, fixes and
 constructive feedback.
 
 * Read our `Code of Conduct`_.
-* IRC: `Libera.Chat`_, the *#ubuntu-server* channel.
+* IRC: `Libera.Chat`_, the :spellexception:`#ubuntu-server` channel.
 * Discourse: `Ubuntu Foundations`_.
 * Contribute: See `CONTRIBUTING.md`_ on GitHub.
 

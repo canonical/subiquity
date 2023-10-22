@@ -26,8 +26,8 @@ Mount the ISO
     mkdir -p ~/iso
     sudo mount -r ~/Downloads/ubuntu-|ubuntu-latest-version|-live-server-s390x.iso ~/iso
 
-Write your autoinstall config
-=============================
+Write your autoinstall configuration
+====================================
 
 Create a cloud-init configuration:
 
@@ -46,10 +46,10 @@ Create a cloud-init configuration:
     EOF
     touch meta-data
 
-The crypted password is ``ubuntu``.
+The encrypted password is ``ubuntu``.
 
-Serve the cloud-init config over HTTP
-=====================================
+Serve the cloud-init configuration over HTTP
+============================================
 
 Leave this running in one terminal window:
 

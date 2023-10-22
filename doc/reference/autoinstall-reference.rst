@@ -4,14 +4,14 @@ Autoinstall configuration reference manual
 ******************************************
 
 The autoinstall file is YAML. At top level it must be a mapping containing the
-keys described in this document. Unrecognized keys are ignored.
+keys described in this document. Unrecognised keys are ignored.
 
 .. _ai-schema:
 
 Schema
 ======
 
-Autoinstall configs are
+Autoinstall configurations are
 :doc:`validated against a JSON schema<autoinstall-schema>` before they are
 used.
 
@@ -20,10 +20,10 @@ used.
 Command lists
 =============
 
-Several config keys are lists of commands to be executed. Each command can be
+Several configuration keys are lists of commands to be executed. Each command can be
 a string (in which case it is executed via ``sh -c``) or a list, in which case
 it is executed directly. Any command exiting with a non-zero return code is
-considered an error and aborts the install (except for error-commands, where
+considered an error and aborts the installation (except for error-commands, where
 it is ignored).
 
 .. _ai-top-level-keys:
@@ -39,7 +39,7 @@ version
 * **type:** integer
 * **default:** no default
 
-A future-proofing config file version field. Currently this must be "1".
+A future-proofing configuration file version field. Currently this must be "1".
 
 .. _ai-interactive-sections:
 
@@ -49,7 +49,7 @@ interactive-sections
 * **type:** list of strings
 * **default:** []
 
-A list of config keys to still show in the UI. So for example:
+A list of configuration keys to still show in the UI. For example:
 
 .. code-block:: yaml
 
@@ -60,15 +60,15 @@ A list of config keys to still show in the UI. So for example:
       username: ubuntu
       password: $crypted_pass
 
-Would stop on the network screen and allow the user to change the defaults. If
-a value is provided for an interactive section it is used as the default.
+This example stops on the network screen and allows the user to change the defaults. If
+a value is provided for an interactive section, it is used as the default.
 
-You can use the special section name of "\*" to indicate that the installer
+You can use the special section name of ``*`` to indicate that the installer
 should ask all the usual questions -- in this case, the :file:`autoinstall.yaml`
 file is not really an "autoinstall" file at all, instead just a way to change
 the defaults in the UI.
 
-Not all config keys correspond to screens in the UI. This documentation
+Not all configuration keys correspond to screens in the UI. This documentation
 indicates if a given section can be interactive or not.
 
 If there are any interactive sections at all, the :ref:`ai-reporting` key is
@@ -85,9 +85,9 @@ early-commands
 
 A list of shell commands to invoke as soon as the installer starts, in
 particular before probing for block and network devices. The autoinstall
-config is available at :file:`/autoinstall.yaml` (irrespective of how it was
+configuration is available at :file:`/autoinstall.yaml` (irrespective of how it was
 provided) and the file will be re-read after the ``early-commands`` have run to
-allow them to alter the config if necessary.
+allow them to alter the configuration if necessary.
 
 .. _ai-locale:
 
@@ -143,7 +143,7 @@ The layout of any attached keyboard. Often systems being automatically
 installed will not have a keyboard at all in which case the value used here
 does not matter.
 
-The mapping's keys correspond to settings in the :file:`/etc/default/keyboard`
+The mapping keys correspond to settings in the :file:`/etc/default/keyboard`
 configuration file. See the :manualpage:`keyboard(5) manual page <man5/keyboard.5.html>`
 for more details.
 
@@ -206,24 +206,24 @@ id
 * **type:** string
 * **default:** identifier of the first available source.
 
-Identifier of the source to install (e.g., ``"ubuntu-server-minimal"``).
+Identifier of the source to install (e.g., ``ubuntu-server-minimal``).
 
 .. _ai-network:
 
 network
 -------
 
-* **type:** netplan-format mapping, see below
+* **type:** Netplan-format mapping, see below
 * **default:** DHCP on interfaces named ``eth*`` or ``en*``
 * **can be interactive:** yes
 
 `Netplan-formatted <https://netplan.io/reference>`_ network configuration.
 This will be applied during installation as well as in the installed system.
-The default is to interpret the config for the install media, which runs
-DHCPv4 on any interface with a name matching "``eth*``" or "``en*``" but then
+The default is to interpret the configuration for the installation media, which runs
+DHCP version 4 on any interface with a name matching ``eth*`` or ``en*`` but then
 disables any interface that does not receive an address.
 
-For example, to run DHCPv6 on a particular NIC:
+For example, to run DHCP version 6 on a specific network interface:
 
 .. code-block:: yaml
 
@@ -234,8 +234,7 @@ For example, to run DHCPv6 on a particular NIC:
           dhcp6: true
 
 Note that in the 20.04 GA release of Subiquity, the behaviour is slightly
-different and requires you to write this with an extra ``network:`` key, like
-so:
+different and requires you to write this with an extra ``network:`` key:
 
 .. code-block:: yaml
 
@@ -270,7 +269,7 @@ apt
 * **default:** see below
 * **can be interactive:** yes
 
-APT configuration, used both during the install and once booted into the target
+APT configuration, used both during the installation and once booted into the target
 system.
 
 This section historically used the same format as curtin,
@@ -280,7 +279,7 @@ Nonetheless, some key differences with the format supported by curtin have been 
 - Subiquity supports an alternative format for the ``primary`` section,
   allowing configuration of a list of candidate primary mirrors. During
   installation, Subiquity will automatically test the specified mirrors and
-  select the first one that seems usable. This new behavior is only activated
+  select the first one that seems usable. This new behaviour is only activated
   when the ``primary`` section is wrapped in the ``mirror-selection`` section.
 
 - The ``fallback`` key controls what Subiquity should do if no primary mirror
@@ -323,7 +322,7 @@ can be expressed in two different ways:
 * The special value ``country-mirror``
 * A mapping with the following keys:
 
-  * ``uri``: The URI of the mirror to use, e.g., "http://fr.archive.ubuntu.com/ubuntu"
+  * ``uri``: The URI of the mirror to use, e.g., ``http://fr.archive.ubuntu.com/ubuntu``
   * ``arches``: An optional list of architectures supported by the mirror. By
     default, this list contains the current CPU architecture.
 
@@ -353,7 +352,7 @@ Subiquity then sets the mirror URI to ``http://CC.archive.ubuntu.com/ubuntu``
 (or similar for ports) where ``CC`` is the country code returned by the lookup.
 If this section is not interactive, the request is timed out after 10 seconds.
 
-If the legacy behavior (i.e., without mirror-selection) is in use, the geoip
+If the legacy behaviour (i.e., without mirror-selection) is in use, the geoip
 request is made if the mirror to be used is the default, and its URI ends up
 getting replaced by the proper country mirror URI.
 
@@ -368,7 +367,7 @@ If you just want to specify a mirror, you can use a configuration like this:
           - country-mirror
           - uri: http://archive.ubuntu.com/ubuntu
 
-To add a ppa:
+To add a PPA:
 
 .. code-block:: yaml
 
@@ -383,8 +382,8 @@ storage
 -------
 
 * **type:** mapping, see below
-* **default:** use "lvm" layout in a single disk system, no default in a
-  multiple disk system
+* **default:** use the ``lvm`` layout on single-disk systems; there is no default for
+  multiple-disk systems
 * **can be interactive:** yes
 
 Storage configuration is a complex topic and the description of the desired
@@ -394,7 +393,7 @@ supports "layouts"; simple ways of expressing common configurations.
 Supported layouts
 ~~~~~~~~~~~~~~~~~
 
-The three supported layouts at the time of writing are "lvm", "direct", and "zfs".
+The three supported layouts at the time of writing are ``lvm``, ``direct`` and ``zfs``.
 
 .. code-block:: yaml
 
@@ -428,7 +427,7 @@ supply a match spec (see below) to indicate which disk to use:
 .. note::
    Match spec -- using "``match: {}``" will match an arbitrary disk
 
-When using the "lvm" layout, LUKS encryption can be enabled by supplying a
+When using the ``lvm`` layout, LUKS encryption can be enabled by supplying a
 password.
 
 .. code-block:: yaml
@@ -444,9 +443,9 @@ The default is to use the ``lvm`` layout.
 Sizing-policy
 ~~~~~~~~~~~~~
 
-The lvm layout will, by default, attempt to leave room for snapshots and
+The ``lvm`` layout, by default, attempts to leave room for snapshots and
 further expansion. A sizing-policy key may be supplied to control this
-behavior.
+behaviour.
 
 * **type:** string (enumeration)
 * **default:** scaled
@@ -459,10 +458,10 @@ Supported values are:
 
 The scaling system is currently as follows:
 
-* Less than 10 GiB: use all remaining space for root filesystem
-* Between 10--20 GiB: 10 GiB root filesystem
-* Between 20--200 GiB: use half of remaining space for root filesystem
-* Greater than 200 GiB: 100 GiB root filesystem
+* Less than 10 GiB: use all remaining space for root file system
+* Between 10--20 GiB: 10 GiB root file system
+* Between 20--200 GiB: use half of remaining space for root file system
+* Greater than 200 GiB: 100 GiB root file system
 
 Example with no size scaling and a passphrase:
 
@@ -474,20 +473,20 @@ Example with no size scaling and a passphrase:
         sizing-policy: all
         password: LUKS_PASSPHRASE
 
-Action-based config
-~~~~~~~~~~~~~~~~~~~
+Action-based configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For full flexibility, the installer allows storage configuration to be done
 using a syntax which is a superset of that supported by curtin, as described in
 `the curtin documentation <https://curtin.readthedocs.io/en/latest/topics/storage.html>`_.
 
-If the "layout" feature is used to configure the disks, the "config" section
-will not be used.
+If the ``layout`` feature is used to configure the disks, the ``config`` section
+is not used.
 
-As well as putting the list of actions under the 'config' key, the
+As well as putting the list of actions under the ``config`` key, the
 `grub <https://curtin.readthedocs.io/en/latest/topics/config.html#grub>`_ and
 `swap <https://curtin.readthedocs.io/en/latest/topics/config.html#swap>`_
-curtin config items can be put here. So a storage section might look like:
+curtin configuration items can be put here. So a storage section might look like:
 
 .. code-block:: yaml
 
@@ -513,7 +512,7 @@ Curtin supported identifying disks by serial (e.g.
 server installer supports this as well. The installer additionally supports a
 ''match spec'' on a disk action that supports more flexible matching.
 
-The actions in the storage config are processed in the order they are in the
+The actions in the storage configuration are processed in the order they are in the
 autoinstall file. Any disk action is assigned a matching disk -- chosen
 arbitrarily from the set of unassigned disks if there is more than one, and
 causing the installation to fail if there is no unassigned matching disk.
@@ -540,7 +539,7 @@ A match spec supports the following keys:
 
 A special sort of key is ``install-media: true``, which will take the disk the
 installer was loaded from (the ``ssd`` and ``size`` selectors will never return
-this disk). If installing to the install media, care obviously needs to be taken
+this disk). If installing to the installation media, care obviously needs to be taken
 to not overwrite the installer itself!
 
 So for example, to match an arbitrary disk it is simply:
@@ -574,7 +573,7 @@ Partition/logical volume extensions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The size of a partition or logical volume in curtin is specified as a number of
-bytes. The autoinstall config is more flexible:
+bytes. The autoinstall configuration is more flexible:
 
 * You can specify the size using the "1G", "512M" syntax supported in the
   installer UI.
@@ -607,7 +606,7 @@ identity
 * **default:** no default
 * **can be interactive:** yes
 
-Configure the initial user for the system. This is the only config key that
+Configure the initial user for the system. This is the only configuration key that
 must be present (unless the :ref:`user-data section <ai-user-data>` is present,
 in which case it is optional).
 
@@ -634,11 +633,11 @@ password
 The password for the new user, encrypted. This is required for use with
 ``sudo``, even if SSH access is configured.
 
-The crypted password string must conform to what the
+The encrypted password string must conform to what the
 ``passwd`` command requires. See the :manualpage:`passwd(1) manual page <man1/passwd.1.html>`
 for details. Quote the password hash to ensure correct treatment of any special characters.
 
-Several tools can generate the crypted password, such as ``mkpasswd`` from the
+Several tools can generate the encrypted password, such as ``mkpasswd`` from the
 ``whois`` package, or ``openssl passwd``.
 
 Example:
@@ -711,7 +710,7 @@ install-server
 
 Whether to install OpenSSH server in the target system.
 
-authorized-keys
+:spellexception:`authorized-keys`
 ~~~~~~~~~~~~~~~
 
 * **type:** list of strings
@@ -807,7 +806,7 @@ debconf-selections
 ------------------
 
 * **type:** string
-* **default:** no config
+* **default:** no configuration
 * **can be interactive:** no
 
 The installer will update the target with debconf set-selection values. Users
@@ -837,7 +836,7 @@ kernel
 * **can be interactive:** no
 
 Which kernel gets installed. Either the name of the package or the name of the
-flavor must be specified.
+flavour must be specified.
 
 package
 ~~~~~~~
@@ -851,7 +850,7 @@ flavor
 
 * **type:** string
 
-The flavor of the kernel, e.g., ``generic`` or ``hwe``.
+The ``flavor`` of the kernel, e.g., ``generic`` or ``hwe``.
 
 .. _ai-timezone:
 
@@ -875,7 +874,7 @@ updates
 * **can be interactive:** no
 
 The type of updates that will be downloaded and installed after the system
-install. Supported values are:
+installation. Supported values are:
 
 * ``security`` -> download and install updates from the -security pocket
 * ``all`` -> also download and install updates from the -updates pocket
@@ -904,7 +903,7 @@ late-commands
 * **default:** no commands
 * **can be interactive:** no
 
-Shell commands to run after the install has completed successfully and any
+Shell commands to run after the installation has completed successfully and any
 updates and packages installed, just before the system reboots. They are run in
 the installer environment with the installed system mounted at ``/target``. You
 can run ``curtin in-target -- $shell_command`` (with the version of Subiquity
@@ -922,7 +921,7 @@ error-commands
 * **default:** no commands
 * **can be interactive:** no
 
-Shell commands to run after the install has failed. They are run in the
+Shell commands to run after the installation has failed. They are run in the
 installer environment, and the target system (or as much of it as the installer
 managed to configure) will be mounted at ``/target``. Logs will be available
 at :file:`/var/log/installer` in the live session.
@@ -940,10 +939,10 @@ reporting
 The installer supports reporting progress to a variety of destinations. Note
 that this section is ignored if there are any :ref:`interactive sections <ai-interactive-sections>`; it only applies to fully automated installs.
 
-The config, and indeed the implementation, is 90% the same as
+The configuration, and indeed the implementation, is 90% the same as
 `that used by curtin <https://curtin.readthedocs.io/en/latest/topics/reporting.html>`_.
 
-Each key in the ``reporting`` mapping in the config defines a destination,
+Each key in the ``reporting`` mapping in the configuration defines a destination,
 where the ``type`` sub-key is one of:
 
 **The rsyslog reporter does not yet exist**
@@ -952,7 +951,7 @@ where the ``type`` sub-key is one of:
   console. There is no other configuration.
 * **rsyslog**: report progress via rsyslog. The **destination** key specifies
   where to send output.
-* **webhook**: report progress via POSTing JSON reports to a URL. Accepts the
+* **webhook**: report progress by sending JSON reports to a URL using POST requests. Accepts the
   same `configuration as curtin <https://curtin.readthedocs.io/en/latest/topics/reporting.html#webhook-reporter>`_.
 * **none**: do not report progress. Only useful to inhibit the default output.
 
