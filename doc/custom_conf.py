@@ -15,7 +15,7 @@ import datetime
 ############################################################
 
 # Product name
-project = 'Ubuntu Install Guide'
+project = 'Ubuntu installation'
 author = 'Canonical Group Ltd'
 
 # Uncomment if your product uses release numbers
@@ -41,7 +41,7 @@ copyright = '%s, %s' % (datetime.date.today().year, author)
 # The URL of the documentation output
 ogp_site_url = 'https://canonical-subiquity.readthedocs-hosted.com/'
 # The documentation website name (usually the same as the product name)
-ogp_site_name = project
+ogp_site_name = 'Ubuntu Installation Guide'
 # An image or logo that is used in the preview
 ogp_image = 'https://assets.ubuntu.com/v1/253da317-image-document-ubuntudocs.svg'
 
@@ -53,7 +53,7 @@ html_favicon = '.sphinx/_static/favicon.png'
 html_context = {
 
     # Change to the link to your product website (without "https://")
-    'product_page': 'documentation.ubuntu.com',
+    'product_page': 'ubuntu.com/download',
 
     # Add your product tag to ".sphinx/_static" and change the path
     # here (start with "_static"), default is the circle of friends
@@ -62,7 +62,7 @@ html_context = {
     # Change to the discourse instance you want to be able to link to
     # using the :discourse: metadata at the top of a file
     # (use an empty value if you don't want to link)
-    'discourse': 'https://discourse.ubuntu.com',
+    'discourse': 'https://discourse.ubuntu.com/c/foundations/',
 
     # Change to the GitHub info for your project
     'github_url': 'https://github.com/canonical/subiquity',
@@ -76,7 +76,7 @@ html_context = {
 
     # Change to an empty value if your GitHub repo doesn't have issues enabled.
     # This will disable the feedback button and the issue link in the footer.
-    'github_issues': '',
+    'github_issues': 'https://bugs.launchpad.net/subiquity',
 
     # Controls the existence of Previous / Next buttons at the bottom of pages
     # Valid options: none, prev, next, both
