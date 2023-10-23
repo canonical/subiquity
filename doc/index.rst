@@ -80,7 +80,6 @@ constructive feedback.
    howto/index
    reference/index
    explanation/index
-   development/index
 
 .. Links:
 .. _Code of Conduct: https://ubuntu.com/community/ethos/code-of-conduct
