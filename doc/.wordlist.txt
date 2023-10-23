@@ -25,6 +25,7 @@ VM
 YAML
 addons
 balancer
+boolean
 dropdown
 favicon
 installable
