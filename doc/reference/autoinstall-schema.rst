@@ -3,15 +3,15 @@
 Autoinstall schema
 ******************
 
-The server installer validates the provided autoinstall config against a
+The server installer validates the provided autoinstall configuration against a
 :ref:`JSON schema<autoinstall_JSON_schema>`.
 
-How the config is validated
-===========================
+How the configuration is validated
+==================================
 
 Although the schema is presented below as a single document, and if you want
-to pre-validate your config you should validate it against this document, the
-config is not actually validated against this document at run time. What
+to pre-validate your configuration you should validate it against this document, the
+configuration is not actually validated against this document at run time. What
 happens instead is that some sections are loaded, validated, and applied
 first, before all other sections are validated. In detail:
 
@@ -19,7 +19,7 @@ first, before all other sections are validated. In detail:
 2. The error commands are loaded and validated.
 3. The early commands are loaded and validated.
 4. The early commands, if any, are run.
-5. The config is reloaded, and now all sections are loaded and validated.
+5. The configuration is reloaded, and now all sections are loaded and validated.
 
 This is so that validation errors in most sections can be reported via the
 reporting and error-commands configuration, as all other errors are.

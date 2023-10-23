@@ -81,9 +81,9 @@ Logical Volume Manager (LVM)
 .. image:: figures/configure-storage-lvm.png
    :alt:
 
-The LVM is a system of managing logical volumes, or filesystems, that is much
+The LVM is a system of managing logical volumes, or file systems, that is much
 more advanced and flexible than the traditional method of partitioning a disk
-into one or more segments and formatting that partition with a filesystem. It
+into one or more segments and formatting that partition with a file system. It
 can be used to combine several disks into one larger pool of storage but it
 offers advantages even in a single disk system, such as snapshots and easy
 resizing of logical volumes.
@@ -113,7 +113,7 @@ but this can be changed later.
 
 On amd64 and arm64 systems, multiple disks can be selected as boot devices,
 which means a system can be configured so that it will continue to boot after
-a failure of any one drive (assuming the root filesystem is placed on a RAID).
+a failure of any one drive (assuming the root file system is placed on a RAID).
 The bootloader will be installed to each of these drives, and the operating
 system configured to install new versions of GRUB to each drive as it is
 updated.
@@ -151,8 +151,8 @@ operating system. One of the ESPs must be mounted at ``/boot/efi``.
 Supported arm64 servers boot using UEFI, and are configured the same way as an
 UEFI-booting amd64 system.
 
-ppc64el systems also load their bootloader (Petitboot, a small linux kernel)
-from a "PReP" partition with a special flag, so in most ways they are similar
+ppc64el systems also load their bootloader (Petitboot, a small Linux kernel)
+from a PReP (PowerPC Reference Platform) partition with a special flag, so in most ways they are similar
 to a UEFI system. The installer only supports one PReP partition at this time.
 
 Limitations and workarounds
@@ -173,4 +173,4 @@ with desired parameters, and then select these partitions or devices as mount
 points in the installer. Any changes you make while the installer is running
 but before altering the storage configuration will reflected in the installer.
 
-The installer cannot yet configure iSCSI mounts or btrfs subvolumes.
+The installer cannot yet configure iSCSI mounts or BTRFS subvolumes.

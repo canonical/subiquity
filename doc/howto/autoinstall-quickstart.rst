@@ -17,7 +17,7 @@ Providing the autoinstall data over the network
 ===============================================
 
 This method is the one that generalises most easily to doing an entirely
-network-based install, where a machine netboots and then is automatically
+network-based installation where a machine boots over a network and then is automatically
 installed.
 
 Download the ISO
@@ -37,10 +37,10 @@ Where you should change `<release-number>` to match the number of the LTS or
 release you have downloaded (e.g., `22.04.3` for Jammy or `23.04` for the Lunar
 interim release).
 
-Write your autoinstall config
------------------------------
+Write your autoinstall configuration
+------------------------------------
 
-This means creating cloud-init config as follows:
+This means creating cloud-init configuration as follows:
 
 .. code-block:: bash
 
@@ -57,10 +57,10 @@ This means creating cloud-init config as follows:
     EOF
     touch meta-data
 
-The crypted password is just "ubuntu".
+The encrypted password is ``ubuntu``.
 
-Serve the cloud-init config over HTTP
--------------------------------------
+Serve the cloud-init configuration over HTTP
+--------------------------------------------
 
 Leave this running in one terminal window:
 
@@ -76,8 +76,8 @@ Create a target disk
 
     truncate -s 10G image.img
 
-Run the install!
-----------------
+Run the installation
+--------------------
 
 As before, you will need to change `<release-number>` in the following command
 to match the release ISO you downloaded.
@@ -91,8 +91,8 @@ to match the release ISO you downloaded.
         -initrd /mnt/casper/initrd \
         -append 'autoinstall ds=nocloud-net;s=http://_gateway:3003/'
 
-This will boot, download the config from the server (set up in the previous
-step) and run the install. The installer reboots at the end but the
+This will boot, download the configuration from the server (set up in the previous
+step) and run the installation. The installer reboots at the end but the
 ``-no-reboot`` flag to ``kvm`` means that ``kvm`` will exit when this happens.
 It should take about 5 minutes.
 
@@ -107,8 +107,8 @@ Boot the installed system
 This will boot into the freshly installed system and you should be able to log
 in as ``ubuntu/ubuntu``.
 
-Using another volume to provide the autoinstall config
-======================================================
+Using another volume to provide the autoinstall configuration
+=============================================================
 
 This is the method to use when you want to create media that you can just plug
 into a system to have it be installed.
@@ -137,7 +137,7 @@ Create your user-data and meta-data files
     EOF
     touch meta-data
 
-The crypted password is just ``ubuntu``.
+The encrypted password is ``ubuntu``.
 
 Create an ISO to use as a cloud-init data source
 ------------------------------------------------
@@ -154,8 +154,8 @@ Create a target disk
 
     truncate -s 10G image.img
 
-Run the install!
-----------------
+Run the installation
+--------------------
 
 As before, you will need to change `<release-number>` in the following command
 to match the release ISO you downloaded.
@@ -167,8 +167,8 @@ to match the release ISO you downloaded.
         -drive file=~/seed.iso,format=raw,cache=none,if=virtio \
         -cdrom ~/Downloads/ubuntu-<release-number>-live-server-amd64.iso
 
-This will boot and run the install. Unless you interrupt boot to add
-'autoinstall' to the kernel command line, the installer will prompt for
+This boots the system and runs the installation. Unless you interrupt boot to add
+``autoinstall`` to the kernel command line, the installer prompts for
 confirmation before touching the disk.
 
 The installer reboots at the end but the ``-no-reboot`` flag to ``kvm`` means

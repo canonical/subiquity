@@ -18,7 +18,7 @@ System requirements
 -------------------
 
 Ubuntu Server Edition provides a common, minimalist base for a variety of
-server applications, such as file/print services, web hosting, email hosting,
+server applications, such as file or print services, web hosting, email hosting,
 etc. This version supports four 64-bit architectures:
 
 * amd64 (Intel/AMD 64-bit)
@@ -32,8 +32,8 @@ The recommended system requirements are:
 * RAM: 1 gigabyte or more
 * Disk: a minimum of 2.5 gigabytes
 
-Perform a system back up
-------------------------
+Perform a system backup
+-----------------------
 
 Before installing Ubuntu Server Edition you should make sure all data on the
 system is backed up.
@@ -50,8 +50,8 @@ use, but they also perform destructive actions.
 Download the server ISO
 -----------------------
 
-You can obtain the amd64 server download from https://releases.ubuntu.com/.
-Select the version you wish to install and select the "server install image"
+You can obtain the amd64 server download from `releases.ubuntu.com <https://releases.ubuntu.com/>`_.
+Select the version you wish to install and select the "Server install image"
 download. Note that the server download includes the installer.
 
 There are platform-specific how-to guides for installations on:
@@ -73,7 +73,7 @@ are also available).
 Perform the installation
 ========================
 
-Now that you have prepared your install medium, you are ready to install.
+Now that you have prepared your installation medium, you are ready to install.
 
 Boot the installer
 ------------------
@@ -83,17 +83,16 @@ Plug the USB stick into the system to be installed and start it.
 Most computers will automatically boot from USB or DVD, though in some cases
 this is disabled to improve boot times. If you don't see the boot message and
 the "Welcome" screen which should appear after it, you will need to set your
-computer to boot from the install media.
+computer to boot from the installation media.
 
 There should be an on-screen message when the computer starts, telling you what
 key to press for settings or a boot menu. Depending on the manufacturer, this
 could be :kbd:`Escape`, :kbd:`F2`, :kbd:`F10` or :kbd:`F12`. Restart your
 computer and hold down this key until the boot menu appears, then select the
-drive with the Ubuntu install media.
+drive with the Ubuntu installation media.
 
-If you are still having problems, check out the
-`Ubuntu Community documentation on booting from
-CD/DVD <https://help.ubuntu.com/community/BootFromCD>`_.
+If you are still having problems, see the
+`Ubuntu Community documentation on booting from CD/DVD <https://help.ubuntu.com/community/BootFromCD>`_.
 
 After a few moments, the installer will start in its language selection screen.
 
@@ -103,21 +102,20 @@ After a few moments, the installer will start in its language selection screen.
 Using the installer
 -------------------
 
-The installer is designed to be easy to use and have sensible defaults so for
-a first install you can mostly just accept the defaults for the most
-straightforward install:
+The installer is designed to be easy to use and have sensible defaults, so for
+a first installation you can accept the defaults:
 
-* Choose your language
-* Update the installer (if offered)
-* Select your keyboard layout
+* Choose your language.
+* Update the installer (if offered).
+* Select your keyboard layout.
 * Do not configure networking (the installer attempts to configure wired
   network interfaces via DHCP, but you can continue without networking if this
-  fails)
-* Do not configure a proxy or custom mirror unless you have to in your network
+  fails).
+* Do not configure a proxy or custom mirror unless you have to in your network.
 * For storage, leave "use an entire disk" checked, and choose a disk to install
-  to, then select "Done" on the configuration screen and confirm the install
-* Enter a username, hostname and password
-* On the SSH and snap screens, select "Done"
-* You will now see log messages as the install is completed
+  to, then select "Done" on the configuration screen and confirm the installation.
+* Enter a username, hostname and password.
+* On the SSH and snap screens, select "Done".
+* You now see log messages as the installation is completed.
 * Select restart when this is complete, and log in using the username and
-  password provided
+  password provided.

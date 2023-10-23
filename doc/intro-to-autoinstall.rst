@@ -11,15 +11,15 @@ This format is supported in the following installers:
  * Ubuntu Server, version 20.04 and later
  * Ubuntu Desktop, version 23.04 and later
 
-Autoinstallation lets you answer all those configuration questions ahead of
-time with an *autoinstall config* and lets the installation process run without
+Automatic installation lets you answer all those configuration questions ahead of
+time with an *autoinstall configuration* and lets the installation process run without
 any interaction.
 
 
-Differences from debian-installer preseeding
+Differences from :spellexception:`debian-installer` preseeding
 ============================================
 
-*preseeds* are the way to automate an installer based on debian-installer
+*preseeds* are the way to automate an installer based on :spellexception:`debian-installer`
 (also known as d-i).
 
 Autoinstalls differ from preseeds in the following ways:
@@ -38,23 +38,22 @@ Providing the autoinstall configuration
 =======================================
 
 There are 2 ways to provide the autoinstall configuration:
- * Provide :external+cloud-init:ref:`#cloud-config
-   user-data<user_data_formats-cloud_config>` containing ``autoinstall:``
+ * Provide :external+cloud-init:ref:`#cloud-config user data <user_data_formats-cloud_config>` containing ``autoinstall:``
    configuration directives to cloud-init at boot time
- * Directly on the install media
+ * Directly on the installation media
 
-Autoinstall by way of cloud-config
+Autoinstall by way of cloud-:spellexception:`config`
 ----------------------------------
 
-The suggested way of providing autoinstall config to the Ubuntu installer is
+The suggested way of providing autoinstall configuration to the Ubuntu installer is
 via cloud-init. This allows the configuration to be applied to the installer
-without having to modify the install media.
+without having to modify the installation media.
 
-The autoinstall config is provided via cloud-init configuration, which is
+The autoinstall configuration is provided via cloud-init configuration, which is
 almost endlessly flexible. In most scenarios the easiest way will be to provide
 user data via the :external+cloud-init:ref:`datasource_nocloud` data source.
 
-When providing autoinstall via cloud-init, the autoinstall config is provided
+When providing autoinstall via cloud-init, the autoinstall configuration is provided
 as :external+cloud-init:ref:`user_data_formats-cloud_config`. This
 means we need a :code:`#cloud-config` header. The autoinstall directives are
 placed under a top level :code:`autoinstall:` key, like so:
@@ -69,16 +68,16 @@ placed under a top level :code:`autoinstall:` key, like so:
 .. note::
 
    :external+cloud-init:ref:`user_data_formats-cloud_config` files must contain
-   the ``#cloud-config`` header to be recognized as a valid cloud config data
+   the ``#cloud-config`` header to be recognised as a valid cloud configuration data
    file.
 
-Autoinstall on the install media
---------------------------------
+Autoinstall on the installation media
+-------------------------------------
 
 Another option for supplying autoinstall to the Ubuntu installer is to place a
-file named :code:`autoinstall.yaml` on the install media itself.
+file named :code:`autoinstall.yaml` on the installation media itself.
 
-There are two potential locations that subiquity will check for the
+There are two potential locations that Subiquity will check for the
 :code:`autoinstall.yaml` file:
 
 * At the root of the "CD-ROM". When you write the installation ISO to a USB
@@ -117,14 +116,14 @@ autoinstall file in the following order and pick the first existing one:
 
 1. Kernel command line
 2. Root of the installation system
-3. Cloud Config
+3. Cloud-:spellexception:`config`
 4. Root of the CD-ROM (ISO)
 
 
 Cloud-init and autoinstall interaction
 ======================================
 
-Cloud-init runs in both the ephemeral system (during install) and in the target
+Cloud-init runs in both the ephemeral system (during installation) and in the target
 system during first boot. Cloud-init then becomes inert for every subsequent
 reboot.
 
@@ -141,7 +140,7 @@ being installed, they must appear under a :ref:`ai-user-data` section under
 
     #cloud-config
     # cloud-init directives may optionally be specified here.
-    # These directives affect the ephemeral system performing the install.
+    # These directives affect the ephemeral system performing the installation.
 
     autoinstall:
         # autoinstall directives must be specified here, not directly at the
@@ -174,11 +173,11 @@ To bypass this prompt, arrange for the argument :code:`autoinstall` to be
 present on the kernel command line.
 
 
-Creating an autoinstall config
-==============================
+Creating an autoinstall configuration
+=====================================
 
 When any system is installed using the Ubuntu installer, an autoinstall file
-for repeating the install is created at
+for repeating the installation is created at
 :code:`/var/log/installer/autoinstall-user-data`.
 
 

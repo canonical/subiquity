@@ -3,7 +3,7 @@
 How to report a problem
 ***********************
 
-We always hope, of course, that every install with the server installer
+We always hope, of course, that every installation with the server installer
 succeeds. But reality doesn't always work that way and there will sometimes be
 failures of various kinds. This section explains the most useful way to report
 any failures so that we can fix the bugs causing them, and we'll keep the topic
@@ -22,7 +22,7 @@ Crash reports
 A failure will result in a crash report being generated which bundles up all
 the information we need to fully diagnose a failure. These live in
 ``/var/crash`` in the installer environment, and for Ubuntu 19.10 and newer
-this is persisted to the install media by default (if there is space). 
+this is persisted to the installation media by default (if there is space).
 
 When an error occurs you are presented with a dialog that allows you to upload
 the report to the error tracker and offers options for continuing. Uploads to

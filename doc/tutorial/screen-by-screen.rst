@@ -72,8 +72,8 @@ Zdev (s390x only)
 This screen is only shown on s390x and allows z-specific configuration of
 devices.
 
-The list of devices can be long. :kbd:`Home` / :kbd:`End` / :kbd:`PageUp` 
-/ :kbd:`PageDown` can be used to navigate through the list more quickly.
+The list of devices can be long. :kbd:`Home` / :kbd:`End` / :kbd:`PgUp`
+/ :kbd:`PgDown` can be used to navigate through the list more quickly.
 
 Network
 =======
@@ -81,10 +81,10 @@ Network
 .. image:: figures/sbs-network.png
    :alt:
 
-This screen allows the configuration of the network. Ubuntu Server uses NetPlan
+This screen allows the configuration of the network. Ubuntu Server uses Netplan
 to configure networking and the UI of the installer can configure a subset of
-NetPlan's capabilities. In particular it can configure DHCP or static
-addressing, VLANs and bonds.
+Netplan capabilities. In particular, it can configure DHCP or static
+addressing, VLAN and bonds.
 
 If networking is present (defined as "at least one interface has a default
 route") then the installer will install updates from the archive at the end of
@@ -121,7 +121,7 @@ Storage configuration is a complicated topic and :ref:`has its own page for docu
 .. image:: figures/sbs-confirm-storage.png
    :alt:
 
-Once the storage configuration is confirmed, the install begins in the
+Once the storage configuration is confirmed, the installation begins in the
 background.
 
 Identity
@@ -140,7 +140,7 @@ SSH
 .. image:: figures/sbs-ssh.png
    :alt:
 
-A default Ubuntu install has no open ports. It is very common to administer
+A default Ubuntu installation has no open ports. It is very common to administer
 servers via SSH so the installer allows it to be installed with the click of a
 button.
 
@@ -165,7 +165,7 @@ Installation logs
    :alt:
 
 The final screen of the installer shows the progress of the installer and
-allows viewing of the full log file. Once the install has completed and
+allows viewing of the full log file. Once the installation has completed and
 security updates installed, the installer waits for confirmation before
 restarting.
 
