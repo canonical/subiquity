@@ -55,7 +55,7 @@ linkcheck:
 	. $(VENV) ; $(SPHINXBUILD) -c . -b linkcheck  "$(SOURCEDIR)" "$(BUILDDIR)"
 
 woke:
-	type woke >/dev/null 2>&1 || { sudo snap install woke; exit 1; }
+	type woke >/dev/null 2>&1 || { sudo snap install woke || exit 1; }
 	woke *.rst **/*.rst -c https://github.com/canonical-web-and-design/Inclusive-naming/raw/main/config.yml
 
 .PHONY: help Makefile

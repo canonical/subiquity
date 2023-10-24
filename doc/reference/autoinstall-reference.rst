@@ -667,7 +667,7 @@ admin-name
 ~~~~~~~~~~
 
 A domain account name with privilege to perform the join operation. That
-account's password will be requested during runtime.
+account's password will be requested during run time.
 
 domain-name
 ~~~~~~~~~~~
