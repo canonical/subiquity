@@ -1,9 +1,18 @@
 .. _index:
 
-Ubuntu installation documentation
-#################################
+Ubuntu installation guide
+=========================
+
+Subiquity is an installer framework for Ubuntu. It provides the Ubuntu Server with a text-based installation user interface and Ubuntu Core first-boot configuration. Subiquity is also the back end for the Ubuntu Desktop installer.
+
+This documentation set offers guidance for installing Ubuntu Server using Subiquity. It also includes instructions on performing an automated installation using the autoinstall feature.
+
+.. note:: The aim is to gradually expand this documentation to cover the installation of all variants of the Ubuntu operating system.
 
 -----
+
+In this documentation
+---------------------
 
 .. grid:: 1 1 2 2
    :gutter: 3
@@ -36,22 +45,22 @@ Ubuntu installation documentation
 
        Discussion and clarification of key topics
 
-Having trouble? We would like to help!
-======================================
-
-- Links to other communication channels go here
-
 Project and community
-=====================
+---------------------
 
-Subiquity is a member of the Ubuntu family. It's an open source project that
-warmly welcomes community projects, contributions, suggestions, fixes and
-constructive feedback.
+Subiquity is a member of the Ubuntu family. It's an open source project that warmly welcomes community projects, contributions, suggestions, fixes and constructive feedback. Use the following resources to ask questions, report bugs, contribute translations, or participate in the development of the Ubuntu installer.
 
-* Read our `Code of Conduct`_.
-* IRC: `Libera.Chat`_, the :spellexception:`#ubuntu-server` channel.
-* Discourse: `Ubuntu Foundations`_.
-* Contribute: See `CONTRIBUTING.md`_ on GitHub.
+Get started:
+  * Read our `Code of Conduct`_
+
+Discuss:
+  * IRC: `Libera.Chat`_, the *#ubuntu-server* channel
+  * Discourse: `Ubuntu Foundations`_
+
+Contribute:
+  * `Contribution guidelines`_ on GitHub
+  * `Issue tracker`_ on Launchpad
+  * `Localisation`_ on Launchpad
 
 .. toctree::
    :hidden:
@@ -67,4 +76,6 @@ constructive feedback.
 .. _Code of Conduct: https://ubuntu.com/community/ethos/code-of-conduct
 .. _Ubuntu Foundations: https://discourse.ubuntu.com/c/foundations/
 .. _Libera.Chat: https://libera.chat/
-.. _CONTRIBUTING.md: https://github.com/canonical/subiquity/blob/main/CONTRIBUTING.md
+.. _Contribution guidelines: https://github.com/canonical/subiquity/blob/main/CONTRIBUTING.md
+.. _Localisation: https://translations.launchpad.net/ubuntu/+source/subiquity/
+.. _Issue tracker: https://bugs.launchpad.net/subiquity
