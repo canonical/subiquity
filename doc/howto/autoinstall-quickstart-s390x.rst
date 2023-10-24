@@ -51,7 +51,7 @@ The encrypted password is ``ubuntu``.
 Serve the cloud-init configuration over HTTP
 ============================================
 
-Leave this running in one terminal window:
+Leave this running in a new terminal window:
 
 .. code-block:: none
 
