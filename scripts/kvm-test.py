@@ -306,14 +306,14 @@ def build(ctx):
             with snap_manager('subiquity_test.snap') as snap:
                 if not ctx.args.reuse:
                     run('snapcraft clean --use-lxd')
-                    run(f'snapcraft snap --use-lxd --output {snap} {snapargs}')
+                    run(f'snapcraft pack --use-lxd --output {snap} {snapargs}')
                 assert_exists(snap)
                 livefs_edit(ctx, '--add-snap-from-store', 'core20', 'stable',
                             '--inject-snap', snap)
     elif project == 'ubuntu-desktop-installer':
         with snap_manager('udi_test.snap') as snap:
             run('snapcraft clean --use-lxd')
-            run(f'snapcraft snap --use-lxd --output {snap} {snapargs}')
+            run(f'snapcraft pack --use-lxd --output {snap} {snapargs}')
             assert_exists(snap)
             run(f'sudo ./scripts/inject-snap {ctx.baseiso} {ctx.iso} {snap}')
     else:

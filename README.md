@@ -59,10 +59,41 @@ an ISO. Rather than building one from scratch, it's much easier to
 install your version of subiquity into the daily image. Here's how to
 do this:
 
-1. Build your change into a snap:
+## Commit your changes locally
+
+If you are only making a change in Subiquity itself, running `git add <modified-file...>`
+and then `git commit` should be enough.
+
+Otherwise, if you made any modification to curtin or probert, you need to ensure that:
+
+* The modification is committed inside the relevant repository (i.e., `git add` + `git commit`).
+* The relevant `source` property in snapcraft.yaml points to the local
+  repository instead of the upstream repository.
+* The relevant `source-commit` property in snapcraft.yaml is updated to reflect
+  your new revision (one must use the full SHA-1 here).
+* The above modifications to snapcraft.yaml are committed.
+
+Example:
+```
+parts:
+  curtin:
+    plugin: nil
+
+    # Comment out the original source property, pointing to the upstream repository
+    #source: https://git.launchpad.net/curtin
+    # Instead, specify the name of the directory where curtin is checked out
+    source: curtin
+    source-type: git
+    # Update the below so it points to the commit ID within the curtin repository
+    source-commit: 7c18bf6a24297ed465a341a1f53875b61c878d6b
+```
+
+## Build and inject your changes into an ISO
+
+1. Build your changes into a snap:
 
    ```
-   $ snapcraft snap --output subiquity_test.snap
+   $ snapcraft pack --output subiquity_test.snap
    ```
 
 2. Grab the current version of the installer:

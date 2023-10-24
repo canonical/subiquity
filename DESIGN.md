@@ -521,7 +521,7 @@ Tests (and lint checks) are run by github actions using lxd.  See
 `.github/workflows/build.yaml` and `./scripts/test-in-lxd.sh` and so
 on.
 
-For "real" testing, you need to make a snap (`snapcraft snap`), mash
+For "real" testing, you need to make a snap (`snapcraft pack`), mash
 it into an existing ISO using `./scripts/inject-subiquity-snap.sh`,
 and boot the result in a VM. There is an even hackier pair of scripts
 (`./scripts/slimy-update-snap.sh` and

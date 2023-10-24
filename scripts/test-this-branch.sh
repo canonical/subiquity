@@ -6,7 +6,7 @@ cd $(dirname $(dirname $(readlink -f $0)))
 
 sudo apt install -y zsync xorriso isolinux
 
-snapcraft snap --output subiquity_test.snap
+snapcraft pack --output subiquity_test.snap
 urlbase=http://cdimage.ubuntu.com/ubuntu-server/daily-live/current
 distroname=$(distro-info -d)
 isoname="${distroname}"-live-server-$(dpkg --print-architecture).iso
