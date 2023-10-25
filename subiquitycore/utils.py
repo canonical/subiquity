@@ -19,7 +19,7 @@ import logging
 import os
 import random
 import subprocess
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Sequence
 
 log = logging.getLogger("subiquitycore.utils")
 
@@ -35,18 +35,15 @@ def _clean_env(env, *, locale=True):
     return env
 
 
-def orig_environ(env: Optional[Dict[str, str]]) -> Dict[str, str]:
+def orig_environ(env):
     """Generate an environment dict that is suitable for use for running
     programs that live outside the snap."""
-
     if env is None:
-        env: Dict[str, str] = os.environ
-
-    ret: Dict[str, str] = env.copy()
-
+        env = os.environ
+    ret = env.copy()
     for key, val in env.items():
         if key.endswith("_ORIG"):
-            key_to_restore: str = key[: -len("_ORIG")]
+            key_to_restore = key[: -len("_ORIG")]
             if val:
                 ret[key_to_restore] = val
             else:
