@@ -24,7 +24,7 @@ NoCloud
 OEM
 OpenSSH
 Petitboot
-PgDown
+PgDn
 PgUp
 POST
 PPA

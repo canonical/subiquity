@@ -73,7 +73,7 @@ This screen is only shown on s390x and allows z-specific configuration of
 devices.
 
 The list of devices can be long. :kbd:`Home` / :kbd:`End` / :kbd:`PgUp`
-/ :kbd:`PgDown` can be used to navigate through the list more quickly.
+/ :kbd:`PgDn` can be used to navigate through the list more quickly.
 
 Network
 =======
