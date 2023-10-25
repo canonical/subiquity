@@ -155,8 +155,12 @@ def main():
 
     async def run_with_loop():
         subiquity_interface = SystemSetupClient(opts)
-        subiquity_interface.note_file_for_apport("InstallerLog", logfiles["debug"])
-        subiquity_interface.note_file_for_apport("InstallerLogInfo", logfiles["info"])
+        subiquity_interface.note_file_for_apport(
+            "InstallerClientLog", logfiles["debug"]
+        )
+        subiquity_interface.note_file_for_apport(
+            "InstallerClientLogInfo", logfiles["info"]
+        )
         await subiquity_interface.run()
 
     asyncio.run(run_with_loop())

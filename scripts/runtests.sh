@@ -62,7 +62,7 @@ validate () {
                 # not to do that.
                 # If we run an autoinstall that customizes the security section as part
                 # of the test-suite, we will need to adapt this test.
-                python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/subiquity-curtin-apt.conf \
+                python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/curtin-install/subiquity-curtin-apt.conf \
                     apt.security[0].uri='"http://security.ubuntu.com/ubuntu/"' \
                     apt.security[0].arches='["amd64", "i386"]' \
                     apt.security[1].uri='"http://ports.ubuntu.com/ubuntu-ports"'
@@ -259,7 +259,7 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --kernel-cmdline autoinstall \
     --source-catalog examples/sources/install.yaml
 validate
-python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/subiquity-curtin-apt.conf \
+python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/curtin-install/subiquity-curtin-apt.conf \
         apt.disable_components='[non-free, restricted]' \
         apt.preferences[0].pin-priority=200 \
         apt.preferences[0].pin='"origin *ubuntu.com*"' \
