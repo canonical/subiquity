@@ -1,14 +1,12 @@
 Reference
-*********
+=========
 
-Our reference section contains support information for Subiquity.
-This includes details on the network requirements, API definitions, support
-matrices and so on.
+The reference section contains support information for Subiquity. This includes details on the network requirements, API definitions, support matrices, and other.
 
 -----
 
 Autoinstall reference manual
-============================
+----------------------------
 
 .. toctree::
    :maxdepth: 1
