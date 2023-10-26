@@ -25,6 +25,7 @@ python3-async-timeout
 python3-attr
 python3-bson
 python3-coverage
+python3-debian
 python3-dev
 python3-distutils-extra
 python3-flake8
