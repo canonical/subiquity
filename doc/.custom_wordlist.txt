@@ -17,6 +17,7 @@ LUKS
 LV
 LVM
 LinuxONE
+Mantic
 MiB
 NIC
 Netplan
@@ -36,7 +37,7 @@ UEFI
 URI
 Zdev
 amd
-authorized-keys
+authorized
 autoinstall
 autoinstaller
 autoinstalls
@@ -51,6 +52,7 @@ debian-installer
 el
 flavor
 geoip
+geolocation
 globbing
 hostname
 iSCSI

@@ -1,2 +1,3 @@
-.. |ubuntu-latest-version| replace:: 23.04
-.. |ubuntu-latest-codename| replace:: Lunar Lobster
+.. |ubuntu-latest-version| replace:: 23.10
+.. |ubuntu-latest-codename| replace:: Mantic Minotaur
+.. role:: command(literal)
