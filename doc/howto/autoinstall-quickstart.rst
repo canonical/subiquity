@@ -1,11 +1,11 @@
-.. _autoinstall_quick-start:
+.. _autoinstall_quick_start:
 
 Autoinstall quick start
 =======================
 
 This guide provides instructions on how to use autoinstall with a current version of Ubuntu for the amd64 architecture in a virtual machine (VM) on your computer.
 
-For older Ubuntu releases, substitute the version in the name of the ISO image. The instructions should otherwise be the same. See :ref:`<autoinstall-quick-start-s390x>` for instructions on installing on the s390x architecture.
+For older Ubuntu releases, substitute the version in the name of the ISO image. The instructions should otherwise be the same. See :ref:`Autoinstall quick start for s390x<autoinstall_quick_start_s390x>` for instructions on installing on the s390x architecture.
 
 Providing the autoinstall data over the network
 -----------------------------------------------
