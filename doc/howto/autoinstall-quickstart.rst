@@ -1,48 +1,39 @@
-.. _autoinstall_quickstart:
+.. _autoinstall_quick-start:
 
 Autoinstall quick start
-***********************
+=======================
 
-The intent of this page is to provide simple instructions to perform an
-autoinstall in a VM on your machine.
+This guide provides instructions on how to use autoinstall with a current version of Ubuntu for the amd64 architecture in a virtual machine (VM) on your computer.
 
-This page assumes that you are installing a recent Ubuntu release. However,
-for older releases, you can substitute the name of the ISO image but the
-instructions should otherwise be the same.
-
-This page also assumes you are on the AMD64 architecture. There is a
-:ref:`version for s390x<autoinstall-quickstart-s390x>` too.
+For older Ubuntu releases, substitute the version in the name of the ISO image. The instructions should otherwise be the same. See :ref:`<autoinstall-quick-start-s390x>` for instructions on installing on the s390x architecture.
 
 Providing the autoinstall data over the network
-===============================================
+-----------------------------------------------
 
-This method is the one that generalises most easily to doing an entirely
-network-based installation where a machine boots over a network and then is automatically
-installed.
+This method describes a network-based installation. When booting over a network, use this method to deliver autoinstall to perform the installation.
 
 Download the ISO
-----------------
+~~~~~~~~~~~~~~~~
 
-Go to the `Ubuntu ISO download page`_ and download the latest Ubuntu
-live-server ISO.
+Download the latest release of the Ubuntu Server image (ISO) from the `Ubuntu ISO download page`_ (currently |ubuntu-latest-version| (|ubuntu-latest-codename|)).
 
 Mount the ISO
--------------
+~~~~~~~~~~~~~
 
-.. code-block:: bash
+Make the content of the ISO image accessible from a local directory:
 
-    sudo mount -r ~/Downloads/ubuntu-<release-number>-live-server-amd64.iso /mnt
+.. code:: none
 
-Where you should change `<release-number>` to match the number of the LTS or
-release you have downloaded (e.g., `22.04.3` for Jammy or `23.04` for the Lunar
-interim release).
+    sudo mount -r ~/Downloads/ubuntu-<version-number>-live-server-amd64.iso /mnt
+
+Change ``<version-number>`` to match the number of the release you have downloaded.
 
 Write your autoinstall configuration
-------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This means creating cloud-init configuration as follows:
+Create a cloud-init configuration:
 
-.. code-block:: bash
+.. code:: none
 
     mkdir -p ~/www
     cd ~/www
@@ -60,69 +51,64 @@ This means creating cloud-init configuration as follows:
 The encrypted password is ``ubuntu``.
 
 Serve the cloud-init configuration over HTTP
---------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Leave this running in one terminal window:
+Leave the HTTP server running in a terminal:
 
-.. code-block:: bash
+.. code:: none
 
     cd ~/www
     python3 -m http.server 3003
 
 Create a target disk
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
-.. code-block::
+Create the target VM disk for the installation:
+
+.. code:: none
 
     truncate -s 10G image.img
 
 Run the installation
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
-As before, you will need to change `<release-number>` in the following command
-to match the release ISO you downloaded.
+Change ``<version-number>`` in the following command to match the release ISO you downloaded.
 
-.. code-block:: bash
+.. code:: none
 
     kvm -no-reboot -m 2048 \
         -drive file=image.img,format=raw,cache=none,if=virtio \
-        -cdrom ~/Downloads/ubuntu-<release-number>-live-server-amd64.iso \
+        -cdrom ~/Downloads/ubuntu-<version-number>-live-server-amd64.iso \
         -kernel /mnt/casper/vmlinuz \
         -initrd /mnt/casper/initrd \
         -append 'autoinstall ds=nocloud-net;s=http://_gateway:3003/'
 
-This will boot, download the configuration from the server (set up in the previous
-step) and run the installation. The installer reboots at the end but the
-``-no-reboot`` flag to ``kvm`` means that ``kvm`` will exit when this happens.
-It should take about 5 minutes.
+This command boots the VM, downloads the configuration from the server (prepared in the previous step) and runs the installation. The installer reboots at the end. The ``-no-reboot`` option to the ``kvm`` command instructs ``kvm`` to exit on reboot.
 
 Boot the installed system
--------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: bash
+.. code:: none
 
     kvm -no-reboot -m 2048 \
         -drive file=image.img,format=raw,cache=none,if=virtio
 
-This will boot into the freshly installed system and you should be able to log
-in as ``ubuntu/ubuntu``.
+This command boots the installed system in the VM. Log in using ``ubuntu`` for both the user name and password.
 
 Using another volume to provide the autoinstall configuration
-=============================================================
+-------------------------------------------------------------
 
-This is the method to use when you want to create media that you can just plug
-into a system to have it be installed.
+Use this method to create an installation medium to plug into a computer to have it be installed.
 
-Download the live-server ISO
-----------------------------
+Download the ISO
+~~~~~~~~~~~~~~~~
 
-Go to the `Ubuntu ISO download page`_ and download the latest Ubuntu
-live-server ISO.
+Download the latest Ubuntu Server ISO from the `Ubuntu ISO download page`_.
 
-Create your user-data and meta-data files
------------------------------------------
+Create user-data and meta-data files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: bash
+.. code:: none
 
     mkdir -p ~/cidata
     cd ~/cidata
@@ -140,52 +126,54 @@ Create your user-data and meta-data files
 The encrypted password is ``ubuntu``.
 
 Create an ISO to use as a cloud-init data source
-------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: bash
+Install utilities for working with cloud images:
+
+.. code:: none
 
     sudo apt install cloud-image-utils
+
+Create the ISO image for cloud-init:
+
+.. code:: none
+
     cloud-localds ~/seed.iso user-data meta-data
 
 Create a target disk
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: bash
+Create the target VM disk for the installation:
+
+.. code:: none
 
     truncate -s 10G image.img
 
 Run the installation
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
-As before, you will need to change `<release-number>` in the following command
-to match the release ISO you downloaded.
+Change ``<version-number>`` in the following command to match the release ISO you downloaded.
 
-.. code-block:: bash
+.. code:: none
 
     kvm -no-reboot -m 2048 \
         -drive file=image.img,format=raw,cache=none,if=virtio \
         -drive file=~/seed.iso,format=raw,cache=none,if=virtio \
-        -cdrom ~/Downloads/ubuntu-<release-number>-live-server-amd64.iso
+        -cdrom ~/Downloads/ubuntu-<version-number>-live-server-amd64.iso
 
-This boots the system and runs the installation. Unless you interrupt boot to add
-``autoinstall`` to the kernel command line, the installer prompts for
-confirmation before touching the disk.
+This command boots the system and runs the installation. The installer prompts for a confirmation before modifying the disk. To skip the need for a confirmation, interrupt the booting process, and add the ``autoinstall`` parameter to the kernel command line.
 
-The installer reboots at the end but the ``-no-reboot`` flag to ``kvm`` means
-that ``kvm`` will exit when this happens.
-
-The whole process should take about 5 minutes.
+The installer reboots at the end. The ``-no-reboot`` option to the ``kvm`` command instructs ``kvm`` to exit on reboot.
 
 Boot the installed system
--------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: bash
+.. code:: none
 
     kvm -no-reboot -m 2048 \
         -drive file=image.img,format=raw,cache=none,if=virtio
 
-This will boot into the freshly installed system and you should be able to log
-in as ``ubuntu/ubuntu``.
+This command boots the installed system in the VM. Log in using ``ubuntu`` for both the user name and password.
 
 .. LINKS
 

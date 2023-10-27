@@ -1,33 +1,31 @@
-.. _autoinstall-quickstart-s390x:
+.. _autoinstall-quick-start-s390x:
 
-Automatic installation quick start for s390x
-********************************************
+Autoinstall quick start for s390x
+=================================
 
-This how-to provides basic instructions to perform an automatic installation
-in a virtual machine (VM) on a local machine on the s390x architecture.
+This guide provides instructions on how to use autoinstall with a current version of Ubuntu for the s390x architecture in a virtual machine (VM) on your computer.
 
-This how-to is a version of :ref:`autoinstall_quickstart`.
-adapted for s390x.
+For older Ubuntu releases, substitute the version in the name of the ISO image. The instructions should otherwise be the same. See :ref:`<autoinstall-quick-start>` for instructions on installing on the amd64 architecture.
 
-Download an ISO
-===============
+Download the ISO
+----------------
 
-Download an ISO image of the latest release from the `release page <https://cdimage.ubuntu.com/ubuntu/releases/>`_ (currently |ubuntu-latest-version| (|ubuntu-latest-codename|)).
-
-.. parsed-literal::
-
-    wget https:\ //cdimage.ubuntu.com/ubuntu/releases/|ubuntu-latest-version|/release/ubuntu-|ubuntu-latest-version|-live-server-s390x.iso -P ~/Downloads
+Download the latest release of the Ubuntu Server image (ISO) from the `Ubuntu ISO download page`_ (currently |ubuntu-latest-version| (|ubuntu-latest-codename|)).
 
 Mount the ISO
-=============
+-------------
 
-.. parsed-literal::
+Make the content of the ISO image accessible from a local directory:
+
+.. code:: none
 
     mkdir -p ~/iso
-    sudo mount -r ~/Downloads/ubuntu-|ubuntu-latest-version|-live-server-s390x.iso ~/iso
+    sudo mount -r ~/Downloads/ubuntu-<version-number>-live-server-s390x.iso ~/iso
+
+Change ``<version-number>`` to match the number of the release you have downloaded.
 
 Write your autoinstall configuration
-====================================
+------------------------------------
 
 Create a cloud-init configuration:
 
@@ -49,9 +47,9 @@ Create a cloud-init configuration:
 The encrypted password is ``ubuntu``.
 
 Serve the cloud-init configuration over HTTP
-============================================
+--------------------------------------------
 
-Leave this running in a new terminal window:
+Leave the HTTP server running in a terminal:
 
 .. code-block:: none
 
@@ -59,14 +57,18 @@ Leave this running in a new terminal window:
     python3 -m http.server 3003
 
 Create a target disk
-====================
+--------------------
 
-Proceed with a second terminal window:
+In a new terminal, install the ``qemu-img`` utility:
 
 .. code-block:: none
 
     sudo apt install qemu-utils
     ...
+
+Create the target VM disk for the installation:
+
+.. code-block:: none
 
     qemu-img create -f qcow2 disk-image.qcow2 10G
     Formatting 'disk-image.qcow2', fmt=qcow2 size=10737418240 cluster_size=65536 lazy_refcounts=off refcount_bits=16
@@ -84,7 +86,9 @@ Proceed with a second terminal window:
         corrupt: false
 
 Run the installation
-====================
+--------------------
+
+Install the ``kvm`` command:
 
 .. code-block:: none
 
@@ -97,26 +101,29 @@ Add the default user to the ``kvm`` group:
 
     sudo usermod -a -G kvm ubuntu   # re-login to make the changes take effect
 
+Run the installation in a VM. Change ``<version-number>`` in the following command to match the release ISO you downloaded:
+
+.. code-block:: none
+
     kvm -no-reboot -name auto-inst-test -nographic -m 2048 \
         -drive file=disk-image.qcow2,format=qcow2,cache=none,if=virtio \
-        -cdrom ~/Downloads/ubuntu-22.10-live-server-s390x.iso \
+        -cdrom ~/Downloads/ubuntu-<version-number>-live-server-s390x.iso \
         -kernel ~/iso/boot/kernel.ubuntu \
         -initrd ~/iso/boot/initrd.ubuntu \
         -append 'autoinstall ds=nocloud-net;s=http://_gateway:3003/ console=ttysclp0'
 
-The above commands boot the virtual machine, download the configuration from the server
-(prepared in the previous step) and run the installation.
-
-The installer reboots at the end. The ``-no-reboot`` flag to ``kvm`` instructs ``kvm``
-to terminate on reboot. The procedure takes approximately 5 minutes.
+This command boots the VM, downloads the configuration from the server (prepared in the previous step) and runs the installation. The installer reboots at the end. The ``-no-reboot`` option to the ``kvm`` command instructs ``kvm`` to exit on reboot.
 
 Boot the installed system
-=========================
+-------------------------
 
 .. code-block:: none
 
     kvm -no-reboot -name auto-inst-test -nographic -m 2048 \
         -drive file=disk-image.qcow2,format=qcow2,cache=none,if=virtio
 
-This command boots into the installed system. Log in using ``ubuntu`` for both the user
-name and password.
+This command boots the installed system in the VM. Log in using ``ubuntu`` for both the user name and password.
+
+.. LINKS
+
+.. _Ubuntu ISO download page: https://releases.ubuntu.com/
