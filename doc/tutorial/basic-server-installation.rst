@@ -13,8 +13,8 @@ System requirements
 
 Ubuntu Server Edition provides a common, minimalist base for a variety of server applications, such as file or print services, web hosting, email hosting, etc. This version supports four 64-bit architectures:
 
-* amd64 (Intel/AMD 64-bit)
-* arm64 (64-bit ARM)
+* amd64 (AMD64, Intel 64)
+* arm64 (AArch64)
 * ppc64el (POWER8 and POWER9)
 * s390x (IBM Z and LinuxONE)
 
