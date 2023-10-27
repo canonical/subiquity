@@ -70,7 +70,8 @@ parts:
 
     source: https://git.launchpad.net/curtin
     source-type: git
-    source-commit: 7c18bf6a24297ed465a341a1f53875b61c878d6b
+    # We are tracking the branch ubuntu/mantic here.
+    source-commit: f96c957c756d2856889ae977677de32647a1cbc9
 
     override-pull: |
       craftctl default
