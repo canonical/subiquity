@@ -181,7 +181,7 @@ class IdentityView(BaseView):
     title = _("Profile setup")
     excerpt = _(
         "Enter the username and password you will use to log in to "
-        "the system. You can configure SSH access on the next screen "
+        "the system. You can configure SSH access on a later screen "
         "but a password is still needed for sudo."
     )
 
