@@ -82,7 +82,7 @@ MIRROR_CHECK_STATUS_TEXTS = {
     (False, None): _(
         "The mirror location cannot be checked because no network has been configured."
     ),
-    (True, None): _("The mirror location has not yet started."),
+    (True, None): _("Testing of the mirror location has not yet started."),
     (True, MirrorCheckStatus.RUNNING): _("The mirror location is being tested."),
     (True, MirrorCheckStatus.OK): _("This mirror location passed tests."),
     (True, MirrorCheckStatus.FAILED): _(
