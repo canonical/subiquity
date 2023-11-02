@@ -16,10 +16,10 @@ time with an *autoinstall configuration* and lets the installation process run w
 any interaction.
 
 
-Differences from :spellexception:`debian-installer` preseeding
+Differences from `debian-installer` preseeding
 ============================================
 
-*preseeds* are the way to automate an installer based on :spellexception:`debian-installer`
+*preseeds* are the way to automate an installer based on `debian-installer`
 (also known as d-i).
 
 Autoinstalls differ from preseeds in the following ways:
@@ -42,7 +42,7 @@ There are 2 ways to provide the autoinstall configuration:
    configuration directives to cloud-init at boot time
  * Directly on the installation media
 
-Autoinstall by way of cloud-:spellexception:`config`
+Autoinstall by way of `cloud-config`
 ----------------------------------
 
 The suggested way of providing autoinstall configuration to the Ubuntu installer is
@@ -116,7 +116,7 @@ autoinstall file in the following order and pick the first existing one:
 
 1. Kernel command line
 2. Root of the installation system
-3. Cloud-:spellexception:`config`
+3. `cloud-config`
 4. Root of the CD-ROM (ISO)
 
 
