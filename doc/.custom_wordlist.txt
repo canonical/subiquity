@@ -49,7 +49,7 @@ codecs
 config
 curtin
 debconf
-debian-installer
+debian
 el
 flavor
 geoip
