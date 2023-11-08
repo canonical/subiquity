@@ -84,7 +84,13 @@ if [ "$(snap managed)" = "true" ]; then
     exit 0
 fi
 
-cat /usr/share/subiquity/console-conf-wait
+# if there is NOT console-conf snap, exit gracefully
+if [ ! -e "/snap/console-conf" ]; then
+  touch /var/lib/console-conf/complete
+  exit 0
+fi
+
+snap run console-conf.wait
 read REPLY
 # start the console-conf routine in snapd to delay any new refreshes, and wait
 # for current refreshes to complete, this will print off messages if there are
@@ -92,4 +98,12 @@ read REPLY
 if snap routine console-conf-start --help >/dev/null 2>/dev/null; then
     snap routine console-conf-start
 fi
-exec console-conf "$@"
+# preapre host finger prints for console-conf as it cannot access sshd or host keys
+mkdir -p /run/console_conf
+/usr/share/subiquity/console-conf-write-login-details --host-fingerprints > /run/console_conf/host-fingerprints.txt
+snap run console-conf "$@"
+rval=$?
+if [ ! ${rval} -eq 0 ]; then
+  echo "console-conf exited with: ${rval}"
+  exit ${rval}
+fi
