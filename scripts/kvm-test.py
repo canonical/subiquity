@@ -39,6 +39,15 @@ iso:
         focal: focal/ubuntu-20.04.3-live-server-amd64.iso
         bionic: bionic/bionic-live-server-amd64.iso
     default: edge
+profiles:
+    server:
+        memory: 2G
+        disk-size: 12G
+        extra-qemu-options: []
+    desktop:
+        memory: 8G
+        disk-size: 20G
+        extra-qemu-options: [-device, qxl, -smp, "2"]
 '''
 
 
@@ -49,13 +58,11 @@ class Profile:
     disk_size: str
     extra_qemu_options: list[str]
 
-
-profiles = {
-
-    'server': Profile(name='server', memory='2G', disk_size='12G', extra_qemu_options=[]),
-    'desktop': Profile(name='desktop', memory='8G', disk_size='20G',
-                       extra_qemu_options=['-device', 'qxl', '-smp', '2']),
-}
+    @classmethod
+    def from_config(cls, name, props) -> 'Profile':
+        return Profile(name=name, memory=props['memory'],
+                       disk_size=props['disk-size'],
+                       extra_qemu_options=props['extra-qemu-options'])
 
 
 def salted_crypt(plaintext_password):
@@ -74,6 +81,9 @@ class Context:
         self.config = self.load_config()
         self.args = args
         self.release = args.release
+        profiles: dict[str, Profile] = {}
+        for profile_name, profile_props in self.config["profiles"].items():
+            profiles[profile_name] = Profile.from_config(profile_name, profile_props)
         self.default_mem = profiles[self.args.profile].memory
         self.default_disk_size = profiles[self.args.profile].disk_size
         self.qemu_extra_options = profiles[self.args.profile].extra_qemu_options
