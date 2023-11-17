@@ -26,7 +26,6 @@ import yaml
 
 
 cfg = '''
-default_mem: '8G'
 iso:
     basedir: /srv/iso
     release:
@@ -40,7 +39,30 @@ iso:
         focal: focal/ubuntu-20.04.3-live-server-amd64.iso
         bionic: bionic/bionic-live-server-amd64.iso
     default: edge
+profiles:
+    server:
+        memory: 2G
+        disk-size: 12G
+        extra-qemu-options: []
+    desktop:
+        memory: 8G
+        disk-size: 20G
+        extra-qemu-options: [-device, qxl, -smp, "2"]
 '''
+
+
+@dataclasses.dataclass
+class Profile:
+    name: str
+    memory: str
+    disk_size: str
+    extra_qemu_options: list[str]
+
+    @classmethod
+    def from_config(cls, name, props) -> 'Profile':
+        return Profile(name=name, memory=props['memory'],
+                       disk_size=props['disk-size'],
+                       extra_qemu_options=props['extra-qemu-options'])
 
 
 def salted_crypt(plaintext_password):
@@ -59,7 +81,12 @@ class Context:
         self.config = self.load_config()
         self.args = args
         self.release = args.release
-        self.default_mem = self.config.get('default_mem', '8G')
+        profiles: dict[str, Profile] = {}
+        for profile_name, profile_props in self.config["profiles"].items():
+            profiles[profile_name] = Profile.from_config(profile_name, profile_props)
+        self.default_mem = profiles[self.args.profile].memory
+        self.default_disk_size = profiles[self.args.profile].disk_size
+        self.qemu_extra_options = profiles[self.args.profile].extra_qemu_options
         if not self.release:
             self.release = self.config["iso"]["default"]
         iso = self.config["iso"]
@@ -145,8 +172,7 @@ parser.add_argument('-B', '--bios', action='store_true', default=False,
                     help='boot in BIOS mode (default mode is UEFI)')
 parser.add_argument('-c', '--channel', action='store',
                     help='build iso with snap from channel')
-parser.add_argument('-d', '--disksize', default='12G', action='store',
-                    help='size of disk to create (12G default)')
+parser.add_argument('-d', '--disksize', help='size of disk to create')
 parser.add_argument('-i', '--img', action='store', help='use this img')
 parser.add_argument('-n', '--nets', action='store', default=1, type=int,
                     help='''number of network interfaces.
@@ -197,6 +223,8 @@ parser.add_argument('--force-no-autoinstall', default=None,
 parser.add_argument('--with-tpm2', action='store_true',
                     help='''emulate a TPM 2.0 interface (requires swtpm
                     package)''')
+parser.add_argument('--profile', default="server",
+                    help='load predefined memory, disk size and qemu options')
 
 
 cc_group = parser.add_mutually_exclusive_group()
@@ -463,6 +491,8 @@ def kvm_prepare_common(ctx):
     if ctx.args.sound:
         ret.extend(('-device', 'AC97', '-device', 'usb-ehci'))
 
+    ret.extend(ctx.qemu_extra_options)
+
     if ctx.args.with_tpm2:
         tpm_emulator_context = tpm_emulator()
     else:
@@ -529,7 +559,8 @@ def install(ctx):
 
             kvm.extend(drive(ctx.target))
             if not os.path.exists(ctx.target) or ctx.args.overwrite:
-                run(f'qemu-img create -f qcow2 {ctx.target} {ctx.args.disksize}')
+                disksize = ctx.args.disksize or ctx.default_disk_size
+                run(f'qemu-img create -f qcow2 {ctx.target} {disksize}')
 
             if len(appends) > 0:
                 with mounter(iso, mntdir):
