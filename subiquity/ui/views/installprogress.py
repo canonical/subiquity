@@ -41,7 +41,7 @@ class MyLineBox(LineBox):
 
 
 class ProgressView(BaseView):
-    title = _("Install progress")
+    title = _("Installation progress")
 
     def __init__(self, controller):
         self.controller = controller
@@ -149,14 +149,14 @@ class ProgressView(BaseView):
             self.title = _("Installing system")
             btns = [self.view_log_btn]
         elif state == ApplicationState.UU_RUNNING:
-            self.title = _("Install complete!")
+            self.title = _("Installation complete!")
             self.reboot_btn.base_widget.set_label(_("Cancel update and reboot"))
             btns = [
                 self.view_log_btn,
                 self.reboot_btn,
             ]
         elif state == ApplicationState.UU_CANCELLING:
-            self.title = _("Install complete!")
+            self.title = _("Installation complete!")
             self.reboot_btn.base_widget.set_label(_("Rebooting..."))
             self.reboot_btn.enabled = False
             btns = [
@@ -164,7 +164,7 @@ class ProgressView(BaseView):
                 self.reboot_btn,
             ]
         elif state == ApplicationState.DONE:
-            self.title = _("Install complete!")
+            self.title = _("Installation complete!")
             self.reboot_btn.base_widget.set_label(_("Reboot Now"))
             btns = [
                 self.view_log_btn,

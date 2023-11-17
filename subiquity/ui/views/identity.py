@@ -178,10 +178,10 @@ class IdentityForm(Form):
 
 
 class IdentityView(BaseView):
-    title = _("Profile setup")
+    title = _("Profile configuration")
     excerpt = _(
         "Enter the username and password you will use to log in to "
-        "the system. You can configure SSH access on a later screen "
+        "the system. You can configure SSH access on a later screen, "
         "but a password is still needed for sudo."
     )
 

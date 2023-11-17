@@ -143,7 +143,7 @@ class ZdevList(WidgetWrap):
 
 
 class ZdevView(BaseView):
-    title = _("Zdev setup")
+    title = _("Zdev configuration")
 
     def __init__(self, controller, zdevinfos):
         log.debug("FileSystemView init start()")

@@ -232,7 +232,7 @@ Wifi support packages will be installed in the target system.
 
 
 class NetworkView(BaseView):
-    title = _("Network connections")
+    title = _("Network configuration")
     excerpt = _(
         "Configure at least one interface this server can use to talk "
         "to other machines, and which preferably provides sufficient "

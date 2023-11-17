@@ -34,29 +34,27 @@ from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquity.ui.views.mirror")
 
-mirror_help = _(
-    "You may provide an archive mirror that will be used instead of the default."
-)
+mirror_help = _("You may provide an archive mirror to be used instead of the default.")
 
 MIRROR_CHECK_CONFIRMATION_TEXTS = {
     MirrorCheckStatus.RUNNING: (
         _("Mirror check still running"),
         _(
-            "The check of the mirror URL is still running. You can continue but"
+            "The check of the mirror URL is still running. You can continue, but"
             " there is a chance that the installation will fail."
         ),
     ),
     MirrorCheckStatus.FAILED: (
         _("Mirror check failed"),
         _(
-            "The check of the mirror URL failed. You can continue but it is very"
+            "The check of the mirror URL failed. You can continue, but it is very"
             " likely that the installation will fail."
         ),
     ),
     None: (
         _("Mirror check has not run"),
         _(
-            "The check of the mirror has not yet started. You can continue but"
+            "The check of the mirror has not yet started. You can continue, but"
             " there is a chance that the installation will fail."
         ),
     ),
@@ -96,7 +94,7 @@ explain the problem. You can try again once the issue has been fixed
 
 
 class MirrorView(BaseView):
-    title = _("Configure Ubuntu archive mirror")
+    title = _("Ubuntu archive mirror configuration")
     excerpt = _("If you use an alternative mirror for Ubuntu, enter its details here.")
 
     def __init__(

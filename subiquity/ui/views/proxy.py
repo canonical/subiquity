@@ -42,7 +42,7 @@ class ProxyForm(Form):
 
 
 class ProxyView(BaseView):
-    title = _("Configure proxy")
+    title = _("Proxy configuration")
     excerpt = _(
         "If this system requires a proxy to connect to the internet, "
         "enter its details here."

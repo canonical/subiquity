@@ -176,7 +176,7 @@ class UpgradeYesNoForm(Form):
     |                                                         |
     | ( )  Skip for now                                       |
     |                                                         |
-    |      You can always enable Ubuntu Pro later via the     |
+    |      You can always enable Ubuntu Pro later using the   |
     |      'pro attach' command.                              |
     |                                                         |
     |                       [ Continue ]                      |
@@ -193,7 +193,7 @@ class UpgradeYesNoForm(Form):
         group,
         _("Skip for now"),
         help="\n"
-        + _("You can always enable Ubuntu Pro later via the 'pro attach' command."),
+        + _("You can always enable Ubuntu Pro later using the 'pro attach' command."),
     )
 
 
@@ -205,8 +205,8 @@ class UpgradeYesNoFormNoNetwork(UpgradeYesNoForm):
     |                                                         |
     | (X)  Skip Ubuntu Pro setup for now                      |
     |                                                         |
-    |      Once you are connected to the Internet, you can    |
-    |      enable Ubuntu Pro via the 'pro attach' command.    |
+    |      Once you are connected to the internet, you can    |
+    |      enable Ubuntu Pro using the 'pro attach' command.  |
     |                                                         |
     |                       [ Continue ]                      |
     |                       [ Back     ]                      |
@@ -221,7 +221,7 @@ class UpgradeYesNoFormNoNetwork(UpgradeYesNoForm):
         _("Skip Ubuntu Pro setup for now"),
         help="\n"
         + _(
-            "Once you are connected to the Internet, you can"
+            "Once you are connected to the internet, you can"
             " enable Ubuntu Po via the 'pro attach' command."
         ),
     )
@@ -372,7 +372,7 @@ class UbuntuProView(BaseView):
         | ( )  Enable Ubuntu Pro                                  |
         |                                                         |
         | (X)  Skip for now                                       |
-        |      You can always enable Ubuntu Pro later via the     |
+        |      You can always enable Ubuntu Pro later using the   |
         |      'pro attach' command.                              |
         |                                                         |
         |                        [ Continue ]                     |
@@ -388,7 +388,7 @@ class UbuntuProView(BaseView):
             " STIG, HIPAA and other compliance or hardening"
             " requirements."
         )
-        excerpt_no_net = _("An Internet connection is required to enable Ubuntu Pro.")
+        excerpt_no_net = _("An internet connection is required to enable Ubuntu Pro.")
 
         about_pro_btn = menu_btn(
             _("About Ubuntu Pro"), on_press=lambda unused: self.show_about_ubuntu_pro()
@@ -423,7 +423,7 @@ class UbuntuProView(BaseView):
         |   * ...                                                 |
         |                                                         |
         | If you want to change the default enablements for your  |
-        | token, you can do so via the ubuntu.com/pro web         |
+        | token, you can do so using the ubuntu.com/pro web       |
         | interface. Alternatively, you can change enabled        |
         | services using the `pro' command-line tool once the     |
         | installation is finished.                               |
@@ -479,8 +479,8 @@ class UbuntuProView(BaseView):
             Text(
                 _(
                     "If you want to change the default enablements for your"
-                    " token, you can do so via the ubuntu.com/pro web"
-                    " interface. Alternatively you can change enabled services"
+                    " token, you can do so using the ubuntu.com/pro web"
+                    " interface. Alternatively, you can change enabled services"
                     " using the `pro` command-line tool once the installation"
                     " is finished."
                 )
@@ -566,11 +566,11 @@ class UbuntuProView(BaseView):
 
         def on_failure(status: UbuntuProCheckTokenStatus) -> None:
             """Open a message box stating that the contract-token
-            obtained via contract-selection is not valid ; and then go
+            obtained using contract-selection is not valid and then go
             back to the previous screen."""
 
             log.error(
-                "contract-token obtained via contract-selection"
+                "contract-token obtained using contract-selection"
                 " counld not be validated: %r",
                 status,
             )
@@ -584,7 +584,7 @@ class UbuntuProView(BaseView):
             )
 
         # It would be uncommon to have this call fail in production
-        # because the contract token obtained via contract-selection is
+        # because the contract token obtained using contract-selection is
         # expected to be valid. During testing, a mismatch in the
         # environment used (e.g., staging in subiquity and production
         # in u-a-c) can lead to this error though.
@@ -767,23 +767,23 @@ class TokenAddedWidget(Stretchy):
 
 class AboutProWidget(Stretchy):
     """Widget showing some information about what Ubuntu Pro offers.
-    +------------------- About Ubuntu Pro --------------------+
-    |                                                         |
-    | Ubuntu Pro is the same base Ubuntu, with an additional  |
-    | layer of security and compliance services and security  |
-    | patches covering a wider range of packages.             |
-    |   • Security patch coverage for CVSS critical, high and |
-    |     selected medium vulnerabilities in all 23,000       |
-    |     packages in "universe" (extended from the normal    |
-    |     2,300 "main" packages).                             |
-    |   • ...                                                 |
-    |   • ...                                                 |
-    |                                                         |
-    | Ubuntu Pro is free for personal use on up to 3 machines.|
-    | More information is at ubuntu.com/pro                   |
-    |                                                         |
-    |                       [ Continue ]                      |
-    +---------------------------------------------------------+
+    +------------------- About Ubuntu Pro ---------------------+
+    |                                                          |
+    | Ubuntu Pro is the same base as Ubuntu but adds an        |
+    | additional layer of security and compliance services     |
+    | and security patches covering a wider range of packages. |
+    |   • Security patch coverage for CVSS critical, high and  |
+    |     selected medium vulnerabilities in all 23,000        |
+    |     packages in "universe" (extended from the normal     |
+    |     2,300 "main" packages).                              |
+    |   • ...                                                  |
+    |   • ...                                                  |
+    |                                                          |
+    | Ubuntu Pro is free for personal use on up to five        |
+    | machines. More information is at ubuntu.com/pro          |
+    |                                                          |
+    |                       [ Continue ]                       |
+    +----------------------------------------------------------+
     """
 
     def __init__(self, parent: UbuntuProView) -> None:
@@ -794,7 +794,7 @@ class AboutProWidget(Stretchy):
 
         title = _("About Ubuntu Pro")
         header = _(
-            "Ubuntu Pro is the same base Ubuntu, with an additional"
+            "Ubuntu Pro is the same base as Ubuntu but adds an additional"
             " layer of security and compliance services and security"
             " patches covering a wider range of packages."
         )
@@ -832,7 +832,7 @@ class AboutProWidget(Stretchy):
             Text(""),
             Pile([itemize(svc, marker="  •") for svc in services]),
             Text(""),
-            Text(_("Ubuntu Pro is free for personal use on up to 3 machines.")),
+            Text(_("Ubuntu Pro is free for personal use on up to five machines.")),
             Text(_("More information is at ubuntu.com/pro")),
             Text(""),
             button_pile([ok]),
@@ -851,7 +851,7 @@ class HowToRegisterWidget(Stretchy):
     |                                                         |
     |_Create your Ubuntu One account with your email. Each    |
     | Ubuntu One account gets a free personal Ubuntu Pro      |
-    | subscription for up to three machines, including        |
+    | subscription for up to five machines, including         |
     | laptops, servers or cloud virtual machines.             |
     |                                                         |
     | Visit ubuntu.com/pro to get started.                    |
@@ -870,7 +870,7 @@ class HowToRegisterWidget(Stretchy):
         header = _(
             "Create your Ubuntu One account with your email. Each"
             " Ubuntu One account gets a free personal Ubuntu Pro"
-            " subscription for up to three machines, including"
+            " subscription for up to five machines, including"
             " laptops, servers or cloud virtual machines."
         )
 
