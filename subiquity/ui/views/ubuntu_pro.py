@@ -222,7 +222,7 @@ class UpgradeYesNoFormNoNetwork(UpgradeYesNoForm):
         help="\n"
         + _(
             "Once you are connected to the internet, you can"
-            " enable Ubuntu Po via the 'pro attach' command."
+            " enable Ubuntu Pro using the 'pro attach' command."
         ),
     )
 
