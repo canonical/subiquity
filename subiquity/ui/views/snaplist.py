@@ -368,7 +368,7 @@ class SnapCheckBox(CheckBox):
 
 
 class SnapListView(BaseView):
-    title = _("Featured Server Snaps")
+    title = _("Featured server snaps")
 
     def __init__(self, controller, data):
         self.selections_by_name = {}

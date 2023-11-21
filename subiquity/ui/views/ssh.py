@@ -207,7 +207,7 @@ class ConfirmSSHKeys(Stretchy):
 
 
 class SSHView(BaseView):
-    title = _("SSH Setup")
+    title = _("SSH configuration")
     excerpt = _(
         "You can choose to install the OpenSSH server package to "
         "enable secure remote access to your server."

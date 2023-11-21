@@ -27,7 +27,7 @@ log = logging.getLogger("subiquity.ui.views.source")
 
 
 class SourceView(BaseView):
-    title = _("Choose type of install")
+    title = _("Choose the type of installation")
 
     def __init__(self, controller, sources, current_id, search_drivers: bool):
         self.controller = controller
