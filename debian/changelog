@@ -1,3 +1,9 @@
+subiquity (24.04.1+git45g5f9fae19) noble; urgency=medium
+
+  * Upgrade to noble, systemd files are now in /usr/lib
+
+ -- Dimitri John Ledkov <dimitri.ledkov@canonical.com>  Fri, 24 Nov 2023 23:10:15 +0000
+
 subiquity (20.04.1+git45g5f9fae19) focal; urgency=medium
 
   * Upload subquity snapshot with reverted consoleconf patch.
