@@ -166,6 +166,20 @@ class InstallController(SubiquityController):
             and self.model.source.current.variant != "core"
         )
 
+    def write_autoinstall_config(self) -> None:
+        autoinstall_path = os.path.join(
+            self.app.root, "var/log/installer/autoinstall-user-data"
+        )
+        autoinstall_config = (
+            "#cloud-config\n"
+            "# See the auto install documentation at:"
+            "# https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html\n"  # noqa: E501
+            + yaml.dump({"autoinstall": self.app.make_autoinstall()})
+        )
+        # As autoinstall-user-data contains a password hash, we want this file
+        # to have a very restrictive mode and ownership.
+        write_file(autoinstall_path, autoinstall_config, mode=0o400, group="root")
+
     @with_context(description="configuring apt", level="INFO", childlevel="DEBUG")
     async def configure_apt(self, *, context):
         mirror = self.app.controllers.Mirror
@@ -683,15 +697,7 @@ class InstallController(SubiquityController):
         description="final system configuration", level="INFO", childlevel="DEBUG"
     )
     async def postinstall(self, *, context):
-        autoinstall_path = os.path.join(
-            self.app.root, "var/log/installer/autoinstall-user-data"
-        )
-        autoinstall_config = "#cloud-config\n" + yaml.dump(
-            {"autoinstall": self.app.make_autoinstall()}
-        )
-        # As autoinstall-user-data contains a password hash, we want this file
-        # to have a very restrictive mode and ownership.
-        write_file(autoinstall_path, autoinstall_config, mode=0o400, group="root")
+        self.write_autoinstall_config()
         try:
             if self.supports_apt():
                 packages = await self.get_target_packages(context=context)

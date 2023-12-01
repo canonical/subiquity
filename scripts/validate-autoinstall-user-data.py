@@ -28,6 +28,7 @@ switch.
 """
 
 import argparse
+import io
 import json
 
 import jsonschema
@@ -53,13 +54,28 @@ def main() -> None:
 
     args = vars(parser.parse_args())
 
-    if args["expect-cloudconfig"]:
-        assert args["input"].readline() == "#cloud-config\n"
-        get_autoinstall_data = lambda data: data["autoinstall"]
-    else:
-        get_autoinstall_data = lambda data: data
+    user_data: io.TextIOWrapper = args["input"]
 
-    data = yaml.safe_load(args["input"])
+    if args["expect-cloudconfig"]:
+        assert user_data.readline() == "#cloud-config\n"
+        def get_autoinstall_data(data): return data["autoinstall"]
+    else:
+        def get_autoinstall_data(data): return data
+
+    # Verify autoinstall doc link is in the file
+
+    stream_pos: int = user_data.tell()
+
+    data: str = user_data.read()
+
+    link: str = "https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html"  # noqa: E501
+
+    assert link in data
+
+    # Verify autoinstall schema
+    user_data.seek(stream_pos)
+
+    data = yaml.safe_load(user_data)
 
     jsonschema.validate(get_autoinstall_data(data),
                         json.load(args["json_schema"]))
