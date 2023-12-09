@@ -20,10 +20,22 @@ from typing import Any, Optional
 
 import attr
 
+from subiquity.common.dmidecode import dmidecode_get
 from subiquity.common.filesystem import gaps, sizes
 from subiquity.models.filesystem import Bootloader, Disk, Partition, Raid, align_up
 
 log = logging.getLogger("subiquity.common.filesystem.boot")
+
+
+def bootable_raid(raid: Raid):
+    if raid._m.bootloader != Bootloader.UEFI:
+        return False
+    if raid.container is not None and raid.container.metadata == "imsm":
+        return True
+    if "poweredge" in dmidecode_get("system-product-name").lower():
+        # LP: #1961079 - all poweredge devices assumed to support raid UEFI boot
+        return True
+    return False
 
 
 @functools.singledispatch
@@ -45,10 +57,7 @@ def _is_boot_device_disk(disk):
 
 @is_boot_device.register(Raid)
 def _is_boot_device_raid(raid):
-    bl = raid._m.bootloader
-    if bl != Bootloader.UEFI:
-        return False
-    if not raid.container or raid.container.metadata != "imsm":
+    if not bootable_raid(raid):
         return False
     return any(p.grub_device for p in raid._partitions)
 
@@ -344,10 +353,7 @@ def _can_be_boot_device_disk(disk, *, resize_partition=None, with_reformatting=F
 
 @can_be_boot_device.register(Raid)
 def _can_be_boot_device_raid(raid, *, resize_partition=None, with_reformatting=False):
-    bl = raid._m.bootloader
-    if bl != Bootloader.UEFI:
-        return False
-    if not raid.container or raid.container.metadata != "imsm":
+    if not bootable_raid(raid):
         return False
     if with_reformatting:
         return True
