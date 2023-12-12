@@ -169,7 +169,8 @@ class NetworkController(BaseNetworkController, SubiquityController):
         with context.child("wait_dhcp"):
             try:
                 await asyncio.wait_for(
-                    asyncio.wait({e.wait() for e in dhcp_events}), 10
+                    asyncio.wait({asyncio.create_task(e.wait()) for e in dhcp_events}),
+                    10,
                 )
             except asyncio.TimeoutError:
                 pass
