@@ -29,6 +29,7 @@ import pyudev
 from curtin import swap
 from curtin.commands.extract import AbstractSourceHandler
 from curtin.storage_config import ptable_part_type_to_flag
+from curtin.util import human2bytes
 
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReportKind
@@ -707,7 +708,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise Exception("failed to locate gap after adding boot")
 
         if choice.reset_partition:
-            if self.app.opts.dry_run:
+            if choice.reset_partition_size is not None:
+                part_align = disk.alignment_data().part_align
+                reset_size = align_up(choice.reset_partition_size, part_align)
+            elif self.app.opts.dry_run:
                 reset_size = DRY_RUN_RESET_SIZE
             else:
                 cp = await arun_command(["du", "-sb", "/cdrom"])
@@ -1410,6 +1414,20 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 disk_id=gap.device.id, gap=gap, allowed=[]
             )
 
+        reset_partition = False
+        reset_partition_size = None
+        rp_input = layout.get("reset-partition", None)
+        if rp_input:
+            reset_partition = True
+            if isinstance(rp_input, (str, int)):
+                reset_partition_size = int(human2bytes(rp_input))
+                log.info(
+                    "autoinstall: will install reset partition "
+                    f"of size {reset_partition_size}"
+                )
+            else:
+                log.info("autoinstall: will install reset partition")
+
         log.info(
             f"autoinstall: running guided {capability} install in "
             f"mode {mode} using {target}"
@@ -1421,7 +1439,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 password=password,
                 recovery_key=guided_recovery_key,
                 sizing_policy=sizing_policy,
-                reset_partition=layout.get("reset-partition", False),
+                reset_partition=reset_partition,
+                reset_partition_size=reset_partition_size,
             ),
             reset_partition_only=layout.get("reset-partition-only", False),
         )
