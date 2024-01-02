@@ -25,6 +25,7 @@ Depends: probert-network,
          python3-yaml,
          python3-requests,
          python3-requests-unixsocket,
+         python3-pyroute2,
          ${misc:Depends},
          ${python3:Depends}
 Description: Ubuntu Server Installer - core libraries
