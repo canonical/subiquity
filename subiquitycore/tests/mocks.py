@@ -25,6 +25,9 @@ class MockedApplication:
     answers = {}
     opts = None
 
+    def make_autoinstall(self):
+        return {"mock_key": "mock_data"}
+
 
 def make_app(model=None):
     app = MockedApplication()

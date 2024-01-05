@@ -198,6 +198,7 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.controller = InstallController(make_app())
         self.controller.model.target = tempfile.mkdtemp()
+        self.controller.app.root = tempfile.mkdtemp()
         os.makedirs(os.path.join(self.controller.model.target, "etc/grub.d"))
         self.addCleanup(shutil.rmtree, self.controller.model.target)
 
@@ -384,3 +385,15 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
     async def test_postinstall_platform_amd64(self, arun, machine):
         await self.controller.platform_postinstall()
         arun.assert_not_called()
+
+    async def test_write_autoinstall_config(self):
+        self.controller.write_autoinstall_config()
+        user_data = (
+            self.controller.app.root + "/var/log/installer/autoinstall-user-data"
+        )
+        with open(user_data) as file:
+            data = file.read()
+            self.assertIn(
+                "https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html",  # noqa: E501
+                data,
+            )
