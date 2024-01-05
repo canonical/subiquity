@@ -16,6 +16,7 @@
 import logging
 import os
 import pwd
+from pathlib import Path
 
 from subiquitycore.utils import run_command
 
@@ -77,7 +78,17 @@ The {keytype} host key fingerprint is:
 
 
 def host_key_info():
-    return summarize_host_keys(host_key_fingerprints())
+    if os.getenv("SNAP_CONFINEMENT", "classic") == "strict":
+        # if we run in confinement, we have no direct accesss to host
+        # keys info use prepared finger prints if exist
+        snap_name = os.getenv("SNAP_NAME", "classic")
+        host_fingerprints = Path("/run/" + snap_name + "/host-fingerprints.txt")
+        if host_fingerprints.is_file():
+            fingerprints = open(host_fingerprints, "r")
+            return fingerprints.read()
+        return ""
+    else:
+        return summarize_host_keys(host_key_fingerprints())
 
 
 def summarize_host_keys(fingerprints):

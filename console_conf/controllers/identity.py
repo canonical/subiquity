@@ -19,7 +19,6 @@ import os
 import pwd
 import shlex
 import sys
-from pathlib import Path
 
 from console_conf.ui.views import IdentityView, LoginView
 from subiquitycore.snapd import SnapdConnection
@@ -117,17 +116,7 @@ def write_login_details(fp, username, ips):
         )
     else:
         first_ip = ips[0]
-        key_info = None
-        if os.getenv("SNAP_CONFINEMENT", "classic") == "strict":
-            # if we run in confinement, we have no direct accesss to host
-            # keys info use prepared finger prints if exist
-            host_fingerprints_path = "/run/console-conf/host-fingerprints.txt"
-            host_fingerprints = Path(host_fingerprints_path)
-            if host_fingerprints.is_file():
-                fingerprints = open(host_fingerprints_path, "r")
-                key_info = fingerprints.read()
-        else:
-            key_info = host_key_info()
+        key_info = host_key_info()
         fp.write(
             login_details_tmpl.format(
                 sshcommands=sshcommands,
