@@ -803,6 +803,8 @@ class Disk(_Device):
             return False
         if len(self._partitions) > 0:
             return False
+        if self.on_remote_storage():
+            return False
         return True
 
     @property
@@ -912,6 +914,8 @@ class Partition(_Formattable):
                 return self._fs._mount is None
             return False
         if self._constructed_device is not None:
+            return False
+        if self.on_remote_storage():
             return False
         return True
 
