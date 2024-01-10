@@ -187,3 +187,9 @@ details summary {
     color: var(--color-version-popup);
     font-weight: bolder;
 }
+
+/* Code-block copybutton invisible by default
+   (overriding Furo config to achieve default copybutton setting). */
+.highlight button.copybtn {
+   opacity: 0;
+}
