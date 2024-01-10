@@ -17,7 +17,7 @@ any interaction.
 
 
 Differences from `debian-installer` preseeding
-============================================
+==============================================
 
 *preseeds* are the way to automate an installer based on `debian-installer`
 (also known as d-i).
@@ -43,7 +43,7 @@ There are 2 ways to provide the autoinstall configuration:
  * Directly on the installation media
 
 Autoinstall by way of `cloud-config`
-----------------------------------
+------------------------------------
 
 The suggested way of providing autoinstall configuration to the Ubuntu installer is
 via cloud-init. This allows the configuration to be applied to the installer
