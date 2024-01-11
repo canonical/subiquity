@@ -2872,6 +2872,49 @@
                 }
             }
         },
+        "nvme": {
+            "nvme0": {
+                "DEVNAME": "/dev/nvme0",
+                "DEVPATH": "/devices/pci0000:00/0000:00:1c.0/0000:02:00.0/nvme/nvme0/",
+                "MAJOR": "238",
+                "MINOR": "0",
+                "NVME_TRTYPE": "pcie",
+                "SUBSYSTEM": "nvme",
+                "attrs": {
+                    "address": "0000:00:1c.0",
+                    "cntlid": "5",
+                    "cntrltype": "io",
+                    "dctype": "none",
+                    "dev": "238:0",
+                    "device": null,
+                    "firmware_rev": "S2681102",
+                    "hmb": "1",
+                    "kato": "0",
+                    "model": "KINGSTON SKC2000M8250G",
+                    "numa_node": "0",
+                    "power/async": "disabled",
+                    "power/autosuspend_delay_ms": null,
+                    "power/control": "auto",
+                    "power/pm_qos_latency_tolerance_us": "100000",
+                    "power/runtime_active_kids": "0",
+                    "power/runtime_active_time": "0",
+                    "power/runtime_enabled": "disabled",
+                    "power/runtime_status": "unsupported",
+                    "power/runtime_suspended_time": "0",
+                    "power/runtime_usage": "0",
+                    "queue_count": "9",
+                    "rescan_controller": null,
+                    "reset_controller": null,
+                    "serial": "50026B72823D1475",
+                    "sqsize": "1023",
+                    "state": "live",
+                    "subsysnqn": "nqn.1994-11.com.kingston:nvme:SK2000M82560GM.2:50026B72823D1475",
+                    "subsystem": "nvme",
+                    "transport": "pcie",
+                    "uevent": "MAJOR=238\nMINOR=0\nDEVNAME=nvme0\nNVME_TRTYPE=pcie"
+                }
+            }
+        },
         "dmcrypt": {},
         "dasd": {},
         "zfs": {
