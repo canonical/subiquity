@@ -704,12 +704,21 @@ class Dasd:
     preserve: bool = False
 
 
+@fsobj("nvme_controller")
+class NVMeController:
+    transport: str
+    tcp_port: Optional[int] = None
+    tcp_addr: Optional[str] = None
+    preserve: bool = False
+
+
 @fsobj("disk")
 class Disk(_Device):
     ptable: Optional[str] = attributes.ptable()
     serial: Optional[str] = None
     wwn: Optional[str] = None
     multipath: Optional[str] = None
+    nvme_controller: Optional[NVMeController] = attributes.ref(default=None)
     path: Optional[str] = None
     wipe: Optional[str] = None
     preserve: bool = False
@@ -755,6 +764,7 @@ class Disk(_Device):
             "serial": self.serial or "unknown",
             "wwn": self.wwn or "unknown",
             "multipath": self.multipath or "unknown",
+            "nvme-controller": self.nvme_controller,
             "size": self.size,
             "humansize": humanize_size(self.size),
             "vendor": self._info.vendor or "unknown",
