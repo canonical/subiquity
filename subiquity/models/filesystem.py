@@ -693,6 +693,9 @@ class _Device(_Formattable, ABC):
             part.number = next_num
             next_num += 1
 
+    def on_remote_storage(self) -> bool:
+        raise NotImplementedError
+
 
 @fsobj("dasd")
 class Dasd:
@@ -820,6 +823,11 @@ class Disk(_Device):
             return None
         return id.encode("utf-8").decode("unicode_escape").strip()
 
+    def on_remote_storage(self) -> bool:
+        if self.nvme_controller and self.nvme_controller.transport == "tcp":
+            return True
+        return False
+
 
 @fsobj("partition")
 class Partition(_Formattable):
@@ -933,6 +941,9 @@ class Partition(_Formattable):
         # check the partition number.
         return self.device.ptable == "msdos" and self.number > 4
 
+    def on_remote_storage(self) -> bool:
+        return self.device.on_remote_storage()
+
 
 @fsobj("raid")
 class Raid(_Device):
@@ -1017,6 +1028,13 @@ class Raid(_Device):
     # What is a device that makes up this device referred to as?
     component_name = "component"
 
+    def on_remote_storage(self) -> bool:
+        for dev in self.devices:
+            if dev.on_remote_storage():
+                return True
+
+        return False
+
 
 @fsobj("lvm_volgroup")
 class LVM_VolGroup(_Device):
@@ -1041,6 +1059,12 @@ class LVM_VolGroup(_Device):
 
     # What is a device that makes up this device referred to as?
     component_name = "PV"
+
+    def on_remote_storage(self) -> bool:
+        for dev in self.devices:
+            if dev.on_remote_storage():
+                return True
+        return False
 
 
 @fsobj("lvm_partition")
@@ -1072,6 +1096,9 @@ class LVM_LogicalVolume(_Formattable):
 
     ok_for_raid = False
     ok_for_lvm_vg = False
+
+    def on_remote_storage(self) -> bool:
+        return self.volgroup.on_remote_storage()
 
 
 LUKS_OVERHEAD = 16 * (2**20)
@@ -1151,6 +1178,9 @@ class DM_Crypt:
     @property
     def size(self):
         return self.volume.size - LUKS_OVERHEAD
+
+    def on_remote_storage(self) -> bool:
+        return self.volume.on_remote_storage()
 
 
 @fsobj("device")
