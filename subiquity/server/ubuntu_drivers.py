@@ -262,4 +262,4 @@ def get_ubuntu_drivers_interface(app) -> UbuntuDriversInterface:
         else:
             cls = UbuntuDriversHasDriversInterface
 
-    return cls(app, gpgpu=is_server)
+    return cls(app, gpgpu=False)
