@@ -187,3 +187,25 @@ details summary {
     color: var(--color-version-popup);
     font-weight: bolder;
 }
+
+/* Code-block copybutton invisible by default
+   (overriding Furo config to achieve default copybutton setting). */
+.highlight button.copybtn {
+   opacity: 0;
+}
+
+/* Mimicking the 'Give feedback' button for UX consistency */
+.sidebar-search-container input[type=submit] {
+    color: #FFFFFF;
+    border: 2px solid #D6410D;
+    padding: var(--sidebar-search-input-spacing-vertical) var(--sidebar-search-input-spacing-horizontal);
+    background: #D6410D;
+    font-weight: bold;
+    font-size: var(--font-size--small);
+    cursor: pointer;
+}
+
+.sidebar-search-container input[type=submit]:hover {
+    text-decoration: underline;
+}
+
