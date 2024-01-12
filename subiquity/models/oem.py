@@ -33,11 +33,8 @@ class OEMModel:
         # When the list is None, it has not yet been retrieved.
         self.metapkgs: Optional[List[OEMMetaPkg]] = None
 
-        # By default, skip looking for OEM meta-packages if we are running
-        # ubuntu-server. OEM meta-packages expect the default kernel flavor to
-        # be HWE (which is only true for ubuntu-desktop).
         self.install_on = {
-            "server": False,
+            "server": True,
             "desktop": True,
             "core": False,
         }
