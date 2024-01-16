@@ -224,7 +224,7 @@ def make_vg(model, pvs=None):
     name = "vg%s" % len(model._actions)
 
     if pvs is None:
-        pvs = {make_disk(model)}
+        pvs = [make_disk(model)]
 
     return model.add_volgroup(name, pvs)
 
