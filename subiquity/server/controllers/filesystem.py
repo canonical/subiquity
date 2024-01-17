@@ -1271,6 +1271,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             (False, ErrorReportKind.BLOCK_PROBE_FAIL, "block"),
             (True, ErrorReportKind.DISK_PROBE_FAIL, "disk"),
         ]:
+            probert_timeout = 90.0
+            if self.app.opts.use_os_prober:
+                # We know that os-prober is going to be (very) slow on some
+                # systems, let's give probert more time.
+                probert_timeout *= 2
             try:
                 start = time.time()
                 await self._probe_once_task.start(
@@ -1279,7 +1284,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 # We wait on the task directly here, not
                 # self._probe_once_task.wait as if _probe_once_task
                 # gets cancelled, we should be cancelled too.
-                await asyncio.wait_for(self._probe_once_task.task, 90.0)
+                await asyncio.wait_for(self._probe_once_task.task, probert_timeout)
             except asyncio.CancelledError:
                 # asyncio.CancelledError is a subclass of Exception in
                 # Python 3.6 (sadface)
