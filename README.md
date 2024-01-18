@@ -128,7 +128,7 @@ The first three steps are bundled into the script ./scripts/test-this-branch.sh.
 
 # Contributing
 
-Please see [CONTRIBUTING.md](CONTRIBUTING.md)
+Please see our [contributing guidelines](CONTRIBUTING.md).
 
 # Documentation
 
