@@ -25,7 +25,7 @@ from curtin.util import EFIBootEntry, EFIBootState
 
 from subiquity.common.types import PackageInstallState
 from subiquity.models.tests.test_filesystem import make_model_and_partition
-from subiquity.server.controllers.install import InstallController
+from subiquity.server.controllers.install import CurtinInstallError, InstallController
 from subiquitycore.tests.mocks import make_app
 
 
@@ -87,6 +87,31 @@ class TestWriteConfig(unittest.IsolatedAsyncioTestCase):
             config="/config.yaml",
             private_mounts=False,
         )
+
+    @patch("subiquity.server.controllers.install.open", mock_open())
+    async def test_run_curtin_install_step_failed(self):
+        cmd = ["curtin", "install", "--set", 'json:stages=["partitioning"]']
+        stages = ["partitioning"]
+
+        async def fake_run_curtin_command(*args, **kwargs):
+            raise subprocess.CalledProcessError(returncode=1, cmd=cmd)
+
+        with patch(
+            "subiquity.server.controllers.install.run_curtin_command",
+            fake_run_curtin_command,
+        ):
+            with self.assertRaises(CurtinInstallError) as exc_cm:
+                await self.controller.run_curtin_step(
+                    name="MyStep",
+                    stages=stages,
+                    config_file=Path("/config.yaml"),
+                    source=None,
+                    config=self.controller.base_config(
+                        logs_dir=Path("/"), resume_data_file=Path("resume-data")
+                    ),
+                )
+        self.assertEqual(stages, exc_cm.exception.stages)
+        self.assertEqual(cmd, exc_cm.exception.__context__.cmd)
 
     def test_base_config(self):
         config = self.controller.base_config(
@@ -397,3 +422,19 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
                 "https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html",  # noqa: E501
                 data,
             )
+
+    def test_error_in_curtin_invocation(self):
+        method = self.controller.error_in_curtin_invocation
+
+        self.assertIsNone(method(Exception()))
+        self.assertIsNone(method(RuntimeError()))
+
+        self.assertIsNone(method(CurtinInstallError(stages=[])))
+        # Running multiple stages in one "curtin step" is not something that
+        # currently happens in practice.
+        self.assertIsNone(
+            method(CurtinInstallError(stages=["extract", "partitioning"]))
+        )
+
+        self.assertEqual("extract", method(CurtinInstallError(stages=["extract"])))
+        self.assertEqual("curthooks", method(CurtinInstallError(stages=["curthooks"])))
