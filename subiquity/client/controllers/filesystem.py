@@ -193,7 +193,10 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         return raidlevels_by_value[level]
 
     async def _answers_action(self, action):
-        from subiquity.ui.views.filesystem.delete import ConfirmDeleteStretchy
+        from subiquity.ui.views.filesystem.delete import (
+            ConfirmDeleteStretchy,
+            ConfirmReformatStretchy,
+        )
         from subiquitycore.ui.stretchy import StretchyOverlay
 
         log.debug("_answers_action %r", action)
@@ -214,7 +217,9 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             body = self.ui.body._w
             if not isinstance(body, StretchyOverlay):
                 return
-            if isinstance(body.stretchy, ConfirmDeleteStretchy):
+            if isinstance(
+                body.stretchy, (ConfirmDeleteStretchy, ConfirmReformatStretchy)
+            ):
                 if action.get("submit", True):
                     body.stretchy.confirm()
             else:
