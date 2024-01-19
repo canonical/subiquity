@@ -34,21 +34,26 @@ class Test_MountBase(SubiTestCase):
         self.mountbase = _MountBase()
         self.mountbase.mountpoint = "/target"
 
-    def test_p(self):
+    def test_pp(self):
         mnt = self.mountbase
 
-        self.assertEqual("/target/d1", mnt.p("d1"))
-        self.assertEqual("/target/d1/d2/d3/d4", mnt.p("d1", "d2/d3", "d4"))
+        self.assertEqual(Path("/target/d1"), mnt.pp("d1"))
+        self.assertEqual(Path("/target/d1/d2/d3/d4"), mnt.pp("d1", "d2/d3", "d4"))
 
         # Mix of strings and paths should produce the same result.
-        self.assertEqual(mnt.p("d1", "d2/d3"), mnt.p("d1", Path("d2/d3")))
-        self.assertEqual(mnt.p("d1", "d2/d3"), mnt.p(Path("d1"), "d2/d3"))
+        self.assertEqual(mnt.pp("d1", "d2/d3"), mnt.pp("d1", Path("d2/d3")))
+        self.assertEqual(mnt.pp("d1", "d2/d3"), mnt.pp(Path("d1"), "d2/d3"))
 
-    def test_p__absolute(self):
+    def test_pp__absolute(self):
         with self.assertRaises(AbsolutePathError):
-            self.mountbase.p("a", "/b")
+            self.mountbase.pp("a", "/b")
         with self.assertRaises(AbsolutePathError):
-            self.mountbase.p("a", pathlib.Path("/b"))
+            self.mountbase.pp("a", Path("/b"))
+
+    def test_p(self):
+        self.assertEqual(self.mountbase.p("foo", "bar"), "/target/foo/bar")
+        with self.assertRaises(AbsolutePathError):
+            self.mountbase.p("foo", "/bar")
 
 
 class TestMounter(SubiTestCase):
