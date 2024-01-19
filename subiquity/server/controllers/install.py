@@ -55,6 +55,12 @@ from subiquitycore.utils import arun_command, log_process_streams
 log = logging.getLogger("subiquity.server.controllers.install")
 
 
+class CurtinInstallError(Exception):
+    def __init__(self, *, stages: List[str]) -> None:
+        super().__init__()
+        self.stages = stages
+
+
 class TracebackExtractor:
     start_marker = re.compile(r"^Traceback \(most recent call last\):")
     end_marker = re.compile(r"\S")
@@ -195,6 +201,17 @@ class InstallController(SubiquityController):
         keyboard = self.app.controllers.Keyboard
         await keyboard.setup_target(context=context)
 
+    @staticmethod
+    def error_in_curtin_invocation(exc: Exception) -> Optional[str]:
+        """If the exception passed as an argument corresponds to an error
+        during the invocation of a single curtin stage, return the name of the
+        stage. Otherwise, return None."""
+        if not isinstance(exc, CurtinInstallError):
+            return None
+        if len(exc.stages) != 1:
+            return None
+        return exc.stages[0]
+
     @with_context(description="executing curtin install {name} step")
     async def run_curtin_step(
         self,
@@ -226,16 +243,19 @@ class InstallController(SubiquityController):
         else:
             source_args = ()
 
-        await run_curtin_command(
-            self.app,
-            context,
-            "install",
-            "--set",
-            f"json:stages={json.dumps(stages)}",
-            *source_args,
-            config=str(config_file),
-            private_mounts=False,
-        )
+        try:
+            await run_curtin_command(
+                self.app,
+                context,
+                "install",
+                "--set",
+                f"json:stages={json.dumps(stages)}",
+                *source_args,
+                config=str(config_file),
+                private_mounts=False,
+            )
+        except subprocess.CalledProcessError:
+            raise CurtinInstallError(stages=stages)
 
         device_map_path = config.get("storage", {}).get("device_map_path")
         if device_map_path is not None:
@@ -673,13 +693,13 @@ class InstallController(SubiquityController):
             await self.postinstall(context=context)
 
             self.app.update_state(ApplicationState.DONE)
-        except Exception:
+        except Exception as exc:
             kw = {}
             if self.tb_extractor.traceback:
                 kw["Traceback"] = "\n".join(self.tb_extractor.traceback)
-            self.app.make_apport_report(
-                ErrorReportKind.INSTALL_FAIL, "install failed", **kw
-            )
+            text = self.error_in_curtin_invocation(exc) or "install failed"
+
+            self.app.make_apport_report(ErrorReportKind.INSTALL_FAIL, text, **kw)
             raise
 
     async def platform_postinstall(self):
