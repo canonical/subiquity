@@ -327,8 +327,10 @@ class AptConfigurer:
         # The file only exists if we are online
         with contextlib.suppress(FileNotFoundError):
             os.unlink(target_mnt.p("etc/apt/sources.list.d/original.list"))
-        with contextlib.suppress(FileNotFoundError):
+        try:
             _restore_file("etc/apt/sources.list")
+        except FileNotFoundError:
+            os.unlink(target_mnt.p("etc/apt/sources.list"))
 
         with contextlib.suppress(FileNotFoundError):
             _restore_file("etc/apt/apt.conf.d/90curtin-aptproxy")
