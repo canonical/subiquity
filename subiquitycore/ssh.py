@@ -17,7 +17,7 @@ import logging
 import os
 import pwd
 
-from subiquitycore.utils import run_command
+from subiquitycore.utils import orig_environ, run_command
 
 log = logging.getLogger("subiquitycore.ssh")
 
@@ -28,7 +28,7 @@ def host_key_fingerprints():
     Returns a sequence of (key-type, fingerprint) pairs.
     """
     try:
-        config = run_command(["sshd", "-T"])
+        config = run_command(["sshd", "-T"], env=orig_environ(None))
     except FileNotFoundError:
         log.debug("sshd not found")
         return []
