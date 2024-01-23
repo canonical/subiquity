@@ -41,7 +41,6 @@ class TestController(SubiTestCase):
         }
         self.controller.autoinstall_key = "sample"
         self.controller.autoinstall_key_alias = "sample-alias"
-        self.controller.autoinstall_default = "default-data"
         self.controller.setup_autoinstall()
         mock_load.assert_called_once_with("some-sample-data")
 
@@ -56,5 +55,6 @@ class TestController(SubiTestCase):
         mock_load.reset_mock()
         self.controller.autoinstall_key = "inexistent"
         self.controller.autoinstall_key_alias = "inexistent"
+        self.controller.autoinstall_default = "default-data"
         self.controller.setup_autoinstall()
         mock_load.assert_called_once_with("default-data")
