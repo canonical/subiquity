@@ -22,7 +22,7 @@ from urwid import LineBox, Text, connect_signal
 from subiquity.common.types import SSHData, SSHIdentity
 from subiquity.ui.views.identity import UsernameField
 from subiquitycore.ui.actionmenu import Action, ActionMenu
-from subiquitycore.ui.buttons import cancel_btn, menu_btn, ok_btn
+from subiquitycore.ui.buttons import cancel_btn, done_btn, menu_btn, ok_btn
 from subiquitycore.ui.container import ListBox, Pile, WidgetWrap
 from subiquitycore.ui.form import BooleanField, ChoiceField, Form, Toggleable
 from subiquitycore.ui.spinner import Spinner
@@ -152,6 +152,22 @@ class SSHImportStretchy(Stretchy):
         self.form.ssh_import_id_value = service
         if iu.value != "":
             iu.validate()
+
+
+class SSHShowKeyStretchy(Stretchy):
+    def __init__(self, parent, key: str) -> None:
+        self.parent = parent
+        widgets = [
+            Text(key),
+            Text(""),
+            button_pile([done_btn(_("Close"), on_press=self.close)]),
+        ]
+
+        title = _("SSH key")
+        super().__init__(title, widgets, 0, 2)
+
+    def close(self, button=None) -> None:
+        self.parent.remove_overlay()
 
 
 class SSHForm(Form):
@@ -339,6 +355,9 @@ class SSHView(BaseView):
             self.form.pwauth.value = True
             self.form.pwauth.enabled = False
 
+    def show_key_overlay(self, key: str):
+        self.show_stretchy_overlay(SSHShowKeyStretchy(self, key))
+
     def refresh_keys_table(self):
         rows: List[TableRow] = []
 
@@ -361,8 +380,14 @@ class SSHView(BaseView):
                     Action(
                         label=_("Delete"),
                         enabled=True,
-                        value=(None,),
+                        value="delete",
                         opens_dialog=False,
+                    ),
+                    Action(
+                        label=_("Show"),
+                        enabled=True,
+                        value="show",
+                        opens_dialog=True,
                     ),
                 ]
             )
@@ -383,8 +408,11 @@ class SSHView(BaseView):
         self.keys_table.set_contents(rows)
 
     def _action(self, sender, value, key):
-        self.remove_key_from_table(key)
-        self.refresh_keys_table()
+        if value == "delete":
+            self.remove_key_from_table(key)
+            self.refresh_keys_table()
+        elif value == "show":
+            self.show_key_overlay(key)
 
     def _toggle_server(self, sender, installed: bool):
         self._import_key_btn.enabled = installed
