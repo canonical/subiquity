@@ -63,7 +63,8 @@ class UbuntuProController(SubiquityTuiController):
         dry_run: bool = self.app.opts.dry_run
 
         lsb = lsb_release(dry_run=dry_run)
-        if "LTS" not in lsb["description"]:
+        # TODO remove special handling of 24.04 when it is marked LTS
+        if "LTS" not in lsb["description"] and lsb["release"] != "24.04":
             await self.endpoint.skip.POST()
             raise Skip("Not running LTS version")
 
