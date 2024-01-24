@@ -18,13 +18,31 @@ import pathlib
 from unittest.mock import AsyncMock, Mock, call, patch
 
 from subiquity.server.mounter import (
+    AbsolutePathError,
     Mounter,
     Mountpoint,
     OverlayMountpoint,
+    _MountBase,
     lowerdir_for,
 )
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
+
+
+class Test_MountBase(SubiTestCase):
+    def setUp(self):
+        self.mountbase = _MountBase()
+        self.mountbase.mountpoint = "/target"
+
+    def test_p(self):
+        mnt = self.mountbase
+
+        self.assertEqual("/target/d1", mnt.p("d1"))
+        self.assertEqual("/target/d1/d2/d3/d4", mnt.p("d1", "d2/d3", "d4"))
+
+    def test_p__absolute(self):
+        with self.assertRaises(AbsolutePathError):
+            self.mountbase.p("a", "/b")
 
 
 class TestMounter(SubiTestCase):
