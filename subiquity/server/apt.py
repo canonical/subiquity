@@ -243,10 +243,11 @@ class AptConfigurer:
         await self.mounter.mount("/cdrom", self.install_tree.p("cdrom"), options="bind")
 
         if self.app.base_model.network.has_network:
-            os.rename(
-                self.install_tree.p("etc/apt/sources.list"),
-                self.install_tree.p("etc/apt/sources.list.d/original.list"),
-            )
+            with contextlib.suppress(FileNotFoundError):
+                os.rename(
+                    self.install_tree.p("etc/apt/sources.list"),
+                    self.install_tree.p("etc/apt/sources.list.d/original.list"),
+                )
         else:
             proxy_path = self.install_tree.p("etc/apt/apt.conf.d/90curtin-aptproxy")
             if os.path.exists(proxy_path):
@@ -326,7 +327,10 @@ class AptConfigurer:
         # The file only exists if we are online
         with contextlib.suppress(FileNotFoundError):
             os.unlink(target_mnt.p("etc/apt/sources.list.d/original.list"))
-        _restore_file("etc/apt/sources.list")
+        try:
+            _restore_file("etc/apt/sources.list")
+        except FileNotFoundError:
+            os.unlink(target_mnt.p("etc/apt/sources.list"))
 
         with contextlib.suppress(FileNotFoundError):
             _restore_file("etc/apt/apt.conf.d/90curtin-aptproxy")

@@ -13,8 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import io
+import pathlib
 import subprocess
+import tempfile
 from unittest.mock import AsyncMock, Mock, patch
 
 from curtin.commands.extract import TrivialSourceHandler
@@ -31,6 +34,7 @@ from subiquity.server.apt import (
 from subiquity.server.dryrun import DRConfig
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.parameterized import parameterized
 from subiquitycore.utils import astart_command
 
 APT_UPDATE_SUCCESS = """\
@@ -66,6 +70,7 @@ class TestAptConfigurer(SubiTestCase):
         self.model.debconf_selections = DebconfSelectionsModel()
         self.model.locale.selected_language = "en_US.UTF-8"
         self.app = make_app(self.model)
+        self.app.command_runner = AsyncMock()
         self.configurer = AptConfigurer(self.app, AsyncMock(), TrivialSourceHandler(""))
 
         self.astart_sym = "subiquity.server.apt.astart_command"
@@ -136,6 +141,97 @@ class TestAptConfigurer(SubiTestCase):
         with patch(self.astart_sym, side_effect=astart_failure):
             with self.assertRaises(AptConfigCheckError):
                 await self.configurer.run_apt_config_check(output)
+
+    @staticmethod
+    @contextlib.contextmanager
+    def naked_apt_dir():
+        temp_dir = tempfile.TemporaryDirectory()
+        try:
+            d = pathlib.Path(temp_dir.name)
+
+            (d / "etc/apt").mkdir(parents=True)
+            (d / "etc/apt/apt.conf.d").mkdir()
+            (d / "etc/apt/preferences.d").mkdir()
+            (d / "etc/apt/sources.list.d").mkdir()
+
+            (d / "var/lib/apt/lists").mkdir(parents=True)
+
+            yield d
+        finally:
+            temp_dir.cleanup()
+
+    @parameterized.expand(
+        # For each test, we choose to place a given APT file in the configured
+        # tree, the install tree, both or neither.
+        # Then we run .deconfigure() and assert whether the file is present in
+        # the target system.
+        #
+        # The elements of the tuple are in this order:
+        # 1. the path to the file
+        # 2. whether we expect the file in the target system (true or false)
+        # after .deconfigure()
+        # 3. whether to place the file in the configured tree
+        # 4. whether to place the file in the install tree
+        # 5. whether the network is up (defaults to True)
+        [
+            # ----------------
+            # online scenarios
+            # ----------------
+            ("etc/apt/sources.list", False, False, True),
+            ("etc/apt/sources.list", True, True, True),
+            ("etc/apt/sources.list.d/ppa.list", False, False, False),
+            ("etc/apt/sources.list.d/ppa.list", True, True, True),
+            ("etc/apt/sources.list.d/original.list", False, False, True),
+            ("etc/apt/apt.conf.d/90curtin-aptproxy", False, False, False),
+            ("etc/apt/apt.conf.d/90curtin-aptproxy", True, True, True),
+            # Files installed by other packages
+            ("etc/apt/sources.list.d/oem-foobar-meta.list", True, False, True),
+            # -----------------
+            # offline scenarios
+            # -----------------
+            # If ppa.list was removed because we're offline
+            ("etc/apt/sources.list.d/ppa.list", True, True, False, False),
+            # If 90curtin-aptproxy was removed because we're offline
+            ("etc/apt/apt.conf.d/90curtin-aptproxy", True, True, False, False),
+        ]
+    )
+    async def test_deconfigure(
+        self,
+        path: str,
+        expect_found: bool,
+        in_configured: bool,
+        in_installed: bool,
+        has_network=True,
+    ):
+        """Test if the relevant files are discarded or restored on deconfigured"""
+        with self.naked_apt_dir() as install_tree, self.naked_apt_dir() as config_tree:
+            self.configurer.configured_tree = OverlayMountpoint(
+                mountpoint=str(config_tree), lowers=[], upperdir=None
+            )
+
+            # Currently, .configure_for_install() will always ensure
+            # sources.list exists, so let's not test without.
+            assert path != "etc/apt/sources.list" or in_installed
+            if path != "etc/apt/sources.list":
+                (install_tree / "etc/apt/sources.list").touch(exist_ok=False)
+
+            if in_configured:
+                (config_tree / path).touch(exist_ok=False)
+            if in_installed:
+                (install_tree / path).touch(exist_ok=False)
+
+            # In practice, they're different but ¯\_(ツ)_/¯
+            target_tree = install_tree
+
+            with patch.object(
+                self.configurer.app.base_model.network, "has_network", has_network
+            ):
+                with patch("subiquity.server.apt.run_curtin_command"):
+                    await self.configurer.deconfigure(
+                        context=None, target=str(target_tree)
+                    )
+
+            self.assertEqual(expect_found, (target_tree / path).exists())
 
 
 class TestDRAptConfigurer(SubiTestCase):
