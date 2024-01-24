@@ -1,4 +1,4 @@
-# Copyright 2021 Canonical, Ltd.
+# Copyright 2024 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -13,35 +13,19 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import unittest
-
 import jsonschema
 from jsonschema.validators import validator_for
 
-from subiquity.server.controllers.ubuntu_pro import UbuntuProController
-from subiquity.server.dryrun import DRConfig
-from subiquitycore.tests.mocks import make_app
+from subiquity.server.controllers.codecs import CodecsController
+from subiquitycore.tests import SubiTestCase
 
 
-class TestUbuntuProController(unittest.TestCase):
-    def setUp(self):
-        app = make_app()
-        app.dr_cfg = DRConfig()
-        self.controller = UbuntuProController(app)
-
-    def test_serialize(self):
-        self.controller.model.token = "1a2b3C"
-        self.assertEqual(self.controller.serialize(), "1a2b3C")
-
-    def test_deserialize(self):
-        self.controller.deserialize("1A2B3C4D")
-        self.assertEqual(self.controller.model.token, "1A2B3C4D")
-
+class TestCodecsController(SubiTestCase):
     def test_valid_schema(self):
         """Test that the expected autoinstall JSON schema is valid"""
 
         JsonValidator: jsonschema.protocols.Validator = validator_for(
-            UbuntuProController.autoinstall_schema
+            CodecsController.autoinstall_schema
         )
 
-        JsonValidator.check_schema(UbuntuProController.autoinstall_schema)
+        JsonValidator.check_schema(CodecsController.autoinstall_schema)

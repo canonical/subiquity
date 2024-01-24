@@ -17,6 +17,9 @@ import os
 import shlex
 from unittest.mock import Mock, patch
 
+import jsonschema
+from jsonschema.validators import validator_for
+
 from subiquity.common.types import PasswordKind
 from subiquity.server.server import (
     MetaController,
@@ -139,6 +142,24 @@ early-commands: ["{cmd}"]
         self.server.load_autoinstall_config(only_early=False)
         after_early = {"version": 1, "early-commands": [cmd], "stuff": "things"}
         self.assertEqual(after_early, self.server.autoinstall_config)
+
+
+class TestAutoinstallValidation(SubiTestCase):
+    async def asyncSetUp(self):
+        opts = Mock()
+        opts.dry_run = True
+        opts.output_base = self.tmp_dir()
+        opts.machine_config = "examples/machines/simple.json"
+        self.server = SubiquityServer(opts, None)
+
+    def test_valid_schema(self):
+        """Test that the expected autoinstall JSON schema is valid"""
+
+        JsonValidator: jsonschema.protocols.Validator = validator_for(
+            SubiquityServer.base_schema
+        )
+
+        JsonValidator.check_schema(SubiquityServer.base_schema)
 
 
 class TestMetaController(SubiTestCase):

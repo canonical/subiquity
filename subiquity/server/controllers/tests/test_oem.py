@@ -16,6 +16,9 @@
 import subprocess
 from unittest.mock import Mock, patch
 
+import jsonschema
+from jsonschema.validators import validator_for
+
 from subiquity.server.controllers.oem import OEMController
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
@@ -110,3 +113,12 @@ Ubuntu-Oem-Kernel-Flavour: oem
                     "oem-sutton-balint-meta", context=None, overlay=Mock()
                 )
             )
+
+    def test_valid_schema(self):
+        """Test that the expected autoinstall JSON schema is valid"""
+
+        JsonValidator: jsonschema.protocols.Validator = validator_for(
+            OEMController.autoinstall_schema
+        )
+
+        JsonValidator.check_schema(OEMController.autoinstall_schema)

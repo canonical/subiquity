@@ -19,6 +19,7 @@ import unittest
 from unittest import mock
 
 import jsonschema
+from jsonschema.validators import validator_for
 
 from subiquity.common.types import MirrorSelectionFallback
 from subiquity.models.mirror import MirrorModel
@@ -264,3 +265,12 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
                 mock_fallback.assert_not_called()
                 await controller.run_mirror_selection_or_fallback(context=None)
                 mock_fallback.assert_called_once()
+
+    def test_valid_schema(self):
+        """Test that the expected autoinstall JSON schema is valid"""
+
+        JsonValidator: jsonschema.protocols.Validator = validator_for(
+            MirrorController.autoinstall_schema
+        )
+
+        JsonValidator.check_schema(MirrorController.autoinstall_schema)

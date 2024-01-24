@@ -15,6 +15,9 @@
 
 from unittest import mock
 
+import jsonschema
+from jsonschema.validators import validator_for
+
 from subiquity.server import snapdapi
 from subiquity.server.controllers import refresh as refresh_mod
 from subiquity.server.controllers.refresh import RefreshController, SnapChannelSource
@@ -99,3 +102,12 @@ class TestRefreshController(SubiTestCase):
                     await self.rc.configure_snapd(context=self.rc.context)
 
         paw.assert_not_called()
+
+    def test_valid_schema(self):
+        """Test that the expected autoinstall JSON schema is valid"""
+
+        JsonValidator: jsonschema.protocols.Validator = validator_for(
+            RefreshController.autoinstall_schema
+        )
+
+        JsonValidator.check_schema(RefreshController.autoinstall_schema)

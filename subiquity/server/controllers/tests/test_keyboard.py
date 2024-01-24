@@ -17,6 +17,9 @@ import os
 import unittest
 from unittest.mock import Mock, patch
 
+import jsonschema
+from jsonschema.validators import validator_for
+
 from subiquity.common.types import KeyboardSetting
 from subiquity.models.keyboard import KeyboardModel
 from subiquity.server.controllers.keyboard import KeyboardController
@@ -27,6 +30,16 @@ from subiquitycore.tests.parameterized import parameterized
 
 class opts:
     dry_run = True
+
+
+class TestKeyboardController(SubiTestCase):
+    def test_valid_schema(self):
+        """Test that the expected autoinstall JSON schema is valid"""
+
+        JsonValidator: jsonschema.protocols.Validator = validator_for(
+            KeyboardController.autoinstall_schema
+        )
+        JsonValidator.check_schema(KeyboardController.autoinstall_schema)
 
 
 class TestSubiquityModel(SubiTestCase):
