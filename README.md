@@ -128,4 +128,12 @@ The first three steps are bundled into the script ./scripts/test-this-branch.sh.
 
 # Contributing
 
-Please see [CONTRIBUTING.md](CONTRIBUTING.md)
+Please see our [contributing guidelines](CONTRIBUTING.md).
+
+# Documentation
+
+Subiquity's documentation is hosted at
+[https://canonical-subiquity.readthedocs-hosted.com/en/latest/](https://canonical-subiquity.readthedocs-hosted.com/en/latest/).
+
+The documentation source can be found in the [doc/](doc/) folder, which
+contains instructions for building a local preview.
