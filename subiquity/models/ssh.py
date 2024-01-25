@@ -26,10 +26,6 @@ class SSHModel:
         self.install_server = False
         self.authorized_keys: List[str] = []
         self.pwauth = True
-        # Although the generated config just contains the key above,
-        # we store the imported id so that we can re-fill the form if
-        # we go back to it.
-        self.ssh_import_id = ""
 
     async def target_packages(self) -> List[TargetPkg]:
         if not self.install_server:
