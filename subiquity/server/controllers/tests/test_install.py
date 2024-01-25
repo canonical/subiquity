@@ -19,7 +19,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import ANY, AsyncMock, Mock, call, mock_open, patch
+from unittest.mock import ANY, AsyncMock, Mock, mock_open, patch
 
 from curtin.util import EFIBootEntry, EFIBootState
 
@@ -261,105 +261,6 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
         app.package_installer.install_pkg = AsyncMock()
         app.package_installer.install_pkg.return_value = PackageInstallState.DONE
         fsm, self.part = make_model_and_partition()
-
-    @patch("subiquity.server.controllers.install.get_efibootmgr")
-    async def test_configure_rp_boot_uefi_add(self, m_get_efibootmgr):
-        m_get_efibootmgr.side_effect = iter([efi_state_no_rp, efi_state_with_rp])
-        self.setup_rp_test()
-        await self.controller.configure_rp_boot_uefi(rp=self.part)
-        calls = [
-            call(
-                [
-                    "efibootmgr",
-                    "--create",
-                    "--loader",
-                    "\\EFI\\boot\\bootx64.efi",
-                    "--disk",
-                    self.part.device.path,
-                    "--part",
-                    str(self.part.number),
-                    "--label",
-                    "Restore Ubuntu to factory state",
-                ]
-            ),
-            call(
-                [
-                    "efibootmgr",
-                    "--bootorder",
-                    "0000,0002,0003",
-                ]
-            ),
-        ]
-        self.run.assert_has_awaits(calls)
-
-    @patch("subiquity.server.controllers.install.get_efibootmgr")
-    async def test_configure_rp_boot_uefi_bootnext(self, m_get_efibootmgr):
-        m_get_efibootmgr.side_effect = iter([efi_state_no_rp, efi_state_with_rp])
-        self.setup_rp_test()
-        self.controller.app.base_model.target = None
-        await self.controller.configure_rp_boot_uefi(rp=self.part)
-        calls = [
-            call(
-                [
-                    "efibootmgr",
-                    "--create",
-                    "--loader",
-                    "\\EFI\\boot\\bootx64.efi",
-                    "--disk",
-                    self.part.device.path,
-                    "--part",
-                    str(self.part.number),
-                    "--label",
-                    "Restore Ubuntu to factory state",
-                ]
-            ),
-            call(
-                [
-                    "efibootmgr",
-                    "--bootorder",
-                    "0000,0002,0003",
-                ]
-            ),
-            call(
-                [
-                    "efibootmgr",
-                    "--bootnext",
-                    "0003",
-                ]
-            ),
-        ]
-        self.run.assert_has_awaits(calls)
-
-    @patch("subiquity.server.controllers.install.get_efibootmgr")
-    async def test_configure_rp_boot_uefi_dup(self, m_get_efibootmgr):
-        m_get_efibootmgr.side_effect = iter([efi_state_with_rp, efi_state_with_dup_rp])
-        self.setup_rp_test()
-        await self.controller.configure_rp_boot_uefi(rp=self.part)
-        calls = [
-            call(
-                [
-                    "efibootmgr",
-                    "--create",
-                    "--loader",
-                    "\\EFI\\boot\\bootx64.efi",
-                    "--disk",
-                    self.part.device.path,
-                    "--part",
-                    str(self.part.number),
-                    "--label",
-                    "Restore Ubuntu to factory state",
-                ]
-            ),
-            call(
-                [
-                    "efibootmgr",
-                    "--delete-bootnum",
-                    "--bootnum",
-                    "0004",
-                ]
-            ),
-        ]
-        self.run.assert_has_awaits(calls)
 
     async def test_configure_rp_boot_grub(self):
         fsuuid, partuuid = "fsuuid", "partuuid"

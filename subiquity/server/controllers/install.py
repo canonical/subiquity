@@ -31,7 +31,6 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 from curtin.config import merge_config
-from curtin.util import get_efibootmgr, is_uefi_bootable
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.pkg import TargetPkg
@@ -534,72 +533,9 @@ class InstallController(SubiquityController):
             private_mounts=False,
         )
 
-    @with_context(description="configuring UEFI menu entry for factory reset")
-    async def configure_rp_boot_uefi(self, context, rp: Partition):
-        # Add an UEFI boot entry to point at the RP
-        # Details:
-        # 1. Do not leave duplicate entries
-        # 2. Do not leave the boot entry in BootOrder
-        # 3. Set BootNext to boot from RP in the reset-partition-only case.
-        state = await self.app.package_installer.install_pkg("efibootmgr")
-        if state != PackageInstallState.DONE:
-            raise RuntimeError("could not install efibootmgr")
-        efi_state_before = get_efibootmgr("/")
-        cmd = [
-            "efibootmgr",
-            "--create",
-            "--loader",
-            "\\EFI\\boot\\bootx64.efi",
-            "--disk",
-            rp.device.path,
-            "--part",
-            str(rp.number),
-            "--label",
-            "Restore Ubuntu to factory state",
-        ]
-        await self.app.command_runner.run(cmd)
-        efi_state_after = get_efibootmgr("/")
-        new_bootnums = set(efi_state_after.entries) - set(efi_state_before.entries)
-        if not new_bootnums:
-            # Will probably only happen in dry-run mode.
-            return
-        new_bootnum = new_bootnums.pop()
-        new_entry = efi_state_after.entries[new_bootnum]
-        orig_num = None
-        for num, entry in efi_state_before.entries.items():
-            if entry.path == new_entry.path and entry.name == new_entry.name:
-                orig_num = num
-        if orig_num is not None:
-            cmd = [
-                "efibootmgr",
-                "--delete-bootnum",
-                "--bootnum",
-                new_bootnum,
-            ]
-            rp_bootnum = orig_num
-        else:
-            cmd = [
-                "efibootmgr",
-                "--bootorder",
-                ",".join(efi_state_before.order + [new_bootnum]),
-            ]
-            rp_bootnum = new_bootnum
-        await self.app.command_runner.run(cmd)
-        if self.model.target is None:
-            cmd = [
-                "efibootmgr",
-                "--bootnext",
-                rp_bootnum,
-            ]
-            await self.app.command_runner.run(cmd)
-
     async def configure_rp_boot(self, context, rp: Partition, casper_uuid: str):
         if self.model.target is not None and not self.opts.dry_run:
             await self.configure_rp_boot_grub(context=context, rp=rp)
-        if self.app.opts.dry_run and not is_uefi_bootable():
-            # Can't even run efibootmgr in this case.
-            return
-        await self.configure_rp_boot_uefi(context=context, rp=rp)
 
     async def maybe_configure_exiting_rp_boot(self, context):
         # We are not creating a reset partition here if we are running
