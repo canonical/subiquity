@@ -15,7 +15,6 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - ubuntu-daily:focal
           - ubuntu-daily:jammy
           - ubuntu-daily:lunar
           - ubuntu-daily:mantic
