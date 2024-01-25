@@ -364,14 +364,10 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
     async def test_configure_rp_boot_grub(self):
         fsuuid, partuuid = "fsuuid", "partuuid"
         self.setup_rp_test(f"{fsuuid}\t{partuuid}".encode("ascii"))
-        await self.controller.configure_rp_boot_grub(
-            rp=self.part, casper_uuid="casper-uuid"
-        )
+        await self.controller.configure_rp_boot_grub(rp=self.part)
         with open(self.controller.tpath("etc/grub.d/99_reset")) as fp:
             cfg = fp.read()
         self.assertIn("--fs-uuid fsuuid", cfg)
-        self.assertIn("rp-partuuid=partuuid", cfg)
-        self.assertIn("uuid=casper-uuid", cfg)
 
     @patch("platform.machine", return_value="s390x")
     @patch("subiquity.server.controllers.install.arun_command")

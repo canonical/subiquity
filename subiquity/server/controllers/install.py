@@ -509,18 +509,16 @@ class InstallController(SubiquityController):
         return new_casper_uuid
 
     @with_context(description="configuring grub menu entry for factory reset")
-    async def configure_rp_boot_grub(self, context, rp: Partition, casper_uuid: str):
+    async def configure_rp_boot_grub(self, context, rp: Partition):
         # Add a grub menu entry to boot from the RP
         cp = await self.app.command_runner.run(
-            ["lsblk", "-n", "-o", "UUID,PARTUUID", rp.path], capture=True
+            ["lsblk", "-n", "-o", "UUID", rp.path], capture=True
         )
-        fs_uuid, rp_uuid = cp.stdout.decode("ascii").strip().split()
+        fs_uuid = cp.stdout.decode("ascii").strip()
         conf = grub_reset_conf.format(
             HEADER=generate_timestamped_header(),
             PARTITION=rp.number,
             FS_UUID=fs_uuid,
-            CASPER_UUID=casper_uuid,
-            RP_UUID=rp_uuid,
         )
         with open(self.tpath("etc/grub.d/99_reset"), "w") as fp:
             os.chmod(fp.fileno(), 0o755)
@@ -597,9 +595,7 @@ class InstallController(SubiquityController):
 
     async def configure_rp_boot(self, context, rp: Partition, casper_uuid: str):
         if self.model.target is not None and not self.opts.dry_run:
-            await self.configure_rp_boot_grub(
-                context=context, rp=rp, casper_uuid=casper_uuid
-            )
+            await self.configure_rp_boot_grub(context=context, rp=rp)
         if self.app.opts.dry_run and not is_uefi_bootable():
             # Can't even run efibootmgr in this case.
             return
@@ -906,8 +902,7 @@ set -e
 cat << EOF
 menuentry "Restore Ubuntu to factory state" {{
       search --no-floppy --hint '(hd0,{PARTITION})' --set --fs-uuid {FS_UUID}
-      linux  /casper/vmlinuz uuid={CASPER_UUID} rp-partuuid={RP_UUID} nopersistent
-      initrd /casper/initrd
+      chainloader /EFI/boot/bootx64.efi
 }}
 EOF
 """
