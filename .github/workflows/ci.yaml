@@ -18,6 +18,7 @@ jobs:
           - ubuntu-daily:jammy
           - ubuntu-daily:lunar
           - ubuntu-daily:mantic
+          - ubuntu-daily:noble
     steps:
     - uses: actions/checkout@v4
     - name: run
@@ -29,8 +30,8 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - ubuntu-daily:jammy    # match the core snap we're running against
-          - ubuntu-daily:mantic   # latest
+          - ubuntu-daily:jammy   # match the core snap we're running against
+          - ubuntu-daily:noble   # latest
     steps:
     - uses: actions/checkout@v4
     - name: lint
