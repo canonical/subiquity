@@ -222,6 +222,12 @@ class SubiquityServer(Application):
                 "minimum": 1,
                 "maximum": 1,
             },
+            "interactive-sections": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                },
+            },
         },
         "required": ["version"],
         "additionalProperties": True,
