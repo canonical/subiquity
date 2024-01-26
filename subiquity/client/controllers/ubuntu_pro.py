@@ -61,16 +61,24 @@ class UbuntuProController(SubiquityTuiController):
         """Generate the UI, based on the data provided by the model."""
 
         dry_run: bool = self.app.opts.dry_run
+        pre_release = False
 
         lsb = lsb_release(dry_run=dry_run)
-        # TODO remove special handling of 24.04 when it is marked LTS
-        if "LTS" not in lsb["description"] and lsb["release"] != "24.04":
-            await self.endpoint.skip.POST()
-            raise Skip("Not running LTS version")
+
+        if "LTS" not in lsb["description"]:
+            # TODO remove special handling of 24.04 when it is marked LTS
+            if lsb["release"] == "24.04":
+                pre_release = True
+            else:
+                await self.endpoint.skip.POST()
+                raise Skip("Not running LTS version")
 
         ubuntu_pro_info: UbuntuProResponse = await self.endpoint.GET()
         return UbuntuProView(
-            self, token=ubuntu_pro_info.token, has_network=ubuntu_pro_info.has_network
+            self,
+            token=ubuntu_pro_info.token,
+            has_network=ubuntu_pro_info.has_network,
+            pre_release=pre_release,
         )
 
     async def run_answers(self) -> None:

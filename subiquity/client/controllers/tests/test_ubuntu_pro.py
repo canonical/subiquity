@@ -42,7 +42,9 @@ class TestUbuntuProController(unittest.IsolatedAsyncioTestCase):
         with patch.object(ctrler.endpoint, "GET", return_value=rv):
             await ctrler.make_ui()
 
-        view.assert_called_once_with(ctrler, token="", has_network=False)
+        view.assert_called_once_with(
+            ctrler, token="", has_network=False, pre_release=False
+        )
 
     @patch("subiquity.client.controllers.ubuntu_pro.UbuntuProView")
     @patch(
@@ -72,3 +74,7 @@ class TestUbuntuProController(unittest.IsolatedAsyncioTestCase):
             await ctrler.make_ui()
 
         view.assert_called_once()
+
+        view.assert_called_once_with(
+            ctrler, token="", has_network=False, pre_release=True
+        )

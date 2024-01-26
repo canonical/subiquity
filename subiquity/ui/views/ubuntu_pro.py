@@ -37,7 +37,7 @@ from subiquitycore.ui.form import (
 from subiquitycore.ui.interactive import StringEditor
 from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.stretchy import Stretchy
-from subiquitycore.ui.utils import SomethingFailed, button_pile, screen
+from subiquitycore.ui.utils import Color, SomethingFailed, button_pile, screen
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquity.ui.views.ubuntu_pro")
@@ -270,11 +270,12 @@ class UbuntuProView(BaseView):
     title = _("Upgrade to Ubuntu Pro")
     subscription_done_label = _("Continue")
 
-    def __init__(self, controller, token: str, has_network: bool):
+    def __init__(self, controller, token: str, has_network: bool, *, pre_release=False):
         """Initialize the view with the default value for the token."""
         self.controller = controller
 
         self.has_network = has_network
+        self.pre_release = pre_release
 
         if self.has_network:
             self.upgrade_yes_no_form = UpgradeYesNoForm(
@@ -399,7 +400,22 @@ class UbuntuProView(BaseView):
         rows = [
             bp,
             Text(""),
-        ] + self.upgrade_yes_no_form.as_rows()
+        ]
+        if self.pre_release:
+            rows.extend(
+                [
+                    Color.info_error(
+                        Text(
+                            _(
+                                "Please note that this is not an official LTS build."
+                                " This screen is only provided for testing."
+                            )
+                        )
+                    ),
+                    Text(""),
+                ]
+            )
+        rows.extend(self.upgrade_yes_no_form.as_rows())
         return screen(
             ListBox(rows),
             self.upgrade_yes_no_form.buttons,
