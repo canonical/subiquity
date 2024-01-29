@@ -14,14 +14,15 @@ Getting started with autoinstall
 
 .. toctree::
    :maxdepth: 1
-   
+
    Autoinstall quick start <autoinstall-quickstart>
    Autoinstall quick start for s390x <autoinstall-quickstart-s390x>
+   Autoinstall validation <autoinstall-validation>
 
 Found a problem?
 ----------------
 
 .. toctree::
    :maxdepth: 1
-   
+
    report-bugs
