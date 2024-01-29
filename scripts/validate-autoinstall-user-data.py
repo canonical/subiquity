@@ -29,56 +29,117 @@ switch.
 
 import argparse
 import io
+from textwrap import dedent
+from typing import Callable
 import json
 
 import jsonschema
 import yaml
 
 
+def parse_args() -> argparse.Namespace:
+    """Parse arguments with argparse"""
+
+    description: str = dedent(
+        """\
+    Validate autoinstall user data against the autoinstall schema. By default
+    expects the user data is wrapped in a cloud-config. Example:
+
+    #cloud-config
+    autoinstall:
+        <user data here>
+
+    To validate the user data directly, you can pass --no-expect-cloudconfig
+    """
+    )
+
+    parser = argparse.ArgumentParser(
+        prog="validate-autoinstall-user-data",
+        description=description,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument(
+        "--json-schema",
+        help="Path to the JSON schema",
+        type=argparse.FileType("r"),
+        default="autoinstall-schema.json",
+    )
+    parser.add_argument(
+        "input",
+        nargs="?",
+        help="Path to the user data instead of stdin",
+        type=argparse.FileType("r"),
+        default="-",
+    )
+    parser.add_argument(
+        "--no-expect-cloudconfig",
+        dest="expect_cloudconfig",
+        action="store_false",
+        help="Assume the data is not wrapped in cloud-config.",
+        default=True,
+    )
+    parser.add_argument(
+        "--check-link",
+        dest="check_link",
+        action="store_true",
+        help="Assert the documentation link is in the user data",
+        default=False,
+    )
+
+    args: argparse.Namespace = parser.parse_args()
+
+    return args
+
+
+def get_autoinstall_no_cloudconfig(data: dict):
+    if "autoinstall" in data:
+        raise AssertionError("Expected no cloud-config but found key 'autoinstall'")
+    return data
+
+
+def get_autoinstall_with_cloudconfig(data: dict):
+    if "autoinstall" not in data:
+        raise AssertionError("Missing key 'autoinstall'")
+
+    return data["autoinstall"]
+
+
 def main() -> None:
-    """ Entry point. """
-    parser = argparse.ArgumentParser()
+    """Entry point."""
 
-    parser.add_argument("--json-schema",
-                        help="Path to the JSON schema",
-                        type=argparse.FileType("r"),
-                        default="autoinstall-schema.json")
-    parser.add_argument("input", nargs="?",
-                        help="Path to the user data instead of stdin",
-                        type=argparse.FileType("r"),
-                        default="-")
-    parser.add_argument("--no-expect-cloudconfig", dest="expect-cloudconfig",
-                        action="store_false",
-                        help="Assume the data is not wrapped in cloud-config.",
-                        default=True)
+    args: argparse.Namespace = parse_args()
 
-    args = vars(parser.parse_args())
-
-    user_data: io.TextIOWrapper = args["input"]
-
-    if args["expect-cloudconfig"]:
-        assert user_data.readline() == "#cloud-config\n"
-        def get_autoinstall_data(data): return data["autoinstall"]
-    else:
-        def get_autoinstall_data(data): return data
+    user_data: io.TextIOWrapper = args.input
+    str_data: str = user_data.read()
 
     # Verify autoinstall doc link is in the file
+    if args.check_link:
+        link: str = "https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html"  # noqa: E501
 
-    stream_pos: int = user_data.tell()
+        if link not in str_data:
+            raise AssertionError("Documentation link missing from user data")
 
-    data: str = user_data.read()
+    if args.expect_cloudconfig:
+        first_line: str = str_data.splitlines()[0]
+        if not first_line == "#cloud-config":
+            raise AssertionError(
+                (
+                    "Expected data to be wrapped in cloud-config "
+                    "but first line is not '#cloud-config'. Try "
+                    "passing --no-expect-cloudconfig."
+                )
+            )
 
-    link: str = "https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html"  # noqa: E501
+        get_autoinstall_data: Callable[[dict], dict] = get_autoinstall_with_cloudconfig
 
-    assert link in data
+    else:
+        get_autoinstall_data: Callable[[dict], dict] = get_autoinstall_no_cloudconfig
 
     # Verify autoinstall schema
-    user_data.seek(stream_pos)
+    yaml_data: dict = yaml.safe_load(str_data)
 
-    data = yaml.safe_load(user_data)
-
-    jsonschema.validate(get_autoinstall_data(data),
-                        json.load(args["json_schema"]))
+    jsonschema.validate(get_autoinstall_data(yaml_data), json.load(args.json_schema))
 
 
 if __name__ == "__main__":

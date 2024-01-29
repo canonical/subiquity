@@ -53,7 +53,7 @@ validate () {
             answers-core)
                 ;;
             *)
-                python3 scripts/validate-autoinstall-user-data.py < $tmpdir/var/log/installer/autoinstall-user-data
+                python3 scripts/validate-autoinstall-user-data.py  --check-link < $tmpdir/var/log/installer/autoinstall-user-data
                 # After the lunar release and the introduction of mirror testing, it
                 # came to our attention that new Ubuntu installations have the security
                 # repository configured with the primary mirror URL (i.e.,
