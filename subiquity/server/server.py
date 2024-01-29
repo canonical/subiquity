@@ -26,7 +26,7 @@ from aiohttp import web
 from cloudinit.config.cc_set_passwords import rand_user_password
 from systemd import journal
 
-from subiquity.cloudinit import get_host_combined_cloud_config
+from subiquity.cloudinit import cloud_init_status_wait, get_host_combined_cloud_config
 from subiquity.common.api.server import bind, controller_for_request
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReporter, ErrorReportKind
@@ -55,7 +55,7 @@ from subiquitycore.file_util import copy_file_if_exists, write_file
 from subiquitycore.prober import Prober
 from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
 from subiquitycore.ssh import host_key_fingerprints, user_key_fingerprints
-from subiquitycore.utils import arun_command, run_command
+from subiquitycore.utils import run_command
 
 NOPROBERARG = "NOPROBER"
 
@@ -556,21 +556,13 @@ class SubiquityServer(Application):
         if self.opts.dry_run:
             self.cloud_init_ok = True
             return
+
         ci_start = time.time()
-        status_coro = arun_command(["cloud-init", "status", "--wait"])
-        try:
-            status_cp = await asyncio.wait_for(status_coro, 600)
-        except asyncio.TimeoutError:
-            status_txt = "<timeout>"
-            self.cloud_init_ok = False
-        else:
-            status_txt = status_cp.stdout
-            self.cloud_init_ok = True
+        self.cloud_init_ok, status = await cloud_init_status_wait()
         log.debug("waited %ss for cloud-init", time.time() - ci_start)
-        if "status: done" in status_txt:
+        log.debug("cloud-init status: %r", status)
+        if self.cloud_init_ok:
             self.load_cloud_config()
-        else:
-            log.debug("cloud-init status: %r, assumed disabled", status_txt)
 
     def select_autoinstall(self):
         # precedence
