@@ -53,15 +53,19 @@ class RealnameEditor(StringEditor, WantsToKnowFormField):
             return super().valid_char(ch)
 
 
-class _AsyncValidatedMixin:
-    """Provides Editor widgets with async validation capabilities"""
-
+class UsernameEditor(StringEditor, WantsToKnowFormField):
     def __init__(self):
         self.validation_task = None
         self.initial = None
         self.validation_result = None
         self._validate_async_inner = None
         connect_signal(self, "change", self._reset_validation)
+
+        self.valid_char_pat = r"[-a-z0-9_]"
+        self.error_invalid_char = _(
+            "The only characters permitted in this field are a-z, 0-9, _ and -"
+        )
+        super().__init__()
 
     def set_initial_state(self, initial):
         self.initial = initial
@@ -85,15 +89,6 @@ class _AsyncValidatedMixin:
         if self._validate_async_inner is not None:
             self.validation_result = await self._validate_async_inner(value)
             self.bff.validate()
-
-
-class UsernameEditor(StringEditor, _AsyncValidatedMixin, WantsToKnowFormField):
-    def __init__(self):
-        self.valid_char_pat = r"[-a-z0-9_]"
-        self.error_invalid_char = _(
-            "The only characters permitted in this field are a-z, 0-9, _ and -"
-        )
-        super().__init__()
 
     def valid_char(self, ch):
         if len(ch) == 1 and not re.match(self.valid_char_pat, ch):
