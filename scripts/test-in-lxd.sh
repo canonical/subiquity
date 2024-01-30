@@ -45,7 +45,18 @@ then
     done
 fi
 
-lxc exec $TESTER -- cloud-init status --wait
+if ! lxc exec $TESTER -- cloud-init status --wait; then
+    ec=$?
+    case $ec in
+        0|2)
+            # 2 is warnings
+            ;;
+        *)
+            echo "cloud-init status failed with $ec"
+            exit $ec
+            ;;
+    esac
+fi
 
 lxc exec $TESTER -- sh -ec "
     cd ~/subiquity
