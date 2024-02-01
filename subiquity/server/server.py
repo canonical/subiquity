@@ -30,7 +30,7 @@ from systemd import journal
 from subiquity.cloudinit import get_host_combined_cloud_config
 from subiquity.common.api.server import bind, controller_for_request
 from subiquity.common.apidef import API
-from subiquity.common.errorreport import ErrorReporter, ErrorReportKind
+from subiquity.common.errorreport import ErrorReport, ErrorReporter, ErrorReportKind
 from subiquity.common.serialize import to_json
 from subiquity.common.types import (
     ApplicationState,
@@ -41,7 +41,7 @@ from subiquity.common.types import (
     PasswordKind,
 )
 from subiquity.models.subiquity import ModelNames, SubiquityModel
-from subiquity.server.autoinstall import AutoinstallValidationError
+from subiquity.server.autoinstall import AutoinstallError, AutoinstallValidationError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.dryrun import DRConfig
 from subiquity.server.errors import ErrorController
@@ -403,8 +403,9 @@ class SubiquityServer(Application):
     def make_apport_report(self, kind, thing, *, wait=False, **kw):
         return self.error_reporter.make_apport_report(kind, thing, wait=wait, **kw)
 
-    async def _run_error_cmds(self, report):
-        await report._info_task
+    async def _run_error_cmds(self, report: Optional[ErrorReport] = None) -> None:
+        if report is not None and report._info_task is not None:
+            await report._info_task
         Error = getattr(self.controllers, "Error", None)
         if Error is not None and Error.cmds:
             try:
@@ -421,7 +422,7 @@ class SubiquityServer(Application):
             return
         report = self.error_reporter.report_for_exc(exc)
         log.error("top level error", exc_info=exc)
-        if not report:
+        if not isinstance(exc, AutoinstallError) and not report:
             report = self.make_apport_report(
                 ErrorReportKind.UNKNOWN, "unknown error", exc=exc
             )

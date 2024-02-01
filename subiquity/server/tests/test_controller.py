@@ -61,7 +61,7 @@ class TestController(SubiTestCase):
         mock_load.assert_called_once_with("default-data")
 
     def test_autoinstall_validation(self):
-        """Test validation error type"""
+        """Test validation error type and no apport reporting"""
 
         self.controller.autoinstall_schema = {
             "type": "object",
@@ -84,3 +84,8 @@ class TestController(SubiTestCase):
 
         # Assert error section is based on autoinstall_key
         self.assertEquals(exception.owner, "some-key")
+
+        # Assert apport report is not created
+        # This only checks that controllers do not manually create an apport
+        # report on validation. Should also be tested in Server
+        self.controller.app.make_apport_report.assert_not_called()

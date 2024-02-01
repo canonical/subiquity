@@ -160,6 +160,7 @@ class TestAutoinstallValidation(SubiTestCase):
                 },
             },
         }
+        self.server.make_apport_report = Mock()
 
     def test_valid_schema(self):
         """Test that the expected autoinstall JSON schema is valid"""
@@ -178,6 +179,20 @@ class TestAutoinstallValidation(SubiTestCase):
 
         with self.assertRaises(AutoinstallValidationError):
             self.server.validate_autoinstall()
+
+    async def test_autoinstall_validation__no_error_report(self):
+        """Test no apport reporting"""
+
+        exception = AutoinstallValidationError("Mock")
+
+        loop = Mock()
+        context = {"exception": exception}
+
+        with patch("subiquity.server.server.log"):
+            with patch.object(self.server, "_run_error_cmds"):
+                self.server._exception_handler(loop, context)
+
+        self.server.make_apport_report.assert_not_called()
 
 
 class TestMetaController(SubiTestCase):

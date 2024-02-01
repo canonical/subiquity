@@ -50,5 +50,6 @@ def make_app(model=None):
     app.log_syslog_id = None
     app.report_start_event = mock.Mock()
     app.report_finish_event = mock.Mock()
+    app.make_apport_report = mock.Mock()
 
     return app
