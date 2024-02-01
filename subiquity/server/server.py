@@ -24,6 +24,7 @@ import jsonschema
 import yaml
 from aiohttp import web
 from cloudinit.config.cc_set_passwords import rand_user_password
+from jsonschema.exceptions import ValidationError
 from systemd import journal
 
 from subiquity.cloudinit import get_host_combined_cloud_config
@@ -40,6 +41,7 @@ from subiquity.common.types import (
     PasswordKind,
 )
 from subiquity.models.subiquity import ModelNames, SubiquityModel
+from subiquity.server.autoinstall import AutoinstallValidationError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.dryrun import DRConfig
 from subiquity.server.errors import ErrorController
@@ -472,6 +474,20 @@ class SubiquityServer(Application):
             await controller.apply_autoinstall_config()
             await controller.configured()
 
+    def validate_autoinstall(self):
+        with self.context.child("core_validation", level="INFO"):
+            try:
+                jsonschema.validate(self.autoinstall_config, self.base_schema)
+            except ValidationError as original_exception:
+                # SubiquityServer currently only checks for these sections
+                # of autoinstall. Hardcode until we have better validation.
+                section = "version or interative-sessions"
+                new_exception: AutoinstallValidationError = AutoinstallValidationError(
+                    section,
+                )
+
+                raise new_exception from original_exception
+
     def load_autoinstall_config(self, *, only_early):
         log.debug(
             "load_autoinstall_config only_early %s file %s",
@@ -486,8 +502,7 @@ class SubiquityServer(Application):
             self.controllers.Reporting.setup_autoinstall()
             self.controllers.Reporting.start()
             self.controllers.Error.setup_autoinstall()
-            with self.context.child("core_validation", level="INFO"):
-                jsonschema.validate(self.autoinstall_config, self.base_schema)
+            self.validate_autoinstall()
             self.controllers.Early.setup_autoinstall()
         else:
             for controller in self.controllers.instances:

@@ -21,6 +21,7 @@ import jsonschema
 from jsonschema.validators import validator_for
 
 from subiquity.common.types import PasswordKind
+from subiquity.server.autoinstall import AutoinstallValidationError
 from subiquity.server.server import (
     MetaController,
     SubiquityServer,
@@ -151,6 +152,14 @@ class TestAutoinstallValidation(SubiTestCase):
         opts.output_base = self.tmp_dir()
         opts.machine_config = "examples/machines/simple.json"
         self.server = SubiquityServer(opts, None)
+        self.server.base_schema = {
+            "type": "object",
+            "properties": {
+                "some-key": {
+                    "type": "boolean",
+                },
+            },
+        }
 
     def test_valid_schema(self):
         """Test that the expected autoinstall JSON schema is valid"""
@@ -160,6 +169,15 @@ class TestAutoinstallValidation(SubiTestCase):
         )
 
         JsonValidator.check_schema(SubiquityServer.base_schema)
+
+    def test_autoinstall_validation__error_type(self):
+        """Test that bad autoinstall data throws AutoinstallValidationError"""
+
+        bad_ai_data = {"some-key": "not a bool"}
+        self.server.autoinstall_config = bad_ai_data
+
+        with self.assertRaises(AutoinstallValidationError):
+            self.server.validate_autoinstall()
 
 
 class TestMetaController(SubiTestCase):

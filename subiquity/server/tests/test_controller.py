@@ -16,6 +16,7 @@
 import contextlib
 from unittest.mock import patch
 
+from subiquity.server.autoinstall import AutoinstallValidationError
 from subiquity.server.controller import SubiquityController
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
@@ -58,3 +59,28 @@ class TestController(SubiTestCase):
         self.controller.autoinstall_default = "default-data"
         self.controller.setup_autoinstall()
         mock_load.assert_called_once_with("default-data")
+
+    def test_autoinstall_validation(self):
+        """Test validation error type"""
+
+        self.controller.autoinstall_schema = {
+            "type": "object",
+            "properties": {
+                "some-key": {
+                    "type": "boolean",
+                },
+            },
+        }
+
+        self.bad_ai_data = {"some-key": "not a bool"}
+
+        self.controller.autoinstall_key = "some-key"
+
+        # Assert error type is correct
+        with self.assertRaises(AutoinstallValidationError) as ctx:
+            self.controller.validate_autoinstall(self.bad_ai_data)
+
+        exception = ctx.exception
+
+        # Assert error section is based on autoinstall_key
+        self.assertEquals(exception.owner, "some-key")
