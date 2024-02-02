@@ -3,7 +3,9 @@
 Autoinstall configuration reference manual
 ==========================================
 
-The autoinstall file uses the YAML format. At the top level, it must be a mapping containing the keys described in this document. Unrecognised keys are ignored.
+The autoinstall file uses the YAML format. At the top level, it must be a
+mapping containing the keys described in this document. Unrecognised keys are
+currently ignored, but may cause a run-time failure in future versions.
 
 .. _ai-schema:
 

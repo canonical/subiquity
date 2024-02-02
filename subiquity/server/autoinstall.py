@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
+from typing import Optional
 
 log = logging.getLogger("subiquity.server.autoinstall")
 
@@ -24,8 +25,13 @@ class AutoinstallError(Exception):
 class AutoinstallValidationError(AutoinstallError):
     def __init__(
         self,
-        owner: str,
+        section: str,
+        message: Optional[str] = None,
     ):
-        self.message = f"Malformed autoinstall in {owner!r} section"
-        self.owner = owner
+        if not message:
+            self.message: str = f"Malformed autoinstall in {section!r} section"
+        else:
+            self.message: str = message
+
+        self.section: str = section
         super().__init__(self.message)

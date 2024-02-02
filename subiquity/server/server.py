@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import copy
 import logging
 import os
 import sys
@@ -475,14 +476,73 @@ class SubiquityServer(Application):
             await controller.apply_autoinstall_config()
             await controller.configured()
 
+    def _strip_controller_keys(self, autoinstall_config: dict) -> dict:
+        return_dict: dict = copy.deepcopy(autoinstall_config)
+
+        for controller in self.controllers.instances:
+            return_dict.pop(controller.autoinstall_key, None)
+
+        return return_dict
+
+    def _enforce_top_level_keys(self, base_config: dict) -> dict:
+        # Assumes base_config is the result of stripping away all
+        # controller related sections (via _strip_controller_keys)
+
+        top_level_keys: set[str] = set(base_config.keys())
+        valid_keys: set[str] = set(self.base_schema["properties"].keys())
+        bad_keys: set[str] = top_level_keys - valid_keys
+
+        # Return early if no bad keys
+        if not bad_keys:
+            return base_config
+
+        # If version early enough, only warn
+        version: int = base_config.get("version", None)
+
+        if not version:
+            raise AutoinstallValidationError(
+                section="top-level keys",
+                message="top-level key 'version' is missing",
+            )
+
+        if version <= 1:
+            for key in bad_keys:
+                log.warning(f"Unrecognized top-level autoinstall key {key!r}")
+
+            log.warning(
+                "Unrecognized keys may cause autoinstall to crash in future versions"
+            )
+
+            # Clean out bad keys
+            for key in bad_keys:
+                base_config.pop(key)
+
+            return base_config
+
+        # Otherwise, error
+        else:
+            for key in bad_keys:
+                log.error(f"Unrecognized top-level autoinstall key {key!r}")
+
+            raw_keys = (f"{key!r}" for key in bad_keys)
+            message: str = (
+                f"Unrecognized top-level autoinstall key(s): {', '.join(raw_keys)}",
+            )
+            raise AutoinstallValidationError(
+                section="top-level keys",
+                message=message,
+            )
+
     def validate_autoinstall(self):
         with self.context.child("core_validation", level="INFO"):
             try:
-                jsonschema.validate(self.autoinstall_config, self.base_schema)
+                stripped_config: dict = self._strip_controller_keys(
+                    self.autoinstall_config
+                )
+                base_config: dict = self._enforce_top_level_keys(stripped_config)
+                jsonschema.validate(base_config, self.base_schema)
             except ValidationError as original_exception:
-                # SubiquityServer currently only checks for these sections
-                # of autoinstall. Hardcode until we have better validation.
-                section = "version or interative-sessions"
+                section: str = "top-level keys"
                 new_exception: AutoinstallValidationError = AutoinstallValidationError(
                     section,
                 )

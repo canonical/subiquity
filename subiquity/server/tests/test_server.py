@@ -121,7 +121,9 @@ class TestAutoinstallLoad(SubiTestCase):
         with self.assertRaises(Exception):
             self.server.select_autoinstall()
 
-    def test_early_commands_changes_autoinstall(self):
+    # Only care about changes to autoinstall, not validity
+    @patch("subiquity.server.server.SubiquityServer.validate_autoinstall")
+    def test_early_commands_changes_autoinstall(self, mocked_validator):
         self.server.controllers = Mock()
         self.server.controllers.instances = []
         rootpath = self.path(root_autoinstall_path)
@@ -162,6 +164,17 @@ class TestAutoinstallValidation(SubiTestCase):
         }
         self.server.make_apport_report = Mock()
 
+    # Pseudo Load controllers to avoid patching loading logic for each controller
+    # Only need to access class attributes
+    def pseudo_load_controllers(self):
+        controller_classes = []
+        for prefix in self.server.controllers.controller_names:
+            controller_classes.append(
+                self.server.controllers._get_controller_class(prefix)
+            )
+
+        self.server.controllers.instances = controller_classes
+
     def test_valid_schema(self):
         """Test that the expected autoinstall JSON schema is valid"""
 
@@ -193,6 +206,67 @@ class TestAutoinstallValidation(SubiTestCase):
                 self.server._exception_handler(loop, context)
 
         self.server.make_apport_report.assert_not_called()
+
+    @patch("subiquity.server.server.log")
+    def test_autoinstall_validation__enforce_top_level_keys(self, log_mock):
+        """Test strict top level keys"""
+
+        # Reset base schema
+        self.server.base_schema = SubiquityServer.base_schema
+
+        # "apt" should be known by the MirrorController and not considered
+        # by the server's validation
+        bad_ai_data = {
+            "version": 1,
+            "apt": "Invalid but deferred",
+            "literally-anything": "lmao",
+        }
+
+        self.server.autoinstall_config = bad_ai_data
+
+        # Load the controllers
+        self.pseudo_load_controllers()
+
+        # OK in Version 1 but ensure warnings
+        self.server.validate_autoinstall()
+        log_mock.warning.assert_called()
+
+        # Not OK in Versions >=2
+        bad_ai_data["version"] = 2
+        self.server.autoinstall_config = bad_ai_data
+
+        log_mock.reset()
+
+        with self.assertRaises(AutoinstallValidationError) as ctx:
+            self.server.validate_autoinstall()
+
+        exception = ctx.exception
+
+        self.assertIn("literally-anything", str(exception))
+        self.assertNotIn("apt", str(exception))
+
+        log_mock.error.assert_called()
+
+    def test_autoinstall__strip_controller_keys(self):
+        """Test only controller keys are stripped"""
+
+        # Mixed data: Has base sections, controller section, and a bad key
+        autoinstall_config = {
+            "version": 1,  # Should stay
+            "interactive-sections": ["identity"],  # Should stay
+            "apt": "...",  # Should be stripped
+            "invalid_key": "...",  # Should stay
+        }
+
+        # Load the controllers
+        self.pseudo_load_controllers()
+
+        result = self.server._strip_controller_keys(autoinstall_config)
+
+        self.assertIn("version", result)
+        self.assertIn("interactive-sections", result)
+        self.assertNotIn("apt", result)
+        self.assertIn("invalid_key", result)
 
 
 class TestMetaController(SubiTestCase):
