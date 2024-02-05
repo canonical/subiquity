@@ -75,6 +75,7 @@ default_capabilities = [
     GuidedCapability.LVM,
     GuidedCapability.LVM_LUKS,
     GuidedCapability.ZFS,
+    GuidedCapability.ZFS_LUKS,
 ]
 
 
@@ -556,6 +557,43 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertFalse(swap.preserve)
         self.assertFalse(root.preserve)
         self.assertEqual("swap", swap.fs().fstype)
+        [rpool] = self.model._all(type="zpool", pool="rpool")
+        self.assertIsNone(rpool.path)
+        self.assertEqual([root], rpool.vdevs)
+        [bpool] = self.model._all(type="zpool", pool="bpool")
+        self.assertIsNone(bpool.path)
+        self.assertEqual([boot], bpool.vdevs)
+        zfs_rootfs = self.model._mount_for_path("/")
+        self.assertEqual("zfs", zfs_rootfs.type)
+        zfs_boot = self.model._mount_for_path("/boot")
+        self.assertEqual("zfs", zfs_boot.type)
+
+    @parameterized.expand(boot_expectations)
+    async def test_guided_zfs_luks(self, bootloader, ptable, p1mnt):
+        await self._guided_setup(bootloader, ptable)
+        target = GuidedStorageTargetReformat(
+            disk_id=self.d1.id, allowed=default_capabilities
+        )
+        await self.controller.guided(
+            GuidedChoiceV2(
+                target=target,
+                capability=GuidedCapability.ZFS_LUKS,
+                password="passw0rd",
+            )
+        )
+        [firmware, boot, swap, root] = self.d1.partitions()
+        self.assertEqual(p1mnt, firmware.mount)
+        self.assertIsNone(boot.mount)
+        self.assertIsNone(root.mount)
+        self.assertFalse(firmware.preserve)
+        self.assertFalse(boot.preserve)
+        self.assertFalse(swap.preserve)
+        self.assertFalse(root.preserve)
+        self.assertIsNone(swap.fs())
+        [dmc] = self.model.all_dm_crypts()
+        self.assertEqual("/dev/urandom", dmc.keyfile)
+        self.assertEqual(["swap", "initramfs"], dmc.options)
+        self.assertEqual("swap", dmc.fs().fstype)
         [rpool] = self.model._all(type="zpool", pool="rpool")
         self.assertIsNone(rpool.path)
         self.assertEqual([root], rpool.vdevs)
