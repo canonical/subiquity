@@ -23,7 +23,14 @@ def setup_logger(dir, base="subiquity"):
     os.makedirs(dir, exist_ok=True)
     # Create the log directory in such a way that users in the group may
     # write to this directory in the installation environment.
-    set_log_perms(dir, mode=0o770, group="adm")
+    log_dir_group = "adm"
+    if os.getenv("SNAP_CONFINEMENT", "classic") == "strict":
+        # strictly confined snaps are peculiar in the way that we will not be
+        # able to chown the location as any other group than 'root', this if
+        # fine though as the snap is already run as the root user and
+        # effectively the logs location will be more closed
+        log_dir_group = "root"
+    set_log_perms(dir, mode=0o770, group=log_dir_group)
 
     logger = logging.getLogger("")
     logger.setLevel(logging.DEBUG)
