@@ -16,6 +16,7 @@
 import contextlib
 from unittest.mock import patch
 
+from subiquity.server.autoinstall import AutoinstallValidationError
 from subiquity.server.controller import SubiquityController
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
@@ -41,7 +42,6 @@ class TestController(SubiTestCase):
         }
         self.controller.autoinstall_key = "sample"
         self.controller.autoinstall_key_alias = "sample-alias"
-        self.controller.autoinstall_default = "default-data"
         self.controller.setup_autoinstall()
         mock_load.assert_called_once_with("some-sample-data")
 
@@ -56,5 +56,36 @@ class TestController(SubiTestCase):
         mock_load.reset_mock()
         self.controller.autoinstall_key = "inexistent"
         self.controller.autoinstall_key_alias = "inexistent"
+        self.controller.autoinstall_default = "default-data"
         self.controller.setup_autoinstall()
         mock_load.assert_called_once_with("default-data")
+
+    def test_autoinstall_validation(self):
+        """Test validation error type and no apport reporting"""
+
+        self.controller.autoinstall_schema = {
+            "type": "object",
+            "properties": {
+                "some-key": {
+                    "type": "boolean",
+                },
+            },
+        }
+
+        self.bad_ai_data = {"some-key": "not a bool"}
+
+        self.controller.autoinstall_key = "some-key"
+
+        # Assert error type is correct
+        with self.assertRaises(AutoinstallValidationError) as ctx:
+            self.controller.validate_autoinstall(self.bad_ai_data)
+
+        exception = ctx.exception
+
+        # Assert error section is based on autoinstall_key
+        self.assertEquals(exception.owner, "some-key")
+
+        # Assert apport report is not created
+        # This only checks that controllers do not manually create an apport
+        # report on validation. Should also be tested in Server
+        self.controller.app.make_apport_report.assert_not_called()

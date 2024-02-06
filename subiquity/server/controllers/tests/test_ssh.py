@@ -16,6 +16,9 @@
 import unittest
 from unittest import mock
 
+import jsonschema
+from jsonschema.validators import validator_for
+
 from subiquity.common.types import SSHFetchIdStatus, SSHIdentity
 from subiquity.server.controllers.ssh import (
     SSHController,
@@ -116,3 +119,12 @@ class TestSSHController(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(response.status, SSHFetchIdStatus.FINGERPRINT_ERROR)
             self.assertEqual(response.error, stderr)
             self.assertIsNone(response.identities)
+
+    def test_valid_schema(self):
+        """Test that the expected autoinstall JSON schema is valid"""
+
+        JsonValidator: jsonschema.protocols.Validator = validator_for(
+            SSHController.autoinstall_schema
+        )
+
+        JsonValidator.check_schema(SSHController.autoinstall_schema)

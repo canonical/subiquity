@@ -16,13 +16,17 @@
 import unittest
 from unittest.mock import AsyncMock
 
+import jsonschema
 import requests
+from jsonschema.validators import validator_for
 
 from subiquity.models.snaplist import SnapListModel
 from subiquity.server.controllers.snaplist import (
     SnapdSnapInfoLoader,
+    SnapListController,
     SnapListFetchError,
 )
+from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 
 
@@ -56,3 +60,14 @@ class TestSnapdSnapInfoLoader(unittest.IsolatedAsyncioTestCase):
         await self.loader.get_snap_list_task()
         self.assertTrue(self.loader.fetch_list_completed())
         self.assertFalse(self.loader.fetch_list_failed())
+
+
+class TestSnapListController(SubiTestCase):
+    def test_valid_schema(self):
+        """Test that the expected autoinstall JSON schema is valid"""
+
+        JsonValidator: jsonschema.protocols.Validator = validator_for(
+            SnapListController.autoinstall_schema
+        )
+
+        JsonValidator.check_schema(SnapListController.autoinstall_schema)

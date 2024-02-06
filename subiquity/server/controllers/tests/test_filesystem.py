@@ -18,7 +18,9 @@ import subprocess
 import uuid
 from unittest import IsolatedAsyncioTestCase, mock
 
+import jsonschema
 from curtin.commands.extract import TrivialSourceHandler
+from jsonschema.validators import validator_for
 
 from subiquity.common.filesystem import gaps, labels
 from subiquity.common.filesystem.actions import DeviceAction
@@ -398,6 +400,15 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
 
         self.assertEqual(len(self.fsc._variation_info), 1)
         self.assertEqual(self.fsc._variation_info["default"].name, "default")
+
+    def test_valid_schema(self):
+        """Test that the expected autoinstall JSON schema is valid"""
+
+        JsonValidator: jsonschema.protocols.Validator = validator_for(
+            FilesystemController.autoinstall_schema
+        )
+
+        JsonValidator.check_schema(FilesystemController.autoinstall_schema)
 
 
 class TestGuided(IsolatedAsyncioTestCase):

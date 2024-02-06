@@ -15,7 +15,9 @@
 
 import unittest
 
+import jsonschema
 from cloudinit.config.schema import SchemaValidationError
+from jsonschema.validators import validator_for
 
 from subiquity.server.controllers.userdata import UserdataController
 from subiquitycore.tests.mocks import make_app
@@ -58,3 +60,12 @@ class TestUserdataController(unittest.TestCase):
             validate.assert_called_with(
                 data=invalid_schema, data_source="autoinstall.user-data"
             )
+
+    def test_valid_schema(self):
+        """Test that the expected autoinstall JSON schema is valid"""
+
+        JsonValidator: jsonschema.protocols.Validator = validator_for(
+            UserdataController.autoinstall_schema
+        )
+
+        JsonValidator.check_schema(UserdataController.autoinstall_schema)

@@ -6,6 +6,12 @@
             "minimum": 1,
             "maximum": 1
         },
+        "interactive-sections": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
         "early-commands": {
             "type": "array",
             "items": {

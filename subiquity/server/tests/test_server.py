@@ -17,7 +17,11 @@ import os
 import shlex
 from unittest.mock import Mock, patch
 
+import jsonschema
+from jsonschema.validators import validator_for
+
 from subiquity.common.types import PasswordKind
+from subiquity.server.autoinstall import AutoinstallValidationError
 from subiquity.server.server import (
     MetaController,
     SubiquityServer,
@@ -139,6 +143,56 @@ early-commands: ["{cmd}"]
         self.server.load_autoinstall_config(only_early=False)
         after_early = {"version": 1, "early-commands": [cmd], "stuff": "things"}
         self.assertEqual(after_early, self.server.autoinstall_config)
+
+
+class TestAutoinstallValidation(SubiTestCase):
+    async def asyncSetUp(self):
+        opts = Mock()
+        opts.dry_run = True
+        opts.output_base = self.tmp_dir()
+        opts.machine_config = "examples/machines/simple.json"
+        self.server = SubiquityServer(opts, None)
+        self.server.base_schema = {
+            "type": "object",
+            "properties": {
+                "some-key": {
+                    "type": "boolean",
+                },
+            },
+        }
+        self.server.make_apport_report = Mock()
+
+    def test_valid_schema(self):
+        """Test that the expected autoinstall JSON schema is valid"""
+
+        JsonValidator: jsonschema.protocols.Validator = validator_for(
+            SubiquityServer.base_schema
+        )
+
+        JsonValidator.check_schema(SubiquityServer.base_schema)
+
+    def test_autoinstall_validation__error_type(self):
+        """Test that bad autoinstall data throws AutoinstallValidationError"""
+
+        bad_ai_data = {"some-key": "not a bool"}
+        self.server.autoinstall_config = bad_ai_data
+
+        with self.assertRaises(AutoinstallValidationError):
+            self.server.validate_autoinstall()
+
+    async def test_autoinstall_validation__no_error_report(self):
+        """Test no apport reporting"""
+
+        exception = AutoinstallValidationError("Mock")
+
+        loop = Mock()
+        context = {"exception": exception}
+
+        with patch("subiquity.server.server.log"):
+            with patch.object(self.server, "_run_error_cmds"):
+                self.server._exception_handler(loop, context)
+
+        self.server.make_apport_report.assert_not_called()
 
 
 class TestMetaController(SubiTestCase):

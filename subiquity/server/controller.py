@@ -19,8 +19,10 @@ import os
 from typing import Any, Optional
 
 import jsonschema
+from jsonschema.exceptions import ValidationError
 
 from subiquity.common.api.server import bind
+from subiquity.server.autoinstall import AutoinstallValidationError
 from subiquity.server.types import InstallerChannels
 from subiquitycore.context import with_context
 from subiquitycore.controller import BaseController
@@ -54,6 +56,19 @@ class SubiquityController(BaseController):
             await self.configured()
             self._active = False
 
+    def validate_autoinstall(self, ai_data: dict) -> None:
+        try:
+            jsonschema.validate(ai_data, self.autoinstall_schema)
+
+        except ValidationError as original_exception:
+            section = self.autoinstall_key
+
+            new_exception: AutoinstallValidationError = AutoinstallValidationError(
+                section,
+            )
+
+            raise new_exception from original_exception
+
     def setup_autoinstall(self):
         if not self.app.autoinstall_config:
             return
@@ -72,7 +87,8 @@ class SubiquityController(BaseController):
                 ai_data = self.autoinstall_default
 
             if ai_data is not None and self.autoinstall_schema is not None:
-                jsonschema.validate(ai_data, self.autoinstall_schema)
+                self.validate_autoinstall(ai_data)
+
             self.load_autoinstall_data(ai_data)
 
     def load_autoinstall_data(self, data):
