@@ -77,18 +77,21 @@ The {keytype} host key fingerprint is:
 )
 
 
-def host_key_info():
-    if os.getenv("SNAP_CONFINEMENT", "classic") == "strict":
-        # if we run in confinement, we have no direct accesss to host
-        # keys info use prepared finger prints if exist
-        snap_name = os.getenv("SNAP_NAME", "classic")
-        host_fingerprints = Path("/run/" + snap_name + "/host-fingerprints.txt")
+def host_key_info(runtime_state_dir=None):
+    if runtime_state_dir:
+        # host fingerprints information may have already been prepared by the
+        # platform glue
+        host_fingerprints = Path(runtime_state_dir) / "host-fingerprints.txt"
+        log.debug(
+            "pre-made host finterprints %s present: %s",
+            host_fingerprints,
+            host_fingerprints.is_file(),
+        )
         if host_fingerprints.is_file():
             fingerprints = open(host_fingerprints, "r")
             return fingerprints.read()
-        return ""
-    else:
-        return summarize_host_keys(host_key_fingerprints())
+
+    return summarize_host_keys(host_key_fingerprints())
 
 
 def summarize_host_keys(fingerprints):
