@@ -25,7 +25,6 @@ class User(object):
     realname = attr.ib()
     username = attr.ib()
     homedir = attr.ib(default=None)
-    fingerprints = attr.ib(init=False, default=[])
 
 
 class IdentityModel(object):
