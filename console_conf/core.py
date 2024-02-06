@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 
 from console_conf.models.console_conf import ConsoleConfModel
 from console_conf.models.systems import RecoverySystemsModel
@@ -22,11 +23,17 @@ from subiquitycore.tui import TuiApplication
 
 log = logging.getLogger("console_conf.core")
 
+# project is used to build the state directory path under /run/, which usually
+# ends up as /run/console-conf. Note this should only be changed in
+# coordination with console-conf-wrapper and any other glue shipped with Ubuntu
+# Core boot base
+CONSOLE_CONF_PROJECT = os.getenv("SNAP_INSTANCE_NAME", "console-conf")
+
 
 class ConsoleConf(TuiApplication):
     from console_conf import controllers as controllers_mod
 
-    project = "console-conf"
+    project = CONSOLE_CONF_PROJECT
 
     make_model = ConsoleConfModel
 
@@ -44,7 +51,7 @@ class ConsoleConf(TuiApplication):
 class RecoveryChooser(TuiApplication):
     from console_conf import controllers as controllers_mod
 
-    project = "console-conf"
+    project = CONSOLE_CONF_PROJECT
 
     controllers = [
         "RecoveryChooserWelcome",
