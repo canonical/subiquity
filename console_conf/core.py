@@ -14,11 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import os
 
 from console_conf.models.console_conf import ConsoleConfModel
 from console_conf.models.systems import RecoverySystemsModel
 from subiquitycore.prober import Prober
+from subiquitycore.snap import snap_name
 from subiquitycore.tui import TuiApplication
 
 log = logging.getLogger("console_conf.core")
@@ -27,7 +27,7 @@ log = logging.getLogger("console_conf.core")
 # ends up as /run/console-conf. Note this should only be changed in
 # coordination with console-conf-wrapper and any other glue shipped with Ubuntu
 # Core boot base
-CONSOLE_CONF_PROJECT = os.getenv("SNAP_INSTANCE_NAME", "console-conf")
+CONSOLE_CONF_PROJECT = snap_name() or "console-conf"
 
 
 class ConsoleConf(TuiApplication):
