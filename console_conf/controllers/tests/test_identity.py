@@ -18,9 +18,10 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from console_conf.controllers.identity import IdentityController
+from console_conf.ui.views import IdentityView, LoginView
 from subiquitycore.models.network import NetworkDev
+from subiquitycore.snapd import MemoryResponseSet, get_fake_connection
 from subiquitycore.tests.mocks import make_app
-from subiquitycore.snapd import get_fake_connection
 
 
 class TestIdentityController(unittest.TestCase):
@@ -73,3 +74,48 @@ class TestIdentityController(unittest.TestCase):
             with open(os.path.join(statedir, "login-details.txt")) as inf:
                 data = inf.read()
             self.assertIn("Ubuntu Core 24 on 1.2.3.4 (tty1)\n", data)
+
+    @patch("pwd.getpwnam")
+    @patch("os.path.isdir", return_value=True)
+    def test_make_ui_managed_with_user(self, isdir, getpwnam):
+        pwinfo = MagicMock()
+        pwinfo.pw_gecos = "Foo,Bar"
+        getpwnam.return_value = pwinfo
+
+        app = make_app()
+        app.opts.dry_run = False
+        app.snapdcon = get_fake_connection()
+        # app.state_dir = statedir
+        network_model = MagicMock()
+        mock_devs = [MagicMock(spec=NetworkDev)]
+        network_model.get_all_netdevs.return_value = mock_devs
+        mock_devs[0].actual_global_ip_addresses = ["1.2.3.4"]
+        app.base_model.network = network_model
+
+        app.snapdcon.response_sets = {
+            "v2-system-info": MemoryResponseSet([{"result": {"managed": True}}]),
+            "v2-users": MemoryResponseSet(
+                [
+                    # no "username" for first entry
+                    {"result": [{}, {"username": "foo"}]}
+                ]
+            ),
+        }
+
+        c = IdentityController(app)
+        ui = c.make_ui()
+        self.assertIsInstance(ui, LoginView)
+        getpwnam.assert_called_with("foo")
+
+    def test_make_ui_unmanaged(self):
+        app = make_app()
+        app.opts.dry_run = False
+        app.snapdcon = get_fake_connection()
+
+        app.snapdcon.response_sets = {
+            "v2-system-info": MemoryResponseSet([{"result": {"managed": False}}]),
+        }
+
+        c = IdentityController(app)
+        ui = c.make_ui()
+        self.assertIsInstance(ui, IdentityView)
