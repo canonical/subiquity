@@ -24,7 +24,7 @@ from subiquitycore import snap
 from subiquitycore.snapd import SnapdConnection
 from subiquitycore.ssh import get_ips_standalone, host_key_info
 from subiquitycore.tuicontroller import TuiController
-from subiquitycore.utils import disable_console_conf, run_command
+from subiquitycore.utils import disable_console_conf
 
 log = logging.getLogger("console_conf.controllers.identity")
 
@@ -51,9 +51,8 @@ def get_core_version():
     return version
 
 
-def get_managed():
+def get_managed(con):
     """Check if device is managed"""
-    con = SnapdConnection("", "/run/snapd.socket")
     return con.get("v2/system-info").json()["result"]["managed"]
 
 
@@ -65,9 +64,8 @@ def get_realname(username):
     return info.pw_gecos.split(",", 1)[0]
 
 
-def get_device_owner():
+def get_device_owner(con):
     """Get device owner, if any"""
-    con = SnapdConnection("", "/run/snapd.socket")
     for user in con.get("v2/users").json()["result"]:
         if "username" not in user:
             continue
@@ -129,7 +127,9 @@ def write_login_details(fp, username, ips, state_dir=None):
 
 
 def write_login_details_standalone():
-    owner = get_device_owner()
+    # running in standalone mode
+    con = SnapdConnection("/", "/run/snapd.socket")
+    owner = get_device_owner(con)
     ips = get_ips_standalone()
     if len(ips) == 0:
         if owner is None:
@@ -159,8 +159,8 @@ class IdentityController(TuiController):
         self.model = app.base_model.identity
 
     def make_ui(self):
-        if get_managed():
-            device_owner = get_device_owner()
+        if get_managed(self.app.snapdcon):
+            device_owner = get_device_owner(self.app.snapdcon)
             if device_owner:
                 self.model.add_user(device_owner)
             return self.make_login_view()
@@ -177,9 +177,8 @@ class IdentityController(TuiController):
             login_details_path = self.opts.output_base + "/login-details.txt"
         else:
             self.app.urwid_loop.draw_screen()
-            con = SnapdConnection("", "/run/snapd.socket")
             user_action = {"action": "create", "email": email, "sudoer": True}
-            res = con.post("v2/users", body=user_action)
+            res = self.app.snapdcon.post("v2/users", body=user_action)
             if res.json()["status"] != "OK":
                 if isinstance(self.ui.body, IdentityView):
                     self.ui.body.snap_create_user_failed(
