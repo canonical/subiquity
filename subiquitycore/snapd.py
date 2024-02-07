@@ -121,6 +121,19 @@ class ResponseSet:
         return _FakeFileResponse(f)
 
 
+class MemoryResponseSet:
+    """Set of response for an endpoint which returns data stored in memory."""
+
+    def __init__(self, data):
+        self.data = data
+        self.index = 0
+
+    def next(self):
+        d = self.data[self.index]
+        self.index += 1
+        return _FakeMemoryResponse(d)
+
+
 class FakeSnapdConnection:
     def __init__(self, snap_data_dir, scale_factor, output_base):
         self.snap_data_dir = snap_data_dir
