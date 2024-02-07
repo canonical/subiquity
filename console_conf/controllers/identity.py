@@ -156,9 +156,6 @@ class IdentityController(TuiController):
             device_owner = get_device_owner()
             if device_owner:
                 self.model.add_user(device_owner)
-                key_file = os.path.join(device_owner["homedir"], ".ssh/authorized_keys")
-                cp = run_command(["ssh-keygen", "-lf", key_file])
-                self.model.user.fingerprints = cp.stdout.replace("\r", "").splitlines()
             return self.make_login_view()
         else:
             return IdentityView(self.model, self)
