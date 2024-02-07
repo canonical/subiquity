@@ -20,21 +20,18 @@ from unittest.mock import MagicMock, patch
 from console_conf.controllers.identity import IdentityController
 from subiquitycore.models.network import NetworkDev
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.snapd import get_fake_connection
 
 
 class TestIdentityController(unittest.TestCase):
     @patch("os.ttyname", return_value="/dev/tty1")
     @patch("console_conf.controllers.identity.get_core_version", return_value="24")
-    @patch("console_conf.controllers.identity.run_command")
-    def test_snap_integration(self, run_command, core_version, ttyname):
+    def test_snap_integration(self, core_version, ttyname):
         with tempfile.TemporaryDirectory(suffix="console-conf-test") as statedir:
-            proc_mock = MagicMock()
-            run_command.return_value = proc_mock
-            proc_mock.returncode = 0
-            proc_mock.stdout = '{"username":"foo"}'
-
             app = make_app()
             app.opts.dry_run = False
+            app.snapdcon = get_fake_connection()
+            app.state_dir = statedir
             network_model = MagicMock()
             mock_devs = [MagicMock(spec=NetworkDev)]
             network_model.get_all_netdevs.return_value = mock_devs
@@ -47,11 +44,31 @@ class TestIdentityController(unittest.TestCase):
 
             app.state_path = MagicMock(side_effect=state_path)
 
+            create_user_calls = 0
+
+            def create_user_cb(path, body, **args):
+                nonlocal create_user_calls
+                create_user_calls += 1
+                self.assertEqual(path, "v2/users")
+                self.assertEqual(
+                    body, {"action": "create", "email": "foo@bar.com", "sudoer": True}
+                )
+                return {
+                    "status": "OK",
+                    "result": [
+                        {
+                            "username": "foo",
+                        }
+                    ],
+                }
+
+            # fake POST handlers
+            app.snapdcon.post_cb["v2/users"] = create_user_cb
+
             c = IdentityController(app)
             c.identity_done("foo@bar.com")
-            run_command.assert_called_with(
-                ["snap", "create-user", "--sudoer", "--json", "foo@bar.com"]
-            )
+
+            self.assertEqual(create_user_calls, 1)
 
             with open(os.path.join(statedir, "login-details.txt")) as inf:
                 data = inf.read()
