@@ -19,6 +19,7 @@ from console_conf.models.console_conf import ConsoleConfModel
 from console_conf.models.systems import RecoverySystemsModel
 from subiquitycore.prober import Prober
 from subiquitycore.snap import snap_name
+from subiquitycore.snapd import SnapdConnection
 from subiquitycore.tui import TuiApplication
 
 log = logging.getLogger("console_conf.core")
@@ -46,6 +47,9 @@ class ConsoleConf(TuiApplication):
     def __init__(self, opts):
         super().__init__(opts)
         self.prober = Prober(opts.machine_config, self.debug_flags)
+        # we're talking to snapd over the main socket, this may require
+        # snapd-control if executing inside a snap
+        self.snapdcon = SnapdConnection(self.root, "/run/snapd.socket")
 
 
 class RecoveryChooser(TuiApplication):
