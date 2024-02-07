@@ -127,6 +127,7 @@ class FakeSnapdConnection:
         self.scale_factor = scale_factor
         self.response_sets = {}
         self.output_base = output_base
+        self.post_cb = {}
 
     def configure_proxy(self, proxy):
         log.debug("pretending to restart snapd to pick up proxy config")
@@ -167,6 +168,9 @@ class FakeSnapdConnection:
                     "status": "Accepted",
                 }
             )
+        if path in self.post_cb:
+            return _FakeMemoryResponse(self.post_cb[path](path, body, **args))
+
         raise Exception(
             "Don't know how to fake POST response to {}".format((path, args))
         )
