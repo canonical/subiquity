@@ -67,7 +67,7 @@ _ssh_import_data = {
 
 
 class SSHImportForm(Form):
-    ssh_import_id = ChoiceField(
+    service = ChoiceField(
         _("Import SSH identity:"),
         choices=[
             (_("from GitHub"), True, "gh"),
@@ -79,12 +79,12 @@ class SSHImportForm(Form):
     import_username = UsernameField(_ssh_import_data["gh"]["caption"])
 
     # validation of the import username does not read from
-    # ssh_import_id.value because it is sometimes done from the
-    # 'select' signal of the import id selector, which is called
-    # before the import id selector's value has actually changed. so
+    # service.value because it is sometimes done from the
+    # 'select' signal of the service selector, which is called
+    # before the service selector's value has actually changed. so
     # the signal handler stuffs the value here before doing
     # validation (yes, this is a hack).
-    ssh_import_id_value = None
+    service_value = None
 
     def validate_import_username(self):
         username = self.import_username.value
@@ -92,7 +92,7 @@ class SSHImportForm(Form):
             return _("This field must not be blank.")
         if len(username) > SSH_IMPORT_MAXLEN:
             return _("SSH id too long, must be < ") + str(SSH_IMPORT_MAXLEN)
-        if self.ssh_import_id_value == "lp":
+        if self.service_value == "lp":
             lp_regex = r"^[a-z0-9][a-z0-9\+\.\-]*$"
             if not re.match(lp_regex, self.import_username.value):
                 return _(
@@ -102,7 +102,7 @@ class SSHImportForm(Form):
                     "the first character."
                     ""
                 )
-        elif self.ssh_import_id_value == "gh":
+        elif self.service_value == "gh":
             if not re.match(r"^[a-zA-Z0-9\-]+$", username):
                 return _(
                     "A GitHub username may only contain alphanumeric "
@@ -119,11 +119,11 @@ class SSHImportStretchy(Stretchy):
         connect_signal(self.form, "submit", lambda unused: self.done())
         connect_signal(self.form, "cancel", lambda unused: self.cancel())
         connect_signal(
-            self.form.ssh_import_id.widget, "select", self._import_service_selected
+            self.form.service.widget, "select", self._import_service_selected
         )
 
         self._import_service_selected(
-            sender=None, service=self.form.ssh_import_id.widget.value
+            sender=None, service=self.form.service.widget.value
         )
 
         rows = self.form.as_rows()
@@ -134,9 +134,7 @@ class SSHImportStretchy(Stretchy):
         self.parent.remove_overlay(self)
 
     def done(self):
-        ssh_import_id = (
-            self.form.ssh_import_id.value + ":" + self.form.import_username.value
-        )
+        ssh_import_id = self.form.service.value + ":" + self.form.import_username.value
         fsk = FetchingSSHKeys(self.parent)
         self.parent.remove_overlay(self)
         self.parent.show_overlay(fsk, width=fsk.width, min_width=None)
@@ -149,7 +147,7 @@ class SSHImportStretchy(Stretchy):
         iu.caption = _(data["caption"])
         iu.widget.valid_char_pat = data["valid_char"]
         iu.widget.error_invalid_char = _(data["error_invalid_char"])
-        self.form.ssh_import_id_value = service
+        self.form.service_value = service
         if iu.value != "":
             iu.validate()
 

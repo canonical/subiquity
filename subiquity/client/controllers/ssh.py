@@ -69,7 +69,7 @@ class SSHController(SubiquityTuiController):
             import_form = self.app.ui.body._w.stretchy.form
 
             view_helpers.enter_data(
-                import_form, {"import_username": username, "ssh_import_id": service}
+                import_form, {"import_username": username, "service": service}
             )
 
             import_form._click_done(None)
