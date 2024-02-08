@@ -88,8 +88,8 @@ def host_key_info(runtime_state_dir=None):
             host_fingerprints.is_file(),
         )
         if host_fingerprints.is_file():
-            fingerprints = open(host_fingerprints, "r")
-            return fingerprints.read()
+            with open(host_fingerprints, "r") as fp:
+                return fp.read()
 
     return summarize_host_keys(host_key_fingerprints())
 
