@@ -100,33 +100,28 @@ class SSHController(SubiquityTuiController):
 
     @with_context(name="ssh_import_id", description="{ssh_import_id}")
     async def _fetch_ssh_keys(self, *, context, ssh_import_id):
-        with self.context.child("ssh_import_id", ssh_import_id):
-            response: SSHFetchIdResponse = await self.endpoint.fetch_id.GET(
-                ssh_import_id
-            )
+        response: SSHFetchIdResponse = await self.endpoint.fetch_id.GET(ssh_import_id)
 
-            if response.status == SSHFetchIdStatus.IMPORT_ERROR:
-                if isinstance(self.ui.body, SSHView):
-                    self.ui.body.fetching_ssh_keys_failed(
-                        _("Importing keys failed:"), response.error
-                    )
-                return
-            elif response.status == SSHFetchIdStatus.FINGERPRINT_ERROR:
-                if isinstance(self.ui.body, SSHView):
-                    self.ui.body.fetching_ssh_keys_failed(
-                        _("ssh-keygen failed to show fingerprint of downloaded keys:"),
-                        response.error,
-                    )
-                return
-
-            identities = response.identities
-
+        if response.status == SSHFetchIdStatus.IMPORT_ERROR:
             if isinstance(self.ui.body, SSHView):
-                self.ui.body.confirm_ssh_keys(ssh_import_id, identities)
-            else:
-                log.debug(
-                    "ui.body of unexpected instance: %s", type(self.ui.body).__name__
+                self.ui.body.fetching_ssh_keys_failed(
+                    _("Importing keys failed:"), response.error
                 )
+            return
+        elif response.status == SSHFetchIdStatus.FINGERPRINT_ERROR:
+            if isinstance(self.ui.body, SSHView):
+                self.ui.body.fetching_ssh_keys_failed(
+                    _("ssh-keygen failed to show fingerprint of downloaded keys:"),
+                    response.error,
+                )
+            return
+
+        identities = response.identities
+
+        if isinstance(self.ui.body, SSHView):
+            self.ui.body.confirm_ssh_keys(ssh_import_id, identities)
+        else:
+            log.debug("ui.body of unexpected instance: %s", type(self.ui.body).__name__)
 
     def fetch_ssh_keys(self, ssh_import_id):
         self._fetch_task = schedule_task(
