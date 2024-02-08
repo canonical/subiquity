@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import logging
 
 from subiquity.client.controller import SubiquityTuiController
@@ -76,15 +75,9 @@ class SSHController(SubiquityTuiController):
             import_form._click_done(None)
 
             # Wait until the key gets fetched
-            while True:
-                try:
-                    confirm_overlay = self.ui.body._w.stretchy
-                except AttributeError:
-                    pass
-                else:
-                    if isinstance(confirm_overlay, ConfirmSSHKeys):
-                        break
-                await asyncio.sleep(0.01)
+            confirm_overlay = await view_helpers.wait_for_overlay(
+                self.ui, ConfirmSSHKeys
+            )
 
             confirm_overlay.ok(None)
 
