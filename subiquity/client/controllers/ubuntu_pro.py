@@ -66,8 +66,11 @@ class UbuntuProController(SubiquityTuiController):
         lsb = lsb_release(dry_run=dry_run)
 
         if "LTS" not in lsb["description"]:
-            # TODO remove special handling of 24.04 when it is marked LTS
-            if lsb["release"] == "24.04":
+            major, minor = lsb["release"].split(".")
+
+            # If running a pre-LTS (e.g., 24.04, 26.04, ...), show the SSH UI
+            # for testing, but with a warning.
+            if int(major) >= 20 and int(major) % 2 == 0 and minor == "04":
                 pre_release = True
             else:
                 await self.endpoint.skip.POST()

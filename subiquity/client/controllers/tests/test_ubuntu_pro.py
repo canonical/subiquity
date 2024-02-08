@@ -78,3 +78,25 @@ class TestUbuntuProController(unittest.IsolatedAsyncioTestCase):
         view.assert_called_once_with(
             ctrler, token="", has_network=False, pre_release=True
         )
+
+    @patch("subiquity.client.controllers.ubuntu_pro.UbuntuProView")
+    @patch(
+        "subiquity.client.controllers.ubuntu_pro.lsb_release",
+        return_value={
+            "description": "Ubuntu R R (development branch)",
+            "release": "26.04",
+        },
+    )
+    async def test_make_ui__26_04_future(self, release, view):
+        ctrler = self.ctrler
+
+        rv = UbuntuProResponse(token="", has_network=False)
+
+        with patch.object(ctrler.endpoint, "GET", return_value=rv):
+            await ctrler.make_ui()
+
+        view.assert_called_once()
+
+        view.assert_called_once_with(
+            ctrler, token="", has_network=False, pre_release=True
+        )
