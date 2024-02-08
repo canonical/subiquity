@@ -18,7 +18,6 @@ import contextlib
 import enum
 import io
 import logging
-import os
 import pathlib
 import random
 import re
@@ -71,7 +70,7 @@ def get_index_targets() -> List[str]:
 def apt_sourceparts_files(mp: Mountpoint) -> List[str]:
     # Return the relative path of the files from
     # mp("etc/apt/sources.list.d") that apt will read.
-    root = pathlib.Path(mp.p())
+    root = mp.pp()
     sources_list_d = root / "etc/apt/sources.list.d"
     paths = list(sources_list_d.glob("*.list")) + list(sources_list_d.glob("*.sources"))
     return [str(p.relative_to(root)) for p in paths]
@@ -147,11 +146,12 @@ class AptConfigurer:
     async def apply_apt_config(self, context, final: bool):
         self.configured_tree = await self.mounter.setup_overlay([self.source_path])
 
-        config_location = os.path.join(
-            self.app.root, "var/log/installer/curtin-install/subiquity-curtin-apt.conf"
+        config_location = pathlib.Path(self.app.root).joinpath(
+            "var/log/installer/curtin-install/subiquity-curtin-apt.conf"
         )
-        generate_config_yaml(config_location, self.apt_config(final))
-        self.app.note_data_for_apport("CurtinAptConfig", config_location)
+
+        generate_config_yaml(str(config_location), self.apt_config(final))
+        self.app.note_data_for_apport("CurtinAptConfig", str(config_location))
 
         await run_curtin_command(
             self.app,
@@ -159,7 +159,7 @@ class AptConfigurer:
             "apt-config",
             "-t",
             self.configured_tree.p(),
-            config=config_location,
+            config=str(config_location),
             private_mounts=True,
         )
 
@@ -172,7 +172,7 @@ class AptConfigurer:
         with non-zero."""
         assert self.configured_tree is not None
 
-        pfx = pathlib.Path(self.configured_tree.p())
+        pfx = self.configured_tree.pp()
 
         apt_config = apt_pkg.Configuration()
 
@@ -239,21 +239,21 @@ class AptConfigurer:
 
         self.install_tree = await self.mounter.setup_overlay([self.configured_tree])
 
-        os.mkdir(self.install_tree.p("cdrom"))
+        self.install_tree.pp("cdrom").mkdir()
         await self.mounter.mount("/cdrom", self.install_tree.p("cdrom"), options="bind")
 
         if self.app.base_model.network.has_network:
             with contextlib.suppress(FileNotFoundError):
-                os.rename(
-                    self.install_tree.p("etc/apt/sources.list"),
-                    self.install_tree.p("etc/apt/sources.list.d/original.list"),
+                self.install_tree.pp("etc/apt/sources.list").rename(
+                    self.install_tree.pp("etc/apt/sources.list.d/original.list"),
                 )
         else:
-            proxy_path = self.install_tree.p("etc/apt/apt.conf.d/90curtin-aptproxy")
-            if os.path.exists(proxy_path):
-                os.unlink(proxy_path)
+            self.install_tree.pp("etc/apt/sources.list").unlink(missing_ok=True)
+            self.install_tree.pp("etc/apt/apt.conf.d/90curtin-aptproxy").unlink(
+                missing_ok=True
+            )
             for relpath in apt_sourceparts_files(self.configured_tree):
-                os.unlink(self.install_tree.p(relpath))
+                self.install_tree.pp(relpath).unlink()
 
         codename = lsb_release(dry_run=self.app.opts.dry_run)["codename"]
 
@@ -325,12 +325,11 @@ class AptConfigurer:
             shutil.copyfile(self.configured_tree.p(path), target_mnt.p(path))
 
         # The file only exists if we are online
-        with contextlib.suppress(FileNotFoundError):
-            os.unlink(target_mnt.p("etc/apt/sources.list.d/original.list"))
+        target_mnt.pp("etc/apt/sources.list.d/original.list").unlink(missing_ok=True)
         try:
             _restore_file("etc/apt/sources.list")
         except FileNotFoundError:
-            os.unlink(target_mnt.p("etc/apt/sources.list"))
+            target_mnt.pp("etc/apt/sources.list").unlink()
 
         with contextlib.suppress(FileNotFoundError):
             _restore_file("etc/apt/apt.conf.d/90curtin-aptproxy")
@@ -354,8 +353,8 @@ class AptConfigurer:
 
         await self.cleanup()
         try:
-            d = target_mnt.p("cdrom")
-            os.rmdir(d)
+            d = target_mnt.pp("cdrom")
+            d.rmdir()
         except OSError as ose:
             log.warning(f"failed to rmdir {d}: {ose}")
 

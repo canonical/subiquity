@@ -51,12 +51,20 @@ class OverlayCleanupError(Exception):
     """Exception to raise when an overlay could not be cleaned up."""
 
 
+class AbsolutePathError(Exception):
+    pass
+
+
 class _MountBase:
-    def p(self, *args: str) -> str:
+    def pp(self, *args: Union[str, Path]) -> Path:
+        """Same as p() but returns a pathlib.Path."""
         for a in args:
-            if a.startswith("/"):
-                raise Exception("no absolute paths here please")
-        return os.path.join(self.mountpoint, *args)
+            if Path(a).is_absolute():
+                raise AbsolutePathError("no absolute paths here please")
+        return Path(self.mountpoint).joinpath(*args)
+
+    def p(self, *args: Union[str, Path]) -> str:
+        return str(self.pp(*args))
 
     def write(self, path, content):
         with open(self.p(path), "w") as fp:
