@@ -21,6 +21,7 @@ import shlex
 import sys
 
 from console_conf.ui.views import IdentityView, LoginView
+from subiquitycore import snap
 from subiquitycore.snapd import SnapdConnection
 from subiquitycore.ssh import get_ips_standalone, host_key_info
 from subiquitycore.tuicontroller import TuiController
@@ -102,7 +103,7 @@ Personalize your account at https://login.ubuntu.com.
 """
 
 
-def write_login_details(fp, username, ips):
+def write_login_details(fp, username, ips, state_dir=None):
     sshcommands = "\n"
     for ip in ips:
         sshcommands += "    ssh %s@%s\n" % (username, ip)
@@ -116,10 +117,11 @@ def write_login_details(fp, username, ips):
         )
     else:
         first_ip = ips[0]
+        key_info = host_key_info(runtime_state_dir=state_dir)
         fp.write(
             login_details_tmpl.format(
                 sshcommands=sshcommands,
-                host_key_info=host_key_info(),
+                host_key_info=key_info,
                 tty_name=tty_name,
                 first_ip=first_ip,
                 version=version,
@@ -142,7 +144,13 @@ def write_login_details_standalone():
     if owner is None:
         print("device managed without user @ {}".format(", ".join(ips)))
     else:
-        write_login_details(sys.stdout, owner["username"], ips)
+        if snap.is_snap() and snap.is_snap_strictly_confined():
+            # normally this is set by the application context, but here we are
+            # executing standalone
+            runtime_state = os.path.join("/run", snap.snap_name())
+        else:
+            runtime_state = None
+        write_login_details(sys.stdout, owner["username"], ips, state_dir=runtime_state)
     return 0
 
 
@@ -190,7 +198,9 @@ class IdentityController(TuiController):
         for dev in net_model.get_all_netdevs():
             ips.extend(dev.actual_global_ip_addresses)
         with open(login_details_path, "w") as fp:
-            write_login_details(fp, result["username"], ips)
+            write_login_details(
+                fp, result["username"], ips, state_dir=self.app.state_dir
+            )
         self.login()
 
     def cancel(self):

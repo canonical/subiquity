@@ -16,6 +16,7 @@
 import logging
 import os
 import pwd
+from pathlib import Path
 
 from subiquitycore.utils import run_command
 
@@ -76,7 +77,20 @@ The {keytype} host key fingerprint is:
 )
 
 
-def host_key_info():
+def host_key_info(runtime_state_dir=None):
+    if runtime_state_dir:
+        # host fingerprints information may have already been prepared by the
+        # platform glue
+        host_fingerprints = Path(runtime_state_dir) / "host-fingerprints.txt"
+        log.debug(
+            "pre-made host finterprints %s present: %s",
+            host_fingerprints,
+            host_fingerprints.is_file(),
+        )
+        if host_fingerprints.is_file():
+            with open(host_fingerprints, "r") as fp:
+                return fp.read()
+
     return summarize_host_keys(host_key_fingerprints())
 
 
