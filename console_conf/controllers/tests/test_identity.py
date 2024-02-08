@@ -34,6 +34,7 @@ class TestIdentityController(unittest.TestCase):
             proc_mock.stdout = '{"username":"foo"}'
 
             app = make_app()
+            app.state_dir = statedir
             app.opts.dry_run = False
             network_model = MagicMock()
             mock_devs = [MagicMock(spec=NetworkDev)]
