@@ -49,6 +49,7 @@ from subiquity.models.tests.test_filesystem import (
     FakeStorageInfo,
     make_disk,
     make_model,
+    make_nvme_controller,
     make_partition,
 )
 from subiquity.server import snapdapi
@@ -1236,17 +1237,34 @@ class TestManualBoot(IsolatedAsyncioTestCase):
     @parameterized.expand(bootloaders_and_ptables)
     async def test_get_boot_disks_some(self, bootloader, ptable):
         self._setup(bootloader, ptable)
+        ctrler = make_nvme_controller(
+            model=self.model, transport="tcp", tcp_addr="172.16.82.78", tcp_port=4420
+        )
+
         d1 = make_disk(self.model)
         d2 = make_disk(self.model)
+        make_disk(self.model, nvme_controller=ctrler)
         make_partition(self.model, d1, size=gaps.largest_gap_size(d1), preserve=True)
         if bootloader == Bootloader.NONE:
             # NONE will always pass the boot check, even on a full disk
+            # .. well unless if it is a "remote" disk.
             bootable = set([d1.id, d2.id])
         else:
             bootable = set([d2.id])
         resp = await self.fsc.v2_GET()
         for d in resp.disks:
             self.assertEqual(d.id in bootable, d.can_be_boot_device)
+
+    @parameterized.expand(bootloaders_and_ptables)
+    async def test_get_boot_disks_no_remote(self, bootloader, ptable):
+        self._setup(bootloader, ptable)
+        d = make_disk(self.model)
+        with mock.patch.object(d, "on_remote_storage", return_value=False):
+            resp = await self.fsc.v2_GET()
+        self.assertTrue(resp.disks[0].can_be_boot_device)
+        with mock.patch.object(d, "on_remote_storage", return_value=True):
+            resp = await self.fsc.v2_GET()
+        self.assertFalse(resp.disks[0].can_be_boot_device)
 
 
 class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):

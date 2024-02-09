@@ -37,6 +37,7 @@ labels_keys = [
     ("Bus:", "bus"),
     ("Rotational:", "rotational"),
     ("Path:", "devpath"),
+    ("NVMe controller:", "nvme-controller"),
 ]
 
 

@@ -161,15 +161,27 @@ LVNameField = simple_field(LVNameEditor)
 
 
 class PartitionForm(Form):
-    def __init__(self, model, max_size, initial, lvm_names, device, alignment):
+    def __init__(
+        self,
+        model,
+        max_size,
+        initial,
+        lvm_names,
+        device,
+        alignment,
+        remote_storage: bool,
+    ):
         self.model = model
         self.device = device
         self.existing_fs_type = None
+        self.remote_storage: bool = remote_storage
         if device:
             ofstype = device.original_fstype()
             if ofstype:
                 self.existing_fs_type = ofstype
         initial_path = initial.get("mount")
+        if not initial_path and remote_storage:
+            initial["mount"] = "/home"
         self.mountpoints = {
             m.path: m.device.volume
             for m in self.model.all_mounts()
@@ -195,6 +207,9 @@ class PartitionForm(Form):
             self.mount.value = self.mount.value
         else:
             self.mount.widget.enable_common_mountpoints()
+            self.mount.value = self.mount.value
+        if self.remote_storage:
+            self.mount.widget.disable_all_mountpoints_but_home()
             self.mount.value = self.mount.value
         if fstype is None:
             if self.existing_fs_type == "swap":
@@ -297,6 +312,17 @@ class PartitionForm(Form):
                                 ).format(mountpoint=mount),
                             )
                         )
+        if self.remote_storage and mount != "/home":
+            self.mount.show_extra(
+                (
+                    "info_error",
+                    _(
+                        "This filesystem is on remote storage. It is usually a "
+                        "bad idea to mount it anywhere but at /home, proceed "
+                        "only with caution."
+                    ),
+                )
+            )
 
     def as_rows(self):
         r = super().as_rows()
@@ -450,6 +476,7 @@ class PartitionStretchy(Stretchy):
             if isinstance(disk, LVM_VolGroup):
                 initial["name"] = partition.name
                 lvm_names.remove(partition.name)
+            remote_storage = partition.on_remote_storage()
         else:
             initial["fstype"] = "ext4"
             max_size = self.gap.size
@@ -461,9 +488,16 @@ class PartitionStretchy(Stretchy):
                         break
                     x += 1
                 initial["name"] = name
+            remote_storage = disk.on_remote_storage()
 
         self.form = PartitionForm(
-            self.model, max_size, initial, lvm_names, partition, alignment
+            self.model,
+            max_size,
+            initial,
+            lvm_names,
+            partition,
+            alignment,
+            remote_storage,
         )
 
         if not isinstance(disk, LVM_VolGroup):
@@ -626,6 +660,7 @@ class FormatEntireStretchy(Stretchy):
             None,
             device,
             alignment=device.alignment_data().part_align,
+            remote_storage=device.on_remote_storage(),
         )
         self.form.remove_field("size")
         self.form.remove_field("name")

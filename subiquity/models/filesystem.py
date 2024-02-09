@@ -693,6 +693,9 @@ class _Device(_Formattable, ABC):
             part.number = next_num
             next_num += 1
 
+    def on_remote_storage(self) -> bool:
+        raise NotImplementedError
+
 
 @fsobj("dasd")
 class Dasd:
@@ -704,12 +707,21 @@ class Dasd:
     preserve: bool = False
 
 
+@fsobj("nvme_controller")
+class NVMeController:
+    transport: str
+    tcp_port: Optional[int] = None
+    tcp_addr: Optional[str] = None
+    preserve: bool = False
+
+
 @fsobj("disk")
 class Disk(_Device):
     ptable: Optional[str] = attributes.ptable()
     serial: Optional[str] = None
     wwn: Optional[str] = None
     multipath: Optional[str] = None
+    nvme_controller: Optional[NVMeController] = attributes.ref(default=None)
     path: Optional[str] = None
     wipe: Optional[str] = None
     preserve: bool = False
@@ -755,6 +767,7 @@ class Disk(_Device):
             "serial": self.serial or "unknown",
             "wwn": self.wwn or "unknown",
             "multipath": self.multipath or "unknown",
+            "nvme-controller": self.nvme_controller,
             "size": self.size,
             "humansize": humanize_size(self.size),
             "vendor": self._info.vendor or "unknown",
@@ -790,6 +803,8 @@ class Disk(_Device):
             return False
         if len(self._partitions) > 0:
             return False
+        if self.on_remote_storage():
+            return False
         return True
 
     @property
@@ -809,6 +824,11 @@ class Disk(_Device):
         if id is None:
             return None
         return id.encode("utf-8").decode("unicode_escape").strip()
+
+    def on_remote_storage(self) -> bool:
+        if self.nvme_controller and self.nvme_controller.transport == "tcp":
+            return True
+        return False
 
 
 @fsobj("partition")
@@ -895,6 +915,8 @@ class Partition(_Formattable):
             return False
         if self._constructed_device is not None:
             return False
+        if self.on_remote_storage():
+            return False
         return True
 
     @property
@@ -922,6 +944,9 @@ class Partition(_Formattable):
         # flag will be set to 'swap'.  For MSDOS partitions tables, we need to
         # check the partition number.
         return self.device.ptable == "msdos" and self.number > 4
+
+    def on_remote_storage(self) -> bool:
+        return self.device.on_remote_storage()
 
 
 @fsobj("raid")
@@ -1007,6 +1032,13 @@ class Raid(_Device):
     # What is a device that makes up this device referred to as?
     component_name = "component"
 
+    def on_remote_storage(self) -> bool:
+        for dev in self.devices:
+            if dev.on_remote_storage():
+                return True
+
+        return False
+
 
 @fsobj("lvm_volgroup")
 class LVM_VolGroup(_Device):
@@ -1031,6 +1063,12 @@ class LVM_VolGroup(_Device):
 
     # What is a device that makes up this device referred to as?
     component_name = "PV"
+
+    def on_remote_storage(self) -> bool:
+        for dev in self.devices:
+            if dev.on_remote_storage():
+                return True
+        return False
 
 
 @fsobj("lvm_partition")
@@ -1062,6 +1100,9 @@ class LVM_LogicalVolume(_Formattable):
 
     ok_for_raid = False
     ok_for_lvm_vg = False
+
+    def on_remote_storage(self) -> bool:
+        return self.volgroup.on_remote_storage()
 
 
 LUKS_OVERHEAD = 16 * (2**20)
@@ -1165,6 +1206,9 @@ class DM_Crypt(_Formattable):
     @property
     def ok_for_lvm_vg(self):
         return self.ok_for_raid and self.size > LVM_OVERHEAD
+
+    def on_remote_storage(self) -> bool:
+        return self.volume.on_remote_storage()
 
 
 @fsobj("device")
@@ -2150,10 +2194,13 @@ class FilesystemModel:
             raise Exception("can only remove unmounted filesystem")
         self._remove(fs)
 
-    def add_mount(self, fs, path):
+    def add_mount(self, fs, path, *, on_remote_storage=False):
         if fs._mount is not None:
             raise Exception(f"{fs} is already mounted")
-        m = Mount(m=self, device=fs, path=path)
+        options = None
+        if on_remote_storage:
+            options = "defaults,_netdev"
+        m = Mount(m=self, device=fs, path=path, options=options)
         self._actions.append(m)
         return m
 

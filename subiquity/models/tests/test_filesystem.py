@@ -15,6 +15,7 @@
 
 import pathlib
 import unittest
+from typing import Optional
 from unittest import mock
 
 import attr
@@ -31,6 +32,7 @@ from subiquity.models.filesystem import (
     Filesystem,
     FilesystemModel,
     NotFinalPartitionError,
+    NVMeController,
     Partition,
     RecoveryKeyHandler,
     ZPool,
@@ -224,7 +226,7 @@ def make_vg(model, pvs=None):
     name = "vg%s" % len(model._actions)
 
     if pvs is None:
-        pvs = {make_disk(model)}
+        pvs = [make_disk(model)]
 
     return model.add_volgroup(name, pvs)
 
@@ -261,6 +263,20 @@ def make_zfs(model, *, pool, **kw):
     zfs = ZFS(m=model, pool=pool, **kw)
     model._actions.append(zfs)
     return zfs
+
+
+def make_nvme_controller(
+    model,
+    *,
+    transport: str,
+    tcp_addr: Optional[str] = None,
+    tcp_port: Optional[str] = None,
+) -> NVMeController:
+    ctrler = NVMeController(
+        m=model, transport=transport, tcp_addr=tcp_addr, tcp_port=tcp_port
+    )
+    model._actions.append(ctrler)
+    return ctrler
 
 
 class TestFilesystemModel(unittest.TestCase):
@@ -1617,3 +1633,101 @@ class TestRecoveryKeyHandler(SubiTestCase):
             ),
             expected,
         )
+
+
+class TestOnRemoteStorage(SubiTestCase):
+    def test_disk__on_local_storage(self):
+        m, d = make_model_and_disk(name="sda", serial="sata0")
+        self.assertFalse(d.on_remote_storage())
+
+        d = make_disk(name="nvme0n1", serial="pcie0")
+        self.assertFalse(d.on_remote_storage())
+
+        ctrler = make_nvme_controller(model=m, transport="pcie")
+
+        d = make_disk(
+            fs_model=m, name="nvme1n1", nvme_controller=ctrler, serial="pcie1"
+        )
+        self.assertFalse(d.on_remote_storage())
+
+    def test_disk__on_remote_storage(self):
+        m = make_model()
+
+        ctrler = make_nvme_controller(
+            model=m, transport="tcp", tcp_addr="172.16.82.78", tcp_port=4420
+        )
+
+        d = make_disk(fs_model=m, name="nvme0n1", nvme_controller=ctrler, serial="tcp0")
+        self.assertTrue(d.on_remote_storage())
+
+    def test_partition(self):
+        m, d = make_model_and_disk(name="sda", serial="sata0")
+        p = make_partition(model=m, device=d)
+
+        # For partitions, this is directly dependent on the underlying device.
+        with mock.patch.object(d, "on_remote_storage", return_value=False):
+            self.assertFalse(p.on_remote_storage())
+        with mock.patch.object(d, "on_remote_storage", return_value=True):
+            self.assertTrue(p.on_remote_storage())
+
+    def test_raid(self):
+        m, raid = make_model_and_raid()
+
+        d0, d1 = list(raid.devices)
+
+        d0_local = mock.patch.object(d0, "on_remote_storage", return_value=False)
+        d1_local = mock.patch.object(d1, "on_remote_storage", return_value=False)
+        d0_remote = mock.patch.object(d0, "on_remote_storage", return_value=True)
+        d1_remote = mock.patch.object(d1, "on_remote_storage", return_value=True)
+
+        # If at least one of the underlying disk is on remote storage, the raid
+        # should be considered on remote storage too.
+        with d0_local, d1_local:
+            self.assertFalse(raid.on_remote_storage())
+        with d0_local, d1_remote:
+            self.assertTrue(raid.on_remote_storage())
+        with d0_remote, d1_local:
+            self.assertTrue(raid.on_remote_storage())
+        with d0_remote, d1_remote:
+            self.assertTrue(raid.on_remote_storage())
+
+    def test_lvm_volgroup(self):
+        m, vg = make_model_and_vg()
+
+        # make_vg creates a VG with a single PV (i.e., a disk).
+        d0 = vg.devices[0]
+
+        with mock.patch.object(d0, "on_remote_storage", return_value=False):
+            self.assertFalse(vg.on_remote_storage())
+        with mock.patch.object(d0, "on_remote_storage", return_value=True):
+            self.assertTrue(vg.on_remote_storage())
+
+        d1 = make_disk(fs_model=m)
+
+        vg.devices.append(d1)
+
+        d0_local = mock.patch.object(d0, "on_remote_storage", return_value=False)
+        d1_local = mock.patch.object(d1, "on_remote_storage", return_value=False)
+        d0_remote = mock.patch.object(d0, "on_remote_storage", return_value=True)
+        d1_remote = mock.patch.object(d1, "on_remote_storage", return_value=True)
+
+        # Just like RAIDs, if at least one of the underlying PV is on remote
+        # storage, the VG should be considered on remote storage too.
+        with d0_local, d1_local:
+            self.assertFalse(vg.on_remote_storage())
+        with d0_local, d1_remote:
+            self.assertTrue(vg.on_remote_storage())
+        with d0_remote, d1_local:
+            self.assertTrue(vg.on_remote_storage())
+        with d0_remote, d1_remote:
+            self.assertTrue(vg.on_remote_storage())
+
+    def test_lvm_logical_volume(self):
+        m, lv = make_model_and_lv()
+
+        vg = lv.volgroup
+        # For LVs, this is directly dependent on the underlying VG.
+        with mock.patch.object(vg, "on_remote_storage", return_value=False):
+            self.assertFalse(lv.on_remote_storage())
+        with mock.patch.object(vg, "on_remote_storage", return_value=True):
+            self.assertTrue(lv.on_remote_storage())

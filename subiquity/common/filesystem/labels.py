@@ -117,6 +117,13 @@ def desc(device):
 def _desc_disk(disk):
     if disk.multipath:
         return _("multipath device")
+    if disk.on_remote_storage():
+        if disk.nvme_controller is not None and disk.nvme_controller.transport == "tcp":
+            return _("NVMe/TCP drive")
+        # At time of writing, only NVMe/TCP drives will report as "remote".
+        # Let's set a default label for potential transports that we may
+        # support in the future.
+        return _("remote drive")
     return _("local disk")
 
 
@@ -318,7 +325,7 @@ def _for_client_disk(disk, *, min_size=0):
         partitions=[for_client(p) for p in gaps.parts_and_gaps(disk)],
         boot_device=boot.is_boot_device(disk),
         can_be_boot_device=boot.can_be_boot_device(disk),
-        ok_for_guided=disk.size >= min_size,
+        ok_for_guided=disk.size >= min_size and not disk.on_remote_storage(),
         model=getattr(disk, "model", None),
         vendor=getattr(disk, "vendor", None),
         has_in_use_partition=disk._has_in_use_partition,

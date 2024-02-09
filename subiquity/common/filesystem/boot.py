@@ -336,6 +336,8 @@ def can_be_boot_device(device, *, resize_partition=None, with_reformatting=False
 
 @can_be_boot_device.register(Disk)
 def _can_be_boot_device_disk(disk, *, resize_partition=None, with_reformatting=False):
+    if disk.on_remote_storage():
+        return False
     if with_reformatting:
         disk = disk._reformatted()
     plan = get_boot_device_plan(disk, resize_partition=resize_partition)
@@ -344,6 +346,8 @@ def _can_be_boot_device_disk(disk, *, resize_partition=None, with_reformatting=F
 
 @can_be_boot_device.register(Raid)
 def _can_be_boot_device_raid(raid, *, resize_partition=None, with_reformatting=False):
+    if raid.on_remote_storage():
+        return False
     bl = raid._m.bootloader
     if bl != Bootloader.UEFI:
         return False
