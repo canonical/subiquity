@@ -1068,10 +1068,11 @@ LUKS_OVERHEAD = 16 * (2**20)
 
 
 @fsobj("dm_crypt")
-class DM_Crypt:
+class DM_Crypt(_Formattable):
     volume: _Formattable = attributes.ref(backlink="_constructed_device")
     key: Optional[str] = attr.ib(metadata={"redact": True}, default=None)
     keyfile: Optional[str] = None
+    options: Optional[List[str]] = None
     recovery_key: Optional[RecoveryKeyHandler] = None
     _recovery_keyfile: Optional[str] = None
     _recovery_live_location: Optional[str] = None
@@ -1141,6 +1142,29 @@ class DM_Crypt:
     @property
     def size(self):
         return self.volume.size - LUKS_OVERHEAD
+
+    def available(self):
+        if self._is_in_use:
+            return False
+        if self._constructed_device is not None:
+            return False
+        if self._fs is None:
+            return True
+        return self._fs._available()
+
+    @property
+    def ok_for_raid(self):
+        if self._fs is not None:
+            if self._fs.preserve:
+                return self._fs._mount is None
+            return False
+        if self._constructed_device is not None:
+            return False
+        return True
+
+    @property
+    def ok_for_lvm_vg(self):
+        return self.ok_for_raid and self.size > LVM_OVERHEAD
 
 
 @fsobj("device")
@@ -2081,9 +2105,11 @@ class FilesystemModel:
     def add_dm_crypt(
         self,
         volume,
-        key,
         *,
-        recovery_key: Optional[RecoveryKeyHandler],
+        key: Optional[str] = None,
+        keyfile: Optional[str] = None,
+        options: Optional[List[str]] = None,
+        recovery_key: Optional[RecoveryKeyHandler] = None,
         root: Optional[pathlib.Path] = None,
     ):
         if not volume.available:
@@ -2093,6 +2119,8 @@ class FilesystemModel:
             m=self,
             volume=volume,
             key=key,
+            keyfile=keyfile,
+            options=options,
             recovery_key=recovery_key,
         )
         self._actions.append(dm_crypt)

@@ -216,6 +216,7 @@ class VariationInfo:
                     GuidedCapability.LVM,
                     GuidedCapability.LVM_LUKS,
                     GuidedCapability.ZFS,
+                    GuidedCapability.ZFS_LUKS,
                 ]
             ),
         )
@@ -563,13 +564,17 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
         gap_boot, gap_rest = gap.split(bootfs_size)
         bpart = self.create_partition(device, gap_boot, dict(fstype=None))
+        encrypted = choice.password is not None
 
         avail = gap_rest.size - self._info.min_size
         swap_size = align_down(swap.suggested_swapsize(avail=avail), part_align)
         if swap_size > 0:
-            gap_swap, gap_rootfs = gap_rest.split(swap_size)
-            self.create_partition(device, gap_swap, dict(fstype="swap"))
-            gap = gap_rootfs
+            gap_swap, gap = gap_rest.split(swap_size)
+            if encrypted:
+                part = self.create_partition(device, gap_swap, {})
+                self.create_cryptoswap(part)
+            else:
+                self.create_partition(device, gap_swap, dict(fstype="swap"))
         else:
             gap = gap_rest
         rpart = self.create_partition(device, gap, dict(fstype=None))
@@ -1386,7 +1391,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 capability = GuidedCapability.DD
                 assert mode == "reformat_disk"
             elif name == "zfs":
-                capability = GuidedCapability.ZFS
+                if password is not None:
+                    capability = GuidedCapability.ZFS_LUKS
+                else:
+                    capability = GuidedCapability.ZFS
             else:
                 capability = GuidedCapability.DIRECT
 

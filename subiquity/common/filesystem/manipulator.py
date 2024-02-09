@@ -145,7 +145,7 @@ class FilesystemManipulator:
             if key:
                 device = self.model.add_dm_crypt(
                     device,
-                    key,
+                    key=key,
                     recovery_key=spec.get("recovery-key"),
                 )
             devices.add(device)
@@ -176,6 +176,15 @@ class FilesystemManipulator:
         self.model.remove_logical_volume(lv)
 
     delete_lvm_partition = delete_logical_volume
+
+    def create_cryptoswap(self, device):
+        dmc = self.model.add_dm_crypt(
+            device,
+            keyfile="/dev/urandom",
+            options=["swap", "initramfs"],
+        )
+        self.create_filesystem(dmc, dict(fstype="swap"))
+        return dmc
 
     def create_zpool(self, device, pool, mountpoint, boot=False, canmount="on"):
         fs_properties = dict(
@@ -341,7 +350,7 @@ class FilesystemManipulator:
                 if key:
                     d = self.model.add_dm_crypt(
                         d,
-                        key,
+                        key=key,
                         recovery_key=spec.get("recovery-key"),
                     )
                 d._constructed_device = existing
