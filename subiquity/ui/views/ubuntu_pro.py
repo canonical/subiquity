@@ -779,7 +779,7 @@ class AboutProWidget(Stretchy):
     |   • ...                                                 |
     |   • ...                                                 |
     |                                                         |
-    | Ubuntu Pro is free for personal use on up to 3 machines.|
+    | Ubuntu Pro is free for personal use on up to 5 machines.|
     | More information is at ubuntu.com/pro                   |
     |                                                         |
     |                       [ Continue ]                      |
@@ -832,7 +832,7 @@ class AboutProWidget(Stretchy):
             Text(""),
             Pile([itemize(svc, marker="  •") for svc in services]),
             Text(""),
-            Text(_("Ubuntu Pro is free for personal use on up to 3 machines.")),
+            Text(_("Ubuntu Pro is free for personal use on up to 5 machines.")),
             Text(_("More information is at ubuntu.com/pro")),
             Text(""),
             button_pile([ok]),
@@ -851,7 +851,7 @@ class HowToRegisterWidget(Stretchy):
     |                                                         |
     |_Create your Ubuntu One account with your email. Each    |
     | Ubuntu One account gets a free personal Ubuntu Pro      |
-    | subscription for up to three machines, including        |
+    | subscription for up to five machines, including         |
     | laptops, servers or cloud virtual machines.             |
     |                                                         |
     | Visit ubuntu.com/pro to get started.                    |
@@ -870,7 +870,7 @@ class HowToRegisterWidget(Stretchy):
         header = _(
             "Create your Ubuntu One account with your email. Each"
             " Ubuntu One account gets a free personal Ubuntu Pro"
-            " subscription for up to three machines, including"
+            " subscription for up to five machines, including"
             " laptops, servers or cloud virtual machines."
         )
 
