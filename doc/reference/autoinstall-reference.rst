@@ -423,6 +423,41 @@ Example with no size scaling and a passphrase:
         sizing-policy: all
         password: LUKS_PASSPHRASE
 
+Reset Partition
+^^^^^^^^^^^^^^^
+
+``reset-partition`` is used for creating a Reset Partition, which is a FAT32 file system containing the entire content of the installer image, so that the user can start the installer from GRUB or EFI without using the installation media. This option is useful for OEM system provisioning.
+
+By default, the size of a Reset Partition is roughly 1.1x the used file system size of the installation media.
+
+An example to enable Reset Partition:
+
+.. code-block:: yaml
+
+    storage:
+      layout:
+        name: direct
+        reset-partition: true
+
+The size of the reset partition can also be fixed to a specified size.  This is an example to fix Reset Partition to 12 GiB:
+
+.. code-block:: yaml
+
+    storage:
+      layout:
+        name: direct
+        reset-partition: 12G
+
+The installer can also install Reset Partition without installing the system.  To do this, set ``reset-partition-only`` to ``true``:
+
+.. code-block:: yaml
+
+    storage:
+      layout:
+        name: direct
+        reset-partition: true
+        reset-partition-only: true
+
 Action-based configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
