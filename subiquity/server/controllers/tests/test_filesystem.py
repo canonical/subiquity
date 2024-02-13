@@ -472,6 +472,26 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual(DRY_RUN_RESET_SIZE, d1p2.size)
         self.assertEqual("/", d1p3.mount)
 
+    async def test_fixed_reset_partition(self):
+        await self._guided_setup(Bootloader.UEFI, "gpt")
+        target = GuidedStorageTargetReformat(
+            disk_id=self.d1.id, allowed=default_capabilities
+        )
+        fixed_reset_size = 12 << 30
+        await self.controller.guided(
+            GuidedChoiceV2(
+                target=target,
+                capability=GuidedCapability.DIRECT,
+                reset_partition=True,
+                reset_partition_size=fixed_reset_size,
+            )
+        )
+        [d1p1, d1p2, d1p3] = self.d1.partitions()
+        self.assertEqual("/boot/efi", d1p1.mount)
+        self.assertIsNone(d1p2.mount)
+        self.assertEqual(fixed_reset_size, d1p2.size)
+        self.assertEqual("/", d1p3.mount)
+
     async def test_guided_reset_partition_only(self):
         await self._guided_setup(Bootloader.UEFI, "gpt")
         target = GuidedStorageTargetReformat(

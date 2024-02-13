@@ -535,6 +535,7 @@ class GuidedChoiceV2:
 
     sizing_policy: Optional[SizingPolicy] = SizingPolicy.SCALED
     reset_partition: bool = False
+    reset_partition_size: Optional[int] = None
 
 
 @attr.s(auto_attribs=True)
