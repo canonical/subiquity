@@ -216,7 +216,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
                 return
             if isinstance(body.stretchy, ConfirmDeleteStretchy):
                 if action.get("submit", True):
-                    body.stretchy.done()
+                    body.stretchy.confirm()
             else:
                 async for _ in self._enter_form_data(
                     body.stretchy.form, action["data"], action.get("submit", True)
