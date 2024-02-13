@@ -719,6 +719,13 @@ class UbuntuProCheckTokenStatus(enum.Enum):
 
 
 @attr.s(auto_attribs=True)
+class UbuntuProGeneralInfo:
+    eol_esm_year: Optional[int]
+    universe_packages: int
+    main_packages: int
+
+
+@attr.s(auto_attribs=True)
 class UPCSInitiateResponse:
     """Response to Ubuntu Pro contract selection initiate request."""
 

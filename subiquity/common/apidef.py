@@ -67,6 +67,7 @@ from subiquity.common.types import (
     StorageResponseV2,
     TimeZoneInfo,
     UbuntuProCheckTokenAnswer,
+    UbuntuProGeneralInfo,
     UbuntuProInfo,
     UbuntuProResponse,
     UPCSInitiateResponse,
@@ -512,6 +513,10 @@ class API:
             class cancel:
                 def POST() -> None:
                     ...
+
+        class info:
+            def GET() -> UbuntuProGeneralInfo:
+                ...
 
     class identity:
         def GET() -> IdentityData:
