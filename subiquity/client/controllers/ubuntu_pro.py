@@ -77,11 +77,13 @@ class UbuntuProController(SubiquityTuiController):
                 raise Skip("Not running LTS version")
 
         ubuntu_pro_info: UbuntuProResponse = await self.endpoint.GET()
+        general_info = await self.endpoint.info.GET()
         return UbuntuProView(
             self,
             token=ubuntu_pro_info.token,
             has_network=ubuntu_pro_info.has_network,
             pre_release=pre_release,
+            info=general_info,
         )
 
     async def run_answers(self) -> None:

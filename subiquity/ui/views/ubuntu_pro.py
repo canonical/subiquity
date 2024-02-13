@@ -21,7 +21,11 @@ from typing import Callable, List
 
 from urwid import Columns, LineBox, Text, Widget, connect_signal
 
-from subiquity.common.types import UbuntuProCheckTokenStatus, UbuntuProSubscription
+from subiquity.common.types import (
+    UbuntuProCheckTokenStatus,
+    UbuntuProGeneralInfo,
+    UbuntuProSubscription,
+)
 from subiquitycore.ui.buttons import back_btn, cancel_btn, done_btn, menu_btn, ok_btn
 from subiquitycore.ui.container import ListBox, Pile, WidgetWrap
 from subiquitycore.ui.form import (
@@ -270,12 +274,21 @@ class UbuntuProView(BaseView):
     title = _("Upgrade to Ubuntu Pro")
     subscription_done_label = _("Continue")
 
-    def __init__(self, controller, token: str, has_network: bool, *, pre_release=False):
+    def __init__(
+        self,
+        controller,
+        token: str,
+        has_network: bool,
+        *,
+        pre_release=False,
+        info: UbuntuProGeneralInfo,
+    ):
         """Initialize the view with the default value for the token."""
         self.controller = controller
 
         self.has_network = has_network
         self.pre_release = pre_release
+        self.info = info
 
         if self.has_network:
             self.upgrade_yes_no_form = UpgradeYesNoForm(
@@ -380,7 +393,7 @@ class UbuntuProView(BaseView):
         |                        [ Back     ]                     |
         +---------------------------------------------------------+
         """
-        security_updates_until = 2032
+        security_updates_until = self.info.eol_esm_year or "20xx"
 
         excerpt = _(
             "Upgrade this machine to Ubuntu Pro for security updates"
@@ -815,8 +828,8 @@ class AboutProWidget(Stretchy):
             " patches covering a wider range of packages."
         )
 
-        universe_packages = 23000
-        main_packages = 2300
+        universe_packages = self.parent.info.universe_packages
+        main_packages = self.parent.info.main_packages
 
         services = [
             _(

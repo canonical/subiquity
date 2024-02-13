@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import ANY, AsyncMock, patch
 
 from subiquity.client.controllers.ubuntu_pro import UbuntuProController
 from subiquity.common.types import UbuntuProResponse
@@ -43,7 +43,7 @@ class TestUbuntuProController(unittest.IsolatedAsyncioTestCase):
             await ctrler.make_ui()
 
         view.assert_called_once_with(
-            ctrler, token="", has_network=False, pre_release=False
+            ctrler, token="", has_network=False, pre_release=False, info=ANY
         )
 
     @patch("subiquity.client.controllers.ubuntu_pro.UbuntuProView")
@@ -76,7 +76,7 @@ class TestUbuntuProController(unittest.IsolatedAsyncioTestCase):
         view.assert_called_once()
 
         view.assert_called_once_with(
-            ctrler, token="", has_network=False, pre_release=True
+            ctrler, token="", has_network=False, pre_release=True, info=ANY
         )
 
     @patch("subiquity.client.controllers.ubuntu_pro.UbuntuProView")
@@ -98,5 +98,5 @@ class TestUbuntuProController(unittest.IsolatedAsyncioTestCase):
         view.assert_called_once()
 
         view.assert_called_once_with(
-            ctrler, token="", has_network=False, pre_release=True
+            ctrler, token="", has_network=False, pre_release=True, info=ANY
         )
