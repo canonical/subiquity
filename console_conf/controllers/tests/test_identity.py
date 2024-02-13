@@ -18,24 +18,22 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from console_conf.controllers.identity import IdentityController
+from console_conf.ui.views import IdentityView, LoginView
 from subiquitycore.models.network import NetworkDev
+from subiquitycore.snapd import MemoryResponseSet, get_fake_connection
 from subiquitycore.tests.mocks import make_app
 
 
 class TestIdentityController(unittest.TestCase):
     @patch("os.ttyname", return_value="/dev/tty1")
     @patch("console_conf.controllers.identity.get_core_version", return_value="24")
-    @patch("console_conf.controllers.identity.run_command")
-    def test_snap_integration(self, run_command, core_version, ttyname):
+    def test_snap_integration(self, core_version, ttyname):
         with tempfile.TemporaryDirectory(suffix="console-conf-test") as statedir:
-            proc_mock = MagicMock()
-            run_command.return_value = proc_mock
-            proc_mock.returncode = 0
-            proc_mock.stdout = '{"username":"foo"}'
-
             app = make_app()
             app.state_dir = statedir
             app.opts.dry_run = False
+            app.snapdcon = get_fake_connection()
+            app.state_dir = statedir
             network_model = MagicMock()
             mock_devs = [MagicMock(spec=NetworkDev)]
             network_model.get_all_netdevs.return_value = mock_devs
@@ -48,12 +46,77 @@ class TestIdentityController(unittest.TestCase):
 
             app.state_path = MagicMock(side_effect=state_path)
 
+            create_user_calls = 0
+
+            def create_user_cb(path, body, **args):
+                nonlocal create_user_calls
+                create_user_calls += 1
+                self.assertEqual(path, "v2/users")
+                self.assertEqual(
+                    body, {"action": "create", "email": "foo@bar.com", "sudoer": True}
+                )
+                return {
+                    "status": "OK",
+                    "result": [
+                        {
+                            "username": "foo",
+                        }
+                    ],
+                }
+
+            # fake POST handlers
+            app.snapdcon.post_cb["v2/users"] = create_user_cb
+
             c = IdentityController(app)
             c.identity_done("foo@bar.com")
-            run_command.assert_called_with(
-                ["snap", "create-user", "--sudoer", "--json", "foo@bar.com"]
-            )
+
+            self.assertEqual(create_user_calls, 1)
 
             with open(os.path.join(statedir, "login-details.txt")) as inf:
                 data = inf.read()
             self.assertIn("Ubuntu Core 24 on 1.2.3.4 (tty1)\n", data)
+
+    @patch("pwd.getpwnam")
+    @patch("os.path.isdir", return_value=True)
+    def test_make_ui_managed_with_user(self, isdir, getpwnam):
+        pwinfo = MagicMock()
+        pwinfo.pw_gecos = "Foo,Bar"
+        getpwnam.return_value = pwinfo
+
+        app = make_app()
+        app.opts.dry_run = False
+        app.snapdcon = get_fake_connection()
+        # app.state_dir = statedir
+        network_model = MagicMock()
+        mock_devs = [MagicMock(spec=NetworkDev)]
+        network_model.get_all_netdevs.return_value = mock_devs
+        mock_devs[0].actual_global_ip_addresses = ["1.2.3.4"]
+        app.base_model.network = network_model
+
+        app.snapdcon.response_sets = {
+            "v2-system-info": MemoryResponseSet([{"result": {"managed": True}}]),
+            "v2-users": MemoryResponseSet(
+                [
+                    # no "username" for first entry
+                    {"result": [{}, {"username": "foo"}]}
+                ]
+            ),
+        }
+
+        c = IdentityController(app)
+        ui = c.make_ui()
+        self.assertIsInstance(ui, LoginView)
+        getpwnam.assert_called_with("foo")
+
+    def test_make_ui_unmanaged(self):
+        app = make_app()
+        app.opts.dry_run = False
+        app.snapdcon = get_fake_connection()
+
+        app.snapdcon.response_sets = {
+            "v2-system-info": MemoryResponseSet([{"result": {"managed": False}}]),
+        }
+
+        c = IdentityController(app)
+        ui = c.make_ui()
+        self.assertIsInstance(ui, IdentityView)

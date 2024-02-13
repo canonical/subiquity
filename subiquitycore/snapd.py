@@ -121,12 +121,26 @@ class ResponseSet:
         return _FakeFileResponse(f)
 
 
+class MemoryResponseSet:
+    """Set of response for an endpoint which returns data stored in memory."""
+
+    def __init__(self, data):
+        self.data = data
+        self.index = 0
+
+    def next(self):
+        d = self.data[self.index]
+        self.index += 1
+        return _FakeMemoryResponse(d)
+
+
 class FakeSnapdConnection:
     def __init__(self, snap_data_dir, scale_factor, output_base):
         self.snap_data_dir = snap_data_dir
         self.scale_factor = scale_factor
         self.response_sets = {}
         self.output_base = output_base
+        self.post_cb = {}
 
     def configure_proxy(self, proxy):
         log.debug("pretending to restart snapd to pick up proxy config")
@@ -167,6 +181,9 @@ class FakeSnapdConnection:
                     "status": "Accepted",
                 }
             )
+        if path in self.post_cb:
+            return _FakeMemoryResponse(self.post_cb[path](path, body, **args))
+
         raise Exception(
             "Don't know how to fake POST response to {}".format((path, args))
         )
