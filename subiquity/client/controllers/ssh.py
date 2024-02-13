@@ -16,8 +16,8 @@
 import logging
 
 from subiquity.client.controller import SubiquityTuiController
-from subiquity.common.types import SSHData, SSHFetchIdResponse, SSHFetchIdStatus
-from subiquity.ui.views.ssh import SSHView
+from subiquity.common.types import SSHFetchIdResponse, SSHFetchIdStatus
+from subiquity.ui.views.ssh import IMPORT_KEY_LABEL, ConfirmSSHKeys, SSHView
 from subiquitycore.async_helpers import schedule_task
 from subiquitycore.context import with_context
 
@@ -45,18 +45,43 @@ class SSHController(SubiquityTuiController):
         ssh_data = await self.endpoint.GET()
         return SSHView(self, ssh_data)
 
-    def run_answers(self):
+    async def run_answers(self):
+        import subiquitycore.testing.view_helpers as view_helpers
+
+        form = self.app.ui.body.form
+        form.install_server.value = self.answers.get("install_server", False)
+        form.pwauth.value = self.answers.get("pwauth", True)
+
+        for key in self.answers.get("authorized_keys", []):
+            # We don't have GUI support for this.
+            self.app.ui.body.add_key_to_table(key)
+
         if "ssh-import-id" in self.answers:
-            import_id = self.answers["ssh-import-id"]
-            ssh = SSHData(install_server=True, authorized_keys=[], allow_pw=True)
-            self.fetch_ssh_keys(ssh_import_id=import_id, ssh_data=ssh)
-        else:
-            ssh = SSHData(
-                install_server=self.answers.get("install_server", False),
-                authorized_keys=self.answers.get("authorized_keys", []),
-                allow_pw=self.answers.get("pwauth", True),
+            view_helpers.click(
+                view_helpers.find_button_matching(self.app.ui.body, IMPORT_KEY_LABEL)
             )
-            self.done(ssh)
+            service, username = self.answers["ssh-import-id"].split(":", maxsplit=1)
+            if service not in ("gh", "lp"):
+                raise ValueError(
+                    f"invalid service {service} - only gh and lp are supported"
+                )
+
+            import_form = self.app.ui.body._w.stretchy.form
+
+            view_helpers.enter_data(
+                import_form, {"import_username": username, "service": service}
+            )
+
+            import_form._click_done(None)
+
+            # Wait until the key gets fetched
+            confirm_overlay = await view_helpers.wait_for_overlay(
+                self.ui, ConfirmSSHKeys
+            )
+
+            confirm_overlay.ok(None)
+
+        form._click_done(None)
 
     def cancel(self):
         self.app.prev_screen()
@@ -67,45 +92,33 @@ class SSHController(SubiquityTuiController):
         self._fetch_task.cancel()
 
     @with_context(name="ssh_import_id", description="{ssh_import_id}")
-    async def _fetch_ssh_keys(self, *, context, ssh_import_id, ssh_data):
-        with self.context.child("ssh_import_id", ssh_import_id):
-            response: SSHFetchIdResponse = await self.endpoint.fetch_id.GET(
-                ssh_import_id
-            )
+    async def _fetch_ssh_keys(self, *, context, ssh_import_id):
+        response: SSHFetchIdResponse = await self.endpoint.fetch_id.GET(ssh_import_id)
 
-            if response.status == SSHFetchIdStatus.IMPORT_ERROR:
-                if isinstance(self.ui.body, SSHView):
-                    self.ui.body.fetching_ssh_keys_failed(
-                        _("Importing keys failed:"), response.error
-                    )
-                return
-            elif response.status == SSHFetchIdStatus.FINGERPRINT_ERROR:
-                if isinstance(self.ui.body, SSHView):
-                    self.ui.body.fetching_ssh_keys_failed(
-                        _("ssh-keygen failed to show fingerprint of downloaded keys:"),
-                        response.error,
-                    )
-                return
+        if response.status == SSHFetchIdStatus.IMPORT_ERROR:
+            if isinstance(self.ui.body, SSHView):
+                self.ui.body.fetching_ssh_keys_failed(
+                    _("Importing keys failed:"), response.error
+                )
+            return
+        elif response.status == SSHFetchIdStatus.FINGERPRINT_ERROR:
+            if isinstance(self.ui.body, SSHView):
+                self.ui.body.fetching_ssh_keys_failed(
+                    _("ssh-keygen failed to show fingerprint of downloaded keys:"),
+                    response.error,
+                )
+            return
 
-            identities = response.identities
+        identities = response.identities
 
-            if "ssh-import-id" in self.app.answers.get("Identity", {}):
-                ssh_data.authorized_keys = [
-                    id_.to_authorized_key() for id_ in identities
-                ]
-                self.done(ssh_data)
-            else:
-                if isinstance(self.ui.body, SSHView):
-                    self.ui.body.confirm_ssh_keys(ssh_data, ssh_import_id, identities)
-                else:
-                    log.debug(
-                        "ui.body of unexpected instance: %s",
-                        type(self.ui.body).__name__,
-                    )
+        if isinstance(self.ui.body, SSHView):
+            self.ui.body.confirm_ssh_keys(ssh_import_id, identities)
+        else:
+            log.debug("ui.body of unexpected instance: %s", type(self.ui.body).__name__)
 
-    def fetch_ssh_keys(self, ssh_import_id, ssh_data):
+    def fetch_ssh_keys(self, ssh_import_id):
         self._fetch_task = schedule_task(
-            self._fetch_ssh_keys(ssh_import_id=ssh_import_id, ssh_data=ssh_data)
+            self._fetch_ssh_keys(ssh_import_id=ssh_import_id)
         )
 
     def done(self, result):

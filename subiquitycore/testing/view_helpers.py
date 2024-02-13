@@ -1,8 +1,11 @@
+import asyncio
 import re
+from typing import Type
 
 import urwid
 
-from subiquitycore.ui.stretchy import StretchyOverlay
+from subiquitycore.ui.frame import SubiquityCoreUI
+from subiquitycore.ui.stretchy import Stretchy, StretchyOverlay
 
 
 def find_with_pred(w, pred, return_path=False):
@@ -86,3 +89,25 @@ def enter_data(form, data):
         bf = getattr(form, k)
         assert bf.enabled, "%s is not enabled" % (k,)
         bf.value = v
+
+
+async def wait_for_overlay(
+    ui: SubiquityCoreUI, overlay_type: Type[Stretchy], *, timeout=None, step=0.01
+) -> Stretchy:
+    """Wait until an overlay of the specified type gets displayed on the
+    screen and return it. If timeout is hit before the overlay is displayed, an
+    asyncio.TimeoutError will be raised. When timeout is set to None, we will
+    wait forever."""
+    if timeout is not None:
+        task = wait_for_overlay(ui, overlay_type)
+        return await asyncio.wait_for(task, timeout=timeout)
+
+    while True:
+        try:
+            stretchy = ui.body._w.stretchy
+        except AttributeError:
+            pass
+        else:
+            if isinstance(stretchy, overlay_type):
+                return stretchy
+        await asyncio.sleep(step)
