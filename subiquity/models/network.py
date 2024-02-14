@@ -62,7 +62,8 @@ class NetworkModel(CoreNetworkModel):
                 }
             }
         else:
-            # Separate sensitive wifi config from world-readable config
+            # Separate sensitive wifi config from potentially shared config
+            # e.g. via apport
             wifis = netplan["network"].pop("wifis", None)
             r = {
                 "write_files": {
@@ -73,11 +74,13 @@ class NetworkModel(CoreNetworkModel):
                             "subiquity-disable-cloudinit-networking.cfg"
                         ),
                         "content": "network: {config: disabled}\n",
+                        "permissions": "0600",
                     },
-                    # World-readable netplan without sensitive wifi config
+                    # netplan without sensitive wifi config
                     "etc_netplan_installer": {
                         "path": "etc/netplan/00-installer-config.yaml",
                         "content": self.stringify_config(netplan),
+                        "permissions": "0600",
                     },
                 },
             }
@@ -88,6 +91,7 @@ class NetworkModel(CoreNetworkModel):
                         "wifis": wifis,
                     },
                 }
+                # sensitive wifi config
                 r["write_files"]["etc_netplan_installer_wifi"] = {
                     "path": "etc/netplan/00-installer-config-wifi.yaml",
                     "content": self.stringify_config(netplan_wifi),

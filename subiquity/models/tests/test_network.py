@@ -42,3 +42,13 @@ class TestNetworkModel(unittest.IsolatedAsyncioTestCase):
         with mock.patch("subiquity.models.network.arun_command") as arun:
             arun.side_effect = subprocess.CalledProcessError(1, [], None, "error")
             self.assertFalse(await self.model.is_nm_enabled())
+
+    async def test_write_netplan_permissions(self):
+        """Assert correct netplan config permissions
+
+        Since netplan 0.106.1, Netplan YAMLs should have file
+        permissions with mode 0o600 (root/owner RW only).
+        """
+        config = self.model.render()
+        for file in config["write_files"].values():
+            self.assertEqual(file["permissions"], "0600")
