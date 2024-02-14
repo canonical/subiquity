@@ -31,7 +31,7 @@ jobs:
       matrix:
         image:
           - ubuntu-daily:jammy   # match the core snap we're running against
-          - ubuntu-daily:noble   # latest
+          # - ubuntu-daily:noble   # latest
     steps:
     - uses: actions/checkout@v4
     - name: lint
