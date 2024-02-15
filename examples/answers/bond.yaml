@@ -9,6 +9,18 @@ Keyboard:
   layout: us
 Network:
   actions:
+    # LP: #2051586 the UI would crash when editing a 802.3ad bond
+    - action: create-bond
+      data:
+        name: bond10
+        devices:
+          - [interface index 0]
+        mode: 802.3ad
+    - obj: [interface name bond10]
+      action: EDIT_BOND
+    - obj: [interface name bond10]
+      action: DELETE
+
     - action: create-bond
       data:
         name: bond10
