@@ -38,11 +38,12 @@ class NetworkModel(CoreNetworkModel):
 
     def render(self):
         netplan = self.render_config()
-        # We write wifi config -- which almost certainly contains secrets -- to
-        # a separate file with more restrictive permissions. This isn't a
-        # perfect solution because in principle there could be wired 802.1x
-        # stuff that has secrets too but the subiquity UI does not support any
-        # of that yet so this will do for now.
+        # We write the wifi config -- which almost certainly contains secrets --
+        # to a separate file since it's possible the default file may
+        # be shared (e.g., via apport for a bug report) and we don't want to
+        # leak them. This isn't a perfect solution because in principle there
+        # could be wired 802.1x stuff that has secrets too, but the subiquity
+        # UI does not support any of that yet so this will do for now.
 
         # If host cloud-init version has no readable combined-cloud-config,
         # default to False.
@@ -63,7 +64,6 @@ class NetworkModel(CoreNetworkModel):
             }
         else:
             # Separate sensitive wifi config from potentially shared config
-            # e.g. via apport
             wifis = netplan["network"].pop("wifis", None)
             r = {
                 "write_files": {
