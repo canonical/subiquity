@@ -234,7 +234,7 @@ class NetworkDev:
             bond = BondConfig(
                 interfaces=self.config["interfaces"],
                 mode=params["mode"],
-                xmit_hash_policy=params.get("xmit-hash-policy"),
+                xmit_hash_policy=params.get("transmit-hash-policy"),
                 lacp_rate=params.get("lacp-rate"),
             )
         vlan: Optional[VLANConfig] = None
