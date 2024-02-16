@@ -19,10 +19,13 @@ import logging
 import os
 from typing import Optional
 
+import distro_info
+
 from subiquity.common.apidef import API
 from subiquity.common.types import (
     UbuntuProCheckTokenAnswer,
     UbuntuProCheckTokenStatus,
+    UbuntuProGeneralInfo,
     UbuntuProInfo,
     UbuntuProResponse,
     UPCSInitiateResponse,
@@ -40,6 +43,7 @@ from subiquity.server.ubuntu_advantage import (
     UAInterface,
     UAInterfaceStrategy,
 )
+from subiquitycore.lsb_release import lsb_release
 
 log = logging.getLogger("subiquity.server.controllers.ubuntu_pro")
 
@@ -199,3 +203,27 @@ class UbuntuProController(SubiquityController):
 
         self.cs.cancel()
         self.cs = None
+
+    async def info_GET(self) -> UbuntuProGeneralInfo:
+        # Currently the number of packages is hard-coded.
+        main_packages = 2300
+        universe_packages = 23000
+        eol_esm_year: Optional[int] = None
+
+        series = lsb_release(dry_run=self.app.opts.dry_run)["codename"]
+
+        for release in distro_info.UbuntuDistroInfo()._releases:
+            if release.series == series:
+                try:
+                    eol_esm_year = release.eol_esm.year
+                except AttributeError:
+                    log.warning("series %s does not have an ESM EOL date", series)
+                break
+        else:
+            log.warning("could not find distro info for %s", series)
+
+        return UbuntuProGeneralInfo(
+            eol_esm_year=eol_esm_year,
+            main_packages=main_packages,
+            universe_packages=universe_packages,
+        )
