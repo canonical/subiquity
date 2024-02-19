@@ -18,6 +18,7 @@ import asyncio
 import contextlib
 import logging
 import os
+import pathlib
 import subprocess
 from typing import Optional
 
@@ -315,7 +316,14 @@ class BaseNetworkController(BaseController):
             if self.opts.dry_run:
                 delay = 1 / self.app.scale_factor
                 await arun_command(["sleep", str(delay)])
-                if os.path.exists("/lib/netplan/generate"):
+
+                # /usr/libexec/netplan/generate exists starting with 22.04.
+                # When we stop supporting 20.04, we should drop the
+                # reference to /lib/netplan/generate.
+                netplan_generator_legacy = pathlib.Path("/lib/netplan/generate")
+                netplan_generator = pathlib.Path("/usr/libexec/netplan/generate")
+
+                if netplan_generator.exists() or netplan_generator_legacy.exists():
                     # If netplan appears to be installed, run generate to
                     # at least test that what we wrote is acceptable to
                     # netplan but clear the SNAP environment variable to
