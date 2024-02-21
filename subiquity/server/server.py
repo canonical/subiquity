@@ -190,11 +190,10 @@ INSTALL_MODEL_NAMES = ModelNames(
         "filesystem",
         "kernel",
         "keyboard",
-        "proxy",
         "source",
     },
-    desktop={"mirror", "network"},
-    server={"mirror", "network"},
+    desktop={"network"},
+    server={"mirror", "network", "proxy"},
 )
 
 POSTINSTALL_MODEL_NAMES = ModelNames(
