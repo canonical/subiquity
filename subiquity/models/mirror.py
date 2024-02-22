@@ -252,6 +252,9 @@ def filter_candidates(
     return candidates_iter
 
 
+Fallback = Union[MirrorSelectionFallback, Callable[[], MirrorSelectionFallback]]
+
+
 class MirrorModel(object):
     def __init__(self):
         self.config = copy.deepcopy(DEFAULT)
@@ -269,7 +272,24 @@ class MirrorModel(object):
         self.default_mirror = LegacyPrimaryEntry.new_from_default(parent=self).uri
 
         # What to do if automatic mirror-selection fails.
-        self.fallback = MirrorSelectionFallback.ABORT
+        self._fallback: Fallback = self._default_fallback
+        self.source_is_desktop: bool = False
+
+    @property
+    def fallback(self) -> MirrorSelectionFallback:
+        if callable(self._fallback):
+            return self._fallback()
+        return self._fallback
+
+    @fallback.setter
+    def fallback(self, value: Fallback) -> None:
+        self._fallback = value
+
+    def _default_fallback(self) -> MirrorSelectionFallback:
+        """Desktop wants to silently fallback to an offline install by default."""
+        if self.source_is_desktop:
+            return MirrorSelectionFallback.OFFLINE_INSTALL
+        return MirrorSelectionFallback.ABORT
 
     def _default_primary_entries(self) -> List[PrimaryEntry]:
         return [

@@ -301,6 +301,7 @@ class MirrorController(SubiquityController):
             self.test_apt_configurer = get_apt_configurer(
                 self.app, self.app.controllers.Source.get_handler()
             )
+        self.model.source_is_desktop = source_entry.variant == "desktop"
         self.source_configured_event.set()
 
     def serialize(self):
