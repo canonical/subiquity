@@ -19,6 +19,7 @@ import logging
 import os
 import random
 import subprocess
+import tempfile
 from typing import Any, Dict, List, Sequence
 
 log = logging.getLogger("subiquitycore.utils")
@@ -282,3 +283,10 @@ def gen_zsys_uuid():
     """Create a 6 character identifier.  Functionally equivalent to
     `head -100 /dev/urandom | tr -dc 'a-z0-9' | head -c6`"""
     return "".join([random.choice(_zsys_uuid_charset()) for i in range(6)])
+
+
+def write_named_tempfile(prefix, contents):
+    f = tempfile.NamedTemporaryFile(prefix=prefix, mode="w", delete=False)
+    with f:
+        f.write(contents)
+    return f.name

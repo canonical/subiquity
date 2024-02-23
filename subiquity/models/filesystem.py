@@ -36,6 +36,7 @@ from curtin.util import human2bytes
 from probert.storage import StorageInfo
 
 from subiquity.common.types import Bootloader, OsProber, RecoveryKey
+from subiquitycore.utils import write_named_tempfile
 
 log = logging.getLogger("subiquity.models.filesystem")
 
@@ -1135,10 +1136,7 @@ class DM_Crypt(_Formattable):
 
     def serialize_key(self):
         if self.key and not self.keyfile:
-            f = tempfile.NamedTemporaryFile(prefix="luks-key-", mode="w", delete=False)
-            f.write(self.key)
-            f.close()
-            return {"keyfile": f.name}
+            return {"keyfile": write_named_tempfile("luks-key-", self.key)}
         else:
             return {}
 
