@@ -217,7 +217,7 @@ class VariationInfo:
                     GuidedCapability.LVM,
                     GuidedCapability.LVM_LUKS,
                     GuidedCapability.ZFS,
-                    GuidedCapability.ZFS_LUKS,
+                    GuidedCapability.ZFS_LUKS_KEYSTORE,
                 ]
             ),
         )

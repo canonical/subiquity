@@ -76,7 +76,7 @@ default_capabilities = [
     GuidedCapability.LVM,
     GuidedCapability.LVM_LUKS,
     GuidedCapability.ZFS,
-    GuidedCapability.ZFS_LUKS,
+    GuidedCapability.ZFS_LUKS_KEYSTORE,
 ]
 
 
@@ -590,7 +590,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual("zfs", zfs_boot.type)
 
     @parameterized.expand(boot_expectations)
-    async def test_guided_zfs_luks(self, bootloader, ptable, p1mnt):
+    async def test_guided_zfs_luks_keystore(self, bootloader, ptable, p1mnt):
         await self._guided_setup(bootloader, ptable)
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, allowed=default_capabilities
@@ -598,7 +598,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         await self.controller.guided(
             GuidedChoiceV2(
                 target=target,
-                capability=GuidedCapability.ZFS_LUKS,
+                capability=GuidedCapability.ZFS_LUKS_KEYSTORE,
                 password="passw0rd",
             )
         )

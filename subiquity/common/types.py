@@ -347,7 +347,7 @@ class GuidedCapability(enum.Enum):
     LVM = enum.auto()
     LVM_LUKS = enum.auto()
     ZFS = enum.auto()
-    ZFS_LUKS = enum.auto()
+    ZFS_LUKS_KEYSTORE = enum.auto()
 
     CORE_BOOT_ENCRYPTED = enum.auto()
     CORE_BOOT_UNENCRYPTED = enum.auto()
@@ -384,7 +384,7 @@ class GuidedCapability(enum.Enum):
     def is_zfs(self) -> bool:
         return self in [
             GuidedCapability.ZFS,
-            GuidedCapability.ZFS_LUKS,
+            GuidedCapability.ZFS_LUKS_KEYSTORE,
         ]
 
 
