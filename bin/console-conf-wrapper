@@ -99,8 +99,8 @@ if snap routine console-conf-start --help >/dev/null 2>/dev/null; then
     snap routine console-conf-start
 fi
 # preapre host finger prints for console-conf as it cannot access sshd or host keys
-mkdir -p /run/console_conf
-/usr/share/subiquity/console-conf-write-login-details --host-fingerprints > /run/console_conf/host-fingerprints.txt
+mkdir -p /run/console-conf
+/usr/share/subiquity/console-conf-write-login-details --host-fingerprints > /run/console-conf/host-fingerprints.txt
 snap run console-conf "$@"
 rval=$?
 if [ ! ${rval} -eq 0 ]; then
