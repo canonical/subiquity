@@ -26,7 +26,7 @@ fi
 if [ -e "/var/lib/snapd/modeenv" ]; then
     mode="$(sed -n 's/mode=\([^[:space:]]*\)/\1/p' /var/lib/snapd/modeenv)"
 else
-    mode="$(sed 's/.*snapd_recovery_mode=\([^[:space:]]*\)[[:space:]].*/\1/' /proc/cmdline))"
+    mode="$(sed 's/.*snapd_recovery_mode=\([^[:space:]]*\)[[:space:]].*/\1/' /proc/cmdline)"
 fi
 
 if [ "${mode}" = "install" ]; then
