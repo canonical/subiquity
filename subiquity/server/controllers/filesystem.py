@@ -1405,7 +1405,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 assert mode == "reformat_disk"
             elif name == "zfs":
                 if password is not None:
-                    capability = GuidedCapability.ZFS_LUKS
+                    capability = GuidedCapability.ZFS_LUKS_KEYSTORE
                 else:
                     capability = GuidedCapability.ZFS
             else:
