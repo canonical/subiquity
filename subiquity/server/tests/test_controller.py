@@ -83,7 +83,7 @@ class TestController(SubiTestCase):
         exception = ctx.exception
 
         # Assert error section is based on autoinstall_key
-        self.assertEquals(exception.owner, "some-key")
+        self.assertEqual(exception.owner, "some-key")
 
         # Assert apport report is not created
         # This only checks that controllers do not manually create an apport
