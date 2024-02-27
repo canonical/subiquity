@@ -15,13 +15,14 @@
 
 import os
 import shlex
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import jsonschema
 from jsonschema.validators import validator_for
 
 from subiquity.common.types import PasswordKind
 from subiquity.server.autoinstall import AutoinstallValidationError
+from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.server import (
     MetaController,
     SubiquityServer,
@@ -239,3 +240,39 @@ class TestDefaultUser(SubiTestCase):
         server.set_installer_password()
         self.assertIsNone(server.installer_user_name)
         self.assertEqual(PasswordKind.NONE, server.installer_user_passwd_kind)
+
+
+class TestExceptionHandling(SubiTestCase):
+    async def asyncSetUp(self):
+        opts = Mock()
+        opts.dry_run = True
+        opts.output_base = self.tmp_dir()
+        opts.machine_config = "examples/machines/simple.json"
+        self.server = SubiquityServer(opts, None)
+        self.server._run_error_cmds = AsyncMock()
+        self.server.make_apport_report = Mock()
+
+    async def test_suppressed_apport_reporting(self):
+        """Test apport reporting suppressed"""
+
+        MockException = type("MockException", (NonReportableException,), {})
+        exception = MockException("Don't report me")
+        loop = Mock()
+        context = {"exception": exception}
+
+        self.server._exception_handler(loop, context)
+
+        self.server.make_apport_report.assert_not_called()
+        self.assertEqual(self.server.fatal_error, None)
+
+    async def test_not_suppressed_apport_reporting(self):
+        """Test apport reporting not suppressed"""
+
+        exception = Exception("Report me")
+        loop = Mock()
+        context = {"exception": exception}
+
+        self.server._exception_handler(loop, context)
+
+        self.server.make_apport_report.assert_called()
+        self.assertNotEqual(self.server.fatal_error, None)
