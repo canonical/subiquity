@@ -148,9 +148,10 @@ class TestChooserController(unittest.TestCase):
         # go back now
         c.back()
         c.ui.set_body.assert_called_with("current")
+        c.ui.set_body.reset_mock()
         # nothing
         c.back()
-        c.ui.set_body.not_called()
+        c.ui.set_body.assert_not_called()
 
     @mock.patch(
         "console_conf.controllers.chooser.ChooserCurrentSystemView",
@@ -169,7 +170,7 @@ class TestChooserController(unittest.TestCase):
         self.assertEqual(v, "current")
         # going back does nothing
         c.back()
-        c.ui.set_body.not_called()
+        c.ui.set_body.assert_not_called()
 
     @mock.patch(
         "console_conf.controllers.chooser.ChooserCurrentSystemView",
