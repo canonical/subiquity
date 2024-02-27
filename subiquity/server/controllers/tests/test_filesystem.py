@@ -581,6 +581,8 @@ class TestGuided(IsolatedAsyncioTestCase):
         [rpool] = self.model._all(type="zpool", pool="rpool")
         self.assertIsNone(rpool.path)
         self.assertEqual([root], rpool.vdevs)
+        self.assertIsNone(rpool.encryption_style)
+        self.assertIsNone(rpool.keyfile)
         [bpool] = self.model._all(type="zpool", pool="bpool")
         self.assertIsNone(bpool.path)
         self.assertEqual([boot], bpool.vdevs)
@@ -618,6 +620,9 @@ class TestGuided(IsolatedAsyncioTestCase):
         [rpool] = self.model._all(type="zpool", pool="rpool")
         self.assertIsNone(rpool.path)
         self.assertEqual([root], rpool.vdevs)
+        self.assertEqual("luks_keystore", rpool.encryption_style)
+        with open(rpool.keyfile) as fp:
+            self.assertEqual("passw0rd", fp.read())
         [bpool] = self.model._all(type="zpool", pool="bpool")
         self.assertIsNone(bpool.path)
         self.assertEqual([boot], bpool.vdevs)

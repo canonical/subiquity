@@ -565,7 +565,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
         gap_boot, gap_rest = gap.split(bootfs_size)
         bpart = self.create_partition(device, gap_boot, dict(fstype=None))
-        encrypted = choice.password is not None
+        encryption_style = None
+        if encrypted := choice.password is not None:
+            encryption_style = "luks_keystore"
 
         avail = gap_rest.size - self._info.min_size
         swap_size = align_down(swap.suggested_swapsize(avail=avail), part_align)
@@ -586,7 +588,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         bpool.create_zfs("BOOT", canmount="off", mountpoint="none")
         bpool.create_zfs(f"BOOT/ubuntu_{uuid}", mountpoint="/boot")
 
-        rpool = self.create_zpool(rpart, "rpool", "/", canmount="off")
+        rpool = self.create_zpool(
+            rpart,
+            "rpool",
+            "/",
+            canmount="off",
+            encryption_style=encryption_style,
+            key=choice.password,
+        )
         rpool.create_zfs("ROOT", canmount="off", mountpoint="none")
         rpool.create_zfs(f"ROOT/ubuntu_{uuid}", mountpoint="/")
         rpool.create_zfs(f"ROOT/ubuntu_{uuid}/var", canmount="off")
@@ -1396,7 +1405,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 assert mode == "reformat_disk"
             elif name == "zfs":
                 if password is not None:
-                    capability = GuidedCapability.ZFS_LUKS
+                    capability = GuidedCapability.ZFS_LUKS_KEYSTORE
                 else:
                     capability = GuidedCapability.ZFS
             else:

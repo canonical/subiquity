@@ -36,6 +36,7 @@ from curtin.util import human2bytes
 from probert.storage import StorageInfo
 
 from subiquity.common.types import Bootloader, OsProber, RecoveryKey
+from subiquitycore.utils import write_named_tempfile
 
 log = logging.getLogger("subiquity.models.filesystem")
 
@@ -1135,10 +1136,7 @@ class DM_Crypt(_Formattable):
 
     def serialize_key(self):
         if self.key and not self.keyfile:
-            f = tempfile.NamedTemporaryFile(prefix="luks-key-", mode="w", delete=False)
-            f.write(self.key)
-            f.close()
-            return {"keyfile": f.name}
+            return {"keyfile": write_named_tempfile("luks-key-", self.key)}
         else:
             return {}
 
@@ -1312,6 +1310,8 @@ class ZPool:
     fs_properties: Optional[dict] = None
 
     default_features: Optional[bool] = True
+    encryption_style: Optional[str] = None
+    keyfile: Optional[str] = None
 
     component_name = "vdev"
 
@@ -2257,6 +2257,8 @@ class FilesystemModel:
         default_features=True,
         fs_properties=None,
         pool_properties=None,
+        encryption_style=None,
+        keyfile=None,
     ):
         zpool = ZPool(
             m=self,
@@ -2266,6 +2268,8 @@ class FilesystemModel:
             default_features=default_features,
             pool_properties=pool_properties,
             fs_properties=fs_properties,
+            encryption_style=encryption_style,
+            keyfile=keyfile,
         )
         self._actions.append(zpool)
         return zpool

@@ -20,6 +20,7 @@ from curtin.block import get_resize_fstypes
 from subiquity.common.filesystem import boot, gaps
 from subiquity.common.types import Bootloader
 from subiquity.models.filesystem import Partition, align_up
+from subiquitycore.utils import write_named_tempfile
 
 log = logging.getLogger("subiquity.common.filesystem.manipulator")
 
@@ -188,7 +189,16 @@ class FilesystemManipulator:
         self.create_filesystem(dmc, dict(fstype="swap"))
         return dmc
 
-    def create_zpool(self, device, pool, mountpoint, boot=False, canmount="on"):
+    def create_zpool(
+        self,
+        device,
+        pool,
+        mountpoint,
+        boot=False,
+        canmount="on",
+        encryption_style=None,
+        key=None,
+    ):
         fs_properties = dict(
             atime=None,
             acltype="posixacl",
@@ -200,6 +210,10 @@ class FilesystemManipulator:
             sync="standard",
             xattr="sa",
         )
+
+        keyfile = None
+        if key is not None:
+            keyfile = write_named_tempfile("zpool-key-", key)
 
         pool_properties = dict(ashift=12, autotrim="on", version=None)
         default_features = True
@@ -217,6 +231,8 @@ class FilesystemManipulator:
             default_features=default_features,
             fs_properties=fs_properties,
             pool_properties=pool_properties,
+            encryption_style=encryption_style,
+            keyfile=keyfile,
         )
 
     def delete(self, obj):
