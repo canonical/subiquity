@@ -1,0 +1,58 @@
+#machine-config: examples/machines/nvme-over-tcp.json
+Source:
+  source: ubuntu-server
+Welcome:
+  lang: en_US
+Refresh:
+  update: no
+Keyboard:
+  layout: us
+Network:
+  accept-default: yes
+Proxy:
+  proxy: ""
+Mirror:
+  mirror: "http://fr.archive.ubuntu.com"
+Filesystem:
+  # 1. Reformat both disks
+  # 2. Create the root filesystem on disk 1 (which is a remote disk)
+  # 3. Create the /boot filesystem on disk 0 (which is a local disk)
+  manual:
+    - obj: [disk index 0]
+      action: REFORMAT
+    - obj: [disk index 1]
+      action: REFORMAT
+    - obj: [disk index 1]
+      action: PARTITION
+      data:
+        fstype: ext4
+        mount: /
+    - obj: [disk index 0]
+      action: PARTITION
+      data:
+        fstype: ext4
+        mount: /boot
+    - action: done
+Identity:
+  realname: Ubuntu
+  username: ubuntu
+  hostname: ubuntu-server
+  # ubuntu
+  password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
+UbuntuPro:
+  token: ""
+SSH:
+  install_server: true
+  pwauth: false
+  authorized_keys:
+    - |
+      ssh-rsa AAAAAAAAAAAAAAAAAAAAAAAAA # ssh-import-id lp:subiquity
+SnapList:
+  snaps:
+    hello:
+      channel: stable
+      classic: false
+InstallProgress:
+  reboot: yes
+Drivers:
+  install: no

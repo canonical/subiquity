@@ -79,16 +79,16 @@ class MountSelector(WidgetWrap):
             if isinstance(opt.value, str):
                 opt.enabled = opt.value in common_mountpoints
 
-    def disable_all_mountpoints_but_home(self):
-        """Currently, we only want filesystems of non-local disks mounted at
-        /home. This is not completely enforced by the UI though. Users can
-        still select "other" and type "/", "/boot", "/var" or anything else."""
+    def disable_boot_boot_efi_mountpoints(self):
+        """Currently, we want /boot and /boot/efi filesystems to be stored on
+        local disks. This is not completely enforced by the UI though.
+        Note that users can still select "other" and type "/boot",
+        "/boot/efi"."""
         for opt in self._selector._options:
             if not isinstance(opt.value, str):
                 continue
-            if opt.value == "/home":
-                continue
-            opt.enabled = False
+            if opt.value == "/boot" or opt.value == "/boot/efi":
+                opt.enabled = False
 
     def _showhide_other(self, show):
         if show and not self._other_showing:
