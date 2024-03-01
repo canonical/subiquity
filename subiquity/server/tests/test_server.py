@@ -15,7 +15,7 @@
 
 import os
 import shlex
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import jsonschema
 from jsonschema.validators import validator_for
@@ -170,6 +170,37 @@ class TestAutoinstallValidation(SubiTestCase):
         )
 
         JsonValidator.check_schema(SubiquityServer.base_schema)
+
+    async def test_skip_cloud_init_config_when_disabled(self):
+        """Avoid reading combined-cloud-config when cloud-init disabled."""
+        opts = Mock()
+        opts.dry_run = True
+        self.tempdir = self.tmp_dir()
+        opts.output_base = self.tempdir
+        opts.machine_config = "examples/machines/simple.json"
+        server = SubiquityServer(opts, None)
+        opts.dry_run = False  # exciting!
+        with patch.object(server, "load_cloud_config") as load_cloud_config:
+            with self.subTest("Skip load_cloud_config when disabled"):
+                with patch("subiquity.server.server.log.debug") as log:
+                    with patch(
+                        "subiquity.server.server.cloud_init_status_wait",
+                        AsyncMock(return_value=(True, "disabled-by-generator")),
+                    ):
+                        await server.wait_for_cloudinit()
+                log.assert_called_with(
+                    "Skip cloud-init autoinstall, cloud-init is disabled"
+                )
+                load_cloud_config.assert_not_called()
+            with self.subTest("Perform load_cloud_config when enabled"):
+                with patch("subiquity.server.server.log.debug") as log:
+                    with patch(
+                        "subiquity.server.server.cloud_init_status_wait",
+                        AsyncMock(return_value=(True, "enabled")),
+                    ):
+                        await server.wait_for_cloudinit()
+                log.assert_called_with("cloud-init status: %r", "enabled")
+                load_cloud_config.assert_called_with()
 
     def test_autoinstall_validation__error_type(self):
         """Test that bad autoinstall data throws AutoinstallValidationError"""
