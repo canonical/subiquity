@@ -38,6 +38,7 @@ from subiquity.common.types import (
     ErrorReportRef,
     KeyFingerprint,
     LiveSessionSSHInfo,
+    NonReportableError,
     PasswordKind,
 )
 from subiquity.models.subiquity import ModelNames, SubiquityModel
@@ -84,6 +85,7 @@ class MetaController:
             state=self.app.state,
             confirming_tty=self.app.confirming_tty,
             error=self.app.fatal_error,
+            nonreportable_error=self.app.nonreportable_error,
             cloud_init_ok=self.app.cloud_init_ok,
             interactive=self.app.interactive,
             echo_syslog_id=self.app.echo_syslog_id,
@@ -292,6 +294,7 @@ class SubiquityServer(Application):
         self.interactive = None
         self.confirming_tty = ""
         self.fatal_error: Optional[ErrorReport] = None
+        self.nonreportable_error: Optional[NonReportableError] = None
         self.running_error_commands = False
         self.installer_user_name = None
         self.installer_user_passwd_kind = PasswordKind.NONE
@@ -431,7 +434,7 @@ class SubiquityServer(Application):
         report: Optional[ErrorReport] = None
 
         if isinstance(exc, NonReportableException):
-            pass
+            self.nonreportable_error = NonReportableError.from_exception(exc)
         else:
             report = self.error_reporter.report_for_exc(exc)
             if report is None:

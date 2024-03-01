@@ -118,7 +118,7 @@ class Client:
                 return (self.loads(content), resp)
             return self.loads(content)
 
-    async def poll_startup(self):
+    async def poll_startup(self, allow_error: bool = False):
         for _ in range(default_timeout * 10):
             try:
                 resp = await self.get("/meta/status")
@@ -129,7 +129,7 @@ class Client:
                 ):
                     await asyncio.sleep(0.5)
                     continue
-                if resp["state"] == "ERROR":
+                if resp["state"] == "ERROR" and not allow_error:
                     raise Exception("server in error state")
                 return
             except aiohttp.client_exceptions.ClientConnectorError:
@@ -270,7 +270,7 @@ def tempdirs(*args, **kwargs):
 
 
 @contextlib.asynccontextmanager
-async def start_server_factory(factory, *args, **kwargs):
+async def start_server_factory(factory, *args, allow_error: bool = False, **kwargs):
     with tempfile.TemporaryDirectory() as tempdir:
         socket_path = f"{tempdir}/socket"
         conn = aiohttp.UnixConnector(path=socket_path)
@@ -279,7 +279,7 @@ async def start_server_factory(factory, *args, **kwargs):
             try:
                 await server.spawn(tempdir, socket_path, *args, **kwargs)
                 await poll_for_socket_exist(socket_path)
-                await server.poll_startup()
+                await server.poll_startup(allow_error=allow_error)
                 yield server
             finally:
                 await server.close()
@@ -2031,6 +2031,53 @@ class TestAutoinstallServer(TestAPI):
                     ]
                 )
                 self.assertTrue(expected.issubset(resp))
+
+    async def test_autoinstall_validation_error(self):
+        cfg = "examples/machines/simple.json"
+        extra = [
+            "--autoinstall",
+            "test_data/autoinstall/invalid-early.yaml",
+        ]
+        # bare server factory for early fail
+        async with start_server_factory(
+            Server, cfg, extra_args=extra, allow_error=True
+        ) as inst:
+            resp = await inst.get("/meta/status")
+
+            error = resp["nonreportable_error"]
+            self.assertIsNone(resp["error"])
+
+            self.assertIsNotNone(error)
+            self.assertIn("cause", error)
+            self.assertIn("message", error)
+            self.assertIn("details", error)
+            self.assertEqual(error["cause"], "AutoinstallValidationError")
+
+    # This test isn't perfect, because in the future we should
+    # really throw an AutoinstallError when a user provided
+    # command fails, but this is the simplest way to test
+    # the non-reportable errors are still reported correctly.
+    # This has the added bonus of failing in the future when
+    # we want to implement this behavior in the command
+    # controllers
+    async def test_autoinstall_not_autoinstall_error(self):
+        cfg = "examples/machines/simple.json"
+        extra = [
+            "--autoinstall",
+            "test_data/autoinstall/bad-early-command.yaml",
+        ]
+        # bare server factory for early fail
+        async with start_server_factory(
+            Server, cfg, extra_args=extra, allow_error=True
+        ) as inst:
+            resp = await inst.get("/meta/status")
+
+            error = resp["error"]
+            self.assertIsNone(resp["nonreportable_error"])
+
+            self.assertIsNotNone(error)
+            self.assertNotEqual(error, None)
+            self.assertEqual(error["kind"], "UNKNOWN")
 
 
 class TestWSLSetupOptions(TestAPI):

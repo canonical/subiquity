@@ -20,7 +20,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import jsonschema
 from jsonschema.validators import validator_for
 
-from subiquity.common.types import PasswordKind
+from subiquity.common.types import NonReportableError, PasswordKind
 from subiquity.server.autoinstall import AutoinstallValidationError
 from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.server import (
@@ -194,6 +194,9 @@ class TestAutoinstallValidation(SubiTestCase):
                 self.server._exception_handler(loop, context)
 
         self.server.make_apport_report.assert_not_called()
+        self.assertIsNone(self.server.fatal_error)
+        error = NonReportableError.from_exception(exception)
+        self.assertEqual(error, self.server.nonreportable_error)
 
 
 class TestMetaController(SubiTestCase):
@@ -264,6 +267,8 @@ class TestExceptionHandling(SubiTestCase):
 
         self.server.make_apport_report.assert_not_called()
         self.assertEqual(self.server.fatal_error, None)
+        error = NonReportableError.from_exception(exception)
+        self.assertEqual(error, self.server.nonreportable_error)
 
     async def test_not_suppressed_apport_reporting(self):
         """Test apport reporting not suppressed"""
@@ -275,4 +280,5 @@ class TestExceptionHandling(SubiTestCase):
         self.server._exception_handler(loop, context)
 
         self.server.make_apport_report.assert_called()
-        self.assertNotEqual(self.server.fatal_error, None)
+        self.assertIsNotNone(self.server.fatal_error)
+        self.assertIsNone(self.server.nonreportable_error)
