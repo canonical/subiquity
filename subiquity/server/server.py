@@ -583,7 +583,10 @@ class SubiquityServer(Application):
         log.debug("waited %ss for cloud-init", time.time() - ci_start)
         log.debug("cloud-init status: %r", status)
         if self.cloud_init_ok:
-            self.load_cloud_config()
+            if "disabled" in status:
+                log.debug("Skip cloud-init autoinstall, cloud-init is disabled")
+            else:
+                self.load_cloud_config()
 
     def select_autoinstall(self):
         # precedence
