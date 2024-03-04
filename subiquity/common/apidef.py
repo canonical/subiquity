@@ -125,6 +125,7 @@ class API:
                 """Restart the server process."""
 
         class ssh_info:
+            @allowed_before_start
             def GET() -> Optional[LiveSessionSSHInfo]:
                 ...
 

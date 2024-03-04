@@ -333,14 +333,17 @@ class SubiquityClient(TuiApplication):
                     print(line)
                 return
 
-            # Get the variant from the server and reload desired
-            # controllers if an override exists
-            variant = await self.client.meta.client_variant.GET()
-            if variant != self.variant:
-                self.variant = variant
-                controllers = self.variant_to_controllers.get(variant)
-                if controllers:
-                    self.load_controllers(controllers)
+            # The server could end up in an error state before we get here
+            # so skip to allow urwid to come up and show an error screen
+            if status.state != ApplicationState.ERROR:
+                # Get the variant from the server and reload desired
+                # controllers if an override exists
+                variant = await self.client.meta.client_variant.GET()
+                if variant != self.variant:
+                    self.variant = variant
+                    controllers = self.variant_to_controllers.get(variant)
+                    if controllers:
+                        self.load_controllers(controllers)
 
             await super().start()
             # Progress uses systemd to collect and display the installation

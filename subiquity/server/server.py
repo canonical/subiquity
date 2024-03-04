@@ -511,10 +511,27 @@ class SubiquityServer(Application):
             only_early,
             self.autoinstall,
         )
+
+        # Set the interactivity as early as possible so autoinstall validation
+        # errors can be shown to the user in an interactive way, if applicable.
+        #
+        # In the case of no autoinstall data, we set interactive=true.
+        #
+        # Otherwise, we need to check the interactivity of the session on both
+        # calls (early=True and early=False) because it's possible that an
+        # early command mutates the autoinstall and changes the value of
+        # interactive-sections.
+
         if not self.autoinstall:
+            self.interactive = True
             return
+
         with open(self.autoinstall) as fp:
             self.autoinstall_config = yaml.safe_load(fp)
+
+        # Check every time
+        self.interactive = bool(self.autoinstall_config.get("interactive-sections"))
+
         if only_early:
             self.controllers.Reporting.setup_autoinstall()
             self.controllers.Reporting.start()
@@ -714,10 +731,6 @@ class SubiquityServer(Application):
                 open(stamp_file, "w").close()
                 await asyncio.sleep(1)
         self.load_autoinstall_config(only_early=False)
-        if self.autoinstall_config:
-            self.interactive = bool(self.autoinstall_config.get("interactive-sections"))
-        else:
-            self.interactive = True
         if not self.interactive and not self.opts.dry_run:
             open("/run/casper-no-prompt", "w").close()
         self.load_serialized_state()
