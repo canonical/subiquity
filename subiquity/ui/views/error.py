@@ -16,10 +16,10 @@
 import asyncio
 import logging
 
-from urwid import Padding, ProgressBar, Text, connect_signal, disconnect_signal
+from urwid import AttrMap, Padding, ProgressBar, Text, connect_signal, disconnect_signal
 
 from subiquity.common.errorreport import ErrorReportKind, ErrorReportState
-from subiquity.common.types import CasperMd5Results
+from subiquity.common.types import CasperMd5Results, NonReportableError
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.ui.buttons import other_btn
 from subiquitycore.ui.container import Pile
@@ -421,3 +421,90 @@ class ErrorReportListStretchy(Stretchy):
         for (s1, old_c), new_c in zip(old_r.cells, new_cells):
             old_c.set_text(new_c.text)
         self.table.invalidate()
+
+
+nonreportable_titles: dict[str, str] = {
+    "AutoinstallError": _("an Autoinstall error"),
+    "AutoinstallValidationError": _("an Autoinstall validation error"),
+}
+
+nonreportable_footers: dict[str, str] = {
+    "AutoinstallError": _(
+        "The installation will be unable to proceed with the provided "
+        "Autoinstall file. Please modify it and try again."
+    ),
+    "AutoinstallValidationError": _(
+        "The installer has detected an issue with the provided Autoinstall "
+        "file. Please modify it and try again."
+    ),
+}
+
+
+class NonReportableErrorStretchy(Stretchy):
+    def __init__(self, app, error):
+        self.app = app  # A SubiquityClient
+        self.error: NonReportableError = error
+
+        self.btns: dict[str, AttrMap] = {
+            "close": close_btn(self, _("Close")),
+            "debug_shell": other_btn(_("Switch to a shell"), on_press=self.debug_shell),
+            "restart": other_btn(_("Restart the installer"), on_press=self.restart),
+        }
+        # Get max button width and create even button sizes
+        width: int = 0
+        width = max((widget_width(button) for button in self.btns.values()))
+        for name, button in self.btns.items():
+            self.btns[name] = Padding(button, width=width, align="center")
+
+        self.pile: Pile = Pile([])
+        self.pile.contents[:] = [
+            (widget, self.pile.options("pack")) for widget in self._pile_elements()
+        ]
+        super().__init__("", [self.pile], 0, 0)
+
+    def _pile_elements(self):
+        btns: dict[str, AttrMap] = self.btns.copy()
+
+        cause: str = self.error.cause  # An exception type name
+
+        # Title
+        title_prefix: str = _("The installation has halted due to")
+        reason: str = nonreportable_titles[cause]  # no default, bug if undefined
+        widgets: list[Text | AttrMap] = [
+            Text(rewrap(f"{title_prefix} {reason}.")),
+            Text(""),
+        ]
+
+        summary_prefix: str = _("error")
+        # Error Summary
+        widgets.extend(
+            [
+                Text(rewrap(f"{summary_prefix}: {self.error.message}")),
+                Text(""),
+            ]
+        )
+
+        # Footer and Buttons
+        footer_text_default: str = _(
+            "The installation is unable to be completed. You may "
+            "switch to a shell to inspect the situation or restart "
+            "the installer to try again."
+        )
+        footer_text: str = nonreportable_footers.get(cause, footer_text_default)
+        widgets.extend(
+            [
+                Text(rewrap(footer_text)),
+                Text(""),
+                btns["debug_shell"],
+                btns["restart"],
+                btns["close"],
+            ]
+        )
+
+        return widgets
+
+    def debug_shell(self, sender):
+        self.app.debug_shell()
+
+    def restart(self, sender):
+        self.app.restart(restart_server=True)

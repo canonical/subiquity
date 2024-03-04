@@ -30,3 +30,26 @@ class IdentityViewTests(unittest.TestCase):
         self.assertIsNot(btn, None)
         view_helpers.click(btn)
         view.controller.click_reboot.assert_called_once_with()
+
+    def test_error_disambiguation(self):
+        view = self.make_view()
+
+        # Reportable errors
+        view.controller.has_nonreportable_error = False
+        view.update_for_state(ApplicationState.ERROR)
+        btn = view_helpers.find_button_matching(view, "^View error report$")
+        self.assertIsNotNone(btn)
+        btn = view_helpers.find_button_matching(view, "^Reboot Now$")
+        self.assertIsNotNone(btn)
+        btn = view_helpers.find_button_matching(view, "^Restart Installer$")
+        self.assertIsNone(btn)
+
+        # Non-Reportable errors
+        view.controller.has_nonreportable_error = True
+        view.update_for_state(ApplicationState.ERROR)
+        btn = view_helpers.find_button_matching(view, "^View error report$")
+        self.assertIsNone(btn)
+        btn = view_helpers.find_button_matching(view, "^Reboot Now$")
+        self.assertIsNone(btn)
+        btn = view_helpers.find_button_matching(view, "^Restart Installer$")
+        self.assertIsNotNone(btn)

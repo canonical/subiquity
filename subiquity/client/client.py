@@ -31,11 +31,16 @@ from subiquity.common.api.client import make_client_for_conn
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReporter
 from subiquity.common.serialize import from_json
-from subiquity.common.types import ApplicationState, ErrorReportKind, ErrorReportRef
+from subiquity.common.types import (
+    ApplicationState,
+    ErrorReportKind,
+    ErrorReportRef,
+    NonReportableError,
+)
 from subiquity.journald import journald_listen
 from subiquity.server.server import POSTINSTALL_MODEL_NAMES
 from subiquity.ui.frame import SubiquityUI
-from subiquity.ui.views.error import ErrorReportStretchy
+from subiquity.ui.views.error import ErrorReportStretchy, NonReportableErrorStretchy
 from subiquity.ui.views.help import HelpMenu, ssh_help_texts
 from subiquity.ui.views.installprogress import InstallConfirmation
 from subiquity.ui.views.welcome import CloudInitFail
@@ -317,25 +322,25 @@ class SubiquityClient(TuiApplication):
         status = await self.connect()
         self.interactive = status.interactive
         if self.interactive:
-            if self.opts.ssh:
-                ssh_info = await self.client.meta.ssh_info.GET()
-                texts = ssh_help_texts(ssh_info)
-                for line in texts:
-                    import urwid
-
-                    if isinstance(line, urwid.Widget):
-                        line = "\n".join(
-                            [
-                                line.decode("utf-8").rstrip()
-                                for line in line.render((1000,)).text
-                            ]
-                        )
-                    print(line)
-                return
-
             # The server could end up in an error state before we get here
             # so skip to allow urwid to come up and show an error screen
             if status.state != ApplicationState.ERROR:
+                if self.opts.ssh:
+                    ssh_info = await self.client.meta.ssh_info.GET()
+                    texts = ssh_help_texts(ssh_info)
+                    for line in texts:
+                        import urwid
+
+                        if isinstance(line, urwid.Widget):
+                            line = "\n".join(
+                                [
+                                    line.decode("utf-8").rstrip()
+                                    for line in line.render((1000,)).text
+                                ]
+                            )
+                        print(line)
+                    return
+
                 # Get the variant from the server and reload desired
                 # controllers if an override exists
                 variant = await self.client.meta.client_variant.GET()
@@ -612,3 +617,7 @@ class SubiquityClient(TuiApplication):
                 # Don't show an error if already looking at one.
                 return
         self.add_global_overlay(ErrorReportStretchy(self, error_ref))
+
+    def show_nonreportable_error(self, error: NonReportableError):
+        log.debug("show_non_reportable_error %r", error.cause)
+        self.add_global_overlay(NonReportableErrorStretchy(self, error))

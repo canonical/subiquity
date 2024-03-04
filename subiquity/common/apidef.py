@@ -121,11 +121,11 @@ class API:
                 """Confirm that the installation should proceed."""
 
         class restart:
+            @allowed_before_start
             def POST() -> None:
                 """Restart the server process."""
 
         class ssh_info:
-            @allowed_before_start
             def GET() -> Optional[LiveSessionSSHInfo]:
                 ...
 

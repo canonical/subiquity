@@ -15,11 +15,12 @@
 
 import asyncio
 import logging
+from typing import Optional
 
 import aiohttp
 
 from subiquity.client.controller import SubiquityTuiController
-from subiquity.common.types import ApplicationState, ShutdownMode
+from subiquity.common.types import ApplicationState, ApplicationStatus, ShutdownMode
 from subiquity.ui.views.installprogress import InstallRunning, ProgressView
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.context import with_context
@@ -32,6 +33,7 @@ class ProgressController(SubiquityTuiController):
         super().__init__(app)
         self.progress_view = ProgressView(self)
         self.app_state = None
+        self.has_nonreportable_error: Optional[bool] = None
         self.crash_report_ref = None
         self.answers = app.answers.get("InstallProgress", {})
 
@@ -75,16 +77,14 @@ class ProgressController(SubiquityTuiController):
                 await asyncio.sleep(1)
                 continue
             self.app_state = app_status.state
+            self.has_nonreportable_error = app_status.nonreportable_error is not None
 
             self.progress_view.update_for_state(self.app_state)
             if self.ui.body is self.progress_view:
                 self.ui.set_header(self.progress_view.title)
 
-            if app_status.error is not None:
-                if self.crash_report_ref is None:
-                    self.crash_report_ref = app_status.error
-                    self.ui.set_body(self.progress_view)
-                    self.app.show_error_report(self.crash_report_ref)
+            if self.app_state == ApplicationState.ERROR:
+                self._handle_error_state(app_status)
 
             if self.app_state == ApplicationState.NEEDS_CONFIRMATION:
                 if self.showing:
@@ -104,6 +104,22 @@ class ProgressController(SubiquityTuiController):
             if self.app_state == ApplicationState.DONE:
                 if self.answers.get("reboot", False):
                     self.click_reboot()
+
+    def _handle_error_state(self, app_status: ApplicationStatus):
+        if (error := app_status.error) is not None:
+            if self.crash_report_ref is None:
+                self.crash_report_ref = error
+                self.ui.set_body(self.progress_view)
+                self.app.show_error_report(error)
+
+        elif (error := app_status.nonreportable_error) is not None:
+            self.ui.set_body(self.progress_view)
+            self.app.show_nonreportable_error(error)
+
+        else:
+            # There is the case that both are None but still in an error state
+            # but this is likely a bug so raise an Exception
+            raise Exception("Server in ERROR state but no error received")
 
     def make_ui(self):
         if self.app_state == ApplicationState.NEEDS_CONFIRMATION:
