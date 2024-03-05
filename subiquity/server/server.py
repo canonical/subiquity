@@ -498,7 +498,7 @@ class SubiquityServer(Application):
             except ValidationError as original_exception:
                 # SubiquityServer currently only checks for these sections
                 # of autoinstall. Hardcode until we have better validation.
-                section = "version or interative-sessions"
+                section = "version or interactive-sections"
                 new_exception: AutoinstallValidationError = AutoinstallValidationError(
                     section,
                 )
