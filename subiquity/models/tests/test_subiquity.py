@@ -411,3 +411,111 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
                 " type 'array'"
             )
             self.assertEqual(expected_error, str(ctx.exception))
+
+
+class TestUserCreationFlows(unittest.IsolatedAsyncioTestCase):
+    """live-server and desktop have a key behavior difference: desktop will
+    permit user creation on first boot, while server will do no such thing.
+    When combined with documented autoinstall behaviors for the `identity`
+    section and allowing `user-data` to mean that the `identity` section may be
+    skipped, the following use cases need to be supported:
+
+    1. PASS - interactive, UI triggers user creation (`identity_POST` called)
+    2. PASS - interactive, if `identity` `mark_configured`, create nothing
+    3. in autoinstall, supply an `identity` section
+      a. PASS - and omit `user-data`
+      b. PASS - and supply `user-data` but no `user-data.users`
+      c. PASS - and supply `user-data` including `user-data.users`
+    4. in autoinstall, omit an `identity` section
+      a. and omit `user-data`
+        1. FAIL - live-server - failure mode is autoinstall schema validation
+        2. PASS - desktop
+      b. PASS - and supply `user-data` but no `user-data.users`
+        - cloud-init defaults
+      c. PASS - and supply `user-data` including `user-data.users`
+
+    The distinction of a user being created by autoinstall or not is not
+    visible here, so some interactive and autoinstall test cases are equivalent
+    at this abstraction layer (and are merged in the actual tests)."""
+
+    def setUp(self):
+        install = ModelNames(set())
+        postinstall = ModelNames({"userdata"})
+        self.model = SubiquityModel("test", MessageHub(), install, postinstall)
+        self.user = dict(name="user", passwd="passw0rd")
+        self.user_identity = IdentityData(
+            username=self.user["name"], crypted_password=self.user["passwd"]
+        )
+        self.foobar = dict(name="foobar", passwd="foobarpassw0rd")
+
+    def assertDictSubset(self, expected, actual):
+        for key in expected.keys():
+            msg = f"expected[{key}] != actual[{key}]"
+            self.assertEqual(expected[key], actual[key], msg)
+
+    def test_create_user_cases_1_3a(self):
+        self.assertIsNone(self.model.userdata)
+        self.model.identity.add_user(self.user_identity)
+        cloud_cfg = self.model._cloud_init_config()
+        [actual] = cloud_cfg["users"]
+        self.assertDictSubset(self.user, actual)
+
+    def test_assert_no_default_user_cases_2_4a2(self):
+        self.assertIsNone(self.model.userdata)
+        cloud_cfg = self.model._cloud_init_config()
+        self.assertEqual([], cloud_cfg["users"])
+
+    def test_create_user_but_no_merge_case_3b(self):
+        # near identical to cases 1 / 3a but user-data is present in
+        # autoinstall, however this doesn't change the outcome.
+        self.model.userdata = {}
+        self.model.identity.add_user(self.user_identity)
+        cloud_cfg = self.model._cloud_init_config()
+        [actual] = cloud_cfg["users"]
+        self.assertDictSubset(self.user, actual)
+
+    def test_create_user_and_merge_case_3c(self):
+        # now we have more user info to merge in
+        self.model.userdata = {"users": ["default", self.foobar]}
+        self.model.identity.add_user(self.user_identity)
+        cloud_cfg = self.model._cloud_init_config()
+        for actual in cloud_cfg["users"]:
+            if isinstance(actual, str):
+                self.assertEqual("default", actual)
+            else:
+                if actual["name"] == self.user["name"]:
+                    expected = self.user
+                else:
+                    expected = self.foobar
+                self.assertDictSubset(expected, actual)
+
+    def test_create_user_and_merge_case_3c_empty(self):
+        # another merge case, but a merge of an empty list, so we
+        # have just supplied the `identity` user with extra steps
+        self.model.userdata = {"users": []}
+        self.model.identity.add_user(self.user_identity)
+        cloud_cfg = self.model._cloud_init_config()
+        [actual] = cloud_cfg["users"]
+        self.assertDictSubset(self.user, actual)
+
+    # 4a1 fails before we get here, so needs to be tested elsewhere
+
+    def test_create_nothing_case_4b(self):
+        self.model.userdata = {}
+        cloud_cfg = self.model._cloud_init_config()
+        self.assertNotIn("users", cloud_cfg)
+
+    def test_create_only_merge_4c(self):
+        self.model.userdata = {"users": ["default", self.foobar]}
+        cloud_cfg = self.model._cloud_init_config()
+        for actual in cloud_cfg["users"]:
+            if isinstance(actual, str):
+                self.assertEqual("default", actual)
+            else:
+                self.assertDictSubset(self.foobar, actual)
+
+    def test_create_only_merge_4c_empty(self):
+        # explicitly saying no (additional) users, thank you very much
+        self.model.userdata = {"users": []}
+        cloud_cfg = self.model._cloud_init_config()
+        self.assertEqual([], cloud_cfg["users"])

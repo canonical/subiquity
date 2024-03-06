@@ -33,6 +33,7 @@ except ImportError:
 class TestUserdataController(unittest.TestCase):
     def setUp(self):
         self.controller = UserdataController(make_app())
+        self.controller.model = None
 
     def test_load_autoinstall_data(self):
         with self.subTest("Valid user-data resets userdata model"):
@@ -69,3 +70,15 @@ class TestUserdataController(unittest.TestCase):
         )
 
         JsonValidator.check_schema(UserdataController.autoinstall_schema)
+
+    def test_load_none(self):
+        self.controller.load_autoinstall_data(None)
+        self.assertIsNone(self.controller.model)
+
+    def test_load_empty(self):
+        self.controller.load_autoinstall_data({})
+        self.assertEqual({}, self.controller.model)
+
+    def test_load_some(self):
+        self.controller.load_autoinstall_data({"stuff": "things"})
+        self.assertEqual({"stuff": "things"}, self.controller.model)

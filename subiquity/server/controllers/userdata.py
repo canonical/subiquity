@@ -23,19 +23,20 @@ log = logging.getLogger("subiquity.server.controllers.userdata")
 class UserdataController(NonInteractiveController):
     model_name = "userdata"
     autoinstall_key = "user-data"
-    autoinstall_default = {}
+    autoinstall_default = None
     autoinstall_schema = {
         "type": "object",
     }
 
     def load_autoinstall_data(self, data):
-        self.model.clear()
+        if data is None:
+            return
         if data:
             self.app.base_model.validate_cloudconfig_schema(
                 data=data,
                 data_source="autoinstall.user-data",
             )
-        self.model.update(data)
+        self.app.base_model.userdata = self.model = data.copy()
 
     def make_autoinstall(self):
-        return self.app.base_model.userdata
+        return self.app.base_model.userdata or {}
