@@ -2235,8 +2235,27 @@ class FilesystemModel:
     def is_root_mounted(self):
         return self._mount_for_path("/") is not None
 
-    def can_install(self):
-        return self.is_root_mounted() and not self.needs_bootloader_partition()
+    def is_rootfs_on_remote_storage(self) -> bool:
+        return self._mount_for_path("/").device.volume.on_remote_storage()
+
+    def is_boot_mounted(self) -> bool:
+        return self._mount_for_path("/boot") is not None
+
+    def is_bootfs_on_remote_storage(self) -> bool:
+        return self._mount_for_path("/boot").device.volume.on_remote_storage()
+
+    def can_install(self) -> bool:
+        if not self.is_root_mounted():
+            return False
+
+        if self.is_rootfs_on_remote_storage():
+            if not self.is_boot_mounted() or self.is_bootfs_on_remote_storage():
+                return False
+
+        if self.needs_bootloader_partition():
+            return False
+
+        return True
 
     def should_add_swapfile(self):
         mount = self._mount_for_path("/")

@@ -180,8 +180,6 @@ class PartitionForm(Form):
             if ofstype:
                 self.existing_fs_type = ofstype
         initial_path = initial.get("mount")
-        if not initial_path and remote_storage:
-            initial["mount"] = "/home"
         self.mountpoints = {
             m.path: m.device.volume
             for m in self.model.all_mounts()
@@ -209,7 +207,7 @@ class PartitionForm(Form):
             self.mount.widget.enable_common_mountpoints()
             self.mount.value = self.mount.value
         if self.remote_storage:
-            self.mount.widget.disable_all_mountpoints_but_home()
+            self.mount.widget.disable_boot_boot_efi_mountpoints()
             self.mount.value = self.mount.value
         if fstype is None:
             if self.existing_fs_type == "swap":
@@ -312,14 +310,14 @@ class PartitionForm(Form):
                                 ).format(mountpoint=mount),
                             )
                         )
-        if self.remote_storage and mount != "/home":
+        if self.remote_storage and mount in ("/boot", "/boot/efi"):
             self.mount.show_extra(
                 (
                     "info_error",
                     _(
-                        "This filesystem is on remote storage. It is usually a "
-                        "bad idea to mount it anywhere but at /home, proceed "
-                        "only with caution."
+                        f"The filesystem for {mount} should be stored on local"
+                        " storage. Storing it on remote storage will likely"
+                        " prevent the system for booting."
                     ),
                 )
             )
