@@ -24,14 +24,17 @@ from subiquity.common.types import NonReportableError, PasswordKind
 from subiquity.server.autoinstall import AutoinstallValidationError
 from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.server import (
+    NOPROBERARG,
     MetaController,
     SubiquityServer,
     cloud_autoinstall_path,
     iso_autoinstall_path,
     root_autoinstall_path,
 )
+from subiquitycore.context import Context
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.parameterized import parameterized
 from subiquitycore.utils import run_command
 
 
@@ -313,3 +316,53 @@ class TestExceptionHandling(SubiTestCase):
         self.server.make_apport_report.assert_called()
         self.assertIsNotNone(self.server.fatal_error)
         self.assertIsNone(self.server.nonreportable_error)
+
+
+class TestEventReporting(SubiTestCase):
+    async def asyncSetUp(self):
+        opts = Mock()
+        opts.dry_run = True
+        opts.output_base = self.tmp_dir()
+        opts.machine_config = NOPROBERARG
+        self.server = SubiquityServer(opts, None)
+
+    @parameterized.expand(
+        (
+            # A very incomprehensible truth table for testing code behavior
+            # This is probably collapsable, but I need a baseline
+            (True, True, None, None, True),
+            (True, False, None, None, True),
+            (True, None, None, None, True),
+            (False, True, None, None, False),
+            (False, True, True, True, False),
+            (False, True, True, False, True),
+            (False, False, False, None, True),
+        )
+    )
+    async def test_maybe_push_to_journal(
+        self,
+        is_install_context,
+        interactive,
+        from_controller,
+        controller_is_interactive,
+        expected_to_send,
+    ):
+        context: Context = Context(
+            self.server, "MockContext", "description", None, "INFO"
+        )
+
+        context.set("is-install-context", is_install_context)
+        self.server.interactive = interactive
+        if from_controller:
+            controller = Mock()
+            controller.interactive = lambda: controller_is_interactive
+            context.set("controller", controller)
+
+        with patch("subiquity.server.server.journal.send") as journal_send_mock:
+            self.server._maybe_push_to_journal(
+                "event_type", context, context.description
+            )
+        if expected_to_send:
+            journal_send_mock.assert_called_once()
+        else:
+            journal_send_mock.assert_not_called()
