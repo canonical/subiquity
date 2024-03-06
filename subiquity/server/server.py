@@ -53,7 +53,7 @@ from subiquity.server.runner import get_command_runner
 from subiquity.server.snapdapi import make_api_client
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import run_bg_task, run_in_thread
-from subiquitycore.context import with_context
+from subiquitycore.context import Context, with_context
 from subiquitycore.core import Application
 from subiquitycore.file_util import copy_file_if_exists, write_file
 from subiquitycore.prober import Prober
@@ -347,28 +347,73 @@ class SubiquityServer(Application):
     def add_event_listener(self, listener):
         self.event_listeners.append(listener)
 
-    def _maybe_push_to_journal(self, event_type, context, description):
-        if not context.get("is-install-context") and self.interactive in [True, None]:
-            controller = context.get("controller")
+    def _maybe_push_to_journal(
+        self,
+        event_type: str,
+        context: Context,
+        description: Optional[str],
+    ):
+        # No reporting for request handlers
+        if context.get("request", default=None) is not None:
+            return
+
+        install_context: bool = context.get("is-install-context", default=False)
+        msg: str = ""
+        parent_id: str = ""
+        indent: int = context.full_name().count("/") - 2
+
+        # We do filtering on which types of events get reported.
+        # For interactive installs, we only want to report the event
+        # if it's coming from a non-interactive context. The user is aware
+        # of the changes being made in interactive sections so lets skip
+        # reporting those events.
+        #
+        # The exceptions to this are:
+        #     - special sections of the install, which set "is-install-context"
+        #       where we want to report the event anyways
+        #
+        #
+        # For non-interactive installs (i.e., full autoinstall) we report
+        # everything.
+
+        force_reporting: bool = install_context
+
+        # self.interactive=None could be an interactive install, we just
+        # haven't found out yet
+        if self.interactive in [True, None] and not force_reporting:
+            # If the event came from a controller and it's interactive,
+            # or there's no associated controller so we can't be sure,
+            # skip reporting.
+            controller = context.get("controller", default=None)
             if controller is None or controller.interactive():
                 return
-        if context.get("request"):
-            return
-        indent = context.full_name().count("/") - 2
-        if context.get("is-install-context") and self.interactive:
+
+            # Otherwise it came from the server
+
+        # Create the message out of the name of the reporter and optionally
+        # the description
+        name: str = context.full_name()
+        if description is not None:
+            msg = f"{name}: {description}"
+        else:
+            msg = name
+
+        # Special case: events from special install contexts which are also
+        # interactive get special formatting
+        if self.interactive and install_context:
             indent -= 1
             msg = context.description
-        else:
-            msg = context.full_name()
-            if description:
-                msg += ": " + description
-        msg = "  " * indent + msg
-        if context.parent:
+
+        indent_prefix: str = " " * indent
+        formatted_message: str = f"{indent_prefix}{msg}"
+
+        if context.parent is not None:
             parent_id = str(context.parent.id)
         else:
             parent_id = ""
+
         journal.send(
-            msg,
+            formatted_message,
             PRIORITY=context.level,
             SYSLOG_IDENTIFIER=self.event_syslog_id,
             SUBIQUITY_CONTEXT_NAME=context.full_name(),

@@ -328,8 +328,20 @@ class TestEventReporting(SubiTestCase):
 
     @parameterized.expand(
         (
-            # A very incomprehensible truth table for testing code behavior
-            # This is probably collapsable, but I need a baseline
+            # A very tedious to read truth table for testing
+            # behavior. A value of None should mean another
+            # option is shadowing the importance of that value
+            # ex: in the is-install-context it doesn't matter
+            # if it came from a controller. Except interactive=None
+            # is a valid value.
+            #
+            #
+            #  -> Special "is-install-context" to force logging
+            # |     -> Install is interactive
+            # |    |      -> Comes from a controller
+            # |    |     |      -> That controller is interactive
+            # |    |     |     |      -> Expected to send
+            # |    |     |     |     |
             (True, True, None, None, True),
             (True, False, None, None, True),
             (True, None, None, None, True),
