@@ -47,9 +47,11 @@ bootloader
 bootloaders
 codecs
 config
+conf
 curtin
 debconf
 debian
+dir
 el
 flavor
 geoip
@@ -74,6 +76,7 @@ rsyslog
 subvolume
 subvolumes
 superset
+sysfs
 traceback
 tty
 ubuntu
@@ -81,3 +84,4 @@ udev
 unformatted
 VLAN
 webhook
+workdir
