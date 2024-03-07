@@ -15,21 +15,11 @@
 import logging
 from typing import Optional
 
-from subiquity.server.nonreportable import NonReportableException
-
-log = logging.getLogger("subiquity.server.autoinstall")
+log = logging.getLogger("subiquity.server.nonreportable")
 
 
-class AutoinstallError(NonReportableException):
-    pass
-
-
-class AutoinstallValidationError(AutoinstallError):
-    def __init__(
-        self,
-        owner: str,
-        details: Optional[str] = None,
-    ):
-        self.message = f"Malformed autoinstall in {owner!r} section"
-        self.owner = owner
-        super().__init__(self.message, details=details)
+class NonReportableException(Exception):
+    def __init__(self, message: str, details: Optional[str] = None):
+        self.message: str = message
+        self.details: Optional[str] = None
+        super().__init__(message)

@@ -38,14 +38,16 @@ from subiquity.common.types import (
     ErrorReportRef,
     KeyFingerprint,
     LiveSessionSSHInfo,
+    NonReportableError,
     PasswordKind,
 )
 from subiquity.models.subiquity import ModelNames, SubiquityModel
-from subiquity.server.autoinstall import AutoinstallError, AutoinstallValidationError
+from subiquity.server.autoinstall import AutoinstallValidationError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.dryrun import DRConfig
 from subiquity.server.errors import ErrorController
 from subiquity.server.geoip import DryRunGeoIPStrategy, GeoIP, HTTPGeoIPStrategy
+from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.pkghelper import get_package_installer
 from subiquity.server.runner import get_command_runner
 from subiquity.server.snapdapi import make_api_client
@@ -83,6 +85,7 @@ class MetaController:
             state=self.app.state,
             confirming_tty=self.app.confirming_tty,
             error=self.app.fatal_error,
+            nonreportable_error=self.app.nonreportable_error,
             cloud_init_ok=self.app.cloud_init_ok,
             interactive=self.app.interactive,
             echo_syslog_id=self.app.echo_syslog_id,
@@ -290,7 +293,8 @@ class SubiquityServer(Application):
         self.update_state(ApplicationState.STARTING_UP)
         self.interactive = None
         self.confirming_tty = ""
-        self.fatal_error = None
+        self.fatal_error: Optional[ErrorReport] = None
+        self.nonreportable_error: Optional[NonReportableError] = None
         self.running_error_commands = False
         self.installer_user_name = None
         self.installer_user_passwd_kind = PasswordKind.NONE
@@ -415,16 +419,29 @@ class SubiquityServer(Application):
             self.update_state(ApplicationState.ERROR)
 
     def _exception_handler(self, loop, context):
-        exc = context.get("exception")
+        exc: Optional[Exception] = context.get("exception")
         if exc is None:
             super()._exception_handler(loop, context)
             return
-        report = self.error_reporter.report_for_exc(exc)
         log.error("top level error", exc_info=exc)
-        if not isinstance(exc, AutoinstallError) and not report:
-            report = self.make_apport_report(
-                ErrorReportKind.UNKNOWN, "unknown error", exc=exc
-            )
+
+        # Some common errors have apport reports written closer to where the
+        # exception was originally thrown. We write a generic "unknown error"
+        # report for cases where it wasn't written already, except in cases
+        # where we want to explicitly supress report generation (e.g., bad
+        # autoinstall cases).
+
+        report: Optional[ErrorReport] = None
+
+        if isinstance(exc, NonReportableException):
+            self.nonreportable_error = NonReportableError.from_exception(exc)
+        else:
+            report = self.error_reporter.report_for_exc(exc)
+            if report is None:
+                report = self.make_apport_report(
+                    ErrorReportKind.UNKNOWN, "unknown error", exc=exc
+                )
+
         self.fatal_error = report
         if self.interactive:
             self.update_state(ApplicationState.ERROR)
@@ -481,7 +498,7 @@ class SubiquityServer(Application):
             except ValidationError as original_exception:
                 # SubiquityServer currently only checks for these sections
                 # of autoinstall. Hardcode until we have better validation.
-                section = "version or interative-sessions"
+                section = "version or interactive-sections"
                 new_exception: AutoinstallValidationError = AutoinstallValidationError(
                     section,
                 )
@@ -494,10 +511,27 @@ class SubiquityServer(Application):
             only_early,
             self.autoinstall,
         )
+
+        # Set the interactivity as early as possible so autoinstall validation
+        # errors can be shown to the user in an interactive way, if applicable.
+        #
+        # In the case of no autoinstall data, we set interactive=true.
+        #
+        # Otherwise, we need to check the interactivity of the session on both
+        # calls (early=True and early=False) because it's possible that an
+        # early command mutates the autoinstall and changes the value of
+        # interactive-sections.
+
         if not self.autoinstall:
+            self.interactive = True
             return
+
         with open(self.autoinstall) as fp:
             self.autoinstall_config = yaml.safe_load(fp)
+
+        # Check every time
+        self.interactive = bool(self.autoinstall_config.get("interactive-sections"))
+
         if only_early:
             self.controllers.Reporting.setup_autoinstall()
             self.controllers.Reporting.start()
@@ -700,10 +734,6 @@ class SubiquityServer(Application):
                 open(stamp_file, "w").close()
                 await asyncio.sleep(1)
         self.load_autoinstall_config(only_early=False)
-        if self.autoinstall_config:
-            self.interactive = bool(self.autoinstall_config.get("interactive-sections"))
-        else:
-            self.interactive = True
         if not self.interactive and not self.opts.dry_run:
             open("/run/casper-no-prompt", "w").close()
         self.load_serialized_state()

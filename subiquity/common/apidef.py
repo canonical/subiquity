@@ -121,6 +121,7 @@ class API:
                 """Confirm that the installation should proceed."""
 
         class restart:
+            @allowed_before_start
             def POST() -> None:
                 """Restart the server process."""
 

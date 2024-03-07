@@ -48,6 +48,9 @@ class ProgressView(BaseView):
         self.ongoing = {}  # context_id -> line containing a spinner
 
         self.reboot_btn = Toggleable(ok_btn(_("Reboot Now"), on_press=self.reboot))
+        self.restart_btn = Toggleable(
+            ok_btn(_("Restart Installer"), on_press=self.restart)
+        )
         self.view_error_btn = cancel_btn(
             _("View error report"), on_press=self.view_error
         )
@@ -172,13 +175,21 @@ class ProgressView(BaseView):
             ]
         elif state == ApplicationState.ERROR:
             self.title = _("An error occurred during installation")
-            self.reboot_btn.base_widget.set_label(_("Reboot Now"))
-            self.reboot_btn.enabled = True
-            btns = [
-                self.view_log_btn,
-                self.view_error_btn,
-                self.reboot_btn,
-            ]
+
+            if self.controller.has_nonreportable_error:
+                self.view_error_btn.enable = False
+                btns = [
+                    self.view_log_btn,
+                    self.restart_btn,
+                ]
+            else:
+                self.reboot_btn.base_widget.set_label(_("Reboot Now"))
+                self.reboot_btn.enabled = True
+                btns = [
+                    self.view_log_btn,
+                    self.view_error_btn,
+                    self.reboot_btn,
+                ]
         elif state == ApplicationState.EXITED:
             self.title = _("Subiquity server process has exited")
             btns = [self.view_log_btn]
@@ -213,6 +224,9 @@ class ProgressView(BaseView):
         self.event_buttons.original_widget._select_first_selectable()
         self.controller.click_reboot()
         self._set_button_width()
+
+    def restart(self, sender):
+        self.controller.app.restart(restart_server=True)
 
     def view_error(self, btn):
         self.controller.app.show_error_report(self.controller.crash_report_ref)

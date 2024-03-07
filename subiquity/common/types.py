@@ -24,6 +24,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import attr
 
+from subiquity.server.nonreportable import NonReportableException
 from subiquitycore.models.network import NetDevInfo
 
 
@@ -53,6 +54,21 @@ class ErrorReportRef:
     kind: ErrorReportKind
     seen: bool
     oops_id: Optional[str]
+
+
+@attr.s(auto_attribs=True)
+class NonReportableError:
+    cause: str
+    message: str
+    details: Optional[str]
+
+    @classmethod
+    def from_exception(cls, exc: NonReportableException):
+        return cls(
+            cause=type(exc).__name__,
+            message=str(exc),
+            details=exc.details,
+        )
 
 
 class ApplicationState(enum.Enum):
@@ -87,6 +103,7 @@ class ApplicationStatus:
     state: ApplicationState
     confirming_tty: str
     error: Optional[ErrorReportRef]
+    nonreportable_error: Optional[NonReportableError]
     cloud_init_ok: Optional[bool]
     interactive: Optional[bool]
     echo_syslog_id: str
