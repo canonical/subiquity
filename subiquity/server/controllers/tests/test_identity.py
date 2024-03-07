@@ -18,6 +18,7 @@ from jsonschema.validators import validator_for
 
 from subiquity.server.controllers.identity import IdentityController
 from subiquitycore.tests import SubiTestCase
+from subiquitycore.tests.mocks import make_app
 
 
 class TestIdentityController(SubiTestCase):
@@ -29,3 +30,22 @@ class TestIdentityController(SubiTestCase):
         )
 
         JsonValidator.check_schema(IdentityController.autoinstall_schema)
+
+
+class TestControllerUserCreationFlows(SubiTestCase):
+    # TestUserCreationFlows has more information about user flow use cases.
+    # See subiquity/models/tests/test_subiquity.py for details.
+    def setUp(self):
+        self.app = make_app()
+        self.ic = IdentityController(self.app)
+        self.ic.model.user = None
+
+    async def test_server_requires_identity_case_4a1(self):
+        self.app.base_model.source.current.variant = "server"
+        with self.assertRaises(Exception):
+            await self.ic.apply_autoinstall_config()
+
+    async def test_desktop_does_not_require_identity_case_4a2(self):
+        self.app.base_model.source.current.variant = "desktop"
+        await self.ic.apply_autoinstall_config()
+        # should not raise

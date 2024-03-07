@@ -88,7 +88,9 @@ class IdentityController(SubiquityController):
             return
         if self.app.base_model.target is None:
             return
-        raise Exception("no identity data provided")
+        if self.app.base_model.source.current.variant != "server":
+            return
+        raise Exception("neither identity nor user-data provided")
 
     def make_autoinstall(self):
         if self.model.user is None:

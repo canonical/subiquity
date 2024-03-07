@@ -498,7 +498,8 @@ class TestUserCreationFlows(unittest.IsolatedAsyncioTestCase):
         [actual] = cloud_cfg["users"]
         self.assertDictSubset(self.user, actual)
 
-    # 4a1 fails before we get here, so needs to be tested elsewhere
+    # 4a1 fails before we get here, see TestControllerUserCreationFlows in
+    # subiquity/server/controllers/tests/test_identity.py for details.
 
     def test_create_nothing_case_4b(self):
         self.model.userdata = {}
