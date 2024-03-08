@@ -207,7 +207,7 @@ class SubiquityModel:
         self.timezone = TimeZoneModel()
         self.ubuntu_pro = UbuntuProModel()
         self.updates = UpdatesModel()
-        self.userdata = {}
+        self.userdata = None
 
         self._confirmation = asyncio.Event()
         self._confirmation_task = None
@@ -378,6 +378,13 @@ class SubiquityModel:
                 user_info["ssh_authorized_keys"] = self.ssh.authorized_keys
             config["users"] = [user_info]
         else:
+            if self.userdata is None:
+                config["users"] = []
+                if self.ssh.authorized_keys:
+                    log.warning(
+                        "likely configuration error: "
+                        "authorized_keys supplied but no known user login"
+                    )
             if self.ssh.authorized_keys:
                 config["ssh_authorized_keys"] = self.ssh.authorized_keys
         if self.ssh.install_server:
@@ -388,7 +395,8 @@ class SubiquityModel:
                 merge_config(config, model.make_cloudconfig())
         for package in self.cloud_init_packages:
             merge_config(config, {"packages": list(self.cloud_init_packages)})
-        merge_cloud_init_config(config, self.userdata)
+        if self.userdata is not None:
+            merge_cloud_init_config(config, self.userdata)
         if lsb_release()["release"] not in ("20.04", "22.04"):
             config.setdefault("write_files", []).append(CLOUDINIT_DISABLE_AFTER_INSTALL)
         self.validate_cloudconfig_schema(data=config, data_source="system install")
