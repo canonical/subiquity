@@ -380,6 +380,11 @@ class SubiquityModel:
         else:
             if self.userdata is None:
                 config["users"] = []
+                if self.ssh.authorized_keys:
+                    log.warning(
+                        "likely configuration error: "
+                        "authorized_keys supplied but no known user login"
+                    )
             if self.ssh.authorized_keys:
                 config["ssh_authorized_keys"] = self.ssh.authorized_keys
         if self.ssh.install_server:
