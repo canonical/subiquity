@@ -77,6 +77,7 @@ realname
 rootfs
 rsyslog
 runtime
+snapd
 subvolume
 subvolumes
 superset
