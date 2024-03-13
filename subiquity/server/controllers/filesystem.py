@@ -986,7 +986,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def has_bitlocker_GET(self) -> List[Disk]:
         """list of Disks that contain a partition that is BitLockered"""
         bitlockered_disks = []
-        for disk in self.model.all_disks():
+        for disk in self.model.all_disks() + self.model.all_raids():
             for part in disk.partitions():
                 fs = part.fs()
                 if not fs:
