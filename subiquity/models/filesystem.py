@@ -36,6 +36,7 @@ from curtin.util import human2bytes
 from probert.storage import StorageInfo
 
 from subiquity.common.types import Bootloader, OsProber, RecoveryKey
+from subiquity.server.autoinstall import AutoinstallError
 from subiquitycore.utils import write_named_tempfile
 
 log = logging.getLogger("subiquity.models.filesystem")
@@ -1722,9 +1723,9 @@ class FilesystemModel:
                     if disk is None:
                         action["match"] = match
                 if disk is None:
-                    raise Exception("{} matched no disk".format(action))
+                    raise AutoinstallError("{} matched no disk".format(action))
                 if disk not in disks:
-                    raise Exception(
+                    raise AutoinstallError(
                         "{} matched {} which was already used".format(action, disk)
                     )
                 disks.remove(disk)
