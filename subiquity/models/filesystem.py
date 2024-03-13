@@ -1641,6 +1641,7 @@ class FilesystemModel:
         return matchers
 
     def disk_for_match(self, disks, match):
+        log.info(f"considering {disks} for {match}")
         matchers = self._make_matchers(match)
         candidates = []
         for candidate in disks:
@@ -1658,7 +1659,9 @@ class FilesystemModel:
         if match.get("size") == "largest":
             candidates.sort(key=lambda d: d.size, reverse=True)
         if candidates:
+            log.info(f"For match {match}, using the first candidate from {candidates}")
             return candidates[0]
+        log.info(f"For match {match}, no devices match")
         return None
 
     def assign_omitted_offsets(self):
