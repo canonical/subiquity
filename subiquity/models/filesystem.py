@@ -36,6 +36,7 @@ from curtin.util import human2bytes
 from probert.storage import StorageInfo
 
 from subiquity.common.types import Bootloader, OsProber, RecoveryKey
+from subiquity.server.autoinstall import AutoinstallError
 from subiquitycore.utils import write_named_tempfile
 
 log = logging.getLogger("subiquity.models.filesystem")
@@ -1641,6 +1642,7 @@ class FilesystemModel:
         return matchers
 
     def disk_for_match(self, disks, match):
+        log.info(f"considering {disks} for {match}")
         matchers = self._make_matchers(match)
         candidates = []
         for candidate in disks:
@@ -1658,7 +1660,9 @@ class FilesystemModel:
         if match.get("size") == "largest":
             candidates.sort(key=lambda d: d.size, reverse=True)
         if candidates:
+            log.info(f"For match {match}, using the first candidate from {candidates}")
             return candidates[0]
+        log.info(f"For match {match}, no devices match")
         return None
 
     def assign_omitted_offsets(self):
@@ -1719,9 +1723,9 @@ class FilesystemModel:
                     if disk is None:
                         action["match"] = match
                 if disk is None:
-                    raise Exception("{} matched no disk".format(action))
+                    raise AutoinstallError("{} matched no disk".format(action))
                 if disk not in disks:
-                    raise Exception(
+                    raise AutoinstallError(
                         "{} matched {} which was already used".format(action, disk)
                     )
                 disks.remove(disk)

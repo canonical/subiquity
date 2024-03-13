@@ -51,8 +51,10 @@ from subiquity.models.tests.test_filesystem import (
     make_model,
     make_nvme_controller,
     make_partition,
+    make_raid,
 )
 from subiquity.server import snapdapi
+from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controllers.filesystem import (
     DRY_RUN_RESET_SIZE,
     FilesystemController,
@@ -1549,3 +1551,31 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
             disallowed.reason,
             GuidedDisallowedCapabilityReason.CORE_BOOT_ENCRYPTION_UNAVAILABLE,
         )
+
+
+class TestMatchingDisks(IsolatedAsyncioTestCase):
+    def setUp(self):
+        bootloader = Bootloader.UEFI
+        self.app = make_app()
+        self.app.opts.bootloader = bootloader.value
+        self.fsc = FilesystemController(app=self.app)
+        self.fsc.model = make_model(bootloader)
+
+    def test_no_match_raises_AutoinstallError(self):
+        with self.assertRaises(AutoinstallError):
+            self.fsc.get_bootable_matching_disk({"size": "largest"})
+
+    def test_two_matches(self):
+        make_disk(self.fsc.model, size=10 << 30)
+        d2 = make_disk(self.fsc.model, size=20 << 30)
+        actual = self.fsc.get_bootable_matching_disk({"size": "largest"})
+        self.assertEqual(d2, actual)
+
+    @mock.patch("subiquity.common.filesystem.boot.can_be_boot_device")
+    def test_actually_match_raid(self, m_cbb):
+        r1 = make_raid(self.fsc.model)
+        m_cbb.return_value = True
+        # a size based check will make the raid not largest because of 65MiB of
+        # overhead
+        actual = self.fsc.get_bootable_matching_disk({"path": "/dev/md/*"})
+        self.assertEqual(r1, actual)
