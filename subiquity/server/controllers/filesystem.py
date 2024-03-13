@@ -1428,11 +1428,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             disk = self.get_bootable_matching_disk(match)
             target = GuidedStorageTargetReformat(disk_id=disk.id, allowed=[])
         elif mode == "use_gap":
-            bootable = [
-                d
-                for d in self.model.all_disks()
-                if boot.can_be_boot_device(d, with_reformatting=False)
-            ]
+            bootable = self.potential_boot_disks(with_reformatting=False)
             gap = gaps.largest_gap(bootable)
             if not gap:
                 raise Exception(
