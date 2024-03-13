@@ -74,6 +74,7 @@ from subiquity.models.filesystem import (
     humanize_size,
 )
 from subiquity.server import snapdapi
+from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
 from subiquity.server.mounter import Mounter
@@ -1327,6 +1328,17 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 self.start_monitor()
             break
 
+    def get_bootable_matching_disk(self, match: dict[str, str]):
+        """given a match directive, find disks or disk-like devices for which
+        we have a plan to boot, and return the best matching one of those.
+        As match directives are autoinstall-supplied, raise AutoinstallError if
+        no matching disk is found."""
+        disks = self.potential_boot_disks(with_reformatting=True)
+        disk = self.model.disk_for_match(disks, match)
+        if disk is None:
+            raise AutoinstallError(f"Failed to find matching device for {match}")
+        return disk
+
     async def run_autoinstall_guided(self, layout):
         name = layout["name"]
         password = None
@@ -1368,7 +1380,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     raise Exception("cannot install this model unencrypted")
                 capability = GC.CORE_BOOT_UNENCRYPTED
             match = layout.get("match", {"size": "largest"})
-            disk = self.model.disk_for_match(self.model.all_disks(), match)
+            disk = self.get_bootable_matching_disk(match)
             mode = "reformat_disk"
         else:
             # this check is conceptually unnecessary but results in a
@@ -1413,7 +1425,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         if mode == "reformat_disk":
             match = layout.get("match", {"size": "largest"})
-            disk = self.model.disk_for_match(self.model.all_disks(), match)
+            disk = self.get_bootable_matching_disk(match)
             target = GuidedStorageTargetReformat(disk_id=disk.id, allowed=[])
         elif mode == "use_gap":
             bootable = [
