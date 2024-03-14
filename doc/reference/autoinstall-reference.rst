@@ -493,7 +493,9 @@ The actions in the storage configuration are processed in the order they are in 
 
 A match spec supports the following keys:
 
-* ``model: value``: matches a disk where ``ID_VENDOR=value`` in udev, supporting globbing
+* ``model: value``: matches a disk where ``ID_MODEL=value`` in udev, supporting globbing
+
+* ``vendor: value``: matches a disk where ``ID_VENDOR=value`` in udev, supporting globbing
 
 * ``path: value``: matches a disk based on path (e.g. ``/dev/sdc``), supporting globbing (the globbing support distinguishes this from specifying ``path: value`` directly in the disk action)
 
