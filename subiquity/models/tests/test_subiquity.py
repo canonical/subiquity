@@ -180,7 +180,6 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
         for model in model_no_proxy, model_proxy:
             config = model.render()
             self.assertConfigWritesFile(config, "etc/machine-id")
-            self.assertConfigWritesFile(config, "var/log/installer/media-info")
 
     def test_storage_version(self):
         model = self.make_model()

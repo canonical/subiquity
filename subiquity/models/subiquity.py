@@ -486,13 +486,6 @@ class SubiquityModel:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             write_file(path, content, mode=mode)
 
-    def _media_info(self):
-        if os.path.exists("/cdrom/.disk/info"):
-            with open("/cdrom/.disk/info") as fp:
-                return fp.read()
-        else:
-            return "media-info"
-
     def _machine_id(self):
         with open("/etc/machine-id") as fp:
             return fp.read()
@@ -524,11 +517,6 @@ class SubiquityModel:
                     "path": "etc/machine-id",
                     "content": self._machine_id(),
                     "permissions": 0o444,
-                },
-                "media_info": {
-                    "path": "var/log/installer/media-info",
-                    "content": self._media_info(),
-                    "permissions": 0o644,
                 },
             },
         }
