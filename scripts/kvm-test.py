@@ -173,6 +173,8 @@ parser.add_argument('-B', '--bios', action='store_true', default=False,
 parser.add_argument('-c', '--channel', action='store',
                     help='build iso with snap from channel')
 parser.add_argument('-d', '--disksize', help='size of disk to create')
+parser.add_argument('--disk-interface', help='type of interface for the disk',
+                    choices=('nvme', 'virtio'), default='virtio')
 parser.add_argument('-i', '--img', action='store', help='use this img')
 parser.add_argument('-n', '--nets', action='store', default=1, type=int,
                     help='''number of network interfaces.
@@ -368,19 +370,21 @@ def create_seed(cloudconfig, tempdir):
     return seed
 
 
-def drive(path, format='qcow2') -> Tuple[str, str]:
+def drive(path, format='qcow2', id_=None, if_="virtio") -> Tuple[str, str]:
     """ Return a tuple (-drive, <options>) that can be passed to kvm """
-    kwargs = []
+    props = []
     serial = None
     cparam = 'writethrough'
-    kwargs.append(f'file={path}')
-    kwargs.append(f'format={format}')
-    kwargs.append(f'cache={cparam}')
-    kwargs.append('if=virtio')
+    props.append(f'file={path}')
+    props.append(f'format={format}')
+    props.append(f'cache={cparam}')
+    props.append(f'if={if_}')
     if serial:
-        kwargs.append(f'serial={serial}')
+        props.append(f'serial={serial}')
+    if id_ is not None:
+        props.append(f'id={id_}')
 
-    return ('-drive', ','.join(kwargs))
+    return ('-drive', ','.join(props))
 
 
 class PortFinder:
@@ -557,7 +561,14 @@ def install(ctx):
             if ctx.args.update:
                 appends.append('subiquity-channel=' + ctx.args.update)
 
-            kvm.extend(drive(ctx.target))
+            match ctx.args.disk_interface:
+                case 'virtio':
+                    kvm.extend(drive(ctx.target, if_='virtio'))
+                case 'nvme':
+                    kvm.extend(drive(ctx.target, id_='localdisk0', if_="none"))
+                    kvm.extend(('-device', 'nvme,drive=localdisk0,serial=deadbeef'))
+                case interface:
+                    raise ValueError('unsupported disk interface', interface)
             if not os.path.exists(ctx.target) or ctx.args.overwrite:
                 disksize = ctx.args.disksize or ctx.default_disk_size
                 run(f'qemu-img create -f qcow2 {ctx.target} {disksize}')
