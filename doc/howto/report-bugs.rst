@@ -5,6 +5,17 @@ Troubleshooting
 
 This section explains how to deal with installation problems and how to report issues to the Subiquity team.
 
+Validate your autoinstall 'user-data' configuration against the Autoinstall JSON schema <../reference/autoinstall-schema.rst>
+----------------
+
+.. code-block:: bash
+
+    git clone https://github.com/canonical/subiquity
+    cd subiquity && make install_deps
+    ./scripts/validate-autoinstall-user-data.py ../ubuntu-autoinstall/user-data
+
+.. note:: The first line in the user-data file have to be "#cloud-config"
+
 Update Subiquity
 ----------------
 
