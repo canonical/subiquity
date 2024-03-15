@@ -124,6 +124,7 @@ def main():
         logdir = opts.output_base
     logfiles = setup_logger(dir=logdir, base="subiquity-client")
 
+    logging.captureWarnings(True)
     logger = logging.getLogger("subiquity")
     version = os.environ.get("SNAP_REVISION", "unknown")
     snap = os.environ.get("SNAP", "unknown")
