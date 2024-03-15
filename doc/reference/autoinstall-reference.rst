@@ -269,10 +269,10 @@ The default is:
       mirror-selection:
         primary:
           - country-mirror
-          - arches: [i386, amd64]
           - uri: "http://archive.ubuntu.com/ubuntu"
-          - arches: [s390x, arm64, armhf, powerpc, ppc64el, riscv64]
+            arches: [i386, amd64]
           - uri: "http://ports.ubuntu.com/ubuntu-ports"
+            arches: [s390x, arm64, armhf, powerpc, ppc64el, riscv64]
       fallback: abort
       geoip: true
 
