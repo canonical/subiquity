@@ -5,7 +5,7 @@ Troubleshooting
 
 This section explains how to deal with installation problems and how to report issues to the Subiquity team.
 
-Validate your autoinstall 'user-data' configuration against the Autoinstall JSON schema <../reference/autoinstall-schema.rst>
+Validate your autoinstall 'user-data' configuration against the Autoinstall JSON schema :ref:`JSON schema<autoinstall_JSON_schema>`
 ----------------
 
 .. code-block:: bash
