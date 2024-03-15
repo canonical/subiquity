@@ -84,6 +84,7 @@ def main():
     if opts.dry_run:
         LOGDIR = opts.output_base
     setup_logger(dir=LOGDIR)
+    logging.captureWarnings(True)
     logger = logging.getLogger("console_conf")
     logger.info("Starting console-conf v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
