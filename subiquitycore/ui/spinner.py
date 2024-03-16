@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import logging
 
 from urwid import Text
 
@@ -41,8 +42,18 @@ styles = {
 }
 
 
+log = logging.getLogger("subiquitycore.ui.spinner")
+
+
 class Spinner(Text):
-    def __init__(self, style="spin", align="center"):
+    """An animation used when loading elements.
+    Use the .start() method to start the animation. You must ensure that you
+    call .stop() otherwise the Spinner will continue firing events until the
+    event loop is closed (even if the spinner is no longer visible on the
+    screen)."""
+
+    def __init__(self, style="spin", align="center", *, debug=False):
+        self.debug = debug
         self.spin_index = 0
         self.spin_text = styles[style]["texts"]
         self.rate = styles[style]["rate"]
@@ -50,6 +61,8 @@ class Spinner(Text):
         self._spin_task = None
 
     def spin(self):
+        if self.debug:
+            log.debug("spinning spinner %s", id(self))
         self.spin_index = (self.spin_index + 1) % len(self.spin_text)
         self.set_text(self.spin_text[self.spin_index])
 
@@ -59,10 +72,14 @@ class Spinner(Text):
             await asyncio.sleep(self.rate)
 
     def start(self):
+        if self.debug:
+            log.debug("starting spinner %s", id(self))
         self.stop()
         self._spin_task = asyncio.create_task(self._spin())
 
     def stop(self):
+        if self.debug:
+            log.debug("stopping spinner %s", id(self))
         self.set_text("")
         if self._spin_task is not None:
             self._spin_task.cancel()
