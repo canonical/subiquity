@@ -19,6 +19,7 @@ Contains some default key navigations
 """
 
 import asyncio
+import contextlib
 import logging
 
 from urwid import Overlay, Text, emit_signal
@@ -152,3 +153,12 @@ class BaseView(WidgetWrap):
                 self.cancel()
                 return None
         return key
+
+    def is_visible(self) -> bool:
+        with contextlib.suppress(AttributeError):
+            return self.controller.app.ui.body is self
+        return False
+
+    def request_redraw_if_visible(self) -> None:
+        if self.is_visible():
+            self.controller.app.request_screen_redraw()
