@@ -66,6 +66,8 @@ class NetworkDeviceTable(WidgetWrap):
     def __init__(self, parent, dev_info):
         self.parent = parent
         self.dev_info = dev_info
+        self.dhcp_spinner = Spinner(align="left")
+        self.dhcp_spinner.rate = 0.3
         super().__init__(self._create())
 
     def _create(self):
@@ -163,10 +165,8 @@ class NetworkDeviceTable(WidgetWrap):
                 if addrs:
                     address_info.extend([(label, Text(addr)) for addr in addrs])
                 elif dhcp_status.state == DHCPState.PENDING:
-                    s = Spinner(align="left")
-                    s.rate = 0.3
-                    s.start()
-                    address_info.append((label, s))
+                    self.dhcp_spinner.start()
+                    address_info.append((label, self.dhcp_spinner))
                 elif dhcp_status.state == DHCPState.TIMED_OUT:
                     address_info.append((label, Text(_("timed out"))))
                 elif dhcp_status.state == DHCPState.RECONFIGURE:
@@ -301,6 +301,8 @@ class NetworkView(BaseView):
         self.wlan_support_install_state_showing = False
         self.error_showing = False
 
+        self.apply_spinner = Spinner()
+
         self.update_for_wlan_support_install_state(wlan_support_install_state)
 
         super().__init__(
@@ -319,6 +321,7 @@ class NetworkView(BaseView):
         stretchy = ViewInterfaceInfo(self, name, info)
         stretchy.attach_context(self.controller.context.child("INFO"))
         self.show_stretchy_overlay(stretchy)
+        self.request_redraw_if_visible()
 
     def _action_INFO(self, name, dev_info):
         run_bg_task(self._show_INFO(dev_info.name))
@@ -361,14 +364,13 @@ class NetworkView(BaseView):
         )
 
     def show_apply_spinner(self):
-        s = Spinner()
-        s.start()
+        self.apply_spinner.start()
         c = TablePile(
             [
                 TableRow(
                     [
                         Text(_("Applying changes")),
-                        s,
+                        self.apply_spinner,
                     ]
                 ),
             ],
@@ -378,10 +380,12 @@ class NetworkView(BaseView):
             (c, self.bottom.options()),
             (Text(""), self.bottom.options()),
         ]
+        self.request_redraw_if_visible()
 
     def hide_apply_spinner(self):
         if len(self.bottom.contents) > 2:
             self.bottom.contents[0:2] = []
+        self.request_redraw_if_visible()
 
     def new_link(self, new_dev_info):
         log.debug(

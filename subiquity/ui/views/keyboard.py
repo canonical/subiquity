@@ -270,8 +270,12 @@ class Detector:
         self.do_step(step_index)
 
     def do_step(self, step_index):
+        async def do_step_and_redraw():
+            await self._do_step(step_index)
+            self.keyboard_view.request_redraw_if_visible()
+
         self.abort()
-        run_bg_task(self._do_step(step_index))
+        run_bg_task(do_step_and_redraw())
 
     async def _do_step(self, step_index):
         log.debug("moving to step %s", step_index)
@@ -433,6 +437,7 @@ class KeyboardView(BaseView):
         )
         if needs_toggle:
             self.show_stretchy_overlay(ToggleQuestion(self, setting))
+            self.request_redraw_if_visible()
         else:
             self.really_done(setting)
 

@@ -24,7 +24,7 @@ from typing import Callable, Optional, Union
 import urwid
 import yaml
 
-from subiquitycore.async_helpers import run_bg_task, schedule_task
+from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.core import Application
 from subiquitycore.palette import PALETTE_COLOR, PALETTE_MONO
 from subiquitycore.screen import make_screen
@@ -83,7 +83,9 @@ class TuiApplication(Application):
         self.cur_screen = None
         self.fg_proc = None
 
-    def run_command_in_foreground(self, cmd, before_hook=None, after_hook=None, **kw):
+    async def run_command_in_foreground(
+        self, cmd, before_hook=None, after_hook=None, **kw
+    ):
         if self.fg_proc is not None:
             raise Exception("cannot run two fg processes at once")
         screen = self.urwid_loop.screen
@@ -119,7 +121,8 @@ class TuiApplication(Application):
         urwid.emit_signal(screen, urwid.display_common.INPUT_DESCRIPTORS_CHANGED)
         if before_hook is not None:
             before_hook()
-        schedule_task(_run())
+
+        await _run()
 
     async def make_view_for_controller(
         self, new
@@ -193,7 +196,7 @@ class TuiApplication(Application):
 
         async def show_load():
             nonlocal ld
-            ld = LoadingDialog(self.ui.body, message, task_to_cancel)
+            ld = LoadingDialog(self, message, task_to_cancel)
             self.ui.body.show_overlay(ld, width=ld.width)
             await self.redraw_screen()
 

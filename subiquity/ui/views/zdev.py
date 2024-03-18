@@ -67,6 +67,7 @@ class ZdevList(WidgetWrap):
             self.parent.controller.chzdev(action, zdevinfo), "Updating..."
         )
         self.update(new_zdevinfos)
+        self.parent.request_redraw_if_visible()
 
     def zdev_action(self, sender, action, zdevinfo):
         run_bg_task(self._zdev_action(action, zdevinfo))

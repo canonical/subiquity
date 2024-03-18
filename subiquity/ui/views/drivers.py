@@ -120,6 +120,7 @@ class DriversView(BaseView):
             self.make_main(install, drivers)
         else:
             self.make_no_drivers()
+        self.request_redraw_if_visible()
 
     def make_no_drivers(self) -> None:
         """Change the view into an information page that shows that no

@@ -585,14 +585,14 @@ class SubiquityClient(TuiApplication):
         else:
             super().unhandled_input(key)
 
-    def debug_shell(self, after_hook=None):
+    async def debug_shell(self, after_hook=None):
         def _before():
             os.system("clear")
             print(DEBUG_SHELL_INTRO)
 
         env = orig_environ(os.environ)
         cmd = ["bash"]
-        self.run_command_in_foreground(
+        await self.run_command_in_foreground(
             cmd, env=env, before_hook=_before, after_hook=after_hook, cwd="/"
         )
 

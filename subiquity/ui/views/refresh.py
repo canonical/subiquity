@@ -262,6 +262,7 @@ class RefreshView(BaseView):
                 self.update_failed(err)
                 return
             self.update_progress(change)
+            self.request_redraw_if_visible()
             await asyncio.sleep(0.1)
 
     def try_update_again(self, sender=None):

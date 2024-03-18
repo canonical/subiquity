@@ -101,6 +101,7 @@ class ProgressView(BaseView):
         )
         self.ongoing[context_id] = len(walker)
         self._add_line(self.event_listbox, new_line)
+        self.request_redraw_if_visible()
 
     def event_finish(self, context_id):
         index = self.ongoing.pop(context_id, None)
@@ -110,6 +111,7 @@ class ProgressView(BaseView):
         spinner = walker[index][1]
         spinner.stop()
         walker[index] = walker[index][0]
+        self.request_redraw_if_visible()
 
     def event_other(self, message: str, event_type: str) -> None:
         """Print events that aren't start or finish events"""

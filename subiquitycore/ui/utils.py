@@ -380,4 +380,4 @@ class LoadingDialog(WidgetWrap):
             self.task_to_cancel.cancel()
         self.closed = True
         self.spinner.stop()
-        self.parent.remove_overlay()
+        self.parent.ui.body.remove_overlay()

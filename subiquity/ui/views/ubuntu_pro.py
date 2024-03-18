@@ -535,6 +535,7 @@ class UbuntuProView(BaseView):
         self.remove_overlay()
         widget = TokenAddedWidget(parent=self, on_continue=show_subscription)
         self.show_stretchy_overlay(widget)
+        self.request_redraw_if_visible()
 
     def upgrade_mode_done(self, form: UpgradeModeForm) -> None:
         """Open the loading dialog and asynchronously check if the token is
@@ -563,6 +564,7 @@ class UbuntuProView(BaseView):
                 form.validated()
             elif status == UbuntuProCheckTokenStatus.UNKNOWN_ERROR:
                 self.show_unknown_error()
+            self.request_redraw_if_visible()
 
         token: str = form.with_contract_token_subform.value["token"]
         checking_token_overlay = CheckingContractToken(self)
@@ -580,6 +582,7 @@ class UbuntuProView(BaseView):
             self.controller.contract_selection_initiate(on_initiated=self.cs_initiated)
 
         self.upgrade_mode_form.set_user_code(user_code)
+        self.request_redraw_if_visible()
         self.controller.contract_selection_wait(
             on_contract_selected=self.on_contract_selected,
             on_timeout=reinitiate,
