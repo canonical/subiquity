@@ -190,6 +190,7 @@ class MirrorView(BaseView):
             await asyncio.sleep(1 / self.controller.app.scale_factor)
             status = await self.controller.endpoint.check_mirror.progress.GET()
             self.update_status(status)
+            self.request_redraw_if_visible()
 
         if check_state.status == MirrorCheckStatus.FAILED:
             self.output_wrap._w = Pile(

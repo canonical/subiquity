@@ -336,15 +336,24 @@ class ErrorReportStretchy(Stretchy):
         if self.pile.selectable():
             while not self.pile.focus.selectable():
                 self.pile.focus_position += 1
+        await self.app.redraw_screen()
 
     def debug_shell(self, sender):
-        self.app.debug_shell()
+        async def debug_shell_and_redraw():
+            await self.app.debug_shell()
+            await self.app.redraw_screen()
+
+        run_bg_task(debug_shell_and_redraw())
 
     def restart(self, sender):
         self.app.restart(restart_server=True)
 
     def view_report(self, sender):
-        self.app.run_command_in_foreground(["less", self.report.path])
+        async def run_less_and_redraw():
+            await self.app.run_command_in_foreground(["less", self.report.path])
+            await self.app.redraw_screen()
+
+        run_bg_task(run_less_and_redraw())
 
     def submit(self, sender):
         self.report.upload()

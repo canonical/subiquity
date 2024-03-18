@@ -100,6 +100,7 @@ class SSHController(SubiquityTuiController):
                 self.ui.body.fetching_ssh_keys_failed(
                     _("Importing keys failed:"), response.error
                 )
+                self.ui.body.request_redraw()
             return
         elif response.status == SSHFetchIdStatus.FINGERPRINT_ERROR:
             if isinstance(self.ui.body, SSHView):
@@ -107,12 +108,14 @@ class SSHController(SubiquityTuiController):
                     _("ssh-keygen failed to show fingerprint of downloaded keys:"),
                     response.error,
                 )
+                self.ui.body.request_redraw()
             return
 
         identities = response.identities
 
         if isinstance(self.ui.body, SSHView):
             self.ui.body.confirm_ssh_keys(ssh_import_id, identities)
+            self.ui.body.request_redraw()
         else:
             log.debug("ui.body of unexpected instance: %s", type(self.ui.body).__name__)
 

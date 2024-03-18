@@ -69,27 +69,34 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
         if act == LinkAction.DEL:
             self.view.del_link(info)
 
+        self.view.request_redraw_if_visible()
+
     async def route_watch_POST(self, has_default_route: bool) -> None:
         if self.view is not None:
             self.view.update_has_default_route(has_default_route)
+            self.view.request_redraw_if_visible()
 
     async def apply_starting_POST(self) -> None:
         if self.view is not None:
             self.view.show_apply_spinner()
+            self.view.request_redraw_if_visible()
 
     async def apply_stopping_POST(self) -> None:
         if self.view is not None:
             self.view.hide_apply_spinner()
+            self.view.request_redraw_if_visible()
 
     async def apply_error_POST(self, stage: str) -> None:
         if self.view is not None:
             self.view.show_network_error(stage)
+            self.view.request_redraw_if_visible()
 
     async def wlan_support_install_finished_POST(
         self, state: PackageInstallState
     ) -> None:
         if self.view:
             self.view.update_for_wlan_support_install_state(state.name)
+            self.view.request_redraw_if_visible()
 
     async def subscribe(self):
         self.tdir = tempfile.mkdtemp()

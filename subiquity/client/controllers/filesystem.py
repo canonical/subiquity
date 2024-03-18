@@ -81,6 +81,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         self.current_view = await self.make_guided_ui(status)
         if isinstance(self.ui.body, SlowProbing):
             self.ui.set_body(self.current_view)
+            await self.app.redraw_screen()
         else:
             log.debug("not refreshing the display. Current display is %r", self.ui.body)
 
@@ -273,18 +274,31 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         self.ui.set_body(FilesystemView(self.model, self))
 
     def guided_choice(self, choice):
-        run_bg_task(self._guided_choice(choice))
+        async def show_guided_and_redraw():
+            await self._guided_choice(choice)
+            await self.app.redraw_screen()
+
+        run_bg_task(show_guided_and_redraw())
 
     async def _guided(self):
         self.ui.set_body((await self.make_ui())())
 
     def guided(self):
-        run_bg_task(self._guided())
+        async def guided_and_redraw():
+            await self._guided()
+            await self.app.redraw_screen()
+
+        run_bg_task(guided_and_redraw())
 
     def reset(self, refresh_view):
+        async def reset_and_redraw():
+            await self._reset(refresh_view)
+            await self.app.redraw_screen()
+
         log.info("Resetting Filesystem model")
         self.app.ui.block_input = True
-        run_bg_task(self._reset(refresh_view))
+
+        run_bg_task(reset_and_redraw())
 
     async def _reset(self, refresh_view):
         status = await self.endpoint.reset.POST()
