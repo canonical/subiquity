@@ -52,11 +52,12 @@ class Spinner(Text):
     event loop is closed (even if the spinner is no longer visible on the
     screen)."""
 
-    def __init__(self, style="spin", align="center", *, debug=False):
+    def __init__(self, style="spin", align="center", *, debug=False, app=None):
         self.debug = debug
         self.spin_index = 0
         self.spin_text = styles[style]["texts"]
         self.rate = styles[style]["rate"]
+        self.app = app
         super().__init__("", align=align)
         self._spin_task = None
 
@@ -65,6 +66,8 @@ class Spinner(Text):
             log.debug("spinning spinner %s", id(self))
         self.spin_index = (self.spin_index + 1) % len(self.spin_text)
         self.set_text(self.spin_text[self.spin_index])
+        if self.app is not None:
+            self.app.request_screen_redraw()
 
     async def _spin(self):
         while True:
