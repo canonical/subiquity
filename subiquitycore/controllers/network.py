@@ -663,7 +663,7 @@ class NetworkController(BaseNetworkController, TuiController, NetworkAnswersMixi
     def done(self):
         log.debug("NetworkController.done next_screen")
         self.model.has_network = self.network_event_receiver.has_default_route
-        self.app.next_screen()
+        self.app.request_next_screen()
 
     def cancel(self):
         self.app.prev_screen()

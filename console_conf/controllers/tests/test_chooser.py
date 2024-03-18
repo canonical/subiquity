@@ -74,7 +74,7 @@ class TestChooserConfirmController(unittest.TestCase):
         c.back()
         app.respond.assert_not_called()
         app.exit.assert_not_called()
-        app.prev_screen.assert_called()
+        app.request_prev_screen.assert_called()
         c.model.unselect.assert_called()
 
     def test_confirm(self):
@@ -106,7 +106,7 @@ class TestChooserController(unittest.TestCase):
         )
         self.assertEqual(c.model.selection, exp)
 
-        app.next_screen.assert_called()
+        app.request_next_screen.assert_called()
         app.respond.assert_not_called()
         app.exit.assert_not_called()
 

@@ -296,7 +296,7 @@ class InstallConfirmation(Stretchy):
         if self.app.controllers.Progress.showing:
             run_bg_task(self.app.confirm_install())
         else:
-            self.app.next_screen(self.app.confirm_install())
+            self.app.request_next_screen(self.app.confirm_install())
 
     def cancel(self, sender):
         self.app.remove_global_overlay(self)

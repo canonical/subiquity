@@ -216,13 +216,13 @@ class UbuntuProController(SubiquityTuiController):
             schedule_task(inner())
 
     def cancel(self) -> None:
-        self.app.prev_screen()
+        self.app.request_prev_screen()
 
     def done(self, token: str) -> None:
         """Submit the token and move on to the next screen."""
-        self.app.next_screen(self.endpoint.POST(UbuntuProInfo(token=token)))
+        self.app.request_next_screen(self.endpoint.POST(UbuntuProInfo(token=token)))
 
     def next_screen(self) -> None:
         """Move on to the next screen. Assume the token should not be
         submitted (or has already been submitted)."""
-        self.app.next_screen()
+        self.app.request_next_screen()

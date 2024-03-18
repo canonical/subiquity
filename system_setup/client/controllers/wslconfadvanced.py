@@ -47,7 +47,7 @@ class WSLConfigurationAdvancedController(SubiquityTuiController):
             "WSLConfigurationAdvancedController.done next_screen user_spec=%s",
             reconf_data,
         )
-        self.app.next_screen(self.endpoint.POST(reconf_data))
+        self.app.request_next_screen(self.endpoint.POST(reconf_data))
 
     def cancel(self):
-        self.app.prev_screen()
+        self.app.request_prev_screen()

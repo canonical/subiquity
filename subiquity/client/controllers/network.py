@@ -118,10 +118,10 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
             run_bg_task(self.unsubscribe())
 
     def cancel(self):
-        self.app.prev_screen()
+        self.app.request_prev_screen()
 
     def done(self):
-        self.app.next_screen(self.endpoint.POST())
+        self.app.request_next_screen(self.endpoint.POST())
 
     def set_static_config(
         self, dev_name: str, ip_version: int, static_config: StaticConfig

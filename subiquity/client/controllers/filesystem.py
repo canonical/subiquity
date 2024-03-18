@@ -260,7 +260,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
     async def _guided_choice(self, choice: GuidedChoiceV2):
         coro = self.endpoint.guided.POST(choice)
         if not choice.capability.supports_manual_customization():
-            self.app.next_screen(coro)
+            await self.app.next_screen(coro)
             return
         status = await self.app.wait_with_progress(coro)
         self.model = FilesystemModel(status.bootloader, root="/")
@@ -294,11 +294,11 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             self.ui.set_body(FilesystemView(self.model, self))
 
     def cancel(self):
-        self.app.prev_screen()
+        self.app.request_prev_screen()
 
     def finish(self):
         log.debug("FilesystemController.finish next_screen")
-        self.app.next_screen(
+        self.app.request_next_screen(
             self.endpoint.POST(
                 self.model._render_actions(mode=ActionRenderMode.FOR_API_CLIENT)
             )

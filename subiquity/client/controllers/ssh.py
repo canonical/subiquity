@@ -84,7 +84,7 @@ class SSHController(SubiquityTuiController):
         form._click_done(None)
 
     def cancel(self):
-        self.app.prev_screen()
+        self.app.request_prev_screen()
 
     def _fetch_cancel(self):
         if self._fetch_task is None:
@@ -123,4 +123,4 @@ class SSHController(SubiquityTuiController):
 
     def done(self, result):
         log.debug("SSHController.done next_screen result=%s", result)
-        self.app.next_screen(self.endpoint.POST(result))
+        self.app.request_next_screen(self.endpoint.POST(result))

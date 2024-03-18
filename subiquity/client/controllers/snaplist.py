@@ -47,10 +47,10 @@ class SnapListController(SubiquityTuiController):
 
     def done(self, selections: List[SnapSelection]):
         log.debug("SnapListController.done next_screen snaps_to_install=%s", selections)
-        self.app.next_screen(self.endpoint.POST(selections))
+        self.app.request_next_screen(self.endpoint.POST(selections))
 
     def cancel(self, sender=None):
-        self.app.prev_screen()
+        self.app.request_prev_screen()
 
     async def get_list_wait(self):
         return await self.endpoint.GET(wait=True)

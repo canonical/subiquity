@@ -67,8 +67,8 @@ class MirrorController(SubiquityTuiController):
             self.app.ui.body.form._click_done(None)
 
     def cancel(self):
-        self.app.prev_screen()
+        self.app.request_prev_screen()
 
     def done(self, mirror):
         log.debug("MirrorController.done next_screen mirror=%s", mirror)
-        self.app.next_screen(self.endpoint.POST(MirrorPost(elected=mirror)))
+        self.app.request_next_screen(self.endpoint.POST(MirrorPost(elected=mirror)))

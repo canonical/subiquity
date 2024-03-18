@@ -483,7 +483,7 @@ class SubiquityClient(TuiApplication):
         self._remove_last_screen()
         super().exit()
 
-    def select_initial_screen(self):
+    async def select_initial_screen(self):
         last_screen = None
         if self.updated:
             state_path = self.state_path("last-screen")
@@ -495,7 +495,7 @@ class SubiquityClient(TuiApplication):
             for i, controller in enumerate(self.controllers.instances):
                 if controller.name == last_screen:
                     index = i
-        run_bg_task(self._select_initial_screen(index))
+        await self._select_initial_screen(index)
 
     async def _select_initial_screen(self, index):
         endpoint_names = []
@@ -507,7 +507,7 @@ class SubiquityClient(TuiApplication):
         if self.variant:
             await self.client.meta.client_variant.POST(self.variant)
         self.controllers.index = index - 1
-        self.next_screen()
+        await self.next_screen()
 
     async def move_screen(self, increment, coro):
         try:
