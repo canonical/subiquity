@@ -75,6 +75,8 @@ class Spinner(Text):
             await asyncio.sleep(self.rate)
 
     def start(self):
+        if self._spin_task is not None:
+            return
         if self.debug:
             log.debug("starting spinner %s", id(self))
         self.stop()
