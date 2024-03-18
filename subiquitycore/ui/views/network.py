@@ -66,7 +66,7 @@ class NetworkDeviceTable(WidgetWrap):
     def __init__(self, parent, dev_info):
         self.parent = parent
         self.dev_info = dev_info
-        self.dhcp_spinner = Spinner(align="left")
+        self.dhcp_spinner = Spinner(align="left", app=self.parent.controller.app)
         self.dhcp_spinner.rate = 0.3
         super().__init__(self._create())
 
@@ -301,7 +301,7 @@ class NetworkView(BaseView):
         self.wlan_support_install_state_showing = False
         self.error_showing = False
 
-        self.apply_spinner = Spinner()
+        self.apply_spinner = Spinner(app=self.controller.app)
 
         self.update_for_wlan_support_install_state(wlan_support_install_state)
 

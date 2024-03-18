@@ -112,7 +112,7 @@ class MirrorView(BaseView):
         connect_signal(self.form, "cancel", self.cancel)
 
         self.status_text = Text("")
-        self.status_spinner = Spinner()
+        self.status_spinner = Spinner(app=self.controller.app)
         self.status_wrap = WidgetWrap(self.status_text)
         self.output_text = Text("")
         self.output_box = LineBox(ListBox([self.output_text]))

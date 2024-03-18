@@ -388,7 +388,7 @@ class SnapListView(BaseView):
             await self._wait_load(spinner)
             self.request_redraw_if_visible()
 
-        spinner = Spinner(style="dots")
+        spinner = Spinner(style="dots", app=self.controller.app)
         spinner.start()
         self._w = screen(
             [spinner],
