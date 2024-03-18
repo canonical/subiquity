@@ -39,6 +39,8 @@ async def test_connect(cmd: List[str]) -> bool:
     try:
         await asyncio.wait_for(proc.wait(), 10)
     except asyncio.TimeoutError:
+        proc.terminate()
+        await proc.wait()
         return False
     return proc.returncode == 0
 
