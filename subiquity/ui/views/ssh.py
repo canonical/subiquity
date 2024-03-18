@@ -179,8 +179,8 @@ class SSHForm(Form):
 class FetchingSSHKeys(WidgetWrap):
     def __init__(self, parent):
         self.parent = parent
-        spinner = Spinner(style="dots")
-        spinner.start()
+        self.spinner = Spinner(style="dots")
+        self.spinner.start()
         text = _("Fetching SSH keys...")
         button = cancel_btn(label=_("Cancel"), on_press=self.cancel)
         # | text |
@@ -191,7 +191,7 @@ class FetchingSSHKeys(WidgetWrap):
                 Pile(
                     [
                         ("pack", Text(" " + text)),
-                        ("pack", spinner),
+                        ("pack", self.spinner),
                         ("pack", button_pile([button])),
                     ]
                 )
@@ -199,6 +199,7 @@ class FetchingSSHKeys(WidgetWrap):
         )
 
     def cancel(self, sender):
+        self.spinner.stop()
         self.parent.remove_overlay()
         self.parent.controller._fetch_cancel()
 
