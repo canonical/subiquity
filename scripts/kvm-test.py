@@ -17,6 +17,7 @@ import dataclasses
 import os
 import pathlib
 import shlex
+import shutil
 import socket
 import subprocess
 import sys
@@ -99,6 +100,11 @@ class Context:
         self.iso = f'/tmp/kvm-test/{self.release}-test.iso'
         self.hostname = f'{self.release}-test'
         self.target = f'/tmp/kvm-test/{self.hostname}.img'
+        parent = pathlib.Path(self.target).parent
+        self.ovmf = {
+                'CODE': parent / f'{self.hostname}_OVMF_CODE_4M_ms.fd',
+                'VARS': parent / f'{self.hostname}_OVMF_VARS_4M_ms.fd'
+        }
         self.password = salted_crypt('ubuntu')
         self.cloudconfig = f'''\
 #cloud-config
@@ -168,8 +174,13 @@ parser.add_argument('--basesnap', default=None, action='store',
                     help='use slimy-update-snap on this snap')
 parser.add_argument('--snap', default=None, action='store',
                     help='inject this snap into the ISO')
-parser.add_argument('-B', '--bios', action='store_true', default=False,
+# Boot Options
+boot_group = parser.add_mutually_exclusive_group()
+boot_group.add_argument('-B', '--bios', action='store_true', default=False,
                     help='boot in BIOS mode (default mode is UEFI)')
+boot_group.add_argument('--secure-boot', action='store_true', default=False,
+                    help='Use SecureBoot', dest="secureboot")
+
 parser.add_argument('-c', '--channel', action='store',
                     help='build iso with snap from channel')
 parser.add_argument('-d', '--disksize', help='size of disk to create')
@@ -473,11 +484,19 @@ def tpm(emulator: Optional[TPMEmulator]) -> List[str]:
 
 
 def bios(ctx):
-    ret = []
     # https://help.ubuntu.com/community/UEFI
-    if not ctx.args.bios:
-        ret = ['-bios', '/usr/share/qemu/OVMF.fd']
-    return ret
+    if ctx.args.bios:
+        return []
+    elif ctx.args.secureboot:
+        # Speical setup for a secureboot virtual machine
+        # https://wiki.debian.org/SecureBoot/VirtualMachine
+        return ['-machine',  'q35,smm=on',
+               '-global', 'driver=cfi.pflash01,property=secure,value=on',
+               '-drive', f'if=pflash,format=raw,unit=0,file={ctx.ovmf["CODE"]}',
+               '-drive', f'if=pflash,format=raw,unit=1,file={ctx.ovmf["VARS"]}'
+               ]
+    else:
+        return ['-bios', '/usr/share/qemu/OVMF.fd']
 
 
 def memory(ctx):
@@ -522,6 +541,14 @@ def install(ctx):
         else:
             raise Exception('refusing to overwrite existing image, use the ' +
                             '-o option to allow overwriting')
+
+    # Only copy the files with secureboot, always overwrite on install
+    if ctx.args.secureboot:
+        # We really don't *have* to copy the code over, but the code and vars
+        # are pairs and successfully reading from /usr/share/... directly
+        # depends on permissions
+        shutil.copy("/usr/share/OVMF/OVMF_CODE_4M.ms.fd", ctx.ovmf["CODE"])
+        shutil.copy("/usr/share/OVMF/OVMF_VARS_4M.ms.fd", ctx.ovmf["VARS"])
 
     with tempfile.TemporaryDirectory() as tempdir:
         mntdir = f'{tempdir}/mnt'
@@ -618,6 +645,11 @@ def boot(ctx):
 
     with kvm_prepare_common(ctx) as kvm:
         kvm.extend(drive(target))
+        if ctx.args.secureboot:
+            if not ctx.ovmf["VARS"].exists():
+                raise Exception(f"Couldn't find firmware variables file {str(ctx.ovmf['VARS'])!r}")
+            if not ctx.ovmf["CODE"].exists():
+                raise Exception(f"Couldn't find firmware code file {str(ctx.ovmf['CODE'])!r}")
         run(kvm)
 
 
