@@ -245,7 +245,7 @@ class CheckingContractToken(WidgetWrap):
     def __init__(self, parent: BaseView):
         """Initializes the loading animation widget."""
         self.parent = parent
-        spinner = Spinner(style="dots")
+        spinner = Spinner(style="dots", app=self.parent.controller.app)
         spinner.start()
         text = _("Checking Ubuntu Pro subscription...")
         button = cancel_btn(label=_("Cancel"), on_press=self.cancel)
