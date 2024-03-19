@@ -193,6 +193,7 @@ def main():
 
     logfiles = setup_logger(dir=logdir, base="subiquity-server")
 
+    logging.captureWarnings(True)
     logger = logging.getLogger("subiquity")
     revision = os.environ.get("SNAP_REVISION", "unknown")
     version = os.environ.get("SNAP_VERSION", "unknown")
