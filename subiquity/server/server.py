@@ -14,11 +14,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import copy
 import logging
 import os
 import sys
 import time
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import jsonschema
 import yaml
@@ -553,8 +554,97 @@ class SubiquityServer(Application):
             await controller.apply_autoinstall_config()
             await controller.configured()
 
+    def filter_autoinstall(
+        self,
+        autoinstall_config: dict[str, Any],
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """Separates autoinstall config by known and unknown keys"""
+
+        invalid_config: dict[str, Any] = copy.deepcopy(autoinstall_config)
+
+        # Pop keys of all loaded controllers, if they exists
+        for controller in self.controllers.instances:
+            invalid_config.pop(controller.autoinstall_key, None)
+
+        # Pop server keys, if they exist
+        for key in self.base_schema["properties"]:
+            invalid_config.pop(key, None)
+
+        valid_config: dict[str, Any] = copy.deepcopy(autoinstall_config)
+
+        # Remove the keys we isolated
+        for key in invalid_config:
+            valid_config.pop(key)
+
+        return (valid_config, invalid_config)
+
+    @with_context(name="top_level_keys")
+    def _enforce_top_level_keys(
+        self,
+        *,
+        autoinstall_config: dict[str, Any],
+        context: Context,
+    ) -> dict[str, Any]:
+        """Enforces usage of known top-level keys.
+
+        In Autoinstall v1, unknown top-level keys are removed from
+        the config and a cleaned config is returned.
+
+        In Autoinstall v2, unknown top-level keys result in a fatal
+        AutoinstallValidationError
+
+        Only checks for unrecognized keys, doesn't validate them.
+        Requires a version number, so this should be called after
+        validating against the schema.
+
+        """
+
+        valid_config, invalid_config = self.filter_autoinstall(autoinstall_config)
+
+        # If no bad keys, return early
+        if len(invalid_config.keys()) == 0:
+            return autoinstall_config
+
+        # If the version is early enough, only warn
+        version: int = autoinstall_config["version"]
+
+        ctx = context
+        if version == 1:
+            # Warn then clean out bad keys and return
+
+            for key in invalid_config:
+                warning = f"Unrecognized top-level key {key!r}"
+                log.warning(warning)
+                ctx.warning(warning)
+
+            warning = (
+                "Unrecognized top-level keys will cause Autoinstall to "
+                "throw an error in future versions."
+            )
+            log.warning(warning)
+            ctx.warning(warning)
+
+            return valid_config
+
+        else:
+            for key in invalid_config:
+                error = f"Unrecognized top-level key {key!r}"
+                log.error(error)
+                ctx.error(error)
+
+            error = "Unrecognized top-level keys are unsupported"
+            log.error(error)
+            ctx.error(error)
+
+            raw_keys = (f"{key!r}" for key in invalid_config)
+            details: str = f"Unrecognized top-level key(s): {', '.join(raw_keys)}"
+            raise AutoinstallValidationError(
+                owner="top-level keys",
+                details=details,
+            )
+
     def validate_autoinstall(self):
-        with self.context.child("core_validation", level="INFO"):
+        with self.context.child("core_validation", level="INFO") as ctx:
             try:
                 jsonschema.validate(self.autoinstall_config, self.base_schema)
             except ValidationError as original_exception:
@@ -566,6 +656,12 @@ class SubiquityServer(Application):
                 )
 
                 raise new_exception from original_exception
+
+            # Enforce top level keys after ensuring we have a version number
+            self.autoinstall_config = self._enforce_top_level_keys(
+                autoinstall_config=self.autoinstall_config,
+                context=ctx,
+            )
 
     def load_autoinstall_config(self, *, only_early):
         log.debug(

@@ -15,6 +15,7 @@
 
 import os
 import shlex
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import jsonschema
@@ -125,7 +126,9 @@ class TestAutoinstallLoad(SubiTestCase):
         with self.assertRaises(Exception):
             self.server.select_autoinstall()
 
-    def test_early_commands_changes_autoinstall(self):
+    # Only care about changes to autoinstall, not validity
+    @patch("subiquity.server.server.SubiquityServer.validate_autoinstall")
+    def test_early_commands_changes_autoinstall(self, validate_mock):
         self.server.controllers = Mock()
         self.server.controllers.instances = []
         rootpath = self.path(root_autoinstall_path)
@@ -165,6 +168,33 @@ class TestAutoinstallValidation(SubiTestCase):
             },
         }
         self.server.make_apport_report = Mock()
+
+    # Pseudo Load Controllers to avoid patching the loading logic for each
+    # controller when we still want access to class attributes
+    def pseudo_load_controllers(self):
+        controller_classes = []
+        for prefix in self.server.controllers.controller_names:
+            controller_classes.append(
+                self.server.controllers._get_controller_class(prefix)
+            )
+        self.server.controllers.instances = controller_classes
+
+    def load_config_and_controllers(
+        self, config: dict[str, Any]
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """Loads an autoinstall config and controllers.
+
+        Loads the provided autoinstall config and the controllers.
+        Returns the valid and invalid portions of the config.
+        """
+        # Reset base schema
+        self.server.base_schema = SubiquityServer.base_schema
+
+        self.server.autoinstall_config = config
+
+        self.pseudo_load_controllers()
+
+        return self.server.filter_autoinstall(config)
 
     def test_valid_schema(self):
         """Test that the expected autoinstall JSON schema is valid"""
@@ -231,6 +261,101 @@ class TestAutoinstallValidation(SubiTestCase):
         self.assertIsNone(self.server.fatal_error)
         error = NonReportableError.from_exception(exception)
         self.assertEqual(error, self.server.nonreportable_error)
+
+    @patch("subiquity.server.server.log")
+    async def test_autoinstall_validation__strict_top_level_keys_warn(self, log_mock):
+        """Test strict top-level key enforcement warnings in v1"""
+
+        bad_ai_data = {
+            "version": 1,
+            "interactive-sections": ["identity"],
+            "apt": "Invalid but deferred",
+            "literally-anything": "lmao",
+        }
+
+        good, bad = self.load_config_and_controllers(bad_ai_data)
+
+        # OK in Version 1 but ensure warnings and stripped config
+        self.server.validate_autoinstall()
+        log_mock.warning.assert_called()
+        log_mock.error.assert_not_called()
+        self.assertEqual(self.server.autoinstall_config, good)
+        self.assertEqual(bad, {"literally-anything": "lmao"})
+
+    @patch("subiquity.server.server.log")
+    async def test_autoinstall_validation__strict_top_level_keys_error(self, log_mock):
+        """Test strict top-level key enforcement errors in v2 or greater"""
+
+        bad_ai_data = {
+            "version": 2,
+            "interactive-sections": ["identity"],
+            "apt": "Invalid but deferred",
+            "literally-anything": "lmao",
+        }
+
+        self.load_config_and_controllers(bad_ai_data)
+
+        # TODO: remove once V2 is enabled
+        self.server.base_schema["properties"]["version"]["maximum"] = 2
+
+        # Not OK in Version >= 2
+        with self.assertRaises(AutoinstallValidationError) as ctx:
+            self.server.validate_autoinstall()
+
+        self.assertIn("top-level keys", str(ctx.exception))
+
+        log_mock.error.assert_called()
+        log_mock.warning.assert_not_called()
+
+    @parameterized.expand(
+        (
+            (
+                # Case 1: extra key "some-bad-key"
+                {
+                    "version": 1,
+                    "interactive-sections": ["identity"],
+                    "apt": "...",
+                    "some-bad-key": "...",
+                },
+                {
+                    "version": 1,
+                    "interactive-sections": ["identity"],
+                    "apt": "...",
+                },
+                {"some-bad-key": "..."},
+            ),
+            (
+                # Case 2: no bad keys
+                {
+                    "version": 1,
+                    "interactive-sections": ["identity"],
+                    "apt": "...",
+                },
+                {
+                    "version": 1,
+                    "interactive-sections": ["identity"],
+                    "apt": "...",
+                },
+                {},
+            ),
+            (
+                # Case 3: no good keys
+                {"some-bad-key": "..."},
+                {},
+                {"some-bad-key": "..."},
+            ),
+        )
+    )
+    async def test_autoinstall_validation__filter_autoinstall(self, config, good, bad):
+        """Test autoinstall config filtering"""
+
+        self.server.base_schema = SubiquityServer.base_schema
+        self.pseudo_load_controllers()
+
+        valid, invalid = self.server.filter_autoinstall(config)
+
+        self.assertEqual(valid, good)
+        self.assertEqual(invalid, bad)
 
 
 class TestMetaController(SubiTestCase):

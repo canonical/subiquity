@@ -3,7 +3,11 @@
 Autoinstall configuration reference manual
 ==========================================
 
-The autoinstall file uses the YAML format. At the top level, it must be a mapping containing the keys described in this document. Unrecognised keys are ignored.
+The autoinstall file uses the YAML format. At the top level, it must be a
+mapping containing the keys described in this document. Unrecognised keys
+are ignored in version 1, but will cause a fatal validation error in future
+versions.
+
 
 .. _ai-schema:
 
@@ -24,6 +28,12 @@ Several configuration keys are lists of commands to be executed. Each command ca
 
 Top-level keys
 --------------
+
+
+.. warning::
+  In version 1, Subiquity will emit warnings when encountering unrecognised
+  keys. In later versions, a fatal validation error is thrown and the
+  installation will halt.
 
 .. _ai-version:
 
