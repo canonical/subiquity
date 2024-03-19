@@ -111,6 +111,28 @@ class ProgressView(BaseView):
         spinner.stop()
         walker[index] = walker[index][0]
 
+    def event_other(self, message: str, event_type: str) -> None:
+        """Print events that aren't start or finish events"""
+
+        # Events which aren't start or finish events (info, warning, or error)
+        # are usually structured like:
+        #
+        # subiquity/controller/blah: event description
+        #
+        # and we want to insert the event type between the colon and the
+        # event description
+        context, text = message.split(":")
+        text = text.lstrip()
+        message = f"{context}: {event_type.upper()}: {text}"
+
+        new_line = Columns(
+            [
+                ("pack", Text(message)),
+            ],
+            dividechars=1,
+        )
+        self._add_line(self.event_listbox, new_line)
+
     def finish_all(self):
         for context_id in list(self.ongoing):
             self.event_finish(context_id)
