@@ -16,7 +16,6 @@ jobs:
       matrix:
         image:
           - ubuntu-daily:jammy
-          - ubuntu-daily:lunar
           - ubuntu-daily:mantic
           - ubuntu-daily:noble
     steps:
