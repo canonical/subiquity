@@ -265,10 +265,9 @@ class SubiquityClient(TuiApplication):
             app_status = await self._status_get(app_state)
 
     def subiquity_event_noninteractive(self, event):
-        if event["SUBIQUITY_EVENT_TYPE"] == "start":
-            print("start: " + event["MESSAGE"])
-        elif event["SUBIQUITY_EVENT_TYPE"] == "finish":
-            print("finish: " + event["MESSAGE"])
+        event_type = event["SUBIQUITY_EVENT_TYPE"]
+        message = event["MESSAGE"]
+        print(f"{event_type}: {message}")
 
     async def connect(self):
         def p(s):
@@ -379,7 +378,9 @@ class SubiquityClient(TuiApplication):
                 # prompting for confirmation will be confusing.
                 os.system("stty sane")
             journald_listen(
-                [status.event_syslog_id], self.subiquity_event_noninteractive, seek=True
+                [status.event_syslog_id],
+                self.subiquity_event_noninteractive,
+                seek=False,
             )
             run_bg_task(self.noninteractive_watch_app_state(status))
 
