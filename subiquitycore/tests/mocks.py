@@ -36,6 +36,7 @@ def make_app(model=None):
         app.base_model = model
     else:
         app.base_model = mock.Mock()
+    app.add_event_listener = mock.Mock()
     app.controllers = mock.Mock()
     app.context = Context.new(app)
     app.exit = mock.Mock()

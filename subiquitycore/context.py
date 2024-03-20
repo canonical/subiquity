@@ -118,6 +118,15 @@ class Context:
             c = c.parent
         return default
 
+    def info(self, message: str) -> None:
+        self.app.report_info_event(self, message)
+
+    def warning(self, message: str) -> None:
+        self.app.report_warning_event(self, message)
+
+    def error(self, message: str) -> None:
+        self.app.report_error_event(self, message)
+
 
 def with_context(name=None, description="", **context_kw):
     def decorate(meth):

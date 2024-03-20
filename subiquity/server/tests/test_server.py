@@ -378,3 +378,81 @@ class TestEventReporting(SubiTestCase):
             journal_send_mock.assert_called_once()
         else:
             journal_send_mock.assert_not_called()
+
+    @parameterized.expand(
+        (
+            # interactive, pushed to journal
+            (True, False),
+            (None, False),
+            (False, True),
+        )
+    )
+    def test_push_info_events(self, interactive, expect_pushed):
+        """Test info event publication"""
+
+        context: Context = Context(
+            self.server, "MockContext", "description", None, "INFO"
+        )
+        self.server.interactive = interactive
+
+        with patch("subiquity.server.server.journal.send") as journal_send_mock:
+            self.server.report_info_event(context, "message")
+
+        if not expect_pushed:
+            journal_send_mock.assert_not_called()
+        else:
+            journal_send_mock.assert_called_once()
+            # message is the only positional argument
+            (message,) = journal_send_mock.call_args.args
+            self.assertIn("message", message)
+            self.assertNotIn("description", message)
+
+    @parameterized.expand(
+        (
+            # interactive
+            (True,),
+            (None,),
+            (False,),
+        )
+    )
+    def test_push_warning_events(self, interactive):
+        """Test warning event publication"""
+
+        context: Context = Context(
+            self.server, "MockContext", "description", None, "INFO"
+        )
+        self.server.interactive = interactive
+
+        with patch("subiquity.server.server.journal.send") as journal_send_mock:
+            self.server.report_warning_event(context, "message")
+
+        journal_send_mock.assert_called_once()
+        # message is the only positional argument
+        (message,) = journal_send_mock.call_args.args
+        self.assertIn("message", message)
+        self.assertNotIn("description", message)
+
+    @parameterized.expand(
+        (
+            # interactive
+            (True,),
+            (None,),
+            (False,),
+        )
+    )
+    def test_push_error_events(self, interactive):
+        """Test error event publication"""
+
+        context: Context = Context(
+            self.server, "MockContext", "description", None, "INFO"
+        )
+        self.server.interactive = interactive
+
+        with patch("subiquity.server.server.journal.send") as journal_send_mock:
+            self.server.report_error_event(context, "message")
+
+        journal_send_mock.assert_called_once()
+        # message is the only positional argument
+        (message,) = journal_send_mock.call_args.args
+        self.assertIn("message", message)
+        self.assertNotIn("description", message)

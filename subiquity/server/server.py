@@ -372,11 +372,14 @@ class SubiquityServer(Application):
         #     - special sections of the install, which set "is-install-context"
         #       where we want to report the event anyways
         #
+        #     - special event types:
+        #       - warn
+        #       - error
         #
         # For non-interactive installs (i.e., full autoinstall) we report
         # everything.
 
-        force_reporting: bool = install_context
+        force_reporting: bool = install_context or event_type in ["warning", "error"]
 
         # self.interactive=None could be an interactive install, we just
         # haven't found out yet
@@ -387,8 +390,6 @@ class SubiquityServer(Application):
             controller = context.get("controller", default=None)
             if controller is None or controller.interactive():
                 return
-
-            # Otherwise it came from the server
 
         # Create the message out of the name of the reporter and optionally
         # the description
@@ -431,6 +432,21 @@ class SubiquityServer(Application):
         for listener in self.event_listeners:
             listener.report_finish_event(context, description, status)
         self._maybe_push_to_journal("finish", context, description)
+
+    def report_info_event(self, context: Context, message: str) -> None:
+        for listener in self.event_listeners:
+            listener.report_info_event(context, message)
+        self._maybe_push_to_journal("info", context, message)
+
+    def report_warning_event(self, context: Context, message: str) -> None:
+        for listener in self.event_listeners:
+            listener.report_warning_event(context, message)
+        self._maybe_push_to_journal("warning", context, message)
+
+    def report_error_event(self, context: Context, message: str) -> None:
+        for listener in self.event_listeners:
+            listener.report_error_event(context, message)
+        self._maybe_push_to_journal("error", context, message)
 
     @property
     def state(self):

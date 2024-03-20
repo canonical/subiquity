@@ -17,10 +17,17 @@ import copy
 import logging
 
 from curtin.reporter import available_handlers, update_configuration
-from curtin.reporter.events import report_finish_event, report_start_event, status
+from curtin.reporter.events import (
+    ReportingEvent,
+    report_event,
+    report_finish_event,
+    report_start_event,
+    status,
+)
 from curtin.reporter.handlers import LogHandler as CurtinLogHandler
 
 from subiquity.server.controller import NonInteractiveController
+from subiquitycore.context import Context
 
 
 class LogHandler(CurtinLogHandler):
@@ -76,3 +83,18 @@ class ReportingController(NonInteractiveController):
         report_finish_event(
             context.full_name(), description, result, level=context.level
         )
+
+    def report_info_event(self, context: Context, message: str):
+        """Report an "info" event."""
+        event = ReportingEvent("info", context.full_name(), message, level="INFO")
+        report_event(event)
+
+    def report_warning_event(self, context: Context, message: str):
+        """Report a "warning" event."""
+        event = ReportingEvent("warning", context.full_name(), message, level="WARNING")
+        report_event(event)
+
+    def report_error_event(self, context: Context, message: str):
+        """Report an "error" event."""
+        event = ReportingEvent("error", context.full_name(), message, level="ERROR")
+        report_event(event)
