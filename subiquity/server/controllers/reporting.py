@@ -27,6 +27,7 @@ from curtin.reporter.events import (
 from curtin.reporter.handlers import LogHandler as CurtinLogHandler
 
 from subiquity.server.controller import NonInteractiveController
+from subiquity.server.event_listener import EventListener
 from subiquitycore.context import Context
 
 
@@ -46,7 +47,7 @@ INITIAL_CONFIG = {
 NON_INTERACTIVE_CONFIG = {"builtin": {"type": "print"}}
 
 
-class ReportingController(NonInteractiveController):
+class ReportingController(EventListener, NonInteractiveController):
     autoinstall_key = "reporting"
     autoinstall_schema = {
         "type": "object",

@@ -46,6 +46,7 @@ from subiquity.server.autoinstall import AutoinstallValidationError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.dryrun import DRConfig
 from subiquity.server.errors import ErrorController
+from subiquity.server.event_listener import EventListener
 from subiquity.server.geoip import DryRunGeoIPStrategy, GeoIP, HTTPGeoIPStrategy
 from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.pkghelper import get_package_installer
@@ -326,7 +327,7 @@ class SubiquityServer(Application):
             log.info("no snapd socket found. Snap support is disabled")
             self.snapd = None
         self.note_data_for_apport("SnapUpdated", str(self.updated))
-        self.event_listeners = []
+        self.event_listeners: list[EventListener] = []
         self.autoinstall_config = None
         self.hub.subscribe(InstallerChannels.NETWORK_UP, self._network_change)
         self.hub.subscribe(InstallerChannels.NETWORK_PROXY_SET, self._proxy_set)
@@ -344,7 +345,7 @@ class SubiquityServer(Application):
         for controller in self.controllers.instances:
             controller.load_state()
 
-    def add_event_listener(self, listener):
+    def add_event_listener(self, listener: EventListener):
         self.event_listeners.append(listener)
 
     def _maybe_push_to_journal(
