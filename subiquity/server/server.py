@@ -663,7 +663,19 @@ class SubiquityServer(Application):
                 context=ctx,
             )
 
-    def load_autoinstall_config(self, *, only_early):
+    @with_context(name="read_config")
+    def _read_config(self, *, cfg_path: str, context: Context) -> dict[str, Any]:
+        with open(cfg_path) as fp:
+            config: dict[str, Any] = yaml.safe_load(fp)
+
+        autoinstall_config: dict[str, Any] = dict()
+
+        autoinstall_config = config
+
+        return autoinstall_config
+
+    @with_context()
+    def load_autoinstall_config(self, *, only_early, context):
         log.debug(
             "load_autoinstall_config only_early %s file %s",
             only_early,
@@ -684,8 +696,9 @@ class SubiquityServer(Application):
             self.interactive = True
             return
 
-        with open(self.autoinstall) as fp:
-            self.autoinstall_config = yaml.safe_load(fp)
+        self.autoinstall_config = self._read_config(
+            cfg_path=self.autoinstall, context=context
+        )
 
         # Check every time
         self.interactive = bool(self.autoinstall_config.get("interactive-sections"))
