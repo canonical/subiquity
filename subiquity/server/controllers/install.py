@@ -177,7 +177,7 @@ class InstallController(SubiquityController):
         )
         autoinstall_config = (
             "#cloud-config\n"
-            "# See the auto install documentation at:"
+            "# See the autoinstall documentation at:\n"
             "# https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html\n"  # noqa: E501
             + yaml.dump({"autoinstall": self.app.make_autoinstall()})
         )
