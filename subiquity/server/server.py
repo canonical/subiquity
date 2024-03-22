@@ -670,7 +670,26 @@ class SubiquityServer(Application):
 
         autoinstall_config: dict[str, Any] = dict()
 
-        autoinstall_config = config
+        # Support "Autoinstall" as a top-level key
+        if "autoinstall" in config:
+            autoinstall_config = config.pop("autoinstall")
+
+            # but the only top level key
+            if len(config) != 0:
+                self.interactive = bool(autoinstall_config.get("interactive-sections"))
+                msg: str = (
+                    "autoinstall is not a valid cloud config datasource.\n"
+                    "No other keys may be present alongside 'autoinstall' at "
+                    "the top level."
+                )
+                context.error(msg)
+                raise AutoinstallValidationError(
+                    owner="top-level keys",
+                    details="autoinstall is not a valid cloud config datasource",
+                )
+
+        else:
+            autoinstall_config = config
 
         return autoinstall_config
 
