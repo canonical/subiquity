@@ -1199,9 +1199,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise ValueError("new partition too large")
         if requested_size < 1:
             requested_size = data.gap.size
+        # empty string is an unformatted partition
+        fstype = data.partition.format or None
         spec = {
             "size": requested_size,
-            "fstype": data.partition.format,
+            "fstype": fstype,
             "mount": data.partition.mount,
         }
 
