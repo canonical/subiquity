@@ -4,11 +4,29 @@ import asyncio
 import json
 import logging
 import re
-from typing import Optional
+from collections.abc import Awaitable
+from subprocess import CompletedProcess
+from typing import Any, Optional
 
 from subiquitycore.utils import arun_command, run_command
 
 log = logging.getLogger("subiquity.cloudinit")
+
+
+class CloudInitSchemaValidationError(Exception):
+    """Exception for cloud config schema validation failure.
+
+    Attributes:
+        keys -- List of keys which are the cause of the failure
+    """
+
+    def __init__(
+        self,
+        keys: list[str],
+        message: str = "Cloud config schema failed to validate.",
+    ) -> None:
+        super().__init__(message)
+        self.keys = keys
 
 
 def get_host_combined_cloud_config() -> dict:
@@ -67,6 +85,58 @@ def read_legacy_status(stream):
     return None
 
 
+def read_recoverable_errors(
+    stream: bytes | str,
+    level: Optional[str] = None,
+) -> list[str]:
+    """Retrieve recoverable errors from cloud-init status."""
+
+    try:
+        status: dict[str, Any] = json.loads(stream)
+    except json.JSONDecodeError:
+        log.warning("Failed to decode cloud-init status output")
+        return []
+
+    errors_by_level: dict[str, list[str]] = status.get("recoverable_errors", {})
+
+    if level is not None:
+        return errors_by_level.get(level, [])
+
+    all_errors: list[str] = []
+    for _level in errors_by_level:
+        all_errors.extend(errors_by_level[_level])
+
+    return all_errors
+
+
+async def get_schema_failure_sources() -> list[str]:
+    """Retrieve the keys causing schema failure."""
+
+    cmd: list[str] = ["cloud-init", "schema", "--system"]
+    status_coro: Awaitable = arun_command(cmd, clean_locale=True)
+    try:
+        sp: CompletedProcess = await asyncio.wait_for(status_coro, 10)
+    except asyncio.TimeoutError:
+        log.warning("cloud-init schema --system timed out")
+        return []
+
+    error: str = sp.stderr  # Relies on arun_command decoding to utf-8 str by default
+
+    # Matches:
+    # ('some-key' was unexpected)
+    # ('some-key', 'another-key' were unexpected)
+    pattern = r"\((?P<args>'[\w\-]+'(,\s'[\w\-]+')*)+ (?:was|were) unexpected\)"
+    search_result = re.search(pattern, error)
+
+    if search_result is None:
+        return []
+
+    args_list: list[str] = search_result.group("args").split(", ")
+    no_quotes: list[str] = [arg.strip("'") for arg in args_list]
+
+    return no_quotes
+
+
 async def cloud_init_status_wait() -> (bool, Optional[str]):
     """Wait for cloud-init completion, and return if timeout ocurred and best
     available status information.
@@ -86,3 +156,23 @@ async def cloud_init_status_wait() -> (bool, Optional[str]):
     else:
         status = read_legacy_status(sp.stdout)
     return (True, status)
+
+
+async def validate_cloud_init_schema() -> None:
+    """Check for cloud-init schema errors.
+    Returns (None) if the cloud-config schmea validated OK according to
+    cloud-init. Otherwise, a CloudInitSchemaValidationError is thrown
+    which contains a list of the keys which failed to validate.
+    Requires cloud-init supporting recoverable errors and extended status.
+
+    :return: None if cloud-init schema validated succesfully.
+    :rtype: None
+    :raises CloudInitSchemaValidationError: If cloud-init schema did not validate
+            succesfully.
+    """
+    causes: list[str] = await get_schema_failure_sources()
+
+    if causes:
+        raise CloudInitSchemaValidationError(keys=causes)
+
+    return None
