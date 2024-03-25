@@ -751,10 +751,10 @@ class InstallController(SubiquityController):
             apt_conf_contents += uu_apt_conf_update_all
         else:
             apt_conf_contents += uu_apt_conf_update_security
-        fname = "zzzz-temp-installer-unattended-upgrade"
-        with open(os.path.join(aptdir, fname), "wb") as apt_conf:
+        apt_conf_path = Path(aptdir) / "zzzz-temp-installer-unattended-upgrade"
+        with open(apt_conf_path, "wb") as apt_conf:
             apt_conf.write(apt_conf_contents)
-            apt_conf.close()
+        try:
             self.unattended_upgrades_ctx = context
             self.unattended_upgrades_cmd = await start_curtin_command(
                 self.app,
@@ -772,8 +772,10 @@ class InstallController(SubiquityController):
             except subprocess.CalledProcessError as cpe:
                 log_process_streams(logging.ERROR, cpe, "Unattended upgrades")
                 context.description = f"FAILED to apply {policy} updates"
-            self.unattended_upgrades_cmd = None
-            self.unattended_upgrades_ctx = None
+        finally:
+            apt_conf_path.unlink()
+        self.unattended_upgrades_cmd = None
+        self.unattended_upgrades_ctx = None
 
     async def stop_unattended_upgrades(self):
         with self.unattended_upgrades_ctx.parent.child(
