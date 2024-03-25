@@ -65,7 +65,7 @@ parts:
 
     source: https://git.launchpad.net/curtin
     source-type: git
-    source-commit: 54cc7d980b9300339e773dc579daa5f11fd12fd0
+    source-commit: a02daee21e8508622ea9755fa667dd2c70335f53
 
     override-pull: |
       craftctl default
