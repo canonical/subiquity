@@ -783,6 +783,28 @@ class TestAdd(TestAPI):
                     await inst.post("/storage/v2/add_partition", data)
 
     @timeout()
+    async def test_add_unformatted_ok(self):
+        disk_id = "disk-sda"
+        async with start_server("examples/machines/simple.json") as inst:
+            for fmt in ("", None):
+                await inst.post("/storage/v2/reset")
+                disk_id = "disk-sda"
+                resp = await inst.get("/storage/v2")
+                [sda] = match(resp["disks"], id=disk_id)
+                [gap] = sda["partitions"]
+
+                data = {
+                    "disk_id": disk_id,
+                    "gap": gap,
+                    "partition": dict(format=fmt, mount="/"),
+                }
+                await inst.post("/storage/v2/add_partition", data)
+
+                v1resp = await inst.get("/storage")
+                empties = match(v1resp["config"], type="format", fstype="")
+                self.assertEqual(0, len(empties), "invalid format object")
+
+    @timeout()
     async def test_add_default_size_handling(self):
         async with start_server("examples/machines/simple.json") as inst:
             disk_id = "disk-sda"
