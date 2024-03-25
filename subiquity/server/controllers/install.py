@@ -752,8 +752,7 @@ class InstallController(SubiquityController):
         else:
             apt_conf_contents += uu_apt_conf_update_security
         apt_conf_path = Path(aptdir) / "zzzz-temp-installer-unattended-upgrade"
-        with open(apt_conf_path, "wb") as apt_conf:
-            apt_conf.write(apt_conf_contents)
+        apt_conf_path.write_bytes(apt_conf_contents)
         try:
             self.unattended_upgrades_ctx = context
             self.unattended_upgrades_cmd = await start_curtin_command(
