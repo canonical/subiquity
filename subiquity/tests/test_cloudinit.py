@@ -19,12 +19,15 @@ from unittest import skipIf
 from unittest.mock import Mock, patch
 
 from subiquity.cloudinit import (
+    CloudInitSchemaValidationError,
     cloud_init_status_wait,
     cloud_init_version,
+    get_schema_failure_keys,
     read_json_extended_status,
     read_legacy_status,
     supports_format_json,
     supports_recoverable_errors,
+    validate_cloud_init_schema,
 )
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.parameterized import parameterized
@@ -132,3 +135,83 @@ class TestCloudInitVersion(SubiTestCase):
             args=[], returncode=0, stdout="status: done\n"
         )
         self.assertEqual((True, "done"), await cloud_init_status_wait())
+
+
+class TestCloudInitSchemaValidation(SubiTestCase):
+    @parameterized.expand(
+        (
+            (
+                (
+                    "  Error: Cloud config schema errors: : Additional "
+                    "properties are not allowed ('bad-key', 'late-commands' "
+                    "were unexpected)\n\nError: Invalid schema: user-data\n\n"
+                ),
+                ["bad-key", "late-commands"],
+            ),
+            (
+                (
+                    "  Error: Cloud config schema errors: : Additional "
+                    "properties are not allowed ('bad-key' "
+                    "was unexpected)\n\nError: Invalid schema: user-data\n\n"
+                ),
+                ["bad-key"],
+            ),
+            ("('key_1', 'key-2', 'KEY3' were unexpected)", ["key_1", "key-2", "KEY3"]),
+            ("('key_.-;!)1!' was unexpected)", ["key_.-;!)1!"]),
+        )
+    )
+    async def test_get_schema_failure_keys(self, msg, expected):
+        """Test 1 or more keys are extracted correctly."""
+
+        with (
+            patch("subiquity.cloudinit.arun_command", new=Mock()),
+            patch("subiquity.cloudinit.asyncio.wait_for") as wait_for_mock,
+        ):
+            wait_for_mock.return_value = CompletedProcess(
+                args=[], returncode=1, stderr=msg
+            )
+
+            bad_keys = await get_schema_failure_keys()
+
+        self.assertEqual(bad_keys, expected)
+
+    @patch("subiquity.cloudinit.arun_command", new=Mock())
+    @patch("subiquity.cloudinit.asyncio.wait_for")
+    async def test_get_schema_failure_malformed(self, wait_for_mock):
+        """Test graceful failure if output changes."""
+
+        error_msg = "('key_1', 'key-2', 'KEY3', were unexpected)"
+
+        wait_for_mock.return_value = CompletedProcess(
+            args=[], returncode=1, stderr=error_msg
+        )
+
+        bad_keys = await get_schema_failure_keys()
+
+        self.assertEqual(bad_keys, [])
+
+    @patch("subiquity.cloudinit.arun_command", new=Mock())
+    @patch("subiquity.cloudinit.asyncio.wait_for")
+    async def test_no_schema_errors(self, wait_for_mock):
+        wait_for_mock.return_value = CompletedProcess(args=[], returncode=0, stderr="")
+
+        self.assertEqual(None, await validate_cloud_init_schema())
+
+    @patch("subiquity.cloudinit.get_schema_failure_keys")
+    async def test_validate_cloud_init_schema(self, sources_mock):
+        mock_keys = ["key1", "key2"]
+        sources_mock.return_value = mock_keys
+
+        with self.assertRaises(CloudInitSchemaValidationError) as ctx:
+            await validate_cloud_init_schema()
+
+        self.assertEqual(mock_keys, ctx.exception.keys)
+
+    @patch("subiquity.cloudinit.arun_command", new=Mock())
+    @patch("subiquity.cloudinit.asyncio.wait_for")
+    @patch("subiquity.cloudinit.log")
+    async def test_get_schema_warn_on_timeout(self, log_mock, wait_for_mock):
+        wait_for_mock.side_effect = asyncio.TimeoutError()
+        sources = await get_schema_failure_keys()
+        log_mock.warning.assert_called()
+        self.assertEqual([], sources)

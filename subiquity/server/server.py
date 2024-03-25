@@ -28,7 +28,12 @@ from cloudinit.config.cc_set_passwords import rand_user_password
 from jsonschema.exceptions import ValidationError
 from systemd import journal
 
-from subiquity.cloudinit import cloud_init_status_wait, get_host_combined_cloud_config
+from subiquity.cloudinit import (
+    CloudInitSchemaValidationError,
+    cloud_init_status_wait,
+    get_host_combined_cloud_config,
+    validate_cloud_init_schema,
+)
 from subiquity.common.api.server import bind, controller_for_request
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReport, ErrorReporter, ErrorReportKind
@@ -43,7 +48,7 @@ from subiquity.common.types import (
     PasswordKind,
 )
 from subiquity.models.subiquity import ModelNames, SubiquityModel
-from subiquity.server.autoinstall import AutoinstallValidationError
+from subiquity.server.autoinstall import AutoinstallError, AutoinstallValidationError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.dryrun import DRConfig
 from subiquity.server.errors import ErrorController
@@ -723,7 +728,66 @@ class SubiquityServer(Application):
     def base_relative(self, path):
         return os.path.join(self.base_model.root, path)
 
-    def load_cloud_config(self):
+    @with_context(name="extract_autoinstall")
+    async def _extract_autoinstall_from_cloud_config(
+        self,
+        *,
+        cloud_cfg: dict[str, Any],
+        context: Context,
+    ) -> dict[str, Any]:
+        """Extract autoinstall passed via cloud config."""
+
+        # Not really is-install-context but set to force event reporting
+        context.set("is-install-context", True)
+        context.enter()  # publish start event
+
+        try:
+            await validate_cloud_init_schema()
+        except CloudInitSchemaValidationError as exc:
+            bad_keys: list[str] = exc.keys
+            raw_keys: list[str] = [f"{key!r}" for key in bad_keys]
+            context.warning(
+                f"cloud-init schema validation failure for: {', '.join(raw_keys)}",
+                log=log,
+            )
+
+            # Raise AutoinstallError if we found any autoinstall as a cause
+            # of the schema validation error, otherwise continue
+
+            # Filter only the bad keys
+            potential_autoinstall: dict[str, Any] = dict(
+                ((key, cloud_cfg[key]) for key in bad_keys)
+            )
+            autoinstall, other = self.filter_autoinstall(potential_autoinstall)
+
+            if len(autoinstall) != 0:
+                for key in autoinstall:
+                    context.error(
+                        message=(
+                            f"{key!r} is valid autoinstall but not "
+                            "found under 'autoinstall'."
+                        ),
+                        log=log,
+                    )
+
+                raise AutoinstallError(
+                    (
+                        "Misplaced autoinstall directives resulted in a cloud-init "
+                        "schema validation failure."
+                    )
+                ) from exc
+
+            else:
+                log.debug(
+                    "No autoinstall keys found among bad cloud config. Continuing."
+                )
+
+        cfg: dict[str, Any] = cloud_cfg.get("autoinstall", {})
+
+        return cfg
+
+    @with_context()
+    async def load_cloud_config(self, *, context: Context):
         # cloud-init 23.3 introduced combined-cloud-config, which helps to
         # prevent subiquity from having to go load cloudinit modules.
         # This matters because a downgrade pickle deserialization issue may
@@ -755,13 +819,16 @@ class SubiquityServer(Application):
             users = ug_util.normalize_users_groups(cloud_cfg, cloud.distro)[0]
             self.installer_user_name = ug_util.extract_default(users)[0]
 
-        if "autoinstall" in cloud_cfg:
+        autoinstall = await self._extract_autoinstall_from_cloud_config(
+            cloud_cfg=cloud_cfg, context=context
+        )
+
+        if autoinstall != {}:
             log.debug("autoinstall found in cloud-config")
-            cfg = cloud_cfg["autoinstall"]
             target = self.base_relative(cloud_autoinstall_path)
             from cloudinit import safeyaml
 
-            write_file(target, safeyaml.dumps(cfg))
+            write_file(target, safeyaml.dumps(autoinstall))
         else:
             log.debug("no autoinstall found in cloud-config")
 
@@ -778,7 +845,7 @@ class SubiquityServer(Application):
             if "disabled" in status:
                 log.debug("Skip cloud-init autoinstall, cloud-init is disabled")
             else:
-                self.load_cloud_config()
+                await self.load_cloud_config()
 
     def select_autoinstall(self):
         # precedence
