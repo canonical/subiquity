@@ -24,14 +24,17 @@ from subiquity.common.types import NonReportableError, PasswordKind
 from subiquity.server.autoinstall import AutoinstallValidationError
 from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.server import (
+    NOPROBERARG,
     MetaController,
     SubiquityServer,
     cloud_autoinstall_path,
     iso_autoinstall_path,
     root_autoinstall_path,
 )
+from subiquitycore.context import Context
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.parameterized import parameterized
 from subiquitycore.utils import run_command
 
 
@@ -313,3 +316,143 @@ class TestExceptionHandling(SubiTestCase):
         self.server.make_apport_report.assert_called()
         self.assertIsNotNone(self.server.fatal_error)
         self.assertIsNone(self.server.nonreportable_error)
+
+
+class TestEventReporting(SubiTestCase):
+    async def asyncSetUp(self):
+        opts = Mock()
+        opts.dry_run = True
+        opts.output_base = self.tmp_dir()
+        opts.machine_config = NOPROBERARG
+        self.server = SubiquityServer(opts, None)
+
+    @parameterized.expand(
+        (
+            # A very tedious to read truth table for testing
+            # behavior. A value of None should mean another
+            # option is shadowing the importance of that value
+            # ex: in the is-install-context it doesn't matter
+            # if it came from a controller. Except interactive=None
+            # is a valid value.
+            #
+            #
+            #  -> Special "is-install-context" to force logging
+            # |     -> Install is interactive
+            # |    |      -> Comes from a controller
+            # |    |     |      -> That controller is interactive
+            # |    |     |     |      -> Expected to send
+            # |    |     |     |     |
+            (True, True, None, None, True),
+            (True, False, None, None, True),
+            (True, None, None, None, True),
+            (False, True, None, None, False),
+            (False, True, True, True, False),
+            (False, True, True, False, True),
+            (False, False, False, None, True),
+        )
+    )
+    async def test_maybe_push_to_journal(
+        self,
+        is_install_context,
+        interactive,
+        from_controller,
+        controller_is_interactive,
+        expected_to_send,
+    ):
+        context: Context = Context(
+            self.server, "MockContext", "description", None, "INFO"
+        )
+
+        context.set("is-install-context", is_install_context)
+        self.server.interactive = interactive
+        if from_controller:
+            controller = Mock()
+            controller.interactive = lambda: controller_is_interactive
+            context.set("controller", controller)
+
+        with patch("subiquity.server.server.journal.send") as journal_send_mock:
+            self.server._maybe_push_to_journal(
+                "event_type", context, context.description
+            )
+        if expected_to_send:
+            journal_send_mock.assert_called_once()
+        else:
+            journal_send_mock.assert_not_called()
+
+    @parameterized.expand(
+        (
+            # interactive, pushed to journal
+            (True, False),
+            (None, False),
+            (False, True),
+        )
+    )
+    def test_push_info_events(self, interactive, expect_pushed):
+        """Test info event publication"""
+
+        context: Context = Context(
+            self.server, "MockContext", "description", None, "INFO"
+        )
+        self.server.interactive = interactive
+
+        with patch("subiquity.server.server.journal.send") as journal_send_mock:
+            self.server.report_info_event(context, "message")
+
+        if not expect_pushed:
+            journal_send_mock.assert_not_called()
+        else:
+            journal_send_mock.assert_called_once()
+            # message is the only positional argument
+            (message,) = journal_send_mock.call_args.args
+            self.assertIn("message", message)
+            self.assertNotIn("description", message)
+
+    @parameterized.expand(
+        (
+            # interactive
+            (True,),
+            (None,),
+            (False,),
+        )
+    )
+    def test_push_warning_events(self, interactive):
+        """Test warning event publication"""
+
+        context: Context = Context(
+            self.server, "MockContext", "description", None, "INFO"
+        )
+        self.server.interactive = interactive
+
+        with patch("subiquity.server.server.journal.send") as journal_send_mock:
+            self.server.report_warning_event(context, "message")
+
+        journal_send_mock.assert_called_once()
+        # message is the only positional argument
+        (message,) = journal_send_mock.call_args.args
+        self.assertIn("message", message)
+        self.assertNotIn("description", message)
+
+    @parameterized.expand(
+        (
+            # interactive
+            (True,),
+            (None,),
+            (False,),
+        )
+    )
+    def test_push_error_events(self, interactive):
+        """Test error event publication"""
+
+        context: Context = Context(
+            self.server, "MockContext", "description", None, "INFO"
+        )
+        self.server.interactive = interactive
+
+        with patch("subiquity.server.server.journal.send") as journal_send_mock:
+            self.server.report_error_event(context, "message")
+
+        journal_send_mock.assert_called_once()
+        # message is the only positional argument
+        (message,) = journal_send_mock.call_args.args
+        self.assertIn("message", message)
+        self.assertNotIn("description", message)
