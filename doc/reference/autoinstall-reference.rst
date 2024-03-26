@@ -3,10 +3,40 @@
 Autoinstall configuration reference manual
 ==========================================
 
-The autoinstall file uses the YAML format. At the top level, it must be a
-mapping containing the keys described in this document. Unrecognised keys
-are ignored in version 1, but will cause a fatal validation error in future
-versions.
+The autoinstall file uses the YAML format. At the top level is a
+single key ``autoinstall`` which contains a mapping of the keys described in
+this document. Unrecognised keys are ignored in version 1, but will cause a
+fatal validation error in future versions.
+
+Here is an example of a minimal autoinstall configuration:
+
+.. code-block:: yaml
+
+    autoinstall:
+      version: 1
+      identity:
+       ...
+
+
+At the top level is the ``autoinstall`` keyword, which contains a version section
+and an (incomplete) identity section which are explained in more detail below.
+Any other key at the level of ``autoinstall``, will result in an autoinstall
+validation error at runtime.
+
+.. warning::
+
+   This behaviour was first introduced during 24.04 (Noble). On any ISOs built
+   before this, you will need to refresh the installer to see this behaviour.
+   Please the note below about the old format.
+
+.. note::
+
+  Technically, in all but one case the top level ``autoinstall`` keyword is
+  strictly unnecessary. This keyword is only necessary when serving autoinstall
+  via cloud-config. For backwards compatibility this format is still supported
+  for non-cloud-config based delivery methods; however, it is
+  **highly recommended** to use the format with a top-level ``autoinstall``
+  keyword as mistakes in this formatting are a common source of confusion.
 
 
 .. _ai-schema:
@@ -29,6 +59,10 @@ Several configuration keys are lists of commands to be executed. Each command ca
 Top-level keys
 --------------
 
+The following keys can be used to configure various aspects of the installation.
+If the global ``autoinstall`` key is provided, then all "top-level keys" must
+be provided underneath it and "top-level" refers to this sub-level. The
+examples below demonstrate this structure.
 
 .. warning::
   In version 1, Subiquity will emit warnings when encountering unrecognised
@@ -57,12 +91,13 @@ A list of configuration keys to still show in the user interface (UI). For examp
 
 .. code-block:: yaml
 
-    version: 1
-    interactive-sections:
-      - network
-    identity:
-      username: ubuntu
-      password: $crypted_pass
+    autoinstall:
+      version: 1
+      interactive-sections:
+        - network
+      identity:
+        username: ubuntu
+        password: $crypted_pass
 
 This example stops on the network screen and allows the user to change the defaults. If a value is provided for an interactive section, it is used as the default.
 
@@ -221,22 +256,24 @@ For example, to run DHCP version 6 on a specific network interface:
 
 .. code-block:: yaml
 
-    network:
-      version: 2
-      ethernets:
-        enp0s31f6:
-          dhcp6: true
-
-Note that in the 20.04 GA release of Subiquity, the behaviour is slightly different and requires you to write this with an extra ``network:`` key:
-
-.. code-block:: yaml
-
-    network:
+    autoinstall:
       network:
         version: 2
         ethernets:
           enp0s31f6:
             dhcp6: true
+
+Note that in the 20.04 GA release of Subiquity, the behaviour is slightly different and requires you to write this with an extra ``network:`` key:
+
+.. code-block:: yaml
+
+    autoinstall:
+      network:
+        network:
+          version: 2
+          ethernets:
+            enp0s31f6:
+              dhcp6: true
 
 Versions later than 20.04 support this syntax, too (for compatibility). When using a newer version, use the regular syntax.
 
@@ -274,17 +311,18 @@ The default is:
 
 .. code-block:: yaml
 
-    apt:
-      preserve_sources_list: false
-      mirror-selection:
-        primary:
-          - country-mirror
-          - arches: [i386, amd64]
-            uri: "http://archive.ubuntu.com/ubuntu"
-          - arches: [s390x, arm64, armhf, powerpc, ppc64el, riscv64]
-            uri: "http://ports.ubuntu.com/ubuntu-ports"
-      fallback: abort
-      geoip: true
+    autoinstall:
+      apt:
+        preserve_sources_list: false
+        mirror-selection:
+          primary:
+            - country-mirror
+            - arches: [i386, amd64]
+              uri: "http://archive.ubuntu.com/ubuntu"
+            - arches: [s390x, arm64, armhf, powerpc, ppc64el, riscv64]
+              uri: "http://ports.ubuntu.com/ubuntu-ports"
+        fallback: abort
+        geoip: true
 
 mirror-selection
 ^^^^^^^^^^^^^^^^
@@ -330,21 +368,23 @@ To specify a mirror, use a configuration like this:
 
 .. code-block:: yaml
 
-    apt:
-      mirror-selection:
-        primary:
-          - uri: YOUR_MIRROR_GOES_HERE
-          - country-mirror
-          - uri: http://archive.ubuntu.com/ubuntu
+    autoinstall:
+      apt:
+        mirror-selection:
+          primary:
+            - uri: YOUR_MIRROR_GOES_HERE
+            - country-mirror
+            - uri: http://archive.ubuntu.com/ubuntu
 
 To add a PPA:
 
 .. code-block:: yaml
 
-    apt:
-      sources:
-        curtin-ppa:
-          source: ppa:curtin-dev/test-archive
+    autoinstall:
+      apt:
+        sources:
+          curtin-ppa:
+            source: ppa:curtin-dev/test-archive
 
 .. _ai-storage:
 
@@ -364,31 +404,33 @@ The three supported layouts at the time of writing are ``lvm``, ``direct`` and `
 
 .. code-block:: yaml
 
-    storage:
-      layout:
-        name: lvm
-    storage:
-      layout:
-        name: direct
-    storage:
-      layout:
-        name: zfs
+    autoinstall:
+      storage:
+        layout:
+          name: lvm
+      storage:
+        layout:
+          name: direct
+      storage:
+        layout:
+          name: zfs
 
 
 By default, these layouts install to the largest disk in a system, but you can supply a match spec (see below) to indicate which disk to use:
 
 .. code-block:: yaml
 
-    storage:
-      layout:
-        name: lvm
-        match:
-          serial: CT*
-    storage:
-      layout:
-        name: direct
-        match:
-          ssd: true
+    autoinstall:
+      storage:
+        layout:
+          name: lvm
+          match:
+            serial: CT*
+      storage:
+        layout:
+          name: direct
+          match:
+            ssd: true
 
 .. note:: Match spec -- using ``match: {}`` matches an arbitrary disk.
 
@@ -396,10 +438,11 @@ When using the ``lvm`` layout, LUKS encryption can be enabled by supplying a pas
 
 .. code-block:: yaml
 
-    storage:
-      layout:
-        name: lvm
-        password: LUKS_PASSPHRASE
+    autoinstall:
+      storage:
+        layout:
+          name: lvm
+          password: LUKS_PASSPHRASE
 
 The default is to use the ``lvm`` layout.
 
@@ -427,11 +470,12 @@ Example with no size scaling and a passphrase:
 
 .. code-block:: yaml
 
-    storage:
-      layout:
-        name: lvm
-        sizing-policy: all
-        password: LUKS_PASSPHRASE
+    autoinstall:
+      storage:
+        layout:
+          name: lvm
+          sizing-policy: all
+          password: LUKS_PASSPHRASE
 
 Reset Partition
 ^^^^^^^^^^^^^^^
@@ -444,29 +488,32 @@ An example to enable Reset Partition:
 
 .. code-block:: yaml
 
-    storage:
-      layout:
-        name: direct
-        reset-partition: true
+    autoinstall:
+      storage:
+        layout:
+          name: direct
+          reset-partition: true
 
 The size of the reset partition can also be fixed to a specified size.  This is an example to fix Reset Partition to 12 GiB:
 
 .. code-block:: yaml
 
-    storage:
-      layout:
-        name: direct
-        reset-partition: 12G
+    autoinstall:
+      storage:
+        layout:
+          name: direct
+          reset-partition: 12G
 
 The installer can also install Reset Partition without installing the system.  To do this, set ``reset-partition-only`` to ``true``:
 
 .. code-block:: yaml
 
-    storage:
-      layout:
-        name: direct
-        reset-partition: true
-        reset-partition-only: true
+    autoinstall:
+      storage:
+        layout:
+          name: direct
+          reset-partition: true
+          reset-partition-only: true
 
 Action-based configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -482,15 +529,16 @@ An example storage section:
 
 .. code-block:: yaml
 
-    storage:
-      swap:
-        size: 0
-      config:
-        - type: disk
-          id: disk0
-          serial: ADATA_SX8200PNP_XXXXXXXXXXX
-        - type: partition
-          ...
+    autoinstall:
+      storage:
+        swap:
+          size: 0
+        config:
+          - type: disk
+            id: disk0
+            serial: ADATA_SX8200PNP_XXXXXXXXXXX
+          - type: partition
+            ...
 
 The extensions to the curtin syntax allow for disk selection and partition or logical-volume sizing.
 
@@ -613,11 +661,12 @@ Example:
 
 .. code-block:: yaml
 
-    identity:
-      realname: 'Ubuntu User'
-      username: ubuntu
-      password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
-      hostname: ubuntu
+    autoinstall:
+      identity:
+        realname: 'Ubuntu User'
+        username: ubuntu
+        password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
+        hostname: ubuntu
 
 .. _ai-active-directory:
 
@@ -758,10 +807,11 @@ A list of snaps to install. Each snap is represented as a mapping with a require
 
 .. code-block:: yaml
 
-    snaps:
-      - name: etcd
-        channel: edge
-        classic: false
+    autoinstall:
+      snaps:
+        - name: etcd
+          channel: edge
+          classic: false
 
 .. _ai-debconf-selections:
 
@@ -898,41 +948,45 @@ The default configuration is:
 
 .. code-block:: yaml
 
-   reporting:
-     builtin:
-       type: print
+   autoinstall:
+     reporting:
+       builtin:
+         type: print
 
 Report to rsyslog:
 
 .. code-block:: yaml
 
-   reporting:
-     central:
-       type: rsyslog
-       destination: "@192.168.0.1"
+   autoinstall:
+     reporting:
+       central:
+         type: rsyslog
+         destination: "@192.168.0.1"
 
 
 Suppress the default output:
 
 .. code-block:: yaml
 
-   reporting:
-     builtin:
-       type: none
+   autoinstall:
+     reporting:
+       builtin:
+         type: none
 
 Report to a curtin-style webhook:
 
 .. code-block:: yaml
 
-   reporting:
-     hook:
-       type: webhook
-       endpoint: http://example.com/endpoint/path
-       consumer_key: "ck_value"
-       consumer_secret: "cs_value"
-       token_key: "tk_value"
-       token_secret: "tk_secret"
-       level: INFO
+   autoinstall:
+     reporting:
+       hook:
+         type: webhook
+         endpoint: http://example.com/endpoint/path
+         consumer_key: "ck_value"
+         consumer_secret: "cs_value"
+         token_key: "tk_value"
+         token_secret: "tk_secret"
+         level: INFO
 
 .. _ai-user-data:
 
