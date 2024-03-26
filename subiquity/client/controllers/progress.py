@@ -46,6 +46,10 @@ class ProgressController(SubiquityTuiController):
             )
         elif event["SUBIQUITY_EVENT_TYPE"] == "finish":
             self.progress_view.event_finish(event["SUBIQUITY_CONTEXT_ID"])
+        else:
+            event_type = event["SUBIQUITY_EVENT_TYPE"]
+            message = event["MESSAGE"]
+            self.progress_view.event_other(message, event_type)
 
     def log_line(self, event):
         log_line = event["MESSAGE"]
