@@ -161,12 +161,6 @@ class DebconfSelectionsModel:
         return {}
 
     def get_apt_config(self, final: bool, has_network: bool) -> Dict[str, Any]:
-        # Workaround for LP: #2055294
-        # TODO remove when the bug is fixed
-        if not self.selections:
-            grub2_selection = "grub-pc grub-efi/cloud_style_installation boolean false"
-            return {"debconf_selections": {"subiquity": grub2_selection}}
-
         return {"debconf_selections": {"subiquity": self.selections}}
 
 
