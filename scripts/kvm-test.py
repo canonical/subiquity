@@ -351,8 +351,8 @@ def build(ctx):
                 assert_exists(snap)
                 livefs_edit(ctx, '--add-snap-from-store', 'core20', 'stable',
                             '--inject-snap', snap)
-    elif project == 'ubuntu-desktop-installer':
-        with snap_manager('udi_test.snap') as snap:
+    elif project == 'ubuntu-desktop-bootstrap':
+        with snap_manager('udb_test.snap') as snap:
             run('snapcraft clean --use-lxd')
             run(f'snapcraft pack --use-lxd --output {snap} {snapargs}')
             assert_exists(snap)
