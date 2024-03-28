@@ -32,7 +32,7 @@ class WSLConfigurationBaseController(SubiquityTuiController):
             "WSLConfigurationBaseController.done next_screen user_spec=%s",
             configuration_data,
         )
-        self.app.next_screen(self.endpoint.POST(configuration_data))
+        self.app.request_next_screen(self.endpoint.POST(configuration_data))
 
     def cancel(self):
-        self.app.prev_screen()
+        self.app.request_prev_screen()

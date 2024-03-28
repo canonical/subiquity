@@ -33,8 +33,8 @@ class ProxyController(SubiquityTuiController):
             self.done(self.answers["proxy"])
 
     def cancel(self):
-        self.app.prev_screen()
+        self.app.request_prev_screen()
 
     def done(self, proxy):
         log.debug("ProxyController.done next_screen proxy=%s", proxy)
-        self.app.next_screen(self.endpoint.POST(proxy))
+        self.app.request_next_screen(self.endpoint.POST(proxy))

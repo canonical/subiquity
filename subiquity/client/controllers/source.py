@@ -43,7 +43,7 @@ class SourceController(SubiquityTuiController):
             form._click_done(None)
 
     def cancel(self):
-        self.app.prev_screen()
+        self.app.request_prev_screen()
 
     def done(self, source_id, search_drivers: bool):
         log.debug(
@@ -51,4 +51,4 @@ class SourceController(SubiquityTuiController):
             source_id,
             search_drivers,
         )
-        self.app.next_screen(self.endpoint.POST(source_id, search_drivers))
+        self.app.request_next_screen(self.endpoint.POST(source_id, search_drivers))

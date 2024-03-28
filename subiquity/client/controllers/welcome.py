@@ -48,10 +48,10 @@ class WelcomeController(SubiquityTuiController):
         log.debug("WelcomeController.done %s next_screen", code)
         i18n.switch_language(code)
         self.app.native_language = display_name
-        self.app.next_screen(self.endpoint.POST(code))
+        self.app.request_next_screen(self.endpoint.POST(code))
 
     def cancel(self, sender=None):
         if not self.serial:
             # Can't go back from here unless we're on serial!
             pass
-        self.app.prev_screen()
+        self.app.request_prev_screen()

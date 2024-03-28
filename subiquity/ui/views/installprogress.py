@@ -90,7 +90,7 @@ class ProgressView(BaseView):
     def event_start(self, context_id, context_parent_id, message):
         self.event_finish(context_parent_id)
         walker = self.event_listbox.base_widget.body
-        spinner = Spinner()
+        spinner = Spinner(app=self.controller.app)
         spinner.start()
         new_line = Columns(
             [
@@ -101,6 +101,7 @@ class ProgressView(BaseView):
         )
         self.ongoing[context_id] = len(walker)
         self._add_line(self.event_listbox, new_line)
+        self.request_redraw_if_visible()
 
     def event_finish(self, context_id):
         index = self.ongoing.pop(context_id, None)
@@ -110,6 +111,7 @@ class ProgressView(BaseView):
         spinner = walker[index][1]
         spinner.stop()
         walker[index] = walker[index][0]
+        self.request_redraw_if_visible()
 
     def event_other(self, message: str, event_type: str) -> None:
         """Print events that aren't start or finish events"""
@@ -296,7 +298,7 @@ class InstallConfirmation(Stretchy):
         if self.app.controllers.Progress.showing:
             run_bg_task(self.app.confirm_install())
         else:
-            self.app.next_screen(self.app.confirm_install())
+            self.app.request_next_screen(self.app.confirm_install())
 
     def cancel(self, sender):
         self.app.remove_global_overlay(self)

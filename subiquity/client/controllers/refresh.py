@@ -77,7 +77,7 @@ class RefreshController(SubiquityTuiController):
 
     def done(self, sender=None):
         log.debug("RefreshController.done next_screen")
-        self.app.next_screen()
+        self.app.request_next_screen()
 
     def cancel(self, sender=None):
-        self.app.prev_screen()
+        self.app.request_prev_screen()

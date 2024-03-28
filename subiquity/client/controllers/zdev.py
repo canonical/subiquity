@@ -33,11 +33,11 @@ class ZdevController(SubiquityTuiController):
             self.done()
 
     def cancel(self):
-        self.app.prev_screen()
+        self.app.request_prev_screen()
 
     def done(self):
         # switch to next screen
-        self.app.next_screen()
+        self.app.request_next_screen()
 
     async def chzdev(self, action, zdevinfo):
         return await self.endpoint.chzdev.POST(action, zdevinfo)

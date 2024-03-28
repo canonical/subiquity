@@ -350,7 +350,12 @@ class SnapCheckBox(CheckBox):
 
     def keypress(self, size, key):
         if key.startswith("enter"):
-            schedule_task(self.load_info())
+
+            async def load_info_and_redraw():
+                await self.load_info()
+                self.parent.request_redraw_if_visible()
+
+            schedule_task(load_info_and_redraw())
         else:
             return super().keypress(size, key)
 
@@ -379,14 +384,18 @@ class SnapListView(BaseView):
             self.loaded(data)
 
     def wait_load(self):
-        spinner = Spinner(style="dots")
+        async def wait_load_and_redraw():
+            await self._wait_load(spinner)
+            self.request_redraw_if_visible()
+
+        spinner = Spinner(style="dots", app=self.controller.app)
         spinner.start()
         self._w = screen(
             [spinner],
             [ok_btn(label=_("Continue"), on_press=self.done)],
             excerpt=_("Loading server snaps from store, please wait..."),
         )
-        schedule_task(self._wait_load(spinner))
+        schedule_task(wait_load_and_redraw())
 
     async def _wait_load(self, spinner):
         # If we show the loading screen at all, we want to show it for

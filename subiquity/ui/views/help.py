@@ -429,8 +429,12 @@ class HelpMenu(PopUpLauncher):
         self.open_pop_up()
 
     def _open(self, sender):
+        async def get_ssh_info_and_redraw():
+            await self._get_ssh_info()
+            await self.app.redraw_screen()
+
         log.debug("open help menu")
-        run_bg_task(self._get_ssh_info())
+        run_bg_task(get_ssh_info_and_redraw())
 
     def create_pop_up(self):
         self._menu = OpenHelpMenu(self)
@@ -505,7 +509,11 @@ class HelpMenu(PopUpLauncher):
         self._show_overlay(GlobalKeyStretchy(self.app))
 
     def debug_shell(self, sender):
-        self.app.debug_shell()
+        async def debug_shell_and_redraw():
+            await self.app.debug_shell()
+            await self.app.redraw_screen()
+
+        run_bg_task(debug_shell_and_redraw())
 
     def toggle_rich(self, sender):
         self.app.toggle_rich()

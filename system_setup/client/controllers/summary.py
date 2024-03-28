@@ -60,6 +60,8 @@ class SummaryController(SubiquityTuiController):
             if self.app_state == ApplicationState.DONE:
                 if self.answers.get("reboot", False):
                     self.click_reboot()
+            if self.summary_view:
+                self.summary_view.request_redraw_if_visible()
 
     async def make_ui(self):
         real_name = ""

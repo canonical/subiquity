@@ -39,7 +39,7 @@ class SerialController(SubiquityTuiController):
     def done(self, rich):
         log.debug("SerialController.done rich %s next_screen", rich)
         self.app.set_rich(rich)
-        self.app.next_screen()
+        self.app.request_next_screen()
 
     def cancel(self):
         # Can't go back from here!

@@ -270,10 +270,10 @@ class ExampleController(SubiquityTuiController):
         return ExampleView(self, thing)
 
     def cancel(self):
-        self.app.prev_screen()
+        self.app.request_prev_screen()
 
     def done(self, thing):
-        self.app.next_screen(self.endpoint.POST(thing))
+        self.app.request_next_screen(self.endpoint.POST(thing))
 ```
 
 Setting `endpoint_name` means that self.client gets set to an implementation of

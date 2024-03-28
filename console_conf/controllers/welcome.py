@@ -24,7 +24,7 @@ class WelcomeController(TuiController):
         return self.welcome_view(self)
 
     def done(self):
-        self.app.next_screen()
+        self.app.request_next_screen()
 
     def cancel(self):
         # Can't go back from here!
