@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import os
 import shlex
 from typing import Any
@@ -21,8 +22,9 @@ from unittest.mock import AsyncMock, Mock, patch
 import jsonschema
 from jsonschema.validators import validator_for
 
+from subiquity.cloudinit import CloudInitSchemaValidationError
 from subiquity.common.types import NonReportableError, PasswordKind
-from subiquity.server.autoinstall import AutoinstallValidationError
+from subiquity.server.autoinstall import AutoinstallError, AutoinstallValidationError
 from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.server import (
     NOPROBERARG,
@@ -356,6 +358,92 @@ class TestAutoinstallValidation(SubiTestCase):
 
         self.assertEqual(valid, good)
         self.assertEqual(invalid, bad)
+
+    @parameterized.expand(
+        (
+            # Has valid cloud config, no autoinstall
+            ({"valid-cloud": "data"}, {}, False),
+            # Has valid cloud config and autoinstall, no valid ai in cloud cfg
+            (
+                {
+                    "valid-cloud": "data",
+                    "autoinstall": {
+                        "version": 1,
+                        "interactive-sections": ["identity"],
+                    },
+                },
+                {
+                    "version": 1,
+                    "interactive-sections": ["identity"],
+                },
+                False,
+            ),
+            # Has valid autoinstall directive in cloud config
+            (
+                {
+                    "interactive-sections": "data",
+                    "autoinstall": {
+                        "version": 1,
+                        "interactive-sections": ["identity"],
+                    },
+                },
+                None,  # Doesn't return
+                True,
+            ),
+            # Invalid cloud config key is autoinstall and no autoinstall
+            (
+                {
+                    "interactive-sections": ["identity"],
+                },
+                None,  # Doesn't return
+                True,
+            ),
+            # Has invalid cloud config key but is not valid autoinstall either
+            (
+                {
+                    "something-else": "data",
+                    "autoinstall": {
+                        "version": 1,
+                        "interactive-sections": ["identity"],
+                    },
+                },
+                {
+                    "version": 1,
+                    "interactive-sections": ["identity"],
+                },
+                False,
+            ),
+        )
+    )
+    async def test_autoinstall_from_cloud_config(self, cloud_cfg, expected, throws):
+        """Test autoinstall extract from cloud config."""
+
+        self.server.base_schema = SubiquityServer.base_schema
+        self.pseudo_load_controllers()
+
+        cloud_data = copy.copy(cloud_cfg)
+        cloud_data.pop("valid-cloud", None)
+        cloud_data.pop("autoinstall", None)
+
+        with patch("subiquity.server.server.validate_cloud_init_schema") as val_mock:
+            if len(cloud_data) == 0:
+                val_mock.return_value = True
+            else:
+                val_mock.side_effect = CloudInitSchemaValidationError(
+                    keys=list(cloud_data.keys())
+                )
+
+            if throws:
+                with self.assertRaises(AutoinstallError):
+                    cfg = await self.server._extract_autoinstall_from_cloud_config(
+                        cloud_cfg=cloud_cfg
+                    )
+            else:
+                cfg = await self.server._extract_autoinstall_from_cloud_config(
+                    cloud_cfg=cloud_cfg
+                )
+
+                self.assertEqual(cfg, expected)
 
 
 class TestMetaController(SubiTestCase):
