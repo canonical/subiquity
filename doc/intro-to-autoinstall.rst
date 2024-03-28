@@ -94,18 +94,6 @@ path is relative to the rootfs of the installation system. For example:
 
 * :code:`subiquity.autoinstallpath=path/to/autoinstall.yaml`
 
-.. note::
-
-    Directly specifying autoinstall as a :code:`autoinstall.yaml` file does not
-    require a :code:`#cloud-config` header, and does not use a top level
-    ``autoinstall:`` key. The autoinstall directives are placed at the top
-    level. For example:
-
-    .. code-block:: yaml
-
-        version: 1
-        ....
-
 
 Order precedence of the autoinstall locations
 =============================================

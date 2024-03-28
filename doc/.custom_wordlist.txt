@@ -73,6 +73,7 @@ pw
 realname
 rootfs
 rsyslog
+runtime
 subvolume
 subvolumes
 superset
