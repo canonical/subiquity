@@ -1141,6 +1141,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         for disk in self.potential_boot_disks(check_boot=False):
             part_align = disk.alignment_data().part_align
             for partition in disk.partitions():
+                if partition._is_in_use:
+                    continue
                 vals = sizes.calculate_guided_resize(
                     partition.estimated_min_size,
                     partition.size,

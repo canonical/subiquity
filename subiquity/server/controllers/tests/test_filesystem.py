@@ -903,6 +903,25 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual(1, len(resp.targets))
 
     @parameterized.expand(bootloaders_and_ptables)
+    async def test_used_half_disk_mounted(self, bootloader, ptable):
+        # When a partition is already mounted, it can't be resized.
+        await self._setup(bootloader, ptable, size=100 << 30)
+        p = make_partition(
+            self.model, self.disk, preserve=True, size=50 << 30, is_in_use=True
+        )
+        self.fs_probe[p._path()] = {"ESTIMATED_MIN_SIZE": 1 << 20}
+        resp = await self.fsc.v2_guided_GET()
+
+        reformat = resp.targets.pop(0)
+        self.assertEqual(
+            GuidedStorageTargetReformat(
+                disk_id=self.disk.id, allowed=default_capabilities
+            ),
+            reformat,
+        )
+        self.assertEqual(1, len(resp.targets))
+
+    @parameterized.expand(bootloaders_and_ptables)
     async def test_used_full_disk(self, bootloader, ptable):
         await self._setup(bootloader, ptable)
         p = make_partition(
