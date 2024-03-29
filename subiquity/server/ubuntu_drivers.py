@@ -301,4 +301,10 @@ def get_ubuntu_drivers_interface(app) -> UbuntuDriversInterface:
         cls = UbuntuDriversFakePCIDevicesInterface
         log.debug("Using fake-devices-wrapper")
 
+    # For quickly testing MOK enrollment we install on server and force no gpgpu
+    # The caveat to this is that it also has to be an online install
+    if "server-force-no-gpgpu" in app.opts.kernel_cmdline:
+        log.debug("Forcing no gpgpu drivers. Requires online install on server.")
+        is_server = False
+
     return cls(app, gpgpu=is_server)
