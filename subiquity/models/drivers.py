@@ -15,8 +15,28 @@
 
 import logging
 
+from subiquity.common.pkg import TargetPkg
+
 log = logging.getLogger("subiquity.models.drivers")
 
 
 class DriversModel:
     do_install = False
+    fake_pci_devices: bool = False
+
+    async def target_packages(self) -> list[TargetPkg]:
+        if self.fake_pci_devices:
+            return [
+                TargetPkg(name="umockdev", skip_when_offline=False),
+                TargetPkg(name="gir1.2-umockdev-1.0", skip_when_offline=False),
+            ]
+        else:
+            return []
+
+    async def live_packages(self) -> tuple[set, set]:
+        before = set()
+        during = set()
+        if self.fake_pci_devices:
+            before.add("umockdev")
+            before.add("gir1.2-umockdev-1.0")
+        return (before, during)
