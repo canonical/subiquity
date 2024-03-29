@@ -45,6 +45,7 @@ def make_app(model=None):
     app.prev_screen = mock.Mock()
     app.hub = MessageHub()
     app.opts = mock.Mock()
+    app.opts.kernel_cmdline = {}
     app.opts.dry_run = True
     app.scale_factor = 1000
     app.echo_syslog_id = None
