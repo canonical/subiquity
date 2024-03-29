@@ -168,6 +168,40 @@ class UbuntuDriversClientInterface(UbuntuDriversInterface):
         return self._oem_metapackages_from_output(result.stdout.decode("utf-8"))
 
 
+class UbuntuDriversFakePCIDevicesInterface(UbuntuDriversInterface):
+    """An implementation of ubuntu-drivers that wraps the calls with
+    the fake-devices-wrapper script."""
+
+    def __init__(self, app, gpgpu: bool) -> None:
+        super().__init__(app, gpgpu)
+
+        app.base_model.drivers.fake_pci_devices = True
+
+        prefix: list[str] = ["/usr/share/ubuntu-drivers-common/fake-devices-wrapper"]
+        self.list_drivers_cmd = prefix + self.list_drivers_cmd
+        self.list_oem_cmd = prefix + self.list_oem_cmd
+        self.install_drivers_cmd = prefix + self.install_drivers_cmd
+
+    async def ensure_cmd_exists(self, root_dir: str) -> None:
+        # TODO This does not tell us if the "--recommended" option is
+        # available.
+        try:
+            await arun_command(["sh", "-c", "command -v ubuntu-drivers"], check=True)
+        except subprocess.CalledProcessError:
+            raise CommandNotFoundError(
+                f"Command ubuntu-drivers is not available in {root_dir}"
+            )
+
+    async def list_drivers(self, root_dir: str, context) -> List[str]:
+        result = await arun_command(self.list_drivers_cmd)
+        return self._drivers_from_output(result.stdout)
+
+    async def list_oem(self, root_dir: str, context) -> List[str]:
+        # result = await run_curtin_command(self.list_oem_cmd, capture=True)
+        result = await arun_command(self.list_oem_cmd)
+        return self._oem_metapackages_from_output(result.stdout)
+
+
 class UbuntuDriversHasDriversInterface(UbuntuDriversInterface):
     """A dry-run implementation of ubuntu-drivers that returns a hard-coded
     list of drivers."""
@@ -261,5 +295,10 @@ def get_ubuntu_drivers_interface(app) -> UbuntuDriversInterface:
             cls = UbuntuDriversRunDriversInterface
         else:
             cls = UbuntuDriversHasDriversInterface
+
+    # Not elif. Also works on dry-run
+    if "fake-pci-devices" in app.opts.kernel_cmdline:
+        cls = UbuntuDriversFakePCIDevicesInterface
+        log.debug("Using fake-devices-wrapper")
 
     return cls(app, gpgpu=is_server)
