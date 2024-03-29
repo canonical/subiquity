@@ -598,6 +598,8 @@ class InstallController(SubiquityController):
 
             self.app.update_state(ApplicationState.RUNNING)
 
+            await self.install_live_packages(context=context)
+
             if self.model.target is None:
                 for_install_path = None
             elif self.supports_apt():
@@ -607,8 +609,6 @@ class InstallController(SubiquityController):
             else:
                 fsc = self.app.controllers.Filesystem
                 for_install_path = self.model.source.get_source(fsc._info.name)
-
-            await self.install_live_packages(context=context)
 
             if self.model.target is not None:
                 if os.path.exists(self.model.target):
