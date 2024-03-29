@@ -15,6 +15,9 @@ if [ -d "/snap/subiquity" ] ; then
 elif [ -d "/snap/ubuntu-desktop-installer" ] ; then
     SNAPNAME=ubuntu-desktop-installer
     INTERMEDIATE=bin/subiquity
+elif [ -d "/snap/ubuntu-desktop-bootstrap" ] ; then
+    SNAPNAME=ubuntu-desktop-bootstrap
+    INTERMEDIATE=bin/subiquity
 else
     echo "subiquity-like snap not found"
     exit 1
