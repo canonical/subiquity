@@ -61,8 +61,8 @@ placed under a top level :code:`autoinstall:` key, like so:
 .. code-block:: yaml
 
     #cloud-config
+    version: 1
     autoinstall:
-        version: 1
         ....
 
 .. note::
@@ -192,8 +192,8 @@ A minimal autoinstall configuration in
 .. code-block:: yaml
 
     #cloud-config
+    version: 1
     autoinstall:
-        version: 1
         identity:
             hostname: hostname
             username: username
