@@ -17,6 +17,8 @@ import asyncio
 import enum
 import functools
 import inspect
+from logging import Logger
+from typing import Optional
 
 
 class Status(enum.Enum):
@@ -118,13 +120,19 @@ class Context:
             c = c.parent
         return default
 
-    def info(self, message: str) -> None:
+    def info(self, message: str, log: Optional[Logger] = None) -> None:
+        if log is not None:
+            log.info(message)
         self.app.report_info_event(self, message)
 
-    def warning(self, message: str) -> None:
+    def warning(self, message: str, log: Optional[Logger] = None) -> None:
+        if log is not None:
+            log.warning(message)
         self.app.report_warning_event(self, message)
 
-    def error(self, message: str) -> None:
+    def error(self, message: str, log: Optional[Logger] = None) -> None:
+        if log is not None:
+            log.error(message)
         self.app.report_error_event(self, message)
 
 
