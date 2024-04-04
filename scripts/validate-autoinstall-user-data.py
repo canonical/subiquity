@@ -60,7 +60,13 @@ def main() -> None:
         assert user_data.readline() == "#cloud-config\n"
         def get_autoinstall_data(data): return data["autoinstall"]
     else:
-        def get_autoinstall_data(data): return data
+        def get_autoinstall_data(data):
+            try:
+                cfg = data["autoinstall"]
+            except KeyError:
+                cfg = data
+            return cfg
+
 
     # Verify autoinstall doc link is in the file
 

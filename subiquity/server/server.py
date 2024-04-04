@@ -668,7 +668,38 @@ class SubiquityServer(Application):
                 context=ctx,
             )
 
-    def load_autoinstall_config(self, *, only_early):
+    @with_context(name="read_config")
+    def _read_config(self, *, cfg_path: str, context: Context) -> dict[str, Any]:
+        with open(cfg_path) as fp:
+            config: dict[str, Any] = yaml.safe_load(fp)
+
+        autoinstall_config: dict[str, Any]
+
+        # Support "autoinstall" as a top-level key
+        if "autoinstall" in config:
+            autoinstall_config = config.pop("autoinstall")
+
+            # but the only top level key
+            if len(config) != 0:
+                self.interactive = bool(autoinstall_config.get("interactive-sections"))
+                msg: str = (
+                    "autoinstall.yaml is not a valid cloud config datasource.\n"
+                    "No other keys may be present alongside 'autoinstall' at "
+                    "the top level."
+                )
+                context.error(msg)
+                raise AutoinstallValidationError(
+                    owner="top-level keys",
+                    details="autoinstall.yaml is not a valid cloud config datasource",
+                )
+
+        else:
+            autoinstall_config = config
+
+        return autoinstall_config
+
+    @with_context()
+    def load_autoinstall_config(self, *, only_early, context):
         log.debug(
             "load_autoinstall_config only_early %s file %s",
             only_early,
@@ -689,8 +720,9 @@ class SubiquityServer(Application):
             self.interactive = True
             return
 
-        with open(self.autoinstall) as fp:
-            self.autoinstall_config = yaml.safe_load(fp)
+        self.autoinstall_config = self._read_config(
+            cfg_path=self.autoinstall, context=context
+        )
 
         # Check every time
         self.interactive = bool(self.autoinstall_config.get("interactive-sections"))

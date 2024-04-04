@@ -20,6 +20,7 @@ from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import jsonschema
+import yaml
 from jsonschema.validators import validator_for
 
 from subiquity.cloudinit import CloudInitSchemaValidationError
@@ -156,6 +157,7 @@ early-commands: ["{cmd}"]
 
 class TestAutoinstallValidation(SubiTestCase):
     async def asyncSetUp(self):
+        self.tempdir = self.tmp_dir()
         opts = Mock()
         opts.dry_run = True
         opts.output_base = self.tmp_dir()
@@ -170,6 +172,15 @@ class TestAutoinstallValidation(SubiTestCase):
             },
         }
         self.server.make_apport_report = Mock()
+
+    def path(self, relative_path):
+        return self.tmp_path(relative_path, dir=self.tempdir)
+
+    def create(self, path, contents):
+        path = self.path(path)
+        with open(path, "w") as fp:
+            fp.write(contents)
+        return path
 
     # Pseudo Load Controllers to avoid patching the loading logic for each
     # controller when we still want access to class attributes
@@ -444,6 +455,44 @@ class TestAutoinstallValidation(SubiTestCase):
                 )
 
                 self.assertEqual(cfg, expected)
+
+    async def test_autoinstall_validation__top_level_autoinstall(self):
+        """Test allow autoinstall as top-level key"""
+
+        new_style = {
+            "autoinstall": {
+                "version": 1,
+                "interactive-sections": ["identity"],
+                "apt": "...",
+            }
+        }
+        old_style = new_style["autoinstall"]
+
+        # Read new style correctly
+        path = self.create("autoinstall.yaml", yaml.dump(new_style))
+        self.assertEqual(self.server._read_config(cfg_path=path), old_style)
+
+        # No changes to old style
+        path = self.create("autoinstall.yaml", yaml.dump(old_style))
+        self.assertEqual(self.server._read_config(cfg_path=path), old_style)
+
+    async def test_autoinstall_validation__not_cloudinit_datasource(self):
+        """Test no cloud init datasources in new style autoinstall"""
+
+        new_style = {
+            "autoinstall": {
+                "version": 1,
+                "interactive-sections": ["identity"],
+                "apt": "...",
+            },
+            "cloudinit-data": "I am data",
+        }
+
+        with self.assertRaises(AutoinstallValidationError) as ctx:
+            path = self.create("autoinstall.yaml", yaml.dump(new_style))
+            self.server._read_config(cfg_path=path)
+
+        self.assertEqual("top-level keys", ctx.exception.owner)
 
 
 class TestMetaController(SubiTestCase):

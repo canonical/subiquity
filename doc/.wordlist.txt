@@ -8,6 +8,8 @@ EBS
 EKS
 Grafana
 IAM
+ISO
+ISOs
 JSON
 Jira
 Juju
