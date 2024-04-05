@@ -1,11 +1,20 @@
-files: "(console_conf|subiquity|subiquitycore|system_setup)"
+files: "(console_conf|subiquity|subiquitycore|system_setup|doc)"
 repos:
   - repo: https://github.com/psf/black
     rev: 23.7.0
     hooks:
       - id: black
+        files: "(console_conf|subiquity|subiquitycore|system_setup)"
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
       - id: isort
         name: isort
+        files: "(console_conf|subiquity|subiquitycore|system_setup)"
+  - repo: local
+    hooks:
+      - id: doc-spelling
+        name: doc-spelling
+        language: system
+        entry: bash -c "cd doc/ && ./pre-commit-spell-check"
+        files: "doc/.*rst"
