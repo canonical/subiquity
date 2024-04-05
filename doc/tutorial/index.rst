@@ -15,6 +15,7 @@ This tutorial introduces the core concepts of autoinstall and is recommended as 
 .. toctree::
    :maxdepth: 1
 
-   basic-server-installation
+   creating-autoinstall-configuration
+   providing-autoinstall
+   operate-server-installer
    screen-by-screen
-

@@ -1,7 +1,7 @@
 Basic server installation
 =========================
 
-This chapter provides an overview of how to install Ubuntu Server Edition. See also the guide on :ref:`how to operate the installer <operate-server-installer>` for more information on using the installer, and the :doc:`screen-by-screen guide <screen-by-screen>` for more information about each of the installer screens.
+This chapter provides an overview of how to install Ubuntu Server Edition. See also the guide on :ref:`how to operate the installer <operate-server-installer>` for more information on using the installer, and the :ref:`screen-by-screen guide <screen-by-screen>` for more information about each of the installer screens.
 
 Preparing to install
 --------------------

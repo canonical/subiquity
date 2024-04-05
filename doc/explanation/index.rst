@@ -10,6 +10,6 @@ About the Server installer
 
 .. toctree::
    :maxdepth: 1
-   
-   operate-server-installer
-   configure-storage
+
+   cloudinit-autoinstall-interaction
+   zero-touch-autoinstall

@@ -14,14 +14,16 @@ Getting started with autoinstall
 
 .. toctree::
    :maxdepth: 1
-   
-   Autoinstall quick start <autoinstall-quickstart>
-   Autoinstall quick start for s390x <autoinstall-quickstart-s390x>
+
+   autoinstall-quickstart
+   autoinstall-quickstart-s390x
+   basic-server-installation
+   configure-storage
 
 Found a problem?
 ----------------
 
 .. toctree::
    :maxdepth: 1
-   
+
    report-bugs
