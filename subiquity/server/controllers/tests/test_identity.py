@@ -16,6 +16,7 @@
 import jsonschema
 from jsonschema.validators import validator_for
 
+from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controllers.identity import IdentityController
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
@@ -42,10 +43,48 @@ class TestControllerUserCreationFlows(SubiTestCase):
 
     async def test_server_requires_identity_case_4a1(self):
         self.app.base_model.source.current.variant = "server"
-        with self.assertRaises(Exception):
-            await self.ic.apply_autoinstall_config()
+
+        # Autoinstall: no identity or user data and identity is not interactive
+        self.app.autoinstall_config = {"interactive-sections": ["not-identity"]}
+        with self.assertRaises(AutoinstallError):
+            self.ic.load_autoinstall_data(None)
+
+    async def test_server_requires_identity_case_4a1__ok_interactive(self):
+        """Test no require identity for interactive identity"""
+        self.app.base_model.source.current.variant = "server"
+
+        # Explicitly interactive
+        self.app.autoinstall_config = {"interactive-sections": ["identity"]}
+        self.ic.load_autoinstall_data(None)
+
+        # Implicitly interactive
+        self.app.autoinstall_config = {"interactive-sections": ["*"]}
+        self.ic.load_autoinstall_data(None)
+
+        # No Autoinstall => interactive
+        self.app.autoinstall_config = {}
+        self.ic.load_autoinstall_data(None)
+
+    async def test_server_requires_identity_case_4a1__reset_only_true(self):
+        """Test no require identity for reset-partition-only=yes."""
+        self.app.base_model.source.current.variant = "server"
+
+        # No raise if reset-parition-only specified
+        self.app.autoinstall_config = {
+            "storage": {"layout": {"reset-partition-only": True}}
+        }
+        self.ic.load_autoinstall_data(None)
+
+    async def test_server_requires_identity_case_4a1__reset_only_false(self):
+        """Test require identity for reset-partition-only=no."""
+        self.app.base_model.source.current.variant = "server"
+
+        # raises if no reset-parition-only in storage:layout:
+        self.app.autoinstall_config = {"storage": {"layout": {}}}
+        with self.assertRaises(AutoinstallError):
+            self.ic.load_autoinstall_data(None)
 
     async def test_desktop_does_not_require_identity_case_4a2(self):
         self.app.base_model.source.current.variant = "desktop"
-        await self.ic.apply_autoinstall_config()
+        self.ic.load_autoinstall_data(None)
         # should not raise
