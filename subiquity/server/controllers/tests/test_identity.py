@@ -20,6 +20,7 @@ from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controllers.identity import IdentityController
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.parameterized import parameterized
 
 
 class TestIdentityController(SubiTestCase):
@@ -41,50 +42,44 @@ class TestControllerUserCreationFlows(SubiTestCase):
         self.ic = IdentityController(self.app)
         self.ic.model.user = None
 
-    async def test_server_requires_identity_case_4a1(self):
-        self.app.base_model.source.current.variant = "server"
-
-        # Autoinstall: no identity or user data and identity is not interactive
-        self.app.autoinstall_config = {"interactive-sections": ["not-identity"]}
-        with self.assertRaises(AutoinstallError):
-            self.ic.load_autoinstall_data(None)
-
-    async def test_server_requires_identity_case_4a1__ok_interactive(self):
-        """Test no require identity for interactive identity"""
-        self.app.base_model.source.current.variant = "server"
-
+    # Test cases for 4a1. Copied for 4a2 but all cases should be valid for desktop.
+    test_cases = [
+        #  (autoinstall config, valid)
+        #
+        # No identity or user data section and identity is not interactive
+        ({"interactive-sections": ["not-identity"]}, False),
         # Explicitly interactive
-        self.app.autoinstall_config = {"interactive-sections": ["identity"]}
-        self.ic.load_autoinstall_data(None)
-
+        ({"interactive-sections": ["identity"]}, True),
         # Implicitly interactive
-        self.app.autoinstall_config = {"interactive-sections": ["*"]}
-        self.ic.load_autoinstall_data(None)
-
+        ({"interactive-sections": ["*"]}, True),
         # No Autoinstall => interactive
-        self.app.autoinstall_config = {}
-        self.ic.load_autoinstall_data(None)
+        ({}, True),
+        # Can be missing if reset-parition-only specified
+        ({"storage": {"layout": {"reset-partition-only": True}}}, True),
+        # Can't be missing if reset-parition-only is not specified
+        ({"storage": {"layout": {}}}, False),
+        # user-data passed instead
+        ({"user-data": "..."}, True),
+    ]
 
-    async def test_server_requires_identity_case_4a1__reset_only_true(self):
-        """Test no require identity for reset-partition-only=yes."""
+    @parameterized.expand(test_cases)
+    async def test_server_requires_identity_case_4a1(self, config, valid):
+        """Test require identity section on Server"""
         self.app.base_model.source.current.variant = "server"
 
-        # No raise if reset-parition-only specified
-        self.app.autoinstall_config = {
-            "storage": {"layout": {"reset-partition-only": True}}
-        }
-        self.ic.load_autoinstall_data(None)
+        self.app.autoinstall_config = config
 
-    async def test_server_requires_identity_case_4a1__reset_only_false(self):
-        """Test require identity for reset-partition-only=no."""
-        self.app.base_model.source.current.variant = "server"
-
-        # raises if no reset-parition-only in storage:layout:
-        self.app.autoinstall_config = {"storage": {"layout": {}}}
-        with self.assertRaises(AutoinstallError):
+        if not valid:
+            with self.assertRaises(AutoinstallError):
+                self.ic.load_autoinstall_data(None)
+        else:
             self.ic.load_autoinstall_data(None)
 
-    async def test_desktop_does_not_require_identity_case_4a2(self):
+    @parameterized.expand(test_cases)
+    async def test_desktop_does_not_require_identity_case_4a2(self, config, valid):
+        """Test require identity section on Desktop"""
         self.app.base_model.source.current.variant = "desktop"
+
+        self.app.autoinstall_config = config
+        # should never raise
         self.ic.load_autoinstall_data(None)
-        # should not raise
