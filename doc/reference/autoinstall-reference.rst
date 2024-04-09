@@ -3,10 +3,7 @@
 Autoinstall configuration reference manual
 ==========================================
 
-The autoinstall file uses the YAML format. At the top level is a
-single key ``autoinstall`` which contains a mapping of the keys described in
-this document. Unrecognised keys are ignored in version 1, but will cause a
-fatal validation error in future versions.
+The autoinstall file uses the YAML format. At the top level is a single key, ``autoinstall``, which contains a mapping of the keys described in this document. Unrecognised keys are ignored in version 1, but they will cause a fatal validation error in future versions.
 
 Here is an example of a minimal autoinstall configuration:
 
@@ -18,25 +15,13 @@ Here is an example of a minimal autoinstall configuration:
        ...
 
 
-At the top level is the ``autoinstall`` keyword, which contains a version section
-and an (incomplete) identity section which are explained in more detail below.
-Any other key at the level of ``autoinstall``, will result in an autoinstall
-validation error at runtime.
-
-.. warning::
-
-   This behaviour was first introduced during 24.04 (Noble). On any ISOs built
-   before this, you will need to refresh the installer to see this behaviour.
-   Please the note below about the old format.
+At the top level is the ``autoinstall`` keyword. It contains a ``version`` section and an (incomplete) ``identity`` section, which are explained in more detail below. Any other key at the level of ``autoinstall`` results in an autoinstall validation error at run time.
 
 .. note::
 
-  Technically, in all but one case the top level ``autoinstall`` keyword is
-  strictly unnecessary. This keyword is only necessary when serving autoinstall
-  via cloud-config. For backwards compatibility this format is still supported
-  for non-cloud-config based delivery methods; however, it is
-  **highly recommended** to use the format with a top-level ``autoinstall``
-  keyword as mistakes in this formatting are a common source of confusion.
+    This behaviour was first introduced during 24.04 (Noble). On any ISOs built before 24.04, you need to refresh the installer to see this behaviour.
+
+    Technically, in all but one case the top level ``autoinstall`` keyword is strictly unnecessary. This keyword is only necessary when serving autoinstall via cloud-config. For backwards compatibility, this format is still supported for delivery methods not based on cloud-config; however, it is **highly recommended** to use the format with a top-level ``autoinstall`` keyword because mistakes in this formatting are a common source of confusion.
 
 
 .. _ai-schema:
@@ -59,15 +44,11 @@ Several configuration keys are lists of commands to be executed. Each command ca
 Top-level keys
 --------------
 
-The following keys can be used to configure various aspects of the installation.
-If the global ``autoinstall`` key is provided, then all "top-level keys" must
-be provided underneath it and "top-level" refers to this sub-level. The
-examples below demonstrate this structure.
+The following keys can be used to configure various aspects of the installation. If the global ``autoinstall`` key is provided, then all "top-level keys" must be provided underneath it and "top-level" refers to this sub-level. The examples below demonstrate this structure.
 
 .. warning::
-  In version 1, Subiquity will emit warnings when encountering unrecognised
-  keys. In later versions, a fatal validation error is thrown and the
-  installation will halt.
+
+  In version 1, Subiquity emits warnings when encountering unrecognised keys. In later versions, it results in a fatal validation error, and the installation halts.
 
 .. _ai-version:
 
