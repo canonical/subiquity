@@ -117,8 +117,8 @@ class SizeWidget(StringEditor):
                 )
             )
             # This will invoke self.form.clean_size() and it is expected that
-            # size_str (and therefore self.value) are propertly aligned.
-            self.accurate_value = self.form.size
+            # size_str (and therefore self.value) are properly aligned.
+            self.accurate_value = self.form.size.value
         else:
             aligned_sz = align_up(sz, self.form.alignment)
             aligned_sz_str = humanize_size(aligned_sz)
