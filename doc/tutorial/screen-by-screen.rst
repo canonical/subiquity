@@ -1,5 +1,7 @@
-Screen-by-screen installer
-==========================
+.. _screen-by-screen:
+
+Screen-by-screen installer walk-through
+=======================================
 
 The installer is designed to be easy to use without documentation. This guide provides more information on each of the screens of the installer to guide you through an installation.
 
