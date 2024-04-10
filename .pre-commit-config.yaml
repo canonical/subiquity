@@ -16,5 +16,5 @@ repos:
       - id: doc-spelling
         name: doc-spelling
         language: system
-        entry: bash -c "cd doc/ && ./pre-commit-spell-check"
+        entry: make -C doc spelling
         files: "doc/.*rst"

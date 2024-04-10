@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-# Setup sphinx virtual env if it's not already
-if [ ! -d .sphinx/venv ]; then
-    make install
-fi
-
-make spelling
