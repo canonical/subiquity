@@ -616,6 +616,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         rpool.create_zfs(f"ROOT/ubuntu_{uuid}/var/spool")
         rpool.create_zfs(f"ROOT/ubuntu_{uuid}/var/www")
 
+        userdata_uuid = gen_zsys_uuid()
+        rpool.create_zfs("USERDATA", canmount="off", mountpoint="none")
+        rpool.create_zfs(f"USERDATA/root_{userdata_uuid}", mountpoint="/root")
+        rpool.create_zfs(f"USERDATA/home_{userdata_uuid}", mountpoint="/home")
+
     @functools.singledispatchmethod
     def start_guided(self, target: GuidedStorageTarget, disk: ModelDisk) -> gaps.Gap:
         """Setup changes to the disk to prepare the gap that we will be

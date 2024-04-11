@@ -593,6 +593,11 @@ class TestGuided(IsolatedAsyncioTestCase):
         zfs_boot = self.model._mount_for_path("/boot")
         self.assertEqual("zfs", zfs_boot.type)
 
+        # checking that these were created
+        [userdata] = self.model._all(type="zfs", volume="USERDATA")
+        [userdata_home] = self.model._all(type="zfs", path="/home")
+        [userdata_root] = self.model._all(type="zfs", path="/root")
+
     @parameterized.expand(boot_expectations)
     async def test_guided_zfs_luks_keystore(self, bootloader, ptable, p1mnt):
         await self._guided_setup(bootloader, ptable)
