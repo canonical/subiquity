@@ -91,12 +91,14 @@ class DriversController(SubiquityController):
 
     @with_context()
     async def _list_drivers(self, context):
+        log.debug("about to wait_apt")
         with context.child("wait_apt"):
             await self._wait_apt.wait()
         # The APT_CONFIGURED event (which unblocks _wait_apt.wait) is sent
         # after the user confirms the destruction changes. At this point, the
         # source is already mounted so the user can't go back all the way to
         # the source screen to enable/disable the "search drivers" checkbox.
+        log.debug("about to check if search_drivers")
         if not self.app.controllers.Source.model.search_drivers:
             self.drivers = []
             self.list_drivers_done_event.set()
@@ -104,12 +106,15 @@ class DriversController(SubiquityController):
         apt = self.app.controllers.Mirror.final_apt_configurer
         try:
             async with apt.overlay() as d:
+                log.debug("about to ensure_cmd_exists")
                 try:
                     # Make sure ubuntu-drivers is available.
                     await self.ubuntu_drivers.ensure_cmd_exists(d.mountpoint)
                 except CommandNotFoundError:
+                    log.debug("cmd dne")
                     self.drivers = []
                 else:
+                    log.debug("cmd exists")
                     self.drivers = await self.ubuntu_drivers.list_drivers(
                         root_dir=d.mountpoint, context=context
                     )

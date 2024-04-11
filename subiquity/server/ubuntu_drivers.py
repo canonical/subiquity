@@ -177,7 +177,11 @@ class UbuntuDriversFakePCIDevicesInterface(UbuntuDriversInterface):
 
         app.base_model.drivers.fake_pci_devices = True
 
-        prefix: list[str] = ["/usr/share/ubuntu-drivers-common/fake-devices-wrapper"]
+        prefix: list[str] = [
+            "env",
+            "-i",
+            "/usr/share/ubuntu-drivers-common/fake-devices-wrapper",
+        ]
         self.list_drivers_cmd = prefix + self.list_drivers_cmd
         self.list_oem_cmd = prefix + self.list_oem_cmd
         self.install_drivers_cmd = prefix + self.install_drivers_cmd
@@ -185,6 +189,7 @@ class UbuntuDriversFakePCIDevicesInterface(UbuntuDriversInterface):
     async def ensure_cmd_exists(self, root_dir: str) -> None:
         # TODO This does not tell us if the "--recommended" option is
         # available.
+        log.debug("in fake ensure")
         try:
             await arun_command(["sh", "-c", "command -v ubuntu-drivers"], check=True)
         except subprocess.CalledProcessError:
@@ -193,13 +198,37 @@ class UbuntuDriversFakePCIDevicesInterface(UbuntuDriversInterface):
             )
 
     async def list_drivers(self, root_dir: str, context) -> List[str]:
+        log.debug("in fake list")
         result = await arun_command(self.list_drivers_cmd)
+        log.debug("got fake list")
+        log.debug(f"fake list={result.stdout}")
+        log.debug(f"result stderr={result.stderr}")
         return self._drivers_from_output(result.stdout)
 
     async def list_oem(self, root_dir: str, context) -> List[str]:
         # result = await run_curtin_command(self.list_oem_cmd, capture=True)
         result = await arun_command(self.list_oem_cmd)
         return self._oem_metapackages_from_output(result.stdout)
+
+    async def install_drivers(self, root_dir: str, context) -> None:
+        await arun_command(
+            [
+                "cp",
+                "/usr/share/ubuntu-drivers-common/fake-devices-wrapper",
+                f"{root_dir}/usr/share/ubuntu-drivers-common/fake-devices-wrapper",
+            ]
+        )
+
+        await run_curtin_command(
+            self.app,
+            context,
+            "in-target",
+            "-t",
+            root_dir,
+            "--",
+            *self.install_drivers_cmd,
+            private_mounts=True,
+        )
 
 
 class UbuntuDriversHasDriversInterface(UbuntuDriversInterface):
