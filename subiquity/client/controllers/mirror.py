@@ -15,6 +15,7 @@
 
 import asyncio
 import logging
+from typing import Optional
 
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import MirrorCheckStatus, MirrorGet, MirrorPost
@@ -42,6 +43,15 @@ class MirrorController(SubiquityTuiController):
             # Just in case there is no candidate at all.
             # In practise, it should seldom happen.
             url = next(iter(mirror_response.candidates), "")
+
+        if not mirror_response.use_during_installation:
+            # If the user comes back to the mirror screen after accepting to
+            # do an installation without the archive (i.e., only fetching from
+            # the pool), the call to /network/has_network will return false. We
+            # need to reset the force_offline value if we want to run another
+            # mirror test.
+            await self.endpoint.POST(MirrorPost(use_during_installation=True))
+
         has_network = await self.app.client.network.has_network.GET()
         if has_network:
             check = await self.endpoint.check_mirror.progress.GET()
@@ -69,6 +79,19 @@ class MirrorController(SubiquityTuiController):
     def cancel(self):
         self.app.prev_screen()
 
-    def done(self, mirror):
-        log.debug("MirrorController.done next_screen mirror=%s", mirror)
-        self.app.next_screen(self.endpoint.POST(MirrorPost(elected=mirror)))
+    def done(self, mirror, skip_archive: Optional[bool]):
+        if skip_archive is not None:
+            use_during_installation = not skip_archive
+        else:
+            use_during_installation = None
+
+        data = MirrorPost(
+            elected=mirror, use_during_installation=use_during_installation
+        )
+
+        log.debug(
+            "MirrorController.done next_screen mirror=%s, use_during_installation=%s",
+            mirror,
+            use_during_installation,
+        )
+        self.app.next_screen(self.endpoint.POST(data))
