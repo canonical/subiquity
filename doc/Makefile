@@ -10,10 +10,12 @@ VENV          = .sphinx/venv/bin/activate
 
 
 # Put it first so that "make" without argument is like "make help".
-help:
-	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+help: install
+	@. $(VENV); $(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-install:
+install: .sphinx/venv
+
+.sphinx/venv: .sphinx/requirements.txt
 	@echo "... setting up virtualenv"
 	python3 -m venv .sphinx/venv
 	. $(VENV); pip install --upgrade -r .sphinx/requirements.txt
@@ -30,16 +32,20 @@ install:
                 "* check links: make linkcheck \n" \
                 "* check inclusive language: make woke \n" \
 		"--------------------------------------------------------------- \n"
-run:
+
+.sphinx/requirements.txt:
+	:
+
+run: install
 	. $(VENV); sphinx-autobuild -c . -b dirhtml "$(SOURCEDIR)" "$(BUILDDIR)"
 
-html:
+html: install
 	. $(VENV); $(SPHINXBUILD) -c . -b dirhtml "$(SOURCEDIR)" "$(BUILDDIR)" -w .sphinx/warnings.txt
 
-epub:
+epub: install
 	. $(VENV); $(SPHINXBUILD) -c . -b epub "$(SOURCEDIR)" "$(BUILDDIR)" -w .sphinx/warnings.txt
 
-serve:
+serve: run
 	cd "$(BUILDDIR)"; python3 -m http.server 8000
 
 clean: clean-doc
@@ -48,17 +54,17 @@ clean: clean-doc
 clean-doc:
 	git clean -fx "$(BUILDDIR)"
 
-spelling: html
+spelling: install html
 	. $(VENV) ; python3 -m pyspelling -c .sphinx/spellingcheck.yaml
 
-linkcheck:
+linkcheck: install
 	. $(VENV) ; $(SPHINXBUILD) -c . -b linkcheck  "$(SOURCEDIR)" "$(BUILDDIR)"
 
 woke:
 	type woke >/dev/null 2>&1 || { sudo snap install woke || exit 1; }
 	woke *.rst **/*.rst -c https://github.com/canonical-web-and-design/Inclusive-naming/raw/main/config.yml
 
-.PHONY: help Makefile
+.PHONY: help Makefile install
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
