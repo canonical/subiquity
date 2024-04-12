@@ -546,6 +546,27 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual(None, d1p2.mount)
         self.assertEqual(DRY_RUN_RESET_SIZE, d1p2.size)
 
+    @parameterized.expand(
+        (
+            ({}, False, None),
+            ({"reset-partition": True}, True, None),
+            ({"reset-partition": False}, False, None),
+            ({"reset-partition": "12345"}, True, 12345),
+            ({"reset-partition": "10G"}, True, 10737418240),
+            ({"reset-partition": 100000}, True, 100000),
+        )
+    )
+    async def test_rest_partition_size(
+        self, ai_data, reset_partition, reset_partition_size
+    ):
+        await self._guided_setup(Bootloader.UEFI, "gpt")
+        self.controller.guided = mock.AsyncMock()
+        layout = ai_data | {"name": "direct"}
+        await self.controller.run_autoinstall_guided(layout)
+        guided_choice = self.controller.guided.call_args.args[0]
+        self.assertEqual(guided_choice.reset_partition, reset_partition)
+        self.assertEqual(guided_choice.reset_partition_size, reset_partition_size)
+
     async def test_guided_direct_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
