@@ -327,7 +327,7 @@ fallback
 ^^^^^^^^
 
 * **type:** string (enumeration)
-* **default:** abort
+* **default:** offline-install
 
 Controls what Subiquity does when no primary mirror is usable. Supported values are:
 
