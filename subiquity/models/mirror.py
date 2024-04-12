@@ -269,7 +269,7 @@ class MirrorModel(object):
         self.default_mirror = LegacyPrimaryEntry.new_from_default(parent=self).uri
 
         # What to do if automatic mirror-selection fails.
-        self.fallback = MirrorSelectionFallback.ABORT
+        self.fallback = MirrorSelectionFallback.OFFLINE_INSTALL
 
     def _default_primary_entries(self) -> List[PrimaryEntry]:
         return [
