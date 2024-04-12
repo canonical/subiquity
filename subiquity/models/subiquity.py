@@ -437,7 +437,9 @@ class SubiquityModel:
                 },
             }
         )
+        grub_dpkg = yaml.dump({"grub_dpkg": {"enabled": False}})
         files = [
+            ("etc/cloud/cloud.cfg.d/20-disable-cc-dpkg-grub.cfg", grub_dpkg, 0o644),
             ("etc/cloud/cloud.cfg.d/99-installer.cfg", config, 0o600),
             ("etc/cloud/ds-identify.cfg", "policy: enabled\n", 0o644),
         ]
