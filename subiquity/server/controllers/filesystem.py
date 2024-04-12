@@ -1469,7 +1469,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         rp_input = layout.get("reset-partition", None)
         if rp_input:
             reset_partition = True
-            if isinstance(rp_input, (str, int)):
+            # bool is a subclass of int -- check for int explicitly
+            if isinstance(rp_input, str) or type(rp_input) is int:
                 reset_partition_size = int(human2bytes(rp_input))
                 log.info(
                     "autoinstall: will install reset partition "
