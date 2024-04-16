@@ -16,12 +16,14 @@
 from unittest import mock
 
 import jsonschema
+import requests
+import requests_mock
 from jsonschema.validators import validator_for
 
 from subiquity.server import snapdapi
 from subiquity.server.controllers import refresh as refresh_mod
 from subiquity.server.controllers.refresh import RefreshController, SnapChannelSource
-from subiquitycore.snapd import AsyncSnapd, get_fake_connection
+from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 
@@ -111,3 +113,31 @@ class TestRefreshController(SubiTestCase):
         )
 
         JsonValidator.check_schema(RefreshController.autoinstall_schema)
+
+    async def test_start_update_api_error_logged(self):
+        self.app.snapdapi = snapdapi.make_api_client(
+            AsyncSnapd(SnapdConnection(root="/inexistent", sock="snapd"))
+        )
+        json_body = {
+            "type": "error",
+            "status-code": 409,
+            "status": "Conflict",
+            "result": {
+                "message": 'snap "subiquity" has "update" change in progress',
+            },
+        }
+        requests_mocker = requests_mock.Mocker()
+        requests_mocker.post(
+            "http+unix://snapd/v2/snaps/subiquity",
+            json=json_body,
+            status_code=409,
+        )
+
+        with requests_mocker:
+            with self.assertRaises(requests.exceptions.HTTPError):
+                with self.assertLogs(
+                    "subiquity.server.controllers.refresh", level="WARNING"
+                ) as logs:
+                    await self.rc.start_update()
+
+            self.assertIn('snap \\"subiquity\\" has \\"update\\"', logs.output[0])

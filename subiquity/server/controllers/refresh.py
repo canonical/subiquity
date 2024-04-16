@@ -214,9 +214,15 @@ class RefreshController(SubiquityController):
 
     @with_context()
     async def start_update(self, context):
-        change_id = await self.app.snapdapi.v2.snaps[self.snap_name].POST(
-            SnapActionRequest(action=SnapAction.REFRESH, ignore_running=True)
-        )
+        try:
+            change_id = await self.app.snapdapi.v2.snaps[self.snap_name].POST(
+                SnapActionRequest(action=SnapAction.REFRESH, ignore_running=True)
+            )
+        except requests.exceptions.HTTPError as http_err:
+            log.warning(
+                "v2/snaps/%s returned %s", self.snap_name, http_err.response.text
+            )
+            raise
         context.description = "change id: {}".format(change_id)
         return change_id
 
