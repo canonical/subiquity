@@ -43,6 +43,7 @@ python3-pytest
 python3-pytest-xdist
 python3-pyudev
 python3-requests
+python3-requests-mock
 python3-requests-unixsocket
 python3-setuptools
 python3-systemd
