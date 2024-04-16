@@ -26,6 +26,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 import attr
 import pyudev
+import requests
 from curtin import swap
 from curtin.commands.extract import AbstractSourceHandler
 from curtin.storage_config import ptable_part_type_to_flag
@@ -342,6 +343,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             return None
         try:
             system = await self.app.snapdapi.v2.systems[label].GET()
+        except requests.exceptions.HTTPError as http_err:
+            log.warning("v2/systems/%s returned %s", label, http_err.response.text)
+            raise
         finally:
             await self._unmount_systems_dir()
         log.debug("got system %s", system)

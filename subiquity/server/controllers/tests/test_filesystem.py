@@ -19,6 +19,8 @@ import uuid
 from unittest import IsolatedAsyncioTestCase, mock
 
 import jsonschema
+import requests
+import requests_mock
 from curtin.commands.extract import TrivialSourceHandler
 from jsonschema.validators import validator_for
 
@@ -61,7 +63,7 @@ from subiquity.server.controllers.filesystem import (
     VariationInfo,
 )
 from subiquity.server.dryrun import DRConfig
-from subiquitycore.snapd import AsyncSnapd, get_fake_connection
+from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized
 from subiquitycore.tests.util import random_string
@@ -413,6 +415,39 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         )
 
         JsonValidator.check_schema(FilesystemController.autoinstall_schema)
+
+    async def test__get_system_api_error_logged(self):
+        mount_mock = mock.patch.object(self.fsc, "_mount_systems_dir")
+        unmount_mock = mock.patch.object(self.fsc, "_unmount_systems_dir")
+
+        self.app.snapdapi = snapdapi.make_api_client(
+            AsyncSnapd(SnapdConnection(root="/inexistent", sock="snapd"))
+        )
+        json_body = {
+            "type": "error",
+            "status-code": 500,
+            "status": "Internal Server Error",
+            "result": {
+                "message": "cannot load assertions for label ...",
+            },
+        }
+        requests_mocker = requests_mock.Mocker()
+        requests_mocker.get(
+            "http+unix://snapd/v2/systems/enhanced-secureboot-desktop",
+            json=json_body,
+            status_code=500,
+        )
+
+        with mount_mock, unmount_mock, requests_mocker:
+            with self.assertRaises(requests.exceptions.HTTPError):
+                with self.assertLogs(
+                    "subiquity.server.controllers.filesystem", level="WARNING"
+                ) as logs:
+                    await self.fsc._get_system(
+                        variation_name="minimal", label="enhanced-secureboot-desktop"
+                    )
+
+            self.assertIn("cannot load assertions for label", logs.output[0])
 
 
 class TestGuided(IsolatedAsyncioTestCase):
