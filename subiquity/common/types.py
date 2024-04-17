@@ -879,6 +879,7 @@ class MirrorPost:
     elected: Optional[str] = None
     candidates: Optional[List[str]] = None
     staged: Optional[str] = None
+    use_during_installation: Optional[bool] = None
 
 
 class MirrorPostResponse(enum.Enum):
@@ -892,6 +893,9 @@ class MirrorGet:
     elected: Optional[str]
     candidates: List[str]
     staged: Optional[str]
+    # Tells whether the mirror will be used during the installation.
+    # When it is False, we will only fetch packages from the pool.
+    use_during_installation: bool
 
 
 class MirrorSelectionFallback(enum.Enum):

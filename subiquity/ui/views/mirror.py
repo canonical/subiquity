@@ -47,8 +47,10 @@ MIRROR_CHECK_CONFIRMATION_TEXTS = {
     MirrorCheckStatus.FAILED: (
         _("Mirror check failed"),
         _(
-            "The check of the mirror URL failed. You can continue, but it is very"
-            " likely that the installation will fail."
+            "The check of the mirror URL failed. If you decide to continue, only"
+            " packages present on the installation media will be considered for"
+            " installation. Remember to install security updates after booting"
+            " your newly installed system."
         ),
     ),
     None: (
@@ -217,7 +219,7 @@ class MirrorView(BaseView):
         self.last_status = check_state.status
 
     def done(self, result):
-        async def confirm_continue_anyway() -> None:
+        async def confirm_continue_anyway(continue_skip_archive: bool) -> None:
             title, question = MIRROR_CHECK_CONFIRMATION_TEXTS[self.last_status]
             confirmed = await self.ask_confirmation(
                 title=title,
@@ -227,7 +229,8 @@ class MirrorView(BaseView):
             )
 
             if confirmed:
-                self.controller.done(result.url.value)
+                skip_archive = True if continue_skip_archive else None
+                self.controller.done(result.url.value, skip_archive=skip_archive)
 
         log.debug("User input: {}".format(result.as_data()))
         if self.has_network and self.last_status in [
@@ -235,9 +238,10 @@ class MirrorView(BaseView):
             MirrorCheckStatus.FAILED,
             None,
         ]:
-            async_helpers.run_bg_task(confirm_continue_anyway())
+            status_is_failed = self.last_status == MirrorCheckStatus.FAILED
+            async_helpers.run_bg_task(confirm_continue_anyway(status_is_failed))
         else:
-            self.controller.done(result.url.value)
+            self.controller.done(result.url.value, skip_archive=None)
 
     def cancel(self, result=None):
         self.controller.cancel()

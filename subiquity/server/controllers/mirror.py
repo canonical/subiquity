@@ -368,7 +368,11 @@ class MirrorController(SubiquityController):
             # Skip the country-mirrors if they have not been resolved yet.
             candidates = [c.uri for c in compatibles if c.uri is not None]
         return MirrorGet(
-            relevant=relevant, elected=elected, candidates=candidates, staged=staged
+            relevant=relevant,
+            elected=elected,
+            candidates=candidates,
+            staged=staged,
+            use_during_installation=not self.app.base_model.network.force_offline,
         )
 
     async def POST(self, data: Optional[MirrorPost]) -> MirrorPostResponse:
@@ -420,6 +424,10 @@ class MirrorController(SubiquityController):
                 ensure_elected_in_candidates()
 
             await self.configured()
+
+        if data.use_during_installation is not None:
+            self.app.base_model.network.force_offline = not data.use_during_installation
+
         return MirrorPostResponse.OK
 
     async def disable_components_GET(self) -> List[str]:
