@@ -734,7 +734,7 @@ codecs
 Configure whether common restricted packages (including codecs) from the multiverse repository are to be installed.
 
 install
-~~~~~~~
+^^^^^^^
 
 * **type:** boolean
 * **default:** ``false``
