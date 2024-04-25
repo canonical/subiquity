@@ -466,6 +466,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.controller = FilesystemController(self.app)
         self.controller.supports_resilient_boot = True
         self.controller._examine_systems_task.start_sync()
+        self.controller.cryptoswap_options = ["a", "b"]
         self.app.dr_cfg = DRConfig()
         self.app.base_model.source.current.type = "fsimage"
         self.app.base_model.source.current.variations = {
@@ -657,7 +658,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertIsNone(swap.fs())
         [dmc] = self.model.all_dm_crypts()
         self.assertEqual("/dev/urandom", dmc.keyfile)
-        self.assertEqual(["swap", "initramfs"], dmc.options)
+        self.assertEqual(["a", "b"], dmc.options)
         self.assertEqual("swap", dmc.fs().fstype)
         [rpool] = self.model._all(type="zpool", pool="rpool")
         self.assertIsNone(rpool.path)

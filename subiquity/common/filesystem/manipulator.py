@@ -180,11 +180,19 @@ class FilesystemManipulator:
 
     delete_lvm_partition = delete_logical_volume
 
+    cryptoswap_options = [
+        "cipher=aes-cbc-essiv:sha256",
+        "initramfs",
+        "plain",
+        "size=256",
+        "swap",
+    ]
+
     def create_cryptoswap(self, device):
         dmc = self.model.add_dm_crypt(
             device,
             keyfile="/dev/urandom",
-            options=["swap", "initramfs"],
+            options=self.cryptoswap_options,
         )
         self.create_filesystem(dmc, dict(fstype="swap"))
         return dmc
