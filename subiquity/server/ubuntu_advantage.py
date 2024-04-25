@@ -17,6 +17,7 @@ helper. """
 
 import asyncio
 import contextlib
+import datetime
 import json
 import logging
 import os
@@ -331,7 +332,7 @@ class UAInterface:
         # is specified in RFC 3339 but not supported by fromisoformat before
         # Python 3.11. See https://bugs.python.org/issue35829
         expiration = dt.fromisoformat(info["expires"].replace("Z", "+00:00"))
-        if expiration.timestamp() <= dt.utcnow().timestamp():
+        if expiration <= dt.now(datetime.timezone.utc):
             raise ExpiredTokenError(token, expires=info["expires"])
 
         def is_activable_service(service: dict) -> bool:
