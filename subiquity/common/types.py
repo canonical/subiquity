@@ -819,9 +819,11 @@ class TaskStatus(enum.Enum):
     DO = "Do"
     DOING = "Doing"
     DONE = "Done"
+    WAIT = "Wait"
     ABORT = "Abort"
     UNDO = "Undo"
     UNDOING = "Undoing"
+    UNDONE = "Undone"
     HOLD = "Hold"
     ERROR = "Error"
 
