@@ -43,6 +43,13 @@ class SerializationError(Exception):
         return f"processing {self.obj}: at {p}, {self.message}"
 
 
+E = typing.TypeVar("E")
+
+
+class NonExhaustive(typing.Generic[E]):
+    pass
+
+
 @attr.s(auto_attribs=True)
 class SerializationContext:
     obj: typing.Any
@@ -88,6 +95,7 @@ class Serializer:
             typing.List: self._walk_List,
             dict: self._walk_Dict,
             typing.Dict: self._walk_Dict,
+            NonExhaustive: self._walk_NonExhaustive,
         }
         self.type_serializers = {}
         self.type_deserializers = {}
@@ -102,6 +110,9 @@ class Serializer:
     def _ann_ok_as_dict_key(self, annotation):
         if annotation is str:
             return True
+        origin = getattr(annotation, "__origin__", None)
+        if origin is NonExhaustive:
+            annotation = annotation.__args__[0]
         if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
             if self.serialize_enums_by == "name":
                 return True
@@ -175,6 +186,19 @@ class Serializer:
             return output_items
         else:
             return dict(output_items)
+
+    def _walk_NonExhaustive(self, meth, args, context):
+        [enum_cls] = args
+        if context.serializing:
+            if isinstance(context.cur, enum_cls):
+                return meth(enum_cls, context)
+            else:
+                return context.cur
+        else:
+            if context.cur in (getattr(m, self.serialize_enums_by) for m in enum_cls):
+                return meth(enum_cls, context)
+            else:
+                return context.cur
 
     def _serialize_dict(self, annotation, context):
         context.assert_type(annotation)

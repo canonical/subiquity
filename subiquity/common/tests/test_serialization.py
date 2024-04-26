@@ -23,7 +23,12 @@ import unittest
 
 import attr
 
-from subiquity.common.serialize import SerializationError, Serializer, named_field
+from subiquity.common.serialize import (
+    NonExhaustive,
+    SerializationError,
+    Serializer,
+    named_field,
+)
 
 
 @attr.s(auto_attribs=True)
@@ -133,11 +138,23 @@ class CommonSerializerTests:
     def test_enums(self):
         self.assertSerialization(MyEnum, MyEnum.name, "name")
 
+    def test_non_exhaustive_enums(self):
+        self.serializer = type(self.serializer)(compact=self.serializer.compact)
+        self.assertSerialization(NonExhaustive[MyEnum], MyEnum.name, "name")
+        self.assertSerialization(NonExhaustive[MyEnum], "name2", "name2")
+
     def test_enums_by_value(self):
         self.serializer = type(self.serializer)(
             compact=self.serializer.compact, serialize_enums_by="value"
         )
         self.assertSerialization(MyEnum, MyEnum.name, "value")
+
+    def test_non_exhaustive_enums_by_value(self):
+        self.serializer = type(self.serializer)(
+            compact=self.serializer.compact, serialize_enums_by="value"
+        )
+        self.assertSerialization(NonExhaustive[MyEnum], MyEnum.name, "value")
+        self.assertSerialization(NonExhaustive[MyEnum], "value2", "value2")
 
     def test_serialize_any(self):
         o = object()
