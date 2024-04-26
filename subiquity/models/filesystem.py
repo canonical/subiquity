@@ -35,7 +35,7 @@ from curtin.swap import can_use_swapfile
 from curtin.util import human2bytes
 from probert.storage import StorageInfo
 
-from subiquity.common.types import Bootloader, OsProber, RecoveryKey
+from subiquity.common.types import Bootloader, OsProber, RecoveryKey, StorageResponse
 from subiquity.server.autoinstall import AutoinstallError
 from subiquitycore.utils import write_named_tempfile
 
@@ -1578,7 +1578,7 @@ class FilesystemModel:
                         Filesystem(m=self, fstype="swap", volume=o, preserve=True)
                     )
 
-    def load_server_data(self, status):
+    def load_server_data(self, status: StorageResponse):
         log.debug("load_server_data %s", status)
         self._all_ids = set()
         self.storage_version = status.storage_version
