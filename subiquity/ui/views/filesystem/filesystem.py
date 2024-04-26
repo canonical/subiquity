@@ -233,7 +233,7 @@ def _whynot_shower(view, action, whynot):
 
 
 class DeviceList(WidgetWrap):
-    def __init__(self, parent, show_available):
+    def __init__(self, parent, show_available: bool):
         self.parent = parent
         self.show_available = show_available
         self.table = TablePile(

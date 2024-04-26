@@ -290,7 +290,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
 
         run_bg_task(guided_and_redraw())
 
-    def reset(self, refresh_view):
+    def reset(self, refresh_view: bool) -> None:
         async def reset_and_redraw():
             await self._reset(refresh_view)
             await self.app.redraw_screen()
@@ -300,7 +300,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
 
         run_bg_task(reset_and_redraw())
 
-    async def _reset(self, refresh_view):
+    async def _reset(self, refresh_view: bool) -> None:
         status = await self.endpoint.reset.POST()
         self.app.ui.block_input = False
         self.model.load_server_data(status)
