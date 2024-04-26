@@ -783,12 +783,18 @@ class SubiquityServer(Application):
                 log=log,
             )
 
-            # Raise AutoinstallError if we found any autoinstall as a cause
-            # of the schema validation error, otherwise continue
+            # Use filter_autoinstall on bad_keys to find potential autoinstall
+            # keys as the cause of the schema validation error. If so,
+            # raise AutoinstallError; else continue.
+            #
+            # Intentionally not attempting to extract bad key data since it is
+            # not guaranteed that the offending keys will be top-level (or
+            # even in?) in the combined config. Although still constructing
+            # a dict since filter_autoinstall expects a dict.
+            # LP: #2062988
 
-            # Filter only the bad keys
-            potential_autoinstall: dict[str, Any] = dict(
-                ((key, cloud_cfg[key]) for key in bad_keys)
+            potential_autoinstall: dict[str, None] = dict(
+                ((key, None) for key in bad_keys)
             )
             autoinstall, other = self.filter_autoinstall(potential_autoinstall)
 
