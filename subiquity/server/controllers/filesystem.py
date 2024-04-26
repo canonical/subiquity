@@ -22,7 +22,7 @@ import os
 import pathlib
 import subprocess
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import attr
 import pyudev
@@ -79,6 +79,7 @@ from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
 from subiquity.server.mounter import Mounter
+from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.snapdapi import (
     StorageEncryptionSupport,
     StorageSafety,
@@ -120,6 +121,23 @@ DRY_RUN_RESET_SIZE = 500 * MiB
 
 class NoSnapdSystemsOnSource(Exception):
     pass
+
+
+class NonReportableSVE(NonReportableException):
+    """Non reportable storage value error"""
+
+
+class ReportableSVE(ValueError):
+    """Reportable storage value error"""
+
+
+# Depending on config, we will let the SVE fail on the server side
+StorageValueError: Type[NonReportableSVE | ReportableSVE] = ReportableSVE
+
+
+def set_user_error_reportable(reportable: bool) -> None:
+    global StorageValueError
+    StorageValueError = ReportableSVE if reportable else NonReportableSVE
 
 
 @attr.s(auto_attribs=True)
@@ -1212,9 +1230,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.locked_probe_data = True
         disk = self.model._one(id=disk_id)
         if boot.is_boot_device(disk):
-            raise ValueError("device already has bootloader partition")
+            raise StorageValueError("device already has bootloader partition")
         if DeviceAction.TOGGLE_BOOT not in DeviceAction.supported(disk):
-            raise ValueError("disk does not support boot partiton")
+            raise StorageValueError("disk does not support boot partiton")
         self.add_boot_disk(disk)
         return await self.v2_GET()
 

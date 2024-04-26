@@ -23,6 +23,7 @@ import sys
 
 import attr
 
+from subiquity.server.controllers.filesystem import set_user_error_reportable
 from subiquitycore.log import setup_logger
 
 from .common import LOGDIR, setup_environment
@@ -137,6 +138,16 @@ def make_server_args_parser():
     )
 
     parser.add_argument("--storage-version", action="store", type=int)
+    parser.add_argument(
+        "--no-report-storage-user-errors",
+        action="store_true",
+        help="""\
+When False (the default), exceptions raised by /storage/v2/ POST handlers when
+the client sends bad information will cause the creation of a crash report and
+a HTTP 500 error to be returned.
+When True, no crash report will be created and a HTTP 422 error will be
+returned. """,
+    )
     parser.add_argument("--use-os-prober", action="store_true", default=False)
     parser.add_argument(
         "--postinst-hooks-dir", default="/etc/subiquity/postinst.d", type=pathlib.Path
@@ -158,6 +169,7 @@ def main():
         opts.storage_version = int(
             opts.kernel_cmdline.get("subiquity-storage-version", 1)
         )
+    set_user_error_reportable(not opts.no_report_storage_user_errors)
     logdir = LOGDIR
     if opts.dry_run:
         if opts.dry_run_config:

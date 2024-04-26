@@ -60,6 +60,7 @@ from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controllers.filesystem import (
     DRY_RUN_RESET_SIZE,
     FilesystemController,
+    StorageValueError,
     VariationInfo,
 )
 from subiquity.server.dryrun import DRConfig
@@ -220,7 +221,9 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
     async def test_v2_add_boot_partition_POST_existing_bootloader(self):
         self.fsc.locked_probe_data = False
         with mock.patch.object(self.fsc, "add_boot_disk") as add_boot_disk:
-            with self.assertRaisesRegex(ValueError, r"already\ has\ bootloader"):
+            with self.assertRaises(
+                StorageValueError, msg="device already has bootloader"
+            ):
                 await self.fsc.v2_add_boot_partition_POST("dev-sda")
         self.assertTrue(self.fsc.locked_probe_data)
         add_boot_disk.assert_not_called()
@@ -230,7 +233,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
     async def test_v2_add_boot_partition_POST_not_supported(self):
         self.fsc.locked_probe_data = False
         with mock.patch.object(self.fsc, "add_boot_disk") as add_boot_disk:
-            with self.assertRaisesRegex(ValueError, r"does\ not\ support\ boot"):
+            with self.assertRaises(StorageValueError, msg="disk does not support boot"):
                 await self.fsc.v2_add_boot_partition_POST("dev-sda")
         self.assertTrue(self.fsc.locked_probe_data)
         add_boot_disk.assert_not_called()
