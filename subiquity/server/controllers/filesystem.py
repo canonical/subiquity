@@ -997,13 +997,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             ),
         )
 
-    async def guided_POST(self, data: GuidedChoiceV2) -> StorageResponse:
-        log.debug(data)
-        await self.guided(data)
-        if not data.capability.supports_manual_customization():
-            await self.configured()
-        return self._done_response()
-
     async def has_rst_GET(self) -> bool:
         search = "/sys/module/ahci/drivers/pci:ahci/*/remapped_nvme"
         for remapped_nvme in glob.glob(search):

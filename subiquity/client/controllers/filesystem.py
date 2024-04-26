@@ -26,6 +26,7 @@ from subiquity.common.types import (
     GuidedStorageResponseV2,
     GuidedStorageTargetManual,
     ProbeStatus,
+    StorageResponse,
     StorageResponseV2,
 )
 from subiquity.models.filesystem import (
@@ -259,7 +260,11 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             raise Exception("could not process action {}".format(action))
 
     async def _guided_choice(self, choice: GuidedChoiceV2):
-        coro = self.endpoint.guided.POST(choice)
+        async def v2_guided_POST_with_v1_response() -> StorageResponse:
+            await self.endpoint.v2.guided.POST(choice)
+            return await self.endpoint.GET()
+
+        coro = v2_guided_POST_with_v1_response()
         if not choice.capability.supports_manual_customization():
             await self.app.next_screen(coro)
             return
