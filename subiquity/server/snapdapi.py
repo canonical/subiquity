@@ -24,7 +24,7 @@ import attr
 
 from subiquity.common.api.client import make_client
 from subiquity.common.api.defs import Payload, api, path_parameter
-from subiquity.common.serialize import Serializer, named_field
+from subiquity.common.serialize import NonExhaustive, Serializer, named_field
 from subiquity.common.types import Change, TaskStatus
 
 log = logging.getLogger("subiquity.server.snapdapi")
@@ -90,17 +90,11 @@ class Response:
     status: str
 
 
-class Role:
+class Role(enum.Enum):
     NONE = ""
     MBR = "mbr"
     SYSTEM_BOOT = "system-boot"
-    SYSTEM_BOOT_IMAGE = "system-boot-image"
-    SYSTEM_BOOT_SELECT = "system-boot-select"
     SYSTEM_DATA = "system-data"
-    SYSTEM_RECOVERY_SELECT = "system-recovery-select"
-    SYSTEM_SAVE = "system-save"
-    SYSTEM_SEED = "system-seed"
-    SYSTEM_SEED_NULL = "system-seed-null"
 
 
 @attr.s(auto_attribs=True)
@@ -134,7 +128,7 @@ class VolumeStructure:
     offset_write: Optional[RelativeOffset] = named_field("offset-write", None)
     size: int = 0
     type: str = ""
-    role: str = Role.NONE
+    role: NonExhaustive[Role] = Role.NONE
     id: Optional[str] = None
     filesystem: str = ""
     content: Optional[List[VolumeContent]] = None
@@ -230,6 +224,13 @@ class SystemActionRequest:
     action: SystemAction
     step: SystemActionStep
     on_volumes: Dict[str, OnVolume] = named_field("on-volumes")
+
+
+@attr.s(auto_attribs=True)
+class SystemActionResponse:
+    encrypted_devices: Dict[NonExhaustive[Role], str] = named_field(
+        "encrypted-devices", default=attr.Factory(dict)
+    )
 
 
 @api

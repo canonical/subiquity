@@ -1537,11 +1537,11 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         with mock.patch.object(
             snapdapi, "post_and_wait", new_callable=mock.AsyncMock
         ) as mocked:
-            mocked.return_value = {
-                "encrypted-devices": {
+            mocked.return_value = snapdapi.SystemActionResponse(
+                encrypted_devices={
                     snapdapi.Role.SYSTEM_DATA: "enc-system-data",
                 },
-            }
+            )
             await self.fsc.setup_encryption(context=self.fsc.context)
 
         # setup_encryption mutates the filesystem model objects to
