@@ -545,6 +545,12 @@ class SubiquityServer(Application):
                 exc=exc,
             )
             resp.headers["x-error-report"] = to_json(ErrorReportRef, report.ref())
+        if resp.status == 422:
+            log.debug(
+                "request to %s failed with status 422: %s",
+                request.raw_path,
+                resp.headers["x-error-msg"],
+            )
         return resp
 
     @with_context()
