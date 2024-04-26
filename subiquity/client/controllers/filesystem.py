@@ -301,7 +301,11 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         run_bg_task(reset_and_redraw())
 
     async def _reset(self, refresh_view: bool) -> None:
-        status = await self.endpoint.reset.POST()
+        async def v2_reset_with_v1_response() -> StorageResponse:
+            await self.endpoint.v2.reset.POST()
+            return await self.endpoint.GET()
+
+        status = await v2_reset_with_v1_response()
         self.app.ui.block_input = False
         self.model.load_server_data(status)
         if refresh_view:

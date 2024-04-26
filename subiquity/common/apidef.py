@@ -321,10 +321,6 @@ class API:
             def POST() -> None:
                 ...
 
-        class reset:
-            def POST() -> StorageResponse:
-                ...
-
         class has_rst:
             def GET() -> bool:
                 pass
