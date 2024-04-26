@@ -441,8 +441,8 @@ class FilesystemView(BaseView):
         self.controller = controller
 
         self.mount_list = MountList(self)
-        self.avail_list = DeviceList(self, True)
-        self.used_list = DeviceList(self, False)
+        self.avail_list = DeviceList(self, show_available=True)
+        self.used_list = DeviceList(self, show_available=False)
         self.avail_list.table.bind(self.used_list.table)
         self._create_raid_btn = Toggleable(
             menu_btn(label=_("Create software RAID (md)"), on_press=self.create_raid)
