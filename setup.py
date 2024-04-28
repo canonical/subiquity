@@ -114,7 +114,7 @@ setup(name='subiquity',
       author='Canonical Engineering',
       author_email='ubuntu-dev@lists.ubuntu.com',
       url='https://github.com/canonical/subiquity',
-      license="AGPLv3+",
+      license="GPLv3",
       packages=find_packages(exclude=["tests"]),
       scripts=[
           'bin/console-conf-wait',
