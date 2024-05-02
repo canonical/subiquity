@@ -18,3 +18,4 @@ repos:
         language: system
         entry: make -C doc spelling
         files: "doc/.*rst"
+        pass_filenames: false
