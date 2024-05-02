@@ -108,39 +108,40 @@ class TestAptConfigurer(SubiTestCase):
                 pass
 
     async def test_run_apt_config_check(self):
-        self.configurer.configured_tree = OverlayMountpoint(
-            upperdir="upperdir-install-tree",
-            lowers=["lowers1-install-tree"],
-            mountpoint="mountpoint-install-tree",
-        )
-
-        async def astart_success(cmd, **kwargs):
-            """Simulates apt-get update behaving normally."""
-            proc = await astart_command(
-                ["sh", "-c", "cat"], **kwargs, stdin=subprocess.PIPE
+        with tempfile.TemporaryDirectory() as tempdir:
+            self.configurer.configured_tree = OverlayMountpoint(
+                upperdir="upperdir-install-tree",
+                lowers=["lowers1-install-tree"],
+                mountpoint=pathlib.Path(tempdir) / "mountpoint-install-tree",
             )
-            proc.stdin.write(APT_UPDATE_SUCCESS.encode("utf-8"))
-            proc.stdin.write_eof()
-            return proc
 
-        async def astart_failure(cmd, **kwargs):
-            """Simulates apt-get update failing."""
-            proc = await astart_command(
-                ["sh", "-c", "cat; exit 1"], **kwargs, stdin=subprocess.PIPE
-            )
-            proc.stdin.write(APT_UPDATE_FAILURE.encode("utf-8"))
-            proc.stdin.write_eof()
-            return proc
+            async def astart_success(cmd, **kwargs):
+                """Simulates apt-get update behaving normally."""
+                proc = await astart_command(
+                    ["sh", "-c", "cat"], **kwargs, stdin=subprocess.PIPE
+                )
+                proc.stdin.write(APT_UPDATE_SUCCESS.encode("utf-8"))
+                proc.stdin.write_eof()
+                return proc
 
-        output = io.StringIO()
-        with patch(self.astart_sym, side_effect=astart_success):
-            await self.configurer.run_apt_config_check(output)
-            self.assertEqual(output.getvalue(), APT_UPDATE_SUCCESS)
+            async def astart_failure(cmd, **kwargs):
+                """Simulates apt-get update failing."""
+                proc = await astart_command(
+                    ["sh", "-c", "cat; exit 1"], **kwargs, stdin=subprocess.PIPE
+                )
+                proc.stdin.write(APT_UPDATE_FAILURE.encode("utf-8"))
+                proc.stdin.write_eof()
+                return proc
 
-        output = io.StringIO()
-        with patch(self.astart_sym, side_effect=astart_failure):
-            with self.assertRaises(AptConfigCheckError):
+            output = io.StringIO()
+            with patch(self.astart_sym, side_effect=astart_success):
                 await self.configurer.run_apt_config_check(output)
+                self.assertEqual(output.getvalue(), APT_UPDATE_SUCCESS)
+
+            output = io.StringIO()
+            with patch(self.astart_sym, side_effect=astart_failure):
+                with self.assertRaises(AptConfigCheckError):
+                    await self.configurer.run_apt_config_check(output)
 
     @staticmethod
     @contextlib.contextmanager
