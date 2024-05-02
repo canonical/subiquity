@@ -77,7 +77,7 @@ class MirrorController(SubiquityTuiController):
             self.app.ui.body.form._click_done(None)
 
     def cancel(self):
-        self.app.prev_screen()
+        self.app.request_prev_screen()
 
     def done(self, mirror, skip_archive: Optional[bool]):
         if skip_archive is not None:
@@ -94,4 +94,4 @@ class MirrorController(SubiquityTuiController):
             mirror,
             use_during_installation,
         )
-        self.app.next_screen(self.endpoint.POST(data))
+        self.app.request_next_screen(self.endpoint.POST(data))

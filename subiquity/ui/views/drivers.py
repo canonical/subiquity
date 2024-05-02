@@ -86,7 +86,7 @@ class DriversView(BaseView):
     def make_waiting(self, install: bool) -> None:
         """Change the view into a spinner and start waiting for drivers
         asynchronously."""
-        self.spinner = Spinner(style="dots")
+        self.spinner = Spinner(style="dots", app=self.controller.app)
         self.spinner.start()
 
         if self.local_only:
@@ -120,6 +120,7 @@ class DriversView(BaseView):
             self.make_main(install, drivers)
         else:
             self.make_no_drivers()
+        self.request_redraw_if_visible()
 
     def make_no_drivers(self) -> None:
         """Change the view into an information page that shows that no

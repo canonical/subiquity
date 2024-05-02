@@ -23,7 +23,7 @@ from typing import Callable, Optional, Union
 import urwid
 import yaml
 
-from subiquitycore.async_helpers import run_bg_task, schedule_task
+from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.core import Application
 from subiquitycore.palette import PALETTE_COLOR, PALETTE_MONO
 from subiquitycore.screen import make_screen
@@ -82,7 +82,9 @@ class TuiApplication(Application):
         self.cur_screen = None
         self.fg_proc = None
 
-    def run_command_in_foreground(self, cmd, before_hook=None, after_hook=None, **kw):
+    async def run_command_in_foreground(
+        self, cmd, before_hook=None, after_hook=None, **kw
+    ):
         if self.fg_proc is not None:
             raise Exception("cannot run two fg processes at once")
         screen = self.urwid_loop.screen
@@ -118,7 +120,8 @@ class TuiApplication(Application):
         urwid.emit_signal(screen, urwid.display_common.INPUT_DESCRIPTORS_CHANGED)
         if before_hook is not None:
             before_hook()
-        schedule_task(_run())
+
+        await _run()
 
     async def make_view_for_controller(
         self, new
@@ -155,7 +158,7 @@ class TuiApplication(Application):
             self.ui.block_input = False
             nonlocal min_show_task
             min_show_task = asyncio.create_task(asyncio.sleep(MIN_SHOW_PROGRESS_TIME))
-            show()
+            await show()
 
         self.ui.block_input = True
         show_task = asyncio.create_task(_show())
@@ -165,7 +168,7 @@ class TuiApplication(Application):
             if min_show_task:
                 await min_show_task
                 if hide is not None:
-                    hide()
+                    await hide()
             else:
                 self.ui.block_input = False
                 show_task.cancel()
@@ -190,18 +193,24 @@ class TuiApplication(Application):
             else:
                 task_to_cancel = None
 
-        def show_load():
+        async def show_load():
             nonlocal ld
-            ld = LoadingDialog(self.ui.body, message, task_to_cancel)
+            ld = LoadingDialog(self, message, task_to_cancel)
             self.ui.body.show_overlay(ld, width=ld.width)
+            await self.redraw_screen()
 
-        def hide_load():
+        async def hide_load():
             ld.close()
+            await self.redraw_screen()
 
         return await self._wait_with_indication(awaitable, show_load, hide_load)
 
     async def wait_with_progress(self, awaitable):
-        return await self._wait_with_indication(awaitable, self.show_progress)
+        async def show_progress():
+            self.show_progress()
+            await self.redraw_screen()
+
+        return await self._wait_with_indication(awaitable, show_progress)
 
     async def _move_screen(
         self, increment, coro
@@ -242,14 +251,36 @@ class TuiApplication(Application):
                 view = view_or_callable
             self.ui.set_body(view)
 
-    def next_screen(self, coro=None):
-        run_bg_task(self.move_screen(1, coro))
+    async def redraw_screen(self):
+        self.urwid_loop.draw_screen()
 
-    def prev_screen(self):
-        run_bg_task(self.move_screen(-1, None))
+    async def next_screen(self, coro=None):
+        await self.move_screen(1, coro)
 
-    def select_initial_screen(self):
-        self.next_screen()
+    async def prev_screen(self):
+        await self.move_screen(-1, None)
+
+    async def select_initial_screen(self):
+        await self.next_screen()
+
+    def request_next_screen(self, coro=None, *, redraw=True):
+        async def next_screen():
+            await self.next_screen(coro)
+            if redraw:
+                await self.redraw_screen()
+
+        run_bg_task(next_screen())
+
+    def request_prev_screen(self, *, redraw=True):
+        async def prev_screen():
+            await self.prev_screen()
+            if redraw:
+                await self.redraw_screen()
+
+        run_bg_task(prev_screen())
+
+    def request_screen_redraw(self):
+        run_bg_task(self.redraw_screen())
 
     def set_rich(self, rich):
         if rich == self.rich_mode:
@@ -320,7 +351,7 @@ class TuiApplication(Application):
         # By default, basic on serial - rich otherwise.
         return not self.opts.run_on_serial
 
-    def start_urwid(self, input=None, output=None):
+    async def start_urwid(self, input=None, output=None):
         # This stops the tcsetpgrp call in run_command_in_foreground from
         # suspending us. See the rant there for more details.
         signal.signal(signal.SIGTTOU, signal.SIG_IGN)
@@ -338,12 +369,13 @@ class TuiApplication(Application):
         extend_dec_special_charmap()
         self.set_rich(self.get_initial_rich_mode())
         self.urwid_loop.start()
-        self.select_initial_screen()
+        await self.select_initial_screen()
+        await self.redraw_screen()
 
     async def start(self, start_urwid=True):
         await super().start()
         if start_urwid:
-            self.start_urwid()
+            await self.start_urwid()
 
     async def run(self):
         try:

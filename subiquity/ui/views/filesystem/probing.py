@@ -30,7 +30,7 @@ class SlowProbing(BaseView):
 
     def __init__(self, controller):
         self.controller = controller
-        self.spinner = Spinner(style="dots")
+        self.spinner = Spinner(style="dots", app=self.controller.app)
         self.spinner.start()
         super().__init__(
             screen(

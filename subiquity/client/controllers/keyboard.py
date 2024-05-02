@@ -49,7 +49,7 @@ class KeyboardController(SubiquityTuiController):
         await self.endpoint.POST(setting)
 
     def done(self):
-        self.app.next_screen()
+        self.app.request_next_screen()
 
     def cancel(self):
-        self.app.prev_screen()
+        self.app.request_prev_screen()

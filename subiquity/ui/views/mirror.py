@@ -114,7 +114,7 @@ class MirrorView(BaseView):
         connect_signal(self.form, "cancel", self.cancel)
 
         self.status_text = Text("")
-        self.status_spinner = Spinner()
+        self.status_spinner = Spinner(app=self.controller.app)
         self.status_wrap = WidgetWrap(self.status_text)
         self.output_text = Text("")
         self.output_box = LineBox(ListBox([self.output_text]))
@@ -192,6 +192,7 @@ class MirrorView(BaseView):
             await asyncio.sleep(1 / self.controller.app.scale_factor)
             status = await self.controller.endpoint.check_mirror.progress.GET()
             self.update_status(status)
+            self.request_redraw_if_visible()
 
         if check_state.status == MirrorCheckStatus.FAILED:
             self.output_wrap._w = Pile(

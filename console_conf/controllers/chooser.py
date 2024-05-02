@@ -69,7 +69,7 @@ class RecoveryChooserController(RecoveryChooserBaseController):
 
     def select(self, system, action):
         self.model.select(system, action)
-        self.app.next_screen()
+        self.app.request_next_screen()
 
     def more_options(self):
         self._current_view = self._all_view
@@ -95,4 +95,4 @@ class RecoveryChooserConfirmController(RecoveryChooserBaseController):
 
     def back(self):
         self.model.unselect()
-        self.app.prev_screen()
+        self.app.request_prev_screen()

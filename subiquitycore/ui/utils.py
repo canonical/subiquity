@@ -356,7 +356,7 @@ class SomethingFailed(Stretchy):
 class LoadingDialog(WidgetWrap):
     def __init__(self, parent, msg, task_to_cancel):
         self.parent = parent
-        self.spinner = Spinner(style="dots")
+        self.spinner = Spinner(style="dots", app=parent)
         self.spinner.start()
         self.closed = False
         # | text |
@@ -379,4 +379,4 @@ class LoadingDialog(WidgetWrap):
             self.task_to_cancel.cancel()
         self.closed = True
         self.spinner.stop()
-        self.parent.remove_overlay()
+        self.parent.ui.body.remove_overlay()

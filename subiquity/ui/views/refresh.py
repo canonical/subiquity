@@ -54,9 +54,10 @@ class TaskProgressBar(ProgressBar):
 
 
 class TaskProgress(WidgetWrap):
-    def __init__(self):
+    def __init__(self, app):
+        self.app = app
         self.mode = "spinning"
-        self.spinner = Spinner()
+        self.spinner = Spinner(app=app)
         self.label = Text("", wrap="clip")
         cols = Color.progress_incomplete(
             Columns(
@@ -129,7 +130,7 @@ class RefreshView(BaseView):
     def __init__(self, controller):
         self.controller = controller
         self.check_task = None
-        self.spinner = Spinner(style="dots")
+        self.spinner = Spinner(style="dots", app=self.controller.app)
 
         if self.controller.status.availability == RefreshCheckState.UNKNOWN:
             self.check_state_checking()
@@ -262,6 +263,7 @@ class RefreshView(BaseView):
                 self.update_failed(err)
                 return
             self.update_progress(change)
+            self.request_redraw_if_visible()
             await asyncio.sleep(0.1)
 
     def try_update_again(self, sender=None):
@@ -294,7 +296,7 @@ class RefreshView(BaseView):
                     del self.task_to_bar[tid]
             if task.status == TaskStatus.DOING:
                 if tid not in self.task_to_bar:
-                    self.task_to_bar[tid] = bar = TaskProgress()
+                    self.task_to_bar[tid] = bar = TaskProgress(app=self.controller.app)
                     self.lb_tasks.base_widget.body.append(bar)
                 else:
                     bar = self.task_to_bar[tid]
