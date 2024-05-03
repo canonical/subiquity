@@ -61,6 +61,10 @@ class MyEnum(enum.Enum):
     name = "value"
 
 
+class MyIntEnum(enum.Enum):
+    name = 1
+
+
 class CommonSerializerTests:
     simple_examples = [
         (int, 1),
@@ -258,6 +262,29 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
         with self.assertRaises(SerializationError) as catcher:
             self.serializer.deserialize(Type, {"field-1": 1, "field2": 2})
         self.assertEqual(catcher.exception.path, "['field-1']")
+
+    def test_serialize_dict_enumkeys_name(self):
+        self.assertSerialization(
+            typing.Dict[MyEnum, str], {MyEnum.name: "b"}, {"name": "b"}
+        )
+
+    def test_serialize_dict_enumkeys_str_value(self):
+        self.serializer = type(self.serializer)(
+            compact=self.serializer.compact, serialize_enums_by="value"
+        )
+        self.assertSerialization(
+            typing.Dict[MyEnum, str], {MyEnum.name: "b"}, {"value": "b"}
+        )
+
+    def test_serialize_dict_enumkeys_notstr_value(self):
+        self.serializer = type(self.serializer)(
+            compact=self.serializer.compact, serialize_enums_by="value"
+        )
+        self.assertSerialization(
+            typing.Dict[MyIntEnum, str],
+            {MyIntEnum.name: "b"},
+            [[1, "b"]],
+        )
 
 
 class TestCompactSerializer(CommonSerializerTests, unittest.TestCase):

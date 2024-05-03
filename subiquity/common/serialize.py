@@ -71,6 +71,8 @@ class SerializationContext:
 # This is basically a half-assed version of # https://pypi.org/project/cattrs/
 # but that's not packaged and this is enough for our needs.
 
+_enum_has_str_values = {}
+
 
 class Serializer:
     def __init__(
@@ -96,6 +98,21 @@ class Serializer:
         self.type_deserializers[dict] = self._scalar
         self.type_serializers[datetime.datetime] = self._serialize_datetime
         self.type_deserializers[datetime.datetime] = self._deserialize_datetime
+
+    def _ann_ok_as_dict_key(self, annotation):
+        if annotation is str:
+            return True
+        if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
+            if self.serialize_enums_by == "name":
+                return True
+            else:
+                if annotation in _enum_has_str_values:
+                    return _enum_has_str_values[annotation]
+                ok = set(type(v.value) for v in annotation) == {str}
+                _enum_has_str_values[annotation] = ok
+                return ok
+        else:
+            return False
 
     def _scalar(self, annotation, context):
         context.assert_type(annotation)
@@ -139,10 +156,12 @@ class Serializer:
 
     def _walk_Dict(self, meth, args, context):
         k_ann, v_ann = args
-        if not context.serializing and k_ann is not str:
-            input_items = context.cur
-        else:
+        if self._ann_ok_as_dict_key(k_ann):
             input_items = context.cur.items()
+        elif context.serializing:
+            input_items = context.cur.items()
+        else:
+            input_items = context.cur
         output_items = [
             [
                 meth(k_ann, context.child(f"/{k}", k)),
@@ -150,9 +169,12 @@ class Serializer:
             ]
             for k, v in input_items
         ]
-        if context.serializing and k_ann is not str:
+        if self._ann_ok_as_dict_key(k_ann):
+            return dict(output_items)
+        elif context.serializing:
             return output_items
-        return dict(output_items)
+        else:
+            return dict(output_items)
 
     def _serialize_dict(self, annotation, context):
         context.assert_type(annotation)
