@@ -313,14 +313,17 @@ def make_api_client(async_snapd):
 snapd_serializer = Serializer(ignore_unknown_fields=True, serialize_enums_by="value")
 
 
-async def post_and_wait(client, meth, *args, **kw):
+async def post_and_wait(client, meth, *args, ann=None, **kw):
     change_id = await meth(*args, **kw)
     log.debug("post_and_wait %s", change_id)
 
     while True:
         result = await client.v2.changes[change_id].GET()
         if result.status == TaskStatus.DONE:
-            return result.data
+            data = result.data
+            if ann is not None:
+                data = snapd_serializer.deserialize(ann, data)
+            return data
         elif result.status == TaskStatus.ERROR:
             raise aiohttp.ClientError(result.err)
         await asyncio.sleep(0.1)
