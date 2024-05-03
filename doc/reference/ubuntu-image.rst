@@ -39,6 +39,7 @@ Basic syntax
 
     ubuntu-image classic [options] image_definition.yaml
 
+.. note:: ``ubuntu-image`` requires **elevated permissions**. Run it as **root** or with ``sudo``.
 
 General options
 ~~~~~~~~~~~~~~~
