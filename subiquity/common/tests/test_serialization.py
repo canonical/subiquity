@@ -23,7 +23,12 @@ import unittest
 
 import attr
 
-from subiquity.common.serialize import SerializationError, Serializer, named_field
+from subiquity.common.serialize import (
+    NonExhaustive,
+    SerializationError,
+    Serializer,
+    named_field,
+)
 
 
 @attr.s(auto_attribs=True)
@@ -59,6 +64,10 @@ class OptionalAndDefault:
 
 class MyEnum(enum.Enum):
     name = "value"
+
+
+class MyIntEnum(enum.Enum):
+    name = 1
 
 
 class CommonSerializerTests:
@@ -129,11 +138,23 @@ class CommonSerializerTests:
     def test_enums(self):
         self.assertSerialization(MyEnum, MyEnum.name, "name")
 
+    def test_non_exhaustive_enums(self):
+        self.serializer = type(self.serializer)(compact=self.serializer.compact)
+        self.assertSerialization(NonExhaustive[MyEnum], MyEnum.name, "name")
+        self.assertSerialization(NonExhaustive[MyEnum], "name2", "name2")
+
     def test_enums_by_value(self):
         self.serializer = type(self.serializer)(
             compact=self.serializer.compact, serialize_enums_by="value"
         )
         self.assertSerialization(MyEnum, MyEnum.name, "value")
+
+    def test_non_exhaustive_enums_by_value(self):
+        self.serializer = type(self.serializer)(
+            compact=self.serializer.compact, serialize_enums_by="value"
+        )
+        self.assertSerialization(NonExhaustive[MyEnum], MyEnum.name, "value")
+        self.assertSerialization(NonExhaustive[MyEnum], "value2", "value2")
 
     def test_serialize_any(self):
         o = object()
@@ -258,6 +279,29 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
         with self.assertRaises(SerializationError) as catcher:
             self.serializer.deserialize(Type, {"field-1": 1, "field2": 2})
         self.assertEqual(catcher.exception.path, "['field-1']")
+
+    def test_serialize_dict_enumkeys_name(self):
+        self.assertSerialization(
+            typing.Dict[MyEnum, str], {MyEnum.name: "b"}, {"name": "b"}
+        )
+
+    def test_serialize_dict_enumkeys_str_value(self):
+        self.serializer = type(self.serializer)(
+            compact=self.serializer.compact, serialize_enums_by="value"
+        )
+        self.assertSerialization(
+            typing.Dict[MyEnum, str], {MyEnum.name: "b"}, {"value": "b"}
+        )
+
+    def test_serialize_dict_enumkeys_notstr_value(self):
+        self.serializer = type(self.serializer)(
+            compact=self.serializer.compact, serialize_enums_by="value"
+        )
+        self.assertSerialization(
+            typing.Dict[MyIntEnum, str],
+            {MyIntEnum.name: "b"},
+            [[1, "b"]],
+        )
 
 
 class TestCompactSerializer(CommonSerializerTests, unittest.TestCase):

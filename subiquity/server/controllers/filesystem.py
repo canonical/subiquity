@@ -275,7 +275,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._on_volume: Optional[snapdapi.OnVolume] = None
         self._source_handler: Optional[AbstractSourceHandler] = None
         self._system_mounter: Optional[Mounter] = None
-        self._role_to_device: Dict[str, _Device] = {}
+        self._role_to_device: Dict[Union[str, snapdapi.Role], _Device] = {}
         self._device_to_structure: Dict[_Device, snapdapi.OnVolume] = {}
         self._pyudev_context: Optional[pyudev.Context] = None
         self.use_tpm: bool = False
@@ -949,9 +949,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 step=snapdapi.SystemActionStep.SETUP_STORAGE_ENCRYPTION,
                 on_volumes=self._on_volumes(),
             ),
+            ann=snapdapi.SystemActionResponse,
         )
-        role_to_encrypted_device = result["encrypted-devices"]
-        for role, enc_path in role_to_encrypted_device.items():
+        for role, enc_path in result.encrypted_devices.items():
             arb_device = ArbitraryDevice(m=self.model, path=enc_path)
             self.model._actions.append(arb_device)
             part = self._role_to_device[role]
