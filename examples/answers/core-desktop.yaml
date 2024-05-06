@@ -1,4 +1,4 @@
-#source-catalog: examples/sources/core.yaml
+#source-catalog: examples/sources/core-desktop.yaml
 Source:
   source: ubuntu-core
 Welcome:
