@@ -205,7 +205,7 @@ class IdentityController(TuiController):
     def cancel(self):
         # You can only go back if we haven't created a user yet.
         if self.model.user is None:
-            self.app.prev_screen()
+            self.app.request_prev_screen()
 
     def make_login_view(self):
         title = "Configuration Complete"
