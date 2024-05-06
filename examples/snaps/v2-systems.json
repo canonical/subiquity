@@ -1,0 +1,43 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": {
+    "systems": [
+      {
+        "current": true,
+        "label": "20240314",
+        "model": {
+          "model": "ubuntu-core-24-amd64-dangerous",
+          "brand-id": "canonical",
+          "display-name": "ubuntu-core-24-amd64-dangerous"
+        },
+        "brand": {
+          "id": "canonical",
+          "username": "canonical",
+          "display-name": "Canonical",
+          "validation": "verified"
+        },
+        "actions": [
+          {
+            "title": "Reinstall",
+            "mode": "install"
+          },
+          {
+            "title": "Recover",
+            "mode": "recover"
+          },
+          {
+            "title": "Factory reset",
+            "mode": "factory-reset"
+          },
+          {
+            "title": "Run normally",
+            "mode": "run"
+          }
+        ],
+        "default-recovery-system": true
+      }
+    ]
+  }
+}

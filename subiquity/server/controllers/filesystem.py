@@ -337,17 +337,26 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self._source_handler = None
 
     async def _get_system(self, variation_name, label):
-        try:
-            await self._mount_systems_dir(variation_name)
-        except NoSnapdSystemsOnSource:
-            return None
-        try:
-            system = await self.app.snapdapi.v2.systems[label].GET()
-        except requests.exceptions.HTTPError as http_err:
-            log.warning("v2/systems/%s returned %s", label, http_err.response.text)
-            raise
-        finally:
-            await self._unmount_systems_dir()
+        systems = await self.app.snapdapi.v2.systems.GET()
+        labels = {system.label for system in systems.systems}
+        if label in labels:
+            try:
+                system = await self.app.snapdapi.v2.systems[label].GET()
+            except requests.exceptions.HTTPError as http_err:
+                log.warning("v2/systems/%s returned %s", label, http_err.response.text)
+                raise
+        else:
+            try:
+                await self._mount_systems_dir(variation_name)
+            except NoSnapdSystemsOnSource:
+                return None
+            try:
+                system = await self.app.snapdapi.v2.systems[label].GET()
+            except requests.exceptions.HTTPError as http_err:
+                log.warning("v2/systems/%s returned %s", label, http_err.response.text)
+                raise
+            finally:
+                await self._unmount_systems_dir()
         log.debug("got system %s", system)
         return system
 
@@ -858,7 +867,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def guided_core_boot(self, disk: Disk):
         # Formatting for a core boot classic system relies on some curtin
         # features that are only available with v2 partitioning.
-        await self._mount_systems_dir(self._info.name)
+        systems = await self.app.snapdapi.v2.systems.GET()
+        labels = {system.label for system in systems.systems}
+        if self._info.label not in labels:
+            await self._mount_systems_dir(self._info.name)
         self.model.storage_version = 2
         [volume] = self._info.system.volumes.values()
         self._on_volume = snapdapi.OnVolume.from_volume(volume)

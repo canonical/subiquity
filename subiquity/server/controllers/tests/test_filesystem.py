@@ -433,6 +433,18 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         }
         requests_mocker = requests_mock.Mocker()
         requests_mocker.get(
+            "http+unix://snapd/v2/systems",
+            json={
+                "type": "sync",
+                "status-code": 200,
+                "status": "OK",
+                "result": {
+                    "systems": [],
+                },
+            },
+            status_code=200,
+        )
+        requests_mocker.get(
             "http+unix://snapd/v2/systems/enhanced-secureboot-desktop",
             json=json_body,
             status_code=500,
@@ -1397,9 +1409,10 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
             name="foo",
             label="system",
             system=snapdapi.SystemDetails(
+                label="system",
                 volumes={
                     "pc": snapdapi.Volume(schema="gpt", structure=structures),
-                }
+                },
             ),
         )
 
