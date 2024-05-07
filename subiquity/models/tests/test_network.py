@@ -52,3 +52,14 @@ class TestNetworkModel(unittest.IsolatedAsyncioTestCase):
         config = self.model.render()
         for file in config["write_files"].values():
             self.assertEqual(file["permissions"], "0600")
+
+    async def test_netplan_wifi_combined(self):
+        """Assert the wifi config is not written separately."""
+
+        mock_config = {"network": {"wifis": "data"}}
+        self.model.render_config = mock.Mock(return_value=mock_config)
+
+        config = self.model.render()
+        self.assertIn(
+            "wifis", config["write_files"]["etc_netplan_installer"]["content"]
+        )
