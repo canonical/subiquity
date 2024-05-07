@@ -375,27 +375,28 @@ class InstallController(SubiquityController):
                     device_map_path=logs_dir / "device-map-format.json",
                 ),
             )
-            await run_curtin_step(
-                name="extract",
-                stages=["extract"],
-                step_config=self.generic_config(),
-                source=source,
-            )
-            await self.create_core_boot_classic_fstab(context=context)
-            await run_curtin_step(
-                name="swap",
-                stages=["swap"],
-                step_config=self.generic_config(
-                    swap_commands={
-                        "subiquity": [
-                            "curtin",
-                            "swap",
-                            "--fstab",
-                            self.tpath("etc/fstab"),
-                        ],
-                    }
-                ),
-            )
+            if source is not None:
+                await run_curtin_step(
+                    name="extract",
+                    stages=["extract"],
+                    step_config=self.generic_config(),
+                    source=source,
+                )
+                await self.create_core_boot_classic_fstab(context=context)
+                await run_curtin_step(
+                    name="swap",
+                    stages=["swap"],
+                    step_config=self.generic_config(
+                        swap_commands={
+                            "subiquity": [
+                                "curtin",
+                                "swap",
+                                "--fstab",
+                                self.tpath("etc/fstab"),
+                            ],
+                        }
+                    ),
+                )
             await fs_controller.finish_install(context=context)
             await self.setup_target(context=context)
         else:

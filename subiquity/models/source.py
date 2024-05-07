@@ -25,22 +25,22 @@ from subiquity.common.serialize import Serializer
 log = logging.getLogger("subiquity.models.source")
 
 
-@attr.s(auto_attribs=True)
+@attr.s(auto_attribs=True, kw_only=True)
 class CatalogEntryVariation:
-    path: str
+    path: str = ""
     size: int
     snapd_system_label: typing.Optional[str] = None
 
 
-@attr.s(auto_attribs=True)
+@attr.s(auto_attribs=True, kw_only=True)
 class CatalogEntry:
     variant: str
     id: str
     name: typing.Dict[str, str]
     description: typing.Dict[str, str]
-    path: str
+    path: str = ""
     size: int
-    type: str
+    type: typing.Optional[str]
     default: bool = False
     locale_support: str = attr.ib(default="locale-only")
     preinstalled_langs: typing.List[str] = attr.Factory(list)
@@ -101,7 +101,12 @@ class SourceModel:
                 return source
         raise KeyError
 
-    def get_source(self, variation_name: typing.Optional[str] = None):
+    def get_source(
+        self, variation_name: typing.Optional[str] = None
+    ) -> typing.Optional[str]:
+        scheme = self.current.type
+        if scheme is None:
+            return None
         if variation_name is None:
             variation = next(iter(self.current.variations.values()))
         else:
@@ -114,7 +119,6 @@ class SourceModel:
             else:
                 suffix = "no-languages"
             path = base + "." + suffix + ext
-        scheme = self.current.type
         return f"{scheme}://{path}"
 
     def render(self):
