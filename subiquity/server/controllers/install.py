@@ -349,7 +349,7 @@ class InstallController(SubiquityController):
                     device_map_path=logs_dir / "device-map.json",
                 ),
             )
-        elif fs_controller.is_core_boot_classic():
+        elif fs_controller.use_snapd_install_api():
             await run_curtin_step(
                 name="partitioning",
                 stages=["partitioning"],
