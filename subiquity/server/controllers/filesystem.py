@@ -289,6 +289,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     def is_core_boot_classic(self):
         return self._info.is_core_boot_classic()
 
+    def use_snapd_install_api(self):
+        return self._on_volume is not None
+
     def load_autoinstall_data(self, data):
         # Log disabled to prevent LUKS password leak
         # log.debug("load_autoinstall_data %s", data)
