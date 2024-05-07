@@ -135,10 +135,11 @@ class SourceController(SubiquityController):
 
     def get_handler(
         self, variation_name: Optional[str] = None
-    ) -> AbstractSourceHandler:
-        handler = get_handler_for_source(
-            sanitize_source(self.model.get_source(variation_name))
-        )
+    ) -> Optional[AbstractSourceHandler]:
+        source = self.model.get_source(variation_name)
+        if source is None:
+            return None
+        handler = get_handler_for_source(sanitize_source(source))
         if handler is not None and self.app.opts.dry_run:
             handler = TrivialSourceHandler("/")
         return handler
