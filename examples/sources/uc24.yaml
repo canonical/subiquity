@@ -1,0 +1,10 @@
+- description:
+    en: This test source provides a "Ubuntu Core" base install
+  id: ubuntu-core
+  locale_support: none
+  name:
+    en: Ubuntu Core 24
+  type: null
+  size: 0
+  variant: core
+  snapd_system_label: "20240314"
