@@ -294,6 +294,16 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # log.debug("self.ai_data = %s", data)
         self.ai_data = data
 
+    # The identity and user-data section are optional if we are only installing
+    # the reset partition, however the identity controller needs to know this
+    # before the filesystem controller naturally sets this. So this is a
+    # function to inspect the outcome early.
+    # See: https://github.com/canonical/subiquity/pull/1965
+    def is_reset_partition_only(self):
+        storage_config = self.app.autoinstall_config.get(self.autoinstall_key, {})
+        layout = storage_config.get("layout", {})
+        return layout.get("reset-partition-only", False)
+
     async def configured(self):
         self._configured = True
         if self._info is None:

@@ -89,14 +89,7 @@ class IdentityController(SubiquityController):
         if self.app.base_model.source.current.variant != "server":
             return
         # 3. we are only refreshing the reset partition
-        # (The identity controller doesn't figure this out until the apply
-        # step, so we are going to cheat and inspect the situation here)
-        storage_config = self.app.autoinstall_config.get("storage")
-        if (
-            storage_config is not None
-            and storage_config.get("layout") is not None
-            and storage_config["layout"].get("reset-partition-only")
-        ):
+        if self.app.controllers.Filesystem.is_reset_partition_only():
             return
         # 4. identity section is interactive
         if self.interactive():
