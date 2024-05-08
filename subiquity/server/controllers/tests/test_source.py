@@ -17,8 +17,14 @@ import unittest
 
 from subiquity.common.serialize import Serializer
 from subiquity.models.source import CatalogEntry
+from subiquity.models.subiquity import SubiquityModel
 from subiquity.models.tests.test_source import make_entry as make_raw_entry
-from subiquity.server.controllers.source import convert_source
+from subiquity.server.controllers.source import SourceController, convert_source
+from subiquity.server.server import INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
+from subiquitycore.pubsub import MessageHub
+from subiquitycore.tests import SubiTestCase
+from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.parameterized import parameterized
 
 
 def make_entry(**kw):
@@ -44,3 +50,45 @@ class TestSubiquityModel(unittest.TestCase):
         self.assertEqual(convert_source(entry, "fr").name, "French")
         self.assertEqual(convert_source(entry, "fr_CA").name, "French Canadian")
         self.assertEqual(convert_source(entry, "fr_BE").name, "French")
+
+
+class TestSourceController(SubiTestCase):
+    def setUp(self):
+        self.base_model = SubiquityModel(
+            "test", MessageHub(), INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
+        )
+        self.app = make_app(model=self.base_model)
+        self.app.opts.source_catalog = "examples/sources/install.yaml"
+        self.controller = SourceController(self.app)
+
+    def _set_source_catalog(self, path):
+        self.app.opts.source_catalog = path
+        self.controller = SourceController(self.app)
+
+    @parameterized.expand(
+        #   (Sources list, is_desktop)
+        (
+            ("examples/sources/desktop.yaml", "desktop"),
+            ("examples/sources/install.yaml", "server"),
+        )
+    )
+    def test_install_source_detection__defaults(self, catalog, expected):
+        """Test source detection with defaults."""
+
+        self._set_source_catalog(catalog)
+
+        variant = self.controller.model.current.variant
+        self.assertEqual(variant, expected)
+
+    @parameterized.expand(
+        #   (Sources list, ai_data, expected)
+        (
+            ("examples/sources/mixed.yaml", {"id": "ubuntu-desktop"}, "desktop"),
+            ("examples/sources/mixed.yaml", {"id": "ubuntu-server"}, "server"),
+        )
+    )
+    def test_install_source_detection__autoinstall(self, catalog, ai_data, expected):
+        """Test source detection with autoinstall."""
+        self._set_source_catalog(catalog)
+        self.controller.load_autoinstall_data(ai_data)
+        self.assertEqual(self.controller.model.current.variant, expected)
