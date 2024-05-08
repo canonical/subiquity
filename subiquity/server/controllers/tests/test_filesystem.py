@@ -1638,3 +1638,50 @@ class TestMatchingDisks(IsolatedAsyncioTestCase):
         # overhead
         actual = self.fsc.get_bootable_matching_disk({"path": "/dev/md/*"})
         self.assertEqual(r1, actual)
+
+
+class TestResetPartitionLookAhead(IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.app = make_app()
+        self.app.opts.bootloader = None
+        self.fsc = FilesystemController(app=self.app)
+
+    @parameterized.expand(
+        # (config, is reset only)
+        (
+            ({}, False),
+            (
+                {
+                    "storage": {},
+                },
+                False,
+            ),
+            (
+                {
+                    "storage": {
+                        "layout": {
+                            "name": "direct",
+                            "reset-partition": True,
+                        },
+                    },
+                },
+                False,
+            ),
+            (
+                {
+                    "storage": {
+                        "layout": {
+                            "reset-partition-only": True,
+                        },
+                    },
+                },
+                True,
+            ),
+        )
+    )
+    def test_is_reset_partition_only_utility(self, config, expected):
+        """Test is_reset_partition_only utility"""
+
+        self.app.autoinstall_config = config
+
+        self.assertEqual(self.fsc.is_reset_partition_only(), expected)

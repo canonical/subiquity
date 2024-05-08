@@ -17,6 +17,7 @@ import jsonschema
 from jsonschema.validators import validator_for
 
 from subiquity.server.autoinstall import AutoinstallError
+from subiquity.server.controllers.filesystem import FilesystemController
 from subiquity.server.controllers.identity import IdentityController
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
@@ -39,6 +40,8 @@ class TestControllerUserCreationFlows(SubiTestCase):
     # See subiquity/models/tests/test_subiquity.py for details.
     def setUp(self):
         self.app = make_app()
+        self.app.opts.bootloader = False
+        self.app.controllers.Filesystem = FilesystemController(self.app)
         self.ic = IdentityController(self.app)
         self.ic.model.user = None
 
@@ -54,9 +57,9 @@ class TestControllerUserCreationFlows(SubiTestCase):
         ({"interactive-sections": ["*"]}, True),
         # No Autoinstall => interactive
         ({}, True),
-        # Can be missing if reset-parition-only specified
+        # Can be missing if reset-partition-only specified
         ({"storage": {"layout": {"reset-partition-only": True}}}, True),
-        # Can't be missing if reset-parition-only is not specified
+        # Can't be missing if reset-partition-only is not specified
         ({"storage": {"layout": {}}}, False),
         # user-data passed instead
         ({"user-data": "..."}, True),
