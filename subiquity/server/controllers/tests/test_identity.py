@@ -19,6 +19,7 @@ from jsonschema.validators import validator_for
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controllers.filesystem import FilesystemController
 from subiquity.server.controllers.identity import IdentityController
+from subiquity.server.controllers.source import SourceController
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized
@@ -43,6 +44,8 @@ class TestControllerUserCreationFlows(SubiTestCase):
         self.app.opts.bootloader = False
         self.app.controllers.Filesystem = FilesystemController(self.app)
         self.ic = IdentityController(self.app)
+        self.app.opts.source_catalog = "examples/sources/install.yaml"
+        self.app.controllers.Source = SourceController(self.app)
         self.ic.model.user = None
 
     # Test cases for 4a1. Copied for 4a2 but all cases should be valid for desktop.
