@@ -665,7 +665,7 @@ class NetworkController(BaseNetworkController, TuiController, NetworkAnswersMixi
         self.app.request_next_screen()
 
     def cancel(self):
-        self.app.prev_screen()
+        self.app.request_prev_screen()
 
     def apply_starting(self):
         super().apply_starting()
