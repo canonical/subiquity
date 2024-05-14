@@ -38,13 +38,6 @@ class NetworkModel(CoreNetworkModel):
 
     def render(self):
         netplan = self.render_config()
-        # We write the wifi config -- which almost certainly contains secrets --
-        # to a separate file since it's possible the default file may
-        # be shared (e.g., via apport for a bug report) and we don't want to
-        # leak them. This isn't a perfect solution because in principle there
-        # could be wired 802.1x stuff that has secrets too, but the subiquity
-        # UI does not support any of that yet so this will do for now.
-
         # If host cloud-init version has no readable combined-cloud-config,
         # default to False.
         cloud_cfg = cloudinit.get_host_combined_cloud_config()
@@ -63,8 +56,6 @@ class NetworkModel(CoreNetworkModel):
                 }
             }
         else:
-            # Separate sensitive wifi config from potentially shared config
-            wifis = netplan["network"].pop("wifis", None)
             r = {
                 "write_files": {
                     # Disable cloud-init networking
@@ -76,7 +67,6 @@ class NetworkModel(CoreNetworkModel):
                         "content": "network: {config: disabled}\n",
                         "permissions": "0600",
                     },
-                    # netplan without sensitive wifi config
                     "etc_netplan_installer": {
                         "path": "etc/netplan/00-installer-config.yaml",
                         "content": self.stringify_config(netplan),
@@ -84,19 +74,6 @@ class NetworkModel(CoreNetworkModel):
                     },
                 },
             }
-            if wifis is not None:
-                netplan_wifi = {
-                    "network": {
-                        "version": 2,
-                        "wifis": wifis,
-                    },
-                }
-                # sensitive wifi config
-                r["write_files"]["etc_netplan_installer_wifi"] = {
-                    "path": "etc/netplan/00-installer-config-wifi.yaml",
-                    "content": self.stringify_config(netplan_wifi),
-                    "permissions": "0600",
-                }
         return r
 
     async def target_packages(self) -> List[TargetPkg]:
