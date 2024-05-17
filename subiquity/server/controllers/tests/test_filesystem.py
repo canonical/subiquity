@@ -835,7 +835,9 @@ class TestLayout(IsolatedAsyncioTestCase):
 
 
 class TestGuidedV2(IsolatedAsyncioTestCase):
-    async def _setup(self, bootloader, ptable, fix_bios=True, **kw):
+    async def _setup(
+        self, bootloader, ptable, fix_bios=True, snapd_system_labels=(None,), **kw
+    ):
         self.app = make_app()
         self.app.opts.bootloader = bootloader.value
         self.fsc = FilesystemController(app=self.app)
@@ -843,11 +845,16 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.fsc.calculate_suggested_install_min.return_value = 10 << 30
         self.fsc.model = self.model = make_model(bootloader)
         self.fsc._examine_systems_task.start_sync()
+        self.app.snapdapi = snapdapi.make_api_client(AsyncSnapd(get_fake_connection()))
         self.app.dr_cfg = DRConfig()
+        self.app.dr_cfg.systems_dir_exists = True
+        self.app.base_model.source.search_drivers = False
         self.app.base_model.source.current.type = "fsimage"
-        self.app.base_model.source.current.variations = {
-            "default": CatalogEntryVariation(path="", size=1),
-        }
+        variations = self.app.base_model.source.current.variations = {}
+        for label in snapd_system_labels:
+            variations["var" + str(label)] = CatalogEntryVariation(
+                path="", size=1, snapd_system_label=label
+            )
         self.app.controllers.Source.get_handler.return_value = TrivialSourceHandler("")
         await self.fsc._examine_systems_task.wait()
         self.disk = make_disk(self.model, ptable=ptable, **kw)
@@ -858,7 +865,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             "filesystem": self.fs_probe,
         }
         self.fsc._probe_task.task = mock.Mock()
-        self.fsc._examine_systems_task.task = mock.Mock()
+        # self.fsc._examine_systems_task.task = mock.Mock()
         if bootloader == Bootloader.BIOS and ptable != "msdos" and fix_bios:
             make_partition(
                 self.model,
@@ -1310,6 +1317,29 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         resp = await self.fsc.v2_guided_GET()
         self.assertEqual(expected, resp.targets)
         self.assertEqual(ProbeStatus.DONE, resp.status)
+
+    @parameterized.expand(
+        [
+            ("mandatory", ["ENCRYPTED"]),
+            ("prefer-encrypted", ["ENCRYPTED", "UNENCRYPTED"]),
+            ("prefer-unencrypted", ["UNENCRYPTED", "ENCRYPTED"]),
+            ("unavailable", ["UNENCRYPTED"]),
+        ]
+    )
+    async def test_core_boot_and_classic(self, label, core_boot_cap_names):
+        expected_core_boot_caps = [
+            getattr(GuidedCapability, f"CORE_BOOT_{cap_name}")
+            for cap_name in core_boot_cap_names
+        ]
+        await self._setup(
+            Bootloader.UEFI,
+            "gpt",
+            snapd_system_labels=[None, label],
+        )
+        resp = await self.fsc.v2_guided_GET()
+        [target, man] = resp.targets
+        got_core_boot_caps = [cap for cap in target.allowed if cap.is_core_boot()]
+        self.assertEqual(got_core_boot_caps, expected_core_boot_caps)
 
 
 class TestManualBoot(IsolatedAsyncioTestCase):

@@ -629,7 +629,7 @@ class TestCore(TestAPI):
             await inst.post("/source", source_id="ubuntu-desktop")
             resp = await inst.get("/storage/v2/guided", wait=True)
             [reformat, manual] = resp["targets"]
-            self.assertIn("CORE_BOOT_PREFER_ENCRYPTED", reformat["allowed"])
+            self.assertIn("CORE_BOOT_ENCRYPTED", reformat["allowed"])
             data = dict(target=reformat, capability="CORE_BOOT_ENCRYPTED")
             await inst.post("/storage/v2/guided", data)
             v2resp = await inst.get("/storage/v2")
