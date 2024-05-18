@@ -28,6 +28,7 @@ YAML
 addons
 balancer
 boolean
+datasource
 dropdown
 favicon
 installable
@@ -36,6 +37,8 @@ namespaces
 observability
 reST
 reStructuredText
+stdin
 subdirectories
 subfolders
 subtree
+validator

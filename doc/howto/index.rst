@@ -19,6 +19,7 @@ Getting started with autoinstall
    autoinstall-quickstart-s390x
    basic-server-installation
    configure-storage
+   autoinstall-validation
 
 Found a problem?
 ----------------

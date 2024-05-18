@@ -21,7 +21,7 @@ The suggested way of providing autoinstall configuration to the Ubuntu installer
 
 The autoinstall configuration is provided via cloud-init configuration, which is almost endlessly flexible. In most scenarios the easiest way will be to provide user data via the :external+cloud-init:ref:`datasource_nocloud` data source.
 
-When providing autoinstall via cloud-init, the autoinstall configuration is provided as :external+cloud-init:ref:`user_data_formats-cloud_config`. This means it requires a :code:`#cloud-config` header. The autoinstall directives are placed under a top level :code:`autoinstall:` key:
+When providing autoinstall via cloud-init, the autoinstall configuration is provided as :external+cloud-init:ref:`user_data_formats-cloud_config`. This means the file requires a :code:`#cloud-config` header and the autoinstall directives are placed under a top level :code:`autoinstall:` key:
 
 .. code-block:: yaml
 
@@ -47,7 +47,7 @@ The autoinstall configuration provided in this way is passed to the Ubuntu insta
     version: 1
     ....
 
-Starting in 24.04 (Noble), to be consistent with the cloud-config based format, a top-level :code:`autoinstall:` keyword is allowed:
+Starting in 24.04 (Noble), to be consistent with the cloud-config based format, a single top-level :code:`autoinstall:` keyword is allowed:
 
 .. code-block:: yaml
 
@@ -69,7 +69,7 @@ Alternatively, you can pass the location of the autoinstall file on the kernel c
 
 
 Order of precedence for autoinstall locations
----------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Because there are many ways to specify the autoinstall file, it may happen that multiple locations are specified at the same time. Subiquity searches for the autoinstall file in the following order and uses the first existing one:
 

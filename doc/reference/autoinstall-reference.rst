@@ -623,6 +623,8 @@ An example storage section:
 
 The extensions to the curtin syntax allow for disk selection and partition or logical-volume sizing.
 
+.. _disk_selection_extensions:
+
 Disk selection extensions
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
