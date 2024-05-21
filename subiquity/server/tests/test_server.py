@@ -456,6 +456,22 @@ class TestAutoinstallValidation(SubiTestCase):
 
                 self.assertEqual(cfg, expected)
 
+    async def test_cloud_config_extract_KeyError(self):
+        """Test autoinstall extract from cloud config resilient to missing data."""
+
+        self.server.base_schema = SubiquityServer.base_schema
+        self.pseudo_load_controllers()
+
+        with patch("subiquity.server.server.validate_cloud_init_schema") as val_mock:
+            val_mock.side_effect = CloudInitSchemaValidationError(
+                keys=["broadcast", "foobar"],
+            )
+
+            # Don't throw on keys that error but aren't in the combined config
+            cfg = await self.server._extract_autoinstall_from_cloud_config(cloud_cfg={})
+
+            self.assertEqual(cfg, {})
+
     async def test_autoinstall_validation__top_level_autoinstall(self):
         """Test allow autoinstall as top-level key"""
 
