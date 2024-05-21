@@ -420,10 +420,13 @@ class SubiquityModel:
         return (before, during)
 
     def _cloud_init_files(self):
-        # TODO, this should be moved to the in-target cloud-config seed so on
-        # first boot of the target, it reconfigures datasource_list to none
-        # for subsequent boots.
-        # (mwhudson does not entirely know what the above means!)
+        # cloud_init_files are placed in-target to be run on first boot due to
+        # /etc/cloud/cloud.cfg.d/99-installer.cfg which limits viable
+        # datasource_list to None. This only allow cloud-init to discover
+        # subiquity-defined configuration on first boot.
+        # During first boot, write_files creates /etc/cloud/cloud-init.disabled
+        # which will prevent cloud-init from running again on subsequent boots
+        # without first running: cloud-init clean.
         userdata = "#cloud-config\n" + yaml.dump(self._cloud_init_config())
         metadata = {"instance-id": str(uuid.uuid4())}
         config = yaml.dump(
@@ -435,7 +438,10 @@ class SubiquityModel:
                         "metadata": metadata,
                     },
                 },
-            }
+            },
+            # ds-identify does not support multi-line YAML datasource_list.
+            # Turn off default_flow_style forcing datasource_list: [None].
+            default_flow_style=None,
         )
         grub_dpkg = yaml.dump({"grub_dpkg": {"enabled": False}})
         files = [
