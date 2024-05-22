@@ -340,6 +340,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def _get_system(
         self, variation_name, label
     ) -> Tuple[Optional[SystemDetails], bool]:
+        """Return system information for a given system label.
+
+        The return value is a SystemDetails object (if any) and True if
+        the system was found in the layer that the installer is running
+        in or False if the source layer needed to be mounted to find
+        it.
+        """
         systems = await self.app.snapdapi.v2.systems.GET()
         labels = {system.label for system in systems.systems}
         if label in labels:
