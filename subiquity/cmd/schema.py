@@ -54,6 +54,7 @@ def make_schema(app):
 def make_app():
     parser = make_server_args_parser()
     opts, unknown = parser.parse_known_args(["--dry-run"])
+    opts.kernel_cmdline = {}
     app = SubiquityServer(opts, "")
     # This is needed because the ubuntu-pro server controller accesses dr_cfg
     # in the initializer.

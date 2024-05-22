@@ -168,6 +168,69 @@ class UbuntuDriversClientInterface(UbuntuDriversInterface):
         return self._oem_metapackages_from_output(result.stdout.decode("utf-8"))
 
 
+class UbuntuDriversFakePCIDevicesInterface(UbuntuDriversInterface):
+    """An implementation of ubuntu-drivers that wraps the calls with
+    the fake-devices-wrapper script."""
+
+    def __init__(self, app, gpgpu: bool) -> None:
+        super().__init__(app, gpgpu)
+
+        app.base_model.drivers.fake_pci_devices = True
+
+        prefix: list[str] = [
+            "env",
+            "-i",
+            "/usr/share/ubuntu-drivers-common/fake-devices-wrapper",
+        ]
+        self.list_drivers_cmd = prefix + self.list_drivers_cmd
+        self.list_oem_cmd = prefix + self.list_oem_cmd
+        self.install_drivers_cmd = prefix + self.install_drivers_cmd
+
+    async def ensure_cmd_exists(self, root_dir: str) -> None:
+        # TODO This does not tell us if the "--recommended" option is
+        # available.
+        log.debug("in fake ensure")
+        try:
+            await arun_command(["sh", "-c", "command -v ubuntu-drivers"], check=True)
+        except subprocess.CalledProcessError:
+            raise CommandNotFoundError(
+                f"Command ubuntu-drivers is not available in {root_dir}"
+            )
+
+    async def list_drivers(self, root_dir: str, context) -> List[str]:
+        log.debug("in fake list")
+        result = await arun_command(self.list_drivers_cmd)
+        log.debug("got fake list")
+        log.debug(f"fake list={result.stdout}")
+        log.debug(f"result stderr={result.stderr}")
+        return self._drivers_from_output(result.stdout)
+
+    async def list_oem(self, root_dir: str, context) -> List[str]:
+        # result = await run_curtin_command(self.list_oem_cmd, capture=True)
+        result = await arun_command(self.list_oem_cmd)
+        return self._oem_metapackages_from_output(result.stdout)
+
+    async def install_drivers(self, root_dir: str, context) -> None:
+        await arun_command(
+            [
+                "cp",
+                "/usr/share/ubuntu-drivers-common/fake-devices-wrapper",
+                f"{root_dir}/usr/share/ubuntu-drivers-common/fake-devices-wrapper",
+            ]
+        )
+
+        await run_curtin_command(
+            self.app,
+            context,
+            "in-target",
+            "-t",
+            root_dir,
+            "--",
+            *self.install_drivers_cmd,
+            private_mounts=True,
+        )
+
+
 class UbuntuDriversHasDriversInterface(UbuntuDriversInterface):
     """A dry-run implementation of ubuntu-drivers that returns a hard-coded
     list of drivers."""
@@ -261,5 +324,16 @@ def get_ubuntu_drivers_interface(app) -> UbuntuDriversInterface:
             cls = UbuntuDriversRunDriversInterface
         else:
             cls = UbuntuDriversHasDriversInterface
+
+    # Not elif. Also works on dry-run
+    if "fake-pci-devices" in app.opts.kernel_cmdline:
+        cls = UbuntuDriversFakePCIDevicesInterface
+        log.debug("Using fake-devices-wrapper")
+
+    # For quickly testing MOK enrollment we install on server and force no gpgpu
+    # The caveat to this is that it also has to be an online install
+    if "server-force-no-gpgpu" in app.opts.kernel_cmdline:
+        log.debug("Forcing no gpgpu drivers. Requires online install on server.")
+        is_server = False
 
     return cls(app, gpgpu=is_server)

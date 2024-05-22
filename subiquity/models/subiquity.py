@@ -411,7 +411,10 @@ class SubiquityModel:
         """
         before = set()
         during = set()
-        for model_name in self._install_model_names.all():
+        models: set[str] = (
+            self._install_model_names.all() | self._postinstall_model_names.all()
+        )
+        for model_name in models:
             meth = getattr(getattr(self, model_name), "live_packages", None)
             if meth is not None:
                 packages = await meth()

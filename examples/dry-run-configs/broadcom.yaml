@@ -1,0 +1,1 @@
+ubuntu_drivers_run_on_host_umockdev: "examples/umockdev/broadcom.yaml"

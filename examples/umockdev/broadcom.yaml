@@ -1,0 +1,7 @@
+devices:
+  # This is a fake broadcom wireless chip
+  - modalias: 'pci:v000014E4d00004353sv00sd01bc02sc80i00'
+    vendor: '0x14E4'
+    device: '0x4353'
+
+
