@@ -429,11 +429,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     def _maybe_disable_encryption(self, info: VariationInfo) -> None:
         if self.model.bootloader != Bootloader.UEFI:
-            log.debug("Disabling core boot based install options on non-UEFI " "system")
+            log.debug("Disabling core boot based install options on non-UEFI system")
             info.capability_info.disallow_if(
                 lambda cap: cap.is_core_boot(),
                 GuidedDisallowedCapabilityReason.NOT_UEFI,
-                _("Enhanced secure boot options only available on UEFI " "systems."),
+                _("Enhanced secure boot options only available on UEFI systems."),
             )
         search_drivers = self.app.base_model.source.search_drivers
         if search_drivers is not SEARCH_DRIVERS_AUTOINSTALL_DEFAULT and search_drivers:
