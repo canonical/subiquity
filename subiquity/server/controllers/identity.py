@@ -22,8 +22,8 @@ import attr
 from subiquity.common.apidef import API
 from subiquity.common.resources import resource_path
 from subiquity.common.types import IdentityData, UsernameValidation
+from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
-from subiquitycore.context import with_context
 
 log = logging.getLogger("subiquity.server.controllers.identity")
 
@@ -79,18 +79,22 @@ class IdentityController(SubiquityController):
                 crypted_password=data["password"],
             )
             self.model.add_user(identity_data)
-
-    @with_context()
-    async def apply_autoinstall_config(self, context=None):
-        if self.model.user:
             return
+
+        # The identity section is required except if (any):
+        # 1. a user-data section is provided
         if "user-data" in self.app.autoinstall_config:
             return
-        if self.app.base_model.target is None:
-            return
+        # 2. we are installing not-Server (Desktop)
         if self.app.base_model.source.current.variant != "server":
             return
-        raise Exception("neither identity nor user-data provided")
+        # 3. we are only refreshing the reset partition
+        if self.app.controllers.Filesystem.is_reset_partition_only():
+            return
+        # 4. identity section is interactive
+        if self.interactive():
+            return
+        raise AutoinstallError("neither identity nor user-data provided")
 
     def make_autoinstall(self):
         if self.model.user is None:
