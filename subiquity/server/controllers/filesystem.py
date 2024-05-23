@@ -22,7 +22,7 @@ import os
 import pathlib
 import subprocess
 import time
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import attr
 import pyudev
@@ -184,6 +184,7 @@ class VariationInfo:
     capability_info: CapabilityInfo = attr.Factory(CapabilityInfo)
     min_size: Optional[int] = None
     system: Optional[SystemDetails] = None
+    needs_systems_mount: bool = False
 
     def is_core_boot_classic(self) -> bool:
         return self.label is not None
@@ -346,20 +347,36 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self._source_handler.cleanup()
             self._source_handler = None
 
-    async def _get_system(self, variation_name, label):
-        try:
-            await self._mount_systems_dir(variation_name)
-        except NoSnapdSystemsOnSource:
-            return None
-        try:
-            system = await self.app.snapdapi.v2.systems[label].GET()
-        except requests.exceptions.HTTPError as http_err:
-            log.warning("v2/systems/%s returned %s", label, http_err.response.text)
-            raise
-        finally:
-            await self._unmount_systems_dir()
-        log.debug("got system %s", system)
-        return system
+    async def _get_system(
+        self, variation_name, label
+    ) -> Tuple[Optional[SystemDetails], bool]:
+        """Return system information for a given system label.
+
+        The return value is a SystemDetails object (if any) and True if
+        the system was found in the layer that the installer is running
+        in or False if the source layer needed to be mounted to find
+        it.
+        """
+        systems = await self.app.snapdapi.v2.systems.GET()
+        labels = {system.label for system in systems.systems}
+        if label in labels:
+            try:
+                return await self.app.snapdapi.v2.systems[label].GET(), True
+            except requests.exceptions.HTTPError as http_err:
+                log.warning("v2/systems/%s returned %s", label, http_err.response.text)
+                raise
+        else:
+            try:
+                await self._mount_systems_dir(variation_name)
+            except NoSnapdSystemsOnSource:
+                return None, False
+            try:
+                return await self.app.snapdapi.v2.systems[label].GET(), False
+            except requests.exceptions.HTTPError as http_err:
+                log.warning("v2/systems/%s returned %s", label, http_err.response.text)
+                raise
+            finally:
+                await self._unmount_systems_dir()
 
     def info_for_system(self, name: str, label: str, system: SystemDetails):
         if len(system.volumes) > 1:
@@ -420,6 +437,29 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         return info
 
+    def _maybe_disable_encryption(self, info: VariationInfo) -> None:
+        if self.model.bootloader != Bootloader.UEFI:
+            log.debug("Disabling core boot based install options on non-UEFI system")
+            info.capability_info.disallow_if(
+                lambda cap: cap.is_core_boot(),
+                GuidedDisallowedCapabilityReason.NOT_UEFI,
+                _("Enhanced secure boot options only available on UEFI systems."),
+            )
+        search_drivers = self.app.base_model.source.search_drivers
+        if search_drivers is not SEARCH_DRIVERS_AUTOINSTALL_DEFAULT and search_drivers:
+            log.debug(
+                "Disabling core boot based install options as third-party "
+                "drivers selected"
+            )
+            info.capability_info.disallow_if(
+                lambda cap: cap.is_core_boot(),
+                GuidedDisallowedCapabilityReason.THIRD_PARTY_DRIVERS,
+                _(
+                    "Enhanced secure boot options cannot currently install "
+                    "third party drivers."
+                ),
+            )
+
     async def _examine_systems(self):
         self._variation_info.clear()
         catalog_entry = self.app.base_model.source.current
@@ -427,7 +467,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             system = None
             label = variation.snapd_system_label
             if label is not None:
-                system = await self._get_system(name, label)
+                system, in_live_layer = await self._get_system(name, label)
             log.debug("got system %s for variation %s", system, name)
             if system is not None and len(system.volumes) > 0:
                 if not self.app.opts.enhanced_secureboot:
@@ -436,46 +476,15 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 info = self.info_for_system(name, label, system)
                 if info is None:
                     continue
-                if self.model.bootloader != Bootloader.UEFI:
-                    log.debug(
-                        "Disabling core boot based install options on non-UEFI "
-                        "system"
-                    )
-                    info.capability_info.disallow_if(
-                        lambda cap: cap.is_core_boot(),
-                        GuidedDisallowedCapabilityReason.NOT_UEFI,
-                        _(
-                            "Enhanced secure boot options only available on UEFI "
-                            "systems."
-                        ),
-                    )
-                search_drivers = self.app.base_model.source.search_drivers
-                if (
-                    search_drivers is not SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
-                    and search_drivers
-                ):
-                    log.debug(
-                        "Disabling core boot based install options as third-party "
-                        "drivers selected"
-                    )
-                    info.capability_info.disallow_if(
-                        lambda cap: cap.is_core_boot(),
-                        GuidedDisallowedCapabilityReason.THIRD_PARTY_DRIVERS,
-                        _(
-                            "Enhanced secure boot options cannot currently install "
-                            "third party drivers."
-                        ),
-                    )
-                self._variation_info[name] = info
+                if not in_live_layer:
+                    info.needs_systems_mount = True
+                self._maybe_disable_encryption(info)
             elif catalog_entry.type.startswith("dd-"):
                 min_size = variation.size
-                self._variation_info[name] = VariationInfo.dd(
-                    name=name, min_size=min_size
-                )
+                info = VariationInfo.dd(name=name, min_size=min_size)
             else:
-                self._variation_info[name] = VariationInfo.classic(
-                    name=name, min_size=variation.size
-                )
+                info = VariationInfo.classic(name=name, min_size=variation.size)
+            self._variation_info[name] = info
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
@@ -866,9 +875,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             offset = offset + structure.size
 
     async def guided_core_boot(self, disk: Disk):
+        if self._info.needs_systems_mount:
+            await self._mount_systems_dir(self._info.name)
         # Formatting for a core boot classic system relies on some curtin
         # features that are only available with v2 partitioning.
-        await self._mount_systems_dir(self._info.name)
         self.model.storage_version = 2
         [volume] = self._info.system.volumes.values()
         self._on_volume = snapdapi.OnVolume.from_volume(volume)

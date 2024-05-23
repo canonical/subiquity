@@ -203,11 +203,17 @@ class StorageEncryption:
 
 @attr.s(auto_attribs=True)
 class SystemDetails:
+    label: str
     current: bool = False
     volumes: Dict[str, Volume] = attr.Factory(dict)
     storage_encryption: Optional[StorageEncryption] = named_field(
         "storage-encryption", default=None
     )
+
+
+@attr.s(auto_attribs=True)
+class SystemsResponse:
+    systems: List[SystemDetails] = attr.Factory(list)
 
 
 class SystemAction(enum.Enum):
@@ -258,6 +264,9 @@ class SnapdAPI:
                 ...
 
         class systems:
+            def GET() -> SystemsResponse:
+                ...
+
             @path_parameter
             class label:
                 def GET() -> SystemDetails:
