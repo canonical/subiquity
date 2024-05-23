@@ -171,6 +171,12 @@ which will not return until the check has completed (or failed). In a similar
 vein, `meta.status.GET()` takes an argument indicating what the client
 thinks the application state currently is and will block until that changes.
 
+In some scenarios (e.g., after updating the installer), the server process will
+automatically restart. In such an event, every open socket will automatically
+get closed. As a consequence, ongoing long polling requests will not receive a
+response. To handle this scenario gracefully, the client should catch the
+error and retry the long polling request after a short time.
+
 ### Examples and common patterns
 
 Adding a typical screen requires:
