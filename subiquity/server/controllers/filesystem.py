@@ -289,6 +289,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     def is_core_boot_classic(self):
         return self._info.is_core_boot_classic()
 
+    def use_snapd_install_api(self):
+        return self._on_volume is not None
+
     def load_autoinstall_data(self, data):
         # Log disabled to prevent LUKS password leak
         # log.debug("load_autoinstall_data %s", data)
@@ -319,6 +322,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def _mount_systems_dir(self, variation_name):
         self._source_handler = self.app.controllers.Source.get_handler(variation_name)
+        if self._source_handler is None:
+            raise NoSnapdSystemsOnSource
         source_path = self._source_handler.setup()
         cur_systems_dir = "/var/lib/snapd/seed/systems"
         source_systems_dir = os.path.join(source_path, cur_systems_dir[1:])

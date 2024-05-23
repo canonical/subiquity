@@ -39,7 +39,7 @@ validate () {
             autoinstall-reset-only)
                 python3 scripts/validate-yaml.py --no-root-mount "${cfgs[@]}"
                 ;;
-            answers-core-desktop)
+            answers-core-desktop|answers-uc24)
                 ;;
             *)
                 python3 scripts/validate-yaml.py "${cfgs[@]}"
@@ -50,7 +50,7 @@ validate () {
             exit 1
         fi
         case $testname in
-            answers-core-desktop)
+            answers-core-desktop|answers-uc24)
                 ;;
             *)
                 python3 scripts/validate-autoinstall-user-data.py < $tmpdir/var/log/installer/autoinstall-user-data
@@ -223,9 +223,13 @@ for answers in examples/answers/*.yaml; do
             --snaps-from-examples \
             --source-catalog $catalog
         validate install
-        if [ $answers != examples/answers/core-desktop.yaml ]; then
-            grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
-        fi
+        case $testname in
+            answers-core-desktop|answers-uc24)
+                ;;
+            *)
+                grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
+                ;;
+        esac
     else
         # The OOBE doesn't exist in WSL < 20.04
         if [ "${RELEASE%.*}" -ge 20 ]; then
