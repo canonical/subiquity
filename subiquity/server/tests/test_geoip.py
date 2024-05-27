@@ -25,7 +25,7 @@ xml = """
   <Ip>1.2.3.4</Ip>
   <Status>OK</Status>
   <CountryCode>US</CountryCode>
-  <CountryCode3>USA</CountryCode3>
+  <CountryCode3>Unknown</CountryCode3>
   <CountryName>United States</CountryName>
   <RegionCode>CA</RegionCode>
   <RegionName>California</RegionName>
