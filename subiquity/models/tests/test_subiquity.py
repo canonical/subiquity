@@ -285,7 +285,8 @@ grub_dpkg:
   enabled: false
 """,
             "etc/cloud/cloud.cfg.d/99-installer.cfg": re.compile(
-                "datasource:\n  None:\n    metadata:\n      instance-id: .*\n    userdata_raw: \"#cloud-config\\\\ngrowpart:\\\\n  mode: \\'off\\'\\\\npreserve_hostname: true\\\\n\\\\\n"  # noqa
+                "datasource:\n  None:\n    metadata: {instance-id: .*}\n    userdata_raw: \"#cloud-config\\\\ngrowpart:\\\\n  mode: \\'off\\'\\\\npreserve_hostname: true\\\\n\\\\\n.*datasource_list: \[None\]",  # noqa
+                re.DOTALL,
             ),
             "etc/hostname": "somehost\n",
             "etc/cloud/ds-identify.cfg": "policy: enabled\n",
@@ -320,7 +321,10 @@ grub_dpkg:
             ):
                 for cpath, content, perms in model._cloud_init_files():
                     if isinstance(expected_files[cpath], re.Pattern):
-                        self.assertIsNotNone(expected_files[cpath].match(content))
+                        self.assertIsNotNone(
+                            expected_files[cpath].match(content),
+                            f"Missing expected file match {cpath}: {content}",
+                        )
                     else:
                         self.assertEqual(expected_files[cpath], content)
 
