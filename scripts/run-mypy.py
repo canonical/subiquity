@@ -13,7 +13,7 @@ def run_mypy(cwd: str | None, stdout: TextIO | None) -> None:
     mypy_cmd = [
         'python3', '-m', 'mypy',
         '--ignore-missing-imports', '--check-untyped-defs',
-        'subiquity', 'subiquitycore', 'system_setup', 'console_conf',
+        'subiquity', 'subiquitycore', 'console_conf',
         'scripts/replay-curtin-log.py',
     ]
 

@@ -88,15 +88,6 @@ parts:
     organize:
       lib/python*/site-packages/usr/lib/curtin: usr/lib/
 
-  ubuntu-wsl-setup:
-    plugin: nil
-    source: .
-    source-type: git
-
-    override-build: |
-      mkdir -p $CRAFT_PART_INSTALL/bin
-      cp system_setup/ubuntu-wsl-setup $CRAFT_PART_INSTALL/bin/ubuntu-wsl-setup
-
   subiquity:
     plugin: nil
 

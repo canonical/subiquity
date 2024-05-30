@@ -1,16 +1,16 @@
-files: "(console_conf|subiquity|subiquitycore|system_setup|doc)"
+files: "(console_conf|subiquity|subiquitycore|doc)"
 repos:
   - repo: https://github.com/psf/black
     rev: 23.7.0
     hooks:
       - id: black
-        files: "(console_conf|subiquity|subiquitycore|system_setup)"
+        files: "(console_conf|subiquity|subiquitycore)"
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
       - id: isort
         name: isort
-        files: "(console_conf|subiquity|subiquitycore|system_setup)"
+        files: "(console_conf|subiquity|subiquitycore)"
   - repo: local
     hooks:
       - id: doc-spelling

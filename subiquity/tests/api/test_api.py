@@ -187,34 +187,6 @@ class Server(Client):
             self.proc._transport.close()
 
 
-class SystemSetupServer(Server):
-    async def spawn(
-        self, output_base, socket, machine_config, bootloader="uefi", extra_args=None
-    ):
-        env = os.environ.copy()
-        env["SUBIQUITY_REPLAY_TIMESCALE"] = "100"
-        cmd = [
-            "python3",
-            "-m",
-            "system_setup.cmd.server",
-            "--dry-run",
-            "--socket",
-            socket,
-            "--output-base",
-            output_base,
-        ]
-        root = os.path.abspath(output_base)
-        conffile = os.path.join(root, "etc/wsl.conf")
-        os.makedirs(os.path.dirname(conffile), exist_ok=True)
-        # The server should crash in the presence of a non-empty conf file.
-        with open(conffile, "w+") as f:
-            f.write("[automount]\noptions=metadata")
-
-        if extra_args is not None:
-            cmd.extend(extra_args)
-        self.proc = await astart_command(cmd, env=env)
-
-
 class TestAPI(SubiTestCase):
     class _MachineConfig(os.PathLike):
         def __init__(self, outer, path):
@@ -300,12 +272,6 @@ async def start_server(*args, set_first_source=True, source=None, **kwargs):
                 break
             await asyncio.sleep(0.5)
         yield instance
-
-
-@contextlib.asynccontextmanager
-async def start_system_setup_server(*args, **kwargs):
-    async with start_server_factory(SystemSetupServer, *args, **kwargs) as srv:
-        yield srv
 
 
 @contextlib.asynccontextmanager
@@ -2100,23 +2066,6 @@ class TestAutoinstallServer(TestAPI):
             self.assertIsNotNone(error)
             self.assertNotEqual(error, None)
             self.assertEqual(error["kind"], "UNKNOWN")
-
-
-class TestWSLSetupOptions(TestAPI):
-    @timeout()
-    async def test_wslsetupoptions(self):
-        cfg = "examples/machines/simple.json"
-        async with start_system_setup_server(cfg) as inst:
-            await inst.post("/meta/client_variant", variant="wsl_setup")
-
-            payload = {"install_language_support_packages": False}
-            endpoint = "/wslsetupoptions"
-            resp = await inst.get(endpoint)
-            self.assertTrue(resp["install_language_support_packages"])
-            await inst.post(endpoint, payload)
-
-            resp = await inst.get(endpoint)
-            self.assertFalse(resp["install_language_support_packages"])
 
 
 class TestActiveDirectory(TestAPI):

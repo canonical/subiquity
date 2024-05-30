@@ -43,8 +43,7 @@ jobs:
       - uses: psf/black@stable
         with:
           version: "~= 23.0"
-          src: "console_conf subiquity subiquitycore system_setup"
-
+          src: "console_conf subiquity subiquitycore"
   format-isort:
     runs-on: ubuntu-20.04
     steps:
@@ -52,8 +51,7 @@ jobs:
       - uses: isort/isort-action@v1
         with:
           isort-version: "5.12.0"
-          sort-paths: "console_conf subiquity subiquitycore system_setup"
-
+          sort-paths: "console_conf subiquity subiquitycore"
   static-typing:
     # In this job, we compare the output of mypy before and after the PR.
     if: github.event_name == 'pull_request'
@@ -74,7 +72,7 @@ jobs:
           # If it does not work, we can set fetch-depth: 0
           fetch-depth: $(( ${{ github.event.pull_request.commits }} + 1 ))
       - name: Run mypy on pull request branch
-        run: python3 -m mypy --ignore-missing-imports --check-untyped-defs subiquity subiquitycore system_setup console_conf scripts/replay-curtin-log.py | tee /tmp/mypy-head.out
+        run: python3 -m mypy --ignore-missing-imports --check-untyped-defs subiquity subiquitycore console_conf scripts/replay-curtin-log.py | tee /tmp/mypy-head.out
       - name: Determine base commit (most recent common ancestor)
         id: determine_base_commit
         run: |
@@ -88,7 +86,7 @@ jobs:
           ref: ${{ steps.determine_base_commit.outputs.base_commit }}
       - run: git show
       - name: Run mypy on base commit
-        run: python3 -m mypy --ignore-missing-imports --check-untyped-defs subiquity subiquitycore system_setup console_conf scripts/replay-curtin-log.py | tee /tmp/mypy-base.out
+        run: python3 -m mypy --ignore-missing-imports --check-untyped-defs subiquity subiquitycore console_conf scripts/replay-curtin-log.py | tee /tmp/mypy-base.out
       - name: Produce the diff between the two mypy runs
         run: diff --color=always --unified=0 /tmp/mypy-base.out /tmp/mypy-head.out
         continue-on-error: true
