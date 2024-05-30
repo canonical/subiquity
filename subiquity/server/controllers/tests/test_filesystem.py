@@ -1551,7 +1551,9 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         choice = GuidedChoiceV2(
             target=response.targets[0], capability=GuidedCapability.CORE_BOOT_ENCRYPTED
         )
-        await self.fsc.v2_guided_POST(choice)
+        with mock.patch.object(self.fsc, "configured") as m_configured:
+            await self.fsc.v2_guided_POST(choice)
+        m_configured.assert_called_once()
 
         self.assertEqual(model.storage_version, 2)
 

@@ -26,6 +26,7 @@ from subiquity.common.types import (
     GuidedStorageResponseV2,
     GuidedStorageTargetManual,
     ProbeStatus,
+    StorageResponse,
     StorageResponseV2,
 )
 from subiquity.models.filesystem import (
@@ -259,7 +260,11 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             raise Exception("could not process action {}".format(action))
 
     async def _guided_choice(self, choice: GuidedChoiceV2):
-        coro = self.endpoint.guided.POST(choice)
+        async def v2_guided_POST_with_v1_response() -> StorageResponse:
+            await self.endpoint.v2.guided.POST(choice)
+            return await self.endpoint.GET()
+
+        coro = v2_guided_POST_with_v1_response()
         if not choice.capability.supports_manual_customization():
             await self.app.next_screen(coro)
             return
@@ -290,7 +295,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
 
         run_bg_task(guided_and_redraw())
 
-    def reset(self, refresh_view):
+    def reset(self, refresh_view: bool) -> None:
         async def reset_and_redraw():
             await self._reset(refresh_view)
             await self.app.redraw_screen()
@@ -300,8 +305,12 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
 
         run_bg_task(reset_and_redraw())
 
-    async def _reset(self, refresh_view):
-        status = await self.endpoint.reset.POST()
+    async def _reset(self, refresh_view: bool) -> None:
+        async def v2_reset_with_v1_response() -> StorageResponse:
+            await self.endpoint.v2.reset.POST()
+            return await self.endpoint.GET()
+
+        status = await v2_reset_with_v1_response()
         self.app.ui.block_input = False
         self.model.load_server_data(status)
         if refresh_view:

@@ -997,18 +997,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             ),
         )
 
-    async def guided_POST(self, data: GuidedChoiceV2) -> StorageResponse:
-        log.debug(data)
-        await self.guided(data)
-        if not data.capability.supports_manual_customization():
-            await self.configured()
-        return self._done_response()
-
-    async def reset_POST(self, context, request) -> StorageResponse:
-        log.info("Resetting Filesystem model")
-        self.model.reset()
-        return await self.GET(context)
-
     async def has_rst_GET(self) -> bool:
         search = "/sys/module/ahci/drivers/pci:ahci/*/remapped_nvme"
         for remapped_nvme in glob.glob(search):
@@ -1207,6 +1195,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug(data)
         self.locked_probe_data = True
         await self.guided(data)
+        if not data.capability.supports_manual_customization():
+            # Going forward, we probably want the client to call POST
+            # /storage/v2 when they are done ; rather than conditionally
+            # marking the model configured here. This requires a way to tell
+            # the client whether manual customization is possible though.
+            await self.configured()
         return await self.v2_guided_GET()
 
     async def v2_reformat_disk_POST(self, data: ReformatDisk) -> StorageResponseV2:

@@ -305,10 +305,6 @@ class API:
                 ...
 
     class storage:
-        class guided:
-            def POST(data: Payload[GuidedChoiceV2]) -> StorageResponse:
-                pass
-
         def GET(wait: bool = False, use_cached_result: bool = False) -> StorageResponse:
             ...
 
@@ -319,10 +315,6 @@ class API:
             """This endpoint only works in dry-run mode."""
 
             def POST() -> None:
-                ...
-
-        class reset:
-            def POST() -> StorageResponse:
                 ...
 
         class has_rst:
