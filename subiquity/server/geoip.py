@@ -53,7 +53,7 @@ class DryRunGeoIPStrategy(GeoIPStrategy):
     <Ip>255.255.255.255</Ip>
     <Status>OK</Status>
     <CountryCode>FR</CountryCode>
-    <CountryCode3>FRA</CountryCode3>
+    <CountryCode3>Unknown</CountryCode3>
     <CountryName>France</CountryName>
     <RegionCode>A8</RegionCode>
     <RegionName>Ile-de-France</RegionName>
@@ -61,7 +61,7 @@ class DryRunGeoIPStrategy(GeoIPStrategy):
     <ZipPostalCode>75013</ZipPostalCode>
     <Latitude>48.8151</Latitude>
     <Longitude>2.2182</Longitude>
-    <AreaCode>0</AreaCode>
+    <AreaCode>None</AreaCode>
     <TimeZone>Europe/Paris</TimeZone>
   </Response>
 """
