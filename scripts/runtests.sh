@@ -9,9 +9,6 @@ tmpdir=$(mktemp -d)
 subiquity_pid=""
 
 validate () {
-    mode="install"
-    [ $# -gt 0 ] && mode="$1"
-
     if [ -d $tmpdir/var/crash -a -n "$(ls -A $tmpdir/var/crash)" ] ; then
         echo "error: subiquity crashed"
         exit 1
@@ -23,58 +20,54 @@ validate () {
         exit 1
     fi
 
-    if [ "${mode}" = "install" ]; then
-        cfgs=()
-        for stage in partitioning formatting; do
-            cfg="$tmpdir"/var/log/installer/curtin-install/subiquity-$stage.conf
-            if [ -e "$cfg" ]; then
-                cfgs+=("$cfg")
-            fi
-        done
-        if grep passw0rd $tmpdir/subiquity-client-debug.log $tmpdir/subiquity-server-debug.log | grep -v "Loaded answers" | grep -v "answers_action"; then
-            echo "password leaked into log file"
-            exit 1
+    cfgs=()
+    for stage in partitioning formatting; do
+        cfg="$tmpdir"/var/log/installer/curtin-install/subiquity-$stage.conf
+        if [ -e "$cfg" ]; then
+            cfgs+=("$cfg")
         fi
-        case $testname in
-            autoinstall-reset-only)
-                python3 scripts/validate-yaml.py --no-root-mount "${cfgs[@]}"
-                ;;
-            answers-core-desktop|answers-uc24)
-                ;;
-            *)
-                python3 scripts/validate-yaml.py "${cfgs[@]}"
-                ;;
-        esac
-        if [ ! -e $tmpdir/subiquity-client-debug.log ] || [ ! -e $tmpdir/subiquity-server-debug.log ]; then
-            echo "log file not created"
-            exit 1
-        fi
-        case $testname in
-            answers-core-desktop|answers-uc24)
-                ;;
-            *)
-                python3 scripts/validate-autoinstall-user-data.py < $tmpdir/var/log/installer/autoinstall-user-data
-                # After the lunar release and the introduction of mirror testing, it
-                # came to our attention that new Ubuntu installations have the security
-                # repository configured with the primary mirror URL (i.e.,
-                # http://<cc>.archive.ubuntu.com/ubuntu) instead of
-                # http://security.ubuntu.com/ubuntu. Let's ensure we instruct curtin
-                # not to do that.
-                # If we run an autoinstall that customizes the security section as part
-                # of the test-suite, we will need to adapt this test.
-                python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/curtin-install/subiquity-curtin-apt.conf \
-                    apt.security[0].uri='"http://security.ubuntu.com/ubuntu/"' \
-                    apt.security[0].arches='["amd64", "i386"]' \
-                    apt.security[1].uri='"http://ports.ubuntu.com/ubuntu-ports"'
-                ;;
-        esac
-        if [ "$testname" == autoinstall-fallback-offline ]; then
-            grep -F -- 'skipping installation of package ubuntu-restricted-addons' "$tmpdir"/subiquity-server-debug.log
-        fi
-        netplan generate --root $tmpdir
-    else
-        echo "W: Unknown validation mode: ${mode}"
+    done
+    if grep passw0rd $tmpdir/subiquity-client-debug.log $tmpdir/subiquity-server-debug.log | grep -v "Loaded answers" | grep -v "answers_action"; then
+        echo "password leaked into log file"
+        exit 1
     fi
+    case $testname in
+        autoinstall-reset-only)
+            python3 scripts/validate-yaml.py --no-root-mount "${cfgs[@]}"
+            ;;
+        answers-core-desktop|answers-uc24)
+            ;;
+        *)
+            python3 scripts/validate-yaml.py "${cfgs[@]}"
+            ;;
+    esac
+    if [ ! -e $tmpdir/subiquity-client-debug.log ] || [ ! -e $tmpdir/subiquity-server-debug.log ]; then
+        echo "log file not created"
+        exit 1
+    fi
+    case $testname in
+        answers-core-desktop|answers-uc24)
+            ;;
+        *)
+            python3 scripts/validate-autoinstall-user-data.py < $tmpdir/var/log/installer/autoinstall-user-data
+            # After the lunar release and the introduction of mirror testing, it
+            # came to our attention that new Ubuntu installations have the security
+            # repository configured with the primary mirror URL (i.e.,
+            # http://<cc>.archive.ubuntu.com/ubuntu) instead of
+            # http://security.ubuntu.com/ubuntu. Let's ensure we instruct curtin
+            # not to do that.
+            # If we run an autoinstall that customizes the security section as part
+            # of the test-suite, we will need to adapt this test.
+            python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/curtin-install/subiquity-curtin-apt.conf \
+                apt.security[0].uri='"http://security.ubuntu.com/ubuntu/"' \
+                apt.security[0].arches='["amd64", "i386"]' \
+                apt.security[1].uri='"http://ports.ubuntu.com/ubuntu-ports"'
+            ;;
+    esac
+    if [ "$testname" == autoinstall-fallback-offline ]; then
+        grep -F -- 'skipping installation of package ubuntu-restricted-addons' "$tmpdir"/subiquity-server-debug.log
+    fi
+    netplan generate --root $tmpdir
 }
 
 clean () {
@@ -225,7 +218,7 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --autoinstall examples/autoinstall/reset-only.yaml \
     --kernel-cmdline autoinstall \
     --source-catalog examples/sources/install.yaml
-validate install
+validate
 
 clean
 testname=autoinstall-fallback-offline
@@ -237,7 +230,7 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --autoinstall examples/autoinstall/fallback-offline.yaml \
     --kernel-cmdline autoinstall \
     --source-catalog examples/sources/install.yaml
-validate install
+validate
 
 python3 -m subiquity.cmd.schema > $tmpdir/test-schema.json
 diff -u "autoinstall-schema.json" $tmpdir/test-schema.json
