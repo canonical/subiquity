@@ -90,7 +90,14 @@ class TestTimeZoneController(SubiTestCase):
                 cloudconfig, self.tzc.model.make_cloudconfig(), self.tzc.model
             )
 
-    def test_bad_tzs(self):
+    @mock.patch("subiquity.server.controllers.timezone.generate_possible_tzs")
+    def test_bad_tzs(self, generate_possible_tzs):
+        generate_possible_tzs.return_value = [
+            "",
+            "geoip",
+            "Pacific/Auckland",
+            "America/Denver",
+        ]
         bads = [
             "dhcp",  # possible future value, not supported yet
             "notatimezone",
