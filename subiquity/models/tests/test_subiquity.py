@@ -285,7 +285,7 @@ grub_dpkg:
   enabled: false
 """,
             "etc/cloud/cloud.cfg.d/99-installer.cfg": re.compile(
-                "datasource:\n  None:\n    metadata: {instance-id: .*}\n    userdata_raw: \"#cloud-config\\\\ngrowpart:\\\\n  mode: \\'off\\'\\\\npreserve_hostname: true\\\\n\\\\\n.*datasource_list: \[None\]",  # noqa
+                "datasource:\n  None:\n    metadata: {instance-id: .*}\n    userdata_raw: \"#cloud-config\\\\ngrowpart:\\\\n  mode: \\'off\\'\\\\npreserve_hostname: true\\\\n\\\\\n.*datasource_list: \\[None\\]",  # noqa
                 re.DOTALL,
             ),
             "etc/hostname": "somehost\n",
