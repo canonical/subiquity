@@ -25,7 +25,7 @@ import platform
 import secrets
 import tempfile
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 import attr
 import more_itertools
@@ -1590,7 +1590,7 @@ class FilesystemModel:
             status.config, blockdevs=None, is_probe_data=False
         )
 
-    def _make_matchers(self, match):
+    def _make_matchers(self, match: dict) -> Sequence[Callable]:
         def _udev_val(disk, key):
             return self._probe_data["blockdev"].get(disk.path, {}).get(key, "")
 
@@ -1658,14 +1658,7 @@ class FilesystemModel:
 
     def _filtered_matches(self, disks: Sequence[_Device], match: dict):
         matchers = self._make_matchers(match)
-        candidates = []
-        for candidate in disks:
-            for matcher in matchers:
-                if not matcher(candidate):
-                    break
-            else:
-                candidates.append(candidate)
-        return candidates
+        return [disk for disk in disks if all(match_fn(disk) for match_fn in matchers)]
 
     def disk_for_match(self, disks, match):
         log.info(f"considering {disks} for {match}")
