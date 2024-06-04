@@ -1591,8 +1591,6 @@ class FilesystemModel:
         )
 
     def _make_matchers(self, match):
-        matchers = []
-
         def _udev_val(disk, key):
             return self._probe_data["blockdev"].get(disk.path, {}).get(key, "")
 
@@ -1621,6 +1619,11 @@ class FilesystemModel:
         def match_install_media(disk):
             return disk._has_in_use_partition
 
+        def match_nonzero_size(disk):
+            return disk.size != 0
+
+        matchers = [match_nonzero_size]
+
         if match.get("install-media", False):
             matchers.append(match_install_media)
 
@@ -1646,8 +1649,6 @@ class FilesystemModel:
         matchers = self._make_matchers(match)
         candidates = []
         for candidate in disks:
-            if candidate.size == 0:
-                continue
             for matcher in matchers:
                 if not matcher(candidate):
                     break
