@@ -1656,8 +1656,7 @@ class FilesystemModel:
             disks.sort(key=lambda d: d.size, reverse=True)
         return disks
 
-    def disk_for_match(self, disks, match):
-        log.info(f"considering {disks} for {match}")
+    def _filtered_matches(self, disks: Sequence[_Device], match: dict):
         matchers = self._make_matchers(match)
         candidates = []
         for candidate in disks:
@@ -1666,6 +1665,11 @@ class FilesystemModel:
                     break
             else:
                 candidates.append(candidate)
+        return candidates
+
+    def disk_for_match(self, disks, match):
+        log.info(f"considering {disks} for {match}")
+        candidates = self._filtered_matches(disks, match)
         candidates = self._sorted_matches(candidates, match)
         if candidates:
             log.info(f"For match {match}, using the first candidate from {candidates}")
