@@ -22,7 +22,7 @@ import os
 import pathlib
 import subprocess
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import attr
 import pyudev
@@ -1360,7 +1360,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 self.start_monitor()
             break
 
-    def get_bootable_matching_disk(self, match: dict[str, str]):
+    def get_bootable_matching_disk(
+        self, match: dict[str, str] | Sequence[dict[str, str]]
+    ):
         """given a match directive, find disks or disk-like devices for which
         we have a plan to boot, and return the best matching one of those.
         As match directives are autoinstall-supplied, raise AutoinstallError if
