@@ -25,7 +25,7 @@ import platform
 import secrets
 import tempfile
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Set, Tuple, Union
 
 import attr
 import more_itertools
@@ -1649,6 +1649,13 @@ class FilesystemModel:
 
         return matchers
 
+    def _sorted_matches(self, disks: Sequence[_Device], match: dict):
+        if match.get("size") == "smallest":
+            disks.sort(key=lambda d: d.size)
+        elif match.get("size") == "largest":
+            disks.sort(key=lambda d: d.size, reverse=True)
+        return disks
+
     def disk_for_match(self, disks, match):
         log.info(f"considering {disks} for {match}")
         matchers = self._make_matchers(match)
@@ -1659,10 +1666,7 @@ class FilesystemModel:
                     break
             else:
                 candidates.append(candidate)
-        if match.get("size") == "smallest":
-            candidates.sort(key=lambda d: d.size)
-        if match.get("size") == "largest":
-            candidates.sort(key=lambda d: d.size, reverse=True)
+        candidates = self._sorted_matches(candidates, match)
         if candidates:
             log.info(f"For match {match}, using the first candidate from {candidates}")
             return candidates[0]
