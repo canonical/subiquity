@@ -1619,6 +1619,9 @@ class FilesystemModel:
         def match_install_media(disk):
             return disk._has_in_use_partition
 
+        def match_not_in_use(disk):
+            return not disk._has_in_use_partition
+
         def match_nonzero_size(disk):
             return disk.size != 0
 
@@ -1641,6 +1644,8 @@ class FilesystemModel:
             matchers.append(match_devpath)
         if "ssd" in match:
             matchers.append(match_ssd)
+        if "size" in match or "ssd" in match:
+            matchers.append(match_not_in_use)
 
         return matchers
 
@@ -1654,8 +1659,6 @@ class FilesystemModel:
                     break
             else:
                 candidates.append(candidate)
-        if "size" in match or "ssd" in match:
-            candidates = [c for c in candidates if not c._has_in_use_partition]
         if match.get("size") == "smallest":
             candidates.sort(key=lambda d: d.size)
         if match.get("size") == "largest":
