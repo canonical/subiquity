@@ -17,6 +17,7 @@ import pathlib
 import unittest
 from typing import Optional
 from unittest import mock
+from unittest.mock import Mock
 
 import attr
 import yaml
@@ -1731,3 +1732,105 @@ class TestOnRemoteStorage(SubiTestCase):
             self.assertFalse(lv.on_remote_storage())
         with mock.patch.object(vg, "on_remote_storage", return_value=True):
             self.assertTrue(lv.on_remote_storage())
+
+
+class TestDiskForMatch(SubiTestCase):
+    def test_empty_match_directive(self):
+        m = make_model()
+        d1 = make_disk(m)
+        d2 = make_disk(m)
+        actual = m.disk_for_match([d1, d2], {})
+        self.assertEqual(d1, actual)
+
+    def test_sort_largest(self):
+        m = make_model()
+        d100 = make_disk(m, size=100 << 30)
+        d200 = make_disk(m, size=200 << 30)
+        actual = m.disk_for_match([d100, d200], {"size": "largest"})
+        self.assertEqual(d200, actual)
+
+    def test_sort_smallest(self):
+        m = make_model()
+        d200 = make_disk(m, size=200 << 30)
+        d100 = make_disk(m, size=100 << 30)
+        actual = m.disk_for_match([d200, d100], {"size": "smallest"})
+        self.assertEqual(d100, actual)
+
+    def test_skip_empty(self):
+        m = make_model()
+        d0 = make_disk(m, size=0)
+        d100 = make_disk(m, size=100 << 30)
+        actual = m.disk_for_match([d0, d100], {"size": "smallest"})
+        self.assertEqual(d100, actual)
+
+    def test_skip_in_use_size(self):
+        m = make_model()
+        d100 = make_disk(m, size=100 << 30)
+        d200 = make_disk(m, size=200 << 30)
+        d100._has_in_use_partition = True
+        actual = m.disk_for_match([d100, d200], {"size": "smallest"})
+        self.assertEqual(d200, actual)
+
+    def test_skip_in_use_ssd(self):
+        m = make_model()
+        d_in_use = make_disk(m)
+        d_not_used = make_disk(m)
+        d_in_use._has_in_use_partition = True
+        d_in_use.info_for_display = Mock(return_value={"rotational": "false"})
+        d_not_used.info_for_display = Mock(return_value={"rotational": "false"})
+        actual = m.disk_for_match([d_in_use, d_not_used], {"ssd": True})
+        self.assertEqual(d_not_used, actual)
+
+    def test_matcher_serial(self):
+        m = make_model()
+        d1 = make_disk(m, serial="1")
+        d2 = make_disk(m, serial="2")
+        fake_up_blockdata(m)
+        self.assertEqual(d1, m.disk_for_match([d1, d2], {"serial": "1"}))
+        self.assertEqual(d2, m.disk_for_match([d1, d2], {"serial": "2"}))
+
+    def test_matcher_model(self):
+        m = make_model()
+        d1 = make_disk(m)
+        fake_up_blockdata_disk(d1, ID_MODEL="m1")
+        d2 = make_disk(m)
+        fake_up_blockdata_disk(d2, ID_MODEL="m2")
+        self.assertEqual(d1, m.disk_for_match([d1, d2], {"model": "m1"}))
+        self.assertEqual(d2, m.disk_for_match([d1, d2], {"model": "m2"}))
+
+    def test_matcher_vendor(self):
+        m = make_model()
+        d1 = make_disk(m)
+        fake_up_blockdata_disk(d1, ID_VENDOR="v1")
+        d2 = make_disk(m)
+        fake_up_blockdata_disk(d2, ID_VENDOR="v2")
+        self.assertEqual(d1, m.disk_for_match([d1, d2], {"vendor": "v1"}))
+        self.assertEqual(d2, m.disk_for_match([d1, d2], {"vendor": "v2"}))
+
+    def test_matcher_path(self):
+        m = make_model()
+        vda = make_disk(m, path="/dev/vda")
+        vdb = make_disk(m, path="/dev/vdb")
+        fake_up_blockdata(m)
+        self.assertEqual(vda, m.disk_for_match([vda, vdb], {"path": "/dev/vda"}))
+        self.assertEqual(vdb, m.disk_for_match([vda, vdb], {"path": "/dev/vdb"}))
+
+    def test_matcher_id_path(self):
+        m = make_model()
+        vda = make_disk(m)
+        fake_up_blockdata_disk(vda, ID_PATH="pci-0000:00:00.0-nvme-vda")
+        vdb = make_disk(m)
+        fake_up_blockdata_disk(vdb, ID_PATH="pci-0000:00:00.0-nvme-vdb")
+        actual = m.disk_for_match([vda, vdb], {"id_path": "*vda"})
+        self.assertEqual(vda, actual)
+        actual = m.disk_for_match([vda, vdb], {"id_path": "*vdb"})
+        self.assertEqual(vdb, actual)
+
+    def test_matcher_install_media(self):
+        m = make_model()
+        iso = make_disk(m)
+        iso._has_in_use_partition = True
+        disk = make_disk(m)
+        fake_up_blockdata(m)
+        actual = m.disk_for_match([iso, disk], {"install-media": True})
+        self.assertEqual(iso, actual)
