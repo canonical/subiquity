@@ -1660,14 +1660,22 @@ class FilesystemModel:
         matchers = self._make_matchers(match)
         return [disk for disk in disks if all(match_fn(disk) for match_fn in matchers)]
 
-    def disk_for_match(self, disks, match):
+    def disk_for_match(
+        self, disks: Sequence[_Device], match: dict | Sequence[dict]
+    ) -> _Device:
+        # a match directive is a dict, or a list of dicts, that specify
+        # * zero or more keys to filter on
+        # * an optional sort on size
         log.info(f"considering {disks} for {match}")
-        candidates = self._filtered_matches(disks, match)
-        candidates = self._sorted_matches(candidates, match)
-        if candidates:
-            log.info(f"For match {match}, using the first candidate from {candidates}")
-            return candidates[0]
-        log.info(f"For match {match}, no devices match")
+        if isinstance(match, dict):
+            match = [match]
+        for m in match:
+            candidates = self._filtered_matches(disks, m)
+            candidates = self._sorted_matches(candidates, m)
+            if candidates:
+                log.info(f"For match {m}, using the first candidate from {candidates}")
+                return candidates[0]
+        log.info(f"No devices satisfy criteria {match}")
         return None
 
     def assign_omitted_offsets(self):

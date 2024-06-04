@@ -1834,3 +1834,25 @@ class TestDiskForMatch(SubiTestCase):
         fake_up_blockdata(m)
         actual = m.disk_for_match([iso, disk], {"install-media": True})
         self.assertEqual(iso, actual)
+
+    def test_match_from_list_first(self):
+        m = make_model()
+        vda = make_disk(m, path="/dev/vda", serial="s1")
+        vdb = make_disk(m, path="/dev/vdb", serial="s2")
+        fake_up_blockdata(m)
+        match = [
+            {"serial": "s1"},
+            {"path": "/dev/vdb"},
+        ]
+        self.assertEqual(vda, m.disk_for_match([vda, vdb], match))
+
+    def test_match_from_list_second(self):
+        m = make_model()
+        vda = make_disk(m, path="/dev/vda", serial="s1")
+        vdb = make_disk(m, path="/dev/vdb", serial="s2")
+        fake_up_blockdata(m)
+        match = [
+            {"serial": "not-found"},
+            {"path": "/dev/vdb"},
+        ]
+        self.assertEqual(vdb, m.disk_for_match([vda, vdb], match))
