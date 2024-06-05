@@ -25,7 +25,7 @@ import platform
 import secrets
 import tempfile
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 import attr
 import more_itertools
@@ -1590,9 +1590,7 @@ class FilesystemModel:
             status.config, blockdevs=None, is_probe_data=False
         )
 
-    def _make_matchers(self, match):
-        matchers = []
-
+    def _make_matchers(self, match: dict) -> Sequence[Callable]:
         def _udev_val(disk, key):
             return self._probe_data["blockdev"].get(disk.path, {}).get(key, "")
 
@@ -1621,6 +1619,14 @@ class FilesystemModel:
         def match_install_media(disk):
             return disk._has_in_use_partition
 
+        def match_not_in_use(disk):
+            return not disk._has_in_use_partition
+
+        def match_nonzero_size(disk):
+            return disk.size != 0
+
+        matchers = [match_nonzero_size]
+
         if match.get("install-media", False):
             matchers.append(match_install_media)
 
@@ -1638,31 +1644,38 @@ class FilesystemModel:
             matchers.append(match_devpath)
         if "ssd" in match:
             matchers.append(match_ssd)
+        if "size" in match or "ssd" in match:
+            matchers.append(match_not_in_use)
 
         return matchers
 
-    def disk_for_match(self, disks, match):
-        log.info(f"considering {disks} for {match}")
-        matchers = self._make_matchers(match)
-        candidates = []
-        for candidate in disks:
-            if candidate.size == 0:
-                continue
-            for matcher in matchers:
-                if not matcher(candidate):
-                    break
-            else:
-                candidates.append(candidate)
-        if "size" in match or "ssd" in match:
-            candidates = [c for c in candidates if not c._has_in_use_partition]
+    def _sorted_matches(self, disks: Sequence[_Device], match: dict):
         if match.get("size") == "smallest":
-            candidates.sort(key=lambda d: d.size)
-        if match.get("size") == "largest":
-            candidates.sort(key=lambda d: d.size, reverse=True)
-        if candidates:
-            log.info(f"For match {match}, using the first candidate from {candidates}")
-            return candidates[0]
-        log.info(f"For match {match}, no devices match")
+            disks.sort(key=lambda d: d.size)
+        elif match.get("size") == "largest":
+            disks.sort(key=lambda d: d.size, reverse=True)
+        return disks
+
+    def _filtered_matches(self, disks: Sequence[_Device], match: dict):
+        matchers = self._make_matchers(match)
+        return [disk for disk in disks if all(match_fn(disk) for match_fn in matchers)]
+
+    def disk_for_match(
+        self, disks: Sequence[_Device], match: dict | Sequence[dict]
+    ) -> _Device:
+        # a match directive is a dict, or a list of dicts, that specify
+        # * zero or more keys to filter on
+        # * an optional sort on size
+        log.info(f"considering {disks} for {match}")
+        if isinstance(match, dict):
+            match = [match]
+        for m in match:
+            candidates = self._filtered_matches(disks, m)
+            candidates = self._sorted_matches(candidates, m)
+            if candidates:
+                log.info(f"For match {m}, using the first candidate from {candidates}")
+                return candidates[0]
+        log.info(f"No devices satisfy criteria {match}")
         return None
 
     def assign_omitted_offsets(self):
