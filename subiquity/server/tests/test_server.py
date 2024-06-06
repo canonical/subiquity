@@ -357,6 +357,12 @@ class TestAutoinstallValidation(SubiTestCase):
                 {},
                 {"some-bad-key": "..."},
             ),
+            (
+                # Case 4: aliased keys are okay too
+                {"ubuntu-advantage": "..."},
+                {"ubuntu-advantage": "..."},
+                {},
+            ),
         )
     )
     async def test_autoinstall_validation__filter_autoinstall(self, config, good, bad):
