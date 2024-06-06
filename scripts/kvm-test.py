@@ -183,7 +183,9 @@ boot_group.add_argument('--secure-boot', action='store_true', default=False,
 
 parser.add_argument('-c', '--channel', action='store',
                     help='build iso with snap from channel')
-parser.add_argument('-d', '--disksize', help='size of disk to create')
+disk_group = parser.add_mutually_exclusive_group()
+disk_group.add_argument('-d', '--disksize', help='size of disk to create')
+disk_group.add_argument('--no-disk', action='store_true', help='attach no local storage')
 parser.add_argument('--disk-interface', help='type of interface for the disk',
                     choices=('nvme', 'virtio'), default='virtio')
 parser.add_argument('-i', '--img', action='store', help='use this img')
@@ -588,17 +590,18 @@ def install(ctx):
             if ctx.args.update:
                 appends.append('subiquity-channel=' + ctx.args.update)
 
-            match ctx.args.disk_interface:
-                case 'virtio':
-                    kvm.extend(drive(ctx.target, if_='virtio'))
-                case 'nvme':
-                    kvm.extend(drive(ctx.target, id_='localdisk0', if_="none"))
-                    kvm.extend(('-device', 'nvme,drive=localdisk0,serial=deadbeef'))
-                case interface:
-                    raise ValueError('unsupported disk interface', interface)
-            if not os.path.exists(ctx.target) or ctx.args.overwrite:
-                disksize = ctx.args.disksize or ctx.default_disk_size
-                run(f'qemu-img create -f qcow2 {ctx.target} {disksize}')
+            if not ctx.args.no_disk:
+                match ctx.args.disk_interface:
+                    case 'virtio':
+                        kvm.extend(drive(ctx.target, if_='virtio'))
+                    case 'nvme':
+                        kvm.extend(drive(ctx.target, id_='localdisk0', if_="none"))
+                        kvm.extend(('-device', 'nvme,drive=localdisk0,serial=deadbeef'))
+                    case interface:
+                        raise ValueError('unsupported disk interface', interface)
+                if not os.path.exists(ctx.target) or ctx.args.overwrite:
+                    disksize = ctx.args.disksize or ctx.default_disk_size
+                    run(f'qemu-img create -f qcow2 {ctx.target} {disksize}')
 
             if len(appends) > 0:
                 with mounter(iso, mntdir):
