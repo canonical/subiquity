@@ -108,20 +108,14 @@ class LateController(CmdListController):
         super().__init__(app)
         self.syslog_id = app.log_syslog_id
 
-        try:
-            hooks_dir = self.app.opts.postinst_hooks_dir
-        except AttributeError:
-            # NOTE: system_setup imports this controller ; but does not use the
-            # postinst hooks mechanism.
-            pass
-        else:
-            if hooks_dir.is_dir():
-                self.builtin_cmds = [
-                    Command(
-                        args=["run-parts", "--debug", "--", str(hooks_dir)],
-                        check=False,
-                    ),
-                ]
+        hooks_dir = self.app.opts.postinst_hooks_dir
+        if hooks_dir.is_dir():
+            self.builtin_cmds = [
+                Command(
+                    args=["run-parts", "--debug", "--", str(hooks_dir)],
+                    check=False,
+                ),
+            ]
 
     def env(self):
         env = super().env()

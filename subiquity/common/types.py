@@ -791,30 +791,6 @@ class ShutdownMode(enum.Enum):
     POWEROFF = enum.auto()
 
 
-@attr.s(auto_attribs=True)
-class WSLConfigurationBase:
-    automount_root: str = attr.ib(default="/mnt/")
-    automount_options: str = ""
-    network_generatehosts: bool = attr.ib(default=True)
-    network_generateresolvconf: bool = attr.ib(default=True)
-
-
-@attr.s(auto_attribs=True)
-class WSLConfigurationAdvanced:
-    automount_enabled: bool = attr.ib(default=True)
-    automount_mountfstab: bool = attr.ib(default=True)
-    interop_enabled: bool = attr.ib(default=True)
-    interop_appendwindowspath: bool = attr.ib(default=True)
-    systemd_enabled: bool = attr.ib(default=False)
-
-
-# Options that affect the setup experience itself, but won't reflect in the
-# /etc/wsl.conf configuration file.
-@attr.s(auto_attribs=True)
-class WSLSetupOptions:
-    install_language_support_packages: bool = attr.ib(default=True)
-
-
 class TaskStatus(enum.Enum):
     DO = "Do"
     DOING = "Doing"

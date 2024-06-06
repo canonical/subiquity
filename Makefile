@@ -9,11 +9,10 @@ PROBERT_REPO=https://github.com/canonical/probert
 DRYRUN?=--dry-run --bootloader uefi --machine-config examples/machines/simple.json \
 	--source-catalog examples/sources/install.yaml \
 	--postinst-hooks-dir examples/postinst.d/
-SYSTEM_SETUP_DRYRUN?=--dry-run
 export PYTHONPATH
 CWD := $(shell pwd)
 
-CHECK_DIRS := console_conf subiquity subiquitycore system_setup
+CHECK_DIRS := console_conf subiquity subiquitycore
 PYTHON := python3
 
 ifneq (,$(MACHINE))
@@ -51,22 +50,6 @@ dryrun-serial ui-view-serial:
 .PHONY: dryrun-server
 dryrun-server:
 	$(PYTHON) -m subiquity.cmd.server $(DRYRUN)
-
-.PHONY: dryrun-system-setup
-dryrun-system-setup:
-	$(PYTHON) -m system_setup.cmd.tui $(SYSTEM_SETUP_DRYRUN)
-
-.PHONY: dryrun-system-setup-server
-dryrun-system-setup-server:
-	$(PYTHON) -m system_setup.cmd.server $(SYSTEM_SETUP_DRYRUN)
-
-.PHONY: dryrun-system-setup-recon
-dryrun-system-setup-recon:
-	DRYRUN_RECONFIG=true $(PYTHON) -m system_setup.cmd.tui $(SYSTEM_SETUP_DRYRUN)
-
-.PHONY: dryrun-system-setup-server-recon
-dryrun-system-setup-server-recon:
-	DRYRUN_RECONFIG=true $(PYTHON) -m system_setup.cmd.server $(SYSTEM_SETUP_DRYRUN)
 
 .PHONY: lint
 lint: flake8
@@ -106,7 +89,6 @@ gitdeps: curtin probert
 .PHONY: schema
 schema: gitdeps
 	@$(PYTHON) -m subiquity.cmd.schema > autoinstall-schema.json
-	@$(PYTHON) -m system_setup.cmd.schema > autoinstall-system-setup-schema.json
 
 .PHONY: format black isort
 format:

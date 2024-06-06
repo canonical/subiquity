@@ -73,9 +73,6 @@ from subiquity.common.types import (
     UPCSInitiateResponse,
     UPCSWaitResponse,
     UsernameValidation,
-    WSLConfigurationAdvanced,
-    WSLConfigurationBase,
-    WSLSetupOptions,
     ZdevInfo,
 )
 from subiquitycore.models.network import (
@@ -93,9 +90,6 @@ class API:
     locale = simple_endpoint(str)
     proxy = simple_endpoint(str)
     updates = simple_endpoint(str)
-    wslconfbase = simple_endpoint(WSLConfigurationBase)
-    wslconfadvanced = simple_endpoint(WSLConfigurationAdvanced)
-    wslsetupoptions = simple_endpoint(WSLSetupOptions)
 
     class meta:
         class status:
@@ -109,12 +103,10 @@ class API:
 
         class client_variant:
             def POST(variant: str) -> None:
-                """Choose the install variant -
-                desktop/server/wsl_setup/wsl_reconfigure"""
+                """Choose the install variant - desktop/server"""
 
             def GET() -> str:
-                """Get the install variant -
-                desktop/server/wsl_setup/wsl_reconfigure"""
+                """Get the install variant - desktop/server"""
 
         class confirm:
             def POST(tty: str) -> None:

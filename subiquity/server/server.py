@@ -749,9 +749,6 @@ class SubiquityServer(Application):
             controller.add_routes(app)
         runner = web.AppRunner(app, keepalive_timeout=0xFFFFFFFF, access_log=None)
         await runner.setup()
-        await self.start_site(runner)
-
-    async def start_site(self, runner: web.AppRunner):
         site = web.UnixSite(runner, self.opts.socket)
         await site.start()
         # It is intended that a non-root client can connect.

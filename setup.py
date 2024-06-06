@@ -129,8 +129,6 @@ setup(name='subiquity',
           'console_scripts': [
               'subiquity-tui = subiquity.cmd.tui:main',
               'console-conf-tui = console_conf.cmd.tui:main',
-              'system-setup-server = system_setup.cmd.server:main',
-              'system-setup-tui = system_setup.cmd.tui:main',
               ('console-conf-write-login-details = '
                'console_conf.cmd.write_login_details:main'),
           ],
