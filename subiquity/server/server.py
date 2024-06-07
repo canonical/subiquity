@@ -570,6 +570,7 @@ class SubiquityServer(Application):
         # Pop keys of all loaded controllers, if they exists
         for controller in self.controllers.instances:
             invalid_config.pop(controller.autoinstall_key, None)
+            invalid_config.pop(controller.autoinstall_key_alias, None)
 
         # Pop server keys, if they exist
         for key in self.base_schema["properties"]:
