@@ -32,6 +32,7 @@ from curtin.commands.extract import AbstractSourceHandler
 from curtin.storage_config import ptable_part_type_to_flag
 from curtin.util import human2bytes
 
+from subiquity.common.api.recoverable_error import RecoverableError
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.filesystem import boot, gaps, labels, sizes
@@ -123,21 +124,23 @@ class NoSnapdSystemsOnSource(Exception):
     pass
 
 
-class NonReportableSVE(NonReportableException):
+class NonReportableSVE(RecoverableError, NonReportableException):
     """Non reportable storage value error"""
 
 
 class ReportableSVE(ValueError):
     """Reportable storage value error"""
 
+    # TODO Inherit from RecoverableError going forward.
+
 
 # Depending on config, we will let the SVE fail on the server side
-StorageValueError: Type[NonReportableSVE | ReportableSVE] = ReportableSVE
+StorageRecoverableError: Type[NonReportableSVE | ReportableSVE] = ReportableSVE
 
 
 def set_user_error_reportable(reportable: bool) -> None:
-    global StorageValueError
-    StorageValueError = ReportableSVE if reportable else NonReportableSVE
+    global StorageRecoverableError
+    StorageRecoverableError = ReportableSVE if reportable else NonReportableSVE
 
 
 @attr.s(auto_attribs=True)
@@ -1230,9 +1233,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.locked_probe_data = True
         disk = self.model._one(id=disk_id)
         if boot.is_boot_device(disk):
-            raise StorageValueError("device already has bootloader partition")
+            raise StorageRecoverableError("device already has bootloader partition")
         if DeviceAction.TOGGLE_BOOT not in DeviceAction.supported(disk):
-            raise StorageValueError("disk does not support boot partiton")
+            raise StorageRecoverableError("disk does not support boot partiton")
         self.add_boot_disk(disk)
         return await self.v2_GET()
 

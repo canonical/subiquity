@@ -21,8 +21,8 @@ import traceback
 
 from aiohttp import web
 
+from subiquity.common.api.recoverable_error import RecoverableError
 from subiquity.common.serialize import Serializer
-from subiquity.server.nonreportable import NonReportableException
 
 from .defs import Payload
 
@@ -171,7 +171,7 @@ def _make_handler(
                 tb = traceback.TracebackException.from_exception(exc)
                 resp = web.Response(
                     text="".join(tb.format()),
-                    status=422 if isinstance(exc, NonReportableException) else 500,
+                    status=422 if isinstance(exc, RecoverableError) else 500,
                     headers={
                         "x-status": "error",
                         "x-error-type": type(exc).__name__,
@@ -181,10 +181,7 @@ def _make_handler(
                         "x-error-msg": json.dumps(str(exc), indent=None),
                     },
                 )
-                # We could use a more specific type but this should be good for
-                # a start.
-                if not isinstance(exc, NonReportableException):
-                    resp["exception"] = exc
+                resp["exception"] = exc
             context.description = "{} {}".format(resp.status, trim(resp.text))
             return resp
 
