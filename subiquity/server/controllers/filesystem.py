@@ -37,7 +37,7 @@ from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.filesystem import boot, gaps, labels, sizes
 from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
-from subiquity.common.types import (
+from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
     Disk,

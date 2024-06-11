@@ -18,7 +18,7 @@ from functools import partial
 from unittest import mock
 
 from subiquity.common.filesystem import gaps
-from subiquity.common.types import GapUsable
+from subiquity.common.types.storage import GapUsable
 from subiquity.models.filesystem import (
     LVM_CHUNK_SIZE,
     LVM_OVERHEAD,

@@ -18,7 +18,7 @@ import functools
 from gettext import pgettext
 
 from subiquity.common.filesystem import boot, gaps, labels
-from subiquity.common.types import GapUsable
+from subiquity.common.types.storage import GapUsable
 from subiquity.models.filesystem import (
     Bootloader,
     Disk,

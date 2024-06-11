@@ -18,7 +18,7 @@ import logging
 from curtin.block import get_resize_fstypes
 
 from subiquity.common.filesystem import boot, gaps
-from subiquity.common.types import Bootloader
+from subiquity.common.types.storage import Bootloader
 from subiquity.models.filesystem import Partition, align_up
 from subiquitycore.utils import write_named_tempfile
 

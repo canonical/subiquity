@@ -15,8 +15,8 @@
 
 import functools
 
-from subiquity.common import types
 from subiquity.common.filesystem import boot, gaps
+from subiquity.common.types import storage as types
 from subiquity.models.filesystem import (
     ZFS,
     Disk,

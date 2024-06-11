@@ -15,7 +15,7 @@
 
 import unittest
 
-from subiquity.common.types import GuidedCapability, SizingPolicy
+from subiquity.common.types.storage import GuidedCapability, SizingPolicy
 
 
 class TestSizingPolicy(unittest.TestCase):
