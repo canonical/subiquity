@@ -13,9 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# This module defines types that will be used in the API when subiquity gets
-# split into client and server processes.  View code should only use these
-# types!
+"""This module defines types that are used in the API between the client and
+server processes.  View code should only use these types!"""
 
 import datetime
 import enum
