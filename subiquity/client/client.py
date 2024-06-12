@@ -16,6 +16,7 @@
 import asyncio
 import contextvars
 import inspect
+import json
 import logging
 import os
 import signal
@@ -57,6 +58,10 @@ log = logging.getLogger("subiquity.client.client")
 class Abort(Exception):
     def __init__(self, error_report_ref=None):
         self.error_report_ref = error_report_ref
+
+
+class RecoverableClientError(ValueError):
+    pass
 
 
 DEBUG_SHELL_INTRO = _(
@@ -206,7 +211,10 @@ class SubiquityClient(TuiApplication):
             raise Abort(ref)
         try:
             response.raise_for_status()
-        except aiohttp.ClientError:
+        except aiohttp.ClientError as exc:
+            if isinstance(exc, aiohttp.ClientResponseError) and exc.status == 422:
+                raise RecoverableClientError(json.loads(headers["x-error-msg"]))
+
             report = self.error_reporter.make_apport_report(
                 ErrorReportKind.SERVER_REQUEST_FAIL,
                 "request to {}".format(response.url.path),

@@ -21,6 +21,7 @@ import traceback
 
 from aiohttp import web
 
+from subiquity.common.api.recoverable_error import RecoverableError
 from subiquity.common.serialize import Serializer
 
 from .defs import Payload
@@ -170,7 +171,7 @@ def _make_handler(
                 tb = traceback.TracebackException.from_exception(exc)
                 resp = web.Response(
                     text="".join(tb.format()),
-                    status=500,
+                    status=422 if isinstance(exc, RecoverableError) else 500,
                     headers={
                         "x-status": "error",
                         "x-error-type": type(exc).__name__,

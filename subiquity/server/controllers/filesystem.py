@@ -22,7 +22,7 @@ import os
 import pathlib
 import subprocess
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import attr
 import pyudev
@@ -32,6 +32,7 @@ from curtin.commands.extract import AbstractSourceHandler
 from curtin.storage_config import ptable_part_type_to_flag
 from curtin.util import human2bytes
 
+from subiquity.common.api.recoverable_error import RecoverableError
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.filesystem import boot, gaps, labels, sizes
@@ -79,6 +80,7 @@ from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
 from subiquity.server.mounter import Mounter
+from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.snapdapi import (
     StorageEncryptionSupport,
     StorageSafety,
@@ -120,6 +122,25 @@ DRY_RUN_RESET_SIZE = 500 * MiB
 
 class NoSnapdSystemsOnSource(Exception):
     pass
+
+
+class NonReportableSVE(RecoverableError, NonReportableException):
+    """Non reportable storage value error"""
+
+
+class ReportableSVE(ValueError):
+    """Reportable storage value error"""
+
+    # TODO Inherit from RecoverableError going forward.
+
+
+# Depending on config, we will let the SVE fail on the server side
+StorageRecoverableError: Type[NonReportableSVE | ReportableSVE] = ReportableSVE
+
+
+def set_user_error_reportable(reportable: bool) -> None:
+    global StorageRecoverableError
+    StorageRecoverableError = ReportableSVE if reportable else NonReportableSVE
 
 
 @attr.s(auto_attribs=True)
@@ -1212,9 +1233,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.locked_probe_data = True
         disk = self.model._one(id=disk_id)
         if boot.is_boot_device(disk):
-            raise ValueError("device already has bootloader partition")
+            raise StorageRecoverableError("device already has bootloader partition")
         if DeviceAction.TOGGLE_BOOT not in DeviceAction.supported(disk):
-            raise ValueError("disk does not support boot partiton")
+            raise StorageRecoverableError("disk does not support boot partiton")
         self.add_boot_disk(disk)
         return await self.v2_GET()
 

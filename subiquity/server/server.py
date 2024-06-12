@@ -538,13 +538,20 @@ class SubiquityServer(Application):
             resp.headers["x-updated"] = "no"
         if resp.get("exception"):
             exc = resp["exception"]
-            log.debug("request to {} crashed".format(request.raw_path), exc_info=exc)
-            report = self.make_apport_report(
-                ErrorReportKind.SERVER_REQUEST_FAIL,
-                "request to {}".format(request.raw_path),
-                exc=exc,
+            log.debug(
+                "request to %s failed with status %d: %s",
+                request.raw_path,
+                resp.status,
+                resp.headers["x-error-msg"],
+                exc_info=exc,
             )
-            resp.headers["x-error-report"] = to_json(ErrorReportRef, report.ref())
+            if not isinstance(exc, NonReportableException):
+                report = self.make_apport_report(
+                    ErrorReportKind.SERVER_REQUEST_FAIL,
+                    "request to {}".format(request.raw_path),
+                    exc=exc,
+                )
+                resp.headers["x-error-report"] = to_json(ErrorReportRef, report.ref())
         return resp
 
     @with_context()
