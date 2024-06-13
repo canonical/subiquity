@@ -17,7 +17,7 @@ import math
 
 import attr
 
-from subiquity.common.types import GuidedResizeValues
+from subiquity.common.types.storage import GuidedResizeValues
 from subiquity.models.filesystem import GiB, MiB, align_down, align_up
 
 BIOS_GRUB_SIZE_BYTES = 1 * MiB

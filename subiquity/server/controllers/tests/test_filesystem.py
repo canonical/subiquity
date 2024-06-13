@@ -26,7 +26,7 @@ from jsonschema.validators import validator_for
 
 from subiquity.common.filesystem import gaps, labels
 from subiquity.common.filesystem.actions import DeviceAction
-from subiquity.common.types import (
+from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
     Gap,

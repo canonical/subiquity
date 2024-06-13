@@ -20,7 +20,7 @@ from typing import Optional
 import attr
 from urwid import Text, connect_signal
 
-from subiquity.common.types import (
+from subiquity.common.types.storage import (
     Gap,
     GuidedCapability,
     GuidedChoiceV2,

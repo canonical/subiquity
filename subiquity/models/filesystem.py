@@ -35,7 +35,12 @@ from curtin.swap import can_use_swapfile
 from curtin.util import human2bytes
 from probert.storage import StorageInfo
 
-from subiquity.common.types import Bootloader, OsProber, RecoveryKey, StorageResponse
+from subiquity.common.types.storage import (
+    Bootloader,
+    OsProber,
+    RecoveryKey,
+    StorageResponse,
+)
 from subiquity.server.autoinstall import AutoinstallError
 from subiquitycore.utils import write_named_tempfile
 

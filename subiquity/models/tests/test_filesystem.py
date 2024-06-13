@@ -23,7 +23,7 @@ import attr
 import yaml
 
 from subiquity.common.filesystem import gaps
-from subiquity.common.types import RecoveryKey
+from subiquity.common.types.storage import RecoveryKey
 from subiquity.models.filesystem import (
     LVM_CHUNK_SIZE,
     ZFS,

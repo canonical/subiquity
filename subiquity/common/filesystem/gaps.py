@@ -18,7 +18,7 @@ from typing import List, Tuple
 
 import attr
 
-from subiquity.common.types import GapUsable
+from subiquity.common.types.storage import GapUsable
 from subiquity.models.filesystem import (
     LVM_CHUNK_SIZE,
     Disk,

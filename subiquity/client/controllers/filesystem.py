@@ -20,7 +20,7 @@ from typing import Callable, Optional
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.filesystem import gaps
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
-from subiquity.common.types import (
+from subiquity.common.types.storage import (
     GuidedCapability,
     GuidedChoiceV2,
     GuidedStorageResponseV2,

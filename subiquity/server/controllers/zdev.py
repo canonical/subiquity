@@ -21,7 +21,8 @@ from collections import OrderedDict
 from typing import List
 
 from subiquity.common.apidef import API
-from subiquity.common.types import Bootloader, ZdevInfo
+from subiquity.common.types import ZdevInfo
+from subiquity.common.types.storage import Bootloader
 from subiquity.server.controller import SubiquityController
 from subiquitycore.utils import arun_command, run_command
 

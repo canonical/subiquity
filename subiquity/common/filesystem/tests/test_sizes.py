@@ -27,7 +27,7 @@ from subiquity.common.filesystem.sizes import (
     scale_partitions,
     uefi_scale,
 )
-from subiquity.common.types import GuidedResizeValues
+from subiquity.common.types.storage import GuidedResizeValues
 from subiquity.models.filesystem import MiB
 
 

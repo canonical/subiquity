@@ -46,7 +46,8 @@ subiquity/common/resources.py
 subiquity/common/serialize.py
 subiquity/common/tests/__init__.py
 subiquity/common/tests/test_serialization.py
-subiquity/common/types.py
+subiquity/common/types/__init__.py
+subiquity/common/types/storage.py
 subiquitycore/async_helpers.py
 subiquitycore/context.py
 subiquitycore/controller.py
