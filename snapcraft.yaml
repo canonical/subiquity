@@ -105,7 +105,6 @@ parts:
       # This list includes the dependencies for curtin and probert as well,
       # there doesn't seem to be any real benefit to listing them separately.
       - cloud-init
-      - dctrl-tools
       - iso-codes
       - libpython3-stdlib
       - libpython3.10-minimal

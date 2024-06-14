@@ -39,7 +39,6 @@ from subiquity.journald import journald_listen
 from subiquity.models.filesystem import ActionRenderMode, Partition
 from subiquity.server.controller import SubiquityController
 from subiquity.server.curtin import run_curtin_command
-from subiquity.server.kernel import list_installed_kernels
 from subiquity.server.mounter import Mounter, Mountpoint
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import run_in_thread
@@ -426,12 +425,6 @@ class InstallController(SubiquityController):
 
             if self.supports_apt():
                 await self.pre_curthooks_oem_configuration(context=context)
-
-                # If we already have a kernel installed, don't bother requesting
-                # curthooks to install it again or we might end up with two
-                # kernels.
-                if await list_installed_kernels(Path(self.tpath())):
-                    self.model.kernel.curthooks_no_install = True
 
             await run_curtin_step(
                 name="curthooks",

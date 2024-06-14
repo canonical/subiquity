@@ -40,11 +40,9 @@ class KernelModel:
         return self.metapkg_name
 
     def render(self):
+        result = {"kernel": {"remove_existing": True}}
         if self.curthooks_no_install:
-            return {"kernel": None}
-
-        return {
-            "kernel": {
-                "package": self.needed_kernel,
-            },
-        }
+            result["kernel"]["install"] = False
+        else:
+            result["kernel"]["package"] = self.needed_kernel
+        return result
