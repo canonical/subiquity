@@ -92,6 +92,8 @@ class ApplicationState(enum.Enum):
     UU_RUNNING = enum.auto()
     UU_CANCELLING = enum.auto()
 
+    LATE_COMMANDS = enum.auto()
+
     # Final state
     DONE = enum.auto()
     ERROR = enum.auto()

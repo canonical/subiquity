@@ -188,6 +188,9 @@ class ProgressView(BaseView):
                 self.view_log_btn,
                 self.reboot_btn,
             ]
+        elif state == ApplicationState.LATE_COMMANDS:
+            self.title = _("Running late-commands")
+            btns = [self.view_log_btn]
         elif state == ApplicationState.DONE:
             self.title = _("Installation complete!")
             self.reboot_btn.base_widget.set_label(_("Reboot Now"))
