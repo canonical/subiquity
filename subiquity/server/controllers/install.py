@@ -625,6 +625,9 @@ class InstallController(SubiquityController):
 
             await self.postinstall(context=context)
 
+            self.app.update_state(ApplicationState.LATE_COMMANDS)
+            await self.app.controllers.Late.run()
+
             self.app.update_state(ApplicationState.DONE)
         except Exception as exc:
             kw = {}

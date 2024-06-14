@@ -21,9 +21,7 @@ from typing import List, Sequence, Union
 import attr
 from systemd import journal
 
-from subiquity.common.types import ApplicationState
 from subiquity.server.controller import NonInteractiveController
-from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command
 
@@ -122,15 +120,6 @@ class LateController(CmdListController):
         if self.app.base_model.target is not None:
             env["TARGET_MOUNT_POINT"] = self.app.base_model.target
         return env
-
-    def start(self):
-        run_bg_task(self._run())
-
-    async def _run(self):
-        Install = self.app.controllers.Install
-        await Install.install_task
-        if self.app.state == ApplicationState.DONE:
-            await self.run()
 
 
 class ErrorController(CmdListController):
