@@ -436,6 +436,8 @@ class NetworkDev:
             self.config["addresses"] = addrs
         else:
             self.config.pop("addresses", None)
+            # If no static addresses, also drop nameservers
+            self.config.pop("nameservers", None)
 
     def remove_routes(self, version):
         routes = [

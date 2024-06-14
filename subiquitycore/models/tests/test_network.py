@@ -74,6 +74,39 @@ class TestNetworkDev(SubiTestCase):
         info = nd.netdev_info()
         self.assertEqual(info.bond, bond)
 
+    def test_remove_ip_network__no_nameserver(self):
+        """Test remove nameservers when no static addresses remain."""
+        nd = NetworkDev(self.model, "testdev0", "eth")
+        nd.config = {
+            "addresses": ["10.0.1.15/24", "f:db28::/32"],
+            "nameservers": {
+                "addresses": ["8.8.8.8", "8.4.8.4"],
+                "search": ["foo", "bar"],
+            },
+            "routes": [{"to": "default", "via": "10.0.2.2"}],
+        }
+        nd.remove_ip_networks_for_version(4)
+        self.assertIn("nameservers", nd.config)
+
+        nd.remove_ip_networks_for_version(6)
+        self.assertNotIn("nameservers", nd.config)
+
+    def test_remove_ip_network__config_empty(self):
+        """Test that removing ipv4 and ipv6 networks causes the config to be empty."""
+        net_dev = NetworkDev(self.model, "testdev0", "eth")
+        net_dev.config = {
+            "dhcp6": True,
+            "addresses": ["10.0.1.15/24"],
+            "nameservers": {
+                "addresses": ["8.8.8.8", "8.4.8.4"],
+                "search": ["foo", "bar"],
+            },
+            "routes": [{"to": "default", "via": "10.0.2.2"}],
+        }
+        net_dev.remove_ip_networks_for_version(4)
+        net_dev.remove_ip_networks_for_version(6)
+        self.assertEqual(net_dev.config, {})
+
 
 class TestBondConfig(SubiTestCase):
     @parameterized.expand(
