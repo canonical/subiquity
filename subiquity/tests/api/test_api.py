@@ -20,12 +20,14 @@ import os
 import re
 import tempfile
 from functools import wraps
+from pathlib import Path
 from typing import Dict, List, Optional
 from unittest.mock import patch
 from urllib.parse import unquote
 
 import aiohttp
 import async_timeout
+import yaml
 from aiohttp.client_exceptions import ClientResponseError
 
 from subiquitycore.tests import SubiTestCase
@@ -2272,3 +2274,50 @@ class TestMountDetection(TestAPI):
             self.assertTrue(disk1["has_in_use_partition"])
             disk1p2 = disk1["partitions"][1]
             self.assertTrue(disk1p2["is_in_use"])
+
+
+class TestNetwork(TestAPI):
+    @timeout()
+    async def test_disable_dead_NICS_on_view(self):
+        """Test that NICs with no global IP are disabled on first GET."""
+        # Due to LP: #2063331 we want to make sure that NICs without a
+        # global IP address by the time we get to the networking screen
+        # are automatically disabled.
+
+        # First NIC "ens3" is connected, second NIC "ens4" is not
+        cfg = "examples/machines/two-nics-one-up-one-down.json"
+        async with start_server(cfg) as inst:
+            # Make sure ens4 is disabled on first view
+            resp = await inst.get("/network")
+            devs = dict((dev["name"], dev) for dev in resp["devices"])
+            self.assertEqual(devs["ens3"]["disabled_reason"], None)
+            self.assertEqual(
+                devs["ens4"]["disabled_reason"], "autoconfiguration failed"
+            )
+
+            conf = Path(inst.output_base()) / "etc/netplan/00-installer-config.yaml"
+
+            await asyncio.sleep(1)  # wait for _write_config step to update the config
+
+            with open(conf) as f:
+                conf_data = yaml.safe_load(f)
+
+            ethernets = conf_data["network"]["ethernets"]
+            self.assertIn("ens3", ethernets)
+            self.assertNotIn("ens4", ethernets)
+
+            # Don't disable on successive GETs (e.g. manually changed back to
+            # dhcp but still hasn't come online).
+            await inst.post("/network/enable_dhcp", dev_name="ens4", ip_version=4)
+            resp = await inst.get("/network")
+            devs = dict((dev["name"], dev) for dev in resp["devices"])
+            # Bug: disabled_reason doesn't get unset so check dhcp4 status
+            self.assertTrue(devs["ens4"]["dhcp4"]["enabled"])
+
+            await asyncio.sleep(1)  # another wait for _write_config
+
+            with open(conf) as f:
+                conf_data = yaml.safe_load(f)
+
+            ethernets = conf_data["network"]["ethernets"]
+            self.assertIn("ens4", ethernets)

@@ -222,6 +222,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
 
     async def GET(self) -> NetworkStatus:
         if not self.view_shown:
+            self.update_initial_configs()
             self.apply_config(silent=True)
             self.view_shown = True
         if self.wlan_support_install_state() == PackageInstallState.DONE:
