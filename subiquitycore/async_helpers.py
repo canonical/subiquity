@@ -45,9 +45,10 @@ def schedule_task(coro, propagate_errors=True):
 background_tasks = set()
 
 
-def run_bg_task(coro, *args, **kwargs) -> None:
+# TODO add context=None when we move to core24.
+def run_bg_task(coro, name=None) -> None:
     """Run a background task in a fire-and-forget style."""
-    task = asyncio.create_task(coro, *args, **kwargs)
+    task = asyncio.create_task(coro, name=name)
     background_tasks.add(task)
     task.add_done_callback(background_tasks.discard)
 
