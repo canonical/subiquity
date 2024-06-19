@@ -37,7 +37,7 @@ from subiquity.models.filesystem import (
 )
 from subiquity.ui.views import FilesystemView, GuidedDiskSelectionView
 from subiquity.ui.views.filesystem.probing import ProbingFailed, SlowProbing
-from subiquitycore.async_helpers import run_bg_task
+from subiquitycore.async_helpers import connect_async_signal, run_bg_task
 from subiquitycore.lsb_release import lsb_release
 from subiquitycore.view import BaseView
 
@@ -206,6 +206,11 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         )
         from subiquitycore.ui.stretchy import StretchyOverlay
 
+        form_submitted = asyncio.Event()
+
+        async def on_form_closed(*args, **kwargs):
+            form_submitted.set()
+
         log.debug("_answers_action %r", action)
         if "obj" in action:
             obj = self._action_get(action["obj"])
@@ -219,11 +224,18 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             meth = getattr(
                 self.ui.body.avail_list, "_{}_{}".format(obj.type, action_name)
             )
-            meth(obj)
+            maybe_coro = meth(obj)
+            if asyncio.iscoroutine(maybe_coro):
+                await maybe_coro
+                self.ui.body.request_redraw()
+
             yield
             body = self.ui.body._w
             if not isinstance(body, StretchyOverlay):
                 return
+
+            connect_async_signal(body.stretchy, "closed", on_form_closed)
+
             if isinstance(
                 body.stretchy, (ConfirmDeleteStretchy, ConfirmReformatStretchy)
             ):
@@ -234,10 +246,13 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
                     body.stretchy.form, action["data"], action.get("submit", True)
                 ):
                     pass
+
+            await form_submitted.wait()
         elif action["action"] == "create-raid":
             self.ui.body.create_raid()
             yield
             body = self.ui.body._w
+            connect_async_signal(body.stretchy, "closed", on_form_closed)
             async for _ in self._enter_form_data(
                 body.stretchy.form,
                 action["data"],
@@ -245,10 +260,12 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
                 clean_suffix="raid",
             ):
                 pass
+            await form_submitted.wait()
         elif action["action"] == "create-vg":
             self.ui.body.create_vg()
             yield
             body = self.ui.body._w
+            connect_async_signal(body.stretchy, "closed", on_form_closed)
             async for _ in self._enter_form_data(
                 body.stretchy.form,
                 action["data"],
@@ -256,6 +273,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
                 clean_suffix="vg",
             ):
                 pass
+            await form_submitted.wait()
         elif action["action"] == "done":
             if not self.ui.body.done_btn.enabled:
                 raise Exception("answers did not provide complete fs config")
