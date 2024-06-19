@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 from unittest import mock
 
@@ -37,6 +38,8 @@ def make_format_entire_view(model, disk):
     return base_view, stretchy
 
 
+@mock.patch("subiquitycore.async_helpers.run_bg_task", asyncio.run)
+@mock.patch("subiquitycore.view.BaseView.request_redraw", mock.Mock())
 class PartitionViewTests(unittest.TestCase):
     def test_initial_focus(self):
         model, disk = make_model_and_disk()
@@ -181,6 +184,7 @@ class PartitionViewTests(unittest.TestCase):
 
         view_helpers.enter_data(stretchy.form, form_data)
         stretchy.form.size.widget.lost_focus()
+
         view_helpers.click(stretchy.form.done_btn.base_widget)
         expected_data = {
             "size": dehumanize_size(form_data["size"]),
@@ -269,6 +273,7 @@ class PartitionViewTests(unittest.TestCase):
         view, stretchy = make_partition_view(model, disk, gap=gap)
         view_helpers.enter_data(stretchy.form, unaligned_data)
         stretchy.form.size.widget.lost_focus()
+
         view_helpers.click(stretchy.form.done_btn.base_widget)
         view.controller.partition_disk_handler.assert_called_once_with(
             stretchy.disk, valid_data, partition=None, gap=gap
