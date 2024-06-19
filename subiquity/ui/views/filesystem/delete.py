@@ -19,6 +19,7 @@ from gettext import ngettext
 from urwid import Text
 
 from subiquity.common.filesystem import labels
+from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.ui.buttons import danger_btn, other_btn
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.table import TablePile, TableRow
@@ -101,9 +102,12 @@ class ConfirmDeleteStretchy(Stretchy):
         super().__init__("", widgets, stretchy_index, len(lines) + 1)
 
     def confirm(self, sender=None):
-        self.parent.controller.delete(self.obj)
-        self.parent.refresh_model_inputs()
-        self.parent.remove_overlay()
+        async def async_confirm() -> None:
+            await self.parent.controller.delete(self.obj)
+            self.parent.refresh_model_inputs()
+            self.parent.remove_overlay()
+
+        run_bg_task(async_confirm())
 
     def cancel(self, sender=None):
         self.parent.remove_overlay()
@@ -168,9 +172,12 @@ class ConfirmReformatStretchy(Stretchy):
         super().__init__(title, widgets, 0, 2)
 
     def confirm(self, sender=None):
-        self.parent.controller.reformat(self.obj)
-        self.parent.refresh_model_inputs()
-        self.parent.remove_overlay()
+        async def async_confirm() -> None:
+            await self.parent.controller.reformat(self.obj)
+            self.parent.refresh_model_inputs()
+            self.parent.remove_overlay()
+
+        run_bg_task(async_confirm())
 
     def cancel(self, sender=None):
         self.parent.remove_overlay()

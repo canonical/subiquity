@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import os
 import pathlib
 import unittest
@@ -39,6 +40,7 @@ def make_view(model, existing=None):
     return base_view, stretchy
 
 
+@mock.patch("subiquitycore.async_helpers.run_bg_task", asyncio.run)
 class LVMViewTests(unittest.TestCase):
     def test_create_vg(self):
         model, disk = make_model_and_disk()

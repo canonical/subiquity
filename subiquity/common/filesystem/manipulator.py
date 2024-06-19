@@ -53,7 +53,7 @@ zfs_boot_features = [
 
 
 class FilesystemManipulator:
-    def create_mount(self, fs, spec: FileSystemSpec):
+    async def create_mount(self, fs, spec: FileSystemSpec):
         if spec.get("mount") is None:
             return
         mount = self.model.add_mount(
@@ -62,15 +62,15 @@ class FilesystemManipulator:
         if self.model.needs_bootloader_partition():
             vol = fs.volume
             if vol.type == "partition" and boot.can_be_boot_device(vol.device):
-                self.add_boot_disk(vol.device)
+                await self.add_boot_disk(vol.device)
         return mount
 
-    def delete_mount(self, mount):
+    async def delete_mount(self, mount):
         if mount is None:
             return
         self.model.remove_mount(mount)
 
-    def create_filesystem(self, volume, spec: FileSystemSpec):
+    async def create_filesystem(self, volume, spec: FileSystemSpec):
         if spec.get("fstype") is None:
             # prep partitions are always wiped (and never have a filesystem)
             if getattr(volume, "flag", None) != "prep":
@@ -97,18 +97,18 @@ class FilesystemManipulator:
         elif spec.get("fstype") is None and spec.get("use_swap"):
             self.model.add_mount(fs, "")
         else:
-            self.create_mount(fs, spec)
+            await self.create_mount(fs, spec)
         return fs
 
-    def delete_filesystem(self, fs):
+    async def delete_filesystem(self, fs):
         if fs is None:
             return
-        self.delete_mount(fs.mount())
+        await self.delete_mount(fs.mount())
         self.model.remove_filesystem(fs)
 
     delete_format = delete_filesystem
 
-    def create_partition(self, device, gap, spec: FileSystemSpec, **kw):
+    async def create_partition(self, device, gap, spec: FileSystemSpec, **kw):
         flag = kw.pop("flag", None)
         if gap.in_extended:
             if flag not in (None, "logical"):
@@ -119,45 +119,45 @@ class FilesystemManipulator:
         part = self.model.add_partition(
             device, size=gap.size, offset=gap.offset, flag=flag, **kw
         )
-        self.create_filesystem(part, spec)
+        await self.create_filesystem(part, spec)
         return part
 
-    def delete_partition(self, part, override_preserve=False):
+    async def delete_partition(self, part, override_preserve=False):
         if (
             not override_preserve
             and part.device.preserve
             and self.model.storage_version < 2
         ):
             raise Exception("cannot delete partitions from preserved disks")
-        self.clear(part)
+        await self.clear(part)
         self.model.remove_partition(part)
 
-    def create_raid(self, spec: RaidSpec):
+    async def create_raid(self, spec: RaidSpec):
         for d in spec["devices"] | spec["spare_devices"]:
-            self.clear(d)
+            await self.clear(d)
         raid = self.model.add_raid(
             spec["name"], spec["level"].value, spec["devices"], spec["spare_devices"]
         )
         return raid
 
-    def delete_raid(self, raid: Raid | None):
+    async def delete_raid(self, raid: Raid | None):
         if raid is None:
             return
-        self.clear(raid)
+        await self.clear(raid)
         for v in raid._subvolumes:
-            self.delete_raid(v)
+            await self.delete_raid(v)
         for p in list(raid.partitions()):
-            self.delete_partition(p, True)
+            await self.delete_partition(p, True)
         for d in set(raid.devices) | set(raid.spare_devices):
             d.wipe = "superblock"
         self.model.remove_raid(raid)
 
-    def create_volgroup(self, spec: VolGroupSpec):
+    async def create_volgroup(self, spec: VolGroupSpec):
         devices = set()
         key = spec.get("passphrase")
 
         for device in spec["devices"]:
-            self.clear(device)
+            await self.clear(device)
             if key:
                 device = self.model.add_dm_crypt(
                     device,
@@ -169,9 +169,9 @@ class FilesystemManipulator:
 
     create_lvm_volgroup = create_volgroup
 
-    def delete_volgroup(self, vg: LVM_VolGroup):
+    async def delete_volgroup(self, vg: LVM_VolGroup):
         for lv in list(vg.partitions()):
-            self.delete_logical_volume(lv)
+            await self.delete_logical_volume(lv)
         for d in vg.devices:
             d.wipe = "superblock"
             if d.type == "dm_crypt":
@@ -180,15 +180,15 @@ class FilesystemManipulator:
 
     delete_lvm_volgroup = delete_volgroup
 
-    def create_logical_volume(self, vg: LVM_VolGroup, spec: LogicalVolumeSpec):
+    async def create_logical_volume(self, vg: LVM_VolGroup, spec: LogicalVolumeSpec):
         lv = self.model.add_logical_volume(vg=vg, name=spec["name"], size=spec["size"])
-        self.create_filesystem(lv, spec)
+        await self.create_filesystem(lv, spec)
         return lv
 
     create_lvm_partition = create_logical_volume
 
-    def delete_logical_volume(self, lv: LVM_LogicalVolume):
-        self.clear(lv)
+    async def delete_logical_volume(self, lv: LVM_LogicalVolume):
+        await self.clear(lv)
         self.model.remove_logical_volume(lv)
 
     delete_lvm_partition = delete_logical_volume
@@ -201,13 +201,13 @@ class FilesystemManipulator:
         "swap",
     ]
 
-    def create_cryptoswap(self, device):
+    async def create_cryptoswap(self, device):
         dmc = self.model.add_dm_crypt(
             device,
             keyfile="/dev/urandom",
             options=self.cryptoswap_options,
         )
-        self.create_filesystem(dmc, dict(fstype="swap"))
+        await self.create_filesystem(dmc, dict(fstype="swap"))
         return dmc
 
     def create_zpool(
@@ -256,27 +256,27 @@ class FilesystemManipulator:
             keyfile=keyfile,
         )
 
-    def delete(self, obj):
+    async def delete(self, obj):
         if obj is None:
             return
-        getattr(self, "delete_" + obj.type)(obj)
+        await getattr(self, "delete_" + obj.type)(obj)
 
-    def clear(self, obj, wipe=None):
+    async def clear(self, obj, wipe=None):
         if obj.type == "disk":
             obj.preserve = False
         if wipe is None:
             wipe = "superblock"
         obj.wipe = wipe
         for subobj in obj.fs(), obj.constructed_device():
-            self.delete(subobj)
+            await self.delete(subobj)
 
-    def reformat(self, disk, ptable=None, wipe=None):
+    async def reformat(self, disk, ptable=None, wipe=None):
         disk.grub_device = False
         if ptable is not None:
             disk.ptable = ptable
         for p in list(disk.partitions()):
-            self.delete_partition(p, True)
-        self.clear(disk, wipe)
+            await self.delete_partition(p, True)
+        await self.clear(disk, wipe)
 
     def can_resize_partition(self, partition):
         if not partition.preserve:
@@ -285,7 +285,7 @@ class FilesystemManipulator:
             return False
         return True
 
-    def partition_disk_handler(
+    async def partition_disk_handler(
         self, disk, spec: PartitionSpec, *, partition=None, gap=None
     ):
         log.debug("partition_disk_handler: %s %s %s %s", disk, spec, partition, gap)
@@ -308,8 +308,8 @@ class FilesystemManipulator:
                 partition.resize = True
                 for part in trailing:
                     part.offset += size_change
-            self.delete_filesystem(partition.fs())
-            self.create_filesystem(partition, spec)
+            await self.delete_filesystem(partition.fs())
+            await self.create_filesystem(partition, spec)
             return
 
         if len(disk.partitions()) == 0:
@@ -323,7 +323,7 @@ class FilesystemManipulator:
         log.debug("model needs a bootloader partition? {}".format(needs_boot))
         can_be_boot = boot.can_be_boot_device(disk)
         if needs_boot and len(disk.partitions()) == 0 and can_be_boot:
-            self.add_boot_disk(disk)
+            await self.add_boot_disk(disk)
 
             # adjust downward the partition size (if necessary) to accommodate
             # bios/grub partition.  It's OK and useful to assign a new gap:
@@ -337,11 +337,13 @@ class FilesystemManipulator:
                 spec["size"] = gap.size
 
         gap = gap.split(spec["size"])[0]
-        self.create_partition(disk, gap, spec)
+        await self.create_partition(disk, gap, spec)
 
         log.debug("Successfully added partition")
 
-    def logical_volume_handler(self, vg, spec: LogicalVolumeSpec, *, partition, gap):
+    async def logical_volume_handler(
+        self, vg, spec: LogicalVolumeSpec, *, partition, gap
+    ):
         # keep the partition name for compat with PartitionStretchy.handler
         lv = partition
 
@@ -357,33 +359,33 @@ class FilesystemManipulator:
                 lv.size = align_up(spec["size"])
                 if gaps.largest_gap_size(vg) < 0:
                     raise Exception("lv size too large")
-            self.delete_filesystem(lv.fs())
-            self.create_filesystem(lv, spec)
+            await self.delete_filesystem(lv.fs())
+            await self.create_filesystem(lv, spec)
             return
 
-        self.create_logical_volume(vg, spec)
+        await self.create_logical_volume(vg, spec)
 
-    def add_format_handler(self, volume, spec: FileSystemSpec):
+    async def add_format_handler(self, volume, spec: FileSystemSpec):
         log.debug("add_format_handler %s %s", volume, spec)
-        self.clear(volume)
-        self.create_filesystem(volume, spec)
+        await self.clear(volume)
+        await self.create_filesystem(volume, spec)
 
-    def raid_handler(self, existing, spec: RaidSpec):
+    async def raid_handler(self, existing, spec: RaidSpec):
         log.debug("raid_handler %s %s", existing, spec)
         if existing is not None:
             for d in existing.devices | existing.spare_devices:
                 d._constructed_device = None
             for d in spec["devices"] | spec["spare_devices"]:
-                self.clear(d)
+                await self.clear(d)
                 d._constructed_device = existing
             existing.name = spec["name"]
             existing.raidlevel = spec["level"].value
             existing.devices = spec["devices"]
             existing.spare_devices = spec["spare_devices"]
         else:
-            self.create_raid(spec)
+            await self.create_raid(spec)
 
-    def volgroup_handler(self, existing: LVM_VolGroup | None, spec: VolGroupSpec):
+    async def volgroup_handler(self, existing: LVM_VolGroup | None, spec: VolGroupSpec):
         if existing is not None:
             key = spec.get("passphrase")
             for d in existing.devices:
@@ -393,7 +395,7 @@ class FilesystemManipulator:
                 d._constructed_device = None
             devices = set()
             for d in spec["devices"]:
-                self.clear(d)
+                await self.clear(d)
                 if key:
                     d = self.model.add_dm_crypt(
                         d,
@@ -405,14 +407,14 @@ class FilesystemManipulator:
             existing.name = spec["name"]
             existing.devices = devices
         else:
-            self.create_volgroup(spec)
+            await self.create_volgroup(spec)
 
     def _mount_esp(self, part):
         if part.fs() is None:
             self.model.add_filesystem(part, "fat32")
         self.model.add_mount(part.fs(), "/boot/efi")
 
-    def remove_boot_disk(self, boot_disk):
+    async def remove_boot_disk(self, boot_disk):
         if self.model.bootloader == Bootloader.BIOS:
             boot_disk.grub_device = False
         partitions = [
@@ -429,10 +431,10 @@ class FilesystemManipulator:
                 elif self.model.bootloader == Bootloader.UEFI:
                     if p.fs():
                         if p.fs().mount():
-                            self.delete_mount(p.fs().mount())
+                            await self.delete_mount(p.fs().mount())
                             remount = True
                         if not p.fs().preserve and p.original_fstype():
-                            self.delete_filesystem(p.fs())
+                            await self.delete_filesystem(p.fs())
                             self.model.add_filesystem(
                                 p, p.original_fstype(), preserve=True
                             )
@@ -443,7 +445,7 @@ class FilesystemManipulator:
                 tot_size += p.size
                 if p.fs() and p.fs().mount():
                     remount = True
-                self.delete_partition(p)
+                await self.delete_partition(p)
             if full:
                 largest_part = max(boot_disk.partitions(), key=lambda p: p.size)
                 largest_part.size += tot_size
@@ -452,14 +454,16 @@ class FilesystemManipulator:
             if part:
                 self._mount_esp(part)
 
-    def add_boot_disk(self, new_boot_disk):
+    async def add_boot_disk(self, new_boot_disk):
+        # NOTE this is async because FilesystemController.add_boot_disk needs
+        # to be async.
         if not self.supports_resilient_boot:
             for disk in boot.all_boot_devices(self.model):
-                self.remove_boot_disk(disk)
+                await self.remove_boot_disk(disk)
         plan = boot.get_boot_device_plan(new_boot_disk)
         if plan is None:
             raise ValueError(f"No known plan to make {new_boot_disk} bootable")
-        plan.apply(self)
+        await plan.apply(self)
         if not new_boot_disk._has_preexisting_partition():
             if new_boot_disk.type == "disk":
                 new_boot_disk.preserve = False

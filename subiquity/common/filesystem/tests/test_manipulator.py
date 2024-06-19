@@ -70,20 +70,20 @@ class Create:
     size: int
 
 
-class TestFilesystemManipulator(unittest.TestCase):
-    def test_delete_encrypted_vg(self):
+class TestFilesystemManipulator(unittest.IsolatedAsyncioTestCase):
+    async def test_delete_encrypted_vg(self):
         manipulator, disk = make_manipulator_and_disk()
         spec = {
             "passphrase": "passw0rd",
             "devices": {disk},
             "name": "vg0",
         }
-        vg = manipulator.create_volgroup(spec)
-        manipulator.delete_volgroup(vg)
+        vg = await manipulator.create_volgroup(spec)
+        await manipulator.delete_volgroup(vg)
         dm_crypts = [a for a in manipulator.model._actions if a.type == "dm_crypt"]
         self.assertEqual(dm_crypts, [])
 
-    def test_wipe_existing_fs(self):
+    async def test_wipe_existing_fs(self):
         # LP: #1983036 - edit a partition to wipe it and mount it, but not
         # actually change the fs type already there
         # example: it's ext2, wipe and make it ext2 again
@@ -93,24 +93,24 @@ class TestFilesystemManipulator(unittest.TestCase):
             manipulator.model, partition=p, fstype="ext2", preserve=True
         )
         manipulator.model._actions.append(fs)
-        manipulator.delete_filesystem(fs)
+        await manipulator.delete_filesystem(fs)
         spec = {"wipe": "random"}
         with mock.patch.object(p, "original_fstype") as original_fstype:
             original_fstype.return_value = "ext2"
-            fs = manipulator.create_filesystem(p, spec)
+            fs = await manipulator.create_filesystem(p, spec)
         self.assertTrue(p.preserve)
         self.assertEqual("random", p.wipe)
         self.assertFalse(fs.preserve)
         self.assertEqual("ext2", fs.fstype)
 
-    def test_can_only_add_boot_once(self):
+    async def test_can_only_add_boot_once(self):
         # This is really testing model code but it's much easier to test with a
         # manipulator around.
         for bl in Bootloader:
             manipulator, disk = make_manipulator_and_disk(bl)
             if DeviceAction.TOGGLE_BOOT not in DeviceAction.supported(disk):
                 continue
-            manipulator.add_boot_disk(disk)
+            await manipulator.add_boot_disk(disk)
             self.assertFalse(
                 DeviceAction.TOGGLE_BOOT.can(disk)[0],
                 "add_boot_disk(disk) did not make _can_TOGGLE_BOOT false "
@@ -171,7 +171,7 @@ class TestFilesystemManipulator(unittest.TestCase):
                 if part.flag == "prep" and part.grub_device:
                     self.fail("{} is a boot disk".format(disk))
 
-    def test_boot_disk_resilient(self):
+    async def test_boot_disk_resilient(self):
         for bl in Bootloader:
             if bl == Bootloader.NONE:
                 continue
@@ -185,13 +185,13 @@ class TestFilesystemManipulator(unittest.TestCase):
                 disk2, size=gap.size, offset=gap.offset
             )
 
-            manipulator.add_boot_disk(disk1)
+            await manipulator.add_boot_disk(disk1)
             self.assertIsBootDisk(manipulator, disk1)
             if bl == Bootloader.UEFI:
                 self.assertIsMountedAtBootEFI(disk1.partitions()[0])
 
             size_before = disk2p1.size
-            manipulator.add_boot_disk(disk2)
+            await manipulator.add_boot_disk(disk2)
             self.assertIsBootDisk(manipulator, disk1)
             self.assertIsBootDisk(manipulator, disk2)
             if bl == Bootloader.UEFI:
@@ -201,19 +201,19 @@ class TestFilesystemManipulator(unittest.TestCase):
             self.assertEqual(disk2.partitions()[1], disk2p1)
             self.assertEqual(disk2.partitions()[0].size + disk2p1.size, size_before)
 
-            manipulator.remove_boot_disk(disk1)
+            await manipulator.remove_boot_disk(disk1)
             self.assertIsNotBootDisk(manipulator, disk1)
             self.assertIsBootDisk(manipulator, disk2)
             if bl == Bootloader.UEFI:
                 self.assertIsMountedAtBootEFI(disk2.partitions()[0])
             self.assertEqual(len(disk1.partitions()), 0)
 
-            manipulator.remove_boot_disk(disk2)
+            await manipulator.remove_boot_disk(disk2)
             self.assertIsNotBootDisk(manipulator, disk2)
             self.assertEqual(len(disk2.partitions()), 1)
             self.assertEqual(disk2p1.size, size_before)
 
-    def test_boot_disk_no_resilient(self):
+    async def test_boot_disk_no_resilient(self):
         for bl in Bootloader:
             if bl == Bootloader.NONE:
                 continue
@@ -227,13 +227,13 @@ class TestFilesystemManipulator(unittest.TestCase):
                 disk2, size=gap.size, offset=gap.offset
             )
 
-            manipulator.add_boot_disk(disk1)
+            await manipulator.add_boot_disk(disk1)
             self.assertIsBootDisk(manipulator, disk1)
             if bl == Bootloader.UEFI:
                 self.assertIsMountedAtBootEFI(disk1.partitions()[0])
 
             size_before = disk2p1.size
-            manipulator.add_boot_disk(disk2)
+            await manipulator.add_boot_disk(disk2)
             self.assertIsNotBootDisk(manipulator, disk1)
             self.assertIsBootDisk(manipulator, disk2)
             if bl == Bootloader.UEFI:
@@ -242,7 +242,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             self.assertEqual(disk2.partitions()[1], disk2p1)
             self.assertEqual(disk2.partitions()[0].size + disk2p1.size, size_before)
 
-    def test_boot_disk_existing(self):
+    async def test_boot_disk_existing(self):
         for bl in Bootloader:
             if bl == Bootloader.NONE:
                 continue
@@ -252,19 +252,19 @@ class TestFilesystemManipulator(unittest.TestCase):
             part = self.add_existing_boot_partition(manipulator, disk1)
 
             wipe_before = part.wipe
-            manipulator.add_boot_disk(disk1)
+            await manipulator.add_boot_disk(disk1)
             self.assertIsBootDisk(manipulator, disk1)
             if bl == Bootloader.UEFI:
                 self.assertIsMountedAtBootEFI(part)
 
-            manipulator.remove_boot_disk(disk1)
+            await manipulator.remove_boot_disk(disk1)
             self.assertIsNotBootDisk(manipulator, disk1)
             self.assertEqual(len(disk1.partitions()), 1)
             self.assertEqual(part.wipe, wipe_before)
             if bl == Bootloader.UEFI:
                 self.assertNotMounted(part)
 
-    def test_mounting_partition_makes_boot_disk(self):
+    async def test_mounting_partition_makes_boot_disk(self):
         manipulator = make_manipulator(Bootloader.UEFI)
         disk1 = make_disk(manipulator.model, preserve=True)
         disk1p1 = manipulator.model.add_partition(
@@ -275,20 +275,24 @@ class TestFilesystemManipulator(unittest.TestCase):
             disk1, size=8192 << 20, offset=513 << 20
         )
         disk1p2.preserve = True
-        manipulator.partition_disk_handler(
-            disk1, {"fstype": "ext4", "mount": "/"}, partition=disk1p2
-        )
+        with mock.patch.object(
+            manipulator, "add_boot_disk", side_effect=manipulator.add_boot_disk
+        ) as m_add_boot_disk:
+            await manipulator.partition_disk_handler(
+                disk1, {"fstype": "ext4", "mount": "/"}, partition=disk1p2
+            )
         efi_mnt = manipulator.model._mount_for_path("/boot/efi")
         self.assertEqual(efi_mnt.device.volume, disk1p1)
+        m_add_boot_disk.assert_called_once()
 
-    def test_add_boot_has_valid_offset(self):
+    async def test_add_boot_has_valid_offset(self):
         for bl in Bootloader:
             if bl == Bootloader.NONE:
                 continue
             manipulator = make_manipulator(bl)
 
             disk1 = make_disk(manipulator.model, preserve=True)
-            manipulator.add_boot_disk(disk1)
+            await manipulator.add_boot_disk(disk1)
             part = gaps.parts_and_gaps(disk1)[0]
             self.assertEqual(1024 * 1024, part.offset)
 
@@ -332,7 +336,7 @@ class TestFilesystemManipulator(unittest.TestCase):
                 self.fail("no assertion about {}".format(new_parts))
 
     @parameterized.expand([(1,), (2,)])
-    def test_add_boot_BIOS_empty(self, version):
+    async def test_add_boot_BIOS_empty(self, version):
         manipulator = make_manipulator(Bootloader.BIOS, version)
         disk = make_disk(manipulator.model, preserve=True)
         with self.assertPartitionOperations(
@@ -342,12 +346,12 @@ class TestFilesystemManipulator(unittest.TestCase):
                 size=sizes.BIOS_GRUB_SIZE_BYTES,
             ),
         ):
-            manipulator.add_boot_disk(disk)
+            await manipulator.add_boot_disk(disk)
 
         self.assertIsBootDisk(manipulator, disk)
 
     @parameterized.expand([(1,), (2,)])
-    def test_add_boot_BIOS_full(self, version):
+    async def test_add_boot_BIOS_full(self, version):
         manipulator = make_manipulator(Bootloader.BIOS, version)
         disk = make_disk(manipulator.model, preserve=True)
         part = make_partition(manipulator.model, disk, size=gaps.largest_gap_size(disk))
@@ -364,12 +368,12 @@ class TestFilesystemManipulator(unittest.TestCase):
                 size=-sizes.BIOS_GRUB_SIZE_BYTES,
             ),
         ):
-            manipulator.add_boot_disk(disk)
+            await manipulator.add_boot_disk(disk)
 
         self.assertIsBootDisk(manipulator, disk)
 
     @parameterized.expand([(1,), (2,)])
-    def test_add_boot_BIOS_half_full(self, version):
+    async def test_add_boot_BIOS_half_full(self, version):
         manipulator = make_manipulator(Bootloader.BIOS, version)
         disk = make_disk(manipulator.model, preserve=True)
         part = make_partition(
@@ -383,11 +387,11 @@ class TestFilesystemManipulator(unittest.TestCase):
             ),
             Move(part=part, offset=sizes.BIOS_GRUB_SIZE_BYTES),
         ):
-            manipulator.add_boot_disk(disk)
+            await manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
     @parameterized.expand([(1,), (2,)])
-    def test_add_boot_BIOS_full_resizes_larger(self, version):
+    async def test_add_boot_BIOS_full_resizes_larger(self, version):
         manipulator = make_manipulator(Bootloader.BIOS)
         # 2002MiB so that the space available for partitioning (2000MiB)
         # divided by 4 is an whole number of megabytes.
@@ -411,7 +415,7 @@ class TestFilesystemManipulator(unittest.TestCase):
                 size=-sizes.BIOS_GRUB_SIZE_BYTES,
             ),
         ):
-            manipulator.add_boot_disk(disk)
+            await manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
     @parameterized.expand([(1,), (2,)])
@@ -431,7 +435,7 @@ class TestFilesystemManipulator(unittest.TestCase):
         )
         self.assertFalse(boot.can_be_boot_device(disk))
 
-    def test_add_boot_BIOS_preserved_v2(self):
+    async def test_add_boot_BIOS_preserved_v2(self):
         manipulator = make_manipulator(Bootloader.BIOS, 2)
         disk = make_disk(manipulator.model, preserve=True)
         half_size = gaps.largest_gap_size(disk) // 2
@@ -446,10 +450,10 @@ class TestFilesystemManipulator(unittest.TestCase):
             ),
             Unchanged(part=part),
         ):
-            manipulator.add_boot_disk(disk)
+            await manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
-    def test_add_boot_BIOS_new_and_preserved_v2(self):
+    async def test_add_boot_BIOS_new_and_preserved_v2(self):
         manipulator = make_manipulator(Bootloader.BIOS, 2)
         # 2002MiB so that the space available for partitioning (2000MiB)
         # divided by 4 is an whole number of megabytes.
@@ -472,7 +476,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             ),
             Unchanged(part=p2_preserved),
         ):
-            manipulator.add_boot_disk(disk)
+            await manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
     @parameterized.expand([(1,), (2,)])
@@ -492,7 +496,7 @@ class TestFilesystemManipulator(unittest.TestCase):
         self.assertFalse(boot.can_be_boot_device(disk))
 
     @parameterized.expand([(1,), (2,)])
-    def test_add_boot_BIOS_msdos(self, version):
+    async def test_add_boot_BIOS_msdos(self, version):
         manipulator = make_manipulator(Bootloader.BIOS, version)
         disk = make_disk(manipulator.model, preserve=True, ptable="msdos")
         part = make_partition(
@@ -502,7 +506,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             disk,
             Unchanged(part=part),
         ):
-            manipulator.add_boot_disk(disk)
+            await manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
     def boot_size_for_disk(self, disk):
@@ -522,7 +526,7 @@ class TestFilesystemManipulator(unittest.TestCase):
     ]
 
     @parameterized.expand(ADD_BOOT_PARAMS)
-    def test_add_boot_empty(self, bl, version):
+    async def test_add_boot_empty(self, bl, version):
         manipulator = make_manipulator(bl, version)
         disk = make_disk(manipulator.model, preserve=True)
         with self.assertPartitionOperations(
@@ -532,11 +536,11 @@ class TestFilesystemManipulator(unittest.TestCase):
                 size=self.boot_size_for_disk(disk),
             ),
         ):
-            manipulator.add_boot_disk(disk)
+            await manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
     @parameterized.expand(ADD_BOOT_PARAMS)
-    def test_add_boot_full(self, bl, version):
+    async def test_add_boot_full(self, bl, version):
         manipulator = make_manipulator(bl, version)
         disk = make_disk(manipulator.model, preserve=True)
         part = make_partition(manipulator.model, disk, size=gaps.largest_gap_size(disk))
@@ -546,11 +550,11 @@ class TestFilesystemManipulator(unittest.TestCase):
             Create(offset=disk.alignment_data().min_start_offset, size=size),
             MoveResize(part=part, offset=size, size=-size),
         ):
-            manipulator.add_boot_disk(disk)
+            await manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
     @parameterized.expand(ADD_BOOT_PARAMS)
-    def test_add_boot_half_full(self, bl, version):
+    async def test_add_boot_half_full(self, bl, version):
         manipulator = make_manipulator(bl, version)
         disk = make_disk(manipulator.model, preserve=True)
         part = make_partition(
@@ -562,11 +566,11 @@ class TestFilesystemManipulator(unittest.TestCase):
             Unchanged(part=part),
             Create(offset=part.offset + part.size, size=size),
         ):
-            manipulator.add_boot_disk(disk)
+            await manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
     @parameterized.expand(ADD_BOOT_PARAMS)
-    def test_add_boot_full_resizes_larger(self, bl, version):
+    async def test_add_boot_full_resizes_larger(self, bl, version):
         manipulator = make_manipulator(bl, version)
         # 2002MiB so that the space available for partitioning (2000MiB)
         # divided by 4 is an whole number of megabytes.
@@ -584,7 +588,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             Create(offset=part_smaller.offset + part_smaller.size, size=size),
             MoveResize(part=part_larger, offset=size, size=-size),
         ):
-            manipulator.add_boot_disk(disk)
+            await manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
     @parameterized.expand(ADD_BOOT_PARAMS)
@@ -596,7 +600,7 @@ class TestFilesystemManipulator(unittest.TestCase):
         self.assertFalse(boot.can_be_boot_device(disk))
 
     @parameterized.expand(ADD_BOOT_PARAMS)
-    def test_add_boot_half_preserved_partition(self, bl, version):
+    async def test_add_boot_half_preserved_partition(self, bl, version):
         manipulator = make_manipulator(bl, version)
         disk = make_disk(manipulator.model, preserve=True)
         half_size = gaps.largest_gap_size(disk) // 2
@@ -610,11 +614,11 @@ class TestFilesystemManipulator(unittest.TestCase):
                 Unchanged(part),
                 Create(offset=part.offset + part.size, size=size),
             ):
-                manipulator.add_boot_disk(disk)
+                await manipulator.add_boot_disk(disk)
             self.assertIsBootDisk(manipulator, disk)
 
     @parameterized.expand([(Bootloader.UEFI,), (Bootloader.PREP,)])
-    def test_add_boot_half_preserved_half_new_partition(self, bl):
+    async def test_add_boot_half_preserved_half_new_partition(self, bl):
         # This test is v2 only because you can only get into this
         # situation in a v2 world.
         manipulator = make_manipulator(bl, 2)
@@ -630,11 +634,11 @@ class TestFilesystemManipulator(unittest.TestCase):
             Create(offset=new_part.offset, size=size),
             MoveResize(part=new_part, offset=size, size=-size),
         ):
-            manipulator.add_boot_disk(disk)
+            await manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
     @parameterized.expand(ADD_BOOT_PARAMS)
-    def test_add_boot_existing_boot_partition(self, bl, version):
+    async def test_add_boot_existing_boot_partition(self, bl, version):
         manipulator = make_manipulator(bl, version)
         disk = make_disk(manipulator.model, preserve=True, size=2002 * MiB)
         if bl == Bootloader.UEFI:
@@ -651,7 +655,7 @@ class TestFilesystemManipulator(unittest.TestCase):
             Unchanged(boot_part),
             Unchanged(rest_part),
         ):
-            manipulator.add_boot_disk(disk)
+            await manipulator.add_boot_disk(disk)
         self.assertIsBootDisk(manipulator, disk)
 
     def test_logical_no_esp_in_gap(self):
@@ -698,39 +702,39 @@ class TestFilesystemManipulator(unittest.TestCase):
         self.assertFalse(gap.is_usable)
         self.assertFalse(boot.can_be_boot_device(d1))
 
-    def test_logical_when_in_extended(self):
+    async def test_logical_when_in_extended(self):
         manipulator = make_manipulator(storage_version=2)
         m = manipulator.model
         d1 = make_disk(m, preserve=True, ptable="msdos")
         size = gaps.largest_gap_size(d1)
         make_partition(m, d1, flag="extended", size=size)
         gap = gaps.largest_gap(d1)
-        p = manipulator.create_partition(d1, gap, spec={}, flag="primary")
+        p = await manipulator.create_partition(d1, gap, spec={}, flag="primary")
         self.assertEqual(p.flag, "logical")
 
 
-class TestReformat(unittest.TestCase):
+class TestReformat(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.manipulator = make_manipulator()
 
-    def test_reformat_default(self):
+    async def test_reformat_default(self):
         disk = make_disk(self.manipulator.model, ptable=None)
-        self.manipulator.reformat(disk)
+        await self.manipulator.reformat(disk)
         self.assertEqual(None, disk.ptable)
 
-    def test_reformat_keep_current(self):
+    async def test_reformat_keep_current(self):
         disk = make_disk(self.manipulator.model, ptable="msdos")
-        self.manipulator.reformat(disk)
+        await self.manipulator.reformat(disk)
         self.assertEqual("msdos", disk.ptable)
 
-    def test_reformat_to_gpt(self):
+    async def test_reformat_to_gpt(self):
         disk = make_disk(self.manipulator.model, ptable=None)
-        self.manipulator.reformat(disk, "gpt")
+        await self.manipulator.reformat(disk, "gpt")
         self.assertEqual("gpt", disk.ptable)
 
-    def test_reformat_to_msdos(self):
+    async def test_reformat_to_msdos(self):
         disk = make_disk(self.manipulator.model, ptable=None)
-        self.manipulator.reformat(disk, "msdos")
+        await self.manipulator.reformat(disk, "msdos")
         self.assertEqual("msdos", disk.ptable)
 
 

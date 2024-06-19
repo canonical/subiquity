@@ -855,7 +855,7 @@ class TestGuided(IsolatedAsyncioTestCase):
 
     async def _guided_side_by_side(self, bl, ptable):
         await self._guided_setup(bl, ptable, storage_version=2)
-        self.controller.add_boot_disk(self.d1)
+        await self.controller.add_boot_disk(self.d1)
         for p in self.d1._partitions:
             p.preserve = True
             if bl == Bootloader.UEFI:

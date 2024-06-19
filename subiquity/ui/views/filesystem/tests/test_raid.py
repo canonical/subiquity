@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 from unittest import mock
 
@@ -22,6 +23,7 @@ def make_view(model, existing=None):
     return base_view, stretchy
 
 
+@mock.patch("subiquitycore.async_helpers.run_bg_task", asyncio.run)
 class RaidViewTests(unittest.TestCase):
     def test_create_raid(self):
         model, disk = make_model_and_disk()
