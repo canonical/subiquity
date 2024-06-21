@@ -38,7 +38,7 @@ from subiquity.common.types import ApplicationState, PackageInstallState
 from subiquity.journald import journald_listen
 from subiquity.models.filesystem import ActionRenderMode, Partition
 from subiquity.server.controller import SubiquityController
-from subiquity.server.curtin import run_curtin_command, start_curtin_command
+from subiquity.server.curtin import run_curtin_command
 from subiquity.server.kernel import list_installed_kernels
 from subiquity.server.mounter import Mounter, Mountpoint
 from subiquity.server.types import InstallerChannels
@@ -751,7 +751,7 @@ class InstallController(SubiquityController):
         apt_conf_path = Path(aptdir) / "zzzz-temp-installer-unattended-upgrade"
         apt_conf_path.write_bytes(apt_conf_contents)
         try:
-            uu_cmd = await start_curtin_command(
+            await run_curtin_command(
                 self.app,
                 context,
                 "in-target",
@@ -762,11 +762,9 @@ class InstallController(SubiquityController):
                 "-v",
                 private_mounts=True,
             )
-            try:
-                await uu_cmd.wait()
-            except subprocess.CalledProcessError as cpe:
-                log_process_streams(logging.ERROR, cpe, "Unattended upgrades")
-                context.description = f"FAILED to apply {policy} updates"
+        except subprocess.CalledProcessError as cpe:
+            log_process_streams(logging.ERROR, cpe, "Unattended upgrades")
+            context.description = f"FAILED to apply {policy} updates"
         finally:
             apt_conf_path.unlink()
 
