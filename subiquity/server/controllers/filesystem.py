@@ -69,6 +69,7 @@ from subiquity.models.filesystem import (
 from subiquity.models.filesystem import Disk as ModelDisk
 from subiquity.models.filesystem import (
     MiB,
+    Partition,
     Raid,
     RecoveryKeyHandler,
     _Device,
@@ -585,9 +586,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             spec["passphrase"] = choice.password
         if choice.recovery_key and not choice.password:
             raise Exception("Cannot have a recovery key without encryption")
-        spec["recovery-key"] = RecoveryKeyHandler.from_post_data(
+        recovery_key_handler = RecoveryKeyHandler.from_post_data(
             choice.recovery_key, default_suffix=f"recovery-key-{vg_name}.txt"
         )
+        if recovery_key_handler is not None:
+            spec["recovery-key"] = recovery_key_handler
 
         vg = self.create_volgroup(spec)
         if choice.sizing_policy == SizingPolicy.SCALED:
@@ -1041,7 +1044,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     break
         return [labels.for_client(disk) for disk in bitlockered_disks]
 
-    def get_partition(self, disk, number):
+    def get_partition(self, disk, number) -> Partition:
         for p in disk.partitions():
             if p.number == number:
                 return p
@@ -1255,9 +1258,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         fstype = data.partition.format or None
         spec: FileSystemSpec = {
             "size": requested_size,
-            "fstype": fstype,
-            "mount": data.partition.mount,
         }
+
+        if fstype is not None:
+            spec["fstype"] = fstype
+        if data.partition.mount is not None:
+            spec["mount"] = data.partition.mount
 
         gap = gaps.at_offset(disk, data.gap.offset).split(requested_size)[0]
         self.create_partition(disk, gap, spec, wipe="superblock")

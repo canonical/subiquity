@@ -45,7 +45,7 @@ VolGroupSpec = TypedDict(
         "name": Required[str],
         "devices": set[Any],
         "passphrase": str,
-        "recovery-key": RecoveryKeyHandler | None,
+        "recovery-key": RecoveryKeyHandler,
     },
     total=False,
 )
@@ -54,9 +54,9 @@ VolGroupSpec = TypedDict(
 FileSystemSpec = TypedDict(
     "FileSystemSpec",
     {
-        "fstype": str | None,
+        "fstype": str | None,  # Sometimes, we explicitly do fstype=None
         "mount": str | None,
-        "wipe": str | None,
+        "wipe": str | None,  # NOTE: no wipe is different from wipe=None
         "use_swap": bool,
         "on-remote-storage": bool,
     },
