@@ -56,7 +56,6 @@ class ShutdownController(SubiquityController):
 
     async def POST(self, mode: ShutdownMode, immediate: bool = False):
         self.mode = mode
-        self.app.controllers.Install.stop_uu()
         self.user_shutdown_event.set()
         if immediate:
             self.server_reboot_event.set()

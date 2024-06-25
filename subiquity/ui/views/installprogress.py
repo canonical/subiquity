@@ -176,20 +176,11 @@ class ProgressView(BaseView):
             self.title = _("Installing system")
             btns = [self.view_log_btn]
         elif state == ApplicationState.UU_RUNNING:
-            self.title = _("Installation complete!")
-            self.reboot_btn.base_widget.set_label(_("Cancel update and reboot"))
-            btns = [
-                self.view_log_btn,
-                self.reboot_btn,
-            ]
-        elif state == ApplicationState.UU_CANCELLING:
-            self.title = _("Installation complete!")
-            self.reboot_btn.base_widget.set_label(_("Rebooting..."))
-            self.reboot_btn.enabled = False
-            btns = [
-                self.view_log_btn,
-                self.reboot_btn,
-            ]
+            self.title = _("Updating system")
+            btns = [self.view_log_btn]
+        elif state == ApplicationState.LATE_COMMANDS:
+            self.title = _("Running late-commands")
+            btns = [self.view_log_btn]
         elif state == ApplicationState.DONE:
             self.title = _("Installation complete!")
             self.reboot_btn.base_widget.set_label(_("Reboot Now"))
