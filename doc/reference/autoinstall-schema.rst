@@ -3,14 +3,30 @@
 Autoinstall schema
 ==================
 
-The server installer validates the provided autoinstall configuration against a :ref:`JSON schema<autoinstall_JSON_schema>`.
+The server installer validates the provided autoinstall configuration against a :ref:`JSON schema<autoinstall_JSON_schema>`. The end of this reference manual presents the schema as a single document which could be used to manually pre-validate an autoinstall configuration, however the actual runtime validation process is more involved than a simple JSON schema validation. See the provided :doc:`pre-validation script <../howto/autoinstall-validation>` for how to perform autoinstall pre-validation.
+
+.. _how_the_delivery_is_verified:
+
+How the delivery is verified
+----------------------------
+
+To ensure expected runtime behaviour after delivering the autoinstall config, the installer performs some sanity checks to ensure one delivery method is not confused for another.
+
+cloud-config
+^^^^^^^^^^^^
+
+When passing autoinstall via cloud-config, the installer will inspect the cloud-config data for any autoinstall-specific keywords outside of the top-level ``autoinstall`` keyword in the config and throw an error if any are encountered. If there are no misplaced keys, the data within the ``autoinstall`` section is passed to the installer.
+
+
+Installation Media
+^^^^^^^^^^^^^^^^^^
+
+When passing autoinstall via the installation media and using the top-level ``autoinstall`` keyword format, the installer will inspect the passed autoinstall file to guarantee that there are no other top-level keys. This check guarantees that the autoinstall config is not mistaken for a cloud-config datasource.
 
 How the configuration is validated
 ----------------------------------
 
-This reference manual presents the schema as a single document. Use it pre-validate your configuration.
-
-At run time, the configuration is not validated against this document. Instead, configuration sections are loaded and validated in this order:
+After the configuration has been delivered to the installer successfully, the configuration sections are loaded and validated in this order:
 
 1. The reporting section is loaded, validated and applied.
 2. The error commands are loaded and validated.
@@ -35,7 +51,7 @@ Regeneration
 
 To regenerate the schema, run ``make schema`` in the root directory of the `Subiquity source repository`_.
 
-.. LINKS 
+.. LINKS
 
 .. _JSON schema: https://json-schema.org/
 .. _Subiquity source repository: https://github.com/canonical/subiquity
