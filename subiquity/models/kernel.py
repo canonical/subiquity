@@ -28,11 +28,6 @@ class KernelModel:
     # should be True.
     explicitly_requested: bool = False
 
-    # If set to True, we won't request curthooks to install the kernel.
-    # We can use this option if the kernel is already part of the source image
-    # of if a kernel got installed using ubuntu-drivers.
-    curthooks_no_install: bool = False
-
     @property
     def needed_kernel(self) -> Optional[str]:
         if self.metapkg_name_override is not None:
@@ -40,9 +35,9 @@ class KernelModel:
         return self.metapkg_name
 
     def render(self):
-        result = {"kernel": {"remove_existing": True}}
-        if self.curthooks_no_install:
-            result["kernel"]["install"] = False
-        else:
-            result["kernel"]["package"] = self.needed_kernel
-        return result
+        return {
+            "kernel": {
+                "remove_existing": True,
+                "package": self.needed_kernel,
+            }
+        }
