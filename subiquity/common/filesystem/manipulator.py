@@ -18,6 +18,13 @@ import logging
 from curtin.block import get_resize_fstypes
 
 from subiquity.common.filesystem import boot, gaps
+from subiquity.common.filesystem.spec import (
+    FileSystemSpec,
+    LogicalVolumeSpec,
+    PartitionSpec,
+    RaidSpec,
+    VolGroupSpec,
+)
 from subiquity.common.types.storage import Bootloader
 from subiquity.models.filesystem import Partition, align_up
 from subiquitycore.utils import write_named_tempfile
@@ -40,7 +47,7 @@ zfs_boot_features = [
 
 
 class FilesystemManipulator:
-    def create_mount(self, fs, spec):
+    def create_mount(self, fs, spec: FileSystemSpec):
         if spec.get("mount") is None:
             return
         mount = self.model.add_mount(
@@ -57,7 +64,7 @@ class FilesystemManipulator:
             return
         self.model.remove_mount(mount)
 
-    def create_filesystem(self, volume, spec):
+    def create_filesystem(self, volume, spec: FileSystemSpec):
         if spec.get("fstype") is None:
             # prep partitions are always wiped (and never have a filesystem)
             if getattr(volume, "flag", None) != "prep":
@@ -95,7 +102,7 @@ class FilesystemManipulator:
 
     delete_format = delete_filesystem
 
-    def create_partition(self, device, gap, spec, **kw):
+    def create_partition(self, device, gap, spec: FileSystemSpec, **kw):
         flag = kw.pop("flag", None)
         if gap.in_extended:
             if flag not in (None, "logical"):
@@ -119,7 +126,7 @@ class FilesystemManipulator:
         self.clear(part)
         self.model.remove_partition(part)
 
-    def create_raid(self, spec):
+    def create_raid(self, spec: RaidSpec):
         for d in spec["devices"] | spec["spare_devices"]:
             self.clear(d)
         raid = self.model.add_raid(
@@ -139,7 +146,7 @@ class FilesystemManipulator:
             d.wipe = "superblock"
         self.model.remove_raid(raid)
 
-    def create_volgroup(self, spec):
+    def create_volgroup(self, spec: VolGroupSpec):
         devices = set()
         key = spec.get("passphrase")
 
@@ -167,7 +174,7 @@ class FilesystemManipulator:
 
     delete_lvm_volgroup = delete_volgroup
 
-    def create_logical_volume(self, vg, spec):
+    def create_logical_volume(self, vg, spec: LogicalVolumeSpec):
         lv = self.model.add_logical_volume(vg=vg, name=spec["name"], size=spec["size"])
         self.create_filesystem(lv, spec)
         return lv
@@ -272,7 +279,9 @@ class FilesystemManipulator:
             return False
         return True
 
-    def partition_disk_handler(self, disk, spec, *, partition=None, gap=None):
+    def partition_disk_handler(
+        self, disk, spec: PartitionSpec, *, partition=None, gap=None
+    ):
         log.debug("partition_disk_handler: %s %s %s %s", disk, spec, partition, gap)
 
         if disk.on_remote_storage():
@@ -326,7 +335,7 @@ class FilesystemManipulator:
 
         log.debug("Successfully added partition")
 
-    def logical_volume_handler(self, vg, spec, *, partition, gap):
+    def logical_volume_handler(self, vg, spec: LogicalVolumeSpec, *, partition, gap):
         # keep the partition name for compat with PartitionStretchy.handler
         lv = partition
 
@@ -348,12 +357,12 @@ class FilesystemManipulator:
 
         self.create_logical_volume(vg, spec)
 
-    def add_format_handler(self, volume, spec):
+    def add_format_handler(self, volume, spec: FileSystemSpec):
         log.debug("add_format_handler %s %s", volume, spec)
         self.clear(volume)
         self.create_filesystem(volume, spec)
 
-    def raid_handler(self, existing, spec):
+    def raid_handler(self, existing, spec: RaidSpec):
         log.debug("raid_handler %s %s", existing, spec)
         if existing is not None:
             for d in existing.devices | existing.spare_devices:
@@ -368,7 +377,7 @@ class FilesystemManipulator:
         else:
             self.create_raid(spec)
 
-    def volgroup_handler(self, existing, spec):
+    def volgroup_handler(self, existing, spec: VolGroupSpec):
         if existing is not None:
             key = spec.get("passphrase")
             for d in existing.devices:
