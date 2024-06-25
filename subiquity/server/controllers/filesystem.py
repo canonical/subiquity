@@ -1256,9 +1256,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             requested_size = data.gap.size
         # empty string is an unformatted partition
         fstype = data.partition.format or None
-        spec: FileSystemSpec = {
-            "size": requested_size,
-        }
+        spec: FileSystemSpec = {}
 
         if fstype is not None:
             spec["fstype"] = fstype
