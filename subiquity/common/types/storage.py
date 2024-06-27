@@ -360,3 +360,11 @@ class ReformatDisk:
 
 
 AddVolumeGroupV2 = VolumeGroup
+
+
+@attr.s(auto_attribs=True)
+class AddRaidV2:
+    name: str
+    level: int
+    devices: list[str]  # ID of disks (for now)
+    spare_devices: list[str]  # ID of disks (for now)

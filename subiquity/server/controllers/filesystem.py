@@ -38,9 +38,15 @@ from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.filesystem import boot, gaps, labels, sizes
 from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
-from subiquity.common.filesystem.spec import FileSystemSpec, PartitionSpec, VolGroupSpec
+from subiquity.common.filesystem.spec import (
+    FileSystemSpec,
+    PartitionSpec,
+    RaidSpec,
+    VolGroupSpec,
+)
 from subiquity.common.types.storage import (
     AddPartitionV2,
+    AddRaidV2,
     AddVolumeGroupV2,
     Bootloader,
     Disk,
@@ -80,6 +86,7 @@ from subiquity.models.filesystem import (
     align_down,
     align_up,
     humanize_size,
+    raidlevels_by_value,
 )
 from subiquity.server import snapdapi
 from subiquity.server.autoinstall import AutoinstallError
@@ -1383,6 +1390,36 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         assert isinstance(lv, LVM_LogicalVolume)
 
         self.delete_logical_volume(lv)
+        return await self.v2_GET()
+
+    def _add_raid_handler(self, data: AddRaidV2) -> RaidSpec:
+        if self.model._one(type="raid", name=data.name) is not None:
+            raise StorageRecoverableError("a RAID with the same name already exists")
+        # TODO support partitions or RAIDs as well
+        devices = {self.model._one(type="disk", id=disk_id) for disk_id in data.devices}
+        spare_devices = {
+            self.model._one(type="disk", id=disk_id) for disk_id in data.spare_devices
+        }
+        if any([device is None for device in devices | spare_devices]):
+            raise StorageRecoverableError(
+                "could not find a matching device to use for the RAID"
+            )
+
+        spec: RaidSpec = {
+            "name": data.name,
+            "level": raidlevels_by_value[f"raid{data.level}"],
+            "devices": devices,
+            "spare_devices": spare_devices,
+        }
+
+        return spec
+
+    async def v2_raid_POST(self, data: AddRaidV2) -> StorageResponseV2:
+        self.locked_probe_data = True
+
+        spec = self._add_raid_handler(data)
+
+        self.create_raid(spec)
         return await self.v2_GET()
 
     async def v2_raid_DELETE(self, id: str) -> StorageResponseV2:
