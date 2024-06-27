@@ -76,5 +76,4 @@ class LogicalVolumeSpec(FileSystemSpec, total=False):
 
 
 class PartitionSpec(FileSystemSpec, total=False):
-    name: str
     size: int
