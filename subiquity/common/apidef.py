@@ -69,6 +69,7 @@ from subiquity.common.types import (
 )
 from subiquity.common.types.storage import (
     AddPartitionV2,
+    AddVolumeGroupV2,
     Disk,
     GuidedChoiceV2,
     GuidedStorageResponseV2,
@@ -407,6 +408,9 @@ class API:
 
             class volume_group:
                 def GET(id: str) -> VolumeGroup:
+                    ...
+
+                def POST(data: Payload[AddVolumeGroupV2]) -> StorageResponseV2:
                     ...
 
                 def DELETE(id: str) -> StorageResponseV2:

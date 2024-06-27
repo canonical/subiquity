@@ -41,6 +41,7 @@ from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.common.filesystem.spec import FileSystemSpec, PartitionSpec, VolGroupSpec
 from subiquity.common.types.storage import (
     AddPartitionV2,
+    AddVolumeGroupV2,
     Bootloader,
     Disk,
     GuidedCapability,
@@ -68,12 +69,12 @@ from subiquity.models.filesystem import (
     ArbitraryDevice,
 )
 from subiquity.models.filesystem import Disk as ModelDisk
+from subiquity.models.filesystem import LVM_LogicalVolume, LVM_VolGroup, MiB
+from subiquity.models.filesystem import Partition
+from subiquity.models.filesystem import Partition as ModelPartition
+from subiquity.models.filesystem import Raid
+from subiquity.models.filesystem import Raid as ModelRaid
 from subiquity.models.filesystem import (
-    LVM_LogicalVolume,
-    LVM_VolGroup,
-    MiB,
-    Partition,
-    Raid,
     RecoveryKeyHandler,
     _Device,
     align_down,
@@ -1308,10 +1309,55 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.partition_disk_handler(disk, spec, partition=partition)
         return await self.v2_GET()
 
+    def _add_volume_group_handler(self, data: AddVolumeGroupV2) -> VolGroupSpec:
+        if self.model._one(type="lvm_volgroup", name=data.name) is not None:
+            raise StorageRecoverableError(
+                "a volume group with the same name already exists"
+            )
+
+        devices = set()
+        for device_id in data.devices:
+            if (device := self.model._one(id=device_id)) is None:
+                raise StorageRecoverableError(
+                    f"could not find device '{device_id}' to use as a physical volume"
+                )
+            if not isinstance(device, (ModelDisk, ModelPartition, ModelRaid)):
+                raise StorageRecoverableError(
+                    f"'{device.type}' devices can not be used as physical volumes"
+                )
+            devices.add(device)
+
+        spec: VolGroupSpec = {
+            "name": data.name,
+            "devices": devices,
+        }
+
+        if not data.devices:
+            raise StorageRecoverableError(
+                "cannot build volume group with no physical volume"
+            )
+
+        if data.encryption is None:
+            return spec
+
+        spec["passphrase"] = data.encryption.passphrase
+        if data.encryption.recovery_key is not None:
+            spec["recovery-key"] = data.recovery_key
+
+        return spec
+
     async def v2_volume_group_GET(self, id: str) -> VolumeGroup:
         if (vg := self.model._one(type="lvm_volgroup", id=id)) is None:
             raise StorageRecoverableError(f"cannot find existing VG '{id}'")
         return labels.for_client(vg)
+
+    async def v2_volume_group_POST(self, data: AddVolumeGroupV2) -> StorageResponseV2:
+        self.locked_probe_data = True
+
+        spec = self._add_volume_group_handler(data)
+
+        self.create_volgroup(spec)
+        return await self.v2_GET()
 
     async def v2_volume_group_DELETE(self, id: str) -> StorageResponseV2:
         """Delete the VG specified by its ID. Any associated LV will be deleted
