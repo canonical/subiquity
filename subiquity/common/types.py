@@ -87,10 +87,11 @@ class ApplicationState(enum.Enum):
     WAITING = enum.auto()
     RUNNING = enum.auto()
 
-    # States reported while unattended-upgrades is running.
-    # TODO: check if these should be dropped in favor of RUNNING.
+    # State reported while unattended-upgrades is running.
+    # TODO: check if this should be dropped in favor of RUNNING.
     UU_RUNNING = enum.auto()
-    UU_CANCELLING = enum.auto()
+
+    LATE_COMMANDS = enum.auto()
 
     # Final state
     DONE = enum.auto()

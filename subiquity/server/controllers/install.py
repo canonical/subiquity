@@ -38,11 +38,11 @@ from subiquity.common.types import ApplicationState, PackageInstallState
 from subiquity.journald import journald_listen
 from subiquity.models.filesystem import ActionRenderMode, Partition
 from subiquity.server.controller import SubiquityController
-from subiquity.server.curtin import run_curtin_command, start_curtin_command
+from subiquity.server.curtin import run_curtin_command
 from subiquity.server.kernel import list_installed_kernels
 from subiquity.server.mounter import Mounter, Mountpoint
 from subiquity.server.types import InstallerChannels
-from subiquitycore.async_helpers import run_bg_task, run_in_thread
+from subiquitycore.async_helpers import run_in_thread
 from subiquitycore.context import with_context
 from subiquitycore.file_util import (
     generate_config_yaml,
@@ -83,17 +83,10 @@ class InstallController(SubiquityController):
         super().__init__(app)
         self.model = app.base_model
 
-        self.unattended_upgrades_cmd = None
-        self.unattended_upgrades_ctx = None
         self.tb_extractor = TracebackExtractor()
 
     def interactive(self):
         return True
-
-    def stop_uu(self):
-        if self.app.state == ApplicationState.UU_RUNNING:
-            self.app.update_state(ApplicationState.UU_CANCELLING)
-            run_bg_task(self.stop_unattended_upgrades())
 
     def start(self):
         journald_listen([self.app.log_syslog_id], self.log_event)
@@ -624,6 +617,9 @@ class InstallController(SubiquityController):
 
             await self.postinstall(context=context)
 
+            self.app.update_state(ApplicationState.LATE_COMMANDS)
+            await self.app.controllers.Late.run()
+
             self.app.update_state(ApplicationState.DONE)
         except Exception as exc:
             kw = {}
@@ -754,8 +750,7 @@ class InstallController(SubiquityController):
         apt_conf_path = Path(aptdir) / "zzzz-temp-installer-unattended-upgrade"
         apt_conf_path.write_bytes(apt_conf_contents)
         try:
-            self.unattended_upgrades_ctx = context
-            self.unattended_upgrades_cmd = await start_curtin_command(
+            await run_curtin_command(
                 self.app,
                 context,
                 "in-target",
@@ -766,30 +761,11 @@ class InstallController(SubiquityController):
                 "-v",
                 private_mounts=True,
             )
-            try:
-                await self.unattended_upgrades_cmd.wait()
-            except subprocess.CalledProcessError as cpe:
-                log_process_streams(logging.ERROR, cpe, "Unattended upgrades")
-                context.description = f"FAILED to apply {policy} updates"
+        except subprocess.CalledProcessError as cpe:
+            log_process_streams(logging.ERROR, cpe, "Unattended upgrades")
+            context.description = f"FAILED to apply {policy} updates"
         finally:
             apt_conf_path.unlink()
-        self.unattended_upgrades_cmd = None
-        self.unattended_upgrades_ctx = None
-
-    async def stop_unattended_upgrades(self):
-        with self.unattended_upgrades_ctx.parent.child(
-            "stop_unattended_upgrades", "cancelling update"
-        ):
-            await self.app.command_runner.run(
-                [
-                    "chroot",
-                    self.tpath(),
-                    "/usr/share/unattended-upgrades/unattended-upgrade-shutdown",
-                    "--stop-only",
-                ]
-            )
-            if self.app.opts.dry_run and self.unattended_upgrades_cmd is not None:
-                self.unattended_upgrades_cmd.proc.terminate()
 
 
 uu_apt_conf = b"""\

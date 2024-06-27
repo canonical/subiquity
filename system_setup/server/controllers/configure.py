@@ -448,6 +448,9 @@ class ConfigureController(SubiquityController):
                 wsl_config_update(self.model.wslconfbase.wslconfbase, root_dir)
                 wsl_config_update(self.model.wslconfadvanced.wslconfadvanced, root_dir)
 
+            self.app.update_state(ApplicationState.LATE_COMMANDS)
+            await self.app.controllers.Late.run()
+
             self.app.update_state(ApplicationState.DONE)
 
         except Exception:
