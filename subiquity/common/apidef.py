@@ -69,6 +69,7 @@ from subiquity.common.types import (
 )
 from subiquity.common.types.storage import (
     AddPartitionV2,
+    AddRaidV2,
     AddVolumeGroupV2,
     Disk,
     GuidedChoiceV2,
@@ -426,6 +427,9 @@ class API:
                     """Delete the LV specified by its ID."""
 
             class raid:
+                def POST(data: Payload[AddRaidV2]) -> StorageResponseV2:
+                    ...
+
                 def DELETE(id: str) -> StorageResponseV2:
                     """Delete the Raid specified by its ID. Any associated
                     partition will be deleted as well."""
