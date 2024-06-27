@@ -587,7 +587,7 @@ class _Formattable(ABC):
         return self._fs.fstype
 
     @property
-    def mount(self):
+    def mount(self) -> Optional[str]:
         if not self._fs or not self._fs._mount:
             return None
         return self._fs._mount.path

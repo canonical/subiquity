@@ -38,6 +38,7 @@ from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.filesystem import boot, gaps, labels, sizes
 from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
+from subiquity.common.filesystem.spec import FileSystemSpec, PartitionSpec, VolGroupSpec
 from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
@@ -68,6 +69,7 @@ from subiquity.models.filesystem import (
 from subiquity.models.filesystem import Disk as ModelDisk
 from subiquity.models.filesystem import (
     MiB,
+    Partition,
     Raid,
     RecoveryKeyHandler,
     _Device,
@@ -559,7 +561,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     self._device_to_structure[action].device = path
 
     def guided_direct(self, gap):
-        spec = dict(fstype="ext4", mount="/")
+        spec = FileSystemSpec(fstype="ext4", mount="/")
         self.create_partition(device=gap.device, gap=gap, spec=spec)
 
     def guided_dd(self, disk: ModelDisk):
@@ -570,23 +572,25 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         part_align = device.alignment_data().part_align
         bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
         gap_boot, gap_rest = gap.split(bootfs_size)
-        spec = dict(fstype="ext4", mount="/boot")
-        self.create_partition(device, gap_boot, spec)
-        part = self.create_partition(device, gap_rest, dict(fstype=None))
+        fs_spec = FileSystemSpec(fstype="ext4", mount="/boot")
+        self.create_partition(device, gap_boot, fs_spec)
+        part = self.create_partition(device, gap_rest, FileSystemSpec(fstype=None))
 
         vg_name = "ubuntu-vg"
         i = 0
         while self.model._one(type="lvm_volgroup", name=vg_name) is not None:
             i += 1
             vg_name = "ubuntu-vg-{}".format(i)
-        spec = dict(name=vg_name, devices=set([part]))
+        spec = VolGroupSpec(name=vg_name, devices=set([part]))
         if choice.password is not None:
             spec["passphrase"] = choice.password
         if choice.recovery_key and not choice.password:
             raise Exception("Cannot have a recovery key without encryption")
-        spec["recovery-key"] = RecoveryKeyHandler.from_post_data(
+        recovery_key_handler = RecoveryKeyHandler.from_post_data(
             choice.recovery_key, default_suffix=f"recovery-key-{vg_name}.txt"
         )
+        if recovery_key_handler is not None:
+            spec["recovery-key"] = recovery_key_handler
 
         vg = self.create_volgroup(spec)
         if choice.sizing_policy == SizingPolicy.SCALED:
@@ -614,7 +618,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         part_align = device.alignment_data().part_align
         bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
         gap_boot, gap_rest = gap.split(bootfs_size)
-        bpart = self.create_partition(device, gap_boot, dict(fstype=None))
+        bpart = self.create_partition(device, gap_boot, FileSystemSpec(fstype=None))
         encryption_style = None
         if encrypted := choice.password is not None:
             encryption_style = "luks_keystore"
@@ -630,7 +634,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 self.create_partition(device, gap_swap, dict(fstype="swap"))
         else:
             gap = gap_rest
-        rpart = self.create_partition(device, gap, dict(fstype=None))
+        rpart = self.create_partition(device, gap, FileSystemSpec(fstype=None))
 
         uuid = gen_zsys_uuid()
 
@@ -1040,7 +1044,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     break
         return [labels.for_client(disk) for disk in bitlockered_disks]
 
-    def get_partition(self, disk, number):
+    def get_partition(self, disk, number) -> Partition:
         for p in disk.partitions():
             if p.number == number:
                 return p
@@ -1252,11 +1256,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             requested_size = data.gap.size
         # empty string is an unformatted partition
         fstype = data.partition.format or None
-        spec = {
-            "size": requested_size,
-            "fstype": fstype,
-            "mount": data.partition.mount,
-        }
+        spec: FileSystemSpec = {}
+
+        if fstype is not None:
+            spec["fstype"] = fstype
+        if data.partition.mount is not None:
+            spec["mount"] = data.partition.mount
 
         gap = gaps.at_offset(disk, data.gap.offset).split(requested_size)[0]
         self.create_partition(disk, gap, spec, wipe="superblock")
@@ -1286,7 +1291,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise ValueError("edit_partition does not support changing size")
         if data.partition.boot is not None and data.partition.boot != partition.boot:
             raise ValueError("edit_partition does not support changing boot")
-        spec = {"mount": data.partition.mount or partition.mount}
+        spec: PartitionSpec = {"mount": data.partition.mount or partition.mount}
         if data.partition.format is not None:
             if data.partition.format != partition.original_fstype():
                 if data.partition.wipe is None:
