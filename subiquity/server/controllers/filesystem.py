@@ -68,6 +68,8 @@ from subiquity.models.filesystem import (
 )
 from subiquity.models.filesystem import Disk as ModelDisk
 from subiquity.models.filesystem import (
+    LVM_LogicalVolume,
+    LVM_VolGroup,
     MiB,
     Partition,
     Raid,
@@ -1301,6 +1303,41 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             spec["size"] = data.partition.size
         spec["wipe"] = data.partition.wipe
         self.partition_disk_handler(disk, spec, partition=partition)
+        return await self.v2_GET()
+
+    async def v2_volume_group_DELETE(self, id: str) -> StorageResponseV2:
+        """Delete the VG specified by its ID. Any associated LV will be deleted
+        as well."""
+        self.locked_probe_data = True
+
+        if (vg := self.model._one(type="lvm_volgroup", id=id)) is None:
+            raise StorageRecoverableError(f"could not find existing VG '{id}'")
+        assert isinstance(vg, LVM_VolGroup)
+
+        self.delete_volgroup(vg)
+        return await self.v2_GET()
+
+    async def v2_logical_volume_DELETE(self, id: str) -> StorageResponseV2:
+        """Delete the LV specified by its ID."""
+        self.locked_probe_data = True
+
+        if (lv := self.model._one(type="lvm_partition", id=id)) is None:
+            raise StorageRecoverableError(f"could not find existing LV '{id}'")
+        assert isinstance(lv, LVM_LogicalVolume)
+
+        self.delete_logical_volume(lv)
+        return await self.v2_GET()
+
+    async def v2_raid_DELETE(self, id: str) -> StorageResponseV2:
+        """Delete the Raid specified by its ID. Any associated partition will
+        be deleted as well."""
+        self.locked_probe_data = True
+
+        if (raid := self.model._one(type="raid", id=id)) is None:
+            raise StorageRecoverableError(f"could not find existing RAID '{id}'")
+        assert isinstance(raid, Raid)
+
+        self.delete_raid(raid)
         return await self.v2_GET()
 
     async def dry_run_wait_probe_POST(self) -> None:
