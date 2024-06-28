@@ -46,6 +46,7 @@ from subiquity.common.filesystem.spec import (
     VolGroupSpec,
 )
 from subiquity.common.types.storage import (
+    AddLogicalVolumeV2,
     AddPartitionV2,
     AddRaidV2,
     AddVolumeGroupV2,
@@ -1383,10 +1384,39 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_volume_groups_GET(self) -> List[VolumeGroup]:
         return [labels.for_client(vg) for vg in self.model._all(type="lvm_volgroup")]
 
+    def _add_logical_volume_handler(
+        self, data: AddLogicalVolumeV2
+    ) -> tuple[LVM_VolGroup, LogicalVolumeSpec]:
+        vg = self.model._one(type="lvm_volgroup", name=data.vg_name)
+
+        if vg is None:
+            raise StorageRecoverableError(f"cannot find VG named '{name}'")
+
+        spec: LogicalVolumeSpec = {
+            "name": data.name,
+        }
+
+        # empty string is an unformatted partition
+        fstype = data.partition.format or None
+        if fstype is not None:
+            spec["fstype"] = fstype
+        if data.partition.mount is not None:
+            spec["mount"] = data.partition.mount
+
     async def v2_logical_volume_GET(self, id: str) -> LogicalVolume:
         if (vg := self.model._one(type="lvm_partition", id=id)) is None:
             raise StorageRecoverableError(f"cannot find existing LV '{id}'")
         return labels.for_client(lv)
+
+    async def v2_logical_volume_POST(
+        self, data: AddLogicalVolumeV2
+    ) -> StorageResponseV2:
+        self.locked_probe_data = True
+
+        vg, spec = self._add_logical_volume_handler(data)
+
+        self.create_logical_volume(vg, spec)
+        return await self.v2_GET()
 
     async def v2_logical_volume_DELETE(self, id: str) -> StorageResponseV2:
         """Delete the LV specified by its ID."""

@@ -147,6 +147,8 @@ class LogicalVolume:
     name: str
     id: Optional[str] = None  # Only set by the server
 
+    size: Optional[int] = None
+
 
 @attr.s(auto_attribs=True)
 class LuksVolume:
@@ -165,8 +167,7 @@ class VolumeGroup:
     encryption: Optional[LuksVolume]
     id: Optional[str] = None  # Only set by the server
 
-    logical_volumes: Optional[List[LogicalVolume]] = None
-
+    logical_volumes: Optional[List[Union[LogicalVolume, Gap]]] = None
 
 class GuidedCapability(enum.Enum):
     # The order listed here is the order they will be presented as options
