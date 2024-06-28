@@ -335,6 +335,7 @@ def _for_client_disk(disk, *, min_size=0):
 @for_client.register(Partition)
 def _for_client_partition(partition, *, min_size=0):
     return types.Partition(
+        id=partition.id,
         size=partition.size,
         number=partition.number,
         wipe=partition.wipe,
