@@ -64,7 +64,7 @@ class MakeBootDevicePlan(abc.ABC):
     """
 
     @abc.abstractmethod
-    def apply(self, manipulator):
+    async def apply(self, manipulator):
         pass
 
 
@@ -77,8 +77,10 @@ class CreatePartPlan(MakeBootDevicePlan):
     spec: dict = attr.ib(factory=dict)
     args: dict = attr.ib(factory=dict)
 
-    def apply(self, manipulator):
-        manipulator.create_partition(self.gap.device, self.gap, self.spec, **self.args)
+    async def apply(self, manipulator):
+        await manipulator.create_partition(
+            self.gap.device, self.gap, self.spec, **self.args
+        )
 
 
 def _can_resize_part(inst, field, part):
@@ -93,7 +95,7 @@ class ResizePlan(MakeBootDevicePlan):
     size_delta: int = 0
     allow_resize_preserved: bool = False
 
-    def apply(self, manipulator):
+    async def apply(self, manipulator):
         self.part.size += self.size_delta
         if self.part.preserve:
             self.part.resize = True
@@ -111,7 +113,7 @@ class SlidePlan(MakeBootDevicePlan):
     parts: list = attr.ib(validator=_no_preserve_parts)
     offset_delta: int = 0
 
-    def apply(self, manipulator):
+    async def apply(self, manipulator):
         for part in self.parts:
             part.offset += self.offset_delta
 
@@ -124,7 +126,7 @@ class SetAttrPlan(MakeBootDevicePlan):
     attr: str
     val: Any
 
-    def apply(self, manipulator):
+    async def apply(self, manipulator):
         setattr(self.device, self.attr, self.val)
 
 
@@ -134,7 +136,7 @@ class MountBootEfiPlan(MakeBootDevicePlan):
 
     part: object
 
-    def apply(self, manipulator):
+    async def apply(self, manipulator):
         manipulator._mount_esp(self.part)
 
 
@@ -142,7 +144,7 @@ class MountBootEfiPlan(MakeBootDevicePlan):
 class NoOpBootPlan(MakeBootDevicePlan):
     """Do nothing, successfully"""
 
-    def apply(self, manipulator):
+    async def apply(self, manipulator):
         pass
 
 
@@ -152,9 +154,9 @@ class MultiStepPlan(MakeBootDevicePlan):
 
     plans: list
 
-    def apply(self, manipulator):
+    async def apply(self, manipulator):
         for plan in self.plans:
-            plan.apply(manipulator)
+            await plan.apply(manipulator)
 
 
 def get_boot_device_plan_bios(device) -> Optional[MakeBootDevicePlan]:
