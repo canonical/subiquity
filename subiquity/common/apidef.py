@@ -68,6 +68,7 @@ from subiquity.common.types import (
     ZdevInfo,
 )
 from subiquity.common.types.storage import (
+    AddLogicalVolumeV2,
     AddPartitionV2,
     AddRaidV2,
     AddVolumeGroupV2,
@@ -425,6 +426,9 @@ class API:
 
             class logical_volume:
                 def GET(id: str) -> LogicalVolume:
+                    ...
+
+                def POST(data: Payload[AddLogicalVolumeV2]) -> StorageResponseV2:
                     ...
 
                 def DELETE(id: str) -> StorageResponseV2:
