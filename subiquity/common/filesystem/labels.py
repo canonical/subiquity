@@ -364,6 +364,14 @@ def _for_client_vg(vg: LVM_VolGroup, *, min_size=0):
     )
 
 
+@for_client.register(LVM_LogicalVolume)
+def _for_client_lv(lv: LVM_LogicalVolume, *, min_size=0):
+    return types.LogicalVolume(
+        id=lv.id,
+        name=lv.name,
+    )
+
+
 @for_client.register(gaps.Gap)
 def _for_client_gap(gap, *, min_size=0):
     return types.Gap(offset=gap.offset, size=gap.size, usable=gap.usable)

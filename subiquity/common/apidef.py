@@ -74,6 +74,7 @@ from subiquity.common.types.storage import (
     Disk,
     GuidedChoiceV2,
     GuidedStorageResponseV2,
+    LogicalVolume,
     ModifyPartitionV2,
     ReformatDisk,
     StorageResponse,
@@ -423,8 +424,15 @@ class API:
                     ...
 
             class logical_volume:
+                def GET(id: str) -> LogicalVolume:
+                    ...
+
                 def DELETE(id: str) -> StorageResponseV2:
                     """Delete the LV specified by its ID."""
+
+            class logical_volumes:
+                def GET() -> List[LogicalVolume]:
+                    ...
 
             class raid:
                 def POST(data: Payload[AddRaidV2]) -> StorageResponseV2:
