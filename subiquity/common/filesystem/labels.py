@@ -353,6 +353,16 @@ def _for_client_partition(partition, *, min_size=0):
     )
 
 
+@for_client.register(LVM_VolGroup)
+def _for_client_vg(vg: LVM_VolGroup, *, min_size=0):
+    return types.VolumeGroup(
+        id=vg.id,
+        name=vg.name,
+        devices=[device.id for device in vg.devices],
+        encryption=None,  # TODO we don't have access to the DM_Crypt device from here.
+    )
+
+
 @for_client.register(gaps.Gap)
 def _for_client_gap(gap, *, min_size=0):
     return types.Gap(offset=gap.offset, size=gap.size, usable=gap.usable)
