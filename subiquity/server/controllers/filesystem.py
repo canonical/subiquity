@@ -40,6 +40,7 @@ from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.common.filesystem.spec import (
     FileSystemSpec,
+    LogicalVolumeSpec,
     PartitionSpec,
     RaidSpec,
     VolGroupSpec,
@@ -60,6 +61,7 @@ from subiquity.common.types.storage import (
     GuidedStorageTargetReformat,
     GuidedStorageTargetResize,
     GuidedStorageTargetUseGap,
+    LogicalVolume,
     ModifyPartitionV2,
     ProbeStatus,
     RecoveryKey,
@@ -1381,6 +1383,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_volume_groups_GET(self) -> List[VolumeGroup]:
         return [labels.for_client(vg) for vg in self.model._all(type="lvm_volgroup")]
 
+    async def v2_logical_volume_GET(self, id: str) -> LogicalVolume:
+        if (vg := self.model._one(type="lvm_partition", id=id)) is None:
+            raise StorageRecoverableError(f"cannot find existing LV '{id}'")
+        return labels.for_client(lv)
+
     async def v2_logical_volume_DELETE(self, id: str) -> StorageResponseV2:
         """Delete the LV specified by its ID."""
         self.locked_probe_data = True
@@ -1391,6 +1398,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         self.delete_logical_volume(lv)
         return await self.v2_GET()
+
+    async def v2_logical_volumes_GET(self) -> List[LogicalVolume]:
+        return [labels.for_client(lv) for lv in self.model._all(type="lvm_partition")]
 
     def _add_raid_handler(self, data: AddRaidV2) -> RaidSpec:
         if self.model._one(type="raid", name=data.name) is not None:

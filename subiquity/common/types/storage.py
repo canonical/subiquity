@@ -158,6 +158,12 @@ class VolumeGroup:
     id: Optional[str] = None  # Only set by the server
 
 
+@attr.s(auto_attribs=True)
+class LogicalVolume:
+    name: str
+    id: Optional[str] = None  # Only set by the server
+
+
 class GuidedCapability(enum.Enum):
     # The order listed here is the order they will be presented as options
 
