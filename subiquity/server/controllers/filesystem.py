@@ -60,6 +60,7 @@ from subiquity.common.types.storage import (
     SizingPolicy,
     StorageResponse,
     StorageResponseV2,
+    VolumeGroup,
 )
 from subiquity.models.filesystem import (
     LVM_CHUNK_SIZE,
@@ -1072,10 +1073,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             disks = self.potential_boot_disks(with_reformatting=True)
         else:
             disks = model._all(type="disk")
+        vgs = model._all(type="lvm_volgroup")
         minsize = self.calculate_suggested_install_min()
         return StorageResponseV2(
             status=ProbeStatus.DONE,
             disks=[labels.for_client(d) for d in disks],
+            volume_groups=[labels.for_client(vg) for vg in vgs],
             need_root=not model.is_root_mounted(),
             need_boot=model.needs_bootloader_partition(),
             install_minimum_size=minsize,
@@ -1305,6 +1308,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.partition_disk_handler(disk, spec, partition=partition)
         return await self.v2_GET()
 
+    async def v2_volume_group_GET(self, id: str) -> VolumeGroup:
+        if (vg := self.model._one(type="lvm_volgroup", id=id)) is None:
+            raise StorageRecoverableError(f"cannot find existing VG '{id}'")
+        return labels.for_client(vg)
+
     async def v2_volume_group_DELETE(self, id: str) -> StorageResponseV2:
         """Delete the VG specified by its ID. Any associated LV will be deleted
         as well."""
@@ -1316,6 +1324,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         self.delete_volgroup(vg)
         return await self.v2_GET()
+
+    async def v2_volume_groups_GET(self) -> List[VolumeGroup]:
+        return [labels.for_client(vg) for vg in self.model._all(type="lvm_volgroup")]
 
     async def v2_logical_volume_DELETE(self, id: str) -> StorageResponseV2:
         """Delete the LV specified by its ID."""

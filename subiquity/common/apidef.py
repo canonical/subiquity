@@ -76,6 +76,7 @@ from subiquity.common.types.storage import (
     ReformatDisk,
     StorageResponse,
     StorageResponseV2,
+    VolumeGroup,
 )
 from subiquitycore.models.network import (
     BondConfig,
@@ -405,9 +406,16 @@ class API:
                     ...
 
             class volume_group:
+                def GET(id: str) -> VolumeGroup:
+                    ...
+
                 def DELETE(id: str) -> StorageResponseV2:
                     """Delete the VG specified by its ID. Any associated LV
                     will be deleted as well."""
+
+            class volume_groups:
+                def GET() -> List[VolumeGroup]:
+                    ...
 
             class logical_volume:
                 def DELETE(id: str) -> StorageResponseV2:
