@@ -143,6 +143,12 @@ class RecoveryKey:
 
 
 @attr.s(auto_attribs=True)
+class LogicalVolume:
+    name: str
+    id: Optional[str] = None  # Only set by the server
+
+
+@attr.s(auto_attribs=True)
 class LuksVolume:
     recovery_key: RecoveryKey
     passphrase: Optional[str] = attr.ib(
@@ -153,15 +159,13 @@ class LuksVolume:
 @attr.s(auto_attribs=True)
 class VolumeGroup:
     name: str
+
     devices: list[str]
+
     encryption: Optional[LuksVolume]
     id: Optional[str] = None  # Only set by the server
 
-
-@attr.s(auto_attribs=True)
-class LogicalVolume:
-    name: str
-    id: Optional[str] = None  # Only set by the server
+    logical_volumes: Optional[List[LogicalVolume]] = None
 
 
 class GuidedCapability(enum.Enum):
@@ -366,12 +370,14 @@ class ReformatDisk:
     ptable: Optional[str] = None
 
 
-AddVolumeGroupV2 = VolumeGroup
-
-
 @attr.s(auto_attribs=True)
 class AddRaidV2:
     name: str
     level: int
-    devices: list[str]  # ID of disks (for now)
-    spare_devices: list[str]  # ID of disks (for now)
+    devices: list[str]
+    spare_devices: list[str]
+
+
+
+AddVolumeGroupV2 = VolumeGroup
+AddLogicalVolumeV2 = LogicalVolume
