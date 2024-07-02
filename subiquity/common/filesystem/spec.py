@@ -29,7 +29,13 @@ except ImportError:
         pass
 
 
-from subiquity.models.filesystem import RaidLevel, RecoveryKeyHandler
+from subiquity.models.filesystem import (
+    Disk,
+    Partition,
+    Raid,
+    RaidLevel,
+    RecoveryKeyHandler,
+)
 
 
 class RaidSpec(TypedDict):
@@ -43,7 +49,7 @@ VolGroupSpec = TypedDict(
     "VolGroupSpec",
     {
         "name": Required[str],
-        "devices": set[Any],
+        "devices": set[Disk | Partition | Raid],
         "passphrase": str,
         "recovery-key": RecoveryKeyHandler,
     },

@@ -51,6 +51,9 @@ from subiquity.models.tests.test_filesystem import (
     FakeStorageInfo,
     make_disk,
     make_model,
+    make_model_and_lv,
+    make_model_and_raid,
+    make_model_and_vg,
     make_nvme_controller,
     make_partition,
     make_raid,
@@ -355,6 +358,63 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
                 await self.fsc.v2_edit_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
         handler.assert_called_once()
+
+    async def test_v2_volume_group_DELETE(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, vg = make_model_and_vg()
+        with mock.patch.object(self.fsc, "delete_volgroup") as del_volgroup:
+            await self.fsc.v2_volume_group_DELETE(id=vg.id)
+        self.assertTrue(self.fsc.locked_probe_data)
+        del_volgroup.assert_called_once()
+
+    async def test_v2_volume_group_DELETE__inexistent(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model = make_model()
+        with mock.patch.object(self.fsc, "delete_volgroup") as del_volgroup:
+            with self.assertRaisesRegex(
+                StorageRecoverableError, r"could not find existing VG"
+            ):
+                await self.fsc.v2_volume_group_DELETE(id="inexistent")
+        self.assertTrue(self.fsc.locked_probe_data)
+        del_volgroup.assert_not_called()
+
+    async def test_v2_logical_volume_DELETE(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, lv = make_model_and_lv()
+        with mock.patch.object(self.fsc, "delete_logical_volume") as del_lv:
+            await self.fsc.v2_logical_volume_DELETE(id=lv.id)
+        self.assertTrue(self.fsc.locked_probe_data)
+        del_lv.assert_called_once()
+
+    async def test_v2_logical_volume_DELETE__inexistent(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model = make_model()
+        with mock.patch.object(self.fsc, "delete_logical_volume") as del_lv:
+            with self.assertRaisesRegex(
+                StorageRecoverableError, r"could not find existing LV"
+            ):
+                await self.fsc.v2_logical_volume_DELETE(id="inexistent")
+        self.assertTrue(self.fsc.locked_probe_data)
+        del_lv.assert_not_called()
+
+    async def test_v2_raid_DELETE(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, raid = make_model_and_raid()
+        with mock.patch.object(self.fsc, "delete_raid") as del_raid:
+            await self.fsc.v2_raid_DELETE(id=raid.id)
+        self.assertTrue(self.fsc.locked_probe_data)
+        del_raid.assert_called_once()
+
+    async def test_v2_raid_DELETE__inexistent(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model = make_model()
+        with mock.patch.object(self.fsc, "delete_raid") as del_raid:
+            with self.assertRaisesRegex(
+                StorageRecoverableError, r"could not find existing RAID"
+            ):
+                await self.fsc.v2_raid_DELETE(id="inexistent")
+        self.assertTrue(self.fsc.locked_probe_data)
+        del_raid.assert_not_called()
 
     async def test__pre_shutdown_install_started(self):
         self.fsc.reset_partition_only = False

@@ -26,7 +26,13 @@ from subiquity.common.filesystem.spec import (
     VolGroupSpec,
 )
 from subiquity.common.types.storage import Bootloader
-from subiquity.models.filesystem import Partition, align_up
+from subiquity.models.filesystem import (
+    LVM_LogicalVolume,
+    LVM_VolGroup,
+    Partition,
+    Raid,
+    align_up,
+)
 from subiquitycore.utils import write_named_tempfile
 
 log = logging.getLogger("subiquity.common.filesystem.manipulator")
@@ -134,7 +140,7 @@ class FilesystemManipulator:
         )
         return raid
 
-    def delete_raid(self, raid):
+    def delete_raid(self, raid: Raid | None):
         if raid is None:
             return
         self.clear(raid)
@@ -163,7 +169,7 @@ class FilesystemManipulator:
 
     create_lvm_volgroup = create_volgroup
 
-    def delete_volgroup(self, vg):
+    def delete_volgroup(self, vg: LVM_VolGroup):
         for lv in list(vg.partitions()):
             self.delete_logical_volume(lv)
         for d in vg.devices:
@@ -174,14 +180,14 @@ class FilesystemManipulator:
 
     delete_lvm_volgroup = delete_volgroup
 
-    def create_logical_volume(self, vg, spec: LogicalVolumeSpec):
+    def create_logical_volume(self, vg: LVM_VolGroup, spec: LogicalVolumeSpec):
         lv = self.model.add_logical_volume(vg=vg, name=spec["name"], size=spec["size"])
         self.create_filesystem(lv, spec)
         return lv
 
     create_lvm_partition = create_logical_volume
 
-    def delete_logical_volume(self, lv):
+    def delete_logical_volume(self, lv: LVM_LogicalVolume):
         self.clear(lv)
         self.model.remove_logical_volume(lv)
 
@@ -377,7 +383,7 @@ class FilesystemManipulator:
         else:
             self.create_raid(spec)
 
-    def volgroup_handler(self, existing, spec: VolGroupSpec):
+    def volgroup_handler(self, existing: LVM_VolGroup | None, spec: VolGroupSpec):
         if existing is not None:
             key = spec.get("passphrase")
             for d in existing.devices:

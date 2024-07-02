@@ -2143,7 +2143,7 @@ class FilesystemModel:
         self._actions.append(r)
         return r
 
-    def remove_raid(self, raid):
+    def remove_raid(self, raid: Raid):
         if raid._fs or raid._constructed_device or len(raid.partitions()):
             raise Exception("can only remove empty RAID")
         self._remove(raid)
@@ -2158,12 +2158,12 @@ class FilesystemModel:
             raise Exception("can only remove empty VG")
         self._remove(vg)
 
-    def add_logical_volume(self, vg, name, size):
+    def add_logical_volume(self, vg: LVM_VolGroup, name: str, size: int | None):
         lv = LVM_LogicalVolume(m=self, volgroup=vg, name=name, size=size)
         self._actions.append(lv)
         return lv
 
-    def remove_logical_volume(self, lv):
+    def remove_logical_volume(self, lv: LVM_LogicalVolume):
         if lv._fs:
             raise Exception("can only remove empty LV")
         self._remove(lv)

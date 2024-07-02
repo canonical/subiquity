@@ -404,6 +404,20 @@ class API:
                 def POST(data: Payload[ModifyPartitionV2]) -> StorageResponseV2:
                     ...
 
+            class volume_group:
+                def DELETE(id: str) -> StorageResponseV2:
+                    """Delete the VG specified by its ID. Any associated LV
+                    will be deleted as well."""
+
+            class logical_volume:
+                def DELETE(id: str) -> StorageResponseV2:
+                    """Delete the LV specified by its ID."""
+
+            class raid:
+                def DELETE(id: str) -> StorageResponseV2:
+                    """Delete the Raid specified by its ID. Any associated
+                    partition will be deleted as well."""
+
     class codecs:
         def GET() -> CodecsData:
             ...
