@@ -48,6 +48,7 @@ class OsProber:
 
 @attr.s(auto_attribs=True)
 class Partition:
+    id: Optional[str] = None
     size: Optional[int] = None
     number: Optional[int] = None
     preserve: Optional[bool] = None
@@ -115,6 +116,58 @@ class Disk:
     vendor: Optional[str] = None
     has_in_use_partition: bool = False
 
+
+@attr.s(auto_attribs=True)
+class RecoveryKey:
+    # Where to store the key in the live system.
+    live_location: Optional[str] = None
+    # Where to copy the key in the target system. /target will automatically be
+    # prefixed.
+    backup_location: Optional[str] = None
+
+    @classmethod
+    def from_autoinstall(
+        cls, config: Union[bool, Dict[str, Any]]
+    ) -> Optional["RecoveryKey"]:
+        if config is False:
+            return None
+
+        # Recovery key with default values
+        if config is True:
+            return cls()
+
+        return cls(
+            backup_location=config.get("backup-location"),
+            live_location=config.get("live-location"),
+        )
+
+
+@attr.s(auto_attribs=True)
+class LogicalVolume:
+    name: str
+    id: Optional[str] = None  # Only set by the server
+
+    size: Optional[int] = None
+
+
+@attr.s(auto_attribs=True)
+class LuksVolume:
+    recovery_key: RecoveryKey
+    passphrase: Optional[str] = attr.ib(
+        default=None, repr=False
+    )  # Only set by the client
+
+
+@attr.s(auto_attribs=True)
+class VolumeGroup:
+    name: str
+
+    devices: list[str]
+
+    encryption: Optional[LuksVolume]
+    id: Optional[str] = None  # Only set by the server
+
+    logical_volumes: Optional[List[Union[LogicalVolume, Gap]]] = None
 
 class GuidedCapability(enum.Enum):
     # The order listed here is the order they will be presented as options
@@ -195,6 +248,7 @@ class StorageResponseV2:
     status: ProbeStatus
     error_report: Optional[ErrorReportRef] = None
     disks: List[Disk] = attr.Factory(list)
+    volume_groups: List[VolumeGroup] = attr.Factory(list)
     # if need_root == True, there is not yet a partition mounted at "/"
     need_root: Optional[bool] = None
     # if need_boot == True, there is not yet a boot partition
@@ -277,31 +331,6 @@ GuidedStorageTarget = Union[
 
 
 @attr.s(auto_attribs=True)
-class RecoveryKey:
-    # Where to store the key in the live system.
-    live_location: Optional[str] = None
-    # Where to copy the key in the target system. /target will automatically be
-    # prefixed.
-    backup_location: Optional[str] = None
-
-    @classmethod
-    def from_autoinstall(
-        cls, config: Union[bool, Dict[str, Any]]
-    ) -> Optional["RecoveryKey"]:
-        if config is False:
-            return None
-
-        # Recovery key with default values
-        if config is True:
-            return cls()
-
-        return cls(
-            backup_location=config.get("backup-location"),
-            live_location=config.get("live-location"),
-        )
-
-
-@attr.s(auto_attribs=True)
 class GuidedChoiceV2:
     target: GuidedStorageTarget
     capability: GuidedCapability
@@ -340,3 +369,16 @@ class ModifyPartitionV2:
 class ReformatDisk:
     disk_id: str
     ptable: Optional[str] = None
+
+
+@attr.s(auto_attribs=True)
+class AddRaidV2:
+    name: str
+    level: int
+    devices: list[str]
+    spare_devices: list[str]
+
+
+
+AddVolumeGroupV2 = VolumeGroup
+AddLogicalVolumeV2 = LogicalVolume
