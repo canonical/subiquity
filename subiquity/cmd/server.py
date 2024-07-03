@@ -152,6 +152,15 @@ returned. """,
     parser.add_argument(
         "--postinst-hooks-dir", default="/etc/subiquity/postinst.d", type=pathlib.Path
     )
+    parser.add_argument(
+        "--supports-nvme-tcp-booting", action="store_true", default=None
+    )
+    parser.add_argument(
+        "--no-supports-nvme-tcp-booting",
+        action="store_false",
+        default=None,
+        dest="supports_nvme_tcp_booting",
+    )
     return parser
 
 
