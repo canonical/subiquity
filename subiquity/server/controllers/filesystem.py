@@ -1099,6 +1099,19 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def generate_recovery_key_GET(self) -> str:
         return self.model.generate_recovery_key()
 
+    async def supports_nvme_tcp_booting_GET(self, wait: bool = False) -> Optional[bool]:
+        if self.app.opts.supports_nvme_tcp_booting is not None:
+            # No need to wait for the task to finish if the CLI arg is present.
+            return self.supports_nvme_tcp_booting
+
+        if wait:
+            await self._probe_firmware_task.wait()
+
+        if not self._probe_firmware_task.done():
+            return None
+
+        return self.supports_nvme_tcp_booting
+
     async def v2_GET(
         self,
         wait: bool = False,
