@@ -140,8 +140,10 @@ class FakeStorageInfo:
     raw = attr.ib(default=attr.Factory(dict))
 
 
-def make_model(bootloader=None, storage_version=None):
-    model = FilesystemModel(root="/tmp")
+def make_model(bootloader=None, storage_version=None, supports_nvme_tcp_booting=False):
+    model = FilesystemModel(
+        root="/tmp", opt_supports_nvme_tcp_booting=supports_nvme_tcp_booting
+    )
     if bootloader is not None:
         model.bootloader = bootloader
     if storage_version is not None:
@@ -353,6 +355,24 @@ class TestFilesystemModel(unittest.TestCase):
         model._probe_data = None
         orig_model = model.get_orig_model()
         self.assertIsNone(orig_model._probe_data)
+
+    @parameterized.expand(
+        (
+            (None, False, False),
+            (None, True, True),
+            (True, True, True),
+            (True, False, True),
+            (False, True, False),
+            (False, False, False),
+        )
+    )
+    def test_supports_nvme_tcp_booting(
+        self, opt: bool | None, detected: bool, expected: bool
+    ):
+        model = make_model()
+        model.opt_supports_nvme_tcp_booting = opt
+        model.detected_supports_nvme_tcp_booting = detected
+        self.assertEqual(expected, model.supports_nvme_tcp_booting)
 
 
 def fake_up_blockdata_disk(disk, **kw):

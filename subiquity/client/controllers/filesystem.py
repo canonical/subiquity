@@ -269,7 +269,11 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             await self.app.next_screen(coro)
             return
         status = await self.app.wait_with_progress(coro)
-        self.model = FilesystemModel(status.bootloader, root="/")
+        # Technically, we don't know if NVMe/TCP support was detected or
+        # specified on CLI ; but that's okay.
+        self.model = FilesystemModel(
+            status.bootloader, root="/", opt_supports_nvme_tcp_booting=False
+        )
         self.model.load_server_data(status)
         if self.model.bootloader == Bootloader.PREP:
             self.supports_resilient_boot = False

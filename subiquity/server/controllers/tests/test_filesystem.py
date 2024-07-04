@@ -145,7 +145,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
 
         with mock.patch.object(self.app.prober, "get_firmware", return_value=fw):
             await self.fsc._probe_firmware()
-        self.assertFalse(self.fsc.firmware_supports_nvme_tcp_booting)
+        self.assertFalse(self.fsc.model.detected_supports_nvme_tcp_booting)
 
     async def test__probe_firmware__nvme_tcp_support(self):
         fw = {
@@ -156,24 +156,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
 
         with mock.patch.object(self.app.prober, "get_firmware", return_value=fw):
             await self.fsc._probe_firmware()
-        self.assertTrue(self.fsc.firmware_supports_nvme_tcp_booting)
-
-    @parameterized.expand(
-        (
-            (None, False, False),
-            (None, True, True),
-            (True, True, True),
-            (True, False, True),
-            (False, True, False),
-            (False, False, False),
-        )
-    )
-    def test_supports_nvme_tcp_booting(
-        self, opt: bool | None, firmware: bool, expected: bool
-    ):
-        self.app.opts.supports_nvme_tcp_booting = opt
-        self.fsc.firmware_supports_nvme_tcp_booting = firmware
-        self.assertEqual(expected, self.fsc.supports_nvme_tcp_booting)
+        self.assertTrue(self.fsc.model.detected_supports_nvme_tcp_booting)
 
     async def test_layout_no_grub_or_swap(self):
         self.fsc.model = model = make_model(Bootloader.UEFI)
