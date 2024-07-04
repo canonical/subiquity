@@ -336,7 +336,7 @@ def can_be_boot_device(device, *, resize_partition=None, with_reformatting=False
 
 @can_be_boot_device.register(Disk)
 def _can_be_boot_device_disk(disk, *, resize_partition=None, with_reformatting=False):
-    if disk.on_remote_storage():
+    if disk.on_remote_storage() and not disk._m.supports_nvme_tcp_booting:
         return False
     if with_reformatting:
         disk = disk._reformatted()

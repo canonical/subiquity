@@ -2292,6 +2292,15 @@ class FilesystemModel:
         return self._mount_for_path("/boot").device.volume.on_remote_storage()
 
     def _can_install_remote(self) -> bool:
+        """Tells whether installing with the rootfs on remote storage would be
+        a supported use-case with the current configuration.
+        It requires either:
+         * firmware support for booting with NVMe/TCP
+         * the boot FS (i.e., kernel + initramfs) to be stored on local storage.
+        """
+        if self.supports_nvme_tcp_booting:
+            return True
+
         return self.is_boot_mounted() and not self.is_bootfs_on_remote_storage()
 
     def can_install(self) -> bool:

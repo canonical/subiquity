@@ -24,16 +24,21 @@ from subiquitycore.tests.parameterized import parameterized
 class TestCanBeBootDevice(unittest.TestCase):
     @parameterized.expand(
         (
-            (False, True),
-            (True, False),
+            (False, False, True),
+            (False, True, True),
+            (True, True, True),
+            (True, False, False),
         )
     )
     def test__can_be_boot_device_disk(
         self,
         on_remote_storage: bool,
+        supports_nvme_tcp_boot: bool,
         expect_can_be_boot_device: bool,
     ):
         model, disk = make_model_and_disk()
+
+        model.opt_supports_nvme_tcp_booting = supports_nvme_tcp_boot
 
         p_on_remote_storage = mock.patch.object(
             disk, "on_remote_storage", return_value=on_remote_storage
@@ -45,7 +50,7 @@ class TestCanBeBootDevice(unittest.TestCase):
         with p_on_remote_storage, p_get_boot_device_plan as m_gbdp:
             self.assertEqual(expect_can_be_boot_device, _can_be_boot_device_disk(disk))
 
-        if not on_remote_storage:
+        if not on_remote_storage or supports_nvme_tcp_boot:
             m_gbdp.assert_called_once_with(disk, resize_partition=None)
         else:
             m_gbdp.assert_not_called()

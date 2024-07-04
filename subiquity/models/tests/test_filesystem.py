@@ -376,18 +376,27 @@ class TestFilesystemModel(unittest.TestCase):
 
     @parameterized.expand(
         (
-            (True, True, False),
-            (True, False, True),
-            (False, False, False),
+            (True, True, True, True),
+            (True, True, False, True),
+            (True, False, False, True),
+            (False, True, True, False),
+            (False, True, False, True),
+            (False, False, False, False),
         )
     )
     def test__can_install_remote(
         self,
+        supports_nvmet_boot: bool,
         boot_mounted: bool,
         bootfs_remote: bool,
         expected: bool,
     ):
         model = make_model()
+        p_supports_nvmet_boot = mock.patch(
+            "subiquity.models.filesystem.FilesystemModel.supports_nvme_tcp_booting",
+            new_callable=mock.PropertyMock,
+            return_value=supports_nvmet_boot,
+        )
         p_boot_mounted = mock.patch.object(
             model, "is_boot_mounted", return_value=boot_mounted
         )
@@ -396,16 +405,23 @@ class TestFilesystemModel(unittest.TestCase):
         )
 
         with (
+            p_supports_nvmet_boot as m_supports_nvmet_boot,
             p_boot_mounted as m_boot_mounted,
             p_bootfs_remote as m_bootfs_remote,
         ):
             self.assertEqual(expected, model._can_install_remote())
 
-        m_boot_mounted.assert_called_once()
-        if boot_mounted:
-            m_bootfs_remote.assert_called_once()
-        else:
+        m_supports_nvmet_boot.assert_called_once()
+
+        if supports_nvmet_boot:
+            m_boot_mounted.assert_not_called()
             m_bootfs_remote.assert_not_called()
+        else:
+            m_boot_mounted.assert_called_once()
+            if boot_mounted:
+                m_bootfs_remote.assert_called_once()
+            else:
+                m_bootfs_remote.assert_not_called()
 
     @parameterized.expand(
         (
