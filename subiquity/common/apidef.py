@@ -323,6 +323,16 @@ class API:
             def GET() -> str:
                 ...
 
+        class supports_nvme_tcp_booting:
+            def GET(wait: bool = False) -> Optional[bool]:
+                """Tells whether the firmware supports booting with NVMe/TCP.
+                If Subiquity hasn't yet determined if NVMe/TCP booting is
+                supported, the response will vary based on the value of wait:
+                * if wait is True, then Subiquity will send the response once
+                it has figured out.
+                * if wait is False, then Subiquity will return None.
+                """
+
         class v2:
             def GET(
                 wait: bool = False,

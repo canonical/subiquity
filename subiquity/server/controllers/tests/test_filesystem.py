@@ -103,7 +103,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.app = make_app()
         self.app.opts.bootloader = "UEFI"
         self.app.command_runner = mock.AsyncMock()
-        self.app.prober = mock.Mock()
+        self.app.prober = mock.AsyncMock()
         self.app.prober.get_storage = mock.AsyncMock()
         self.app.block_log_dir = "/inexistent"
         self.app.note_file_for_apport = mock.Mock()
@@ -135,6 +135,45 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             await self.fsc._probe_once(restricted=True)
         self.assertIsNone(self.fsc.queued_probe_data)
         load.assert_not_called()
+
+    async def test__probe_firmware__no_nvme_tcp_support(self):
+        fw = {
+            "bios-vendor": "LENOVO",
+            "bios-version": "R10ET39W (1.24 )",
+            "bios-release-date": "08/12/2019",
+        }
+
+        with mock.patch.object(self.app.prober, "get_firmware", return_value=fw):
+            await self.fsc._probe_firmware()
+        self.assertFalse(self.fsc.firmware_supports_nvme_tcp_booting)
+
+    async def test__probe_firmware__nvme_tcp_support(self):
+        fw = {
+            "bios-vendor": "EFI Development Kit II / OVMF",
+            "bios-version": "0.0.0",
+            "bios-release-date": "02/06/2015",
+        }
+
+        with mock.patch.object(self.app.prober, "get_firmware", return_value=fw):
+            await self.fsc._probe_firmware()
+        self.assertTrue(self.fsc.firmware_supports_nvme_tcp_booting)
+
+    @parameterized.expand(
+        (
+            (None, False, False),
+            (None, True, True),
+            (True, True, True),
+            (True, False, True),
+            (False, True, False),
+            (False, False, False),
+        )
+    )
+    def test_supports_nvme_tcp_booting(
+        self, opt: bool | None, firmware: bool, expected: bool
+    ):
+        self.app.opts.supports_nvme_tcp_booting = opt
+        self.fsc.firmware_supports_nvme_tcp_booting = firmware
+        self.assertEqual(expected, self.fsc.supports_nvme_tcp_booting)
 
     async def test_layout_no_grub_or_swap(self):
         self.fsc.model = model = make_model(Bootloader.UEFI)
@@ -1399,6 +1438,7 @@ class TestManualBoot(IsolatedAsyncioTestCase):
         self.fsc.model = self.model = make_model(bootloader)
         self.model.storage_version = 2
         self.fsc._probe_task.task = mock.Mock()
+        self.fsc._probe_firmware_task.task = mock.Mock()
         self.fsc._examine_systems_task.task = mock.Mock()
 
     @parameterized.expand(bootloaders_and_ptables)
@@ -1459,6 +1499,13 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.app.opts.bootloader = "UEFI"
         self.app.prober = mock.Mock()
         self.app.prober.get_storage = mock.AsyncMock()
+        self.app.prober.get_firmware = mock.AsyncMock(
+            return_value={
+                "bios-vendor": None,
+                "bios-version": None,
+                "bios-release-date": None,
+            }
+        )
         self.app.snapdapi = snapdapi.make_api_client(AsyncSnapd(get_fake_connection()))
         self.app.dr_cfg = DRConfig()
         self.app.dr_cfg.systems_dir_exists = True

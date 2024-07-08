@@ -311,6 +311,19 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.queued_probe_data: Optional[Dict[str, Any]] = None
         self.reset_partition_only: bool = False
 
+        # If needed, this can be moved outside of the storage/filesystem stuff.
+        self._probe_firmware_task = SingleInstanceTask(self._probe_firmware)
+
+        self.firmware_supports_nvme_tcp_booting: Optional[bool] = None
+
+    @property
+    def supports_nvme_tcp_booting(self) -> bool:
+        if self.app.opts.supports_nvme_tcp_booting is not None:
+            return self.app.opts.supports_nvme_tcp_booting
+
+        assert self.firmware_supports_nvme_tcp_booting is not None
+        return self.firmware_supports_nvme_tcp_booting
+
     def is_core_boot_classic(self):
         return self._info.is_core_boot_classic()
 
@@ -520,6 +533,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def apply_autoinstall_config(self, context=None):
         await self._start_task
         await self._probe_task.wait()
+        await self._probe_firmware_task.wait()
         await self._examine_systems_task.wait()
         if False in self._errors:
             raise self._errors[False][0]
@@ -822,6 +836,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             if wait:
                 await self._start_task
                 await self._probe_task.wait()
+                await self._probe_firmware_task.wait()
             else:
                 return resp_cls(status=ProbeStatus.PROBING)
         if True in self._errors:
@@ -1083,6 +1098,19 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def generate_recovery_key_GET(self) -> str:
         return self.model.generate_recovery_key()
+
+    async def supports_nvme_tcp_booting_GET(self, wait: bool = False) -> Optional[bool]:
+        if self.app.opts.supports_nvme_tcp_booting is not None:
+            # No need to wait for the task to finish if the CLI arg is present.
+            return self.supports_nvme_tcp_booting
+
+        if wait:
+            await self._probe_firmware_task.wait()
+
+        if not self._probe_firmware_task.done():
+            return None
+
+        return self.supports_nvme_tcp_booting
 
     async def v2_GET(
         self,
@@ -1423,6 +1451,29 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 self.start_monitor()
             break
 
+    async def _probe_firmware(self) -> None:
+        fw = await self.app.prober.get_firmware()
+
+        log.debug("detected firmware information: %s", fw)
+
+        edk2_timberland_sig = {
+            "bios-vendor": "EFI Development Kit II / OVMF",
+            "bios-version": "0.0.0",
+            "bios-release-date": "02/06/2015",
+        }
+
+        if set(edk2_timberland_sig.items()).issubset(set(fw.items())):
+            log.debug("firmware seems to support booting with NVMe/TCP")
+            assume_supported = True
+        else:
+            log.debug("firmware does not seem to support booting with NVMe/TCP")
+            assume_supported = False
+
+        if self.app.opts.supports_nvme_tcp_booting != assume_supported:
+            log.debug("but CLI argument states otherwise, so ignoring")
+
+        self.firmware_supports_nvme_tcp_booting = assume_supported
+
     def get_bootable_matching_disk(
         self, match: dict[str, str] | Sequence[dict[str, str]]
     ):
@@ -1613,6 +1664,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def _start(self):
         await self._probe_task.start()
+        await self._probe_firmware_task.start()
 
     def start_monitor(self):
         if self._configured:

@@ -14,6 +14,7 @@
 
 import asyncio
 import logging
+from typing import Any
 
 import yaml
 from probert.network import StoredDataObserver, UdevObserver
@@ -63,3 +64,9 @@ class Prober:
             )
 
         return await run_in_thread(run_probert, probe_types)
+
+    async def get_firmware(self) -> dict[str, Any]:
+        from probert.firmware import FirmwareProber
+
+        prober = FirmwareProber()
+        return await prober.probe()
