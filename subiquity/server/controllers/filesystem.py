@@ -1461,7 +1461,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             log.debug("firmware does not seem to support booting with NVMe/TCP")
             assume_supported = False
 
-        if self.model.opt_supports_nvme_tcp_booting != assume_supported:
+        if self.model.opt_supports_nvme_tcp_booting not in (None, assume_supported):
             log.debug("but CLI argument states otherwise, so ignoring")
 
         self.model.detected_supports_nvme_tcp_booting = assume_supported

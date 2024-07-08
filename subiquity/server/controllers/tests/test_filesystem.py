@@ -136,27 +136,47 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertIsNone(self.fsc.queued_probe_data)
         load.assert_not_called()
 
-    async def test__probe_firmware__no_nvme_tcp_support(self):
-        fw = {
-            "bios-vendor": "LENOVO",
-            "bios-version": "R10ET39W (1.24 )",
-            "bios-release-date": "08/12/2019",
-        }
+    fw_lenovo = {
+        "bios-vendor": "LENOVO",
+        "bios-version": "R10ET39W (1.24 )",
+        "bios-release-date": "08/12/2019",
+    }
+    fw_edk2_timberland = {
+        "bios-vendor": "EFI Development Kit II / OVMF",
+        "bios-version": "0.0.0",
+        "bios-release-date": "02/06/2015",
+    }
 
+    @parameterized.expand(
+        (
+            (fw_lenovo, True, False, True),
+            (fw_lenovo, False, False, False),
+            (fw_lenovo, None, False, False),
+            (fw_edk2_timberland, True, True, False),
+            (fw_edk2_timberland, False, True, True),
+            (fw_edk2_timberland, None, True, False),
+        )
+    )
+    async def test__probe_firmware(
+        self,
+        fw,
+        opt_supports: bool | None,
+        expect_detected_supports: bool,
+        expect_log: bool,
+    ):
+        self.fsc.model.opt_supports_nvme_tcp_booting = opt_supports
         with mock.patch.object(self.app.prober, "get_firmware", return_value=fw):
-            await self.fsc._probe_firmware()
-        self.assertFalse(self.fsc.model.detected_supports_nvme_tcp_booting)
-
-    async def test__probe_firmware__nvme_tcp_support(self):
-        fw = {
-            "bios-vendor": "EFI Development Kit II / OVMF",
-            "bios-version": "0.0.0",
-            "bios-release-date": "02/06/2015",
-        }
-
-        with mock.patch.object(self.app.prober, "get_firmware", return_value=fw):
-            await self.fsc._probe_firmware()
-        self.assertTrue(self.fsc.model.detected_supports_nvme_tcp_booting)
+            with self.assertLogs(
+                "subiquity.server.controllers.filesystem", level="DEBUG"
+            ) as debug:
+                await self.fsc._probe_firmware()
+        self.assertEqual(
+            expect_detected_supports, self.fsc.model.detected_supports_nvme_tcp_booting
+        )
+        found_log = "but CLI argument states otherwise, so ignoring" in [
+            record.msg for record in debug.records
+        ]
+        self.assertEqual(expect_log, found_log)
 
     async def test_layout_no_grub_or_swap(self):
         self.fsc.model = model = make_model(Bootloader.UEFI)
