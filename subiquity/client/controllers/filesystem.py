@@ -61,6 +61,11 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             assert self.current_view is not None
             return self.current_view
 
+        # Move somewhere else, maybe?
+        self.supports_nvme_tcp_booting = (
+            await self.endpoint.supports_nvme_tcp_booting.GET(wait=True)
+        )
+
         status: GuidedStorageResponseV2 = await self.endpoint.v2.guided.GET()
         if status.status == ProbeStatus.PROBING:
             run_bg_task(self._wait_for_probing())
@@ -272,7 +277,9 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         # Technically, we don't know if NVMe/TCP support was detected or
         # specified on CLI ; but that's okay.
         self.model = FilesystemModel(
-            status.bootloader, root="/", opt_supports_nvme_tcp_booting=False
+            status.bootloader,
+            root="/",
+            opt_supports_nvme_tcp_booting=self.supports_nvme_tcp_booting,
         )
         self.model.load_server_data(status)
         if self.model.bootloader == Bootloader.PREP:
