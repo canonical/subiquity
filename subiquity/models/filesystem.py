@@ -2291,13 +2291,15 @@ class FilesystemModel:
     def is_bootfs_on_remote_storage(self) -> bool:
         return self._mount_for_path("/boot").device.volume.on_remote_storage()
 
+    def _can_install_remote(self) -> bool:
+        return self.is_boot_mounted() and not self.is_bootfs_on_remote_storage()
+
     def can_install(self) -> bool:
         if not self.is_root_mounted():
             return False
 
-        if self.is_rootfs_on_remote_storage():
-            if not self.is_boot_mounted() or self.is_bootfs_on_remote_storage():
-                return False
+        if self.is_rootfs_on_remote_storage() and not self._can_install_remote():
+            return False
 
         if self.needs_bootloader_partition():
             return False
