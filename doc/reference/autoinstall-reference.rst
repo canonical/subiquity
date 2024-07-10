@@ -576,6 +576,18 @@ To match a Seagate drive:
      match:
        model: Seagate
 
+As of Subiquity 24.08.1, match specs may optionally be specified in an ordered
+list, and will use the first match spec that matches one or more unused disks:
+
+.. code-block:: yaml
+
+   # attempt first to match by serial, then by path
+   - type: disk
+     id: data-disk
+     match:
+       - serial: Foodisk_1TB_ABC123_1
+       - path: /dev/nvme0n1
+
 Partition/logical volume extensions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
