@@ -222,6 +222,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
 
     async def GET(self) -> NetworkStatus:
         if not self.view_shown:
+            self.update_initial_configs()
             self.apply_config(silent=True)
             self.view_shown = True
         if self.wlan_support_install_state() == PackageInstallState.DONE:
@@ -236,6 +237,14 @@ class NetworkController(BaseNetworkController, SubiquityController):
         )
 
     async def configured(self):
+        # There may be some instances in which the network controller
+        # is interactive but is only ever marked configured (through a
+        # POST to either /network or /meta/mark_configured) and is never
+        # interacted with otherwise (via GET) such that we don't disable
+        # interfaces which don't have a global IP.
+        if self.interactive() and not self.view_shown:
+            self.update_initial_configs()
+
         self.model.has_network = self.network_event_receiver.has_default_route
         self.model.needs_wpasupplicant = (
             self.wlan_support_install_state() == PackageInstallState.DONE
