@@ -316,14 +316,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         self.firmware_supports_nvme_tcp_booting: Optional[bool] = None
 
-    @property
-    def supports_nvme_tcp_booting(self) -> bool:
-        if self.app.opts.supports_nvme_tcp_booting is not None:
-            return self.app.opts.supports_nvme_tcp_booting
-
-        assert self.firmware_supports_nvme_tcp_booting is not None
-        return self.firmware_supports_nvme_tcp_booting
-
     def is_core_boot_classic(self):
         return self._info.is_core_boot_classic()
 
@@ -1100,9 +1092,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return self.model.generate_recovery_key()
 
     async def supports_nvme_tcp_booting_GET(self, wait: bool = False) -> Optional[bool]:
-        if self.app.opts.supports_nvme_tcp_booting is not None:
+        if self.model.opt_supports_nvme_tcp_booting is not None:
             # No need to wait for the task to finish if the CLI arg is present.
-            return self.supports_nvme_tcp_booting
+            return self.model.supports_nvme_tcp_booting
 
         if wait:
             await self._probe_firmware_task.wait()
@@ -1110,7 +1102,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if not self._probe_firmware_task.done():
             return None
 
-        return self.supports_nvme_tcp_booting
+        return self.model.supports_nvme_tcp_booting
 
     async def v2_GET(
         self,
@@ -1469,10 +1461,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             log.debug("firmware does not seem to support booting with NVMe/TCP")
             assume_supported = False
 
-        if self.app.opts.supports_nvme_tcp_booting != assume_supported:
+        if self.model.opt_supports_nvme_tcp_booting not in (None, assume_supported):
             log.debug("but CLI argument states otherwise, so ignoring")
 
-        self.firmware_supports_nvme_tcp_booting = assume_supported
+        self.model.detected_supports_nvme_tcp_booting = assume_supported
 
     def get_bootable_matching_disk(
         self, match: dict[str, str] | Sequence[dict[str, str]]

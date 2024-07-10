@@ -488,7 +488,10 @@ class FilesystemView(BaseView):
         todos = []
         if not self.model.is_root_mounted():
             todos.append(_("Mount a filesystem at /"))
-        elif self.model.is_rootfs_on_remote_storage():
+        elif (
+            self.model.is_rootfs_on_remote_storage()
+            and not self.model.supports_nvme_tcp_booting
+        ):
             # We need a /boot partition on local storage
             if (
                 not self.model.is_boot_mounted()

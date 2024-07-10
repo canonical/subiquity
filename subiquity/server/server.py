@@ -287,7 +287,11 @@ class SubiquityServer(Application):
         if self.opts.dry_run:
             root = os.path.abspath(self.opts.output_base)
         return SubiquityModel(
-            root, self.hub, INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
+            root,
+            self.hub,
+            INSTALL_MODEL_NAMES,
+            POSTINSTALL_MODEL_NAMES,
+            opt_supports_nvme_tcp_booting=self.opts.supports_nvme_tcp_booting,
         )
 
     def __init__(self, opts, block_log_dir):

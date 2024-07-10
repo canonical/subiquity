@@ -1480,11 +1480,22 @@ class FilesystemModel:
         else:
             return Bootloader.BIOS
 
-    def __init__(self, bootloader=None, *, root: str):
+    def __init__(
+        self,
+        bootloader=None,
+        *,
+        root: str,
+        opt_supports_nvme_tcp_booting: bool | None = None,
+        detected_supports_nvme_tcp_booting: bool | None = None,
+    ):
         if bootloader is None:
             bootloader = self._probe_bootloader()
         self.bootloader = bootloader
         self.root = root
+        self.opt_supports_nvme_tcp_booting: bool | None = opt_supports_nvme_tcp_booting
+        self.detected_supports_nvme_tcp_booting: bool | None = (
+            detected_supports_nvme_tcp_booting
+        )
         self.storage_version = 1
         self._probe_data = None
         self.dd_target: Optional[Disk] = None
@@ -1507,11 +1518,25 @@ class FilesystemModel:
         # the original state.  _orig_config plays a similar role, but is
         # expressed in terms of curtin actions, which are not what we want to
         # use on the V2 storage API.
-        orig_model = FilesystemModel(self.bootloader, root=self.root)
+        orig_model = FilesystemModel(
+            self.bootloader,
+            root=self.root,
+            opt_supports_nvme_tcp_booting=self.opt_supports_nvme_tcp_booting,
+            detected_supports_nvme_tcp_booting=self.detected_supports_nvme_tcp_booting,
+        )
+
         orig_model.target = self.target
         if self._probe_data is not None:
             orig_model.load_probe_data(self._probe_data)
         return orig_model
+
+    @property
+    def supports_nvme_tcp_booting(self) -> bool:
+        if self.opt_supports_nvme_tcp_booting is not None:
+            return self.opt_supports_nvme_tcp_booting
+
+        assert self.detected_supports_nvme_tcp_booting is not None
+        return self.detected_supports_nvme_tcp_booting
 
     def process_probe_data(self):
         self._orig_config = storage_config.extract_storage_config(self._probe_data)[
@@ -2266,13 +2291,24 @@ class FilesystemModel:
     def is_bootfs_on_remote_storage(self) -> bool:
         return self._mount_for_path("/boot").device.volume.on_remote_storage()
 
+    def _can_install_remote(self) -> bool:
+        """Tells whether installing with the rootfs on remote storage would be
+        a supported use-case with the current configuration.
+        It requires either:
+         * firmware support for booting with NVMe/TCP
+         * the boot FS (i.e., kernel + initramfs) to be stored on local storage.
+        """
+        if self.supports_nvme_tcp_booting:
+            return True
+
+        return self.is_boot_mounted() and not self.is_bootfs_on_remote_storage()
+
     def can_install(self) -> bool:
         if not self.is_root_mounted():
             return False
 
-        if self.is_rootfs_on_remote_storage():
-            if not self.is_boot_mounted() or self.is_bootfs_on_remote_storage():
-                return False
+        if self.is_rootfs_on_remote_storage() and not self._can_install_remote():
+            return False
 
         if self.needs_bootloader_partition():
             return False
