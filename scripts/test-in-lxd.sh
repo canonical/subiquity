@@ -8,7 +8,8 @@ lxd init --auto
 
 if [ -z "$(lxc list -f csv -c n ^${TESTER}\$)" ]
 then
-    lxc launch $IMAGE $TESTER
+    # using security.nesting=true for LP: #2046486
+    lxc launch $IMAGE $TESTER -c security.nesting=true
     lxc config device add $TESTER code disk source=`pwd` path=/subiquity
 else
     lxc start $TESTER
