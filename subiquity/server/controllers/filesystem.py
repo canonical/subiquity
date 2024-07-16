@@ -1154,6 +1154,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if probe_resp is not None:
             return probe_resp
 
+        # TODO We should probably use temporary copies of the storage model and
+        # try to apply each scenario that we want to return. If an error is
+        # encountered when applying a scenario, we should skip it and log why.
+        # This should avoid problems such as "Exceeded number of available
+        # partitions" that we struggle to manually anticipate.
         scenarios = []
         install_min = self.calculate_suggested_install_min()
 
