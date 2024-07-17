@@ -40,8 +40,11 @@ apps:
     environment:
       PYTHONIOENCODING: utf-8
       SUBIQUITY_ROOT: $SNAP
+      PYTHONPATH_ORIG: $PYTHONPATH
+      PYTHON_ORIG: $PYTHON
       PYTHON: $SNAP/usr/bin/python3.10
       PY3OR2_PYTHON: $SNAP/usr/bin/python3.10
+      PATH_ORIG: $PATH
       PATH: $PATH:$SNAP/bin:$SNAP/sbin
   subiquity-service:
     command: usr/bin/subiquity-service
