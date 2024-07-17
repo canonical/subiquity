@@ -58,8 +58,10 @@ rm -rf new/lib/python3.10/site-packages/curtin
 
 if [ -d new/lib/python3.10/site-packages/subiquity ] ; then
     subiquity_dest=new/lib/python3.10/site-packages
+    bin_dest=new/system_scripts/
 elif [ -d new/bin/subiquity/subiquity ] ; then
     subiquity_dest=new/bin/subiquity
+    bin_dest=new/bin/subiquity/system_scripts/
 else
     echo "unrecognized snap" >&2
     exit 1
@@ -72,5 +74,6 @@ rm -rf "${subiquity_dest}/subiquitycore"
 
 rsync -a --chown 0:0 $src/curtin/curtin new/lib/python3.10/site-packages
 rsync -a --chown 0:0 $src/subiquity $src/subiquitycore $subiquity_dest
+rsync -a --chown 0:0 $src/system_scripts/ $bin_dest
 
 snapcraft pack new --output $new
