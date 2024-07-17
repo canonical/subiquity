@@ -1166,6 +1166,23 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 # Do we return a reason here?
                 continue
 
+            # Now we check if we have enough room for all the primary
+            # partitions. This isn't failproof but should limit the number of
+            # UseGaps scenarios that are suggested but can't be applied because
+            # we don't have enough room for partitions.
+            new_primary_parts = 0
+            if not gap.in_extended:
+                new_primary_parts += 1  # For the rootfs to create.
+            new_primary_parts += boot.get_boot_device_plan(disk).new_partition_count()
+            # In theory, there could be a recovery partition as well. Not sure
+            # how to account for it since we don't know yet if one will be
+            # requested.
+            if new_primary_parts > gaps.remaining_primary_partitions(
+                disk, disk.alignment_data()
+            ):
+                log.error("skipping UseGap: not enough room for primary partitions")
+                continue
+
             capability_info = CapabilityInfo()
             for variation in self._variation_info.values():
                 if variation.is_core_boot_classic():
