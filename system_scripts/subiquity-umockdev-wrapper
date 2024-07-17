@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+"""Read a YAML file passed as the --config argument and execute the command
+supplied in a testbed configured with UMockdev.
+
+Note: This is a development script for testing driver installs. It requires
+the packages umockdev and gir1.2-umockdev-1.0 to be installed. See
+UbuntuDriversFakePCIDevicesInterface in subiquity/server/ubuntu_drivers.py
+for usage details.
+"""
+
+import argparse
+import os
+
+import gi
+import yaml
+
+try:
+    gi.require_version("UMockdev", "1.0")
+except ValueError as exc:
+    raise RuntimeError("Package gir1.2-umockdev-1.0 is required") from exc
+
+from gi.repository import UMockdev
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--config", type=argparse.FileType(), required=True)
+    parser.add_argument("command", help="Command to execute")
+    parser.add_argument("args", nargs="*", help="Command arguments")
+
+    args = parser.parse_args()
+
+    data = yaml.safe_load(args.config)
+
+    testbed = UMockdev.Testbed.new()
+
+    for idx, dev in enumerate(data["devices"]):
+        subsystem = dev["modalias"].split(":", maxsplit=1)[0]
+        name = f"dev{idx}"
+        parent = None
+        attrs: list[str] = []
+        properties: list[str] = []
+
+        # dev is a dict, but add_device expects a list [key1, value1, key2,
+        # value2, ...], a bit like a Perl's hash in LIST context.
+        for key, value in dev.items():
+            attrs.extend([key, value])
+
+        testbed.add_device(subsystem, name, parent, attrs, properties)
+
+    os.execvp("umockdev-wrapper", ["umockdev-wrapper", args.command] + args.args)
+
+
+if __name__ == "__main__":
+    main()

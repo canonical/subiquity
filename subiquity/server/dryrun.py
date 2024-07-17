@@ -80,7 +80,7 @@ class DRConfig:
     ]
 
     # If running ubuntu-drivers on the host, supply a file to
-    # umockdev-wrapper.py
+    # subiquity-umockdev-wrapper
     ubuntu_drivers_run_on_host_umockdev: Optional[
         str
     ] = "examples/umockdev/dell-certified+nvidia.yaml"

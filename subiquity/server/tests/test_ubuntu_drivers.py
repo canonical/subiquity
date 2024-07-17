@@ -218,7 +218,7 @@ class TestUbuntuDriversRunDriversInterface(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             ubuntu_drivers.list_oem_cmd,
             [
-                "scripts/umockdev-wrapper.py",
+                "system_scripts/subiquity-umockdev-wrapper",
                 "--config",
                 "/xps.yaml",
                 "--",
@@ -229,7 +229,7 @@ class TestUbuntuDriversRunDriversInterface(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             ubuntu_drivers.list_drivers_cmd[0:6],
             [
-                "scripts/umockdev-wrapper.py",
+                "system_scripts/subiquity-umockdev-wrapper",
                 "--config",
                 "/xps.yaml",
                 "--",
@@ -240,7 +240,7 @@ class TestUbuntuDriversRunDriversInterface(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             ubuntu_drivers.install_drivers_cmd[0:6],
             [
-                "scripts/umockdev-wrapper.py",
+                "system_scripts/subiquity-umockdev-wrapper",
                 "--config",
                 "/xps.yaml",
                 "--",

@@ -210,21 +210,21 @@ class UbuntuDriversRunDriversInterface(UbuntuDriversInterface):
             return
 
         self.list_oem_cmd = [
-            "scripts/umockdev-wrapper.py",
+            "system_scripts/subiquity-umockdev-wrapper",
             "--config",
             app.dr_cfg.ubuntu_drivers_run_on_host_umockdev,
             "--",
         ] + self.list_oem_cmd
 
         self.list_drivers_cmd = [
-            "scripts/umockdev-wrapper.py",
+            "system_scripts/subiquity-umockdev-wrapper",
             "--config",
             app.dr_cfg.ubuntu_drivers_run_on_host_umockdev,
             "--",
         ] + self.list_drivers_cmd
 
         self.install_drivers_cmd = [
-            "scripts/umockdev-wrapper.py",
+            "system_scripts/subiquity-umockdev-wrapper",
             "--config",
             app.dr_cfg.ubuntu_drivers_run_on_host_umockdev,
             "--",

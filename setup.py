@@ -124,6 +124,7 @@ setup(name='subiquity',
           'bin/subiquity-service',
           'bin/subiquity-server',
           'bin/subiquity-cmd',
+          'system_scripts/subiquity-umockdev-wrapper',
       ],
       entry_points={
           'console_scripts': [
