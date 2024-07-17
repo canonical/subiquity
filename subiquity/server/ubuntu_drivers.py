@@ -339,7 +339,7 @@ class UbuntuDriversRunDriversInterface(UbuntuDriversInterface):
 
 
 def get_ubuntu_drivers_interface(app) -> UbuntuDriversInterface:
-    is_server = app.base_model.source.current.variant == "server"
+    use_gpgpu = app.base_model.source.current.variant == "server"
     cls: Type[UbuntuDriversInterface] = UbuntuDriversClientInterface
     if app.opts.dry_run:
         if "no-drivers" in app.debug_flags:
@@ -353,4 +353,10 @@ def get_ubuntu_drivers_interface(app) -> UbuntuDriversInterface:
         log.debug("Using umockdev wrapper")
         cls = UbuntuDriversFakePCIDevicesInterface
 
-    return cls(app, gpgpu=is_server)
+    # For quickly testing MOK enrollment we install on server and force no gpgpu
+    # The caveat to this is that it also has to be an online install
+    if "subiquity-server-force-no-gpgpu" in app.opts.kernel_cmdline:
+        log.debug("Forcing no gpgpu drivers. Requires online install on server.")
+        use_gpgpu = False
+
+    return cls(app, gpgpu=use_gpgpu)
