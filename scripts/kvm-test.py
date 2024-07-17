@@ -240,6 +240,8 @@ parser.add_argument('--with-tpm2', action='store_true',
                     package)''')
 parser.add_argument('--profile', default="server",
                     help='load predefined memory, disk size and qemu options')
+parser.add_argument('--fake-pci-devices', action='store_true', default=False,
+                    help='trick ubuntu-drivers into installing drivers')
 
 
 cc_group = parser.add_mutually_exclusive_group()
@@ -589,6 +591,9 @@ def install(ctx):
 
             if ctx.args.update:
                 appends.append('subiquity-channel=' + ctx.args.update)
+
+            if ctx.args.fake_pci_devices:
+                appends.append('subiquity-fake-pci-devices')
 
             if not ctx.args.no_disk:
                 match ctx.args.disk_interface:
