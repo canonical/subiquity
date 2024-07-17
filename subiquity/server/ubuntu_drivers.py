@@ -16,12 +16,16 @@
 """ Module that defines helpers to use the ubuntu-drivers command. """
 
 import logging
+import re
 import subprocess
 from abc import ABC, abstractmethod
 from typing import List, Type
 
+import yaml
+
 from subiquity.server.curtin import run_curtin_command
-from subiquitycore.utils import arun_command
+from subiquitycore.file_util import write_file
+from subiquitycore.utils import arun_command, system_scripts_env
 
 log = logging.getLogger("subiquity.server.ubuntu_drivers")
 
@@ -168,6 +172,89 @@ class UbuntuDriversClientInterface(UbuntuDriversInterface):
         return self._oem_metapackages_from_output(result.stdout.decode("utf-8"))
 
 
+class UbuntuDriversFakePCIDevicesInterface(UbuntuDriversInterface):
+    """An implementation of ubuntu-drivers that wraps the calls with
+    the umockdev wrapper script.
+
+
+    Requires an online install to download umockdev packages or
+    a modified ISOs with the packages added to the pool.
+    """
+
+    def __init__(self, app, gpgpu: bool) -> None:
+        super().__init__(app, gpgpu)
+
+        # PCI devices can be passed on the kernel command line as a comma
+        # separated list:
+        #  subiquity-fake-pci-devices=pci:v00001234d00001234,pci:v00005678d00005678
+        pcis = app.opts.kernel_cmdline.get("subiquity-fake-pci-devices")
+        devs = [self.modalias_to_config(d) for d in pcis.split(",") if d != ""]
+        self.dev_config = {"devices": devs}
+        log.debug(f"writing umockdev_config: {self.dev_config}")
+
+        # write config to live environment
+        self.dev_config_path = "/tmp/umockdev_config.yaml"
+        write_file(self.dev_config_path, yaml.safe_dump(self.dev_config), mode=0o777)
+
+        prefix: list[str] = [
+            "subiquity-umockdev-wrapper",  # vendored in system_scripts
+            "--config",
+            self.dev_config_path,
+            "--",  # Don't let wrapper consume ubuntu-drivers feature flags
+        ]
+
+        self.sys_env = system_scripts_env()
+
+        self.list_drivers_cmd = prefix + self.list_drivers_cmd
+        self.list_oem_cmd = prefix + self.list_oem_cmd
+        self.install_drivers_cmd = prefix + self.install_drivers_cmd
+
+    def modalias_to_config(self, modalias: str) -> dict[str, list[dict[str, str]]]:
+        """Generate a device config for umockdev-wrapper given a modalias."""
+        matches = re.compile(
+            r"pci:v(?P<vendor_id>[0-9A-F]{8})d(?P<device_id>[0-9A-F]{8})"
+        ).match(modalias)
+
+        assert matches is not None, f"{modalias} is malformed."
+
+        return {
+            "modalias": modalias,
+            "vendor": f"0x{matches.group('vendor_id')}",
+            "device": f"0x{matches.group('device_id')}",
+        }
+
+    async def ensure_cmd_exists(self, root_dir: str) -> None:
+        # TODO This does not tell us if the "--recommended" option is
+        # available.
+        try:
+            await arun_command(["sh", "-c", "command -v ubuntu-drivers"], check=True)
+        except subprocess.CalledProcessError:
+            raise CommandNotFoundError(
+                f"Command ubuntu-drivers is not available in {root_dir}"
+            )
+        # Install wrapper script prerequisites on live system
+        try:
+            await arun_command(
+                ["apt", "install", "-y", "umockdev", "gir1.2-umockdev-1.0"], check=True
+            )
+        except subprocess.CalledProcessError as err:
+            log.debug(f"ensure_cmd returned with exit code {err.returncode}")
+            log.debug(f"ensure_cmd stdout: {err.stdout}")
+            log.debug(f"ensure_cmd stderr: {err.stderr}")
+            raise Exception("Installing umockdev failed. Quitting early.")
+
+    async def list_drivers(self, root_dir: str, context) -> List[str]:
+        result = await arun_command(self.list_drivers_cmd, env=self.sys_env)
+        return self._drivers_from_output(result.stdout)
+
+    async def list_oem(self, root_dir: str, context) -> List[str]:
+        result = await arun_command(self.list_oem_cmd, env=self.sys_env)
+        return self._oem_metapackages_from_output(result.stdout)
+
+    async def install_drivers(self, root_dir: str, context) -> None:
+        pass
+
+
 class UbuntuDriversHasDriversInterface(UbuntuDriversInterface):
     """A dry-run implementation of ubuntu-drivers that returns a hard-coded
     list of drivers."""
@@ -261,5 +348,9 @@ def get_ubuntu_drivers_interface(app) -> UbuntuDriversInterface:
             cls = UbuntuDriversRunDriversInterface
         else:
             cls = UbuntuDriversHasDriversInterface
+
+    if app.opts.kernel_cmdline.get("subiquity-fake-pci-devices"):
+        log.debug("Using umockdev wrapper")
+        cls = UbuntuDriversFakePCIDevicesInterface
 
     return cls(app, gpgpu=is_server)
