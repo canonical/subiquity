@@ -63,6 +63,9 @@ class MakeBootDevicePlan(abc.ABC):
     this a boot device" in sync.
     """
 
+    def new_partition_count(self) -> int:
+        return 0
+
     @abc.abstractmethod
     def apply(self, manipulator):
         pass
@@ -76,6 +79,10 @@ class CreatePartPlan(MakeBootDevicePlan):
 
     spec: dict = attr.ib(factory=dict)
     args: dict = attr.ib(factory=dict)
+
+    # TODO add @typing.override decorator when we switch to core24.
+    def new_partition_count(self) -> int:
+        return 1
 
     def apply(self, manipulator):
         manipulator.create_partition(self.gap.device, self.gap, self.spec, **self.args)
@@ -155,6 +162,10 @@ class MultiStepPlan(MakeBootDevicePlan):
     def apply(self, manipulator):
         for plan in self.plans:
             plan.apply(manipulator)
+
+    # TODO add @typing.override decorator when we switch to core24.
+    def new_partition_count(self) -> int:
+        return sum([plan.new_partition_count() for plan in self.plans])
 
 
 def get_boot_device_plan_bios(device) -> Optional[MakeBootDevicePlan]:
