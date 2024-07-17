@@ -1146,6 +1146,43 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 classic_capabilities.update(info.capability_info.allowed)
         return sorted(classic_capabilities)
 
+    def available_use_gap_scenarios(
+        self, install_min
+    ) -> list[tuple[int, GuidedStorageTargetUseGap]]:
+        scenarios: list[tuple[int, GuidedStorageTargetUseGap]] = []
+        for disk in self.potential_boot_disks(with_reformatting=False):
+            parts = [
+                p
+                for p in disk.partitions()
+                if p.flag != "bios_grub" and not p._is_in_use
+            ]
+            if len(parts) < 1:
+                # On an (essentially) empty disk, don't bother to offer it
+                # with UseGap, as it's basically the same as the Reformat
+                # case.
+                continue
+            gap = gaps.largest_gap(disk)
+            if gap is None:
+                # Do we return a reason here?
+                continue
+
+            capability_info = CapabilityInfo()
+            for variation in self._variation_info.values():
+                if variation.is_core_boot_classic():
+                    continue
+                capability_info.combine(
+                    variation.capability_info_for_gap(gap, install_min)
+                )
+            api_gap = labels.for_client(gap)
+            use_gap = GuidedStorageTargetUseGap(
+                disk_id=disk.id,
+                gap=api_gap,
+                allowed=capability_info.allowed,
+                disallowed=capability_info.disallowed,
+            )
+            scenarios.append((gap.size, use_gap))
+        return scenarios
+
     async def v2_guided_GET(self, wait: bool = False) -> GuidedStorageResponseV2:
         """Acquire a list of possible guided storage configuration scenarios.
         Results are sorted by the size of the space potentially available to
@@ -1181,36 +1218,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             )
             scenarios.append((disk.size, reformat))
 
-        for disk in self.potential_boot_disks(with_reformatting=False):
-            parts = [
-                p
-                for p in disk.partitions()
-                if p.flag != "bios_grub" and not p._is_in_use
-            ]
-            if len(parts) < 1:
-                # On an (essentially) empty disk, don't bother to offer it
-                # with UseGap, as it's basically the same as the Reformat
-                # case.
-                continue
-            gap = gaps.largest_gap(disk)
-            if gap is None:
-                # Do we return a reason here?
-                continue
-            capability_info = CapabilityInfo()
-            for variation in self._variation_info.values():
-                if variation.is_core_boot_classic():
-                    continue
-                capability_info.combine(
-                    variation.capability_info_for_gap(gap, install_min)
-                )
-            api_gap = labels.for_client(gap)
-            use_gap = GuidedStorageTargetUseGap(
-                disk_id=disk.id,
-                gap=api_gap,
-                allowed=capability_info.allowed,
-                disallowed=capability_info.disallowed,
-            )
-            scenarios.append((gap.size, use_gap))
+        scenarios.extend(self.available_use_gap_scenarios(install_min))
 
         for disk in self.potential_boot_disks(check_boot=False):
             part_align = disk.alignment_data().part_align
