@@ -35,6 +35,29 @@ def _clean_env(env, *, locale=True):
     return env
 
 
+def system_scripts_env() -> dict[str, str]:
+    """Generate an environment for running all programs outside of the snap,
+    but also include those vendored in $SNAP/bin.
+    """
+
+    env: dict[str, str] = orig_environ(os.environ)
+    snap_path: str | None = env.get("SNAP")
+    assert snap_path is not None, "Could not find path to SNAP"
+
+    server_bin = f"{snap_path}/system_scripts"
+    desktop_bin = f"{snap_path}/bin/subiquity/system_scripts"
+
+    env["PATH"] = os.pathsep.join(
+        [
+            server_bin,
+            desktop_bin,
+            env["PATH"],
+        ]
+    )
+
+    return env
+
+
 def orig_environ(env):
     """Generate an environment dict that is suitable for use for running
     programs that live outside the snap."""
