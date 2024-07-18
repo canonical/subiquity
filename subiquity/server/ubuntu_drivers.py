@@ -206,6 +206,14 @@ class UbuntuDriversFakePCIDevicesInterface(UbuntuDriversInterface):
 
         self.sys_env = system_scripts_env()
 
+        self.pre_req_cmd = [
+            "apt-get",
+            "install",
+            "-y",
+            "umockdev",
+            "gir1.2-umockdev-1.0",
+        ]
+
         self.list_drivers_cmd = prefix + self.list_drivers_cmd
         self.list_oem_cmd = prefix + self.list_oem_cmd
         self.install_drivers_cmd = prefix + self.install_drivers_cmd
@@ -235,9 +243,7 @@ class UbuntuDriversFakePCIDevicesInterface(UbuntuDriversInterface):
             )
         # Install wrapper script prerequisites on live system
         try:
-            await arun_command(
-                ["apt", "install", "-y", "umockdev", "gir1.2-umockdev-1.0"], check=True
-            )
+            await arun_command(self.pre_req_cmd, check=True)
         except subprocess.CalledProcessError as err:
             log.debug(f"ensure_cmd returned with exit code {err.returncode}")
             log.debug(f"ensure_cmd stdout: {err.stdout}")
@@ -298,7 +304,7 @@ class UbuntuDriversFakePCIDevicesInterface(UbuntuDriversInterface):
             "-t",
             root_dir,
             "--",
-            *["apt", "install", "-y", "umockdev", "gir1.2-umockdev-1.0"],
+            *self.pre_req_cmd,
             private_mounts=True,
         )
 
