@@ -16,6 +16,7 @@
 """ Module that defines helpers to use the ubuntu-drivers command. """
 
 import logging
+import os
 import re
 import subprocess
 from abc import ABC, abstractmethod
@@ -24,7 +25,7 @@ from typing import List, Type
 import yaml
 
 from subiquity.server.curtin import run_curtin_command
-from subiquitycore.file_util import write_file
+from subiquitycore.file_util import copy_file_if_exists, write_file
 from subiquitycore.utils import arun_command, system_scripts_env
 
 log = logging.getLogger("subiquity.server.ubuntu_drivers")
@@ -251,8 +252,58 @@ class UbuntuDriversFakePCIDevicesInterface(UbuntuDriversInterface):
         result = await arun_command(self.list_oem_cmd, env=self.sys_env)
         return self._oem_metapackages_from_output(result.stdout)
 
+    def _get_wrapper_path(self) -> str | None:
+        # Find subiquity-umockdev-wrapper on live system
+        base_paths: list[str] = self.sys_env["PATH"].split(":")
+        script_path: str | None = None
+
+        log.debug(f"Looking in {base_paths}")
+        for b in base_paths:
+            test_path = f"{b}/subiquity-umockdev-wrapper"
+            log.debug(f"looking for {test_path=}")
+            if os.path.isfile(test_path):
+                script_path = test_path
+                break
+
+        log.debug(f"found {script_path=}")
+
+        return script_path
+
     async def install_drivers(self, root_dir: str, context) -> None:
-        pass
+        # Copy config from live system, allowing changes made to the config
+        # after it has been written to persist.
+        copy_file_if_exists(
+            self.dev_config_path,
+            f"{root_dir}/{self.dev_config_path}",
+        )
+
+        # Copy wrapper script to target system
+        # The "find and copy to /target/usr/bin" strategy is to get around
+        # messing with $PATH on curtin in-target commands. When, or if, a more
+        # standard way to run commands inside the target environment comes
+        # along this should be converted to conform.
+        wrapper_script_source: str | None = self._get_wrapper_path()
+        if wrapper_script_source is None:
+            raise Exception("Couldn't find path to subiquity-umockdev-wrapper")
+
+        wrapper_script_dest: str = f"{root_dir}/usr/bin/subiquity-umockdev-wrapper"
+        copy_file_if_exists(wrapper_script_source, wrapper_script_dest)
+        os.chmod(wrapper_script_dest, 0o777)  # Make sure it's executable
+
+        # Install wrapper script pre-reqs on target
+        await run_curtin_command(
+            self.app,
+            context,
+            "in-target",
+            "-t",
+            root_dir,
+            "--",
+            *["apt", "install", "-y", "umockdev", "gir1.2-umockdev-1.0"],
+            private_mounts=True,
+        )
+
+        # Finally call the wrapped install
+        await super().install_drivers(root_dir, context)
 
 
 class UbuntuDriversHasDriversInterface(UbuntuDriversInterface):
