@@ -24,7 +24,6 @@ from typing import Any, List, Optional
 import jsonschema
 import yaml
 from aiohttp import web
-from cloudinit.config.cc_set_passwords import rand_user_password
 from jsonschema.exceptions import ValidationError
 from systemd import journal
 
@@ -32,6 +31,7 @@ from subiquity.cloudinit import (
     CloudInitSchemaValidationError,
     cloud_init_status_wait,
     get_host_combined_cloud_config,
+    rand_user_password,
     validate_cloud_init_schema,
 )
 from subiquity.common.api.server import bind, controller_for_request
