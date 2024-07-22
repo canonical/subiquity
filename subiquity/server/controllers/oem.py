@@ -23,7 +23,6 @@ from subiquity.models.oem import OEMMetaPkg
 from subiquity.server.apt import OverlayCleanupError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.curtin import run_curtin_command
-from subiquity.server.kernel import flavor_to_pkgname
 from subiquity.server.types import InstallerChannels
 from subiquity.server.ubuntu_drivers import (
     CommandNotFoundError,
@@ -183,10 +182,7 @@ class OEMController(SubiquityController):
         for pkg in self.model.metapkgs:
             if pkg.wants_oem_kernel:
                 kernel_model = self.app.base_model.kernel
-                kernel_model.metapkg_name_override = flavor_to_pkgname(
-                    pkg.name, dry_run=self.app.opts.dry_run
-                )
-
+                kernel_model.metapkg_name_override = pkg.name
                 log.debug("overriding kernel flavor because of OEM")
 
         log.debug("OEM meta-packages to install: %s", self.model.metapkgs)
