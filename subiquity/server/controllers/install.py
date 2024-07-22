@@ -31,6 +31,7 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 from curtin.config import merge_config
+from curtin.distro import list_kernels
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.pkg import TargetPkg
@@ -297,6 +298,25 @@ class InstallController(SubiquityController):
 
         if not self.model.oem.metapkgs:
             return
+
+        # cause existing kernels to be removed, if needed.  If a kernel is
+        # already in the minimal layer, it might not be the intended one, so
+        # tell kernel to remove that pre-installed kernel.  This augments the
+        # curtin ensure_one_kernel logic as by the time it knows what to do,
+        # there are already two kernels, so instead we calculate the "before"
+        # set of kernels now.  Note that in the case where the one preinstalled
+        # kernel is also the one that the OEM logic tells us to install, that
+        # kernel stays installed despite being on the remove list we supply
+        # here, since the curthook act of installing a kernel doesn't change
+        # state.
+        target = self.tpath()
+        if self.app.opts.dry_run:
+            existing_kernels = []
+        else:
+            existing_kernels = list_kernels(target=target)
+
+        self.app.base_model.kernel.curthooks_install = False
+        self.app.base_model.kernel.remove = existing_kernels
 
         with context.child(
             "install_oem_metapackages", "installing applicable OEM metapackages"
