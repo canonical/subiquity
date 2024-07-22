@@ -192,13 +192,19 @@ class OEMController(SubiquityController):
 
         await self.kernel_configured_event.wait()
 
-        if self.model.metapkgs and kernel_model.explicitly_requested:
-            # TODO
-            # This should be a dialog or something rather than the content of
-            # an exception, really. But this is a simple way to print out
-            # something in autoinstall.
-            msg = _(
-                """\
+        if self.model.metapkgs:
+            for metapkg in self.model.metapkgs:
+                if kernel_model.metapkg_name == metapkg.name:
+                    # The below check handles conflicts with autoinstall / oem
+                    # kernel requirements, but if they're asking for the same
+                    # thing, there is no conflict.  We look at the raw
+                    # metapkg_name and not needed_kernel because we want the
+                    # autoinstall value if it's there, not the overridden value
+                    # set by the OEM code.
+                    return
+            if kernel_model.explicitly_requested:
+                msg = _(
+                    """\
 A specific kernel flavor was requested but it cannot be satistified when \
 installing on certified hardware.
 You should either disable the installation of OEM meta-packages using the \
@@ -207,8 +213,8 @@ install.
   oem:
     install: false
 """
-            )
-            raise RuntimeError(msg)
+                )
+                raise RuntimeError(msg)
 
     @with_context()
     async def apply_autoinstall_config(self, context) -> None:
