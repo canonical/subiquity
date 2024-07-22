@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from typing import List, Optional
 
 
 class KernelModel:
@@ -28,6 +28,15 @@ class KernelModel:
     # should be True.
     explicitly_requested: bool = False
 
+    # In OEM kernel cases with a different kernel pre-installed in the source
+    # image, we want to remove that pre-installed kernel.
+    remove: Optional[List[str]] = None
+
+    # If set to False, we won't request curthooks to install the kernel.
+    # We can use this option if the kernel is already part of the source image
+    # of if a kernel got installed using ubuntu-drivers.
+    curthooks_install: bool = True
+
     @property
     def needed_kernel(self) -> Optional[str]:
         if self.metapkg_name_override is not None:
@@ -35,9 +44,13 @@ class KernelModel:
         return self.metapkg_name
 
     def render(self):
-        return {
-            "kernel": {
-                "remove_existing": True,
-                "package": self.needed_kernel,
-            }
-        }
+        kernel = {}
+        if self.curthooks_install:
+            kernel["package"] = self.needed_kernel
+        else:
+            kernel["install"] = False
+        if bool(self.remove):
+            kernel["remove"] = self.remove
+        else:
+            kernel["remove_existing"] = True
+        return {"kernel": kernel}
