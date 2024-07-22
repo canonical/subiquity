@@ -21,6 +21,7 @@ from subiquity.common.apidef import API
 from subiquity.common.types import OEMResponse
 from subiquity.models.oem import OEMMetaPkg
 from subiquity.server.apt import OverlayCleanupError
+from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.curtin import run_curtin_command
 from subiquity.server.types import InstallerChannels
@@ -214,7 +215,7 @@ install.
     install: false
 """
                 )
-                raise RuntimeError(msg)
+                raise AutoinstallError(msg)
 
     @with_context()
     async def apply_autoinstall_config(self, context) -> None:
