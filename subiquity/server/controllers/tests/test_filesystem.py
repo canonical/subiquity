@@ -24,7 +24,7 @@ import requests_mock
 from curtin.commands.extract import TrivialSourceHandler
 from jsonschema.validators import validator_for
 
-from subiquity.common.filesystem import gaps, labels
+from subiquity.common.filesystem import boot, gaps, labels
 from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.common.types.storage import (
     AddPartitionV2,
@@ -1419,16 +1419,64 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             GuidedStorageTargetReformat(
                 disk_id=self.disk.id, allowed=default_capabilities
             ),
-            GuidedStorageTargetUseGap(
-                disk_id=self.disk.id,
-                allowed=default_capabilities,
-                gap=labels.for_client(gaps.largest_gap(self.disk)),
-            ),
             GuidedStorageTargetManual(),
         ]
+        # VTOC does not have enough room for an ESP + 3 partitions, presumably.
+        if ptable != "vtoc" or bootloader == Bootloader.NONE:
+            expected.insert(
+                1,
+                GuidedStorageTargetUseGap(
+                    disk_id=self.disk.id,
+                    allowed=default_capabilities,
+                    gap=labels.for_client(gaps.largest_gap(self.disk)),
+                ),
+            )
         resp = await self.fsc.v2_guided_GET()
         self.assertEqual(expected, resp.targets)
         self.assertEqual(ProbeStatus.DONE, resp.status)
+
+    @parameterized.expand(
+        (
+            (1, 4, True, True),
+            (1, 4, False, True),
+            (4, 4, True, False),
+            (4, 4, False, False),
+            (3, 4, False, True),
+            (3, 4, True, False),
+            (127, 128, True, False),
+            (127, 128, False, True),
+        )
+    )
+    async def test_available_use_gap_scenarios(
+        self,
+        existing_primaries: int,
+        max_primaries: int,
+        create_boot_part: bool,
+        expected_scenario: bool,
+    ):
+        await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
+        install_min = self.fsc.calculate_suggested_install_min()
+
+        for _ in range(existing_primaries):
+            make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+
+        p_max_primaries = mock.patch.object(
+            self.fsc.model._partition_alignment_data["gpt"],
+            "primary_part_limit",
+            max_primaries,
+        )
+        if create_boot_part:
+            boot_plan = boot.CreatePartPlan(mock.Mock(), mock.Mock(), mock.Mock())
+        else:
+            boot_plan = boot.NoOpBootPlan()
+        p_boot_plan = mock.patch(
+            "subiquity.server.controllers.filesystem.boot.get_boot_device_plan",
+            return_value=boot_plan,
+        )
+        with p_max_primaries, p_boot_plan:
+            scenarios = self.fsc.available_use_gap_scenarios(install_min)
+
+        self.assertEqual(expected_scenario, scenarios != [])
 
 
 class TestManualBoot(IsolatedAsyncioTestCase):

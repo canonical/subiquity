@@ -14,9 +14,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from unittest import mock
+from unittest.mock import Mock, patch
 
-from subiquity.common.filesystem.boot import _can_be_boot_device_disk
+import attr
+
+from subiquity.common.filesystem.boot import (
+    CreatePartPlan,
+    MountBootEfiPlan,
+    MultiStepPlan,
+    NoOpBootPlan,
+    ResizePlan,
+    SetAttrPlan,
+    SlidePlan,
+    _can_be_boot_device_disk,
+)
 from subiquity.models.tests.test_filesystem import make_model_and_disk
 from subiquitycore.tests.parameterized import parameterized
 
@@ -40,10 +51,10 @@ class TestCanBeBootDevice(unittest.TestCase):
 
         model.opt_supports_nvme_tcp_booting = supports_nvme_tcp_boot
 
-        p_on_remote_storage = mock.patch.object(
+        p_on_remote_storage = patch.object(
             disk, "on_remote_storage", return_value=on_remote_storage
         )
-        p_get_boot_device_plan = mock.patch(
+        p_get_boot_device_plan = patch(
             "subiquity.common.filesystem.boot.get_boot_device_plan", return_value=True
         )
 
@@ -54,3 +65,45 @@ class TestCanBeBootDevice(unittest.TestCase):
             m_gbdp.assert_called_once_with(disk, resize_partition=None)
         else:
             m_gbdp.assert_not_called()
+
+
+class TestMakeBootDevicePlan(unittest.TestCase):
+    @unittest.skipUnless(
+        hasattr(attr.validators, "disabled"),
+        "this test requires attr.validators.disabled context manager",
+    )
+    def test_new_partition_count__single(self):
+        self.assertEqual(1, CreatePartPlan(Mock()).new_partition_count())
+        with attr.validators.disabled():
+            self.assertEqual(0, ResizePlan(Mock()).new_partition_count())
+        with attr.validators.disabled():
+            self.assertEqual(0, SlidePlan(Mock()).new_partition_count())
+        self.assertEqual(0, SetAttrPlan(Mock(), Mock(), Mock()).new_partition_count())
+        self.assertEqual(0, MountBootEfiPlan(Mock()).new_partition_count())
+        self.assertEqual(0, NoOpBootPlan().new_partition_count())
+
+    def test_new_partition_count__multi_step(self):
+        self.assertEqual(0, MultiStepPlan([]).new_partition_count())
+
+        self.assertEqual(
+            3,
+            MultiStepPlan(
+                [
+                    CreatePartPlan(Mock()),
+                    CreatePartPlan(Mock()),
+                    CreatePartPlan(Mock()),
+                ]
+            ).new_partition_count(),
+        )
+
+        self.assertEqual(
+            2,
+            MultiStepPlan(
+                [
+                    CreatePartPlan(Mock()),
+                    CreatePartPlan(Mock()),
+                    MountBootEfiPlan(Mock()),
+                    NoOpBootPlan(),
+                ]
+            ).new_partition_count(),
+        )
