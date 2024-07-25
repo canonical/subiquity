@@ -718,7 +718,9 @@ install-server
 * **type:** boolean
 * **default:** ``false``
 
-Whether to install the OpenSSH server in the target system.
+Whether to install the OpenSSH server in the target system.  Note that Desktop
+install ISOs do not include openssh-server on the ISO, so installs of
+Desktop require Ubuntu archive access for install-server to be successful.
 
 authorized-keys
 ^^^^^^^^^^^^^^^
