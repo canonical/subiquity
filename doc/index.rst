@@ -55,7 +55,6 @@ Get started:
 
 Discuss:
   * IRC: `Libera.Chat`_, the *#ubuntu-server* channel
-  * Discourse: `Ubuntu Foundations`_
 
 Contribute:
   * `Contribution guidelines`_ on GitHub
