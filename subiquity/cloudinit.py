@@ -3,8 +3,8 @@
 import asyncio
 import json
 import logging
-import random
 import re
+import secrets
 from collections.abc import Awaitable, Sequence
 from string import ascii_letters, digits
 from subprocess import CompletedProcess
@@ -162,8 +162,8 @@ async def validate_cloud_init_schema() -> None:
     return None
 
 
-def rand_str(strlen: int = 32, select_from: Optional[Sequence] = None) -> str:
-    r: random.SystemRandom = random.SystemRandom()
+def rand_password(strlen: int = 32, select_from: Optional[Sequence] = None) -> str:
+    r: secrets.SystemRandom = secrets.SystemRandom()
     if not select_from:
         select_from: str = ascii_letters + digits
     return "".join([r.choice(select_from) for _x in range(strlen)])
@@ -172,4 +172,4 @@ def rand_str(strlen: int = 32, select_from: Optional[Sequence] = None) -> str:
 # Generate random user passwords the same way cloud-init does
 # https://github.com/canonical/cloud-init/blob/6e4153b346bc0d3f3422c01a3f93ecfb28269da2/cloudinit/config/cc_set_passwords.py#L249  # noqa: E501
 def rand_user_password(pwlen: int = 20) -> str:
-    return rand_str(strlen=pwlen, select_from=CLOUD_INIT_PW_SET)
+    return rand_password(strlen=pwlen, select_from=CLOUD_INIT_PW_SET)

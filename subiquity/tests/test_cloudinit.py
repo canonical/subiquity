@@ -24,7 +24,7 @@ from subiquity.cloudinit import (
     cloud_init_status_wait,
     cloud_init_version,
     get_schema_failure_keys,
-    rand_str,
+    rand_password,
     rand_user_password,
     read_json_extended_status,
     read_legacy_status,
@@ -238,13 +238,13 @@ class TestCloudInitRandomStrings(SubiTestCase):
 
     def test_rand_string_generation(self):
         # random string is 32 characters by default
-        password = rand_str()
+        password = rand_password()
         self.assertEqual(len(password), 32)
 
         # password is requested length
-        password = rand_str(strlen=20)
+        password = rand_password(strlen=20)
         self.assertEqual(len(password), 20)
 
         # password characters sampled from provided set
         choices = ["a"]
-        self.assertEqual("a" * 32, rand_str(select_from=choices))
+        self.assertEqual("a" * 32, rand_password(select_from=choices))
