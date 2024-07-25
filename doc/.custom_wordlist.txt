@@ -11,6 +11,7 @@ GPT
 GUID
 GiB
 GiB
+Kylin
 Libera
 LPAR
 LTS
@@ -36,6 +37,7 @@ Seagate
 Subiquity
 UEFI
 URI
+Xubuntu
 Zdev
 amd
 authorized

@@ -218,9 +218,44 @@ id
 ^^
 
 * **type:** string
-* **default:** identifier of the first available source.
+* **default:** the default value as listed in install-sources
 
-Identifier of the source to install (e.g., ``ubuntu-server-minimal``).
+Identifier of the source to install (e.g., ``ubuntu-server-minimal``).  The
+correct ID to use is specific to a given install ISO.  As this ID may change
+over time, the canonical place to look for this information is the install ISO
+itself, in the file ``casper/install-sources.yaml``, where the value to use is
+the ``id``.
+
+Current values:
+* ubuntu-server:
+  * minimal: ``ubuntu-server-minimal``
+  * standard (default): ``ubuntu-server``
+* Ubuntu desktop:
+  * minimal (default): ``ubuntu-desktop-minimal``
+  * standard: ``ubuntu-desktop``
+* Ubuntu Budgie:
+  * minimal: ``ubuntu-budgie-desktop-minimal``
+  * standard (default): ``ubuntu-budgie-desktop``
+* Ubuntu Cinnamon:
+  * minimal: ``ubuntucinnamon-desktop-minimal``
+  * standard (default): ``ubuntucinnamon-desktop``
+* Edubuntu:
+  * minimal: ``edubuntu-desktop-minimal``
+  * standard (default): ``edubuntu-desktop``
+* Ubuntu Kylin:
+  * minimal: ``ubuntukylin-desktop-minimal``
+  * standard (default): ``ubuntukylin-desktop``
+* Ubuntu MATE:
+  * minimal: ``ubuntu-mate-desktop-minimal``
+  * standard (default): ``ubuntu-mate-desktop``
+* Ubuntu Studio:
+  * standard (default): ``ubuntustudio-desktop``
+* Xubuntu:
+  * full ISO:
+    * minimal: ``xubuntu-desktop-minimal``
+    * standard (default): ``xubuntu-desktop``
+  * minimal ISO:
+    * minimal (default): ``xubuntu-desktop-minimal``
 
 .. _ai-network:
 
