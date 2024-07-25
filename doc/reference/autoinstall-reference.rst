@@ -892,6 +892,18 @@ Request the system to power off or reboot automatically after the installation h
 * ``reboot``
 * ``poweroff``
 
+shutdown examples:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # default behavior
+     shutdown: reboot
+
+   autoinstall:
+     # shutdown instead of reboot
+     shutdown: poweroff
+
 .. _ai-late-commands:
 
 late-commands
