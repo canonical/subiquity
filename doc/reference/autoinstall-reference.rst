@@ -227,35 +227,76 @@ itself, in the file ``casper/install-sources.yaml``, where the value to use is
 the ``id``.
 
 Current values:
+
 * ubuntu-server:
+
   * minimal: ``ubuntu-server-minimal``
   * standard (default): ``ubuntu-server``
+
 * Ubuntu desktop:
+
   * minimal (default): ``ubuntu-desktop-minimal``
   * standard: ``ubuntu-desktop``
+
 * Ubuntu Budgie:
+
   * minimal: ``ubuntu-budgie-desktop-minimal``
   * standard (default): ``ubuntu-budgie-desktop``
+
 * Ubuntu Cinnamon:
+
   * minimal: ``ubuntucinnamon-desktop-minimal``
   * standard (default): ``ubuntucinnamon-desktop``
+
 * Edubuntu:
+
   * minimal: ``edubuntu-desktop-minimal``
   * standard (default): ``edubuntu-desktop``
+
 * Ubuntu Kylin:
+
   * minimal: ``ubuntukylin-desktop-minimal``
   * standard (default): ``ubuntukylin-desktop``
+
 * Ubuntu MATE:
+
   * minimal: ``ubuntu-mate-desktop-minimal``
   * standard (default): ``ubuntu-mate-desktop``
+
 * Ubuntu Studio:
+
   * standard (default): ``ubuntustudio-desktop``
+
 * Xubuntu:
+
   * full ISO:
+
     * minimal: ``xubuntu-desktop-minimal``
     * standard (default): ``xubuntu-desktop``
+
   * minimal ISO:
+
     * minimal (default): ``xubuntu-desktop-minimal``
+
+source examples:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # default behavior
+     source:
+       search_drivers: true
+       id: <the install source marked as default in install-sources.yaml>
+
+   autoinstall:
+     # on the ubuntu-server ISO, install with the minimal source
+     source:
+       id: ubuntu-server-minimal
+
+   autoinstall:
+     # on the Ubuntu desktop ISO, install with the standard source
+     source:
+       id: ubuntu-desktop
 
 .. _ai-network:
 
