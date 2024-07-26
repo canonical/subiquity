@@ -135,6 +135,17 @@ def parse_args() -> Namespace:
         default=False,
     )
 
+    # An option we use in CI to make sure Subiquity will insert a link to
+    # the documentation in the auto-generated autoinstall file post-install.
+    # There's not need for users to check this.
+    parser.add_argument(
+        "--check-link",
+        dest="check_link",
+        action="store_true",
+        help=argparse.SUPPRESS,
+        default=False,
+    )
+
     return parser.parse_args()
 
 
@@ -147,7 +158,9 @@ def main() -> None:
 
     # Verify autoinstall doc link is in the file
 
-    assert verify_link(str_user_data), "Documentation link missing from user data"
+    if args.check_link:
+
+        assert verify_link(str_user_data), "Documentation link missing from user data"
 
     # Verify autoinstall schema
 
