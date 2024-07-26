@@ -139,6 +139,23 @@ channel
 
 The channel to check for updates.
 
+Example:
+
+.. code-block:: yaml
+
+  autoinstall:
+   # Refresh to the latest snap built from the "main" subiquity branch
+   refresh-installer:
+     update: true
+     channel: latest/edge
+
+  autoinstall:
+   # Refresh to the latest beta release
+   refresh-installer:
+     update: true
+     channel: latest/beta
+
+
 .. _ai-keyboard:
 
 keyboard
