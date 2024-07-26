@@ -42,19 +42,10 @@ class SubiquityController(BaseController):
     autoinstall_key_alias: Optional[str] = None
 
     interactive_for_variants = None
-    _active = True
 
     def __init__(self, app):
         super().__init__(app)
         self.context.set("controller", self)
-        if self.interactive_for_variants is not None:
-            self.app.hub.subscribe(InstallerChannels.INSTALL_CONFIRMED, self._confirmed)
-
-    async def _confirmed(self):
-        variant = self.app.base_model.source.current.variant
-        if variant not in self.interactive_for_variants:
-            await self.configured()
-            self._active = False
 
     def validate_autoinstall(self, ai_data: dict) -> None:
         try:
@@ -109,6 +100,21 @@ class SubiquityController(BaseController):
         is called after this is done).
         """
         pass
+
+    @property
+    def _active(self):
+        """Some controllers report interactivity based on what variant is in
+        use, and set interactive_for_variants to control that.  A controller
+        that hasn't opted-in to this behavior is presumed interactive if it
+        has made it this far.  Otherwise, consult the list of
+        interactive_for_variants to determine if it should be interactive.
+        Note that some contollers override interactive(), so refer to the
+        controller of interest for full details.
+        """
+        if self.interactive_for_variants is None:
+            return True
+        variant = self.app.base_model.source.current.variant
+        return variant in self.interactive_for_variants
 
     def interactive(self):
         if not self.app.autoinstall_config:
