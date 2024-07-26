@@ -92,7 +92,13 @@ def parse_autoinstall(user_data: str, expect_cloudconfig: bool) -> dict[str, Any
 def legacy_verify(ai_data: dict[str, Any], json_schema: io.TextIOWrapper) -> None:
     """Legacy verification method for use in CI"""
 
-    jsonschema.validate(ai_data, json.load(json_schema))
+    # support top-level "autoinstall" in regular autoinstall user data
+    if "autoinstall" in ai_data:
+        data: dict[str, Any] = ai_data["autoinstall"]
+    else:
+        data: dict[str, Any] = ai_data
+
+    jsonschema.validate(data, json.load(json_schema))
 
 
 def parse_args() -> Namespace:
