@@ -19,10 +19,13 @@ from unittest import skipIf
 from unittest.mock import Mock, patch
 
 from subiquity.cloudinit import (
+    CLOUD_INIT_PW_SET,
     CloudInitSchemaValidationError,
     cloud_init_status_wait,
     cloud_init_version,
     get_schema_failure_keys,
+    rand_password,
+    rand_user_password,
     read_json_extended_status,
     read_legacy_status,
     supports_format_json,
@@ -215,3 +218,33 @@ class TestCloudInitSchemaValidation(SubiTestCase):
         sources = await get_schema_failure_keys()
         log_mock.warning.assert_called()
         self.assertEqual([], sources)
+
+
+class TestCloudInitRandomStrings(SubiTestCase):
+    def test_passwd_constraints(self):
+        # password is 20 characters by default
+        password = rand_user_password()
+        self.assertEqual(len(password), 20)
+
+        # password is requested length
+        password = rand_user_password(pwlen=32)
+        self.assertEqual(len(password), 32)
+
+        # passwords contain valid chars
+        # sample passwords
+        for _i in range(100):
+            password = rand_user_password()
+            self.assertTrue(all(char in CLOUD_INIT_PW_SET for char in password))
+
+    def test_rand_string_generation(self):
+        # random string is 32 characters by default
+        password = rand_password()
+        self.assertEqual(len(password), 32)
+
+        # password is requested length
+        password = rand_password(strlen=20)
+        self.assertEqual(len(password), 20)
+
+        # password characters sampled from provided set
+        choices = ["a"]
+        self.assertEqual("a" * 32, rand_password(select_from=choices))

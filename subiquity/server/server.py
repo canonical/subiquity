@@ -24,7 +24,6 @@ from typing import Any, List, Optional
 import jsonschema
 import yaml
 from aiohttp import web
-from cloudinit.config.cc_set_passwords import rand_user_password
 from jsonschema.exceptions import ValidationError
 from systemd import journal
 
@@ -32,6 +31,7 @@ from subiquity.cloudinit import (
     CloudInitSchemaValidationError,
     cloud_init_status_wait,
     get_host_combined_cloud_config,
+    rand_user_password,
     validate_cloud_init_schema,
 )
 from subiquity.common.api.server import bind, controller_for_request
@@ -873,9 +873,18 @@ class SubiquityServer(Application):
         if autoinstall != {}:
             log.debug("autoinstall found in cloud-config")
             target = self.base_relative(cloud_autoinstall_path)
-            from cloudinit import safeyaml
 
-            write_file(target, safeyaml.dumps(autoinstall))
+            ai_yaml: str = yaml.dump(
+                autoinstall,
+                line_break="\n",
+                indent=4,
+                explicit_start=True,
+                explicit_end=True,
+                default_flow_style=False,
+                Dumper=yaml.dumper.SafeDumper,
+            )
+
+            write_file(target, ai_yaml)
         else:
             log.debug("no autoinstall found in cloud-config")
 
