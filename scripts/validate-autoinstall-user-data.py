@@ -28,9 +28,9 @@ switch.
 """
 
 import argparse
-import io
 import json
 from argparse import Namespace
+from typing import Any
 
 import jsonschema
 import yaml
@@ -44,6 +44,44 @@ def verify_link(data: str) -> bool:
     """Verify the autoinstall doc link is in the generated user-data."""
 
     return DOC_LINK in data
+
+
+def parse_cloud_config(data: str) -> dict[str, Any]:
+    """Parse cloud-config and extra autoinstall data."""
+
+    # "#cloud-config" header is required for cloud-config data
+    first_line: str = data.splitlines()[0]
+    if not first_line == "#cloud-config":
+        raise AssertionError(
+            (
+                "Expected data to be wrapped in cloud-config "
+                "but first line is not '#cloud-config'. Try "
+                "passing --no-expect-cloudconfig."
+            )
+        )
+
+    cc_data: dict[str, Any] = yaml.safe_load(data)
+
+    # "autoinstall" top-level keyword is required in cloud-config delivery case
+    if "autoinstall" not in cc_data:
+        raise AssertionError(
+            (
+                "Expected data to be wrapped in cloud-config "
+                "but could not find top level 'autoinstall' "
+                "key."
+            )
+        )
+    else:
+        return cc_data["autoinstall"]
+
+
+def parse_autoinstall(user_data: str, expect_cloudconfig: bool) -> dict[str, Any]:
+    """Parse stringified user_data and extract autoinstall data."""
+
+    if expect_cloudconfig:
+        return parse_cloud_config(user_data)
+    else:
+        return yaml.safe_load(user_data)
 
 
 def parse_args() -> Namespace:
@@ -70,7 +108,7 @@ def parse_args() -> Namespace:
     )
     parser.add_argument(
         "--no-expect-cloudconfig",
-        dest="expect-cloudconfig",
+        dest="expect_cloudconfig",
         action="store_false",
         help="Assume the data is not wrapped in cloud-config.",
         default=True,
@@ -84,37 +122,19 @@ def main() -> None:
 
     args: Namespace = parse_args()
 
-    user_data: io.TextIOWrapper = args.input
-
-    if args["expect-cloudconfig"]:
-        assert user_data.readline() == "#cloud-config\n"
-
-        def get_autoinstall_data(data):
-            return data["autoinstall"]
-
-    else:
-
-        def get_autoinstall_data(data):
-            try:
-                cfg = data["autoinstall"]
-            except KeyError:
-                cfg = data
-            return cfg
+    str_user_data: str = args.input.read()
 
     # Verify autoinstall doc link is in the file
 
-    stream_pos: int = user_data.tell()
-
-    data: str = user_data.read()
-
-    assert verify_link(data)
+    assert verify_link(str_user_data)
 
     # Verify autoinstall schema
-    user_data.seek(stream_pos)
 
-    data = yaml.safe_load(user_data)
+    ai_user_data: dict[str, Any] = parse_autoinstall(
+        str_user_data, args.expect_cloudconfig
+    )
 
-    jsonschema.validate(get_autoinstall_data(data), json.load(args["json_schema"]))
+    jsonschema.validate(ai_user_data, json.load(args.json_schema))
 
 
 if __name__ == "__main__":
