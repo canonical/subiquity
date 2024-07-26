@@ -40,6 +40,10 @@ class SSHKeyFetcher:
         cmd = ("ssh-import-id", "--output", "-", "--", user_id)
         env = None
         if self.app.base_model.proxy.proxy:
+            # This is probably not needed since ProxyController.POST and
+            # ProxyController.start both set the http_proxy / https_proxy
+            # variables. This was probably needed when SSH key import was done
+            # by the client though.
             env = os.environ.copy()
             env["https_proxy"] = self.app.base_model.proxy.proxy
 
