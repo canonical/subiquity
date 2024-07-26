@@ -30,13 +30,15 @@ switch.
 import argparse
 import io
 import json
+from argparse import Namespace
 
 import jsonschema
 import yaml
 
 
-def main() -> None:
-    """Entry point."""
+def parse_args() -> Namespace:
+    """Parse argparse arguments."""
+
     parser = argparse.ArgumentParser(
         prog="validate-autoinstall-user-data",
         description=__doc__,
@@ -64,7 +66,13 @@ def main() -> None:
         default=True,
     )
 
-    args = vars(parser.parse_args())
+    return parser.parse_args()
+
+
+def main() -> None:
+    """Entry point."""
+
+    args = vars(parse_args)
 
     user_data: io.TextIOWrapper = args["input"]
 
