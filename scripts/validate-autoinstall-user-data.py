@@ -35,6 +35,16 @@ from argparse import Namespace
 import jsonschema
 import yaml
 
+DOC_LINK: str = (
+    "https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html"  # noqa: E501
+)
+
+
+def verify_link(data: str) -> bool:
+    """Verify the autoinstall doc link is in the generated user-data."""
+
+    return DOC_LINK in data
+
 
 def parse_args() -> Namespace:
     """Parse argparse arguments."""
@@ -72,9 +82,9 @@ def parse_args() -> Namespace:
 def main() -> None:
     """Entry point."""
 
-    args = vars(parse_args)
+    args: Namespace = parse_args()
 
-    user_data: io.TextIOWrapper = args["input"]
+    user_data: io.TextIOWrapper = args.input
 
     if args["expect-cloudconfig"]:
         assert user_data.readline() == "#cloud-config\n"
@@ -97,11 +107,7 @@ def main() -> None:
 
     data: str = user_data.read()
 
-    link: str = (
-        "https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html"  # noqa: E501
-    )
-
-    assert link in data
+    assert verify_link(data)
 
     # Verify autoinstall schema
     user_data.seek(stream_pos)
