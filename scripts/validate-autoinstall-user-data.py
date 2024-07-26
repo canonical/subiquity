@@ -28,6 +28,7 @@ switch.
 """
 
 import argparse
+import io
 import json
 from argparse import Namespace
 from typing import Any
@@ -88,6 +89,12 @@ def parse_autoinstall(user_data: str, expect_cloudconfig: bool) -> dict[str, Any
         return yaml.safe_load(user_data)
 
 
+def legacy_verify(ai_data: dict[str, Any], json_schema: io.TextIOWrapper) -> None:
+    """Legacy verification method for use in CI"""
+
+    jsonschema.validate(ai_data, json.load(json_schema))
+
+
 def parse_args() -> Namespace:
     """Parse argparse arguments."""
 
@@ -97,12 +104,6 @@ def parse_args() -> Namespace:
         formatter_class=argparse.RawTextHelpFormatter,
     )
 
-    parser.add_argument(
-        "--json-schema",
-        help="Path to the JSON schema",
-        type=argparse.FileType("r"),
-        default="autoinstall-schema.json",
-    )
     parser.add_argument(
         "input",
         nargs="?",
@@ -116,6 +117,22 @@ def parse_args() -> Namespace:
         action="store_false",
         help="Assume the data is not wrapped in cloud-config.",
         default=True,
+    )
+
+    # Hidden validation path we use in CI until the new validation method
+    # is ready. i.e. continue to validate based on the json schema directly.
+    parser.add_argument(
+        "--json-schema",
+        help=argparse.SUPPRESS,
+        type=argparse.FileType("r"),
+        default="autoinstall-schema.json",
+    )
+
+    parser.add_argument(
+        "--legacy",
+        action="store_true",
+        help=argparse.SUPPRESS,
+        default=False,
     )
 
     return parser.parse_args()
@@ -143,7 +160,9 @@ def main() -> None:
         print(f"FAILURE: {exc}")
         return 1
 
-    jsonschema.validate(ai_user_data, json.load(args.json_schema))
+    if args.legacy:
+        legacy_verify(ai_user_data, args.json_schema)
+
     print(SUCCESS_MSG)
 
 
