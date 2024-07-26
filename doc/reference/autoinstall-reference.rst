@@ -872,6 +872,20 @@ flavor
 
 The ``flavor`` of the kernel, e.g., ``generic`` or ``hwe``.
 
+Example:
+
+.. code-block:: yaml
+
+   autoinstall:
+      # Install a specific kernel package.
+      kernel:
+        package: linux-image-5.13.0-40-generic
+
+   autoinstall:
+      # Install a particular kernel flavour.
+      kernel:
+        flavour: hwe
+
 .. _ai-timezone:
 
 timezone
