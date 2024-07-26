@@ -132,6 +132,7 @@ class SubiquityController(BaseController):
             and self.autoinstall_key_alias in i_sections
         ):
             return self._active
+        return False
 
     async def configured(self):
         """Let the world know that this controller's model is now configured."""
