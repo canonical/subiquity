@@ -40,6 +40,10 @@ DOC_LINK: str = (
 )
 
 
+SUCCESS_MSG: str = "Success: The provided autoinstall config validated successfully"
+FAILURE_MSG: str = "Failure: The provided autoinstall config failed validation"
+
+
 def verify_link(data: str) -> bool:
     """Verify the autoinstall doc link is in the generated user-data."""
 
@@ -126,15 +130,21 @@ def main() -> None:
 
     # Verify autoinstall doc link is in the file
 
-    assert verify_link(str_user_data)
+    assert verify_link(str_user_data), "Documentation link missing from user data"
 
     # Verify autoinstall schema
 
-    ai_user_data: dict[str, Any] = parse_autoinstall(
-        str_user_data, args.expect_cloudconfig
-    )
+    try:
+
+        ai_user_data: dict[str, Any] = parse_autoinstall(
+            str_user_data, args.expect_cloudconfig
+        )
+    except Exception as exc:
+        print(f"FAILURE: {exc}")
+        return 1
 
     jsonschema.validate(ai_user_data, json.load(args.json_schema))
+    print(SUCCESS_MSG)
 
 
 if __name__ == "__main__":
