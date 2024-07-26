@@ -36,25 +36,33 @@ import yaml
 
 
 def main() -> None:
-    """ Entry point. """
+    """Entry point."""
     parser = argparse.ArgumentParser(
-            prog="validate-autoinstall-user-data",
-            description=__doc__,
-            formatter_class=argparse.RawTextHelpFormatter,
-            )
+        prog="validate-autoinstall-user-data",
+        description=__doc__,
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
 
-    parser.add_argument("--json-schema",
-                        help="Path to the JSON schema",
-                        type=argparse.FileType("r"),
-                        default="autoinstall-schema.json")
-    parser.add_argument("input", nargs="?",
-                        help="Path to the user data instead of stdin",
-                        type=argparse.FileType("r"),
-                        default="-")
-    parser.add_argument("--no-expect-cloudconfig", dest="expect-cloudconfig",
-                        action="store_false",
-                        help="Assume the data is not wrapped in cloud-config.",
-                        default=True)
+    parser.add_argument(
+        "--json-schema",
+        help="Path to the JSON schema",
+        type=argparse.FileType("r"),
+        default="autoinstall-schema.json",
+    )
+    parser.add_argument(
+        "input",
+        nargs="?",
+        help="Path to the user data instead of stdin",
+        type=argparse.FileType("r"),
+        default="-",
+    )
+    parser.add_argument(
+        "--no-expect-cloudconfig",
+        dest="expect-cloudconfig",
+        action="store_false",
+        help="Assume the data is not wrapped in cloud-config.",
+        default=True,
+    )
 
     args = vars(parser.parse_args())
 
@@ -62,8 +70,12 @@ def main() -> None:
 
     if args["expect-cloudconfig"]:
         assert user_data.readline() == "#cloud-config\n"
-        def get_autoinstall_data(data): return data["autoinstall"]
+
+        def get_autoinstall_data(data):
+            return data["autoinstall"]
+
     else:
+
         def get_autoinstall_data(data):
             try:
                 cfg = data["autoinstall"]
@@ -71,14 +83,15 @@ def main() -> None:
                 cfg = data
             return cfg
 
-
     # Verify autoinstall doc link is in the file
 
     stream_pos: int = user_data.tell()
 
     data: str = user_data.read()
 
-    link: str = "https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html"  # noqa: E501
+    link: str = (
+        "https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html"  # noqa: E501
+    )
 
     assert link in data
 
@@ -87,8 +100,7 @@ def main() -> None:
 
     data = yaml.safe_load(user_data)
 
-    jsonschema.validate(get_autoinstall_data(data),
-                        json.load(args["json_schema"]))
+    jsonschema.validate(get_autoinstall_data(data), json.load(args["json_schema"]))
 
 
 if __name__ == "__main__":
