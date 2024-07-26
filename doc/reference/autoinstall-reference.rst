@@ -856,6 +856,8 @@ kernel
 
 Which kernel gets installed. Either the name of the package or the name of the flavour must be specified.
 
+The exact default kernel is ISO build specific, but generally the ``generic`` flavour is installed for Server and the ``hwe`` flavour is installed for Desktop.
+
 package
 ^^^^^^^
 
