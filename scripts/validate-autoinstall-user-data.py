@@ -14,13 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Entry-point to validate autoinstall-user-data against schema.
-By default, we are expecting the autoinstall user-data to be wrapped in a cloud
-config format:
+"""Validate autoinstall-user-data against the autoinstall schema.
 
-#cloud-config
-autoinstall:
-  <user data comes here>
+By default, we are expecting the autoinstall user-data to be wrapped in a cloud
+config format. Example:
+
+    #cloud-config
+    autoinstall:
+      <user data comes here>
 
 To validate the user-data directly, you can pass the --no-expect-cloudconfig
 switch.
@@ -36,7 +37,11 @@ import yaml
 
 def main() -> None:
     """ Entry point. """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+            prog="validate-autoinstall-user-data",
+            description=__doc__,
+            formatter_class=argparse.RawTextHelpFormatter,
+            )
 
     parser.add_argument("--json-schema",
                         help="Path to the JSON schema",
