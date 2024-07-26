@@ -360,7 +360,14 @@ proxy
 * **default:** no proxy
 * **can be interactive:** true
 
-The proxy to configure both during installation and for ``apt`` and ``snapd`` in the target system.
+The proxy to configure both during installation and for ``apt`` and ``snapd`` in the target system. This setting is currently not honoured when running the geoip lookup.
+
+Example:
+
+.. code-block:: yaml
+
+    autoinstall:
+      proxy: http://172.16.90.1:3128
 
 .. _ai-apt:
 

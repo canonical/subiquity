@@ -74,6 +74,12 @@ class HTTPGeoIPStrategy(GeoIPStrategy):
     async def get_response(self) -> str:
         url = "https://geoip.ubuntu.com/lookup"
         async with aiohttp.ClientSession() as session:
+            # We probably want to honor proxy settings here; using
+            # session.get(url, proxy=...) so that we can perform a successful
+            # geoip lookup in a walled garden. Bear in mind that it would
+            # result in a geoip lookup of the proxy itself (the proxy initiates
+            # the connection to the geoip service) but in most cases this is
+            # what we want.
             async with session.get(url) as response:
                 response.raise_for_status()
                 return await response.text()
