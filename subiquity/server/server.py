@@ -80,6 +80,7 @@ log = logging.getLogger("subiquity.server.server")
 class MetaController:
     def __init__(self, app):
         self.app = app
+        self.name = "meta"
         self.context = app.context.child("Meta")
         self.free_only = False
 
