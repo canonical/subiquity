@@ -314,6 +314,12 @@ class SubiquityModel:
             and model_name not in self._cur_install_model_names
         )
 
+    def is_model_required(self, model_name):
+        return (
+            model_name in self._cur_install_model_names
+            or model_name in self._cur_postinstall_model_names
+        )
+
     async def confirm(self):
         self._confirmation.set()
         await self.hub.abroadcast(InstallerChannels.INSTALL_CONFIRMED)
