@@ -2241,11 +2241,11 @@ class FilesystemModel:
             raise Exception("can only remove unmounted filesystem")
         self._remove(fs)
 
-    def add_mount(self, fs, path, *, on_remote_storage=False):
+    def add_mount(self, fs: Filesystem, path):
         if fs._mount is not None:
             raise Exception(f"{fs} is already mounted")
         options = None
-        if on_remote_storage:
+        if fs.volume.on_remote_storage():
             options = "defaults,_netdev"
         m = Mount(m=self, device=fs, path=path, options=options)
         self._actions.append(m)
