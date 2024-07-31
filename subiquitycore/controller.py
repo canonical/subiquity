@@ -30,7 +30,9 @@ class BaseController(ABC):
         self.app = app
         self.context = self.app.context.child(self.name, childlevel="DEBUG")
         if self.model_name is not None:
-            self.model = getattr(self.app.base_model, self.model_name)
+            # Model names are used as the target of saying something is
+            # configured, but sometimes there isn't actually a model.
+            self.model = getattr(self.app.base_model, self.model_name, None)
 
     def start(self):
         """Called just before the main loop is started.
