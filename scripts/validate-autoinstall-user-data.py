@@ -33,6 +33,7 @@ import io
 import json
 import sys
 import tempfile
+import traceback
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Any
@@ -138,6 +139,7 @@ async def make_app() -> SubiquityServer:
 async def verify_autoinstall(
     app: SubiquityServer,
     cfg_path: str,
+    verbosity: int = 0,
 ) -> int:
     """Verify autoinstall configuration using a SubiquityServer.
 
@@ -148,6 +150,21 @@ async def verify_autoinstall(
     # Tell the server where to load the autoinstall
     app.autoinstall = cfg_path
 
+    # Suppress start and finish events unless verbosity >=2
+    if verbosity < 2:
+        for el in app.event_listeners:
+            el.report_start_event = lambda x, y: None
+            el.report_finish_event = lambda x, y, z: None
+    # Suppress info events unless verbosity >=1
+    if verbosity < 1:
+        for el in app.event_listeners:
+            el.report_info_event = lambda x, y: None
+
+    # Make sure all events are printed (we could fail during read, which
+    # would happen before we setup the reporting controller)
+    app.controllers.Reporting.config = {"builtin": {"type": "print"}}
+    app.controllers.Reporting.start()
+
     # Validation happens during load phases. Do both phases.
     try:
         app.load_autoinstall_config(only_early=True, context=None)
@@ -155,6 +172,10 @@ async def verify_autoinstall(
     except Exception as exc:
 
         print(exc)  # Has the useful error message
+
+        # Print the full traceback if verbosity > 2
+        if verbosity > 2:
+            traceback.print_exception(exc)
 
         print(FAILURE_MSG)
         return 1
@@ -172,7 +193,11 @@ async def _async_main(ai_user_data: dict[str, Any], args: Namespace) -> int:
         yaml_as_text: str = yaml.dump(ai_user_data)
         path.write_text(yaml_as_text)
 
-        return await verify_autoinstall(app=app, cfg_path=path)
+        return await verify_autoinstall(
+            app=app,
+            cfg_path=path,
+            verbosity=args.verbosity,
+        )
 
 
 def parse_args() -> Namespace:
@@ -224,6 +249,16 @@ def parse_args() -> Namespace:
         action="store_true",
         help=argparse.SUPPRESS,
         default=False,
+    )
+    parser.add_argument(
+        "-v",
+        "--verbosity",
+        action="count",
+        help=(
+            "Increase output verbosity. Use -v for more info, -vv for "
+            "detailed output, and -vvv for fully detailed output."
+        ),
+        default=0,
     )
 
     return parser.parse_args()
