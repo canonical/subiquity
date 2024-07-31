@@ -112,6 +112,7 @@ class SubiquityController(BaseController):
         override interactive(), so refer to the controller of interest for full
         details.
         """
+        # FIXME is this correct for refresh?
         if self.interactive_for_variants is None:
             if self.model_name is None:
                 return True
