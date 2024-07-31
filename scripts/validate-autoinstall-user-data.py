@@ -28,13 +28,35 @@ switch.
 """
 
 import argparse
+import asyncio
 import io
 import json
-from argparse import Namespace
+import sys
+import tempfile
+from argparse import ArgumentParser, Namespace
+from pathlib import Path
 from typing import Any
 
 import jsonschema
 import yaml
+
+# Python path trickery so we can import subiquity code and still call this
+# script without using the makefile. Eventually we should ship this a
+# program in the subiquity snap, so users don't even have to checkout the
+# source code but that will also require work to make sure Subiquity is
+# safe to install on regular systems.
+scripts_dir = sys.path[0]
+subiquity_root = Path(scripts_dir) / ".."
+curtin_root = subiquity_root / "curtin"
+probert_root = subiquity_root / "probert"
+
+sys.path.insert(0, str(subiquity_root))
+sys.path.insert(1, str(curtin_root))
+sys.path.insert(2, str(probert_root))
+
+from subiquity.cmd.server import make_server_args_parser  # noqa: E402
+from subiquity.server.dryrun import DRConfig  # noqa: E402
+from subiquity.server.server import SubiquityServer  # noqa: E402
 
 DOC_LINK: str = (
     "https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html"  # noqa: E501
@@ -101,6 +123,58 @@ def legacy_verify(ai_data: dict[str, Any], json_schema: io.TextIOWrapper) -> Non
     jsonschema.validate(data, json.load(json_schema))
 
 
+async def make_app() -> SubiquityServer:
+    parser: ArgumentParser = make_server_args_parser()
+    opts, unknown = parser.parse_known_args(["--dry-run"])
+    app: SubiquityServer = SubiquityServer(opts, "")
+    # This is needed because the ubuntu-pro server controller accesses dr_cfg
+    # in the initializer.
+    app.dr_cfg = DRConfig()
+    app.base_model = app.make_model()
+    app.controllers.load_all()
+    return app
+
+
+async def verify_autoinstall(
+    app: SubiquityServer,
+    cfg_path: str,
+) -> int:
+    """Verify autoinstall configuration using a SubiquityServer.
+
+    Returns 0 if successfully validated.
+    Returns 1 if fails to validate.
+    """
+
+    # Tell the server where to load the autoinstall
+    app.autoinstall = cfg_path
+
+    # Validation happens during load phases. Do both phases.
+    try:
+        app.load_autoinstall_config(only_early=True, context=None)
+        app.load_autoinstall_config(only_early=False, context=None)
+    except Exception as exc:
+
+        print(exc)  # Has the useful error message
+
+        print(FAILURE_MSG)
+        return 1
+
+    print(SUCCESS_MSG)
+    return 0
+
+
+async def _async_main(ai_user_data: dict[str, Any], args: Namespace) -> int:
+    # Make a dry-run server
+    app: SubiquityServer = await make_app()
+
+    with tempfile.TemporaryDirectory() as td:
+        path = Path(td) / "autoinstall.yaml"
+        yaml_as_text: str = yaml.dump(ai_user_data)
+        path.write_text(yaml_as_text)
+
+        return await verify_autoinstall(app=app, cfg_path=path)
+
+
 def parse_args() -> Namespace:
     """Parse argparse arguments."""
 
@@ -155,7 +229,7 @@ def parse_args() -> Namespace:
     return parser.parse_args()
 
 
-def main() -> None:
+def main() -> int:
     """Entry point."""
 
     args: Namespace = parse_args()
@@ -171,7 +245,6 @@ def main() -> None:
     # Verify autoinstall schema
 
     try:
-
         ai_user_data: dict[str, Any] = parse_autoinstall(
             str_user_data, args.expect_cloudconfig
         )
@@ -181,9 +254,11 @@ def main() -> None:
 
     if args.legacy:
         legacy_verify(ai_user_data, args.json_schema)
+        print(SUCCESS_MSG)
+        return 0
 
-    print(SUCCESS_MSG)
+    return asyncio.run(_async_main(ai_user_data, args))
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
