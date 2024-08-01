@@ -38,9 +38,18 @@ from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.filesystem import boot, gaps, labels, sizes
 from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
-from subiquity.common.filesystem.spec import FileSystemSpec, PartitionSpec, VolGroupSpec
+from subiquity.common.filesystem.spec import (
+    FileSystemSpec,
+    LogicalVolumeSpec,
+    PartitionSpec,
+    RaidSpec,
+    VolGroupSpec,
+)
 from subiquity.common.types.storage import (
+    AddLogicalVolumeV2,
     AddPartitionV2,
+    AddRaidV2,
+    AddVolumeGroupV2,
     Bootloader,
     Disk,
     GuidedCapability,
@@ -53,6 +62,7 @@ from subiquity.common.types.storage import (
     GuidedStorageTargetReformat,
     GuidedStorageTargetResize,
     GuidedStorageTargetUseGap,
+    LogicalVolume,
     ModifyPartitionV2,
     ProbeStatus,
     RecoveryKey,
@@ -60,6 +70,7 @@ from subiquity.common.types.storage import (
     SizingPolicy,
     StorageResponse,
     StorageResponseV2,
+    VolumeGroup,
 )
 from subiquity.models.filesystem import (
     LVM_CHUNK_SIZE,
@@ -67,17 +78,18 @@ from subiquity.models.filesystem import (
     ArbitraryDevice,
 )
 from subiquity.models.filesystem import Disk as ModelDisk
+from subiquity.models.filesystem import LVM_LogicalVolume, LVM_VolGroup, MiB
+from subiquity.models.filesystem import Partition
+from subiquity.models.filesystem import Partition as ModelPartition
+from subiquity.models.filesystem import Raid
+from subiquity.models.filesystem import Raid as ModelRaid
 from subiquity.models.filesystem import (
-    LVM_LogicalVolume,
-    LVM_VolGroup,
-    MiB,
-    Partition,
-    Raid,
     RecoveryKeyHandler,
     _Device,
     align_down,
     align_up,
     humanize_size,
+    raidlevels_by_value,
 )
 from subiquity.server import snapdapi
 from subiquity.server.autoinstall import AutoinstallError
@@ -1079,10 +1091,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             disks = self.potential_boot_disks(with_reformatting=True)
         else:
             disks = model._all(type="disk")
+        vgs = model._all(type="lvm_volgroup")
         minsize = self.calculate_suggested_install_min()
         return StorageResponseV2(
             status=ProbeStatus.DONE,
             disks=[labels.for_client(d) for d in disks],
+            volume_groups=[labels.for_client(vg) for vg in vgs],
             need_root=not model.is_root_mounted(),
             need_boot=model.needs_bootloader_partition(),
             install_minimum_size=minsize,
@@ -1355,6 +1369,56 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.partition_disk_handler(disk, spec, partition=partition)
         return await self.v2_GET()
 
+    def _add_volume_group_handler(self, data: AddVolumeGroupV2) -> VolGroupSpec:
+        if self.model._one(type="lvm_volgroup", name=data.name) is not None:
+            raise StorageRecoverableError(
+                "a volume group with the same name already exists"
+            )
+
+        devices = set()
+        for device_id in data.devices:
+            if (device := self.model._one(id=device_id)) is None:
+                raise StorageRecoverableError(
+                    f"could not find device '{device_id}' to use as a physical volume"
+                )
+            if not isinstance(device, (ModelDisk, ModelPartition, ModelRaid)):
+                raise StorageRecoverableError(
+                    f"'{device.type}' devices can not be used as physical volumes"
+                )
+            devices.add(device)
+
+        spec: VolGroupSpec = {
+            "name": data.name,
+            "devices": devices,
+        }
+
+        if not data.devices:
+            raise StorageRecoverableError(
+                "cannot build volume group with no physical volume"
+            )
+
+        if data.encryption is None:
+            return spec
+
+        spec["passphrase"] = data.encryption.passphrase
+        if data.encryption.recovery_key is not None:
+            spec["recovery-key"] = data.recovery_key
+
+        return spec
+
+    async def v2_volume_group_GET(self, id: str) -> VolumeGroup:
+        if (vg := self.model._one(type="lvm_volgroup", id=id)) is None:
+            raise StorageRecoverableError(f"cannot find existing VG '{id}'")
+        return labels.for_client(vg)
+
+    async def v2_volume_group_POST(self, data: AddVolumeGroupV2) -> StorageResponseV2:
+        self.locked_probe_data = True
+
+        spec = self._add_volume_group_handler(data)
+
+        self.create_volgroup(spec)
+        return await self.v2_GET()
+
     async def v2_volume_group_DELETE(self, id: str) -> StorageResponseV2:
         """Delete the VG specified by its ID. Any associated LV will be deleted
         as well."""
@@ -1367,6 +1431,43 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.delete_volgroup(vg)
         return await self.v2_GET()
 
+    async def v2_volume_groups_GET(self) -> List[VolumeGroup]:
+        return [labels.for_client(vg) for vg in self.model._all(type="lvm_volgroup")]
+
+    def _add_logical_volume_handler(
+        self, data: AddLogicalVolumeV2
+    ) -> tuple[LVM_VolGroup, LogicalVolumeSpec]:
+        vg = self.model._one(type="lvm_volgroup", name=data.vg_name)
+
+        if vg is None:
+            raise StorageRecoverableError(f"cannot find VG named '{name}'")
+
+        spec: LogicalVolumeSpec = {
+            "name": data.name,
+        }
+
+        # empty string is an unformatted partition
+        fstype = data.partition.format or None
+        if fstype is not None:
+            spec["fstype"] = fstype
+        if data.partition.mount is not None:
+            spec["mount"] = data.partition.mount
+
+    async def v2_logical_volume_GET(self, id: str) -> LogicalVolume:
+        if (vg := self.model._one(type="lvm_partition", id=id)) is None:
+            raise StorageRecoverableError(f"cannot find existing LV '{id}'")
+        return labels.for_client(lv)
+
+    async def v2_logical_volume_POST(
+        self, data: AddLogicalVolumeV2
+    ) -> StorageResponseV2:
+        self.locked_probe_data = True
+
+        vg, spec = self._add_logical_volume_handler(data)
+
+        self.create_logical_volume(vg, spec)
+        return await self.v2_GET()
+
     async def v2_logical_volume_DELETE(self, id: str) -> StorageResponseV2:
         """Delete the LV specified by its ID."""
         self.locked_probe_data = True
@@ -1376,6 +1477,39 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         assert isinstance(lv, LVM_LogicalVolume)
 
         self.delete_logical_volume(lv)
+        return await self.v2_GET()
+
+    async def v2_logical_volumes_GET(self) -> List[LogicalVolume]:
+        return [labels.for_client(lv) for lv in self.model._all(type="lvm_partition")]
+
+    def _add_raid_handler(self, data: AddRaidV2) -> RaidSpec:
+        if self.model._one(type="raid", name=data.name) is not None:
+            raise StorageRecoverableError("a RAID with the same name already exists")
+        # TODO support partitions or RAIDs as well
+        devices = {self.model._one(type="disk", id=disk_id) for disk_id in data.devices}
+        spare_devices = {
+            self.model._one(type="disk", id=disk_id) for disk_id in data.spare_devices
+        }
+        if any([device is None for device in devices | spare_devices]):
+            raise StorageRecoverableError(
+                "could not find a matching device to use for the RAID"
+            )
+
+        spec: RaidSpec = {
+            "name": data.name,
+            "level": raidlevels_by_value[f"raid{data.level}"],
+            "devices": devices,
+            "spare_devices": spare_devices,
+        }
+
+        return spec
+
+    async def v2_raid_POST(self, data: AddRaidV2) -> StorageResponseV2:
+        self.locked_probe_data = True
+
+        spec = self._add_raid_handler(data)
+
+        self.create_raid(spec)
         return await self.v2_GET()
 
     async def v2_raid_DELETE(self, id: str) -> StorageResponseV2:

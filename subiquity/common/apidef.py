@@ -68,14 +68,19 @@ from subiquity.common.types import (
     ZdevInfo,
 )
 from subiquity.common.types.storage import (
+    AddLogicalVolumeV2,
     AddPartitionV2,
+    AddRaidV2,
+    AddVolumeGroupV2,
     Disk,
     GuidedChoiceV2,
     GuidedStorageResponseV2,
+    LogicalVolume,
     ModifyPartitionV2,
     ReformatDisk,
     StorageResponse,
     StorageResponseV2,
+    VolumeGroup,
 )
 from subiquitycore.models.network import (
     BondConfig,
@@ -415,15 +420,38 @@ class API:
                     ...
 
             class volume_group:
+                def GET(id: str) -> VolumeGroup:
+                    ...
+
+                def POST(data: Payload[AddVolumeGroupV2]) -> StorageResponseV2:
+                    ...
+
                 def DELETE(id: str) -> StorageResponseV2:
                     """Delete the VG specified by its ID. Any associated LV
                     will be deleted as well."""
 
+            class volume_groups:
+                def GET() -> List[VolumeGroup]:
+                    ...
+
             class logical_volume:
+                def GET(id: str) -> LogicalVolume:
+                    ...
+
+                def POST(data: Payload[AddLogicalVolumeV2]) -> StorageResponseV2:
+                    ...
+
                 def DELETE(id: str) -> StorageResponseV2:
                     """Delete the LV specified by its ID."""
 
+            class logical_volumes:
+                def GET() -> List[LogicalVolume]:
+                    ...
+
             class raid:
+                def POST(data: Payload[AddRaidV2]) -> StorageResponseV2:
+                    ...
+
                 def DELETE(id: str) -> StorageResponseV2:
                     """Delete the Raid specified by its ID. Any associated
                     partition will be deleted as well."""
