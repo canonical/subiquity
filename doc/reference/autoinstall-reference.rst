@@ -212,6 +212,25 @@ Corresponds to the value of ``grp:`` option from the ``XKBOPTIONS`` setting. Acc
 
 .. warning:: The version of Subiquity released with 20.04 GA does not accept ``null`` for this field due to a bug.
 
+keyboard examples:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # default behavior
+     keyboard:
+       layout: us
+       variant: ""
+       toggle: null
+
+   autoinstall:
+     # use Alt and Shift to toggle between default US keyboard and
+     # "Greek (simple)"
+     keyboard:
+       layout: "us,gr"
+       variant: ",simple"
+       toggle: alt_shift_toggle
+
 .. _ai-source:
 
 source
