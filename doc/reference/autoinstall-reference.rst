@@ -237,20 +237,16 @@ id
 * **type:** string
 * **default:** the default value as listed in install-sources
 
-Identifier of the source to install (e.g., ``ubuntu-server-minimal``).  The
-correct ID to use is specific to a given install ISO.  As this ID may change
-over time, the canonical place to look for this information is the install ISO
-itself, in the file ``casper/install-sources.yaml``, where the value to use is
-the ``id``.
+Identifier of the source to install (e.g., ``ubuntu-server-minimal``).  The correct ID to use is specific to a given installation ISO. As this ID may change over time, the canonical place to look for this information is the installation ISO itself, in the ``casper/install-sources.yaml`` file where the value to use is the ``id``.
 
 Current values:
 
-* ubuntu-server:
+* Ubuntu Server:
 
   * minimal: ``ubuntu-server-minimal``
   * standard (default): ``ubuntu-server``
 
-* Ubuntu desktop:
+* Ubuntu Desktop:
 
   * minimal (default): ``ubuntu-desktop-minimal``
   * standard: ``ubuntu-desktop``
@@ -300,18 +296,18 @@ source examples:
 .. code-block:: yaml
 
    autoinstall:
-     # default behavior
+     # default behaviour
      source:
        search_drivers: true
-       id: <the install source marked as default in install-sources.yaml>
+       id: <the installation source marked as default in install-sources.yaml>
 
    autoinstall:
-     # on the ubuntu-server ISO, install with the minimal source
+     # on the Ubuntu Server ISO, install with the minimal source
      source:
        id: ubuntu-server-minimal
 
    autoinstall:
-     # on the Ubuntu desktop ISO, install with the standard source
+     # on the Ubuntu Desktop ISO, install with the standard source
      source:
        id: ubuntu-desktop
 
@@ -820,9 +816,7 @@ install-server
 * **type:** boolean
 * **default:** ``false``
 
-Whether to install the OpenSSH server in the target system.  Note that Desktop
-install ISOs do not include openssh-server on the ISO, so installs of
-Desktop require Ubuntu archive access for install-server to be successful.
+Whether to install the OpenSSH server in the target system. Note that Desktop installation ISOs do not include ``openssh-server``, so installations of Desktop require Ubuntu archive access for ``install-server`` to be successful.
 
 authorized-keys
 ^^^^^^^^^^^^^^^
@@ -838,12 +832,12 @@ allow-pw
 * **type:** boolean
 * **default:** ``true`` if ``authorized_keys`` is empty, ``false`` otherwise
 
-ssh examples:
+``ssh`` examples:
 
 .. code-block:: yaml
 
    autoinstall:
-     # default behavior
+     # default behaviour
      ssh:
        install-server: false
        authorized-keys: []
@@ -1044,7 +1038,7 @@ shutdown examples:
 .. code-block:: yaml
 
    autoinstall:
-     # default behavior
+     # default behaviour
      shutdown: reboot
 
    autoinstall:
