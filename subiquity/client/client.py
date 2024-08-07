@@ -370,6 +370,7 @@ class SubiquityClient(TuiApplication):
                 )
             if not status.cloud_init_ok:
                 self.add_global_overlay(CloudInitFail(self))
+                run_bg_task(self.redraw_screen())
             self.error_reporter.load_reports()
             for report in self.error_reporter.reports:
                 if report.kind == ErrorReportKind.UI and not report.seen:
