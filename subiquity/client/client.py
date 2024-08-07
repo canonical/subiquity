@@ -604,6 +604,14 @@ class SubiquityClient(TuiApplication):
             cmd, env=env, before_hook=_before, after_hook=after_hook, cwd="/"
         )
 
+    def request_debug_shell(self, after_hook=None, *, redraw=True) -> None:
+        async def debug_shell_and_redraw():
+            await self.debug_shell(after_hook)
+            if redraw:
+                await self.redraw_screen()
+
+        run_bg_task(debug_shell_and_redraw())
+
     def note_file_for_apport(self, key, path):
         self.error_reporter.note_file_for_apport(key, path)
 

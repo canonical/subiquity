@@ -339,11 +339,7 @@ class ErrorReportStretchy(Stretchy):
         await self.app.redraw_screen()
 
     def debug_shell(self, sender):
-        async def debug_shell_and_redraw():
-            await self.app.debug_shell()
-            await self.app.redraw_screen()
-
-        run_bg_task(debug_shell_and_redraw())
+        self.app.request_debug_shell()
 
     def restart(self, sender):
         self.app.restart(restart_server=True)

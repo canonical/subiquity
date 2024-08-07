@@ -509,11 +509,7 @@ class HelpMenu(PopUpLauncher):
         self._show_overlay(GlobalKeyStretchy(self.app))
 
     def debug_shell(self, sender):
-        async def debug_shell_and_redraw():
-            await self.app.debug_shell()
-            await self.app.redraw_screen()
-
-        run_bg_task(debug_shell_and_redraw())
+        self.app.request_debug_shell()
 
     def toggle_rich(self, sender):
         self.app.toggle_rich()
