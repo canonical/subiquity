@@ -16,9 +16,13 @@
 import jsonschema
 from jsonschema.validators import validator_for
 
+from subiquity.server.autoinstall import AutoinstallError
+from subiquity.server.controllers.filesystem import FilesystemController
 from subiquity.server.controllers.identity import IdentityController
+from subiquity.server.controllers.source import SourceController
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.parameterized import parameterized
 
 
 class TestIdentityController(SubiTestCase):
@@ -37,15 +41,51 @@ class TestControllerUserCreationFlows(SubiTestCase):
     # See subiquity/models/tests/test_subiquity.py for details.
     def setUp(self):
         self.app = make_app()
+        self.app.opts.bootloader = False
+        self.app.controllers.Filesystem = FilesystemController(self.app)
         self.ic = IdentityController(self.app)
+        self.app.opts.source_catalog = "examples/sources/install.yaml"
+        self.app.controllers.Source = SourceController(self.app)
         self.ic.model.user = None
 
-    async def test_server_requires_identity_case_4a1(self):
-        self.app.base_model.source.current.variant = "server"
-        with self.assertRaises(Exception):
-            await self.ic.apply_autoinstall_config()
+    # Test cases for 4a1. Copied for 4a2 but all cases should be valid for desktop.
+    test_cases = [
+        #  (autoinstall config, valid)
+        #
+        # No identity or user data section and identity is not interactive
+        ({"interactive-sections": ["not-identity"]}, False),
+        # Explicitly interactive
+        ({"interactive-sections": ["identity"]}, True),
+        # Implicitly interactive
+        ({"interactive-sections": ["*"]}, True),
+        # No Autoinstall => interactive
+        ({}, True),
+        # Can be missing if reset-partition-only specified
+        ({"storage": {"layout": {"reset-partition-only": True}}}, True),
+        # Can't be missing if reset-partition-only is not specified
+        ({"storage": {"layout": {}}}, False),
+        # user-data passed instead
+        ({"user-data": "..."}, True),
+    ]
 
-    async def test_desktop_does_not_require_identity_case_4a2(self):
+    @parameterized.expand(test_cases)
+    async def test_server_requires_identity_case_4a1(self, config, valid):
+        """Test require identity section on Server"""
+        self.app.base_model.source.current.variant = "server"
+
+        self.app.autoinstall_config = config
+
+        if not valid:
+            with self.assertRaises(AutoinstallError):
+                self.ic.load_autoinstall_data(None)
+        else:
+            self.ic.load_autoinstall_data(None)
+
+    @parameterized.expand(test_cases)
+    async def test_desktop_does_not_require_identity_case_4a2(self, config, valid):
+        """Test require identity section on Desktop"""
         self.app.base_model.source.current.variant = "desktop"
-        await self.ic.apply_autoinstall_config()
-        # should not raise
+
+        self.app.autoinstall_config = config
+        # should never raise
+        self.ic.load_autoinstall_data(None)

@@ -29,6 +29,8 @@ from subiquity.common.types import SourceSelection, SourceSelectionAndSetting
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
 
+SOURCES_DEFAULT_PATH = "/cdrom/casper/install-sources.yaml"
+
 log = logging.getLogger("subiquity.server.controllers.source")
 
 
@@ -77,8 +79,14 @@ class SourceController(SubiquityController):
         super().__init__(app)
         self._handler = None
         self.source_path: Optional[str] = None
-        self.ai_source_id: Optional[str] = None
         self._configured: bool = False
+
+        path = SOURCES_DEFAULT_PATH
+        if self.app.opts.source_catalog is not None:
+            path = self.app.opts.source_catalog
+        if os.path.exists(path):
+            with open(path) as fp:
+                self.model.load_from_file(fp)
 
     def make_autoinstall(self):
         return {
@@ -86,7 +94,7 @@ class SourceController(SubiquityController):
             "id": self.model.current.id,
         }
 
-    def load_autoinstall_data(self, data: Any) -> None:
+    def load_autoinstall_data(self, data: Optional[dict[str, Any]]) -> None:
         if data is None:
             data = {}
 
@@ -98,22 +106,11 @@ class SourceController(SubiquityController):
             "search_drivers", SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
         )
 
-        # At this point, the model has not yet loaded the sources from the
-        # catalog. So we store the ID and lean on self.start to select the
-        # current source accordingly.
-        self.ai_source_id = data.get("id")
+        # Assign the current source if hinted by autoinstall.
+        if id := data.get("id"):
+            self.model.current = self.model.get_matching_source(id)
 
     def start(self):
-        path = "/cdrom/casper/install-sources.yaml"
-        if self.app.opts.source_catalog is not None:
-            path = self.app.opts.source_catalog
-        if not os.path.exists(path):
-            return
-        with open(path) as fp:
-            self.model.load_from_file(fp)
-        # Assign the current source if hinted by autoinstall.
-        if self.ai_source_id is not None:
-            self.model.current = self.model.get_matching_source(self.ai_source_id)
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, "locale"), self._set_locale
         )

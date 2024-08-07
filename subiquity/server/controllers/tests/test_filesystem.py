@@ -545,6 +545,27 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual(None, d1p2.mount)
         self.assertEqual(DRY_RUN_RESET_SIZE, d1p2.size)
 
+    @parameterized.expand(
+        (
+            ({}, False, None),
+            ({"reset-partition": True}, True, None),
+            ({"reset-partition": False}, False, None),
+            ({"reset-partition": "12345"}, True, 12345),
+            ({"reset-partition": "10G"}, True, 10737418240),
+            ({"reset-partition": 100000}, True, 100000),
+        )
+    )
+    async def test_rest_partition_size(
+        self, ai_data, reset_partition, reset_partition_size
+    ):
+        await self._guided_setup(Bootloader.UEFI, "gpt")
+        self.controller.guided = mock.AsyncMock()
+        layout = ai_data | {"name": "direct"}
+        await self.controller.run_autoinstall_guided(layout)
+        guided_choice = self.controller.guided.call_args.args[0]
+        self.assertEqual(guided_choice.reset_partition, reset_partition)
+        self.assertEqual(guided_choice.reset_partition_size, reset_partition_size)
+
     async def test_guided_direct_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
@@ -1638,3 +1659,50 @@ class TestMatchingDisks(IsolatedAsyncioTestCase):
         # overhead
         actual = self.fsc.get_bootable_matching_disk({"path": "/dev/md/*"})
         self.assertEqual(r1, actual)
+
+
+class TestResetPartitionLookAhead(IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.app = make_app()
+        self.app.opts.bootloader = None
+        self.fsc = FilesystemController(app=self.app)
+
+    @parameterized.expand(
+        # (config, is reset only)
+        (
+            ({}, False),
+            (
+                {
+                    "storage": {},
+                },
+                False,
+            ),
+            (
+                {
+                    "storage": {
+                        "layout": {
+                            "name": "direct",
+                            "reset-partition": True,
+                        },
+                    },
+                },
+                False,
+            ),
+            (
+                {
+                    "storage": {
+                        "layout": {
+                            "reset-partition-only": True,
+                        },
+                    },
+                },
+                True,
+            ),
+        )
+    )
+    def test_is_reset_partition_only_utility(self, config, expected):
+        """Test is_reset_partition_only utility"""
+
+        self.app.autoinstall_config = config
+
+        self.assertEqual(self.fsc.is_reset_partition_only(), expected)
