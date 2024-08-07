@@ -515,7 +515,7 @@ class NonReportableErrorStretchy(Stretchy):
         return widgets
 
     def debug_shell(self, sender):
-        self.app.debug_shell()
+        self.app.request_debug_shell()
 
     def restart(self, sender):
         self.app.restart(restart_server=True)

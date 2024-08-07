@@ -123,7 +123,7 @@ class CloudInitFail(Stretchy):
         super().__init__("", widgets, stretchy_index=0, focus_index=2)
 
     def _debug_shell(self, sender):
-        self.app.debug_shell()
+        self.app.request_debug_shell()
 
     def _close(self, sender):
         self.app.remove_global_overlay(self)

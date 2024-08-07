@@ -571,7 +571,7 @@ class SubiquityClient(TuiApplication):
             if not self.ui.right_icon.current_help:
                 self.ui.right_icon.open_pop_up()
         elif key in ["ctrl z", "f2"]:
-            self.debug_shell()
+            self.request_debug_shell()
         elif self.opts.dry_run:
             self.unhandled_input_dry_run(key)
         else:
