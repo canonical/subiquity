@@ -29,6 +29,7 @@ from subiquity.ui.views.filesystem.compound import (
     MultiDeviceField,
     get_possible_components,
 )
+from subiquitycore.async_helpers import connect_async_signal
 from subiquitycore.ui.container import Pile
 from subiquitycore.ui.form import (
     ChoiceField,
@@ -162,7 +163,7 @@ class RaidStretchy(Stretchy):
 
         connect_signal(form.level.widget, "select", self._select_level)
         connect_signal(form.devices.widget, "change", self._change_devices)
-        connect_signal(form, "submit", self.done)
+        connect_async_signal(form, "submit", self.done)
         connect_signal(form, "cancel", self.cancel)
 
         rows = form.as_rows()
@@ -190,13 +191,13 @@ class RaidStretchy(Stretchy):
         else:
             self.form.size.value = "-"
 
-    def done(self, sender):
+    async def done(self, sender):
         result = self.form.as_data()
         mdc = self.form.devices.widget
         result["devices"] = mdc.active_devices
         result["spare_devices"] = mdc.spare_devices
         log.debug("raid_done: result = {}".format(result))
-        self.parent.controller.raid_handler(self.existing, result)
+        await self.parent.controller.raid_handler(self.existing, result)
         self.parent.refresh_model_inputs()
         self.parent.remove_overlay()
 

@@ -15,6 +15,10 @@
 import asyncio
 import concurrent.futures
 import logging
+from functools import partial
+from typing import Any, Awaitable, Callable
+
+from urwid import connect_signal
 
 log = logging.getLogger("subiquitycore.async_helpers")
 
@@ -45,9 +49,20 @@ def schedule_task(coro, propagate_errors=True):
 background_tasks = set()
 
 
-def run_bg_task(coro, *args, **kwargs) -> None:
+def connect_async_signal(
+    obj, name: str, callback: Callable[..., Awaitable[Any]], **kwargs
+):
+    connect_signal(obj, name, partial(_async_signal_callback, callback), **kwargs)
+
+
+def _async_signal_callback(callback, /, *args, **kwargs):
+    run_bg_task(callback(*args, **kwargs))
+
+
+# TODO add context=None when we move to core24.
+def run_bg_task(coro, name=None) -> None:
     """Run a background task in a fire-and-forget style."""
-    task = asyncio.create_task(coro, *args, **kwargs)
+    task = asyncio.create_task(coro, name=name)
     background_tasks.add(task)
     task.add_done_callback(background_tasks.discard)
 

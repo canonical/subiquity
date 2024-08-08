@@ -40,6 +40,7 @@ from subiquity.ui.mount import (
     common_mountpoints,
     suitable_mountpoints_for_existing_fs,
 )
+from subiquitycore.async_helpers import connect_async_signal, run_bg_task
 from subiquitycore.ui.container import Pile
 from subiquitycore.ui.form import (
     BooleanField,
@@ -539,7 +540,7 @@ class PartitionStretchy(Stretchy):
                 self.form.name.enabled = False
                 self.form.size.enabled = False
 
-        connect_signal(self.form, "submit", self.done)
+        connect_async_signal(self.form, "submit", self.done)
         connect_signal(self.form, "cancel", self.cancel)
 
         rows = []
@@ -619,7 +620,7 @@ class PartitionStretchy(Stretchy):
     def cancel(self, button=None):
         self.parent.remove_overlay()
 
-    def done(self, form):
+    async def done(self, form) -> None:
         log.debug("Add Partition Result: {}".format(form.as_data()))
         spec = form.as_data()
         if self.partition is not None and boot.is_esp(self.partition):
@@ -633,9 +634,12 @@ class PartitionStretchy(Stretchy):
             handler = self.controller.logical_volume_handler
         else:
             handler = self.controller.partition_disk_handler
-        handler(self.disk, spec, partition=self.partition, gap=self.gap)
+
+        await handler(self.disk, spec, partition=self.partition, gap=self.gap)
         self.parent.refresh_model_inputs()
         self.parent.remove_overlay()
+        # This should probably be moved somewhere else
+        self.parent.request_redraw_if_visible()
 
 
 class FormatEntireStretchy(Stretchy):
@@ -663,7 +667,7 @@ class FormatEntireStretchy(Stretchy):
         self.form.remove_field("size")
         self.form.remove_field("name")
 
-        connect_signal(self.form, "submit", self.done)
+        connect_async_signal(self.form, "submit", self.done)
         connect_signal(self.form, "cancel", self.cancel)
 
         rows = []
@@ -692,8 +696,13 @@ class FormatEntireStretchy(Stretchy):
     def cancel(self, button=None):
         self.parent.remove_overlay()
 
-    def done(self, form):
+    async def done(self, form):
         log.debug("Format Entire Result: {}".format(form.as_data()))
-        self.controller.add_format_handler(self.device, form.as_data())
-        self.parent.refresh_model_inputs()
-        self.parent.remove_overlay()
+
+        async def do_format() -> None:
+            await self.controller.add_format_handler(self.device, form.as_data())
+            self.parent.refresh_model_inputs()
+            self.parent.remove_overlay()
+            self.parent.request_redraw_if_visible()
+
+        run_bg_task(do_format())

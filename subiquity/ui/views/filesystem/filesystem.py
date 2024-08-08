@@ -19,6 +19,7 @@ Provides storage device selection and additional storage
 configuration.
 
 """
+import asyncio
 import logging
 
 import attr
@@ -27,6 +28,7 @@ from urwid import Text, connect_signal
 from subiquity.common.filesystem import boot, gaps, labels
 from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.models.filesystem import humanize_size
+from subiquitycore.async_helpers import connect_async_signal, run_bg_task
 from subiquitycore.ui.actionmenu import Action, ActionMenu, ActionMenuOpenButton
 from subiquitycore.ui.buttons import back_btn, done_btn, menu_btn, other_btn, reset_btn
 from subiquitycore.ui.container import ListBox, WidgetWrap
@@ -113,10 +115,10 @@ class MountList(WidgetWrap):
         )
         super().__init__(self.table)
 
-    def _mount_action(self, sender, action, mount):
+    async def _mount_action(self, mount, sender, action):
         log.debug("_mount_action %s %s", action, mount)
         if action == "unmount":
-            self.parent.controller.delete_mount(mount)
+            await self.parent.controller.delete_mount(mount)
             self.parent.refresh_model_inputs()
 
     def refresh_model_inputs(self):
@@ -168,7 +170,9 @@ class MountList(WidgetWrap):
                         ]
             actions = [(_("Unmount"), mi.mount.can_delete(), "unmount")]
             menu = ActionMenu(actions)
-            connect_signal(menu, "action", self._mount_action, mi.mount)
+            connect_async_signal(
+                menu, "action", self._mount_action, user_args=[mi.mount]
+            )
             cells = [
                 Text("["),
                 Text(path_markup),
@@ -274,12 +278,13 @@ class DeviceList(WidgetWrap):
         disk._constructed_device = None
         self.parent.refresh_model_inputs()
 
-    def _disk_TOGGLE_BOOT(self, disk):
+    async def _disk_TOGGLE_BOOT(self, disk):
         if boot.is_boot_device(disk):
-            self.parent.controller.remove_boot_disk(disk)
+            await self.parent.controller.remove_boot_disk(disk)
+            self.parent.refresh_model_inputs()
         else:
-            self.parent.controller.add_boot_disk(disk)
-        self.parent.refresh_model_inputs()
+            await self.parent.controller.add_boot_disk(disk)
+            self.parent.refresh_model_inputs()
 
     _partition_EDIT = _stretchy_shower(
         lambda parent, part: PartitionStretchy(parent, part.device, partition=part)
@@ -309,7 +314,9 @@ class DeviceList(WidgetWrap):
     def _action(self, sender, value, device):
         action, meth = value
         log.debug("_action %s %s", action, device.id)
-        meth(device)
+        maybe_coro = meth(device)
+        if asyncio.iscoroutine(maybe_coro):
+            run_bg_task(maybe_coro)
 
     def _label_REMOVE(self, action, device):
         cd = device.constructed_device()

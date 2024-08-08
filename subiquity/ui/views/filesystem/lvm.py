@@ -26,6 +26,7 @@ from subiquity.ui.views.filesystem.compound import (
     MultiDeviceField,
     get_possible_components,
 )
+from subiquitycore.async_helpers import connect_async_signal
 from subiquitycore.ui.container import Pile
 from subiquitycore.ui.form import (
     BooleanField,
@@ -203,7 +204,7 @@ class VolGroupStretchy(Stretchy):
         self.form.devices.widget.set_supports_spares(False)
 
         connect_signal(form.devices.widget, "change", self._change_devices)
-        connect_signal(form, "submit", self.done)
+        connect_async_signal(form, "submit", self.done)
         connect_signal(form, "cancel", self.cancel)
 
         rows = form.as_rows()
@@ -216,7 +217,7 @@ class VolGroupStretchy(Stretchy):
         else:
             self.form.size.value = "-"
 
-    def done(self, sender):
+    async def done(self, sender):
         result = self.form.as_data()
         del result["size"]
         mdc = self.form.devices.widget
@@ -236,7 +237,7 @@ class VolGroupStretchy(Stretchy):
         if "passphrase" in safe_result:
             safe_result["passphrase"] = "<REDACTED>"
         log.debug("vg_done: {}".format(safe_result))
-        self.parent.controller.volgroup_handler(self.existing, result)
+        await self.parent.controller.volgroup_handler(self.existing, result)
         self.parent.refresh_model_inputs()
         self.parent.remove_overlay()
 
