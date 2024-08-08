@@ -1103,6 +1103,15 @@ error-commands
 
 Shell commands to run after the installation has failed. They are run in the installer environment, and the target system (or as much of it as the installer managed to configure) is mounted at ``/target``. Logs will be available in :file:`/var/log/installer` in the live session.
 
+.. code-block:: yaml
+
+   autoinstall:
+     # Collect all of the logs in /var/log/installer
+     # Collect the live system journal too
+     error-commands:
+       - tar -czf /installer-logs.tar.gz /var/log/installer/
+       - journalctl -b > /installer-journal.log
+
 .. _ai-reporting:
 
 reporting
