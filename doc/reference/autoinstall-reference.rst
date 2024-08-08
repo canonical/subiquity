@@ -99,6 +99,22 @@ early-commands
 
 A list of shell commands to invoke as soon as the installer starts, in particular before probing for block and network devices. The autoinstall configuration is available at :file:`/autoinstall.yaml` (irrespective of how it was provided), and the file is re-read after the ``early-commands`` have run to allow them to alter the configuration if necessary.
 
+Example early commands:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # Pause the install just before starting to allow manual inspection/modification of the live system.
+     # Unpause by creating the "/run/finish-early" file.
+     early-commands:
+       - while [ ! -f /run/finish-early ]; do sleep 1; done
+
+   autoinstall:
+     # Replace the current autoinstall configuration with one provided by a trusted server
+     early-commands:
+       - wget -O /autoinstall.yaml $TRUSTED_SERVER_URL
+
+
 .. _ai-locale:
 
 locale
