@@ -377,7 +377,15 @@ class GuidedDiskSelectionView(BaseView):
                 )
             )
         else:
-            super().__init__(screen([Text(rewrap(_(no_disks)))], []))
+            super().__init__(
+                screen(
+                    [Text(rewrap(_(no_disks)))],
+                    [
+                        other_btn(_("Back"), on_press=self.cancel),
+                        other_btn(_("Refresh"), on_press=self.refresh),
+                    ],
+                )
+            )
 
     def local_help(self):
         return (_("Help on guided storage configuration"), rewrap(_(HELP)))
@@ -437,6 +445,9 @@ class GuidedDiskSelectionView(BaseView):
                 capability=GuidedCapability.MANUAL,
             )
         )
+
+    def refresh(self, sender):
+        self.controller.guided()
 
     def cancel(self, btn=None):
         self.controller.cancel()
