@@ -48,7 +48,7 @@ class SnapChannelSource(enum.Enum):
 class RefreshController(SubiquityController):
     endpoint = API.refresh
 
-    autoinstall_key = "refresh-installer"
+    autoinstall_key = model_name = "refresh-installer"
     autoinstall_schema = {
         "type": "object",
         "properties": {

@@ -80,6 +80,7 @@ log = logging.getLogger("subiquity.server.server")
 class MetaController:
     def __init__(self, app):
         self.app = app
+        self.name = "meta"
         self.context = app.context.child("Meta")
         self.free_only = False
 
@@ -198,27 +199,30 @@ INSTALL_MODEL_NAMES = ModelNames(
     {
         "debconf_selections",
         "filesystem",
-        "kernel",
-        "keyboard",
-        "source",
     },
-    desktop={"network"},
-    server={"mirror", "network", "proxy"},
+    core=set(),
+    desktop={"network", "kernel", "keyboard", "source"},
+    server={"mirror", "network", "proxy", "kernel", "keyboard", "source"},
 )
 
 POSTINSTALL_MODEL_NAMES = ModelNames(
     {
-        "drivers",
-        "identity",
         "locale",
         "packages",
-        "snaplist",
-        "ssh",
-        "ubuntu_pro",
         "userdata",
     },
-    desktop={"timezone", "codecs", "active_directory", "network"},
-    server={"network"},
+    core=set(),
+    desktop={
+        "timezone",
+        "codecs",
+        "active_directory",
+        "network",
+        "drivers",
+        "identity",
+        "snaplist",
+        "ubuntu_pro",
+    },
+    server={"network", "drivers", "identity", "snaplist", "ubuntu_pro", "ssh"},
 )
 
 
@@ -280,7 +284,7 @@ class SubiquityServer(Application):
         "Shutdown",
     ]
 
-    supported_variants = ["server", "desktop"]
+    supported_variants = ["server", "desktop", "core"]
 
     def make_model(self):
         root = "/"
