@@ -612,6 +612,16 @@ class _Device(_Formattable, ABC):
     def size(self):
         pass
 
+    @property
+    @abstractmethod
+    def sort_key(self) -> Tuple:
+        """return a value that is usable for sorting.  The intent here is
+        that two runs of a specific version of subiquity must produce an
+        identical sort result for _Devices, so that while Subiquity might make
+        an arbitrary choice of disk, it's a consistent arbitrary choice.
+        """
+        pass
+
     # [Partition]
     _partitions: List["Partition"] = attributes.backlink(default=attr.Factory(list))
 
@@ -733,6 +743,10 @@ class Disk(_Device):
 
     _info: StorageInfo = attributes.for_api()
     _has_in_use_partition: bool = attributes.for_api(default=False)
+
+    @property
+    def sort_key(self) -> int:
+        return (self.wwn, self.serial, self.path)
 
     @property
     def available_for_partitions(self):
@@ -875,6 +889,10 @@ class Partition(_Formattable):
                 return
         raise Exception("Exceeded number of available partitions")
 
+    @property
+    def sort_key(self) -> int:
+        return (self.device.sort_key(), self.number)
+
     def available(self):
         if self.flag in ["bios_grub", "prep"] or self.grub_device:
             return False
@@ -960,6 +978,10 @@ class Raid(_Device):
     )
     _info: Optional[StorageInfo] = attributes.for_api(default=None)
     _has_in_use_partition = False
+
+    @property
+    def sort_key(self) -> int:
+        return tuple([dev.sort_key for dev in raid_device_sort(self.devices)])
 
     def serialize_devices(self):
         # Surprisingly, the order of devices passed to mdadm --create
@@ -1055,6 +1077,10 @@ class LVM_VolGroup(_Device):
     def size(self):
         # Should probably query actual size somehow for an existing VG!
         return get_lvm_size(self.devices)
+
+    @property
+    def sort_key(self) -> int:
+        return tuple([dev.sort_key for dev in self.devices])
 
     @property
     def available_for_partitions(self):
@@ -1218,6 +1244,10 @@ class ArbitraryDevice(_Device):
     @property
     def size(self):
         return 0
+
+    @property
+    def sort_key(self) -> int:
+        return (self.path,)
 
     ok_for_raid = False
     ok_for_lvm_vg = False
@@ -1650,6 +1680,13 @@ class FilesystemModel:
         return matchers
 
     def _sorted_matches(self, disks: Sequence[_Device], match: dict):
+        # sort first on the sort_key.  Objective here is that if we are falling
+        # back to arbitrary disk selection, we're at least consistent in what
+        # disk we arbitrarily select across runs
+        disks.sort(key=lambda d: d.sort_key)
+
+        # then sort on size, if requested.  Thanks to stable sort, if disks
+        # (or raids) have the same size, the sort_key will tiebreak.
         if match.get("size") == "smallest":
             disks.sort(key=lambda d: d.size)
         elif match.get("size") == "largest":
