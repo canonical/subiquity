@@ -1042,6 +1042,18 @@ timezone
 
 The timezone to configure on the system. The special value ``geoip`` can be used to query the timezone automatically over the network.
 
+timezone examples:
+
+.. code-block:: yaml
+
+   autoinstall:
+      # Default behaviour
+      timezone: "geoip"
+
+   autoinstall:
+      # Configure explicitly
+      timezone: "Europe/London"
+
 .. _ai-updates:
 
 updates
