@@ -252,6 +252,14 @@ class TuiApplication(Application):
             self.ui.set_body(view)
 
     async def redraw_screen(self):
+        if self.urwid_loop is None:
+            # This should only happen very early on ; but there is probably no
+            # point calling redraw_screen that early, right?
+            return
+        if not self.urwid_loop.screen.started:
+            # This can happen if a foreground process (e.g., bash debug shell)
+            # is running or if the installer is shutting down.
+            return
         self.urwid_loop.draw_screen()
 
     async def next_screen(self, coro=None):

@@ -370,6 +370,7 @@ class SubiquityClient(TuiApplication):
                 )
             if not status.cloud_init_ok:
                 self.add_global_overlay(CloudInitFail(self))
+                run_bg_task(self.redraw_screen())
             self.error_reporter.load_reports()
             for report in self.error_reporter.reports:
                 if report.kind == ErrorReportKind.UI and not report.seen:
@@ -571,7 +572,7 @@ class SubiquityClient(TuiApplication):
             if not self.ui.right_icon.current_help:
                 self.ui.right_icon.open_pop_up()
         elif key in ["ctrl z", "f2"]:
-            self.debug_shell()
+            self.request_debug_shell()
         elif self.opts.dry_run:
             self.unhandled_input_dry_run(key)
         else:
@@ -603,6 +604,14 @@ class SubiquityClient(TuiApplication):
         await self.run_command_in_foreground(
             cmd, env=env, before_hook=_before, after_hook=after_hook, cwd="/"
         )
+
+    def request_debug_shell(self, after_hook=None, *, redraw=True) -> None:
+        async def debug_shell_and_redraw():
+            await self.debug_shell(after_hook)
+            if redraw:
+                await self.redraw_screen()
+
+        run_bg_task(debug_shell_and_redraw())
 
     def note_file_for_apport(self, key, path):
         self.error_reporter.note_file_for_apport(key, path)

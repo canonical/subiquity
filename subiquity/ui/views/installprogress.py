@@ -326,4 +326,4 @@ class InstallRunning(Stretchy):
         self.btn.enabled = True
 
     def _debug_shell(self, sender):
-        self.app.debug_shell()
+        self.app.request_debug_shell()
