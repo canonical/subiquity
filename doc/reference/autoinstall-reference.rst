@@ -110,6 +110,18 @@ locale
 
 The locale to configure for the installed system.
 
+locale examples:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # default behavior
+     locale: "en_US.UTF-8"
+
+   autoinstall:
+     # Greek locale
+     locale: "el_GR"
+
 .. _ai-refresh-installer:
 
 refresh-installer
