@@ -209,9 +209,11 @@ def make_model_and_partition(bootloader=None):
     return model, make_partition(model, disk)
 
 
-def make_raid(model, **kw):
+def make_raid(model, disks=None, **kw):
     name = "md%s" % len(model._actions)
-    r = model.add_raid(name, "raid1", {make_disk(model), make_disk(model)}, set())
+    if disks is None:
+        disks = {make_disk(model), make_disk(model)}
+    r = model.add_raid(name, "raid1", disks, set())
     size = r.size
     for k, v in kw.items():
         setattr(r, k, v)
