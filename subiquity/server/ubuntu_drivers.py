@@ -16,12 +16,16 @@
 """ Module that defines helpers to use the ubuntu-drivers command. """
 
 import logging
+import os
 import subprocess
 from abc import ABC, abstractmethod
 from typing import List, Type
 
+import yaml
+
 from subiquity.server.curtin import run_curtin_command
-from subiquitycore.utils import arun_command
+from subiquitycore.file_util import copy_file_if_exists, write_file
+from subiquitycore.utils import arun_command, system_scripts_env
 
 log = logging.getLogger("subiquity.server.ubuntu_drivers")
 
@@ -168,6 +172,129 @@ class UbuntuDriversClientInterface(UbuntuDriversInterface):
         return self._oem_metapackages_from_output(result.stdout.decode("utf-8"))
 
 
+class UbuntuDriversFakePCIDevicesInterface(UbuntuDriversInterface):
+    """An implementation of ubuntu-drivers that wraps the calls with
+    the umockdev wrapper script.
+
+
+    Requires an online install to download umockdev packages or
+    a modified ISOs with the packages added to the pool.
+    """
+
+    def __init__(self, app, gpgpu: bool) -> None:
+        super().__init__(app, gpgpu)
+
+        # Default config. A broadcom wireless device.
+        self.dev_config = {
+            "devices": [
+                {
+                    "modalias": "pci:v000014E4d00004353sv00sd01bc02sc80i00",
+                    "vendor": "0x14E4",
+                    "device": "0x4353",
+                }
+            ]
+        }
+
+        self.dev_config_path = "/tmp/umockdev_config.yaml"
+
+        # write config to live environment
+        write_file(self.dev_config_path, yaml.safe_dump(self.dev_config), mode=0o777)
+
+        prefix: list[str] = [
+            "subiquity-umockdev-wrapper",  # vendored in system_scripts
+            "--config",
+            f"{self.dev_config_path}",
+            "--",  # Don't let wrapper consume ubuntu-drivers feature flags
+        ]
+
+        self.sys_env = system_scripts_env()
+
+        self.pre_req_cmd = ["apt", "install", "-y", "umockdev", "gir1.2-umockdev-1.0"]
+
+        self.list_drivers_cmd = prefix + self.list_drivers_cmd
+        self.list_oem_cmd = prefix + self.list_oem_cmd
+        self.install_drivers_cmd = prefix + self.install_drivers_cmd
+
+    async def ensure_cmd_exists(self, root_dir: str) -> None:
+        # TODO This does not tell us if the "--recommended" option is
+        # available.
+        try:
+            await arun_command(["sh", "-c", "command -v ubuntu-drivers"], check=True)
+        except subprocess.CalledProcessError:
+            raise CommandNotFoundError(
+                f"Command ubuntu-drivers is not available in {root_dir}"
+            )
+        # Install wrapper script prerequisites on live system
+        try:
+            await arun_command(self.pre_req_cmd, check=True)
+        except subprocess.CalledProcessError as err:
+            log.debug(f"ensure_cmd retuned with exit code {err.returncode}")
+            log.debug(f"ensure_cmd stdout: {err.stdout}")
+            log.debug(f"ensure_cmd stderr: {err.stderr}")
+            raise Exception("Installing umockdev failed. Quitting early.")
+
+    async def list_drivers(self, root_dir: str, context) -> List[str]:
+        result = await arun_command(self.list_drivers_cmd, env=self.sys_env)
+        return self._drivers_from_output(result.stdout)
+
+    async def list_oem(self, root_dir: str, context) -> List[str]:
+        result = await arun_command(self.list_oem_cmd, env=self.sys_env)
+        return self._oem_metapackages_from_output(result.stdout)
+
+    def _get_wrapper_path(self) -> str | None:
+        # Find subiquity-umockdev-wrapper on live system
+        base_paths: list[str] = self.sys_env["PATH"].split(":")
+        script_path: str | None = None
+
+        log.debug(f"Looking in {base_paths}")
+        for b in base_paths:
+            test_path = f"{b}/subiquity-umockdev-wrapper"
+            log.debug(f"looking for {test_path=}")
+            if os.path.isfile(test_path):
+                script_path = test_path
+                break
+
+        log.debug(f"found {script_path=}")
+
+        return script_path
+
+    async def install_drivers(self, root_dir: str, context) -> None:
+        # Copy config from live system, allowing changes made to the config
+        # after it has been written to persist.
+        copy_file_if_exists(
+            self.dev_config_path,
+            f"{root_dir}/{self.dev_config_path}",
+        )
+
+        # Copy wrapper script to target system
+        # The "find and copy to /target/usr/bin" strategy is to get around
+        # messing with $PATH on curtin in-target commands. When, or if, a more
+        # standard way to run commands inside the target environment comes
+        # along this should be converted to conform.
+        wrapper_script_source: str | None = self._get_wrapper_path()
+        if wrapper_script_source is None:
+            raise Exception("Couldn't find path to subiquity-umockdev-wrapper")
+
+        wrapper_script_dest: str = f"{root_dir}/usr/bin/subiquity-umockdev-wrapper"
+        copy_file_if_exists(wrapper_script_source, wrapper_script_dest)
+        os.chmod(wrapper_script_dest, 0o777)  # Make sure it's executable
+
+        # Install wrapper script pre-reqs on target
+        await run_curtin_command(
+            self.app,
+            context,
+            "in-target",
+            "-t",
+            root_dir,
+            "--",
+            *self.pre_req_cmd,
+            private_mounts=True,
+        )
+
+        # Finally call the wrapped install
+        await super().install_drivers(root_dir, context)
+
+
 class UbuntuDriversHasDriversInterface(UbuntuDriversInterface):
     """A dry-run implementation of ubuntu-drivers that returns a hard-coded
     list of drivers."""
@@ -261,5 +388,15 @@ def get_ubuntu_drivers_interface(app) -> UbuntuDriversInterface:
             cls = UbuntuDriversRunDriversInterface
         else:
             cls = UbuntuDriversHasDriversInterface
+
+    if "subiquity-fake-pci-devices" in app.opts.kernel_cmdline:
+        log.debug("Using umockdev wrapper")
+        cls = UbuntuDriversFakePCIDevicesInterface
+
+    # For quickly testing MOK enrollment we install on server and force no gpgpu
+    # The caveat to this is that it also has to be an online install
+    if "subiquity-server-force-no-gpgpu" in app.opts.kernel_cmdline:
+        log.debug("Forcing no gpgpu drivers. Requires online install on server.")
+        is_server = False
 
     return cls(app, gpgpu=is_server)
