@@ -1073,6 +1073,25 @@ late-commands
 Shell commands to run after the installation has completed successfully and any updates and packages installed, just before the system reboots. The commands are run in the installer environment with the installed system mounted at ``/target``. You can run ``curtin in-target -- $shell_command`` (with the version of Subiquity
 released with 20.04 GA, you need to specify this as ``curtin in-target --target=/target -- $shell_command``) to run in the target system (similar to how plain ``in-target`` can be used in ``d-i preseed/late_command``).
 
+
+Example late commands:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # Pause the install just before finishing to allow manual inspection/modification.
+     # Unpause by creating the "/run/finish-late" file.
+     late-commands:
+       - while [ ! -f /run/finish-late ]; do sleep 1; done
+
+   autoinstall:
+     # Install additional packages on the target system and run some custom scripts.
+     late-commands:
+       - curtin in-target -- apt-get update
+       - curtin in-target -- apt-get install -y curl vim
+       - curtin in-target -- curl -o /tmp/my-script.sh $script_url
+       - curtin in-target -- /bin/sh /tmp/my-script.sh
+
 .. _ai-error-commands:
 
 error-commands
