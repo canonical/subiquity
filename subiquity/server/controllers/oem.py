@@ -21,9 +21,9 @@ from subiquity.common.apidef import API
 from subiquity.common.types import OEMResponse
 from subiquity.models.oem import OEMMetaPkg
 from subiquity.server.apt import OverlayCleanupError
+from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.curtin import run_curtin_command
-from subiquity.server.kernel import flavor_to_pkgname
 from subiquity.server.types import InstallerChannels
 from subiquity.server.ubuntu_drivers import (
     CommandNotFoundError,
@@ -183,10 +183,7 @@ class OEMController(SubiquityController):
         for pkg in self.model.metapkgs:
             if pkg.wants_oem_kernel:
                 kernel_model = self.app.base_model.kernel
-                kernel_model.metapkg_name_override = flavor_to_pkgname(
-                    pkg.name, dry_run=self.app.opts.dry_run
-                )
-
+                kernel_model.metapkg_name_override = pkg.name
                 log.debug("overriding kernel flavor because of OEM")
 
         log.debug("OEM meta-packages to install: %s", self.model.metapkgs)
@@ -196,13 +193,19 @@ class OEMController(SubiquityController):
 
         await self.kernel_configured_event.wait()
 
-        if self.model.metapkgs and kernel_model.explicitly_requested:
-            # TODO
-            # This should be a dialog or something rather than the content of
-            # an exception, really. But this is a simple way to print out
-            # something in autoinstall.
-            msg = _(
-                """\
+        if self.model.metapkgs:
+            for metapkg in self.model.metapkgs:
+                if kernel_model.metapkg_name == metapkg.name:
+                    # The below check handles conflicts with autoinstall / oem
+                    # kernel requirements, but if they're asking for the same
+                    # thing, there is no conflict.  We look at the raw
+                    # metapkg_name and not needed_kernel because we want the
+                    # autoinstall value if it's there, not the overridden value
+                    # set by the OEM code.
+                    return
+            if kernel_model.explicitly_requested:
+                msg = _(
+                    """\
 A specific kernel flavor was requested but it cannot be satistified when \
 installing on certified hardware.
 You should either disable the installation of OEM meta-packages using the \
@@ -211,8 +214,8 @@ install.
   oem:
     install: false
 """
-            )
-            raise RuntimeError(msg)
+                )
+                raise AutoinstallError(msg)
 
     @with_context()
     async def apply_autoinstall_config(self, context) -> None:
