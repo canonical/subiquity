@@ -56,9 +56,7 @@ class FilesystemManipulator:
     def create_mount(self, fs, spec: FileSystemSpec):
         if spec.get("mount") is None:
             return
-        mount = self.model.add_mount(
-            fs, spec["mount"], on_remote_storage=spec.get("on-remote-storage", False)
-        )
+        mount = self.model.add_mount(fs, spec["mount"])
         if self.model.needs_bootloader_partition():
             vol = fs.volume
             if vol.type == "partition" and boot.can_be_boot_device(vol.device):
@@ -290,9 +288,6 @@ class FilesystemManipulator:
     ):
         log.debug("partition_disk_handler: %s %s %s %s", disk, spec, partition, gap)
 
-        if disk.on_remote_storage():
-            spec["on-remote-storage"] = True
-
         if partition is not None:
             if "size" in spec and spec["size"] != partition.size:
                 trailing, gap_size = gaps.movable_trailing_partitions_and_gap_size(
@@ -346,9 +341,6 @@ class FilesystemManipulator:
         lv = partition
 
         log.debug("logical_volume_handler: %s %s %s", vg, lv, spec)
-
-        if vg.on_remote_storage():
-            spec["on-remote-storage"] = True
 
         if lv is not None:
             if "name" in spec:

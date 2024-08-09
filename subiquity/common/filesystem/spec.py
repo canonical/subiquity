@@ -64,7 +64,6 @@ FileSystemSpec = TypedDict(
         "mount": str | None,
         "wipe": str | None,  # NOTE: no wipe is different from wipe=None
         "use_swap": bool,
-        "on-remote-storage": bool,
     },
     total=False,
 )
