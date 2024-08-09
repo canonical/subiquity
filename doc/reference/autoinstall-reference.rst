@@ -894,6 +894,21 @@ install
 
 Whether to install the ``ubuntu-restricted-addons`` package.
 
+Examples:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # default behaviour
+     codecs:
+       install: false
+
+   autoinstall:
+     # install codecs, which currently means installing the
+     # ubuntu-restricted-addons package
+     codecs:
+       install: true
+
 .. _ai-drivers:
 
 drivers
@@ -911,6 +926,20 @@ install
 
 Whether to install the available third-party drivers.
 
+Examples:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # default behaviour
+     drivers:
+       install: false
+
+   autoinstall:
+     # install drivers as suggested by `ubuntu-drivers`.
+     drivers:
+       install: true
+
 .. _ai-oem:
 
 oem
@@ -927,6 +956,29 @@ install
 * **default:**: ``auto``
 
 Whether to install the available OEM meta-packages. The special value ``auto`` -- which is the default -- enables the installation on Ubuntu Desktop but not on Ubuntu Server. This option has no effect on core boot classic.
+
+As installing an OEM meta-package can result in installing a certain kernel, specifying both a kernel with :ref:`ai-kernel` and also specifying ``oem.install: true`` may lead to an install failure due to conflicting kernel requirements.  When using oem.install, it is recommended to not specify a kernel.
+
+Examples:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # default behaviour
+     oem:
+       install: auto
+
+   autoinstall:
+     # Install OEM meta-packages as suggested by ubuntu-drivers.
+     # On some hardware, this changes what kernel is installed.
+     oem:
+       install: true
+
+   autoinstall:
+     # Disable OEM meta-package automatic installation, even if suggested to do
+     # so by ubuntu-drivers
+     oem:
+       install: false
 
 .. _ai-snaps:
 
@@ -1030,10 +1082,22 @@ updates
 * **default:** ``security``
 * **can be interactive:** no
 
-The type of updates that will be downloaded and installed after the system installation. Supported values are:
+The type of updates that will be downloaded and installed after the system installation, and before rebooting into the target system. Supported values are:
 
 * ``security``: download and install updates from the ``-security`` pocket.
 * ``all``: also download and install updates from the ``-updates`` pocket.
+
+Examples:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # default behaviour.  Updates from the security pocket are installed.
+     updates: security
+
+   autoinstall:
+     # Updates from both the security and updates pockets are installed.
+     updates: all
 
 .. _ai-shutdown:
 
