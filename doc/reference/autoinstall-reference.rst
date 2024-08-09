@@ -99,6 +99,22 @@ early-commands
 
 A list of shell commands to invoke as soon as the installer starts, in particular before probing for block and network devices. The autoinstall configuration is available at :file:`/autoinstall.yaml` (irrespective of how it was provided), and the file is re-read after the ``early-commands`` have run to allow them to alter the configuration if necessary.
 
+Example early commands:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # Pause the install just before starting to allow manual inspection/modification of the live system.
+     # Unpause by creating the "/run/finish-early" file.
+     early-commands:
+       - while [ ! -f /run/finish-early ]; do sleep 1; done
+
+   autoinstall:
+     # Replace the current autoinstall configuration with one provided by a trusted server
+     early-commands:
+       - wget -O /autoinstall.yaml $TRUSTED_SERVER_URL
+
+
 .. _ai-locale:
 
 locale
@@ -1057,6 +1073,25 @@ late-commands
 Shell commands to run after the installation has completed successfully and any updates and packages installed, just before the system reboots. The commands are run in the installer environment with the installed system mounted at ``/target``. You can run ``curtin in-target -- $shell_command`` (with the version of Subiquity
 released with 20.04 GA, you need to specify this as ``curtin in-target --target=/target -- $shell_command``) to run in the target system (similar to how plain ``in-target`` can be used in ``d-i preseed/late_command``).
 
+
+Example late commands:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # Pause the install just before finishing to allow manual inspection/modification.
+     # Unpause by creating the "/run/finish-late" file.
+     late-commands:
+       - while [ ! -f /run/finish-late ]; do sleep 1; done
+
+   autoinstall:
+     # Install additional packages on the target system and run some custom scripts.
+     late-commands:
+       - curtin in-target -- apt-get update
+       - curtin in-target -- apt-get install -y curl vim
+       - curtin in-target -- curl -o /tmp/my-script.sh $script_url
+       - curtin in-target -- /bin/sh /tmp/my-script.sh
+
 .. _ai-error-commands:
 
 error-commands
@@ -1067,6 +1102,15 @@ error-commands
 * **can be interactive:** no
 
 Shell commands to run after the installation has failed. They are run in the installer environment, and the target system (or as much of it as the installer managed to configure) is mounted at ``/target``. Logs will be available in :file:`/var/log/installer` in the live session.
+
+.. code-block:: yaml
+
+   autoinstall:
+     # Collect all of the logs in /var/log/installer
+     # Collect the live system journal too
+     error-commands:
+       - tar -czf /installer-logs.tar.gz /var/log/installer/
+       - journalctl -b > /installer-journal.log
 
 .. _ai-reporting:
 
