@@ -209,9 +209,11 @@ def make_model_and_partition(bootloader=None):
     return model, make_partition(model, disk)
 
 
-def make_raid(model, **kw):
+def make_raid(model, disks=None, **kw):
     name = "md%s" % len(model._actions)
-    r = model.add_raid(name, "raid1", {make_disk(model), make_disk(model)}, set())
+    if disks is None:
+        disks = {make_disk(model), make_disk(model)}
+    r = model.add_raid(name, "raid1", disks, set())
     size = r.size
     for k, v in kw.items():
         setattr(r, k, v)
@@ -1860,17 +1862,23 @@ class TestOnRemoteStorage(SubiTestCase):
 
 
 class TestDiskForMatch(SubiTestCase):
+    match_sort_criteria = (["smallest"], ["largest"])
+
     def test_empty_match_directive(self):
         m = make_model()
         d1 = make_disk(m)
         d2 = make_disk(m)
+
+        # this test relies heavily on the assumptions in make_disk
         actual = m.disk_for_match([d1, d2], {})
+        self.assertEqual(d1, actual)
+        actual = m.disk_for_match([d2, d1], {})
         self.assertEqual(d1, actual)
 
     def test_sort_largest(self):
         m = make_model()
-        d100 = make_disk(m, size=100 << 30)
-        d200 = make_disk(m, size=200 << 30)
+        d100 = make_disk(m, size=100 << 30, serial="s1", path="/dev/d1")
+        d200 = make_disk(m, size=200 << 30, serial="s2", path="/dev/d2")
         actual = m.disk_for_match([d100, d200], {"size": "largest"})
         self.assertEqual(d200, actual)
 
@@ -1880,6 +1888,79 @@ class TestDiskForMatch(SubiTestCase):
         d100 = make_disk(m, size=100 << 30)
         actual = m.disk_for_match([d200, d100], {"size": "smallest"})
         self.assertEqual(d100, actual)
+
+    @parameterized.expand(match_sort_criteria)
+    def test_sort_serial(self, sort_criteria: str):
+        m = make_model()
+        d1 = make_disk(m, serial="s1", path=None, wwn=None)
+        d2 = make_disk(m, serial="s2", path=None, wwn=None)
+        # while the size sort is reversed when doing largest,
+        # we pre-sort on the other criteria, and stable sort helps out
+        actual = m.disk_for_match([d2, d1], {"size": sort_criteria})
+        self.assertEqual(d1, actual)
+
+    @parameterized.expand(match_sort_criteria)
+    def test_sort_path(self, sort_criteria: str):
+        m = make_model()
+        d1 = make_disk(m, serial=None, path="/dev/d1", wwn=None)
+        d2 = make_disk(m, serial=None, path="/dev/d2", wwn=None)
+        actual = m.disk_for_match([d2, d1], {"size": sort_criteria})
+        self.assertEqual(d1, actual)
+
+    @parameterized.expand(match_sort_criteria)
+    def test_sort_wwn(self, sort_criteria: str):
+        m = make_model()
+        d1 = make_disk(m, serial=None, path=None, wwn="w1")
+        d2 = make_disk(m, serial=None, path=None, wwn="w2")
+        actual = m.disk_for_match([d2, d1], {"size": sort_criteria})
+        self.assertEqual(d1, actual)
+
+    @parameterized.expand(match_sort_criteria)
+    def test_sort_wwn_wins(self, sort_criteria: str):
+        m = make_model()
+        d1 = make_disk(m, serial="s2", path="/dev/d2", wwn="w1")
+        d2 = make_disk(m, serial="s1", path="/dev/d1", wwn="w2")
+        actual = m.disk_for_match([d2, d1], {"size": sort_criteria})
+        self.assertEqual(d1, actual)
+
+    @parameterized.expand(match_sort_criteria)
+    def test_sort_serial_wins(self, sort_criteria: str):
+        m = make_model()
+        d1 = make_disk(m, serial="s1", path="/dev/d2", wwn="w")
+        d2 = make_disk(m, serial="s2", path="/dev/d1", wwn="w")
+        actual = m.disk_for_match([d2, d1], {"size": sort_criteria})
+        self.assertEqual(d1, actual)
+
+    @parameterized.expand(match_sort_criteria)
+    def test_sort_path_wins(self, sort_criteria: str):
+        m = make_model()
+        d1 = make_disk(m, serial="s", path="/dev/d1", wwn="w")
+        d2 = make_disk(m, serial="s", path="/dev/d2", wwn="w")
+        actual = m.disk_for_match([d2, d1], {"size": sort_criteria})
+        self.assertEqual(d1, actual)
+
+    def test_sort_raid(self):
+        m = make_model()
+        d1_1 = make_disk(m, size=100 << 30)
+        d1_2 = make_disk(m, size=100 << 30)
+        d2_1 = make_disk(m, size=200 << 30)
+        d2_2 = make_disk(m, size=200 << 30)
+        r1 = make_raid(m, disks={d1_1, d1_2})
+        r2 = make_raid(m, disks={d2_1, d2_2})
+        actual = m.disk_for_match([r1, r2], {"size": "largest"})
+        self.assertEqual(r2, actual)
+
+    @parameterized.expand(match_sort_criteria)
+    def test_sort_raid_on_disks(self, sort_criteria: str):
+        m = make_model()
+        d1_1 = make_disk(m, serial=None, path=None, wwn="w1_1")
+        d1_2 = make_disk(m, serial=None, path=None, wwn="w1_2")
+        d2_1 = make_disk(m, serial=None, path=None, wwn="w2_1")
+        d2_2 = make_disk(m, serial=None, path=None, wwn="w2_2")
+        r1 = make_raid(m, disks={d1_1, d1_2})
+        r2 = make_raid(m, disks={d2_1, d2_2})
+        actual = m.disk_for_match([r1, r2], {"size": sort_criteria})
+        self.assertEqual(r1, actual)
 
     def test_skip_empty(self):
         m = make_model()
