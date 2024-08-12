@@ -815,6 +815,16 @@ token
 
 A contract token to attach to an existing Ubuntu Pro subscription.
 
+Example:
+
+.. code-block:: yaml
+
+   autoinstall:
+     ubuntu-pro:
+       # Enable Ubuntu-Pro using a contract token
+       # Note that the example below is an invalid contract token.
+       token: C1NWcZTHLteJXGVMM6YhvHDpGrhyy7
+
 .. _ai-ssh:
 
 ssh
