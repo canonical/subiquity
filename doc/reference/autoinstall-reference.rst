@@ -958,6 +958,16 @@ debconf-selections
 
 The installer updates the target with debconf ``set-selection`` values. Users need to be familiar with the options of the ``debconf`` package.
 
+Example:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # Disable SSH root login and start the ufw firewall automatically
+     debconf-selections: |
+       openssh-server openssh-server/permit-root-login boolean false
+       ufw ufw/enable boolean true
+
 .. _ai-packages:
 
 packages
