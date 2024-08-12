@@ -798,6 +798,16 @@ domain-name
 
 The Active Directory domain to join.
 
+Example:
+
+.. code-block:: yaml
+
+   autoinstall:
+     active-directory:
+       # Join the Active Directory domain as user "$ubuntu"
+       admin-name: $ubuntu
+       domain-name: ad.ubuntu.com
+
 .. _ai-ubuntu-pro:
 
 ubuntu-pro
