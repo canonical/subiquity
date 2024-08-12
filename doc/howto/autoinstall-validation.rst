@@ -5,11 +5,7 @@ Autoinstall Validation
 
 The following how-to guide demonstrates how to perform pre-validation of a autoinstall config.
 
-Autoinstall config is validated against a :doc:`JSON schema <../reference/autoinstall-schema>` during runtime before it is applied. This check ensures existence of required keys and their data types, but does not guarantee the validity of the data provided (e.g., a bad :ref:`match directive <disk_selection_extensions>`). Additionally, the following validation script is unable to replicate some of the cloud-config based :ref:`delivery checks <how_the_delivery_is_verified>`. There are some basic checks performed to catch simple delivery-related errors, which you can read more about in the examples section, but the focus of the validation is on the Autoinstall configuration *after* it has been delivered to the installer.
-
-.. note::
-   See the cloud-init documentation for `how to validate your cloud-config`_.
-
+Autoinstall config is validated against a :doc:`JSON schema <../reference/autoinstall-schema>` during runtime before it is applied. This check ensures existence of required keys and their data types, but does not guarantee total validity of the data provided (see the :ref:`Validator Limitations<validator-limitations>` section for more details).
 
 Pre-validating the Autoinstall configuration
 --------------------------------------------
@@ -86,6 +82,25 @@ If you want to validate autoinstall configurations which will be delivered via t
       # autoinstall directives
 
 then this can be signalled by passing the ``--no-expect-cloudconfig`` flag. Both formats in this delivery method, with or without a top-level ``autoinstall`` keyword, are supported in this mode.
+
+.. _validator-limitations:
+
+Validator Limitations
+---------------------
+
+The autoinstall validator currently has the following limitations:
+
+1. The validator makes an assumption about the target installation media that may not necessarily be true about the actual installation media. It assumes that (1) the installation target is ubuntu-server and (2) the only valid install source is :code:`synthesized`. Some cases where this would cause the validator fail otherwise correct autoinstall configurations:
+
+   a. Missing both an :code:`identity` and :code:`user-data` section for a Desktop target, where these sections are fully optional.
+   b. A :code:`source` section which specifies any :code:`id` other than :code:`synthesized`, where the :code:`id` may really match a valid source on the target ISO.
+
+2. Validity of the data provided in each section is not guaranteed as some sections cannot be reasonably validated outside of the installation runtime environment (e.g., a bad :ref:`match directive <disk_selection_extensions>`).
+
+3. The validator is unable to replicate some of the cloud-config based :ref:`delivery checks <how_the_delivery_is_verified>`. There are some basic checks performed to catch simple delivery-related errors, which you can read more about in the examples section, but the focus of the validation is on the Autoinstall configuration *after* it has been delivered to the installer.
+
+.. note::
+   See the cloud-init documentation for `how to validate your cloud-config`_.
 
 
 ------------
