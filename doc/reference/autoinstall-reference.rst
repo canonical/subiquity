@@ -989,6 +989,17 @@ packages
 
 A list of packages to install into the target system. Specifically, a list of strings to pass to the :command:`apt-get install` command. Therefore, this includes things such as task selection (``dns-server^``) and installing particular versions of a package (``my-package=1-1``).
 
+Example:
+
+.. code-block:: yaml
+
+  autoinstall:
+    packages:
+      # Install ipython3 and git, and ensure they are marked as manually
+      # installed.
+      - ipython3
+      - git
+
 .. _ai-kernel:
 
 kernel
