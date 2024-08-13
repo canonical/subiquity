@@ -798,6 +798,16 @@ domain-name
 
 The Active Directory domain to join.
 
+Example:
+
+.. code-block:: yaml
+
+   autoinstall:
+     active-directory:
+       # Join the Active Directory domain as user "$ubuntu"
+       admin-name: $ubuntu
+       domain-name: ad.ubuntu.com
+
 .. _ai-ubuntu-pro:
 
 ubuntu-pro
@@ -814,6 +824,16 @@ token
 * **default:** no token
 
 A contract token to attach to an existing Ubuntu Pro subscription.
+
+Example:
+
+.. code-block:: yaml
+
+   autoinstall:
+     ubuntu-pro:
+       # Enable Ubuntu-Pro using a contract token
+       # Note that the example below is an invalid contract token.
+       token: C1NWcZTHLteJXGVMM6YhvHDpGrhyy7
 
 .. _ai-ssh:
 
@@ -1010,6 +1030,16 @@ debconf-selections
 
 The installer updates the target with debconf ``set-selection`` values. Users need to be familiar with the options of the ``debconf`` package.
 
+Example:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # Disable SSH root login and start the ufw firewall automatically
+     debconf-selections: |
+       openssh-server openssh-server/permit-root-login boolean false
+       ufw ufw/enable boolean true
+
 .. _ai-packages:
 
 packages
@@ -1020,6 +1050,17 @@ packages
 * **can be interactive:** no
 
 A list of packages to install into the target system. Specifically, a list of strings to pass to the :command:`apt-get install` command. Therefore, this includes things such as task selection (``dns-server^``) and installing particular versions of a package (``my-package=1-1``).
+
+Example:
+
+.. code-block:: yaml
+
+  autoinstall:
+    packages:
+      # Install ipython3 and git, and ensure they are marked as manually
+      # installed.
+      - ipython3
+      - git
 
 .. _ai-kernel:
 
