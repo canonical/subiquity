@@ -475,7 +475,9 @@ class SubiquityServer(Application):
     def note_data_for_apport(self, key, value):
         self.error_reporter.note_data_for_apport(key, value)
 
-    def make_apport_report(self, kind, thing, *, wait=False, **kw):
+    def make_apport_report(
+        self, kind: ErrorReportKind, thing, *, wait=False, **kw
+    ) -> ErrorReport:
         return self.error_reporter.make_apport_report(kind, thing, wait=wait, **kw)
 
     async def _run_error_cmds(self, report: Optional[ErrorReport] = None) -> None:

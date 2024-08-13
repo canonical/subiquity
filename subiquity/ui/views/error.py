@@ -15,11 +15,12 @@
 
 import asyncio
 import logging
+from typing import Optional
 
 from urwid import AttrMap, Padding, ProgressBar, Text, connect_signal, disconnect_signal
 
-from subiquity.common.errorreport import ErrorReportKind, ErrorReportState
-from subiquity.common.types import CasperMd5Results, NonReportableError
+from subiquity.common.errorreport import ErrorReport, ErrorReportKind, ErrorReportState
+from subiquity.common.types import CasperMd5Results, ErrorReportRef, NonReportableError
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.ui.buttons import other_btn
 from subiquitycore.ui.container import Pile
@@ -185,11 +186,11 @@ retrying the install.
 
 
 class ErrorReportStretchy(Stretchy):
-    def __init__(self, app, ref, interrupting=True):
+    def __init__(self, app, ref: ErrorReportRef, interrupting=True):
         self.app = app
-        self.error_ref = ref
+        self.error_ref: ErrorReportRef = ref
         self.integrity_check_result = None
-        self.report = app.error_reporter.get(ref)
+        self.report: Optional[ErrorReport] = app.error_reporter.get(ref)
         self.pending = None
         if self.report is None:
             run_bg_task(self._wait())
@@ -452,7 +453,7 @@ nonreportable_footers: dict[str, str] = {
 
 
 class NonReportableErrorStretchy(Stretchy):
-    def __init__(self, app, error):
+    def __init__(self, app, error: NonReportableError):
         self.app = app  # A SubiquityClient
         self.error: NonReportableError = error
 
