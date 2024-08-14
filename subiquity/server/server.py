@@ -744,6 +744,8 @@ class SubiquityServer(Application):
         if only_early:
             self.controllers.Reporting.setup_autoinstall()
             self.controllers.Reporting.start()
+            self.controllers.Integrity.setup_autoinstall()
+            self.controllers.Integrity.start()
             self.controllers.Error.setup_autoinstall()
             self.validate_autoinstall()
             self.controllers.Early.setup_autoinstall()
