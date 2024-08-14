@@ -553,7 +553,7 @@ class API:
 
     class integrity:
         @allowed_before_start
-        def GET() -> CasperMd5Results:
+        def GET(wait=False) -> CasperMd5Results:
             ...
 
     class active_directory:
