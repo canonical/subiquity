@@ -257,8 +257,14 @@ class ErrorReportStretchy(Stretchy):
 
         self.spinner.stop()
 
-        if self.error_ref.state == ErrorReportState.DONE:
-            assert self.report
+        state = self.error_ref.state
+        if state == ErrorReportState.DONE and self.report is None:
+            # It is possible that the report has finished generating
+            # server-side (and therefore the API returns ErrorReportState.DONE)
+            # but hasn't been loaded locally.
+            state = ErrorReportState.LOADING
+
+        if state == ErrorReportState.DONE:
             widgets.append(btns["view"])
             widgets.append(Text(""))
             widgets.append(Text(rewrap(_(submit_text))))
@@ -288,7 +294,7 @@ class ErrorReportStretchy(Stretchy):
                     ]
                 )
         else:
-            text, spin = error_report_state_descriptions[self.error_ref.state]
+            text, spin = error_report_state_descriptions[state]
             widgets.append(Text(rewrap(_(text))))
             if spin:
                 self.spinner.start()
@@ -301,7 +307,7 @@ class ErrorReportStretchy(Stretchy):
         if self.report and self.report.uploader:
             widgets.extend([Text(""), btns["cancel"]])
         elif self.interrupting:
-            if self.error_ref.state != ErrorReportState.INCOMPLETE:
+            if state != ErrorReportState.INCOMPLETE:
                 text, btn_names = error_report_options[self.error_ref.kind]
                 if text:
                     widgets.extend([Text(""), Text(rewrap(_(text)))])
