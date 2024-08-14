@@ -190,6 +190,9 @@ class ErrorReportStretchy(Stretchy):
         self.app = app
         self.error_ref: ErrorReportRef = ref
         self.integrity_check_result = None
+        self.wait_integrity_check_result_task = asyncio.create_task(
+            self.wait_integrity_check_result()
+        )
         self.report: Optional[ErrorReport] = app.error_reporter.get(ref)
         self.pending = None
         if self.report is None:
@@ -328,6 +331,12 @@ class ErrorReportStretchy(Stretchy):
             self.pending.cancel()
         self.pending = asyncio.create_task(asyncio.sleep(0.1))
         self.change_task = asyncio.create_task(self._report_changed_())
+
+    async def wait_integrity_check_result(self):
+        old_result = self.integrity_check_result
+        self.integrity_check_result = await self.app.client.integrity.GET(wait=True)
+        if self.integrity_check_result != old_result:
+            self._report_changed()
 
     async def _report_changed_(self):
         await self.pending
