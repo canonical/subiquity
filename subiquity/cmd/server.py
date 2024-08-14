@@ -167,8 +167,6 @@ returned. """,
 def main():
     print("starting server")
     setup_environment()
-    # setup_environment sets $APPORT_DATA_DIR which must be set before
-    # apport is imported, which is done by this import:
     from subiquity.server.dryrun import DRConfig
     from subiquity.server.server import SubiquityServer
 

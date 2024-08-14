@@ -83,8 +83,6 @@ AUTO_ANSWERS_FILE = "/subiquity_config/answers.yaml"
 
 def main():
     setup_environment()
-    # setup_environment sets $APPORT_DATA_DIR which must be set before
-    # apport is imported, which is done by this import:
     from subiquity.client.client import SubiquityClient
 
     parser = make_client_args_parser()
