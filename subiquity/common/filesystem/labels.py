@@ -20,6 +20,7 @@ from subiquity.common.types import storage as types
 from subiquity.models.filesystem import (
     ZFS,
     Disk,
+    DM_Crypt,
     LVM_LogicalVolume,
     LVM_VolGroup,
     Partition,
@@ -335,6 +336,7 @@ def _for_client_disk(disk, *, min_size=0):
 @for_client.register(Partition)
 def _for_client_partition(partition, *, min_size=0):
     return types.Partition(
+        id=partition.id,
         size=partition.size,
         number=partition.number,
         wipe=partition.wipe,
@@ -350,6 +352,34 @@ def _for_client_partition(partition, *, min_size=0):
         mount=partition.mount,
         format=partition.format,
         is_in_use=partition._is_in_use,
+    )
+
+
+@for_client.register(LVM_VolGroup)
+def _for_client_vg(vg: LVM_VolGroup, *, min_size=0):
+    return types.VolumeGroup(
+        id=vg.id,
+        name=vg.name,
+        devices=[device.id for device in vg.devices],
+        encryption=None,  # TODO we don't have access to the DM_Crypt device from here.
+        logical_volumes=[for_client(p) for p in gaps.parts_and_gaps(vg)],
+    )
+
+
+@for_client.register(LVM_LogicalVolume)
+def _for_client_lv(lv: LVM_LogicalVolume, *, min_size=0):
+    return types.LogicalVolume(
+        id=lv.id,
+        name=lv.name,
+        size=lv.size,
+    )
+
+
+@for_client.register(DM_Crypt)
+def _for_client_dm_crypt(dm_crypt: DM_Crypt, *, min_size=0):
+    return types.LuksVolume(
+        passphrase="<redacted>",
+        recovery_key=dm_crypt.recovery_key,
     )
 
 

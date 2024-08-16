@@ -179,7 +179,9 @@ class FilesystemManipulator:
     delete_lvm_volgroup = delete_volgroup
 
     def create_logical_volume(self, vg: LVM_VolGroup, spec: LogicalVolumeSpec):
-        lv = self.model.add_logical_volume(vg=vg, name=spec["name"], size=spec["size"])
+        lv = self.model.add_logical_volume(
+            vg=vg, name=spec["name"], size=spec.get("size")
+        )
         self.create_filesystem(lv, spec)
         return lv
 

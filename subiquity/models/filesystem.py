@@ -1108,7 +1108,7 @@ class LVM_VolGroup(_Device):
 class LVM_LogicalVolume(_Formattable):
     name: str
     volgroup: LVM_VolGroup = attributes.ref(backlink="_partitions")
-    size: int = attributes.size(default=None)
+    size: int | None = attributes.size(default=None)
     wipe: Optional[str] = None
 
     preserve: bool = False
