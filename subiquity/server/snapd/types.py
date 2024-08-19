@@ -33,19 +33,36 @@ def date_field(name=None, default=attr.NOTHING):
 ChangeID = str
 
 
+def _underscore_to_hyphen(cls, fields):
+    results = []
+    for field in fields:
+        if "_" in field.name is not None:
+            metadata = {"name": field.name.replace("_", "-")}
+            results.append(field.evolve(metadata=metadata))
+        else:
+            results.append(field)
+    return results
+
+
+def snapdtype(cls):
+    return attr.s(
+        auto_attribs=True, kw_only=True, field_transformer=_underscore_to_hyphen
+    )(cls)
+
+
 class SnapStatus(enum.Enum):
     ACTIVE = "active"
     AVAILABLE = "available"
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class Publisher:
     id: str
     username: str
-    display_name: str = named_field("display-name")
+    display_name: str
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class Snap:
     id: str
     name: str
@@ -61,11 +78,11 @@ class SnapAction(enum.Enum):
     SWITCH = "switch"
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class SnapActionRequest:
     action: SnapAction
     channel: str = ""
-    ignore_running: bool = named_field("ignore-running", False)
+    ignore_running: bool = False
 
 
 class ResponseType:
@@ -74,10 +91,10 @@ class ResponseType:
     ERROR = "error"
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class Response:
     type: str
-    status_code: int = named_field("status-code")
+    status_code: int
     status: str
 
 
@@ -88,35 +105,35 @@ class Role(enum.Enum):
     SYSTEM_DATA = "system-data"
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class RelativeOffset:
-    relative_to: str = named_field("relative-to")
+    relative_to: str
     offset: int
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class VolumeContent:
     source: str = ""
     target: str = ""
     image: str = ""
     offset: Optional[int] = None
-    offset_write: Optional[RelativeOffset] = named_field("offset-write", None)
+    offset_write: Optional[RelativeOffset] = None
     size: int = 0
     unpack: bool = False
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class VolumeUpdate:
     edition: int = 0
     preserve: Optional[List[str]] = None
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class VolumeStructure:
     name: str = ""
-    label: str = named_field("filesystem-label", "")
+    label: str = ""
     offset: Optional[int] = None
-    offset_write: Optional[RelativeOffset] = named_field("offset-write", None)
+    offset_write: Optional[RelativeOffset] = "offset-write"
     size: int = 0
     type: str = ""
     role: NonExhaustive[Role] = Role.NONE
@@ -132,7 +149,7 @@ class VolumeStructure:
             return self.type
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class Volume:
     schema: str = ""
     bootloader: str = ""
@@ -140,7 +157,7 @@ class Volume:
     structure: Optional[List[VolumeStructure]] = None
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class OnVolumeStructure(VolumeStructure):
     device: Optional[str] = None
 
@@ -149,7 +166,7 @@ class OnVolumeStructure(VolumeStructure):
         return cls(**attr.asdict(vs, recurse=False))
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class OnVolume(Volume):
     structure: Optional[List[OnVolumeStructure]] = None
 
@@ -182,27 +199,23 @@ class EncryptionType(enum.Enum):
     DEVICE_SETUP_HOOK = "device-setup-hook"
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class StorageEncryption:
     support: StorageEncryptionSupport
-    storage_safety: StorageSafety = named_field("storage-safety")
-    encryption_type: EncryptionType = named_field(
-        "encryption-type", default=EncryptionType.NONE
-    )
-    unavailable_reason: str = named_field("unavailable-reason", default="")
+    storage_safety: StorageSafety
+    encryption_type: EncryptionType = EncryptionType.NONE
+    unavailable_reason: str = ""
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class SystemDetails:
     label: str
     current: bool = False
     volumes: Dict[str, Volume] = attr.Factory(dict)
-    storage_encryption: Optional[StorageEncryption] = named_field(
-        "storage-encryption", default=None
-    )
+    storage_encryption: Optional[StorageEncryption] = None
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class SystemsResponse:
     systems: List[SystemDetails] = attr.Factory(list)
 
@@ -216,15 +229,13 @@ class SystemActionStep(enum.Enum):
     FINISH = "finish"
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class SystemActionRequest:
     action: SystemAction
     step: SystemActionStep
-    on_volumes: Dict[str, OnVolume] = named_field("on-volumes")
+    on_volumes: Dict[str, OnVolume]
 
 
-@attr.s(auto_attribs=True)
+@snapdtype
 class SystemActionResponse:
-    encrypted_devices: Dict[NonExhaustive[Role], str] = named_field(
-        "encrypted-devices", default=attr.Factory(dict)
-    )
+    encrypted_devices: Dict[NonExhaustive[Role], str] = attr.Factory(dict)
