@@ -463,13 +463,33 @@ fallback
 ^^^^^^^^
 
 * **type:** string (enumeration)
-* **default:** offline-install
+* **default:** ``offline-install``
 
 Controls what Subiquity does when no primary mirror is usable. Supported values are:
 
 * ``abort``: abort the installation
 * ``offline-install``: revert to an offline installation
 * ``continue-anyway``: attempt to install the system anyway (not recommended; the installation fails)
+
+Examples:
+
+.. code-block:: yaml
+
+    # Only install from the primary archive and abort the installation if mirror validation fails.
+    autoinstall:
+      apt:
+        mirror-selection:
+          primary:
+            - uri: "http://archive.ubuntu.com/ubuntu"
+        fallback: abort
+
+    # Only install from the German country mirror and continue with an offline install if mirror validation fails.
+    autoinstall:
+      apt:
+        mirror-selection:
+          primary:
+            - uri: "http://de.archive.ubuntu.com/ubuntu"
+        fallback: offline-install
 
 geoip
 ^^^^^
