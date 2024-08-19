@@ -205,7 +205,52 @@ class StorageEncryption:
 
 
 @snapdtype
-class SystemDetails:
+class AvailableOptional:
+    snaps: List[str] = attr.Factory(list)
+    components: Dict[str, List[str]] = attr.Factory(dict)
+
+
+class ModelSnapType(enum.Enum):
+    KERNEL = "kernel"
+    GADGET = "gadget"
+    BASE = "base"
+    SNAPD = "snapd"
+    APP = "app"
+
+
+class PresenceValue(enum.Enum):
+    REQUIRED = "required"
+    OPTIONAL = "optional"
+
+
+@snapdtype
+class Presence:
+    presence: PresenceValue
+
+
+@snapdtype
+class ModelSnap:
+    default_channel: str
+    id: str
+    name: str
+    type: NonExhaustive[ModelSnapType]
+    components: Optional[Dict[str, Presence]] = None
+
+
+@snapdtype
+class Model:
+    architecture: str
+    snaps: List[ModelSnap]
+
+    def snap_of_type(self, typ: ModelSnapType) -> Optional[ModelSnap]:
+        for snap in self.snaps:
+            if snap.type == typ:
+                return snap
+        return None
+
+
+@snapdtype
+class ShortSystemDetails:
     label: str
     current: bool = False
     volumes: Dict[str, Volume] = attr.Factory(dict)
@@ -213,8 +258,14 @@ class SystemDetails:
 
 
 @snapdtype
+class SystemDetails(ShortSystemDetails):
+    model: Model
+    available_optional: Optional[AvailableOptional] = None
+
+
+@snapdtype
 class SystemsResponse:
-    systems: List[SystemDetails] = attr.Factory(list)
+    systems: List[ShortSystemDetails] = attr.Factory(list)
 
 
 class SystemAction(enum.Enum):
@@ -227,10 +278,16 @@ class SystemActionStep(enum.Enum):
 
 
 @snapdtype
+class OptionalInstall(AvailableOptional):
+    all: bool = False
+
+
+@snapdtype
 class SystemActionRequest:
     action: SystemAction
     step: SystemActionStep
     on_volumes: Dict[str, OnVolume]
+    optional_install: Optional[OptionalInstall] = None
 
 
 @snapdtype
