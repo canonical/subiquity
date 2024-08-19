@@ -24,6 +24,7 @@ apps:
       PYTHON: $SNAP/usr/bin/python3.10
       # APPORT_DATA_DIR must be set before the `apport` python module is
       # imported.
+      APPORT_DATA_DIR_ORIG: $APPORT_DATA_DIR
       APPORT_DATA_DIR: $SNAP/share/apport
   probert:
     command: usr/bin/subiquity-cmd $SNAP/usr/bin/python3.10 $SNAP/bin/probert
@@ -48,6 +49,7 @@ apps:
       PATH: $PATH:$SNAP/bin:$SNAP/sbin
       # APPORT_DATA_DIR must be set before the `apport` python module is
       # imported.
+      APPORT_DATA_DIR_ORIG: $APPORT_DATA_DIR
       APPORT_DATA_DIR: $SNAP/share/apport
   subiquity-service:
     command: usr/bin/subiquity-service
@@ -66,6 +68,7 @@ apps:
       PYTHON: $SNAP/usr/bin/python3.10
       # APPORT_DATA_DIR must be set before the `apport` python module is
       # imported.
+      APPORT_DATA_DIR_ORIG: $APPORT_DATA_DIR
       APPORT_DATA_DIR: $SNAP/share/apport
 
 parts:
