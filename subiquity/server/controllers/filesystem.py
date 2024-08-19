@@ -81,13 +81,14 @@ from subiquity.models.filesystem import (
     align_up,
     humanize_size,
 )
-from subiquity.server import snapdapi
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
 from subiquity.server.mounter import Mounter
 from subiquity.server.nonreportable import NonReportableException
-from subiquity.server.snapdapi import (
+from subiquity.server.snapd import api as snapdapi
+from subiquity.server.snapd import types as snapdtypes
+from subiquity.server.snapd.types import (
     StorageEncryptionSupport,
     StorageSafety,
     SystemDetails,
@@ -300,11 +301,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.app.hub.subscribe(InstallerChannels.PRE_SHUTDOWN, self._pre_shutdown)
         self._variation_info: Dict[str, VariationInfo] = {}
         self._info: Optional[VariationInfo] = None
-        self._on_volume: Optional[snapdapi.OnVolume] = None
+        self._on_volume: Optional[snapdtypes.OnVolume] = None
         self._source_handler: Optional[AbstractSourceHandler] = None
         self._system_mounter: Optional[Mounter] = None
-        self._role_to_device: Dict[Union[str, snapdapi.Role], _Device] = {}
-        self._device_to_structure: Dict[_Device, snapdapi.OnVolume] = {}
+        self._role_to_device: Dict[Union[str, snapdtypes.Role], _Device] = {}
+        self._device_to_structure: Dict[_Device, snapdtypes.OnVolume] = {}
         self._pyudev_context: Optional[pyudev.Context] = None
         self.use_tpm: bool = False
         self.locked_probe_data: bool = False
@@ -906,7 +907,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     def _offsets_and_sizes_for_volume(self, volume):
         offset = self.model._partition_alignment_data["gpt"].min_start_offset
         for structure in volume.structure:
-            if structure.role == snapdapi.Role.MBR:
+            if structure.role == snapdtypes.Role.MBR:
                 continue
             if structure.offset is not None:
                 offset = structure.offset
@@ -920,7 +921,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # features that are only available with v2 partitioning.
         self.model.storage_version = 2
         [volume] = self._info.system.volumes.values()
-        self._on_volume = snapdapi.OnVolume.from_volume(volume)
+        self._on_volume = snapdtypes.OnVolume.from_volume(volume)
 
         preserved_parts = set()
 
@@ -953,7 +954,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 part = parts_by_offset_size[(offset, size)]
             else:
                 if (
-                    structure.role == snapdapi.Role.SYSTEM_DATA
+                    structure.role == snapdtypes.Role.SYSTEM_DATA
                     and structure == self._on_volume.structure[-1]
                 ):
                     gap = gaps.at_offset(disk, offset)
@@ -974,20 +975,20 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 fs = self.model.add_filesystem(
                     part, structure.filesystem, label=structure.label
                 )
-                if structure.role == snapdapi.Role.SYSTEM_DATA:
+                if structure.role == snapdtypes.Role.SYSTEM_DATA:
                     self.model.add_mount(fs, "/")
-                elif structure.role == snapdapi.Role.SYSTEM_BOOT:
+                elif structure.role == snapdtypes.Role.SYSTEM_BOOT:
                     self.model.add_mount(fs, "/boot")
                 elif part.flag == "boot":
                     part.grub_device = True
                     self.model.add_mount(fs, "/boot/efi")
-            if structure.role != snapdapi.Role.NONE:
+            if structure.role != snapdtypes.Role.NONE:
                 self._role_to_device[structure.role] = part
             self._device_to_structure[part] = structure
 
         disk._partitions.sort(key=lambda p: p.number)
 
-    def _on_volumes(self) -> Dict[str, snapdapi.OnVolume]:
+    def _on_volumes(self) -> Dict[str, snapdtypes.OnVolume]:
         # Return a value suitable for use as the 'on-volumes' part of a
         # SystemActionRequest.
         #
@@ -1003,12 +1004,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         result = await snapdapi.post_and_wait(
             self.app.snapdapi,
             self.app.snapdapi.v2.systems[label].POST,
-            snapdapi.SystemActionRequest(
-                action=snapdapi.SystemAction.INSTALL,
-                step=snapdapi.SystemActionStep.SETUP_STORAGE_ENCRYPTION,
+            snapdtypes.SystemActionRequest(
+                action=snapdtypes.SystemAction.INSTALL,
+                step=snapdtypes.SystemActionStep.SETUP_STORAGE_ENCRYPTION,
                 on_volumes=self._on_volumes(),
             ),
-            ann=snapdapi.SystemActionResponse,
+            ann=snapdtypes.SystemActionResponse,
         )
         for role, enc_path in result.encrypted_devices.items():
             arb_device = ArbitraryDevice(m=self.model, path=enc_path)
@@ -1024,9 +1025,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         await snapdapi.post_and_wait(
             self.app.snapdapi,
             self.app.snapdapi.v2.systems[label].POST,
-            snapdapi.SystemActionRequest(
-                action=snapdapi.SystemAction.INSTALL,
-                step=snapdapi.SystemActionStep.FINISH,
+            snapdtypes.SystemActionRequest(
+                action=snapdtypes.SystemAction.INSTALL,
+                step=snapdtypes.SystemActionStep.FINISH,
                 on_volumes=self._on_volumes(),
             ),
         )
