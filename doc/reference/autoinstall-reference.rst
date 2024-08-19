@@ -400,7 +400,7 @@ This section historically used the same format as curtin, which is documented in
 
 - The ``geoip`` key controls whether to perform IP-based geolocation to determine the correct country mirror.
 
-The default is:
+The default apt configuration is equivalent to:
 
 .. code-block:: yaml
 
@@ -410,10 +410,10 @@ The default is:
         mirror-selection:
           primary:
             - country-mirror
-            - arches: [i386, amd64]
-              uri: "http://archive.ubuntu.com/ubuntu"
-            - arches: [s390x, arm64, armhf, powerpc, ppc64el, riscv64]
-              uri: "http://ports.ubuntu.com/ubuntu-ports"
+            - uri: "http://archive.ubuntu.com/ubuntu"
+              arches: [i386, amd64]
+            - uri: "http://ports.ubuntu.com/ubuntu-ports"
+              arches: [s390x, arm64, armhf, powerpc, ppc64el, riscv64]
         fallback: abort
         geoip: true
 
@@ -432,8 +432,32 @@ In the new format, the ``primary`` section expects a list of mirrors, which can 
 * The special ``country-mirror`` value
 * A mapping with the following keys:
 
-  * ``uri``: The URI of the mirror to use, e.g., ``http://fr.archive.ubuntu.com/ubuntu``.
-  * ``arches``: An optional list of architectures supported by the mirror. By default, this list contains the current CPU architecture.
+  * ``uri`` (Required): The URI of the mirror to use, e.g., ``http://fr.archive.ubuntu.com/ubuntu``.
+  * ``arches`` (Optional): A list of architectures supported by the mirror. By default, this list contains the current CPU architecture.
+
+The URI for the archive mirror does not have to be a country mirror, although it may be the most convenient, and can take the URL of any valid Ubuntu mirror. A list of all registered archive mirrors can be found on `Launchpad <https://launchpad.net/ubuntu/+archivemirrors>`_.
+
+Examples:
+
+.. code-block:: yaml
+
+  # Use the first custom mirror that works. Do not restrict to specific architectures.
+  autoinstall:
+    apt:
+      mirror-selection:
+        primary:
+          - uri: "http://mirror1.internal/ubuntu"
+          - uri: "http://mirror2.internal/ubuntu"
+
+  # Use one mirror for amd64 and another for i386.
+  autoinstall:
+    apt:
+      mirror-selection:
+        primary:
+          - uri: "http://jp.archive.ubuntu.com/ubuntu"
+            arches: [amd64]
+          - uri: "http://tw.archive.ubuntu.com/ubuntu"
+            arches: [i386]
 
 fallback
 ^^^^^^^^
