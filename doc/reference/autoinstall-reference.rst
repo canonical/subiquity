@@ -423,7 +423,7 @@ mirror-selection
 If the ``primary`` section is contained within the ``mirror-selection`` section, the automatic mirror selection is enabled. This is the default in new installations.
 
 primary (when placed inside the ``mirror-selection`` section)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 * **type:** custom, see below
 
