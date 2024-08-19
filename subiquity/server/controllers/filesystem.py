@@ -23,13 +23,11 @@ import pathlib
 import shutil
 import subprocess
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import attr
 import pyudev
-import requests
 from curtin import swap
-from curtin.commands.extract import AbstractSourceHandler
 from curtin.storage_config import ptable_part_type_to_flag
 from curtin.util import human2bytes
 
@@ -85,10 +83,10 @@ from subiquity.models.filesystem import (
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
-from subiquity.server.mounter import Mounter
 from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
+from subiquity.server.snapd.system_getter import SystemGetter, SystemsDirMounter
 from subiquity.server.snapd.types import (
     StorageEncryptionSupport,
     StorageSafety,
@@ -126,10 +124,6 @@ system_non_gpt_text = _(
 
 
 DRY_RUN_RESET_SIZE = 500 * MiB
-
-
-class NoSnapdSystemsOnSource(Exception):
-    pass
 
 
 class NonReportableSVE(RecoverableError, NonReportableException):
@@ -302,9 +296,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.app.hub.subscribe(InstallerChannels.PRE_SHUTDOWN, self._pre_shutdown)
         self._variation_info: Dict[str, VariationInfo] = {}
         self._info: Optional[VariationInfo] = None
+        self._system_getter = SystemGetter(self.app)
         self._on_volume: Optional[snapdtypes.OnVolume] = None
-        self._source_handler: Optional[AbstractSourceHandler] = None
-        self._system_mounter: Optional[Mounter] = None
         self._role_to_device: Dict[Union[str, snapdtypes.Role], _Device] = {}
         self._device_to_structure: Dict[_Device, snapdtypes.OnVolume] = {}
         self._pyudev_context: Optional[pyudev.Context] = None
@@ -351,69 +344,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self.app.base_model.source.search_drivers = not self.is_core_boot_classic()
         await super().configured()
         self.stop_monitor()
-
-    async def _mount_systems_dir(self, variation_name):
-        self._source_handler = self.app.controllers.Source.get_handler(variation_name)
-        if self._source_handler is None:
-            raise NoSnapdSystemsOnSource
-        source_path = self._source_handler.setup()
-        cur_systems_dir = "/var/lib/snapd/seed/systems"
-        source_systems_dir = os.path.join(source_path, cur_systems_dir[1:])
-        if self.app.opts.dry_run:
-            systems_dir_exists = self.app.dr_cfg.systems_dir_exists
-        else:
-            systems_dir_exists = pathlib.Path(source_systems_dir).is_dir()
-        if not systems_dir_exists:
-            raise NoSnapdSystemsOnSource
-        self._system_mounter = Mounter(self.app)
-        if not self.app.opts.dry_run:
-            await self._system_mounter.bind_mount_tree(
-                source_systems_dir, cur_systems_dir
-            )
-
-        cur_snaps_dir = "/var/lib/snapd/seed/snaps"
-        source_snaps_dir = os.path.join(source_path, cur_snaps_dir[1:])
-        if not self.app.opts.dry_run:
-            await self._system_mounter.bind_mount_tree(source_snaps_dir, cur_snaps_dir)
-
-    async def _unmount_systems_dir(self):
-        if self._system_mounter is not None:
-            await self._system_mounter.cleanup()
-            self._system_mounter = None
-        if self._source_handler is not None:
-            self._source_handler.cleanup()
-            self._source_handler = None
-
-    async def _get_system(
-        self, variation_name, label
-    ) -> Tuple[Optional[SystemDetails], bool]:
-        """Return system information for a given system label.
-
-        The return value is a SystemDetails object (if any) and True if
-        the system was found in the layer that the installer is running
-        in or False if the source layer needed to be mounted to find
-        it.
-        """
-        systems = await self.app.snapdapi.v2.systems.GET()
-        labels = {system.label for system in systems.systems}
-        if label in labels:
-            try:
-                return await self.app.snapdapi.v2.systems[label].GET(), True
-            except requests.exceptions.HTTPError as http_err:
-                log.warning("v2/systems/%s returned %s", label, http_err.response.text)
-                raise
-        else:
-            try:
-                await self._mount_systems_dir(variation_name)
-            except NoSnapdSystemsOnSource:
-                return None, False
-            try:
-                return await self.app.snapdapi.v2.systems[label].GET(), False
-            except requests.exceptions.HTTPError as http_err:
-                log.warning("v2/systems/%s returned %s", label, http_err.response.text)
-                raise
-            finally:
-                await self._unmount_systems_dir()
 
     def info_for_system(self, name: str, label: str, system: SystemDetails):
         if len(system.volumes) > 1:
@@ -504,7 +434,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             system = None
             label = variation.snapd_system_label
             if label is not None:
-                system, in_live_layer = await self._get_system(name, label)
+                system, in_live_layer = await self._system_getter.get(name, label)
             log.debug("got system %s for variation %s", system, name)
             if system is not None and len(system.volumes) > 0:
                 if not self.app.opts.enhanced_secureboot:
@@ -935,7 +865,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def guided_core_boot(self, disk: Disk):
         if self._info.needs_systems_mount:
-            await self._mount_systems_dir(self._info.name)
+            await SystemsDirMounter(self.app, self._info.name).mount()
         # Formatting for a core boot classic system relies on some curtin
         # features that are only available with v2 partitioning.
         self.model.storage_version = 2
