@@ -497,21 +497,28 @@ geoip
 * **type:** boolean
 * **default:** ``true``
 
-If ``geoip`` is set to ``true`` and one of the candidate primary mirrors has the special value ``country-mirror``, a request is made to ``https://geoip.ubuntu.com/lookup``. Subiquity then sets the mirror URI to ``http://CC.archive.ubuntu.com/ubuntu`` (or similar for ports) where ``CC`` is the country code returned by the lookup. If this section is not interactive, the request expires after 10 seconds.
+If ``geoip`` is set to ``true`` and one of the candidate primary mirrors has the special value ``country-mirror``, a request is made to ``https://geoip.ubuntu.com/lookup``. Subiquity then sets the mirror URI to ``http://CC.archive.ubuntu.com/ubuntu`` where ``CC`` is the country code returned by the lookup. If this section is not interactive, the request expires after 10 seconds.
 
 If the legacy behaviour (i.e., without mirror-selection) is in use, the geolocation request is made if the mirror to be used is the default, and its URI is replaced by the proper country mirror URI.
 
-To specify a mirror, use a configuration like this:
+Examples:
 
 .. code-block:: yaml
 
+    # Use the automatically determined country mirror first, followed by an explicit backup mirror.
     autoinstall:
       apt:
         mirror-selection:
           primary:
-            - uri: YOUR_MIRROR_GOES_HERE
             - country-mirror
-            - uri: http://archive.ubuntu.com/ubuntu
+            - uri: http://dk.archive.ubuntu.com/ubuntu
+        geoip: true
+
+    # Disable automatic country mirror detection (i.e. only use http://archive.ubuntu.com/ubuntu)
+    autoinstall:
+      apt:
+        geoip: false
+
 
 To add a PPA:
 
