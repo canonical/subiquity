@@ -392,7 +392,7 @@ apt
 
 APT configuration, used both during the installation and once booted into the target system.
 
-This section historically used the same format as curtin, which is documented in the `APT Source <https://curtin.readthedocs.io/en/latest/topics/apt_source.html>`_ section of the curtin documentation. Nonetheless, some key differences with the format supported by curtin have been introduced:
+This section has historically used the same format as curtin, which is documented in the `APT Source <https://curtin.readthedocs.io/en/latest/topics/apt_source.html>`_ section of the curtin documentation. Nonetheless, some key differences with the format supported by curtin have been introduced:
 
 - Subiquity supports an alternative format for the ``primary`` section, allowing configuration of a list of candidate primary mirrors. During installation, Subiquity automatically tests the specified mirrors and selects the first one that appears usable. This new behaviour is only activated when the ``primary`` section is wrapped in the ``mirror-selection`` section.
 
@@ -400,7 +400,10 @@ This section historically used the same format as curtin, which is documented in
 
 - The ``geoip`` key controls whether to perform IP-based geolocation to determine the correct country mirror.
 
-The default apt configuration is equivalent to:
+
+All other sections behave as defined in curtin. See the curtin `documentation <https://curtin.readthedocs.io/en/latest/topics/apt_source.html#common-snippets>`_ and its `example apt configurations <https://git.launchpad.net/curtin/tree/examples/apt-source.yaml>`_ for usage examples of these sections, such as how to add a PPA using the ``sources`` section.
+
+The default apt configuration in Subiquity is equivalent to:
 
 .. code-block:: yaml
 
@@ -519,16 +522,6 @@ Examples:
       apt:
         geoip: false
 
-
-To add a PPA:
-
-.. code-block:: yaml
-
-    autoinstall:
-      apt:
-        sources:
-          curtin-ppa:
-            source: ppa:curtin-dev/test-archive
 
 .. _ai-storage:
 
