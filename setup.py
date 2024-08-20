@@ -125,6 +125,7 @@ setup(name='subiquity',
           'bin/subiquity-server',
           'bin/subiquity-cmd',
           'system_scripts/subiquity-umockdev-wrapper',
+          'system_scripts/subiquity-legacy-cloud-init-extract',
       ],
       entry_points={
           'console_scripts': [

@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+# Copyright 2024 Canonical, Ltd.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""Legacy script for compatibility on systems where the combined cloud config
+json is unsupported.
+
+Writes the extracted cloud config data to a yaml dictionary:
+
+    {
+        "cloud_cfg": {...},
+        "installer_user_name": "...",
+    }
+
+"""
+
+import argparse
+import sys
+from typing import Any, Dict
+
+from cloudinit import safeyaml, stages
+from cloudinit.cloud import Cloud
+from cloudinit.distros import ug_util
+
+
+def get_cloud() -> Cloud:
+    """Get Cloud object via stages.Init()."""
+    init = stages.Init()
+    init.read_cfg()
+    init.fetch(existing="trust")
+    return init.cloudify()
+
+
+def write_data(
+    cloud_cfg: Dict[str, Any],
+    user_name: str,
+    location: str,
+) -> None:
+    """Write extracted cloud config and user name."""
+    data = {
+        "cloud_cfg": cloud_cfg,
+        "installer_user_name": user_name,
+    }
+
+    output = safeyaml.dumps(data)
+
+    if location == "-":
+        print(output)
+    else:
+        with open(location, "w") as fp:
+            fp.write(output)
+
+
+def parse_args() -> argparse.Namespace:
+    """Parse arguments."""
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+    )
+
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default="-",
+        help="Location to write extracted data instead of stdout.",
+    )
+
+    return parser.parse_args()
+
+
+def main() -> int:
+    args: argparse.Namespace = parse_args()
+
+    cloud: Cloud = get_cloud()
+
+    cloud_cfg: Dict[str, Any] = cloud.cfg
+
+    users, _groups = ug_util.normalize_users_groups(cloud_cfg, cloud.distro)
+    installer_user_name = ug_util.extract_default(users)[0]
+
+    write_data(cloud_cfg, installer_user_name, args.output)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
