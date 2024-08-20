@@ -539,6 +539,16 @@ When using the ``lvm`` layout, LUKS encryption can be enabled by supplying a pas
 
 The default is to use the ``lvm`` layout.
 
+Additionally, TPM-backed encryption can be enabled by using the ``hybrid`` layout with ``encrypted`` set to yes.
+
+.. code-block:: yaml
+
+    autoinstall:
+      storage:
+        layout:
+          name: hybrid
+          encrypted: yes
+
 Sizing-policy
 ^^^^^^^^^^^^^
 
