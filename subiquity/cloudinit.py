@@ -122,7 +122,7 @@ async def get_schema_failure_keys() -> list[str]:
 
 
 async def cloud_init_status_wait() -> (bool, Optional[str]):
-    """Wait for cloud-init completion, and return if timeout ocurred and best
+    """Wait for cloud-init completion, and return if timeout occurred and best
     available status information.
     :return: tuple of (ok, status string or None)
     """
@@ -144,15 +144,15 @@ async def cloud_init_status_wait() -> (bool, Optional[str]):
 
 async def validate_cloud_init_schema() -> None:
     """Check for cloud-init schema errors.
-    Returns (None) if the cloud-config schmea validated OK according to
+    Returns (None) if the cloud-config schema validated OK according to
     cloud-init. Otherwise, a CloudInitSchemaValidationError is thrown
     which contains a list of the keys which failed to validate.
     Requires cloud-init supporting recoverable errors and extended status.
 
-    :return: None if cloud-init schema validated succesfully.
+    :return: None if cloud-init schema validated successfully.
     :rtype: None
     :raises CloudInitSchemaValidationError: If cloud-init schema did not validate
-            succesfully.
+            successfully.
     """
     causes: list[str] = await get_schema_failure_keys()
 
