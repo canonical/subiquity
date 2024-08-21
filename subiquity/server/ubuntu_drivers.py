@@ -209,6 +209,7 @@ class UbuntuDriversFakePCIDevicesInterface(UbuntuDriversInterface):
         self.pre_req_cmd = [
             "apt-get",
             "install",
+            "-oDPkg::Lock::Timeout=-1",  # avoid oem vs drivers lock timeout
             "-y",
             "umockdev",
             "gir1.2-umockdev-1.0",
