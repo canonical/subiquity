@@ -53,6 +53,7 @@ class SubiquityController(BaseController):
     async def _confirmed(self):
         variant = self.app.base_model.source.current.variant
         if variant not in self.interactive_for_variants:
+            log.debug(f"disabling {self.name} as it is not interactive for {variant}")
             await self.configured()
             self._active = False
 

@@ -16,8 +16,6 @@ Proxy:
 Filesystem:
   guided: yes
   guided-index: 0
-UbuntuPro:
-  token: ""
 InstallProgress:
   reboot: yes
 Drivers:

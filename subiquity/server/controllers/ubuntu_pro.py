@@ -87,6 +87,8 @@ class UbuntuProController(SubiquityController):
         },
     }
 
+    interactive_for_variants = {"desktop", "server"}
+
     def __init__(self, app) -> None:
         """Initializer for server-side Ubuntu Pro controller."""
         strategy: UAInterfaceStrategy
