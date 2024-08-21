@@ -126,6 +126,18 @@ locale
 
 The locale to configure for the installed system.
 
+locale examples:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # default behavior
+     locale: "en_US.UTF-8"
+
+   autoinstall:
+     # Greek locale
+     locale: "el_GR"
+
 .. _ai-refresh-installer:
 
 refresh-installer
@@ -227,6 +239,25 @@ Corresponds to the value of ``grp:`` option from the ``XKBOPTIONS`` setting. Acc
 * ``sclk_toggle``
 
 .. warning:: The version of Subiquity released with 20.04 GA does not accept ``null`` for this field due to a bug.
+
+keyboard examples:
+
+.. code-block:: yaml
+
+   autoinstall:
+     # default behavior
+     keyboard:
+       layout: us
+       variant: ""
+       toggle: null
+
+   autoinstall:
+     # use Alt and Shift to toggle between default US keyboard and
+     # "Greek (simple)"
+     keyboard:
+       layout: "us,gr"
+       variant: ",simple"
+       toggle: alt_shift_toggle
 
 .. _ai-source:
 
@@ -1122,7 +1153,19 @@ timezone
 * **default:** no timezone
 * **can be interactive:** no
 
-The timezone to configure on the system. The special value ``geoip`` can be used to query the timezone automatically over the network.
+The timezone to configure on the system.
+
+timezone examples:
+
+.. code-block:: yaml
+
+   autoinstall:
+      # Default behaviour
+      timezone: "Etc/UTC"
+
+   autoinstall:
+      # Configure explicitly
+      timezone: "Europe/London"
 
 .. _ai-updates:
 
