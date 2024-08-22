@@ -7,11 +7,18 @@ import re
 import secrets
 from collections.abc import Awaitable, Sequence
 from string import ascii_letters, digits
-from subprocess import CompletedProcess
-from typing import Optional
+from subprocess import CalledProcessError, CompletedProcess
+from typing import Any, Optional
+
+import yaml
 
 from subiquity.server.nonreportable import NonReportableException
-from subiquitycore.utils import arun_command, run_command
+from subiquitycore.utils import (
+    arun_command,
+    log_process_streams,
+    run_command,
+    system_scripts_env,
+)
 
 log = logging.getLogger("subiquity.cloudinit")
 
@@ -160,6 +167,24 @@ async def validate_cloud_init_schema() -> None:
         raise CloudInitSchemaValidationError(keys=causes)
 
     return None
+
+
+async def legacy_cloud_init_extract() -> tuple[dict[str, Any], str]:
+    """Load cloud-config from stages.Init() using helper script."""
+
+    try:
+        proc: CompletedProcess = await arun_command(
+            ["subiquity-legacy-cloud-init-extract"],
+            env=system_scripts_env(),
+            check=True,
+        )
+    except CalledProcessError as cpe:
+        log_process_streams(logging.DEBUG, cpe, "subiquity-legacy-cloud-init-extract")
+        raise cpe
+
+    extract: dict[str, Any] = yaml.safe_load(proc.stdout)
+
+    return (extract["cloud_cfg"], extract["installer_user_name"])
 
 
 def rand_password(strlen: int = 32, select_from: Optional[Sequence] = None) -> str:
