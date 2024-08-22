@@ -413,6 +413,20 @@ class InstallController(SubiquityController):
                         }
                     ),
                 )
+            seed_dir = "var/lib/snapd/seed"
+            live_seed_dir = "/" + seed_dir
+            target_seed_dir = self.tpath(seed_dir)
+            info = fs_controller._info
+            if not os.path.isdir(os.path.join(target_seed_dir, "systems", info.label)):
+                for dir in "snaps", "systems":
+                    await self.app.command_runner.run(
+                        [
+                            "cp",
+                            "-naT",
+                            os.path.join(live_seed_dir, dir),
+                            os.path.join(target_seed_dir, dir),
+                        ]
+                    )
             await fs_controller.finish_install(context=context)
             await self.setup_target(context=context)
         else:
