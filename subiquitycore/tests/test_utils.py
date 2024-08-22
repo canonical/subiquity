@@ -14,8 +14,16 @@
 
 # from unittest.mock import Mock
 
+import os
+from unittest.mock import patch
+
 from subiquitycore.tests import SubiTestCase
-from subiquitycore.utils import _zsys_uuid_charset, gen_zsys_uuid, orig_environ
+from subiquitycore.utils import (
+    _zsys_uuid_charset,
+    gen_zsys_uuid,
+    orig_environ,
+    system_scripts_env,
+)
 
 
 class TestOrigEnviron(SubiTestCase):
@@ -67,6 +75,40 @@ class TestOrigEnviron(SubiTestCase):
             "PATH": "/usr/bin:/bin",
         }
         self.assertEqual(expected, orig_environ(env))
+
+
+class TestSystemScriptsEnv(SubiTestCase):
+    def test_path_no_snap_usr_bin(self):
+        """Test path to /<snap>/usr/bin/ is not present.
+
+        This makes sure that the snap python is not picked up.
+        """
+        snap = "/snap/subiquity/current"
+        snap_env = {
+            "SNAP": snap,
+            "PATH_ORIG": "/usr/bin",
+            "PATH": f"{snap}/usr/bin",
+        }
+
+        with patch.dict(os.environ, snap_env, clear=True):
+            path = system_scripts_env()["PATH"]
+
+        self.assertNotIn(f"{snap}/usr/bin", path)
+
+    def test_path_scripts_location(self):
+        """Test system_scripts path location for Desktop and Server."""
+        snap = "/snap/subiquity/current"
+        snap_env = {
+            "SNAP": snap,
+            "PATH_ORIG": "/usr/bin",
+            "PATH": f"{snap}/usr/bin:{snap}/bin",
+        }
+
+        with patch.dict(os.environ, snap_env, clear=True):
+            path = system_scripts_env()["PATH"]
+
+        self.assertIn(f"{snap}/system_scripts", path)
+        self.assertIn(f"{snap}/bin/subiquity/system_scripts", path)
 
 
 class TestZsysUUID(SubiTestCase):
