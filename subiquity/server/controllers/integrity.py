@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import json
 import logging
 
@@ -35,11 +36,16 @@ class IntegrityController(SubiquityController):
     model_name = "integrity"
     result_filepath = "/run/casper-md5check.json"
 
+    md5check_done = asyncio.Event()
+
     @property
     def result(self):
         return CasperMd5Results(self.model.md5check_results.get("result", "unknown"))
 
-    async def GET(self) -> CasperMd5Results:
+    async def GET(self, wait=False) -> CasperMd5Results:
+        if wait:
+            await self.md5check_done.wait()
+
         return self.result
 
     async def wait_casper_md5check(self):
@@ -64,6 +70,7 @@ class IntegrityController(SubiquityController):
     async def md5check(self):
         await self.wait_casper_md5check()
         self.model.md5check_results = await self.get_md5check_results()
+        self.md5check_done.set()
 
     def start(self):
         self._md5check_task = schedule_task(self.md5check())

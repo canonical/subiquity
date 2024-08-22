@@ -15,11 +15,12 @@
 
 import asyncio
 import logging
+from typing import Optional
 
 from urwid import AttrMap, Padding, ProgressBar, Text, connect_signal, disconnect_signal
 
-from subiquity.common.errorreport import ErrorReportKind, ErrorReportState
-from subiquity.common.types import CasperMd5Results, NonReportableError
+from subiquity.common.errorreport import ErrorReport, ErrorReportKind, ErrorReportState
+from subiquity.common.types import CasperMd5Results, ErrorReportRef, NonReportableError
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.ui.buttons import other_btn
 from subiquitycore.ui.container import Pile
@@ -185,11 +186,14 @@ retrying the install.
 
 
 class ErrorReportStretchy(Stretchy):
-    def __init__(self, app, ref, interrupting=True):
+    def __init__(self, app, ref: ErrorReportRef, interrupting=True):
         self.app = app
-        self.error_ref = ref
+        self.error_ref: ErrorReportRef = ref
         self.integrity_check_result = None
-        self.report = app.error_reporter.get(ref)
+        self.wait_integrity_check_result_task = asyncio.create_task(
+            self.wait_integrity_check_result()
+        )
+        self.report: Optional[ErrorReport] = app.error_reporter.get(ref)
         self.pending = None
         if self.report is None:
             run_bg_task(self._wait())
@@ -256,8 +260,14 @@ class ErrorReportStretchy(Stretchy):
 
         self.spinner.stop()
 
-        if self.error_ref.state == ErrorReportState.DONE:
-            assert self.report
+        state = self.error_ref.state
+        if state == ErrorReportState.DONE and self.report is None:
+            # It is possible that the report has finished generating
+            # server-side (and therefore the API returns ErrorReportState.DONE)
+            # but hasn't been loaded locally.
+            state = ErrorReportState.LOADING
+
+        if state == ErrorReportState.DONE:
             widgets.append(btns["view"])
             widgets.append(Text(""))
             widgets.append(Text(rewrap(_(submit_text))))
@@ -287,7 +297,7 @@ class ErrorReportStretchy(Stretchy):
                     ]
                 )
         else:
-            text, spin = error_report_state_descriptions[self.error_ref.state]
+            text, spin = error_report_state_descriptions[state]
             widgets.append(Text(rewrap(_(text))))
             if spin:
                 self.spinner.start()
@@ -300,7 +310,7 @@ class ErrorReportStretchy(Stretchy):
         if self.report and self.report.uploader:
             widgets.extend([Text(""), btns["cancel"]])
         elif self.interrupting:
-            if self.error_ref.state != ErrorReportState.INCOMPLETE:
+            if state != ErrorReportState.INCOMPLETE:
                 text, btn_names = error_report_options[self.error_ref.kind]
                 if text:
                     widgets.extend([Text(""), Text(rewrap(_(text)))])
@@ -321,6 +331,12 @@ class ErrorReportStretchy(Stretchy):
             self.pending.cancel()
         self.pending = asyncio.create_task(asyncio.sleep(0.1))
         self.change_task = asyncio.create_task(self._report_changed_())
+
+    async def wait_integrity_check_result(self):
+        old_result = self.integrity_check_result
+        self.integrity_check_result = await self.app.client.integrity.GET(wait=True)
+        if self.integrity_check_result != old_result:
+            self._report_changed()
 
     async def _report_changed_(self):
         await self.pending
@@ -452,7 +468,7 @@ nonreportable_footers: dict[str, str] = {
 
 
 class NonReportableErrorStretchy(Stretchy):
-    def __init__(self, app, error):
+    def __init__(self, app, error: NonReportableError):
         self.app = app  # A SubiquityClient
         self.error: NonReportableError = error
 

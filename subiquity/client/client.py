@@ -30,7 +30,7 @@ from subiquity.client.controller import Confirm
 from subiquity.client.keycodes import KeyCodesFilter, NoOpKeycodesFilter
 from subiquity.common.api.client import make_client_for_conn
 from subiquity.common.apidef import API
-from subiquity.common.errorreport import ErrorReporter
+from subiquity.common.errorreport import ErrorReport, ErrorReporter
 from subiquity.common.serialize import from_json
 from subiquity.common.types import (
     ApplicationState,
@@ -619,7 +619,9 @@ class SubiquityClient(TuiApplication):
     def note_data_for_apport(self, key, value):
         self.error_reporter.note_data_for_apport(key, value)
 
-    def make_apport_report(self, kind, thing, *, interrupt, wait=False, **kw):
+    def make_apport_report(
+        self, kind: ErrorReportKind, thing, *, interrupt, wait=False, **kw
+    ) -> ErrorReport:
         report = self.error_reporter.make_apport_report(kind, thing, wait=wait, **kw)
 
         if report is not None and interrupt:
@@ -627,7 +629,7 @@ class SubiquityClient(TuiApplication):
 
         return report
 
-    def show_error_report(self, error_ref):
+    def show_error_report(self, error_ref: ErrorReportRef) -> None:
         log.debug("show_error_report %r", error_ref.base)
         if isinstance(self.ui.body, BaseView):
             w = getattr(self.ui.body._w, "stretchy", None)
@@ -636,6 +638,6 @@ class SubiquityClient(TuiApplication):
                 return
         self.add_global_overlay(ErrorReportStretchy(self, error_ref))
 
-    def show_nonreportable_error(self, error: NonReportableError):
+    def show_nonreportable_error(self, error: NonReportableError) -> None:
         log.debug("show_non_reportable_error %r", error.cause)
         self.add_global_overlay(NonReportableErrorStretchy(self, error))

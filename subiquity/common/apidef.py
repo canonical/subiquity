@@ -120,6 +120,7 @@ class API:
                 """Restart the server process."""
 
         class ssh_info:
+            @allowed_before_start
             def GET() -> Optional[LiveSessionSSHInfo]:
                 ...
 
@@ -552,7 +553,8 @@ class API:
                 ...
 
     class integrity:
-        def GET() -> CasperMd5Results:
+        @allowed_before_start
+        def GET(wait=False) -> CasperMd5Results:
             ...
 
     class active_directory:

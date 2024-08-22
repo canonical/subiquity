@@ -22,7 +22,7 @@ import re
 import sys
 import time
 import traceback
-from typing import Iterable, Set
+from typing import Iterable, Optional, Set
 
 import apport
 import apport.crashdb
@@ -74,7 +74,7 @@ class Upload(metaclass=urwid.MetaSignals):
 class ErrorReport(metaclass=urwid.MetaSignals):
     signals = ["changed"]
 
-    reporter = attr.ib()
+    reporter: "ErrorReporter" = attr.ib()
     base = attr.ib()
     pr = attr.ib()
     state: ErrorReportState = attr.ib()
@@ -86,7 +86,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
     uploader = attr.ib(default=None)
 
     @classmethod
-    def new(cls, reporter, kind):
+    def new(cls, reporter: "ErrorReporter", kind: ErrorReportKind):
         base = "{:.9f}.{}".format(time.time(), kind.name.lower())
         crash_file = open(os.path.join(reporter.crash_directory, base + ".crash"), "wb")
 
@@ -391,7 +391,9 @@ class ErrorReporter(object):
     def report_for_exc(self, exc):
         return self._reports_by_exception.get(exc)
 
-    def make_apport_report(self, kind, thing, *, wait=False, exc=None, **kw):
+    def make_apport_report(
+        self, kind: ErrorReportKind, thing, *, wait=False, exc=None, **kw
+    ) -> ErrorReport:
         if not self.dry_run and not os.path.exists("/cdrom/.disk/info"):
             return None
 
@@ -441,10 +443,10 @@ class ErrorReporter(object):
         # In the fullness of time we should do the signature thing here.
         return report
 
-    def get(self, error_ref):
+    def get(self, error_ref: ErrorReportRef) -> Optional[ErrorReport]:
         return self._reports_by_base.get(error_ref.base)
 
-    async def get_wait(self, error_ref):
+    async def get_wait(self, error_ref: ErrorReportRef) -> ErrorReport:
         report = self._reports_by_base.get(error_ref.base)
         if report is not None:
             return report
