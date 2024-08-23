@@ -423,7 +423,7 @@ apt
 
 APT configuration, used both during the installation and once booted into the target system.
 
-This section historically used the same format as curtin, which is documented in the `APT Source <https://curtin.readthedocs.io/en/latest/topics/apt_source.html>`_ section of the curtin documentation. Nonetheless, some key differences with the format supported by curtin have been introduced:
+This section has historically used the same format as curtin, which is documented in the `APT Source <https://curtin.readthedocs.io/en/latest/topics/apt_source.html>`_ section of the curtin documentation. Nonetheless, some key differences with the format supported by curtin have been introduced:
 
 - Subiquity supports an alternative format for the ``primary`` section, allowing configuration of a list of candidate primary mirrors. During installation, Subiquity automatically tests the specified mirrors and selects the first one that appears usable. This new behaviour is only activated when the ``primary`` section is wrapped in the ``mirror-selection`` section.
 
@@ -431,7 +431,10 @@ This section historically used the same format as curtin, which is documented in
 
 - The ``geoip`` key controls whether to perform IP-based geolocation to determine the correct country mirror.
 
-The default is:
+
+All other sections behave as defined in curtin. See the curtin `documentation <https://curtin.readthedocs.io/en/latest/topics/apt_source.html#common-snippets>`_ and its `example apt configurations <https://git.launchpad.net/curtin/tree/examples/apt-source.yaml>`_ for usage examples of these sections, such as how to add a PPA using the ``sources`` section.
+
+The default apt configuration in Subiquity is equivalent to:
 
 .. code-block:: yaml
 
@@ -441,10 +444,10 @@ The default is:
         mirror-selection:
           primary:
             - country-mirror
-            - arches: [i386, amd64]
-              uri: "http://archive.ubuntu.com/ubuntu"
-            - arches: [s390x, arm64, armhf, powerpc, ppc64el, riscv64]
-              uri: "http://ports.ubuntu.com/ubuntu-ports"
+            - uri: "http://archive.ubuntu.com/ubuntu"
+              arches: [i386, amd64]
+            - uri: "http://ports.ubuntu.com/ubuntu-ports"
+              arches: [s390x, arm64, armhf, powerpc, ppc64el, riscv64]
         fallback: abort
         geoip: true
 
@@ -454,7 +457,7 @@ mirror-selection
 If the ``primary`` section is contained within the ``mirror-selection`` section, the automatic mirror selection is enabled. This is the default in new installations.
 
 primary (when placed inside the ``mirror-selection`` section)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 * **type:** custom, see below
 
@@ -463,14 +466,38 @@ In the new format, the ``primary`` section expects a list of mirrors, which can 
 * The special ``country-mirror`` value
 * A mapping with the following keys:
 
-  * ``uri``: The URI of the mirror to use, e.g., ``http://fr.archive.ubuntu.com/ubuntu``.
-  * ``arches``: An optional list of architectures supported by the mirror. By default, this list contains the current CPU architecture.
+  * ``uri`` (Required): The URI of the mirror to use, e.g., ``http://fr.archive.ubuntu.com/ubuntu``.
+  * ``arches`` (Optional): A list of architectures supported by the mirror. By default, this list contains the current CPU architecture.
+
+The URI for the archive mirror does not have to be a country mirror, although it may be the most convenient, and can take the URL of any valid Ubuntu mirror. A list of all registered archive mirrors can be found on `Launchpad <https://launchpad.net/ubuntu/+archivemirrors>`_.
+
+Examples:
+
+.. code-block:: yaml
+
+  # Use the first custom mirror that works. Do not restrict to specific architectures.
+  autoinstall:
+    apt:
+      mirror-selection:
+        primary:
+          - uri: "http://mirror1.internal/ubuntu"
+          - uri: "http://mirror2.internal/ubuntu"
+
+  # Use one mirror for amd64 and another for i386.
+  autoinstall:
+    apt:
+      mirror-selection:
+        primary:
+          - uri: "http://jp.archive.ubuntu.com/ubuntu"
+            arches: [amd64]
+          - uri: "http://tw.archive.ubuntu.com/ubuntu"
+            arches: [i386]
 
 fallback
 ^^^^^^^^
 
 * **type:** string (enumeration)
-* **default:** offline-install
+* **default:** ``offline-install``
 
 Controls what Subiquity does when no primary mirror is usable. Supported values are:
 
@@ -478,37 +505,54 @@ Controls what Subiquity does when no primary mirror is usable. Supported values 
 * ``offline-install``: revert to an offline installation
 * ``continue-anyway``: attempt to install the system anyway (not recommended; the installation fails)
 
+Examples:
+
+.. code-block:: yaml
+
+    # Only install from the primary archive and abort the installation if mirror validation fails.
+    autoinstall:
+      apt:
+        mirror-selection:
+          primary:
+            - uri: "http://archive.ubuntu.com/ubuntu"
+        fallback: abort
+
+    # Only install from the German country mirror and continue with an offline install if mirror validation fails.
+    autoinstall:
+      apt:
+        mirror-selection:
+          primary:
+            - uri: "http://de.archive.ubuntu.com/ubuntu"
+        fallback: offline-install
+
 geoip
 ^^^^^
 
 * **type:** boolean
 * **default:** ``true``
 
-If ``geoip`` is set to ``true`` and one of the candidate primary mirrors has the special value ``country-mirror``, a request is made to ``https://geoip.ubuntu.com/lookup``. Subiquity then sets the mirror URI to ``http://CC.archive.ubuntu.com/ubuntu`` (or similar for ports) where ``CC`` is the country code returned by the lookup. If this section is not interactive, the request expires after 10 seconds.
+If ``geoip`` is set to ``true`` and one of the candidate primary mirrors has the special value ``country-mirror``, a request is made to ``https://geoip.ubuntu.com/lookup``. Subiquity then sets the mirror URI to ``http://CC.archive.ubuntu.com/ubuntu`` where ``CC`` is the country code returned by the lookup. If this section is not interactive, the request expires after 10 seconds.
 
 If the legacy behaviour (i.e., without mirror-selection) is in use, the geolocation request is made if the mirror to be used is the default, and its URI is replaced by the proper country mirror URI.
 
-To specify a mirror, use a configuration like this:
+Examples:
 
 .. code-block:: yaml
 
+    # Use the automatically determined country mirror first, followed by an explicit backup mirror.
     autoinstall:
       apt:
         mirror-selection:
           primary:
-            - uri: YOUR_MIRROR_GOES_HERE
             - country-mirror
-            - uri: http://archive.ubuntu.com/ubuntu
+            - uri: http://dk.archive.ubuntu.com/ubuntu
+        geoip: true
 
-To add a PPA:
-
-.. code-block:: yaml
-
+    # Disable automatic country mirror detection (i.e. only use http://archive.ubuntu.com/ubuntu)
     autoinstall:
       apt:
-        sources:
-          curtin-ppa:
-            source: ppa:curtin-dev/test-archive
+        geoip: false
+
 
 .. _ai-storage:
 
