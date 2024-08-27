@@ -84,7 +84,7 @@ class ProgressView(BaseView):
         at_end = len(walker) == 0 or lb.focus_position == len(walker) - 1
         walker.append(line)
         if at_end:
-            lb.set_focus(len(walker) - 1)
+            lb.focus_position = len(walker) - 1
             lb.set_focus_valign("bottom")
 
     def event_start(self, context_id, context_parent_id, message):
