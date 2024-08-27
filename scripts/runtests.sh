@@ -169,7 +169,7 @@ python3 scripts/check-yaml-fields.py "$tmpdir"/var/log/installer/curtin-install/
 python3 scripts/check-yaml-fields.py <(python3 scripts/check-yaml-fields.py $tmpdir/etc/cloud/cloud.cfg.d/99-installer.cfg datasource.None.userdata_raw) \
         locale='"en_GB.UTF-8"' \
         timezone='"Pacific/Guam"' \
-        ubuntu_advantage.token='"C1NWcZTHLteJXGVMM6YhvHDpGrhyy7"' \
+        ubuntu_pro.token='"C1NWcZTHLteJXGVMM6YhvHDpGrhyy7"' \
         'snap.commands=[snap install --channel=3.2/stable etcd]'
 grep -q 'finish: subiquity/Install/install/postinstall/install_package1: SUCCESS: installing package1' \
      $tmpdir/subiquity-server-debug.log

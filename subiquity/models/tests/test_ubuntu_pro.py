@@ -25,7 +25,7 @@ class TestUbuntuProModel(unittest.TestCase):
         # Test with a token
         model.token = "0a1b2c3d4e5f6"
         expected = {
-            "ubuntu_advantage": {
+            "ubuntu_pro": {
                 "token": "0a1b2c3d4e5f6",
             }
         }
