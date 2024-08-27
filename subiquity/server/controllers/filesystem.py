@@ -568,21 +568,23 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if action in self._device_to_structure:
                     self._device_to_structure[action].device = path
 
-    def guided_direct(self, gap):
+    async def guided_direct(self, gap):
         spec = FileSystemSpec(fstype="ext4", mount="/")
-        self.create_partition(device=gap.device, gap=gap, spec=spec)
+        await self.create_partition(device=gap.device, gap=gap, spec=spec)
 
     def guided_dd(self, disk: ModelDisk):
         self.model.dd_target = disk
 
-    def guided_lvm(self, gap, choice: GuidedChoiceV2):
+    async def guided_lvm(self, gap, choice: GuidedChoiceV2):
         device = gap.device
         part_align = device.alignment_data().part_align
         bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
         gap_boot, gap_rest = gap.split(bootfs_size)
         fs_spec = FileSystemSpec(fstype="ext4", mount="/boot")
-        self.create_partition(device, gap_boot, fs_spec)
-        part = self.create_partition(device, gap_rest, FileSystemSpec(fstype=None))
+        await self.create_partition(device, gap_boot, fs_spec)
+        part = await self.create_partition(
+            device, gap_rest, FileSystemSpec(fstype=None)
+        )
 
         vg_name = "ubuntu-vg"
         i = 0
@@ -600,7 +602,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if recovery_key_handler is not None:
             spec["recovery-key"] = recovery_key_handler
 
-        vg = self.create_volgroup(spec)
+        vg = await self.create_volgroup(spec)
         if choice.sizing_policy == SizingPolicy.SCALED:
             lv_size = sizes.scaled_rootfs_size(vg.size)
             lv_size = align_down(lv_size, LVM_CHUNK_SIZE)
@@ -609,7 +611,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         else:
             raise Exception(f"Unhandled size policy {choice.sizing_policy}")
         log.debug(f"lv_size {lv_size} for {choice.sizing_policy}")
-        self.create_logical_volume(
+        await self.create_logical_volume(
             vg=vg,
             spec=dict(
                 size=lv_size,
@@ -621,12 +623,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.model.load_or_generate_recovery_keys()
         self.model.expose_recovery_keys()
 
-    def guided_zfs(self, gap, choice: GuidedChoiceV2):
+    async def guided_zfs(self, gap, choice: GuidedChoiceV2):
         device = gap.device
         part_align = device.alignment_data().part_align
         bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
         gap_boot, gap_rest = gap.split(bootfs_size)
-        bpart = self.create_partition(device, gap_boot, FileSystemSpec(fstype=None))
+        bpart = await self.create_partition(
+            device, gap_boot, FileSystemSpec(fstype=None)
+        )
         encryption_style = None
         if encrypted := choice.password is not None:
             encryption_style = "luks_keystore"
@@ -636,13 +640,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if swap_size > 0:
             gap_swap, gap = gap_rest.split(swap_size)
             if encrypted:
-                part = self.create_partition(device, gap_swap, {})
-                self.create_cryptoswap(part)
+                part = await self.create_partition(device, gap_swap, {})
+                await self.create_cryptoswap(part)
             else:
-                self.create_partition(device, gap_swap, dict(fstype="swap"))
+                await self.create_partition(device, gap_swap, dict(fstype="swap"))
         else:
             gap = gap_rest
-        rpart = self.create_partition(device, gap, FileSystemSpec(fstype=None))
+        rpart = await self.create_partition(device, gap, FileSystemSpec(fstype=None))
 
         uuid = gen_zsys_uuid()
 
@@ -683,13 +687,15 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         rpool.create_zfs(f"USERDATA/home_{userdata_uuid}", mountpoint="/home")
 
     @functools.singledispatchmethod
-    def start_guided(self, target: GuidedStorageTarget, disk: ModelDisk) -> gaps.Gap:
+    async def start_guided(
+        self, target: GuidedStorageTarget, disk: ModelDisk
+    ) -> gaps.Gap:
         """Setup changes to the disk to prepare the gap that we will be
         doing a guided install into."""
         raise NotImplementedError(target)
 
     @start_guided.register
-    def start_guided_reformat(
+    async def start_guided_reformat(
         self, target: GuidedStorageTargetReformat, disk: ModelDisk
     ) -> gaps.Gap:
         """Perform the reformat, and return the resulting gap."""
@@ -697,20 +703,20 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if in_use_parts:
             for p in disk.partitions():
                 if not p._is_in_use:
-                    self.delete_partition(p)
+                    await self.delete_partition(p)
         else:
-            self.reformat(disk, wipe="superblock-recursive")
+            await self.reformat(disk, wipe="superblock-recursive")
         return gaps.largest_gap(disk)
 
     @start_guided.register
-    def start_guided_use_gap(
+    async def start_guided_use_gap(
         self, target: GuidedStorageTargetUseGap, disk: ModelDisk
     ) -> gaps.Gap:
         """Lookup the matching model gap."""
         return gaps.at_offset(disk, target.gap.offset)
 
     @start_guided.register
-    def start_guided_resize(
+    async def start_guided_resize(
         self, target: GuidedStorageTargetResize, disk: ModelDisk
     ) -> gaps.Gap:
         """Perform the resize of the target partition,
@@ -780,9 +786,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             await self.guided_core_boot(disk)
             return
 
-        gap = self.start_guided(choice.target, disk)
+        gap = await self.start_guided(choice.target, disk)
         if DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk):
-            self.add_boot_disk(disk)
+            await self.add_boot_disk(disk)
         # find what's left of the gap after adding boot
         gap = gap.within()
         if gap is None:
@@ -799,7 +805,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 reset_size = int(cp.stdout.strip().split()[0])
                 reset_size = align_up(int(reset_size * 1.10), 256 * MiB)
             reset_gap, gap = gap.split(reset_size)
-            self.model.reset_partition = self.create_partition(
+            self.model.reset_partition = await self.create_partition(
                 device=reset_gap.device,
                 gap=reset_gap,
                 spec={"fstype": "fat32"},
@@ -808,16 +814,16 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self.reset_partition_only = reset_partition_only
             if reset_partition_only:
                 for mount in self.model._all(type="mount"):
-                    self.delete_mount(mount)
+                    await self.delete_mount(mount)
                 self.model.target = self.app.base_model.target = None
                 return
 
         if choice.capability.is_lvm():
-            self.guided_lvm(gap, choice)
+            await self.guided_lvm(gap, choice)
         elif choice.capability.is_zfs():
-            self.guided_zfs(gap, choice)
+            await self.guided_zfs(gap, choice)
         elif choice.capability == GuidedCapability.DIRECT:
-            self.guided_direct(gap)
+            await self.guided_direct(gap)
         elif choice.capability == GuidedCapability.DD:
             self.guided_dd(disk)
         else:
@@ -940,11 +946,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
             for part in list(disk.partitions()):
                 if part not in preserved_parts:
-                    self.delete_partition(part)
+                    await self.delete_partition(part)
                     del parts_by_offset_size[(part.offset, part.size)]
 
         if not preserved_parts:
-            self.reformat(disk, self._on_volume.schema)
+            await self.reformat(disk, self._on_volume.schema)
 
         for structure, offset, size in self._offsets_and_sizes_for_volume(
             self._on_volume
@@ -970,7 +976,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 part.partition_name = structure.name
             if structure.filesystem:
                 part.wipe = "superblock"
-                self.delete_filesystem(part.fs())
+                await self.delete_filesystem(part.fs())
                 fs = self.model.add_filesystem(
                     part, structure.filesystem, label=structure.label
                 )
@@ -1282,7 +1288,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_reformat_disk_POST(self, data: ReformatDisk) -> StorageResponseV2:
         self.locked_probe_data = True
-        self.reformat(self.model._one(id=data.disk_id), data.ptable)
+        await self.reformat(self.model._one(id=data.disk_id), data.ptable)
         return await self.v2_GET()
 
     async def v2_add_boot_partition_POST(self, disk_id: str) -> StorageResponseV2:
@@ -1292,7 +1298,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise StorageRecoverableError("device already has bootloader partition")
         if DeviceAction.TOGGLE_BOOT not in DeviceAction.supported(disk):
             raise StorageRecoverableError("disk does not support boot partiton")
-        self.add_boot_disk(disk)
+        await self.add_boot_disk(disk)
         return await self.v2_GET()
 
     async def v2_add_partition_POST(self, data: AddPartitionV2) -> StorageResponseV2:
@@ -1316,7 +1322,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             spec["mount"] = data.partition.mount
 
         gap = gaps.at_offset(disk, data.gap.offset).split(requested_size)[0]
-        self.create_partition(disk, gap, spec, wipe="superblock")
+        await self.create_partition(disk, gap, spec, wipe="superblock")
         return await self.v2_GET()
 
     async def v2_delete_partition_POST(
@@ -1326,7 +1332,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.locked_probe_data = True
         disk = self.model._one(id=data.disk_id)
         partition = self.get_partition(disk, data.partition.number)
-        self.delete_partition(partition)
+        await self.delete_partition(partition)
         return await self.v2_GET()
 
     async def v2_edit_partition_POST(
@@ -1352,7 +1358,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if data.partition.size is not None:
             spec["size"] = data.partition.size
         spec["wipe"] = data.partition.wipe
-        self.partition_disk_handler(disk, spec, partition=partition)
+        await self.partition_disk_handler(disk, spec, partition=partition)
         return await self.v2_GET()
 
     async def v2_volume_group_DELETE(self, id: str) -> StorageResponseV2:
@@ -1364,7 +1370,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise StorageRecoverableError(f"could not find existing VG '{id}'")
         assert isinstance(vg, LVM_VolGroup)
 
-        self.delete_volgroup(vg)
+        await self.delete_volgroup(vg)
         return await self.v2_GET()
 
     async def v2_logical_volume_DELETE(self, id: str) -> StorageResponseV2:
@@ -1375,7 +1381,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise StorageRecoverableError(f"could not find existing LV '{id}'")
         assert isinstance(lv, LVM_LogicalVolume)
 
-        self.delete_logical_volume(lv)
+        await self.delete_logical_volume(lv)
         return await self.v2_GET()
 
     async def v2_raid_DELETE(self, id: str) -> StorageResponseV2:
@@ -1387,7 +1393,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise StorageRecoverableError(f"could not find existing RAID '{id}'")
         assert isinstance(raid, Raid)
 
-        self.delete_raid(raid)
+        await self.delete_raid(raid)
         return await self.v2_GET()
 
     async def dry_run_wait_probe_POST(self) -> None:
