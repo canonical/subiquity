@@ -1,7 +1,22 @@
 #!/bin/bash
 set -eux
+
+if [ "$#" -lt 2 ]; then
+    cat >&2 <<EOF
+usage: $0 <lxd-image> <test-command>
+
+positional arguments:
+  lxd-image     the LXD image to launch
+  test-command  the command to run on the container
+
+example:
+  $0 ubuntu-daily:noble "make check"
+EOF
+    exit 1
+fi
+
 IMAGE=$1
-SCRIPT=$2
+TEST_CMD=$2
 TESTER=subiquity-${IMAGE##*:}
 
 lxd init --auto
@@ -62,6 +77,6 @@ fi
 lxc exec $TESTER -- sh -ec "
     cd ~/subiquity
     ./scripts/installdeps.sh
-    $SCRIPT"
+    $TEST_CMD"
 
 lxc stop $TESTER
