@@ -65,7 +65,7 @@ Alternatively, you can pass the location of the autoinstall file on the kernel c
 
 .. code-block::
 
-    subiquity.autoinstallpath=path/to/autoinstall.yaml`
+    subiquity.autoinstallpath=path/to/autoinstall.yaml
 
 
 Order of precedence for autoinstall locations
