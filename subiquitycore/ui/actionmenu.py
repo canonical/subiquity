@@ -63,7 +63,9 @@ class _ActionMenuDialog(WidgetWrap):
                 else:
                     btn = Color.menu_button(ActionMenuButton(action.label))
                 width = max(width, len(btn.base_widget.label))
-                connect_signal(btn.base_widget, "click", self.click, action.value)
+                connect_signal(
+                    btn.base_widget, "click", self.click, user_args=[action.value]
+                )
             else:
                 label = action.label
                 if isinstance(label, Widget):
@@ -89,7 +91,7 @@ class _ActionMenuDialog(WidgetWrap):
     def close(self, sender):
         self.parent.close_pop_up()
 
-    def click(self, btn, value):
+    def click(self, value, btn):
         self.parent._action(value)
         self.parent.close_pop_up()
 

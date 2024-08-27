@@ -113,7 +113,7 @@ class MountList(WidgetWrap):
         )
         super().__init__(self.table)
 
-    def _mount_action(self, sender, action, mount):
+    def _mount_action(self, mount, sender, action):
         log.debug("_mount_action %s %s", action, mount)
         if action == "unmount":
             self.parent.controller.delete_mount(mount)
@@ -168,7 +168,7 @@ class MountList(WidgetWrap):
                         ]
             actions = [(_("Unmount"), mi.mount.can_delete(), "unmount")]
             menu = ActionMenu(actions)
-            connect_signal(menu, "action", self._mount_action, mi.mount)
+            connect_signal(menu, "action", self._mount_action, user_args=[mi.mount])
             cells = [
                 Text("["),
                 Text(path_markup),
@@ -306,7 +306,7 @@ class DeviceList(WidgetWrap):
         lambda parent, gap: PartitionStretchy(parent, gap.device, gap=gap)
     )
 
-    def _action(self, sender, value, device):
+    def _action(self, device, sender, value):
         action, meth = value
         log.debug("_action %s %s", action, device.id)
         meth(device)
@@ -365,7 +365,7 @@ class DeviceList(WidgetWrap):
         if not device_actions:
             return Text("")
         menu = ActionMenu(device_actions)
-        connect_signal(menu, "action", self._action, device)
+        connect_signal(menu, "action", self._action, user_args=[device])
         return menu
 
     def refresh_model_inputs(self):

@@ -128,7 +128,7 @@ class ChooserView(ChooserBaseView):
                     Action(label=act.title.capitalize(), value=act, enabled=True)
                 )
             menu = ActionMenu(actions)
-            connect_signal(menu, "action", self._system_action, s)
+            connect_signal(menu, "action", self._system_action, user_args=[s])
             srow = make_action_menu_row(
                 [
                     Text(s.label),
@@ -162,7 +162,7 @@ class ChooserView(ChooserBaseView):
             ),
         )
 
-    def _system_action(self, sender, action, system):
+    def _system_action(self, system, sender, action):
         self.controller.select(system, action)
 
     def back(self, result):

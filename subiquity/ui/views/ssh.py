@@ -407,11 +407,11 @@ class SSHView(BaseView):
                     menu,
                 )
             )
-            connect_signal(menu, "action", self._action, key)
+            connect_signal(menu, "action", self._action, user_args=[key])
 
         self.keys_table.set_contents(rows)
 
-    def _action(self, sender, value, key):
+    def _action(self, key, sender, value):
         if value == "delete":
             self.remove_key_from_table(key)
             self.refresh_keys_table()

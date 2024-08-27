@@ -60,7 +60,7 @@ class _PopUpSelectDialog(WidgetWrap):
         for i, option in enumerate(self.parent._options):
             if option.enabled:
                 btn = ClickableThing(option.label)
-                connect_signal(btn, "click", self.click, i)
+                connect_signal(btn, "click", self.click, user_args=[i])
                 if i == cur_index:
                     rhs = "\N{BLACK LEFT-POINTING SMALL TRIANGLE} "
                 else:
@@ -85,7 +85,7 @@ class _PopUpSelectDialog(WidgetWrap):
         list_box.base_widget.focus_position = cur_index
         super().__init__(Color.body(LineBox(list_box)))
 
-    def click(self, btn, index):
+    def click(self, index, btn):
         self.parent.index = index
         self.parent.close_pop_up()
 

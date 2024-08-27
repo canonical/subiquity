@@ -98,7 +98,7 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
             del self.devices[device]
         self._emit("change", self.devices)
 
-    def _select_active_spare(self, sender, value, device):
+    def _select_active_spare(self, device, sender, value):
         self.devices[device] = value
         self._emit("change", self.devices)
 
@@ -151,7 +151,9 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
                 self.all_rows.append(Color.menu_button(TableRow([box, size])))
                 self.no_selector_rows.append(self.all_rows[-1])
                 selector = Selector(["active", "spare"])
-                connect_signal(selector, "select", self._select_active_spare, device)
+                connect_signal(
+                    selector, "select", self._select_active_spare, user_args=[device]
+                )
                 selector = Toggleable(
                     UrwidPadding(Color.menu_button(selector), left=len(prefix))
                 )
