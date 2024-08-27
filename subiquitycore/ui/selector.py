@@ -12,7 +12,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import ACTIVATE, AttrWrap, CompositeCanvas, LineBox
+from urwid import ACTIVATE, AttrMap, CompositeCanvas, LineBox
 from urwid import Padding as UrwidPadding
 from urwid import PopUpLauncher, Text, connect_signal
 
@@ -76,9 +76,9 @@ class _PopUpSelectDialog(WidgetWrap):
                 ]
             )
             if option.enabled:
-                row = AttrWrap(row, "menu_button", "menu_button focus")
+                row = AttrMap(row, "menu_button", "menu_button focus")
             else:
-                row = AttrWrap(row, "info_minor")
+                row = AttrMap(row, "info_minor")
             btn = UrwidPadding(row, width=self.parent._padding.width)
             group.append(btn)
         list_box = ListBox(group)
@@ -162,7 +162,7 @@ class Selector(WidgetWrap):
     def __init__(self, opts, index=0):
         self._icon = ClickableThing(Text(""))
         self._padding = UrwidPadding(
-            AttrWrap(
+            AttrMap(
                 Columns(
                     [
                         (1, Text("[")),

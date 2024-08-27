@@ -15,7 +15,7 @@
 import attr
 from urwid import (
     ACTIVATE,
-    AttrWrap,
+    AttrMap,
     Button,
     LineBox,
     PopUpLauncher,
@@ -83,7 +83,7 @@ class _ActionMenuDialog(WidgetWrap):
                     ],
                     dividechars=1,
                 )
-                btn = AttrWrap(btn, "info_minor")
+                btn = AttrMap(btn, "info_minor")
             group.append(btn)
         self.width = width
         super().__init__(Color.body(LineBox(ListBox(group))))
