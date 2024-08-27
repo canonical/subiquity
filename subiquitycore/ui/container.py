@@ -465,12 +465,11 @@ class ScrollBarListBox(urwid.WidgetDecoration):
 
             seen_focus = False
             height = height_before_focus = 0
-            focus_widget, focus_pos = lb.body.get_focus()
             # Scan through the rows calculating total height and the
             # height of the rows before the focus widget.
             for widget in lb.body:
                 rows = widget.rows((maxcol - 1,))
-                if widget is focus_widget:
+                if widget is lb.focus:
                     seen_focus = True
                 elif not seen_focus:
                     height_before_focus += rows
