@@ -24,7 +24,7 @@ import shutil
 import subprocess
 import time
 from contextlib import AsyncExitStack
-from typing import Any, Callable, Dict, List, Optional, Self, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Self, Sequence, Union
 
 import attr
 import pyudev
@@ -88,7 +88,6 @@ from subiquity.models.filesystem import (
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
-from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
 from subiquity.server.snapd.system_getter import SystemGetter, SystemsDirMounter
@@ -127,23 +126,13 @@ system_non_gpt_text = _(
 DRY_RUN_RESET_SIZE = 500 * MiB
 
 
-class NonReportableSVE(RecoverableError, NonReportableException):
-    """Non reportable storage value error"""
-
-
-class ReportableSVE(ValueError):
-    """Reportable storage value error"""
-
-    # TODO Inherit from RecoverableError going forward.
-
-
-# Depending on config, we will let the SVE fail on the server side
-StorageRecoverableError: Type[NonReportableSVE | ReportableSVE] = ReportableSVE
+class StorageRecoverableError(RecoverableError):
+    pass
 
 
 def set_user_error_reportable(reportable: bool) -> None:
     global StorageRecoverableError
-    StorageRecoverableError = ReportableSVE if reportable else NonReportableSVE
+    StorageRecoverableError.produce_crash_report = reportable
 
 
 @attr.s(auto_attribs=True)

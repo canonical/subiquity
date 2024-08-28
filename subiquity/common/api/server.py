@@ -169,9 +169,13 @@ def _make_handler(
                 )
             except Exception as exc:
                 tb = traceback.TracebackException.from_exception(exc)
+                if not isinstance(exc, RecoverableError) or exc.produce_crash_report:
+                    status = 500
+                else:
+                    status = 422
                 resp = web.Response(
                     text="".join(tb.format()),
-                    status=422 if isinstance(exc, RecoverableError) else 500,
+                    status=status,
                     headers={
                         "x-status": "error",
                         "x-error-type": type(exc).__name__,
