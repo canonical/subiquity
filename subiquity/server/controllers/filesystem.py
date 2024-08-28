@@ -133,6 +133,9 @@ class StorageRecoverableError(RecoverableError):
 class StorageInvalidUsageError(StorageRecoverableError):
     """Exception to raise when a storage endpoint is not properly used."""
 
+    code = "storage-invalid-usage"
+    title = _("Invalid use of storage endpoint")
+
 
 class StorageConstraintViolationError(StorageRecoverableError):
     """Exception to raise when a constraint is violated at runtime.
@@ -141,10 +144,16 @@ class StorageConstraintViolationError(StorageRecoverableError):
      - requesting a boot configuration that is not supported by the hardware
     """
 
+    code = "storage-constraint-violated"
+    title = _("Storage constraint violated")
+
 
 class StorageNotFoundError(StorageRecoverableError):
     """Exception to raise when a storage entity declared in a request (e.g., a
     disk, a partition, ...) is not found in the model."""
+
+    code = "storage-not-found"
+    title = _("Storage entity not found")
 
 
 def set_user_error_reportable(reportable: bool) -> None:
