@@ -44,8 +44,11 @@ apps:
     environment:
       PYTHONIOENCODING: utf-8
       SUBIQUITY_ROOT: $SNAP
+      PYTHONPATH_ORIG: $PYTHONPATH
+      PYTHON_ORIG: $PYTHON
       PYTHON: $SNAP/usr/bin/python3.10
       PY3OR2_PYTHON: $SNAP/usr/bin/python3.10
+      PATH_ORIG: $PATH
       PATH: $PATH:$SNAP/bin:$SNAP/sbin
       # APPORT_DATA_DIR must be set before the `apport` python module is
       # imported.
@@ -152,6 +155,7 @@ parts:
       bin/subiquity-service: usr/bin/subiquity-service
       bin/subiquity-server: usr/bin/subiquity-server
       bin/subiquity-cmd: usr/bin/subiquity-cmd
+      bin/subiquity-umockdev-wrapper: system_scripts/subiquity-umockdev-wrapper
 
     build-attributes:
       - enable-patchelf

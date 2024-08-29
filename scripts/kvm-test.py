@@ -23,8 +23,8 @@ import subprocess
 import sys
 import tempfile
 from typing import List, Optional, Tuple
-import yaml
 
+import yaml
 
 cfg = '''
 iso:
@@ -240,6 +240,11 @@ parser.add_argument('--with-tpm2', action='store_true',
                     package)''')
 parser.add_argument('--profile', default="server",
                     help='load predefined memory, disk size and qemu options')
+parser.add_argument('--kernel-cmdline', action='append', default=[],
+                    dest='kernel_appends',
+                    help=('Use to append argument(s) to kernel command line.'
+                          'Can be passed repeatedly.'),
+                    )
 
 
 cc_group = parser.add_mutually_exclusive_group()
@@ -555,7 +560,7 @@ def install(ctx):
     with tempfile.TemporaryDirectory() as tempdir:
         mntdir = f'{tempdir}/mnt'
         os.mkdir(mntdir)
-        appends = []
+        appends = ctx.args.kernel_appends
 
         with kvm_prepare_common(ctx) as kvm:
 
