@@ -14,9 +14,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-from subprocess import CompletedProcess
+import logging
+from subprocess import CalledProcessError, CompletedProcess
 from unittest import skipIf
 from unittest.mock import Mock, patch
+
+import yaml
 
 from subiquity.cloudinit import (
     CLOUD_INIT_PW_SET,
@@ -24,6 +27,7 @@ from subiquity.cloudinit import (
     cloud_init_status_wait,
     cloud_init_version,
     get_schema_failure_keys,
+    legacy_cloud_init_extract,
     rand_password,
     rand_user_password,
     read_json_extended_status,
@@ -248,3 +252,57 @@ class TestCloudInitRandomStrings(SubiTestCase):
         # password characters sampled from provided set
         choices = ["a"]
         self.assertEqual("a" * 32, rand_password(select_from=choices))
+
+
+@patch("subiquity.cloudinit.arun_command")
+@patch("subiquity.cloudinit.system_scripts_env")
+class TestCloudInitLegacyExtract(SubiTestCase):
+    """Test subiquity-legacy-cloud-init-extract helper function."""
+
+    @patch("subiquity.cloudinit.yaml.safe_load")
+    async def test_called_with_correct_env(
+        self,
+        safe_load_mock,
+        scripts_env_mock,
+        arun_mock,
+    ):
+        """Test legacy script is called with system_scripts env."""
+        mock_env = {"mock": "env"}
+        scripts_env_mock.return_value = mock_env
+        await legacy_cloud_init_extract()
+        self.assertEqual(arun_mock.call_args.kwargs["env"], mock_env)
+
+    async def test_read_stdout(
+        self,
+        scripts_env_mock,
+        arun_mock,
+    ):
+        """Test reads yaml from stdout."""
+        prog_output = {"cloud_cfg": {"some": "data"}, "installer_user_name": "pytest"}
+        expected_cloud_cfg = prog_output["cloud_cfg"]
+        expected_installer_user_name = prog_output["installer_user_name"]
+        arun_mock.return_value.stdout = yaml.dump(prog_output)
+
+        cloud_cfg, installer_user_name = await legacy_cloud_init_extract()
+        self.assertEqual(cloud_cfg, expected_cloud_cfg)
+        self.assertEqual(installer_user_name, expected_installer_user_name)
+
+    async def test_useful_error(
+        self,
+        scripts_env_mock,
+        arun_mock,
+    ):
+        """Test reports errors usefully."""
+        arun_mock.side_effect = cpe = CalledProcessError(
+            1, ["extract"], "stdout", "stderr"
+        )
+
+        with (
+            self.assertRaises(CalledProcessError),
+            patch("subiquity.cloudinit.log_process_streams") as log_mock,
+        ):
+            await legacy_cloud_init_extract()
+
+        log_mock.assert_called_with(
+            logging.DEBUG, cpe, "subiquity-legacy-cloud-init-extract"
+        )

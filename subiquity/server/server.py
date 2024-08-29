@@ -31,6 +31,7 @@ from subiquity.cloudinit import (
     CloudInitSchemaValidationError,
     cloud_init_status_wait,
     get_host_combined_cloud_config,
+    legacy_cloud_init_extract,
     rand_user_password,
     validate_cloud_init_schema,
 )
@@ -858,17 +859,8 @@ class SubiquityServer(Application):
 
         else:
             log.debug("loading cloud-config from stages.Init()")
-            from cloudinit import stages
-            from cloudinit.distros import ug_util
 
-            init = stages.Init()
-            init.read_cfg()
-            init.fetch(existing="trust")
-            cloud = init.cloudify()
-            cloud_cfg = cloud.cfg
-
-            users = ug_util.normalize_users_groups(cloud_cfg, cloud.distro)[0]
-            self.installer_user_name = ug_util.extract_default(users)[0]
+            cloud_cfg, self.installer_user_name = await legacy_cloud_init_extract()
 
         autoinstall = await self._extract_autoinstall_from_cloud_config(
             cloud_cfg=cloud_cfg, context=context

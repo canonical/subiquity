@@ -37,7 +37,7 @@ def _clean_env(env, *, locale=True):
 
 def system_scripts_env() -> dict[str, str]:
     """Generate an environment for running all programs outside of the snap,
-    but also include those vendored in $SNAP/bin.
+    but also include those vendored in $SNAP/system_scripts.
     """
 
     env: dict[str, str] = orig_environ(os.environ)
