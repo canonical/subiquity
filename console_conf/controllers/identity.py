@@ -22,7 +22,7 @@ import sys
 from subiquitycore.ssh import host_key_info, get_ips_standalone
 from subiquitycore.snapd import SnapdConnection
 from subiquitycore.tuicontroller import TuiController
-from subiquitycore.utils import disable_console_conf, run_command
+from subiquitycore.utils import run_command
 
 from console_conf.ui.views import IdentityView, LoginView
 
@@ -213,9 +213,4 @@ class IdentityController(TuiController):
         self.ui.set_body(self.make_login_view())
 
     def login_done(self):
-        if not self.opts.dry_run:
-            # stop the console-conf services (this will kill the
-            # current process).
-            disable_console_conf()
-
         self.app.exit()
