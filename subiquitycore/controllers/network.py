@@ -585,7 +585,7 @@ class NetworkAnswersMixin:
             table = self._action_get(action["obj"])
             meth = getattr(self.ui.body, "_action_{}".format(action["action"]))
             action_obj = getattr(NetDevAction, action["action"])
-            self.ui.body._action(None, (action_obj, meth), table)
+            self.ui.body._action(table, None, (action_obj, meth))
             yield
             body = self.ui.body._w
             if action["action"] == "DELETE":

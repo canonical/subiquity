@@ -69,7 +69,7 @@ class ZdevList(WidgetWrap):
         self.update(new_zdevinfos)
         self.parent.request_redraw_if_visible()
 
-    def zdev_action(self, sender, action, zdevinfo):
+    def zdev_action(self, zdevinfo, sender, action):
         run_bg_task(self._zdev_action(action, zdevinfo))
 
     def update(self, zdevinfos):
@@ -120,7 +120,7 @@ class ZdevList(WidgetWrap):
                 (_("Disable"), zdevinfo.on, "disable"),
             ]
             menu = ActionMenu(actions)
-            connect_signal(menu, "action", self.zdev_action, zdevinfo)
+            connect_signal(menu, "action", self.zdev_action, user_args=[zdevinfo])
             cells = [
                 Text(zdevinfo.id),
                 status(zdevinfo),

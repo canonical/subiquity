@@ -131,7 +131,7 @@ class TabCyclingPile(urwid.Pile):
         """Select first selectable child (possibily recursively)."""
         for i, (w, o) in enumerate(self.contents):
             if w.selectable():
-                self.set_focus(i)
+                self.focus_position = i
                 _maybe_call(w, "_select_first_selectable")
                 return
 
@@ -139,7 +139,7 @@ class TabCyclingPile(urwid.Pile):
         """Select last selectable child (possibily recursively)."""
         for i, (w, o) in reversed(list(enumerate(self.contents))):
             if w.selectable():
-                self.set_focus(i)
+                self.focus_position = i
                 _maybe_call(w, "_select_last_selectable")
                 return
 
@@ -189,7 +189,7 @@ class TabCyclingPile(urwid.Pile):
             next_fp = self.focus_position + 1
             for i, (w, o) in enumerate(self._contents[next_fp:], next_fp):
                 if w.selectable():
-                    self.set_focus(i)
+                    self.focus_position = i
                     _maybe_call(w, "_select_first_selectable")
                     return
             if not key.endswith(" no wrap"):
@@ -199,7 +199,7 @@ class TabCyclingPile(urwid.Pile):
             positions = self._contents[: self.focus_position]
             for i, (w, o) in reversed(list(enumerate(positions))):
                 if w.selectable():
-                    self.set_focus(i)
+                    self.focus_position = i
                     _maybe_call(w, "_select_last_selectable")
                     return
             if not key.endswith(" no wrap"):
@@ -265,7 +265,7 @@ class OneSelectableColumns(urwid.Columns):
         """Select first selectable child (possibily recursively)."""
         for i, (w, o) in enumerate(self.contents):
             if w.selectable():
-                self.set_focus(i)
+                self.focus_position = i
                 _maybe_call(w, "_select_first_selectable")
                 return
 
@@ -273,7 +273,7 @@ class OneSelectableColumns(urwid.Columns):
         """Select last selectable child (possibily recursively)."""
         for i, (w, o) in reversed(list(enumerate(self.contents))):
             if w.selectable():
-                self.set_focus(i)
+                self.focus_position = i
                 _maybe_call(w, "_select_last_selectable")
                 return
 
@@ -289,14 +289,14 @@ class TabCyclingListBox(urwid.ListBox):
         super().__init__(body)
 
     def _set_focus_no_move(self, i):
-        # We call set_focus twice because otherwise the listbox
-        # attempts to do the minimal amount of scrolling required to
+        # We set the focus_position property twice because otherwise the
+        # listbox attempts to do the minimal amount of scrolling required to
         # get the new focus widget into view, which is not what we
         # want, as if our first widget is a compound widget it results
         # its last widget being focused -- in fact the opposite of
         # what we want!
-        self.set_focus(i)
-        self.set_focus(i)
+        self.focus_position = i
+        self.focus_position = i
         # I don't really understand why this is required but it seems it is.
         self._invalidate()
 
@@ -334,7 +334,7 @@ class TabCyclingListBox(urwid.ListBox):
             next_fp = self.focus_position + 1
             for i, w in enumerate(self.body[next_fp:], next_fp):
                 if w.selectable():
-                    self.set_focus(i)
+                    self.focus_position = i
                     _maybe_call(w, "_select_first_selectable")
                     return None
             if not key.endswith(" no wrap"):
@@ -344,7 +344,7 @@ class TabCyclingListBox(urwid.ListBox):
             positions = self.body[: self.focus_position]
             for i, w in reversed(list(enumerate(positions))):
                 if w.selectable():
-                    self.set_focus(i)
+                    self.focus_position = i
                     _maybe_call(w, "_select_last_selectable")
                     return None
             if not key.endswith(" no wrap"):
@@ -465,12 +465,11 @@ class ScrollBarListBox(urwid.WidgetDecoration):
 
             seen_focus = False
             height = height_before_focus = 0
-            focus_widget, focus_pos = lb.body.get_focus()
             # Scan through the rows calculating total height and the
             # height of the rows before the focus widget.
             for widget in lb.body:
                 rows = widget.rows((maxcol - 1,))
-                if widget is focus_widget:
+                if widget is lb.focus:
                     seen_focus = True
                 elif not seen_focus:
                     height_before_focus += rows

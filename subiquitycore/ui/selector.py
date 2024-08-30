@@ -12,7 +12,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import ACTIVATE, AttrWrap, CompositeCanvas, LineBox
+from urwid import ACTIVATE, AttrMap, CompositeCanvas, LineBox
 from urwid import Padding as UrwidPadding
 from urwid import PopUpLauncher, Text, connect_signal
 
@@ -60,7 +60,7 @@ class _PopUpSelectDialog(WidgetWrap):
         for i, option in enumerate(self.parent._options):
             if option.enabled:
                 btn = ClickableThing(option.label)
-                connect_signal(btn, "click", self.click, i)
+                connect_signal(btn, "click", self.click, user_args=[i])
                 if i == cur_index:
                     rhs = "\N{BLACK LEFT-POINTING SMALL TRIANGLE} "
                 else:
@@ -76,16 +76,16 @@ class _PopUpSelectDialog(WidgetWrap):
                 ]
             )
             if option.enabled:
-                row = AttrWrap(row, "menu_button", "menu_button focus")
+                row = AttrMap(row, "menu_button", "menu_button focus")
             else:
-                row = AttrWrap(row, "info_minor")
+                row = AttrMap(row, "info_minor")
             btn = UrwidPadding(row, width=self.parent._padding.width)
             group.append(btn)
         list_box = ListBox(group)
         list_box.base_widget.focus_position = cur_index
         super().__init__(Color.body(LineBox(list_box)))
 
-    def click(self, btn, index):
+    def click(self, index, btn):
         self.parent.index = index
         self.parent.close_pop_up()
 
@@ -162,7 +162,7 @@ class Selector(WidgetWrap):
     def __init__(self, opts, index=0):
         self._icon = ClickableThing(Text(""))
         self._padding = UrwidPadding(
-            AttrWrap(
+            AttrMap(
                 Columns(
                     [
                         (1, Text("[")),

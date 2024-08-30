@@ -397,7 +397,7 @@ class ErrorReportListStretchy(Stretchy):
         self.report_to_row = {}
         self.app.error_reporter.load_reports()
         for report in self.app.error_reporter.reports:
-            connect_signal(report, "changed", self._report_changed, report)
+            connect_signal(report, "changed", self._report_changed, user_args=[report])
             r = self.report_to_row[report] = self.row_for_report(report)
             rows.append(r)
         self.table = TablePile(rows, colspecs={1: ColSpec(can_shrink=True)})
@@ -410,7 +410,7 @@ class ErrorReportListStretchy(Stretchy):
         ]
         super().__init__("", widgets, 2, 2)
 
-    def open_report(self, sender, report):
+    def open_report(self, report, sender):
         self.app.add_global_overlay(ErrorReportStretchy(self.app, report, False))
 
     def state_for_report(self, report):
@@ -421,7 +421,7 @@ class ErrorReportListStretchy(Stretchy):
     def cells_for_report(self, report):
         date = report.pr.get("Date", "???")
         icon = ClickableIcon(date)
-        connect_signal(icon, "click", self.open_report, report)
+        connect_signal(icon, "click", self.open_report, user_args=[report])
         return [
             Text("["),
             icon,

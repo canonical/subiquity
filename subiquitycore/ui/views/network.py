@@ -88,7 +88,7 @@ class NetworkDeviceTable(WidgetWrap):
                 actions.append((action.str(), True, (action, meth), opens_dialog))
 
         menu = ActionMenu(actions)
-        connect_signal(menu, "action", self.parent._action, self)
+        connect_signal(menu, "action", self.parent._action, user_args=[self])
 
         trows = [
             make_action_menu_row(
@@ -344,7 +344,7 @@ class NetworkView(BaseView):
             self.controller.delete_link(dev_info.name)
             self.del_link(dev_info)
 
-    def _action(self, sender, action, netdev_table):
+    def _action(self, netdev_table, sender, action):
         action, meth = action
         dev_info = netdev_table.dev_info
         meth("{}/{}".format(dev_info.name, action.name), dev_info)
