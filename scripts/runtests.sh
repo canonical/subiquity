@@ -232,6 +232,18 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --source-catalog examples/sources/install.yaml
 validate
 
+clean
+testname=autoinstall-empty-cmdlist
+LANG=C.UTF-8 timeout --foreground 60 \
+    python3 -m subiquity.cmd.tui \
+    --dry-run \
+    --output-base "$tmpdir" \
+    --machine-config examples/machines/simple.json \
+    --autoinstall examples/autoinstall/empty-cmdlist.yaml \
+    --kernel-cmdline autoinstall \
+    --source-catalog examples/sources/install.yaml
+validate
+
 python3 -m subiquity.cmd.schema > $tmpdir/test-schema.json
 diff -u "autoinstall-schema.json" $tmpdir/test-schema.json
 
