@@ -1435,11 +1435,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             (False, ErrorReportKind.BLOCK_PROBE_FAIL, "block"),
             (True, ErrorReportKind.DISK_PROBE_FAIL, "disk"),
         ]:
-            probert_timeout = 90.0
-            if self.app.opts.use_os_prober:
-                # We know that os-prober is going to be (very) slow on some
-                # systems, let's give probert more time.
-                probert_timeout *= 2
+            if self.app.opts.block_probing_timeout is None:
+                probert_timeout = None
+            else:
+                probert_timeout = self.app.opts.block_probing_timeout
+                if self.app.opts.use_os_prober:
+                    # We know that os-prober is going to be (very) slow on some
+                    # systems, let's give probert more time.
+                    probert_timeout *= 2
             try:
                 start = time.time()
                 await self._probe_once_task.start(
