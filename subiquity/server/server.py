@@ -58,7 +58,7 @@ from subiquity.server.geoip import DryRunGeoIPStrategy, GeoIP, HTTPGeoIPStrategy
 from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.pkghelper import get_package_installer
 from subiquity.server.runner import get_command_runner
-from subiquity.server.snapdapi import make_api_client
+from subiquity.server.snapd.api import make_api_client
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import run_bg_task, run_in_thread
 from subiquitycore.context import Context, with_context

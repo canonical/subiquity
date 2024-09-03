@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import copy
 import subprocess
 import uuid
@@ -58,7 +59,6 @@ from subiquity.models.tests.test_filesystem import (
     make_partition,
     make_raid,
 )
-from subiquity.server import snapdapi
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controllers.filesystem import (
     DRY_RUN_RESET_SIZE,
@@ -67,6 +67,9 @@ from subiquity.server.controllers.filesystem import (
     VariationInfo,
 )
 from subiquity.server.dryrun import DRConfig
+from subiquity.server.snapd import api as snapdapi
+from subiquity.server.snapd import types as snapdtypes
+from subiquity.server.snapd.system_getter import SystemGetter
 from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized
@@ -524,8 +527,15 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         JsonValidator.check_schema(FilesystemController.autoinstall_schema)
 
     async def test__get_system_api_error_logged(self):
-        mount_mock = mock.patch.object(self.fsc, "_mount_systems_dir")
-        unmount_mock = mock.patch.object(self.fsc, "_unmount_systems_dir")
+        getter = SystemGetter(self.app)
+
+        @contextlib.asynccontextmanager
+        async def mounted(self):
+            yield
+
+        mount_mock = mock.patch(
+            "subiquity.server.snapd.system_getter.SystemsDirMounter.mounted", mounted
+        )
 
         self.app.snapdapi = snapdapi.make_api_client(
             AsyncSnapd(SnapdConnection(root="/inexistent", sock="snapd"))
@@ -557,12 +567,12 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             status_code=500,
         )
 
-        with mount_mock, unmount_mock, requests_mocker:
+        with mount_mock, requests_mocker:
             with self.assertRaises(requests.exceptions.HTTPError):
                 with self.assertLogs(
-                    "subiquity.server.controllers.filesystem", level="WARNING"
+                    "subiquity.server.snapd.system_getter", level="WARNING"
                 ) as logs:
-                    await self.fsc._get_system(
+                    await getter.get(
                         variation_name="minimal", label="enhanced-secureboot-desktop"
                     )
 
@@ -1565,16 +1575,25 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.fsc = FilesystemController(app=self.app)
         self.fsc._configured = True
         self.fsc.model = make_model(Bootloader.UEFI)
-        self.fsc._mount_systems_dir = mock.AsyncMock()
+
+        @contextlib.asynccontextmanager
+        async def mounted(self):
+            yield
+
+        p = mock.patch(
+            "subiquity.server.snapd.system_getter.SystemsDirMounter.mounted", mounted
+        )
+        p.start()
+        self.addCleanup(p.stop)
 
     def _add_details_for_structures(self, structures):
         self.fsc._info = VariationInfo(
             name="foo",
             label="system",
-            system=snapdapi.SystemDetails(
+            system=snapdtypes.SystemDetails(
                 label="system",
                 volumes={
-                    "pc": snapdapi.Volume(schema="gpt", structure=structures),
+                    "pc": snapdtypes.Volume(schema="gpt", structure=structures),
                 },
             ),
         )
@@ -1584,14 +1603,14 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         arbitrary_uuid = str(uuid.uuid4())
         self._add_details_for_structures(
             [
-                snapdapi.VolumeStructure(
+                snapdtypes.VolumeStructure(
                     type="83,0FC63DAF-8483-4772-8E79-3D69D8477DE4",
                     offset=1 << 20,
                     size=1 << 30,
                     filesystem="ext4",
                     name="one",
                 ),
-                snapdapi.VolumeStructure(
+                snapdtypes.VolumeStructure(
                     type=arbitrary_uuid, offset=2 << 30, size=1 << 30, filesystem="ext4"
                 ),
             ]
@@ -1623,7 +1642,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         )
         self._add_details_for_structures(
             [
-                snapdapi.VolumeStructure(
+                snapdtypes.VolumeStructure(
                     type="0FC63DAF-8483-4772-8E79-3D69D8477DE4",
                     offset=1 << 20,
                     size=1 << 30,
@@ -1644,7 +1663,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         )
         self._add_details_for_structures(
             [
-                snapdapi.VolumeStructure(
+                snapdtypes.VolumeStructure(
                     type="0FC63DAF-8483-4772-8E79-3D69D8477DE4",
                     offset=1 << 20,
                     size=1 << 30,
@@ -1661,7 +1680,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         disk = make_disk(self.fsc.model)
         self._add_details_for_structures(
             [
-                snapdapi.VolumeStructure(
+                snapdtypes.VolumeStructure(
                     type="21686148-6449-6E6F-744E-656564454649",
                     offset=1 << 20,
                     name="BIOS Boot",
@@ -1669,12 +1688,12 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                     role="",
                     filesystem="",
                 ),
-                snapdapi.VolumeStructure(
+                snapdtypes.VolumeStructure(
                     type="0FC63DAF-8483-4772-8E79-3D69D8477DE4",
                     offset=2 << 20,
                     name="ptname",
                     size=2 << 30,
-                    role=snapdapi.Role.SYSTEM_DATA,
+                    role=snapdtypes.Role.SYSTEM_DATA,
                     filesystem="ext4",
                 ),
             ]
@@ -1724,7 +1743,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
             [
                 structure
                 for structure in self.fsc._info.system.volumes["pc"].structure
-                if structure.role != snapdapi.Role.MBR
+                if structure.role != snapdtypes.Role.MBR
             ]
         )
         self.assertEqual(partition_count, len(disk.partitions()))
@@ -1736,9 +1755,9 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         with mock.patch.object(
             snapdapi, "post_and_wait", new_callable=mock.AsyncMock
         ) as mocked:
-            mocked.return_value = snapdapi.SystemActionResponse(
+            mocked.return_value = snapdtypes.SystemActionResponse(
                 encrypted_devices={
-                    snapdapi.Role.SYSTEM_DATA: "enc-system-data",
+                    snapdtypes.Role.SYSTEM_DATA: "enc-system-data",
                 },
             )
             await self.fsc.setup_encryption(context=self.fsc.context)
@@ -1756,8 +1775,8 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         mocked.assert_called_once()
         [call] = mocked.mock_calls
         request = call.args[2]
-        self.assertEqual(request.action, snapdapi.SystemAction.INSTALL)
-        self.assertEqual(request.step, snapdapi.SystemActionStep.FINISH)
+        self.assertEqual(request.action, snapdtypes.SystemAction.INSTALL)
+        self.assertEqual(request.step, snapdtypes.SystemActionStep.FINISH)
 
     async def test_from_sample_data_autoinstall(self):
         # calling this a unit test is definitely questionable. but it
@@ -1784,7 +1803,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
             [
                 structure
                 for structure in self.fsc._info.system.volumes["pc"].structure
-                if structure.role != snapdapi.Role.MBR
+                if structure.role != snapdtypes.Role.MBR
             ]
         )
         self.assertEqual(partition_count, len(disk.partitions()))
