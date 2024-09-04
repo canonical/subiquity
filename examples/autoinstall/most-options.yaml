@@ -69,3 +69,5 @@ storage:
   - {type: format, fstype: ext4, volume: raid-system, preserve: false, id: format-system}
   - {type: mount, device: format-system, path: /, id: mount-system}
   - {type: mount, device: format-boot, path: /boot, id: mount-boot, options: 'errors=remount-ro'}
+kernel-crash-dumps:
+  enabled: false

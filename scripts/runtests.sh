@@ -171,6 +171,8 @@ python3 scripts/check-yaml-fields.py <(python3 scripts/check-yaml-fields.py $tmp
         timezone='"Pacific/Guam"' \
         ubuntu_advantage.token='"C1NWcZTHLteJXGVMM6YhvHDpGrhyy7"' \
         'snap.commands=[snap install --channel=3.2/stable etcd]'
+python3 scripts/check-yaml-fields.py "$tmpdir"/var/log/installer/curtin-install/subiquity-curthooks.conf \
+        kernel-crash-dumps.enabled=false
 grep -q 'finish: subiquity/Install/install/postinstall/install_package1: SUCCESS: installing package1' \
      $tmpdir/subiquity-server-debug.log
 grep -q 'finish: subiquity/Install/install/postinstall/install_package2: SUCCESS: installing package2' \
@@ -193,6 +195,8 @@ validate
 python3 scripts/check-yaml-fields.py "$tmpdir"/var/log/installer/autoinstall-user-data \
         'autoinstall.source.id="ubuntu-server-minimal"'
 grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
+python3 scripts/check-yaml-fields.py "$tmpdir"/var/log/installer/curtin-install/subiquity-curthooks.conf \
+        kernel-crash-dumps.enabled=null
 
 clean
 testname=autoinstall-hybrid
