@@ -1190,6 +1190,55 @@ Example:
       kernel:
         flavour: hwe
 
+.. _ai-kernel-crash-dumps:
+
+kernel-crash-dumps
+~~~~~~~~~~~~~~~~~~
+
+* **type:** mapping, see below
+* **default:** see below
+* **can be interactive:** no
+
+Toggle kernel crash dumps enablement.
+
+In 24.10 and later, the default configuration will result in dynamic enablement of kernel crash dumps on the installed system using the ``kdump-tools`` package. On amd64, arm64, and s390x systems, if the system is detected to meet the minimum requirements for kernel crash dumps then they will be enabled. Otherwise, they will be disabled. More details about the minimum system requirements can be found in the following document (doesn't exist yet).
+
+In pre-24.10, the default configuration will result in kernel crash dumps being disabled.
+
+Default configuration:
+
+.. code-block:: yaml
+
+   autoinstall:
+      # In 24.10 and later, allow kernel crash dumps to be enabled dynamically.
+      # In pre-24.10, kernel crash dumps will be disabled.
+      kernel-crash-dumps:
+        enabled: null
+
+enabled
+^^^^^^^
+
+* **type:** boolean or null
+* **default:** ``null``
+
+Specify a boolean value to enable or disable kernel crash dumps. Set to ``null`` (default) to allow dynamic enablement.
+
+If kernel crash dumps are to be disabled, whether determined dynamically or manually requested, the ``kdump-tools`` package will not be uninstalled but will be configured to ensure it is inactive in the target system.
+
+Examples:
+
+.. code-block:: yaml
+
+   autoinstall:
+      # Enable kernel crash dumps.
+      kernel-crash-dumps:
+        enabled: true
+
+   autoinstall:
+      # Disable kernel crash dumps.
+      kernel-crash-dumps:
+        enabled: false
+
 .. _ai-timezone:
 
 timezone

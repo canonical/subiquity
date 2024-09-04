@@ -55,6 +55,7 @@ debconf
 debian
 dir
 el
+enablement
 flavor
 geoip
 geolocation
