@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# source the management script
+. "$SNAP"/management-script
+
+
+handle_block_probing_timeout_config()
+{
+    block_probing_timeout="$(block_probing_timeout)"
+
+    case "${block_probing_timeout}" in
+        no | none | null)
+            # Special supported values for no timeout.
+            ;;
+        default)
+            # Special supported values for letting Subiquity decide.
+            ;;
+        "" | *[!0-9]*)
+            # Match everything else that is not an integer.
+            echo "\"${block_probing_timeout}\" is not a valid block probing timeout" >&2
+            return 1
+    esac
+
+    snapctl set block-probing-timeout="${block_probing_timeout}"
+
+    # Restart subiquity-server to apply new config
+    snapctl restart subiquity.subiquity-server
+}
+
+handle_block_probing_timeout_config
