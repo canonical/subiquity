@@ -23,6 +23,7 @@ from .identity import IdentityController
 from .install import InstallController
 from .integrity import IntegrityController
 from .kernel import KernelController
+from .kernel_crash_dumps import KernelCrashDumpsController
 from .keyboard import KeyboardController
 from .locale import LocaleController
 from .mirror import MirrorController
@@ -54,6 +55,7 @@ __all__ = [
     "IntegrityController",
     "InstallController",
     "KernelController",
+    "KernelCrashDumpsController",
     "KeyboardController",
     "LateController",
     "LocaleController",

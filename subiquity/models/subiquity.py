@@ -52,6 +52,7 @@ from .filesystem import FilesystemModel
 from .identity import IdentityModel
 from .integrity import IntegrityModel
 from .kernel import KernelModel
+from .kernel_crash_dumps import KernelCrashDumpsModel
 from .keyboard import KeyboardModel
 from .locale import LocaleModel
 from .mirror import MirrorModel
@@ -198,6 +199,7 @@ class SubiquityModel:
         self.identity = IdentityModel()
         self.integrity = IntegrityModel()
         self.kernel = KernelModel()
+        self.kernel_crash_dumps = KernelCrashDumpsModel()
         self.keyboard = KeyboardModel(self.root)
         self.locale = LocaleModel(self.chroot_prefix)
         self.mirror = MirrorModel()
