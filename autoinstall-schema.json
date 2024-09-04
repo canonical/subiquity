@@ -103,6 +103,21 @@
                 }
             ]
         },
+        "kernel-crash-dumps": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
+                }
+            },
+            "required": [
+                "enabled"
+            ],
+            "additionalProperties": false
+        },
         "keyboard": {
             "type": "object",
             "properties": {
