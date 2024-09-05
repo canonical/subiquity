@@ -375,7 +375,7 @@ class DryRunAptConfigurer(AptConfigurer):
 
     @contextlib.asynccontextmanager
     async def overlay(self):
-        yield await self.mounter.setup_overlay(self.install_tree.mountpoint)
+        yield await self.mounter.setup_overlay([self.install_tree.mountpoint])
 
     async def deconfigure(self, context, target):
         await self.cleanup()
