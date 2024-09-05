@@ -1279,6 +1279,24 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertTrue(disk2.id in rendered_ids)
         self.assertTrue(disk2p1.id in rendered_ids)
 
+    def test_bind_mount(self):
+        model = make_model()
+        make_disk(model, path="/dev/vda")
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config(
+            [
+                {
+                    "id": "tmpfs1",
+                    "type": "mount",
+                    "spec": "none",
+                    "path": "/tmp",
+                    "size": "4194304",
+                    "fstype": "tmpfs",
+                },
+            ]
+        )
+        self.assertEqual(model.render()["storage"]["config"][0]["fstype"], "tmpfs")
+
 
 class TestPartitionNumbering(unittest.TestCase):
     def setUp(self):

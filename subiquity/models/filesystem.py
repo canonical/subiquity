@@ -1258,12 +1258,9 @@ class Filesystem:
 class Mount:
     path: str
     device: Filesystem = attributes.ref(backlink="_mount", default=None)
+    fstype: Optional[str] = None
     options: Optional[str] = None
     spec: Optional[str] = None
-
-    @property
-    def fstype(self):
-        return self.device.fstype
 
     def can_delete(self):
         from subiquity.common.filesystem import boot
@@ -2318,8 +2315,9 @@ class FilesystemModel:
     def should_add_swapfile(self):
         mount = self._mount_for_path("/")
         if mount is not None:
-            if not can_use_swapfile("/", mount.fstype):
-                return False
+            if mount.type != "zfs":
+                if not can_use_swapfile("/", mount.device.fstype):
+                    return False
         for swap in self._all(type="format", fstype="swap"):
             if swap.mount():
                 return False
