@@ -65,3 +65,14 @@
   type: fsimage
   variant: desktop
   snapd_system_label: finish-fail
+- description:
+    en: This test source has components so if you select "install third party drivers" below, installation will be (eventually, not today) able to proceed.
+  id: src-components
+  locale_support: none
+  name:
+    en: With kernel components
+  path: foo.squashfs
+  size: 530485248
+  type: fsimage
+  variant: desktop
+  snapd_system_label: components
