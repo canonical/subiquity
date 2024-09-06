@@ -314,8 +314,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # If needed, this can be moved outside of the storage/filesystem stuff.
         self._probe_firmware_task = SingleInstanceTask(self._probe_firmware)
 
-        self.firmware_supports_nvme_tcp_booting: Optional[bool] = None
-
     def is_core_boot_classic(self):
         return self._info.is_core_boot_classic()
 
