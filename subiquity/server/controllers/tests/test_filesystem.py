@@ -149,30 +149,46 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
 
     @parameterized.expand(
         (
-            (fw_lenovo, True, False, True),
-            (fw_lenovo, False, False, False),
-            (fw_lenovo, None, False, False),
-            (fw_edk2_timberland, True, True, False),
-            (fw_edk2_timberland, False, True, True),
-            (fw_edk2_timberland, None, True, False),
+            (False, fw_lenovo, False),
+            (False, fw_edk2_timberland, True),
+            (True, fw_lenovo, True),
+            (True, fw_edk2_timberland, True),
+        )
+    )
+    async def test_firmware_supports_nvmeotcp_boot(
+        self, nbft_exists: bool, firmware: dict[str, str], expected: bool
+    ):
+        with mock.patch("pathlib.Path.exists", return_value=nbft_exists):
+            self.assertEqual(
+                expected, self.fsc.firmware_supports_nvmeotcp_boot(firmware)
+            )
+
+    @parameterized.expand(
+        (
+            (False, True, True),
+            (False, False, False),
+            (False, None, False),
+            (True, True, False),
+            (True, False, True),
+            (True, None, False),
         )
     )
     async def test__probe_firmware(
         self,
-        fw,
+        fw_supports: bool,
         opt_supports: bool | None,
-        expect_detected_supports: bool,
         expect_log: bool,
     ):
         self.fsc.model.opt_supports_nvme_tcp_booting = opt_supports
-        with mock.patch.object(self.app.prober, "get_firmware", return_value=fw):
-            with self.assertLogs(
-                "subiquity.server.controllers.filesystem", level="DEBUG"
-            ) as debug:
-                await self.fsc._probe_firmware()
-        self.assertEqual(
-            expect_detected_supports, self.fsc.model.detected_supports_nvme_tcp_booting
-        )
+        with mock.patch.object(self.app.prober, "get_firmware", return_value=None):
+            with mock.patch.object(
+                self.fsc, "firmware_supports_nvmeotcp_boot", return_value=fw_supports
+            ):
+                with self.assertLogs(
+                    "subiquity.server.controllers.filesystem", level="DEBUG"
+                ) as debug:
+                    await self.fsc._probe_firmware()
+        self.assertEqual(fw_supports, self.fsc.model.detected_supports_nvme_tcp_booting)
         found_log = "but CLI argument states otherwise, so ignoring" in [
             record.msg for record in debug.records
         ]

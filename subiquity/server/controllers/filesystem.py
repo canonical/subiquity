@@ -1471,23 +1471,35 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 self.start_monitor()
             break
 
-    async def _probe_firmware(self) -> None:
-        fw = await self.app.prober.get_firmware()
-
-        log.debug("detected firmware information: %s", fw)
-
+    def firmware_supports_nvmeotcp_boot(self, fw: dict[str, str]) -> bool:
+        """Tell whether the system supports NVMe/TCP booting. This is solely
+        determined by checking for:
+         * the presence of a NBFT ; or
+         * the presence of a known-good firmware model/version."""
         edk2_timberland_sig = {
             "bios-vendor": "EFI Development Kit II / OVMF",
             "bios-version": "0.0.0",
             "bios-release-date": "02/06/2015",
         }
-
-        if set(edk2_timberland_sig.items()).issubset(set(fw.items())):
-            log.debug("firmware seems to support booting with NVMe/TCP")
-            assume_supported = True
+        if pathlib.Path("/sys/firmware/acpi/tables/NBFT").exists():
+            log.debug("firmware seems to support booting with NVMe/TCP (NBFT found)")
+            return True
+        elif set(edk2_timberland_sig.items()).issubset(set(fw.items())):
+            log.debug(
+                "firmware seems to support booting with NVMe/TCP"
+                " (EDK II from Timberland SIG found)"
+            )
+            return True
         else:
             log.debug("firmware does not seem to support booting with NVMe/TCP")
-            assume_supported = False
+            return False
+
+    async def _probe_firmware(self) -> None:
+        fw = await self.app.prober.get_firmware()
+
+        log.debug("detected firmware information: %s", fw)
+
+        assume_supported = self.firmware_supports_nvmeotcp_boot(fw)
 
         if self.model.opt_supports_nvme_tcp_booting not in (None, assume_supported):
             log.debug("but CLI argument states otherwise, so ignoring")
