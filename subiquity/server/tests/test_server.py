@@ -23,7 +23,7 @@ import jsonschema
 import yaml
 from jsonschema.validators import validator_for
 
-from subiquity.cloudinit import CloudInitSchemaValidationError
+from subiquity.cloudinit import CloudInitSchemaTopLevelKeyError
 from subiquity.common.types import NonReportableError, PasswordKind
 from subiquity.server.autoinstall import AutoinstallError, AutoinstallValidationError
 from subiquity.server.nonreportable import NonReportableException
@@ -442,11 +442,13 @@ class TestAutoinstallValidation(SubiTestCase):
         cloud_data.pop("valid-cloud", None)
         cloud_data.pop("autoinstall", None)
 
-        with patch("subiquity.server.server.validate_cloud_init_schema") as val_mock:
+        with patch(
+            "subiquity.server.server.validate_cloud_init_top_level_keys"
+        ) as val_mock:
             if len(cloud_data) == 0:
                 val_mock.return_value = True
             else:
-                val_mock.side_effect = CloudInitSchemaValidationError(
+                val_mock.side_effect = CloudInitSchemaTopLevelKeyError(
                     keys=list(cloud_data.keys())
                 )
 
@@ -468,8 +470,10 @@ class TestAutoinstallValidation(SubiTestCase):
         self.server.base_schema = SubiquityServer.base_schema
         self.pseudo_load_controllers()
 
-        with patch("subiquity.server.server.validate_cloud_init_schema") as val_mock:
-            val_mock.side_effect = CloudInitSchemaValidationError(
+        with patch(
+            "subiquity.server.server.validate_cloud_init_top_level_keys"
+        ) as val_mock:
+            val_mock.side_effect = CloudInitSchemaTopLevelKeyError(
                 keys=["broadcast", "foobar"],
             )
 

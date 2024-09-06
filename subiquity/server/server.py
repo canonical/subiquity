@@ -28,12 +28,12 @@ from jsonschema.exceptions import ValidationError
 from systemd import journal
 
 from subiquity.cloudinit import (
-    CloudInitSchemaValidationError,
+    CloudInitSchemaTopLevelKeyError,
     cloud_init_status_wait,
     get_host_combined_cloud_config,
     legacy_cloud_init_extract,
     rand_user_password,
-    validate_cloud_init_schema,
+    validate_cloud_init_top_level_keys,
 )
 from subiquity.common.api.server import bind, controller_for_request
 from subiquity.common.apidef import API
@@ -790,8 +790,8 @@ class SubiquityServer(Application):
         context.enter()  # publish start event
 
         try:
-            await validate_cloud_init_schema()
-        except CloudInitSchemaValidationError as exc:
+            await validate_cloud_init_top_level_keys()
+        except CloudInitSchemaTopLevelKeyError as exc:
             bad_keys: list[str] = exc.keys
             raw_keys: list[str] = [f"{key!r}" for key in bad_keys]
             context.warning(

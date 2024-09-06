@@ -29,7 +29,11 @@ CLOUD_INIT_PW_SET = "".join([x for x in ascii_letters + digits if x not in "loLO
 
 
 class CloudInitSchemaValidationError(NonReportableException):
-    """Exception for cloud config schema validation failure.
+    """Exception for cloud config schema validation failure."""
+
+
+class CloudInitSchemaTopLevelKeyError(CloudInitSchemaValidationError):
+    """Exception for when cloud-config top level keys fail to validate.
 
     Attributes:
         keys -- List of keys which are the cause of the failure
@@ -38,7 +42,7 @@ class CloudInitSchemaValidationError(NonReportableException):
     def __init__(
         self,
         keys: list[str],
-        message: str = "Cloud config schema failed to validate.",
+        message: str = "Cloud config schema failed to validate top-level keys.",
     ) -> None:
         super().__init__(message)
         self.keys = keys
@@ -100,8 +104,8 @@ def read_legacy_status(stream):
     return None
 
 
-async def get_schema_failure_keys() -> list[str]:
-    """Retrieve the keys causing schema failure."""
+async def get_unknown_keys() -> list[str]:
+    """Retrieve top-level keys causing schema failures, if any."""
 
     cmd: list[str] = ["cloud-init", "schema", "--system"]
     status_coro: Awaitable = arun_command(cmd, clean_locale=True)
@@ -149,22 +153,22 @@ async def cloud_init_status_wait() -> (bool, Optional[str]):
     return (True, status)
 
 
-async def validate_cloud_init_schema() -> None:
-    """Check for cloud-init schema errors.
+async def validate_cloud_init_top_level_keys() -> None:
+    """Check for cloud-init schema errors in top-level keys.
     Returns (None) if the cloud-config schema validated OK according to
-    cloud-init. Otherwise, a CloudInitSchemaValidationError is thrown
-    which contains a list of the keys which failed to validate.
+    cloud-init. Otherwise, a CloudInitSchemaTopLevelKeyError is thrown
+    which contains a list of the top-level keys which failed to validate.
     Requires cloud-init supporting recoverable errors and extended status.
 
     :return: None if cloud-init schema validated successfully.
     :rtype: None
-    :raises CloudInitSchemaValidationError: If cloud-init schema did not validate
-            successfully.
+    :raises CloudInitSchemaTopLevelKeyError: If cloud-init schema did not
+            validate successfully.
     """
-    causes: list[str] = await get_schema_failure_keys()
+    causes: list[str] = await get_unknown_keys()
 
     if causes:
-        raise CloudInitSchemaValidationError(keys=causes)
+        raise CloudInitSchemaTopLevelKeyError(keys=causes)
 
     return None
 

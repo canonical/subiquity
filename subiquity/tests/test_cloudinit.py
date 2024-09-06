@@ -23,10 +23,10 @@ import yaml
 
 from subiquity.cloudinit import (
     CLOUD_INIT_PW_SET,
-    CloudInitSchemaValidationError,
+    CloudInitSchemaTopLevelKeyError,
     cloud_init_status_wait,
     cloud_init_version,
-    get_schema_failure_keys,
+    get_unknown_keys,
     legacy_cloud_init_extract,
     rand_password,
     rand_user_password,
@@ -34,7 +34,7 @@ from subiquity.cloudinit import (
     read_legacy_status,
     supports_format_json,
     supports_recoverable_errors,
-    validate_cloud_init_schema,
+    validate_cloud_init_top_level_keys,
 )
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.parameterized import parameterized
@@ -144,7 +144,7 @@ class TestCloudInitVersion(SubiTestCase):
         self.assertEqual((True, "done"), await cloud_init_status_wait())
 
 
-class TestCloudInitSchemaValidation(SubiTestCase):
+class TestCloudInitTopLevelKeyValidation(SubiTestCase):
     @parameterized.expand(
         (
             (
@@ -178,7 +178,7 @@ class TestCloudInitSchemaValidation(SubiTestCase):
                 args=[], returncode=1, stderr=msg
             )
 
-            bad_keys = await get_schema_failure_keys()
+            bad_keys = await get_unknown_keys()
 
         self.assertEqual(bad_keys, expected)
 
@@ -193,7 +193,7 @@ class TestCloudInitSchemaValidation(SubiTestCase):
             args=[], returncode=1, stderr=error_msg
         )
 
-        bad_keys = await get_schema_failure_keys()
+        bad_keys = await get_unknown_keys()
 
         self.assertEqual(bad_keys, [])
 
@@ -202,15 +202,15 @@ class TestCloudInitSchemaValidation(SubiTestCase):
     async def test_no_schema_errors(self, wait_for_mock):
         wait_for_mock.return_value = CompletedProcess(args=[], returncode=0, stderr="")
 
-        self.assertEqual(None, await validate_cloud_init_schema())
+        self.assertEqual(None, await validate_cloud_init_top_level_keys())
 
-    @patch("subiquity.cloudinit.get_schema_failure_keys")
+    @patch("subiquity.cloudinit.get_unknown_keys")
     async def test_validate_cloud_init_schema(self, sources_mock):
         mock_keys = ["key1", "key2"]
         sources_mock.return_value = mock_keys
 
-        with self.assertRaises(CloudInitSchemaValidationError) as ctx:
-            await validate_cloud_init_schema()
+        with self.assertRaises(CloudInitSchemaTopLevelKeyError) as ctx:
+            await validate_cloud_init_top_level_keys()
 
         self.assertEqual(mock_keys, ctx.exception.keys)
 
@@ -219,7 +219,7 @@ class TestCloudInitSchemaValidation(SubiTestCase):
     @patch("subiquity.cloudinit.log")
     async def test_get_schema_warn_on_timeout(self, log_mock, wait_for_mock):
         wait_for_mock.side_effect = asyncio.TimeoutError()
-        sources = await get_schema_failure_keys()
+        sources = await get_unknown_keys()
         log_mock.warning.assert_called()
         self.assertEqual([], sources)
 
