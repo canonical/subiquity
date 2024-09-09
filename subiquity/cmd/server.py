@@ -206,6 +206,9 @@ def main():
         logdir = opts.output_base
         if opts.bootloader is None:
             opts.bootloader = "uefi"
+        # Set for system_scripts support in dry run
+        if not os.environ.get("SNAP"):
+            os.environ["SNAP"] = str(pathlib.Path(__file__).parents[2])
     else:
         dr_cfg = None
     if opts.socket is None:
