@@ -2053,13 +2053,6 @@ class FilesystemModel:
             config["grub"] = self.grub
         return config
 
-    def systemd_shutdown_commands(self) -> list[list[str]]:
-        """Return a list of commands meant to be executed by systemd-shutdown.
-        We entrust the execution of `zpool export` commands to systemd-shutdown
-        instead of subiquity's _pre_shutdown hook, in hope that the commands
-        will more likely succeed."""
-        return [["zpool", "export", zpool.name] for zpool in self._all(type="zpool")]
-
     def load_probe_data(self, probe_data):
         for devname, devdata in probe_data["blockdev"].items():
             if int(devdata["attrs"]["size"]) != 0:

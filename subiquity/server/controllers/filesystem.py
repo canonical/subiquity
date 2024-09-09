@@ -1768,3 +1768,5 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 )
             else:
                 await self.app.command_runner.run(["umount", "--recursive", "/target"])
+        if len(self.model._all(type="zpool")) > 0:
+            await self.app.command_runner.run(["zpool", "export", "-a"])
