@@ -244,3 +244,12 @@ parts:
 
     build-attributes:
       - enable-patchelf
+
+  management-script:
+    plugin: nil
+
+    override-build:
+      cp $CRAFT_PROJECT_DIR/scripts/management-script $CRAFT_PART_INSTALL/management-script
+
+    stage:
+      - management-script

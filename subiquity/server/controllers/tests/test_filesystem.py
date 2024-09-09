@@ -1548,6 +1548,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.app = make_app()
         self.app.command_runner = mock.AsyncMock()
         self.app.opts.bootloader = "UEFI"
+        self.app.opts.block_probing_timeout = None
         self.app.prober = mock.Mock()
         self.app.prober.get_storage = mock.AsyncMock()
         self.app.prober.get_firmware = mock.AsyncMock(

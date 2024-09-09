@@ -1,0 +1,21 @@
+#!/bin/sh
+
+DEFAULT_BLOCK_PROBING_TIMEOUT=default
+
+block_probing_timeout()
+{
+    timeout="$(snapctl get block-probing-timeout)"
+    if [ -z "${timeout}" ]; then
+        timeout="${DEFAULT_BLOCK_PROBING_TIMEOUT}"
+    fi
+    echo "$timeout"
+}
+
+set_block_probing_timeout()
+{
+    if [ "$1" = "$DEFAULT_BLOCK_PROBING_TIMEOUT" ]; then
+        snapctl unset block-probing-timeout
+    else:
+        snapctl set block-probing-timeout
+    fi
+}

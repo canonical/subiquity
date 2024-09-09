@@ -1,4 +1,7 @@
 #!/bin/sh
+
+. "$SNAP"/management-script
+
 port=tty1
 export PYTHONPATH=$SNAP/lib/python3.10/site-packages
 
@@ -15,10 +18,25 @@ fi
 # can result in service status message being written on top of the TUI.
 /bin/kill "-SIGRTMIN+21" 1
 
+block_probing_timeout="$(block_probing_timeout)"
+case "${block_probing_timeout}" in
+    # Remember /bin/sh does not support arrays :(
+    no | none | null)
+        timeout_opts="--no-block-probing-timeout"
+        ;;
+    default)
+        timeout_opts=""
+        ;;
+    *)
+        timeout_opts="--block-probing-timeout ${block_probing_timeout}"
+        ;;
+esac
+
+
 if [ "$port" = "tty1" ]; then
 	$SNAP/bin/subiquity-loadkeys
 	setfont $SNAP/subiquity.psf
-	exec /sbin/agetty -n --noclear -l $PYTHON -o $SNAP/usr/bin/subiquity $port $TERM
+	exec /sbin/agetty -n --noclear -l $PYTHON -o "$SNAP/usr/bin/subiquity ${timeout_opts}" $port $TERM
 else
-	exec /sbin/agetty -n --keep-baud -l $PYTHON -o "$SNAP/usr/bin/subiquity --serial" $port 115200,38400,9600 $TERM
+	exec /sbin/agetty -n --keep-baud -l $PYTHON -o "$SNAP/usr/bin/subiquity --serial ${timeout_opts}" $port 115200,38400,9600 $TERM
 fi

@@ -161,6 +161,23 @@ returned. """,
         default=None,
         dest="supports_nvme_tcp_booting",
     )
+    parser.add_argument(
+        "--block-probing-timeout",
+        type=float,
+        default=90.0,
+        dest="block_probing_timeout",
+        help="""\
+The maximum number of seconds to wait for block devices discovery (by default
+90 seconds). Note that this timeout is doubled if os-prober is involved.""",
+    )
+    parser.add_argument(
+        "--no-block-probing-timeout",
+        action="store_const",
+        const=None,
+        dest="block_probing_timeout",
+        help="Wait indefinitely for block devices discovery. " "",
+    )
+
     return parser
 
 
