@@ -1757,6 +1757,19 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return r
 
     async def _pre_shutdown(self):
+        """This function is executed just before rebooting and after copying
+        logs to the target. This means bugs reports are unlikely to include
+        execution logs from this function and therefore diagnosing issues is a
+        challenge. Let's try to keep it as simple as possible.
+
+        Another approach to execute commands before reboot is to place scripts in
+        /usr/lib/systemd/system-shutdown and lean on systemd-shutdown(8) to
+        execute them after unmounting most file-systems.
+
+        See this PR for an example (the PR was eventually reverted because it
+        didn't address the issue we tried to solve at the time).
+        https://github.com/canonical/subiquity/pull/2064
+        """
         if not self.reset_partition_only:
             # /target is mounted only if the installation was actually started.
             try:
