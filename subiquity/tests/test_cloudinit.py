@@ -227,6 +227,36 @@ class TestCloudInitTopLevelKeyValidation(SubiTestCase):
         log_mock.warning.assert_called()
         self.assertEqual([], sources)
 
+    @parameterized.expand(
+        (
+            ("20.2", True),
+            ("22.1", True),
+            ("22.2", False),
+            ("23.0", False),
+        )
+    )
+    async def test_version_check_and_skip(self, version, should_skip):
+        """Test that top-level key validation skipped on right versions.
+
+        The "schema" subcommand, which the top-level key validation relies
+        on, was added in cloud-init version 22.2. This test is to ensure
+        that it's skipped on older releases.
+        """
+        with (
+            patch("subiquity.cloudinit.get_unknown_keys") as keys_mock,
+            patch("subiquity.cloudinit.cloud_init_version") as version_mock,
+        ):
+            version_mock.return_value = version
+
+            if should_skip:
+                await validate_cloud_init_top_level_keys()
+                keys_mock.assert_not_called()
+
+            else:
+                keys_mock.return_value = []  # avoid raise condition
+                await validate_cloud_init_top_level_keys()
+                keys_mock.assert_called_once()
+
 
 class TestCloudInitRandomStrings(SubiTestCase):
     def test_passwd_constraints(self):

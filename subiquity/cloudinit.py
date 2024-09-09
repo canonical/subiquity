@@ -87,6 +87,10 @@ def supports_recoverable_errors() -> bool:
     return cloud_init_version() >= "23.4"
 
 
+def supports_schema_subcommand() -> bool:
+    return cloud_init_version() >= "22.2"
+
+
 def read_json_extended_status(stream):
     try:
         status = json.loads(stream)
@@ -171,6 +175,13 @@ async def validate_cloud_init_top_level_keys() -> None:
     :raises CloudInitSchemaTopLevelKeyError: If cloud-init schema did not
             validate successfully.
     """
+    if not supports_schema_subcommand():
+        log.debug(
+            "Host cloud-config doesn't support 'schema' subcommand. "
+            "Skipping top-level key cloud-config validation."
+        )
+        return None
+
     causes: list[str] = await get_unknown_keys()
 
     if causes:
