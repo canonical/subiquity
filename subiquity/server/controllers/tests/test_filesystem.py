@@ -468,9 +468,10 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             [
                 mock.call(["mountpoint", "/target"]),
                 mock.call(["umount", "--recursive", "/target"]),
+                mock.call(["zpool", "export", "-a"]),
             ]
         )
-        self.assertEqual(len(mock_run.mock_calls), 2)
+        self.assertEqual(3, mock_run.call_count)
 
     async def test__pre_shutdown_install_not_started(self):
         async def fake_run(cmd, **kwargs):
@@ -479,10 +480,15 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
 
         self.fsc.reset_partition_only = False
         run = mock.patch.object(self.app.command_runner, "run", side_effect=fake_run)
-        _all = mock.patch.object(self.fsc.model, "_all")
-        with run as mock_run, _all:
+        with run as mock_run:
             await self.fsc._pre_shutdown()
-        mock_run.assert_called_once_with(["mountpoint", "/target"])
+        mock_run.assert_has_calls(
+            [
+                mock.call(["mountpoint", "/target"]),
+                mock.call(["zpool", "export", "-a"]),
+            ]
+        )
+        self.assertEqual(2, mock_run.call_count)
 
     async def test_examine_systems(self):
         # In LP: #2037723 and other similar reports, the user selects the
