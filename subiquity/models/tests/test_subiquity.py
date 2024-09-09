@@ -16,23 +16,15 @@
 import datetime
 import fnmatch
 import json
+import os
 import re
 import unittest
+from pathlib import Path
 from unittest import mock
 
 import yaml
-from cloudinit.config.schema import SchemaValidationError
 
-from subiquitycore.tests.parameterized import parameterized
-
-try:
-    from cloudinit.config.schema import SchemaProblem
-except ImportError:
-
-    def SchemaProblem(x, y):
-        return (x, y)  # TODO(drop on cloud-init 22.3 SRU)
-
-
+from subiquity.cloudinit import CloudInitSchemaValidationError
 from subiquity.common.types import IdentityData
 from subiquity.models.subiquity import (
     CLOUDINIT_CLEAN_FILE_TMPL,
@@ -43,6 +35,8 @@ from subiquity.models.subiquity import (
 from subiquity.server.server import INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
 from subiquity.server.types import InstallerChannels
 from subiquitycore.pubsub import MessageHub
+from subiquitycore.tests import SubiTestCase
+from subiquitycore.tests.parameterized import parameterized
 
 getent_group_output = """
 root:x:0:
@@ -77,7 +71,9 @@ class TestModelNames(unittest.TestCase):
         self.assertEqual(model_names.all(), {"a", "b", "c"})
 
 
-class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
+# Patch os.environ for system_scripts
+@mock.patch.dict(os.environ, {"SNAP": str(Path(__file__).parents[3])})
+class TestSubiquityModel(SubiTestCase):
     maxDiff = None
 
     def writtenFiles(self, config):
@@ -257,7 +253,7 @@ class TestSubiquityModel(unittest.IsolatedAsyncioTestCase):
         with self.subTest("Invalid user-data raises error"):
             model = self.make_model()
             model.userdata = {"bootcmd": "nope"}
-            with self.assertRaises(SchemaValidationError) as ctx:
+            with self.assertRaises(CloudInitSchemaValidationError) as ctx:
                 model._cloud_init_config()
             expected_error = (
                 "Cloud config schema errors: bootcmd: 'nope' is not of type 'array'"
@@ -370,38 +366,8 @@ grub_dpkg:
                 data_source="autoinstall.user-data",
             )
 
-        # Create our own subclass for focal as schema_deprecations
-        # was not yet defined.
-        class SchemaDeprecation(SchemaValidationError):
-            schema_deprecations = ()
-
-            def __init__(self, schema_errors=(), schema_deprecations=()):
-                super().__init__(schema_errors)
-                self.schema_deprecations = schema_deprecations
-
-        problem = SchemaProblem(
-            "bogus", "'bogus' is deprecated, use 'notbogus' instead"
-        )
-        with self.subTest("Deprecated cloud-config warns"):
-            with unittest.mock.patch(
-                "subiquity.models.subiquity.validate_cloudconfig_schema"
-            ) as validate:
-                validate.side_effect = SchemaDeprecation(schema_deprecations=(problem,))
-                with self.assertLogs(
-                    "subiquity.models.subiquity", level="INFO"
-                ) as logs:
-                    model.validate_cloudconfig_schema(
-                        data={"bogus": True}, data_source="autoinstall.user-data"
-                    )
-            expected = (
-                "WARNING:subiquity.models.subiquity:The cloud-init"
-                " configuration for autoinstall.user-data contains deprecated"
-                " values:\n'bogus' is deprecated, use 'notbogus' instead"
-            )
-            self.assertEqual(logs.output, [expected])
-
         with self.subTest("Invalid cloud-config schema errors"):
-            with self.assertRaises(SchemaValidationError) as ctx:
+            with self.assertRaises(CloudInitSchemaValidationError) as ctx:
                 model.validate_cloudconfig_schema(
                     data={"bootcmd": "nope"}, data_source="system info"
                 )
@@ -411,7 +377,7 @@ grub_dpkg:
             self.assertEqual(expected_error, str(ctx.exception))
 
         with self.subTest("Prefix autoinstall.user-data cloud-config errors"):
-            with self.assertRaises(SchemaValidationError) as ctx:
+            with self.assertRaises(CloudInitSchemaValidationError) as ctx:
                 model.validate_cloudconfig_schema(
                     data={"bootcmd": "nope"}, data_source="autoinstall.user-data"
                 )
@@ -423,6 +389,8 @@ grub_dpkg:
             self.assertEqual(expected_error, str(ctx.exception))
 
 
+# Patch os.environ for system_scripts
+@mock.patch.dict(os.environ, {"SNAP": str(Path(__file__).parents[3])})
 class TestUserCreationFlows(unittest.IsolatedAsyncioTestCase):
     """live-server and desktop have a key behavior difference: desktop will
     permit user creation on first boot, while server will do no such thing.

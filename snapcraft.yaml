@@ -157,6 +157,7 @@ parts:
       bin/subiquity-cmd: usr/bin/subiquity-cmd
       bin/subiquity-umockdev-wrapper: system_scripts/subiquity-umockdev-wrapper
       bin/subiquity-legacy-cloud-init-extract: system_scripts/subiquity-legacy-cloud-init-extract
+      bin/subiquity-legacy-cloud-init-validate: system_scripts/subiquity-legacy-cloud-init-validate
 
     build-attributes:
       - enable-patchelf
