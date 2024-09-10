@@ -159,7 +159,7 @@ disable_feedback_button = False
 
 intersphinx_mapping = {
     'cloud-init': (
-        'https://canonical-cloud-init.readthedocs-hosted.com/en/latest',
+        'https://docs.cloud-init.io/en/latest/',
          None
     )
 }
