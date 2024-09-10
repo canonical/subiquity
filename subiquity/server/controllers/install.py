@@ -345,25 +345,6 @@ class InstallController(SubiquityController):
 
         fs_controller = self.app.controllers.Filesystem
 
-        def register_shutdown_commands() -> None:
-            cmds: list[list[str]] = fs_controller.model.systemd_shutdown_commands()
-
-            if not cmds:
-                return
-
-            shutdown_dir = root / "usr/lib/systemd/system-shutdown"
-            shutdown_script = shutdown_dir / "subiquity-storage.shutdown"
-            shutdown_dir.mkdir(parents=True, exist_ok=True)
-            with shutdown_script.open(mode="w", encoding="utf-8") as stream:
-                # Generating a bash script is .. ewww
-                # Should we place the commands in a JSON file and hardcode a
-                # script that calls jq or something?
-                stream.write("#!/bin/bash\n")
-                for cmd in cmds:
-                    stream.write(shlex.join(cmd))
-                    stream.write("\n")
-            shutdown_script.chmod(0o755)
-
         async def run_curtin_step(name, stages, step_config, source=None):
             config = copy.deepcopy(base_config)
             filename = f"subiquity-{name.replace(' ', '-')}.conf"
@@ -387,7 +368,6 @@ class InstallController(SubiquityController):
                     device_map_path=logs_dir / "device-map.json",
                 ),
             )
-            register_shutdown_commands()
         elif fs_controller.use_snapd_install_api():
             await run_curtin_step(
                 name="partitioning",
@@ -407,7 +387,6 @@ class InstallController(SubiquityController):
                     device_map_path=logs_dir / "device-map-format.json",
                 ),
             )
-            register_shutdown_commands()
             if source is not None:
                 await run_curtin_step(
                     name="extract",
@@ -441,7 +420,6 @@ class InstallController(SubiquityController):
                 ),
                 source=source,
             )
-            register_shutdown_commands()
             await run_curtin_step(
                 name="extract",
                 stages=["extract"],
