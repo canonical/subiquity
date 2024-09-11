@@ -20,6 +20,7 @@ import json
 import logging
 import os
 import pathlib
+import shutil
 import subprocess
 import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
@@ -1699,4 +1700,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 )
             else:
                 await self.app.command_runner.run(["umount", "--recursive", "/target"])
-        await self.app.command_runner.run(["zpool", "export", "-a"])
+        # Make sure we only execute the zpool export command if it is
+        # available. By default, zfsutils-linux is not installed in the live
+        # installer environment. It gets dynamically installed by curtin when
+        # needed.
+        if shutil.which("zpool") is not None:
+            await self.app.command_runner.run(["zpool", "export", "-a"])
