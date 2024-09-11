@@ -6,7 +6,7 @@ sphinx-tabs
 sphinx-reredirects
 pyspelling
 sphinxext-opengraph
-lxd-sphinx-extensions
+canonical-sphinx-extensions
 sphinx-copybutton
 myst-parser
 sphinxcontrib-jquery
