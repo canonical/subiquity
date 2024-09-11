@@ -474,37 +474,51 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertTrue(self.fsc.locked_probe_data)
         del_raid.assert_not_called()
 
-    async def test__pre_shutdown_install_started(self):
+    @parameterized.expand(((True,), (False,)))
+    async def test__pre_shutdown_install_started(self, zfsutils_linux_installed: bool):
         self.fsc.reset_partition_only = False
         run = mock.patch.object(self.app.command_runner, "run")
         _all = mock.patch.object(self.fsc.model, "_all")
-        with run as mock_run, _all:
-            await self.fsc._pre_shutdown()
-        mock_run.assert_has_calls(
-            [
-                mock.call(["mountpoint", "/target"]),
-                mock.call(["umount", "--recursive", "/target"]),
-                mock.call(["zpool", "export", "-a"]),
-            ]
+        which_rv = "/usr/sbin/zpool" if zfsutils_linux_installed else None
+        which = mock.patch(
+            "subiquity.server.controllers.filesystem.shutil.which",
+            return_value=which_rv,
         )
-        self.assertEqual(3, mock_run.call_count)
+        with run as mock_run, _all, which:
+            await self.fsc._pre_shutdown()
 
-    async def test__pre_shutdown_install_not_started(self):
+        expected_calls = [
+            mock.call(["mountpoint", "/target"]),
+            mock.call(["umount", "--recursive", "/target"]),
+        ]
+        if zfsutils_linux_installed:
+            expected_calls.append(mock.call(["zpool", "export", "-a"]))
+        self.assertEqual(expected_calls, mock_run.mock_calls)
+
+    @parameterized.expand(((True,), (False,)))
+    async def test__pre_shutdown_install_not_started(
+        self, zfsutils_linux_installed: bool
+    ):
         async def fake_run(cmd, **kwargs):
             if cmd == ["mountpoint", "/target"]:
                 raise subprocess.CalledProcessError(cmd=cmd, returncode=1)
 
         self.fsc.reset_partition_only = False
         run = mock.patch.object(self.app.command_runner, "run", side_effect=fake_run)
-        with run as mock_run:
-            await self.fsc._pre_shutdown()
-        mock_run.assert_has_calls(
-            [
-                mock.call(["mountpoint", "/target"]),
-                mock.call(["zpool", "export", "-a"]),
-            ]
+        which_rv = "/usr/sbin/zpool" if zfsutils_linux_installed else None
+        which = mock.patch(
+            "subiquity.server.controllers.filesystem.shutil.which",
+            return_value=which_rv,
         )
-        self.assertEqual(2, mock_run.call_count)
+        with run as mock_run, which:
+            await self.fsc._pre_shutdown()
+
+        expected_calls = [
+            mock.call(["mountpoint", "/target"]),
+        ]
+        if zfsutils_linux_installed:
+            expected_calls.append(mock.call(["zpool", "export", "-a"]))
+        self.assertEqual(expected_calls, mock_run.mock_calls)
 
     async def test_examine_systems(self):
         # In LP: #2037723 and other similar reports, the user selects the
