@@ -471,7 +471,7 @@ class InstallController(SubiquityController):
                 context=context, rp=rp, casper_uuid=new_casper_uuid
             )
         else:
-            await self.maybe_configure_exiting_rp_boot(context=context)
+            await self.maybe_configure_existing_rp_boot(context=context)
 
     async def adjust_rp(self, rp: Partition, mp: Mountpoint) -> str:
         if self.app.opts.dry_run:
@@ -544,7 +544,7 @@ class InstallController(SubiquityController):
         if self.model.target is not None and not self.opts.dry_run:
             await self.configure_rp_boot_grub(context=context, rp=rp)
 
-    async def maybe_configure_exiting_rp_boot(self, context):
+    async def maybe_configure_existing_rp_boot(self, context):
         # We are not creating a reset partition here if we are running
         # from one we still want to configure booting from it.
 
