@@ -577,21 +577,6 @@ def install(ctx):
                 kvm.append('-nographic')
                 appends.append('console=ttyS0')
 
-            if ctx.args.cloud_config is not None or ctx.args.cloud_config_default:
-                if ctx.args.cloud_config is not None:
-                    ctx.cloudconfig = ctx.args.cloud_config.read()
-                kvm.extend(drive(create_seed(ctx.cloudconfig, tempdir), 'raw'))
-                if ctx.args.autoinstall is None:
-                    # Let's inspect the yaml and check if there is an autoinstall
-                    # section.
-                    autoinstall = "autoinstall" in yaml.safe_load(ctx.cloudconfig)
-                else:
-                    autoinstall = ctx.args.autoinstall
-
-                if autoinstall:
-                    appends.append('autoinstall')
-
-
             if ctx.args.update:
                 appends.append('subiquity-channel=' + ctx.args.update)
 
@@ -607,6 +592,20 @@ def install(ctx):
                 if not os.path.exists(ctx.target) or ctx.args.overwrite:
                     disksize = ctx.args.disksize or ctx.default_disk_size
                     run(f'qemu-img create -f qcow2 {ctx.target} {disksize}')
+
+            if ctx.args.cloud_config is not None or ctx.args.cloud_config_default:
+                if ctx.args.cloud_config is not None:
+                    ctx.cloudconfig = ctx.args.cloud_config.read()
+                kvm.extend(drive(create_seed(ctx.cloudconfig, tempdir), 'raw'))
+                if ctx.args.autoinstall is None:
+                    # Let's inspect the yaml and check if there is an autoinstall
+                    # section.
+                    autoinstall = "autoinstall" in yaml.safe_load(ctx.cloudconfig)
+                else:
+                    autoinstall = ctx.args.autoinstall
+
+                if autoinstall:
+                    appends.append('autoinstall')
 
             if len(appends) > 0:
                 with mounter(iso, mntdir):
