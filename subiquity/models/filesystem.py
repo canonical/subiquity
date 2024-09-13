@@ -1728,9 +1728,9 @@ class FilesystemModel:
         matchers = self._make_matchers(match)
         return [disk for disk in disks if all(match_fn(disk) for match_fn in matchers)]
 
-    def disk_for_match(
+    def _matching_disks(
         self, disks: Sequence[_Device], match: MatchDirective | Sequence[MatchDirective]
-    ) -> Optional[_Device]:
+    ) -> tuple[list[_Device], Optional[MatchDirective]]:
         log.info(f"considering {disks} for {match}")
         if not isinstance(match, Sequence):
             match = [match]
@@ -1738,10 +1738,25 @@ class FilesystemModel:
             candidates = self._filtered_matches(disks, m)
             candidates = self._sorted_matches(candidates, m)
             if candidates:
-                log.info(f"For match {m}, using the first candidate from {candidates}")
-                return candidates[0]
+                return candidates, m
         log.info(f"No devices satisfy criteria {match}")
-        return None
+        return [], None
+
+    def disks_for_match(
+        self, disks: Sequence[_Device], match: MatchDirective | Sequence[MatchDirective]
+    ) -> list[_Device]:
+        candidates, _ = self._matching_disks(disks, match)
+        return candidates
+
+    def disk_for_match(
+        self, disks: Sequence[_Device], match: MatchDirective | Sequence[MatchDirective]
+    ) -> Optional[_Device]:
+        candidates, m = self._matching_disks(disks, match)
+        if candidates:
+            log.info(f"For match {m}, using the first candidate from {candidates}")
+            return candidates[0]
+        else:
+            return None
 
     def assign_omitted_offsets(self):
         """Assign offsets to partitions that do not already have one.

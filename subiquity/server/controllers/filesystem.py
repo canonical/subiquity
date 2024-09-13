@@ -1377,18 +1377,29 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 self.start_monitor()
             break
 
+    def get_bootable_matching_disks(
+        self, match: MatchDirective | Sequence[MatchDirective]
+    ) -> list[_Device]:
+        """given a match directive, find disks or disk-like devices for which
+        we have a plan to boot, and return them.
+        As match directives are autoinstall-supplied, raise AutoinstallError if
+        no matching disk is found."""
+        disks = self.potential_boot_disks(with_reformatting=True)
+        matching_disks = self.model.disks_for_match(disks, match)
+        if not matching_disks:
+            raise AutoinstallError(f"Failed to find matching device for {match}")
+        return matching_disks
+
     def get_bootable_matching_disk(
         self, match: MatchDirective | Sequence[MatchDirective]
-    ):
+    ) -> _Device:
         """given a match directive, find disks or disk-like devices for which
         we have a plan to boot, and return the best matching one of those.
         As match directives are autoinstall-supplied, raise AutoinstallError if
         no matching disk is found."""
-        disks = self.potential_boot_disks(with_reformatting=True)
-        disk = self.model.disk_for_match(disks, match)
-        if disk is None:
-            raise AutoinstallError(f"Failed to find matching device for {match}")
-        return disk
+        matching_disks = self.get_bootable_matching_disks(match)
+        assert matching_disks
+        return matching_disks[0]
 
     async def run_autoinstall_guided(self, layout):
         name = layout["name"]

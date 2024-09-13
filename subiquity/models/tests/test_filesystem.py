@@ -1745,24 +1745,28 @@ class TestDiskForMatch(SubiTestCase):
         d2 = make_disk(m)
 
         # this test relies heavily on the assumptions in make_disk
-        actual = m.disk_for_match([d1, d2], {})
-        self.assertEqual(d1, actual)
-        actual = m.disk_for_match([d2, d1], {})
-        self.assertEqual(d1, actual)
+        self.assertEqual(d1, m.disk_for_match([d1, d2], {}))
+        self.assertEqual([d1, d2], m.disks_for_match([d1, d2], {}))
+        self.assertEqual(d1, m.disk_for_match([d2, d1], {}))
+        self.assertEqual([d1, d2], m.disks_for_match([d2, d1], {}))
 
     def test_sort_largest(self):
         m = make_model()
         d100 = make_disk(m, size=100 << 30, serial="s1", path="/dev/d1")
         d200 = make_disk(m, size=200 << 30, serial="s2", path="/dev/d2")
-        actual = m.disk_for_match([d100, d200], {"size": "largest"})
-        self.assertEqual(d200, actual)
+        self.assertEqual(d200, m.disk_for_match([d100, d200], {"size": "largest"}))
+        self.assertEqual(
+            [d200, d100], m.disks_for_match([d100, d200], {"size": "largest"})
+        )
 
     def test_sort_smallest(self):
         m = make_model()
         d200 = make_disk(m, size=200 << 30)
         d100 = make_disk(m, size=100 << 30)
-        actual = m.disk_for_match([d200, d100], {"size": "smallest"})
-        self.assertEqual(d100, actual)
+        self.assertEqual(d100, m.disk_for_match([d200, d100], {"size": "smallest"}))
+        self.assertEqual(
+            [d100, d200], m.disks_for_match([d200, d100], {"size": "smallest"})
+        )
 
     @parameterized.expand(match_sort_criteria)
     def test_sort_serial(self, sort_criteria: str):
@@ -1771,48 +1775,48 @@ class TestDiskForMatch(SubiTestCase):
         d2 = make_disk(m, serial="s2", path=None, wwn=None)
         # while the size sort is reversed when doing largest,
         # we pre-sort on the other criteria, and stable sort helps out
-        actual = m.disk_for_match([d2, d1], {"size": sort_criteria})
-        self.assertEqual(d1, actual)
+        self.assertEqual(d1, m.disk_for_match([d2, d1], {"size": sort_criteria}))
+        self.assertEqual([d1, d2], m.disks_for_match([d2, d1], {"size": sort_criteria}))
 
     @parameterized.expand(match_sort_criteria)
     def test_sort_path(self, sort_criteria: str):
         m = make_model()
         d1 = make_disk(m, serial=None, path="/dev/d1", wwn=None)
         d2 = make_disk(m, serial=None, path="/dev/d2", wwn=None)
-        actual = m.disk_for_match([d2, d1], {"size": sort_criteria})
-        self.assertEqual(d1, actual)
+        self.assertEqual(d1, m.disk_for_match([d2, d1], {"size": sort_criteria}))
+        self.assertEqual([d1, d2], m.disks_for_match([d2, d1], {"size": sort_criteria}))
 
     @parameterized.expand(match_sort_criteria)
     def test_sort_wwn(self, sort_criteria: str):
         m = make_model()
         d1 = make_disk(m, serial=None, path=None, wwn="w1")
         d2 = make_disk(m, serial=None, path=None, wwn="w2")
-        actual = m.disk_for_match([d2, d1], {"size": sort_criteria})
-        self.assertEqual(d1, actual)
+        self.assertEqual(d1, m.disk_for_match([d2, d1], {"size": sort_criteria}))
+        self.assertEqual([d1, d2], m.disks_for_match([d2, d1], {"size": sort_criteria}))
 
     @parameterized.expand(match_sort_criteria)
     def test_sort_wwn_wins(self, sort_criteria: str):
         m = make_model()
         d1 = make_disk(m, serial="s2", path="/dev/d2", wwn="w1")
         d2 = make_disk(m, serial="s1", path="/dev/d1", wwn="w2")
-        actual = m.disk_for_match([d2, d1], {"size": sort_criteria})
-        self.assertEqual(d1, actual)
+        self.assertEqual(d1, m.disk_for_match([d2, d1], {"size": sort_criteria}))
+        self.assertEqual([d1, d2], m.disks_for_match([d2, d1], {"size": sort_criteria}))
 
     @parameterized.expand(match_sort_criteria)
     def test_sort_serial_wins(self, sort_criteria: str):
         m = make_model()
         d1 = make_disk(m, serial="s1", path="/dev/d2", wwn="w")
         d2 = make_disk(m, serial="s2", path="/dev/d1", wwn="w")
-        actual = m.disk_for_match([d2, d1], {"size": sort_criteria})
-        self.assertEqual(d1, actual)
+        self.assertEqual(d1, m.disk_for_match([d2, d1], {"size": sort_criteria}))
+        self.assertEqual([d1, d2], m.disks_for_match([d2, d1], {"size": sort_criteria}))
 
     @parameterized.expand(match_sort_criteria)
     def test_sort_path_wins(self, sort_criteria: str):
         m = make_model()
         d1 = make_disk(m, serial="s", path="/dev/d1", wwn="w")
         d2 = make_disk(m, serial="s", path="/dev/d2", wwn="w")
-        actual = m.disk_for_match([d2, d1], {"size": sort_criteria})
-        self.assertEqual(d1, actual)
+        self.assertEqual(d1, m.disk_for_match([d2, d1], {"size": sort_criteria}))
+        self.assertEqual([d1, d2], m.disks_for_match([d2, d1], {"size": sort_criteria}))
 
     def test_sort_raid(self):
         m = make_model()
@@ -1822,8 +1826,8 @@ class TestDiskForMatch(SubiTestCase):
         d2_2 = make_disk(m, size=200 << 30)
         r1 = make_raid(m, disks={d1_1, d1_2})
         r2 = make_raid(m, disks={d2_1, d2_2})
-        actual = m.disk_for_match([r1, r2], {"size": "largest"})
-        self.assertEqual(r2, actual)
+        self.assertEqual(r2, m.disk_for_match([r1, r2], {"size": "largest"}))
+        self.assertEqual([r2, r1], m.disks_for_match([r1, r2], {"size": "largest"}))
 
     @parameterized.expand(match_sort_criteria)
     def test_sort_raid_on_disks(self, sort_criteria: str):
@@ -1834,23 +1838,23 @@ class TestDiskForMatch(SubiTestCase):
         d2_2 = make_disk(m, serial=None, path=None, wwn="w2_2")
         r1 = make_raid(m, disks={d1_1, d1_2})
         r2 = make_raid(m, disks={d2_1, d2_2})
-        actual = m.disk_for_match([r1, r2], {"size": sort_criteria})
-        self.assertEqual(r1, actual)
+        self.assertEqual(r1, m.disk_for_match([r1, r2], {"size": sort_criteria}))
+        self.assertEqual([r1, r2], m.disks_for_match([r1, r2], {"size": sort_criteria}))
 
     def test_skip_empty(self):
         m = make_model()
         d0 = make_disk(m, size=0)
         d100 = make_disk(m, size=100 << 30)
-        actual = m.disk_for_match([d0, d100], {"size": "smallest"})
-        self.assertEqual(d100, actual)
+        self.assertEqual(d100, m.disk_for_match([d0, d100], {"size": "smallest"}))
+        self.assertEqual([d100], m.disks_for_match([d0, d100], {"size": "smallest"}))
 
     def test_skip_in_use_size(self):
         m = make_model()
         d100 = make_disk(m, size=100 << 30)
         d200 = make_disk(m, size=200 << 30)
         d100._has_in_use_partition = True
-        actual = m.disk_for_match([d100, d200], {"size": "smallest"})
-        self.assertEqual(d200, actual)
+        self.assertEqual(d200, m.disk_for_match([d100, d200], {"size": "smallest"}))
+        self.assertEqual([d200], m.disks_for_match([d100, d200], {"size": "smallest"}))
 
     def test_skip_in_use_ssd(self):
         m = make_model()
@@ -1859,8 +1863,12 @@ class TestDiskForMatch(SubiTestCase):
         d_in_use._has_in_use_partition = True
         d_in_use.info_for_display = Mock(return_value={"rotational": "false"})
         d_not_used.info_for_display = Mock(return_value={"rotational": "false"})
-        actual = m.disk_for_match([d_in_use, d_not_used], {"ssd": True})
-        self.assertEqual(d_not_used, actual)
+        self.assertEqual(
+            d_not_used, m.disk_for_match([d_in_use, d_not_used], {"ssd": True})
+        )
+        self.assertEqual(
+            [d_not_used], m.disks_for_match([d_in_use, d_not_used], {"ssd": True})
+        )
 
     def test_matcher_serial(self):
         m = make_model()
@@ -1868,7 +1876,9 @@ class TestDiskForMatch(SubiTestCase):
         d2 = make_disk(m, serial="2")
         fake_up_blockdata(m)
         self.assertEqual(d1, m.disk_for_match([d1, d2], {"serial": "1"}))
+        self.assertEqual([d1], m.disks_for_match([d1, d2], {"serial": "1"}))
         self.assertEqual(d2, m.disk_for_match([d1, d2], {"serial": "2"}))
+        self.assertEqual([d2], m.disks_for_match([d1, d2], {"serial": "2"}))
 
     def test_matcher_model(self):
         m = make_model()
@@ -1877,7 +1887,9 @@ class TestDiskForMatch(SubiTestCase):
         d2 = make_disk(m)
         fake_up_blockdata_disk(d2, ID_MODEL="m2")
         self.assertEqual(d1, m.disk_for_match([d1, d2], {"model": "m1"}))
+        self.assertEqual([d1], m.disks_for_match([d1, d2], {"model": "m1"}))
         self.assertEqual(d2, m.disk_for_match([d1, d2], {"model": "m2"}))
+        self.assertEqual([d2], m.disks_for_match([d1, d2], {"model": "m2"}))
 
     def test_matcher_vendor(self):
         m = make_model()
@@ -1886,7 +1898,9 @@ class TestDiskForMatch(SubiTestCase):
         d2 = make_disk(m)
         fake_up_blockdata_disk(d2, ID_VENDOR="v2")
         self.assertEqual(d1, m.disk_for_match([d1, d2], {"vendor": "v1"}))
+        self.assertEqual([d1], m.disks_for_match([d1, d2], {"vendor": "v1"}))
         self.assertEqual(d2, m.disk_for_match([d1, d2], {"vendor": "v2"}))
+        self.assertEqual([d2], m.disks_for_match([d1, d2], {"vendor": "v2"}))
 
     def test_matcher_path(self):
         m = make_model()
@@ -1894,7 +1908,9 @@ class TestDiskForMatch(SubiTestCase):
         vdb = make_disk(m, path="/dev/vdb")
         fake_up_blockdata(m)
         self.assertEqual(vda, m.disk_for_match([vda, vdb], {"path": "/dev/vda"}))
+        self.assertEqual([vda], m.disks_for_match([vda, vdb], {"path": "/dev/vda"}))
         self.assertEqual(vdb, m.disk_for_match([vda, vdb], {"path": "/dev/vdb"}))
+        self.assertEqual([vdb], m.disks_for_match([vda, vdb], {"path": "/dev/vdb"}))
 
     def test_matcher_id_path(self):
         m = make_model()
@@ -1902,10 +1918,10 @@ class TestDiskForMatch(SubiTestCase):
         fake_up_blockdata_disk(vda, ID_PATH="pci-0000:00:00.0-nvme-vda")
         vdb = make_disk(m)
         fake_up_blockdata_disk(vdb, ID_PATH="pci-0000:00:00.0-nvme-vdb")
-        actual = m.disk_for_match([vda, vdb], {"id_path": "*vda"})
-        self.assertEqual(vda, actual)
-        actual = m.disk_for_match([vda, vdb], {"id_path": "*vdb"})
-        self.assertEqual(vdb, actual)
+        self.assertEqual(vda, m.disk_for_match([vda, vdb], {"id_path": "*vda"}))
+        self.assertEqual([vda], m.disks_for_match([vda, vdb], {"id_path": "*vda"}))
+        self.assertEqual(vdb, m.disk_for_match([vda, vdb], {"id_path": "*vdb"}))
+        self.assertEqual([vdb], m.disks_for_match([vda, vdb], {"id_path": "*vdb"}))
 
     def test_matcher_install_media(self):
         m = make_model()
@@ -1913,8 +1929,8 @@ class TestDiskForMatch(SubiTestCase):
         iso._has_in_use_partition = True
         disk = make_disk(m)
         fake_up_blockdata(m)
-        actual = m.disk_for_match([iso, disk], {"install-media": True})
-        self.assertEqual(iso, actual)
+        self.assertEqual(iso, m.disk_for_match([iso, disk], {"install-media": True}))
+        self.assertEqual([iso], m.disks_for_match([iso, disk], {"install-media": True}))
 
     def test_match_from_list_first(self):
         m = make_model()
@@ -1926,6 +1942,7 @@ class TestDiskForMatch(SubiTestCase):
             {"path": "/dev/vdb"},
         ]
         self.assertEqual(vda, m.disk_for_match([vda, vdb], match))
+        self.assertEqual([vda], m.disks_for_match([vda, vdb], match))
 
     def test_match_from_list_second(self):
         m = make_model()
@@ -1937,3 +1954,4 @@ class TestDiskForMatch(SubiTestCase):
             {"path": "/dev/vdb"},
         ]
         self.assertEqual(vdb, m.disk_for_match([vda, vdb], match))
+        self.assertEqual([vdb], m.disks_for_match([vda, vdb], match))
