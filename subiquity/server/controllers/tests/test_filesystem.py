@@ -1860,12 +1860,20 @@ class TestMatchingDisks(IsolatedAsyncioTestCase):
     def test_no_match_raises_AutoinstallError(self):
         with self.assertRaises(AutoinstallError):
             self.fsc.get_bootable_matching_disk({"size": "largest"})
+        with self.assertRaises(AutoinstallError):
+            self.fsc.get_bootable_matching_disks({"size": "largest"})
 
     def test_two_matches(self):
-        make_disk(self.fsc.model, size=10 << 30)
+        d1 = make_disk(self.fsc.model, size=10 << 30)
         d2 = make_disk(self.fsc.model, size=20 << 30)
-        actual = self.fsc.get_bootable_matching_disk({"size": "largest"})
-        self.assertEqual(d2, actual)
+        self.assertEqual(d2, self.fsc.get_bootable_matching_disk({"size": "largest"}))
+        self.assertEqual(d1, self.fsc.get_bootable_matching_disk({"size": "smallest"}))
+        self.assertEqual(
+            [d2, d1], self.fsc.get_bootable_matching_disks({"size": "largest"})
+        )
+        self.assertEqual(
+            [d1, d2], self.fsc.get_bootable_matching_disks({"size": "smallest"})
+        )
 
     @mock.patch("subiquity.common.filesystem.boot.can_be_boot_device")
     def test_actually_match_raid(self, m_cbb):
