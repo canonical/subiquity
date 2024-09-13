@@ -66,6 +66,7 @@ from subiquity.models.filesystem import (
 )
 from subiquity.models.filesystem import Disk as ModelDisk
 from subiquity.models.filesystem import (
+    MatchDirective,
     MiB,
     Raid,
     RecoveryKeyHandler,
@@ -1377,7 +1378,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             break
 
     def get_bootable_matching_disk(
-        self, match: dict[str, str] | Sequence[dict[str, str]]
+        self, match: MatchDirective | Sequence[MatchDirective]
     ):
         """given a match directive, find disks or disk-like devices for which
         we have a plan to boot, and return the best matching one of those.

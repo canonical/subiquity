@@ -25,7 +25,18 @@ import platform
 import secrets
 import tempfile
 from abc import ABC, abstractmethod
-from typing import Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import (
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    TypedDict,
+    Union,
+)
 
 import attr
 import more_itertools
@@ -48,6 +59,26 @@ GiB = 1024 * 1024 * 1024
 class NotFinalPartitionError(Exception):
     """Exception to raise when guessing the size of a partition that is not
     the last one."""
+
+
+# a match directive is a dict that specifies
+# * zero or more keys to filter on
+# * an optional sort on size
+MatchDirective = TypedDict(
+    "MatchDirective",
+    {
+        "serial": str,
+        "model": str,
+        "vendor": str,
+        "path": str,
+        "id_path": str,
+        "devpath": str,
+        "ssd": bool,
+        "size": Literal["smallest", "largest"],
+        "install-media": bool,
+    },
+    total=False,
+)
 
 
 @attr.s(auto_attribs=True)
@@ -1620,7 +1651,7 @@ class FilesystemModel:
             status.config, blockdevs=None, is_probe_data=False
         )
 
-    def _make_matchers(self, match: dict) -> Sequence[Callable]:
+    def _make_matchers(self, match: MatchDirective) -> Sequence[Callable]:
         def _udev_val(disk, key):
             return self._probe_data["blockdev"].get(disk.path, {}).get(key, "")
 
@@ -1679,7 +1710,7 @@ class FilesystemModel:
 
         return matchers
 
-    def _sorted_matches(self, disks: Sequence[_Device], match: dict):
+    def _sorted_matches(self, disks: Sequence[_Device], match: MatchDirective):
         # sort first on the sort_key.  Objective here is that if we are falling
         # back to arbitrary disk selection, we're at least consistent in what
         # disk we arbitrarily select across runs
@@ -1693,18 +1724,15 @@ class FilesystemModel:
             disks.sort(key=lambda d: d.size, reverse=True)
         return disks
 
-    def _filtered_matches(self, disks: Sequence[_Device], match: dict):
+    def _filtered_matches(self, disks: Sequence[_Device], match: MatchDirective):
         matchers = self._make_matchers(match)
         return [disk for disk in disks if all(match_fn(disk) for match_fn in matchers)]
 
     def disk_for_match(
-        self, disks: Sequence[_Device], match: dict | Sequence[dict]
+        self, disks: Sequence[_Device], match: MatchDirective | Sequence[MatchDirective]
     ) -> _Device:
-        # a match directive is a dict, or a list of dicts, that specify
-        # * zero or more keys to filter on
-        # * an optional sort on size
         log.info(f"considering {disks} for {match}")
-        if isinstance(match, dict):
+        if not isinstance(match, Sequence):
             match = [match]
         for m in match:
             candidates = self._filtered_matches(disks, m)
