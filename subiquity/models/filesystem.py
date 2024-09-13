@@ -1730,7 +1730,7 @@ class FilesystemModel:
 
     def disk_for_match(
         self, disks: Sequence[_Device], match: MatchDirective | Sequence[MatchDirective]
-    ) -> _Device:
+    ) -> Optional[_Device]:
         log.info(f"considering {disks} for {match}")
         if not isinstance(match, Sequence):
             match = [match]
