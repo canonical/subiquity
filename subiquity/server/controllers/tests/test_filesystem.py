@@ -450,6 +450,78 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             self.assertIn("cannot load assertions for label", logs.output[0])
 
 
+class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.app = make_app()
+        self.app.opts.bootloader = None
+        self.fsc = FilesystemController(self.app)
+        self.model = self.fsc.model = make_model()
+
+        # This is needed for examine_systems_task
+        self.app.base_model.source.current.type = "fsimage"
+        self.app.base_model.source.current.variations = {
+            "default": CatalogEntryVariation(path="", size=1),
+        }
+
+    async def asyncSetUp(self):
+        self.fsc._examine_systems_task.start_sync()
+
+        await self.fsc._examine_systems_task.wait()
+
+    async def test_direct_use_gap__install_media(self):
+        """Match directives were previously not honored when using mode: use_gap.
+        This made it not possible for the OEM team to install to the
+        installation media. LP: #2080608"""
+        layout = {
+            "name": "direct",
+            "mode": "use_gap",
+            "match": {
+                "install-media": True,
+            },
+        }
+
+        # The matcher for "install-media": True looks for
+        # _has_in_use_partition.
+        iso = make_disk(self.model)
+        iso._has_in_use_partition = True
+
+        make_disk(self.model)
+
+        p_guided = mock.patch.object(self.fsc, "guided")
+        p_guided_choice_v2 = mock.patch(
+            "subiquity.server.controllers.filesystem.GuidedChoiceV2",
+            wraps=GuidedChoiceV2,
+        )
+        p_largest_gap = mock.patch(
+            "subiquity.server.controllers.filesystem.gaps.largest_gap",
+            wraps=gaps.largest_gap,
+        )
+
+        with (
+            p_guided as m_guided,
+            p_guided_choice_v2 as m_guided_choice_v2,
+            p_largest_gap as m_largest_gap,
+        ):
+            await self.fsc.run_autoinstall_guided(layout)
+
+        # largest_gap will call itself recursively, so we should not expect a
+        # single call to it.
+        m_largest_gap.mock_calls[0] = mock.call([iso])
+
+        m_guided.assert_called_once()
+        m_guided_choice_v2.assert_called_once_with(
+            target=GuidedStorageTargetUseGap(
+                disk_id=iso.id, gap=gaps.largest_gap([iso]), allowed=[]
+            ),
+            capability=GuidedCapability.DIRECT,
+            password=mock.ANY,
+            recovery_key=mock.ANY,
+            sizing_policy=mock.ANY,
+            reset_partition=mock.ANY,
+            reset_partition_size=mock.ANY,
+        )
+
+
 class TestGuided(IsolatedAsyncioTestCase):
     boot_expectations = [
         (Bootloader.UEFI, "gpt", "/boot/efi"),

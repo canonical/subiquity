@@ -1490,8 +1490,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             disk = self.get_bootable_matching_disk(match)
             target = GuidedStorageTargetReformat(disk_id=disk.id, allowed=[])
         elif mode == "use_gap":
-            bootable = self.potential_boot_disks(with_reformatting=False)
-            gap = gaps.largest_gap(bootable)
+            match = layout.get("match", {})
+            bootable_disks = self.get_bootable_matching_disks(match)
+            gap = gaps.largest_gap(bootable_disks)
             if not gap:
                 raise Exception(
                     "autoinstall cannot configure storage "
