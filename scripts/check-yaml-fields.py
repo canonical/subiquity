@@ -27,8 +27,7 @@ def main():
                 v = v[index]
         if expected is None:
             print(v)
-        else:
-            assert v == expected, "{!r} != {!r}".format(v, expected)
+        assert v == expected, "{!r} != {!r}".format(v, expected)
 
 
 main()
