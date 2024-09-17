@@ -123,7 +123,7 @@ class ProgressView(BaseView):
         #
         # and we want to insert the event type between the colon and the
         # event description
-        context, text = message.split(":")
+        context, text = message.split(":", maxsplit=1)
         text = text.lstrip()
         message = f"{context}: {event_type.upper()}: {text}"
 

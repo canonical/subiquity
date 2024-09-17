@@ -1,5 +1,6 @@
 import unittest
 from unittest import mock
+from unittest.mock import patch
 
 from subiquity.client.controllers.progress import ProgressController
 from subiquity.common.types import ApplicationState
@@ -53,3 +54,29 @@ class IdentityViewTests(unittest.TestCase):
         self.assertIsNone(btn)
         btn = view_helpers.find_button_matching(view, "^Restart Installer$")
         self.assertIsNotNone(btn)
+
+    @patch("subiquity.ui.views.installprogress.Columns")
+    @patch("subiquity.ui.views.installprogress.Text")
+    def test_event_other_formatting(self, text_mock, columns_mock):
+        """Test formatting of the other_event function."""
+        view = self.make_view()
+        text_mock.return_value = "mock text"
+        view.event_other("MOCK CONTEXT: message", "mock")
+        text_mock.assert_called_with("MOCK CONTEXT: MOCK: message")
+        columns_mock.assert_called_with(
+            [
+                ("pack", "mock text"),
+            ],
+            dividechars=1,
+        )
+
+    @patch("subiquity.ui.views.installprogress.Text")
+    def test_event_other_robust_splitting(self, text_mock):
+        """Test that messages containing a colon don't fail to split.
+
+        event_other uses str.split(":"), make sure it doesn't cause an
+        error if more than one colon is present in the message.
+        """
+        view = self.make_view()
+        view.event_other("MOCK CONTEXT: bad keys: 1, 2, 3", "mock")
+        text_mock.assert_called_with("MOCK CONTEXT: MOCK: bad keys: 1, 2, 3")
