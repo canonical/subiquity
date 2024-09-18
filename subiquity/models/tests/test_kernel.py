@@ -27,7 +27,7 @@ class TestKernelModel(SubiTestCase):
         expected = {
             "kernel": {
                 "package": "kernel-a",
-                "remove_existing": True,
+                "remove": "existing",
             }
         }
 
@@ -40,7 +40,7 @@ class TestKernelModel(SubiTestCase):
         expected = {
             "kernel": {
                 "install": False,
-                "remove_existing": True,
+                "remove": "existing",
             }
         }
 

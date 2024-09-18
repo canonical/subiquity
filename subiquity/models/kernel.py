@@ -55,8 +55,8 @@ class KernelModel:
     #    Newer ISOs may have the wrong kernel pre-installed, so we need to
     #    install the correct kernel and remove the pre-installed one.  We
     #    continue to rely on curtin for kernel installation, with the addition
-    #    of support to remove the pre-installed kernel.  remove_existing does
-    #    the right thing here.
+    #    of support to remove the pre-installed kernel.  `remove: existing`
+    #    does the right thing here.
     # 3. yes preinstall, preinstalled kernel is right, no OEM kernel:
     #    Almost identical to case #2 but this time the preinstall is correct.
     #    This is the happy path and a noticeably faster install time.  From the
@@ -80,23 +80,23 @@ class KernelModel:
 
     # Handling:
     # 1. no preinstall, no OEM kernel:
-    #    use "package" to specify the desired package, we set "remove_existing"
-    #    but it has nothing to do, so nothing is removed.  Curtin carries out
-    #    the actual kernel install.
-    #    config: {"package": "foo", "remove_existing": True}
+    #    use "package" to specify the desired package, we set
+    #    `remove: existing` but it has nothing to do, so nothing is removed.
+    #    Curtin carries out the actual kernel install.
+    #    config: {"package": "foo", "remove": "existing"}
     # 2. yes preinstall, preinstalled kernel is wrong, no OEM kernel:
-    #    use "package" to specify the desired package, we set "remove_existing"
-    #    and this time it has a pre-installed package to remove.  Same config
-    #    as #1, but curtin determines a package does need to be removed and
-    #    does so.
-    #    config: {"package": "foo", "remove_existing": True}
+    #    use "package" to specify the desired package, we set
+    #    `remove: existing` and this time it has a pre-installed package to
+    #    remove.  Same config as #1, but curtin determines a package does need
+    #    to be removed and does so.
+    #    config: {"package": "foo", "remove": "existing"}
     # 3. yes preinstall, preinstalled kernel is right, no OEM kernel:
-    #    use "package" to specify the desired package, we set "remove_existing"
-    #    like before.  Same config as #1/#2, but curtin detects via
-    #    ensure_one_kernel that the installed kernel state before/after
-    #    installing the requested package is unchanged, so no kernel is
-    #    removed.
-    #    config: {"package": "foo", "remove_existing": True}
+    #    use "package" to specify the desired package, we set
+    #    `remove: existing` like before.  Same config as #1/#2, but curtin
+    #    detects via ensure_one_kernel that the installed kernel state
+    #    before/after installing the requested package is unchanged, so no
+    #    kernel is removed.
+    #    config: {"package": "foo", "remove": "existing"}
     # 4. no preinstall, yes OEM kernel:
     #    This time Subiquity is managing the kernel install, curtin should not
     #    install anything, and curtin's ensure_one_kernel would do the right
@@ -134,5 +134,5 @@ class KernelModel:
         if bool(self.remove):
             kernel["remove"] = self.remove
         else:
-            kernel["remove_existing"] = True
+            kernel["remove"] = "existing"
         return {"kernel": kernel}
