@@ -71,6 +71,7 @@ from subiquity.models.filesystem import Disk as ModelDisk
 from subiquity.models.filesystem import (
     LVM_LogicalVolume,
     LVM_VolGroup,
+    MatchDirective,
     MiB,
     Partition,
     Raid,
@@ -1510,18 +1511,29 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         self.model.detected_supports_nvme_tcp_booting = assume_supported
 
+    def get_bootable_matching_disks(
+        self, match: MatchDirective | Sequence[MatchDirective]
+    ) -> list[_Device]:
+        """given a match directive, find disks or disk-like devices for which
+        we have a plan to boot, and return them.
+        As match directives are autoinstall-supplied, raise AutoinstallError if
+        no matching disk is found."""
+        disks = self.potential_boot_disks(with_reformatting=True)
+        matching_disks = self.model.disks_for_match(disks, match)
+        if not matching_disks:
+            raise AutoinstallError(f"Failed to find matching device for {match}")
+        return matching_disks
+
     def get_bootable_matching_disk(
-        self, match: dict[str, str] | Sequence[dict[str, str]]
-    ):
+        self, match: MatchDirective | Sequence[MatchDirective]
+    ) -> _Device:
         """given a match directive, find disks or disk-like devices for which
         we have a plan to boot, and return the best matching one of those.
         As match directives are autoinstall-supplied, raise AutoinstallError if
         no matching disk is found."""
-        disks = self.potential_boot_disks(with_reformatting=True)
-        disk = self.model.disk_for_match(disks, match)
-        if disk is None:
-            raise AutoinstallError(f"Failed to find matching device for {match}")
-        return disk
+        matching_disks = self.get_bootable_matching_disks(match)
+        assert matching_disks
+        return matching_disks[0]
 
     async def run_autoinstall_guided(self, layout):
         name = layout["name"]
@@ -1612,8 +1624,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             disk = self.get_bootable_matching_disk(match)
             target = GuidedStorageTargetReformat(disk_id=disk.id, allowed=[])
         elif mode == "use_gap":
-            bootable = self.potential_boot_disks(with_reformatting=False)
-            gap = gaps.largest_gap(bootable)
+            match = layout.get("match", {})
+            bootable_disks = self.get_bootable_matching_disks(match)
+            gap = gaps.largest_gap(bootable_disks)
             if not gap:
                 raise Exception(
                     "autoinstall cannot configure storage "
