@@ -16,18 +16,11 @@
 import unittest
 
 import jsonschema
-from cloudinit.config.schema import SchemaValidationError
 from jsonschema.validators import validator_for
 
+from subiquity.cloudinit import CloudInitSchemaValidationError
 from subiquity.server.controllers.userdata import UserdataController
 from subiquitycore.tests.mocks import make_app
-
-try:
-    from cloudinit.config.schema import SchemaProblem
-except ImportError:
-
-    def SchemaProblem(x, y):
-        return (x, y)  # TODO(drop on cloud-init 22.3 SRU)
 
 
 class TestUserdataController(unittest.TestCase):
@@ -42,21 +35,16 @@ class TestUserdataController(unittest.TestCase):
             self.controller.load_autoinstall_data(valid_schema)
             self.assertEqual(self.controller.model, valid_schema)
 
-        fake_error = SchemaValidationError(
-            schema_errors=(
-                SchemaProblem("ssh_import_id", "'wrong' is not of type 'array'"),
-            ),
+        fake_error = CloudInitSchemaValidationError(
+            "ssh_import_id: 'wrong' is not of type 'array'"
         )
         invalid_schema = {"ssh_import_id": "wrong"}
         validate = self.controller.app.base_model.validate_cloudconfig_schema
         validate.side_effect = fake_error
         with self.subTest("Invalid user-data raises error"):
-            with self.assertRaises(SchemaValidationError) as ctx:
+            with self.assertRaises(CloudInitSchemaValidationError) as ctx:
                 self.controller.load_autoinstall_data(invalid_schema)
-            expected_error = (
-                "Cloud config schema errors: ssh_import_id: 'wrong' is not of"
-                " type 'array'"
-            )
+            expected_error = "ssh_import_id: 'wrong' is not of" " type 'array'"
             self.assertEqual(expected_error, str(ctx.exception))
             validate.assert_called_with(
                 data=invalid_schema, data_source="autoinstall.user-data"

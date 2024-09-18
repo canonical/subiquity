@@ -23,18 +23,21 @@ import yaml
 
 from subiquity.cloudinit import (
     CLOUD_INIT_PW_SET,
+    CloudInitSchemaTopLevelKeyError,
     CloudInitSchemaValidationError,
     cloud_init_status_wait,
     cloud_init_version,
-    get_schema_failure_keys,
+    get_unknown_keys,
     legacy_cloud_init_extract,
+    legacy_cloud_init_validation,
     rand_password,
     rand_user_password,
     read_json_extended_status,
     read_legacy_status,
     supports_format_json,
     supports_recoverable_errors,
-    validate_cloud_init_schema,
+    validate_cloud_config_schema,
+    validate_cloud_init_top_level_keys,
 )
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.parameterized import parameterized
@@ -144,7 +147,8 @@ class TestCloudInitVersion(SubiTestCase):
         self.assertEqual((True, "done"), await cloud_init_status_wait())
 
 
-class TestCloudInitSchemaValidation(SubiTestCase):
+@patch("subiquity.cloudinit.system_scripts_env", new=Mock())
+class TestCloudInitTopLevelKeyValidation(SubiTestCase):
     @parameterized.expand(
         (
             (
@@ -178,7 +182,7 @@ class TestCloudInitSchemaValidation(SubiTestCase):
                 args=[], returncode=1, stderr=msg
             )
 
-            bad_keys = await get_schema_failure_keys()
+            bad_keys = await get_unknown_keys()
 
         self.assertEqual(bad_keys, expected)
 
@@ -193,7 +197,7 @@ class TestCloudInitSchemaValidation(SubiTestCase):
             args=[], returncode=1, stderr=error_msg
         )
 
-        bad_keys = await get_schema_failure_keys()
+        bad_keys = await get_unknown_keys()
 
         self.assertEqual(bad_keys, [])
 
@@ -202,15 +206,15 @@ class TestCloudInitSchemaValidation(SubiTestCase):
     async def test_no_schema_errors(self, wait_for_mock):
         wait_for_mock.return_value = CompletedProcess(args=[], returncode=0, stderr="")
 
-        self.assertEqual(None, await validate_cloud_init_schema())
+        self.assertEqual(None, await validate_cloud_init_top_level_keys())
 
-    @patch("subiquity.cloudinit.get_schema_failure_keys")
+    @patch("subiquity.cloudinit.get_unknown_keys")
     async def test_validate_cloud_init_schema(self, sources_mock):
         mock_keys = ["key1", "key2"]
         sources_mock.return_value = mock_keys
 
-        with self.assertRaises(CloudInitSchemaValidationError) as ctx:
-            await validate_cloud_init_schema()
+        with self.assertRaises(CloudInitSchemaTopLevelKeyError) as ctx:
+            await validate_cloud_init_top_level_keys()
 
         self.assertEqual(mock_keys, ctx.exception.keys)
 
@@ -219,9 +223,39 @@ class TestCloudInitSchemaValidation(SubiTestCase):
     @patch("subiquity.cloudinit.log")
     async def test_get_schema_warn_on_timeout(self, log_mock, wait_for_mock):
         wait_for_mock.side_effect = asyncio.TimeoutError()
-        sources = await get_schema_failure_keys()
+        sources = await get_unknown_keys()
         log_mock.warning.assert_called()
         self.assertEqual([], sources)
+
+    @parameterized.expand(
+        (
+            ("20.2", True),
+            ("22.1", True),
+            ("22.2", False),
+            ("23.0", False),
+        )
+    )
+    async def test_version_check_and_skip(self, version, should_skip):
+        """Test that top-level key validation skipped on right versions.
+
+        The "schema" subcommand, which the top-level key validation relies
+        on, was added in cloud-init version 22.2. This test is to ensure
+        that it's skipped on older releases.
+        """
+        with (
+            patch("subiquity.cloudinit.get_unknown_keys") as keys_mock,
+            patch("subiquity.cloudinit.cloud_init_version") as version_mock,
+        ):
+            version_mock.return_value = version
+
+            if should_skip:
+                await validate_cloud_init_top_level_keys()
+                keys_mock.assert_not_called()
+
+            else:
+                keys_mock.return_value = []  # avoid raise condition
+                await validate_cloud_init_top_level_keys()
+                keys_mock.assert_called_once()
 
 
 class TestCloudInitRandomStrings(SubiTestCase):
@@ -252,6 +286,25 @@ class TestCloudInitRandomStrings(SubiTestCase):
         # password characters sampled from provided set
         choices = ["a"]
         self.assertEqual("a" * 32, rand_password(select_from=choices))
+
+
+class TestCloudInitSchemaValidation(SubiTestCase):
+    """Test cloud-init schema Validation."""
+
+    @patch("subiquity.cloudinit.legacy_cloud_init_validation")
+    @patch("subiquity.cloudinit.Path")
+    @patch("subiquity.cloudinit.tempfile.TemporaryDirectory")
+    async def test_config_dump(self, tempdir_mock, path_mock, legacy_validate_mock):
+        """Test the config and source passed correctly."""
+        test_config = {"mock key": "mock value"}
+        validate_cloud_config_schema(test_config, "mock source")
+
+        # Config is the same
+        result_path = path_mock.return_value.__truediv__.return_value
+        result_path.write_text.assert_called_with(yaml.dump(test_config))
+
+        # Source is the same
+        legacy_validate_mock.assert_called_with(str(result_path), "mock source")
 
 
 @patch("subiquity.cloudinit.arun_command")
@@ -306,3 +359,82 @@ class TestCloudInitLegacyExtract(SubiTestCase):
         log_mock.assert_called_with(
             logging.DEBUG, cpe, "subiquity-legacy-cloud-init-extract"
         )
+
+
+@patch("subiquity.cloudinit.run_command")
+@patch("subiquity.cloudinit.system_scripts_env")
+class TestCloudInitLegacyValidation(SubiTestCase):
+    """Test subiquity-legacy-cloud-init-validation helper function."""
+
+    def test_called_with_correct_env(
+        self,
+        scripts_env_mock,
+        arun_mock,
+    ):
+        """Test legacy script is called with correct parameters and env."""
+        prog_output = {"warnings": "", "errors": ""}
+        arun_mock.return_value.stdout = yaml.dump(prog_output)
+
+        mock_env = {"mock": "env"}
+        scripts_env_mock.return_value = mock_env
+
+        legacy_cloud_init_validation("mock_config", "mock source")
+
+        scripts_env_mock.assert_called_once()
+        arun_mock.assert_called_with(
+            [
+                "subiquity-legacy-cloud-init-validate",
+                "--config",
+                "mock_config",
+                "--source",
+                "mock source",
+            ],
+            env=mock_env,
+            check=True,
+        )
+
+    def test_useful_cpe_error(
+        self,
+        scripts_env_mock,
+        arun_mock,
+    ):
+        """Test reports CalledProcessError usefully."""
+        arun_mock.side_effect = cpe = CalledProcessError(
+            1, ["validate"], "stdout", "stderr"
+        )
+
+        with (
+            self.assertRaises(CalledProcessError),
+            patch("subiquity.cloudinit.log_process_streams") as log_mock,
+        ):
+            legacy_cloud_init_validation("", "")
+
+        log_mock.assert_called_with(
+            logging.DEBUG, cpe, "subiquity-legacy-cloud-init-validate"
+        )
+
+    def test_raise_schema_error(
+        self,
+        scripts_env_mock,
+        arun_mock,
+    ):
+        """Test raise CloudInitSchemaValidationError on errors encountered."""
+        prog_output = {"warnings": "", "errors": "bad config!"}
+        arun_mock.return_value.stdout = yaml.dump(prog_output)
+
+        with self.assertRaises(CloudInitSchemaValidationError):
+            legacy_cloud_init_validation("", "")
+
+    async def test_log_warnings(
+        self,
+        scripts_env_mock,
+        arun_mock,
+    ):
+        """Test raise CloudInitSchemaValidationError on errors encountered."""
+        prog_output = {"warnings": "deprecated key!", "errors": ""}
+        arun_mock.return_value.stdout = yaml.dump(prog_output)
+
+        with self.assertLogs("subiquity.cloudinit") as log_mock:
+            legacy_cloud_init_validation("", "")
+
+        self.assertIn("deprecated key!", log_mock.output[0])

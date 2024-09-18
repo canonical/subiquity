@@ -5,7 +5,9 @@ import json
 import logging
 import re
 import secrets
+import tempfile
 from collections.abc import Awaitable, Sequence
+from pathlib import Path
 from string import ascii_letters, digits
 from subprocess import CalledProcessError, CompletedProcess
 from typing import Any, Optional
@@ -29,7 +31,11 @@ CLOUD_INIT_PW_SET = "".join([x for x in ascii_letters + digits if x not in "loLO
 
 
 class CloudInitSchemaValidationError(NonReportableException):
-    """Exception for cloud config schema validation failure.
+    """Exception for cloud config schema validation failure."""
+
+
+class CloudInitSchemaTopLevelKeyError(CloudInitSchemaValidationError):
+    """Exception for when cloud-config top level keys fail to validate.
 
     Attributes:
         keys -- List of keys which are the cause of the failure
@@ -38,7 +44,7 @@ class CloudInitSchemaValidationError(NonReportableException):
     def __init__(
         self,
         keys: list[str],
-        message: str = "Cloud config schema failed to validate.",
+        message: str = "Cloud config schema failed to validate top-level keys.",
     ) -> None:
         super().__init__(message)
         self.keys = keys
@@ -81,6 +87,10 @@ def supports_recoverable_errors() -> bool:
     return cloud_init_version() >= "23.4"
 
 
+def supports_schema_subcommand() -> bool:
+    return cloud_init_version() >= "22.2"
+
+
 def read_json_extended_status(stream):
     try:
         status = json.loads(stream)
@@ -100,11 +110,15 @@ def read_legacy_status(stream):
     return None
 
 
-async def get_schema_failure_keys() -> list[str]:
-    """Retrieve the keys causing schema failure."""
+async def get_unknown_keys() -> list[str]:
+    """Retrieve top-level keys causing schema failures, if any."""
 
     cmd: list[str] = ["cloud-init", "schema", "--system"]
-    status_coro: Awaitable = arun_command(cmd, clean_locale=True)
+    status_coro: Awaitable = arun_command(
+        cmd,
+        clean_locale=True,
+        env=system_scripts_env(),
+    )
     try:
         sp: CompletedProcess = await asyncio.wait_for(status_coro, 10)
     except asyncio.TimeoutError:
@@ -149,24 +163,92 @@ async def cloud_init_status_wait() -> (bool, Optional[str]):
     return (True, status)
 
 
-async def validate_cloud_init_schema() -> None:
-    """Check for cloud-init schema errors.
+async def validate_cloud_init_top_level_keys() -> None:
+    """Check for cloud-init schema errors in top-level keys.
     Returns (None) if the cloud-config schema validated OK according to
-    cloud-init. Otherwise, a CloudInitSchemaValidationError is thrown
-    which contains a list of the keys which failed to validate.
+    cloud-init. Otherwise, a CloudInitSchemaTopLevelKeyError is thrown
+    which contains a list of the top-level keys which failed to validate.
     Requires cloud-init supporting recoverable errors and extended status.
 
     :return: None if cloud-init schema validated successfully.
     :rtype: None
-    :raises CloudInitSchemaValidationError: If cloud-init schema did not validate
-            successfully.
+    :raises CloudInitSchemaTopLevelKeyError: If cloud-init schema did not
+            validate successfully.
     """
-    causes: list[str] = await get_schema_failure_keys()
+    if not supports_schema_subcommand():
+        log.debug(
+            "Host cloud-config doesn't support 'schema' subcommand. "
+            "Skipping top-level key cloud-config validation."
+        )
+        return None
+
+    causes: list[str] = await get_unknown_keys()
 
     if causes:
-        raise CloudInitSchemaValidationError(keys=causes)
+        raise CloudInitSchemaTopLevelKeyError(keys=causes)
 
     return None
+
+
+def validate_cloud_config_schema(data: dict[str, Any], data_source: str) -> None:
+    """Validate data config adheres to strict cloud-config schema
+
+    Log warnings on any deprecated cloud-config keys used.
+
+    :param data: dict of cloud-config
+    :param data_source: str to present in logs/errors describing
+        where this config came from: autoinstall.user-data or system info
+    :raises CloudInitSchemaValidationError: If cloud-config did not validate
+        successfully.
+    :raises CalledProcessError: In the legacy code path if calling the helper
+        script fails.
+    """
+    with tempfile.TemporaryDirectory() as td:
+        path = Path(td) / "test-cloud-config.yaml"
+        path.write_text(yaml.dump(data))
+        # Eventually we may want to move to using the CLI when available,
+        # but we can rely on the "legacy" script for now.
+        legacy_cloud_init_validation(str(path), data_source)
+
+
+def legacy_cloud_init_validation(config_path: str, data_source: str) -> None:
+    """Validate cloud-config using helper script.
+
+    :param config_path: path to cloud-config to validate
+    :param data_source: str to present in logs/errors describing
+        where this config came from: autoinstall.user-data or system info
+    :raises CloudInitSchemaValidationError: If cloud-config did not validate
+        successfully.
+    :raises CalledProcessError: If calling the helper script fails.
+    """
+
+    try:
+        proc: CompletedProcess = run_command(
+            [
+                "subiquity-legacy-cloud-init-validate",
+                "--config",
+                config_path,
+                "--source",
+                data_source,
+            ],
+            env=system_scripts_env(),
+            check=True,
+        )
+    except CalledProcessError as cpe:
+        log_process_streams(
+            logging.DEBUG,
+            cpe,
+            "subiquity-legacy-cloud-init-validate",
+        )
+        raise cpe
+
+    results: dict[str, str] = yaml.safe_load(proc.stdout)
+
+    if warnings := results.get("warnings"):
+        log.warning(warnings)
+
+    if errors := results.get("errors"):
+        raise CloudInitSchemaValidationError(errors)
 
 
 async def legacy_cloud_init_extract() -> tuple[dict[str, Any], str]:

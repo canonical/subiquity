@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+# Copyright 2024 Canonical, Ltd.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""Legacy script for compatibility on systems where the 'cloud-init schema'
+is unsupported.
+"""
+
+import argparse
+import sys
+from typing import Any, Dict
+
+import yaml
+from cloudinit import safeyaml
+from cloudinit.config.schema import (
+    SchemaValidationError,
+    get_schema,
+    validate_cloudconfig_schema,
+)
+
+try:
+    from cloudinit.config.schema import SchemaProblem
+except ImportError:
+
+    def SchemaProblem(x, y):
+        return (x, y)  # (not available before cloud-init 22.3)
+
+
+def validate(data: Dict[str, Any], data_source: str) -> Dict[str, str]:
+    """Validate that `data` adheres to strict cloud-config schema.
+
+    Collect warnings on any deprecated cloud-config keys used, and any errors
+    generated while trying to validate the cloud-config.
+
+    :param data: dict of valid cloud-config
+    :param data_source: str to present in logs/errors describing
+        where this config came from: autoinstall.user-data or system info
+
+    :return: A dict with keys "warnings" and "errors", containing the respective
+        data as a string.
+    """
+    # cloud-init v. 22.3 will allow for log_deprecations=True to avoid
+    # raising errors on deprecated keys.
+    # In the meantime, iterate over schema_deprecations to log warnings.
+
+    results = {
+        "warnings": "",
+        "errors": "",
+    }
+
+    try:
+        validate_cloudconfig_schema(data, schema=get_schema(), strict=True)
+    except SchemaValidationError as e:
+        if hasattr(e, "schema_deprecations"):
+            warnings = []
+            deprecations = getattr(e, "schema_deprecations")
+            if deprecations:
+                for schema_path, message in deprecations:
+                    warnings.append(f"{schema_path}: {message}")
+            if warnings:
+                combined_warnings = "\n".join(warnings)
+                results["warnings"] = (
+                    f"The cloud-init configuration for {data_source} contains"
+                    f" deprecated values:\n"
+                    f"{combined_warnings}"
+                )
+
+        if e.schema_errors:
+            if data_source == "autoinstall.user-data":
+                errors = [
+                    SchemaProblem(f"{data_source}.{path}", message)
+                    for (path, message) in e.schema_errors
+                ]
+            else:
+                errors = e.schema_errors
+            results["errors"] = str(SchemaValidationError(schema_errors=errors))
+
+    return results
+
+
+def write_data(
+    results: Dict[str, str],
+    location: str,
+) -> None:
+    """Write result of cloud-config validation"""
+
+    output = safeyaml.dumps(results)
+
+    if location == "-":
+        print(output)
+    else:
+        with open(location, "w") as fp:
+            fp.write(output)
+
+
+def parse_args() -> argparse.Namespace:
+    """Parse arguments."""
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+    )
+
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        required=True,
+        help="Location of cloud-config to validate.",
+    )
+
+    parser.add_argument(
+        "-s",
+        "--source",
+        type=str,
+        required=True,
+        help="description of the data source for the config.",
+    )
+
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default="-",
+        help="Location to write result of validation instead of stdout.",
+    )
+
+    return parser.parse_args()
+
+
+def main() -> int:
+    args: argparse.Namespace = parse_args()
+
+    with open(args.config) as fp:
+        config = yaml.safe_load(fp)
+
+    results = validate(config, args.source)
+    write_data(results, args.output)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

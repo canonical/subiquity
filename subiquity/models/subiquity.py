@@ -23,22 +23,9 @@ from collections import OrderedDict
 from typing import Any, Dict, List, Set, Tuple
 
 import yaml
-from cloudinit.config.schema import (
-    SchemaValidationError,
-    get_schema,
-    validate_cloudconfig_schema,
-)
-
-try:
-    from cloudinit.config.schema import SchemaProblem
-except ImportError:
-
-    def SchemaProblem(x, y):
-        return (x, y)  # TODO(drop on cloud-init 22.3 SRU)
-
-
 from curtin.config import merge_config
 
+from subiquity.cloudinit import validate_cloud_config_schema
 from subiquity.common.pkg import TargetPkg
 from subiquity.common.resources import get_users_and_groups
 from subiquity.server.types import InstallerChannels
@@ -321,44 +308,8 @@ class SubiquityModel:
         await self.hub.abroadcast(InstallerChannels.INSTALL_CONFIRMED)
 
     def validate_cloudconfig_schema(self, data: dict, data_source: str):
-        """Validate data config adheres to strict cloud-config schema
-
-        Log warnings on any deprecated cloud-config keys used.
-
-        :param data: dict of valid cloud-config
-        :param data_source: str to present in logs/errors describing
-            where this config came from: autoinstall.user-data or system info
-
-        :raise SchemaValidationError: on invalid cloud-config schema
-        """
-        # cloud-init v. 22.3 will allow for log_deprecations=True to avoid
-        # raising errors on deprecated keys.
-        # In the meantime, iterate over schema_deprecations to log warnings.
-        try:
-            validate_cloudconfig_schema(data, schema=get_schema(), strict=True)
-        except SchemaValidationError as e:
-            if hasattr(e, "schema_deprecations"):
-                warnings = []
-                deprecations = getattr(e, "schema_deprecations")
-                if deprecations:
-                    for schema_path, message in deprecations:
-                        warnings.append(message)
-                if warnings:
-                    log.warning(
-                        "The cloud-init configuration for %s contains"
-                        " deprecated values:\n%s",
-                        data_source,
-                        "\n".join(warnings),
-                    )
-            if e.schema_errors:
-                if data_source == "autoinstall.user-data":
-                    errors = [
-                        SchemaProblem(f"{data_source}.{path}", message)
-                        for (path, message) in e.schema_errors
-                    ]
-                else:
-                    errors = e.schema_errors
-                raise SchemaValidationError(schema_errors=errors)
+        """Validate data config adheres to strict cloud-config schema."""
+        validate_cloud_config_schema(data, data_source)
 
     def _cloud_init_config(self):
         config = {
