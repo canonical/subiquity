@@ -13,3 +13,4 @@ About the Server installer
 
    cloudinit-autoinstall-interaction
    zero-touch-autoinstall
+   uefi-secureboot
