@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import enum
 import logging
 import os
 import typing
@@ -56,6 +57,34 @@ class CatalogEntry:
             )
 
 
+# It is possible that on release day the default (i.e. generic) kernel
+# will not support ZFS or NVidia drivers. In this case, if the target
+# system and the user's choices combine to want to use these features,
+# we install a "bridge" kernel instead (when as the generic/default
+# kernel does support these features, the bridge kernel metapackage
+# will be switched to referencing the default kernel metapackage). All
+# the details about this are stored in the source catalog on the ISO.
+
+
+class BridgeKernelReason(enum.Enum):
+    NVIDIA = "nvidia"
+    ZFS = "zfs"
+
+
+@attr.s(auto_attribs=True, kw_only=True)
+class KernelInfo:
+    default: str
+    bridge: typing.Optional[str] = None
+    bridge_reasons: typing.List[BridgeKernelReason] = attr.Factory(list)
+
+
+@attr.s(auto_attribs=True, kw_only=True)
+class SourceCatalog:
+    version: int
+    sources: typing.List[CatalogEntry]
+    kernel: KernelInfo
+
+
 legacy_server_entry = CatalogEntry(
     variant="server",
     id="synthesized",
@@ -71,32 +100,43 @@ legacy_server_entry = CatalogEntry(
     },
 )
 
+_serializer = Serializer(ignore_unknown_fields=True, serialize_enums_by="value")
+
 
 class SourceModel:
     def __init__(self):
         self._dir = "/cdrom/casper"
         self.current = legacy_server_entry
-        self.sources = [self.current]
+        self.catalog = SourceCatalog(
+            version=1,
+            sources=[self.current],
+            kernel=KernelInfo(default="linux-generic"),
+        )
         self.lang = None
         self.search_drivers = False
 
     def load_from_file(self, fp):
         self._dir = os.path.dirname(fp.name)
-        self.sources = []
         self.current = None
-        self.sources = Serializer(ignore_unknown_fields=True).deserialize(
-            typing.List[CatalogEntry], yaml.safe_load(fp)
-        )
-        for entry in self.sources:
+        content = yaml.safe_load(fp)
+        if isinstance(content, list):
+            self.catalog = SourceCatalog(
+                version=1,
+                sources=_serializer.deserialize(typing.List[CatalogEntry], content),
+                kernel=KernelInfo(default="linux-generic"),
+            )
+        else:
+            self.catalog = _serializer.deserialize(SourceCatalog, content)
+        for entry in self.catalog.sources:
             if entry.default:
                 self.current = entry
-        log.debug("loaded %d sources from %r", len(self.sources), fp.name)
+        log.debug("loaded %d sources from %r", len(self.catalog.sources), fp.name)
         if self.current is None:
-            self.current = self.sources[0]
+            self.current = self.catalog.sources[0]
 
     def get_matching_source(self, id_: str) -> CatalogEntry:
         """Return a source object that has the ID requested."""
-        for source in self.sources:
+        for source in self.catalog.sources:
             if source.id == id_:
                 return source
         raise KeyError

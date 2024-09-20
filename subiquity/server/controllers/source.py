@@ -114,6 +114,8 @@ class SourceController(SubiquityController):
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, "locale"), self._set_locale
         )
+        if self.model.catalog.version != 1:
+            raise Exception("unknown source catalog version")
 
     def _set_locale(self):
         current = self.app.base_model.locale.selected_language
@@ -128,7 +130,7 @@ class SourceController(SubiquityController):
             search_drivers = True
 
         return SourceSelectionAndSetting(
-            [convert_source(source, cur_lang) for source in self.model.sources],
+            [convert_source(source, cur_lang) for source in self.model.catalog.sources],
             self.model.current.id,
             search_drivers=search_drivers,
         )
