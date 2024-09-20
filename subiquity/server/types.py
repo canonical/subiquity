@@ -55,3 +55,7 @@ class InstallerChannels(CoreChannels):
     # app.controllers.Drivers.drivers to see which drivers will be
     # installed.
     DRIVERS_DECIDED = "drivers-decided"
+    # This message is sent when we know whether or not we need to
+    # install a "bridge kernel". After this is sent we really do
+    # finally know which kernel we will be installing.
+    BRIDGE_KERNEL_DECIDED = "bridge-kernel-decided"

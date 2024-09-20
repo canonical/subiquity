@@ -101,6 +101,7 @@ class KernelController(NonInteractiveController):
             self.model.metapkg_name = self.app.base_model.source.catalog.kernel.bridge
         else:
             self.model.metapkg_name = self.default_metapkg_name
+        self.app.hub.broadcast(InstallerChannels.BRIDGE_KERNEL_DECIDED)
 
     def _confirmed(self):
         fs_model = self.app.base_model.filesystem
