@@ -48,6 +48,10 @@ validate () {
     case $testname in
         answers-core-desktop|answers-uc24)
             ;;
+        answers-bridge)
+            python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/curtin-install/subiquity-curthooks.conf \
+                    kernel.package="linux-generic-brg-22.04"
+            ;;
         *)
             python3 scripts/validate-autoinstall-user-data.py --legacy --check-link < $tmpdir/var/log/installer/autoinstall-user-data
             # After the lunar release and the introduction of mirror testing, it
