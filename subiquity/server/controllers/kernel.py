@@ -18,6 +18,7 @@ import os
 
 from subiquity.server.controller import NonInteractiveController
 from subiquity.server.kernel import flavor_to_pkgname
+from subiquity.server.types import InstallerChannels
 
 log = logging.getLogger("subiquity.server.controllers.kernel")
 
@@ -65,8 +66,14 @@ class KernelController(NonInteractiveController):
                 log.debug(f"Using kernel {kernel_package} due to {mp_file}")
                 break
         else:
-            log.debug("Using default kernel linux-generic")
-            self.model.metapkg_name = "linux-generic"
+            # no default kernel found in etc or run, use default from
+            # source catalog.
+            self.app.hub.subscribe(
+                (InstallerChannels.CONFIGURED, "source"), self._set_source
+            )
+
+    async def _set_source(self):
+        self.model.metapkg_name = self.app.base_model.source.catalog.kernel.default
 
     def load_autoinstall_data(self, data):
         if data is None:

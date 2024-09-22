@@ -18,6 +18,7 @@ import os.path
 
 from subiquity.models.kernel import KernelModel
 from subiquity.server.controllers.kernel import KernelController
+from subiquity.server.types import InstallerChannels
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized
@@ -40,11 +41,24 @@ class TestMetapackageSelection(SubiTestCase):
 
     def test_defaults(self):
         self.controller.start()
-        self.assertEqual("linux-generic", self.controller.model.metapkg_name)
+        self.assertEqual(None, self.controller.model.metapkg_name)
+
+    async def test_defaults_from_source(self):
+        self.app.base_model.source.catalog.kernel.default = "default-kernel"
+        self.controller.start()
+        await self.app.hub.abroadcast((InstallerChannels.CONFIGURED, "source"))
+        self.assertEqual("default-kernel", self.controller.model.metapkg_name)
 
     def test_mpfile_run(self):
         self.setup_mpfile("run", "linux-aaaa")
         self.controller.start()
+        self.assertEqual("linux-aaaa", self.controller.model.metapkg_name)
+
+    async def test_mpfile_run_overrides_source(self):
+        self.app.base_model.source.catalog.kernel.default = "default-kernel"
+        self.setup_mpfile("run", "linux-aaaa")
+        self.controller.start()
+        await self.app.hub.abroadcast((InstallerChannels.CONFIGURED, "source"))
         self.assertEqual("linux-aaaa", self.controller.model.metapkg_name)
 
     def test_mpfile_etc(self):
@@ -60,7 +74,7 @@ class TestMetapackageSelection(SubiTestCase):
 
     @parameterized.expand(
         [
-            [None, None, "linux-generic"],
+            [None, None, None],
             [None, {}, "linux-generic"],
             # when the metapackage file is set, it should be used.
             ["linux-zzzz", None, "linux-zzzz"],
