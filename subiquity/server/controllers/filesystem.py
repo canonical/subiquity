@@ -1147,7 +1147,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return sorted(classic_capabilities)
 
     def available_use_gap_scenarios(
-        self, install_min
+        self, install_min: int
     ) -> list[tuple[int, GuidedStorageTargetUseGap]]:
         scenarios: list[tuple[int, GuidedStorageTargetUseGap]] = []
         for disk in self.potential_boot_disks(with_reformatting=False):
@@ -1200,6 +1200,36 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             scenarios.append((gap.size, use_gap))
         return scenarios
 
+    def available_target_resize_scenarios(
+        self, install_min: int
+    ) -> list[tuple[int, GuidedStorageTargetResize]]:
+        scenarios: list[tuple[int, GuidedStorageTargetResize]] = []
+
+        for disk in self.potential_boot_disks(check_boot=False):
+            part_align = disk.alignment_data().part_align
+            for partition in disk.partitions():
+                if partition._is_in_use:
+                    continue
+                vals = sizes.calculate_guided_resize(
+                    partition.estimated_min_size,
+                    partition.size,
+                    install_min,
+                    part_align=part_align,
+                )
+                if vals is None:
+                    # Return a reason here
+                    continue
+                if not boot.can_be_boot_device(
+                    disk, resize_partition=partition, with_reformatting=False
+                ):
+                    # Return a reason here
+                    continue
+                resize = GuidedStorageTargetResize.from_recommendations(
+                    partition, vals, allowed=self.get_classic_capabilities()
+                )
+                scenarios.append((vals.install_max, resize))
+        return scenarios
+
     async def v2_guided_GET(self, wait: bool = False) -> GuidedStorageResponseV2:
         """Acquire a list of possible guided storage configuration scenarios.
         Results are sorted by the size of the space potentially available to
@@ -1236,30 +1266,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             scenarios.append((disk.size, reformat))
 
         scenarios.extend(self.available_use_gap_scenarios(install_min))
-
-        for disk in self.potential_boot_disks(check_boot=False):
-            part_align = disk.alignment_data().part_align
-            for partition in disk.partitions():
-                if partition._is_in_use:
-                    continue
-                vals = sizes.calculate_guided_resize(
-                    partition.estimated_min_size,
-                    partition.size,
-                    install_min,
-                    part_align=part_align,
-                )
-                if vals is None:
-                    # Return a reason here
-                    continue
-                if not boot.can_be_boot_device(
-                    disk, resize_partition=partition, with_reformatting=False
-                ):
-                    # Return a reason here
-                    continue
-                resize = GuidedStorageTargetResize.from_recommendations(
-                    partition, vals, allowed=classic_capabilities
-                )
-                scenarios.append((vals.install_max, resize))
+        scenarios.extend(self.available_target_resize_scenarios(install_min))
 
         scenarios.sort(reverse=True, key=lambda x: x[0])
         return GuidedStorageResponseV2(
