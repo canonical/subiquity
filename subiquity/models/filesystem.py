@@ -2431,10 +2431,13 @@ class FilesystemModel:
         self._actions.append(zpool)
         return zpool
 
+    def uses_zfs(self):
+        return self._one(type="zpool") is not None
+
     async def live_packages(self) -> Tuple[Set, Set]:
         before = set()
         during = set()
-        if self._one(type="zpool") is not None:
+        if self.uses_zfs():
             before.add("zfsutils-linux")
         if self.reset_partition is not None:
             during.add("efibootmgr")
