@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from functools import partial
 from unittest import mock
 
 from subiquity.common.filesystem import gaps
@@ -44,7 +43,11 @@ class GapTestCase(unittest.TestCase):
         m = mock.patch("subiquity.common.filesystem.gaps.parts_and_gaps")
         p = m.start()
         self.addCleanup(m.stop)
-        p.side_effect = partial(gaps.find_disk_gaps_v2, info=alignment_data)
+
+        def fake_parts_and_gaps(device, ignore_disk_fs=False):
+            return gaps.find_disk_gaps_v2(device)
+
+        p.side_effect = fake_parts_and_gaps
 
         for cls in Disk, Raid:
             md = mock.patch.object(cls, "alignment_data")
@@ -58,6 +61,27 @@ class TestGaps(unittest.TestCase):
         [gap] = gaps.parts_and_gaps(make_disk())
         self.assertTrue(isinstance(gap, gaps.Gap))
         self.assertEqual(MiB, gap.offset)
+
+    def test_disk_with_filesystem(self):
+        disk = make_disk()
+        disk._fs = mock.Mock()
+
+        self.assertFalse(gaps.parts_and_gaps(disk))
+        [gap] = gaps.parts_and_gaps(disk, ignore_disk_fs=True)
+        self.assertTrue(isinstance(gap, gaps.Gap))
+        self.assertEqual(MiB, gap.offset)
+
+    def test_disk_with_filesystem_and_partitions(self):
+        model, disk = make_model_and_disk()
+        make_partition(model, disk, size=20 * MiB)
+
+        disk._fs = mock.Mock()
+
+        self.assertFalse(gaps.parts_and_gaps(disk))
+        [part, gap] = gaps.parts_and_gaps(disk, ignore_disk_fs=True)
+        self.assertTrue(isinstance(part, gaps.Partition))
+        self.assertTrue(isinstance(gap, gaps.Gap))
+        self.assertEqual(MiB + 20 * MiB, gap.offset)
 
 
 class TestSplitGap(GapTestCase):
