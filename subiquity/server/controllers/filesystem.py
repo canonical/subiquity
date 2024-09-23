@@ -68,6 +68,7 @@ from subiquity.models.filesystem import Disk as ModelDisk
 from subiquity.models.filesystem import (
     MatchDirective,
     MiB,
+    Partition,
     Raid,
     RecoveryKeyHandler,
     _Device,
@@ -1151,6 +1152,23 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             scenarios.append((gap.size, use_gap))
         return scenarios
 
+    def resize_has_enough_room_for_partitions(self, disk, resized: Partition) -> bool:
+        """Check if we have enough room for all the primary partitions. This
+        isn't failproof but should limit the number of TargetResize scenarios
+        that are suggested but can't be applied because we don't have enough
+        room for partitions."""
+        new_primary_parts = 0
+        if not resized.is_logical:
+            new_primary_parts += 1
+        boot_plan = boot.get_boot_device_plan(disk, resize_partition=resized)
+        new_primary_parts += boot_plan.new_partition_count()
+        # In theory, there could be a recovery partition as well. Not sure
+        # how to account for it since we don't know yet if one will be
+        # requested.
+        return new_primary_parts <= gaps.remaining_primary_partitions(
+            disk, disk.alignment_data()
+        )
+
     def available_target_resize_scenarios(
         self, install_min: int
     ) -> list[tuple[int, GuidedStorageTargetResize]]:
@@ -1175,6 +1193,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 ):
                     # Return a reason here
                     continue
+
+                if not self.resize_has_enough_room_for_partitions(disk, partition):
+                    log.error(
+                        "skipping TargetResize: not enough room for primary partitions"
+                    )
+                    continue
+
                 resize = GuidedStorageTargetResize.from_recommendations(
                     partition, vals, allowed=self.get_classic_capabilities()
                 )
