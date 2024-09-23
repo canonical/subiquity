@@ -1250,17 +1250,19 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             reformat,
         )
 
-        resize = possible.pop(0)
-        expected = GuidedStorageTargetResize(
-            disk_id=self.disk.id,
-            partition_number=p.number,
-            new_size=200 << 30,
-            minimum=50 << 30,
-            recommended=200 << 30,
-            maximum=230 << 30,
-            allowed=default_capabilities,
-        )
-        self.assertEqual(expected, resize)
+        if ptable != "vtoc" or bootloader == Bootloader.NONE:
+            # VTOC has primary_part_limit=3
+            resize = possible.pop(0)
+            expected = GuidedStorageTargetResize(
+                disk_id=self.disk.id,
+                partition_number=p.number,
+                new_size=200 << 30,
+                minimum=50 << 30,
+                recommended=200 << 30,
+                maximum=230 << 30,
+                allowed=default_capabilities,
+            )
+            self.assertEqual(expected, resize)
         self.assertEqual(1, len(possible))
 
     @parameterized.expand(bootloaders_and_ptables)
@@ -1585,6 +1587,86 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             scenarios = self.fsc.available_use_gap_scenarios(install_min)
 
         self.assertEqual(expected_scenario, scenarios != [])
+
+    async def test_resize_has_enough_room_for_partitions__one_primary(self):
+        await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
+
+        p = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+
+        self.assertTrue(self.fsc.resize_has_enough_room_for_partitions(self.disk, p))
+
+    async def test_resize_has_enough_room_for_partitions__full_primaries(self):
+        await self._setup(Bootloader.NONE, "dos", fix_bios=True)
+
+        p1 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        p2 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        p3 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        p4 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(self.disk, p1))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(self.disk, p2))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(self.disk, p3))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(self.disk, p4))
+
+    @mock.patch("subiquity.server.controllers.filesystem.boot.get_boot_device_plan")
+    async def test_resize_has_enough_room_for_partitions__one_more(self, p_boot_plan):
+        await self._setup(Bootloader.NONE, "dos", fix_bios=True)
+
+        model = self.model
+        disk = self.disk
+        # Sizes are irrelevant
+        size = 4 << 20
+        p1 = make_partition(model, disk, preserve=True, size=size)
+        p2 = make_partition(model, disk, preserve=True, size=size)
+        p3 = make_partition(model, disk, preserve=True, size=size)
+
+        p_boot_plan.return_value = boot.CreatePartPlan(
+            mock.Mock(), mock.Mock(), mock.Mock()
+        )
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p1))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p2))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p3))
+
+        p_boot_plan.return_value = boot.NoOpBootPlan()
+        self.assertTrue(self.fsc.resize_has_enough_room_for_partitions(disk, p1))
+        self.assertTrue(self.fsc.resize_has_enough_room_for_partitions(disk, p2))
+        self.assertTrue(self.fsc.resize_has_enough_room_for_partitions(disk, p3))
+
+    @mock.patch("subiquity.server.controllers.filesystem.boot.get_boot_device_plan")
+    async def test_resize_has_enough_room_for_partitions__logical(self, p_boot_plan):
+        await self._setup(Bootloader.NONE, "dos", fix_bios=True)
+
+        model = self.model
+        disk = self.disk
+        # Sizes are irrelevant
+        size = 4 << 20
+        p1 = make_partition(model, disk, preserve=True, size=size)
+        p2 = make_partition(model, disk, preserve=True, size=size, flag="extended")
+        p5 = make_partition(model, disk, preserve=True, size=size, flag="logical")
+        p6 = make_partition(model, disk, preserve=True, size=size, flag="logical")
+        p3 = make_partition(model, disk, preserve=True, size=size)
+        p4 = make_partition(model, disk, preserve=True, size=size)
+
+        p_boot_plan.return_value = boot.CreatePartPlan(
+            mock.Mock(), mock.Mock(), mock.Mock()
+        )
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p1))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p2))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p3))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p4))
+        # we're installing in a logical partition, but we still have not enough
+        # room to apply the boot plan.
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p5))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p6))
+
+        p_boot_plan.return_value = boot.NoOpBootPlan()
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p1))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p2))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p3))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p4))
+        # if we're installing in a logical partition, we have enough room
+        self.assertTrue(self.fsc.resize_has_enough_room_for_partitions(disk, p5))
+        self.assertTrue(self.fsc.resize_has_enough_room_for_partitions(disk, p6))
 
 
 class TestManualBoot(IsolatedAsyncioTestCase):
