@@ -47,3 +47,11 @@ class InstallerChannels(CoreChannels):
     # step is after logfiles have been copied to the system, so should be used
     # sparingly and only as absolutely required.
     PRE_SHUTDOWN = "pre-shutdown"
+    # This message is sent when it has been decided:
+    #  a. whether drivers should be searched for or not
+    #  b. which drivers ubuntu-drivers recommends for the system
+    #  c. if the user has elected to install these drivers
+    # Once this has been sent, it is safe to inspect
+    # app.controllers.Drivers.drivers to see which drivers will be
+    # installed.
+    DRIVERS_DECIDED = "drivers-decided"
