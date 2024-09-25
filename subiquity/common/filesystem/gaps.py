@@ -88,7 +88,7 @@ class Gap:
 
 
 @functools.singledispatch
-def parts_and_gaps(device):
+def parts_and_gaps(device, ignore_disk_fs=False):
     raise NotImplementedError(device)
 
 
@@ -191,8 +191,8 @@ def find_disk_gaps_v2(device, info=None):
 
 @parts_and_gaps.register(Disk)
 @parts_and_gaps.register(Raid)
-def parts_and_gaps_disk(device):
-    if device._fs is not None:
+def parts_and_gaps_disk(device, ignore_disk_fs=False):
+    if device._fs is not None and not ignore_disk_fs:
         return []
     if device._m.storage_version == 1:
         return find_disk_gaps_v1(device)
@@ -201,7 +201,7 @@ def parts_and_gaps_disk(device):
 
 
 @parts_and_gaps.register(LVM_VolGroup)
-def _parts_and_gaps_vg(device):
+def _parts_and_gaps_vg(device, ignore_disk_fs=False):
     used = 0
     r = []
     for lv in device._partitions:
@@ -277,7 +277,7 @@ def movable_trailing_partitions_and_gap_size(partition):
 def _movable_trailing_partitions_and_gap_size_partition(
     partition: Partition,
 ) -> Tuple[List[Partition], int]:
-    pgs = parts_and_gaps(partition.device)
+    pgs = parts_and_gaps(partition.device, ignore_disk_fs=True)
     part_idx = pgs.index(partition)
     trailing_partitions = []
     in_extended = partition.is_logical
