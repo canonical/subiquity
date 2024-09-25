@@ -564,6 +564,7 @@ def get_initrd(mntdir):
 
 
 def install(ctx):
+    boot_opts = ["order=d"]
     if os.path.exists(ctx.target):
         match ctx.args.target_overwrite:
             case TargetOverwrite.RECREATE:
@@ -573,7 +574,18 @@ def install(ctx):
                                 '--reuse-target or --recreate-target option to ' +
                                 'allow overwriting')
             case TargetOverwrite.REUSE:
-                pass
+                if not ctx.args.bios:
+                    boot_opts.append("menu=on")
+                    note = """
+NOTE:
+----
+The option -boot order=d only works in legacy BIOS mode.
+When reusing a target image in UEFI mode, QEMU will try to boot from the disk \
+first; rather than from the installation media. To workaround the issue, mash \
+the ESC button when the QEMU window opens. Then select "Device Manager" and \
+"UEFI QEMU DVD-ROM".
+----"""
+                    print(note, file=sys.stderr)
 
     # Only copy the files with secureboot, always overwrite on install
     if ctx.args.secureboot:
@@ -597,7 +609,7 @@ def install(ctx):
             else:
                 iso = ctx.iso
 
-            kvm.extend(('-cdrom', iso))
+            kvm.extend(('-cdrom', iso, '-boot', ','.join(boot_opts)))
 
             if ctx.args.serial:
                 kvm.append('-nographic')
