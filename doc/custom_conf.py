@@ -177,3 +177,24 @@ copybutton_only_copy_prompt_lines = False
 extlinks = {
     'manualpage': ( 'https://manpages.ubuntu.com/manpages/lunar/en/%s', '' )
 }
+
+# Redefine the Sphinx 'command' role to behave/render like 'literal'
+from docutils import nodes
+from docutils.parsers.rst import roles
+from sphinx.util.docutils import SphinxRole
+
+class CommandRole(SphinxRole):
+    def run(self):
+        text = self.text
+        node = nodes.literal(text, text)
+        return [node], []
+
+def setup(app):
+    roles.register_local_role('command', CommandRole())
+
+# Define a custom role for package-name formatting
+def pkg_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+    node = nodes.literal(rawtext, text)
+    return [node], []
+
+roles.register_local_role('pkg', pkg_role)

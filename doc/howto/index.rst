@@ -20,6 +20,8 @@ Getting started with autoinstall
    basic-server-installation
    configure-storage
    autoinstall-validation
+   Sign binaries for Secure Boot <uefi-secureboot-signing>
+   Test Secure Boot <uefi-secureboot-testing>
 
 Found a problem?
 ----------------
