@@ -11,6 +11,8 @@ GPT
 GUID
 GiB
 GiB
+ISO
+ISOs
 Kylin
 Libera
 LPAR
@@ -44,6 +46,7 @@ authorized
 autoinstall
 autoinstaller
 autoinstalls
+boolean
 bootable
 bootloader
 bootloaders
@@ -51,6 +54,7 @@ codecs
 config
 conf
 curtin
+datasource
 debconf
 debian
 dir
@@ -79,6 +83,7 @@ rootfs
 rsyslog
 runtime
 snapd
+stdin
 subvolume
 subvolumes
 superset
@@ -89,6 +94,7 @@ tty
 ubuntu
 udev
 unformatted
+validator
 VLAN
 webhook
 workdir
