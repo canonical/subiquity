@@ -12,4 +12,5 @@ About the Server installer
    :maxdepth: 1
 
    cloudinit-autoinstall-interaction
+   security-overview
    zero-touch-autoinstall

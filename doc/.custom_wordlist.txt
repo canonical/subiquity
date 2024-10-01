@@ -54,7 +54,9 @@ codecs
 config
 conf
 curtin
+dataset
 datasource
+decrypted
 debconf
 debian
 dir
