@@ -695,7 +695,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         """Perform the reformat, and return the resulting gap."""
         in_use_parts = [p for p in disk.partitions() if p._is_in_use]
         if in_use_parts:
-            for p in disk.partitions():
+            for p in list(disk.partitions()):
                 if not p._is_in_use:
                     self.delete_partition(p)
         else:
