@@ -48,3 +48,38 @@ system.  Security updates are always applied, if the installer has network
 access to the Ubuntu archive.  Optionally, non-security updates can be
 configured to be applied before first boot when using ``autoinstall``
 :ref:`ai-updates` with the value ``all``.
+
+
+Details on Encrypted installations
+----------------------------------
+
+LVM
+^^^
+
+To implement full disk encryption in the style referred to as "LVM", 3
+partitions are created:
+
+1. A bootloader partition
+2. An ``ext4`` partition mounted at ``/boot``
+3. A partition used as the :manualpage:`cryptsetup(8) <man5/keyboard.5.html>`
+   device.  The resulting LUKS encrypted block device is then used as the LVM
+   Volume Group physical device, and the rootfs is created in a logical volume.
+
+The configured passphrase is then used to unlock the LUKS encrypted device.
+
+Note that while the term "full disk encryption" is used, ``/boot`` and any data
+on the bootloader partition remain unencrypted in this scheme.
+
+ZFS
+^^^
+
+ZFS disk encryption in Subiquity and Ubuntu-desktop-installer is a hybrid of
+LUKS and ZFS encryption approaches.  In addition to the required bootloader
+partition, two pools ``bpool`` and ``rpool`` are created.
+
+* A LUKS device is created as a ZFS dataset in the ``rpool``.
+* The configured passphrase is used to encrypt the LUKS device.
+* The real key for the ZFS dataset is contained in the "keystore" LUKS device
+  as a simple file.
+* The ``rpool`` is decrypted using this simple file inside the encrypted LUKS
+  device.
