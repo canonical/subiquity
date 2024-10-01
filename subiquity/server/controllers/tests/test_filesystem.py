@@ -449,6 +449,67 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
 
             self.assertIn("cannot load assertions for label", logs.output[0])
 
+    def test_start_guided_reformat__no_in_use(self):
+        self.fsc.model = model = make_model(Bootloader.UEFI)
+        disk = make_disk(model)
+
+        p1 = make_partition(model, disk, size=10 << 30)
+        p2 = make_partition(model, disk, size=10 << 30)
+        p3 = make_partition(model, disk, size=10 << 30)
+        p4 = make_partition(model, disk, size=10 << 30)
+
+        p_del_part = mock.patch.object(
+            self.fsc, "delete_partition", wraps=self.fsc.delete_partition
+        )
+        p_reformat = mock.patch.object(self.fsc, "reformat", wraps=self.fsc.reformat)
+
+        with p_del_part as m_del_part, p_reformat as m_reformat:
+            self.fsc.start_guided_reformat(
+                GuidedStorageTargetReformat(disk_id=disk.id), disk
+            )
+
+        m_reformat.assert_called_once_with(disk, wipe="superblock-recursive")
+        expected_del_calls = [
+            mock.call(p1, True),
+            mock.call(p2, True),
+            mock.call(p3, True),
+            mock.call(p4, True),
+        ]
+        self.assertEqual(expected_del_calls, m_del_part.mock_calls)
+
+    def test_start_guided_reformat__with_in_use(self):
+        """In LP: #2083322, start_guided_reformat did not remove all the
+        partitions that should have been removed. Because we were iterating
+        over device._partitions and calling delete_partition in the body, we
+        failed to iterate over some of the partitions."""
+        self.fsc.model = model = make_model(Bootloader.UEFI)
+        disk = make_disk(model)
+
+        p1 = make_partition(model, disk, size=10 << 30)
+        p2 = make_partition(model, disk, size=10 << 30)
+        p3 = make_partition(model, disk, size=10 << 30)
+        p4 = make_partition(model, disk, size=10 << 30)
+
+        p2._is_in_use = True
+
+        # We use wraps to ensure that the real delete_partition gets called. If
+        # we just do a no-op, we won't invalidate the iterator.
+        p_del_part = mock.patch.object(
+            self.fsc, "delete_partition", wraps=self.fsc.delete_partition
+        )
+        p_reformat = mock.patch.object(self.fsc, "reformat", wraps=self.fsc.reformat)
+
+        with p_del_part as m_del_part, p_reformat as m_reformat:
+            self.fsc.start_guided_reformat(
+                GuidedStorageTargetReformat(disk_id=disk.id), disk
+            )
+
+        m_reformat.assert_not_called()
+        # Not sure why we don't call with "override_preserve=True", like we do
+        # in reformat.
+        expected_del_calls = [mock.call(p1), mock.call(p3), mock.call(p4)]
+        self.assertEqual(expected_del_calls, m_del_part.mock_calls)
+
 
 class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):
     def setUp(self):
