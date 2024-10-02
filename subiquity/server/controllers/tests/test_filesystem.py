@@ -63,7 +63,9 @@ from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controllers.filesystem import (
     DRY_RUN_RESET_SIZE,
     FilesystemController,
-    StorageRecoverableError,
+    StorageConstraintViolationError,
+    StorageInvalidUsageError,
+    StorageNotFoundError,
     VariationInfo,
 )
 from subiquity.server.dryrun import DRConfig
@@ -283,7 +285,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.fsc.locked_probe_data = False
         with mock.patch.object(self.fsc, "add_boot_disk") as add_boot_disk:
             with self.assertRaises(
-                StorageRecoverableError, msg="device already has bootloader"
+                StorageConstraintViolationError, msg="device already has bootloader"
             ):
                 await self.fsc.v2_add_boot_partition_POST("dev-sda")
         self.assertTrue(self.fsc.locked_probe_data)
@@ -295,7 +297,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.fsc.locked_probe_data = False
         with mock.patch.object(self.fsc, "add_boot_disk") as add_boot_disk:
             with self.assertRaises(
-                StorageRecoverableError, msg="disk does not support boot"
+                StorageConstraintViolationError, msg="disk does not support boot"
             ):
                 await self.fsc.v2_add_boot_partition_POST("dev-sda")
         self.assertTrue(self.fsc.locked_probe_data)
@@ -330,7 +332,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         )
         with mock.patch.object(self.fsc, "create_partition") as create_part:
             with self.assertRaisesRegex(
-                ValueError, r"does\ not\ support\ changing\ boot"
+                StorageInvalidUsageError, r"does\ not\ support\ changing\ boot"
             ):
                 await self.fsc.v2_add_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
@@ -352,7 +354,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             ),
         )
         with mock.patch.object(self.fsc, "create_partition") as create_part:
-            with self.assertRaisesRegex(ValueError, r"too\ large"):
+            with self.assertRaisesRegex(StorageConstraintViolationError, r"too\ large"):
                 await self.fsc.v2_add_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
         create_part.assert_not_called()
@@ -399,7 +401,9 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         existing = Partition(number=1, size=1000 << 20, boot=False)
         with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
             with mock.patch.object(self.fsc, "get_partition", return_value=existing):
-                with self.assertRaisesRegex(ValueError, r"changing\ boot"):
+                with self.assertRaisesRegex(
+                    StorageInvalidUsageError, r"changing\ boot"
+                ):
                     await self.fsc.v2_edit_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
         handler.assert_not_called()
@@ -430,7 +434,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.fsc.model = make_model()
         with mock.patch.object(self.fsc, "delete_volgroup") as del_volgroup:
             with self.assertRaisesRegex(
-                StorageRecoverableError, r"could not find existing VG"
+                StorageNotFoundError, r"could not find existing VG"
             ):
                 await self.fsc.v2_volume_group_DELETE(id="inexistent")
         self.assertTrue(self.fsc.locked_probe_data)
@@ -449,7 +453,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.fsc.model = make_model()
         with mock.patch.object(self.fsc, "delete_logical_volume") as del_lv:
             with self.assertRaisesRegex(
-                StorageRecoverableError, r"could not find existing LV"
+                StorageNotFoundError, r"could not find existing LV"
             ):
                 await self.fsc.v2_logical_volume_DELETE(id="inexistent")
         self.assertTrue(self.fsc.locked_probe_data)
@@ -468,7 +472,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.fsc.model = make_model()
         with mock.patch.object(self.fsc, "delete_raid") as del_raid:
             with self.assertRaisesRegex(
-                StorageRecoverableError, r"could not find existing RAID"
+                StorageNotFoundError, r"could not find existing RAID"
             ):
                 await self.fsc.v2_raid_DELETE(id="inexistent")
         self.assertTrue(self.fsc.locked_probe_data)
