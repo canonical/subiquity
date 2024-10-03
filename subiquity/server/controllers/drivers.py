@@ -127,12 +127,12 @@ class DriversController(SubiquityController):
         log.debug("Available drivers to install: %s", self.drivers)
 
     async def _send_drivers_decided(self):
-        await asyncio.wait(
-            {
-                asyncio.create_task(self.list_drivers_done_event.wait()),
-                asyncio.create_task(self.configured_event.wait()),
-            }
-        )
+        await self.list_drivers_done_event.wait()
+        if self.drivers:
+            # If there are drivers, we need to wait until all
+            # postinstall models are configured before we can be sure
+            # if the user will change their mind or not.
+            await self.app.base_model.wait_postinstall()
         await self.app.hub.abroadcast(InstallerChannels.DRIVERS_DECIDED)
 
     async def GET(self, wait: bool = False) -> DriversResponse:
