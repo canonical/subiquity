@@ -105,6 +105,8 @@ class KernelController(NonInteractiveController):
 
     def _confirmed(self):
         fs_model = self.app.base_model.filesystem
+        if not self.app.base_model.source.catalog.kernel.bridge_reasons:
+            self.app.hub.broadcast(InstallerChannels.BRIDGE_KERNEL_DECIDED)
         self._maybe_set_bridge_kernel(BridgeKernelReason.ZFS, fs_model.uses_zfs())
         if not self.app.base_model.source.search_drivers:
             self._maybe_set_bridge_kernel(BridgeKernelReason.NVIDIA, False)
