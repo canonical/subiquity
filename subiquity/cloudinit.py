@@ -72,11 +72,14 @@ def get_host_combined_cloud_config() -> dict:
 
 def cloud_init_version() -> str:
     # looks like 24.1~3gb729a4c4-0ubuntu1
-    cmd = ["dpkg-query", "-W", "-f=${Version}", "cloud-init"]
-    sp = run_command(cmd, check=False)
-    version = re.split("[-~]", sp.stdout)[0]
-    log.debug(f"cloud-init version: {version}")
-    return version
+    for pkg in "cloud-init", "cloud-init-base":
+        cmd = ["dpkg-query", "-W", "-f=${Version}", pkg]
+        sp = run_command(cmd, check=False)
+        if version := re.split("[-~]", sp.stdout)[0]:
+            log.debug(f"cloud-init version: {version}")
+            return version
+    log.debug("cloud-init not installed")
+    return ""
 
 
 def supports_format_json() -> bool:

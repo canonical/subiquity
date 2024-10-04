@@ -63,6 +63,16 @@ class TestCloudInitVersion(SubiTestCase):
             rc.return_value.stdout = ""
             self.assertEqual("", cloud_init_version())
 
+    def test_cloud_init_full(self):
+        with patch("subiquity.cloudinit.run_command") as rc:
+            rc.side_effect = [Mock(stdout="1.2.3"), Mock(stdout="4.5.6")]
+            self.assertEqual("1.2.3", cloud_init_version())
+
+    def test_cloud_init_base(self):
+        with patch("subiquity.cloudinit.run_command") as rc:
+            rc.side_effect = [Mock(stdout=""), Mock(stdout="4.5.6")]
+            self.assertEqual("4.5.6", cloud_init_version())
+
     @parameterized.expand(
         (
             ("22.3", False),
