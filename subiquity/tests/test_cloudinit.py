@@ -53,14 +53,12 @@ class TestCloudInitVersion(SubiTestCase):
     )
     def test_split_version(self, pkgver, expected):
         with patch("subiquity.cloudinit.run_command") as rc:
-            rc.return_value = Mock()
-            rc.return_value.stdout = pkgver
+            rc.return_value = Mock(stdout=pkgver)
             self.assertEqual(expected, cloud_init_version())
 
     def test_cloud_init_not_present(self):
         with patch("subiquity.cloudinit.run_command") as rc:
-            rc.return_value = Mock()
-            rc.return_value.stdout = ""
+            rc.return_value = Mock(stdout="")
             self.assertEqual("", cloud_init_version())
 
     def test_cloud_init_full(self):
