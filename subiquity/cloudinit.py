@@ -76,7 +76,7 @@ def cloud_init_version() -> str:
         cmd = ["dpkg-query", "-W", "-f=${Version}", pkg]
         sp = run_command(cmd, check=False)
         if version := re.split("[-~]", sp.stdout)[0]:
-            log.debug(f"cloud-init version: {version}")
+            log.debug(f"{pkg} version: {version}")
             return version
     log.debug("cloud-init not installed")
     return ""
