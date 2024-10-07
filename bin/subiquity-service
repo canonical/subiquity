@@ -3,7 +3,7 @@
 . "$SNAP"/management-script
 
 port=tty1
-export PYTHONPATH=$SNAP/lib/python3.10/site-packages
+export PYTHONPATH=$SNAP/lib/python3.12/site-packages
 
 if [ -n "$1" ]; then
    port=$1

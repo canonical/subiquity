@@ -11,7 +11,7 @@ fi
 
 if [ -d "/snap/subiquity" ] ; then
     SNAPNAME=subiquity
-    INTERMEDIATE=lib/python3.10/site-packages
+    INTERMEDIATE=lib/python3.12/site-packages
 elif [ -d "/snap/ubuntu-desktop-installer" ] ; then
     SNAPNAME=ubuntu-desktop-installer
     INTERMEDIATE=bin/subiquity

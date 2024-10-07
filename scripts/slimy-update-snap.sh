@@ -54,10 +54,10 @@ do_mount $old old
 
 add_overlay old new
 
-rm -rf new/lib/python3.10/site-packages/curtin
+rm -rf new/lib/python3.12/site-packages/curtin
 
-if [ -d new/lib/python3.10/site-packages/subiquity ] ; then
-    subiquity_dest=new/lib/python3.10/site-packages
+if [ -d new/lib/python3.12/site-packages/subiquity ] ; then
+    subiquity_dest=new/lib/python3.12/site-packages
     bin_dest=new/system_scripts/
 elif [ -d new/bin/subiquity/subiquity ] ; then
     subiquity_dest=new/bin/subiquity
@@ -72,7 +72,7 @@ rm -rf "${subiquity_dest}/subiquitycore"
 
 (cd "${src}" && ./scripts/update-part.py curtin)
 
-rsync -a --chown 0:0 $src/curtin/curtin new/lib/python3.10/site-packages
+rsync -a --chown 0:0 $src/curtin/curtin new/lib/python3.12/site-packages
 rsync -a --chown 0:0 $src/subiquity $src/subiquitycore $subiquity_dest
 rsync -a --chown 0:0 $src/system_scripts/ $bin_dest
 

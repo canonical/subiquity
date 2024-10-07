@@ -1,5 +1,5 @@
 name: subiquity
-base: core22
+base: core24
 version: git
 summary: Ubuntu installer
 description: The Ubuntu server installer
@@ -10,7 +10,7 @@ contact: https://bugs.launchpad.net/subiquity/+filebug
 
 apps:
   subiquity:
-    command: usr/bin/subiquity-cmd $SNAP/usr/bin/python3.10 -m subiquity
+    command: usr/bin/subiquity-cmd $SNAP/usr/bin/python3.12 -m subiquity
     environment:
       # Save original values of environment variables, we want to restore them
       # for the debug shell (LP: #1975629) and restart (LP: #1978139)
@@ -21,21 +21,21 @@ apps:
       SUBIQUITY_ROOT_ORIG: $SUBIQUITY_ROOT
       SUBIQUITY_ROOT: $SNAP
       PYTHON_ORIG: $PYTHON
-      PYTHON: $SNAP/usr/bin/python3.10
+      PYTHON: $SNAP/usr/bin/python3.12
       # APPORT_DATA_DIR must be set before the `apport` python module is
       # imported.
       APPORT_DATA_DIR_ORIG: $APPORT_DATA_DIR
       APPORT_DATA_DIR: $SNAP/share/apport
   probert:
-    command: usr/bin/subiquity-cmd $SNAP/usr/bin/python3.10 $SNAP/bin/probert
+    command: usr/bin/subiquity-cmd $SNAP/usr/bin/python3.12 $SNAP/bin/probert
     environment:
-      PYTHON: $SNAP/usr/bin/python3.10
+      PYTHON: $SNAP/usr/bin/python3.12
   curtin:
     command: usr/bin/subiquity-cmd $SNAP/bin/curtin
     environment:
       PYTHONIOENCODING: utf-8
-      PYTHON: $SNAP/usr/bin/python3.10
-      PY3OR2_PYTHON: $SNAP/usr/bin/python3.10
+      PYTHON: $SNAP/usr/bin/python3.12
+      PY3OR2_PYTHON: $SNAP/usr/bin/python3.12
       PATH: $PATH:$SNAP/bin
   subiquity-server:
     command: usr/bin/subiquity-server
@@ -46,8 +46,8 @@ apps:
       SUBIQUITY_ROOT: $SNAP
       PYTHONPATH_ORIG: $PYTHONPATH
       PYTHON_ORIG: $PYTHON
-      PYTHON: $SNAP/usr/bin/python3.10
-      PY3OR2_PYTHON: $SNAP/usr/bin/python3.10
+      PYTHON: $SNAP/usr/bin/python3.12
+      PY3OR2_PYTHON: $SNAP/usr/bin/python3.12
       PATH_ORIG: $PATH
       PATH: $PATH:$SNAP/bin:$SNAP/sbin
       # APPORT_DATA_DIR must be set before the `apport` python module is
@@ -68,7 +68,7 @@ apps:
       SUBIQUITY_ROOT_ORIG: $SUBIQUITY_ROOT
       SUBIQUITY_ROOT: $SNAP
       PYTHON_ORIG: $PYTHON
-      PYTHON: $SNAP/usr/bin/python3.10
+      PYTHON: $SNAP/usr/bin/python3.12
       # APPORT_DATA_DIR must be set before the `apport` python module is
       # imported.
       APPORT_DATA_DIR_ORIG: $APPORT_DATA_DIR
@@ -121,8 +121,8 @@ parts:
       # there doesn't seem to be any real benefit to listing them separately.
       - iso-codes
       - libpython3-stdlib
-      - libpython3.10-minimal
-      - libpython3.10-stdlib
+      - libpython3.12-minimal
+      - libpython3.12-stdlib
       - libsystemd0
       - lsb-release
       - ntfs-3g
@@ -145,7 +145,7 @@ parts:
       - python3-urwid
       - python3-yaml
       - python3-yarl
-      - python3.10-minimal
+      - python3.12-minimal
       - ssh-import-id
       - ubuntu-advantage-tools
 
