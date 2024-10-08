@@ -1327,6 +1327,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return await self.v2_GET()
 
     async def v2_add_boot_partition_POST(self, disk_id: str) -> StorageResponseV2:
+        log.debug("v2_add_boot_partition: disk-id: %s", disk_id)
         self.locked_probe_data = True
         disk = self.model._one(id=disk_id)
         if boot.is_boot_device(disk):
