@@ -10,7 +10,7 @@ The server installer validates the provided autoinstall configuration against a 
 How the delivery is verified
 ----------------------------
 
-To ensure expected runtime behaviour after delivering the autoinstall config, the installer performs some sanity checks to ensure one delivery method is not confused for another.
+To ensure expected runtime behaviour after delivering the autoinstall config, the installer performs some quick checks to ensure one delivery method is not confused for another.
 
 cloud-config
 ^^^^^^^^^^^^
