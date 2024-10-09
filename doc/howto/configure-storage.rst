@@ -46,11 +46,11 @@ RAID
 .. image:: figures/configure-storage-raid.png
    :alt:
 
-`Linux software RAID <https://raid.wiki.kernel.org/index.php/Linux_Raid>`_ (Redundant Array of Independent Disks) can be used to combine several disks into a single device that is (usually) tolerant to any one disk failure.
+`Linux software RAID <https://docs.kernel.org/admin-guide/md.html>`_ (Redundant Array of Independent Disks) can be used to combine several disks into a single device that is (usually) tolerant to any one disk failure.
 
 A software RAID device can be created from entire disks or unformatted partitions. Select the :guilabel:`Create software RAID ("MD")` button to open the creation dialog.
 
-The server installer supports RAID levels 0, 1, 5, 6 and 10. It does not allow customising other options, such as metadata format. See the `Linux RAID documentation <https://raid.wiki.kernel.org/index.php/Linux_Raid>`_ for more details.
+The server installer supports RAID levels 0, 1, 5, 6 and 10. It does not allow customising other options, such as metadata format. See the `Linux RAID documentation <https://docs.kernel.org/admin-guide/md.html>`_ for more details.
 
 A software RAID device can be formatted and mounted directly. It can be partitioned into several partitions, and can be used as part of another RAID device or LVM volume group.
 
