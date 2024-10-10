@@ -1201,7 +1201,7 @@ kernel-crash-dumps
 
 Toggle kernel crash dumps enablement.
 
-In 24.10 and later, the default configuration will result in dynamic enablement of kernel crash dumps on the installed system using the ``kdump-tools`` package. On amd64, arm64, and s390x systems, if the system is detected to meet the minimum requirements for kernel crash dumps then they will be enabled. Otherwise, they will be disabled. More details about the minimum system requirements can be found in the following document (doesn't exist yet).
+In 24.10 and later, the default configuration will result in dynamic enablement of kernel crash dumps on the installed system using the ``kdump-tools`` package. On amd64, arm64, and s390x systems, if the system is detected to meet the minimum requirements for kernel crash dumps then they will be enabled. Otherwise, they will be disabled. More details about the minimum system requirements can be found in the :external+ubuntu-server:ref:`Ubuntu Server documentation<kernel-crash-dump>`.
 
 In pre-24.10, the default configuration will result in kernel crash dumps being disabled.
 
