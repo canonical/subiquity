@@ -116,7 +116,7 @@ class TestSourceModel(unittest.TestCase):
         with open("examples/sources/install-canary.yaml") as fp:
             model = SourceModel()
             model.load_from_file(fp)
-        self.assertEqual(2, len(model.sources))
+        self.assertEqual(2, len(model.catalog.sources))
 
         minimal = model.get_matching_source("ubuntu-desktop-minimal")
         self.assertIsNotNone(minimal.variations)

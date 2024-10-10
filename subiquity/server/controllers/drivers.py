@@ -53,6 +53,7 @@ class DriversController(SubiquityController):
 
         self._list_drivers_task: Optional[asyncio.Task] = None
         self.list_drivers_done_event = asyncio.Event()
+        self.configured_event = asyncio.Event()
 
         # None means that the list has not (yet) been retrieved whereas an
         # empty list means that no drivers are available.
@@ -72,6 +73,13 @@ class DriversController(SubiquityController):
         self.app.hub.subscribe(InstallerChannels.APT_CONFIGURED, self._wait_apt.set)
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, "source"), self.restart_querying_drivers_list
+        )
+        self.app.hub.subscribe(
+            (InstallerChannels.CONFIGURED, "drivers"),
+            self.configured_event.set,
+        )
+        self._send_drivers_decided_task = asyncio.create_task(
+            self._send_drivers_decided()
         )
 
     def restart_querying_drivers_list(self):
@@ -117,6 +125,15 @@ class DriversController(SubiquityController):
             log.exception("Failed to cleanup overlay. Continuing anyway.")
         self.list_drivers_done_event.set()
         log.debug("Available drivers to install: %s", self.drivers)
+
+    async def _send_drivers_decided(self):
+        await self.list_drivers_done_event.wait()
+        if self.drivers:
+            # If there are drivers, we need to wait until all
+            # postinstall models are configured before we can be sure
+            # if the user will change their mind or not.
+            await self.app.base_model.wait_postinstall()
+        await self.app.hub.abroadcast(InstallerChannels.DRIVERS_DECIDED)
 
     async def GET(self, wait: bool = False) -> DriversResponse:
         local_only = not self.app.base_model.network.has_network

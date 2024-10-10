@@ -16,8 +16,10 @@
 import logging
 import os
 
+from subiquity.models.source import BridgeKernelReason
 from subiquity.server.controller import NonInteractiveController
 from subiquity.server.kernel import flavor_to_pkgname
+from subiquity.server.types import InstallerChannels
 
 log = logging.getLogger("subiquity.server.controllers.kernel")
 
@@ -59,14 +61,63 @@ class KernelController(NonInteractiveController):
                 with open(mp_file) as fp:
                     kernel_package = fp.read().strip()
                 self.model.metapkg_name = kernel_package
+                self.default_metapkg_name = self.model.metapkg_name
                 # built-in kernel requirements are not considered
                 # explicitly_requested
                 self.model.explicitly_requested = False
                 log.debug(f"Using kernel {kernel_package} due to {mp_file}")
                 break
         else:
-            log.debug("Using default kernel linux-generic")
-            self.model.metapkg_name = "linux-generic"
+            # no default kernel found in etc or run, use default from
+            # source catalog.
+            self.app.hub.subscribe(
+                (InstallerChannels.CONFIGURED, "source"), self._set_source
+            )
+        self.needs_bridge = {}
+        self.app.hub.subscribe(
+            InstallerChannels.INSTALL_CONFIRMED,
+            self._confirmed,
+        )
+        self.app.hub.subscribe(
+            InstallerChannels.DRIVERS_DECIDED,
+            self._drivers_decided,
+        )
+
+    async def _set_source(self):
+        self.model.metapkg_name = self.app.base_model.source.catalog.kernel.default
+        self.default_metapkg_name = self.model.metapkg_name
+
+    def _maybe_set_bridge_kernel(self, reason, value):
+        if reason in self.needs_bridge:
+            return
+        reasons = self.app.base_model.source.catalog.kernel.bridge_reasons
+        if reason not in reasons:
+            value = False
+        self.needs_bridge[reason] = value
+        if len(self.needs_bridge) < len(BridgeKernelReason):
+            return
+        log.debug("bridge kernel decided %s", self.needs_bridge)
+        if any(self.needs_bridge.values()):
+            self.model.metapkg_name = self.app.base_model.source.catalog.kernel.bridge
+        else:
+            self.model.metapkg_name = self.default_metapkg_name
+        self.app.hub.broadcast(InstallerChannels.BRIDGE_KERNEL_DECIDED)
+
+    def _confirmed(self):
+        fs_model = self.app.base_model.filesystem
+        if not self.app.base_model.source.catalog.kernel.bridge_reasons:
+            self.app.hub.broadcast(InstallerChannels.BRIDGE_KERNEL_DECIDED)
+        self._maybe_set_bridge_kernel(BridgeKernelReason.ZFS, fs_model.uses_zfs())
+        if not self.app.base_model.source.search_drivers:
+            self._maybe_set_bridge_kernel(BridgeKernelReason.NVIDIA, False)
+
+    def _drivers_decided(self):
+        drivers_controller = self.app.controllers.Drivers
+        self._maybe_set_bridge_kernel(
+            BridgeKernelReason.NVIDIA,
+            drivers_controller.model.do_install
+            and any("nvidia" in driver for driver in drivers_controller.drivers),
+        )
 
     def load_autoinstall_data(self, data):
         if data is None:

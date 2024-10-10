@@ -82,6 +82,10 @@ class InstallController(SubiquityController):
     def __init__(self, app):
         super().__init__(app)
         self.model = app.base_model
+        self.bridge_kernel_decided = asyncio.Event()
+        self.app.hub.subscribe(
+            InstallerChannels.BRIDGE_KERNEL_DECIDED, self.bridge_kernel_decided.set
+        )
 
         self.tb_extractor = TracebackExtractor()
 
@@ -445,6 +449,8 @@ class InstallController(SubiquityController):
 
             if self.supports_apt():
                 await self.pre_curthooks_oem_configuration(context=context)
+
+            await self.bridge_kernel_decided.wait()
 
             await run_curtin_step(
                 name="curthooks",
