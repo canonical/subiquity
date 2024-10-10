@@ -41,6 +41,7 @@ UEFI
 URI
 Xubuntu
 Zdev
+ZFS
 amd
 authorized
 autoinstall
@@ -53,8 +54,11 @@ bootloaders
 codecs
 config
 conf
+cryptsetup
 curtin
+dataset
 datasource
+decrypted
 debconf
 debian
 dir
@@ -67,6 +71,7 @@ globbing
 hostname
 iSCSI
 init
+keystore
 md
 oem
 openssh
@@ -93,6 +98,7 @@ traceback
 tty
 ubuntu
 udev
+unencrypted
 unformatted
 validator
 VLAN
