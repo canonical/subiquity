@@ -22,9 +22,14 @@ Ubuntu-server ISO is listening by default with a random password
 ----------------------------------------------------------------
 
 The Ubuntu Server ISO offers SSH access to the installation system to
-facilitate installations that need to start over a minimal serial line, and that may not
-be rich enough to run the installer user interface.  In that case, the SSH
+facilitate the following installation use cases:
+
+ * The installation needs to start over a minimal serial line, which may not
+be capable of running the installer user interface; in that case, the SSH
 access information is printed on that serial line.
+
+* The user prefers using SSH access to interact with the installer interface
+(for example, for richer language support).
 
 Additionally, from the Subiquity UI, one can see the SSH access information by
 navigating to the :guilabel:`Help -> Help on SSH Access` menu item.
