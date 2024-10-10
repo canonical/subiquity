@@ -161,6 +161,10 @@ intersphinx_mapping = {
     'cloud-init': (
         'https://docs.cloud-init.io/en/latest/',
          None
+    ),
+    'ubuntu-server': (
+        'https://documentation.ubuntu.com/server/',
+         None
     )
 }
 
