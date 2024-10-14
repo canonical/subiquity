@@ -20,6 +20,7 @@ Getting started with autoinstall
    basic-server-installation
    configure-storage
    autoinstall-validation
+   Use ubuntu-image to build classical images <ubuntu-image-classic-examples>
 
 Found a problem?
 ----------------
