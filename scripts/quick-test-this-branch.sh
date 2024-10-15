@@ -12,6 +12,7 @@ LIVEFS_EDITOR=$(readlink -f $LIVEFS_EDITOR)
 
 old_iso="$(readlink -f "${1}")"
 new_iso="$(readlink -f "${2}")"
+shift 2
 
 tmpdir="$(mktemp -d)"
 cd "${tmpdir}"
@@ -27,4 +28,4 @@ fi
 
 $src/scripts/slimy-update-snap.sh old.snap new.snap
 
-PYTHONPATH=$LIVEFS_EDITOR python3 -m livefs_edit $old_iso $new_iso --inject-snap new.snap
+PYTHONPATH=$LIVEFS_EDITOR python3 -m livefs_edit $old_iso $new_iso --inject-snap new.snap "$@"
