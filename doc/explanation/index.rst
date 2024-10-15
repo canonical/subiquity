@@ -14,3 +14,4 @@ About the Server installer
    cloudinit-autoinstall-interaction
    security-overview
    zero-touch-autoinstall
+   ubuntu-image-security-overview
