@@ -114,8 +114,10 @@ class SourceController(SubiquityController):
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, "locale"), self._set_locale
         )
-        if self.model.catalog.version != 1:
-            raise Exception("unknown source catalog version")
+        if self.model.catalog.version not in (1, 2):
+            raise Exception(
+                f"unknown source catalog version {self.model.catalog.version}"
+            )
 
     def _set_locale(self):
         current = self.app.base_model.locale.selected_language
