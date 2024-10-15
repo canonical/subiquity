@@ -67,7 +67,7 @@ class CatalogEntry:
 
 
 class BridgeKernelReason(enum.Enum):
-    NVIDIA = "nvidia"
+    DRIVERS = "drivers"
     ZFS = "zfs"
 
 

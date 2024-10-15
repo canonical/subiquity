@@ -109,12 +109,12 @@ class KernelController(NonInteractiveController):
             self.app.hub.broadcast(InstallerChannels.BRIDGE_KERNEL_DECIDED)
         self._maybe_set_bridge_kernel(BridgeKernelReason.ZFS, fs_model.uses_zfs())
         if not self.app.base_model.source.search_drivers:
-            self._maybe_set_bridge_kernel(BridgeKernelReason.NVIDIA, False)
+            self._maybe_set_bridge_kernel(BridgeKernelReason.DRIVERS, False)
 
     def _drivers_decided(self):
         drivers_controller = self.app.controllers.Drivers
         self._maybe_set_bridge_kernel(
-            BridgeKernelReason.NVIDIA,
+            BridgeKernelReason.DRIVERS,
             drivers_controller.model.do_install
             and any("nvidia" in driver for driver in drivers_controller.drivers),
         )

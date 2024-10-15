@@ -42,19 +42,19 @@ def n_booleans(*, n):
 
 
 bridge_scenarios = []
-for bridge_zfs, bridge_nvidia, has_zfs, has_nvidia in n_booleans(n=4):
+for bridge_zfs, bridge_drivers, has_zfs, has_drivers in n_booleans(n=4):
     # We consider scenarios for each reason being a reason to choose
     # the kernel and actually discovered.
     bridge_reasons = []
     if bridge_zfs:
         bridge_reasons.append(BridgeKernelReason.ZFS)
-    if bridge_nvidia:
-        bridge_reasons.append(BridgeKernelReason.NVIDIA)
+    if bridge_drivers:
+        bridge_reasons.append(BridgeKernelReason.DRIVERS)
     detected_reasons = []
     if has_zfs:
         detected_reasons.append(BridgeKernelReason.ZFS)
-    if has_nvidia:
-        detected_reasons.append(BridgeKernelReason.NVIDIA)
+    if has_drivers:
+        detected_reasons.append(BridgeKernelReason.DRIVERS)
     for search_drivers, do_install in n_booleans(n=2):
         # Then we consider scenarios where the user chooses whether or
         # not to search for drivers and whether or not to install the
@@ -64,7 +64,7 @@ for bridge_zfs, bridge_nvidia, has_zfs, has_nvidia in n_booleans(n=4):
         use_bridge = False
         if bridge_zfs and has_zfs:
             use_bridge = True
-        if bridge_nvidia and has_nvidia and do_install:
+        if bridge_drivers and has_drivers and do_install:
             use_bridge = True
         bridge_scenarios.append(
             (
@@ -174,7 +174,7 @@ class TestMetapackageSelection(SubiTestCase):
 
         if not scenario.search_drivers:
             drivers = []
-        elif BridgeKernelReason.NVIDIA in scenario.detected_reasons:
+        elif BridgeKernelReason.DRIVERS in scenario.detected_reasons:
             drivers = ["something-else", "nvidia-driver"]
         else:
             drivers = ["something-else"]
