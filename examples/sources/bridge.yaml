@@ -27,4 +27,4 @@ kernel:
   default: linux-generic
   bridge: linux-generic-brg-22.04
   bridge_reasons:
-    - nvidia
+    - drivers
