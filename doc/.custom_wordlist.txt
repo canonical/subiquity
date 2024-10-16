@@ -89,8 +89,10 @@ rsyslog
 runtime
 snapd
 stdin
+subdirectory
 subvolume
 subvolumes
+sudo
 superset
 sysfs
 TPM
