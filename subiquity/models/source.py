@@ -67,7 +67,12 @@ class CatalogEntry:
 
 
 class BridgeKernelReason(enum.Enum):
+    # When bridge_reasons contains "drivers", some driver packages are known to
+    # be behind, so we should fall back to the bridge kernel.
     DRIVERS = "drivers"
+    # When bridge_reasons contains "zfs", we should use the bridge kernel as
+    # the default kernel is not yet known to the kernel team to be sufficiently
+    # stable.
     ZFS = "zfs"
 
 

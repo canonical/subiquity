@@ -113,6 +113,9 @@ class KernelController(NonInteractiveController):
 
     def _drivers_decided(self):
         drivers_controller = self.app.controllers.Drivers
+        # while the term DRIVERS is used here, only some drivers are expected
+        # to trigger bridge kernel fallback, and only then if DRIVERS is listed
+        # as one of the bridge_reasons.
         self._maybe_set_bridge_kernel(
             BridgeKernelReason.DRIVERS,
             drivers_controller.model.do_install
