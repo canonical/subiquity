@@ -2,7 +2,7 @@
 
 '''kvm-test - boot a kvm with a test iso, possibly building that test iso first
 
-kvm-test -q --install -o --boot
+kvm-test -q --install --recreate-target --boot
    slimy build, install, overwrite existing image if it exists,
    and boot the result after install
 
@@ -14,6 +14,7 @@ import contextlib
 import copy
 import crypt
 import dataclasses
+import enum
 import os
 import pathlib
 import shlex
@@ -50,6 +51,15 @@ profiles:
         disk-size: 20G
         extra-qemu-options: [-device, qxl, -smp, "2"]
 '''
+
+
+class TargetOverwrite(enum.Enum):
+    # Abort if the target already exists
+    PRESERVE = enum.auto()
+    # Recreate the target if it already exists
+    RECREATE = enum.auto()
+    # Reuse the target if it already exists
+    REUSE = enum.auto()
 
 
 @dataclasses.dataclass
@@ -156,7 +166,7 @@ parser = argparse.ArgumentParser(
 Test isos and images written to /tmp/kvm-test
 
 Sample usage:
-    kvm-test --build -q --install -o -a --boot
+    kvm-test --build -q --install --recreate-target -a --boot
         slimy build, run install, overwrite existing image, use autoinstall,
         boot final resulting image
 
@@ -204,8 +214,20 @@ parser.add_argument('--nic', action="append", dest="nics",
                     metavar="argument",
                     help='pass custom -nic argument to QEMU'
                          ' - overrides --nets')
-parser.add_argument('-o', '--overwrite', default=False, action='store_true',
-                    help='allow overwrite of the target image')
+target_overwrite_group = parser.add_mutually_exclusive_group()
+target_overwrite_group.add_argument('--preserve-target',
+                                    dest='target_overwrite',
+                                    action='store_const', const=TargetOverwrite.PRESERVE,
+                                    help='reuse the target image if it exists')
+target_overwrite_group.add_argument('-o', '--overwrite', '--recreate-target',
+                                    dest='target_overwrite',
+                                    action='store_const', const=TargetOverwrite.RECREATE,
+                                    help='recreate the target disk if it already exists')
+target_overwrite_group.add_argument('--reuse-target',
+                                    dest='target_overwrite',
+                                    action='store_const', const=TargetOverwrite.REUSE,
+                                    help='reuse the target image if it exists')
+target_overwrite_group.set_defaults(target_overwrite=TargetOverwrite.PRESERVE)
 parser.add_argument('-q', '--quick', default=False, action='store_true',
                     help='build iso with quick-test-this-branch')
 parser.add_argument('-r', '--release', action='store', help='target release')
@@ -542,12 +564,28 @@ def get_initrd(mntdir):
 
 
 def install(ctx):
+    boot_opts = ["order=d"]
     if os.path.exists(ctx.target):
-        if ctx.args.overwrite:
-            os.remove(ctx.target)
-        else:
-            raise Exception('refusing to overwrite existing image, use the ' +
-                            '-o option to allow overwriting')
+        match ctx.args.target_overwrite:
+            case TargetOverwrite.RECREATE:
+                os.remove(ctx.target)
+            case TargetOverwrite.PRESERVE:
+                raise Exception('refusing to overwrite existing image, use the ' +
+                                '--reuse-target or --recreate-target option to ' +
+                                'allow overwriting')
+            case TargetOverwrite.REUSE:
+                if not ctx.args.bios:
+                    boot_opts.append("menu=on")
+                    note = """
+NOTE:
+----
+The option -boot order=d only works in legacy BIOS mode.
+When reusing a target image in UEFI mode, QEMU will try to boot from the disk \
+first; rather than from the installation media. To workaround the issue, mash \
+the ESC button when the QEMU window opens. Then select "Device Manager" and \
+"UEFI QEMU DVD-ROM".
+----"""
+                    print(note, file=sys.stderr)
 
     # Only copy the files with secureboot, always overwrite on install
     if ctx.args.secureboot:
@@ -571,7 +609,7 @@ def install(ctx):
             else:
                 iso = ctx.iso
 
-            kvm.extend(('-cdrom', iso))
+            kvm.extend(('-cdrom', iso, '-boot', ','.join(boot_opts)))
 
             if ctx.args.serial:
                 kvm.append('-nographic')
@@ -589,7 +627,7 @@ def install(ctx):
                         kvm.extend(('-device', 'nvme,drive=localdisk0,serial=deadbeef'))
                     case interface:
                         raise ValueError('unsupported disk interface', interface)
-                if not os.path.exists(ctx.target) or ctx.args.overwrite:
+                if not os.path.exists(ctx.target):
                     disksize = ctx.args.disksize or ctx.default_disk_size
                     run(f'qemu-img create -f qcow2 {ctx.target} {disksize}')
 
