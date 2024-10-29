@@ -95,7 +95,7 @@ parts:
       # See https://discuss.python.org/t/18240
       # As a workaround, we use a fake user install to get the package
       # installed in the expected place.
-      PYTHONUSERBASE="$CRAFT_PART_INSTALL" pip3 install --user --no-dependencies .
+      PYTHONUSERBASE="$CRAFT_PART_INSTALL" pip3 install --user --no-dependencies --break-system-packages .
 
     build-packages:
       - python3-pip
