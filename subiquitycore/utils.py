@@ -234,6 +234,14 @@ def log_process_streams(
     log.log(level, "--------------------------------------------------")
 
 
+def _generate_salt() -> str:
+    salt_set = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./"
+    salt = 16 * " "
+    salt = "".join([random.choice(salt_set) for c in salt])
+
+    return salt
+
+
 # FIXME: replace with passlib and update package deps
 def crypt_password(passwd, algo="SHA-512"):
     # encryption algo - id pairs for crypt()
@@ -245,9 +253,7 @@ def crypt_password(passwd, algo="SHA-512"):
             )
         )
 
-    salt_set = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./"
-    salt = 16 * " "
-    salt = "".join([random.choice(salt_set) for c in salt])
+    salt = _generate_salt(algo)
     return crypt.crypt(passwd, algos[algo] + salt)
 
 
