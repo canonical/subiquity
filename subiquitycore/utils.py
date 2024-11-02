@@ -13,7 +13,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import crypt
 import logging
 import os
 import random
@@ -236,30 +235,7 @@ def log_process_streams(
     log.log(level, "--------------------------------------------------")
 
 
-def _generate_salt() -> str:
-    salt_set = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./"
-    salt = 16 * " "
-    salt = "".join([random.choice(salt_set) for c in salt])
-
-    return salt
-
-
-# FIXME: replace with passlib and update package deps
 def crypt_password(passwd, algo="SHA-512"):
-    # encryption algo - id pairs for crypt()
-    algos = {"SHA-512": "$6$", "SHA-256": "$5$", "MD5": "$1$", "DES": ""}
-    if algo not in algos:
-        raise Exception(
-            "Invalid algo({}), must be one of: {}. ".format(
-                algo, ",".join(algos.keys())
-            )
-        )
-
-    salt = _generate_salt(algo)
-    return crypt.crypt(passwd, algos[algo] + salt)
-
-
-def passlib_crypt(passwd, algo="SHA-512"):
     # Use rounds=5000 where possible to be equivalent w/ crypt.
     algos = {
         "SHA-512": passlib.hash.sha512_crypt.using(rounds=5000),

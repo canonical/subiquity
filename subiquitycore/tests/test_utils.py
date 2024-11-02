@@ -23,7 +23,6 @@ from subiquitycore.utils import (
     crypt_password,
     gen_zsys_uuid,
     orig_environ,
-    passlib_crypt,
     system_scripts_env,
 )
 
@@ -134,36 +133,7 @@ class TestZsysUUID(SubiTestCase):
 
 
 class TestCryptPassword(SubiTestCase):
-    @patch("subiquitycore.utils._generate_salt")
     @patch("passlib.utils.handlers.HasSalt._generate_salt")
-    def test_compare_passlib_with_crypt(self, subi_salt_mock, pass_salt_mock):
-        """Test passlib module output is equivalent with python crypt module."""
-
-        # Test SHA-512
-        subi_salt_mock.return_value = pass_salt_mock.return_value = "mock.salt"
-        python = crypt_password("ubuntu", "SHA-512")
-        passlib = passlib_crypt("ubuntu", "SHA-512")
-        self.assertEqual(python, passlib)
-
-        # Test SHA-256
-        subi_salt_mock.return_value = pass_salt_mock.return_value = "mock.salt"
-        python = crypt_password("ubuntu", "SHA-256")
-        passlib = passlib_crypt("ubuntu", "SHA-256")
-        self.assertEqual(python, passlib)
-
-        # Test MD5
-        subi_salt_mock.return_value = pass_salt_mock.return_value = "mock.sal"
-        python = crypt_password("ubuntu", "MD5")
-        passlib = passlib_crypt("ubuntu", "MD5")
-        self.assertEqual(python, passlib)
-
-        # Test DES
-        subi_salt_mock.return_value = pass_salt_mock.return_value = "mo"
-        python = crypt_password("ubuntu", "DES")
-        passlib = passlib_crypt("ubuntu", "DES")
-        self.assertEqual(python, passlib)
-
-    @patch("subiquitycore.utils._generate_salt")
     def test_canary_output_changed(self, salt_mock):
         """Test known outputs to track any changes to hash function"""
         # Test SHA-512
