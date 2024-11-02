@@ -21,6 +21,8 @@ import subprocess
 import tempfile
 from typing import Any, Dict, List, Sequence
 
+import passlib.hash
+
 log = logging.getLogger("subiquitycore.utils")
 
 
@@ -255,6 +257,25 @@ def crypt_password(passwd, algo="SHA-512"):
 
     salt = _generate_salt(algo)
     return crypt.crypt(passwd, algos[algo] + salt)
+
+
+def passlib_crypt(passwd, algo="SHA-512"):
+    # Use rounds=5000 where possible to be equivalent w/ crypt.
+    algos = {
+        "SHA-512": passlib.hash.sha512_crypt.using(rounds=5000),
+        "SHA-256": passlib.hash.sha256_crypt.using(rounds=5000),
+        "MD5": passlib.hash.md5_crypt,
+        "DES": passlib.hash.des_crypt,
+    }
+
+    if algo not in algos:
+        raise Exception(
+            "Invalid algo({}), must be one of: {}. ".format(
+                algo, ",".join(algos.keys())
+            )
+        )
+    handler = algos[algo]
+    return handler.hash(passwd)
 
 
 def disable_subiquity():
