@@ -12,7 +12,6 @@ See kvm-test -h for options and more examples.
 import argparse
 import contextlib
 import copy
-import crypt
 import dataclasses
 import enum
 import os
@@ -26,6 +25,7 @@ import tempfile
 from typing import List, Optional, Tuple
 
 import yaml
+from passlib.hash import sha512_crypt
 
 cfg = '''
 iso:
@@ -78,8 +78,8 @@ class Profile:
 
 def salted_crypt(plaintext_password):
     # match subiquity documentation
-    salt = '$6$exDY1mhS4KUYCE/2'
-    return crypt.crypt(plaintext_password, salt)
+    salt = 'exDY1mhS4KUYCE/2'
+    return sha512_crypt.hash(plaintext_password, salt=salt, rounds=5000)
 
 
 class Tap:
