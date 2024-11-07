@@ -413,14 +413,11 @@ def create_seed(cloudconfig, tempdir):
 def drive(path, format='qcow2', id_=None, if_="virtio", file_locking=True) -> Tuple[str, str]:
     """ Return a tuple (-drive, <options>) that can be passed to kvm """
     props = []
-    serial = None
     cparam = 'writethrough'
     props.append(f'file={path}')
     props.append(f'format={format}')
     props.append(f'cache={cparam}')
     props.append(f'if={if_}')
-    if serial:
-        props.append(f'serial={serial}')
     if not file_locking:
         props.append("file.locking=off")
     if id_ is not None:
