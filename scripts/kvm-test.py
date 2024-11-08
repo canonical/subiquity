@@ -197,7 +197,7 @@ disk_group = parser.add_mutually_exclusive_group()
 disk_group.add_argument('-d', '--disksize', help='size of disk to create')
 disk_group.add_argument('--no-disk', action='store_true', help='attach no local storage')
 parser.add_argument('--disk-interface', help='type of interface for the disk',
-                    choices=('nvme', 'virtio'), default='virtio')
+                    choices=('nvme', 'virtio', 'scsi-multipath'), default='virtio')
 parser.add_argument('-i', '--img', action='store', help='use this img')
 parser.add_argument('-n', '--nets', action='store', default=1, type=int,
                     help='''number of network interfaces.
@@ -410,17 +410,16 @@ def create_seed(cloudconfig, tempdir):
     return seed
 
 
-def drive(path, format='qcow2', id_=None, if_="virtio") -> Tuple[str, str]:
+def drive(path, format='qcow2', id_=None, if_="virtio", file_locking=True) -> Tuple[str, str]:
     """ Return a tuple (-drive, <options>) that can be passed to kvm """
     props = []
-    serial = None
     cparam = 'writethrough'
     props.append(f'file={path}')
     props.append(f'format={format}')
     props.append(f'cache={cparam}')
     props.append(f'if={if_}')
-    if serial:
-        props.append(f'serial={serial}')
+    if not file_locking:
+        props.append("file.locking=off")
     if id_ is not None:
         props.append(f'id={id_}')
 
@@ -625,6 +624,12 @@ the ESC button when the QEMU window opens. Then select "Device Manager" and \
                     case 'nvme':
                         kvm.extend(drive(ctx.target, id_='localdisk0', if_="none"))
                         kvm.extend(('-device', 'nvme,drive=localdisk0,serial=deadbeef'))
+                    case 'scsi-multipath':
+                        kvm.extend(("-device", "virtio-scsi-pci,id=scsi"))
+                        kvm.extend(drive(ctx.target, id_="mdisk0", if_="none", file_locking=False))
+                        kvm.extend(("-device", "scsi-hd,drive=mdisk0,serial=MPIO"))
+                        kvm.extend(drive(ctx.target, id_="mdisk1", if_="none", file_locking=False))
+                        kvm.extend(("-device", "scsi-hd,drive=mdisk1,serial=MPIO"))
                     case interface:
                         raise ValueError('unsupported disk interface', interface)
                 if not os.path.exists(ctx.target):
