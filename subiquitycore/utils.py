@@ -13,13 +13,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import crypt
 import logging
 import os
 import random
 import subprocess
 import tempfile
 from typing import Any, Dict, List, Sequence
+
+import passlib.hash
 
 log = logging.getLogger("subiquitycore.utils")
 
@@ -234,21 +235,23 @@ def log_process_streams(
     log.log(level, "--------------------------------------------------")
 
 
-# FIXME: replace with passlib and update package deps
 def crypt_password(passwd, algo="SHA-512"):
-    # encryption algo - id pairs for crypt()
-    algos = {"SHA-512": "$6$", "SHA-256": "$5$", "MD5": "$1$", "DES": ""}
+    # Use rounds=5000 where possible to be equivalent w/ crypt.
+    algos = {
+        "SHA-512": passlib.hash.sha512_crypt.using(rounds=5000),
+        "SHA-256": passlib.hash.sha256_crypt.using(rounds=5000),
+        "MD5": passlib.hash.md5_crypt,
+        "DES": passlib.hash.des_crypt,
+    }
+
     if algo not in algos:
         raise Exception(
             "Invalid algo({}), must be one of: {}. ".format(
                 algo, ",".join(algos.keys())
             )
         )
-
-    salt_set = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./"
-    salt = 16 * " "
-    salt = "".join([random.choice(salt_set) for c in salt])
-    return crypt.crypt(passwd, algos[algo] + salt)
+    handler = algos[algo]
+    return handler.hash(passwd)
 
 
 def disable_subiquity():

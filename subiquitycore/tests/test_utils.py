@@ -20,6 +20,7 @@ from unittest.mock import patch
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.utils import (
     _zsys_uuid_charset,
+    crypt_password,
     gen_zsys_uuid,
     orig_environ,
     system_scripts_env,
@@ -129,3 +130,40 @@ class TestZsysUUID(SubiTestCase):
         for i in range(10):
             uuid = gen_zsys_uuid()
             self.assertEqual(6, len(uuid), uuid)
+
+
+class TestCryptPassword(SubiTestCase):
+    @patch("passlib.utils.handlers.HasSalt._generate_salt")
+    def test_canary_output_changed(self, salt_mock):
+        """Test known outputs to track any changes to hash function"""
+        # Test SHA-512
+        salt_mock.return_value = "mock.salt"
+        python = crypt_password("ubuntu", "SHA-512")
+        known = (
+            "$6$mock.salt$5fMmG3oLeOGZj9yRgVj3oVyF4zmNy10dZ0rI7mKf4tHW3WE8JPk."
+            "dpXKMAVhYfmh7ccQIRSKp.b0wqKQ8us5S1"
+        )
+        self.assertEqual(python, known)
+
+        # Test SHA-256
+        salt_mock.return_value = "mock.salt"
+        python = crypt_password("ubuntu", "SHA-256")
+        known = "$5$mock.salt$mVAnp2L7zhx8JgnO5NU0D6q0aSnaWa3f3uMvJQAgBIC"
+        self.assertEqual(python, known)
+
+        # Test MD5
+        salt_mock.return_value = "mock.sal"
+        python = crypt_password("ubuntu", "MD5")
+        known = "$1$mock.sal$daGoQL9mCvUkkwtK5kJML0"
+        self.assertEqual(python, known)
+
+        # Test DES
+        salt_mock.return_value = "mo"
+        python = crypt_password("ubuntu", "DES")
+        known = "mohjxgnj7QHfQ"
+        self.assertEqual(python, known)
+
+    def test_exception_on_unknown_algorithm(self):
+        """Test an exception is thrown when an unknown algorithm is requested."""
+        with self.assertRaises(Exception):
+            crypt_password("mock_passwd", algo="UNKNOWN")

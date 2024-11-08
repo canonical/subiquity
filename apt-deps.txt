@@ -36,6 +36,7 @@ python3-more-itertools
 python3-mypy
 python3-nose
 python3-parameterized
+python3-passlib
 python3-pip
 python3-pyflakes
 python3-pyroute2
