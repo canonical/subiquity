@@ -105,6 +105,7 @@ setup(name='subiquity',
       license="AGPLv3+",
       packages=find_packages(exclude=["tests"]),
       scripts=[
+          'bin/console-conf-check-error',
           'bin/console-conf-wait',
           'bin/console-conf-wrapper',
           'bin/subiquity-debug',

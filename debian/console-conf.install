@@ -1,3 +1,4 @@
+debian/tmp/usr/bin/console-conf-check-error         usr/share/subiquity
 debian/tmp/usr/bin/console-conf-tui                 usr/share/subiquity
 debian/tmp/usr/bin/console-conf-wait                usr/share/subiquity
 debian/tmp/usr/bin/console-conf-wrapper             usr/share/subiquity

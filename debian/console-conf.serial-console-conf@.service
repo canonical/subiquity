@@ -9,13 +9,14 @@ After=core18.start-snapd.service core.start-snapd.service
 # on core20 the user may invoke a recovery chooser, make sure the detection
 # service runs before
 After=snapd.recovery-chooser-trigger.service
-ConditionPathExists=!/var/lib/console-conf/complete
 StartLimitInterval=0
 Conflicts=serial-getty@%i.service
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity
 ExecStart=/sbin/agetty -i -n --keep-baud -l /usr/share/subiquity/console-conf-wrapper --login-options "--serial" 115200,38400,9600 %I $TERM
+RestartPreventExitStatus=22
+ExecStopPost=/usr/share/subiquity/console-conf-check-error serial-getty@%i.service
 Type=idle
 Restart=always
 RestartSec=0
