@@ -321,3 +321,13 @@ def after(device, offset):
             if pg.offset > offset:
                 return pg
     return None
+
+
+def includes(device, offset):
+    """Find the gap that includes the specified offset."""
+    for pg in parts_and_gaps(device):
+        if not isinstance(pg, Gap):
+            continue
+        if pg.offset <= offset < (pg.offset + pg.size):
+            return pg
+    return None

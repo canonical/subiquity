@@ -232,6 +232,41 @@ class TestAfter(unittest.TestCase):
         self.assertTrue(gap.offset < g1.offset)
 
 
+class TestIncludes(unittest.TestCase):
+    def test_one_big_gap(self):
+        d = make_disk()
+        [gap] = gaps.parts_and_gaps(d)
+        self.assertEqual(gap, gaps.includes(d, gap.offset))
+        self.assertEqual(gap, gaps.includes(d, gap.offset + gap.size - 1))
+        self.assertEqual(gap, gaps.includes(d, gap.offset + gap.size // 2))
+
+        self.assertIsNone(gaps.includes(d, gap.offset + gap.size))
+        self.assertIsNone(gaps.includes(d, gap.offset - 1))
+
+    def test_no_gap(self):
+        m, d = make_model_and_disk()
+        make_partition(m, d, size=-1)
+        [part] = gaps.parts_and_gaps(d)
+        self.assertIsNone(gaps.includes(d, part.offset))
+        self.assertIsNone(gaps.includes(d, part.offset + part.size - 1))
+        self.assertIsNone(gaps.includes(d, part.offset + part.size // 2))
+
+        self.assertIsNone(gaps.includes(d, part.offset + part.size))
+        self.assertIsNone(gaps.includes(d, part.offset - 1))
+
+    def test_half_allocated(self):
+        m, d = make_model_and_disk()
+        make_partition(m, d)
+        [part, gap] = gaps.parts_and_gaps(d)
+        self.assertIsNone(gaps.includes(d, part.offset))
+        self.assertIsNone(gaps.includes(d, part.offset + part.size - 1))
+        self.assertIsNone(gaps.includes(d, part.offset + part.size // 2))
+
+        self.assertEqual(gap, gaps.includes(d, gap.offset))
+        self.assertEqual(gap, gaps.includes(d, gap.offset + gap.size - 1))
+        self.assertEqual(gap, gaps.includes(d, gap.offset + gap.size // 2))
+
+
 class TestDiskGaps(unittest.TestCase):
     def test_no_partition_gpt(self):
         size = 1 << 30
