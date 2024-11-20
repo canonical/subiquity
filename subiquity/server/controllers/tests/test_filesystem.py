@@ -1709,6 +1709,76 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
         self.assertEqual(expected_scenario, scenarios != [])
 
+    async def test_available_erase_install_scenarios(self):
+        await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
+        install_min = self.fsc.calculate_suggested_install_min()
+
+        p1 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        p2 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+
+        self.model._probe_data["os"] = {
+            p1._path(): {
+                "label": "Ubuntu",
+                "long": "Ubuntu 22.04.1 LTS",
+                "type": "linux",
+                "version": "22.04.1",
+            },
+            p2._path(): {
+                "label": "Ubuntu",
+                "long": "Ubuntu 20.04.7 LTS",
+                "type": "linux",
+                "version": "20.04.7",
+            },
+        }
+
+        scenario1, scenario2 = self.fsc.available_erase_install_scenarios(install_min)
+
+        # available_*_scenarios returns a list of tuple having an int as an index
+        scenario1 = scenario1[1]
+        scenario2 = scenario2[1]
+
+        self.assertIsInstance(scenario1, GuidedStorageTargetEraseInstall)
+        self.assertEqual(self.disk.id, scenario1.disk_id)
+        self.assertEqual(p1.number, scenario1.partition_number)
+        self.assertIsInstance(scenario2, GuidedStorageTargetEraseInstall)
+        self.assertEqual(self.disk.id, scenario2.disk_id)
+        self.assertEqual(p2.number, scenario2.partition_number)
+
+    async def test_available_erase_install_scenarios__no_os(self):
+        await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
+        install_min = self.fsc.calculate_suggested_install_min()
+
+        make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+
+        self.assertFalse(self.fsc.available_erase_install_scenarios(install_min))
+
+    async def test_available_erase_install_scenarios__full_primaries(self):
+        await self._setup(Bootloader.UEFI, "dos", fix_bios=True)
+        install_min = self.fsc.calculate_suggested_install_min()
+
+        p1 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        p2 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+
+        self.model._probe_data["os"] = {
+            p1._path(): {
+                "label": "Ubuntu",
+                "long": "Ubuntu 22.04.1 LTS",
+                "type": "linux",
+                "version": "22.04.1",
+            },
+            p2._path(): {
+                "label": "Ubuntu",
+                "long": "Ubuntu 20.04.7 LTS",
+                "type": "linux",
+                "version": "20.04.7",
+            },
+        }
+
+        self.assertFalse(self.fsc.available_erase_install_scenarios(install_min))
+
     async def test_resize_has_enough_room_for_partitions__one_primary(self):
         await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
 

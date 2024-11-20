@@ -890,8 +890,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.model.expose_recovery_keys()
         await self.configured()
 
-    def potential_boot_disks(self, check_boot=True, with_reformatting=False):
-        disks = []
+    def potential_boot_disks(
+        self, check_boot=True, with_reformatting=False
+    ) -> list[ModelDisk | Raid]:
+        disks: list[ModelDisk | Raid] = []
         for raid in self.model._all(type="raid"):
             if check_boot and not boot.can_be_boot_device(
                 raid, with_reformatting=with_reformatting
@@ -1277,6 +1279,58 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 scenarios.append((vals.install_max, resize))
         return scenarios
 
+    def available_erase_install_scenarios(
+        self, install_min: int
+    ) -> list[tuple[int, GuidedStorageTargetEraseInstall]]:
+        scenarios: list[tuple[int, GuidedStorageTargetEraseInstall]] = []
+
+        for disk in self.potential_boot_disks(check_boot=False):
+            # Skip RAID until we know how to proceed.
+            if not isinstance(disk, ModelDisk):
+                continue
+
+            for partition in disk.partitions():
+                if partition._is_in_use:
+                    continue
+
+                if partition.os is None:
+                    continue
+
+                # Make an ephemeral copy of the disk object with the relevant
+                # partition removed. Then it's as if we're installing in the
+                # resulting gap (which will include free space that was
+                # directly before or after the partition that we removed).
+                altered_disk = disk._excluding_partition(partition)
+                if not boot.can_be_boot_device(altered_disk, with_reformatting=False):
+                    continue
+
+                gap = gaps.includes(altered_disk, offset=partition.offset)
+                if not self.use_gap_has_enough_room_for_partitions(altered_disk, gap):
+                    log.error(
+                        "skipping TargetEraseInstall: not enough room for primary"
+                        " partitions after removing %s from %s",
+                        partition.number,
+                        disk.id,
+                    )
+                    continue
+
+                capability_info = CapabilityInfo()
+                for variation in self._variation_info.values():
+                    if variation.is_core_boot_classic():
+                        continue
+                    capability_info.combine(
+                        variation.capability_info_for_gap(gap, install_min)
+                    )
+
+                erase = GuidedStorageTargetEraseInstall(
+                    disk.id,
+                    partition.number,
+                    allowed=capability_info.allowed,
+                    disallowed=capability_info.disallowed,
+                )
+                scenarios.append((gap.size, erase))
+        return scenarios
+
     async def v2_guided_GET(self, wait: bool = False) -> GuidedStorageResponseV2:
         """Acquire a list of possible guided storage configuration scenarios.
         Results are sorted by the size of the space potentially available to
@@ -1314,6 +1368,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         scenarios.extend(self.available_use_gap_scenarios(install_min))
         scenarios.extend(self.available_target_resize_scenarios(install_min))
+        scenarios.extend(self.available_erase_install_scenarios(install_min))
 
         scenarios.sort(reverse=True, key=lambda x: x[0])
         return GuidedStorageResponseV2(
