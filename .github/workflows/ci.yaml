@@ -15,7 +15,6 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - ubuntu-daily:jammy
           - ubuntu-daily:noble
           - ubuntu-daily:oracular
     steps:
@@ -29,9 +28,8 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - ubuntu-daily:jammy     # match the core snap we're running against
-          - ubuntu-daily:noble     # future core snap
-          - ubuntu-daily:oracular  # latest
+          - ubuntu-daily:noble     # match the core snap we're running against
+          - ubuntu-daily:oracular  # latest-ish
     steps:
     - uses: actions/checkout@v4
     - name: lint

@@ -16,6 +16,7 @@
 import abc
 import functools
 import logging
+import typing
 from typing import Any, Optional
 
 import attr
@@ -80,7 +81,7 @@ class CreatePartPlan(MakeBootDevicePlan):
     spec: dict = attr.ib(factory=dict)
     args: dict = attr.ib(factory=dict)
 
-    # TODO add @typing.override decorator when we switch to core24.
+    @typing.override
     def new_partition_count(self) -> int:
         return 1
 
@@ -163,7 +164,7 @@ class MultiStepPlan(MakeBootDevicePlan):
         for plan in self.plans:
             plan.apply(manipulator)
 
-    # TODO add @typing.override decorator when we switch to core24.
+    @typing.override
     def new_partition_count(self) -> int:
         return sum([plan.new_partition_count() for plan in self.plans])
 

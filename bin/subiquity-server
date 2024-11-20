@@ -2,7 +2,7 @@
 
 . "$SNAP"/management-script
 
-export PYTHONPATH=$PYTHONPATH:$SNAP/lib/python3.10/site-packages
+export PYTHONPATH=$PYTHONPATH:$SNAP/lib/python3.12/site-packages
 
 block_probing_timeout="$(block_probing_timeout)"
 
