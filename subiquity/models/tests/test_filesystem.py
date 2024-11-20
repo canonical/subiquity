@@ -1521,6 +1521,52 @@ class TestDisk(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"^do not renumber"):
             d.renumber_logical_partitions(removed_partition=pp)
 
+    def test__reformatted__empty_disk(self):
+        m, d = make_model_and_disk()
+
+        d2 = d._reformatted()
+        self.assertIsNot(d, d2)
+        self.assertIsNot(d._partitions, d2._partitions)
+
+    def test__reformatted__with_partitions(self):
+        m, d = make_model_and_disk()
+
+        p1 = make_partition(m, d)
+        p2 = make_partition(m, d)
+
+        d2 = d._reformatted()
+
+        self.assertIsNot(d, d2)
+        self.assertEqual(d.partitions(), [p1, p2])
+        self.assertEqual(d2.partitions(), [])
+
+    def test__reformatted__with_in_use_parts(self):
+        m, d = make_model_and_disk()
+
+        p1 = make_partition(m, d, is_in_use=True)
+        p2 = make_partition(m, d, is_in_use=True)
+        p3 = make_partition(m, d)
+        p4 = make_partition(m, d, is_in_use=True)
+        p5 = make_partition(m, d)
+
+        d2 = d._reformatted()
+
+        self.assertIsNot(d, d2)
+        self.assertEqual(d.partitions(), [p1, p2, p3, p4, p5])
+        self.assertEqual(d2.partitions(), [p1, p2, p4])
+
+    def test__excluding_partition(self):
+        m, d = make_model_and_disk()
+
+        p1 = make_partition(m, d)
+        p2 = make_partition(m, d)
+
+        d2 = d._excluding_partition(p1)
+
+        self.assertIsNot(d, d2)
+        self.assertEqual(d.partitions(), [p1, p2])
+        self.assertEqual(d2.partitions(), [p2])
+
 
 class TestPartition(unittest.TestCase):
     def test_is_logical(self):
