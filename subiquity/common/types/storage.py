@@ -255,6 +255,14 @@ class GuidedStorageTargetResize:
 
 
 @attr.s(auto_attribs=True)
+class GuidedStorageTargetEraseInstall:
+    disk_id: str
+    partition_number: int
+    allowed: List[GuidedCapability] = attr.Factory(list)
+    disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
+
+
+@attr.s(auto_attribs=True)
 class GuidedStorageTargetUseGap:
     disk_id: str
     gap: Gap

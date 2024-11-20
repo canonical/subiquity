@@ -35,6 +35,7 @@ from subiquity.common.types.storage import (
     GuidedChoiceV2,
     GuidedDisallowedCapability,
     GuidedDisallowedCapabilityReason,
+    GuidedStorageTargetEraseInstall,
     GuidedStorageTargetManual,
     GuidedStorageTargetReformat,
     GuidedStorageTargetResize,
@@ -664,6 +665,65 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         # in reformat.
         expected_del_calls = [mock.call(p1), mock.call(p3), mock.call(p4)]
         self.assertEqual(expected_del_calls, m_del_part.mock_calls)
+
+    def test_start_guided_erase_install__no_free_space(self):
+        self.fsc.model = model = make_model(Bootloader.UEFI, storage_version=2)
+        disk = make_disk(model)
+
+        p1 = make_partition(model, disk, size=10 << 30)
+        make_partition(model, disk, size=-1, preserve=True)
+
+        gap = self.fsc.start_guided_erase_install(
+            GuidedStorageTargetEraseInstall(disk_id=disk.id, partition_number=1), disk
+        )
+
+        self.assertEqual(p1.offset, gap.offset)
+        self.assertEqual(p1.size, gap.size)
+
+    def test_start_guided_erase_install__free_space_after(self):
+        self.fsc.model = model = make_model(Bootloader.UEFI, storage_version=2)
+        disk = make_disk(model)
+
+        part = make_partition(model, disk, size=10 << 30)
+
+        _, trailing_gap = gaps.parts_and_gaps(disk)
+
+        gap = self.fsc.start_guided_erase_install(
+            GuidedStorageTargetEraseInstall(disk_id=disk.id, partition_number=1), disk
+        )
+
+        self.assertEqual(part.offset, gap.offset)
+        self.assertEqual(part.size + trailing_gap.size, gap.size)
+
+    def test_start_guided_erase_install__free_space_before(self):
+        self.fsc.model = model = make_model(Bootloader.UEFI, storage_version=2)
+        disk = make_disk(model)
+
+        part = make_partition(model, disk, size=-1, offset=20 << 30)
+
+        leading_gap, _ = gaps.parts_and_gaps(disk)
+
+        gap = self.fsc.start_guided_erase_install(
+            GuidedStorageTargetEraseInstall(disk_id=disk.id, partition_number=1), disk
+        )
+
+        self.assertEqual(leading_gap.offset, gap.offset)
+        self.assertEqual(part.size + leading_gap.size, gap.size)
+
+    def test_start_guided_erase_install__free_space_before_and_after(self):
+        self.fsc.model = model = make_model(Bootloader.UEFI, storage_version=2)
+        disk = make_disk(model)
+
+        part = make_partition(model, disk, size=10 << 30, offset=20 << 30)
+
+        leading_gap, _, trailing_gap = gaps.parts_and_gaps(disk)
+
+        gap = self.fsc.start_guided_erase_install(
+            GuidedStorageTargetEraseInstall(disk_id=disk.id, partition_number=1), disk
+        )
+
+        self.assertEqual(leading_gap.offset, gap.offset)
+        self.assertEqual(part.size + leading_gap.size + trailing_gap.size, gap.size)
 
 
 class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):

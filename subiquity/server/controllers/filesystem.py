@@ -50,6 +50,7 @@ from subiquity.common.types.storage import (
     GuidedDisallowedCapabilityReason,
     GuidedStorageResponseV2,
     GuidedStorageTarget,
+    GuidedStorageTargetEraseInstall,
     GuidedStorageTargetManual,
     GuidedStorageTargetReformat,
     GuidedStorageTargetResize,
@@ -730,6 +731,18 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             pgs = gaps.parts_and_gaps(disk)
             raise Exception(f"gap not found after resize, pgs={pgs}")
         return gap
+
+    @start_guided.register
+    def start_guided_erase_install(
+        self, target: GuidedStorageTargetEraseInstall, disk: ModelDisk
+    ) -> gaps.Gap:
+        """Remove the targetted partition and return the resulting gap. If
+        there was free space before or after the partition being removed, it
+        will be included in the returned gap. Therefore gap.offset and gap.size
+        will not necessarily match partition.offset and partition.size."""
+        partition = self.get_partition(disk, target.partition_number)
+        self.delete_partition(partition, override_preserve=True)
+        return gaps.includes(disk, partition.offset)
 
     def set_info_for_capability(self, capability: GuidedCapability):
         """Given a request for a capability, select the variation to use."""
