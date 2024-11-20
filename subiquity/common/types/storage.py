@@ -277,6 +277,7 @@ class GuidedStorageTargetManual:
 
 
 GuidedStorageTarget = Union[
+    GuidedStorageTargetEraseInstall,
     GuidedStorageTargetReformat,
     GuidedStorageTargetResize,
     GuidedStorageTargetUseGap,
