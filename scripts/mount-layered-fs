@@ -1,0 +1,70 @@
+#!/usr/bin/python3
+# Given a squashfs filename in the Ubuntu ISO style, mount it along with layers
+# that it depends upon.  Block script on input until user continues,
+# then cleanup.
+
+import argparse
+import contextlib
+import os
+import subprocess
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("squashfs")
+    parser.add_argument("mountpoint")
+    return parser.parse_args()
+
+
+def check(cmd):
+    print(cmd)
+    subprocess.run(cmd, check=True)
+
+
+def umount(dirname):
+    cmd = ["umount", dirname]
+    print(cmd)
+    subprocess.run(cmd)
+
+
+def enumerate_layers(squashfs):
+    # squashfs filename is of the form A.B.squashfs, where A and B are layers.
+    # Mounting A.B.squashfs requires an A.squashfs in the same directory as
+    # A.B.squashfs.  Layered fs are not limited to two, it is valid to have an
+    # arbitrarily long list of layers like A.B.C.D.E.F.squashfs.
+    # Return the paths to the individual layers we need, lowest to highest.
+    squashfs = Path(squashfs)
+    directory = squashfs.parent
+    active_layers = []
+    for layer in squashfs.stem.split("."):
+        active_layers.append(layer)
+        file = ".".join(active_layers) + ".squashfs"
+        yield str(directory / file)
+
+
+def main():
+    args = get_args()
+    assert os.geteuid() == 0
+
+    with contextlib.ExitStack() as es:
+        lowers = []
+
+        for fs in enumerate_layers(args.squashfs):
+            layertmp = es.enter_context(TemporaryDirectory())
+            lowers.append(layertmp)
+            check(["mount", "-o", "ro", fs, layertmp])
+            es.callback(umount, layertmp)
+
+        lowerdir_opt = "lowerdir=" + ":".join(reversed(lowers))
+        check([
+            "mount", "-t", "overlay", "overlay",
+            "-o", lowerdir_opt, args.mountpoint,
+        ])
+        es.callback(umount, args.mountpoint)
+        input(f"{args.mountpoint} is mounted, press enter to cleanup")
+
+
+if __name__ == "__main__":
+    main()
