@@ -8,9 +8,8 @@ import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
-from typing import TextIO
 from pathlib import Path
-from typing import Any
+from typing import Any, TextIO
 
 import dns.resolver
 from prettytable import PrettyTable
@@ -89,11 +88,14 @@ def check_primary_archive(
 def get_cname(domain: str) -> str:
     """Get CNAME records for domain."""
     try:
-        answers = dns.resolver.Resolver().resolve(domain, "CNAME")
-        # There can only ever be one CNAME record
-        return answers[0].target.to_text()
-    except dns.resolver.NoAnswer:
+        # There should only ever be one CNAME record
+        [answer] = dns.resolver.Resolver().resolve(domain, "CNAME")
+        return answer.target.to_text()
+    except dns.resolver.NoAnswer:  # No record is OK
         return ""
+    except ValueError as ve:  # Unpack error.
+        print(f"Error: More than 1 CNAME record for {domain!r}")
+        raise ve
 
 
 def get_arecords(domain: str) -> set[str]:
@@ -105,19 +107,39 @@ def get_arecords(domain: str) -> set[str]:
         return set()
 
 
-def get_dns_information(country_codes: list[str]) -> dict[str, Any]:
-    """Return a dictionary of CNAMES and A records for all country mirrors."""
-    # Don't put protocol (i.e. 'http://') in url. Only pass domain name.
+def get_dns_information(country_codes: list[str]) -> tuple[dict[str, Any], list[str]]:
+    """Return a dns information (CNAMES and A records) for all country mirrors.
+
+    Returns a 2-tuple containing the following information:
+        - A dictionary keyed on the 2-letter country code whose value is
+        another dictionary containing the domain, A records, and CNAME record,
+        if any.
+        - A list of 2-letter country codes which resulted in CNAME lookups
+        that returned more than 1 result. This is not compliant with DNS
+        specification and should be considered a mirror configuration error.
+    """
     country_code_to_dns_data: dict[str, Any] = {}
+
+    cname_errors: list[str] = []
+
     for cc in country_codes:
+        # Don't put protocol (i.e. 'http://') in url. Only pass domain name.
         domain = f"{cc}.archive.ubuntu.com"
+
+        cname: str = ""
+        try:
+            cname = get_cname(domain)
+        except ValueError:
+            cname_errors.append(cc)
+            continue
+
         country_code_to_dns_data[cc] = {
             "domain": domain,
             "A": get_arecords(domain),
-            "CNAME": get_cname(domain),
+            "CNAME": cname,
         }
 
-    return country_code_to_dns_data
+    return country_code_to_dns_data, cname_errors
 
 
 def get_multi_country_mirrors(cc_to_dns: dict[str, Any]) -> dict[str, set[str]]:
@@ -305,7 +327,7 @@ def check_all_mirrors(
     country_codes: list[str] = [c.alpha_2.lower() for c in countries]
 
     print("Checking DNS information for mirrors...")
-    country_code_to_dns_data = get_dns_information(country_codes)
+    country_code_to_dns_data, cname_errors = get_dns_information(country_codes)
 
     # Also collect IPs for the primary archive
     primary_archive = {
@@ -354,6 +376,14 @@ def check_all_mirrors(
                 f"{mirror}.archive.ubuntu.com",
                 "-",  # To be updated
             )
+
+    # Generate "not ok" status for mirrors with bad cname
+    for cc in cname_errors:
+        mirror_status[cc] = (
+            "not ok",
+            "more than 1 CNAME record",
+            "-",
+        )
 
     # Remaining mirrors are real mirrors
     mirrors_to_check = set()
