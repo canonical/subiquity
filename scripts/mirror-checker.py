@@ -414,12 +414,30 @@ def check_all_mirrors(
         for cc in aliases:
             mirror_status[cc] = mirror_status[mirror]
 
+    # Print the table so that bad mirrors are at the bottom and are easier to
+    # find.
+
     table = PrettyTable(header)
-    table.add_row(["primary", *mirror_status.pop("primary")])
+
+    primary_status = mirror_status.pop("primary")
+
+    if primary_status[0] == "ok":
+        table.add_row(["primary", *primary_status])
+
+    # "ok" or "NA" statuses first
     for cc, status in sorted(mirror_status.items()):
         if cc in filtered_mirrors["non_mirrors"] and not show_non_mirrors:
             continue
-        table.add_row([cc, *status])
+        if status[0] != "not ok":
+            table.add_row([cc, *status])
+
+    # Print "not ok" status second
+    if primary_status[0] == "not ok":
+        table.add_row(["primary", *primary_status])
+
+    for cc, status in sorted(mirror_status.items()):
+        if status[0] == "not ok":
+            table.add_row([cc, *status])
 
     print(table)
 
