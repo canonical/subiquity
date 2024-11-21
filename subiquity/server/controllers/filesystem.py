@@ -742,7 +742,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         will not necessarily match partition.offset and partition.size."""
         partition = self.get_partition(disk, target.partition_number)
         self.delete_partition(partition, override_preserve=True)
-        return gaps.includes(disk, partition.offset)
+        return gaps.find_gap_after_removal(disk, removed_partition=partition)
 
     def set_info_for_capability(self, capability: GuidedCapability):
         """Given a request for a capability, select the variation to use."""
@@ -1304,7 +1304,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if not boot.can_be_boot_device(altered_disk, with_reformatting=False):
                     continue
 
-                gap = gaps.includes(altered_disk, offset=partition.offset)
+                gap = gaps.find_gap_after_removal(
+                    altered_disk, removed_partition=partition
+                )
                 if not self.use_gap_has_enough_room_for_partitions(altered_disk, gap):
                     log.error(
                         "skipping TargetEraseInstall: not enough room for primary"

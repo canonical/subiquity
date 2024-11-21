@@ -267,6 +267,108 @@ class TestIncludes(unittest.TestCase):
         self.assertEqual(gap, gaps.includes(d, gap.offset + gap.size // 2))
 
 
+class TestFindGapAfterRemoval(unittest.TestCase):
+    def test_no_free_space_single_part(self):
+        m, d = make_model_and_disk(ptable="gpt")
+        p = make_partition(m, d, size=-1)
+
+        m.remove_partition(p)
+
+        gap = gaps.find_gap_after_removal(d, p)
+
+        self.assertEqual(p.offset, gap.offset)
+        self.assertEqual(p.size, gap.size)
+
+    def test_no_free_space_two_parts(self):
+        m, d = make_model_and_disk(ptable="gpt")
+        make_partition(m, d)
+        p2 = make_partition(m, d, size=-1)
+
+        m.remove_partition(p2)
+
+        gap = gaps.find_gap_after_removal(d, p2)
+
+        self.assertEqual(p2.offset, gap.offset)
+        self.assertEqual(p2.size, gap.size)
+
+    def test_free_space_before(self):
+        m, d = make_model_and_disk(ptable="gpt")
+        p = make_partition(m, d, offset=5 * MiB, size=10 * MiB)
+
+        m.remove_partition(p)
+
+        gap = gaps.find_gap_after_removal(d, p)
+
+        self.assertEqual(d.alignment_data().min_start_offset, gap.offset)
+        self.assertLess(gap.offset, p.offset)
+
+    def test_unaligned_part(self):
+        m, d = make_model_and_disk(ptable="gpt")
+        make_partition(m, d, offset=1 * MiB, size=int(10.5 * MiB))
+        p2 = make_partition(m, d, offset=int(11.5 * MiB), size=10 * MiB)
+
+        m.remove_partition(p2)
+
+        gap = gaps.find_gap_after_removal(d, p2)
+
+        self.assertGreater(gap.offset, p2.offset)
+
+    def test_unaligned_extended(self):
+        """This test reuses data from threebuntu-on-msdos.json ; where the
+        logical partitions are aligned to the MiB boundary, but the extended
+        partition is not. When removing the first logical partition, the
+        resulting gap does not appear where the partition used to be, but
+        after. This is arguably a bug and with this test-case, we are
+        acknowledging that this quirk exists.
+        disk
+        ----
+        { "sectorsize": 512, "unit": "sectors", "size": "161061273600" }
+        partitions
+        ----------
+         { "node": "/dev/sda1", "size": 97654784, "start": 2048, "type": "83" },
+         { "node": "/dev/sda2", "size": 215863298, "start": 97658878, "type": "5" },
+         { "node": "/dev/sda3", "size": 1048576, "start": 313522176, "type": "ef" },
+         { "node": "/dev/sda5", "size": 97654784, "start": 97658880, "type": "83" },
+         { "node": "/dev/sda6", "size": 118206464, "start": 195315712, "type": "83" },
+        """
+
+        def make_part(*, offset, size, sector_size=512, **kwargs):
+            return make_partition(
+                m,
+                d,
+                preserve=True,
+                size=size * sector_size,
+                offset=offset * sector_size,
+                **kwargs,
+            )
+
+        m, d = make_model_and_disk(size=161061273600, ptable="dos", storage_version=2)
+        p1 = make_part(offset=2048, size=97654784)
+        p2 = make_part(offset=97658878, size=215863298, flag="extended")
+        p3 = make_part(offset=313522176, size=1048576)
+        p5 = make_part(offset=97658880, size=97654784, flag="logical")
+        p6 = make_part(offset=195315712, size=118206464, flag="logical")
+
+        # Just so we can use MiB later without thinking.
+        self.assertEqual(MiB, d.alignment_data().part_align)
+
+        self.assertTrue(p1.offset % MiB == 0)
+        self.assertTrue(p3.offset % MiB == 0)
+        self.assertTrue(p5.offset % MiB == 0)
+        self.assertTrue(p6.offset % MiB == 0)
+
+        # The extended partition is unaligned
+        self.assertFalse(p2.offset % MiB == 0)
+
+        m.remove_partition(p5)
+
+        gap = gaps.find_gap_after_removal(d, p5)
+
+        # Ideally, the gap should be at p5.offset, not after p5.offset.
+        # Let's change this to assertEqual if we fix the "issue".
+        self.assertGreater(gap.offset, p5.offset)
+
+
 class TestDiskGaps(unittest.TestCase):
     def test_no_partition_gpt(self):
         size = 1 << 30

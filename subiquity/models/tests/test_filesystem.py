@@ -167,8 +167,8 @@ def make_disk(fs_model=None, **kw):
     return disk
 
 
-def make_model_and_disk(bootloader=None, **kw):
-    model = make_model(bootloader)
+def make_model_and_disk(bootloader=None, storage_version=None, **kw):
+    model = make_model(bootloader, storage_version)
     return model, make_disk(model, **kw)
 
 
