@@ -1353,6 +1353,46 @@ class TestSwap(unittest.TestCase):
         self.assertFalse(m.should_add_swapfile())
 
 
+class TestDisk(unittest.TestCase):
+    def test_renumber_logical_partitions(self):
+        m = make_model(storage_version=2)
+        d = make_disk(m, ptable="msdos")
+
+        pe = make_partition(m, d, flag="extended")
+        pl1 = make_partition(m, d, flag="logical")
+        pl2 = make_partition(m, d, flag="logical")
+        pl3 = make_partition(m, d, flag="logical")
+        pp = make_partition(m, d)
+
+        self.assertEqual(1, pe.number)
+        self.assertEqual(5, pl1.number)
+        self.assertEqual(6, pl2.number)
+        self.assertEqual(7, pl3.number)
+        self.assertEqual(2, pp.number)
+
+        d._partitions.remove(pl1)
+
+        d.renumber_logical_partitions(removed_partition=pl1)
+
+        self.assertEqual(1, pe.number)
+        self.assertEqual(5, pl2.number)
+        self.assertEqual(6, pl3.number)
+        self.assertEqual(2, pp.number)
+
+    def test_renumber_logical_partitions__after_removing_primary(self):
+        m = make_model(storage_version=2)
+        d = make_disk(m, ptable="msdos")
+
+        make_partition(m, d, flag="extended")
+        make_partition(m, d, flag="logical")
+        pp = make_partition(m, d)
+
+        d._partitions.remove(pp)
+
+        with self.assertRaisesRegex(ValueError, r"^do not renumber"):
+            d.renumber_logical_partitions(removed_partition=pp)
+
+
 class TestPartition(unittest.TestCase):
     def test_is_logical(self):
         m = make_model(storage_version=2)

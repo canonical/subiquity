@@ -728,6 +728,15 @@ class _Device(_Formattable, ABC):
         return any(p.preserve for p in self._partitions)
 
     def renumber_logical_partitions(self, removed_partition):
+        """After removing a logical partition, one can call this function to
+        update the partition number of other logical partitions.
+        Please only call this function after removing a logical partition."""
+        if not removed_partition.is_logical:
+            # The implementation of this function expects the removed partition
+            # to have a partition number in the logical range (e.g., 5+ for a
+            # DOS partition table).
+            raise ValueError("do not renumber logical parts after removing a primary")
+
         parts = [
             p
             for p in self.partitions_by_number()
@@ -2210,7 +2219,8 @@ class FilesystemModel:
         for p2 in movable_trailing_partitions_and_gap_size(part)[0]:
             p2.offset -= part.size
         self._remove(part)
-        part.device.renumber_logical_partitions(part)
+        if part.is_logical:
+            part.device.renumber_logical_partitions(part)
         if len(part.device._partitions) == 0:
             part.device.ptable = None
 
