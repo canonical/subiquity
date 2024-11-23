@@ -29,6 +29,7 @@ python3-debian
 python3-dev
 python3-distro-info
 python3-distutils-extra
+python3-dnspython
 python3-flake8
 python3-gi
 python3-jsonschema
@@ -38,6 +39,8 @@ python3-nose
 python3-parameterized
 python3-passlib
 python3-pip
+python3-prettytable
+python3-pycountry
 python3-pyflakes
 python3-pyroute2
 python3-pytest
