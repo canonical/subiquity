@@ -20,3 +20,4 @@ jobs:
     uses: canonical/documentation-workflows/.github/workflows/documentation-checks.yaml@main
     with:
       working-directory: 'doc'
+      runs-on: ubuntu-22.04
