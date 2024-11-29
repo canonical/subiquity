@@ -23,7 +23,7 @@ import pathlib
 import shutil
 import subprocess
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import attr
 import pyudev
@@ -86,7 +86,6 @@ from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
 from subiquity.server.mounter import Mounter
-from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.snapdapi import (
     StorageEncryptionSupport,
     StorageSafety,
@@ -130,23 +129,39 @@ class NoSnapdSystemsOnSource(Exception):
     pass
 
 
-class NonReportableSVE(RecoverableError, NonReportableException):
-    """Non reportable storage value error"""
+class StorageRecoverableError(RecoverableError):
+    pass
 
 
-class ReportableSVE(ValueError):
-    """Reportable storage value error"""
+class StorageInvalidUsageError(StorageRecoverableError):
+    """Exception to raise when a storage endpoint is not properly used."""
 
-    # TODO Inherit from RecoverableError going forward.
+    code = "storage-invalid-usage"
+    title = _("Invalid use of storage endpoint")
 
 
-# Depending on config, we will let the SVE fail on the server side
-StorageRecoverableError: Type[NonReportableSVE | ReportableSVE] = ReportableSVE
+class StorageConstraintViolationError(StorageRecoverableError):
+    """Exception to raise when a constraint is violated at runtime.
+    Examples:
+     - not enough space on the disk to create a partition
+     - requesting a boot configuration that is not supported by the hardware
+    """
+
+    code = "storage-constraint-violated"
+    title = _("Storage constraint violated")
+
+
+class StorageNotFoundError(StorageRecoverableError):
+    """Exception to raise when a storage entity declared in a request (e.g., a
+    disk, a partition, ...) is not found in the model."""
+
+    code = "storage-not-found"
+    title = _("Storage entity not found")
 
 
 def set_user_error_reportable(reportable: bool) -> None:
     global StorageRecoverableError
-    StorageRecoverableError = ReportableSVE if reportable else NonReportableSVE
+    StorageRecoverableError.produce_crash_report = reportable
 
 
 @attr.s(auto_attribs=True)
@@ -593,7 +608,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if choice.password is not None:
             spec["passphrase"] = choice.password
         if choice.recovery_key and not choice.password:
-            raise Exception("Cannot have a recovery key without encryption")
+            raise StorageInvalidUsageError(
+                "Cannot have a recovery key without encryption"
+            )
         recovery_key_handler = RecoveryKeyHandler.from_post_data(
             choice.recovery_key, default_suffix=f"recovery-key-{vg_name}.txt"
         )
@@ -607,7 +624,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         elif choice.sizing_policy == SizingPolicy.ALL:
             lv_size = vg.size
         else:
-            raise Exception(f"Unhandled size policy {choice.sizing_policy}")
+            raise StorageInvalidUsageError(
+                f"Unhandled size policy {choice.sizing_policy}"
+            )
         log.debug(f"lv_size {lv_size} for {choice.sizing_policy}")
         self.create_logical_volume(
             vg=vg,
@@ -719,7 +738,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         part_align = disk.alignment_data().part_align
         new_size = align_up(target.new_size, part_align)
         if new_size > partition.size:
-            raise Exception(f"Aligned requested size {new_size} too large")
+            raise StorageConstraintViolationError(
+                f"Aligned requested size {new_size} too large"
+            )
         partition.size = new_size
         partition.resize = True
         # Calculating where that gap will be can be tricky due to alignment
@@ -728,7 +749,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         gap = gaps.after(disk, partition.offset)
         if gap is None:
             pgs = gaps.parts_and_gaps(disk)
-            raise Exception(f"gap not found after resize, pgs={pgs}")
+            raise StorageConstraintViolationError(
+                f"gap not found after resize, pgs={pgs}"
+            )
         return gap
 
     def set_info_for_capability(self, capability: GuidedCapability):
@@ -755,7 +778,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             if caps & set(info.capability_info.allowed):
                 self._info = info
                 return
-        raise Exception("could not find variation for {}".format(capability))
+        raise StorageConstraintViolationError(
+            "could not find variation for {}".format(capability)
+        )
 
     async def guided(
         self, choice: GuidedChoiceV2, reset_partition_only: bool = False
@@ -772,7 +797,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         if self.is_core_boot_classic():
             if not self.app.opts.enhanced_secureboot:
-                raise ValueError(
+                raise StorageConstraintViolationError(
                     "Not using enhanced_secureboot: disabled on commandline"
                 )
             assert isinstance(choice.target, GuidedStorageTargetReformat)
@@ -786,7 +811,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # find what's left of the gap after adding boot
         gap = gap.within()
         if gap is None:
-            raise Exception("failed to locate gap after adding boot")
+            raise StorageConstraintViolationError(
+                "failed to locate gap after adding boot"
+            )
 
         if choice.reset_partition:
             if choice.reset_partition_size is not None:
@@ -821,7 +848,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         elif choice.capability == GuidedCapability.DD:
             self.guided_dd(disk)
         else:
-            raise ValueError("cannot process capability")
+            raise StorageInvalidUsageError("cannot process capability")
 
     async def _probe_response(self, wait, resp_cls):
         if not self._probe_task.done():
@@ -1057,7 +1084,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         for p in disk.partitions():
             if p.number == number:
                 return p
-        raise ValueError(f"Partition {number} on {disk.id} not found")
+        raise StorageNotFoundError(f"Partition {number} on {disk.id} not found")
 
     def calculate_suggested_install_min(self):
         catalog_entry = self.app.base_model.source.current
@@ -1331,9 +1358,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.locked_probe_data = True
         disk = self.model._one(id=disk_id)
         if boot.is_boot_device(disk):
-            raise StorageRecoverableError("device already has bootloader partition")
+            raise StorageConstraintViolationError(
+                "device already has bootloader partition"
+            )
         if DeviceAction.TOGGLE_BOOT not in DeviceAction.supported(disk):
-            raise StorageRecoverableError("disk does not support boot partiton")
+            raise StorageConstraintViolationError("disk does not support boot partiton")
         self.add_boot_disk(disk)
         return await self.v2_GET()
 
@@ -1341,11 +1370,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug(data)
         self.locked_probe_data = True
         if data.partition.boot is not None:
-            raise ValueError("add_partition does not support changing boot")
+            raise StorageInvalidUsageError(
+                "add_partition does not support changing boot"
+            )
         disk = self.model._one(id=data.disk_id)
         requested_size = data.partition.size or 0
         if requested_size > data.gap.size:
-            raise ValueError("new partition too large")
+            raise StorageConstraintViolationError("new partition too large")
         if requested_size < 1:
             requested_size = data.gap.size
         # empty string is an unformatted partition
@@ -1382,14 +1413,20 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             data.partition.size not in (None, partition.size)
             and self.app.opts.storage_version < 2
         ):
-            raise ValueError("edit_partition does not support changing size")
+            raise StorageInvalidUsageError(
+                "edit_partition does not support changing size"
+            )
         if data.partition.boot is not None and data.partition.boot != partition.boot:
-            raise ValueError("edit_partition does not support changing boot")
+            raise StorageInvalidUsageError(
+                "edit_partition does not support changing boot"
+            )
         spec: PartitionSpec = {"mount": data.partition.mount or partition.mount}
         if data.partition.format is not None:
             if data.partition.format != partition.original_fstype():
                 if data.partition.wipe is None:
-                    raise ValueError("changing partition format requires a wipe value")
+                    raise StorageInvalidUsageError(
+                        "changing partition format requires a wipe value"
+                    )
             spec["fstype"] = data.partition.format
         if data.partition.size is not None:
             spec["size"] = data.partition.size
@@ -1403,7 +1440,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.locked_probe_data = True
 
         if (vg := self.model._one(type="lvm_volgroup", id=id)) is None:
-            raise StorageRecoverableError(f"could not find existing VG '{id}'")
+            raise StorageNotFoundError(f"could not find existing VG '{id}'")
         assert isinstance(vg, LVM_VolGroup)
 
         self.delete_volgroup(vg)
@@ -1414,7 +1451,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.locked_probe_data = True
 
         if (lv := self.model._one(type="lvm_partition", id=id)) is None:
-            raise StorageRecoverableError(f"could not find existing LV '{id}'")
+            raise StorageNotFoundError(f"could not find existing LV '{id}'")
         assert isinstance(lv, LVM_LogicalVolume)
 
         self.delete_logical_volume(lv)
@@ -1426,7 +1463,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.locked_probe_data = True
 
         if (raid := self.model._one(type="raid", id=id)) is None:
-            raise StorageRecoverableError(f"could not find existing RAID '{id}'")
+            raise StorageNotFoundError(f"could not find existing RAID '{id}'")
         assert isinstance(raid, Raid)
 
         self.delete_raid(raid)

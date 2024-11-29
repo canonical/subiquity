@@ -169,17 +169,24 @@ def _make_handler(
                 )
             except Exception as exc:
                 tb = traceback.TracebackException.from_exception(exc)
+                headers = {
+                    "x-status": "error",
+                    "x-error-type": type(exc).__name__,
+                    # aiohttp will reject a header if its value contains a
+                    # "\r" or "\n" character. By using compact JSON, we
+                    # ensure those characters are escaped.
+                    "x-error-msg": json.dumps(str(exc), indent=None),
+                }
+                if not isinstance(exc, RecoverableError) or exc.produce_crash_report:
+                    status = 500
+                else:
+                    status = 422
+                    headers["x-error-code"] = exc.code
+                    headers["x-error-title"] = json.dumps(exc.title, indent=None)
                 resp = web.Response(
                     text="".join(tb.format()),
-                    status=422 if isinstance(exc, RecoverableError) else 500,
-                    headers={
-                        "x-status": "error",
-                        "x-error-type": type(exc).__name__,
-                        # aiohttp will reject a header if its value contains a
-                        # "\r" or "\n" character. By using compact JSON, we
-                        # ensure those characters are escaped.
-                        "x-error-msg": json.dumps(str(exc), indent=None),
-                    },
+                    status=status,
+                    headers=headers,
                 )
                 resp["exception"] = exc
             context.description = "{} {}".format(resp.status, trim(resp.text))

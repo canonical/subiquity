@@ -35,6 +35,7 @@ from subiquity.cloudinit import (
     rand_user_password,
     validate_cloud_init_top_level_keys,
 )
+from subiquity.common.api.recoverable_error import RecoverableError
 from subiquity.common.api.server import bind, controller_for_request
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReport, ErrorReporter, ErrorReportKind
@@ -554,7 +555,7 @@ class SubiquityServer(Application):
                 resp.headers["x-error-msg"],
                 exc_info=exc,
             )
-            if not isinstance(exc, NonReportableException):
+            if not isinstance(exc, RecoverableError) or exc.produce_crash_report:
                 report = self.make_apport_report(
                     ErrorReportKind.SERVER_REQUEST_FAIL,
                     "request to {}".format(request.raw_path),
