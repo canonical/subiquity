@@ -1188,7 +1188,7 @@ Example:
    autoinstall:
       # Install a particular kernel flavour.
       kernel:
-        flavour: hwe
+        flavor: hwe
 
 .. _ai-kernel-crash-dumps:
 
