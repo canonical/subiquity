@@ -740,6 +740,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         there was free space before or after the partition being removed, it
         will be included in the returned gap. Therefore gap.offset and gap.size
         will not necessarily match partition.offset and partition.size."""
+        if self.model.storage_version < 2:
+            raise StorageRecoverableError(
+                '"Erase and Install" requires storage version 2'
+            )
         partition = self.get_partition(disk, target.partition_number)
         self.delete_partition(partition, override_preserve=True)
         return gaps.find_gap_after_removal(disk, removed_partition=partition)
@@ -1283,6 +1287,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self, install_min: int
     ) -> list[tuple[int, GuidedStorageTargetEraseInstall]]:
         scenarios: list[tuple[int, GuidedStorageTargetEraseInstall]] = []
+        if self.model.storage_version < 2:
+            return []
 
         for disk in self.potential_boot_disks(check_boot=False):
             # Skip RAID until we know how to proceed.
