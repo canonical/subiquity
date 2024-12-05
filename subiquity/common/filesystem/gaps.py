@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import functools
+import logging
 from typing import List, Tuple
 
 import attr
@@ -29,6 +30,8 @@ from subiquity.models.filesystem import (
     align_down,
     align_up,
 )
+
+log = logging.getLogger("subiquity.common.filesystem.gaps")
 
 
 # should also set on_setattr=None with attrs 20.1.0
@@ -314,10 +317,61 @@ def at_offset(device, offset):
     return None
 
 
-def after(device, offset):
-    """Find the first gap that is after this offset."""
+def after(device, offset, *, only_gap=True):
+    """Find the first gap that is after this offset. If only_gap is False, find
+    the first gap (or partition!) that is after this offset."""
     for pg in parts_and_gaps(device):
-        if isinstance(pg, Gap):
+        if isinstance(pg, Gap) or not only_gap:
             if pg.offset > offset:
                 return pg
     return None
+
+
+def includes(device, offset):
+    """Find the gap that includes the specified offset."""
+    for pg in parts_and_gaps(device):
+        if not isinstance(pg, Gap):
+            continue
+        if pg.offset <= offset < (pg.offset + pg.size):
+            return pg
+    return None
+
+
+def find_gap_after_removal(disk: Disk, removed_partition: Partition) -> Gap:
+    """Assuming that the specified partition was removed from the disk, return
+    the corresponding, resulting gap that "contains" the partition. The offset
+    of the resulting gap can either:
+    * match that of the removed partition
+    * be lower than that of the removed partition (we automatically claim free
+    space prepending the removed partition)
+    * be greater (surprisingly) than that of the removed partition. This is
+    probably a bug."""
+    gap = includes(disk, removed_partition.offset)
+
+    if gap is not None:
+        return gap
+
+    # Sometimes, after removal, the gap will appear slighly *after* where the
+    # partition used to be. This is notably an issue when dealing with logical
+    # partitions.
+    # This is arguably a bug (i.e., we probably block too much space) but let's
+    # try to look harder for the gap since we know it can happen.
+    part_or_gap = after(disk, removed_partition.offset, only_gap=False)
+
+    # Ensure that what we find is actually a gap and ensure that it covers at
+    # least one part of the partition we removed.
+    if (
+        part_or_gap is None
+        or not isinstance(part_or_gap, Gap)
+        or part_or_gap.offset >= removed_partition.offset + removed_partition.size
+    ):
+        raise RuntimeError(
+            f"could not find a gap after removing {removed_partition.id}"
+        )
+
+    gap = part_or_gap
+    log.debug(
+        "no gap found on %s that includes offset %s", disk.id, removed_partition.offset
+    )
+    log.debug("using gap at offset %s instead", gap.offset)
+    return gap
