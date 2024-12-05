@@ -20,9 +20,10 @@ import requests
 import requests_mock
 from jsonschema.validators import validator_for
 
-from subiquity.server import snapdapi
 from subiquity.server.controllers import refresh as refresh_mod
 from subiquity.server.controllers.refresh import RefreshController, SnapChannelSource
+from subiquity.server.snapd import api as snapdapi
+from subiquity.server.snapd import types as snapdtypes
 from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
@@ -48,7 +49,7 @@ class TestRefreshController(SubiTestCase):
 
             paw.assert_called_once()
             request = paw.mock_calls[0].args[2]
-            self.assertEqual(request.action, snapdapi.SnapAction.SWITCH)
+            self.assertEqual(request.action, snapdtypes.SnapAction.SWITCH)
             self.assertEqual(request.channel, "newchan")
 
     async def test_configure_snapd_notfound(self):
@@ -91,7 +92,7 @@ class TestRefreshController(SubiTestCase):
 
         paw.assert_called_once()
         request = paw.mock_calls[0].args[2]
-        self.assertEqual(request.action, snapdapi.SnapAction.SWITCH)
+        self.assertEqual(request.action, snapdtypes.SnapAction.SWITCH)
         self.assertEqual(request.channel, "newchan")
 
         # Test with the snap not following the expected channel
