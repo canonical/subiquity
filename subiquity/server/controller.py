@@ -111,7 +111,7 @@ class SubiquityController(BaseController):
         """
         pass
 
-    def interactive(self):
+    def interactive(self) -> bool:
         if not self.app.autoinstall_config:
             return self._active
         i_sections = self.app.autoinstall_config.get("interactive-sections", [])
@@ -127,6 +127,8 @@ class SubiquityController(BaseController):
             and self.autoinstall_key_alias in i_sections
         ):
             return self._active
+
+        return False
 
     async def configured(self):
         """Let the world know that this controller's model is now configured."""
