@@ -119,7 +119,6 @@ class MetaController:
     async def client_variant_POST(self, variant: str) -> None:
         if variant not in self.app.supported_variants:
             raise ValueError(f"unrecognized client variant {variant}")
-        self.app.base_model.set_source_variant(variant)
         self.app.set_source_variant(variant)
 
     async def client_variant_GET(self) -> str:
@@ -355,6 +354,11 @@ class SubiquityServer(Application):
 
     def set_source_variant(self, variant):
         self.variant = variant
+
+        # Update the model variant too.
+        # Guard for init. The "base_model" attribute isn't set until .run() is called.
+        if getattr(self, "base_model", None) is not None:
+            self.base_model.set_source_variant(variant)
 
     def load_serialized_state(self):
         for controller in self.controllers.instances:

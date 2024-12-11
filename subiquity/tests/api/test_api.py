@@ -2330,3 +2330,19 @@ class TestServerVariantSupport(TestAPI):
                     "unrecognized client variant foo-bar",
                     json.loads(cre.headers["x-error-msg"]),
                 )
+
+    async def test_post_source_update_server_variant(self):
+        """Test POSTing to source will correctly update Server variant."""
+
+        extra_args = ["--source-catalog", "examples/sources/mixed.yaml"]
+        async with start_server(
+            "examples/machines/simple.json",
+            extra_args=extra_args,
+        ) as inst:
+            resp = await inst.get("/meta/client_variant")
+            self.assertEqual(resp, "server")
+
+            await inst.post("/source", source_id="ubuntu-desktop")
+
+            resp = await inst.get("/meta/client_variant")
+            self.assertEqual(resp, "desktop")
