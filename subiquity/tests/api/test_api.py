@@ -2312,6 +2312,7 @@ class TestServerVariantSupport(TestAPI):
         (
             ("server", True),
             ("desktop", True),
+            ("core", True),
             ("foo-bar", False),
         )
     )

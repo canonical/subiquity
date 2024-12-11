@@ -285,7 +285,7 @@ class SubiquityServer(Application):
         "Shutdown",
     ]
 
-    supported_variants = ["server", "desktop"]
+    supported_variants = ["server", "desktop", "core"]
 
     def make_model(self):
         root = "/"
