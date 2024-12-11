@@ -151,7 +151,7 @@ class SourceController(SubiquityController):
     async def configured(self):
         await super().configured()
         self._configured = True
-        self.app.base_model.set_source_variant(self.model.current.variant)
+        self.app.set_source_variant(self.model.current.variant)
 
     async def POST(self, source_id: str, search_drivers: bool = False) -> None:
         # Marking the source model configured has an effect on many of the
