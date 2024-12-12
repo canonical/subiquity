@@ -31,6 +31,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Self,
     Sequence,
     Set,
     Tuple,
@@ -666,6 +667,13 @@ class _Device(_Formattable, ABC):
         # deleted as possible.
         new_disk = attr.evolve(self)
         new_disk._partitions = [p for p in self.partitions() if p._is_in_use]
+        return new_disk
+
+    def _excluding_partition(self, partition: "Partition") -> Self:
+        """Return an ephemeral copy of the device with the specific partition
+        removed."""
+        new_disk = attr.evolve(self)
+        new_disk._partitions = [p for p in self.partitions() if p is not partition]
         return new_disk
 
     def dasd(self):

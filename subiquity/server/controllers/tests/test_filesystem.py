@@ -35,6 +35,7 @@ from subiquity.common.types.storage import (
     GuidedChoiceV2,
     GuidedDisallowedCapability,
     GuidedDisallowedCapabilityReason,
+    GuidedStorageTargetEraseInstall,
     GuidedStorageTargetManual,
     GuidedStorageTargetReformat,
     GuidedStorageTargetResize,
@@ -665,6 +666,65 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         # in reformat.
         expected_del_calls = [mock.call(p1), mock.call(p3), mock.call(p4)]
         self.assertEqual(expected_del_calls, m_del_part.mock_calls)
+
+    def test_start_guided_erase_install__no_free_space(self):
+        self.fsc.model = model = make_model(Bootloader.UEFI, storage_version=2)
+        disk = make_disk(model)
+
+        p1 = make_partition(model, disk, size=10 << 30)
+        make_partition(model, disk, size=-1, preserve=True)
+
+        gap = self.fsc.start_guided_erase_install(
+            GuidedStorageTargetEraseInstall(disk_id=disk.id, partition_number=1), disk
+        )
+
+        self.assertEqual(p1.offset, gap.offset)
+        self.assertEqual(p1.size, gap.size)
+
+    def test_start_guided_erase_install__free_space_after(self):
+        self.fsc.model = model = make_model(Bootloader.UEFI, storage_version=2)
+        disk = make_disk(model)
+
+        part = make_partition(model, disk, size=10 << 30)
+
+        _, trailing_gap = gaps.parts_and_gaps(disk)
+
+        gap = self.fsc.start_guided_erase_install(
+            GuidedStorageTargetEraseInstall(disk_id=disk.id, partition_number=1), disk
+        )
+
+        self.assertEqual(part.offset, gap.offset)
+        self.assertEqual(part.size + trailing_gap.size, gap.size)
+
+    def test_start_guided_erase_install__free_space_before(self):
+        self.fsc.model = model = make_model(Bootloader.UEFI, storage_version=2)
+        disk = make_disk(model)
+
+        part = make_partition(model, disk, size=-1, offset=20 << 30)
+
+        leading_gap, _ = gaps.parts_and_gaps(disk)
+
+        gap = self.fsc.start_guided_erase_install(
+            GuidedStorageTargetEraseInstall(disk_id=disk.id, partition_number=1), disk
+        )
+
+        self.assertEqual(leading_gap.offset, gap.offset)
+        self.assertEqual(part.size + leading_gap.size, gap.size)
+
+    def test_start_guided_erase_install__free_space_before_and_after(self):
+        self.fsc.model = model = make_model(Bootloader.UEFI, storage_version=2)
+        disk = make_disk(model)
+
+        part = make_partition(model, disk, size=10 << 30, offset=20 << 30)
+
+        leading_gap, _, trailing_gap = gaps.parts_and_gaps(disk)
+
+        gap = self.fsc.start_guided_erase_install(
+            GuidedStorageTargetEraseInstall(disk_id=disk.id, partition_number=1), disk
+        )
+
+        self.assertEqual(leading_gap.offset, gap.offset)
+        self.assertEqual(part.size + leading_gap.size + trailing_gap.size, gap.size)
 
 
 class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):
@@ -1649,6 +1709,76 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             scenarios = self.fsc.available_use_gap_scenarios(install_min)
 
         self.assertEqual(expected_scenario, scenarios != [])
+
+    async def test_available_erase_install_scenarios(self):
+        await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
+        install_min = self.fsc.calculate_suggested_install_min()
+
+        p1 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        p2 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+
+        self.model._probe_data["os"] = {
+            p1._path(): {
+                "label": "Ubuntu",
+                "long": "Ubuntu 22.04.1 LTS",
+                "type": "linux",
+                "version": "22.04.1",
+            },
+            p2._path(): {
+                "label": "Ubuntu",
+                "long": "Ubuntu 20.04.7 LTS",
+                "type": "linux",
+                "version": "20.04.7",
+            },
+        }
+
+        scenario1, scenario2 = self.fsc.available_erase_install_scenarios(install_min)
+
+        # available_*_scenarios returns a list of tuple having an int as an index
+        scenario1 = scenario1[1]
+        scenario2 = scenario2[1]
+
+        self.assertIsInstance(scenario1, GuidedStorageTargetEraseInstall)
+        self.assertEqual(self.disk.id, scenario1.disk_id)
+        self.assertEqual(p1.number, scenario1.partition_number)
+        self.assertIsInstance(scenario2, GuidedStorageTargetEraseInstall)
+        self.assertEqual(self.disk.id, scenario2.disk_id)
+        self.assertEqual(p2.number, scenario2.partition_number)
+
+    async def test_available_erase_install_scenarios__no_os(self):
+        await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
+        install_min = self.fsc.calculate_suggested_install_min()
+
+        make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+
+        self.assertFalse(self.fsc.available_erase_install_scenarios(install_min))
+
+    async def test_available_erase_install_scenarios__full_primaries(self):
+        await self._setup(Bootloader.UEFI, "dos", fix_bios=True)
+        install_min = self.fsc.calculate_suggested_install_min()
+
+        p1 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        p2 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+
+        self.model._probe_data["os"] = {
+            p1._path(): {
+                "label": "Ubuntu",
+                "long": "Ubuntu 22.04.1 LTS",
+                "type": "linux",
+                "version": "22.04.1",
+            },
+            p2._path(): {
+                "label": "Ubuntu",
+                "long": "Ubuntu 20.04.7 LTS",
+                "type": "linux",
+                "version": "20.04.7",
+            },
+        }
+
+        self.assertFalse(self.fsc.available_erase_install_scenarios(install_min))
 
     async def test_resize_has_enough_room_for_partitions__one_primary(self):
         await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
