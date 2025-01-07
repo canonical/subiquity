@@ -18,6 +18,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+import uuid
 from pathlib import Path
 from unittest.mock import ANY, AsyncMock, Mock, mock_open, patch
 
@@ -26,6 +27,7 @@ from curtin.util import EFIBootEntry, EFIBootState
 from subiquity.common.types import PackageInstallState
 from subiquity.models.tests.test_filesystem import make_model_and_partition
 from subiquity.server.controllers.install import CurtinInstallError, InstallController
+from subiquity.server.mounter import Mountpoint
 from subiquitycore.tests.mocks import make_app
 
 
@@ -335,3 +337,45 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual("extract", method(CurtinInstallError(stages=["extract"])))
         self.assertEqual("curthooks", method(CurtinInstallError(stages=["curthooks"])))
+
+    async def test_adjust_rp(self):
+        orig_casper_uuid = str(uuid.uuid4())
+        partuuid = str(uuid.uuid4())
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            d = Path(tempdir)
+
+            (d / "boot/grub").mkdir(parents=True)
+            orig_grub_conf = f"""\
+menuentry "Restore Ubuntu to factory state" {{
+	set gfxpayload=keep
+	linux	/casper/vmlinuz layerfs-path=minimal.standard.live.squashfs nopersistent ds=nocloud\\;s=/cdrom/cloud-configs/reset-media uuid={orig_casper_uuid} --- quiet splash
+	initrd	/casper/initrd
+}}
+"""  # noqa
+            (d / "boot/grub/grub.cfg").write_text(orig_grub_conf)
+
+            (d / ".disk").mkdir()
+            (d / ".disk/casper-uuid-generic").write_text(orig_casper_uuid)
+
+            mp = Mountpoint(mountpoint=tempdir)
+            self.setup_rp_test(f"{partuuid}".encode("ascii"))
+            new_casper_uuid = await self.controller.adjust_rp(self.part, mp)
+            try:
+                uuid.UUID(new_casper_uuid)
+            except ValueError:
+                self.fail("adjust_rp should return a valid uuid for casper uuid")
+
+            ref_grub_conf = f"""\
+menuentry "Restore Ubuntu to factory state" {{
+	set gfxpayload=keep
+linux /casper/vmlinuz layerfs-path=minimal.standard.live.squashfs nopersistent 'ds=nocloud;s=/cdrom/cloud-configs/reset-media' uuid={new_casper_uuid} rp-partuuid={partuuid} --- quiet splash
+	initrd	/casper/initrd
+}}
+"""  # noqa
+            grub_conf_from_file = (d / "boot/grub/grub.cfg").read_text()
+            self.assertEqual(ref_grub_conf, grub_conf_from_file)
+            casper_uuid_from_file = (
+                (d / ".disk/casper-uuid-generic").read_text().strip()
+            )
+            self.assertEqual(new_casper_uuid, casper_uuid_from_file)
