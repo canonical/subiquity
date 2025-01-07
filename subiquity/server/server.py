@@ -114,6 +114,8 @@ class MetaController:
             if controller.endpoint in endpoints:
                 await controller.configured()
 
+    # TODO: Make post to /meta/client_variant a RecoverableError (it doesn't
+    # have to be fatal and it's currently only pseudo-fatal).
     async def client_variant_POST(self, variant: str) -> None:
         if variant not in self.app.supported_variants:
             raise ValueError(f"unrecognized client variant {variant}")
