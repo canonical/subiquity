@@ -39,6 +39,10 @@ i18n:
 dryrun ui-view: probert i18n
 	$(PYTHON) -m subiquity $(DRYRUN) $(MACHARGS)
 
+.PHONY: dryrun-debug-sv2
+dryrun-debug-sv2: probert i18n
+	$(PYTHON) -m subiquity $(DRYRUN) $(MACHARGS) --storage-version=2 --debug-sv2-guided
+
 .PHONY: dryrun-console-conf ui-view-console-conf
 dryrun-console-conf ui-view-console-conf:
 	$(PYTHON) -m console_conf.cmd.tui --dry-run $(MACHARGS)

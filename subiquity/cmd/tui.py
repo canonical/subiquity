@@ -75,6 +75,11 @@ def make_client_args_parser():
         default=".subiquity",
         help="in dryrun, control basedir of files",
     )
+    # Only for debugging - helps to reproduce some storage v2 guided scenarios
+    # issues.
+    parser.add_argument(
+        "--debug-sv2-guided", action="store_true", help=argparse.SUPPRESS
+    )
     return parser
 
 

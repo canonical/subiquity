@@ -21,17 +21,23 @@ import attr
 from urwid import Text, connect_signal
 
 from subiquity.common.types.storage import (
+    Disk,
     Gap,
     GuidedCapability,
     GuidedChoiceV2,
     GuidedDisallowedCapabilityReason,
+    GuidedStorageTarget,
+    GuidedStorageTargetEraseInstall,
     GuidedStorageTargetManual,
     GuidedStorageTargetReformat,
+    GuidedStorageTargetResize,
+    GuidedStorageTargetUseGap,
     Partition,
     RecoveryKey,
 )
 from subiquity.models.filesystem import humanize_size
-from subiquitycore.ui.buttons import other_btn
+from subiquitycore.ui.buttons import forward_btn, other_btn
+from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.form import (
     NO_CAPTION,
     NO_HELP,
@@ -317,6 +323,114 @@ Block probing did not discover any disks. Unfortunately this means that
 installation will not be possible.
 """
 )
+
+
+class GuidedDiskSelectionViewV2Debug(BaseView):
+    title = "Guided storage configuration for storage version 2 (only for debugging)"
+
+    desc = """
+/!\\ This view is only for debugging. Its goal is to make it easier to reproduce \
+some storage-version=2 bugs that may have occurred using the desktop installer.
+
+Considerations:
+ * The view is incomplete, has no translations, might crash in some scenarios, use \
+it at your own risk...
+ * The allowed / disallowed capabilities are basically ignored. Selecting \
+a scenario will use the DIRECT capability (except for manual partitioning where \
+it will use MANUAL)
+ * For target resize, the recommended size will be used (no slider is implemented).
+ """
+
+    def __init__(
+        self,
+        controller,
+        targets: list[GuidedStorageTarget],
+        disk_by_id: dict[str, Disk],
+    ):
+        self.controller = controller
+
+        buttons = []
+
+        for target in targets:
+            if isinstance(target, GuidedStorageTargetManual):
+                label = "Manual partitioning"
+            elif isinstance(target, GuidedStorageTargetReformat):
+                label = "Install to {} after wiping it".format(target.disk_id)
+            elif isinstance(target, GuidedStorageTargetUseGap):
+                label = "Install to {} in {} gap at offset {}".format(
+                    target.disk_id,
+                    humanize_size(target.gap.size),
+                    target.gap.offset,
+                )
+            elif isinstance(
+                target, (GuidedStorageTargetEraseInstall, GuidedStorageTargetResize)
+            ):
+                partition = next(
+                    iter(
+                        [
+                            p
+                            for p in disk_by_id[target.disk_id].partitions
+                            if isinstance(p, Partition)
+                            and p.number == target.partition_number
+                        ]
+                    )
+                )
+                if isinstance(target, GuidedStorageTargetEraseInstall):
+                    label = (
+                        "Install to {} after erasing p{} ({}) which contains {}".format(
+                            target.disk_id,
+                            partition.number,
+                            humanize_size(partition.size),
+                            partition.os,
+                        )
+                    )
+                else:
+                    label = (
+                        "Install to {} after resizing p{} (currently {}) to {}".format(
+                            target.disk_id,
+                            partition.number,
+                            humanize_size(partition.size),
+                            humanize_size(target.recommended),
+                        )
+                    )
+            else:
+                label = f"Unsupported scenario ({type(target)})"
+
+            buttons.append(
+                forward_btn(label=label, on_press=self.proceed, user_arg=target)
+            )
+
+        return super().__init__(
+            screen(
+                ListBox(buttons),
+                focus_buttons=False,
+                narrow_rows=True,
+                buttons=None,
+                excerpt=self.desc,
+            )
+        )
+
+    def proceed(self, sender, target: GuidedStorageTarget):
+        if isinstance(target, GuidedStorageTargetManual):
+            self.controller.guided_choice(
+                GuidedChoiceV2(target=target, capability=GuidedCapability.MANUAL)
+            )
+        elif isinstance(
+            target,
+            (
+                GuidedStorageTargetReformat,
+                GuidedStorageTargetUseGap,
+                GuidedStorageTargetEraseInstall,
+                GuidedStorageTargetResize,
+            ),
+        ):
+            if isinstance(target, GuidedStorageTargetResize):
+                # Feel free to add a slider or something to configure the size...
+                target.new_size = target.recommended
+            # Feel free to implement something more than DIRECT
+            self.controller.guided_choice(
+                GuidedChoiceV2(target=target, capability=GuidedCapability.DIRECT)
+            )
 
 
 class GuidedDiskSelectionView(BaseView):
