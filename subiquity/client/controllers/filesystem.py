@@ -36,6 +36,7 @@ from subiquity.models.filesystem import (
     raidlevels_by_value,
 )
 from subiquity.ui.views import FilesystemView, GuidedDiskSelectionView
+from subiquity.ui.views.filesystem.guided import GuidedDiskSelectionViewV2Debug
 from subiquity.ui.views.filesystem.probing import ProbingFailed, SlowProbing
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.lsb_release import lsb_release
@@ -94,7 +95,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
     async def make_guided_ui(
         self,
         status: GuidedStorageResponseV2,
-    ) -> GuidedDiskSelectionView:
+    ) -> GuidedDiskSelectionView | GuidedDiskSelectionViewV2Debug:
         if status.status == ProbeStatus.FAILED:
             self.app.show_error_report(status.error_report)
             return ProbingFailed(self, status.error_report)
@@ -106,7 +107,12 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         if status.error_report:
             self.app.show_error_report(status.error_report)
 
-        return GuidedDiskSelectionView(self, status.targets, disk_by_id)
+        if not self.app.opts.debug_sv2_guided:
+            cls = GuidedDiskSelectionView
+        else:
+            cls = GuidedDiskSelectionViewV2Debug
+
+        return cls(self, status.targets, disk_by_id)
 
     async def run_answers(self):
         # Wait for probing to finish.
