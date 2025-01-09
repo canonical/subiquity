@@ -450,6 +450,78 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             self.assertIn("cannot load assertions for label", logs.output[0])
 
 
+class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.app = make_app()
+        self.app.opts.bootloader = None
+        self.fsc = FilesystemController(self.app)
+        self.model = self.fsc.model = make_model()
+
+        # This is needed for examine_systems_task
+        self.app.base_model.source.current.type = "fsimage"
+        self.app.base_model.source.current.variations = {
+            "default": CatalogEntryVariation(path="", size=1),
+        }
+
+    async def asyncSetUp(self):
+        self.fsc._examine_systems_task.start_sync()
+
+        await self.fsc._examine_systems_task.wait()
+
+    async def test_direct_use_gap__install_media(self):
+        """Match directives were previously not honored when using mode: use_gap.
+        This made it not possible for the OEM team to install to the
+        installation media. LP: #2080608"""
+        layout = {
+            "name": "direct",
+            "mode": "use_gap",
+            "match": {
+                "install-media": True,
+            },
+        }
+
+        # The matcher for "install-media": True looks for
+        # _has_in_use_partition.
+        iso = make_disk(self.model)
+        iso._has_in_use_partition = True
+
+        make_disk(self.model)
+
+        p_guided = mock.patch.object(self.fsc, "guided")
+        p_guided_choice_v2 = mock.patch(
+            "subiquity.server.controllers.filesystem.GuidedChoiceV2",
+            wraps=GuidedChoiceV2,
+        )
+        p_largest_gap = mock.patch(
+            "subiquity.server.controllers.filesystem.gaps.largest_gap",
+            wraps=gaps.largest_gap,
+        )
+
+        with (
+            p_guided as m_guided,
+            p_guided_choice_v2 as m_guided_choice_v2,
+            p_largest_gap as m_largest_gap,
+        ):
+            await self.fsc.run_autoinstall_guided(layout)
+
+        # largest_gap will call itself recursively, so we should not expect a
+        # single call to it.
+        m_largest_gap.mock_calls[0] = mock.call([iso])
+
+        m_guided.assert_called_once()
+        m_guided_choice_v2.assert_called_once_with(
+            target=GuidedStorageTargetUseGap(
+                disk_id=iso.id, gap=gaps.largest_gap([iso]), allowed=[]
+            ),
+            capability=GuidedCapability.DIRECT,
+            password=mock.ANY,
+            recovery_key=mock.ANY,
+            sizing_policy=mock.ANY,
+            reset_partition=mock.ANY,
+            reset_partition_size=mock.ANY,
+        )
+
+
 class TestGuided(IsolatedAsyncioTestCase):
     boot_expectations = [
         (Bootloader.UEFI, "gpt", "/boot/efi"),
@@ -1022,17 +1094,19 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             reformat,
         )
 
-        resize = possible.pop(0)
-        expected = GuidedStorageTargetResize(
-            disk_id=self.disk.id,
-            partition_number=p.number,
-            new_size=200 << 30,
-            minimum=50 << 30,
-            recommended=200 << 30,
-            maximum=230 << 30,
-            allowed=default_capabilities,
-        )
-        self.assertEqual(expected, resize)
+        if ptable != "vtoc" or bootloader == Bootloader.NONE:
+            # VTOC has primary_part_limit=3
+            resize = possible.pop(0)
+            expected = GuidedStorageTargetResize(
+                disk_id=self.disk.id,
+                partition_number=p.number,
+                new_size=200 << 30,
+                minimum=50 << 30,
+                recommended=200 << 30,
+                maximum=230 << 30,
+                allowed=default_capabilities,
+            )
+            self.assertEqual(expected, resize)
         self.assertEqual(1, len(possible))
 
     @parameterized.expand(bootloaders_and_ptables)
@@ -1357,6 +1431,86 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             scenarios = self.fsc.available_use_gap_scenarios(install_min)
 
         self.assertEqual(expected_scenario, scenarios != [])
+
+    async def test_resize_has_enough_room_for_partitions__one_primary(self):
+        await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
+
+        p = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+
+        self.assertTrue(self.fsc.resize_has_enough_room_for_partitions(self.disk, p))
+
+    async def test_resize_has_enough_room_for_partitions__full_primaries(self):
+        await self._setup(Bootloader.NONE, "dos", fix_bios=True)
+
+        p1 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        p2 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        p3 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+        p4 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
+
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(self.disk, p1))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(self.disk, p2))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(self.disk, p3))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(self.disk, p4))
+
+    @mock.patch("subiquity.server.controllers.filesystem.boot.get_boot_device_plan")
+    async def test_resize_has_enough_room_for_partitions__one_more(self, p_boot_plan):
+        await self._setup(Bootloader.NONE, "dos", fix_bios=True)
+
+        model = self.model
+        disk = self.disk
+        # Sizes are irrelevant
+        size = 4 << 20
+        p1 = make_partition(model, disk, preserve=True, size=size)
+        p2 = make_partition(model, disk, preserve=True, size=size)
+        p3 = make_partition(model, disk, preserve=True, size=size)
+
+        p_boot_plan.return_value = boot.CreatePartPlan(
+            mock.Mock(), mock.Mock(), mock.Mock()
+        )
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p1))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p2))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p3))
+
+        p_boot_plan.return_value = boot.NoOpBootPlan()
+        self.assertTrue(self.fsc.resize_has_enough_room_for_partitions(disk, p1))
+        self.assertTrue(self.fsc.resize_has_enough_room_for_partitions(disk, p2))
+        self.assertTrue(self.fsc.resize_has_enough_room_for_partitions(disk, p3))
+
+    @mock.patch("subiquity.server.controllers.filesystem.boot.get_boot_device_plan")
+    async def test_resize_has_enough_room_for_partitions__logical(self, p_boot_plan):
+        await self._setup(Bootloader.NONE, "dos", fix_bios=True)
+
+        model = self.model
+        disk = self.disk
+        # Sizes are irrelevant
+        size = 4 << 20
+        p1 = make_partition(model, disk, preserve=True, size=size)
+        p2 = make_partition(model, disk, preserve=True, size=size, flag="extended")
+        p5 = make_partition(model, disk, preserve=True, size=size, flag="logical")
+        p6 = make_partition(model, disk, preserve=True, size=size, flag="logical")
+        p3 = make_partition(model, disk, preserve=True, size=size)
+        p4 = make_partition(model, disk, preserve=True, size=size)
+
+        p_boot_plan.return_value = boot.CreatePartPlan(
+            mock.Mock(), mock.Mock(), mock.Mock()
+        )
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p1))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p2))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p3))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p4))
+        # we're installing in a logical partition, but we still have not enough
+        # room to apply the boot plan.
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p5))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p6))
+
+        p_boot_plan.return_value = boot.NoOpBootPlan()
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p1))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p2))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p3))
+        self.assertFalse(self.fsc.resize_has_enough_room_for_partitions(disk, p4))
+        # if we're installing in a logical partition, we have enough room
+        self.assertTrue(self.fsc.resize_has_enough_room_for_partitions(disk, p5))
+        self.assertTrue(self.fsc.resize_has_enough_room_for_partitions(disk, p6))
 
 
 class TestManualBoot(IsolatedAsyncioTestCase):
@@ -1692,12 +1846,20 @@ class TestMatchingDisks(IsolatedAsyncioTestCase):
     def test_no_match_raises_AutoinstallError(self):
         with self.assertRaises(AutoinstallError):
             self.fsc.get_bootable_matching_disk({"size": "largest"})
+        with self.assertRaises(AutoinstallError):
+            self.fsc.get_bootable_matching_disks({"size": "largest"})
 
     def test_two_matches(self):
-        make_disk(self.fsc.model, size=10 << 30)
+        d1 = make_disk(self.fsc.model, size=10 << 30)
         d2 = make_disk(self.fsc.model, size=20 << 30)
-        actual = self.fsc.get_bootable_matching_disk({"size": "largest"})
-        self.assertEqual(d2, actual)
+        self.assertEqual(d2, self.fsc.get_bootable_matching_disk({"size": "largest"}))
+        self.assertEqual(d1, self.fsc.get_bootable_matching_disk({"size": "smallest"}))
+        self.assertEqual(
+            [d2, d1], self.fsc.get_bootable_matching_disks({"size": "largest"})
+        )
+        self.assertEqual(
+            [d1, d2], self.fsc.get_bootable_matching_disks({"size": "smallest"})
+        )
 
     @mock.patch("subiquity.common.filesystem.boot.can_be_boot_device")
     def test_actually_match_raid(self, m_cbb):

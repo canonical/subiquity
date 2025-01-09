@@ -66,7 +66,9 @@ from subiquity.models.filesystem import (
 )
 from subiquity.models.filesystem import Disk as ModelDisk
 from subiquity.models.filesystem import (
+    MatchDirective,
     MiB,
+    Partition,
     Raid,
     RecoveryKeyHandler,
     _Device,
@@ -1096,8 +1098,49 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 classic_capabilities.update(info.capability_info.allowed)
         return sorted(classic_capabilities)
 
+    def _guided_has_enough_room_for_partitions(
+        self,
+        disk,
+        *,
+        resized_partition: Optional[Partition] = None,
+        gap: Optional[gaps.Gap] = None,
+    ) -> bool:
+        """Check if we have enough room for all the primary partitions. This
+        isn't failproof but should limit the number of TargetResize/UseGap
+        scenarios that are suggested but can't be applied because we don't have
+        enough room for partitions.
+        """
+        if (resized_partition is None) == (gap is None):
+            raise ValueError("please specify either resized_partition or gap")
+
+        new_primary_parts = 0
+        if resized_partition is not None:
+            install_to_logical = resized_partition.is_logical
+        else:
+            install_to_logical = gap.in_extended
+
+        if not install_to_logical:
+            new_primary_parts += 1
+
+        boot_plan = boot.get_boot_device_plan(disk, resize_partition=resized_partition)
+        new_primary_parts += boot_plan.new_partition_count()
+        # In theory, there could be a recovery partition as well. Not sure
+        # how to account for it since we don't know yet if one will be
+        # requested.
+        return new_primary_parts <= gaps.remaining_primary_partitions(
+            disk, disk.alignment_data()
+        )
+
+    def use_gap_has_enough_room_for_partitions(self, disk, gap: gaps.Gap) -> bool:
+        return self._guided_has_enough_room_for_partitions(disk, gap=gap)
+
+    def resize_has_enough_room_for_partitions(self, disk, resized: Partition) -> bool:
+        return self._guided_has_enough_room_for_partitions(
+            disk, resized_partition=resized
+        )
+
     def available_use_gap_scenarios(
-        self, install_min
+        self, install_min: int
     ) -> list[tuple[int, GuidedStorageTargetUseGap]]:
         scenarios: list[tuple[int, GuidedStorageTargetUseGap]] = []
         for disk in self.potential_boot_disks(with_reformatting=False):
@@ -1115,21 +1158,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             if gap is None:
                 # Do we return a reason here?
                 continue
-
-            # Now we check if we have enough room for all the primary
-            # partitions. This isn't failproof but should limit the number of
-            # UseGaps scenarios that are suggested but can't be applied because
-            # we don't have enough room for partitions.
-            new_primary_parts = 0
-            if not gap.in_extended:
-                new_primary_parts += 1  # For the rootfs to create.
-            new_primary_parts += boot.get_boot_device_plan(disk).new_partition_count()
-            # In theory, there could be a recovery partition as well. Not sure
-            # how to account for it since we don't know yet if one will be
-            # requested.
-            if new_primary_parts > gaps.remaining_primary_partitions(
-                disk, disk.alignment_data()
-            ):
+            if not self.use_gap_has_enough_room_for_partitions(disk, gap):
                 log.error("skipping UseGap: not enough room for primary partitions")
                 continue
 
@@ -1148,6 +1177,43 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 disallowed=capability_info.disallowed,
             )
             scenarios.append((gap.size, use_gap))
+        return scenarios
+
+    def available_target_resize_scenarios(
+        self, install_min: int
+    ) -> list[tuple[int, GuidedStorageTargetResize]]:
+        scenarios: list[tuple[int, GuidedStorageTargetResize]] = []
+
+        for disk in self.potential_boot_disks(check_boot=False):
+            part_align = disk.alignment_data().part_align
+            for partition in disk.partitions():
+                if partition._is_in_use:
+                    continue
+                vals = sizes.calculate_guided_resize(
+                    partition.estimated_min_size,
+                    partition.size,
+                    install_min,
+                    part_align=part_align,
+                )
+                if vals is None:
+                    # Return a reason here
+                    continue
+                if not boot.can_be_boot_device(
+                    disk, resize_partition=partition, with_reformatting=False
+                ):
+                    # Return a reason here
+                    continue
+
+                if not self.resize_has_enough_room_for_partitions(disk, partition):
+                    log.error(
+                        "skipping TargetResize: not enough room for primary partitions"
+                    )
+                    continue
+
+                resize = GuidedStorageTargetResize.from_recommendations(
+                    partition, vals, allowed=self.get_classic_capabilities()
+                )
+                scenarios.append((vals.install_max, resize))
         return scenarios
 
     async def v2_guided_GET(self, wait: bool = False) -> GuidedStorageResponseV2:
@@ -1181,30 +1247,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             scenarios.append((disk.size, reformat))
 
         scenarios.extend(self.available_use_gap_scenarios(install_min))
-
-        for disk in self.potential_boot_disks(check_boot=False):
-            part_align = disk.alignment_data().part_align
-            for partition in disk.partitions():
-                if partition._is_in_use:
-                    continue
-                vals = sizes.calculate_guided_resize(
-                    partition.estimated_min_size,
-                    partition.size,
-                    install_min,
-                    part_align=part_align,
-                )
-                if vals is None:
-                    # Return a reason here
-                    continue
-                if not boot.can_be_boot_device(
-                    disk, resize_partition=partition, with_reformatting=False
-                ):
-                    # Return a reason here
-                    continue
-                resize = GuidedStorageTargetResize.from_recommendations(
-                    partition, vals, allowed=classic_capabilities
-                )
-                scenarios.append((vals.install_max, resize))
+        scenarios.extend(self.available_target_resize_scenarios(install_min))
 
         scenarios.sort(reverse=True, key=lambda x: x[0])
         return GuidedStorageResponseV2(
@@ -1376,18 +1419,29 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 self.start_monitor()
             break
 
+    def get_bootable_matching_disks(
+        self, match: MatchDirective | Sequence[MatchDirective]
+    ) -> list[_Device]:
+        """given a match directive, find disks or disk-like devices for which
+        we have a plan to boot, and return them.
+        As match directives are autoinstall-supplied, raise AutoinstallError if
+        no matching disk is found."""
+        disks = self.potential_boot_disks(with_reformatting=True)
+        matching_disks = self.model.disks_for_match(disks, match)
+        if not matching_disks:
+            raise AutoinstallError(f"Failed to find matching device for {match}")
+        return matching_disks
+
     def get_bootable_matching_disk(
-        self, match: dict[str, str] | Sequence[dict[str, str]]
-    ):
+        self, match: MatchDirective | Sequence[MatchDirective]
+    ) -> _Device:
         """given a match directive, find disks or disk-like devices for which
         we have a plan to boot, and return the best matching one of those.
         As match directives are autoinstall-supplied, raise AutoinstallError if
         no matching disk is found."""
-        disks = self.potential_boot_disks(with_reformatting=True)
-        disk = self.model.disk_for_match(disks, match)
-        if disk is None:
-            raise AutoinstallError(f"Failed to find matching device for {match}")
-        return disk
+        matching_disks = self.get_bootable_matching_disks(match)
+        assert matching_disks
+        return matching_disks[0]
 
     async def run_autoinstall_guided(self, layout):
         name = layout["name"]
@@ -1478,8 +1532,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             disk = self.get_bootable_matching_disk(match)
             target = GuidedStorageTargetReformat(disk_id=disk.id, allowed=[])
         elif mode == "use_gap":
-            bootable = self.potential_boot_disks(with_reformatting=False)
-            gap = gaps.largest_gap(bootable)
+            match = layout.get("match", {})
+            bootable_disks = self.get_bootable_matching_disks(match)
+            gap = gaps.largest_gap(bootable_disks)
             if not gap:
                 raise Exception(
                     "autoinstall cannot configure storage "
