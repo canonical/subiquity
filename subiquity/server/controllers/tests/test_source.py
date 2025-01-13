@@ -92,22 +92,28 @@ class TestSourceController(SubiTestCase):
         self._set_source_catalog(catalog)
         self.controller.load_autoinstall_data(ai_data)
         self.assertEqual(self.controller.model.current.variant, expected)
+        self.assertEqual(
+            self.controller.app.base_model.source.current.variant, expected
+        )
 
-    async def test_on_configure_update_variant(self):
-        """Test update variant through server on configure.
-
-        Ensure the source controller doesn't update variant on the base
-        model directly.
-        """
+    def test_update_variant_through_server(self):
+        """Test update variant through server on configure."""
         app = self.controller.app = unittest.mock.Mock()
         model = self.controller.app.base_model = unittest.mock.Mock()
 
-        self.controller.model.current.variant = "mock-variant"
-
-        with unittest.mock.patch(
-            "subiquity.server.controller.SubiquityController.configured"
-        ):
-            await self.controller.configured()
+        self.controller._update_variant("mock-variant")
 
         app.set_source_variant.assert_called_with("mock-variant")
         model.set_source_variant.assert_not_called()
+
+    async def test_on_configure_update_variant(self):
+        """Test variant is updated on configure."""
+        self.controller.model.current.variant = "mock-variant"
+        with (
+            unittest.mock.patch(
+                "subiquity.server.controller.SubiquityController.configured"
+            ),
+            unittest.mock.patch.object(self.controller, "_update_variant"),
+        ):
+            await self.controller.configured()
+            self.controller._update_variant.assert_called_with("mock-variant")

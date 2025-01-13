@@ -13,6 +13,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittest import mock
 
+from subiquity.server.server import SubiquityServer
 from subiquitycore.context import Context
 from subiquitycore.pubsub import MessageHub
 
@@ -23,6 +24,7 @@ class MockedApplication:
     autoinstall_config = {}
     answers = {}
     opts = None
+    set_source_variant = SubiquityServer.set_source_variant
 
     def make_autoinstall(self):
         return {"mock_key": "mock_data"}
