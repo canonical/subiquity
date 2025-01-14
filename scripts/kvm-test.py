@@ -189,7 +189,8 @@ boot_group = parser.add_mutually_exclusive_group()
 boot_group.add_argument('-B', '--bios', action='store_true', default=False,
                     help='boot in BIOS mode (default mode is UEFI)')
 boot_group.add_argument('--secure-boot', action='store_true', default=False,
-                    help='Use SecureBoot', dest="secureboot")
+                    help='Use SecureBoot.  Normally off by default, set to true when using with-tpm2',
+                    dest="secureboot")
 
 parser.add_argument('-c', '--channel', action='store',
                     help='build iso with snap from channel')
@@ -291,6 +292,9 @@ def parse_args():
         raise Exception('Obtain a copy of livefs-editor and point ' +
                         'LIVEFS_EDITOR to it\n'
                         'https://github.com/mwhudson/livefs-editor')
+
+    if ctx.args.with_tpm2:
+        ctx.args.secureboot = True
 
     return ctx
 
