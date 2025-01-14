@@ -107,13 +107,14 @@ class Context:
         except KeyError:
             pass
         self.curdir = os.getcwd()
-        self.iso = f'/tmp/kvm-test/{self.release}-test.iso'
         self.hostname = f'{self.release}-test'
-        self.target = f'/tmp/kvm-test/{self.hostname}.img'
-        parent = pathlib.Path(self.target).parent
+        self.rundir = pathlib.Path('/tmp/kvm-test')
+        self.iso = self.rundir / f'{self.release}-test.iso'
+        self.vmstate = self.rundir / self.hostname
+        self.target = self.vmstate / f'{self.hostname}.img'
         self.ovmf = {
-                'CODE': parent / f'{self.hostname}_OVMF_CODE_4M_ms.fd',
-                'VARS': parent / f'{self.hostname}_OVMF_VARS_4M_ms.fd'
+                'CODE': self.vmstate / f'{self.hostname}_OVMF_CODE_4M_ms.fd',
+                'VARS': self.vmstate / f'{self.hostname}_OVMF_VARS_4M_ms.fd'
         }
         self.password = salted_crypt('ubuntu')
         self.cloudconfig = f'''\
@@ -549,7 +550,7 @@ def kvm_prepare_common(ctx):
     ret.extend(ctx.qemu_extra_options)
 
     if ctx.args.with_tpm2:
-        tpm_emulator_context = tpm_emulator()
+        tpm_emulator_context = tpm_emulator(ctx)
     else:
         tpm_emulator_context = contextlib.nullcontext()
 
@@ -568,10 +569,10 @@ def get_initrd(mntdir):
 
 def install(ctx):
     boot_opts = ["order=d"]
-    if os.path.exists(ctx.target):
+    if ctx.vmstate.exists():
         match ctx.args.target_overwrite:
             case TargetOverwrite.RECREATE:
-                os.remove(ctx.target)
+                shutil.rmtree(ctx.vmstate, ignore_errors=False)
             case TargetOverwrite.PRESERVE:
                 raise Exception('refusing to overwrite existing image, use the ' +
                                 '--reuse-target or --recreate-target option to ' +
@@ -589,6 +590,8 @@ the ESC button when the QEMU window opens. Then select "Device Manager" and \
 "UEFI QEMU DVD-ROM".
 ----"""
                     print(note, file=sys.stderr)
+
+    ctx.vmstate.mkdir(exist_ok=True)
 
     # Only copy the files with secureboot, always overwrite on install
     if ctx.args.secureboot:
@@ -667,17 +670,12 @@ the ESC button when the QEMU window opens. Then select "Device Manager" and \
 
 
 @contextlib.contextmanager
-def tpm_emulator(directory=None):
-    if directory is None:
-        directory_context = tempfile.TemporaryDirectory()
-    else:
-        directory_context = contextlib.nullcontext(enter_result=directory)
+def tpm_emulator(ctx: Context):
+    tpmstate = ctx.vmstate
+    logfile = tpmstate / 'log'
 
-    with directory_context as tempdir:
-        socket = os.path.join(tempdir, 'swtpm-sock')
-        logfile = os.path.join(tempdir, 'log')
-        tpmstate = tempdir
-
+    with tempfile.TemporaryDirectory() as tempdir:
+        socket = pathlib.Path(tempdir) / f'kvm-test-{ctx.hostname}.sock'
         ps = subprocess.Popen(['swtpm', 'socket',
                                '--tpmstate', f'dir={tpmstate}',
                                '--ctrl', f'type=unixio,path={socket}',
@@ -685,9 +683,7 @@ def tpm_emulator(directory=None):
                                '--log',  f'file={logfile},level=20'],
                               )
         try:
-            yield TPMEmulator(socket=pathlib.Path(socket),
-                              logfile=pathlib.Path(logfile),
-                              tpmstate=pathlib.Path(tpmstate))
+            yield TPMEmulator(socket=socket, logfile=logfile, tpmstate=tpmstate)
         finally:
             ps.communicate()
 
@@ -722,7 +718,7 @@ def main() -> None:
     if ctx.args.base and ctx.args.build:
         raise Exception('cannot use base iso and build')
 
-    os.makedirs('/tmp/kvm-test', exist_ok=True)
+    os.makedirs(ctx.rundir, parents=True, exist_ok=True)
 
     if ctx.args.build:
         build(ctx)
