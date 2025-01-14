@@ -792,6 +792,7 @@ class Disk(_Device):
     preserve: bool = False
     name: str = ""
     grub_device: bool = False
+    skip_bootloader: bool = False
     device_id: Optional[str] = None
 
     _info: StorageInfo = attributes.for_api()
