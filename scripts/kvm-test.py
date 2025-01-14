@@ -676,7 +676,8 @@ def tpm_emulator(ctx: Context):
 
     with tempfile.TemporaryDirectory() as tempdir:
         socket = pathlib.Path(tempdir) / f'kvm-test-{ctx.hostname}.sock'
-        ps = subprocess.Popen(['swtpm', 'socket',
+        ps = subprocess.Popen(['aa-exec', '-p', 'unconfined', '--',
+                               'swtpm', 'socket',
                                '--tpmstate', f'dir={tpmstate}',
                                '--ctrl', f'type=unixio,path={socket}',
                                '--tpm2',
