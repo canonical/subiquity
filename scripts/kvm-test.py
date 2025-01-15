@@ -108,7 +108,10 @@ class Context:
             pass
         self.curdir = os.getcwd()
         self.hostname = f'{self.release}-test'
-        self.rundir = Path('/tmp/kvm-test')
+        self.rundir = Path(
+            self.config.get('rundir', '/tmp/kvm-test')
+        )
+
         self.iso = self.rundir / f'{self.release}-test.iso'
         self.vmstate = self.rundir / self.hostname
         self.target = self.vmstate / f'{self.hostname}.img'
