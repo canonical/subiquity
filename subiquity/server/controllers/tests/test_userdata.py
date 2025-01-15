@@ -13,19 +13,31 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import unittest
+from pathlib import Path
+from unittest import mock
 
 import jsonschema
 from jsonschema.validators import validator_for
 
 from subiquity.cloudinit import CloudInitSchemaValidationError
+from subiquity.models.subiquity import SubiquityModel
 from subiquity.server.controllers.userdata import UserdataController
+from subiquity.server.server import INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
+from subiquitycore.pubsub import MessageHub
 from subiquitycore.tests.mocks import make_app
 
 
+# Patch os.environ for system_scripts
+@mock.patch.dict(os.environ, {"SNAP": str(Path(__file__).parents[4])})
 class TestUserdataController(unittest.TestCase):
     def setUp(self):
-        self.controller = UserdataController(make_app())
+        base_model = SubiquityModel(
+            "test", MessageHub(), INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
+        )
+        self.app = make_app(model=base_model)
+        self.controller = UserdataController(self.app)
         self.controller.model = None
 
     def test_load_autoinstall_data(self):
@@ -39,7 +51,9 @@ class TestUserdataController(unittest.TestCase):
             "ssh_import_id: 'wrong' is not of type 'array'"
         )
         invalid_schema = {"ssh_import_id": "wrong"}
-        validate = self.controller.app.base_model.validate_cloudconfig_schema
+        validate = (
+            self.controller.app.base_model.validate_cloudconfig_schema
+        ) = mock.Mock()
         validate.side_effect = fake_error
         with self.subTest("Invalid user-data raises error"):
             with self.assertRaises(CloudInitSchemaValidationError) as ctx:
@@ -68,5 +82,11 @@ class TestUserdataController(unittest.TestCase):
         self.assertEqual({}, self.controller.model)
 
     def test_load_some(self):
-        self.controller.load_autoinstall_data({"stuff": "things"})
-        self.assertEqual({"stuff": "things"}, self.controller.model)
+        self.controller.load_autoinstall_data({"users": []})
+        self.assertEqual({"users": []}, self.controller.model)
+
+    def test_load_bad(self):
+        with self.assertRaises(CloudInitSchemaValidationError):
+            self.controller.load_autoinstall_data({"stuff": "things"})
+
+        self.assertEqual(None, self.controller.model)
