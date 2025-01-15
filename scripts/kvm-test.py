@@ -15,7 +15,7 @@ import copy
 import dataclasses
 import enum
 import os
-import pathlib
+from pathlib import Path
 import shlex
 import shutil
 import socket
@@ -108,7 +108,7 @@ class Context:
             pass
         self.curdir = os.getcwd()
         self.hostname = f'{self.release}-test'
-        self.rundir = pathlib.Path('/tmp/kvm-test')
+        self.rundir = Path('/tmp/kvm-test')
         self.iso = self.rundir / f'{self.release}-test.iso'
         self.vmstate = self.rundir / self.hostname
         self.target = self.vmstate / f'{self.hostname}.img'
@@ -502,9 +502,9 @@ def nets(ctx) -> List[str]:
 
 @dataclasses.dataclass(frozen=True)
 class TPMEmulator:
-    socket: pathlib.Path
-    logfile: pathlib.Path
-    tpmstate: pathlib.Path
+    socket: Path
+    logfile: Path
+    tpmstate: Path
 
 
 def tpm(emulator: Optional[TPMEmulator]) -> List[str]:
@@ -675,7 +675,7 @@ def tpm_emulator(ctx: Context):
     logfile = tpmstate / 'log'
 
     with tempfile.TemporaryDirectory() as tempdir:
-        socket = pathlib.Path(tempdir) / f'kvm-test-{ctx.hostname}.sock'
+        socket = Path(tempdir) / f'kvm-test-{ctx.hostname}.sock'
         ps = subprocess.Popen(['aa-exec', '-p', 'unconfined', '--',
                                'swtpm', 'socket',
                                '--tpmstate', f'dir={tpmstate}',
