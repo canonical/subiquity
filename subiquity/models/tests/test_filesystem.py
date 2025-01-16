@@ -1586,6 +1586,29 @@ class TestPartition(unittest.TestCase):
         self.assertTrue(p6.is_logical)
         self.assertTrue(p7.is_logical)
 
+    def test_os(self):
+        m = make_model(storage_version=2)
+        d = make_disk(m, ptable="gpt")
+
+        p1 = make_partition(m, d, preserve=True)
+        p2 = make_partition(m, d, preserve=True)
+
+        os_info = {
+            "label": "Ubuntu",
+            "long": "Ubuntu 22.04.1 LTS",
+            "type": "linux",
+            "version": "22.04.1",
+        }
+
+        m._probe_data["os"] = {p1._path(): os_info}
+
+        self.assertEqual("Ubuntu", p1.os.label)
+        self.assertEqual("Ubuntu 22.04.1 LTS", p1.os.long)
+        self.assertEqual("linux", p1.os.type)
+        self.assertEqual("22.04.1", p1.os.version)
+        self.assertIsNone(p1.os.subpath)
+        self.assertIsNone(p2.os)
+
 
 class TestCanmount(SubiTestCase):
     @parameterized.expand(
