@@ -719,7 +719,7 @@ def main() -> None:
     if ctx.args.base and ctx.args.build:
         raise Exception('cannot use base iso and build')
 
-    os.makedirs(ctx.rundir, parents=True, exist_ok=True)
+    ctx.rundir.mkdir(parents=True, exist_ok=True)
 
     if ctx.args.build:
         build(ctx)
