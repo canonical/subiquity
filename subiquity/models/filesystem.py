@@ -978,6 +978,11 @@ class Partition(_Formattable):
 
     @property
     def os(self):
+        if not self.preserve:
+            # Only associate the OS information with existing partitions.
+            # If /dev/sda4 was deleted and a new partition on sda with number 4
+            # is created, we should not pretend it contains anything of value.
+            return None
         os_data = self._m._probe_data.get("os", {}).get(self._path())
         if not os_data:
             return None

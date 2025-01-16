@@ -1394,6 +1394,25 @@ class TestPartition(unittest.TestCase):
         self.assertIsNone(p1.os.subpath)
         self.assertIsNone(p2.os)
 
+    def test_os__recreated_partition(self):
+        m = make_model(storage_version=2)
+        d = make_disk(m, ptable="gpt")
+
+        # We do not mark the partition preserved, which means we either
+        # formatted the disk or deleted / recreated the partition.
+        p = make_partition(m, d)
+
+        os_info = {
+            "label": "Ubuntu",
+            "long": "Ubuntu 22.04.1 LTS",
+            "type": "linux",
+            "version": "22.04.1",
+        }
+
+        m._probe_data["os"] = {p._path(): os_info}
+
+        self.assertIsNone(p.os)
+
 
 class TestCanmount(SubiTestCase):
     @parameterized.expand(
