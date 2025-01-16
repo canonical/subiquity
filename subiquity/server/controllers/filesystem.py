@@ -1303,6 +1303,17 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if partition.os is None:
                     continue
 
+                if (
+                    partition.is_logical
+                    and disk.partitions_by_number()[-1] != partition
+                ):
+                    # FIXME If we remove this partition, the subsequent logical
+                    # partitions will be renumbered. This will cause various
+                    # mismatches in the info returned by /storage/v2. For now,
+                    # we exclude this scenario.
+                    # See LP: #2091172
+                    continue
+
                 # Make an ephemeral copy of the disk object with the relevant
                 # partition removed. Then it's as if we're installing in the
                 # resulting gap (which will include free space that was
