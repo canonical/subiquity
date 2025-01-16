@@ -337,7 +337,7 @@ def noop(path):
 
 @contextlib.contextmanager
 def mounter(src, dest):
-    run(["fuseiso", src, dest])
+    run(["fuseiso", str(src), str(dest)])
     try:
         yield
     finally:
@@ -615,7 +615,7 @@ the ESC button when the QEMU window opens. Then select "Device Manager" and \
             else:
                 iso = ctx.iso
 
-            kvm.extend(('-cdrom', iso, '-boot', ','.join(boot_opts)))
+            kvm.extend(('-cdrom', str(iso), '-boot', ','.join(boot_opts)))
 
             if ctx.args.serial:
                 kvm.append('-nographic')
