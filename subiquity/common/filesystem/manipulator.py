@@ -120,7 +120,7 @@ class FilesystemManipulator:
         self.create_filesystem(part, spec)
         return part
 
-    def delete_partition(self, part, override_preserve=False):
+    def delete_partition(self, part, override_preserve=False, allow_renumbering=True):
         if (
             not override_preserve
             and part.device.preserve
@@ -128,7 +128,7 @@ class FilesystemManipulator:
         ):
             raise Exception("cannot delete partitions from preserved disks")
         self.clear(part)
-        self.model.remove_partition(part)
+        self.model.remove_partition(part, allow_renumbering=allow_renumbering)
 
     def create_raid(self, spec: RaidSpec):
         for d in spec["devices"] | spec["spare_devices"]:

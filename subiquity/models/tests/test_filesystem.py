@@ -487,13 +487,19 @@ class TestFilesystemModel(unittest.TestCase):
 
     @parameterized.expand(
         (
-            (1, False),
-            (2, False),
-            (5, True),
-            (6, True),
+            (1, True, False),
+            (2, True, False),
+            (5, True, True),
+            (6, True, True),
+            (1, False, False),
+            (2, False, False),
+            (5, False, False),
+            (6, False, False),
         )
     )
-    def test_remove_partition__renumbers(self, pnumber: int, expect_call: bool):
+    def test_remove_partition__renumbers(
+        self, pnumber: int, allow_renumbering: bool, expect_call: bool
+    ):
         m, d = make_model_and_disk(ptable="dos", storage_version=2)
 
         make_partition(m, d, preserve=True)
@@ -505,7 +511,7 @@ class TestFilesystemModel(unittest.TestCase):
         part = next(iter([p for p in d.partitions() if p.number == pnumber]))
 
         with mock.patch.object(d, "renumber_logical_partitions") as m_renumber:
-            m.remove_partition(part)
+            m.remove_partition(part, allow_renumbering=allow_renumbering)
 
         if expect_call:
             m_renumber.assert_called_once_with(part)
