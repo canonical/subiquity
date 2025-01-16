@@ -1780,6 +1780,53 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
         self.assertFalse(self.fsc.available_erase_install_scenarios(install_min))
 
+    async def test_available_erase_install_scenarios__with_logical_partitions(self):
+        await self._setup(Bootloader.UEFI, "dos", fix_bios=True)
+        install_min = self.fsc.calculate_suggested_install_min()
+
+        model, disk = self.model, self.disk
+        # Sizes are irrelevant
+        size = 4 << 20
+
+        # This is inspired from threebuntu-on-msdos.json
+        p1 = make_partition(model, disk, preserve=True, size=size)
+        make_partition(model, disk, preserve=True, size=size * 4, flag="extended")
+        make_partition(model, disk, preserve=True, size=size)  # This is the ESP
+        p5 = make_partition(model, disk, preserve=True, size=size, flag="logical")
+        p6 = make_partition(model, disk, preserve=True, size=size, flag="logical")
+
+        self.model._probe_data["os"] = {
+            p1._path(): {
+                "label": "Ubuntu",
+                "long": "Ubuntu 20.04.4 LTS",
+                "type": "linux",
+                "version": "20.04.4",
+            },
+            p5._path(): {
+                "label": "Ubuntu1",
+                "long": "Ubuntu 21.10",
+                "type": "linux",
+                "version": "21.10",
+            },
+            p6._path(): {
+                "label": "Ubuntu2",
+                "long": "Ubuntu 22.04 LTS",
+                "type": "linux",
+                "version": "22.04",
+            },
+        }
+
+        indexed_scenarios = self.fsc.available_erase_install_scenarios(install_min)
+
+        scenarios = [indexed_scenario[1] for indexed_scenario in indexed_scenarios]
+        sorted_scenarios = sorted(
+            scenarios, key=lambda sc: (sc.disk_id, sc.partition_number)
+        )
+        self.assertEqual(1, sorted_scenarios[0].partition_number)
+        self.assertEqual(5, sorted_scenarios[1].partition_number)
+        self.assertEqual(6, sorted_scenarios[2].partition_number)
+        self.assertEqual(3, len(sorted_scenarios))
+
     async def test_resize_has_enough_room_for_partitions__one_primary(self):
         await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
 
