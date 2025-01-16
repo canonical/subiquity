@@ -178,7 +178,7 @@ def make_partition(
         device = make_disk(model)
     model = device._m
     if size is None or offset is None:
-        gap = gaps.largest_gap(device)
+        gap = gaps.largest_gap(device, in_extended=flag == "logical")
         if size is None:
             size = gap.size // 2
         if offset is None:

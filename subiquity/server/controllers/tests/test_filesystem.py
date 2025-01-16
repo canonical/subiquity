@@ -1566,7 +1566,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         # Sizes are irrelevant
         size = 4 << 20
         p1 = make_partition(model, disk, preserve=True, size=size)
-        p2 = make_partition(model, disk, preserve=True, size=size, flag="extended")
+        p2 = make_partition(model, disk, preserve=True, size=size * 2, flag="extended")
         p5 = make_partition(model, disk, preserve=True, size=size, flag="logical")
         p6 = make_partition(model, disk, preserve=True, size=size, flag="logical")
         p3 = make_partition(model, disk, preserve=True, size=size)
