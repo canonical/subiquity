@@ -252,10 +252,11 @@ def _do_post_inits(obj):
 def fsobj(typ):
     def wrapper(c):
         c.__attrs_post_init__ = _do_post_inits
-        c._post_inits = [_set_backlinks]
+        c._post_inits = []
         class_post_init = getattr(c, "__post_init__", None)
         if class_post_init is not None:
             c._post_inits.append(class_post_init)
+        c._post_inits.append(_set_backlinks)
         c.type = attributes.const(typ)
         c.id = attr.ib(default=None)
         c._m = attr.ib(repr=None, default=None)
