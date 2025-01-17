@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import copy
 import subprocess
 import uuid
@@ -69,6 +70,7 @@ from subiquity.server.controllers.filesystem import (
 from subiquity.server.dryrun import DRConfig
 from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
+from subiquity.server.snapd.system_getter import SystemGetter
 from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized
@@ -562,8 +564,15 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         JsonValidator.check_schema(FilesystemController.autoinstall_schema)
 
     async def test__get_system_api_error_logged(self):
-        mount_mock = mock.patch.object(self.fsc, "_mount_systems_dir")
-        unmount_mock = mock.patch.object(self.fsc, "_unmount_systems_dir")
+        getter = SystemGetter(self.app)
+
+        @contextlib.asynccontextmanager
+        async def mounted(self):
+            yield
+
+        mount_mock = mock.patch(
+            "subiquity.server.snapd.system_getter.SystemsDirMounter.mounted", mounted
+        )
 
         self.app.snapdapi = snapdapi.make_api_client(
             AsyncSnapd(SnapdConnection(root="/inexistent", sock="snapd"))
@@ -595,12 +604,12 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             status_code=500,
         )
 
-        with mount_mock, unmount_mock, requests_mocker:
+        with mount_mock, requests_mocker:
             with self.assertRaises(requests.exceptions.HTTPError):
                 with self.assertLogs(
-                    "subiquity.server.controllers.filesystem", level="WARNING"
+                    "subiquity.server.snapd.system_getter", level="WARNING"
                 ) as logs:
-                    await self.fsc._get_system(
+                    await getter.get(
                         variation_name="minimal", label="enhanced-secureboot-desktop"
                     )
 
@@ -1948,7 +1957,16 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.fsc = FilesystemController(app=self.app)
         self.fsc._configured = True
         self.fsc.model = make_model(Bootloader.UEFI)
-        self.fsc._mount_systems_dir = mock.AsyncMock()
+
+        @contextlib.asynccontextmanager
+        async def mounted(self):
+            yield
+
+        p = mock.patch(
+            "subiquity.server.snapd.system_getter.SystemsDirMounter.mounted", mounted
+        )
+        p.start()
+        self.addCleanup(p.stop)
 
     def _add_details_for_structures(self, structures):
         self.fsc._info = VariationInfo(
