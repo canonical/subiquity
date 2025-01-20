@@ -1626,8 +1626,11 @@ class FilesystemModel:
             log.debug("%s is mounted", obj.path)
             work = [obj]
             while work:
+                # Go through the chain of dependencies, starting from the
+                # partition (or LV). We mark involved disks and raids as having
+                # in-use partitions.
                 o = work.pop(0)
-                if isinstance(o, Disk):
+                if isinstance(o, (Disk, Raid)):
                     o._has_in_use_partition = True
                 work.extend(dependencies(o))
 
