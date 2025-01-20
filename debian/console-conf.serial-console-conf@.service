@@ -16,6 +16,7 @@ Conflicts=serial-getty@%i.service
 Environment=PYTHONPATH=/usr/share/subiquity
 ExecStart=/sbin/agetty -i -n --keep-baud -l /usr/share/subiquity/console-conf-wrapper --login-options "--serial" 115200,38400,9600 %I $TERM
 RestartPreventExitStatus=22
+SuccessExitStatus=22
 ExecStopPost=/usr/share/subiquity/console-conf-check-error serial-getty@%i.service
 Type=idle
 Restart=always

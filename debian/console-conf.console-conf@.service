@@ -17,6 +17,7 @@ Conflicts=getty@%i.service
 Environment=PYTHONPATH=/usr/share/subiquity
 ExecStart=/sbin/agetty -i -n --noclear -l /usr/share/subiquity/console-conf-wrapper %I $TERM
 RestartPreventExitStatus=22
+SuccessExitStatus=22
 ExecStopPost=/usr/share/subiquity/console-conf-check-error getty@%i.service
 Type=idle
 OnFailure=getty@%i.service
