@@ -485,6 +485,33 @@ class TestFilesystemModel(unittest.TestCase):
         else:
             m_needs_bootloader.assert_not_called()
 
+    @parameterized.expand(
+        (
+            (1, False),
+            (2, False),
+            (5, True),
+            (6, True),
+        )
+    )
+    def test_remove_partition__renumbers(self, pnumber: int, expect_call: bool):
+        m, d = make_model_and_disk(ptable="dos", storage_version=2)
+
+        make_partition(m, d, preserve=True)
+        make_partition(m, d, preserve=True)
+        make_partition(m, d, preserve=True, flag="extended")
+        make_partition(m, d, preserve=True, flag="logical")
+        make_partition(m, d, preserve=True, flag="logical")
+
+        part = next(iter([p for p in d.partitions() if p.number == pnumber]))
+
+        with mock.patch.object(d, "renumber_logical_partitions") as m_renumber:
+            m.remove_partition(part)
+
+        if expect_call:
+            m_renumber.assert_called_once_with(part)
+        else:
+            m_renumber.assert_not_called()
+
 
 def fake_up_blockdata_disk(disk, **kw):
     model = disk._m
