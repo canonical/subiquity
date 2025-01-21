@@ -17,6 +17,7 @@ import logging
 
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.ui.views.source import SourceView
+from subiquitycore.tuicontroller import Skip
 
 log = logging.getLogger("subiquity.client.controllers.source")
 
@@ -26,6 +27,17 @@ class SourceController(SubiquityTuiController):
 
     async def make_ui(self):
         sources = await self.endpoint.GET()
+
+        # When we have a source screen with only one source and don't need to
+        # ask about drivers, let's skip showing the screen and mark it
+        # configured.
+
+        # The "core" variant doesn't care about drivers
+        if self.app.variant == "core":
+            if len(sources.sources) == 1:
+                await self.endpoint.POST(source_id=sources.current_id)
+                raise Skip
+
         return SourceView(
             self, sources.sources, sources.current_id, sources.search_drivers
         )

@@ -95,27 +95,41 @@ class SubiquityClient(TuiApplication):
     def make_ui(self):
         return SubiquityUI(self, self.help_menu)
 
-    controllers = [
-        "Serial",
-        "Welcome",
-        "Refresh",
-        "Keyboard",
-        "Source",
-        "Zdev",
-        "Network",
-        "Proxy",
-        "Mirror",
-        "Refresh",
-        "Filesystem",
-        "Identity",
-        "UbuntuPro",
-        "SSH",
-        "Drivers",
-        "SnapList",
-        "Progress",
-    ]
+    variant_to_controllers: Dict[str, List[str]] = {
+        "server": [
+            "Serial",
+            "Welcome",
+            "Refresh",
+            "Keyboard",
+            "Source",
+            "Zdev",
+            "Network",
+            "Proxy",
+            "Mirror",
+            "Refresh",
+            "Filesystem",
+            "Identity",
+            "UbuntuPro",
+            "SSH",
+            "Drivers",
+            "SnapList",
+            "Progress",
+        ],
+        "core": [
+            "Serial",
+            "Welcome",
+            "Refresh",
+            "Keyboard",
+            "Network",
+            "Refresh",
+            "Source",
+            "Filesystem",
+            "Progress",
+        ],
+    }
 
-    variant_to_controllers: Dict[str, List[str]] = {}
+    # Set default controllerset
+    controllers = variant_to_controllers["server"]
 
     def __init__(self, opts, about_msg=None):
         if is_linux_tty():

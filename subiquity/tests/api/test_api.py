@@ -31,6 +31,7 @@ import yaml
 from aiohttp.client_exceptions import ClientResponseError
 
 from subiquitycore.tests import SubiTestCase
+from subiquitycore.tests.parameterized import parameterized
 from subiquitycore.utils import astart_command, matching_dicts
 
 default_timeout = 10
@@ -2304,3 +2305,28 @@ class TestNetwork(TestAPI):
 
             ethernets = conf_data["network"]["ethernets"]
             self.assertIn("ens4", ethernets)
+
+
+class TestServerVariantSupport(TestAPI):
+    @parameterized.expand(
+        (
+            ("server", True),
+            ("desktop", True),
+            ("core", True),
+            ("foo-bar", False),
+        )
+    )
+    async def test_supported_variants(self, variant, is_supported):
+        async with start_server("examples/machines/simple.json") as inst:
+            if is_supported:
+                await inst.post("/meta/client_variant", variant=variant)
+            else:
+                with self.assertRaises(ClientResponseError) as ctx:
+                    await inst.post("/meta/client_variant", variant=variant)
+                cre = ctx.exception
+                self.assertEqual(500, cre.status)
+                self.assertIn("x-error-report", cre.headers)
+                self.assertEqual(
+                    "unrecognized client variant foo-bar",
+                    json.loads(cre.headers["x-error-msg"]),
+                )
