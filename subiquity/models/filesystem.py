@@ -646,10 +646,11 @@ class _Device(_Formattable, ABC):
     @property
     @abstractmethod
     def sort_key(self) -> Tuple:
-        """return a value that is usable for sorting.  The intent here is
-        that two runs of a specific version of subiquity must produce an
-        identical sort result for _Devices, so that while Subiquity might make
-        an arbitrary choice of disk, it's a consistent arbitrary choice.
+        """return a value that is usable for sorting and does not contain
+        any None values.  The intent here is that two runs of a specific
+        version of subiquity must produce an identical sort result for
+        _Devices, so that while Subiquity might make an arbitrary choice of
+        disk, it's a consistent arbitrary choice.
         """
         pass
 
@@ -776,8 +777,8 @@ class Disk(_Device):
     _has_in_use_partition: bool = attributes.for_api(default=False)
 
     @property
-    def sort_key(self) -> int:
-        return (self.wwn, self.serial, self.path)
+    def sort_key(self) -> Tuple:
+        return (self.wwn or "", self.serial or "", self.path or "")
 
     @property
     def available_for_partitions(self):
@@ -921,8 +922,8 @@ class Partition(_Formattable):
         raise Exception("Exceeded number of available partitions")
 
     @property
-    def sort_key(self) -> int:
-        return (self.device.sort_key(), self.number)
+    def sort_key(self) -> Tuple:
+        return (self.device.sort_key, self.number or 0)
 
     def available(self):
         if self.flag in ["bios_grub", "prep"] or self.grub_device:
@@ -1011,7 +1012,7 @@ class Raid(_Device):
     _has_in_use_partition = False
 
     @property
-    def sort_key(self) -> int:
+    def sort_key(self) -> Tuple:
         return tuple([dev.sort_key for dev in raid_device_sort(self.devices)])
 
     def serialize_devices(self):
@@ -1110,7 +1111,7 @@ class LVM_VolGroup(_Device):
         return get_lvm_size(self.devices)
 
     @property
-    def sort_key(self) -> int:
+    def sort_key(self) -> Tuple:
         return tuple([dev.sort_key for dev in self.devices])
 
     @property
@@ -1277,8 +1278,8 @@ class ArbitraryDevice(_Device):
         return 0
 
     @property
-    def sort_key(self) -> int:
-        return (self.path,)
+    def sort_key(self) -> Tuple:
+        return (self.path or "",)
 
     ok_for_raid = False
     ok_for_lvm_vg = False
