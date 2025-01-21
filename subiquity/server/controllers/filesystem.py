@@ -922,7 +922,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 part.wipe = "superblock"
                 self.delete_filesystem(part.fs())
                 fs = self.model.add_filesystem(
-                    part, structure.filesystem, label=structure.label
+                    part, structure.filesystem, label=structure.filesystem_label
                 )
                 if structure.role == snapdtypes.Role.SYSTEM_DATA:
                     self.model.add_mount(fs, "/")
