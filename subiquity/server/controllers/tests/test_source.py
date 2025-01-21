@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import functools
 import unittest
 
 from subiquity.common.serialize import Serializer
@@ -20,7 +21,11 @@ from subiquity.models.source import CatalogEntry
 from subiquity.models.subiquity import SubiquityModel
 from subiquity.models.tests.test_source import make_entry as make_raw_entry
 from subiquity.server.controllers.source import SourceController, convert_source
-from subiquity.server.server import INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
+from subiquity.server.server import (
+    INSTALL_MODEL_NAMES,
+    POSTINSTALL_MODEL_NAMES,
+    SubiquityServer,
+)
 from subiquitycore.pubsub import MessageHub
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
@@ -58,6 +63,12 @@ class TestSourceController(SubiTestCase):
             "test", MessageHub(), INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
         )
         self.app = make_app(model=self.base_model)
+        self.app.set_source_variant = functools.partial(
+            SubiquityServer.set_source_variant, self.app
+        )
+        self.app._set_source_variant = functools.partial(
+            SubiquityServer._set_source_variant, self.app
+        )
         self.app.opts.source_catalog = "examples/sources/install.yaml"
         self.controller = SourceController(self.app)
 
@@ -92,3 +103,28 @@ class TestSourceController(SubiTestCase):
         self._set_source_catalog(catalog)
         self.controller.load_autoinstall_data(ai_data)
         self.assertEqual(self.controller.model.current.variant, expected)
+        self.assertEqual(
+            self.controller.app.base_model.source.current.variant, expected
+        )
+
+    def test_update_variant_through_server(self):
+        """Test update variant through server on configure."""
+        app = self.controller.app = unittest.mock.Mock()
+        model = self.controller.app.base_model = unittest.mock.Mock()
+
+        self.controller._update_variant("mock-variant")
+
+        app.set_source_variant.assert_called_with("mock-variant")
+        model.set_source_variant.assert_not_called()
+
+    async def test_on_configure_update_variant(self):
+        """Test variant is updated on configure."""
+        self.controller.model.current.variant = "mock-variant"
+        with (
+            unittest.mock.patch(
+                "subiquity.server.controller.SubiquityController.configured"
+            ),
+            unittest.mock.patch.object(self.controller, "_update_variant"),
+        ):
+            await self.controller.configured()
+            self.controller._update_variant.assert_called_with("mock-variant")

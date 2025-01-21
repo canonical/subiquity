@@ -744,3 +744,18 @@ class TestEventReporting(SubiTestCase):
         (message,) = journal_send_mock.call_args.args
         self.assertIn("message", message)
         self.assertNotIn("description", message)
+
+
+class TestVariantHandling(SubiTestCase):
+    async def asyncSetUp(self):
+        opts = Mock()
+        opts.dry_run = True
+        opts.output_base = self.tmp_dir()
+        opts.machine_config = NOPROBERARG
+        self.server = SubiquityServer(opts, None)
+
+    def test_set_source_variant(self):
+        self.server.base_model = Mock()
+        self.server.set_source_variant("mock-variant")
+        self.assertEqual(self.server.variant, "mock-variant")
+        self.server.base_model.set_source_variant.assert_called_with("mock-variant")

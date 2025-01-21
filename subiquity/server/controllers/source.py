@@ -87,6 +87,7 @@ class SourceController(SubiquityController):
         if os.path.exists(path):
             with open(path) as fp:
                 self.model.load_from_file(fp)
+        self._update_variant(self.model.current.variant)
 
     def make_autoinstall(self):
         return {
@@ -148,10 +149,13 @@ class SourceController(SubiquityController):
             handler = TrivialSourceHandler("/")
         return handler
 
+    def _update_variant(self, variant: str) -> None:
+        self.app.set_source_variant(variant)
+
     async def configured(self):
         await super().configured()
         self._configured = True
-        self.app.base_model.set_source_variant(self.model.current.variant)
+        self._update_variant(self.model.current.variant)
 
     async def POST(self, source_id: str, search_drivers: bool = False) -> None:
         # Marking the source model configured has an effect on many of the
