@@ -2075,6 +2075,16 @@ class TestDiskForMatch(SubiTestCase):
         self.assertEqual(d1, m.disk_for_match([d2, d1], {"size": sort_criteria}))
         self.assertEqual([d1, d2], m.disks_for_match([d2, d1], {"size": sort_criteria}))
 
+    def test_sort_disks_none_values(self):
+        m = make_model()
+        d1 = make_disk(m, wwn=None, serial="s", path="/dev/d1")
+        d2 = make_disk(m, wwn="w", serial=None, path="/dev/d2")
+        d3 = make_disk(m, wwn="w", serial="s", path=None)
+        self.assertEqual(d1, m.disk_for_match([d3, d2, d1], {"size": "largest"}))
+        self.assertEqual(
+            [d1, d2, d3], m.disks_for_match([d3, d2, d1], {"size": "largest"})
+        )
+
     def test_sort_raid(self):
         m = make_model()
         d1_1 = make_disk(m, size=100 << 30)
