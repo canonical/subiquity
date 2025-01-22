@@ -320,8 +320,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         await super().configured()
         self.stop_monitor()
 
-    async def _mount_systems_dir(self, variation_name):
-        self._source_handler = self.app.controllers.Source.get_handler(variation_name)
+    async def _mount_systems_dir(self, variation_name, source_id: Optional[str] = None):
+        self._source_handler = self.app.controllers.Source.get_handler(
+            variation_name, source_id=source_id
+        )
         source_path = self._source_handler.setup()
         cur_systems_dir = "/var/lib/snapd/seed/systems"
         source_systems_dir = os.path.join(source_path, cur_systems_dir[1:])
@@ -351,9 +353,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self._source_handler = None
 
     @exclusive
-    async def _get_system(self, variation_name, label):
+    async def _get_system(self, variation_name, label, *, source_id: str):
         try:
-            await self._mount_systems_dir(variation_name)
+            await self._mount_systems_dir(variation_name, source_id=source_id)
         except NoSnapdSystemsOnSource:
             return None
         try:
@@ -438,7 +440,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 # (see LP: #2084032).
                 # Therefore we use an asyncio.Task (coupled with
                 # asyncio.shield) so we can prevent propagation.
-                task = asyncio.create_task(self._get_system(name, label))
+                task = asyncio.create_task(
+                    self._get_system(name, label, source_id=catalog_entry.id)
+                )
 
                 system = await asyncio.shield(task)
                 # _get_system is marked async_helpers.exclusive
