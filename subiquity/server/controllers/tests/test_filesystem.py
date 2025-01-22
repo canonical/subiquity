@@ -567,7 +567,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         getter = SystemGetter(self.app)
 
         @contextlib.asynccontextmanager
-        async def mounted(self):
+        async def mounted(self, *, source_id):
             yield
 
         mount_mock = mock.patch(
@@ -610,7 +610,9 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
                     "subiquity.server.snapd.system_getter", level="WARNING"
                 ) as logs:
                     await getter.get(
-                        variation_name="minimal", label="enhanced-secureboot-desktop"
+                        variation_name="minimal",
+                        label="enhanced-secureboot-desktop",
+                        source_id="default",
                     )
 
             self.assertIn("cannot load assertions for label", logs.output[0])
@@ -2008,7 +2010,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.fsc.model = make_model(Bootloader.UEFI)
 
         @contextlib.asynccontextmanager
-        async def mounted(self):
+        async def mounted(self, *, source_id):
             yield
 
         p = mock.patch(

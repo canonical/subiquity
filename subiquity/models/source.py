@@ -147,19 +147,27 @@ class SourceModel:
         raise KeyError
 
     def get_source(
-        self, variation_name: typing.Optional[str] = None
+        self,
+        variation_name: typing.Optional[str] = None,
+        *,
+        source_id: typing.Optional[str] = None,
     ) -> typing.Optional[str]:
-        scheme = self.current.type
+        if source_id is None:
+            source = self.current
+        else:
+            source = self.get_matching_source(source_id)
+
+        scheme = source.type
         if scheme is None:
             return None
         if variation_name is None:
-            variation = next(iter(self.current.variations.values()))
+            variation = next(iter(source.variations.values()))
         else:
-            variation = self.current.variations[variation_name]
+            variation = source.variations[variation_name]
         path = os.path.join(self._dir, variation.path)
-        if self.current.preinstalled_langs:
+        if source.preinstalled_langs:
             base, ext = os.path.splitext(path)
-            if self.lang in self.current.preinstalled_langs:
+            if self.lang in source.preinstalled_langs:
                 suffix = self.lang
             else:
                 suffix = "no-languages"

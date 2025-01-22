@@ -440,7 +440,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 # (see LP: #2084032).
                 # Therefore we use an asyncio.Task (coupled with
                 # asyncio.shield) so we can prevent propagation.
-                task = asyncio.create_task(self._system_getter.get(name, label))
+                task = asyncio.create_task(
+                    self._system_getter.get(name, label, source_id=catalog_entry.id)
+                )
 
                 system, in_live_layer = await asyncio.shield(task)
                 # _system_getter.get is marked async_helpers.exclusive
