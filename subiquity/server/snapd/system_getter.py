@@ -23,6 +23,7 @@ import requests
 
 from subiquity.server.mounter import Mounter
 from subiquity.server.snapd.types import SystemDetails
+from subiquitycore import async_helpers
 
 log = logging.getLogger("subiquity.server.snapd.system_getter")
 
@@ -81,6 +82,7 @@ class SystemGetter:
             log.warning("v2/systems/%s returned %s", label, http_err.response.text)
             raise
 
+    @async_helpers.exclusive
     async def get(
         self, variation_name: str, label: str
     ) -> Tuple[Optional[SystemDetails], bool]:

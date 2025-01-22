@@ -434,7 +434,20 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             system = None
             label = variation.snapd_system_label
             if label is not None:
-                system, in_live_layer = await self._system_getter.get(name, label)
+                # We do not want to propagate cancellation to
+                # _system_getter.get. If it gets cancelled during its critical
+                # section, it won't be able to properly clean up after itself
+                # (see LP: #2084032).
+                # Therefore we use an asyncio.Task (coupled with
+                # asyncio.shield) so we can prevent propagation.
+                task = asyncio.create_task(self._system_getter.get(name, label))
+
+                system, in_live_layer = await asyncio.shield(task)
+                # _system_getter.get is marked async_helpers.exclusive
+                # so it should be safe to let it finish "unsupervised" if we
+                # get cancelled even though it might be called again
+                # concurrently.
+
             log.debug("got system %s for variation %s", system, name)
             if system is not None and len(system.volumes) > 0:
                 if not self.app.opts.enhanced_secureboot:
