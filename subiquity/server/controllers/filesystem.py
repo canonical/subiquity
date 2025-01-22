@@ -91,6 +91,7 @@ from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import (
     SingleInstanceTask,
     TaskAlreadyRunningError,
+    exclusive,
     schedule_task,
 )
 from subiquitycore.context import with_context
@@ -349,6 +350,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self._source_handler.cleanup()
             self._source_handler = None
 
+    @exclusive
     async def _get_system(self, variation_name, label):
         try:
             await self._mount_systems_dir(variation_name)
@@ -430,7 +432,20 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             system = None
             label = variation.snapd_system_label
             if label is not None:
-                system = await self._get_system(name, label)
+                # We do not want to propagate cancellation to
+                # _get_system. If it gets cancelled during its critical
+                # section, it won't be able to properly clean up after itself
+                # (see LP: #2084032).
+                # Therefore we use an asyncio.Task (coupled with
+                # asyncio.shield) so we can prevent propagation.
+                task = asyncio.create_task(self._get_system(name, label))
+
+                system = await asyncio.shield(task)
+                # _get_system is marked async_helpers.exclusive
+                # so it should be safe to let it finish "unsupervised" if we
+                # get cancelled even though it might be called again
+                # concurrently.
+
             log.debug("got system %s for variation %s", system, name)
             if system is not None and len(system.volumes) > 0:
                 if not self.app.opts.enhanced_secureboot:
