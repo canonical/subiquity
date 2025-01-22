@@ -434,21 +434,32 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             system = None
             label = variation.snapd_system_label
             if label is not None:
-                # We do not want to propagate cancellation to
-                # _get_system. If it gets cancelled during its critical
+                # We do not want to unconditionally propagate cancellation to
+                # _get_system If it gets cancelled during its critical
                 # section, it won't be able to properly clean up after itself
                 # (see LP: #2084032).
                 # Therefore we use an asyncio.Task (coupled with
                 # asyncio.shield) so we can prevent propagation.
+                in_critical_section = asyncio.Event()
                 task = asyncio.create_task(
-                    self._get_system(name, label, source_id=catalog_entry.id)
+                    self._get_system(
+                        name,
+                        label,
+                        source_id=catalog_entry.id,
+                        started_event=in_critical_section,
+                    )
                 )
-
-                system = await asyncio.shield(task)
-                # _get_system is marked async_helpers.exclusive
-                # so it should be safe to let it finish "unsupervised" if we
-                # get cancelled even though it might be called again
-                # concurrently.
+                try:
+                    system = await asyncio.shield(task)
+                except asyncio.CancelledError:
+                    if not in_critical_section.is_set():
+                        # Just to make sure we don't end up with a large queue of
+                        # _get_system() tasks.
+                        task.cancel()
+                    # _get_system is marked async_helpers.exclusive
+                    # so it should be safe to let it finish "unsupervised" even
+                    # though it might be called again concurrently.
+                    raise
 
             log.debug("got system %s for variation %s", system, name)
             if system is not None and len(system.volumes) > 0:
