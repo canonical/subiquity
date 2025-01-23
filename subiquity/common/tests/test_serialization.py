@@ -173,6 +173,14 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
         c = C(datetime.datetime(2022, 1, 1))
         self.assertSerialization(C, c, {"d": "2022-01-01"})
 
+    def test_float(self):
+        @attr.s
+        class C:
+            f: float = attr.ib()
+
+        c = C(0.1)
+        self.assertSerialization(C, c, {"f": 0.1})
+
     def test_serialize_attr(self):
         data = Data.make_random()
         expected = {"field1": data.field1, "field2": data.field2}
