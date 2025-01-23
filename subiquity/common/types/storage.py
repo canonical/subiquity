@@ -164,6 +164,16 @@ class GuidedCapability(enum.Enum):
             GuidedCapability.ZFS_LUKS_KEYSTORE,
         ]
 
+    def supports_passphrase(self) -> bool:
+        return self in [
+            GuidedCapability.LVM_LUKS,
+            GuidedCapability.CORE_BOOT_ENCRYPTED,
+            GuidedCapability.ZFS_LUKS_KEYSTORE,
+        ]
+
+    def supports_pin(self) -> bool:
+        return self == GuidedCapability.CORE_BOOT_ENCRYPTED
+
 
 class GuidedDisallowedCapabilityReason(enum.Enum):
     TOO_SMALL = enum.auto()
@@ -315,13 +325,26 @@ class GuidedChoiceV2:
     target: GuidedStorageTarget
     capability: GuidedCapability
 
-    # Those two fields are only used when using LVM+LUKS
+    # password is used in the LUKS encryption cases, and also with TPMFDE in
+    # the PASSPHRASE authentication_mode.
     password: Optional[str] = attr.ib(default=None, repr=False)
+    # pin is only used with TPMFDE in the PIN authentication_mode.
+    pin: Optional[str] = attr.ib(default=None, repr=False)
     recovery_key: Optional[RecoveryKey] = None
 
     sizing_policy: Optional[SizingPolicy] = SizingPolicy.SCALED
     reset_partition: bool = False
     reset_partition_size: Optional[int] = None
+
+    def validate(self):
+        from subiquity.server.controllers.filesystem import validate_pin_pass
+
+        validate_pin_pass(
+            passphrase_allowed=self.capability.supports_passphrase(),
+            pin_allowed=self.capability.supports_pin(),
+            passphrase=self.password,
+            pin=self.pin,
+        )
 
 
 @attr.s(auto_attribs=True)

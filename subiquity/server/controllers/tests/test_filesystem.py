@@ -19,6 +19,7 @@ import subprocess
 import uuid
 from unittest import IsolatedAsyncioTestCase, mock
 
+import attrs
 import jsonschema
 import requests
 import requests_mock
@@ -2343,3 +2344,38 @@ class TestResetPartitionLookAhead(IsolatedAsyncioTestCase):
         self.app.autoinstall_config = config
 
         self.assertEqual(self.fsc.is_reset_partition_only(), expected)
+
+
+class TestGuidedChoiceValidation(IsolatedAsyncioTestCase):
+    def test_pin_and_pass(self):
+        reformat = GuidedStorageTargetReformat
+        tpmfde = GuidedCapability.CORE_BOOT_ENCRYPTED
+        choice = GuidedChoiceV2(
+            target=reformat, capability=tpmfde, pin="01234", password="asdf"
+        )
+        with self.assertRaises(StorageRecoverableError):
+            choice.validate()
+
+    @parameterized.expand(
+        (
+            (GuidedCapability.MANUAL, False, False),
+            (GuidedCapability.LVM_LUKS, False, True),
+            (GuidedCapability.CORE_BOOT_ENCRYPTED, True, True),
+        )
+    )
+    def test_capability_pin_pass_validation(self, capability, pin_ok, pass_ok):
+        def maybe_assert_raises(ok: bool):
+            if ok:
+                return contextlib.nullcontext()
+            else:
+                return self.assertRaises(StorageRecoverableError)
+
+        reformat = GuidedStorageTargetReformat
+        choice = GuidedChoiceV2(target=reformat, capability=capability)
+        pin_choice = attrs.evolve(choice, pin="01234")
+        with maybe_assert_raises(pin_ok):
+            pin_choice.validate()
+
+        passphrase_choice = attrs.evolve(choice, password="asdf")
+        with maybe_assert_raises(pass_ok):
+            passphrase_choice.validate()

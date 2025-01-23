@@ -262,6 +262,23 @@ class VariationInfo:
         )
 
 
+def validate_pin_pass(
+    passphrase_allowed: bool, pin_allowed: bool, passphrase: str, pin: str
+) -> None:
+    if passphrase is not None and pin is not None:
+        raise StorageRecoverableError("must supply at most one of pin and passphrase")
+    if not pin_allowed and pin is not None:
+        raise StorageRecoverableError("unexpected pin supplied")
+    if not passphrase_allowed and passphrase is not None:
+        raise StorageRecoverableError("unexpected passphrase supplied")
+
+    if pin is not None:
+        try:
+            int(pin)
+        except ValueError:
+            raise StorageRecoverableError("pin is a string of digits")
+
+
 class FilesystemController(SubiquityController, FilesystemManipulator):
     endpoint = API.storage
 
@@ -708,6 +725,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def guided(
         self, choice: GuidedChoiceV2, reset_partition_only: bool = False
     ) -> None:
+        choice.validate()
+
         self.model.dd_target = None
         if choice.capability == GuidedCapability.MANUAL:
             return
