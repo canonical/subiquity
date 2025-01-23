@@ -42,6 +42,7 @@ from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
     Disk,
+    EntropyResponse,
     GuidedCapability,
     GuidedChoiceV2,
     GuidedDisallowedCapability,
@@ -272,11 +273,8 @@ def validate_pin_pass(
     if not passphrase_allowed and passphrase is not None:
         raise StorageRecoverableError("unexpected passphrase supplied")
 
-    if pin is not None:
-        try:
-            int(pin)
-        except ValueError:
-            raise StorageRecoverableError("pin is a string of digits")
+    if pin is not None and not pin.isdecimal():
+        raise StorageRecoverableError("pin is a string of digits")
 
 
 class FilesystemController(SubiquityController, FilesystemManipulator):
@@ -1468,6 +1466,28 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         self.delete_raid(raid)
         return await self.v2_GET()
+
+    async def v2_calculate_entropy_POST(
+        self,
+        passphrase: Optional[str] = None,
+        pin: Optional[str] = None,
+    ) -> EntropyResponse:
+        validate_pin_pass(
+            passphrase_allowed=True, pin_allowed=True, passphrase=passphrase, pin=pin
+        )
+
+        if passphrase is None and pin is None:
+            raise StorageRecoverableError(
+                "must supply at least one of pin and passphrase"
+            )
+
+        # FIXME actually call snapd and fill in responses
+        entropy = 0.0
+        minimum_required = 0.0
+        return EntropyResponse(
+            entropy=entropy,
+            minimum_required=minimum_required,
+        )
 
     async def dry_run_wait_probe_POST(self) -> None:
         if not self.app.opts.dry_run:

@@ -31,6 +31,7 @@ from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
+    EntropyResponse,
     Gap,
     GapUsable,
     GuidedCapability,
@@ -2379,3 +2380,40 @@ class TestGuidedChoiceValidation(IsolatedAsyncioTestCase):
         passphrase_choice = attrs.evolve(choice, password="asdf")
         with maybe_assert_raises(pass_ok):
             passphrase_choice.validate()
+
+
+class TestCalculateEntropy(IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.app = make_app()
+        self.app.opts.bootloader = None
+        self.fsc = FilesystemController(app=self.app)
+
+    async def test_both_pin_and_pass(self):
+        with self.assertRaises(StorageRecoverableError):
+            await self.fsc.v2_calculate_entropy_POST(passphrase="asdf", pin="01234")
+
+    async def test_neither_pin_and_pass(self):
+        with self.assertRaises(StorageRecoverableError):
+            await self.fsc.v2_calculate_entropy_POST()
+
+    @parameterized.expand(
+        (
+            ["asdf"],
+            ["+1"],
+            ["-1"],
+        )
+    )
+    async def test_invalid_pin(self, pin):
+        with self.assertRaises(StorageRecoverableError):
+            await self.fsc.v2_calculate_entropy_POST(pin=pin)
+
+    @parameterized.expand(
+        (
+            [{"pin": "01234"}],
+            [{"passphrase": "asdf"}],
+        )
+    )
+    async def test_stub_valid(self, kwargs):
+        expected = EntropyResponse(0.0, 0.0)
+        actual = await self.fsc.v2_calculate_entropy_POST(**kwargs)
+        self.assertEqual(expected, actual)

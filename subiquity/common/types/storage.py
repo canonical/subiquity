@@ -372,3 +372,9 @@ class ModifyPartitionV2:
 class ReformatDisk:
     disk_id: str
     ptable: Optional[str] = None
+
+
+@attr.s(auto_attribs=True)
+class EntropyResponse:
+    entropy: float
+    minimum_required: float
