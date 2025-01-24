@@ -117,3 +117,16 @@ class SingleInstanceTask:
         if self.task is None:
             return False
         return self.task.done()
+
+
+def exclusive(coroutine_function):
+    """Can be used to decorate a coroutine function that we do not want to run
+    multiple times concurrently. It uses a lock internally.
+    """
+    lock = asyncio.Lock()
+
+    async def wrapped(*args, **kwargs):
+        async with lock:
+            return await coroutine_function(*args, **kwargs)
+
+    return wrapped
