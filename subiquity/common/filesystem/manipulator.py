@@ -257,8 +257,12 @@ class FilesystemManipulator:
             self.delete_partition(p, True)
         self.clear(disk, wipe)
 
-    def can_resize_partition(self, partition):
+    def can_resize_partition(self, partition, *, wipe=None):
+        # For a new partition.
         if not partition.preserve:
+            return True
+        # For an existing partition that is being wiped.
+        if wipe is not None:
             return True
         if partition.format not in get_resize_fstypes():
             return False
@@ -279,7 +283,7 @@ class FilesystemManipulator:
                 size_change = new_size - partition.size
                 if size_change > gap_size:
                     raise Exception("partition size too large")
-                if not self.can_resize_partition(partition):
+                if not self.can_resize_partition(partition, wipe=spec.get("wipe")):
                     raise Exception("partition cannot support resize")
                 partition.size = new_size
                 partition.resize = True
