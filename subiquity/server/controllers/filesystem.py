@@ -1385,8 +1385,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # Handle filesystem format
         if data.partition.format is not None:
             if data.partition.format != partition.original_fstype():
-                if data.partition.wipe is None:
-                    raise ValueError("changing partition format requires a wipe value")
+                if data.partition.wipe is None and partition.preserve:
+                    raise ValueError(
+                        "changing format of an existing partition requires a wipe value"
+                    )
             spec["fstype"] = data.partition.format
 
         if data.partition.size is not None:
