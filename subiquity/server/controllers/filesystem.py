@@ -42,6 +42,7 @@ from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
     Disk,
+    EntropyResponse,
     GuidedCapability,
     GuidedChoiceV2,
     GuidedDisallowedCapability,
@@ -260,6 +261,20 @@ class VariationInfo:
                 ]
             ),
         )
+
+
+def validate_pin_pass(
+    passphrase_allowed: bool, pin_allowed: bool, passphrase: str, pin: str
+) -> None:
+    if passphrase is not None and pin is not None:
+        raise StorageRecoverableError("must supply at most one of pin and passphrase")
+    if not pin_allowed and pin is not None:
+        raise StorageRecoverableError("unexpected pin supplied")
+    if not passphrase_allowed and passphrase is not None:
+        raise StorageRecoverableError("unexpected passphrase supplied")
+
+    if pin is not None and not pin.isdecimal():
+        raise StorageRecoverableError("pin is a string of digits")
 
 
 class FilesystemController(SubiquityController, FilesystemManipulator):
@@ -713,6 +728,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def guided(
         self, choice: GuidedChoiceV2, reset_partition_only: bool = False
     ) -> None:
+        choice.validate()
+
         self.model.dd_target = None
         if choice.capability == GuidedCapability.MANUAL:
             return
@@ -1443,6 +1460,28 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         self.delete_raid(raid)
         return await self.v2_GET()
+
+    async def v2_calculate_entropy_POST(
+        self,
+        passphrase: Optional[str] = None,
+        pin: Optional[str] = None,
+    ) -> EntropyResponse:
+        validate_pin_pass(
+            passphrase_allowed=True, pin_allowed=True, passphrase=passphrase, pin=pin
+        )
+
+        if passphrase is None and pin is None:
+            raise StorageRecoverableError(
+                "must supply at least one of pin and passphrase"
+            )
+
+        # FIXME actually call snapd and fill in responses
+        entropy = 0.0
+        minimum_required = 0.0
+        return EntropyResponse(
+            entropy=entropy,
+            minimum_required=minimum_required,
+        )
 
     async def dry_run_wait_probe_POST(self) -> None:
         if not self.app.opts.dry_run:

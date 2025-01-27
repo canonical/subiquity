@@ -99,7 +99,7 @@ class Serializer:
         }
         self.type_serializers = {}
         self.type_deserializers = {}
-        for typ in int, str, bool, list, type(None):
+        for typ in int, float, str, bool, list, type(None):
             self.type_serializers[typ] = self._scalar
             self.type_deserializers[typ] = self._scalar
         self.type_serializers[dict] = self._serialize_dict

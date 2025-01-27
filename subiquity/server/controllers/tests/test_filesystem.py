@@ -19,6 +19,7 @@ import subprocess
 import uuid
 from unittest import IsolatedAsyncioTestCase, mock
 
+import attrs
 import jsonschema
 import requests
 import requests_mock
@@ -30,6 +31,7 @@ from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
+    EntropyResponse,
     Gap,
     GapUsable,
     GuidedCapability,
@@ -2341,3 +2343,75 @@ class TestResetPartitionLookAhead(IsolatedAsyncioTestCase):
         self.app.autoinstall_config = config
 
         self.assertEqual(self.fsc.is_reset_partition_only(), expected)
+
+
+class TestGuidedChoiceValidation(IsolatedAsyncioTestCase):
+    def test_pin_and_pass(self):
+        reformat = GuidedStorageTargetReformat
+        tpmfde = GuidedCapability.CORE_BOOT_ENCRYPTED
+        choice = GuidedChoiceV2(
+            target=reformat, capability=tpmfde, pin="01234", password="asdf"
+        )
+        with self.assertRaises(StorageRecoverableError):
+            choice.validate()
+
+    @parameterized.expand(
+        (
+            (GuidedCapability.MANUAL, False, False),
+            (GuidedCapability.LVM_LUKS, False, True),
+            (GuidedCapability.CORE_BOOT_ENCRYPTED, True, True),
+        )
+    )
+    def test_capability_pin_pass_validation(self, capability, pin_ok, pass_ok):
+        def maybe_assert_raises(ok: bool):
+            if ok:
+                return contextlib.nullcontext()
+            else:
+                return self.assertRaises(StorageRecoverableError)
+
+        reformat = GuidedStorageTargetReformat
+        choice = GuidedChoiceV2(target=reformat, capability=capability)
+        pin_choice = attrs.evolve(choice, pin="01234")
+        with maybe_assert_raises(pin_ok):
+            pin_choice.validate()
+
+        passphrase_choice = attrs.evolve(choice, password="asdf")
+        with maybe_assert_raises(pass_ok):
+            passphrase_choice.validate()
+
+
+class TestCalculateEntropy(IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.app = make_app()
+        self.app.opts.bootloader = None
+        self.fsc = FilesystemController(app=self.app)
+
+    async def test_both_pin_and_pass(self):
+        with self.assertRaises(StorageRecoverableError):
+            await self.fsc.v2_calculate_entropy_POST(passphrase="asdf", pin="01234")
+
+    async def test_neither_pin_and_pass(self):
+        with self.assertRaises(StorageRecoverableError):
+            await self.fsc.v2_calculate_entropy_POST()
+
+    @parameterized.expand(
+        (
+            ["asdf"],
+            ["+1"],
+            ["-1"],
+        )
+    )
+    async def test_invalid_pin(self, pin):
+        with self.assertRaises(StorageRecoverableError):
+            await self.fsc.v2_calculate_entropy_POST(pin=pin)
+
+    @parameterized.expand(
+        (
+            [{"pin": "01234"}],
+            [{"passphrase": "asdf"}],
+        )
+    )
+    async def test_stub_valid(self, kwargs):
+        expected = EntropyResponse(0.0, 0.0)
+        actual = await self.fsc.v2_calculate_entropy_POST(**kwargs)
+        self.assertEqual(expected, actual)
