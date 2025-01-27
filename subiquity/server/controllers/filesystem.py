@@ -676,7 +676,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 '"Erase and Install" requires storage version 2'
             )
         partition = self.get_partition(disk, target.partition_number)
-        self.delete_partition(partition, override_preserve=True)
+        # Do not renumber logical partitions.
+        # In this scenario we will create a new partition in the resulting gap
+        # so the number of logical partitions should not change.
+        self.delete_partition(
+            partition, override_preserve=True, allow_renumbering=False
+        )
         return gaps.find_gap_after_removal(disk, removed_partition=partition)
 
     def set_info_for_capability(self, capability: GuidedCapability):
@@ -1231,17 +1236,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     continue
 
                 if partition.os is None:
-                    continue
-
-                if (
-                    partition.is_logical
-                    and disk.partitions_by_number()[-1] != partition
-                ):
-                    # FIXME If we remove this partition, the subsequent logical
-                    # partitions will be renumbered. This will cause various
-                    # mismatches in the info returned by /storage/v2. For now,
-                    # we exclude this scenario.
-                    # See LP: #2091172
                     continue
 
                 # Make an ephemeral copy of the disk object with the relevant

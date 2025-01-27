@@ -1831,12 +1831,10 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         sorted_scenarios = sorted(
             scenarios, key=lambda sc: (sc.disk_id, sc.partition_number)
         )
-        # Currently we expect only two scenarios because of the workaround for
-        # LP: #2091172. If we drop the workaround, we will have a third
-        # scenario for partition p5.
         self.assertEqual(1, sorted_scenarios[0].partition_number)
-        self.assertEqual(6, sorted_scenarios[1].partition_number)
-        self.assertEqual(2, len(sorted_scenarios))
+        self.assertEqual(5, sorted_scenarios[1].partition_number)
+        self.assertEqual(6, sorted_scenarios[2].partition_number)
+        self.assertEqual(3, len(sorted_scenarios))
 
     async def test_resize_has_enough_room_for_partitions__one_primary(self):
         await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
