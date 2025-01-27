@@ -1398,6 +1398,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if data.partition.boot is not None and data.partition.boot != partition.boot:
             raise ValueError("edit_partition does not support changing boot")
         spec: PartitionSpec = {"mount": data.partition.mount or partition.mount}
+        # NOTE from ogayot: it is my understanding that in this context, having
+        # format=None (which is the default value) means to keep the current
+        # format. To change from ext4 to "unformatted", one must specify
+        # format="".
         if data.partition.format is not None:
             if data.partition.format != partition.original_fstype():
                 if data.partition.wipe is None:
