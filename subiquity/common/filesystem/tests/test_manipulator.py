@@ -754,3 +754,9 @@ class TestCanResize(unittest.TestCase):
         part = make_partition(self.manipulator.model, disk, preserve=True)
         make_filesystem(self.manipulator.model, partition=part, fstype="asdf")
         self.assertFalse(self.manipulator.can_resize_partition(part))
+
+    def test_resize_invalid_but_wipe(self):
+        disk = make_disk(self.manipulator.model, ptable=None)
+        part = make_partition(self.manipulator.model, disk, preserve=True)
+        make_filesystem(self.manipulator.model, partition=part, fstype="asdf")
+        self.assertTrue(self.manipulator.can_resize_partition(part, wipe="superblock"))
