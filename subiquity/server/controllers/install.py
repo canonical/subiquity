@@ -486,6 +486,13 @@ class InstallController(SubiquityController):
                 words = shlex.split(line)
                 if words and words[0] == "linux" and "---" in words:
                     index = words.index("---")
+                    words = [
+                        word
+                        for word in words
+                        if not (
+                            word.startswith("uuid=") or word.startswith("rp-partuuid=")
+                        )
+                    ]
                     words[index - 1 : index - 1] = [
                         "uuid=" + new_casper_uuid,
                         "rp-partuuid=" + rp_uuid,
