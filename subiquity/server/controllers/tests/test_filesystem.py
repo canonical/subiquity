@@ -17,6 +17,7 @@ import contextlib
 import copy
 import subprocess
 import uuid
+from pathlib import Path
 from unittest import IsolatedAsyncioTestCase, mock
 
 import attrs
@@ -1049,6 +1050,9 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual("luks_keystore", rpool.encryption_style)
         with open(rpool.keyfile) as fp:
             self.assertEqual("passw0rd", fp.read())
+            # a tempfile is created outside of normal test tempfiles,
+            # clean that up
+            Path(rpool.keyfile).unlink()
         [bpool] = self.model._all(type="zpool", pool="bpool")
         self.assertIsNone(bpool.path)
         self.assertEqual([boot], bpool.vdevs)
