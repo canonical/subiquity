@@ -24,8 +24,6 @@ from typing import List, Optional, Union
 
 import attr
 
-from subiquitycore.utils import arun_command
-
 log = logging.getLogger("subiquity.server.mounter")
 
 
@@ -234,13 +232,16 @@ class DryRunMounter(Mounter):
             source = lowerdir
         target = self.tmpfiles.tdir()
         os.mkdir(f"{target}/etc")
-        await arun_command(
-            [
-                "cp",
-                "-aT",
-                f"{source}/etc/apt",
-                f"{target}/etc/apt",
-            ],
-            check=True,
+
+        # In dry run mode we copy the apt config from the running
+        # system into the "target". Some files associated with Ubuntu
+        # Pro are not readable to regular users and they aren't
+        # required to get some kind of working config in the target so
+        # skip them.
+        shutil.copytree(
+            f"{source}/etc/apt",
+            f"{target}/etc/apt",
+            ignore=shutil.ignore_patterns("*esm*", "*advantage*"),
         )
+
         return OverlayMountpoint(lowers=[source], mountpoint=target, upperdir=None)

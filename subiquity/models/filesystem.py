@@ -246,10 +246,11 @@ def _do_post_inits(obj):
 def fsobj(typ):
     def wrapper(c):
         c.__attrs_post_init__ = _do_post_inits
-        c._post_inits = [_set_backlinks]
+        c._post_inits = []
         class_post_init = getattr(c, "__post_init__", None)
         if class_post_init is not None:
             c._post_inits.append(class_post_init)
+        c._post_inits.append(_set_backlinks)
         c.type = attributes.const(typ)
         c.id = attr.ib(default=None)
         c._m = attr.ib(repr=None, default=None)
@@ -727,6 +728,15 @@ class _Device(_Formattable, ABC):
         return any(p.preserve for p in self._partitions)
 
     def renumber_logical_partitions(self, removed_partition):
+        """After removing a logical partition, one can call this function to
+        update the partition number of other logical partitions.
+        Please only call this function after removing a logical partition."""
+        if not removed_partition.is_logical:
+            # The implementation of this function expects the removed partition
+            # to have a partition number in the logical range (e.g., 5+ for a
+            # DOS partition table).
+            raise ValueError("do not renumber logical parts after removing a primary")
+
         parts = [
             p
             for p in self.partitions_by_number()
@@ -977,6 +987,11 @@ class Partition(_Formattable):
 
     @property
     def os(self):
+        if not self.preserve:
+            # Only associate the OS information with existing partitions.
+            # If /dev/sda4 was deleted and a new partition on sda with number 4
+            # is created, we should not pretend it contains anything of value.
+            return None
         os_data = self._m._probe_data.get("os", {}).get(self._path())
         if not os_data:
             return None
@@ -1611,8 +1626,11 @@ class FilesystemModel:
             log.debug("%s is mounted", obj.path)
             work = [obj]
             while work:
+                # Go through the chain of dependencies, starting from the
+                # partition (or LV). We mark involved disks and raids as having
+                # in-use partitions.
                 o = work.pop(0)
-                if isinstance(o, Disk):
+                if isinstance(o, (Disk, Raid)):
                     o._has_in_use_partition = True
                 work.extend(dependencies(o))
 
@@ -2204,7 +2222,8 @@ class FilesystemModel:
         for p2 in movable_trailing_partitions_and_gap_size(part)[0]:
             p2.offset -= part.size
         self._remove(part)
-        part.device.renumber_logical_partitions(part)
+        if part.is_logical:
+            part.device.renumber_logical_partitions(part)
         if len(part.device._partitions) == 0:
             part.device.ptable = None
 

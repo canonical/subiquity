@@ -20,6 +20,7 @@ import json
 import logging
 import os
 import pathlib
+import shutil
 import subprocess
 import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
@@ -650,7 +651,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         """Perform the reformat, and return the resulting gap."""
         in_use_parts = [p for p in disk.partitions() if p._is_in_use]
         if in_use_parts:
-            for p in disk.partitions():
+            for p in list(disk.partitions()):
                 if not p._is_in_use:
                     self.delete_partition(p)
         else:
@@ -1268,6 +1269,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return await self.v2_GET()
 
     async def v2_add_boot_partition_POST(self, disk_id: str) -> StorageResponseV2:
+        log.debug("v2_add_boot_partition: disk-id: %s", disk_id)
         self.locked_probe_data = True
         disk = self.model._one(id=disk_id)
         if boot.is_boot_device(disk):
@@ -1699,5 +1701,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 )
             else:
                 await self.app.command_runner.run(["umount", "--recursive", "/target"])
-        if len(self.model._all(type="zpool")) > 0:
+        # Make sure we only execute the zpool export command if it is
+        # available. By default, zfsutils-linux is not installed in the live
+        # installer environment. It gets dynamically installed by curtin when
+        # needed.
+        if shutil.which("zpool") is not None:
             await self.app.command_runner.run(["zpool", "export", "-a"])

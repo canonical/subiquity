@@ -178,7 +178,7 @@ def make_partition(
         device = make_disk(model)
     model = device._m
     if size is None or offset is None:
-        gap = gaps.largest_gap(device)
+        gap = gaps.largest_gap(device, in_extended=flag == "logical")
         if size is None:
             size = gap.size // 2
         if offset is None:
@@ -1353,6 +1353,46 @@ class TestSwap(unittest.TestCase):
         self.assertFalse(m.should_add_swapfile())
 
 
+class TestDisk(unittest.TestCase):
+    def test_renumber_logical_partitions(self):
+        m = make_model(storage_version=2)
+        d = make_disk(m, ptable="msdos")
+
+        pe = make_partition(m, d, flag="extended")
+        pl1 = make_partition(m, d, flag="logical")
+        pl2 = make_partition(m, d, flag="logical")
+        pl3 = make_partition(m, d, flag="logical")
+        pp = make_partition(m, d)
+
+        self.assertEqual(1, pe.number)
+        self.assertEqual(5, pl1.number)
+        self.assertEqual(6, pl2.number)
+        self.assertEqual(7, pl3.number)
+        self.assertEqual(2, pp.number)
+
+        d._partitions.remove(pl1)
+
+        d.renumber_logical_partitions(removed_partition=pl1)
+
+        self.assertEqual(1, pe.number)
+        self.assertEqual(5, pl2.number)
+        self.assertEqual(6, pl3.number)
+        self.assertEqual(2, pp.number)
+
+    def test_renumber_logical_partitions__after_removing_primary(self):
+        m = make_model(storage_version=2)
+        d = make_disk(m, ptable="msdos")
+
+        make_partition(m, d, flag="extended")
+        make_partition(m, d, flag="logical")
+        pp = make_partition(m, d)
+
+        d._partitions.remove(pp)
+
+        with self.assertRaisesRegex(ValueError, r"^do not renumber"):
+            d.renumber_logical_partitions(removed_partition=pp)
+
+
 class TestPartition(unittest.TestCase):
     def test_is_logical(self):
         m = make_model(storage_version=2)
@@ -1370,6 +1410,48 @@ class TestPartition(unittest.TestCase):
         self.assertTrue(p5.is_logical)
         self.assertTrue(p6.is_logical)
         self.assertTrue(p7.is_logical)
+
+    def test_os(self):
+        m = make_model(storage_version=2)
+        d = make_disk(m, ptable="gpt")
+
+        p1 = make_partition(m, d, preserve=True)
+        p2 = make_partition(m, d, preserve=True)
+
+        os_info = {
+            "label": "Ubuntu",
+            "long": "Ubuntu 22.04.1 LTS",
+            "type": "linux",
+            "version": "22.04.1",
+        }
+
+        m._probe_data["os"] = {p1._path(): os_info}
+
+        self.assertEqual("Ubuntu", p1.os.label)
+        self.assertEqual("Ubuntu 22.04.1 LTS", p1.os.long)
+        self.assertEqual("linux", p1.os.type)
+        self.assertEqual("22.04.1", p1.os.version)
+        self.assertIsNone(p1.os.subpath)
+        self.assertIsNone(p2.os)
+
+    def test_os__recreated_partition(self):
+        m = make_model(storage_version=2)
+        d = make_disk(m, ptable="gpt")
+
+        # We do not mark the partition preserved, which means we either
+        # formatted the disk or deleted / recreated the partition.
+        p = make_partition(m, d)
+
+        os_info = {
+            "label": "Ubuntu",
+            "long": "Ubuntu 22.04.1 LTS",
+            "type": "linux",
+            "version": "22.04.1",
+        }
+
+        m._probe_data["os"] = {p._path(): os_info}
+
+        self.assertIsNone(p.os)
 
 
 class TestCanmount(SubiTestCase):

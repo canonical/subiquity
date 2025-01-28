@@ -351,31 +351,51 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertTrue(self.fsc.locked_probe_data)
         handler.assert_called_once()
 
-    async def test__pre_shutdown_install_started(self):
+    @parameterized.expand(((True,), (False,)))
+    async def test__pre_shutdown_install_started(self, zfsutils_linux_installed: bool):
         self.fsc.reset_partition_only = False
         run = mock.patch.object(self.app.command_runner, "run")
         _all = mock.patch.object(self.fsc.model, "_all")
-        with run as mock_run, _all:
-            await self.fsc._pre_shutdown()
-        mock_run.assert_has_calls(
-            [
-                mock.call(["mountpoint", "/target"]),
-                mock.call(["umount", "--recursive", "/target"]),
-            ]
+        which_rv = "/usr/sbin/zpool" if zfsutils_linux_installed else None
+        which = mock.patch(
+            "subiquity.server.controllers.filesystem.shutil.which",
+            return_value=which_rv,
         )
-        self.assertEqual(len(mock_run.mock_calls), 2)
+        with run as mock_run, _all, which:
+            await self.fsc._pre_shutdown()
 
-    async def test__pre_shutdown_install_not_started(self):
+        expected_calls = [
+            mock.call(["mountpoint", "/target"]),
+            mock.call(["umount", "--recursive", "/target"]),
+        ]
+        if zfsutils_linux_installed:
+            expected_calls.append(mock.call(["zpool", "export", "-a"]))
+        self.assertEqual(expected_calls, mock_run.mock_calls)
+
+    @parameterized.expand(((True,), (False,)))
+    async def test__pre_shutdown_install_not_started(
+        self, zfsutils_linux_installed: bool
+    ):
         async def fake_run(cmd, **kwargs):
             if cmd == ["mountpoint", "/target"]:
                 raise subprocess.CalledProcessError(cmd=cmd, returncode=1)
 
         self.fsc.reset_partition_only = False
         run = mock.patch.object(self.app.command_runner, "run", side_effect=fake_run)
-        _all = mock.patch.object(self.fsc.model, "_all")
-        with run as mock_run, _all:
+        which_rv = "/usr/sbin/zpool" if zfsutils_linux_installed else None
+        which = mock.patch(
+            "subiquity.server.controllers.filesystem.shutil.which",
+            return_value=which_rv,
+        )
+        with run as mock_run, which:
             await self.fsc._pre_shutdown()
-        mock_run.assert_called_once_with(["mountpoint", "/target"])
+
+        expected_calls = [
+            mock.call(["mountpoint", "/target"]),
+        ]
+        if zfsutils_linux_installed:
+            expected_calls.append(mock.call(["zpool", "export", "-a"]))
+        self.assertEqual(expected_calls, mock_run.mock_calls)
 
     async def test_examine_systems(self):
         # In LP: #2037723 and other similar reports, the user selects the
@@ -448,6 +468,67 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
                     )
 
             self.assertIn("cannot load assertions for label", logs.output[0])
+
+    def test_start_guided_reformat__no_in_use(self):
+        self.fsc.model = model = make_model(Bootloader.UEFI)
+        disk = make_disk(model)
+
+        p1 = make_partition(model, disk, size=10 << 30)
+        p2 = make_partition(model, disk, size=10 << 30)
+        p3 = make_partition(model, disk, size=10 << 30)
+        p4 = make_partition(model, disk, size=10 << 30)
+
+        p_del_part = mock.patch.object(
+            self.fsc, "delete_partition", wraps=self.fsc.delete_partition
+        )
+        p_reformat = mock.patch.object(self.fsc, "reformat", wraps=self.fsc.reformat)
+
+        with p_del_part as m_del_part, p_reformat as m_reformat:
+            self.fsc.start_guided_reformat(
+                GuidedStorageTargetReformat(disk_id=disk.id), disk
+            )
+
+        m_reformat.assert_called_once_with(disk, wipe="superblock-recursive")
+        expected_del_calls = [
+            mock.call(p1, True),
+            mock.call(p2, True),
+            mock.call(p3, True),
+            mock.call(p4, True),
+        ]
+        self.assertEqual(expected_del_calls, m_del_part.mock_calls)
+
+    def test_start_guided_reformat__with_in_use(self):
+        """In LP: #2083322, start_guided_reformat did not remove all the
+        partitions that should have been removed. Because we were iterating
+        over device._partitions and calling delete_partition in the body, we
+        failed to iterate over some of the partitions."""
+        self.fsc.model = model = make_model(Bootloader.UEFI)
+        disk = make_disk(model)
+
+        p1 = make_partition(model, disk, size=10 << 30)
+        p2 = make_partition(model, disk, size=10 << 30)
+        p3 = make_partition(model, disk, size=10 << 30)
+        p4 = make_partition(model, disk, size=10 << 30)
+
+        p2._is_in_use = True
+
+        # We use wraps to ensure that the real delete_partition gets called. If
+        # we just do a no-op, we won't invalidate the iterator.
+        p_del_part = mock.patch.object(
+            self.fsc, "delete_partition", wraps=self.fsc.delete_partition
+        )
+        p_reformat = mock.patch.object(self.fsc, "reformat", wraps=self.fsc.reformat)
+
+        with p_del_part as m_del_part, p_reformat as m_reformat:
+            self.fsc.start_guided_reformat(
+                GuidedStorageTargetReformat(disk_id=disk.id), disk
+            )
+
+        m_reformat.assert_not_called()
+        # Not sure why we don't call with "override_preserve=True", like we do
+        # in reformat.
+        expected_del_calls = [mock.call(p1), mock.call(p3), mock.call(p4)]
+        self.assertEqual(expected_del_calls, m_del_part.mock_calls)
 
 
 class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):
@@ -1485,7 +1566,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         # Sizes are irrelevant
         size = 4 << 20
         p1 = make_partition(model, disk, preserve=True, size=size)
-        p2 = make_partition(model, disk, preserve=True, size=size, flag="extended")
+        p2 = make_partition(model, disk, preserve=True, size=size * 2, flag="extended")
         p5 = make_partition(model, disk, preserve=True, size=size, flag="logical")
         p6 = make_partition(model, disk, preserve=True, size=size, flag="logical")
         p3 = make_partition(model, disk, preserve=True, size=size)
