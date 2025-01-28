@@ -464,7 +464,9 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
                     "subiquity.server.controllers.filesystem", level="WARNING"
                 ) as logs:
                     await self.fsc._get_system(
-                        variation_name="minimal", label="enhanced-secureboot-desktop"
+                        variation_name="minimal",
+                        label="enhanced-secureboot-desktop",
+                        source_id="default",
                     )
 
             self.assertIn("cannot load assertions for label", logs.output[0])

@@ -14,10 +14,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import sys
 import unittest
 from unittest.mock import AsyncMock
 
-from subiquitycore.async_helpers import SingleInstanceTask, TaskAlreadyRunningError
+from subiquitycore.async_helpers import (
+    SingleInstanceTask,
+    TaskAlreadyRunningError,
+    exclusive,
+)
 from subiquitycore.tests.parameterized import parameterized
 
 
@@ -64,3 +69,31 @@ class TestSITWait(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(asyncio.TimeoutError):
             await asyncio.wait_for(sit.wait(), timeout=0.1)
         self.assertFalse(sit.done())
+
+
+class TestExclusive(unittest.IsolatedAsyncioTestCase):
+    @unittest.skipIf(sys.version_info < (3, 11), "asyncio.Barrier is not available")
+    async def test_concurrency(self):
+        timeout = 0.1
+        barrier = asyncio.Barrier(parties=2)
+
+        async def f():
+            async with barrier:
+                pass
+
+        await asyncio.wait_for(asyncio.gather(f(), f()), timeout=timeout)
+
+        g = exclusive(f)
+
+        with self.assertRaises(asyncio.TimeoutError):
+            await asyncio.wait_for(asyncio.gather(g(), g()), timeout=timeout)
+
+        # This is the same as g, but just to show an example of the intended
+        # usage.
+        @exclusive
+        async def e():
+            async with barrier:
+                pass
+
+        with self.assertRaises(asyncio.TimeoutError):
+            await asyncio.wait_for(asyncio.gather(e(), e()), timeout=timeout)

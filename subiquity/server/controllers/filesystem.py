@@ -91,6 +91,7 @@ from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import (
     SingleInstanceTask,
     TaskAlreadyRunningError,
+    exclusive,
     schedule_task,
 )
 from subiquitycore.context import with_context
@@ -319,8 +320,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         await super().configured()
         self.stop_monitor()
 
-    async def _mount_systems_dir(self, variation_name):
-        self._source_handler = self.app.controllers.Source.get_handler(variation_name)
+    async def _mount_systems_dir(self, variation_name, source_id: Optional[str] = None):
+        self._source_handler = self.app.controllers.Source.get_handler(
+            variation_name, source_id=source_id
+        )
         source_path = self._source_handler.setup()
         cur_systems_dir = "/var/lib/snapd/seed/systems"
         source_systems_dir = os.path.join(source_path, cur_systems_dir[1:])
@@ -349,9 +352,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self._source_handler.cleanup()
             self._source_handler = None
 
-    async def _get_system(self, variation_name, label):
+    @exclusive
+    async def _get_system(self, variation_name, label, *, source_id: str):
         try:
-            await self._mount_systems_dir(variation_name)
+            await self._mount_systems_dir(variation_name, source_id=source_id)
         except NoSnapdSystemsOnSource:
             return None
         try:
@@ -430,7 +434,33 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             system = None
             label = variation.snapd_system_label
             if label is not None:
-                system = await self._get_system(name, label)
+                # We do not want to unconditionally propagate cancellation to
+                # _get_system If it gets cancelled during its critical
+                # section, it won't be able to properly clean up after itself
+                # (see LP: #2084032).
+                # Therefore we use an asyncio.Task (coupled with
+                # asyncio.shield) so we can prevent propagation.
+                in_critical_section = asyncio.Event()
+                task = asyncio.create_task(
+                    self._get_system(
+                        name,
+                        label,
+                        source_id=catalog_entry.id,
+                        started_event=in_critical_section,
+                    )
+                )
+                try:
+                    system = await asyncio.shield(task)
+                except asyncio.CancelledError:
+                    if not in_critical_section.is_set():
+                        # Just to make sure we don't end up with a large queue of
+                        # _get_system() tasks.
+                        task.cancel()
+                    # _get_system is marked async_helpers.exclusive
+                    # so it should be safe to let it finish "unsupervised" even
+                    # though it might be called again concurrently.
+                    raise
+
             log.debug("got system %s for variation %s", system, name)
             if system is not None and len(system.volumes) > 0:
                 if not self.app.opts.enhanced_secureboot:
