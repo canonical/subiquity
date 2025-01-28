@@ -23,6 +23,7 @@ import requests
 
 from subiquity.server.mounter import Mounter
 from subiquity.server.snapd.types import SystemDetails
+from subiquitycore import async_helpers
 
 log = logging.getLogger("subiquity.server.snapd.system_getter")
 
@@ -36,8 +37,10 @@ class SystemsDirMounter:
         self.app = app
         self.variation_name = variation_name
 
-    async def mount(self):
-        source_handler = self.app.controllers.Source.get_handler(self.variation_name)
+    async def mount(self, *, source_id: Optional[str] = None):
+        source_handler = self.app.controllers.Source.get_handler(
+            self.variation_name, source_id=source_id
+        )
         if source_handler is None:
             raise NoSnapdSystemsOnSource
         mounter = Mounter(self.app)
@@ -61,8 +64,8 @@ class SystemsDirMounter:
         return source_handler, mounter
 
     @contextlib.asynccontextmanager
-    async def mounted(self):
-        source_handler, mounter = await self.mount()
+    async def mounted(self, *, source_id: Optional[str] = None):
+        source_handler, mounter = await self.mount(source_id=source_id)
         try:
             yield
         finally:
@@ -81,8 +84,9 @@ class SystemGetter:
             log.warning("v2/systems/%s returned %s", label, http_err.response.text)
             raise
 
+    @async_helpers.exclusive
     async def get(
-        self, variation_name: str, label: str
+        self, variation_name: str, label: str, *, source_id: str
     ) -> Tuple[Optional[SystemDetails], bool]:
         """Return system information for a given system label.
 
@@ -97,7 +101,9 @@ class SystemGetter:
             return await self._get(label), True
         else:
             try:
-                async with SystemsDirMounter(self.app, variation_name).mounted():
+                async with SystemsDirMounter(self.app, variation_name).mounted(
+                    source_id=source_id
+                ):
                     return await self._get(label), False
             except NoSnapdSystemsOnSource:
                 return None, False

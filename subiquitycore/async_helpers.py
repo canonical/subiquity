@@ -15,6 +15,7 @@
 import asyncio
 import concurrent.futures
 import logging
+from typing import Optional
 
 log = logging.getLogger("subiquitycore.async_helpers")
 
@@ -117,3 +118,22 @@ class SingleInstanceTask:
         if self.task is None:
             return False
         return self.task.done()
+
+
+def exclusive(coroutine_function):
+    """Can be used to decorate a coroutine function that we do not want to run
+    multiple times concurrently. It uses a lock internally.
+    If the caller needs to know when the decorated coroutine starts executing
+    (i.e., when it has acquired the exclusive lock), they can pass an
+    asyncio.Event as the "started_event" keyword-only argument.
+    """
+    lock = asyncio.Lock()
+
+    async def wrapped(*args, started_event: Optional[asyncio.Event] = None, **kwargs):
+        async with lock:
+            if started_event is not None:
+                started_event.set()
+
+            return await coroutine_function(*args, **kwargs)
+
+    return wrapped
