@@ -21,7 +21,10 @@ import attr
 
 from subiquity.common.filesystem import boot, gaps, sizes
 from subiquity.common.filesystem.actions import DeviceAction
-from subiquity.common.filesystem.manipulator import FilesystemManipulator
+from subiquity.common.filesystem.manipulator import (
+    FilesystemManipulator,
+    get_resize_fstypes,
+)
 from subiquity.models.filesystem import Bootloader, MiB, Partition
 from subiquity.models.tests.test_filesystem import (
     make_disk,
@@ -742,6 +745,22 @@ class TestCanResize(unittest.TestCase):
         disk = make_disk(self.manipulator.model, ptable=None)
         part = make_partition(self.manipulator.model, disk, preserve=False)
         self.assertTrue(self.manipulator.can_resize_partition(part))
+
+    def test_resize_non_resizable(self):
+        disk = make_disk(self.manipulator.model, ptable=None)
+        part = make_partition(self.manipulator.model, disk, preserve=True)
+        # If XFS becomes resizable, replace with something else.
+        self.assertNotIn("xfs", get_resize_fstypes())
+        make_filesystem(self.manipulator.model, partition=part, fstype="xfs")
+        self.assertFalse(self.manipulator.can_resize_partition(part))
+
+    def test_resize_non_resizable_but_wipe(self):
+        disk = make_disk(self.manipulator.model, ptable=None)
+        part = make_partition(self.manipulator.model, disk, preserve=True)
+        # If XFS becomes resizable, replace with something else.
+        self.assertNotIn("xfs", get_resize_fstypes())
+        make_filesystem(self.manipulator.model, partition=part, fstype="xfs")
+        self.assertTrue(self.manipulator.can_resize_partition(part, wipe="superblock"))
 
     def test_resize_ext4(self):
         disk = make_disk(self.manipulator.model, ptable=None)
