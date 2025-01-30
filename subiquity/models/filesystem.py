@@ -2214,15 +2214,16 @@ class FilesystemModel:
         self._actions.append(p)
         return p
 
-    def remove_partition(self, part):
+    def remove_partition(self, part, *, allow_moving=True):
         if part._fs or part._constructed_device:
             raise Exception("can only remove empty partition")
         from subiquity.common.filesystem.gaps import (
             movable_trailing_partitions_and_gap_size,
         )
 
-        for p2 in movable_trailing_partitions_and_gap_size(part)[0]:
-            p2.offset -= part.size
+        if allow_moving:
+            for p2 in movable_trailing_partitions_and_gap_size(part)[0]:
+                p2.offset -= part.size
         self._remove(part)
         if part.is_logical:
             part.device.renumber_logical_partitions(part)
