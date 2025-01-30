@@ -643,10 +643,18 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             disk, ptable=None, wipe="superblock-recursive"
         )
         expected_del_calls = [
-            mock.call(p1, override_preserve=True),
-            mock.call(p2, override_preserve=True),
-            mock.call(p3, override_preserve=True),
-            mock.call(p4, override_preserve=True),
+            mock.call(
+                p1, override_preserve=True, allow_renumbering=False, allow_moving=False
+            ),
+            mock.call(
+                p2, override_preserve=True, allow_renumbering=False, allow_moving=False
+            ),
+            mock.call(
+                p3, override_preserve=True, allow_renumbering=False, allow_moving=False
+            ),
+            mock.call(
+                p4, override_preserve=True, allow_renumbering=False, allow_moving=False
+            ),
         ]
         self.assertEqual(expected_del_calls, m_del_part.mock_calls)
 
