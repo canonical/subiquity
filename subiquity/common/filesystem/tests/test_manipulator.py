@@ -733,6 +733,16 @@ class TestReformat(unittest.TestCase):
         self.manipulator.reformat(disk, "msdos")
         self.assertEqual("msdos", disk.ptable)
 
+    def test_reformat_with_partitions(self):
+        """We had a bug earlier where the ptable parameter of reformat would be
+        essentially ignored when the disk to reformat had partitions.  Ensure
+        this isn't the case anymore.
+        """
+        disk = make_disk(self.manipulator.model, ptable="gpt")
+        make_partition(self.manipulator.model, disk)
+        self.manipulator.reformat(disk, "msdos")
+        self.assertEqual("msdos", disk.ptable)
+
 
 class TestCanResize(unittest.TestCase):
     def setUp(self):

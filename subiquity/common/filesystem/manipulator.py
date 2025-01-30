@@ -270,10 +270,10 @@ class FilesystemManipulator:
 
     def reformat(self, disk, ptable=None, wipe=None):
         disk.grub_device = False
-        if ptable is not None:
-            disk.ptable = ptable
         for p in list(disk.partitions()):
             self.delete_partition(p, True)
+        if ptable is not None:
+            disk.ptable = ptable
         self.clear(disk, wipe)
 
     def can_resize_partition(self, partition, *, wipe=None):
