@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from typing import Optional
 
 from curtin.block import get_resize_fstypes
 
@@ -268,12 +269,13 @@ class FilesystemManipulator:
         for subobj in obj.fs(), obj.constructed_device():
             self.delete(subobj)
 
-    def reformat(self, disk, ptable=None, wipe=None):
+    def reformat(self, disk, ptable: Optional[str], wipe=None):
+        """Reformat the specified disk. If ptable is None, use the default
+        partition table type."""
         disk.grub_device = False
         for p in list(disk.partitions()):
             self.delete_partition(p, True)
-        if ptable is not None:
-            disk.ptable = ptable
+        disk.ptable = ptable
         self.clear(disk, wipe)
 
     def can_resize_partition(self, partition, *, wipe=None):
