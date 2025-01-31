@@ -685,7 +685,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if not p._is_in_use:
                     self.delete_partition(p)
         else:
-            self.reformat(disk, wipe="superblock-recursive")
+            self.reformat(disk, ptable=target.ptable, wipe="superblock-recursive")
         return gaps.largest_gap(disk)
 
     @start_guided.register
