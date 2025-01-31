@@ -639,7 +639,9 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
                 GuidedStorageTargetReformat(disk_id=disk.id), disk
             )
 
-        m_reformat.assert_called_once_with(disk, wipe="superblock-recursive")
+        m_reformat.assert_called_once_with(
+            disk, ptable=None, wipe="superblock-recursive"
+        )
         expected_del_calls = [
             mock.call(p1, True),
             mock.call(p2, True),
@@ -933,7 +935,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_direct_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, allowed=default_capabilities
+            disk_id=self.d1.id, ptable="msdos", allowed=default_capabilities
         )
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.DIRECT)
@@ -967,7 +969,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_lvm_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, allowed=default_capabilities
+            disk_id=self.d1.id, ptable="msdos", allowed=default_capabilities
         )
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.LVM)
@@ -1064,7 +1066,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_zfs_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, allowed=default_capabilities
+            disk_id=self.d1.id, ptable="msdos", allowed=default_capabilities
         )
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.ZFS)
