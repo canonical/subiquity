@@ -236,6 +236,8 @@ class GuidedResizeValues:
 @attr.s(auto_attribs=True)
 class GuidedStorageTargetReformat:
     disk_id: str
+    # ptable=None means to use the default (GPT in most scenarios)
+    ptable: Optional[str] = None
     allowed: List[GuidedCapability] = attr.Factory(list)
     disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
 
