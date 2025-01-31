@@ -1475,6 +1475,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         assert matching_disks
         return matching_disks[0]
 
+    def has_valid_non_core_boot_variation(self) -> bool:
+        for variation in self._variation_info.values():
+            if not variation.is_valid():
+                continue
+            if not variation.is_core_boot_classic():
+                return True
+        return False
+
     async def run_autoinstall_guided(self, layout):
         name = layout["name"]
         password = None
@@ -1521,12 +1529,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         else:
             # this check is conceptually unnecessary but results in a
             # much cleaner error message...
-            for variation in self._variation_info.values():
-                if not variation.is_valid():
-                    continue
-                if not variation.is_core_boot_classic():
-                    break
-            else:
+            if not self.has_valid_non_core_boot_variation():
                 raise Exception(
                     "must use name: hybrid when installing core boot classic"
                 )
@@ -1561,8 +1564,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         if mode == "reformat_disk":
             match = layout.get("match", {"size": "largest"})
+            ptable = layout.get("ptable")
             disk = self.get_bootable_matching_disk(match)
-            target = GuidedStorageTargetReformat(disk_id=disk.id, allowed=[])
+            target = GuidedStorageTargetReformat(
+                disk_id=disk.id, ptable=ptable, allowed=[]
+            )
         elif mode == "use_gap":
             match = layout.get("match", {})
             bootable_disks = self.get_bootable_matching_disks(match)
