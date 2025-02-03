@@ -965,10 +965,13 @@ class Partition(_Formattable):
         if fs_data is None:
             return -1
         val = fs_data.get("ESTIMATED_MIN_SIZE", -1)
-        if val == 0:
-            return self.device.alignment_data().part_align
         if val == -1:
             return -1
+        if not self.on_supported_ptable():
+            # We don't know the alignment constraints so...
+            return -1
+        if val == 0:
+            return self.device.alignment_data().part_align
         return align_up(val, self.device.alignment_data().part_align)
 
     @property

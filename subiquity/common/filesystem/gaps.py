@@ -194,6 +194,8 @@ def find_disk_gaps_v2(device, info=None):
 def parts_and_gaps_disk(device, ignore_disk_fs=False):
     if device._fs is not None and not ignore_disk_fs:
         return []
+    if device.ptable == "unsupported":
+        return device.partitions()
     if device._m.storage_version == 1:
         return find_disk_gaps_v1(device)
     else:

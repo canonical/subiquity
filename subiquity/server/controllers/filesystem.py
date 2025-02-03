@@ -1175,6 +1175,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     ) -> list[tuple[int, GuidedStorageTargetUseGap]]:
         scenarios: list[tuple[int, GuidedStorageTargetUseGap]] = []
         for disk in self.potential_boot_disks(with_reformatting=False):
+            if disk.ptable == "unsupported":
+                # In theory, this check is not needed since largest_gap will
+                # return None. But let's make it obvious that we don't want to
+                # deal with unsupported ptables.
+                continue
             parts = [
                 p
                 for p in disk.partitions()
@@ -1216,6 +1221,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         scenarios: list[tuple[int, GuidedStorageTargetResize]] = []
 
         for disk in self.potential_boot_disks(check_boot=False):
+            if disk.ptable == "unsupported":
+                continue
             part_align = disk.alignment_data().part_align
             for partition in disk.partitions():
                 if partition._is_in_use:
