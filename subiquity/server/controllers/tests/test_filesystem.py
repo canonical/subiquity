@@ -639,7 +639,9 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
                 GuidedStorageTargetReformat(disk_id=disk.id), disk
             )
 
-        m_reformat.assert_called_once_with(disk, wipe="superblock-recursive")
+        m_reformat.assert_called_once_with(
+            disk, ptable=None, wipe="superblock-recursive"
+        )
         expected_del_calls = [
             mock.call(p1, True),
             mock.call(p2, True),
@@ -933,7 +935,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_direct_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, allowed=default_capabilities
+            disk_id=self.d1.id, ptable="msdos", allowed=default_capabilities
         )
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.DIRECT)
@@ -967,7 +969,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_lvm_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, allowed=default_capabilities
+            disk_id=self.d1.id, ptable="msdos", allowed=default_capabilities
         )
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.LVM)
@@ -1064,7 +1066,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_zfs_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, allowed=default_capabilities
+            disk_id=self.d1.id, ptable="msdos", allowed=default_capabilities
         )
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.ZFS)
@@ -1198,6 +1200,37 @@ class TestLayout(IsolatedAsyncioTestCase):
     async def test_bad_modes(self, mode):
         with self.assertRaises(ValueError):
             self.fsc.validate_layout_mode(mode)
+
+    @parameterized.expand([(True, None), (True, "gpt"), (True, "msdos"), (False, None)])
+    async def test_autoinstall__reformat_with_ptable(self, include_ptable, ptable):
+        self.fsc.model = make_model()
+
+        make_disk(self.fsc.model, id="dev-sdc"),
+
+        layout = {
+            "name": "direct",
+            "mode": "reformat_disk",
+        }
+
+        if include_ptable:
+            layout["ptable"] = ptable
+
+        p_guided = mock.patch.object(self.fsc, "guided")
+        p_reformat = mock.patch(
+            "subiquity.server.controllers.filesystem.GuidedStorageTargetReformat"
+        )
+        p_has_valid_variation = mock.patch.object(
+            self.fsc, "has_valid_non_core_boot_variation", return_value=True
+        )
+
+        with p_guided as m_guided, p_reformat as m_reformat, p_has_valid_variation:
+            await self.fsc.run_autoinstall_guided(layout)
+
+        expected_ptable = ptable if include_ptable else None
+        m_reformat.assert_called_once_with(
+            disk_id="dev-sdc", ptable=expected_ptable, allowed=[]
+        )
+        m_guided.assert_called_once()
 
 
 class TestGuidedV2(IsolatedAsyncioTestCase):

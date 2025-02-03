@@ -602,6 +602,16 @@ By default, these layouts install to the largest disk in a system, but you can s
 
 .. note:: Match spec -- using ``match: {}`` matches an arbitrary disk.
 
+
+By default (except on s390x), the matching disk will be partitioned using a GUID Partition Table (GPT). But you can specifically request a MSDOS (aka. MBR) partition table:
+
+.. code-block:: yaml
+    autoinstall:
+      storage:
+        layout:
+          name: direct
+          ptable: msdos
+
 When using the ``lvm`` layout, LUKS encryption can be enabled by supplying a password.
 
 .. code-block:: yaml

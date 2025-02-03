@@ -1562,7 +1562,7 @@ class TestDisk(unittest.TestCase):
         self.assertIsNot(d._partitions, d2._partitions)
 
     def test__reformatted__with_partitions(self):
-        m, d = make_model_and_disk()
+        m, d = make_model_and_disk(ptable="gpt")
 
         p1 = make_partition(m, d)
         p2 = make_partition(m, d)
@@ -1573,8 +1573,11 @@ class TestDisk(unittest.TestCase):
         self.assertEqual(d.partitions(), [p1, p2])
         self.assertEqual(d2.partitions(), [])
 
+        self.assertEqual("gpt", d.ptable)
+        self.assertIsNone(d2.ptable)
+
     def test__reformatted__with_in_use_parts(self):
-        m, d = make_model_and_disk()
+        m, d = make_model_and_disk(ptable="gpt")
 
         p1 = make_partition(m, d, is_in_use=True)
         p2 = make_partition(m, d, is_in_use=True)
@@ -1587,6 +1590,9 @@ class TestDisk(unittest.TestCase):
         self.assertIsNot(d, d2)
         self.assertEqual(d.partitions(), [p1, p2, p3, p4, p5])
         self.assertEqual(d2.partitions(), [p1, p2, p4])
+
+        self.assertEqual("gpt", d.ptable)
+        self.assertEqual("gpt", d2.ptable)
 
     def test__excluding_partition(self):
         m, d = make_model_and_disk()
