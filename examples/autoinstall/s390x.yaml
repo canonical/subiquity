@@ -1,0 +1,12 @@
+version: 1
+identity:
+  hostname: ai-test
+  password: "$y$j9T$UdY22v4Kexn/AZcIzBSUc0$2DnuvWDSwoDCFPlbk1ghZeT2qFrEBKY1bpFQoexHdw7"
+  username: ubuntu
+zdevs:
+  - id: 0.0.1506
+    state: enabled
+  - id: 0.0.1507
+    state: enabled
+  - id: 0.0.1508
+    state: disabled
