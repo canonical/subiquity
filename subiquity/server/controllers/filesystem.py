@@ -1309,6 +1309,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug("v2_add_boot_partition: disk-id: %s", disk_id)
         self.locked_probe_data = True
         disk = self.model._one(id=disk_id)
+        if disk.ptable == "unsupported":
+            raise ValueError("cannot modify a disk with an unsupported partition table")
         if boot.is_boot_device(disk):
             raise ValueError("device already has bootloader partition")
         if DeviceAction.TOGGLE_BOOT not in DeviceAction.supported(disk):
@@ -1322,6 +1324,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if data.partition.boot is not None:
             raise ValueError("add_partition does not support changing boot")
         disk = self.model._one(id=data.disk_id)
+        if disk.ptable == "unsupported":
+            raise ValueError("cannot modify a disk with an unsupported partition table")
         requested_size = data.partition.size or 0
         if requested_size > data.gap.size:
             raise ValueError("new partition too large")
@@ -1345,6 +1349,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug(data)
         self.locked_probe_data = True
         disk = self.model._one(id=data.disk_id)
+        if disk.ptable == "unsupported":
+            raise ValueError("cannot modify a disk with an unsupported partition table")
         partition = self.get_partition(disk, data.partition.number)
         self.delete_partition(partition)
         return await self.v2_GET()
@@ -1355,6 +1361,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug(data)
         self.locked_probe_data = True
         disk = self.model._one(id=data.disk_id)
+        if disk.ptable == "unsupported":
+            raise ValueError("cannot modify a disk with an unsupported partition table")
         partition = self.get_partition(disk, data.partition.number)
         if (
             data.partition.size not in (None, partition.size)
