@@ -280,7 +280,12 @@ def _usage_labels_partition(partition):
 
 @usage_labels.register(Disk)
 def _usage_labels_disk(disk):
-    return _usage_labels_generic(disk, exclude_final_unused=True)
+    usages = _usage_labels_generic(disk, exclude_final_unused=True)
+
+    if disk.ptable == "unsupported":
+        usages.append(_("unsupported partition table"))
+
+    return usages
 
 
 @usage_labels.register(Raid)
