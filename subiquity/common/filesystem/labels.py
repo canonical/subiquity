@@ -334,6 +334,7 @@ def _for_client_disk(disk, *, min_size=0):
         model=getattr(disk, "model", None),
         vendor=getattr(disk, "vendor", None),
         has_in_use_partition=disk._has_in_use_partition,
+        requires_reformat=disk.ptable == "unsupported",
     )
 
 
