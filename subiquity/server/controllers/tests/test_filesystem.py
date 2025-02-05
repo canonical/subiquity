@@ -56,6 +56,7 @@ from subiquity.models.tests.test_filesystem import (
     FakeStorageInfo,
     make_disk,
     make_model,
+    make_model_and_disk,
     make_model_and_lv,
     make_model_and_raid,
     make_model_and_vg,
@@ -308,6 +309,18 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertTrue(self.fsc.locked_probe_data)
         add_boot_disk.assert_not_called()
 
+    async def test_v2_add_boot_partition_POST_unsupported_ptable(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk(ptable="unsupported")
+
+        with mock.patch.object(self.fsc, "add_boot_disk") as add_boot_disk:
+            with self.assertRaisesRegex(
+                StorageRecoverableError, "unsupported partition table"
+            ):
+                await self.fsc.v2_add_boot_partition_POST(d.id)
+        self.assertTrue(self.fsc.locked_probe_data)
+        add_boot_disk.assert_not_called()
+
     @mock.patch(MOCK_PREFIX + "boot.is_boot_device", mock.Mock(return_value=False))
     @mock.patch(
         MOCK_PREFIX + "DeviceAction.supported",
@@ -364,6 +377,30 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertTrue(self.fsc.locked_probe_data)
         create_part.assert_not_called()
 
+    async def test_v2_add_partition_POST_unsupported_ptable(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk(ptable="unsupported")
+        data = AddPartitionV2(
+            disk_id=d.id,
+            partition=Partition(
+                format="ext4",
+                mount="/",
+                size=2000 << 20,
+            ),
+            gap=Gap(
+                offset=1 << 20,
+                size=1000 << 20,
+                usable=GapUsable.YES,
+            ),
+        )
+        with mock.patch.object(self.fsc, "create_partition") as create_part:
+            with self.assertRaisesRegex(
+                StorageRecoverableError, r"unsupported partition table"
+            ):
+                await self.fsc.v2_add_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        create_part.assert_not_called()
+
     @mock.patch(MOCK_PREFIX + "gaps.at_offset")
     async def test_v2_add_partition_POST(self, at_offset):
         at_offset.split = mock.Mock(return_value=[mock.Mock()])
@@ -384,6 +421,22 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             await self.fsc.v2_add_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
         create_part.assert_called_once()
+
+    async def test_v2_delete_partition_POST_unsupported_ptable(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk(ptable="unsupported")
+        data = ModifyPartitionV2(
+            disk_id=d.id,
+            partition=Partition(number=1),
+        )
+        with mock.patch.object(self.fsc, "delete_partition") as del_part:
+            with mock.patch.object(self.fsc, "get_partition"):
+                with self.assertRaisesRegex(
+                    StorageRecoverableError, r"unsupported partition table"
+                ):
+                    await self.fsc.v2_delete_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        del_part.assert_not_called()
 
     async def test_v2_delete_partition_POST(self):
         self.fsc.locked_probe_data = False
@@ -407,6 +460,23 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
             with mock.patch.object(self.fsc, "get_partition", return_value=existing):
                 with self.assertRaisesRegex(ValueError, r"changing\ boot"):
+                    await self.fsc.v2_edit_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        handler.assert_not_called()
+
+    async def test_v2_edit_partition_POST_unsupported_ptable(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk(ptable="unsupported")
+        data = ModifyPartitionV2(
+            disk_id=d.id,
+            partition=Partition(number=1, boot=True),
+        )
+        existing = Partition(number=1, size=1000 << 20, boot=False)
+        with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
+            with mock.patch.object(self.fsc, "get_partition", return_value=existing):
+                with self.assertRaisesRegex(
+                    StorageRecoverableError, r"unsupported partition table"
+                ):
                     await self.fsc.v2_edit_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
         handler.assert_not_called()
