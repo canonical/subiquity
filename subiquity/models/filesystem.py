@@ -868,6 +868,8 @@ class Disk(_Device):
 
     @property
     def ok_for_raid(self):
+        if self.ptable == "unsupported":
+            return False
         if self._fs is not None:
             if self._fs.preserve:
                 return self._fs._mount is None
@@ -987,6 +989,8 @@ class Partition(_Formattable):
 
     @property
     def ok_for_raid(self):
+        if not self.on_supported_ptable():
+            return False
         if self.boot:
             return False
         if self._fs is not None:
@@ -1032,6 +1036,9 @@ class Partition(_Formattable):
 
     def on_remote_storage(self) -> bool:
         return self.device.on_remote_storage()
+
+    def on_supported_ptable(self) -> bool:
+        return self.device.ptable != "unsupported"
 
 
 @fsobj("raid")
