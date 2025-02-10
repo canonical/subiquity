@@ -1190,6 +1190,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     ) -> list[tuple[int, GuidedStorageTargetUseGap]]:
         scenarios: list[tuple[int, GuidedStorageTargetUseGap]] = []
         for disk in self.potential_boot_disks(with_reformatting=False):
+            if disk.ptable == "unsupported":
+                # In theory, this check is not needed since largest_gap will
+                # return None. But let's make it obvious that we don't want to
+                # deal with unsupported ptables.
+                continue
             parts = [
                 p
                 for p in disk.partitions()
@@ -1231,6 +1236,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         scenarios: list[tuple[int, GuidedStorageTargetResize]] = []
 
         for disk in self.potential_boot_disks(check_boot=False):
+            if disk.ptable == "unsupported":
+                continue
             part_align = disk.alignment_data().part_align
             for partition in disk.partitions():
                 if partition._is_in_use:
@@ -1272,6 +1279,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         for disk in self.potential_boot_disks(check_boot=False):
             # Skip RAID until we know how to proceed.
             if not isinstance(disk, ModelDisk):
+                continue
+
+            if disk.ptable == "unsupported":
+                # Let's not mess up with unsupported ptables. We can't remove
+                # partitions on these.
                 continue
 
             for partition in disk.partitions():
@@ -1385,6 +1397,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug("v2_add_boot_partition: disk-id: %s", disk_id)
         self.locked_probe_data = True
         disk = self.model._one(id=disk_id)
+        if disk.ptable == "unsupported":
+            raise StorageRecoverableError(
+                "cannot modify a disk with an unsupported partition table"
+            )
         if boot.is_boot_device(disk):
             raise StorageRecoverableError("device already has bootloader partition")
         if DeviceAction.TOGGLE_BOOT not in DeviceAction.supported(disk):
@@ -1398,6 +1414,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if data.partition.boot is not None:
             raise ValueError("add_partition does not support changing boot")
         disk = self.model._one(id=data.disk_id)
+        if disk.ptable == "unsupported":
+            raise StorageRecoverableError(
+                "cannot modify a disk with an unsupported partition table"
+            )
         requested_size = data.partition.size or 0
         if requested_size > data.gap.size:
             raise ValueError("new partition too large")
@@ -1422,6 +1442,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug(data)
         self.locked_probe_data = True
         disk = self.model._one(id=data.disk_id)
+        if disk.ptable == "unsupported":
+            raise StorageRecoverableError(
+                "cannot modify a disk with an unsupported partition table"
+            )
         partition = self.get_partition(disk, data.partition.number)
         self.delete_partition(partition)
         return await self.v2_GET()
@@ -1432,6 +1456,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug(data)
         self.locked_probe_data = True
         disk = self.model._one(id=data.disk_id)
+        if disk.ptable == "unsupported":
+            raise StorageRecoverableError(
+                "cannot modify a disk with an unsupported partition table"
+            )
         partition = self.get_partition(disk, data.partition.number)
         if (
             data.partition.size not in (None, partition.size)

@@ -738,6 +738,16 @@ class TestReformat(unittest.TestCase):
         self.manipulator.reformat(disk, "msdos")
         self.assertEqual("msdos", disk.ptable)
 
+    def test_reformat_unsupported_disk(self):
+        # Start with a GPT disk so we can call make_partition, but then reset
+        # it to unsupported.
+        disk = make_disk(self.manipulator.model, ptable="gpt")
+        make_partition(self.manipulator.model, disk)
+
+        disk.ptable = "unsupported"
+
+        self.manipulator.reformat(disk, ptable=None)
+
 
 class TestCanResize(unittest.TestCase):
     def setUp(self):
