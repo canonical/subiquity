@@ -582,6 +582,32 @@ def create_disk(path: Path, size: str):
     run(['qemu-img', 'create', '-f', 'qcow2', str(path), size])
 
 
+def storage_args(ctx) -> list[str]:
+    if not ctx.targets:
+        return []
+
+    args = []
+    match ctx.args.disk_interface:
+        case 'virtio':
+            for idx, target in enumerate(ctx.targets):
+                args.extend(drive(target, id_=f'disk{idx}', if_='virtio'))
+        case 'nvme':
+            for idx, target in enumerate(ctx.targets):
+                args.extend(drive(target, id_=f'localdisk{idx}', if_="none"))
+                args.extend(('-device', f'nvme,drive=localdisk{idx},serial=deadbeef{idx}'))
+        case 'scsi-multipath':
+            args.extend(("-device", "virtio-scsi-pci,id=scsi"))
+            for args, target in enumerate(ctx.targets):
+                args.extend(drive(target, id_=f"mdisk{idx}0", if_="none", file_locking=False))
+                args.extend(("-device", f"scsi-hd,drive=mdisk{idx}0,serial=MPIO{idx}"))
+                args.extend(drive(target, id_=f"mdisk{idx}1", if_="none", file_locking=False))
+                args.extend(("-device", f"scsi-hd,drive=mdisk{idx}1,serial=MPIO{idx}"))
+        case interface:
+            raise ValueError('unsupported disk interface', interface)
+
+    return args
+
+
 def install(ctx):
     boot_opts = ["order=d"]
     if ctx.vmstate.exists():
@@ -639,24 +665,9 @@ the ESC button when the QEMU window opens. Then select "Device Manager" and \
             if ctx.args.update:
                 appends.append('subiquity-channel=' + ctx.args.update)
 
+            kvm.extend(storage_args(ctx))
+
             if ctx.targets:
-                match ctx.args.disk_interface:
-                    case 'virtio':
-                        for idx, target in enumerate(ctx.targets):
-                            kvm.extend(drive(target, id_=f'disk{idx}', if_='virtio'))
-                    case 'nvme':
-                        for idx, target in enumerate(ctx.targets):
-                            kvm.extend(drive(target, id_=f'localdisk{idx}', if_="none"))
-                            kvm.extend(('-device', f'nvme,drive=localdisk{idx},serial=deadbeef{idx}'))
-                    case 'scsi-multipath':
-                        kvm.extend(("-device", "virtio-scsi-pci,id=scsi"))
-                        for idx, target in enumerate(ctx.targets):
-                            kvm.extend(drive(target, id_=f"mdisk{idx}0", if_="none", file_locking=False))
-                            kvm.extend(("-device", f"scsi-hd,drive=mdisk{idx}0,serial=MPIO{idx}"))
-                            kvm.extend(drive(target, id_=f"mdisk{idx}1", if_="none", file_locking=False))
-                            kvm.extend(("-device", f"scsi-hd,drive=mdisk{idx}1,serial=MPIO{idx}"))
-                    case interface:
-                        raise ValueError('unsupported disk interface', interface)
                 for target, disksize in zip_longest(ctx.targets, ctx.args.disks_sizes):
                     if target is None:
                         break
@@ -713,8 +724,8 @@ def boot(ctx):
     with kvm_prepare_common(ctx) as kvm:
         if ctx.args.img:
             kvm.extend(drive(ctx.args.img))
-        elif ctx.args.targets:
-            kvm.extend(drive(ctx.targets[0]))
+        else:
+            kvm.extend(storage_args(ctx))
         if ctx.args.secureboot:
             if not ctx.ovmf["VARS"].exists():
                 raise Exception(f"Couldn't find firmware variables file {str(ctx.ovmf['VARS'])!r}")
