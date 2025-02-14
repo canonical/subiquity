@@ -202,7 +202,7 @@ disk_group = parser.add_mutually_exclusive_group()
 disk_group.add_argument('-d', '--disksize', help='size of disk to create')
 disk_group.add_argument('--no-disk', action='store_true', help='attach no local storage')
 parser.add_argument('--disk-interface', help='type of interface for the disk',
-                    choices=('nvme', 'virtio', 'scsi-multipath'), default='virtio')
+                    choices=('nvme', 'virtio', 'scsi', 'scsi-multipath'), default='virtio')
 parser.add_argument('-i', '--img', action='store', help='use this img')
 parser.add_argument('-n', '--nets', action='store', default=1, type=int,
                     help='''number of network interfaces.
@@ -634,6 +634,19 @@ the ESC button when the QEMU window opens. Then select "Device Manager" and \
                     case 'nvme':
                         kvm.extend(drive(ctx.target, id_='localdisk0', if_="none"))
                         kvm.extend(('-device', 'nvme,drive=localdisk0,serial=deadbeef'))
+                    case 'scsi':
+                        kvm.extend(("-device", "virtio-scsi-pci,id=scsi"))
+                        kvm.extend(drive(ctx.target, id_="localdisk0", if_="none"))
+                        kvm.extend(("-device", "scsi-hd,drive=localdisk0,serial=deadbeef"))
+                        note = """
+NOTE:
+----
+If the guest supports it (plucky does but noble doesn't), you can create a fake \
+IMSM RAID 0 using the following commands:
+  # IMSM_NO_PLATFORM=1 mdadm --create /dev/md/imsm0 -n 1 --metadata=imsm /dev/sda --force
+  # IMSM_NO_PLATFORM=1 mdadm --create /dev/md/raid0_1 -n 1 --level 0 /dev/md/imsm0 --force
+----"""
+                        print(note, file=sys.stderr)
                     case 'scsi-multipath':
                         kvm.extend(("-device", "virtio-scsi-pci,id=scsi"))
                         kvm.extend(drive(ctx.target, id_="mdisk0", if_="none", file_locking=False))
