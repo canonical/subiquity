@@ -208,7 +208,7 @@ parser.add_argument('--no-disk', action='store_const', const=0,
                     dest='disk_count', help='attach no local storage')
 
 parser.add_argument('--disk-interface', help='type of interface for the disk(s)',
-                    choices=('nvme', 'virtio', 'scsi-multipath'), default='virtio')
+                    choices=('nvme', 'virtio', 'scsi', 'scsi-multipath'), default='virtio')
 parser.add_argument('-d', '--disksize', action='append', dest='disks_sizes', default=[],
                     help='size of disk to create (12G default) (repeat to specify size of extra disks)')
 parser.add_argument('-i', '--img', action='store', help='use this img')
@@ -595,9 +595,25 @@ def storage_args(ctx) -> list[str]:
             for idx, target in enumerate(ctx.targets):
                 args.extend(drive(target, id_=f'localdisk{idx}', if_="none"))
                 args.extend(('-device', f'nvme,drive=localdisk{idx},serial=deadbeef{idx}'))
+        case 'scsi':
+            args.extend(('-device', 'virtio-scsi-pci,id=scsi'))
+            for idx, target in enumerate(ctx.targets):
+                args.extend(drive(target, id_=f'localdisk{idx}', if_="none"))
+                args.extend(('-device', f'scsi-hd,drive=localdisk{idx},serial=deadbeef{idx}'))
+            note = '''
+NOTE:
+----
+If the guest supports it (plucky does but noble doesn't), you can create a fake \
+IMSM RAID using commands such as:
+  # IMSM_NO_PLATFORM=1 mdadm --create /dev/md/imsm0 -n 2 --metadata=imsm /dev/sda /dev/sdb
+  # IMSM_NO_PLATFORM=1 mdadm --create /dev/md/raid1_1 -n 2 --level 1 /dev/md/imsm0
+If you only have one disk, you can still do a RAID 0 (i.e., --level=0) but you \
+will need to pass the --force option.
+----'''
+            print(note, file=sys.stderr)
         case 'scsi-multipath':
             args.extend(("-device", "virtio-scsi-pci,id=scsi"))
-            for args, target in enumerate(ctx.targets):
+            for idx, target in enumerate(ctx.targets):
                 args.extend(drive(target, id_=f"mdisk{idx}0", if_="none", file_locking=False))
                 args.extend(("-device", f"scsi-hd,drive=mdisk{idx}0,serial=MPIO{idx}"))
                 args.extend(drive(target, id_=f"mdisk{idx}1", if_="none", file_locking=False))
