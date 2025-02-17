@@ -121,6 +121,15 @@ enter_advancing_command_map["enter no wrap"] = "next selectable"
 class TabCyclingPile(urwid.Pile):
     _command_map = enter_advancing_command_map
 
+    def sizing(self) -> frozenset[urwid.Sizing]:
+        """urwid 2.4.2 added support in Piles for widgets with fixed sizing.
+        Unfortunately, this nuked the performance for us. Maybe we are doing
+        something wrong? For now, let's revert the change in our Pile
+        implementation.
+        See LP: #2089681
+        """
+        return frozenset([urwid.FLOW, urwid.BOX])
+
     def selectable(self):
         for w, _ in self.contents:
             if w.selectable():
