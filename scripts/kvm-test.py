@@ -613,7 +613,7 @@ will need to pass the --force option.
             print(note, file=sys.stderr)
         case 'scsi-multipath':
             args.extend(("-device", "virtio-scsi-pci,id=scsi"))
-            for args, target in enumerate(ctx.targets):
+            for idx, target in enumerate(ctx.targets):
                 args.extend(drive(target, id_=f"mdisk{idx}0", if_="none", file_locking=False))
                 args.extend(("-device", f"scsi-hd,drive=mdisk{idx}0,serial=MPIO{idx}"))
                 args.extend(drive(target, id_=f"mdisk{idx}1", if_="none", file_locking=False))
