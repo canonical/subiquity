@@ -21,7 +21,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: run
-      run: sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make check"
+      run: |
+        sudo ./scripts/github-ci-lxd-setup.sh
+        sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make check"
 
   lint:
     runs-on: ubuntu-24.04
@@ -35,7 +37,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: lint
-      run: sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make lint"
+      run: |
+        sudo ./scripts/github-ci-lxd-setup.sh
+        sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make lint"
 
   format-black:
     runs-on: ubuntu-24.04
