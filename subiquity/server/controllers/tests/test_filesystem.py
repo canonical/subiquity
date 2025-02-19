@@ -377,6 +377,29 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertTrue(self.fsc.locked_probe_data)
         create_part.assert_not_called()
 
+    async def test_v2_add_partition_POST_change_pname(self):
+        self.fsc.locked_probe_data = False
+        data = AddPartitionV2(
+            disk_id="dev-sda",
+            partition=Partition(
+                format="ext4",
+                mount="/",
+                name="Foobar",
+            ),
+            gap=Gap(
+                offset=1 << 20,
+                size=1000 << 20,
+                usable=GapUsable.YES,
+            ),
+        )
+        with mock.patch.object(self.fsc, "create_partition") as create_part:
+            with self.assertRaisesRegex(
+                StorageRecoverableError, r"partition name is not implemented"
+            ):
+                await self.fsc.v2_add_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        create_part.assert_not_called()
+
     async def test_v2_add_partition_POST_unsupported_ptable(self):
         self.fsc.locked_probe_data = False
         self.fsc.model, d = make_model_and_disk(ptable="unsupported")
@@ -461,6 +484,22 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
             with mock.patch.object(self.fsc, "get_partition", return_value=existing):
                 with self.assertRaisesRegex(ValueError, r"changing\ boot"):
+                    await self.fsc.v2_edit_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        handler.assert_not_called()
+
+    async def test_v2_edit_partition_POST_change_pname(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk()
+        data = ModifyPartitionV2(
+            disk_id=d.id,
+            partition=Partition(number=1, name="Foobar"),
+        )
+
+        existing = make_partition(self.fsc.model, d, size=1000 << 20)
+        with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
+            with mock.patch.object(self.fsc, "get_partition", return_value=existing):
+                with self.assertRaisesRegex(ValueError, r"changing partition name"):
                     await self.fsc.v2_edit_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
         handler.assert_not_called()

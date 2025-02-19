@@ -131,3 +131,15 @@ class TestForClient(unittest.TestCase):
     def test_for_client_disk_unsupported_ptable(self):
         _, disk = make_model_and_disk(ptable="unsupported")
         self.assertTrue(for_client(disk).requires_reformat)
+
+    def test_for_client_partition_no_name(self):
+        model, disk = make_model_and_disk(ptable="gpt")
+        part = make_partition(model, disk, partition_name=None)
+
+        self.assertIsNone(for_client(part).name)
+
+    def test_for_client_partition_with_name(self):
+        model, disk = make_model_and_disk(ptable="gpt")
+        part = make_partition(model, disk, partition_name="Foobar")
+
+        self.assertEqual("Foobar", for_client(part).name)

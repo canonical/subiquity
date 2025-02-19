@@ -65,6 +65,9 @@ class Partition:
     estimated_min_size: Optional[int] = -1
     resize: Optional[bool] = None
     path: Optional[str] = None
+    # Be careful, this corresponds to the partition_name field (not the name
+    # field) in the associated fsobject
+    name: Optional[str] = None
     # Was this partition mounted when the installer started?
     is_in_use: bool = False
 

@@ -1455,6 +1455,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             spec["fstype"] = fstype
         if data.partition.mount is not None:
             spec["mount"] = data.partition.mount
+        if data.partition.name is not None:
+            raise StorageRecoverableError(
+                "setting the partition name is not implemented"
+            )
 
         gap = gaps.at_offset(disk, data.gap.offset).split(requested_size)[0]
         self.create_partition(disk, gap, spec, wipe="superblock")
@@ -1492,6 +1496,25 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise ValueError("edit_partition does not support changing size")
         if data.partition.boot is not None and data.partition.boot != partition.boot:
             raise ValueError("edit_partition does not support changing boot")
+        if data.partition.name != partition.name:
+            if data.partition is None:
+                # FIXME Instead of checking if data.partition.name is None,
+                # what we really want to know is whether the name field is
+                # present in the request. Unfortunately, None is the default
+                # value so there is no easy way to make the distinction between
+                # these two scenarios:
+                # 1. No intention to change the partition name:
+                #     {"partition": {"number": 1, ...}
+                # 2. Attemping to reset the partition name:
+                #     {"partition": {"number": 1, "name": null, ...}
+                log.warning(
+                    "cannot tell if the user wants to keep the current"
+                    " partition name or reset it ; assuming they want to keep it"
+                )
+            else:
+                raise ValueError(
+                    "edit_partition does not support changing partition name"
+                )
         spec: PartitionSpec = {"mount": data.partition.mount or partition.mount}
         if data.partition.format is not None:
             if data.partition.format != partition.original_fstype():

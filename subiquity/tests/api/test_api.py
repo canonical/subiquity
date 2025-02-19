@@ -906,6 +906,31 @@ class TestEdit(TestAPI):
                 await inst.post("/storage/v2/edit_partition", data)
 
     @timeout()
+    async def test_edit_no_change_pname(self):
+        async with start_server("examples/machines/win11-along-ubuntu.json") as inst:
+            disk_id = "disk-sda"
+            resp = await inst.get("/storage/v2")
+
+            [sda] = match(resp["disks"], id=disk_id)
+            [sda2] = match(sda["partitions"], number=2)
+
+            self.assertIsNotNone(sda2["name"])
+
+            # This should be a no-op since "name" is not present.
+            data = {
+                "disk_id": disk_id,
+                "partition": {
+                    "number": 2,
+                },
+            }
+            await inst.post("/storage/v2/edit_partition", data)
+
+            # Now, it should refuse the update
+            data["partition"]["name"] = "foo"
+            with self.assertRaises(ClientResponseError):
+                await inst.post("/storage/v2/edit_partition", data)
+
+    @timeout()
     async def test_edit_format(self):
         async with start_server("examples/machines/win10.json") as inst:
             disk_id = "disk-sda"
