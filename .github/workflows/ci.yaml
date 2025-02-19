@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -24,7 +24,7 @@ jobs:
       run: sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make check"
 
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -38,7 +38,7 @@ jobs:
       run: sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make lint"
 
   format-black:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: psf/black@stable
@@ -47,7 +47,7 @@ jobs:
           src: "console_conf subiquity subiquitycore system_setup"
 
   format-isort:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: isort/isort-action@v1
@@ -58,7 +58,7 @@ jobs:
   static-typing:
     # In this job, we compare the output of mypy before and after the PR.
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-22.04  # minimimum 22.04 for python3-typeshed
+    runs-on: ubuntu-24.04
     steps:
       - name: Install mypy and typeshed
         run: sudo apt-get install -y python3-mypy python3-typeshed
