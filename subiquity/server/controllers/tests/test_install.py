@@ -29,6 +29,7 @@ from subiquity.models.tests.test_filesystem import make_model_and_partition
 from subiquity.server.controllers.install import CurtinInstallError, InstallController
 from subiquity.server.mounter import Mountpoint
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.parameterized import parameterized
 
 
 class TestWriteConfig(unittest.IsolatedAsyncioTestCase):
@@ -379,3 +380,33 @@ linux /casper/vmlinuz layerfs-path=minimal.standard.live.squashfs nopersistent '
                 (d / ".disk/casper-uuid-generic").read_text().strip()
             )
             self.assertEqual(new_casper_uuid, casper_uuid_from_file)
+
+
+class TestInstallControllerDriverMatch(unittest.TestCase):
+    def setUp(self):
+        self.ic = InstallController(make_app())
+
+    @parameterized.expand(
+        (
+            # no components
+            ([], ["nvidia-driver-510"], []),
+            # no drivers detected
+            (["nvidia-510-ko", "nvidia-510-user"], [], []),
+            # missing user component
+            (["nvidia-510-ko"], ["nvidia-driver-510"], []),
+            # missing ko component
+            (["nvidia-510-user"], ["nvidia-driver-510"], []),
+            # wrong driver version
+            (["nvidia-510-ko", "nvidia-510-user"], ["nvidia-driver-999"], []),
+            # match
+            (
+                ["nvidia-510-ko", "nvidia-510-user"],
+                ["nvidia-driver-510"],
+                ["nvidia-510-ko", "nvidia-510-user"],
+            ),
+        )
+    )
+    def test_kernel_components(self, comps, drivers, expected):
+        self.ic.app.controllers.Filesystem._info.available_kernel_components = comps
+        self.ic.app.controllers.Drivers.drivers = drivers
+        self.assertEqual(expected, self.ic.kernel_components())
