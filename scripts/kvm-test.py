@@ -107,7 +107,7 @@ class Context:
             self.baseiso = os.path.join(iso["basedir"],
                                         iso["release"][self.release])
         except KeyError:
-            pass
+            self.baseiso = self.args.iso
         self.curdir = os.getcwd()
         self.hostname = f'{self.release}-test'
         self.rundir = Path(
@@ -332,7 +332,7 @@ def run(cmd):
         cmd_str = cmd
         cmd_array = shlex.split(cmd)
     else:
-        cmd_str = shlex.join(cmd)
+        cmd_str = shlex.join([str(c) for c in cmd])
         cmd_array = cmd
     # semi-simulate "bash -x"
     print(f'+ {cmd_str}', file=sys.stderr)
@@ -364,11 +364,11 @@ def noop(path):
 
 @contextlib.contextmanager
 def mounter(src, dest):
-    run(["fuseiso", str(src), str(dest)])
+    run(["sudo", "mount", str(src), str(dest)])
     try:
         yield
     finally:
-        run(["fusermount", "-u", dest])
+        run(["sudo", "umount", str(dest)])
 
 
 def livefs_edit(ctx, *args):
@@ -389,7 +389,8 @@ def build(ctx):
     snap_manager = noop if ctx.args.save else delete_later
     if project == 'subiquity':
         if ctx.args.quick:
-            run(f'sudo ./scripts/quick-test-this-branch.sh {ctx.baseiso} \
+            livefs_editor = os.environ['LIVEFS_EDITOR']
+            run(f'sudo LIVEFS_EDITOR={livefs_editor} ./scripts/quick-test-this-branch.sh {ctx.baseiso} \
                 {ctx.iso}')
         elif ctx.args.basesnap:
             with snap_manager('subiquity_test.snap') as snap:
@@ -401,8 +402,7 @@ def build(ctx):
             run(f'sudo ./scripts/inject-subiquity-snap.sh {ctx.baseiso} \
                 {ctx.args.snap} {ctx.iso}')
         elif ctx.args.channel:
-            livefs_edit(ctx, '--add-snap-from-store', 'core20', 'stable',
-                        '--add-snap-from-store', 'subiquity',
+            livefs_edit(ctx, '--add-snap-from-store', 'subiquity',
                         ctx.args.channel)
         else:
             with snap_manager('subiquity_test.snap') as snap:
@@ -410,8 +410,7 @@ def build(ctx):
                     run('snapcraft clean --use-lxd')
                     run(f'snapcraft pack --use-lxd --output {snap} {snapargs}')
                 assert_exists(snap)
-                livefs_edit(ctx, '--add-snap-from-store', 'core20', 'stable',
-                            '--inject-snap', snap)
+                livefs_edit(ctx, '--inject-snap', snap)
     elif project == 'ubuntu-desktop-bootstrap':
         with snap_manager('udb_test.snap') as snap:
             run('snapcraft clean --use-lxd')
@@ -581,7 +580,7 @@ def memory(ctx):
 @contextlib.contextmanager
 def kvm_prepare_common(ctx):
     '''Spawn needed background processes and return the CLI options for QEMU'''
-    ret = ['kvm', '-no-reboot']
+    ret = ['kvm', '-no-reboot', '-cpu', 'host']
     ret.extend(('-vga', 'virtio'))
     ret.extend(memory(ctx))
     ret.extend(bios(ctx))
@@ -724,7 +723,7 @@ the ESC button when the QEMU window opens. Then select "Device Manager" and \
         with kvm_prepare_common(ctx) as kvm:
             if ctx.args.netboot:
                 iso = None
-            elif ctx.args.iso:
+            elif ctx.args.iso and not ctx.args.build:
                 iso = ctx.args.iso
             elif ctx.args.base:
                 iso = ctx.baseiso
