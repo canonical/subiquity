@@ -217,6 +217,24 @@ LANG=C.UTF-8 timeout --foreground 60 \
 validate
 
 clean
+testname=autoinstall-kernel-components
+# components install with fake nvidia pci devices
+LANG=C.UTF-8 timeout --foreground 60 \
+    python3 -m subiquity.cmd.tui \
+    --dry-run \
+    --output-base "$tmpdir" \
+    --machine-config examples/machines/simple.json \
+    --autoinstall examples/autoinstall/hybrid.yaml \
+    --dry-run-config examples/dry-run-configs/tpm.yaml \
+    --bootloader uefi \
+    --snaps-from-examples \
+    --kernel-cmdline autoinstall \
+    --source-catalog examples/sources/tpm.yaml
+validate
+grep -q "finish_install: kernel_components=\['nvidia-510-ko', 'nvidia-510-user'\]" \
+	$tmpdir/subiquity-server-debug.log
+
+clean
 testname=autoinstall-reset-only
 LANG=C.UTF-8 timeout --foreground 60 \
     python3 -m subiquity.cmd.tui \
