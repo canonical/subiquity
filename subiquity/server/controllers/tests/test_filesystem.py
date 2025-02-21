@@ -2653,6 +2653,8 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
         self.app = make_app()
         self.app.opts.bootloader = None
         self.fsc = FilesystemController(app=self.app)
+        self.fsc._info = mock.Mock()
+        self.fsc._info.needs_systems_mount = False
 
     async def test_both_pin_and_pass(self):
         with self.assertRaises(StorageRecoverableError):
@@ -2675,11 +2677,44 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
 
     @parameterized.expand(
         (
+            [{"pin": "01234"}, "invalid-pin"],
+            [{"passphrase": "asdf"}, "invalid-passphrase"],
+        )
+    )
+    async def test_stub_invalid(self, kwargs, kind):
+        expected = EntropyResponse(1.0, 2.0)
+        label = self.fsc._info.label
+        self.app.snapdapi.v2.systems[label].POST = mock.AsyncMock(return_value=1)
+
+        with mock.patch.object(
+            snapdapi, "post_and_wait", new_callable=mock.AsyncMock
+        ) as mocked:
+            mocked.return_value = snapdtypes.EntropyCheckResponse(
+                kind=kind,
+                value=snapdtypes.InsufficientEntropyDetails(
+                    reasons=["low-entropy"],
+                    entropy_bits=1.0,
+                    min_entropy_bits=2.0,
+                ),
+            )
+            actual = await self.fsc.v2_calculate_entropy_POST(**kwargs)
+
+        self.assertEqual(expected, actual)
+
+    @parameterized.expand(
+        (
             [{"pin": "01234"}],
             [{"passphrase": "asdf"}],
         )
     )
     async def test_stub_valid(self, kwargs):
-        expected = EntropyResponse(0.0, 0.0)
-        actual = await self.fsc.v2_calculate_entropy_POST(**kwargs)
-        self.assertEqual(expected, actual)
+        label = self.fsc._info.label
+        self.app.snapdapi.v2.systems[label].POST = mock.AsyncMock(return_value=1)
+
+        with mock.patch.object(
+            snapdapi, "post_and_wait", new_callable=mock.AsyncMock
+        ) as mocked:
+            mocked.return_value = None
+            actual = await self.fsc.v2_calculate_entropy_POST(**kwargs)
+
+        self.assertIsNone(actual)

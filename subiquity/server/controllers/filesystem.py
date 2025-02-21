@@ -23,6 +23,7 @@ import pathlib
 import shutil
 import subprocess
 import time
+from contextlib import AsyncExitStack
 from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import attr
@@ -89,6 +90,7 @@ from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
 from subiquity.server.snapd.system_getter import SystemGetter, SystemsDirMounter
 from subiquity.server.snapd.types import (
+    EntropyCheckResponseKind,
     StorageEncryptionSupport,
     StorageSafety,
     SystemDetails,
@@ -1587,7 +1589,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self,
         passphrase: Optional[str] = None,
         pin: Optional[str] = None,
-    ) -> EntropyResponse:
+    ) -> Optional[EntropyResponse]:
         validate_pin_pass(
             passphrase_allowed=True, pin_allowed=True, passphrase=passphrase, pin=pin
         )
@@ -1597,12 +1599,47 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 "must supply at least one of pin and passphrase"
             )
 
-        # FIXME actually call snapd and fill in responses
-        entropy = 0.0
-        minimum_required = 0.0
+        # checking entropy requires an encrypted core boot system to refer to
+        info = self._info
+        if info is None:
+            caps = {
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
+            }
+            for candidate_info in self._variation_info.values():
+                if caps & set(candidate_info.capability_info.allowed):
+                    info = candidate_info
+                    break
+
+        if info is None:
+            log.debug("no suitable system found")
+            return None
+
+        async with AsyncExitStack() as es:
+            if info.needs_systems_mount:
+                mounter = SystemsDirMounter(self.app, info.name)
+                await es.enter_async_context(mounter.mounted())
+
+            result = await snapdapi.post_and_wait(
+                self.app.snapdapi,
+                self.app.snapdapi.v2.systems[info.label].POST,
+                snapdtypes.SystemActionRequest(
+                    action=snapdtypes.SystemAction.CHECK_PASSPHRASE,
+                ),
+                ann=snapdtypes.EntropyCheckResponse,
+            )
+
+        if result is None:
+            return None
+
+        if result.kind == EntropyCheckResponseKind.UNSUPPORTED:
+            log.debug("v2_calculate_entropy_POST: unsupported by snapd")
+            return None
+
         return EntropyResponse(
-            entropy=entropy,
-            minimum_required=minimum_required,
+            entropy=result.value.entropy_bits,
+            minimum_required=result.value.min_entropy_bits,
         )
 
     async def dry_run_wait_probe_POST(self) -> None:
