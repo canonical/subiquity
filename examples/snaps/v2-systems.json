@@ -37,6 +37,34 @@
           }
         ],
         "default-recovery-system": true
+      },
+      {
+        "label": "components",
+        "model": {
+          "model": "ubuntu-classic-2410-amd64-dangerous",
+          "brand-id": "9XoOBkC2zdzx5CVZdl0ZVYuLpCo15ww0",
+          "display-name": "ubuntu-classic-2410-amd64-dangerous"
+        },
+        "brand": {
+          "id": "9XoOBkC2zdzx5CVZdl0ZVYuLpCo15ww0",
+          "username": "mwhudson",
+          "display-name": "Michael Hudson-Doyle",
+          "validation": "unproven"
+        },
+        "actions": [
+          {
+            "title": "Install",
+            "mode": "install"
+          },
+          {
+            "title": "Recover",
+            "mode": "recover"
+          },
+          {
+            "title": "Factory reset",
+            "mode": "factory-reset"
+          }
+        ]
       }
     ]
   }
