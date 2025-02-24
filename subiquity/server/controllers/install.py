@@ -675,7 +675,7 @@ class InstallController(SubiquityController):
             return []
         info: VariationInfo = self.app.controllers.Filesystem._info
         kernel_components = info.available_kernel_components
-        for driver in self.app.controllers.Drivers.drivers:
+        for driver in sorted(self.app.controllers.Drivers.drivers, reverse=True):
             m = re.fullmatch("nvidia-driver-([0-9]+)", driver)
             if not m:
                 continue

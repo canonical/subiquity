@@ -404,6 +404,17 @@ class TestInstallControllerDriverMatch(unittest.TestCase):
                 ["nvidia-driver-510"],
                 ["nvidia-510-ko", "nvidia-510-user"],
             ),
+            # prefer "newer" based on a reversed sort
+            (
+                ["nvidia-1-ko", "nvidia-1-user", "nvidia-2-ko", "nvidia-2-user"],
+                ["nvidia-driver-1", "nvidia-driver-2"],
+                ["nvidia-2-ko", "nvidia-2-user"],
+            ),
+            (
+                ["nvidia-1-ko", "nvidia-1-user", "nvidia-2-ko", "nvidia-2-user"],
+                ["nvidia-driver-2", "nvidia-driver-1"],
+                ["nvidia-2-ko", "nvidia-2-user"],
+            ),
         )
     )
     def test_kernel_components(self, comps, drivers, expected):
