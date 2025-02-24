@@ -396,8 +396,12 @@ class TestInstallControllerDriverMatch(unittest.TestCase):
             (["nvidia-510-ko"], ["nvidia-driver-510"], []),
             # missing ko component
             (["nvidia-510-user"], ["nvidia-driver-510"], []),
-            # wrong driver version
-            (["nvidia-510-ko", "nvidia-510-user"], ["nvidia-driver-999"], []),
+            # mismatched component versions, nothing usable available
+            (
+                ["nvidia-2-ko", "nvidia-1-user"],
+                ["nvidia-driver-999"],
+                [],
+            ),
             # match
             (
                 ["nvidia-510-ko", "nvidia-510-user"],
@@ -414,6 +418,24 @@ class TestInstallControllerDriverMatch(unittest.TestCase):
                 ["nvidia-1-ko", "nvidia-1-user", "nvidia-2-ko", "nvidia-2-user"],
                 ["nvidia-driver-2", "nvidia-driver-1"],
                 ["nvidia-2-ko", "nvidia-2-user"],
+            ),
+            # wrong driver version
+            (
+                ["nvidia-510-ko", "nvidia-510-user"],
+                ["nvidia-driver-999"],
+                ["nvidia-510-ko", "nvidia-510-user"],
+            ),
+            # wrong driver version, use newer
+            (
+                ["nvidia-1-ko", "nvidia-2-user", "nvidia-2-ko", "nvidia-1-user"],
+                ["nvidia-driver-999"],
+                ["nvidia-2-ko", "nvidia-2-user"],
+            ),
+            # mismatched component versions, something usable available
+            (
+                ["nvidia-1-ko", "nvidia-2-ko", "nvidia-1-user"],
+                ["nvidia-driver-999"],
+                ["nvidia-1-ko", "nvidia-1-user"],
             ),
         )
     )

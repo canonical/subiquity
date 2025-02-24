@@ -675,15 +675,29 @@ class InstallController(SubiquityController):
             return []
         info: VariationInfo = self.app.controllers.Filesystem._info
         kernel_components = info.available_kernel_components
+        nvidia_driver_offered: bool = False
+        # for first pass, accept the matching version, if that's an option
         for driver in sorted(self.app.controllers.Drivers.drivers, reverse=True):
             m = re.fullmatch("nvidia-driver-([0-9]+)", driver)
             if not m:
                 continue
+            nvidia_driver_offered = True
             v = m.group(1)
             ko = f"nvidia-{v}-ko"
             user = f"nvidia-{v}-user"
             if ko in kernel_components and user in kernel_components:
                 return [ko, user]
+        # if we don't match there, accept the newest reasonable version
+        if nvidia_driver_offered:
+            for component in sorted(kernel_components, reverse=True):
+                m = re.fullmatch("nvidia-([0-9]+)-ko", component)
+                if not m:
+                    continue
+                ko = component
+                v = m.group(1)
+                user = f"nvidia-{v}-user"
+                if user in kernel_components:
+                    return [ko, user]
         return []
 
     @with_context(
