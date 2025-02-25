@@ -16,7 +16,6 @@
 import asyncio
 import logging
 import platform
-import random
 from collections import OrderedDict
 from typing import List
 
@@ -24,7 +23,7 @@ from subiquity.common.apidef import API
 from subiquity.common.types import ZdevInfo
 from subiquity.common.types.storage import Bootloader
 from subiquity.server.controller import SubiquityController
-from subiquitycore.utils import arun_command, run_command
+from subiquitycore.utils import run_command
 
 log = logging.getLogger("subiquity.server.controllers.zdev")
 
@@ -614,13 +613,12 @@ class ZdevController(SubiquityController):
 
     async def chzdev_POST(self, action: str, zdev: ZdevInfo) -> List[ZdevInfo]:
         if self.opts.dry_run:
-            await asyncio.sleep(random.random() * 0.4)
             on = action == "enable"
             self.zdevinfos[zdev.id].on = on
             self.zdevinfos[zdev.id].pers = on
-        else:
-            chzdev_cmd = ["chzdev", "--%s" % action, zdev.id]
-            await arun_command(chzdev_cmd)
+        chzdev_cmd = ["chzdev", "--%s" % action, zdev.id]
+        await self.app.command_runner.run(chzdev_cmd)
+
         return await self.GET()
 
     async def GET(self) -> List[ZdevInfo]:
