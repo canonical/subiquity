@@ -676,6 +676,11 @@ class InstallController(SubiquityController):
         info: VariationInfo = self.app.controllers.Filesystem._info
         kernel_components = info.available_kernel_components
         nvidia_driver_offered: bool = False
+        # so here we make the jump from the `ubuntu-drivers` recommendation and
+        # map that, as close as we can, to kernel components.  Currently just
+        # handling nvidia.  Note that it's highly likely that the version
+        # offered in archive will be newer than what is offered by pc-kernel
+        # (570 in plucky archive vs 550 in noble pc-kernel at time of writing).
         # for first pass, accept the matching version, if that's an option
         for driver in sorted(self.app.controllers.Drivers.drivers, reverse=True):
             m = re.fullmatch("nvidia-driver-([0-9]+)", driver)
