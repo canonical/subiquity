@@ -242,11 +242,8 @@ class Model:
     architecture: str
     snaps: List[ModelSnap]
 
-    def snap_of_type(self, typ: ModelSnapType) -> Optional[ModelSnap]:
-        for snap in self.snaps:
-            if snap.type == typ:
-                return snap
-        return None
+    def snaps_of_type(self, typ: ModelSnapType) -> List[ModelSnap]:
+        return [snap for snap in self.snaps if snap.type == typ]
 
 
 @snapdtype
