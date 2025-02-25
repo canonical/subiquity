@@ -39,6 +39,7 @@ from subiquity.common.types import ApplicationState, PackageInstallState
 from subiquity.journald import journald_listen
 from subiquity.models.filesystem import ActionRenderMode, Partition
 from subiquity.server.controller import SubiquityController
+from subiquity.server.controllers.filesystem import VariationInfo
 from subiquity.server.curtin import run_curtin_command
 from subiquity.server.mounter import Mounter, Mountpoint
 from subiquity.server.types import InstallerChannels
@@ -413,7 +414,6 @@ class InstallController(SubiquityController):
                         }
                     ),
                 )
-            await fs_controller.finish_install(context=context)
             await self.setup_target(context=context)
         else:
             await run_curtin_step(
@@ -668,6 +668,24 @@ class InstallController(SubiquityController):
                     log.warning("chreipl stderr:\n%s", cpe.stderr)
                 raise
 
+    def kernel_components(self) -> List[str]:
+        if not self.supports_apt():
+            return []
+        if not self.model.drivers.do_install:
+            return []
+        info: VariationInfo = self.app.controllers.Filesystem._info
+        kernel_components = info.available_kernel_components
+        for driver in sorted(self.app.controllers.Drivers.drivers, reverse=True):
+            m = re.fullmatch("nvidia-driver-([0-9]+)", driver)
+            if not m:
+                continue
+            v = m.group(1)
+            ko = f"nvidia-{v}-ko"
+            user = f"nvidia-{v}-user"
+            if ko in kernel_components and user in kernel_components:
+                return [ko, user]
+        return []
+
     @with_context(
         description="final system configuration", level="INFO", childlevel="DEBUG"
     )
@@ -687,6 +705,12 @@ class InstallController(SubiquityController):
                     await self.install_package(context=context, package=package.name)
         finally:
             await self.configure_cloud_init(context=context)
+
+        fs_controller = self.app.controllers.Filesystem
+        if fs_controller.use_snapd_install_api():
+            await fs_controller.finish_install(
+                context=context, kernel_components=self.kernel_components()
+            )
 
         if self.supports_apt():
             if self.model.drivers.do_install:
