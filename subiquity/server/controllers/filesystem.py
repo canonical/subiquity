@@ -214,10 +214,10 @@ class VariationInfo:
     def available_kernel_components(self) -> List[str]:
         if not self.system.available_optional:
             return []
-        kernel = self.system.model.snap_of_type(snapdtypes.ModelSnapType.KERNEL)
-        if kernel is None:
+        kernels = self.system.model.snaps_of_type(snapdtypes.ModelSnapType.KERNEL)
+        if len(kernels) != 1:
             return []
-        return self.system.available_optional.components.get(kernel.name, [])
+        return self.system.available_optional.components.get(kernels[0].name, [])
 
     def is_core_boot_classic(self) -> bool:
         return self.label is not None
@@ -1034,12 +1034,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def finish_install(self, context, kernel_components):
         log.debug(f"finish_install: {kernel_components=}")
         label = self._info.label
-        optional_install = None
-        kernel = self._info.system.model.snap_of_type(snapdtypes.ModelSnapType.KERNEL)
-        if kernel is not None:
+        kernels = self._info.system.model.snaps_of_type(snapdtypes.ModelSnapType.KERNEL)
+        if len(kernels) == 1:
             optional_install = snapdtypes.OptionalInstall(
-                components={kernel.name: kernel_components}
+                components={kernels[0].name: kernel_components}
             )
+        else:
+            log.error(f"unexpected number of kernel snaps {len(kernels)}")
+            optional_install = None
         await snapdapi.post_and_wait(
             self.app.snapdapi,
             self.app.snapdapi.v2.systems[label].POST,
