@@ -916,11 +916,15 @@ class Partition(_Formattable):
     number: Optional[int] = None
     preserve: bool = False
     grub_device: bool = False
+    # This field controls the existence of a /dev/disk/by-dname/<name> symlink.
+    # Not to be confused with "partition_name" below.
     name: Optional[str] = None
     multipath: Optional[str] = None
     offset: Optional[int] = None
     resize: Optional[bool] = None
     partition_type: Optional[str] = None
+    # This is the actual name of the partition, if supported. It maps to the
+    # "name" field in the Partition API object.
     partition_name: Optional[str] = None
     path: Optional[str] = None
     uuid: Optional[str] = None
