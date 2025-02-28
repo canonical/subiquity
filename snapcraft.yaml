@@ -136,6 +136,7 @@ parts:
       - python3-minimal
       - python3-more-itertools
       - python3-oauthlib
+      - python3-packaging
       - python3-passlib
       - python3-pkg-resources
       - python3-pyroute2
