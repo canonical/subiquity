@@ -20,6 +20,8 @@ import platform
 from collections import OrderedDict
 from typing import List, Literal, Optional, TypedDict
 
+import attrs
+
 from subiquity.common.apidef import API
 from subiquity.common.types import ZdevInfo
 from subiquity.common.types.storage import Bootloader
@@ -603,6 +605,19 @@ class ZdevAiItem(TypedDict, total=True):
 ZdevAi = list[ZdevAiItem]
 
 
+@attrs.define(auto_attribs=True)
+class ZdevAction:
+    id: str
+    enable: bool
+
+    @classmethod
+    def from_ai_item(cls, item: ZdevAiItem) -> "ZdevAction":
+        return cls(id=item["id"], enable=item["enabled"])
+
+    def to_ai_item(self) -> ZdevAiItem:
+        return ZdevAiItem(id=self.id, enabled=self.enable)
+
+
 class ZdevController(SubiquityController):
     endpoint = API.zdev
 
@@ -620,12 +635,12 @@ class ZdevController(SubiquityController):
     autoinstall_default = []
 
     def __init__(self, app):
-        self.ai_data: ZdevAi = []
+        self.ai_actions: list[ZdevAction] = []
         self.zdev_handling_task: Optional[asyncio.Task] = None
 
         # Recording of actions that have been performed on the Zdevs. This is
         # only used to produce an autoinstall config at the end.
-        self.done_actions: list[ZdevAiItem] = []
+        self.done_ai_actions: list[ZdevAction] = []
 
         super().__init__(app)
         if self.opts.dry_run:
@@ -638,7 +653,7 @@ class ZdevController(SubiquityController):
             self.zdevinfos = OrderedDict([(i.id, i) for i in zdevinfos])
 
     def load_autoinstall_data(self, data: ZdevAi) -> None:
-        self.ai_data = data
+        self.ai_actions = [ZdevAction.from_ai_item(item) for item in data]
 
     @with_context()
     async def apply_autoinstall_config(self, context) -> None:
@@ -646,18 +661,18 @@ class ZdevController(SubiquityController):
             await self.zdev_handling_task
 
     def start(self) -> None:
-        if self.ai_data:
+        if self.ai_actions:
             self.zdev_handling_task = schedule_task(self.handle_zdevs())
 
     def make_autoinstall(self) -> ZdevAi:
         # Small "optimization" to avoid producing a config that enables or
         # disables a given device multiple times in a row.
-        return [x for x, _ in itertools.groupby(self.done_actions)]
+        return [x.to_ai_item() for x, _ in itertools.groupby(self.done_ai_actions)]
 
     async def handle_zdevs(self) -> None:
-        for item in self.ai_data:
-            action = "enable" if item["enabled"] else "disable"
-            await self.chzdev(action, self.zdevinfos[item["id"]])
+        for ai_action in self.ai_actions:
+            action = "enable" if ai_action.enable else "disable"
+            await self.chzdev(action, self.zdevinfos[ai_action.id])
 
     def interactive(self):
         if self.app.base_model.filesystem.bootloader != Bootloader.NONE:
@@ -669,14 +684,12 @@ class ZdevController(SubiquityController):
     ) -> None:
         if action == "enable":
             on = True
-            state = "enabled"
         elif action == "disable":
             on = False
-            state = "disabled"
         else:
             raise ValueError("action must be 'enable' or 'disable'")
 
-        self.done_actions.append(ZdevAiItem(id=zdev.id, state=state))
+        self.done_ai_actions.append(ZdevAction(id=zdev.id, enable=on))
 
         if self.opts.dry_run:
             self.zdevinfos[zdev.id].on = on
