@@ -16,7 +16,7 @@
 import unittest
 from unittest.mock import AsyncMock, Mock, patch
 
-from subiquity.server.controllers.zdev import ZdevController
+from subiquity.server.controllers.zdev import ZdevAction, ZdevController
 from subiquitycore.tests.mocks import make_app
 
 
@@ -25,18 +25,29 @@ class TestZdevController(unittest.IsolatedAsyncioTestCase):
         self.ctrler = ZdevController(make_app())
 
     def test_make_autoinstall_no_dupes(self):
-        self.ctrler.done_actions = [
+        self.ctrler.done_ai_actions = [
+            ZdevAction(id="0.0.1507", enable=True),
+            ZdevAction(id="0.0.1508", enable=False),
+            ZdevAction(id="0.0.1509", enable=True),
+        ]
+
+        expected = [
             {"id": "0.0.1507", "enabled": True},
             {"id": "0.0.1508", "enabled": False},
             {"id": "0.0.1509", "enabled": True},
         ]
-        self.assertEqual(self.ctrler.done_actions, self.ctrler.make_autoinstall())
+        self.assertEqual(expected, self.ctrler.make_autoinstall())
 
     def test_make_autoinstall_with_dupes(self):
-        action1 = {"id": "0.0.1507", "enabled": True}
-        action2 = {"id": "0.0.1508", "enabled": True}
-        self.ctrler.done_actions = [action1, action1, action1, action2, action2]
-        self.assertEqual([action1, action2], self.ctrler.make_autoinstall())
+        action1 = ZdevAction(id="0.0.1507", enable=True)
+        action2 = ZdevAction(id="0.0.1508", enable=True)
+        self.ctrler.done_ai_actions = [action1, action1, action1, action2, action2]
+
+        expected = [
+            {"id": "0.0.1507", "enabled": True},
+            {"id": "0.0.1508", "enabled": True},
+        ]
+        self.assertEqual(expected, self.ctrler.make_autoinstall())
 
     @patch("asyncio.sleep", AsyncMock())
     async def test_handle_zdevs__none(self):
@@ -67,14 +78,14 @@ class TestZdevController(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(expected_calls, m_chzdev.mock_calls)
 
     async def test_chzdev_wrong_action(self):
-        self.ctrler.done_actions = []
+        self.ctrler.done_ai_actions = []
         with self.assertRaises(ValueError):
             await self.ctrler.chzdev("enAble", self.ctrler.zdevinfos["0.0.1507"])
-        self.assertFalse(self.ctrler.done_actions)
+        self.assertFalse(self.ctrler.done_ai_actions)
 
     @patch("asyncio.sleep", AsyncMock())
     async def test_chzdev_enable(self):
-        self.ctrler.done_actions = []
+        self.ctrler.done_ai_actions = []
 
         self.ctrler.app.command_runner = Mock()
         with patch.object(self.ctrler.app.command_runner, "run", AsyncMock()) as m_run:
@@ -83,26 +94,26 @@ class TestZdevController(unittest.IsolatedAsyncioTestCase):
         m_run.assert_called_once_with(["chzdev", "--enable", "0.0.1507"])
 
         self.assertEqual(
-            [{"id": "0.0.1507", "state": "enabled"}], self.ctrler.done_actions
+            [ZdevAction(id="0.0.1507", enable=True)], self.ctrler.done_ai_actions
         )
 
     @patch("asyncio.sleep", AsyncMock())
     async def test_chzdev_disable(self):
-        self.ctrler.done_actions = []
+        self.ctrler.done_ai_actions = []
 
         self.ctrler.app.command_runner = Mock()
         with patch.object(self.ctrler.app.command_runner, "run", AsyncMock()) as m_run:
             await self.ctrler.chzdev("disable", self.ctrler.zdevinfos["0.0.1507"])
 
         self.assertEqual(
-            [{"id": "0.0.1507", "state": "disabled"}], self.ctrler.done_actions
+            [ZdevAction(id="0.0.1507", enable=False)], self.ctrler.done_ai_actions
         )
 
         m_run.assert_called_once_with(["chzdev", "--disable", "0.0.1507"])
 
     @patch("asyncio.sleep", AsyncMock())
     async def test_chzdev_enable_disable_multiple(self):
-        self.ctrler.done_actions = []
+        self.ctrler.done_ai_actions = []
 
         self.ctrler.app.command_runner = Mock()
         with patch.object(self.ctrler.app.command_runner, "run", AsyncMock()) as m_run:
@@ -121,10 +132,10 @@ class TestZdevController(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             [
-                {"id": "0.0.1507", "state": "enabled"},
-                {"id": "0.0.1507", "state": "enabled"},
-                {"id": "0.0.1508", "state": "disabled"},
-                {"id": "0.0.1508", "state": "enabled"},
+                ZdevAction(id="0.0.1507", enable=True),
+                ZdevAction(id="0.0.1507", enable=True),
+                ZdevAction(id="0.0.1508", enable=False),
+                ZdevAction(id="0.0.1508", enable=True),
             ],
-            self.ctrler.done_actions,
+            self.ctrler.done_ai_actions,
         )
