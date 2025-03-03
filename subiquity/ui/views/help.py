@@ -41,7 +41,7 @@ def close_btn(app, stretchy):
 
 ABOUT_INSTALLER = _(
     """
-Welcome to the Ubuntu Server Installer!
+Welcome to Subiquity, the Ubuntu Server Installer!
 
 The most popular server Linux in the cloud and data centre, this
 release of Ubuntu will receive updates for 9 months from release.
