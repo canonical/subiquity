@@ -1465,3 +1465,41 @@ The following example provides user-data which is approximately equivalent to wh
            groups: adm, cdrom, dip, lxd, plugdev, sudo
            shell: /bin/bash
            lock_passwd: False
+
+.. _ai-zdevs:
+
+zdevs
+~~~~~
+
+* **type:** list of devices
+* **default:** ``[]``
+* **can be interactive:** yes
+
+On IBM Z, configure the state (enabled or disabled) of supported devices.
+
+Each element (i.e., device) of the list is a mapping with the following keys:
+
+id
+^^
+
+**type:** string
+
+Identifies the device to operate on.
+
+enabled
+^^^^^^^
+
+**type:** boolean
+
+Controls whether the device should be enabled or disabled.
+
+.. code-block:: yaml
+
+  autoinstall:
+    zdevs:
+      - id: 0.0.1507
+        enabled: true
+      - id: 0.0.1508
+        enabled: true
+      - id: 0.0.1509
+        enabled: false

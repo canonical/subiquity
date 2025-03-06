@@ -139,6 +139,20 @@
             ],
             "additionalProperties": false
         },
+        "zdevs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "enabled": {
+                        "type": "boolean"
+                    }
+                }
+            }
+        },
         "source": {
             "type": "object",
             "properties": {

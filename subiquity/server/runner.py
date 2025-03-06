@@ -15,6 +15,7 @@
 
 import asyncio
 import os
+import random
 import subprocess
 from contextlib import suppress
 from typing import List, Optional
@@ -129,6 +130,8 @@ class DryRunCommandRunner(LoggedCommandRunner):
             return 0
         elif "unattended-upgrades" in cmd:
             return 3 * self.delay
+        elif "chzdev" in cmd:
+            return 0.4 * random.random() * self.delay
         else:
             return self.delay
 
