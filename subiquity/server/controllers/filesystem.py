@@ -787,7 +787,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     "Not using enhanced_secureboot: disabled on commandline"
                 )
             assert isinstance(choice.target, GuidedStorageTargetReformat)
-            self.use_tpm = choice.capability == GuidedCapability.CORE_BOOT_ENCRYPTED
+            self.use_tpm = choice.capability.is_tpm_backed()
             await self.guided_core_boot(disk, choice)
             return
 

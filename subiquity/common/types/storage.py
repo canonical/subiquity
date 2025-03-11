@@ -175,6 +175,12 @@ class GuidedCapability(enum.Enum):
             GuidedCapability.ZFS_LUKS_KEYSTORE,
         ]
 
+    def is_tpm_backed(self) -> bool:
+        return self in [
+            GuidedCapability.CORE_BOOT_ENCRYPTED,
+            GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+        ]
+
     def supports_passphrase(self) -> bool:
         return self in [
             GuidedCapability.LVM_LUKS,
