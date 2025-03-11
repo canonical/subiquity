@@ -75,6 +75,7 @@ from subiquity.server.dryrun import DRConfig
 from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
 from subiquity.server.snapd.system_getter import SystemGetter
+from subiquity.server.snapd.types import VolumesAuth, VolumesAuthMode
 from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized
@@ -2165,6 +2166,10 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.fsc = FilesystemController(app=self.app)
         self.fsc._configured = True
         self.fsc.model = make_model(Bootloader.UEFI)
+        self.choice = GuidedChoiceV2(
+            target=GuidedStorageTargetReformat,
+            capability=GuidedCapability.CORE_BOOT_ENCRYPTED,
+        )
 
         @contextlib.asynccontextmanager
         async def mounted(self, *, source_id):
@@ -2192,7 +2197,22 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
             ),
         )
 
-    async def test_guided_core_boot(self):
+    @parameterized.expand(
+        (
+            [None, None],
+            [
+                {"password": "asdf"},
+                VolumesAuth(
+                    mode=VolumesAuthMode.PASSPHRASE, passphrase="asdf", pin=None
+                ),
+            ],
+            [
+                {"pin": "1234"},
+                VolumesAuth(mode=VolumesAuthMode.PIN, passphrase=None, pin="1234"),
+            ],
+        )
+    )
+    async def test_guided_core_boot(self, va_input, va_expected):
         disk = make_disk(self.fsc.model)
         arbitrary_uuid = str(uuid.uuid4())
         self._add_details_for_structures(
@@ -2209,7 +2229,13 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 ),
             ]
         )
-        await self.fsc.guided_core_boot(disk)
+        if va_input is not None:
+            self.choice = attrs.evolve(self.choice, **va_input)
+        await self.fsc.guided_core_boot(disk, self.choice)
+        if va_expected is None:
+            self.assertIsNone(self.fsc._volumes_auth)
+        else:
+            self.assertEqual(va_expected, self.fsc._volumes_auth)
         [part1, part2] = disk.partitions()
         self.assertEqual(part1.offset, 1 << 20)
         self.assertEqual(part1.size, 1 << 30)
@@ -2244,7 +2270,8 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 ),
             ]
         )
-        await self.fsc.guided_core_boot(disk)
+        await self.fsc.guided_core_boot(disk, self.choice)
+        self.assertIsNone(self.fsc._volumes_auth)
         [part] = disk.partitions()
         self.assertEqual(reused_part, part)
         self.assertEqual(reused_part.wipe, "superblock")
@@ -2265,7 +2292,8 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 ),
             ]
         )
-        await self.fsc.guided_core_boot(disk)
+        await self.fsc.guided_core_boot(disk, self.choice)
+        self.assertIsNone(self.fsc._volumes_auth)
         [part] = disk.partitions()
         self.assertEqual(existing_part, part)
         self.assertEqual(existing_part.wipe, None)
@@ -2292,7 +2320,8 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 ),
             ]
         )
-        await self.fsc.guided_core_boot(disk)
+        await self.fsc.guided_core_boot(disk, self.choice)
+        self.assertIsNone(self.fsc._volumes_auth)
         [bios_part, part] = disk.partitions()
         self.assertEqual(part.offset, 2 << 20)
         self.assertEqual(part.partition_name, "ptname")

@@ -19,6 +19,7 @@ from typing import Dict, List, Optional
 import attr
 
 from subiquity.common.serialize import NonExhaustive, named_field
+from subiquity.common.types.storage import GuidedChoiceV2
 
 RFC3339 = "%Y-%m-%dT%H:%M:%S.%fZ"
 
@@ -279,12 +280,36 @@ class OptionalInstall(AvailableOptional):
     all: bool = False
 
 
+class VolumesAuthMode(enum.Enum):
+    PIN = "pin"
+    PASSPHRASE = "passphrase"
+
+
+@snapdtype
+class VolumesAuth:
+    mode: VolumesAuthMode
+    passphrase: Optional[str] = None
+    pin: Optional[str] = None
+    # kdf-time: Optional[int]
+    # kdf-type: Optional["argon2id"|"argon2i"|"pbkdf2"]
+
+    @classmethod
+    def from_choice(cls, choice: GuidedChoiceV2) -> Optional["VolumesAuth"]:
+        if choice.password is not None:
+            return cls(mode=VolumesAuthMode.PASSPHRASE, passphrase=choice.password)
+        elif choice.pin is not None:
+            return cls(mode=VolumesAuthMode.PIN, pin=choice.pin)
+        else:
+            return None
+
+
 @snapdtype
 class SystemActionRequest:
     action: SystemAction
     step: SystemActionStep
     on_volumes: Dict[str, OnVolume]
     optional_install: Optional[OptionalInstall] = None
+    volumes_auth: Optional[VolumesAuth] = None
 
 
 @snapdtype
