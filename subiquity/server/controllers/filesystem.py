@@ -322,6 +322,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self._info: Optional[VariationInfo] = None
         self._system_getter = SystemGetter(self.app)
         self._on_volume: Optional[snapdtypes.OnVolume] = None
+        self._volumes_auth: Optional[snapdtypes.VolumesAuth] = None
         self._role_to_device: Dict[Union[str, snapdtypes.Role], _Device] = {}
         self._device_to_structure: Dict[_Device, snapdtypes.OnVolume] = {}
         self._pyudev_context: Optional[pyudev.Context] = None
@@ -786,8 +787,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     "Not using enhanced_secureboot: disabled on commandline"
                 )
             assert isinstance(choice.target, GuidedStorageTargetReformat)
-            self.use_tpm = choice.capability == GuidedCapability.CORE_BOOT_ENCRYPTED
-            await self.guided_core_boot(disk)
+            self.use_tpm = choice.capability.is_tpm_backed()
+            await self.guided_core_boot(disk, choice)
             return
 
         gap = self.start_guided(choice.target, disk)
@@ -925,7 +926,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             yield (structure, offset, structure.size)
             offset = offset + structure.size
 
-    async def guided_core_boot(self, disk: Disk):
+    async def guided_core_boot(self, disk: Disk, choice: GuidedChoiceV2):
         if self._info.needs_systems_mount:
             await SystemsDirMounter(self.app, self._info.name).mount()
         # Formatting for a core boot classic system relies on some curtin
@@ -933,6 +934,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.model.storage_version = 2
         [volume] = self._info.system.volumes.values()
         self._on_volume = snapdtypes.OnVolume.from_volume(volume)
+        self._volumes_auth = snapdtypes.VolumesAuth.from_choice(choice)
 
         preserved_parts = set()
 
@@ -1012,14 +1014,17 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     @with_context(description="configuring TPM-backed full disk encryption")
     async def setup_encryption(self, context):
         label = self._info.label
+        kwargs = dict(
+            action=snapdtypes.SystemAction.INSTALL,
+            step=snapdtypes.SystemActionStep.SETUP_STORAGE_ENCRYPTION,
+            on_volumes=self._on_volumes(),
+        )
+        if self._volumes_auth is not None:
+            kwargs["volumes_auth"] = self._volumes_auth
         result = await snapdapi.post_and_wait(
             self.app.snapdapi,
             self.app.snapdapi.v2.systems[label].POST,
-            snapdtypes.SystemActionRequest(
-                action=snapdtypes.SystemAction.INSTALL,
-                step=snapdtypes.SystemActionStep.SETUP_STORAGE_ENCRYPTION,
-                on_volumes=self._on_volumes(),
-            ),
+            snapdtypes.SystemActionRequest(**kwargs),
             ann=snapdtypes.SystemActionResponse,
         )
         for role, enc_path in result.encrypted_devices.items():
