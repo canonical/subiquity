@@ -2525,6 +2525,7 @@ class TestGuidedChoiceValidation(IsolatedAsyncioTestCase):
             (GuidedCapability.MANUAL, False, False),
             (GuidedCapability.LVM_LUKS, False, True),
             (GuidedCapability.CORE_BOOT_ENCRYPTED, True, True),
+            (GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED, True, True),
         )
     )
     def test_capability_pin_pass_validation(self, capability, pin_ok, pass_ok):

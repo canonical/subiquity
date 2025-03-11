@@ -179,11 +179,15 @@ class GuidedCapability(enum.Enum):
         return self in [
             GuidedCapability.LVM_LUKS,
             GuidedCapability.CORE_BOOT_ENCRYPTED,
+            GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
             GuidedCapability.ZFS_LUKS_KEYSTORE,
         ]
 
     def supports_pin(self) -> bool:
-        return self == GuidedCapability.CORE_BOOT_ENCRYPTED
+        return self in [
+            GuidedCapability.CORE_BOOT_ENCRYPTED,
+            GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+        ]
 
 
 class GuidedDisallowedCapabilityReason(enum.Enum):
