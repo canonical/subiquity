@@ -65,6 +65,34 @@
             "mode": "factory-reset"
           }
         ]
+      },
+      {
+        "label": "ubuntu-core-24-amd64",
+        "model": {
+          "model": "ubuntu-core-24-amd64",
+          "brand-id": "canonical",
+          "display-name": "ubuntu-core-24-amd64"
+        },
+        "brand": {
+          "id": "canonical",
+          "username": "canonical",
+          "display-name": "Canonical",
+          "validation": "verified"
+        },
+        "actions": [
+          {
+            "title": "Install",
+            "mode": "install"
+          },
+          {
+            "title": "Recover",
+            "mode": "recover"
+          },
+          {
+            "title": "Factory reset",
+            "mode": "factory-reset"
+          }
+        ]
       }
     ]
   }
