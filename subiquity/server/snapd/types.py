@@ -236,6 +236,7 @@ class ModelSnap:
     name: str
     type: NonExhaustive[ModelSnapType]
     components: Optional[Dict[str, Presence]] = None
+    presence: PresenceValue = PresenceValue.REQUIRED
 
 
 @snapdtype
