@@ -275,6 +275,8 @@ class SystemActionStep(enum.Enum):
     FINISH = "finish"
 
 
+# Setting all=True and with a non-empty AvailableOptional will result in an
+# error, so set all=False by default.
 @snapdtype
 class OptionalInstall(AvailableOptional):
     all: bool = False
@@ -308,6 +310,7 @@ class SystemActionRequest:
     action: SystemAction
     step: SystemActionStep
     on_volumes: Dict[str, OnVolume]
+    # When optional_install=None it is equivalent to OptionalInstall(all=True)
     optional_install: Optional[OptionalInstall] = None
     volumes_auth: Optional[VolumesAuth] = None
 

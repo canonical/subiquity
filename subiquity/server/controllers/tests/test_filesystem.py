@@ -863,6 +863,79 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertEqual(leading_gap.offset, gap.offset)
         self.assertEqual(part.size + leading_gap.size + trailing_gap.size, gap.size)
 
+    async def test_finish_install(self):
+        self.app.snapdapi = snapdapi.make_api_client(AsyncSnapd(get_fake_connection()))
+        variation_info = VariationInfo(
+            name="mock",
+            label="mock-label",
+            system=snapdtypes.SystemDetails(
+                label="mock-label",
+                volumes={
+                    "mockVol": snapdtypes.Volume(schema="mock", structure=None),
+                },
+                model=snapdtypes.Model(
+                    architecture="mock-arch",
+                    snaps=[
+                        snapdtypes.ModelSnap(
+                            name="MockKernel",
+                            type=snapdtypes.ModelSnapType.KERNEL,
+                            presence=snapdtypes.PresenceValue.REQUIRED,
+                            components={
+                                "nvidia-510-ko": snapdtypes.PresenceValue.OPTIONAL,
+                                "nvidia-510-user": snapdtypes.PresenceValue.OPTIONAL,
+                                "foo": snapdtypes.PresenceValue.OPTIONAL,
+                                "bar": snapdtypes.PresenceValue.OPTIONAL,
+                            },
+                            default_channel="foo",
+                            id="bar",
+                        ),
+                        snapdtypes.ModelSnap(
+                            name="MockApp1",
+                            type=snapdtypes.ModelSnapType.APP,
+                            presence=snapdtypes.PresenceValue.REQUIRED,
+                            default_channel="foo",
+                            id="bar",
+                        ),
+                        snapdtypes.ModelSnap(
+                            name="MockApp2",
+                            type=snapdtypes.ModelSnapType.APP,
+                            presence=snapdtypes.PresenceValue.OPTIONAL,
+                            default_channel="foo",
+                            id="bar",
+                        ),
+                    ],
+                ),
+                available_optional=snapdtypes.AvailableOptional(
+                    snaps=["MockApp2"],
+                    components={
+                        "MockKernel": [
+                            "nvidia-510-ko",
+                            "nvidia-510-user",
+                            "foo",
+                            "bar",
+                        ]
+                    },
+                ),
+            ),
+        )
+        self.fsc._info = variation_info
+        with mock.patch.object(snapdapi, "post_and_wait") as mock_post:
+            await self.fsc.finish_install(
+                context=self.fsc.context,
+                kernel_components=["nvidia-510-ko", "nvidia-510-user"],
+            )
+        mock_post.assert_called_once()
+
+        # Assert installing all optional snaps but only the requested components
+        expected_optional_install = snapdtypes.OptionalInstall(
+            all=False,
+            components={"MockKernel": ["nvidia-510-ko", "nvidia-510-user"]},
+            snaps=variation_info.system.available_optional.snaps,
+        )
+        actual = mock_post.call_args.args[2].optional_install
+
+        self.assertEqual(expected_optional_install, actual)
+
 
 class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):
     def setUp(self):
