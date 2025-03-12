@@ -59,7 +59,9 @@ class KernelController(NonInteractiveController):
                 with open(mp_file) as fp:
                     kernel_package = fp.read().strip()
                 self.model.metapkg_name = kernel_package
-                self.model.explicitly_requested = True
+                # built-in kernel requirements are not considered
+                # explicitly_requested
+                self.model.explicitly_requested = False
                 log.debug(f"Using kernel {kernel_package} due to {mp_file}")
                 break
         else:
@@ -78,6 +80,7 @@ class KernelController(NonInteractiveController):
             package = flavor_to_pkgname(flavor, dry_run=dry_run)
         log.debug(f"Using kernel {package} due to autoinstall")
         self.model.metapkg_name = package
+        # autoinstall kernel requirements are explicitly_requested
         self.model.explicitly_requested = True
 
     def make_autoinstall(self):
