@@ -1,0 +1,15 @@
+sources:
+- description:
+    en: Ubuntu Core.
+  id: ubuntu-core
+  locale_support: none
+  name:
+    en: Ubuntu Core 24
+  path: ''
+  size: 0
+  snapd_system_label: ubuntu-core-24-amd64
+  type: null
+  variant: core
+version: 2
+kernel:
+  default: "snap:pc-kernel"
