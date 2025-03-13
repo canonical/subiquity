@@ -1041,12 +1041,21 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         label = self._info.label
         kernels = self._info.system.model.snaps_of_type(snapdtypes.ModelSnapType.KERNEL)
         if len(kernels) == 1:
+            optional_snaps = []
+            if (optionals := self._info.system.available_optional) is not None:
+                optional_snaps = optionals.snaps
+
             optional_install = snapdtypes.OptionalInstall(
-                components={kernels[0].name: kernel_components}
+                components={kernels[0].name: kernel_components},
+                snaps=optional_snaps,
             )
         else:
             log.error(f"unexpected number of kernel snaps {len(kernels)}")
-            optional_install = None
+            # multi-kernel model case unknown, let snapd try to install all
+            # optional things here.
+            optional_install = snapdtypes.OptionalInstall(all=True)
+        log.debug(f"finish_install: {optional_install=}")
+
         await snapdapi.post_and_wait(
             self.app.snapdapi,
             self.app.snapdapi.v2.systems[label].POST,
