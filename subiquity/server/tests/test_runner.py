@@ -169,3 +169,9 @@ class TestDryRunCommandRunner(SubiTestCase):
         # Commands having scripts/replay will actually be executed - no delay.
         delay = self.runner._get_delay_for_cmd(["scripts/replay-curtin-log.py"])
         self.assertEqual(delay, 0)
+
+        # chzdev commands multiply a random number with 0.4 * default_delay
+        with patch("random.random", return_value=1) as m_random:
+            delay = self.runner._get_delay_for_cmd(["chzdev", "--enable", "0.0.1507"])
+        self.assertEqual(delay, 1 * 0.4 * 10)
+        m_random.assert_called_once()
