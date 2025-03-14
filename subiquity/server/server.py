@@ -340,7 +340,8 @@ class SubiquityServer(Application):
         elif os.path.exists(self.snapd_socket_path):
             connection = SnapdConnection(self.root, self.snapd_socket_path)
             self.snapd = AsyncSnapd(connection)
-            self.snapdapi = make_api_client(self.snapd)
+            log_snapd = "subiquity-log-snapd" in self.opts.kernel_cmdline
+            self.snapdapi = make_api_client(self.snapd, log_responses=log_snapd)
         else:
             log.info("no snapd socket found. Snap support is disabled")
             self.snapd = None
