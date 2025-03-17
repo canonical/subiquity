@@ -15,7 +15,9 @@
 
 import asyncio
 import contextlib
+import json
 import logging
+import tempfile
 from typing import List
 
 import aiohttp
@@ -41,6 +43,7 @@ log = logging.getLogger("subiquity.server.snapd.api")
 @api
 class SnapdAPI:
     serialize_query_args = False
+    log_responses = False
 
     class v2:
         class changes:
@@ -94,7 +97,7 @@ class _FakeError:
         raise aiohttp.ClientError(self.data["result"]["message"])
 
 
-def make_api_client(async_snapd):
+def make_api_client(async_snapd, log_responses=False):
     # subiquity.common.api.client is designed around how to make requests
     # with aiohttp's client code, not the AsyncSnapd API but with a bit of
     # effort it can be contorted into shape. Clearly it would be better to
@@ -107,6 +110,8 @@ def make_api_client(async_snapd):
             content = await async_snapd.get(path[1:], **params)
         else:
             content = await async_snapd.post(path[1:], json, **params)
+        if log_responses:
+            log_json_response(content, path.replace("/", "_"))
         response = snapd_serializer.deserialize(Response, content)
         if response.type == ResponseType.SYNC:
             content = content["result"]
@@ -116,7 +121,9 @@ def make_api_client(async_snapd):
             yield _FakeError()
         yield _FakeResponse(content)
 
-    return make_client(SnapdAPI, make_request, serializer=snapd_serializer)
+    client = make_client(SnapdAPI, make_request, serializer=snapd_serializer)
+    client.log_responses = log_responses
+    return client
 
 
 snapd_serializer = Serializer(ignore_unknown_fields=True, serialize_enums_by="value")
@@ -130,9 +137,30 @@ async def post_and_wait(client, meth, *args, ann=None, **kw):
         result = await client.v2.changes[change_id].GET()
         if result.status == TaskStatus.DONE:
             data = result.data
+            if client.log_responses:
+                log_json_response(data)
             if ann is not None:
                 data = snapd_serializer.deserialize(ann, data)
             return data
         elif result.status == TaskStatus.ERROR:
             raise aiohttp.ClientError(result.err)
         await asyncio.sleep(0.1)
+
+
+def log_json_response(data, label=None):
+    """Write the received response to a unique filename.  Useful for developer
+    purposes - in some cases, crafting the correct request to snapd can require
+    some tricky system setup, so this simplifies capturing the response."""
+
+    prefix = "snapd."
+    if label is not None:
+        prefix += label + "."
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        dir="/tmp",
+        prefix=prefix,
+        suffix=".json",
+        delete=False,
+        delete_on_close=False,
+    ) as fp:
+        json.dump(data, fp)
