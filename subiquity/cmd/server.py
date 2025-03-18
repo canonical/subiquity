@@ -150,6 +150,12 @@ returned. """,
     )
     parser.add_argument("--use-os-prober", action="store_true", default=False)
     parser.add_argument(
+        "--no-wlan-listener",
+        action="store_false",
+        dest="with_wlan_listener",
+        default=True,
+    )
+    parser.add_argument(
         "--postinst-hooks-dir", default="/etc/subiquity/postinst.d", type=pathlib.Path
     )
     parser.add_argument(
