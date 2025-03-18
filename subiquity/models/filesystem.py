@@ -796,6 +796,7 @@ class Disk(_Device):
     preserve: bool = False
     name: str = ""
     grub_device: bool = False
+    skip_bootloader: bool = False
     device_id: Optional[str] = None
 
     _info: StorageInfo = attributes.for_api()
@@ -2387,6 +2388,10 @@ class FilesystemModel:
         elif self.bootloader == Bootloader.BIOS:
             return self._one(type="disk", grub_device=True) is None
         elif self.bootloader == Bootloader.UEFI:
+            if len(self._all(type="disk")) > 0 and len(self._all(type="disk")) == len(
+                self._all(type="disk", skip_bootloader=True)
+            ):
+                return False
             for esp in self._all(type="partition", grub_device=True):
                 if esp.fs() and esp.fs().mount():
                     if esp.fs().mount().path == "/boot/efi":
