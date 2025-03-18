@@ -181,7 +181,8 @@ class BaseNetworkController(BaseController):
     def start(self):
         self._observer_handles = []
         self.observer, self._observer_fds = self.app.prober.probe_network(
-            self.network_event_receiver
+            self.network_event_receiver,
+            with_wlan_listener=self.app.opts.with_wlan_listener,
         )
         self.start_watching()
 
