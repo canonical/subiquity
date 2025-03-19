@@ -138,6 +138,6 @@ class ShutdownController(SubiquityController):
             self.app.exit()
         else:
             if self.mode == ShutdownMode.REBOOT:
-                run_command(["/sbin/reboot"])
+                run_command(["systemctl", "reboot"])
             elif self.mode == ShutdownMode.POWEROFF:
-                run_command(["/sbin/poweroff"])
+                run_command(["systemctl", "poweroff"])
