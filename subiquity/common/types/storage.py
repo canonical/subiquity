@@ -70,6 +70,13 @@ class Partition:
     name: Optional[str] = None
     # Was this partition mounted when the installer started?
     is_in_use: bool = False
+    # read-only views of mount, format, and encryption status.  Used to
+    # simplify display of complex constructed objects - maybe this partition
+    # isn't mounted directly but contains other devices which eventually have
+    # information that we want to show.
+    effective_mount: Optional[str] = None
+    effective_format: Optional[str] = None
+    effectively_encrypted: Optional[bool] = None
 
 
 @attr.s(auto_attribs=True)

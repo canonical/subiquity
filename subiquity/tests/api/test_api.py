@@ -15,6 +15,7 @@
 
 import asyncio
 import contextlib
+import itertools
 import json
 import os
 import re
@@ -1221,7 +1222,13 @@ class TestPartitionTableEditing(TestAPI):
             [sda] = resp["disks"]
             [p1, p2, p3, p4] = sda["partitions"]
             e1.pop("annotations")
-            e1.update({"mount": "/boot/efi", "grub_device": True})
+            e1.update(
+                {
+                    "mount": "/boot/efi",
+                    "grub_device": True,
+                    "effective_mount": "/boot/efi",
+                }
+            )
             self.assertDictSubset(e1, p1)
             self.assertEqual(e2, p2)
             self.assertEqual(e3, p3)
@@ -1271,7 +1278,13 @@ class TestPartitionTableEditing(TestAPI):
 
             expected_p1 = orig_p1.copy()
             expected_p1.pop("annotations")
-            expected_p1.update({"mount": "/boot/efi", "grub_device": True})
+            expected_p1.update(
+                {
+                    "mount": "/boot/efi",
+                    "grub_device": True,
+                    "effective_mount": "/boot/efi",
+                }
+            )
             expected_p3 = actual_p3
             data = {
                 "disk_id": "disk-sda",
@@ -1527,6 +1540,7 @@ class TestRegression(TestAPI):
                 "already formatted as ext4",
                 "mounted at /",
             ]
+            expected["effective_mount"] = "/"
             self.assertEqual(expected, p5)
             await check_preserve()
 
@@ -2383,3 +2397,204 @@ class TestServerVariantSupport(TestAPI):
 
             resp = await inst.get("/meta/client_variant")
             self.assertEqual(resp, "desktop")
+
+
+class TestLabels(TestAPI):
+    @parameterized.expand(
+        (
+            (
+                "DIRECT",
+                None,
+                (
+                    {
+                        "number": 1,
+                        "boot": True,
+                        "grub_device": True,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "fat32",
+                        "mount": "/boot/efi",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 2,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "ext4",
+                        "mount": "/",
+                        "effectively_encrypted": False,
+                    },
+                ),
+            ),
+            (
+                "LVM",
+                None,
+                (
+                    {
+                        "number": 1,
+                        "boot": True,
+                        "grub_device": True,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "fat32",
+                        "mount": "/boot/efi",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 2,
+                        "boot": False,  # really
+                        "grub_device": None,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "ext4",
+                        "mount": "/boot",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 3,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "effective_format": "ext4",
+                        "effective_mount": "/",
+                        "effectively_encrypted": False,
+                    },
+                ),
+            ),
+            (
+                "LVM_LUKS",
+                "passw0rd",
+                (
+                    {
+                        "number": 1,
+                        "boot": True,
+                        "grub_device": True,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "fat32",
+                        "mount": "/boot/efi",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 2,
+                        "boot": False,
+                        "grub_device": None,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "ext4",
+                        "mount": "/boot",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 3,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "effective_format": "ext4",
+                        "effective_mount": "/",
+                        "effectively_encrypted": True,
+                    },
+                ),
+            ),
+            (
+                "ZFS",
+                None,
+                (
+                    {
+                        "number": 1,
+                        "boot": True,
+                        "grub_device": True,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "fat32",
+                        "mount": "/boot/efi",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 2,
+                        "boot": False,
+                        "grub_device": None,
+                        "preserve": False,
+                        "wipe": None,
+                        "effective_format": "zfs",
+                        "effective_mount": "/boot",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 3,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "swap",
+                        "mount": "",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 4,
+                        "preserve": False,
+                        "wipe": None,
+                        "effective_format": "zfs",
+                        "effective_mount": "/",
+                        "effectively_encrypted": False,
+                    },
+                ),
+            ),
+            (
+                "ZFS_LUKS_KEYSTORE",
+                "passw0rd",
+                (
+                    {
+                        "number": 1,
+                        "boot": True,
+                        "grub_device": True,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "fat32",
+                        "mount": "/boot/efi",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 2,
+                        "boot": False,
+                        "grub_device": None,
+                        "preserve": False,
+                        "wipe": None,
+                        "effective_format": "zfs",
+                        "effective_mount": "/boot",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 3,
+                        "preserve": False,
+                        "wipe": None,
+                        "effective_format": "swap",
+                        "effective_mount": "",
+                        "effectively_encrypted": True,
+                    },
+                    {
+                        "number": 4,
+                        "preserve": False,
+                        "wipe": None,
+                        "effective_format": "zfs",
+                        "effective_mount": "/",
+                        "effectively_encrypted": True,
+                    },
+                ),
+            ),
+        )
+    )
+    @timeout()
+    async def test_labels(self, capability, password, partitions):
+        async with start_server("examples/machines/simple.json") as inst:
+            resp = await inst.get("/storage/v2/guided?wait=true")
+            [reformat, manual] = resp["targets"]
+
+            await inst.post(
+                "/storage/v2/guided",
+                {
+                    "target": reformat,
+                    "capability": capability,
+                    "password": password,
+                },
+            )
+            resp = await inst.get("/storage/v2")
+            [d] = resp["disks"]
+            for expected, actual in itertools.zip_longest(partitions, d["partitions"]):
+                self.assertDictSubset(expected, actual, f"partnum {actual['number']}")
