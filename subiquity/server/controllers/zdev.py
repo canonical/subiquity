@@ -670,9 +670,14 @@ class ZdevController(SubiquityController):
         return [x.to_ai_item() for x, _ in itertools.groupby(self.done_ai_actions)]
 
     async def handle_zdevs(self) -> None:
+        if self.opts.dry_run:
+            zdevinfos = self.zdevinfos
+        else:
+            zdevinfos = OrderedDict([(i.id, i) for i in self.lszdev()])
+
         for ai_action in self.ai_actions:
             action = "enable" if ai_action.enable else "disable"
-            await self.chzdev(action, self.zdevinfos[ai_action.id])
+            await self.chzdev(action, zdevinfos[ai_action.id])
 
     def interactive(self):
         if self.app.base_model.filesystem.bootloader != Bootloader.NONE:
@@ -707,8 +712,13 @@ class ZdevController(SubiquityController):
         else:
             return self.lszdev()
 
-    def lszdev(self) -> list[ZdevInfo]:
-        devices = run_command(lszdev_cmd, universal_newlines=True).stdout
-        devices = devices.splitlines()
+    def _raw_lszdev(self) -> str:
+        return run_command(lszdev_cmd, universal_newlines=True).stdout
+
+    def _parse_lszdev(self, output: str) -> list[ZdevInfo]:
+        devices = output.splitlines()
         devices.sort()
         return [ZdevInfo.from_row(row) for row in devices]
+
+    def lszdev(self) -> list[ZdevInfo]:
+        return self._parse_lszdev(self._raw_lszdev())

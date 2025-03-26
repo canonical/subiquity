@@ -14,15 +14,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+from collections import OrderedDict
 from unittest.mock import AsyncMock, Mock, patch
 
-from subiquity.server.controllers.zdev import ZdevAction, ZdevController
+from subiquity.server.controllers.zdev import ZdevAction, ZdevController, lszdev_stock
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.parameterized import parameterized
 
 
 class TestZdevController(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.ctrler = ZdevController(make_app())
+        self.p_raw_lszdev = patch.object(
+            self.ctrler, "_raw_lszdev", return_value=lszdev_stock
+        )
 
     def test_make_autoinstall_no_dupes(self):
         self.ctrler.done_ai_actions = [
@@ -70,7 +75,8 @@ class TestZdevController(unittest.IsolatedAsyncioTestCase):
 
         m_chzdev.assert_not_called()
 
-    async def test_handle_zdevs(self):
+    @parameterized.expand(((True,), (False,)))
+    async def test_handle_zdevs(self, dry_run: bool):
         self.ctrler.load_autoinstall_data(
             [
                 {"id": "0.0.1507", "enabled": True},
@@ -78,13 +84,33 @@ class TestZdevController(unittest.IsolatedAsyncioTestCase):
             ]
         )
 
-        with patch.object(self.ctrler, "chzdev") as m_chzdev:
+        # In LP: #2104267, handle_zdevs() was raising an exception only when
+        # dry-run is False. Let's run the test with dry_run=True as well.
+        p_dry_run = patch.object(self.ctrler.app.opts, "dry_run", dry_run)
+
+        with patch.object(
+            self.ctrler, "chzdev"
+        ) as m_chzdev, self.p_raw_lszdev as m_raw_lszdev, p_dry_run:
             await self.ctrler.handle_zdevs()
 
-        expected_calls = [
-            unittest.mock.call("enable", self.ctrler.zdevinfos["0.0.1507"]),
-            unittest.mock.call("disable", self.ctrler.zdevinfos["0.0.1508"]),
-        ]
+        if dry_run:
+            # In dry-run we use a "cache" of zdevinfos
+            m_raw_lszdev.assert_not_called()
+        else:
+            # But otherwise, we call lszdev().
+            m_raw_lszdev.assert_called_once()
+
+        with self.p_raw_lszdev:
+            expected_calls = [
+                unittest.mock.call(
+                    "enable",
+                    OrderedDict([(i.id, i) for i in self.ctrler.lszdev()])["0.0.1507"],
+                ),
+                unittest.mock.call(
+                    "disable",
+                    OrderedDict([(i.id, i) for i in self.ctrler.lszdev()])["0.0.1508"],
+                ),
+            ]
 
         self.assertEqual(expected_calls, m_chzdev.mock_calls)
 
