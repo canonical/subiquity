@@ -117,7 +117,7 @@ class TestZdevController(unittest.IsolatedAsyncioTestCase):
     async def test_chzdev_wrong_action(self):
         self.ctrler.done_ai_actions = []
         with self.assertRaises(ValueError):
-            await self.ctrler.chzdev("enAble", self.ctrler.zdevinfos["0.0.1507"])
+            await self.ctrler.chzdev("enAble", self.ctrler.dr_zdevinfos["0.0.1507"])
         self.assertFalse(self.ctrler.done_ai_actions)
 
     @patch("asyncio.sleep", AsyncMock())
@@ -126,7 +126,7 @@ class TestZdevController(unittest.IsolatedAsyncioTestCase):
 
         self.ctrler.app.command_runner = Mock()
         with patch.object(self.ctrler.app.command_runner, "run", AsyncMock()) as m_run:
-            await self.ctrler.chzdev("enable", self.ctrler.zdevinfos["0.0.1507"])
+            await self.ctrler.chzdev("enable", self.ctrler.dr_zdevinfos["0.0.1507"])
 
         m_run.assert_called_once_with(["chzdev", "--enable", "0.0.1507"])
 
@@ -140,7 +140,7 @@ class TestZdevController(unittest.IsolatedAsyncioTestCase):
 
         self.ctrler.app.command_runner = Mock()
         with patch.object(self.ctrler.app.command_runner, "run", AsyncMock()) as m_run:
-            await self.ctrler.chzdev("disable", self.ctrler.zdevinfos["0.0.1507"])
+            await self.ctrler.chzdev("disable", self.ctrler.dr_zdevinfos["0.0.1507"])
 
         self.assertEqual(
             [ZdevAction(id="0.0.1507", enable=False)], self.ctrler.done_ai_actions
@@ -154,10 +154,10 @@ class TestZdevController(unittest.IsolatedAsyncioTestCase):
 
         self.ctrler.app.command_runner = Mock()
         with patch.object(self.ctrler.app.command_runner, "run", AsyncMock()) as m_run:
-            await self.ctrler.chzdev("enable", self.ctrler.zdevinfos["0.0.1507"])
-            await self.ctrler.chzdev("enable", self.ctrler.zdevinfos["0.0.1507"])
-            await self.ctrler.chzdev("disable", self.ctrler.zdevinfos["0.0.1508"])
-            await self.ctrler.chzdev("enable", self.ctrler.zdevinfos["0.0.1508"])
+            await self.ctrler.chzdev("enable", self.ctrler.dr_zdevinfos["0.0.1507"])
+            await self.ctrler.chzdev("enable", self.ctrler.dr_zdevinfos["0.0.1507"])
+            await self.ctrler.chzdev("disable", self.ctrler.dr_zdevinfos["0.0.1508"])
+            await self.ctrler.chzdev("enable", self.ctrler.dr_zdevinfos["0.0.1508"])
 
         expected_calls = [
             unittest.mock.call(["chzdev", "--enable", "0.0.1507"]),

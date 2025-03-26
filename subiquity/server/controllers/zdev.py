@@ -650,7 +650,7 @@ class ZdevController(SubiquityController):
                 devices = lszdev_stock.splitlines()
                 devices.sort()
                 zdevinfos = [ZdevInfo.from_row(row) for row in devices]
-            self.zdevinfos = OrderedDict([(i.id, i) for i in zdevinfos])
+            self.dr_zdevinfos = OrderedDict([(i.id, i) for i in zdevinfos])
 
     def load_autoinstall_data(self, data: ZdevAi) -> None:
         self.ai_actions = [ZdevAction.from_ai_item(item) for item in data]
@@ -671,7 +671,7 @@ class ZdevController(SubiquityController):
 
     async def handle_zdevs(self) -> None:
         if self.opts.dry_run:
-            zdevinfos = self.zdevinfos
+            zdevinfos = self.dr_zdevinfos
         else:
             zdevinfos = OrderedDict([(i.id, i) for i in self.lszdev()])
 
@@ -697,8 +697,8 @@ class ZdevController(SubiquityController):
         self.done_ai_actions.append(ZdevAction(id=zdev.id, enable=on))
 
         if self.opts.dry_run:
-            self.zdevinfos[zdev.id].on = on
-            self.zdevinfos[zdev.id].pers = on
+            self.dr_zdevinfos[zdev.id].on = on
+            self.dr_zdevinfos[zdev.id].pers = on
         chzdev_cmd = ["chzdev", "--%s" % action, zdev.id]
         await self.app.command_runner.run(chzdev_cmd)
 
@@ -708,7 +708,7 @@ class ZdevController(SubiquityController):
 
     async def GET(self) -> List[ZdevInfo]:
         if self.opts.dry_run:
-            return self.zdevinfos.values()
+            return self.dr_zdevinfos.values()
         else:
             return self.lszdev()
 
