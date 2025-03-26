@@ -707,7 +707,7 @@ class ZdevController(SubiquityController):
         else:
             return self.lszdev()
 
-    def lszdev(self):
+    def lszdev(self) -> list[ZdevInfo]:
         devices = run_command(lszdev_cmd, universal_newlines=True).stdout
         devices = devices.splitlines()
         devices.sort()
