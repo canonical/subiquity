@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import subprocess
 import unittest
 from collections import OrderedDict
 from unittest.mock import AsyncMock, Mock, patch
@@ -104,11 +105,15 @@ class TestZdevController(unittest.IsolatedAsyncioTestCase):
             expected_calls = [
                 unittest.mock.call(
                     "enable",
-                    OrderedDict([(i.id, i) for i in self.ctrler.lszdev()])["0.0.1507"],
+                    OrderedDict([(i.id, i) for i in await self.ctrler.lszdev()])[
+                        "0.0.1507"
+                    ],
                 ),
                 unittest.mock.call(
                     "disable",
-                    OrderedDict([(i.id, i) for i in self.ctrler.lszdev()])["0.0.1508"],
+                    OrderedDict([(i.id, i) for i in await self.ctrler.lszdev()])[
+                        "0.0.1508"
+                    ],
                 ),
             ]
 
@@ -176,3 +181,17 @@ class TestZdevController(unittest.IsolatedAsyncioTestCase):
             ],
             self.ctrler.done_ai_actions,
         )
+
+    async def test__raw_lszdev(self):
+        with patch(
+            "subiquity.server.controllers.zdev.arun_command",
+            return_value=subprocess.CompletedProcess((), 0, stdout="output"),
+        ):
+            self.assertEqual("output", await self.ctrler._raw_lszdev())
+
+    def test__raw_lszdev_sync(self):
+        with patch(
+            "subiquity.server.controllers.zdev.run_command",
+            return_value=subprocess.CompletedProcess((), 0, stdout="output"),
+        ):
+            self.assertEqual("output", self.ctrler._raw_lszdev_sync())
