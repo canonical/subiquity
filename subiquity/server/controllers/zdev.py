@@ -28,7 +28,7 @@ from subiquity.common.types.storage import Bootloader
 from subiquity.server.controller import SubiquityController
 from subiquitycore.async_helpers import schedule_task
 from subiquitycore.context import with_context
-from subiquitycore.utils import run_command
+from subiquitycore.utils import arun_command, run_command
 
 log = logging.getLogger("subiquity.server.controllers.zdev")
 
@@ -645,12 +645,12 @@ class ZdevController(SubiquityController):
         super().__init__(app)
         if self.opts.dry_run:
             if platform.machine() == "s390x":
-                zdevinfos = self.lszdev()
+                zdevinfos = self.lszdev_sync()
             else:
                 devices = lszdev_stock.splitlines()
                 devices.sort()
                 zdevinfos = [ZdevInfo.from_row(row) for row in devices]
-            self.zdevinfos = OrderedDict([(i.id, i) for i in zdevinfos])
+            self.dr_zdevinfos = OrderedDict([(i.id, i) for i in zdevinfos])
 
     def load_autoinstall_data(self, data: ZdevAi) -> None:
         self.ai_actions = [ZdevAction.from_ai_item(item) for item in data]
@@ -670,9 +670,14 @@ class ZdevController(SubiquityController):
         return [x.to_ai_item() for x, _ in itertools.groupby(self.done_ai_actions)]
 
     async def handle_zdevs(self) -> None:
+        if self.opts.dry_run:
+            zdevinfos = self.dr_zdevinfos
+        else:
+            zdevinfos = OrderedDict([(i.id, i) for i in await self.lszdev()])
+
         for ai_action in self.ai_actions:
             action = "enable" if ai_action.enable else "disable"
-            await self.chzdev(action, self.zdevinfos[ai_action.id])
+            await self.chzdev(action, zdevinfos[ai_action.id])
 
     def interactive(self):
         if self.app.base_model.filesystem.bootloader != Bootloader.NONE:
@@ -692,8 +697,8 @@ class ZdevController(SubiquityController):
         self.done_ai_actions.append(ZdevAction(id=zdev.id, enable=on))
 
         if self.opts.dry_run:
-            self.zdevinfos[zdev.id].on = on
-            self.zdevinfos[zdev.id].pers = on
+            self.dr_zdevinfos[zdev.id].on = on
+            self.dr_zdevinfos[zdev.id].pers = on
         chzdev_cmd = ["chzdev", "--%s" % action, zdev.id]
         await self.app.command_runner.run(chzdev_cmd)
 
@@ -703,12 +708,25 @@ class ZdevController(SubiquityController):
 
     async def GET(self) -> List[ZdevInfo]:
         if self.opts.dry_run:
-            return self.zdevinfos.values()
+            return self.dr_zdevinfos.values()
         else:
-            return self.lszdev()
+            return await self.lszdev()
 
-    def lszdev(self):
-        devices = run_command(lszdev_cmd, universal_newlines=True).stdout
-        devices = devices.splitlines()
+    def _raw_lszdev_sync(self) -> str:
+        return run_command(lszdev_cmd, universal_newlines=True).stdout
+
+    async def _raw_lszdev(self) -> str:
+        return (await arun_command(lszdev_cmd)).stdout
+
+    def _parse_lszdev(self, output: str) -> list[ZdevInfo]:
+        devices = output.splitlines()
         devices.sort()
         return [ZdevInfo.from_row(row) for row in devices]
+
+    def lszdev_sync(self) -> list[ZdevInfo]:
+        """Synchronous version of lszdev - which we can drop once we move the
+        call to lszdev outside the initializer."""
+        return self._parse_lszdev(self._raw_lszdev_sync())
+
+    async def lszdev(self) -> list[ZdevInfo]:
+        return self._parse_lszdev(await self._raw_lszdev())
