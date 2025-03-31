@@ -1781,6 +1781,7 @@ class TestOEM(TestAPI):
             resp = await inst.get("/oem", wait=False)
             self.assertIsNone(resp["metapackages"])
 
+    @timeout()
     async def test_listing_empty(self):
         expected_pkgs = []
         with patch.dict(os.environ, {"SUBIQUITY_DEBUG": "no-drivers"}):
@@ -1826,16 +1827,19 @@ class TestOEM(TestAPI):
                 resp = await inst.get("/oem", wait=True)
                 self.assertEqual(expected, resp["metapackages"])
 
+    @timeout()
     async def test_listing_certified_ubuntu_server(self):
         # Listing of OEM meta-packages is intentionally disabled on
         # ubuntu-server.
         await self._test_listing_certified(source_id="ubuntu-server", expected=[])
 
+    @timeout()
     async def test_listing_certified_ubuntu_desktop(self):
         await self._test_listing_certified(
             source_id="ubuntu-desktop", expected=["oem-somerville-tentacool-meta"]
         )
 
+    @timeout()
     async def test_confirmation_before_storage_configured(self):
         # On ubuntu-desktop, the confirmation event sometimes comes before the
         # storage configured event. This was known to cause OEM to fail with
@@ -2048,6 +2052,7 @@ class TestAutoinstallServer(TestAPI):
                 )
                 self.assertTrue(expected.issubset(resp))
 
+    @timeout()
     async def test_autoinstall_validation_error(self):
         cfg = "examples/machines/simple.json"
         extra = [
@@ -2076,6 +2081,7 @@ class TestAutoinstallServer(TestAPI):
     # This has the added bonus of failing in the future when
     # we want to implement this behavior in the command
     # controllers
+    @timeout()
     async def test_autoinstall_not_autoinstall_error(self):
         cfg = "examples/machines/simple.json"
         extra = [
@@ -2341,6 +2347,7 @@ class TestServerVariantSupport(TestAPI):
             ("foo-bar", False),
         )
     )
+    @timeout()
     async def test_supported_variants(self, variant, is_supported):
         async with start_server("examples/machines/simple.json") as inst:
             if is_supported:
@@ -2356,6 +2363,7 @@ class TestServerVariantSupport(TestAPI):
                     json.loads(cre.headers["x-error-msg"]),
                 )
 
+    @timeout()
     async def test_post_source_update_server_variant(self):
         """Test POSTing to source will correctly update Server variant."""
 
