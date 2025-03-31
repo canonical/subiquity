@@ -11,7 +11,7 @@ window.onload = function() {
     link.classList.add("muted-link");
     link.classList.add("github-issue-link");
     link.text = "Give feedback";
-    link.href = ("https://bugs.launchpad.net/subiquity/+filebug");
+    link.href = (launchpad_issues);
     link.target = "_blank";
 
     const div = document.createElement("div");
