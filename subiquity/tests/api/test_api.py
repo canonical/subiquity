@@ -212,13 +212,17 @@ class TestAPI(SubiTestCase):
     def machineConfig(self, path):
         return self._MachineConfig(self, path)
 
-    def assertDictSubset(self, expected, actual):
+    def assertDictSubset(self, expected, actual, msg=None):
         """All keys in dictionary expected, and matching values, must match
         keys and values in actual.  Actual may contain additional keys and
         values that don't appear in expected, and this is not a failure."""
 
+        if msg is None:
+            msg = ""
+        else:
+            msg = " " + msg
         for k, v in expected.items():
-            self.assertEqual(v, actual[k], k)
+            self.assertEqual(v, actual[k], msg=k + msg)
 
 
 async def poll_for_socket_exist(socket_path):
