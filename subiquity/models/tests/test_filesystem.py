@@ -208,6 +208,10 @@ def make_filesystem(model, partition, *, fstype="ext4", **kw):
     return Filesystem(m=model, volume=partition, fstype=fstype, **kw)
 
 
+def make_mount(model, fs: Filesystem, path):
+    return model.add_mount(fs, path)
+
+
 def make_model_and_partition(bootloader=None):
     model, disk = make_model_and_disk(bootloader)
     return model, make_partition(model, disk)
@@ -286,6 +290,10 @@ def make_nvme_controller(
     )
     model._actions.append(ctrler)
     return ctrler
+
+
+def make_dm_crypt(model, device):
+    return model.add_dm_crypt(device)
 
 
 class TestFilesystemModel(unittest.TestCase):

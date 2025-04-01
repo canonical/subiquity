@@ -20,6 +20,7 @@ from subiquity.common.types import storage as types
 from subiquity.models.filesystem import (
     ZFS,
     Disk,
+    DM_Crypt,
     LVM_LogicalVolume,
     LVM_VolGroup,
     Partition,
@@ -338,8 +339,37 @@ def _for_client_disk(disk, *, min_size=0):
     )
 
 
+def _resolve_constructed_object(partition: Partition) -> tuple[str, str, bool]:
+    """provide answers for labels for VERY simple cases of constructed devices.
+    This is not really the correct way to represent arbitrarily complex trees
+    of block devices but sufficient for what guided does."""
+    cd = partition.constructed_device()
+    if isinstance(cd, ZPool):
+        encrypted = False
+        if cd.encryption_style == "luks_keystore":
+            encrypted = True
+        return cd.mountpoint, cd.fstype, encrypted
+    elif isinstance(cd, LVM_VolGroup):
+        lvs = cd.partitions()
+        # guided produces one of these.  with a non-one amount we don't
+        # know what to show for the effective values.
+        if len(lvs) == 1:
+            encrypted = False
+            maybe_dmc = partition.constructed_device(skip_dm_crypt=False)
+            if isinstance(maybe_dmc, DM_Crypt):
+                encrypted = True
+            return lvs[0].mount, lvs[0].format, encrypted
+
+    cd = partition.constructed_device(skip_dm_crypt=False)
+    if isinstance(cd, DM_Crypt):
+        return cd.mount, cd.format, True
+
+    return partition.mount, partition.format, False
+
+
 @for_client.register(Partition)
 def _for_client_partition(partition, *, min_size=0):
+    e_mount, e_format, e_encrypted = _resolve_constructed_object(partition)
     return types.Partition(
         size=partition.size,
         number=partition.number,
@@ -357,6 +387,9 @@ def _for_client_partition(partition, *, min_size=0):
         mount=partition.mount,
         format=partition.format,
         is_in_use=partition._is_in_use,
+        effective_mount=e_mount,
+        effective_format=e_format,
+        effectively_encrypted=e_encrypted,
     )
 
 

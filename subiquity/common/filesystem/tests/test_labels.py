@@ -18,11 +18,17 @@ import unittest
 
 from subiquity.common.filesystem.labels import annotations, for_client, usage_labels
 from subiquity.models.tests.test_filesystem import (
+    make_dm_crypt,
+    make_filesystem,
+    make_lv,
     make_model,
     make_model_and_disk,
     make_model_and_partition,
     make_model_and_raid,
+    make_mount,
     make_partition,
+    make_vg,
+    make_zpool,
 )
 
 
@@ -143,3 +149,99 @@ class TestForClient(unittest.TestCase):
         part = make_partition(model, disk, partition_name="Foobar")
 
         self.assertEqual("Foobar", for_client(part).name)
+
+
+class TestEffective(unittest.TestCase):
+    def test_part(self):
+        model, disk = make_model_and_disk()
+        part = make_partition(model, disk)
+        fs = make_filesystem(model, part, fstype="fs")
+        make_mount(model, fs, "/mount")
+
+        fc = for_client(part)
+        self.assertEqual("fs", fc.format)
+        self.assertEqual("fs", fc.effective_format)
+        self.assertEqual("/mount", fc.mount)
+        self.assertEqual("/mount", fc.effective_mount)
+        self.assertFalse(fc.effectively_encrypted)
+
+    def test_part_vg_lv(self):
+        model, disk = make_model_and_disk()
+        part = make_partition(model, disk)
+        vg = make_vg(model, pvs=[part])
+        lv = make_lv(model, vg)
+        fs = make_filesystem(model, lv, fstype="fs")
+        make_mount(model, fs, "/mount")
+
+        fc = for_client(part)
+        self.assertEqual(None, fc.format)
+        self.assertEqual("fs", fc.effective_format)
+        self.assertEqual(None, fc.mount)
+        self.assertEqual("/mount", fc.effective_mount)
+        self.assertFalse(fc.effectively_encrypted)
+
+    def test_part_crypt_vg_lv(self):
+        model, disk = make_model_and_disk()
+        part = make_partition(model, disk)
+        dmc = make_dm_crypt(model, part)
+        vg = make_vg(model, pvs=[dmc])
+        lv = make_lv(model, vg)
+        fs = make_filesystem(model, lv, fstype="fs")
+        make_mount(model, fs, "/mount")
+
+        fc = for_client(part)
+        self.assertEqual(None, fc.format)
+        self.assertEqual("fs", fc.effective_format)
+        self.assertEqual(None, fc.mount)
+        self.assertEqual("/mount", fc.effective_mount)
+        self.assertTrue(fc.effectively_encrypted)
+
+    def test_part_zpool(self):
+        model, disk = make_model_and_disk()
+        part = make_partition(model, disk)
+        make_zpool(model, part, "mypool", "/mount")
+
+        fc = for_client(part)
+        self.assertEqual(None, fc.format)
+        self.assertEqual("zfs", fc.effective_format)
+        self.assertEqual(None, fc.mount)
+        self.assertEqual("/mount", fc.effective_mount)
+        self.assertFalse(fc.effectively_encrypted)
+
+    def test_part_zpool_keystore(self):
+        model, disk = make_model_and_disk()
+        part = make_partition(model, disk)
+        lk = "luks_keystore"
+        make_zpool(model, part, "mypool", "/mount", encryption_style=lk)
+
+        fc = for_client(part)
+        self.assertEqual(None, fc.format)
+        self.assertEqual("zfs", fc.effective_format)
+        self.assertEqual(None, fc.mount)
+        self.assertEqual("/mount", fc.effective_mount)
+        self.assertTrue(fc.effectively_encrypted)
+
+    def test_part_swap(self):
+        model, disk = make_model_and_disk()
+        part = make_partition(model, disk)
+        make_filesystem(model, part, fstype="swap")
+
+        fc = for_client(part)
+        self.assertEqual("swap", fc.format)
+        self.assertEqual("swap", fc.effective_format)
+        self.assertEqual(None, fc.mount)
+        self.assertEqual(None, fc.effective_mount)
+        self.assertFalse(fc.effectively_encrypted)
+
+    def test_part_crypt_swap(self):
+        model, disk = make_model_and_disk()
+        part = make_partition(model, disk)
+        dmc = make_dm_crypt(model, part)
+        make_filesystem(model, dmc, fstype="swap")
+
+        fc = for_client(part)
+        self.assertEqual(None, fc.format)
+        self.assertEqual("swap", fc.effective_format)
+        self.assertEqual(None, fc.mount)
+        self.assertEqual(None, fc.effective_mount)
+        self.assertTrue(fc.effectively_encrypted)
