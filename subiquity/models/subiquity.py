@@ -486,9 +486,6 @@ class SubiquityModel:
             },
         }
 
-        if self.source.current.variant == "desktop":
-            config["grub"]["replace_linux_default"] = False
-
         if os.path.exists("/run/casper-md5check.json"):
             with open("/run/casper-md5check.json") as fp:
                 config["write_files"]["md5check"] = {
