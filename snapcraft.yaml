@@ -223,7 +223,8 @@ parts:
 
     source: https://github.com/canonical/probert.git
     source-type: git
-    source-commit: f34ae3c3f942a9c479fe928911053a302e146251
+    # Tracks the ubuntu/noble branch
+    source-commit: ee45ec6103d235884828ad7aca5018fafdfc4a62
 
     override-build: *pyinstall
 
