@@ -17,6 +17,7 @@ import enum
 from itertools import zip_longest
 import os
 from pathlib import Path
+import re
 import shlex
 import shutil
 import socket
@@ -582,6 +583,17 @@ def create_disk(path: Path, size: str):
     run(['qemu-img', 'create', '-f', 'qcow2', str(path), size])
 
 
+def get_grub_appends(ctx, mntdir: str) -> list[str]:
+    for line in (Path(mntdir) / "boot/grub/grub.cfg").read_text().splitlines():
+        # something like
+        # linux /casper/vmlinuz --- quiet splash
+        m = re.search(r"linux\s+/casper/vmlinuz\s+---\s+(.*)", line)
+        if m is None:
+            continue
+        return ["---"] + m.group(1).split()
+    return []
+
+
 def storage_args(ctx) -> list[str]:
     if not ctx.targets:
         return []
@@ -706,11 +718,14 @@ the ESC button when the QEMU window opens. Then select "Device Manager" and \
 
             if len(appends) > 0:
                 with mounter(iso, mntdir):
+                    appends.extend(get_grub_appends(ctx, mntdir))
+                    # no additional appends should be added after the grub ones
+                    kvm.extend(('-append', ' '.join(appends)))
+
                     # if we're passing kernel args, we need to manually specify
                     # kernel / initrd
                     kvm.extend(('-kernel', f'{mntdir}/casper/vmlinuz'))
                     kvm.extend(('-initrd', get_initrd(mntdir)))
-                    kvm.extend(('-append', ' '.join(appends)))
                     run(kvm)
             else:
                 run(kvm)
