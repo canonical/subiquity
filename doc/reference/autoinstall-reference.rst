@@ -193,7 +193,7 @@ keyboard
 * **default:** US English keyboard
 * **can be interactive:** true
 
-The layout of any attached keyboard. The mapping keys correspond to settings in the :file:`/etc/default/keyboard` configuration file. See the :manualpage:`keyboard(5) manual page <man5/keyboard.5.html>` for more details.
+The layout of any attached keyboard. The mapping keys correspond to settings in the :file:`/etc/default/keyboard` configuration file. See the :manpage:`keyboard(5)` manual page for more details.
 
 The mapping contains keys:
 
@@ -606,6 +606,7 @@ By default, these layouts install to the largest disk in a system, but you can s
 By default (except on s390x), the matching disk will be partitioned using a GUID Partition Table (GPT). But you can specifically request a MSDOS (aka. MBR) partition table:
 
 .. code-block:: yaml
+
     autoinstall:
       storage:
         layout:
@@ -855,7 +856,7 @@ password
 
 The password for the new user, encrypted. This is required for use with ``sudo``, even if SSH access is configured.
 
-The encrypted password string must conform to what the ``passwd`` command requires. See the :manualpage:`passwd(1) manual page <man1/passwd.1.html>` for details. Quote the password hash to ensure correct treatment of any special characters.
+The encrypted password string must conform to what the ``passwd`` command requires. See the :manpage:`passwd(1)` manual page for details. Quote the password hash to ensure correct treatment of any special characters.
 
 Several tools can generate the encrypted password, such as ``mkpasswd`` from the ``whois`` package, or ``openssl passwd``.
 

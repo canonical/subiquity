@@ -66,7 +66,7 @@ partitions are created:
 
 1. A bootloader partition.
 2. An Ext4 partition mounted at :file:`/boot`.
-3. A partition used as the :manualpage:`cryptsetup(8) <man5/keyboard.5.html>`
+3. A partition used as the :manpage:`cryptsetup(8)`
    device.  The resulting LUKS-encrypted block device is then used as the LVM physical device
    for the volume group, and the rootfs is created in a logical volume.
 
