@@ -32,11 +32,15 @@ class Prober:
         self.debug_flags = debug_flags
         log.debug("Prober() init finished, data:{}".format(self.saved_config))
 
-    def probe_network(self, receiver):
+    def probe_network(self, receiver, *, with_wlan_listener: bool):
         if self.saved_config is not None:
-            observer = StoredDataObserver(self.saved_config["network"], receiver)
+            observer = StoredDataObserver(
+                self.saved_config["network"],
+                receiver,
+                with_wlan_listener=with_wlan_listener,
+            )
         else:
-            observer = UdevObserver(receiver)
+            observer = UdevObserver(receiver, with_wlan_listener=with_wlan_listener)
         return observer, observer.start()
 
     async def get_storage(self, probe_types=None):
