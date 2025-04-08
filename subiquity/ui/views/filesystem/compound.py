@@ -123,7 +123,7 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
                 self.all_rows.append(
                     TableRow(
                         [
-                            Text("    " + labels.label(device), wrap="ellipsis"),
+                            Text("    " + labels.label(device)),
                             Text(humanize_size(device.size), align="right"),
                         ]
                     )
