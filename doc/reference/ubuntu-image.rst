@@ -44,7 +44,7 @@ As part of the model assertion, a `gadget snap`_ is specified.  The gadget conta
 
 * Names of all the volumes to be produced (volumes are roughly analogous to disk images).
 
-* Structures (structures define the layout of the volume, including partitions, Master Boot Records, or any other relevant content.) within the volume. :none:`wokeignore:rule=master,`
+* Structures (structures define the layout of the volume, including partitions, Primary Boot Records, or any other relevant content.) within the volume.
 
 * Whether the volume contains a bootloader and if so, what kind of bootloader.
 

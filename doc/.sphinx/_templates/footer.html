@@ -5,7 +5,7 @@
   {% if meta %}
     {% if 'sequential_nav' in meta %}
       {% set sequential_nav = meta.sequential_nav %}
-    {% endif %}  
+    {% endif %}
   {% endif %}
   {# mod: Conditional wrappers to control page navigation buttons #}
   {% if sequential_nav != "none" -%}
@@ -27,7 +27,7 @@
           <div class="context">
             <span>{{ _("Previous") }}</span>
           </div>
-          {% if prev.link == pathto(master_doc) %}
+          {% if prev.link == pathto(root_doc) %}
             <div class="title">{{ _("Home") }}</div>
           {% else %}
             <div class="title">{{ prev.title }}</div>
@@ -71,29 +71,34 @@
     {%- endif %}
   </div>
   <div class="right-details">
-
-    {# mod: replaced RTD icons with our links #}
-
-    {% if discourse %}
-    <div class="ask-discourse">
-      <a class="muted-link" href="{{ discourse }}">Ask a question on Discourse</a>
-    </div>
-    {% endif %}
-
-    {% if github_url and github_version and github_folder %}
-
-    {% if github_issues %}
     <div class="issue-github">
       <a class="muted-link" href="https://bugs.launchpad.net/subiquity/+filebug">Open a Launchpad issue for this documentation</a>
     </div>
-    {% endif %}
 
     <div class="edit-github">
       <a class="muted-link" href="{{ github_url }}/edit/{{ github_version }}{{ github_folder }}{{ pagename }}{{ page_source_suffix }}">Edit this page on GitHub</a>
     </div>
-    {% endif %}
-
-
-    </div>
+  </div>
+  <div>
+   {% if has_contributor_listing and display_contributors and pagename and page_source_suffix %}
+       {% set contributors = get_contributors_for_file(pagename, page_source_suffix) %}
+       {% if contributors %}
+          {% if contributors | length > 1 %}
+              <a class="display-contributors">Thanks to the {{ contributors |length }} contributors!</a>
+          {% else %}
+              <a class="display-contributors">Thanks to our contributor!</a>
+          {% endif %}
+          <div id="overlay"></div>
+          <ul class="all-contributors">
+              {% for contributor in contributors %}
+                  <li>
+                      <a href="{{ contributor[1] }}" class="contributor">{{ contributor[0] }}</a>
+                  </li>
+              {% endfor %}
+          </ul>
+       {% endif %}
+   {% endif %}
+  </div>
+  <div class="right-details">
   </div>
 </div>
