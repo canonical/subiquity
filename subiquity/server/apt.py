@@ -263,6 +263,11 @@ class AptConfigurer:
             mode=0o644,
         )
 
+        # workaround LP: #2105480 and many many many like it
+        apt_lists = self.install_tree.pp("var/lib/apt/lists")
+        if apt_lists.exists():
+            shutil.rmtree(str(apt_lists))
+
         await run_curtin_command(
             self.app,
             context,
