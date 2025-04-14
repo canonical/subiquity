@@ -99,7 +99,9 @@ def summarize_device(disk):
     label = disk.label
     rows = [
         (
-            disk,
+            # Partial reformat is only supported when using the storage v2 API.
+            # Skip scenarios that have in-use partitions.
+            disk if not disk.has_in_use_partition else None,
             [
                 (2, Text(label)),
                 Text(disk.type),
@@ -451,7 +453,10 @@ class GuidedDiskSelectionView(BaseView):
             if not isinstance(target, GuidedStorageTargetReformat):
                 continue
             reformats.append(target)
-            if target.allowed:
+            # v2 guided will advertise "partial" reformat scenarios (i.e.,
+            # where at least one partition is in use). We don't want to offer
+            # that in v1 guided so check for in-use partitions.
+            if target.allowed and not disk_by_id[target.disk_id].has_in_use_partition:
                 any_ok = True
             for disallowed in target.disallowed:
                 if disallowed.reason == GCDR.CORE_BOOT_ENCRYPTION_UNAVAILABLE:
