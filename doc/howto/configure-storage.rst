@@ -17,7 +17,7 @@ You can choose whether or not to set up LVM, and if you do, whether or not to en
 
 Select :guilabel:`Custom storage layout` to apply no configuration to the disks.
 
-The installer then moves to the main storage customisation screen.
+The installer then moves to the main storage customization screen.
 
 The main storage screen
 -----------------------
@@ -50,7 +50,7 @@ RAID
 
 A software RAID device can be created from entire disks or unformatted partitions. Select the :guilabel:`Create software RAID ("MD")` button to open the creation dialog.
 
-The server installer supports RAID levels 0, 1, 5, 6 and 10. It does not allow customising other options, such as metadata format. See the `Linux RAID documentation <https://docs.kernel.org/admin-guide/md.html>`_ for more details.
+The server installer supports RAID levels 0, 1, 5, 6 and 10. It does not allow customizing other options, such as metadata format. See the `Linux RAID documentation <https://docs.kernel.org/admin-guide/md.html>`_ for more details.
 
 A software RAID device can be formatted and mounted directly. It can be partitioned into several partitions, and can be used as part of another RAID device or LVM volume group.
 

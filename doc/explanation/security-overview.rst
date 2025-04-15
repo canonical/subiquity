@@ -40,7 +40,7 @@ navigating to the :guilabel:`Help -> Help on SSH Access` menu item.
 Note that a default password is never used. Instead, a 20-character random
 password is generated and is unique to that given boot of the installer.
 
-Ubuntu Desktop and Ubuntu flavours do not have the SSH server installed by
+Ubuntu Desktop and Ubuntu flavors do not have the SSH server installed by
 default.
 
 
@@ -66,7 +66,7 @@ partitions are created:
 
 1. A bootloader partition.
 2. An Ext4 partition mounted at :file:`/boot`.
-3. A partition used as the :manualpage:`cryptsetup(8) <man5/keyboard.5.html>`
+3. A partition used as the :manpage:`cryptsetup(8)`
    device.  The resulting LUKS-encrypted block device is then used as the LVM physical device
    for the volume group, and the rootfs is created in a logical volume.
 
