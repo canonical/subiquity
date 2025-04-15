@@ -3,7 +3,7 @@
 Autoinstall configuration reference manual
 ==========================================
 
-The autoinstall file uses the YAML format. At the top level is a single key, ``autoinstall``, which contains a mapping of the keys described in this document. Unrecognised keys are ignored in version 1, but they will cause a fatal validation error in future versions.
+The autoinstall file uses the YAML format. At the top level is a single key, ``autoinstall``, which contains a mapping of the keys described in this document. Unrecognized keys are ignored in version 1, but they will cause a fatal validation error in future versions.
 
 Here is an example of a minimal autoinstall configuration:
 
@@ -19,7 +19,7 @@ At the top level is the ``autoinstall`` keyword. It contains a ``version`` secti
 
 .. note::
 
-    This behaviour was first introduced during 24.04 (Noble). On any ISOs built before 24.04, you need to refresh the installer to see this behaviour.
+    This behavior was first introduced during 24.04 (Noble). On any ISOs built before 24.04, you need to refresh the installer to see this behavior.
 
     Technically, in all but one case the top level ``autoinstall`` keyword is strictly unnecessary. This keyword is only necessary when serving autoinstall via cloud-config. For backwards compatibility, this format is still supported for delivery methods not based on cloud-config; however, it is **highly recommended** to use the format with a top-level ``autoinstall`` keyword because mistakes in this formatting are a common source of confusion.
 
@@ -48,7 +48,7 @@ The following keys can be used to configure various aspects of the installation.
 
 .. warning::
 
-  In version 1, Subiquity emits warnings when encountering unrecognised keys. In later versions, it results in a fatal validation error, and the installation halts.
+  In version 1, Subiquity emits warnings when encountering unrecognized keys. In later versions, it results in a fatal validation error, and the installation halts.
 
 .. _ai-version:
 
@@ -343,7 +343,7 @@ source examples:
 .. code-block:: yaml
 
    autoinstall:
-     # default behaviour
+     # default behavior
      source:
        search_drivers: true
        id: <the installation source marked as default in install-sources.yaml>
@@ -380,7 +380,7 @@ For example, to run DHCP version 6 on a specific network interface:
           enp0s31f6:
             dhcp6: true
 
-Note that in the 20.04 GA release of Subiquity, the behaviour is slightly different and requires you to write this with an extra ``network:`` key:
+Note that in the 20.04 GA release of Subiquity, the behavior is slightly different and requires you to write this with an extra ``network:`` key:
 
 .. code-block:: yaml
 
@@ -403,7 +403,7 @@ proxy
 * **default:** no proxy
 * **can be interactive:** true
 
-The proxy to configure both during installation and for ``apt`` and ``snapd`` in the target system. This setting is currently not honoured when running the geoip lookup.
+The proxy to configure both during installation and for ``apt`` and ``snapd`` in the target system. This setting is currently not honored when running the geoip lookup.
 
 Example:
 
@@ -425,7 +425,7 @@ APT configuration, used both during the installation and once booted into the ta
 
 This section has historically used the same format as curtin, which is documented in the `APT Source <https://curtin.readthedocs.io/en/latest/topics/apt_source.html>`_ section of the curtin documentation. Nonetheless, some key differences with the format supported by curtin have been introduced:
 
-- Subiquity supports an alternative format for the ``primary`` section, allowing configuration of a list of candidate primary mirrors. During installation, Subiquity automatically tests the specified mirrors and selects the first one that appears usable. This new behaviour is only activated when the ``primary`` section is wrapped in the ``mirror-selection`` section.
+- Subiquity supports an alternative format for the ``primary`` section, allowing configuration of a list of candidate primary mirrors. During installation, Subiquity automatically tests the specified mirrors and selects the first one that appears usable. This new behavior is only activated when the ``primary`` section is wrapped in the ``mirror-selection`` section.
 
 - The ``fallback`` key controls what Subiquity does when no primary mirror is usable.
 
@@ -533,7 +533,7 @@ geoip
 
 If ``geoip`` is set to ``true`` and one of the candidate primary mirrors has the special value ``country-mirror``, a request is made to ``https://geoip.ubuntu.com/lookup``. Subiquity then sets the mirror URI to ``http://CC.archive.ubuntu.com/ubuntu`` where ``CC`` is the country code returned by the lookup. If this section is not interactive, the request expires after 10 seconds.
 
-If the legacy behaviour (i.e., without mirror-selection) is in use, the geolocation request is made if the mirror to be used is the default, and its URI is replaced by the proper country mirror URI.
+If the legacy behavior (i.e., without mirror-selection) is in use, the geolocation request is made if the mirror to be used is the default, and its URI is replaced by the proper country mirror URI.
 
 Examples:
 
@@ -638,7 +638,7 @@ Additionally, TPM-backed encryption can be enabled by using the ``hybrid`` layou
 Sizing-policy
 ^^^^^^^^^^^^^
 
-The ``lvm`` layout, by default, attempts to leave room for snapshots and further expansion. A sizing-policy key may be supplied to control this behaviour.
+The ``lvm`` layout, by default, attempts to leave room for snapshots and further expansion. A sizing-policy key may be supplied to control this behavior.
 
 * **type:** string (enumeration)
 * **default:** scaled
@@ -971,7 +971,7 @@ allow-pw
 .. code-block:: yaml
 
    autoinstall:
-     # default behaviour
+     # default behavior
      ssh:
        install-server: false
        authorized-keys: []
@@ -1017,7 +1017,7 @@ Examples:
 .. code-block:: yaml
 
    autoinstall:
-     # default behaviour
+     # default behavior
      codecs:
        install: false
 
@@ -1049,7 +1049,7 @@ Examples:
 .. code-block:: yaml
 
    autoinstall:
-     # default behaviour
+     # default behavior
      drivers:
        install: false
 
@@ -1082,7 +1082,7 @@ Examples:
 .. code-block:: yaml
 
    autoinstall:
-     # default behaviour
+     # default behavior
      oem:
        install: auto
 
@@ -1169,9 +1169,9 @@ kernel
 * **default:** default kernel
 * **can be interactive:** no
 
-Which kernel gets installed. Either the name of the package or the name of the flavour must be specified.
+Which kernel gets installed. Either the name of the package or the name of the flavor must be specified.
 
-The exact default kernel is ISO build specific, but generally the ``generic`` flavour is installed for Server and the ``hwe`` flavour is installed for Desktop.
+The exact default kernel is ISO build specific, but generally the ``generic`` flavor is installed for Server and the ``hwe`` flavor is installed for Desktop.
 
 package
 ^^^^^^^
@@ -1197,7 +1197,7 @@ Example:
         package: linux-image-5.13.0-40-generic
 
    autoinstall:
-      # Install a particular kernel flavour.
+      # Install a particular kernel flavor.
       kernel:
         flavor: hwe
 
@@ -1266,7 +1266,7 @@ timezone examples:
 .. code-block:: yaml
 
    autoinstall:
-      # Default behaviour
+      # Default behavior
       timezone: "Etc/UTC"
 
    autoinstall:
@@ -1292,7 +1292,7 @@ Examples:
 .. code-block:: yaml
 
    autoinstall:
-     # default behaviour.  Updates from the security pocket are installed.
+     # default behavior.  Updates from the security pocket are installed.
      updates: security
 
    autoinstall:
@@ -1318,7 +1318,7 @@ shutdown examples:
 .. code-block:: yaml
 
    autoinstall:
-     # default behaviour
+     # default behavior
      shutdown: reboot
 
    autoinstall:

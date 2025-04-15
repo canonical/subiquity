@@ -34,7 +34,7 @@ Classical images are built from an image-definition YAML file, which defines the
     Defines the parameters to build the content of the rootfs.
 
 ``artifacts``
-    Defines the types of artefacts to create, including the actual images, manifest files, and others.
+    Defines the types of artifacts to create, including the actual images, manifest files, and others.
 
 
 The ``gadget.yaml`` file
@@ -156,7 +156,7 @@ Options of the ``classic`` command
 These are the options for defining the contents of classical preinstalled Ubuntu images. They can only be used when the ``ubuntu-image classic`` command is used.
 
 ``image_definition``
-    Path to the image-definition file. This file defines all of the customisation required when building the image. This positional argument must be given for this mode of operation.
+    Path to the image-definition file. This file defines all of the customization required when building the image. This positional argument must be given for this mode of operation.
 
 
 State-machine options
@@ -188,7 +188,7 @@ Files used by ``ubuntu-image``
 Environment variable
 --------------------
 
-The following environment variable is recognised by ``ubuntu-image``.
+The following environment variable is recognized by ``ubuntu-image``.
 
 ``UBUNTU_IMAGE_PRESERVE_UNPACK``
     When set, the variable specifies the directory for preserving a pristine copy of the unpacked gadget contents.  The directory must exist, and an ``unpack`` directory will be created under this directory.  The full contents of the ``<workdir>/unpack`` directory after the ``snap prepare-image`` sub-command has run is copied here.

@@ -40,7 +40,7 @@ navigating to the :guilabel:`Help -> Help on SSH Access` menu item.
 Note that a default password is never used. Instead, a 20-character random
 password is generated and is unique to that given boot of the installer.
 
-Ubuntu Desktop and Ubuntu flavours do not have the SSH server installed by
+Ubuntu Desktop and Ubuntu flavors do not have the SSH server installed by
 default.
 
 

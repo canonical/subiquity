@@ -24,7 +24,7 @@ Running the installer over a serial port
 
 By default, the installer runs on the first virtual terminal, ``tty1``. This is what is displayed on any connected monitor by default. On systems without a monitor or a remote virtual terminal, you can run the installer on the serial port. To do this, specify an `appropriate console <https://www.kernel.org/doc/html/latest/admin-guide/serial-console.html>`_ on the kernel command line. A common value is ``console=ttyS0``.
 
-When running on a serial port, the installer starts in a basic mode that uses only the ASCII character set and black and white colours. If you are connecting from a terminal emulator, such as gnome-terminal, that supports Unicode and rich colours, you can switch to "rich mode", which uses Unicode and colours, and supports
+When running on a serial port, the installer starts in a basic mode that uses only the ASCII character set and black and white colors. If you are connecting from a terminal emulator, such as gnome-terminal, that supports Unicode and rich colors, you can switch to "rich mode", which uses Unicode and colors, and supports
 many languages.
 
 .. _connect-via-ssh:
@@ -60,5 +60,5 @@ Key                                   Action
 :kbd:`F1`                             Open help menu
 :kbd:`Control` + :kbd:`Z`, :kbd:`F2`  Switch to shell
 :kbd:`Control` + :kbd:`L`, :kbd:`F3`  Redraw screen
-:kbd:`Control` + :kbd:`T`, :kbd:`F4`  Toggle rich mode (colour, Unicode) on and off
+:kbd:`Control` + :kbd:`T`, :kbd:`F4`  Toggle rich mode (color, Unicode) on and off
 ====================================  =============================================

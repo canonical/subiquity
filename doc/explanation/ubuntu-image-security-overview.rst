@@ -44,9 +44,9 @@ Miscellaneous
 
 * Secrets (passwords and hashes) can be present in the configuration files (image definition YAML) provided to ``ubuntu-image`` to build images. Specifically:
 
-  * In the ``extra-ppas`` customisation section, authentication tokens ``user:password`` can be defined to access private PPAs. These values are used to write the ``apt`` configuration without any treatment.
-  * In the ``manual`` customisation section, user accounts can be defined with plain text or hashed passwords. These values are directly passed to the ``chpassword`` utility without any treatment.
-  * In the ``cloud-init`` customisation section, the given cloud-init configuration can contain hashed passwords. These values are written into `cloud-init`_ configuration files without any treatment.
+  * In the ``extra-ppas`` customization section, authentication tokens ``user:password`` can be defined to access private PPAs. These values are used to write the ``apt`` configuration without any treatment.
+  * In the ``manual`` customization section, user accounts can be defined with plain text or hashed passwords. These values are directly passed to the ``chpassword`` utility without any treatment.
+  * In the ``cloud-init`` customization section, the given cloud-init configuration can contain hashed passwords. These values are written into `cloud-init`_ configuration files without any treatment.
 
   These configuration files should then be securely stored, and if secrets are used, they should ideally be injected at runtime.
 
