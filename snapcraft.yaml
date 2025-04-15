@@ -80,7 +80,8 @@ parts:
 
     source: https://git.launchpad.net/curtin
     source-type: git
-    source-commit: "ce8d06668d1b3f7cba6712bf948aa1a995160b78"
+    # Tracks the ubuntu/plucky branch
+    source-commit: "aa2f5dd039341f7ba4e4eb9cb2713babbd557482"
 
     override-pull: |
       craftctl default
