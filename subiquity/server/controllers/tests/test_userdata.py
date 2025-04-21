@@ -51,9 +51,9 @@ class TestUserdataController(unittest.TestCase):
             "ssh_import_id: 'wrong' is not of type 'array'"
         )
         invalid_schema = {"ssh_import_id": "wrong"}
-        validate = (
-            self.controller.app.base_model.validate_cloudconfig_schema
-        ) = mock.Mock()
+        validate = self.controller.app.base_model.validate_cloudconfig_schema = (
+            mock.Mock()
+        )
         validate.side_effect = fake_error
         with self.subTest("Invalid user-data raises error"):
             with self.assertRaises(CloudInitSchemaValidationError) as ctx:

@@ -12,8 +12,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Re-usable input widgets
-"""
+"""Re-usable input widgets"""
 
 import logging
 import re

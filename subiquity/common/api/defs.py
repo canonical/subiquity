@@ -103,11 +103,9 @@ def path_parameter(cls):
 
 def simple_endpoint(typ):
     class endpoint:
-        def GET() -> typ:
-            ...
+        def GET() -> typ: ...
 
-        def POST(data: Payload[typ]):
-            ...
+        def POST(data: Payload[typ]): ...
 
     return endpoint
 
