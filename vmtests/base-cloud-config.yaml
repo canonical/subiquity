@@ -1,0 +1,33 @@
+#cloud-config
+
+# the users section here sets up the live environment with what we need to be
+# able to ssh in.  At test runtime, a ssh key is added.
+users:
+  - default
+  - name: ubuntu
+    plain_text_passwd: ubuntu
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: users, admin
+    shell: /bin/bash
+    lock_passwd: false
+
+bootcmd:
+  - apt install -y openssh-server
+
+autoinstall:
+  version: 1
+
+  # create a default user.  Tests may override if desired.
+  identity:
+    realname: ''
+    hostname: ubuntu
+    username: ubuntu
+    password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
+
+  # this sets up the target system with the ability to ssh in, for first boot
+  # testing.  At test runtime, a ssh key is added.
+  ssh:
+    install-server: true
+    allow-pw: false
+
+  shutdown: poweroff
