@@ -47,8 +47,7 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
     async def test_simple(self):
         @api
         class API:
-            def GET() -> str:
-                ...
+            def GET() -> str: ...
 
         class Impl(ControllerBase):
             async def GET(self) -> str:
@@ -62,8 +61,7 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
         class API:
             class endpoint:
                 class nested:
-                    def GET() -> str:
-                        ...
+                    def GET() -> str: ...
 
         class Impl(ControllerBase):
             async def endpoint_nested_GET(self) -> str:
@@ -75,8 +73,7 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
     async def test_args(self):
         @api
         class API:
-            def GET(arg1: str, arg2: str) -> str:
-                ...
+            def GET(arg1: str, arg2: str) -> str: ...
 
         class Impl(ControllerBase):
             async def GET(self, arg1: str, arg2: str) -> str:
@@ -92,8 +89,7 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
             class param1:
                 @path_parameter
                 class param2:
-                    def GET(arg1: str, arg2: str) -> str:
-                        ...
+                    def GET(arg1: str, arg2: str) -> str: ...
 
         class Impl(ControllerBase):
             async def param1_param2_GET(
@@ -108,13 +104,11 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
         class API:
             @path_parameter
             class param1:
-                def GET(arg: str) -> str:
-                    ...
+                def GET(arg: str) -> str: ...
 
             @path_parameter
             class param2:
-                def GET(arg: str) -> str:
-                    ...
+                def GET(arg: str) -> str: ...
 
         with self.assertRaises(MultiplePathParameters):
             api(API)
@@ -122,8 +116,7 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
     async def test_defaults(self):
         @api
         class API:
-            def GET(arg1: str = "arg1", arg2: str = "arg2") -> str:
-                ...
+            def GET(arg1: str = "arg1", arg2: str = "arg2") -> str: ...
 
         class Impl(ControllerBase):
             async def GET(self, arg1: str = "arg1", arg2: str = "arg2") -> str:
@@ -137,8 +130,7 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
     async def test_post(self):
         @api
         class API:
-            def POST(data: Payload[dict]) -> str:
-                ...
+            def POST(data: Payload[dict]) -> str: ...
 
         class Impl(ControllerBase):
             async def POST(self, data: dict) -> str:
@@ -159,8 +151,7 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
         @api
         class API:
             class doubler:
-                def POST(data: In) -> Out:
-                    ...
+                def POST(data: In) -> Out: ...
 
         class Impl(ControllerBase):
             async def doubler_POST(self, data: In) -> Out:
@@ -173,8 +164,7 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
     async def test_middleware(self):
         @api
         class API:
-            def GET() -> int:
-                ...
+            def GET() -> int: ...
 
         class Impl(ControllerBase):
             async def GET(self) -> int:
@@ -206,12 +196,10 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
         @api
         class API:
             class good:
-                def GET(x: int) -> int:
-                    ...
+                def GET(x: int) -> int: ...
 
             class bad:
-                def GET(x: int) -> int:
-                    ...
+                def GET(x: int) -> int: ...
 
         class Impl(ControllerBase):
             async def good_GET(self, x: int) -> int:
@@ -230,12 +218,10 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
         @api
         class API:
             class good:
-                def GET(x: int) -> int:
-                    ...
+                def GET(x: int) -> int: ...
 
             class bad:
-                def GET(x: int) -> int:
-                    ...
+                def GET(x: int) -> int: ...
 
         class Impl(ControllerBase):
             async def good_GET(self, x: int) -> int:

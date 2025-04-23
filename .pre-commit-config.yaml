@@ -1,12 +1,12 @@
 files: "(console_conf|subiquity|subiquitycore|doc)"
 repos:
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 25.1.0
     hooks:
       - id: black
         files: "(console_conf|subiquity|subiquitycore)"
   - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+    rev: 6.0.1
     hooks:
       - id: isort
         name: isort

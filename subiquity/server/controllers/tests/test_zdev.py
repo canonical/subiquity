@@ -89,9 +89,11 @@ class TestZdevController(unittest.IsolatedAsyncioTestCase):
         # dry-run is False. Let's run the test with dry_run=True as well.
         p_dry_run = patch.object(self.ctrler.app.opts, "dry_run", dry_run)
 
-        with patch.object(
-            self.ctrler, "chzdev"
-        ) as m_chzdev, self.p_raw_lszdev as m_raw_lszdev, p_dry_run:
+        with (
+            patch.object(self.ctrler, "chzdev") as m_chzdev,
+            self.p_raw_lszdev as m_raw_lszdev,
+            p_dry_run,
+        ):
             await self.ctrler.handle_zdevs()
 
         if dry_run:

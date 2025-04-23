@@ -16,7 +16,10 @@ import abc
 import logging
 from urllib.parse import urlparse
 
-from urwid import CheckBox, MetaSignals
+from urwid import (
+    CheckBox,
+    MetaSignals,
+)
 from urwid import Padding as UrwidPadding
 from urwid import (
     RadioButton,

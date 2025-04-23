@@ -95,10 +95,9 @@ schema: gitdeps
 	@$(PYTHON) -m subiquity.cmd.schema > autoinstall-schema.json
 
 .PHONY: format black isort
-format:
-	env -u PYTHONPATH tox -e black,isort
+format: black isort
 black isort:
-	env -u PYTHONPATH tox -e $@
+	pre-commit run -a $@
 
 .PHONY: clean
 clean:

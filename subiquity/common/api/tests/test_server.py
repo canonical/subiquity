@@ -68,8 +68,7 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
     async def test_simple(self):
         @api
         class API:
-            def GET() -> str:
-                ...
+            def GET() -> str: ...
 
         class Impl(ControllerBase):
             async def GET(self) -> str:
@@ -83,8 +82,7 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
         class API:
             class endpoint:
                 class nested:
-                    def get():
-                        ...
+                    def get(): ...
 
         class Impl(ControllerBase):
             async def nested_get(self, request, context):
@@ -96,8 +94,7 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
     async def test_args(self):
         @api
         class API:
-            def GET(arg: str):
-                ...
+            def GET(arg: str): ...
 
         class Impl(ControllerBase):
             async def GET(self, arg: str):
@@ -109,8 +106,7 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
     async def test_missing_argument(self):
         @api
         class API:
-            def GET(arg: str):
-                ...
+            def GET(arg: str): ...
 
         class Impl(ControllerBase):
             async def GET(self, arg: str):
@@ -128,8 +124,7 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
     async def test_error(self):
         @api
         class API:
-            def GET():
-                ...
+            def GET(): ...
 
         class Impl(ControllerBase):
             async def GET(self):
@@ -144,8 +139,7 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
     async def test_post(self):
         @api
         class API:
-            def POST(data: Payload[str]) -> str:
-                ...
+            def POST(data: Payload[str]) -> str: ...
 
         class Impl(ControllerBase):
             async def POST(self, data: str) -> str:
@@ -157,8 +151,7 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
     def test_missing_method(self):
         @api
         class API:
-            def GET(arg: str):
-                ...
+            def GET(arg: str): ...
 
         class Impl(ControllerBase):
             pass
@@ -171,8 +164,7 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
     def test_signature_checking(self):
         @api
         class API:
-            def GET(arg: str):
-                ...
+            def GET(arg: str): ...
 
         class Impl(ControllerBase):
             async def GET(self, arg: int):
@@ -194,8 +186,7 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
 
         @api
         class API:
-            def GET() -> str:
-                ...
+            def GET() -> str: ...
 
         class Impl(ControllerBase):
             async def GET(self) -> str:
@@ -217,8 +208,7 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
         @api
         class API:
             class meth:
-                def GET() -> str:
-                    ...
+                def GET() -> str: ...
 
         class Impl(ControllerBase):
             async def GET(self) -> str:
@@ -237,18 +227,15 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
         class API:
             serialize_query_args = False
 
-            def GET(arg: str) -> str:
-                ...
+            def GET(arg: str) -> str: ...
 
             class meth:
-                def GET(arg: str) -> str:
-                    ...
+                def GET(arg: str) -> str: ...
 
                 class more:
                     serialize_query_args = True
 
-                    def GET(arg: str) -> str:
-                        ...
+                    def GET(arg: str) -> str: ...
 
         class Impl(ControllerBase):
             async def GET(self, arg: str) -> str:
@@ -270,8 +257,7 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
         class API:
             @path_parameter
             class param:
-                def GET(arg: int):
-                    ...
+                def GET(arg: int): ...
 
         class Impl(ControllerBase):
             async def param_GET(self, param: str, arg: int):
@@ -285,8 +271,7 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
         class API:
             class can_be_used_early:
                 @allowed_before_start
-                def GET():
-                    ...
+                def GET(): ...
 
         class Impl(ControllerBase):
             def __init__(self):
@@ -306,8 +291,7 @@ class TestBind(unittest.IsolatedAsyncioTestCase):
         @api
         class API:
             class must_not_be_used_early:
-                def GET():
-                    ...
+                def GET(): ...
 
         class Impl(ControllerBase):
             def __init__(self):

@@ -302,10 +302,10 @@ grub_dpkg:
             " NETPLAN_ROOT_READ_ONLY=True uses cloud-init networking"
         ):
             lsb_release.return_value = {"release": "22.04"}
-            expected_files[
-                "etc/cloud/clean.d/99-installer"
-            ] = CLOUDINIT_CLEAN_FILE_TMPL.format(
-                header=header, cfg_files=json.dumps(sorted(cfg_files))
+            expected_files["etc/cloud/clean.d/99-installer"] = (
+                CLOUDINIT_CLEAN_FILE_TMPL.format(
+                    header=header, cfg_files=json.dumps(sorted(cfg_files))
+                )
             )
             with unittest.mock.patch(
                 "subiquity.cloudinit.open",
@@ -339,10 +339,10 @@ grub_dpkg:
             cfg_files.append(
                 "/etc/cloud/cloud.cfg.d/subiquity-disable-cloudinit-networking.cfg"
             )
-            expected_files[
-                "etc/cloud/clean.d/99-installer"
-            ] = CLOUDINIT_CLEAN_FILE_TMPL.format(
-                header=header, cfg_files=json.dumps(sorted(cfg_files))
+            expected_files["etc/cloud/clean.d/99-installer"] = (
+                CLOUDINIT_CLEAN_FILE_TMPL.format(
+                    header=header, cfg_files=json.dumps(sorted(cfg_files))
+                )
             )
             with unittest.mock.patch(
                 "subiquity.cloudinit.open",

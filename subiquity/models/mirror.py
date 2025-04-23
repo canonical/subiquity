@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-""" This model mainly manages the mirror selection but also covers all the
+"""This model mainly manages the mirror selection but also covers all the
 settings that can be found under the 'apt' autoinstall section.
 Some settings are handled by Subiquity but others are directly forwarded to
 curtin.
@@ -258,9 +258,9 @@ class MirrorModel(object):
         self.legacy_primary = False
         self.disabled_components: Set[str] = set()
         self.primary_elected: Optional[BasePrimaryEntry] = None
-        self.primary_candidates: List[
-            BasePrimaryEntry
-        ] = self._default_primary_entries()
+        self.primary_candidates: List[BasePrimaryEntry] = (
+            self._default_primary_entries()
+        )
 
         self.primary_staged: Optional[BasePrimaryEntry] = None
 
