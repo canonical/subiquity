@@ -18,6 +18,7 @@ lsb-release
 os-prober
 pandoc
 pkg-config
+pre-commit
 python3-aiohttp
 python3-aioresponses
 python3-apport
