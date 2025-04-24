@@ -17,7 +17,6 @@ import logging
 import subprocess
 from typing import List
 
-from subiquity import cloudinit
 from subiquity.common.pkg import TargetPkg
 from subiquitycore.models.network import NetworkModel as CoreNetworkModel
 from subiquitycore.utils import arun_command
@@ -38,42 +37,24 @@ class NetworkModel(CoreNetworkModel):
 
     def render(self):
         netplan = self.render_config()
-        # If host cloud-init version has no readable combined-cloud-config,
-        # default to False.
-        cloud_cfg = cloudinit.get_host_combined_cloud_config()
-        use_cloudinit_net = cloud_cfg.get("features", {}).get(
-            "NETPLAN_CONFIG_ROOT_READ_ONLY", False
-        )
-
-        if use_cloudinit_net:
-            r = {
-                "write_files": {
-                    "etc_netplan_installer": {
-                        "path": "etc/cloud/cloud.cfg.d/90-installer-network.cfg",
-                        "content": self.stringify_config(netplan),
-                        "permissions": "0600",
-                    },
-                }
-            }
-        else:
-            r = {
-                "write_files": {
-                    # Disable cloud-init networking
-                    "no_cloudinit_net": {
-                        "path": (
-                            "etc/cloud/cloud.cfg.d/"
-                            "subiquity-disable-cloudinit-networking.cfg"
-                        ),
-                        "content": "network: {config: disabled}\n",
-                        "permissions": "0600",
-                    },
-                    "etc_netplan_installer": {
-                        "path": "etc/netplan/00-installer-config.yaml",
-                        "content": self.stringify_config(netplan),
-                        "permissions": "0600",
-                    },
+        r = {
+            "write_files": {
+                # Disable cloud-init networking
+                "no_cloudinit_net": {
+                    "path": (
+                        "etc/cloud/cloud.cfg.d/"
+                        "00-subiquity-disable-cloudinit-networking.cfg"
+                    ),
+                    "content": "network: {config: disabled}\n",
+                    "permissions": "0600",
                 },
-            }
+                "etc_netplan_installer": {
+                    "path": "etc/netplan/00-installer-config.yaml",
+                    "content": self.stringify_config(netplan),
+                    "permissions": "0600",
+                },
+            },
+        }
         return r
 
     async def target_packages(self) -> List[TargetPkg]:
