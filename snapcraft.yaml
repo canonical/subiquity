@@ -63,10 +63,11 @@ parts:
   curtin:
     plugin: nil
 
-    source: https://git.launchpad.net/curtin
+    # TODO update
+    source: https://git.launchpad.net/~ogayot/curtin
     source-type: git
     # Tracks the ubuntu/noble branch
-    source-commit: e67611532bb84e39980ca60ab37fc08f304a15a5
+    source-commit: 1d422d3153202b511ad70aee995df744265bd806
 
     override-pull: |
       craftctl default
