@@ -663,6 +663,8 @@ class _Device(_Formattable, ABC):
         # deleted as possible.
         new_disk = attr.evolve(self)
         new_disk._partitions = [p for p in self.partitions() if p._is_in_use]
+        if not new_disk._partitions:
+            new_disk.ptable = None
         return new_disk
 
     def dasd(self):
