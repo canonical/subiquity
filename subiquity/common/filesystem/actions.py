@@ -168,6 +168,8 @@ def _can_edit_generic(device):
 def _can_edit_partition(partition):
     if partition._is_in_use:
         return False
+    if not partition.on_supported_ptable():
+        return False
     return _can_edit_generic(partition)
 
 
@@ -297,6 +299,8 @@ def _can_delete_generic(device):
 @_can_delete.register(Partition)
 def _can_delete_partition(partition):
     if partition._is_in_use:
+        return False
+    if not partition.on_supported_ptable():
         return False
     if partition.device._has_preexisting_partition():
         return _(

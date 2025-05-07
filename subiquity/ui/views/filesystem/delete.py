@@ -168,7 +168,7 @@ class ConfirmReformatStretchy(Stretchy):
         super().__init__(title, widgets, 0, 2)
 
     def confirm(self, sender=None):
-        self.parent.controller.reformat(self.obj)
+        self.parent.controller.reformat(self.obj, ptable=None)
         self.parent.refresh_model_inputs()
         self.parent.remove_overlay()
 
