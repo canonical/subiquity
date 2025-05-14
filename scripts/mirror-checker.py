@@ -185,7 +185,7 @@ def get_multi_country_mirrors(cc_to_dns: dict[str, Any]) -> dict[str, set[str]]:
 def _print_dns_information(country_code_to_dns_data: dict[str, Any]) -> None:
 
     for cc, data in country_code_to_dns_data.items():
-        print(f"{data["domain"]}:")
+        print(f"{data['domain']}:")
         print(f"\tCNAME: {data['CNAME']!r}")
         print("\tA records:")
         for r in data["A"]:
