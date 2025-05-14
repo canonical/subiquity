@@ -881,8 +881,8 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
                             type=snapdtypes.ModelSnapType.KERNEL,
                             presence=snapdtypes.PresenceValue.REQUIRED,
                             components={
-                                "nvidia-510-ko": snapdtypes.PresenceValue.OPTIONAL,
-                                "nvidia-510-user": snapdtypes.PresenceValue.OPTIONAL,
+                                "nvidia-510-uda-ko": snapdtypes.PresenceValue.OPTIONAL,
+                                "nvidia-510-uda-user": snapdtypes.PresenceValue.OPTIONAL,
                                 "foo": snapdtypes.PresenceValue.OPTIONAL,
                                 "bar": snapdtypes.PresenceValue.OPTIONAL,
                             },
@@ -909,8 +909,8 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
                     snaps=["MockApp2"],
                     components={
                         "MockKernel": [
-                            "nvidia-510-ko",
-                            "nvidia-510-user",
+                            "nvidia-510-uda-ko",
+                            "nvidia-510-uda-user",
                             "foo",
                             "bar",
                         ]
@@ -922,14 +922,14 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         with mock.patch.object(snapdapi, "post_and_wait") as mock_post:
             await self.fsc.finish_install(
                 context=self.fsc.context,
-                kernel_components=["nvidia-510-ko", "nvidia-510-user"],
+                kernel_components=["nvidia-510-uda-ko", "nvidia-510-uda-user"],
             )
         mock_post.assert_called_once()
 
         # Assert installing all optional snaps but only the requested components
         expected_optional_install = snapdtypes.OptionalInstall(
             all=False,
-            components={"MockKernel": ["nvidia-510-ko", "nvidia-510-user"]},
+            components={"MockKernel": ["nvidia-510-uda-ko", "nvidia-510-uda-user"]},
             snaps=variation_info.system.available_optional.snaps,
         )
         actual = mock_post.call_args.args[2].optional_install

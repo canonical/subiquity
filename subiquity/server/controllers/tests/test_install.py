@@ -391,51 +391,66 @@ class TestInstallControllerDriverMatch(unittest.TestCase):
             # no components
             ([], ["nvidia-driver-510"], []),
             # no drivers detected
-            (["nvidia-510-ko", "nvidia-510-user"], [], []),
+            (["nvidia-510-uda-ko", "nvidia-510-uda-user"], [], []),
             # missing user component
-            (["nvidia-510-ko"], ["nvidia-driver-510"], []),
+            (["nvidia-510-uda-ko"], ["nvidia-driver-510"], []),
             # missing ko component
-            (["nvidia-510-user"], ["nvidia-driver-510"], []),
+            (["nvidia-510-uda-user"], ["nvidia-driver-510"], []),
             # mismatched component versions, nothing usable available
             (
-                ["nvidia-2-ko", "nvidia-1-user"],
+                ["nvidia-2-uda-ko", "nvidia-1-uda-user"],
                 ["nvidia-driver-999"],
                 [],
             ),
             # match
             (
-                ["nvidia-510-ko", "nvidia-510-user"],
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
                 ["nvidia-driver-510"],
-                ["nvidia-510-ko", "nvidia-510-user"],
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
             ),
             # prefer "newer" based on a reversed sort
             (
-                ["nvidia-1-ko", "nvidia-1-user", "nvidia-2-ko", "nvidia-2-user"],
+                [
+                    "nvidia-1-uda-ko",
+                    "nvidia-1-uda-user",
+                    "nvidia-2-uda-ko",
+                    "nvidia-2-uda-user",
+                ],
                 ["nvidia-driver-1", "nvidia-driver-2"],
-                ["nvidia-2-ko", "nvidia-2-user"],
+                ["nvidia-2-uda-ko", "nvidia-2-uda-user"],
             ),
             (
-                ["nvidia-1-ko", "nvidia-1-user", "nvidia-2-ko", "nvidia-2-user"],
+                [
+                    "nvidia-1-uda-ko",
+                    "nvidia-1-uda-user",
+                    "nvidia-2-uda-ko",
+                    "nvidia-2-uda-user",
+                ],
                 ["nvidia-driver-2", "nvidia-driver-1"],
-                ["nvidia-2-ko", "nvidia-2-user"],
+                ["nvidia-2-uda-ko", "nvidia-2-uda-user"],
             ),
             # wrong driver version
             (
-                ["nvidia-510-ko", "nvidia-510-user"],
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
                 ["nvidia-driver-999"],
-                ["nvidia-510-ko", "nvidia-510-user"],
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
             ),
             # wrong driver version, use newer
             (
-                ["nvidia-1-ko", "nvidia-2-user", "nvidia-2-ko", "nvidia-1-user"],
+                [
+                    "nvidia-1-uda-ko",
+                    "nvidia-2-uda-user",
+                    "nvidia-2-uda-ko",
+                    "nvidia-1-uda-user",
+                ],
                 ["nvidia-driver-999"],
-                ["nvidia-2-ko", "nvidia-2-user"],
+                ["nvidia-2-uda-ko", "nvidia-2-uda-user"],
             ),
             # mismatched component versions, something usable available
             (
-                ["nvidia-1-ko", "nvidia-2-ko", "nvidia-1-user"],
+                ["nvidia-1-uda-ko", "nvidia-2-uda-ko", "nvidia-1-uda-user"],
                 ["nvidia-driver-999"],
-                ["nvidia-1-ko", "nvidia-1-user"],
+                ["nvidia-1-uda-ko", "nvidia-1-uda-user"],
             ),
         )
     )
