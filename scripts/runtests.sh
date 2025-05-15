@@ -231,7 +231,7 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --kernel-cmdline autoinstall \
     --source-catalog examples/sources/tpm.yaml
 validate
-grep -q "finish_install: kernel_components=\['nvidia-510-ko', 'nvidia-510-user'\]" \
+grep -q "finish_install: kernel_components=\['nvidia-510-uda-ko', 'nvidia-510-uda-user'\]" \
 	$tmpdir/subiquity-server-debug.log
 
 clean

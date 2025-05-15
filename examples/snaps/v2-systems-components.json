@@ -24,10 +24,10 @@
         },
         {
           "components": {
-            "nvidia-510-ko": {
+            "nvidia-510-uda-ko": {
               "presence": "optional"
             },
-            "nvidia-510-user": {
+            "nvidia-510-uda-user": {
               "presence": "optional"
             }
           },
@@ -298,8 +298,8 @@
     "available-optional": {
       "components": {
         "mwhudson-test-k-components": [
-          "nvidia-510-ko",
-          "nvidia-510-user"
+          "nvidia-510-uda-ko",
+          "nvidia-510-uda-user"
         ]
       }
     }

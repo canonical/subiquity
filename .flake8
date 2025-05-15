@@ -1,5 +1,6 @@
 [flake8]
 # gettext inserts _ into builtin path.
 builtins = _
-max-line-length = 88
+# black shoots for 88 characters but sometimes goes with longer
+max-line-length = 100
 extend-ignore = E203
