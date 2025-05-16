@@ -232,7 +232,7 @@ parts:
 
     source: https://github.com/canonical/probert.git
     source-type: git
-    source-commit: "2e5ec81f1623f3cfc64b3fe21c2072c4f608ea9e"
+    source-commit: "36086af03fc4941a8ac219648ce77401743f3ae0"
 
     override-build: *pyinstall
 
