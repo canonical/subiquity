@@ -230,9 +230,9 @@ parts:
   probert:
     plugin: nil
 
-    source: https://github.com/canonical/probert.git
+    source: https://github.com/ogayot/probert.git
     source-type: git
-    source-commit: "2e5ec81f1623f3cfc64b3fe21c2072c4f608ea9e"
+    source-commit: "28e1bdbfc95ac9913cdd740bd84f39e507916dd7"
 
     override-build: *pyinstall
 
