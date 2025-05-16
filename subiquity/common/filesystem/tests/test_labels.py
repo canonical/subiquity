@@ -123,3 +123,11 @@ class TestForClient(unittest.TestCase):
         model, raid = make_model_and_raid()
         make_partition(model, raid)
         for_client(raid)
+
+    def test_for_client_disk_supported_ptable(self):
+        _, disk = make_model_and_disk(ptable="gpt")
+        self.assertFalse(for_client(disk).requires_reformat)
+
+    def test_for_client_disk_unsupported_ptable(self):
+        _, disk = make_model_and_disk(ptable="unsupported")
+        self.assertTrue(for_client(disk).requires_reformat)

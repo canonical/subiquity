@@ -19,7 +19,9 @@ LV
 LVM
 LinuxONE
 Mantic
+MBR
 MiB
+MSDOS
 NIC
 Netplan
 NoCloud

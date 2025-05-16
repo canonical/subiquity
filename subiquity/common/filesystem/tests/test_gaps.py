@@ -83,6 +83,24 @@ class TestGaps(unittest.TestCase):
         self.assertTrue(isinstance(gap, gaps.Gap))
         self.assertEqual(MiB + 20 * MiB, gap.offset)
 
+    def test_disk_with_unsupported_ptable(self):
+        model, disk = make_model_and_disk(ptable="unsupported")
+
+        self.assertEqual([], gaps.parts_and_gaps(disk))
+
+    def test_disk_with_unsupported_ptable_and_partitions(self):
+        # Start with GPT so make_partition does not complain, but we will reset
+        # the ptable before running the actual test.
+        model, disk = make_model_and_disk(ptable="gpt")
+
+        p1 = make_partition(model, disk)
+        p2 = make_partition(model, disk)
+        p3 = make_partition(model, disk)
+
+        disk.ptable = "unsupported"
+
+        self.assertEqual([p1, p2, p3], gaps.parts_and_gaps(disk))
+
 
 class TestSplitGap(GapTestCase):
     def test_equal(self):

@@ -51,6 +51,7 @@ from subiquity.models.tests.test_filesystem import (
     FakeStorageInfo,
     make_disk,
     make_model,
+    make_model_and_disk,
     make_nvme_controller,
     make_partition,
     make_raid,
@@ -235,6 +236,16 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertTrue(self.fsc.locked_probe_data)
         add_boot_disk.assert_not_called()
 
+    async def test_v2_add_boot_partition_POST_unsupported_ptable(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk(ptable="unsupported")
+
+        with mock.patch.object(self.fsc, "add_boot_disk") as add_boot_disk:
+            with self.assertRaisesRegex(ValueError, "unsupported partition table"):
+                await self.fsc.v2_add_boot_partition_POST(d.id)
+        self.assertTrue(self.fsc.locked_probe_data)
+        add_boot_disk.assert_not_called()
+
     @mock.patch(MOCK_PREFIX + "boot.is_boot_device", mock.Mock(return_value=False))
     @mock.patch(
         MOCK_PREFIX + "DeviceAction.supported",
@@ -291,6 +302,28 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertTrue(self.fsc.locked_probe_data)
         create_part.assert_not_called()
 
+    async def test_v2_add_partition_POST_unsupported_ptable(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk(ptable="unsupported")
+        data = AddPartitionV2(
+            disk_id=d.id,
+            partition=Partition(
+                format="ext4",
+                mount="/",
+                size=2000 << 20,
+            ),
+            gap=Gap(
+                offset=1 << 20,
+                size=1000 << 20,
+                usable=GapUsable.YES,
+            ),
+        )
+        with mock.patch.object(self.fsc, "create_partition") as create_part:
+            with self.assertRaisesRegex(ValueError, r"unsupported partition table"):
+                await self.fsc.v2_add_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        create_part.assert_not_called()
+
     @mock.patch(MOCK_PREFIX + "gaps.at_offset")
     async def test_v2_add_partition_POST(self, at_offset):
         at_offset.split = mock.Mock(return_value=[mock.Mock()])
@@ -311,6 +344,20 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             await self.fsc.v2_add_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
         create_part.assert_called_once()
+
+    async def test_v2_delete_partition_POST_unsupported_ptable(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk(ptable="unsupported")
+        data = ModifyPartitionV2(
+            disk_id=d.id,
+            partition=Partition(number=1),
+        )
+        with mock.patch.object(self.fsc, "delete_partition") as del_part:
+            with mock.patch.object(self.fsc, "get_partition"):
+                with self.assertRaisesRegex(ValueError, r"unsupported partition table"):
+                    await self.fsc.v2_delete_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        del_part.assert_not_called()
 
     async def test_v2_delete_partition_POST(self):
         self.fsc.locked_probe_data = False
@@ -334,6 +381,21 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
             with mock.patch.object(self.fsc, "get_partition", return_value=existing):
                 with self.assertRaisesRegex(ValueError, r"changing\ boot"):
+                    await self.fsc.v2_edit_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        handler.assert_not_called()
+
+    async def test_v2_edit_partition_POST_unsupported_ptable(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk(ptable="unsupported")
+        data = ModifyPartitionV2(
+            disk_id=d.id,
+            partition=Partition(number=1, boot=True),
+        )
+        existing = Partition(number=1, size=1000 << 20, boot=False)
+        with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
+            with mock.patch.object(self.fsc, "get_partition", return_value=existing):
+                with self.assertRaisesRegex(ValueError, r"unsupported partition table"):
                     await self.fsc.v2_edit_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
         handler.assert_not_called()
@@ -490,12 +552,14 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
                 GuidedStorageTargetReformat(disk_id=disk.id), disk
             )
 
-        m_reformat.assert_called_once_with(disk, wipe="superblock-recursive")
+        m_reformat.assert_called_once_with(
+            disk, ptable=None, wipe="superblock-recursive"
+        )
         expected_del_calls = [
-            mock.call(p1, True),
-            mock.call(p2, True),
-            mock.call(p3, True),
-            mock.call(p4, True),
+            mock.call(p1, override_preserve=True, allow_moving=False),
+            mock.call(p2, override_preserve=True, allow_moving=False),
+            mock.call(p3, override_preserve=True, allow_moving=False),
+            mock.call(p4, override_preserve=True, allow_moving=False),
         ]
         self.assertEqual(expected_del_calls, m_del_part.mock_calls)
 
@@ -724,7 +788,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_direct_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, allowed=default_capabilities
+            disk_id=self.d1.id, ptable="msdos", allowed=default_capabilities
         )
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.DIRECT)
@@ -758,7 +822,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_lvm_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, allowed=default_capabilities
+            disk_id=self.d1.id, ptable="msdos", allowed=default_capabilities
         )
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.LVM)
@@ -852,7 +916,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_zfs_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, allowed=default_capabilities
+            disk_id=self.d1.id, ptable="msdos", allowed=default_capabilities
         )
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.ZFS)
@@ -986,6 +1050,37 @@ class TestLayout(IsolatedAsyncioTestCase):
     async def test_bad_modes(self, mode):
         with self.assertRaises(ValueError):
             self.fsc.validate_layout_mode(mode)
+
+    @parameterized.expand([(True, None), (True, "gpt"), (True, "msdos"), (False, None)])
+    async def test_autoinstall__reformat_with_ptable(self, include_ptable, ptable):
+        self.fsc.model = make_model()
+
+        make_disk(self.fsc.model, id="dev-sdc"),
+
+        layout = {
+            "name": "direct",
+            "mode": "reformat_disk",
+        }
+
+        if include_ptable:
+            layout["ptable"] = ptable
+
+        p_guided = mock.patch.object(self.fsc, "guided")
+        p_reformat = mock.patch(
+            "subiquity.server.controllers.filesystem.GuidedStorageTargetReformat"
+        )
+        p_has_valid_variation = mock.patch.object(
+            self.fsc, "has_valid_non_core_boot_variation", return_value=True
+        )
+
+        with p_guided as m_guided, p_reformat as m_reformat, p_has_valid_variation:
+            await self.fsc.run_autoinstall_guided(layout)
+
+        expected_ptable = ptable if include_ptable else None
+        m_reformat.assert_called_once_with(
+            disk_id="dev-sdc", ptable=expected_ptable, allowed=[]
+        )
+        m_guided.assert_called_once()
 
 
 class TestGuidedV2(IsolatedAsyncioTestCase):

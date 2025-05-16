@@ -351,6 +351,8 @@ def _can_be_boot_device_disk(disk, *, resize_partition=None, with_reformatting=F
         return False
     if with_reformatting:
         disk = disk._reformatted()
+    if disk.ptable == "unsupported":
+        return False
     plan = get_boot_device_plan(disk, resize_partition=resize_partition)
     return plan is not None
 
