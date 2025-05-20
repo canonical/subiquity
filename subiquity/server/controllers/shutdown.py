@@ -139,10 +139,10 @@ class ShutdownController(SubiquityController):
         else:
             # On desktop, a systemd inhibitor is in place to block shutdown.
             # Starting with systemd 257, the inhibitor also prevents the root
-            # user from shutting down unless the --check-inhibitors=no or the
-            # --force option is used.
+            # user from shutting down unless the --check-inhibitors=no,
+            # --ignore-inhibitors, or the --force option is used.
             # See LP: #2092438
             if self.mode == ShutdownMode.REBOOT:
-                run_command(["systemctl", "reboot", "--check-inhibitors=no"])
+                run_command(["systemctl", "reboot", "--ignore-inhibitors"])
             elif self.mode == ShutdownMode.POWEROFF:
-                run_command(["systemctl", "poweroff", "--check-inhibitors=no"])
+                run_command(["systemctl", "poweroff", "--ignore-inhibitors"])
