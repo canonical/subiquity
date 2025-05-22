@@ -663,6 +663,8 @@ class _Device(_Formattable, ABC):
         # deleted as possible.
         new_disk = attr.evolve(self)
         new_disk._partitions = [p for p in self.partitions() if p._is_in_use]
+        if not new_disk._partitions:
+            new_disk.ptable = None
         return new_disk
 
     def dasd(self):
@@ -853,6 +855,8 @@ class Disk(_Device):
 
     @property
     def ok_for_raid(self):
+        if self.ptable == "unsupported":
+            return False
         if self._fs is not None:
             if self._fs.preserve:
                 return self._fs._mount is None
@@ -961,14 +965,19 @@ class Partition(_Formattable):
         if fs_data is None:
             return -1
         val = fs_data.get("ESTIMATED_MIN_SIZE", -1)
-        if val == 0:
-            return self.device.alignment_data().part_align
         if val == -1:
             return -1
+        if not self.on_supported_ptable():
+            # We don't know the alignment constraints so...
+            return -1
+        if val == 0:
+            return self.device.alignment_data().part_align
         return align_up(val, self.device.alignment_data().part_align)
 
     @property
     def ok_for_raid(self):
+        if not self.on_supported_ptable():
+            return False
         if self.boot:
             return False
         if self._fs is not None:
@@ -1014,6 +1023,9 @@ class Partition(_Formattable):
 
     def on_remote_storage(self) -> bool:
         return self.device.on_remote_storage()
+
+    def on_supported_ptable(self) -> bool:
+        return self.device.ptable != "unsupported"
 
 
 @fsobj("raid")
@@ -2212,15 +2224,16 @@ class FilesystemModel:
         self._actions.append(p)
         return p
 
-    def remove_partition(self, part):
+    def remove_partition(self, part, *, allow_moving=True):
         if part._fs or part._constructed_device:
             raise Exception("can only remove empty partition")
         from subiquity.common.filesystem.gaps import (
             movable_trailing_partitions_and_gap_size,
         )
 
-        for p2 in movable_trailing_partitions_and_gap_size(part)[0]:
-            p2.offset -= part.size
+        if allow_moving:
+            for p2 in movable_trailing_partitions_and_gap_size(part)[0]:
+                p2.offset -= part.size
         self._remove(part)
         if part.is_logical:
             part.device.renumber_logical_partitions(part)

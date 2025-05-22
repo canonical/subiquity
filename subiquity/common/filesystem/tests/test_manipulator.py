@@ -715,13 +715,8 @@ class TestReformat(unittest.TestCase):
 
     def test_reformat_default(self):
         disk = make_disk(self.manipulator.model, ptable=None)
-        self.manipulator.reformat(disk)
+        self.manipulator.reformat(disk, ptable=None)
         self.assertEqual(None, disk.ptable)
-
-    def test_reformat_keep_current(self):
-        disk = make_disk(self.manipulator.model, ptable="msdos")
-        self.manipulator.reformat(disk)
-        self.assertEqual("msdos", disk.ptable)
 
     def test_reformat_to_gpt(self):
         disk = make_disk(self.manipulator.model, ptable=None)
@@ -732,6 +727,26 @@ class TestReformat(unittest.TestCase):
         disk = make_disk(self.manipulator.model, ptable=None)
         self.manipulator.reformat(disk, "msdos")
         self.assertEqual("msdos", disk.ptable)
+
+    def test_reformat_with_partitions(self):
+        """We had a bug earlier where the ptable parameter of reformat would be
+        essentially ignored when the disk to reformat had partitions.  Ensure
+        this isn't the case anymore.
+        """
+        disk = make_disk(self.manipulator.model, ptable="gpt")
+        make_partition(self.manipulator.model, disk)
+        self.manipulator.reformat(disk, "msdos")
+        self.assertEqual("msdos", disk.ptable)
+
+    def test_reformat_unsupported_disk(self):
+        # Start with a GPT disk so we can call make_partition, but then reset
+        # it to unsupported.
+        disk = make_disk(self.manipulator.model, ptable="gpt")
+        make_partition(self.manipulator.model, disk)
+
+        disk.ptable = "unsupported"
+
+        self.manipulator.reformat(disk, ptable=None)
 
 
 class TestCanResize(unittest.TestCase):

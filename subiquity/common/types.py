@@ -355,6 +355,14 @@ class Disk:
     model: Optional[str] = None
     vendor: Optional[str] = None
     has_in_use_partition: bool = False
+    # Going forward, we want the v2 storage responses to return a list of
+    # operations (e.g., reformat, add-partition, delete-partition ...) that can
+    # be performed on a given disk. But we don't have this implemented yet.
+    # The requires_reformat field is essentially a way to tell clients that
+    # only the "reformat" operation is currently possible. No partition can be
+    # added, deleted or otherwise modified on this disk until a reformat is
+    # performed.
+    requires_reformat: Optional[bool] = None
 
 
 class GuidedCapability(enum.Enum):
@@ -467,6 +475,8 @@ class GuidedResizeValues:
 @attr.s(auto_attribs=True)
 class GuidedStorageTargetReformat:
     disk_id: str
+    # ptable=None means to use the default (GPT in most scenarios)
+    ptable: Optional[str] = None
     allowed: List[GuidedCapability] = attr.Factory(list)
     disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
 
