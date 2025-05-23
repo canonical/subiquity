@@ -18,16 +18,15 @@ jobs:
           - ubuntu-daily:noble
           - ubuntu-daily:questing
     steps:
+    - name: Setup upterm session
+      uses: lhotari/action-upterm@v1
+      with:
+        limit-access-to-actor: true
     - uses: actions/checkout@v4
     - name: run
       run: |
         sudo ./scripts/github-ci-lxd-setup.sh
         sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make check"
-    - name: Setup upterm session
-      uses: lhotari/action-upterm@v1
-      with:
-        ## limits ssh access and adds the ssh public key for the user which triggered the workflow
-        limit-access-to-actor: true
 
   lint:
     runs-on: ubuntu-24.04
