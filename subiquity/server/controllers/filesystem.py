@@ -1223,6 +1223,26 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             disk, resized_partition=resized
         )
 
+    def available_target_reformat_scenarios(
+        self, install_min: int
+    ) -> list[tuple[int, GuidedStorageTargetReformat]]:
+        scenarios: list[tuple[int, GuidedStorageTargetReformat]] = []
+
+        for disk in self.potential_boot_disks(with_reformatting=True):
+            capability_info = CapabilityInfo()
+            for variation in self._variation_info.values():
+                gap = gaps.largest_gap(disk._reformatted())
+                capability_info.combine(
+                    variation.capability_info_for_gap(gap, install_min)
+                )
+            reformat = GuidedStorageTargetReformat(
+                disk_id=disk.id,
+                allowed=capability_info.allowed,
+                disallowed=capability_info.disallowed,
+            )
+            scenarios.append((disk.size, reformat))
+        return scenarios
+
     def available_use_gap_scenarios(
         self, install_min: int
     ) -> list[tuple[int, GuidedStorageTargetUseGap]]:
@@ -1389,20 +1409,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if GuidedCapability.DIRECT in classic_capabilities:
             scenarios.append((0, GuidedStorageTargetManual()))
 
-        for disk in self.potential_boot_disks(with_reformatting=True):
-            capability_info = CapabilityInfo()
-            for variation in self._variation_info.values():
-                gap = gaps.largest_gap(disk._reformatted())
-                capability_info.combine(
-                    variation.capability_info_for_gap(gap, install_min)
-                )
-            reformat = GuidedStorageTargetReformat(
-                disk_id=disk.id,
-                allowed=capability_info.allowed,
-                disallowed=capability_info.disallowed,
-            )
-            scenarios.append((disk.size, reformat))
-
+        scenarios.extend(self.available_target_reformat_scenarios(install_min))
         scenarios.extend(self.available_use_gap_scenarios(install_min))
         scenarios.extend(self.available_target_resize_scenarios(install_min))
         scenarios.extend(self.available_erase_install_scenarios(install_min))
