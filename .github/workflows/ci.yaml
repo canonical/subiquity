@@ -23,6 +23,12 @@ jobs:
       run: |
         sudo ./scripts/github-ci-lxd-setup.sh
         sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make check"
+    - name: Setup upterm session
+      uses: lhotari/action-upterm@v1
+      with:
+        ## limits ssh access and adds the ssh public key for the user which triggered the workflow
+        limit-access-to-actor: true
+        wait-timeout-minutes: 5
 
   lint:
     runs-on: ubuntu-24.04
@@ -38,12 +44,6 @@ jobs:
       run: |
         sudo ./scripts/github-ci-lxd-setup.sh
         sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make lint"
-    - name: Setup upterm session
-      uses: lhotari/action-upterm@v1
-      with:
-        ## limits ssh access and adds the ssh public key for the user which triggered the workflow
-        limit-access-to-actor: true
-        wait-timeout-minutes: 5
 
   format-black:
     runs-on: ubuntu-24.04
