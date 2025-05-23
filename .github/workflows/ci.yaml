@@ -27,6 +27,7 @@ jobs:
       uses: mxschmitt/action-tmate@v3
       with:
         detached: true
+        limit-access-to-actor: true
     - name: run
       run: |
         sudo ./scripts/github-ci-lxd-setup.sh
