@@ -1605,6 +1605,29 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             minimum_required=minimum_required,
         )
 
+    async def v2_core_boot_recovery_key_GET(self) -> str:
+        if not self._configured:
+            raise StorageRecoverableError("storage model is not yet configured")
+        if (self.model.guided_configuration is None) or (
+            self.model.guided_configuration.capability
+            != GuidedCapability.CORE_BOOT_ENCRYPTED
+        ):
+            raise StorageRecoverableError("not using core boot encrypted")
+
+        # TODO lean on snapd to obtain the recovery key. This is a stub
+        # implementation.
+        if self.model.core_boot_recovery_key is None:
+            self.model.core_boot_recovery_key = RecoveryKeyHandler(
+                live_location=None, backup_location=None
+            )
+            self.model.core_boot_recovery_key.generate()
+
+        key = self.model.core_boot_recovery_key._key
+
+        assert key is not None  # To help the static type checker
+
+        return key
+
     async def dry_run_wait_probe_POST(self) -> None:
         if not self.app.opts.dry_run:
             raise NotImplementedError
