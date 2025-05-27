@@ -93,7 +93,7 @@ class RecoveryKeyHandler:
     live_location: Optional[pathlib.Path]
     # Where to store the key in the target system. /target will automatically
     # be prefixed.
-    backup_location: pathlib.Path
+    backup_location: Optional[pathlib.Path]
 
     _key: Optional[str] = attr.ib(repr=False, default=None)
 
@@ -158,6 +158,10 @@ class RecoveryKeyHandler:
     def copy_key_to_target_system(self, target: pathlib.Path) -> None:
         """Write the key to the target system - so it can be retrieved after
         the install by an admin."""
+
+        if self.backup_location is None:
+            log.debug("no backup location set: not copying rec-key to target")
+            return
 
         self._expose_key(
             location=self.backup_location,
