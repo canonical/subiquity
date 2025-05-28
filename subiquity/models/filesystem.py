@@ -93,7 +93,7 @@ class RecoveryKeyHandler:
     live_location: Optional[pathlib.Path]
     # Where to store the key in the target system. /target will automatically
     # be prefixed.
-    backup_location: pathlib.Path
+    backup_location: Optional[pathlib.Path]
 
     _key: Optional[str] = attr.ib(repr=False, default=None)
 
@@ -158,6 +158,10 @@ class RecoveryKeyHandler:
     def copy_key_to_target_system(self, target: pathlib.Path) -> None:
         """Write the key to the target system - so it can be retrieved after
         the install by an admin."""
+
+        if self.backup_location is None:
+            log.debug("no backup location set: not copying rec-key to target")
+            return
 
         self._expose_key(
             location=self.backup_location,
@@ -1601,6 +1605,12 @@ class FilesystemModel:
         self._probe_data = None
         self.dd_target: Optional[Disk] = None
         self.reset_partition: Optional[Partition] = None
+        # When using the TPM/FDE flow, the recovery key is created by snapd.
+        # For now, we are storing the key directly in the model even though it
+        # is in practise attached to an encrypted device. If at some point,
+        # snapd grows support for multiple encrypted devices, we will need to
+        # find a better way.
+        self.core_boot_recovery_key: Optional[RecoveryKeyHandler] = None
         self.reset()
 
     def reset(self):
@@ -1613,6 +1623,7 @@ class FilesystemModel:
         self.swap = None
         self.grub = None
         self.guided_configuration = None
+        self.core_boot_recovery_key = None
 
     def get_orig_model(self):
         # The purpose of this is to be able to answer arbitrary questions about

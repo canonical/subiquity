@@ -594,6 +594,37 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertTrue(self.fsc.locked_probe_data)
         del_raid.assert_not_called()
 
+    async def test_v2_core_boot_recovery_GET(self):
+        self.fsc.model = make_model()
+        self.fsc.model.guided_configuration = mock.Mock(
+            capability=GuidedCapability.CORE_BOOT_ENCRYPTED
+        )
+        await self.fsc.v2_core_boot_recovery_key_GET()
+
+    async def test_v2_core_boot_recovery_GET__not_yet_configured(self):
+        self.fsc.model = make_model()
+        self.fsc._configured = False
+        with self.assertRaises(
+            StorageRecoverableError, msg="storage model is not yet configured"
+        ):
+            await self.fsc.v2_core_boot_recovery_key_GET()
+
+    async def test_v2_core_boot_recovery_GET__not_core_boot(self):
+        self.fsc.model = make_model()
+        with self.assertRaises(
+            StorageRecoverableError, msg="not using core boot encrypted"
+        ):
+            await self.fsc.v2_core_boot_recovery_key_GET()
+
+        self.fsc.model.guided_configuration = mock.Mock(
+            capability=GuidedCapability.DIRECT
+        )
+
+        with self.assertRaises(
+            StorageRecoverableError, msg="not using core boot encrypted"
+        ):
+            await self.fsc.v2_core_boot_recovery_key_GET()
+
     @parameterized.expand(((True,), (False,)))
     async def test__pre_shutdown_install_started(self, zfsutils_linux_installed: bool):
         self.fsc.reset_partition_only = False

@@ -399,6 +399,9 @@ class API:
                     configuring CORE_BOOT_ENCRYPTED, and may use it in other
                     scenarios."""
 
+            class core_boot_recovery_key:
+                def GET() -> str: ...
+
     class codecs:
         def GET() -> CodecsData: ...
 
