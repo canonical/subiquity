@@ -317,5 +317,5 @@ class SystemActionRequest:
 
 
 @snapdtype
-class SystemActionResponse:
+class SystemActionResponseSetupEncryption:
     encrypted_devices: Dict[NonExhaustive[Role], str] = attr.Factory(dict)

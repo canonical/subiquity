@@ -2482,7 +2482,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         with mock.patch.object(
             snapdapi, "post_and_wait", new_callable=mock.AsyncMock
         ) as mocked:
-            mocked.return_value = snapdtypes.SystemActionResponse(
+            mocked.return_value = snapdtypes.SystemActionResponseSetupEncryption(
                 encrypted_devices={
                     snapdtypes.Role.SYSTEM_DATA: "enc-system-data",
                 },

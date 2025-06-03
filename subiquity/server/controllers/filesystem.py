@@ -1025,7 +1025,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self.app.snapdapi,
             self.app.snapdapi.v2.systems[label].POST,
             snapdtypes.SystemActionRequest(**kwargs),
-            ann=snapdtypes.SystemActionResponse,
+            ann=snapdtypes.SystemActionResponseSetupEncryption,
         )
         for role, enc_path in result.encrypted_devices.items():
             arb_device = ArbitraryDevice(m=self.model, path=enc_path)
