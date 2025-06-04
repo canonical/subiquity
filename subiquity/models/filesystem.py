@@ -2519,6 +2519,12 @@ class FilesystemModel:
             else:
                 dm_crypt.recovery_key.generate()
 
+    def set_core_boot_recovery_key(self, key: str) -> None:
+        self.core_boot_recovery_key = RecoveryKeyHandler(
+            live_location=None, backup_location=None
+        )
+        self.core_boot_recovery_key._key = key
+
     def expose_recovery_keys(self) -> None:
         for dm_crypt in self.all_dm_crypts():
             if dm_crypt.recovery_key is None:

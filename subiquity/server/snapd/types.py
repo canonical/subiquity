@@ -273,6 +273,7 @@ class SystemAction(enum.Enum):
 
 class SystemActionStep(enum.Enum):
     SETUP_STORAGE_ENCRYPTION = "setup-storage-encryption"
+    GENERATE_RECOVERY_KEY = "generate-recovery-key"
     FINISH = "finish"
 
 
@@ -319,3 +320,8 @@ class SystemActionRequest:
 @snapdtype
 class SystemActionResponseSetupEncryption:
     encrypted_devices: Dict[NonExhaustive[Role], str] = attr.Factory(dict)
+
+
+@snapdtype
+class SystemActionResponseGenerateRecoveryKey:
+    recovery_key: str

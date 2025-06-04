@@ -68,6 +68,9 @@ class SnapdAPI:
             class label:
                 def GET() -> SystemDetails: ...
 
+                # TODO The return type is correct only for async responses, but
+                # not all responses are async. We'd need to extend support for
+                # Union types e.g., Union[ChangeID, SystemActionResponse]
                 def POST(action: Payload[SystemActionRequest]) -> ChangeID: ...
 
 
