@@ -64,9 +64,11 @@ flake8:
 
 .PHONY: unit
 unit: gitdeps
+	mkdir -p .coverage
 	timeout 120 \
 	$(PYTHON) -m pytest --ignore curtin --ignore probert \
-		--ignore subiquity/tests/api
+		--ignore subiquity/tests/api \
+		--cov-report xml:.coverage/cobertura.xml
 
 .PHONY: api
 api: gitdeps

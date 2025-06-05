@@ -24,6 +24,13 @@ jobs:
           sudo ./scripts/installdeps.sh
           sudo apt install pylint
 
+      - name: Coverage
+        run: |
+          make unit
+
+      - name: pylint is installed, right?
+        run: command -v pylint
+
       - name: Run TICS analysis with github-action
         uses: tiobe/tics-github-action@v3
         with:
