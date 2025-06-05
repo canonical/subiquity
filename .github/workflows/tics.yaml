@@ -1,8 +1,9 @@
 name: TICS
+
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+  schedule:
+    - cron: '17 5 * * 6'  # Run at 5:17a (arbitrary) on Saturday
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -10,12 +11,21 @@ concurrency:
 
 jobs:
   TICS:
-    runs-on: [self-hosted, linux, amd64, tiobe, jammy]
+    runs-on: [self-hosted, linux, amd64, tiobe, noble]
     steps:
       - name: Checkout the project
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Dependencies
+        run: |
+          sudo ./scripts/installdeps.sh
+          sudo apt install pylint
+
+      - name: Coverage
+        run: |
+          make unit
 
       - name: Run TICS analysis with github-action
         uses: tiobe/tics-github-action@v3
