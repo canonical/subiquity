@@ -20,7 +20,9 @@ jobs:
           fetch-depth: 0
 
       - name: Dependencies
-        run: sudo ./scripts/installdeps.sh
+        run: |
+          sudo ./scripts/installdeps.sh
+          sudo apt install pylint
 
       - name: Run TICS analysis with github-action
         uses: tiobe/tics-github-action@v3
