@@ -4,6 +4,8 @@ name: TICS
 #     branches:
 #       - main
 
+# FIXME demote to only run weekly
+
 on: [pull_request]
 
 concurrency:
