@@ -62,7 +62,7 @@ class SnapListModel:
         if snap is None:
             return
         if snap not in self.complete_snaps:
-            self.update_snap(snap, info)
+            self.update(snap, info)
         channel_map = info["channels"]
         for track in info["tracks"]:
             for risk in risks:
