@@ -20,7 +20,7 @@ jobs:
           fetch-depth: 0
 
       - name: Dependencies
-        run: ./scripts/installdeps.sh
+        run: sudo ./scripts/installdeps.sh
 
       - name: Run TICS analysis with github-action
         uses: tiobe/tics-github-action@v3
