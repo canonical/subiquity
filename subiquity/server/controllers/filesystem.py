@@ -31,6 +31,7 @@ from curtin import swap
 from curtin.storage_config import ptable_part_type_to_flag
 from curtin.util import human2bytes
 
+from subiquity.common.api.defs import Payload, api, path_parameter
 from subiquity.common.api.recoverable_error import RecoverableError
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReportKind
@@ -91,6 +92,8 @@ from subiquity.server.snapd.system_getter import SystemGetter, SystemsDirMounter
 from subiquity.server.snapd.types import (
     StorageEncryptionSupport,
     StorageSafety,
+    SystemActionRequest,
+    SystemActionResponseGenerateRecoveryKey,
     SystemDetails,
 )
 from subiquity.server.types import InstallerChannels
@@ -1025,7 +1028,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             self.app.snapdapi,
             self.app.snapdapi.v2.systems[label].POST,
             snapdtypes.SystemActionRequest(**kwargs),
-            ann=snapdtypes.SystemActionResponse,
+            ann=snapdtypes.SystemActionResponseSetupEncryption,
         )
         for role, enc_path in result.encrypted_devices.items():
             arb_device = ArbitraryDevice(m=self.model, path=enc_path)
@@ -1034,6 +1037,42 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             for fs in self.model._all(type="format"):
                 if fs.volume == part:
                     fs.volume = arb_device
+
+    async def fetch_core_boot_recovery_key(self):
+        """Fetch the recovery key from snapd and store it in the model."""
+
+        # TODO This is a workaround!
+        # Ideally, we'd want to use self.app.snapdapi here, but SnapdAPI
+        # defines the return type of POST /v2/systems/{system-label} as a
+        # ChangeID (which is only true for async responses) and we don't have
+        # the needed support for Union types.
+        # For now, let's define a fake API definition and create a new snapd
+        # client out of it.
+        @api
+        class AlternateSnapdAPI:
+            class v2:
+                class systems:
+                    @path_parameter
+                    class label:
+                        def POST(
+                            action: Payload[SystemActionRequest],
+                        ) -> SystemActionResponseGenerateRecoveryKey: ...
+
+        snapd_client = snapdapi.make_api_client(
+            self.app.snapd, api_class=AlternateSnapdAPI, log_responses=False
+        )
+
+        label = self._info.label
+
+        result = await snapd_client.v2.systems[label].POST(
+            snapdtypes.SystemActionRequest(
+                action=snapdtypes.SystemAction.INSTALL,
+                step=snapdtypes.SystemActionStep.GENERATE_RECOVERY_KEY,
+                on_volumes={},
+            ),
+        )
+
+        self.model.set_core_boot_recovery_key(result.recovery_key)
 
     @with_context(description="making system bootable")
     async def finish_install(self, context, kernel_components):
@@ -1613,14 +1652,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             != GuidedCapability.CORE_BOOT_ENCRYPTED
         ):
             raise StorageRecoverableError("not using core boot encrypted")
-
-        # TODO lean on snapd to obtain the recovery key. This is a stub
-        # implementation.
-        if self.model.core_boot_recovery_key is None:
-            self.model.core_boot_recovery_key = RecoveryKeyHandler(
-                live_location=None, backup_location=None
-            )
-            self.model.core_boot_recovery_key.generate()
 
         key = self.model.core_boot_recovery_key._key
 

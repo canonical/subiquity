@@ -384,6 +384,7 @@ class InstallController(SubiquityController):
             )
             if fs_controller.use_tpm:
                 await fs_controller.setup_encryption(context=context)
+                await fs_controller.fetch_core_boot_recovery_key()
             await run_curtin_step(
                 name="formatting",
                 stages=["partitioning"],

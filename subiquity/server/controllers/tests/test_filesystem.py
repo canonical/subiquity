@@ -599,7 +599,8 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.fsc.model.guided_configuration = mock.Mock(
             capability=GuidedCapability.CORE_BOOT_ENCRYPTED
         )
-        await self.fsc.v2_core_boot_recovery_key_GET()
+        self.fsc.model.set_core_boot_recovery_key("recovery")
+        self.assertEqual("recovery", await self.fsc.v2_core_boot_recovery_key_GET())
 
     async def test_v2_core_boot_recovery_GET__not_yet_configured(self):
         self.fsc.model = make_model()
@@ -893,6 +894,18 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
 
         self.assertEqual(leading_gap.offset, gap.offset)
         self.assertEqual(part.size + leading_gap.size + trailing_gap.size, gap.size)
+
+    async def test_fetch_core_boot_recovery_key(self):
+        self.app.snapd = AsyncSnapd(get_fake_connection())
+        self.app.snapdapi = snapdapi.make_api_client(self.app.snapd)
+        self.fsc._info = mock.Mock(label="my-label")
+
+        with mock.patch.object(
+            self.fsc.model, "set_core_boot_recovery_key"
+        ) as m_set_key:
+            await self.fsc.fetch_core_boot_recovery_key()
+
+        m_set_key.assert_called_once_with("my-recovery-key")
 
     async def test_finish_install(self):
         self.app.snapdapi = snapdapi.make_api_client(AsyncSnapd(get_fake_connection()))
@@ -2482,7 +2495,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         with mock.patch.object(
             snapdapi, "post_and_wait", new_callable=mock.AsyncMock
         ) as mocked:
-            mocked.return_value = snapdtypes.SystemActionResponse(
+            mocked.return_value = snapdtypes.SystemActionResponseSetupEncryption(
                 encrypted_devices={
                     snapdtypes.Role.SYSTEM_DATA: "enc-system-data",
                 },

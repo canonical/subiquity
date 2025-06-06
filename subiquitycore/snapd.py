@@ -159,6 +159,7 @@ class FakeSnapdConnection:
                 }
             )
         change = None
+        sync_result = None
         if path == "v2/snaps/subiquity" and body["action"] == "switch":
             change = "8"
         if path.startswith("v2/systems/") and body["action"] == "install":
@@ -171,6 +172,8 @@ class FakeSnapdConnection:
                     change = "5"
             elif step == "setup-storage-encryption":
                 change = "6"
+            elif step == "generate-recovery-key":
+                sync_result = {"recovery-key": "my-recovery-key"}
         if change is not None:
             return _FakeMemoryResponse(
                 {
@@ -178,6 +181,15 @@ class FakeSnapdConnection:
                     "change": change,
                     "status-code": 200,
                     "status": "Accepted",
+                }
+            )
+        elif sync_result is not None:
+            return _FakeMemoryResponse(
+                {
+                    "type": "sync",
+                    "status-code": 200,
+                    "status": "OK",
+                    "result": sync_result,
                 }
             )
         if path in self.post_cb:

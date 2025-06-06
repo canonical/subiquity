@@ -68,6 +68,9 @@ class SnapdAPI:
             class label:
                 def GET() -> SystemDetails: ...
 
+                # TODO The return type is correct only for async responses, but
+                # not all responses are async. We'd need to extend support for
+                # Union types e.g., Union[ChangeID, SystemActionResponse]
                 def POST(action: Payload[SystemActionRequest]) -> ChangeID: ...
 
 
@@ -90,7 +93,7 @@ class _FakeError:
         raise aiohttp.ClientError(self.data["result"]["message"])
 
 
-def make_api_client(async_snapd, log_responses=False):
+def make_api_client(async_snapd, log_responses=False, *, api_class=SnapdAPI):
     # subiquity.common.api.client is designed around how to make requests
     # with aiohttp's client code, not the AsyncSnapd API but with a bit of
     # effort it can be contorted into shape. Clearly it would be better to
@@ -114,7 +117,7 @@ def make_api_client(async_snapd, log_responses=False):
             yield _FakeError()
         yield _FakeResponse(content)
 
-    client = make_client(SnapdAPI, make_request, serializer=snapd_serializer)
+    client = make_client(api_class, make_request, serializer=snapd_serializer)
     client.log_responses = log_responses
     return client
 
