@@ -5,7 +5,7 @@ on: [pull_request]
 # on:
 #   workflow_dispatch:
 #   schedule:
-#     - cron: '16 6 * * */7'  # Run at 6:16a (arbitrary) once every 7 days
+#     - cron: '17 5 * * 6'  # Run at 5:17a (arbitrary) on Saturday
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
