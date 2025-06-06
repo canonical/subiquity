@@ -2,6 +2,8 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 
+import urwid
+
 from subiquity.client.controllers.progress import ProgressController
 from subiquity.common.types import ApplicationState
 from subiquity.ui.views.installprogress import ProgressView
@@ -56,7 +58,7 @@ class IdentityViewTests(unittest.TestCase):
         self.assertIsNotNone(btn)
 
     @patch("subiquity.ui.views.installprogress.Columns")
-    @patch("subiquity.ui.views.installprogress.Text")
+    @patch("subiquity.ui.views.installprogress.Text", wraps=urwid.Text)
     def test_event_other_formatting(self, text_mock, columns_mock):
         """Test formatting of the other_event function."""
         view = self.make_view()
@@ -70,7 +72,7 @@ class IdentityViewTests(unittest.TestCase):
             dividechars=1,
         )
 
-    @patch("subiquity.ui.views.installprogress.Text")
+    @patch("subiquity.ui.views.installprogress.Text", wraps=urwid.Text)
     def test_event_other_robust_splitting(self, text_mock):
         """Test that messages containing a colon don't fail to split.
 
