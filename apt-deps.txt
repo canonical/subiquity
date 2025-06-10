@@ -45,6 +45,7 @@ python3-pycountry
 python3-pyflakes
 python3-pyroute2
 python3-pytest
+python3-pytest-cov
 python3-pytest-xdist
 python3-pyudev
 python3-requests
