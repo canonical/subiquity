@@ -23,6 +23,7 @@ import pathlib
 import shutil
 import subprocess
 import time
+from contextlib import AsyncExitStack
 from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import attr
@@ -1637,14 +1638,35 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if passphrase is None and pin is None:
             raise StorageRecoverableError("must supply one of pin and passphrase")
 
-        # FIXME actually call snapd and fill in responses
-        if pin is not None:
-            entropy = float(len(pin))
-            minimum_required = 4.0
-        else:
-            assert passphrase is not None  # To help the static type checker
-            entropy = float(len(passphrase))
-            minimum_required = 8.0
+        # checking entropy requires an encrypted core boot system to refer to
+        info = self._info
+        if info is None:
+            caps = {
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
+            }
+            for candidate_info in self._variation_info.values():
+                if caps & set(candidate_info.capability_info.allowed):
+                    info = candidate_info
+                    break
+
+        if info is None:
+            raise StorageRecoverableError("no suitable system found")
+
+        async with AsyncExitStack() as es:
+            if info.needs_systems_mount:
+                mounter = SystemsDirMounter(self.app, info.name)
+                await es.enter_async_context(mounter.mounted())
+
+            # FIXME actually call snapd and fill in responses
+            if pin is not None:
+                entropy = float(len(pin))
+                minimum_required = 4.0
+            else:
+                assert passphrase is not None  # To help the static type checker
+                entropy = float(len(passphrase))
+                minimum_required = 8.0
 
         if entropy >= minimum_required:
             return None

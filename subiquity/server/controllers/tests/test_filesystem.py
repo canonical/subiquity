@@ -2740,6 +2740,8 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
         self.app = make_app()
         self.app.opts.bootloader = None
         self.fsc = FilesystemController(app=self.app)
+        self.fsc._info = mock.Mock()
+        self.fsc._info.needs_systems_mount = False
 
     async def test_both_pin_and_pass(self):
         with self.assertRaises(StorageRecoverableError):
