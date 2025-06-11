@@ -1635,9 +1635,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         )
 
         if passphrase is None and pin is None:
-            raise StorageRecoverableError(
-                "must supply at least one of pin and passphrase"
-            )
+            raise StorageRecoverableError("must supply one of pin and passphrase")
 
         # FIXME actually call snapd and fill in responses
         entropy = 0.0
