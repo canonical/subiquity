@@ -1,0 +1,6 @@
+[run]
+; The default data_file location is .coverage, and we want to use .coverage as
+; a directory so that TICS finds the coverage report at .coverage/cobertura.xml
+; The value chosen here doesn't matter very much, as it's only kept until the
+; report is generated anyhow.
+data_file = .coverage.tmp
