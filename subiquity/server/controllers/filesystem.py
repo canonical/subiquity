@@ -1638,8 +1638,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise StorageRecoverableError("must supply one of pin and passphrase")
 
         # FIXME actually call snapd and fill in responses
-        entropy = 0.0
-        minimum_required = 0.0
+        if pin is not None:
+            entropy = float(len(pin))
+            minimum_required = 4.0
+        else:
+            assert passphrase is not None  # To help the static type checker
+            entropy = float(len(passphrase))
+            minimum_required = 8.0
+
         return EntropyResponse(
             entropy=entropy,
             minimum_required=minimum_required,
