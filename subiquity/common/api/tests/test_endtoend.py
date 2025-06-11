@@ -32,7 +32,7 @@ from subiquity.common.api.defs import (
 from .test_server import ControllerBase, makeTestClient
 
 
-def make_request(client, method, path, *, params, json):
+def make_request(client, method, path, *, params, json, raise_for_status):
     return client.request(method, path, params=params, json=json)
 
 
@@ -178,9 +178,16 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
             pass
 
         @contextlib.asynccontextmanager
-        async def custom_make_request(client, method, path, *, params, json):
+        async def custom_make_request(
+            client, method, path, *, params, json, raise_for_status
+        ):
             async with make_request(
-                client, method, path, params=params, json=json
+                client,
+                method,
+                path,
+                params=params,
+                json=json,
+                raise_for_status=raise_for_status,
             ) as resp:
                 if resp.headers.get("x-status") == "skip":
                     raise Skip
@@ -241,9 +248,16 @@ class TestEndToEnd(unittest.IsolatedAsyncioTestCase):
             pass
 
         @contextlib.asynccontextmanager
-        async def custom_make_request(client, method, path, *, params, json):
+        async def custom_make_request(
+            client, method, path, *, params, json, raise_for_status
+        ):
             async with make_request(
-                client, method, path, params=params, json=json
+                client,
+                method,
+                path,
+                params=params,
+                json=json,
+                raise_for_status=raise_for_status,
             ) as resp:
                 if resp.headers.get("x-status") == "ERROR":
                     raise Abort

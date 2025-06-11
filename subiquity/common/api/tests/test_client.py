@@ -50,7 +50,7 @@ class TestClient(unittest.TestCase):
                 def POST(data: Payload[str]) -> None: ...
 
         @contextlib.asynccontextmanager
-        async def make_request(method, path, *, params, json):
+        async def make_request(method, path, *, params, json, raise_for_status):
             requests.append((method, path, params, json))
             if method == "GET":
                 v = "value"
@@ -76,7 +76,7 @@ class TestClient(unittest.TestCase):
             def GET(arg: str) -> str: ...
 
         @contextlib.asynccontextmanager
-        async def make_request(method, path, *, params, json):
+        async def make_request(method, path, *, params, json, raise_for_status):
             requests.append((method, path, params, json))
             yield FakeResponse(params["arg"])
 
@@ -95,7 +95,7 @@ class TestClient(unittest.TestCase):
                 def GET(arg: str) -> str: ...
 
         @contextlib.asynccontextmanager
-        async def make_request(method, path, *, params, json):
+        async def make_request(method, path, *, params, json, raise_for_status):
             requests.append((method, path, params, json))
             yield FakeResponse(params["arg"])
 
@@ -122,7 +122,7 @@ class TestClient(unittest.TestCase):
                     def GET(arg: str) -> str: ...
 
         @contextlib.asynccontextmanager
-        async def make_request(method, path, *, params, json):
+        async def make_request(method, path, *, params, json, raise_for_status):
             requests.append((method, path, params, json))
             yield FakeResponse(params["arg"])
 
