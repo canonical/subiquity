@@ -2818,11 +2818,11 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
 
     @parameterized.expand(
         (
-            ("pin", "01234"),
-            ("passphrase", "asdfasdf"),
+            ("pin", "01234", EntropyResponse(5, 4, 8)),
+            ("passphrase", "asdfasdf", EntropyResponse(8, 8, 16)),
         )
     )
-    async def test_stub_valid(self, type_, pin_or_pass):
+    async def test_stub_valid(self, type_, pin_or_pass, expected_entropy):
         label = self.fsc._info.label
         self.app.snapd = AsyncSnapd(get_fake_connection())
 
@@ -2834,10 +2834,14 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
                 self.app.snapdapi.v2.systems[label],
                 "POST",
                 new_callable=mock.AsyncMock,
-                return_value=None,
+                return_value=snapdtypes.EntropyCheckResponse(
+                    entropy_bits=expected_entropy.entropy_bits,
+                    min_entropy_bits=expected_entropy.min_entropy_bits,
+                    optimal_entropy_bits=expected_entropy.optimal_entropy_bits,
+                ),
             ):
                 actual = await self.fsc.v2_calculate_entropy_POST(
                     CalculateEntropyRequest(**{type_: pin_or_pass})
                 )
 
-        self.assertIsNone(actual)
+        self.assertEqual(expected_entropy, actual)

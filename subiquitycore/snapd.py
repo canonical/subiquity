@@ -184,7 +184,11 @@ class FakeSnapdConnection:
                 "type": "sync",
                 "status-code": 200,
                 "status": "OK",
-                "result": None,
+                "result": {
+                    "entropy-bits": entropy_bits,
+                    "min-entropy-bits": min_entropy_bits,
+                    "optimal-entropy-bits": optimal_entropy_bits,
+                },
             }
         )
 

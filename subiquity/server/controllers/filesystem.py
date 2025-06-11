@@ -1657,7 +1657,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         snapd_client,
         request: snapdtypes.SystemActionRequest,
         variation_info: VariationInfo,
-    ) -> Optional[snapdtypes.EntropyCheckResponse]:
+    ) -> snapdtypes.EntropyCheckResponse:
         async with AsyncExitStack() as es:
             if variation_info.needs_systems_mount:
                 mounter = SystemsDirMounter(self.app, variation_info.name)
@@ -1669,7 +1669,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_calculate_entropy_POST(
         self, data: CalculateEntropyRequest
-    ) -> Optional[EntropyResponse]:
+    ) -> EntropyResponse:
         validate_pin_pass(
             passphrase_allowed=True,
             pin_allowed=True,
@@ -1721,7 +1721,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     class label:
                         def POST(
                             action: Payload[SystemActionRequest],
-                        ) -> Optional[snapdtypes.EntropyCheckResponse]: ...
+                        ) -> snapdtypes.EntropyCheckResponse: ...
 
         snapd_client = snapdapi.make_api_client(
             self.app.snapd,
@@ -1731,8 +1731,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         result = await self.do_entropy_check(snapd_client, request, info)
 
-        if result is None:
-            return None
+        # TODO check the response-code instead.
+        if result.entropy_bits is not None:
+            # Let's consider this a "good" response
+            return EntropyResponse(
+                entropy_bits=result.entropy_bits,
+                min_entropy_bits=result.min_entropy_bits,
+                optimal_entropy_bits=result.optimal_entropy_bits,
+            )
 
         if result.kind == EntropyCheckResponseKind.UNSUPPORTED:
             # TODO determine why we're running into UNSUPPORTED sometimes.
@@ -1748,6 +1754,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         assert result.value is not None
 
+        # This is a bad response
         return EntropyResponse(
             entropy_bits=result.value.entropy_bits,
             min_entropy_bits=result.value.min_entropy_bits,
