@@ -2762,11 +2762,20 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
 
     @parameterized.expand(
         (
-            [{"pin": "01234"}],
-            [{"passphrase": "asdf"}],
+            ("pin", "012", EntropyResponse(3.0, 4.0)),
+            ("passphrase", "asdf", EntropyResponse(4.0, 8.0)),
         )
     )
-    async def test_stub_valid(self, kwargs):
-        expected = EntropyResponse(0.0, 0.0)
-        actual = await self.fsc.v2_calculate_entropy_POST(**kwargs)
+    async def test_stub_invalid(self, type_, pin_or_pass, expected):
+        actual = await self.fsc.v2_calculate_entropy_POST(**{type_: pin_or_pass})
+        self.assertEqual(expected, actual)
+
+    @parameterized.expand(
+        (
+            ("pin", "01234", EntropyResponse(5.0, 4.0)),
+            ("passphrase", "asdfasdf", EntropyResponse(8.0, 8.0)),
+        )
+    )
+    async def test_stub_valid(self, type_, pin_or_pass, expected):
+        actual = await self.fsc.v2_calculate_entropy_POST(**{type_: pin_or_pass})
         self.assertEqual(expected, actual)
