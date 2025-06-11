@@ -162,8 +162,8 @@ class FakeSnapdConnection:
                 "kind": kind,
                 "message": "did not pass quality checks",
                 "value": {
-                    "entropy-bits": float(entropy_bits),
-                    "min-entropy-bits": float(min_entropy_bits),
+                    "entropy-bits": entropy_bits,
+                    "min-entropy-bits": min_entropy_bits,
                     "reasons": ["low-entropy"],
                 },
             }
