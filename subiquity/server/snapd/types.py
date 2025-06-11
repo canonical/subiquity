@@ -352,6 +352,7 @@ class InsufficientEntropyDetails:
     reasons: List[InsufficientEntropyReasons]
     entropy_bits: int
     min_entropy_bits: int
+    optimal_entropy_bits: int
 
 
 @snapdtype

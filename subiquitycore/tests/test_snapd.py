@@ -32,6 +32,7 @@ class TestFakeSnapdConnection(unittest.TestCase):
                     "value": {
                         "entropy-bits": 3,
                         "min-entropy-bits": 4,
+                        "optimal-entropy-bits": 6,
                         "reasons": ["low-entropy"],
                     },
                     "message": "did not pass quality checks",
@@ -66,6 +67,7 @@ class TestFakeSnapdConnection(unittest.TestCase):
                     "value": {
                         "entropy-bits": 3,
                         "min-entropy-bits": 8,
+                        "optimal-entropy-bits": 10,
                         "reasons": ["low-entropy"],
                     },
                     "message": "did not pass quality checks",

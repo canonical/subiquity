@@ -152,10 +152,12 @@ class FakeSnapdConnection:
         if body["action"] == "check-passphrase":
             entropy_bits = len(body["passphrase"])
             min_entropy_bits = 8
+            optimal_entropy_bits = 10
             kind = "invalid-passphrase"
         else:
             entropy_bits = len(body["pin"])
             min_entropy_bits = 4
+            optimal_entropy_bits = 6
             kind = "invalid-pin"
 
         if entropy_bits < min_entropy_bits:
@@ -170,6 +172,7 @@ class FakeSnapdConnection:
                         "value": {
                             "entropy-bits": entropy_bits,
                             "min-entropy-bits": min_entropy_bits,
+                            "optimal-entropy-bits": optimal_entropy_bits,
                             "reasons": ["low-entropy"],
                         },
                     },
