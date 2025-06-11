@@ -406,5 +406,5 @@ class ReformatDisk:
 
 @attr.s(auto_attribs=True)
 class EntropyResponse:
-    entropy: float
-    minimum_required: float
+    entropy_bits: int
+    min_entropy_bits: int
