@@ -1627,6 +1627,44 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.delete_raid(raid)
         return await self.v2_GET()
 
+    async def _get_snapd_entropy_response(
+        self, system_label: str, pin: Optional[str], passphrase: Optional[str]
+    ) -> snapdtypes.EntropyCheckResponse:
+        # TODO This is a workaround!
+        # Ideally, we'd want to use self.app.snapdapi here, but SnapdAPI
+        # defines the return type of POST /v2/systems/{system-label} as a
+        # ChangeID (which is only true for async responses) and we don't have
+        # the needed support for Union types.
+        # For now, let's define a fake API definition and create a new snapd
+        # client out of it.
+        @api
+        class AlternateSnapdAPI:
+            class v2:
+                class systems:
+                    @path_parameter
+                    class label:
+                        def POST(
+                            action: Payload[SystemActionRequest],
+                        ) -> snapdtypes.EntropyCheckResponse: ...
+
+        snapd_client = snapdapi.make_api_client(
+            self.app.snapd, api_class=AlternateSnapdAPI, log_responses=False
+        )
+
+        if pin is not None:
+            request = snapdtypes.SystemActionRequest(
+                action=snapdtypes.SystemAction.CHECK_PIN, pin=pin
+            )
+        else:
+            request = snapdtypes.SystemActionRequest(
+                action=snapdtypes.SystemAction.CHECK_PASSPHRASE,
+                passphrase=passphrase,
+            )
+
+        return await snapd_client.v2.systems[system_label].POST(
+            request, raise_for_status=False
+        )
+
     async def v2_calculate_entropy_POST(
         self,
         passphrase: Optional[str] = None,
@@ -1655,45 +1693,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if info is None:
             raise StorageRecoverableError("no suitable system found")
 
-        # TODO This is a workaround!
-        # Ideally, we'd want to use self.app.snapdapi here, but SnapdAPI
-        # defines the return type of POST /v2/systems/{system-label} as a
-        # ChangeID (which is only true for async responses) and we don't have
-        # the needed support for Union types.
-        # For now, let's define a fake API definition and create a new snapd
-        # client out of it.
-        @api
-        class AlternateSnapdAPI:
-            class v2:
-                class systems:
-                    @path_parameter
-                    class label:
-                        def POST(
-                            action: Payload[SystemActionRequest],
-                        ) -> snapdtypes.EntropyCheckResponse: ...
-
-        snapd_client = snapdapi.make_api_client(
-            self.app.snapd, api_class=AlternateSnapdAPI, log_responses=False
-        )
-
         async with AsyncExitStack() as es:
             if info.needs_systems_mount:
                 mounter = SystemsDirMounter(self.app, info.name)
                 await es.enter_async_context(mounter.mounted())
 
-            if pin is not None:
-                request = snapdtypes.SystemActionRequest(
-                    action=snapdtypes.SystemAction.CHECK_PIN, pin=pin
-                )
-            else:
-                request = snapdtypes.SystemActionRequest(
-                    action=snapdtypes.SystemAction.CHECK_PASSPHRASE,
-                    passphrase=passphrase,
-                )
-
-            result = await snapd_client.v2.systems[info.label].POST(
-                request, raise_for_status=False
-            )
+            result = await self._get_snapd_entropy_response(info.label, pin, passphrase)
 
         # TODO check the response-code instead.
         if result.entropy_bits is not None:
