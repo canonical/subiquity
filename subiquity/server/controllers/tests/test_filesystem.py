@@ -18,7 +18,7 @@ import copy
 import subprocess
 import uuid
 from pathlib import Path
-from unittest import IsolatedAsyncioTestCase, mock
+from unittest import IsolatedAsyncioTestCase, TestCase, mock
 
 import attrs
 import jsonschema
@@ -70,6 +70,7 @@ from subiquity.server.controllers.filesystem import (
     FilesystemController,
     StorageRecoverableError,
     VariationInfo,
+    validate_pin_pass,
 )
 from subiquity.server.dryrun import DRConfig
 from subiquity.server.snapd import api as snapdapi
@@ -103,6 +104,48 @@ default_capabilities_disallowed_too_small = [
     )
     for cap in default_capabilities
 ]
+
+
+class TestValidatePinPass(TestCase):
+    def test_valid_pin(self):
+        validate_pin_pass(
+            passphrase_allowed=False, pin_allowed=True, passphrase=None, pin="1234"
+        )
+
+    def test_invalid_pin(self):
+        with self.assertRaises(
+            StorageRecoverableError, msg="pin is a string of digits"
+        ):
+            validate_pin_pass(
+                passphrase_allowed=False, pin_allowed=True, passphrase=None, pin="abcd"
+            )
+
+    def test_valid_passphrase(self):
+        validate_pin_pass(
+            passphrase_allowed=True, pin_allowed=False, passphrase="abcd", pin=None
+        )
+
+    def test_unexpected_passphrase(self):
+        with self.assertRaises(
+            StorageRecoverableError, msg="unexpected passphrase supplied"
+        ):
+            validate_pin_pass(
+                passphrase_allowed=False, pin_allowed=False, passphrase="abcd", pin=None
+            )
+
+    def test_unexpected_pin(self):
+        with self.assertRaises(StorageRecoverableError, msg="unexpected pin supplied"):
+            validate_pin_pass(
+                passphrase_allowed=False, pin_allowed=False, passphrase=None, pin="1234"
+            )
+
+    def test_pin_and_pass_supplied(self):
+        with self.assertRaises(
+            StorageRecoverableError, msg="must supply at most one of pin and passphrase"
+        ):
+            validate_pin_pass(
+                passphrase_allowed=True, pin_allowed=True, passphrase="abcd", pin="1234"
+            )
 
 
 class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
