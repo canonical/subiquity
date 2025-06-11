@@ -1629,7 +1629,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self,
         passphrase: Optional[str] = None,
         pin: Optional[str] = None,
-    ) -> EntropyResponse:
+    ) -> Optional[EntropyResponse]:
         validate_pin_pass(
             passphrase_allowed=True, pin_allowed=True, passphrase=passphrase, pin=pin
         )
@@ -1645,6 +1645,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             assert passphrase is not None  # To help the static type checker
             entropy = float(len(passphrase))
             minimum_required = 8.0
+
+        if entropy >= minimum_required:
+            return None
 
         return EntropyResponse(
             entropy=entropy,
