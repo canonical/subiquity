@@ -1749,8 +1749,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         assert result.value is not None
 
         return EntropyResponse(
-            entropy=result.value.entropy_bits,
-            minimum_required=float(result.value.min_entropy_bits),
+            entropy_bits=result.value.entropy_bits,
+            min_entropy_bits=result.value.min_entropy_bits,
         )
 
     async def v2_core_boot_recovery_key_GET(self) -> str:

@@ -30,7 +30,7 @@ class TestFakeSnapdConnection(unittest.TestCase):
                 "status-code": 400,
                 "result": {
                     "value": {
-                        "entropy-bits": 3.0,
+                        "entropy-bits": 3,
                         "min-entropy-bits": 4,
                         "reasons": ["low-entropy"],
                     },
@@ -64,7 +64,7 @@ class TestFakeSnapdConnection(unittest.TestCase):
                 "status-code": 400,
                 "result": {
                     "value": {
-                        "entropy-bits": 3.0,
+                        "entropy-bits": 3,
                         "min-entropy-bits": 8,
                         "reasons": ["low-entropy"],
                     },
