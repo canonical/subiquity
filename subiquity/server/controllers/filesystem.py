@@ -1731,6 +1731,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return EntropyResponse(
             entropy_bits=result.value.entropy_bits,
             min_entropy_bits=result.value.min_entropy_bits,
+            optimal_entropy_bits=result.value.optimal_entropy_bits,
         )
 
     async def v2_core_boot_recovery_key_GET(self) -> str:
