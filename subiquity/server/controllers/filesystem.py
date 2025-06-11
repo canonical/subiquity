@@ -276,7 +276,10 @@ class VariationInfo:
 
 
 def validate_pin_pass(
-    passphrase_allowed: bool, pin_allowed: bool, passphrase: str, pin: str
+    passphrase_allowed: bool,
+    pin_allowed: bool,
+    passphrase: Optional[str],
+    pin: Optional[str],
 ) -> None:
     if passphrase is not None and pin is not None:
         raise StorageRecoverableError("must supply at most one of pin and passphrase")
