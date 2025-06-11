@@ -1631,7 +1631,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self,
         passphrase: Optional[str] = None,
         pin: Optional[str] = None,
-    ) -> Optional[EntropyResponse]:
+    ) -> EntropyResponse:
         validate_pin_pass(
             passphrase_allowed=True, pin_allowed=True, passphrase=passphrase, pin=pin
         )
@@ -1670,7 +1670,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     class label:
                         def POST(
                             action: Payload[SystemActionRequest],
-                        ) -> Optional[snapdtypes.EntropyCheckResponse]: ...
+                        ) -> snapdtypes.EntropyCheckResponse: ...
 
         snapd_client = snapdapi.make_api_client(
             self.app.snapd, api_class=AlternateSnapdAPI, log_responses=False
@@ -1695,13 +1695,19 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 request, raise_for_status=False
             )
 
-        if result is None:
-            return None
+        # TODO check the response-code instead.
+        if result.entropy_bits is not None:
+            # Let's consider this a "good" response
+            return EntropyResponse(
+                entropy_bits=result.entropy_bits,
+                min_entropy_bits=result.min_entropy_bits,
+                optimal_entropy_bits=result.optimal_entropy_bits,
+            )
 
-        if result.kind == EntropyCheckResponseKind.UNSUPPORTED:
-            log.debug("v2_calculate_entropy_POST: unsupported by snapd")
-            return None
+        # Maybe we should consider this a recoverable error?
+        assert result.kind != EntropyCheckResponseKind.UNSUPPORTED
 
+        # This is a bad response
         return EntropyResponse(
             entropy_bits=result.value.entropy_bits,
             min_entropy_bits=result.value.min_entropy_bits,
