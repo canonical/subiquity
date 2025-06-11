@@ -357,6 +357,12 @@ class InsufficientEntropyDetails:
 
 @snapdtype
 class EntropyCheckResponse:
-    kind: EntropyCheckResponseKind
-    message: str
-    value: InsufficientEntropyDetails
+    # On success (i.e., response.status-code: 400), these fields will be provided.
+    entropy_bits: Optional[int] = None
+    min_entropy_bits: Optional[int] = None
+    optimal_entropy_bits: Optional[int] = None
+
+    # On failure, these fields will be provided.
+    kind: Optional[EntropyCheckResponseKind] = None
+    message: Optional[str] = None
+    value: Optional[InsufficientEntropyDetails] = None

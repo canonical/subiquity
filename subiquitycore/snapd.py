@@ -159,7 +159,13 @@ class FakeSnapdConnection:
             optimal_entropy_bits = 6
             kind = "invalid-pin"
 
-        if entropy_bits < min_entropy_bits:
+        if entropy_bits >= min_entropy_bits:
+            return {
+                "entropy-bits": entropy_bits,
+                "min-entropy-bits": min_entropy_bits,
+                "optimal-entropy-bits": optimal_entropy_bits,
+            }
+        else:
             return {
                 "kind": kind,
                 "message": "did not pass quality checks",
@@ -170,8 +176,6 @@ class FakeSnapdConnection:
                     "reasons": ["low-entropy"],
                 },
             }
-
-        return None
 
     def post(self, path, body, *, raise_for_status=True, **args):
         if path == "v2/snaps/subiquity" and body["action"] == "refresh":

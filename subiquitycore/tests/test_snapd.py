@@ -38,8 +38,13 @@ class TestFakeSnapdConnection(unittest.TestCase):
         )
 
     def test__fake_entropy__pin_good(self):
-        self.assertIsNone(
-            self.snapd._fake_entropy({"action": "check-pin", "pin": "12345"})
+        expected = {
+            "entropy-bits": 5,
+            "min-entropy-bits": 4,
+            "optimal-entropy-bits": 6,
+        }
+        self.assertEqual(
+            expected, self.snapd._fake_entropy({"action": "check-pin", "pin": "12345"})
         )
 
     def test__fake_entropy__passphrase_bad(self):
@@ -61,8 +66,14 @@ class TestFakeSnapdConnection(unittest.TestCase):
         )
 
     def test__fake_entropy__passphrase_good(self):
-        self.assertIsNone(
+        expected = {
+            "entropy-bits": 12,
+            "min-entropy-bits": 8,
+            "optimal-entropy-bits": 10,
+        }
+        self.assertEqual(
+            expected,
             self.snapd._fake_entropy(
                 {"action": "check-passphrase", "passphrase": "abcdefghijkl"}
-            )
+            ),
         )
