@@ -91,6 +91,7 @@ from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
 from subiquity.server.snapd.system_getter import SystemGetter, SystemsDirMounter
 from subiquity.server.snapd.types import (
+    EntropyCheckResponseKind,
     StorageEncryptionSupport,
     StorageSafety,
     SystemActionRequest,
@@ -1654,26 +1655,56 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if info is None:
             raise StorageRecoverableError("no suitable system found")
 
+        # TODO This is a workaround!
+        # Ideally, we'd want to use self.app.snapdapi here, but SnapdAPI
+        # defines the return type of POST /v2/systems/{system-label} as a
+        # ChangeID (which is only true for async responses) and we don't have
+        # the needed support for Union types.
+        # For now, let's define a fake API definition and create a new snapd
+        # client out of it.
+        @api
+        class AlternateSnapdAPI:
+            class v2:
+                class systems:
+                    @path_parameter
+                    class label:
+                        def POST(
+                            action: Payload[SystemActionRequest],
+                        ) -> Optional[snapdtypes.EntropyCheckResponse]: ...
+
+        snapd_client = snapdapi.make_api_client(
+            self.app.snapd, api_class=AlternateSnapdAPI, log_responses=False
+        )
+
         async with AsyncExitStack() as es:
             if info.needs_systems_mount:
                 mounter = SystemsDirMounter(self.app, info.name)
                 await es.enter_async_context(mounter.mounted())
 
-            # FIXME actually call snapd and fill in responses
             if pin is not None:
-                entropy = float(len(pin))
-                minimum_required = 4.0
+                request = snapdtypes.SystemActionRequest(
+                    action=snapdtypes.SystemAction.CHECK_PIN, pin=pin
+                )
             else:
-                assert passphrase is not None  # To help the static type checker
-                entropy = float(len(passphrase))
-                minimum_required = 8.0
+                request = snapdtypes.SystemActionRequest(
+                    action=snapdtypes.SystemAction.CHECK_PASSPHRASE,
+                    passphrase=passphrase,
+                )
 
-        if entropy >= minimum_required:
+            result = await snapd_client.v2.systems[info.label].POST(
+                request, raise_for_status=False
+            )
+
+        if result is None:
+            return None
+
+        if result.kind == EntropyCheckResponseKind.UNSUPPORTED:
+            log.debug("v2_calculate_entropy_POST: unsupported by snapd")
             return None
 
         return EntropyResponse(
-            entropy=entropy,
-            minimum_required=minimum_required,
+            entropy=result.value.entropy_bits,
+            minimum_required=result.value.min_entropy_bits,
         )
 
     async def v2_core_boot_recovery_key_GET(self) -> str:

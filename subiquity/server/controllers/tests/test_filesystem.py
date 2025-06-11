@@ -2764,13 +2764,37 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
 
     @parameterized.expand(
         (
-            ("pin", "012", EntropyResponse(3.0, 4.0)),
-            ("passphrase", "asdf", EntropyResponse(4.0, 8.0)),
+            ("pin", "012", EntropyResponse(3.0, 4.0), "invalid-pin"),
+            ("passphrase", "asdf", EntropyResponse(8.0, 8.0), "invalid-passphrase"),
         )
     )
-    async def test_stub_invalid(self, type_, pin_or_pass, expected):
-        actual = await self.fsc.v2_calculate_entropy_POST(**{type_: pin_or_pass})
-        self.assertEqual(expected, actual)
+    async def test_stub_invalid(self, type_, pin_or_pass, expected_entropy, kind):
+        label = self.fsc._info.label
+        self.app.snapd = AsyncSnapd(get_fake_connection())
+
+        with mock.patch(
+            "subiquity.server.controllers.filesystem.snapdapi.make_api_client",
+            return_value=self.app.snapdapi,
+        ):
+            with mock.patch.object(
+                self.app.snapdapi.v2.systems[label],
+                "POST",
+                new_callable=mock.AsyncMock,
+                return_value=snapdtypes.EntropyCheckResponse(
+                    kind=kind,
+                    message="did not pass quality checks",
+                    value=snapdtypes.InsufficientEntropyDetails(
+                        reasons=["low-entropy"],
+                        entropy_bits=expected_entropy.entropy,
+                        min_entropy_bits=expected_entropy.minimum_required,
+                    ),
+                ),
+            ):
+                actual = await self.fsc.v2_calculate_entropy_POST(
+                    **{type_: pin_or_pass}
+                )
+
+        self.assertEqual(expected_entropy, actual)
 
     @parameterized.expand(
         (
@@ -2779,6 +2803,21 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
         )
     )
     async def test_stub_valid(self, type_, pin_or_pass):
-        self.assertIsNone(
-            await self.fsc.v2_calculate_entropy_POST(**{type_: pin_or_pass})
-        )
+        label = self.fsc._info.label
+        self.app.snapd = AsyncSnapd(get_fake_connection())
+
+        with mock.patch(
+            "subiquity.server.controllers.filesystem.snapdapi.make_api_client",
+            return_value=self.app.snapdapi,
+        ):
+            with mock.patch.object(
+                self.app.snapdapi.v2.systems[label],
+                "POST",
+                new_callable=mock.AsyncMock,
+                return_value=None,
+            ):
+                actual = await self.fsc.v2_calculate_entropy_POST(
+                    **{type_: pin_or_pass}
+                )
+
+        self.assertIsNone(actual)
