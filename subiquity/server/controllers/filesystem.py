@@ -1704,6 +1704,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if result.entropy_bits is not None:
             # Let's consider this a "good" response
             return EntropyResponse(
+                success=True,
                 entropy_bits=result.entropy_bits,
                 min_entropy_bits=result.min_entropy_bits,
                 optimal_entropy_bits=result.optimal_entropy_bits,
@@ -1714,6 +1715,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         # This is a bad response
         return EntropyResponse(
+            success=False,
             entropy_bits=result.value.entropy_bits,
             min_entropy_bits=result.value.min_entropy_bits,
             optimal_entropy_bits=result.value.optimal_entropy_bits,

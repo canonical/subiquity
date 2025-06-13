@@ -406,6 +406,8 @@ class ReformatDisk:
 
 @attr.s(auto_attribs=True)
 class EntropyResponse:
+    success: bool
+
     entropy_bits: int
     min_entropy_bits: int
     optimal_entropy_bits: int
