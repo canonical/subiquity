@@ -2783,8 +2783,13 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
 
     @parameterized.expand(
         (
-            ("pin", "012", EntropyResponse(3, 4, 5), "invalid-pin"),
-            ("passphrase", "asdf", EntropyResponse(8, 8, 10), "invalid-passphrase"),
+            ("pin", "012", EntropyResponse(False, 3, 4, 5), "invalid-pin"),
+            (
+                "passphrase",
+                "asdf",
+                EntropyResponse(False, 8, 8, 10),
+                "invalid-passphrase",
+            ),
         )
     )
     async def test_stub_invalid(self, type_, pin_or_pass, expected_entropy, kind):
@@ -2818,8 +2823,8 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
 
     @parameterized.expand(
         (
-            ("pin", "01234", EntropyResponse(5, 4, 8)),
-            ("passphrase", "asdfasdf", EntropyResponse(8, 8, 16)),
+            ("pin", "01234", EntropyResponse(True, 5, 4, 8)),
+            ("passphrase", "asdfasdf", EntropyResponse(True, 8, 8, 16)),
         )
     )
     async def test_stub_valid(self, type_, pin_or_pass, expected_entropy):
