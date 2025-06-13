@@ -2764,11 +2764,16 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
 
     @parameterized.expand(
         (
-            ("pin", "012", EntropyResponse(False, 3, 4, 5), "invalid-pin"),
+            (
+                "pin",
+                "012",
+                EntropyResponse(False, 3, 4, 5, failure_reasons=["low-entropy"]),
+                "invalid-pin",
+            ),
             (
                 "passphrase",
                 "asdf",
-                EntropyResponse(False, 8, 8, 10),
+                EntropyResponse(False, 8, 8, 10, failure_reasons=["low-entropy"]),
                 "invalid-passphrase",
             ),
         )
@@ -2788,7 +2793,7 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
                 return_value=snapdtypes.EntropyCheckResponse(
                     kind=kind,
                     value=snapdtypes.InsufficientEntropyDetails(
-                        reasons=["low-entropy"],
+                        reasons=[snapdtypes.InsufficientEntropyReasons.LOW_ENTROPY],
                         entropy_bits=expected_entropy.entropy_bits,
                         min_entropy_bits=expected_entropy.min_entropy_bits,
                         optimal_entropy_bits=expected_entropy.optimal_entropy_bits,

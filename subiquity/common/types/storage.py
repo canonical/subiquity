@@ -411,3 +411,6 @@ class EntropyResponse:
     entropy_bits: int
     min_entropy_bits: int
     optimal_entropy_bits: int
+
+    # Set to None if success is True
+    failure_reasons: Optional[list[str]] = None
