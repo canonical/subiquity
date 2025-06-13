@@ -101,11 +101,15 @@ def make_api_client(async_snapd, log_responses=False, *, api_class=SnapdAPI):
     # the fake implementation used in dry-run mode.
 
     @contextlib.asynccontextmanager
-    async def make_request(method, path, *, params, json):
+    async def make_request(method, path, *, params, json, raise_for_status):
         if method == "GET":
-            content = await async_snapd.get(path[1:], **params)
+            content = await async_snapd.get(
+                path[1:], raise_for_status=raise_for_status, **params
+            )
         else:
-            content = await async_snapd.post(path[1:], json, **params)
+            content = await async_snapd.post(
+                path[1:], json, raise_for_status=raise_for_status, **params
+            )
         if log_responses:
             log_json_response(content, path.replace("/", "_"))
         response = snapd_serializer.deserialize(Response, content)

@@ -269,6 +269,8 @@ class SystemsResponse:
 
 class SystemAction(enum.Enum):
     INSTALL = "install"
+    CHECK_PASSPHRASE = "check-passphrase"
+    CHECK_PIN = "check-pin"
 
 
 class SystemActionStep(enum.Enum):
@@ -309,12 +311,20 @@ class VolumesAuth:
 
 @snapdtype
 class SystemActionRequest:
-    action: SystemAction
-    step: SystemActionStep
-    on_volumes: Dict[str, OnVolume]
+    action: Optional[SystemAction] = None
+
+    # For action=INSTALL
+    step: Optional[SystemActionStep] = None
+    on_volumes: Optional[Dict[str, OnVolume]] = None
     # When optional_install=None it is equivalent to OptionalInstall(all=True)
     optional_install: Optional[OptionalInstall] = None
     volumes_auth: Optional[VolumesAuth] = None
+
+    # For action=CHECK_PIN
+    pin: Optional[str] = None
+
+    # For action=CHECK_PASSPHRASE
+    passphrase: Optional[str] = None
 
 
 @snapdtype
@@ -325,3 +335,35 @@ class SystemActionResponseSetupEncryption:
 @snapdtype
 class SystemActionResponseGenerateRecoveryKey:
     recovery_key: str
+
+
+class EntropyCheckResponseKind(enum.Enum):
+    INVALID_PIN = "invalid-pin"
+    INVALID_PASSPHRASE = "invalid-passphrase"
+    UNSUPPORTED = "unsupported"
+
+
+class InsufficientEntropyReasons(enum.Enum):
+    LOW_ENTROPY = "low-entropy"
+
+
+@snapdtype
+class InsufficientEntropyDetails:
+    reasons: List[InsufficientEntropyReasons]
+
+    entropy_bits: int
+    min_entropy_bits: int
+    optimal_entropy_bits: int
+
+
+@snapdtype
+class EntropyCheckResponse:
+    # On success (i.e., response.status-code: 400), these fields will be provided.
+    entropy_bits: Optional[int] = None
+    min_entropy_bits: Optional[int] = None
+    optimal_entropy_bits: Optional[int] = None
+
+    # On failure, these fields will be provided.
+    kind: Optional[EntropyCheckResponseKind] = None
+    message: Optional[str] = None
+    value: Optional[InsufficientEntropyDetails] = None
