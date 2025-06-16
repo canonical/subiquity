@@ -32,6 +32,7 @@ from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
+    CalculateEntropyRequest,
     EntropyResponse,
     Gap,
     GapUsable,
@@ -2745,11 +2746,13 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
 
     async def test_both_pin_and_pass(self):
         with self.assertRaises(StorageRecoverableError):
-            await self.fsc.v2_calculate_entropy_POST(passphrase="asdf", pin="01234")
+            await self.fsc.v2_calculate_entropy_POST(
+                CalculateEntropyRequest(passphrase="asdf", pin="01234")
+            )
 
     async def test_neither_pin_and_pass(self):
         with self.assertRaises(StorageRecoverableError):
-            await self.fsc.v2_calculate_entropy_POST()
+            await self.fsc.v2_calculate_entropy_POST(CalculateEntropyRequest())
 
     @parameterized.expand(
         (
@@ -2760,7 +2763,7 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
     )
     async def test_invalid_pin(self, pin):
         with self.assertRaises(StorageRecoverableError):
-            await self.fsc.v2_calculate_entropy_POST(pin=pin)
+            await self.fsc.v2_calculate_entropy_POST(CalculateEntropyRequest(pin=pin))
 
     @parameterized.expand(
         (
@@ -2791,7 +2794,7 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
                 ),
             ):
                 actual = await self.fsc.v2_calculate_entropy_POST(
-                    **{type_: pin_or_pass}
+                    CalculateEntropyRequest(**{type_: pin_or_pass})
                 )
 
         self.assertEqual(expected_entropy, actual)
@@ -2817,7 +2820,7 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
                 return_value=None,
             ):
                 actual = await self.fsc.v2_calculate_entropy_POST(
-                    **{type_: pin_or_pass}
+                    CalculateEntropyRequest(**{type_: pin_or_pass})
                 )
 
         self.assertIsNone(actual)

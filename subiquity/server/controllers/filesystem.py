@@ -43,6 +43,7 @@ from subiquity.common.filesystem.spec import FileSystemSpec, PartitionSpec, VolG
 from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
+    CalculateEntropyRequest,
     Disk,
     EntropyResponse,
     GuidedCapability,
@@ -1628,15 +1629,16 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return await self.v2_GET()
 
     async def v2_calculate_entropy_POST(
-        self,
-        passphrase: Optional[str] = None,
-        pin: Optional[str] = None,
+        self, data: CalculateEntropyRequest
     ) -> Optional[EntropyResponse]:
         validate_pin_pass(
-            passphrase_allowed=True, pin_allowed=True, passphrase=passphrase, pin=pin
+            passphrase_allowed=True,
+            pin_allowed=True,
+            passphrase=data.passphrase,
+            pin=data.pin,
         )
 
-        if passphrase is None and pin is None:
+        if data.passphrase is None and data.pin is None:
             raise StorageRecoverableError("must supply one of pin and passphrase")
 
         # checking entropy requires an encrypted core boot system to refer to
@@ -1681,14 +1683,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 mounter = SystemsDirMounter(self.app, info.name)
                 await es.enter_async_context(mounter.mounted())
 
-            if pin is not None:
+            if data.pin is not None:
                 request = snapdtypes.SystemActionRequest(
-                    action=snapdtypes.SystemAction.CHECK_PIN, pin=pin
+                    action=snapdtypes.SystemAction.CHECK_PIN, pin=data.pin
                 )
             else:
                 request = snapdtypes.SystemActionRequest(
                     action=snapdtypes.SystemAction.CHECK_PASSPHRASE,
-                    passphrase=passphrase,
+                    passphrase=data.passphrase,
                 )
 
             result = await snapd_client.v2.systems[info.label].POST(
