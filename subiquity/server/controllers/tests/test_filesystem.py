@@ -626,6 +626,16 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         ):
             await self.fsc.v2_core_boot_recovery_key_GET()
 
+    async def test_v2_core_boot_recovery_GET__not_yet_available(self):
+        self.fsc.model = make_model()
+        self.fsc.model.guided_configuration = mock.Mock(
+            capability=GuidedCapability.CORE_BOOT_ENCRYPTED
+        )
+        with self.assertRaises(
+            StorageRecoverableError, msg="recovery key is not yet available"
+        ):
+            await self.fsc.v2_core_boot_recovery_key_GET()
+
     @parameterized.expand(((True,), (False,)))
     async def test__pre_shutdown_install_started(self, zfsutils_linux_installed: bool):
         self.fsc.reset_partition_only = False

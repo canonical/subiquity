@@ -384,7 +384,6 @@ class InstallController(SubiquityController):
             )
             if fs_controller.use_tpm:
                 await fs_controller.setup_encryption(context=context)
-                await fs_controller.fetch_core_boot_recovery_key()
             await run_curtin_step(
                 name="formatting",
                 stages=["partitioning"],
@@ -732,6 +731,13 @@ class InstallController(SubiquityController):
 
         fs_controller = self.app.controllers.Filesystem
         if fs_controller.use_snapd_install_api():
+            if fs_controller.use_tpm:
+                # This will generate a recovery key which will initially expire
+                # after a very short duration (e.g., 5 minutes).
+                # We need to reach the finish_install step within that timeframe,
+                # otherwise the key will be considered expired. So let's keep
+                # the two calls next to one another.
+                await fs_controller.fetch_core_boot_recovery_key()
             await fs_controller.finish_install(
                 context=context, kernel_components=self.kernel_components()
             )
