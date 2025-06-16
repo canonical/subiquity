@@ -32,7 +32,7 @@ Now you can invoke the validation script with:
 
 .. code:: none
 
-   ./scripts/validate-autoinstall-user-data <path-to-config>
+   ./scripts/validate-autoinstall-user-data.py <path-to-config>
 
 
 or you can feed the configuration data via stdin:
@@ -41,7 +41,7 @@ or you can feed the configuration data via stdin:
 .. code:: none
 
    # a trivial example
-   cat <config> | ./scripts/validate-autoinstall-user-data
+   cat <config> | ./scripts/validate-autoinstall-user-data.py
 
 .. warning::
 
