@@ -14,12 +14,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from subiquity.server.snapd.info import SnapdInfo, SnapdVersion
 
 
-class TestSnapdInfo(unittest.TestCase):
+class TestSnapdInfo(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.info = SnapdInfo(Mock())
 
@@ -42,3 +42,15 @@ class TestSnapdInfo(unittest.TestCase):
     def test_parse_version__bad_version(self):
         with self.assertRaises(ValueError):
             self.info._parse_version("2.+g59.0e89e83")
+
+    async def test_has_beta_entropy__yes_equal(self):
+        with patch.object(self.info, "version", return_value=SnapdVersion(2, 68)):
+            self.assertTrue(await self.info.has_beta_entropy_check())
+
+    async def test_has_beta_entropy__yes_greater(self):
+        with patch.object(self.info, "version", return_value=SnapdVersion(2, 68, 4)):
+            self.assertTrue(await self.info.has_beta_entropy_check())
+
+    async def test_has_beta_entropy__no(self):
+        with patch.object(self.info, "version", return_value=SnapdVersion(2, 67)):
+            self.assertFalse(await self.info.has_beta_entropy_check())

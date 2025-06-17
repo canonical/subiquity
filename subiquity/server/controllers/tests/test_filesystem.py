@@ -76,6 +76,7 @@ from subiquity.server.controllers.filesystem import (
 from subiquity.server.dryrun import DRConfig
 from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
+from subiquity.server.snapd.info import SnapdInfo
 from subiquity.server.snapd.system_getter import SystemGetter
 from subiquity.server.snapd.types import VolumesAuth, VolumesAuthMode
 from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
@@ -160,6 +161,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.app.prober.get_storage = mock.AsyncMock()
         self.app.block_log_dir = "/inexistent"
         self.app.note_file_for_apport = mock.Mock()
+        self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
         self.fsc = FilesystemController(app=self.app)
         self.fsc._configured = True
 
@@ -1039,6 +1041,7 @@ class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
         self.app.opts.bootloader = None
+        self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
         self.fsc = FilesystemController(self.app)
         self.model = self.fsc.model = make_model()
 
@@ -1120,6 +1123,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def _guided_setup(self, bootloader, ptable, storage_version=None):
         self.app = make_app()
         self.app.opts.bootloader = bootloader.value
+        self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
         self.controller = FilesystemController(self.app)
         self.controller.supports_resilient_boot = True
         self.controller._examine_systems_task.start_sync()
@@ -1529,6 +1533,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
     async def _setup(self, bootloader, ptable, fix_bios=True, **kw):
         self.app = make_app()
         self.app.opts.bootloader = bootloader.value
+        self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
         self.fsc = FilesystemController(app=self.app)
         self.fsc.calculate_suggested_install_min = mock.Mock()
         self.fsc.calculate_suggested_install_min.return_value = 10 << 30
@@ -2330,6 +2335,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
             }
         )
         self.app.snapdapi = snapdapi.make_api_client(AsyncSnapd(get_fake_connection()))
+        self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
         self.app.dr_cfg = DRConfig()
         self.app.dr_cfg.systems_dir_exists = True
         self.app.controllers.Source.get_handler.return_value = TrivialSourceHandler("")

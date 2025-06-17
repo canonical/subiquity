@@ -58,3 +58,6 @@ class SnapdInfo:
         result = await self.snapdapi.v2.snaps["snapd"].GET()
 
         return self._parse_version(result.version)
+
+    async def has_beta_entropy_check(self) -> bool:
+        return await self.version() >= SnapdVersion(2, 68)
