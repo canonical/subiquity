@@ -1653,6 +1653,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         ):
             raise StorageRecoverableError("not using core boot encrypted")
 
+        if self.model.core_boot_recovery_key is None:
+            # The recovery key only becomes available just before we get to the
+            # finish-install step, which is very late.
+            raise StorageRecoverableError("recovery key is not yet available")
+
         key = self.model.core_boot_recovery_key._key
 
         assert key is not None  # To help the static type checker
