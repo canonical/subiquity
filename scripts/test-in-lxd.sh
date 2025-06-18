@@ -78,4 +78,4 @@ lxc exec $TESTER -- sh -ec "
     ./scripts/installdeps.sh
     $TEST_CMD"
 
-# lxc stop $TESTER
+lxc stop $TESTER

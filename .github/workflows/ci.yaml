@@ -18,16 +18,7 @@ jobs:
           - ubuntu-daily:noble
           - ubuntu-daily:questing
     steps:
-    # - name: Setup upterm session
-    #   uses: lhotari/action-upterm@v1
-    #   with:
-    #     limit-access-to-actor: true
     - uses: actions/checkout@v4
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
-      with:
-        detached: true
-        limit-access-to-actor: true
     - name: run
       run: |
         sudo ./scripts/github-ci-lxd-setup.sh
