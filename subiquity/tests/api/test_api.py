@@ -1683,7 +1683,7 @@ class TestRegression(TestAPI):
         async with start_server(cfg, extra_args=extra) as inst:
             names = ["locale", "keyboard", "source", "network", "proxy", "mirror"]
             await inst.post("/meta/mark_configured", endpoint_names=names)
-            resp = await inst.get("/storage/v2")
+            resp = await inst.get("/storage/v2", wait=True)
             [d] = resp["disks"]
             [g] = d["partitions"]
             data = {
