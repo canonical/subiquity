@@ -69,6 +69,7 @@ from subiquity.common.types import (
 )
 from subiquity.common.types.storage import (
     AddPartitionV2,
+    CalculateEntropyRequest,
     Disk,
     EntropyResponse,
     GuidedChoiceV2,
@@ -390,14 +391,14 @@ class API:
 
             class calculate_entropy:
                 def POST(
-                    passphrase: Optional[str] = None,
-                    pin: Optional[str] = None,
-                ) -> EntropyResponse:
+                    data: Payload[CalculateEntropyRequest],
+                ) -> Optional[EntropyResponse]:
                     """Calculate the entropy associated with the supplied
                     passphrase or pin.  Clients must use this endpoint to
                     confirm that the pin or passphrase is suitable prior to
                     configuring CORE_BOOT_ENCRYPTED, and may use it in other
-                    scenarios."""
+                    scenarios.  A null response indicates that the entropy
+                    is sufficient."""
 
             class core_boot_recovery_key:
                 def GET() -> str: ...

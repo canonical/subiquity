@@ -23,6 +23,7 @@ import pathlib
 import shutil
 import subprocess
 import time
+from contextlib import AsyncExitStack
 from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import attr
@@ -42,6 +43,7 @@ from subiquity.common.filesystem.spec import FileSystemSpec, PartitionSpec, VolG
 from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
+    CalculateEntropyRequest,
     Disk,
     EntropyResponse,
     GuidedCapability,
@@ -90,6 +92,7 @@ from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
 from subiquity.server.snapd.system_getter import SystemGetter, SystemsDirMounter
 from subiquity.server.snapd.types import (
+    EntropyCheckResponseKind,
     StorageEncryptionSupport,
     StorageSafety,
     SystemActionRequest,
@@ -276,7 +279,10 @@ class VariationInfo:
 
 
 def validate_pin_pass(
-    passphrase_allowed: bool, pin_allowed: bool, passphrase: str, pin: str
+    passphrase_allowed: bool,
+    pin_allowed: bool,
+    passphrase: Optional[str],
+    pin: Optional[str],
 ) -> None:
     if passphrase is not None and pin is not None:
         raise StorageRecoverableError("must supply at most one of pin and passphrase")
@@ -1623,25 +1629,84 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return await self.v2_GET()
 
     async def v2_calculate_entropy_POST(
-        self,
-        passphrase: Optional[str] = None,
-        pin: Optional[str] = None,
-    ) -> EntropyResponse:
+        self, data: CalculateEntropyRequest
+    ) -> Optional[EntropyResponse]:
         validate_pin_pass(
-            passphrase_allowed=True, pin_allowed=True, passphrase=passphrase, pin=pin
+            passphrase_allowed=True,
+            pin_allowed=True,
+            passphrase=data.passphrase,
+            pin=data.pin,
         )
 
-        if passphrase is None and pin is None:
-            raise StorageRecoverableError(
-                "must supply at least one of pin and passphrase"
+        if data.passphrase is None and data.pin is None:
+            raise StorageRecoverableError("must supply one of pin and passphrase")
+
+        # checking entropy requires an encrypted core boot system to refer to
+        info = self._info
+        if info is None:
+            caps = {
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
+            }
+            for candidate_info in self._variation_info.values():
+                if caps & set(candidate_info.capability_info.allowed):
+                    info = candidate_info
+                    break
+
+        if info is None:
+            raise StorageRecoverableError("no suitable system found")
+
+        # TODO This is a workaround!
+        # Ideally, we'd want to use self.app.snapdapi here, but SnapdAPI
+        # defines the return type of POST /v2/systems/{system-label} as a
+        # ChangeID (which is only true for async responses) and we don't have
+        # the needed support for Union types.
+        # For now, let's define a fake API definition and create a new snapd
+        # client out of it.
+        @api
+        class AlternateSnapdAPI:
+            class v2:
+                class systems:
+                    @path_parameter
+                    class label:
+                        def POST(
+                            action: Payload[SystemActionRequest],
+                        ) -> Optional[snapdtypes.EntropyCheckResponse]: ...
+
+        snapd_client = snapdapi.make_api_client(
+            self.app.snapd, api_class=AlternateSnapdAPI, log_responses=False
+        )
+
+        async with AsyncExitStack() as es:
+            if info.needs_systems_mount:
+                mounter = SystemsDirMounter(self.app, info.name)
+                await es.enter_async_context(mounter.mounted())
+
+            if data.pin is not None:
+                request = snapdtypes.SystemActionRequest(
+                    action=snapdtypes.SystemAction.CHECK_PIN, pin=data.pin
+                )
+            else:
+                request = snapdtypes.SystemActionRequest(
+                    action=snapdtypes.SystemAction.CHECK_PASSPHRASE,
+                    passphrase=data.passphrase,
+                )
+
+            result = await snapd_client.v2.systems[info.label].POST(
+                request, raise_for_status=False
             )
 
-        # FIXME actually call snapd and fill in responses
-        entropy = 0.0
-        minimum_required = 0.0
+        if result is None:
+            return None
+
+        if result.kind == EntropyCheckResponseKind.UNSUPPORTED:
+            log.debug("v2_calculate_entropy_POST: unsupported by snapd")
+            return None
+
         return EntropyResponse(
-            entropy=entropy,
-            minimum_required=minimum_required,
+            entropy=result.value.entropy_bits,
+            minimum_required=result.value.min_entropy_bits,
         )
 
     async def v2_core_boot_recovery_key_GET(self) -> str:

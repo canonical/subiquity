@@ -405,6 +405,12 @@ class ReformatDisk:
 
 
 @attr.s(auto_attribs=True)
+class CalculateEntropyRequest:
+    passphrase: Optional[str] = None
+    pin: Optional[str] = None
+
+
+@attr.s(auto_attribs=True)
 class EntropyResponse:
     entropy: float
     minimum_required: float
