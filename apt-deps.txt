@@ -51,6 +51,7 @@ python3-pyudev
 python3-requests
 python3-requests-mock
 python3-requests-unixsocket
+python3-ruamel.yaml
 python3-setuptools
 python3-systemd
 python3-urwid
