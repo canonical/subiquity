@@ -21,7 +21,6 @@ jobs:
       - name: Dependencies
         run: |
           sudo ./scripts/installdeps.sh
-          sudo apt install pylint
 
       - name: Coverage
         run: |
