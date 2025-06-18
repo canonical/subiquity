@@ -368,6 +368,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return layout.get("reset-partition-only", False)
 
     async def configured(self):
+        # set_info_capability() requires variations info to be populated, so
+        # wait for it.
+        await self._examine_systems_task.wait()
         self._configured = True
         if self._info is None:
             self.set_info_for_capability(GuidedCapability.DIRECT)
