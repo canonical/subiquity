@@ -51,7 +51,8 @@ def _wrap(make_request, path, meth, serializer, serialize_query_args):
             params=query_args,
             raise_for_status=raise_for_status,
         ) as resp:
-            resp.raise_for_status()
+            if raise_for_status:
+                resp.raise_for_status()
             return serializer.deserialize(r_ann, await resp.json())
 
     return impl
