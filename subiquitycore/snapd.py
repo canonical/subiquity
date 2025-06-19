@@ -57,7 +57,7 @@ class SnapdConnection:
         with requests_unixsocket.Session() as session:
             return session.post(
                 self.url_base + path,
-                data=json.dumps(body),
+                json=body,
                 timeout=self.default_timeout_seconds,
             )
 
