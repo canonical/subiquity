@@ -59,6 +59,7 @@ from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.pkghelper import get_package_installer
 from subiquity.server.runner import get_command_runner
 from subiquity.server.snapd.api import make_api_client
+from subiquity.server.snapd.info import SnapdInfo
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import run_bg_task, run_in_thread
 from subiquitycore.context import Context, with_context
@@ -337,11 +338,13 @@ class SubiquityServer(Application):
             connection = get_fake_connection(self.scale_factor, opts.output_base)
             self.snapd = AsyncSnapd(connection)
             self.snapdapi = make_api_client(self.snapd)
+            self.snapdinfo = SnapdInfo(self.snapdapi)
         elif os.path.exists(self.snapd_socket_path):
             connection = SnapdConnection(self.root, self.snapd_socket_path)
             self.snapd = AsyncSnapd(connection)
             log_snapd = "subiquity-log-snapd" in self.opts.kernel_cmdline
             self.snapdapi = make_api_client(self.snapd, log_responses=log_snapd)
+            self.snapdinfo = SnapdInfo(self.snapdapi)
         else:
             log.info("no snapd socket found. Snap support is disabled")
             self.snapd = None

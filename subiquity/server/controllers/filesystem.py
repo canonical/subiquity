@@ -368,6 +368,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return layout.get("reset-partition-only", False)
 
     async def configured(self):
+        # set_info_capability() requires variations info to be populated, so
+        # wait for it.
+        await self._examine_systems_task.wait()
         self._configured = True
         if self._info is None:
             self.set_info_for_capability(GuidedCapability.DIRECT)
@@ -379,7 +382,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         await super().configured()
         self.stop_monitor()
 
-    def info_for_system(self, name: str, label: str, system: SystemDetails):
+    def info_for_system(
+        self, name: str, label: str, system: SystemDetails, has_beta_entropy_check: bool
+    ):
         if len(system.volumes) > 1:
             log.error("Skipping uninstallable system: %s", system_multiple_volumes_text)
             return None
@@ -424,6 +429,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             info.capability_info.disallowed = [
                 disallowed_encryption(se.unavailable_reason)
             ]
+        elif not has_beta_entropy_check:
+            info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
+            msg = _("snapd version is too old, please refresh")
+            info.capability_info.disallowed = [disallowed_encryption(msg)]
         else:
             if se.storage_safety == StorageSafety.ENCRYPTED:
                 info.capability_info.allowed = [GuidedCapability.CORE_BOOT_ENCRYPTED]
@@ -469,6 +478,15 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def _examine_systems(self):
         self._variation_info.clear()
         catalog_entry = self.app.base_model.source.current
+
+        try:
+            has_beta_entropy_check = await self.app.snapdinfo.has_beta_entropy_check()
+        except ValueError as exc:
+            log.debug(
+                "cannot check if snapd has beta entropy check, assuming yes: %s", exc
+            )
+            has_beta_entropy_check = True
+
         for name, variation in catalog_entry.variations.items():
             system = None
             label = variation.snapd_system_label
@@ -505,7 +523,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if not self.app.opts.enhanced_secureboot:
                     log.debug("Not offering enhanced_secureboot: commandline disabled")
                     continue
-                info = self.info_for_system(name, label, system)
+                info = self.info_for_system(
+                    name, label, system, has_beta_entropy_check=has_beta_entropy_check
+                )
                 if info is None:
                     continue
                 if not in_live_layer:
