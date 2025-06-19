@@ -168,8 +168,10 @@ class FakeSnapdConnection:
                         "kind": kind,
                         "message": "did not pass quality checks",
                         "value": {
+                            # In snapd 2.68, entropy-bits is a float, but
+                            # min-entropy-bits is an int.
                             "entropy-bits": float(entropy_bits),
-                            "min-entropy-bits": float(min_entropy_bits),
+                            "min-entropy-bits": int(min_entropy_bits),
                             "reasons": ["low-entropy"],
                         },
                     },

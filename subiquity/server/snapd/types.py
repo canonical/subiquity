@@ -351,7 +351,7 @@ class InsufficientEntropyReasons(enum.Enum):
 class InsufficientEntropyDetails:
     reasons: List[InsufficientEntropyReasons]
     entropy_bits: float
-    min_entropy_bits: float
+    min_entropy_bits: int
 
 
 @snapdtype
