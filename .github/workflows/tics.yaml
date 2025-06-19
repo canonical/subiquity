@@ -21,11 +21,10 @@ jobs:
       - name: Dependencies
         run: |
           sudo ./scripts/installdeps.sh
-          sudo apt install pylint
 
       - name: Coverage
         run: |
-          make unit
+          make coverage
 
       - name: Run TICS analysis with github-action
         uses: tiobe/tics-github-action@v3
