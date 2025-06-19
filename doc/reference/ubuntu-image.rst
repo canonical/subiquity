@@ -150,6 +150,9 @@ These are the options for defining the contents of snap-based images.  They can 
 --sysfs-overlay=<path to directory that contains sysfs overlay>
     Specify the directory that contains the sysfs overlay. This options also requires the ``--preseed`` and ``--preseed-sign-key`` options.
 
+--assertion=<ASSERTION-FILE-PATH>
+    Include in the produced image the assertions contained in the given file. The files can include multiple assertions. The argument can be specified multiple times. All assertion types are allowed, except for ``snap-declaration``, ``snap-revision``, ``model``, ``serial`` and ``validation-set``.
+
 Options of the ``classic`` command
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
