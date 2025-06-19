@@ -1065,7 +1065,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                         ) -> SystemActionResponseGenerateRecoveryKey: ...
 
         snapd_client = snapdapi.make_api_client(
-            self.app.snapd, api_class=AlternateSnapdAPI, log_responses=False
+            self.app.snapd,
+            api_class=AlternateSnapdAPI,
+            log_responses=self.app.snapdapi.log_responses,
         )
 
         label = self._info.label
@@ -1675,7 +1677,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                         ) -> Optional[snapdtypes.EntropyCheckResponse]: ...
 
         snapd_client = snapdapi.make_api_client(
-            self.app.snapd, api_class=AlternateSnapdAPI, log_responses=False
+            self.app.snapd,
+            api_class=AlternateSnapdAPI,
+            log_responses=self.app.snapdapi.log_responses,
         )
 
         async with AsyncExitStack() as es:
