@@ -1720,9 +1720,21 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if result is None:
             return None
 
+        assert isinstance(result, snapdtypes.EntropyCheckResponse)
+
         if result.kind == EntropyCheckResponseKind.UNSUPPORTED:
-            log.debug("v2_calculate_entropy_POST: unsupported by snapd")
-            return None
+            # TODO determine why we're running into UNSUPPORTED sometimes.
+            log.warning(
+                'v2/systems/%s action="%s" returned "%s"',
+                info.label,
+                request.action,
+                result.kind,
+            )
+            raise StorageRecoverableError(
+                'entropy check failed: snapd returned "unsupported"'
+            )
+
+        assert result.value is not None
 
         return EntropyResponse(
             entropy=result.value.entropy_bits,

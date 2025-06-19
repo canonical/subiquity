@@ -358,4 +358,6 @@ class InsufficientEntropyDetails:
 class EntropyCheckResponse:
     kind: EntropyCheckResponseKind
     message: str
-    value: InsufficientEntropyDetails
+
+    # Set to None if kind="unsupported"
+    value: Optional[InsufficientEntropyDetails] = None
