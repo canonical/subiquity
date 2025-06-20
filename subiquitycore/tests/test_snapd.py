@@ -15,7 +15,7 @@
 import unittest
 from unittest.mock import Mock
 
-from subiquitycore.snapd import FakeSnapdConnection
+from subiquitycore.snapd import FakeSnapdConnection, _FakeMemoryResponse
 
 
 class TestFakeSnapdConnection(unittest.TestCase):
@@ -23,34 +23,56 @@ class TestFakeSnapdConnection(unittest.TestCase):
         self.snapd = FakeSnapdConnection(Mock(), Mock(), Mock())
 
     def test__fake_entropy__pin_bad(self):
-        expected = {
-            "value": {
-                "entropy-bits": 3.0,
-                "min-entropy-bits": 4.0,
-                "reasons": ["low-entropy"],
-            },
-            "message": "did not pass quality checks",
-            "kind": "invalid-pin",
-        }
+        expected = _FakeMemoryResponse(
+            {
+                "type": "error",
+                "status": "Bad Request",
+                "status-code": 400,
+                "result": {
+                    "value": {
+                        "entropy-bits": 3.0,
+                        "min-entropy-bits": 4,
+                        "reasons": ["low-entropy"],
+                    },
+                    "message": "did not pass quality checks",
+                    "kind": "invalid-pin",
+                },
+            }
+        )
         self.assertEqual(
             expected, self.snapd._fake_entropy({"action": "check-pin", "pin": "123"})
         )
 
     def test__fake_entropy__pin_good(self):
-        self.assertIsNone(
-            self.snapd._fake_entropy({"action": "check-pin", "pin": "12345"})
+        expected = _FakeMemoryResponse(
+            {
+                "type": "sync",
+                "status": "OK",
+                "status-code": 200,
+                "result": None,
+            }
+        )
+        self.assertEqual(
+            expected, self.snapd._fake_entropy({"action": "check-pin", "pin": "12345"})
         )
 
     def test__fake_entropy__passphrase_bad(self):
-        expected = {
-            "value": {
-                "entropy-bits": 3.0,
-                "min-entropy-bits": 8.0,
-                "reasons": ["low-entropy"],
-            },
-            "message": "did not pass quality checks",
-            "kind": "invalid-passphrase",
-        }
+        expected = _FakeMemoryResponse(
+            {
+                "type": "error",
+                "status": "Bad Request",
+                "status-code": 400,
+                "result": {
+                    "value": {
+                        "entropy-bits": 3.0,
+                        "min-entropy-bits": 8,
+                        "reasons": ["low-entropy"],
+                    },
+                    "message": "did not pass quality checks",
+                    "kind": "invalid-passphrase",
+                },
+            }
+        )
         self.assertEqual(
             expected,
             self.snapd._fake_entropy(
@@ -59,8 +81,17 @@ class TestFakeSnapdConnection(unittest.TestCase):
         )
 
     def test__fake_entropy__passphrase_good(self):
-        self.assertIsNone(
+        expected = _FakeMemoryResponse(
+            {
+                "type": "sync",
+                "status": "OK",
+                "status-code": 200,
+                "result": None,
+            }
+        )
+        self.assertEqual(
+            expected,
             self.snapd._fake_entropy(
                 {"action": "check-passphrase", "passphrase": "abcdefghijkl"}
-            )
+            ),
         )

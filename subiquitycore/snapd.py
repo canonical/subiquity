@@ -23,6 +23,7 @@ from functools import partial
 from typing import Any
 from urllib.parse import quote_plus, urlencode
 
+import attrs
 import requests_unixsocket
 
 from subiquitycore.async_helpers import run_in_thread
@@ -90,9 +91,9 @@ class _FakeFileResponse:
             return json.load(fp)
 
 
+@attrs.define
 class _FakeMemoryResponse:
-    def __init__(self, data):
-        self.data = data
+    data: Any
 
     def raise_for_status(self):
         pass
@@ -147,7 +148,7 @@ class FakeSnapdConnection:
         log.debug("pretending to restart snapd to pick up proxy config")
         time.sleep(2 / self.scale_factor)
 
-    def _fake_entropy(self, body) -> dict[str, Any] | None:
+    def _fake_entropy(self, body) -> _FakeMemoryResponse:
         if body["action"] == "check-passphrase":
             entropy_bits = len(body["passphrase"])
             min_entropy_bits = 8
@@ -158,17 +159,33 @@ class FakeSnapdConnection:
             kind = "invalid-pin"
 
         if entropy_bits < min_entropy_bits:
-            return {
-                "kind": kind,
-                "message": "did not pass quality checks",
-                "value": {
-                    "entropy-bits": float(entropy_bits),
-                    "min-entropy-bits": float(min_entropy_bits),
-                    "reasons": ["low-entropy"],
-                },
-            }
+            return _FakeMemoryResponse(
+                {
+                    "type": "error",
+                    "status-code": 400,
+                    "status": "Bad Request",
+                    "result": {
+                        "kind": kind,
+                        "message": "did not pass quality checks",
+                        "value": {
+                            # In snapd 2.68, entropy-bits is a float, but
+                            # min-entropy-bits is an int.
+                            "entropy-bits": float(entropy_bits),
+                            "min-entropy-bits": int(min_entropy_bits),
+                            "reasons": ["low-entropy"],
+                        },
+                    },
+                }
+            )
 
-        return None
+        return _FakeMemoryResponse(
+            {
+                "type": "sync",
+                "status-code": 200,
+                "status": "OK",
+                "result": None,
+            }
+        )
 
     def post(self, path, body, *, raise_for_status=True, **args):
         if path == "v2/snaps/subiquity" and body["action"] == "refresh":
@@ -185,7 +202,6 @@ class FakeSnapdConnection:
             )
         change = None
         sync_result = None
-        has_sync_result = False
         if path == "v2/snaps/subiquity" and body["action"] == "switch":
             change = "8"
         if path.startswith("v2/systems/") and body["action"] == "install":
@@ -204,10 +220,7 @@ class FakeSnapdConnection:
             "check-passphrase",
             "check-pin",
         ):
-            # This is required because self._fake_entropy() might return None,
-            # which should still be considered a response.
-            has_sync_result = True
-            sync_result = self._fake_entropy(body)
+            return self._fake_entropy(body)
 
         if change is not None:
             return _FakeMemoryResponse(
@@ -218,7 +231,7 @@ class FakeSnapdConnection:
                     "status": "Accepted",
                 }
             )
-        elif sync_result is not None or has_sync_result:
+        elif sync_result:
             return _FakeMemoryResponse(
                 {
                     "type": "sync",
