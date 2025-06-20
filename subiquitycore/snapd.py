@@ -151,24 +151,31 @@ class FakeSnapdConnection:
         if body["action"] == "check-passphrase":
             entropy_bits = len(body["passphrase"])
             min_entropy_bits = 8
+            optimal_entropy_bits = 10
             kind = "invalid-passphrase"
         else:
             entropy_bits = len(body["pin"])
             min_entropy_bits = 4
+            optimal_entropy_bits = 6
             kind = "invalid-pin"
 
-        if entropy_bits < min_entropy_bits:
+        if entropy_bits >= min_entropy_bits:
+            return {
+                "entropy-bits": entropy_bits,
+                "min-entropy-bits": min_entropy_bits,
+                "optimal-entropy-bits": optimal_entropy_bits,
+            }
+        else:
             return {
                 "kind": kind,
                 "message": "did not pass quality checks",
                 "value": {
-                    "entropy-bits": float(entropy_bits),
-                    "min-entropy-bits": float(min_entropy_bits),
+                    "entropy-bits": entropy_bits,
+                    "min-entropy-bits": min_entropy_bits,
+                    "optimal-entropy-bits": optimal_entropy_bits,
                     "reasons": ["low-entropy"],
                 },
             }
-
-        return None
 
     def post(self, path, body, *, raise_for_status=True, **args):
         if path == "v2/snaps/subiquity" and body["action"] == "refresh":
