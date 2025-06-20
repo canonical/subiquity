@@ -184,7 +184,7 @@ class OEMController(SubiquityController):
             if pkg.wants_oem_kernel:
                 kernel_model = self.app.base_model.kernel
                 kernel_model.metapkg_name_override = flavor_to_pkgname(
-                    pkg.name, dry_run=self.app.opts.dry_run
+                    "oem", dry_run=self.app.opts.dry_run
                 )
 
                 log.debug("overriding kernel flavor because of OEM")
