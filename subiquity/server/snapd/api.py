@@ -85,12 +85,12 @@ class _FakeResponse:
         return self.data
 
 
-class _FakeError:
-    def __init__(self, data):
-        self.data = data
-
+class _FakeError(_FakeResponse):
     def raise_for_status(self):
         raise aiohttp.ClientError(self.data["result"]["message"])
+
+    async def json(self):
+        return self.data["result"]
 
 
 def make_api_client(async_snapd, log_responses=False, *, api_class=SnapdAPI):
@@ -118,7 +118,8 @@ def make_api_client(async_snapd, log_responses=False, *, api_class=SnapdAPI):
         elif response.type == ResponseType.ASYNC:
             content = content["change"]
         elif response.type == ResponseType.ERROR:
-            yield _FakeError()
+            yield _FakeError(content)
+            return
         yield _FakeResponse(content)
 
     client = make_client(api_class, make_request, serializer=snapd_serializer)

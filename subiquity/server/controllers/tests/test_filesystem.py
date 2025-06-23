@@ -2805,7 +2805,7 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
                     value=snapdtypes.InsufficientEntropyDetails(
                         reasons=["low-entropy"],
                         entropy_bits=expected_entropy.entropy,
-                        min_entropy_bits=expected_entropy.minimum_required,
+                        min_entropy_bits=int(expected_entropy.minimum_required),
                     ),
                 ),
             ):

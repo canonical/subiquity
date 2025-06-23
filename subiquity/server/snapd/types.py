@@ -351,11 +351,13 @@ class InsufficientEntropyReasons(enum.Enum):
 class InsufficientEntropyDetails:
     reasons: List[InsufficientEntropyReasons]
     entropy_bits: float
-    min_entropy_bits: float
+    min_entropy_bits: int
 
 
 @snapdtype
 class EntropyCheckResponse:
     kind: EntropyCheckResponseKind
     message: str
-    value: InsufficientEntropyDetails
+
+    # Set to None if kind="unsupported"
+    value: Optional[InsufficientEntropyDetails] = None
