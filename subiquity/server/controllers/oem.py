@@ -183,11 +183,18 @@ class OEMController(SubiquityController):
         for pkg in self.model.metapkgs:
             if pkg.wants_oem_kernel:
                 kernel_model = self.app.base_model.kernel
+                # flavor_to_pkgname expects a value such as "oem", "generic",
+                # or "generic-hwe", not a package name in any case.
+                # The return value of the function should look something like
+                # linux-oem-24.04
                 kernel_model.metapkg_name_override = flavor_to_pkgname(
-                    pkg.name, dry_run=self.app.opts.dry_run
+                    "oem", dry_run=self.app.opts.dry_run
                 )
 
-                log.debug("overriding kernel flavor because of OEM")
+                log.debug(
+                    'overriding kernel flavor to "oem"'
+                    " according to the OEM metapkg info"
+                )
 
         log.debug("OEM meta-packages to install: %s", self.model.metapkgs)
 
