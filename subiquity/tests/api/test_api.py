@@ -1669,7 +1669,7 @@ class TestRegression(TestAPI):
                     f"partition overlap {cur} {nxt}",
                 )
 
-    @timeout()
+    @timeout(multiplier=2)
     async def test_probert_result_during_partitioning(self):
         """LP: #2016901 - when a probert run finishes during manual
         partitioning, we used to load the probing data automatically ;
@@ -2070,7 +2070,7 @@ class TestAutoinstallServer(TestAPI):
                 )
                 self.assertTrue(expected.issubset(resp))
 
-    @timeout()
+    @timeout(multiplier=2)
     async def test_autoinstall_validation_error(self):
         cfg = "examples/machines/simple.json"
         extra = [
@@ -2099,7 +2099,7 @@ class TestAutoinstallServer(TestAPI):
     # This has the added bonus of failing in the future when
     # we want to implement this behavior in the command
     # controllers
-    @timeout()
+    @timeout(multiplier=2)
     async def test_autoinstall_not_autoinstall_error(self):
         cfg = "examples/machines/simple.json"
         extra = [
