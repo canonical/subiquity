@@ -103,6 +103,7 @@ from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import (
     SingleInstanceTask,
     TaskAlreadyRunningError,
+    exclusive,
     schedule_task,
 )
 from subiquitycore.context import with_context
@@ -1650,6 +1651,22 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.delete_raid(raid)
         return await self.v2_GET()
 
+    @exclusive
+    async def do_entropy_check(
+        self,
+        snapd_client,
+        request: snapdtypes.SystemActionRequest,
+        variation_info: VariationInfo,
+    ) -> Optional[snapdtypes.EntropyCheckResponse]:
+        async with AsyncExitStack() as es:
+            if variation_info.needs_systems_mount:
+                mounter = SystemsDirMounter(self.app, variation_info.name)
+                await es.enter_async_context(mounter.mounted())
+
+            return await snapd_client.v2.systems[variation_info.label].POST(
+                request, raise_for_status=False
+            )
+
     async def v2_calculate_entropy_POST(
         self, data: CalculateEntropyRequest
     ) -> Optional[EntropyResponse]:
@@ -1679,6 +1696,16 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if info is None:
             raise StorageRecoverableError("no suitable system found")
 
+        if data.pin is not None:
+            request = snapdtypes.SystemActionRequest(
+                action=snapdtypes.SystemAction.CHECK_PIN, pin=data.pin
+            )
+        else:
+            request = snapdtypes.SystemActionRequest(
+                action=snapdtypes.SystemAction.CHECK_PASSPHRASE,
+                passphrase=data.passphrase,
+            )
+
         # TODO This is a workaround!
         # Ideally, we'd want to use self.app.snapdapi here, but SnapdAPI
         # defines the return type of POST /v2/systems/{system-label} as a
@@ -1702,29 +1729,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             log_responses=self.app.snapdapi.log_responses,
         )
 
-        async with AsyncExitStack() as es:
-            if info.needs_systems_mount:
-                mounter = SystemsDirMounter(self.app, info.name)
-                await es.enter_async_context(mounter.mounted())
-
-            if data.pin is not None:
-                request = snapdtypes.SystemActionRequest(
-                    action=snapdtypes.SystemAction.CHECK_PIN, pin=data.pin
-                )
-            else:
-                request = snapdtypes.SystemActionRequest(
-                    action=snapdtypes.SystemAction.CHECK_PASSPHRASE,
-                    passphrase=data.passphrase,
-                )
-
-            result = await snapd_client.v2.systems[info.label].POST(
-                request, raise_for_status=False
-            )
+        result = await self.do_entropy_check(snapd_client, request, info)
 
         if result is None:
             return None
-
-        assert isinstance(result, snapdtypes.EntropyCheckResponse)
 
         if result.kind == EntropyCheckResponseKind.UNSUPPORTED:
             # TODO determine why we're running into UNSUPPORTED sometimes.
