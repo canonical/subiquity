@@ -30,8 +30,9 @@ class TestFakeSnapdConnection(unittest.TestCase):
                 "status-code": 400,
                 "result": {
                     "value": {
-                        "entropy-bits": 3.0,
+                        "entropy-bits": 3,
                         "min-entropy-bits": 4,
+                        "optimal-entropy-bits": 6,
                         "reasons": ["low-entropy"],
                     },
                     "message": "did not pass quality checks",
@@ -49,7 +50,11 @@ class TestFakeSnapdConnection(unittest.TestCase):
                 "type": "sync",
                 "status": "OK",
                 "status-code": 200,
-                "result": None,
+                "result": {
+                    "entropy-bits": 5,
+                    "min-entropy-bits": 4,
+                    "optimal-entropy-bits": 6,
+                },
             }
         )
         self.assertEqual(
@@ -64,8 +69,9 @@ class TestFakeSnapdConnection(unittest.TestCase):
                 "status-code": 400,
                 "result": {
                     "value": {
-                        "entropy-bits": 3.0,
+                        "entropy-bits": 3,
                         "min-entropy-bits": 8,
+                        "optimal-entropy-bits": 10,
                         "reasons": ["low-entropy"],
                     },
                     "message": "did not pass quality checks",
@@ -86,7 +92,11 @@ class TestFakeSnapdConnection(unittest.TestCase):
                 "type": "sync",
                 "status": "OK",
                 "status-code": 200,
-                "result": None,
+                "result": {
+                    "entropy-bits": 12,
+                    "min-entropy-bits": 8,
+                    "optimal-entropy-bits": 10,
+                },
             }
         )
         self.assertEqual(

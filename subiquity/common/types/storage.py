@@ -412,5 +412,11 @@ class CalculateEntropyRequest:
 
 @attr.s(auto_attribs=True)
 class EntropyResponse:
-    entropy: float
-    minimum_required: float
+    success: bool
+
+    entropy_bits: int
+    min_entropy_bits: int
+    optimal_entropy_bits: int
+
+    # Set to None if success is True
+    failure_reasons: Optional[List[str]] = None
