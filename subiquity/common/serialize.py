@@ -133,10 +133,10 @@ class Serializer:
         NoneType = type(None)
         if NoneType in args:
             args = [a for a in args if a is not NoneType]
+            if context.cur is None:
+                return context.cur
             if len(args) == 1:
                 # I.e. Optional[thing]
-                if context.cur is None:
-                    return context.cur
                 return meth(args[0], context)
         if all(attr.has(a) for a in args):
             if context.serializing:

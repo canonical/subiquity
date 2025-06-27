@@ -207,6 +207,31 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
         }
         self.assertSerialization(typing.Union[Data, Container], data, expected)
 
+    def test_serialization_union_none_attrs(self):
+        @attr.s(auto_attribs=True)
+        class A:
+            x: int
+
+        @attr.s(auto_attribs=True)
+        class B:
+            y: int
+
+        self.assertSerialization(typing.Union[type(None), A, B], None, None)
+        self.assertSerialization(
+            typing.Union[type(None), A, B], A(10), {"$type": "A", "x": 10}
+        )
+        self.assertSerialization(
+            typing.Union[type(None), A, B], B(10), {"$type": "B", "y": 10}
+        )
+
+        self.assertSerialization(typing.Union[type(None), A, B], None, None)
+        self.assertSerialization(
+            typing.Union[type(None), A, B], A(10), {"$type": "A", "x": 10}
+        )
+        self.assertSerialization(
+            typing.Union[type(None), A, B], B(10), {"$type": "B", "y": 10}
+        )
+
     def test_arbitrary_types_may_have_type_field(self):
         # The serializer will add a $type field to data elements in a Union.
         # If we then take that serialized value and fling it back to another
