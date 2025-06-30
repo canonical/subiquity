@@ -2783,8 +2783,18 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
 
     @parameterized.expand(
         (
-            ("pin", "012", EntropyResponse(3.0, 4.0), "invalid-pin"),
-            ("passphrase", "asdf", EntropyResponse(8.0, 8.0), "invalid-passphrase"),
+            (
+                "pin",
+                "012",
+                EntropyResponse(False, 3, 4, 5, failure_reasons=["low-entropy"]),
+                "invalid-pin",
+            ),
+            (
+                "passphrase",
+                "asdf",
+                EntropyResponse(False, 8, 8, 10, failure_reasons=["low-entropy"]),
+                "invalid-passphrase",
+            ),
         )
     )
     async def test_stub_invalid(self, type_, pin_or_pass, expected_entropy, kind):
@@ -2803,9 +2813,10 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
                     kind=kind,
                     message="did not pass quality checks",
                     value=snapdtypes.InsufficientEntropyDetails(
-                        reasons=["low-entropy"],
-                        entropy_bits=expected_entropy.entropy,
-                        min_entropy_bits=int(expected_entropy.minimum_required),
+                        reasons=[snapdtypes.InsufficientEntropyReasons.LOW_ENTROPY],
+                        entropy_bits=expected_entropy.entropy_bits,
+                        min_entropy_bits=expected_entropy.min_entropy_bits,
+                        optimal_entropy_bits=expected_entropy.optimal_entropy_bits,
                     ),
                 ),
             ):
@@ -2817,11 +2828,11 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
 
     @parameterized.expand(
         (
-            ("pin", "01234"),
-            ("passphrase", "asdfasdf"),
+            ("pin", "01234", EntropyResponse(True, 5, 4, 8)),
+            ("passphrase", "asdfasdf", EntropyResponse(True, 8, 8, 16)),
         )
     )
-    async def test_stub_valid(self, type_, pin_or_pass):
+    async def test_stub_valid(self, type_, pin_or_pass, expected_entropy):
         label = self.fsc._info.label
         self.app.snapd = AsyncSnapd(get_fake_connection())
 
@@ -2833,10 +2844,14 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
                 self.app.snapdapi.v2.systems[label],
                 "POST",
                 new_callable=mock.AsyncMock,
-                return_value=None,
+                return_value=snapdtypes.EntropyCheckResponse(
+                    entropy_bits=expected_entropy.entropy_bits,
+                    min_entropy_bits=expected_entropy.min_entropy_bits,
+                    optimal_entropy_bits=expected_entropy.optimal_entropy_bits,
+                ),
             ):
                 actual = await self.fsc.v2_calculate_entropy_POST(
                     CalculateEntropyRequest(**{type_: pin_or_pass})
                 )
 
-        self.assertIsNone(actual)
+        self.assertEqual(expected_entropy, actual)

@@ -390,15 +390,12 @@ class API:
                     partition will be deleted as well."""
 
             class calculate_entropy:
-                def POST(
-                    data: Payload[CalculateEntropyRequest],
-                ) -> Optional[EntropyResponse]:
+                def POST(data: Payload[CalculateEntropyRequest]) -> EntropyResponse:
                     """Calculate the entropy associated with the supplied
                     passphrase or pin.  Clients must use this endpoint to
                     confirm that the pin or passphrase is suitable prior to
                     configuring CORE_BOOT_ENCRYPTED, and may use it in other
-                    scenarios.  A null response indicates that the entropy
-                    is sufficient."""
+                    scenarios."""
 
             class core_boot_recovery_key:
                 def GET() -> str: ...

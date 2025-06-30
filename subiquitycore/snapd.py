@@ -152,10 +152,12 @@ class FakeSnapdConnection:
         if body["action"] == "check-passphrase":
             entropy_bits = len(body["passphrase"])
             min_entropy_bits = 8
+            optimal_entropy_bits = 10
             kind = "invalid-passphrase"
         else:
             entropy_bits = len(body["pin"])
             min_entropy_bits = 4
+            optimal_entropy_bits = 6
             kind = "invalid-pin"
 
         if entropy_bits < min_entropy_bits:
@@ -168,10 +170,9 @@ class FakeSnapdConnection:
                         "kind": kind,
                         "message": "did not pass quality checks",
                         "value": {
-                            # In snapd 2.68, entropy-bits is a float, but
-                            # min-entropy-bits is an int.
-                            "entropy-bits": float(entropy_bits),
-                            "min-entropy-bits": int(min_entropy_bits),
+                            "entropy-bits": entropy_bits,
+                            "min-entropy-bits": min_entropy_bits,
+                            "optimal-entropy-bits": optimal_entropy_bits,
                             "reasons": ["low-entropy"],
                         },
                     },
@@ -183,7 +184,11 @@ class FakeSnapdConnection:
                 "type": "sync",
                 "status-code": 200,
                 "status": "OK",
-                "result": None,
+                "result": {
+                    "entropy-bits": entropy_bits,
+                    "min-entropy-bits": min_entropy_bits,
+                    "optimal-entropy-bits": optimal_entropy_bits,
+                },
             }
         )
 
