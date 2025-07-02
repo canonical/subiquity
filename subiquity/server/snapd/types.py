@@ -350,14 +350,20 @@ class InsufficientEntropyReasons(enum.Enum):
 @snapdtype
 class InsufficientEntropyDetails:
     reasons: List[InsufficientEntropyReasons]
-    entropy_bits: float
+    entropy_bits: int
     min_entropy_bits: int
+    optimal_entropy_bits: int
 
 
 @snapdtype
 class EntropyCheckResponse:
-    kind: EntropyCheckResponseKind
-    message: str
+    # On success (i.e., response.status-code: 400), these fields will be provided.
+    entropy_bits: Optional[int] = None
+    min_entropy_bits: Optional[int] = None
+    optimal_entropy_bits: Optional[int] = None
 
+    # On failure, these fields will be provided.
+    kind: Optional[EntropyCheckResponseKind] = None
+    message: Optional[str] = None
     # Set to None if kind="unsupported"
     value: Optional[InsufficientEntropyDetails] = None
