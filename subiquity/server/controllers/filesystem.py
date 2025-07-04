@@ -91,14 +91,6 @@ from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
 from subiquity.server.snapd.system_getter import SystemGetter, SystemsDirMounter
-from subiquity.server.snapd.types import (
-    EntropyCheckResponseKind,
-    StorageEncryptionSupport,
-    StorageSafety,
-    SystemActionRequest,
-    SystemActionResponseGenerateRecoveryKey,
-    SystemDetails,
-)
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import (
     SingleInstanceTask,
@@ -214,7 +206,7 @@ class VariationInfo:
     label: Optional[str]
     capability_info: CapabilityInfo = attr.Factory(CapabilityInfo)
     min_size: Optional[int] = None
-    system: Optional[SystemDetails] = None
+    system: Optional[snapdtypes.SystemDetails] = None
     needs_systems_mount: bool = False
 
     @property
@@ -384,7 +376,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.stop_monitor()
 
     def info_for_system(
-        self, name: str, label: str, system: SystemDetails, has_beta_entropy_check: bool
+        self,
+        name: str,
+        label: str,
+        system: snapdtypes.SystemDetails,
+        has_beta_entropy_check: bool,
     ):
         if len(system.volumes) > 1:
             log.error("Skipping uninstallable system: %s", system_multiple_volumes_text)
@@ -411,7 +407,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             )
 
         se = system.storage_encryption
-        if se.support == StorageEncryptionSupport.DEFECTIVE:
+        if se.support == snapdtypes.StorageEncryptionSupport.DEFECTIVE:
             info.capability_info.disallowed = [
                 disallowed_encryption(se.unavailable_reason)
             ]
@@ -421,11 +417,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         _structure, last_offset, last_size = offsets_and_sizes[-1]
         info.min_size = last_offset + last_size
 
-        if se.support == StorageEncryptionSupport.DISABLED:
+        if se.support == snapdtypes.StorageEncryptionSupport.DISABLED:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
             msg = _("TPM backed full-disk encryption has been disabled")
             info.capability_info.disallowed = [disallowed_encryption(msg)]
-        elif se.support == StorageEncryptionSupport.UNAVAILABLE:
+        elif se.support == snapdtypes.StorageEncryptionSupport.UNAVAILABLE:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
             info.capability_info.disallowed = [
                 disallowed_encryption(se.unavailable_reason)
@@ -435,13 +431,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             msg = _("snapd version is too old, please refresh")
             info.capability_info.disallowed = [disallowed_encryption(msg)]
         else:
-            if se.storage_safety == StorageSafety.ENCRYPTED:
+            if se.storage_safety == snapdtypes.StorageSafety.ENCRYPTED:
                 info.capability_info.allowed = [GuidedCapability.CORE_BOOT_ENCRYPTED]
-            elif se.storage_safety == StorageSafety.PREFER_ENCRYPTED:
+            elif se.storage_safety == snapdtypes.StorageSafety.PREFER_ENCRYPTED:
                 info.capability_info.allowed = [
                     GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED
                 ]
-            elif se.storage_safety == StorageSafety.PREFER_UNENCRYPTED:
+            elif se.storage_safety == snapdtypes.StorageSafety.PREFER_UNENCRYPTED:
                 info.capability_info.allowed = [
                     GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED
                 ]
@@ -1082,8 +1078,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     @path_parameter
                     class label:
                         def POST(
-                            action: Payload[SystemActionRequest],
-                        ) -> SystemActionResponseGenerateRecoveryKey: ...
+                            action: Payload[snapdtypes.SystemActionRequest],
+                        ) -> snapdtypes.SystemActionResponseGenerateRecoveryKey: ...
 
         snapd_client = snapdapi.make_api_client(
             self.app.snapd,
@@ -1720,7 +1716,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     @path_parameter
                     class label:
                         def POST(
-                            action: Payload[SystemActionRequest],
+                            action: Payload[snapdtypes.SystemActionRequest],
                         ) -> snapdtypes.EntropyCheckResponse: ...
 
         snapd_client = snapdapi.make_api_client(
@@ -1741,7 +1737,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 optimal_entropy_bits=result.optimal_entropy_bits,
             )
 
-        if result.kind == EntropyCheckResponseKind.UNSUPPORTED:
+        if result.kind == snapdtypes.EntropyCheckResponseKind.UNSUPPORTED:
             # TODO determine why we're running into UNSUPPORTED sometimes.
             log.warning(
                 'v2/systems/%s action="%s" returned "%s"',
