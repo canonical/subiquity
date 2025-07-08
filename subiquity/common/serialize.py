@@ -158,6 +158,12 @@ class Serializer:
                     if a.__name__ == n:
                         return meth(a, context)
                 context.error(f"type {n} not found in {args}")
+        elif all(t in (int, str, float, bool) for t in args):
+            data = context.cur
+            for type_ in args:
+                if isinstance(data, type_):
+                    return meth(type_, context)
+
         raise context.error(f"cannot serialize Union[{args}]")
 
     def _walk_List(self, meth, args, context):
