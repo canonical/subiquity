@@ -93,6 +93,18 @@ class CommonSerializerTests:
         self.assertSerializesTo(annotation, value, expected)
         self.assertDeserializesTo(annotation, expected, value)
 
+    def assertSerializesToErrors(self, annotation, value):
+        with self.assertRaises(SerializationError):
+            self.serializer.serialize(annotation, value)
+
+    def assertDeserializesToErrors(self, annotation, value):
+        with self.assertRaises(SerializationError):
+            self.serializer.deserialize(annotation, value)
+
+    def assertSerializationErrors(self, annotation, value):
+        self.assertSerializesToErrors(annotation, value)
+        self.assertDeserializesToErrors(annotation, value)
+
     def test_roundtrip_scalars(self):
         for typ, val in self.simple_examples:
             self.assertRoundtrips(typ, val)
@@ -206,6 +218,61 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
             "field2": data.field2,
         }
         self.assertSerialization(typing.Union[Data, Container], data, expected)
+
+    def test_serialization_union_scalars(self):
+        self.assertSerialization(typing.Union[int, str], 30, 30)
+        self.assertSerialization(typing.Union[int, str], "hello", "hello")
+
+        self.assertSerialization(typing.Union[int, float], 30.0, 30.0)
+        self.assertSerialization(typing.Union[float, int], 30.0, 30.0)
+        self.assertSerialization(typing.Union[int, float], 30, 30)
+        self.assertSerialization(typing.Union[float, int], 30, 30)
+
+        self.assertSerialization(typing.Union[bool, str], True, True)
+        self.assertSerialization(typing.Union[bool, str], False, False)
+        self.assertSerialization(typing.Union[bool, str], "hello", "hello")
+
+        self.assertSerialization(typing.Union[int, float, str], 10, 10)
+        self.assertSerialization(typing.Union[int, float, str], "string", "string")
+        self.assertSerialization(typing.Union[int, float, str], 5.0, 5.0)
+
+        self.assertSerialization(typing.Union[int, float, str, None], 10, 10)
+        self.assertSerialization(typing.Union[int, float, str, None], None, None)
+
+        # This is what Optional[int] does.
+        self.assertSerialization(typing.Union[int, type(None)], 10, 10)
+        self.assertSerialization(typing.Union[int, type(None)], None, None)
+
+    def test_serialization_union_scalars__errors(self):
+        self.assertSerializationErrors(typing.Union[int, str], 5.0)
+        self.assertSerializationErrors(typing.Union[int, float], "hello")
+        self.assertSerializationErrors(typing.Union[int, float], "5.0")
+        self.assertSerializationErrors(typing.Union[str, int], True)
+
+    def test_serialization_union_none_attrs(self):
+        @attr.s(auto_attribs=True)
+        class A:
+            x: int
+
+        @attr.s(auto_attribs=True)
+        class B:
+            y: int
+
+        self.assertSerialization(typing.Union[type(None), A, B], None, None)
+        self.assertSerialization(
+            typing.Union[type(None), A, B], A(10), {"$type": "A", "x": 10}
+        )
+        self.assertSerialization(
+            typing.Union[type(None), A, B], B(10), {"$type": "B", "y": 10}
+        )
+
+        self.assertSerialization(typing.Union[type(None), A, B], None, None)
+        self.assertSerialization(
+            typing.Union[type(None), A, B], A(10), {"$type": "A", "x": 10}
+        )
+        self.assertSerialization(
+            typing.Union[type(None), A, B], B(10), {"$type": "B", "y": 10}
+        )
 
     def test_arbitrary_types_may_have_type_field(self):
         # The serializer will add a $type field to data elements in a Union.

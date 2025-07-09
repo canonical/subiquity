@@ -133,10 +133,10 @@ class Serializer:
         NoneType = type(None)
         if NoneType in args:
             args = [a for a in args if a is not NoneType]
+            if context.cur is None:
+                return context.cur
             if len(args) == 1:
                 # I.e. Optional[thing]
-                if context.cur is None:
-                    return context.cur
                 return meth(args[0], context)
         if all(attr.has(a) for a in args):
             if context.serializing:
@@ -158,6 +158,12 @@ class Serializer:
                     if a.__name__ == n:
                         return meth(a, context)
                 context.error(f"type {n} not found in {args}")
+        elif all(t in (int, str, float, bool) for t in args):
+            data = context.cur
+            for type_ in args:
+                if isinstance(data, type_):
+                    return meth(type_, context)
+
         raise context.error(f"cannot serialize Union[{args}]")
 
     def _walk_List(self, meth, args, context):
