@@ -16,7 +16,7 @@ jobs:
       matrix:
         image:
           - ubuntu-daily:noble
-          - ubuntu-daily:plucky
+          - ubuntu-daily:questing
     steps:
     - uses: actions/checkout@v4
     - name: run
@@ -31,7 +31,7 @@ jobs:
       matrix:
         image:
           - ubuntu-daily:noble     # match the core snap we're running against
-          - ubuntu-daily:plucky    # latest
+          - ubuntu-daily:questing  # latest
     steps:
     - uses: actions/checkout@v4
     - name: lint
