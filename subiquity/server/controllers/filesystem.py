@@ -24,7 +24,7 @@ import shutil
 import subprocess
 import time
 from contextlib import AsyncExitStack
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Self, Sequence, Type, Union
 
 import attr
 import pyudev
@@ -35,7 +35,7 @@ from curtin.util import human2bytes
 from subiquity.common.api.defs import Payload, api, path_parameter
 from subiquity.common.api.recoverable_error import RecoverableError
 from subiquity.common.apidef import API
-from subiquity.common.errorreport import ErrorReportKind
+from subiquity.common.errorreport import ErrorReport, ErrorReportKind
 from subiquity.common.filesystem import boot, gaps, labels, sizes
 from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
@@ -91,14 +91,6 @@ from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
 from subiquity.server.snapd.system_getter import SystemGetter, SystemsDirMounter
-from subiquity.server.snapd.types import (
-    EntropyCheckResponseKind,
-    StorageEncryptionSupport,
-    StorageSafety,
-    SystemActionRequest,
-    SystemActionResponseGenerateRecoveryKey,
-    SystemDetails,
-)
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import (
     SingleInstanceTask,
@@ -214,7 +206,7 @@ class VariationInfo:
     label: Optional[str]
     capability_info: CapabilityInfo = attr.Factory(CapabilityInfo)
     min_size: Optional[int] = None
-    system: Optional[SystemDetails] = None
+    system: Optional[snapdtypes.SystemDetails] = None
     needs_systems_mount: bool = False
 
     @property
@@ -249,7 +241,7 @@ class VariationInfo:
         return r
 
     @classmethod
-    def classic(cls, name: str, min_size: int):
+    def classic(cls, name: str, min_size: int) -> Self:
         return cls(
             name=name,
             label=None,
@@ -266,7 +258,7 @@ class VariationInfo:
         )
 
     @classmethod
-    def dd(cls, name: str, min_size: int):
+    def dd(cls, name: str, min_size: int) -> Self:
         return cls(
             name=name,
             label=None,
@@ -305,16 +297,16 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     _configured = False
 
-    def __init__(self, app):
-        self.ai_data = {}
+    def __init__(self, app) -> None:
+        self.ai_data: Optional[dict[str, Any]] = {}
         super().__init__(app)
         self.model.target = app.base_model.target
         if self.opts.dry_run and self.opts.bootloader:
             name = self.opts.bootloader.upper()
             self.model.bootloader = getattr(Bootloader, name)
         self.model.storage_version = self.opts.storage_version
-        self._monitor = None
-        self._errors = {}
+        self._monitor: Optional[pyudev.Monitor] = None
+        self._errors: dict[bool, tuple[Exception, ErrorReport]] = {}
         self._probe_once_task = SingleInstanceTask(
             self._probe_once, propagate_errors=False
         )
@@ -384,8 +376,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.stop_monitor()
 
     def info_for_system(
-        self, name: str, label: str, system: SystemDetails, has_beta_entropy_check: bool
-    ):
+        self,
+        name: str,
+        label: str,
+        system: snapdtypes.SystemDetails,
+        has_beta_entropy_check: bool,
+    ) -> Optional[VariationInfo]:
         if len(system.volumes) > 1:
             log.error("Skipping uninstallable system: %s", system_multiple_volumes_text)
             return None
@@ -401,7 +397,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             system=system,
         )
 
-        def disallowed_encryption(msg):
+        def disallowed_encryption(msg) -> GuidedDisallowedCapability:
             GCDR = GuidedDisallowedCapabilityReason
             reason = GCDR.CORE_BOOT_ENCRYPTION_UNAVAILABLE
             return GuidedDisallowedCapability(
@@ -411,7 +407,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             )
 
         se = system.storage_encryption
-        if se.support == StorageEncryptionSupport.DEFECTIVE:
+        if se.support == snapdtypes.StorageEncryptionSupport.DEFECTIVE:
             info.capability_info.disallowed = [
                 disallowed_encryption(se.unavailable_reason)
             ]
@@ -421,11 +417,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         _structure, last_offset, last_size = offsets_and_sizes[-1]
         info.min_size = last_offset + last_size
 
-        if se.support == StorageEncryptionSupport.DISABLED:
+        if se.support == snapdtypes.StorageEncryptionSupport.DISABLED:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
             msg = _("TPM backed full-disk encryption has been disabled")
             info.capability_info.disallowed = [disallowed_encryption(msg)]
-        elif se.support == StorageEncryptionSupport.UNAVAILABLE:
+        elif se.support == snapdtypes.StorageEncryptionSupport.UNAVAILABLE:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
             info.capability_info.disallowed = [
                 disallowed_encryption(se.unavailable_reason)
@@ -435,13 +431,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             msg = _("snapd version is too old, please refresh")
             info.capability_info.disallowed = [disallowed_encryption(msg)]
         else:
-            if se.storage_safety == StorageSafety.ENCRYPTED:
+            if se.storage_safety == snapdtypes.StorageSafety.ENCRYPTED:
                 info.capability_info.allowed = [GuidedCapability.CORE_BOOT_ENCRYPTED]
-            elif se.storage_safety == StorageSafety.PREFER_ENCRYPTED:
+            elif se.storage_safety == snapdtypes.StorageSafety.PREFER_ENCRYPTED:
                 info.capability_info.allowed = [
                     GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED
                 ]
-            elif se.storage_safety == StorageSafety.PREFER_UNENCRYPTED:
+            elif se.storage_safety == snapdtypes.StorageSafety.PREFER_UNENCRYPTED:
                 info.capability_info.allowed = [
                     GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED
                 ]
@@ -476,7 +472,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     ),
                 )
 
-    async def _examine_systems(self):
+    async def _examine_systems(self) -> None:
         self._variation_info.clear()
         catalog_entry = self.app.base_model.source.current
 
@@ -946,8 +942,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             disks.append(disk)
         return [d for d in disks]
 
-    def _offsets_and_sizes_for_volume(self, volume):
+    def _offsets_and_sizes_for_volume(self, volume: snapdtypes.Volume):
         offset = self.model._partition_alignment_data["gpt"].min_start_offset
+        assert volume.structure is not None
         for structure in volume.structure:
             if structure.role == snapdtypes.Role.MBR:
                 continue
@@ -1082,8 +1079,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     @path_parameter
                     class label:
                         def POST(
-                            action: Payload[SystemActionRequest],
-                        ) -> SystemActionResponseGenerateRecoveryKey: ...
+                            action: Payload[snapdtypes.SystemActionRequest],
+                        ) -> snapdtypes.SystemActionResponseGenerateRecoveryKey: ...
 
         snapd_client = snapdapi.make_api_client(
             self.app.snapd,
@@ -1720,7 +1717,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     @path_parameter
                     class label:
                         def POST(
-                            action: Payload[SystemActionRequest],
+                            action: Payload[snapdtypes.SystemActionRequest],
                         ) -> snapdtypes.EntropyCheckResponse: ...
 
         snapd_client = snapdapi.make_api_client(
@@ -1741,7 +1738,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 optimal_entropy_bits=result.optimal_entropy_bits,
             )
 
-        if result.kind == EntropyCheckResponseKind.UNSUPPORTED:
+        if result.kind == snapdtypes.EntropyCheckResponseKind.UNSUPPORTED:
             # TODO determine why we're running into UNSUPPORTED sometimes.
             log.warning(
                 'v2/systems/%s action="%s" returned "%s"',
@@ -2074,6 +2071,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     @with_context()
     async def convert_autoinstall_config(self, context=None):
+        assert self.ai_data is not None
         # Log disabled to prevent LUKS password leak
         # log.debug("self.ai_data = %s", self.ai_data)
         if "layout" in self.ai_data:

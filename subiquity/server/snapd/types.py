@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Self
 
 import attr
 
@@ -169,7 +169,7 @@ class OnVolume(Volume):
     structure: Optional[List[OnVolumeStructure]] = None
 
     @classmethod
-    def from_volume(cls, v: Volume):
+    def from_volume(cls, v: Volume) -> Self:
         kw = attr.asdict(v, recurse=False)
         kw["structure"] = [
             OnVolumeStructure.from_volume_structure(vs) for vs in v.structure
