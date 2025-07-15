@@ -1585,7 +1585,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise ValueError("edit_partition does not support changing size")
         if data.partition.boot is not None and data.partition.boot != partition.boot:
             raise ValueError("edit_partition does not support changing boot")
-        if data.partition.name != partition.name:
+        if data.partition.name != partition.partition_name:
             if data.partition is None:
                 # FIXME Instead of checking if data.partition.name is None,
                 # what we really want to know is whether the name field is
