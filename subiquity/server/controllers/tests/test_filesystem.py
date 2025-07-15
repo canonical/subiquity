@@ -507,12 +507,13 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertTrue(self.fsc.locked_probe_data)
         handler.assert_not_called()
 
-    async def test_v2_edit_partition_POST_preserve_pname(self):
+    @parameterized.expand(((None,), ("Foobar",)))
+    async def test_v2_edit_partition_POST_preserve_pname(self, name):
         self.fsc.locked_probe_data = False
         self.fsc.model, d = make_model_and_disk()
         data = ModifyPartitionV2(
             disk_id=d.id,
-            partition=Partition(number=1, name="Foobar"),
+            partition=Partition(number=1, name=name),
         )
 
         existing = make_partition(
