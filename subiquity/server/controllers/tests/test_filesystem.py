@@ -543,13 +543,33 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             partition=Partition(number=1, name="Foobar"),
         )
 
-        existing = make_partition(self.fsc.model, d, size=1000 << 20)
+        existing = make_partition(
+            self.fsc.model, d, size=1000 << 20, partition_name="MyPart"
+        )
         with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
             with mock.patch.object(self.fsc, "get_partition", return_value=existing):
                 with self.assertRaisesRegex(ValueError, r"changing partition name"):
                     await self.fsc.v2_edit_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
         handler.assert_not_called()
+
+    @parameterized.expand(((None,), ("Foobar",)))
+    async def test_v2_edit_partition_POST_preserve_pname(self, name):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk()
+        data = ModifyPartitionV2(
+            disk_id=d.id,
+            partition=Partition(number=1, name=name),
+        )
+
+        existing = make_partition(
+            self.fsc.model, d, size=1000 << 20, partition_name="Foobar"
+        )
+        with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
+            with mock.patch.object(self.fsc, "get_partition", return_value=existing):
+                await self.fsc.v2_edit_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        handler.assert_called_once()
 
     async def test_v2_edit_partition_POST_unsupported_ptable(self):
         self.fsc.locked_probe_data = False
