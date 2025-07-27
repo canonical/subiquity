@@ -15,6 +15,7 @@
 
 import asyncio
 import contextlib
+import itertools
 import json
 import os
 import re
@@ -31,6 +32,7 @@ import yaml
 from aiohttp.client_exceptions import ClientResponseError
 
 from subiquitycore.tests import SubiTestCase
+from subiquitycore.tests.parameterized import parameterized
 from subiquitycore.utils import astart_command, matching_dicts
 
 default_timeout = 10
@@ -211,13 +213,17 @@ class TestAPI(SubiTestCase):
     def machineConfig(self, path):
         return self._MachineConfig(self, path)
 
-    def assertDictSubset(self, expected, actual):
+    def assertDictSubset(self, expected, actual, msg=None):
         """All keys in dictionary expected, and matching values, must match
         keys and values in actual.  Actual may contain additional keys and
         values that don't appear in expected, and this is not a failure."""
 
+        if msg is None:
+            msg = ""
+        else:
+            msg = " " + msg
         for k, v in expected.items():
-            self.assertEqual(v, actual[k], k)
+            self.assertEqual(v, actual[k], msg=k + msg)
 
 
 async def poll_for_socket_exist(socket_path):
@@ -905,6 +911,31 @@ class TestEdit(TestAPI):
                 await inst.post("/storage/v2/edit_partition", data)
 
     @timeout()
+    async def test_edit_no_change_pname(self):
+        async with start_server("examples/machines/win11-along-ubuntu.json") as inst:
+            disk_id = "disk-sda"
+            resp = await inst.get("/storage/v2")
+
+            [sda] = match(resp["disks"], id=disk_id)
+            [sda2] = match(sda["partitions"], number=2)
+
+            self.assertIsNotNone(sda2["name"])
+
+            # This should be a no-op since "name" is not present.
+            data = {
+                "disk_id": disk_id,
+                "partition": {
+                    "number": 2,
+                },
+            }
+            await inst.post("/storage/v2/edit_partition", data)
+
+            # Now, it should refuse the update
+            data["partition"]["name"] = "foo"
+            with self.assertRaises(ClientResponseError):
+                await inst.post("/storage/v2/edit_partition", data)
+
+    @timeout()
     async def test_edit_format(self):
         async with start_server("examples/machines/win10.json") as inst:
             disk_id = "disk-sda"
@@ -1191,7 +1222,13 @@ class TestPartitionTableEditing(TestAPI):
             [sda] = resp["disks"]
             [p1, p2, p3, p4] = sda["partitions"]
             e1.pop("annotations")
-            e1.update({"mount": "/boot/efi", "grub_device": True})
+            e1.update(
+                {
+                    "mount": "/boot/efi",
+                    "grub_device": True,
+                    "effective_mount": "/boot/efi",
+                }
+            )
             self.assertDictSubset(e1, p1)
             self.assertEqual(e2, p2)
             self.assertEqual(e3, p3)
@@ -1241,7 +1278,13 @@ class TestPartitionTableEditing(TestAPI):
 
             expected_p1 = orig_p1.copy()
             expected_p1.pop("annotations")
-            expected_p1.update({"mount": "/boot/efi", "grub_device": True})
+            expected_p1.update(
+                {
+                    "mount": "/boot/efi",
+                    "grub_device": True,
+                    "effective_mount": "/boot/efi",
+                }
+            )
             expected_p3 = actual_p3
             data = {
                 "disk_id": "disk-sda",
@@ -1497,6 +1540,7 @@ class TestRegression(TestAPI):
                 "already formatted as ext4",
                 "mounted at /",
             ]
+            expected["effective_mount"] = "/"
             self.assertEqual(expected, p5)
             await check_preserve()
 
@@ -1625,7 +1669,7 @@ class TestRegression(TestAPI):
                     f"partition overlap {cur} {nxt}",
                 )
 
-    @timeout()
+    @timeout(multiplier=2)
     async def test_probert_result_during_partitioning(self):
         """LP: #2016901 - when a probert run finishes during manual
         partitioning, we used to load the probing data automatically ;
@@ -1639,7 +1683,7 @@ class TestRegression(TestAPI):
         async with start_server(cfg, extra_args=extra) as inst:
             names = ["locale", "keyboard", "source", "network", "proxy", "mirror"]
             await inst.post("/meta/mark_configured", endpoint_names=names)
-            resp = await inst.get("/storage/v2")
+            resp = await inst.get("/storage/v2", wait=True)
             [d] = resp["disks"]
             [g] = d["partitions"]
             data = {
@@ -1755,6 +1799,7 @@ class TestOEM(TestAPI):
             resp = await inst.get("/oem", wait=False)
             self.assertIsNone(resp["metapackages"])
 
+    @timeout()
     async def test_listing_empty(self):
         expected_pkgs = []
         with patch.dict(os.environ, {"SUBIQUITY_DEBUG": "no-drivers"}):
@@ -1800,16 +1845,19 @@ class TestOEM(TestAPI):
                 resp = await inst.get("/oem", wait=True)
                 self.assertEqual(expected, resp["metapackages"])
 
+    @timeout()
     async def test_listing_certified_ubuntu_server(self):
         # Listing of OEM meta-packages is intentionally disabled on
         # ubuntu-server.
         await self._test_listing_certified(source_id="ubuntu-server", expected=[])
 
+    @timeout()
     async def test_listing_certified_ubuntu_desktop(self):
         await self._test_listing_certified(
             source_id="ubuntu-desktop", expected=["oem-somerville-tentacool-meta"]
         )
 
+    @timeout()
     async def test_confirmation_before_storage_configured(self):
         # On ubuntu-desktop, the confirmation event sometimes comes before the
         # storage configured event. This was known to cause OEM to fail with
@@ -2022,6 +2070,7 @@ class TestAutoinstallServer(TestAPI):
                 )
                 self.assertTrue(expected.issubset(resp))
 
+    @timeout(multiplier=2)
     async def test_autoinstall_validation_error(self):
         cfg = "examples/machines/simple.json"
         extra = [
@@ -2050,6 +2099,7 @@ class TestAutoinstallServer(TestAPI):
     # This has the added bonus of failing in the future when
     # we want to implement this behavior in the command
     # controllers
+    @timeout(multiplier=2)
     async def test_autoinstall_not_autoinstall_error(self):
         cfg = "examples/machines/simple.json"
         extra = [
@@ -2304,3 +2354,247 @@ class TestNetwork(TestAPI):
 
             ethernets = conf_data["network"]["ethernets"]
             self.assertIn("ens4", ethernets)
+
+
+class TestServerVariantSupport(TestAPI):
+    @parameterized.expand(
+        (
+            ("server", True),
+            ("desktop", True),
+            ("core", True),
+            ("foo-bar", False),
+        )
+    )
+    @timeout()
+    async def test_supported_variants(self, variant, is_supported):
+        async with start_server("examples/machines/simple.json") as inst:
+            if is_supported:
+                await inst.post("/meta/client_variant", variant=variant)
+            else:
+                with self.assertRaises(ClientResponseError) as ctx:
+                    await inst.post("/meta/client_variant", variant=variant)
+                cre = ctx.exception
+                self.assertEqual(500, cre.status)
+                self.assertIn("x-error-report", cre.headers)
+                self.assertEqual(
+                    "unrecognized client variant foo-bar",
+                    json.loads(cre.headers["x-error-msg"]),
+                )
+
+    @timeout()
+    async def test_post_source_update_server_variant(self):
+        """Test POSTing to source will correctly update Server variant."""
+
+        extra_args = ["--source-catalog", "examples/sources/mixed.yaml"]
+        async with start_server(
+            "examples/machines/simple.json",
+            extra_args=extra_args,
+        ) as inst:
+            resp = await inst.get("/meta/client_variant")
+            self.assertEqual(resp, "server")
+
+            await inst.post("/source", source_id="ubuntu-desktop")
+
+            resp = await inst.get("/meta/client_variant")
+            self.assertEqual(resp, "desktop")
+
+
+class TestLabels(TestAPI):
+    @parameterized.expand(
+        (
+            (
+                "DIRECT",
+                None,
+                (
+                    {
+                        "number": 1,
+                        "boot": True,
+                        "grub_device": True,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "fat32",
+                        "mount": "/boot/efi",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 2,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "ext4",
+                        "mount": "/",
+                        "effectively_encrypted": False,
+                    },
+                ),
+            ),
+            (
+                "LVM",
+                None,
+                (
+                    {
+                        "number": 1,
+                        "boot": True,
+                        "grub_device": True,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "fat32",
+                        "mount": "/boot/efi",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 2,
+                        "boot": False,  # really
+                        "grub_device": None,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "ext4",
+                        "mount": "/boot",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 3,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "effective_format": "ext4",
+                        "effective_mount": "/",
+                        "effectively_encrypted": False,
+                    },
+                ),
+            ),
+            (
+                "LVM_LUKS",
+                "passw0rd",
+                (
+                    {
+                        "number": 1,
+                        "boot": True,
+                        "grub_device": True,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "fat32",
+                        "mount": "/boot/efi",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 2,
+                        "boot": False,
+                        "grub_device": None,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "ext4",
+                        "mount": "/boot",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 3,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "effective_format": "ext4",
+                        "effective_mount": "/",
+                        "effectively_encrypted": True,
+                    },
+                ),
+            ),
+            (
+                "ZFS",
+                None,
+                (
+                    {
+                        "number": 1,
+                        "boot": True,
+                        "grub_device": True,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "fat32",
+                        "mount": "/boot/efi",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 2,
+                        "boot": False,
+                        "grub_device": None,
+                        "preserve": False,
+                        "wipe": None,
+                        "effective_format": "zfs",
+                        "effective_mount": "/boot",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 3,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "swap",
+                        "mount": "",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 4,
+                        "preserve": False,
+                        "wipe": None,
+                        "effective_format": "zfs",
+                        "effective_mount": "/",
+                        "effectively_encrypted": False,
+                    },
+                ),
+            ),
+            (
+                "ZFS_LUKS_KEYSTORE",
+                "passw0rd",
+                (
+                    {
+                        "number": 1,
+                        "boot": True,
+                        "grub_device": True,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "fat32",
+                        "mount": "/boot/efi",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 2,
+                        "boot": False,
+                        "grub_device": None,
+                        "preserve": False,
+                        "wipe": None,
+                        "effective_format": "zfs",
+                        "effective_mount": "/boot",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 3,
+                        "preserve": False,
+                        "wipe": None,
+                        "effective_format": "swap",
+                        "effective_mount": "",
+                        "effectively_encrypted": True,
+                    },
+                    {
+                        "number": 4,
+                        "preserve": False,
+                        "wipe": None,
+                        "effective_format": "zfs",
+                        "effective_mount": "/",
+                        "effectively_encrypted": True,
+                    },
+                ),
+            ),
+        )
+    )
+    @timeout()
+    async def test_labels(self, capability, password, partitions):
+        async with start_server("examples/machines/simple.json") as inst:
+            resp = await inst.get("/storage/v2/guided?wait=true")
+            [reformat, manual] = resp["targets"]
+
+            await inst.post(
+                "/storage/v2/guided",
+                {
+                    "target": reformat,
+                    "capability": capability,
+                    "password": password,
+                },
+            )
+            resp = await inst.get("/storage/v2")
+            [d] = resp["disks"]
+            for expected, actual in itertools.zip_longest(partitions, d["partitions"]):
+                self.assertDictSubset(expected, actual, f"partnum {actual['number']}")

@@ -51,5 +51,6 @@ def make_app(model=None):
     app.report_start_event = mock.Mock()
     app.report_finish_event = mock.Mock()
     app.make_apport_report = mock.Mock()
+    app.snapdapi = mock.AsyncMock()
 
     return app

@@ -24,7 +24,7 @@ with open("snapcraft.yaml") as f:
     config = yaml.safe_load(f)["parts"][part]
 
 
-c = "master"
+c = "main"
 for k in "source-commit", "source-tag", "source-branch":
     if k in config:
         c = config[k]

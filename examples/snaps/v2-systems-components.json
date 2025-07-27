@@ -1,0 +1,307 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": {
+    "label": "components",
+    "model": {
+      "architecture": "amd64",
+      "authority-id": "9XoOBkC2zdzx5CVZdl0ZVYuLpCo15ww0",
+      "base": "core24",
+      "brand-id": "9XoOBkC2zdzx5CVZdl0ZVYuLpCo15ww0",
+      "classic": "true",
+      "distribution": "ubuntu",
+      "grade": "dangerous",
+      "model": "ubuntu-classic-2410-amd64-dangerous",
+      "series": "16",
+      "sign-key-sha3-384": "aAs_tmrctcOKqURCRPoczKzkgyqzdpkxA3kMhTyxjZ8feKzAOER4RxQ1uxVRRR4f",
+      "snaps": [
+        {
+          "default-channel": "24/edge",
+          "id": "UqFziVZDHLSyO3TqSWgNBoAdHbLI4dAH",
+          "name": "pc",
+          "type": "gadget"
+        },
+        {
+          "components": {
+            "nvidia-510-uda-ko": {
+              "presence": "optional"
+            },
+            "nvidia-510-uda-user": {
+              "presence": "optional"
+            }
+          },
+          "default-channel": "latest/edge",
+          "id": "hdMGB0pBVDIRSIJZk9Z1MkjZEtzTCKgA",
+          "name": "mwhudson-test-k-components",
+          "type": "kernel"
+        },
+        {
+          "default-channel": "latest/edge",
+          "id": "dwTAh7MZZ01zyriOZErqd1JynQLiOGvM",
+          "name": "core24",
+          "type": "base"
+        },
+        {
+          "default-channel": "latest/edge",
+          "id": "amcUKQILKXHHTlmSa7NMdnXSx02dNeeT",
+          "name": "core22",
+          "type": "base"
+        },
+        {
+          "default-channel": "latest/edge",
+          "id": "PMrrV4ml8uWuEUDBT8dSGnKUYbevVhc4",
+          "name": "snapd",
+          "type": "snapd"
+        },
+        {
+          "default-channel": "latest/edge",
+          "id": "EISPgh06mRh1vordZY9OZ34QHdd7OrdR",
+          "name": "bare",
+          "type": "base"
+        },
+        {
+          "default-channel": "latest/edge",
+          "id": "3wdHCAVyZEmYsCMFDE9qt92UV8rC8Wdk",
+          "name": "firefox",
+          "type": "app"
+        },
+        {
+          "default-channel": "latest/edge",
+          "id": "lATO8HzwVvrAPrlZRAWpfyrJKlAJrZS3",
+          "name": "gnome-42-2204",
+          "type": "app"
+        },
+        {
+          "default-channel": "latest/edge",
+          "id": "jZLfBRzf1cYlYysIjD2bwSzNtngY0qit",
+          "name": "gtk-common-themes",
+          "type": "app"
+        },
+        {
+          "default-channel": "latest/edge",
+          "id": "gjf3IPXoRiipCu9K0kVu52f0H56fIksg",
+          "name": "snap-store",
+          "type": "app"
+        },
+        {
+          "default-channel": "latest/edge",
+          "id": "IrwRHakqtzhFRHJOOPxKVPU0Kk7Erhcu",
+          "name": "snapd-desktop-integration",
+          "type": "app"
+        },
+        {
+          "default-channel": "latest/edge",
+          "id": "EI0D1KHjP8XiwMZKqSjuh6W8zvcowUVP",
+          "name": "firmware-updater",
+          "type": "app"
+        }
+      ],
+      "timestamp": "2024-06-18T12:00:00.0Z",
+      "type": "model"
+    },
+    "brand": {
+      "id": "9XoOBkC2zdzx5CVZdl0ZVYuLpCo15ww0",
+      "username": "mwhudson",
+      "display-name": "Michael Hudson-Doyle",
+      "validation": "unproven"
+    },
+    "actions": [
+      {
+        "title": "Install",
+        "mode": "install"
+      },
+      {
+        "title": "Recover",
+        "mode": "recover"
+      },
+      {
+        "title": "Factory reset",
+        "mode": "factory-reset"
+      }
+    ],
+    "volumes": {
+      "pc": {
+        "schema": "gpt",
+        "bootloader": "grub",
+        "id": "",
+        "structure": [
+          {
+            "name": "mbr",
+            "filesystem-label": "",
+            "offset": 0,
+            "offset-write": null,
+            "min-size": 440,
+            "size": 440,
+            "type": "mbr",
+            "role": "mbr",
+            "id": "",
+            "filesystem": "",
+            "content": [
+              {
+                "source": "",
+                "target": "",
+                "image": "mbr.img",
+                "offset": null,
+                "size": 0,
+                "unpack": false
+              }
+            ],
+            "update": {
+              "edition": 1,
+              "preserve": null
+            }
+          },
+          {
+            "name": "BIOS Boot",
+            "filesystem-label": "",
+            "offset": 1048576,
+            "offset-write": null,
+            "min-size": 1048576,
+            "size": 1048576,
+            "type": "21686148-6449-6E6F-744E-656564454649",
+            "role": "",
+            "id": "",
+            "filesystem": "",
+            "content": null,
+            "update": {
+              "edition": 2,
+              "preserve": null
+            }
+          },
+          {
+            "name": "ubuntu-seed",
+            "filesystem-label": "ubuntu-seed",
+            "offset": 2097152,
+            "offset-write": null,
+            "min-size": 1258291200,
+            "size": 1258291200,
+            "type": "C12A7328-F81F-11D2-BA4B-00A0C93EC93B",
+            "role": "system-seed",
+            "id": "",
+            "filesystem": "vfat",
+            "content": [
+              {
+                "source": "grubx64.efi",
+                "target": "EFI/ubuntu/grubx64.efi",
+                "image": "",
+                "offset": null,
+                "size": 0,
+                "unpack": false
+              },
+              {
+                "source": "shim.efi.signed",
+                "target": "EFI/ubuntu/shimx64.efi",
+                "image": "",
+                "offset": null,
+                "size": 0,
+                "unpack": false
+              },
+              {
+                "source": "boot.csv",
+                "target": "EFI/ubuntu/bootx64.csv",
+                "image": "",
+                "offset": null,
+                "size": 0,
+                "unpack": false
+              },
+              {
+                "source": "fb.efi",
+                "target": "EFI/boot/fbx64.efi",
+                "image": "",
+                "offset": null,
+                "size": 0,
+                "unpack": false
+              },
+              {
+                "source": "shim.efi.signed",
+                "target": "EFI/boot/bootx64.efi",
+                "image": "",
+                "offset": null,
+                "size": 0,
+                "unpack": false
+              }
+            ],
+            "update": {
+              "edition": 2,
+              "preserve": null
+            }
+          },
+          {
+            "name": "ubuntu-boot",
+            "filesystem-label": "ubuntu-boot",
+            "offset": 1260388352,
+            "offset-write": null,
+            "min-size": 786432000,
+            "size": 786432000,
+            "type": "0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+            "role": "system-boot",
+            "id": "",
+            "filesystem": "ext4",
+            "content": [
+              {
+                "source": "grubx64.efi",
+                "target": "EFI/boot/grubx64.efi",
+                "image": "",
+                "offset": null,
+                "size": 0,
+                "unpack": false
+              }
+            ],
+            "update": {
+              "edition": 1,
+              "preserve": null
+            }
+          },
+          {
+            "name": "ubuntu-save",
+            "filesystem-label": "ubuntu-save",
+            "offset": 2046820352,
+            "offset-write": null,
+            "min-size": 16777216,
+            "size": 33554432,
+            "type": "0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+            "role": "system-save",
+            "id": "",
+            "filesystem": "ext4",
+            "content": null,
+            "update": {
+              "edition": 0,
+              "preserve": null
+            }
+          },
+          {
+            "name": "ubuntu-data",
+            "filesystem-label": "ubuntu-data",
+            "offset": null,
+            "offset-write": null,
+            "min-size": 1073741824,
+            "size": 1073741824,
+            "type": "0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+            "role": "system-data",
+            "id": "",
+            "filesystem": "ext4",
+            "content": null,
+            "update": {
+              "edition": 0,
+              "preserve": null
+            }
+          }
+        ]
+      }
+    },
+    "storage-encryption": {
+      "support": "available",
+      "storage-safety": "prefer-encrypted",
+      "encryption-type": "cryptsetup"
+    },
+    "available-optional": {
+      "components": {
+        "mwhudson-test-k-components": [
+          "nvidia-510-uda-ko",
+          "nvidia-510-uda-user"
+        ]
+      }
+    }
+  }
+}

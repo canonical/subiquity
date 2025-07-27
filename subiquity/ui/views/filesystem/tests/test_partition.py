@@ -167,9 +167,7 @@ class PartitionViewTests(unittest.TestCase):
             "size": "256M",
         }
         model, disk = make_model_and_disk()
-        partition = model.add_partition(
-            disk, size=512 * (2**20), offset=0, flag="boot"
-        )
+        partition = model.add_partition(disk, size=512 * (2**20), offset=0, flag="boot")
         fs = model.add_filesystem(partition, "fat32")
         model.add_mount(fs, "/boot/efi")
         view, stretchy = make_partition_view(model, disk, partition=partition)
@@ -194,9 +192,7 @@ class PartitionViewTests(unittest.TestCase):
 
     def test_edit_existing_unused_boot_partition(self):
         model, disk = make_model_and_disk()
-        partition = model.add_partition(
-            disk, size=512 * (2**20), offset=0, flag="boot"
-        )
+        partition = model.add_partition(disk, size=512 * (2**20), offset=0, flag="boot")
         fs = model.add_filesystem(partition, "fat32")
         model._orig_config = model._render_actions()
         disk.preserve = partition.preserve = fs.preserve = True
@@ -218,9 +214,7 @@ class PartitionViewTests(unittest.TestCase):
 
     def test_edit_existing_used_boot_partition(self):
         model, disk = make_model_and_disk()
-        partition = model.add_partition(
-            disk, size=512 * (2**20), offset=0, flag="boot"
-        )
+        partition = model.add_partition(disk, size=512 * (2**20), offset=0, flag="boot")
         fs = model.add_filesystem(partition, "fat32")
         model._orig_config = model._render_actions()
         partition.grub_device = True

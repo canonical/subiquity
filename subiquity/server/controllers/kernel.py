@@ -47,6 +47,13 @@ class KernelController(NonInteractiveController):
 
     def start(self):
         if self.model.metapkg_name is not None:
+            # if we're exiting early here, we have made a decision on the
+            # kernel already - probably autoinstall - and are skipping the
+            # bridge_kernel logic.  We must still broadcast
+            # BRIDGE_KERNEL_DECIDED though, otherwise we'll hang in
+            # curtin_install before curthooks waiting for
+            # bridge_kernel_decided.set().
+            self.app.hub.broadcast(InstallerChannels.BRIDGE_KERNEL_DECIDED)
             # if we have set the desired kernel already, use that.
             return
         # the ISO may have been configured to tell us what kernel to use

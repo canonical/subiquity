@@ -12,8 +12,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-""" This module defines utilities to interface with the ubuntu-advantage-tools
-helper. """
+"""This module defines utilities to interface with the ubuntu-advantage-tools
+helper."""
 
 import asyncio
 import contextlib

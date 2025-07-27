@@ -4,9 +4,7 @@ on: [pull_request]
 
 jobs:
   cla-check:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check if CLA signed
-        uses: canonical/has-signed-canonical-cla@v1
-        with:
-          accept-existing-contributors: true
+        uses: canonical/has-signed-canonical-cla@v2

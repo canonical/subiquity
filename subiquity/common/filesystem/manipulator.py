@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from typing import Optional
 
 from curtin.block import get_resize_fstypes
 
@@ -120,7 +121,14 @@ class FilesystemManipulator:
         self.create_filesystem(part, spec)
         return part
 
-    def delete_partition(self, part, override_preserve=False):
+    def delete_partition(
+        self,
+        part,
+        *,
+        override_preserve=False,
+        allow_renumbering=True,
+        allow_moving=True,
+    ):
         if (
             not override_preserve
             and part.device.preserve
@@ -128,7 +136,9 @@ class FilesystemManipulator:
         ):
             raise Exception("cannot delete partitions from preserved disks")
         self.clear(part)
-        self.model.remove_partition(part)
+        self.model.remove_partition(
+            part, allow_renumbering=allow_renumbering, allow_moving=allow_moving
+        )
 
     def create_raid(self, spec: RaidSpec):
         for d in spec["devices"] | spec["spare_devices"]:
@@ -145,7 +155,7 @@ class FilesystemManipulator:
         for v in raid._subvolumes:
             self.delete_raid(v)
         for p in list(raid.partitions()):
-            self.delete_partition(p, True)
+            self.delete_partition(p, override_preserve=True)
         for d in set(raid.devices) | set(raid.spare_devices):
             d.wipe = "superblock"
         self.model.remove_raid(raid)
@@ -268,16 +278,23 @@ class FilesystemManipulator:
         for subobj in obj.fs(), obj.constructed_device():
             self.delete(subobj)
 
-    def reformat(self, disk, ptable=None, wipe=None):
+    def reformat(self, disk, ptable: Optional[str], wipe=None):
+        """Reformat the specified disk. If ptable is None, use the default
+        partition table type."""
         disk.grub_device = False
-        if ptable is not None:
-            disk.ptable = ptable
         for p in list(disk.partitions()):
-            self.delete_partition(p, True)
+            self.delete_partition(
+                p, override_preserve=True, allow_renumbering=False, allow_moving=False
+            )
+        disk.ptable = ptable
         self.clear(disk, wipe)
 
-    def can_resize_partition(self, partition):
+    def can_resize_partition(self, partition, *, wipe=None):
+        # For a new partition.
         if not partition.preserve:
+            return True
+        # For an existing partition that is being wiped.
+        if wipe is not None:
             return True
         if partition.format not in get_resize_fstypes():
             return False
@@ -297,7 +314,7 @@ class FilesystemManipulator:
                 size_change = new_size - partition.size
                 if size_change > gap_size:
                     raise Exception("partition size too large")
-                if not self.can_resize_partition(partition):
+                if not self.can_resize_partition(partition, wipe=spec.get("wipe")):
                     raise Exception("partition cannot support resize")
                 partition.size = new_size
                 partition.resize = True

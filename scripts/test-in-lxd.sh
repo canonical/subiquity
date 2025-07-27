@@ -19,7 +19,6 @@ IMAGE=$1
 TEST_CMD=$2
 TESTER=subiquity-${IMAGE##*:}
 
-lxd init --auto
 
 if [ -z "$(lxc list -f csv -c n ^${TESTER}\$)" ]
 then

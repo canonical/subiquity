@@ -5,3 +5,5 @@
 34d40643ad78af72421fbdf222c29994c8852b03
 # supplemental format with black --experimental-string-processing
 c08fdab2f835d38bbf83a8310e809d673aae5557
+# format with black 25.1.0 + isort 6.0.1
+9316ed0683274b02a3d64831644fe38e84ff7648

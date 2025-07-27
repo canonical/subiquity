@@ -93,7 +93,7 @@ class RecoveryKeyHandler:
     live_location: Optional[pathlib.Path]
     # Where to store the key in the target system. /target will automatically
     # be prefixed.
-    backup_location: pathlib.Path
+    backup_location: Optional[pathlib.Path]
 
     _key: Optional[str] = attr.ib(repr=False, default=None)
 
@@ -158,6 +158,10 @@ class RecoveryKeyHandler:
     def copy_key_to_target_system(self, target: pathlib.Path) -> None:
         """Write the key to the target system - so it can be retrieved after
         the install by an admin."""
+
+        if self.backup_location is None:
+            log.debug("no backup location set: not copying rec-key to target")
+            return
 
         self._expose_key(
             location=self.backup_location,
@@ -252,10 +256,11 @@ def _do_post_inits(obj):
 def fsobj(typ):
     def wrapper(c):
         c.__attrs_post_init__ = _do_post_inits
-        c._post_inits = [_set_backlinks]
+        c._post_inits = []
         class_post_init = getattr(c, "__post_init__", None)
         if class_post_init is not None:
             c._post_inits.append(class_post_init)
+        c._post_inits.append(_set_backlinks)
         c.type = attributes.const(typ)
         c.id = attr.ib(default=None)
         c._m = attr.ib(repr=None, default=None)
@@ -652,10 +657,11 @@ class _Device(_Formattable, ABC):
     @property
     @abstractmethod
     def sort_key(self) -> Tuple:
-        """return a value that is usable for sorting.  The intent here is
-        that two runs of a specific version of subiquity must produce an
-        identical sort result for _Devices, so that while Subiquity might make
-        an arbitrary choice of disk, it's a consistent arbitrary choice.
+        """return a value that is usable for sorting and does not contain
+        any None values.  The intent here is that two runs of a specific
+        version of subiquity must produce an identical sort result for
+        _Devices, so that while Subiquity might make an arbitrary choice of
+        disk, it's a consistent arbitrary choice.
         """
         pass
 
@@ -667,6 +673,8 @@ class _Device(_Formattable, ABC):
         # deleted as possible.
         new_disk = attr.evolve(self)
         new_disk._partitions = [p for p in self.partitions() if p._is_in_use]
+        if not new_disk._partitions:
+            new_disk.ptable = None
         return new_disk
 
     def _excluding_partition(self, partition: "Partition") -> Self:
@@ -799,8 +807,8 @@ class Disk(_Device):
     _has_in_use_partition: bool = attributes.for_api(default=False)
 
     @property
-    def sort_key(self) -> int:
-        return (self.wwn, self.serial, self.path)
+    def sort_key(self) -> Tuple:
+        return (self.wwn or "", self.serial or "", self.path or "")
 
     @property
     def available_for_partitions(self):
@@ -865,6 +873,8 @@ class Disk(_Device):
 
     @property
     def ok_for_raid(self):
+        if self.ptable == "unsupported":
+            return False
         if self._fs is not None:
             if self._fs.preserve:
                 return self._fs._mount is None
@@ -911,11 +921,15 @@ class Partition(_Formattable):
     number: Optional[int] = None
     preserve: bool = False
     grub_device: bool = False
+    # This field controls the existence of a /dev/disk/by-dname/<name> symlink.
+    # Not to be confused with "partition_name" below.
     name: Optional[str] = None
     multipath: Optional[str] = None
     offset: Optional[int] = None
     resize: Optional[bool] = None
     partition_type: Optional[str] = None
+    # This is the actual name of the partition, if supported. It maps to the
+    # "name" field in the Partition API object.
     partition_name: Optional[str] = None
     path: Optional[str] = None
     uuid: Optional[str] = None
@@ -944,8 +958,8 @@ class Partition(_Formattable):
         raise Exception("Exceeded number of available partitions")
 
     @property
-    def sort_key(self) -> int:
-        return (self.device.sort_key(), self.number)
+    def sort_key(self) -> Tuple:
+        return (self.device.sort_key, self.number or 0)
 
     def available(self):
         if self.flag in ["bios_grub", "prep"] or self.grub_device:
@@ -973,14 +987,19 @@ class Partition(_Formattable):
         if fs_data is None:
             return -1
         val = fs_data.get("ESTIMATED_MIN_SIZE", -1)
-        if val == 0:
-            return self.device.alignment_data().part_align
         if val == -1:
             return -1
+        if not self.on_supported_ptable():
+            # We don't know the alignment constraints so...
+            return -1
+        if val == 0:
+            return self.device.alignment_data().part_align
         return align_up(val, self.device.alignment_data().part_align)
 
     @property
     def ok_for_raid(self):
+        if not self.on_supported_ptable():
+            return False
         if self.boot:
             return False
         if self._fs is not None:
@@ -999,6 +1018,11 @@ class Partition(_Formattable):
 
     @property
     def os(self):
+        if not self.preserve:
+            # Only associate the OS information with existing partitions.
+            # If /dev/sda4 was deleted and a new partition on sda with number 4
+            # is created, we should not pretend it contains anything of value.
+            return None
         os_data = self._m._probe_data.get("os", {}).get(self._path())
         if not os_data:
             return None
@@ -1022,6 +1046,9 @@ class Partition(_Formattable):
     def on_remote_storage(self) -> bool:
         return self.device.on_remote_storage()
 
+    def on_supported_ptable(self) -> bool:
+        return self.device.ptable != "unsupported"
+
 
 @fsobj("raid")
 class Raid(_Device):
@@ -1034,7 +1061,7 @@ class Raid(_Device):
     _has_in_use_partition = False
 
     @property
-    def sort_key(self) -> int:
+    def sort_key(self) -> Tuple:
         return tuple([dev.sort_key for dev in raid_device_sort(self.devices)])
 
     def serialize_devices(self):
@@ -1133,7 +1160,7 @@ class LVM_VolGroup(_Device):
         return get_lvm_size(self.devices)
 
     @property
-    def sort_key(self) -> int:
+    def sort_key(self) -> Tuple:
         return tuple([dev.sort_key for dev in self.devices])
 
     @property
@@ -1300,8 +1327,8 @@ class ArbitraryDevice(_Device):
         return 0
 
     @property
-    def sort_key(self) -> int:
-        return (self.path,)
+    def sort_key(self) -> Tuple:
+        return (self.path or "",)
 
     ok_for_raid = False
     ok_for_lvm_vg = False
@@ -1579,6 +1606,12 @@ class FilesystemModel:
         self._probe_data = None
         self.dd_target: Optional[Disk] = None
         self.reset_partition: Optional[Partition] = None
+        # When using the TPM/FDE flow, the recovery key is created by snapd.
+        # For now, we are storing the key directly in the model even though it
+        # is in practise attached to an encrypted device. If at some point,
+        # snapd grows support for multiple encrypted devices, we will need to
+        # find a better way.
+        self.core_boot_recovery_key: Optional[RecoveryKeyHandler] = None
         self.reset()
 
     def reset(self):
@@ -1591,6 +1624,7 @@ class FilesystemModel:
         self.swap = None
         self.grub = None
         self.guided_configuration = None
+        self.core_boot_recovery_key = None
 
     def get_orig_model(self):
         # The purpose of this is to be able to answer arbitrary questions about
@@ -1658,8 +1692,11 @@ class FilesystemModel:
             log.debug("%s is mounted", obj.path)
             work = [obj]
             while work:
+                # Go through the chain of dependencies, starting from the
+                # partition (or LV). We mark involved disks and raids as having
+                # in-use partitions.
                 o = work.pop(0)
-                if isinstance(o, Disk):
+                if isinstance(o, (Disk, Raid)):
                     o._has_in_use_partition = True
                 work.extend(dependencies(o))
 
@@ -2241,17 +2278,18 @@ class FilesystemModel:
         self._actions.append(p)
         return p
 
-    def remove_partition(self, part):
+    def remove_partition(self, part, *, allow_renumbering=True, allow_moving=True):
         if part._fs or part._constructed_device:
             raise Exception("can only remove empty partition")
         from subiquity.common.filesystem.gaps import (
             movable_trailing_partitions_and_gap_size,
         )
 
-        for p2 in movable_trailing_partitions_and_gap_size(part)[0]:
-            p2.offset -= part.size
+        if allow_moving:
+            for p2 in movable_trailing_partitions_and_gap_size(part)[0]:
+                p2.offset -= part.size
         self._remove(part)
-        if part.is_logical:
+        if part.is_logical and allow_renumbering:
             part.device.renumber_logical_partitions(part)
         if len(part.device._partitions) == 0:
             part.device.ptable = None
@@ -2485,6 +2523,12 @@ class FilesystemModel:
                 )
             else:
                 dm_crypt.recovery_key.generate()
+
+    def set_core_boot_recovery_key(self, key: str) -> None:
+        self.core_boot_recovery_key = RecoveryKeyHandler(
+            live_location=None, backup_location=None
+        )
+        self.core_boot_recovery_key._key = key
 
     def expose_recovery_keys(self) -> None:
         for dm_crypt in self.all_dm_crypts():

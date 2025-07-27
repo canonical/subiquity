@@ -13,11 +13,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import copy
 import subprocess
 import uuid
-from unittest import IsolatedAsyncioTestCase, mock
+from pathlib import Path
+from unittest import IsolatedAsyncioTestCase, TestCase, mock
 
+import attrs
 import jsonschema
 import requests
 import requests_mock
@@ -29,6 +32,8 @@ from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
+    CalculateEntropyRequest,
+    EntropyResponse,
     Gap,
     GapUsable,
     GuidedCapability,
@@ -52,6 +57,7 @@ from subiquity.models.tests.test_filesystem import (
     FakeStorageInfo,
     make_disk,
     make_model,
+    make_model_and_disk,
     make_model_and_lv,
     make_model_and_raid,
     make_model_and_vg,
@@ -65,10 +71,14 @@ from subiquity.server.controllers.filesystem import (
     FilesystemController,
     StorageRecoverableError,
     VariationInfo,
+    validate_pin_pass,
 )
 from subiquity.server.dryrun import DRConfig
 from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
+from subiquity.server.snapd.info import SnapdInfo
+from subiquity.server.snapd.system_getter import SystemGetter
+from subiquity.server.snapd.types import VolumesAuth, VolumesAuthMode
 from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized
@@ -98,6 +108,48 @@ default_capabilities_disallowed_too_small = [
 ]
 
 
+class TestValidatePinPass(TestCase):
+    def test_valid_pin(self):
+        validate_pin_pass(
+            passphrase_allowed=False, pin_allowed=True, passphrase=None, pin="1234"
+        )
+
+    def test_invalid_pin(self):
+        with self.assertRaises(
+            StorageRecoverableError, msg="pin is a string of digits"
+        ):
+            validate_pin_pass(
+                passphrase_allowed=False, pin_allowed=True, passphrase=None, pin="abcd"
+            )
+
+    def test_valid_passphrase(self):
+        validate_pin_pass(
+            passphrase_allowed=True, pin_allowed=False, passphrase="abcd", pin=None
+        )
+
+    def test_unexpected_passphrase(self):
+        with self.assertRaises(
+            StorageRecoverableError, msg="unexpected passphrase supplied"
+        ):
+            validate_pin_pass(
+                passphrase_allowed=False, pin_allowed=False, passphrase="abcd", pin=None
+            )
+
+    def test_unexpected_pin(self):
+        with self.assertRaises(StorageRecoverableError, msg="unexpected pin supplied"):
+            validate_pin_pass(
+                passphrase_allowed=False, pin_allowed=False, passphrase=None, pin="1234"
+            )
+
+    def test_pin_and_pass_supplied(self):
+        with self.assertRaises(
+            StorageRecoverableError, msg="must supply at most one of pin and passphrase"
+        ):
+            validate_pin_pass(
+                passphrase_allowed=True, pin_allowed=True, passphrase="abcd", pin="1234"
+            )
+
+
 class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
     MOCK_PREFIX = "subiquity.server.controllers.filesystem."
 
@@ -109,6 +161,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.app.prober.get_storage = mock.AsyncMock()
         self.app.block_log_dir = "/inexistent"
         self.app.note_file_for_apport = mock.Mock()
+        self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
         self.fsc = FilesystemController(app=self.app)
         self.fsc._configured = True
 
@@ -303,6 +356,18 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertTrue(self.fsc.locked_probe_data)
         add_boot_disk.assert_not_called()
 
+    async def test_v2_add_boot_partition_POST_unsupported_ptable(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk(ptable="unsupported")
+
+        with mock.patch.object(self.fsc, "add_boot_disk") as add_boot_disk:
+            with self.assertRaisesRegex(
+                StorageRecoverableError, "unsupported partition table"
+            ):
+                await self.fsc.v2_add_boot_partition_POST(d.id)
+        self.assertTrue(self.fsc.locked_probe_data)
+        add_boot_disk.assert_not_called()
+
     @mock.patch(MOCK_PREFIX + "boot.is_boot_device", mock.Mock(return_value=False))
     @mock.patch(
         MOCK_PREFIX + "DeviceAction.supported",
@@ -359,6 +424,53 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertTrue(self.fsc.locked_probe_data)
         create_part.assert_not_called()
 
+    async def test_v2_add_partition_POST_change_pname(self):
+        self.fsc.locked_probe_data = False
+        data = AddPartitionV2(
+            disk_id="dev-sda",
+            partition=Partition(
+                format="ext4",
+                mount="/",
+                name="Foobar",
+            ),
+            gap=Gap(
+                offset=1 << 20,
+                size=1000 << 20,
+                usable=GapUsable.YES,
+            ),
+        )
+        with mock.patch.object(self.fsc, "create_partition") as create_part:
+            with self.assertRaisesRegex(
+                StorageRecoverableError, r"partition name is not implemented"
+            ):
+                await self.fsc.v2_add_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        create_part.assert_not_called()
+
+    async def test_v2_add_partition_POST_unsupported_ptable(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk(ptable="unsupported")
+        data = AddPartitionV2(
+            disk_id=d.id,
+            partition=Partition(
+                format="ext4",
+                mount="/",
+                size=2000 << 20,
+            ),
+            gap=Gap(
+                offset=1 << 20,
+                size=1000 << 20,
+                usable=GapUsable.YES,
+            ),
+        )
+        with mock.patch.object(self.fsc, "create_partition") as create_part:
+            with self.assertRaisesRegex(
+                StorageRecoverableError, r"unsupported partition table"
+            ):
+                await self.fsc.v2_add_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        create_part.assert_not_called()
+
     @mock.patch(MOCK_PREFIX + "gaps.at_offset")
     async def test_v2_add_partition_POST(self, at_offset):
         at_offset.split = mock.Mock(return_value=[mock.Mock()])
@@ -380,6 +492,22 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertTrue(self.fsc.locked_probe_data)
         create_part.assert_called_once()
 
+    async def test_v2_delete_partition_POST_unsupported_ptable(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk(ptable="unsupported")
+        data = ModifyPartitionV2(
+            disk_id=d.id,
+            partition=Partition(number=1),
+        )
+        with mock.patch.object(self.fsc, "delete_partition") as del_part:
+            with mock.patch.object(self.fsc, "get_partition"):
+                with self.assertRaisesRegex(
+                    StorageRecoverableError, r"unsupported partition table"
+                ):
+                    await self.fsc.v2_delete_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        del_part.assert_not_called()
+
     async def test_v2_delete_partition_POST(self):
         self.fsc.locked_probe_data = False
         data = ModifyPartitionV2(
@@ -394,11 +522,12 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
 
     async def test_v2_edit_partition_POST_change_boot(self):
         self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk()
         data = ModifyPartitionV2(
-            disk_id="dev-sda",
+            disk_id=d.id,
             partition=Partition(number=1, boot=True),
         )
-        existing = Partition(number=1, size=1000 << 20, boot=False)
+        existing = make_partition(self.fsc.model, d, size=1000 << 20)
         with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
             with mock.patch.object(self.fsc, "get_partition", return_value=existing):
                 with self.assertRaisesRegex(ValueError, r"changing\ boot"):
@@ -406,13 +535,68 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertTrue(self.fsc.locked_probe_data)
         handler.assert_not_called()
 
+    async def test_v2_edit_partition_POST_change_pname(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk()
+        data = ModifyPartitionV2(
+            disk_id=d.id,
+            partition=Partition(number=1, name="Foobar"),
+        )
+
+        existing = make_partition(
+            self.fsc.model, d, size=1000 << 20, partition_name="MyPart"
+        )
+        with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
+            with mock.patch.object(self.fsc, "get_partition", return_value=existing):
+                with self.assertRaisesRegex(ValueError, r"changing partition name"):
+                    await self.fsc.v2_edit_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        handler.assert_not_called()
+
+    @parameterized.expand(((None,), ("Foobar",)))
+    async def test_v2_edit_partition_POST_preserve_pname(self, name):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk()
+        data = ModifyPartitionV2(
+            disk_id=d.id,
+            partition=Partition(number=1, name=name),
+        )
+
+        existing = make_partition(
+            self.fsc.model, d, size=1000 << 20, partition_name="Foobar"
+        )
+        with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
+            with mock.patch.object(self.fsc, "get_partition", return_value=existing):
+                await self.fsc.v2_edit_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        handler.assert_called_once()
+
+    async def test_v2_edit_partition_POST_unsupported_ptable(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk()
+        data = ModifyPartitionV2(
+            disk_id=d.id,
+            partition=Partition(number=1, boot=True),
+        )
+        existing = make_partition(self.fsc.model, d, size=1000 << 20)
+        d.ptable = "unsupported"
+        with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
+            with mock.patch.object(self.fsc, "get_partition", return_value=existing):
+                with self.assertRaisesRegex(
+                    StorageRecoverableError, r"unsupported partition table"
+                ):
+                    await self.fsc.v2_edit_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        handler.assert_not_called()
+
     async def test_v2_edit_partition_POST(self):
         self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk()
         data = ModifyPartitionV2(
-            disk_id="dev-sda",
+            disk_id=d.id,
             partition=Partition(number=1),
         )
-        existing = Partition(number=1, size=1000 << 20, boot=False)
+        existing = make_partition(self.fsc.model, d, size=1000 << 20)
         with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
             with mock.patch.object(self.fsc, "get_partition", return_value=existing):
                 await self.fsc.v2_edit_partition_POST(data)
@@ -475,6 +659,48 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
                 await self.fsc.v2_raid_DELETE(id="inexistent")
         self.assertTrue(self.fsc.locked_probe_data)
         del_raid.assert_not_called()
+
+    async def test_v2_core_boot_recovery_GET(self):
+        self.fsc.model = make_model()
+        self.fsc.model.guided_configuration = mock.Mock(
+            capability=GuidedCapability.CORE_BOOT_ENCRYPTED
+        )
+        self.fsc.model.set_core_boot_recovery_key("recovery")
+        self.assertEqual("recovery", await self.fsc.v2_core_boot_recovery_key_GET())
+
+    async def test_v2_core_boot_recovery_GET__not_yet_configured(self):
+        self.fsc.model = make_model()
+        self.fsc._configured = False
+        with self.assertRaises(
+            StorageRecoverableError, msg="storage model is not yet configured"
+        ):
+            await self.fsc.v2_core_boot_recovery_key_GET()
+
+    async def test_v2_core_boot_recovery_GET__not_core_boot(self):
+        self.fsc.model = make_model()
+        with self.assertRaises(
+            StorageRecoverableError, msg="not using core boot encrypted"
+        ):
+            await self.fsc.v2_core_boot_recovery_key_GET()
+
+        self.fsc.model.guided_configuration = mock.Mock(
+            capability=GuidedCapability.DIRECT
+        )
+
+        with self.assertRaises(
+            StorageRecoverableError, msg="not using core boot encrypted"
+        ):
+            await self.fsc.v2_core_boot_recovery_key_GET()
+
+    async def test_v2_core_boot_recovery_GET__not_yet_available(self):
+        self.fsc.model = make_model()
+        self.fsc.model.guided_configuration = mock.Mock(
+            capability=GuidedCapability.CORE_BOOT_ENCRYPTED
+        )
+        with self.assertRaises(
+            StorageRecoverableError, msg="recovery key is not yet available"
+        ):
+            await self.fsc.v2_core_boot_recovery_key_GET()
 
     @parameterized.expand(((True,), (False,)))
     async def test__pre_shutdown_install_started(self, zfsutils_linux_installed: bool):
@@ -562,8 +788,15 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         JsonValidator.check_schema(FilesystemController.autoinstall_schema)
 
     async def test__get_system_api_error_logged(self):
-        mount_mock = mock.patch.object(self.fsc, "_mount_systems_dir")
-        unmount_mock = mock.patch.object(self.fsc, "_unmount_systems_dir")
+        getter = SystemGetter(self.app)
+
+        @contextlib.asynccontextmanager
+        async def mounted(self, *, source_id):
+            yield
+
+        mount_mock = mock.patch(
+            "subiquity.server.snapd.system_getter.SystemsDirMounter.mounted", mounted
+        )
 
         self.app.snapdapi = snapdapi.make_api_client(
             AsyncSnapd(SnapdConnection(root="/inexistent", sock="snapd"))
@@ -595,13 +828,15 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             status_code=500,
         )
 
-        with mount_mock, unmount_mock, requests_mocker:
+        with mount_mock, requests_mocker:
             with self.assertRaises(requests.exceptions.HTTPError):
                 with self.assertLogs(
-                    "subiquity.server.controllers.filesystem", level="WARNING"
+                    "subiquity.server.snapd.system_getter", level="WARNING"
                 ) as logs:
-                    await self.fsc._get_system(
-                        variation_name="minimal", label="enhanced-secureboot-desktop"
+                    await getter.get(
+                        variation_name="minimal",
+                        label="enhanced-secureboot-desktop",
+                        source_id="default",
                     )
 
             self.assertIn("cannot load assertions for label", logs.output[0])
@@ -625,12 +860,22 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
                 GuidedStorageTargetReformat(disk_id=disk.id), disk
             )
 
-        m_reformat.assert_called_once_with(disk, wipe="superblock-recursive")
+        m_reformat.assert_called_once_with(
+            disk, ptable=None, wipe="superblock-recursive"
+        )
         expected_del_calls = [
-            mock.call(p1, True),
-            mock.call(p2, True),
-            mock.call(p3, True),
-            mock.call(p4, True),
+            mock.call(
+                p1, override_preserve=True, allow_renumbering=False, allow_moving=False
+            ),
+            mock.call(
+                p2, override_preserve=True, allow_renumbering=False, allow_moving=False
+            ),
+            mock.call(
+                p3, override_preserve=True, allow_renumbering=False, allow_moving=False
+            ),
+            mock.call(
+                p4, override_preserve=True, allow_renumbering=False, allow_moving=False
+            ),
         ]
         self.assertEqual(expected_del_calls, m_del_part.mock_calls)
 
@@ -726,11 +971,97 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertEqual(leading_gap.offset, gap.offset)
         self.assertEqual(part.size + leading_gap.size + trailing_gap.size, gap.size)
 
+    async def test_fetch_core_boot_recovery_key(self):
+        self.app.snapd = AsyncSnapd(get_fake_connection())
+        self.app.snapdapi = snapdapi.make_api_client(self.app.snapd)
+        self.fsc._info = mock.Mock(label="my-label")
+
+        with mock.patch.object(
+            self.fsc.model, "set_core_boot_recovery_key"
+        ) as m_set_key:
+            await self.fsc.fetch_core_boot_recovery_key()
+
+        m_set_key.assert_called_once_with("my-recovery-key")
+
+    async def test_finish_install(self):
+        self.app.snapdapi = snapdapi.make_api_client(AsyncSnapd(get_fake_connection()))
+        variation_info = VariationInfo(
+            name="mock",
+            label="mock-label",
+            system=snapdtypes.SystemDetails(
+                label="mock-label",
+                volumes={
+                    "mockVol": snapdtypes.Volume(schema="mock", structure=None),
+                },
+                model=snapdtypes.Model(
+                    architecture="mock-arch",
+                    snaps=[
+                        snapdtypes.ModelSnap(
+                            name="MockKernel",
+                            type=snapdtypes.ModelSnapType.KERNEL,
+                            presence=snapdtypes.PresenceValue.REQUIRED,
+                            components={
+                                "nvidia-510-uda-ko": snapdtypes.PresenceValue.OPTIONAL,
+                                "nvidia-510-uda-user": snapdtypes.PresenceValue.OPTIONAL,
+                                "foo": snapdtypes.PresenceValue.OPTIONAL,
+                                "bar": snapdtypes.PresenceValue.OPTIONAL,
+                            },
+                            default_channel="foo",
+                            id="bar",
+                        ),
+                        snapdtypes.ModelSnap(
+                            name="MockApp1",
+                            type=snapdtypes.ModelSnapType.APP,
+                            presence=snapdtypes.PresenceValue.REQUIRED,
+                            default_channel="foo",
+                            id="bar",
+                        ),
+                        snapdtypes.ModelSnap(
+                            name="MockApp2",
+                            type=snapdtypes.ModelSnapType.APP,
+                            presence=snapdtypes.PresenceValue.OPTIONAL,
+                            default_channel="foo",
+                            id="bar",
+                        ),
+                    ],
+                ),
+                available_optional=snapdtypes.AvailableOptional(
+                    snaps=["MockApp2"],
+                    components={
+                        "MockKernel": [
+                            "nvidia-510-uda-ko",
+                            "nvidia-510-uda-user",
+                            "foo",
+                            "bar",
+                        ]
+                    },
+                ),
+            ),
+        )
+        self.fsc._info = variation_info
+        with mock.patch.object(snapdapi, "post_and_wait") as mock_post:
+            await self.fsc.finish_install(
+                context=self.fsc.context,
+                kernel_components=["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+            )
+        mock_post.assert_called_once()
+
+        # Assert installing all optional snaps but only the requested components
+        expected_optional_install = snapdtypes.OptionalInstall(
+            all=False,
+            components={"MockKernel": ["nvidia-510-uda-ko", "nvidia-510-uda-user"]},
+            snaps=variation_info.system.available_optional.snaps,
+        )
+        actual = mock_post.call_args.args[2].optional_install
+
+        self.assertEqual(expected_optional_install, actual)
+
 
 class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
         self.app.opts.bootloader = None
+        self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
         self.fsc = FilesystemController(self.app)
         self.model = self.fsc.model = make_model()
 
@@ -812,6 +1143,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def _guided_setup(self, bootloader, ptable, storage_version=None):
         self.app = make_app()
         self.app.opts.bootloader = bootloader.value
+        self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
         self.controller = FilesystemController(self.app)
         self.controller.supports_resilient_boot = True
         self.controller._examine_systems_task.start_sync()
@@ -919,7 +1251,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_direct_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, allowed=default_capabilities
+            disk_id=self.d1.id, ptable="msdos", allowed=default_capabilities
         )
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.DIRECT)
@@ -953,7 +1285,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_lvm_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, allowed=default_capabilities
+            disk_id=self.d1.id, ptable="msdos", allowed=default_capabilities
         )
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.LVM)
@@ -1036,6 +1368,9 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual("luks_keystore", rpool.encryption_style)
         with open(rpool.keyfile) as fp:
             self.assertEqual("passw0rd", fp.read())
+            # a tempfile is created outside of normal test tempfiles,
+            # clean that up
+            Path(rpool.keyfile).unlink()
         [bpool] = self.model._all(type="zpool", pool="bpool")
         self.assertIsNone(bpool.path)
         self.assertEqual([boot], bpool.vdevs)
@@ -1047,7 +1382,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_zfs_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, allowed=default_capabilities
+            disk_id=self.d1.id, ptable="msdos", allowed=default_capabilities
         )
         await self.controller.guided(
             GuidedChoiceV2(target=target, capability=GuidedCapability.ZFS)
@@ -1182,11 +1517,43 @@ class TestLayout(IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError):
             self.fsc.validate_layout_mode(mode)
 
+    @parameterized.expand([(True, None), (True, "gpt"), (True, "msdos"), (False, None)])
+    async def test_autoinstall__reformat_with_ptable(self, include_ptable, ptable):
+        self.fsc.model = make_model()
+
+        make_disk(self.fsc.model, id="dev-sdc"),
+
+        layout = {
+            "name": "direct",
+            "mode": "reformat_disk",
+        }
+
+        if include_ptable:
+            layout["ptable"] = ptable
+
+        p_guided = mock.patch.object(self.fsc, "guided")
+        p_reformat = mock.patch(
+            "subiquity.server.controllers.filesystem.GuidedStorageTargetReformat"
+        )
+        p_has_valid_variation = mock.patch.object(
+            self.fsc, "has_valid_non_core_boot_variation", return_value=True
+        )
+
+        with p_guided as m_guided, p_reformat as m_reformat, p_has_valid_variation:
+            await self.fsc.run_autoinstall_guided(layout)
+
+        expected_ptable = ptable if include_ptable else None
+        m_reformat.assert_called_once_with(
+            disk_id="dev-sdc", ptable=expected_ptable, allowed=[]
+        )
+        m_guided.assert_called_once()
+
 
 class TestGuidedV2(IsolatedAsyncioTestCase):
     async def _setup(self, bootloader, ptable, fix_bios=True, **kw):
         self.app = make_app()
         self.app.opts.bootloader = bootloader.value
+        self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
         self.fsc = FilesystemController(app=self.app)
         self.fsc.calculate_suggested_install_min = mock.Mock()
         self.fsc.calculate_suggested_install_min.return_value = 10 << 30
@@ -1780,6 +2147,53 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
         self.assertFalse(self.fsc.available_erase_install_scenarios(install_min))
 
+    async def test_available_erase_install_scenarios__with_logical_partitions(self):
+        await self._setup(Bootloader.UEFI, "dos", fix_bios=True)
+        install_min = self.fsc.calculate_suggested_install_min()
+
+        model, disk = self.model, self.disk
+        # Sizes are irrelevant
+        size = 4 << 20
+
+        # This is inspired from threebuntu-on-msdos.json
+        p1 = make_partition(model, disk, preserve=True, size=size)
+        make_partition(model, disk, preserve=True, size=size * 4, flag="extended")
+        make_partition(model, disk, preserve=True, size=size)  # This is the ESP
+        p5 = make_partition(model, disk, preserve=True, size=size, flag="logical")
+        p6 = make_partition(model, disk, preserve=True, size=size, flag="logical")
+
+        self.model._probe_data["os"] = {
+            p1._path(): {
+                "label": "Ubuntu",
+                "long": "Ubuntu 20.04.4 LTS",
+                "type": "linux",
+                "version": "20.04.4",
+            },
+            p5._path(): {
+                "label": "Ubuntu1",
+                "long": "Ubuntu 21.10",
+                "type": "linux",
+                "version": "21.10",
+            },
+            p6._path(): {
+                "label": "Ubuntu2",
+                "long": "Ubuntu 22.04 LTS",
+                "type": "linux",
+                "version": "22.04",
+            },
+        }
+
+        indexed_scenarios = self.fsc.available_erase_install_scenarios(install_min)
+
+        scenarios = [indexed_scenario[1] for indexed_scenario in indexed_scenarios]
+        sorted_scenarios = sorted(
+            scenarios, key=lambda sc: (sc.disk_id, sc.partition_number)
+        )
+        self.assertEqual(1, sorted_scenarios[0].partition_number)
+        self.assertEqual(5, sorted_scenarios[1].partition_number)
+        self.assertEqual(6, sorted_scenarios[2].partition_number)
+        self.assertEqual(3, len(sorted_scenarios))
+
     async def test_resize_has_enough_room_for_partitions__one_primary(self):
         await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
 
@@ -1833,7 +2247,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         # Sizes are irrelevant
         size = 4 << 20
         p1 = make_partition(model, disk, preserve=True, size=size)
-        p2 = make_partition(model, disk, preserve=True, size=size, flag="extended")
+        p2 = make_partition(model, disk, preserve=True, size=size * 2, flag="extended")
         p5 = make_partition(model, disk, preserve=True, size=size, flag="logical")
         p6 = make_partition(model, disk, preserve=True, size=size, flag="logical")
         p3 = make_partition(model, disk, preserve=True, size=size)
@@ -1941,6 +2355,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
             }
         )
         self.app.snapdapi = snapdapi.make_api_client(AsyncSnapd(get_fake_connection()))
+        self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
         self.app.dr_cfg = DRConfig()
         self.app.dr_cfg.systems_dir_exists = True
         self.app.controllers.Source.get_handler.return_value = TrivialSourceHandler("")
@@ -1948,7 +2363,20 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.fsc = FilesystemController(app=self.app)
         self.fsc._configured = True
         self.fsc.model = make_model(Bootloader.UEFI)
-        self.fsc._mount_systems_dir = mock.AsyncMock()
+        self.choice = GuidedChoiceV2(
+            target=GuidedStorageTargetReformat,
+            capability=GuidedCapability.CORE_BOOT_ENCRYPTED,
+        )
+
+        @contextlib.asynccontextmanager
+        async def mounted(self, *, source_id):
+            yield
+
+        p = mock.patch(
+            "subiquity.server.snapd.system_getter.SystemsDirMounter.mounted", mounted
+        )
+        p.start()
+        self.addCleanup(p.stop)
 
     def _add_details_for_structures(self, structures):
         self.fsc._info = VariationInfo(
@@ -1959,10 +2387,29 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 volumes={
                     "pc": snapdtypes.Volume(schema="gpt", structure=structures),
                 },
+                model=snapdtypes.Model(
+                    architecture="amd64",
+                    snaps=[],
+                ),
             ),
         )
 
-    async def test_guided_core_boot(self):
+    @parameterized.expand(
+        (
+            [None, None],
+            [
+                {"password": "asdf"},
+                VolumesAuth(
+                    mode=VolumesAuthMode.PASSPHRASE, passphrase="asdf", pin=None
+                ),
+            ],
+            [
+                {"pin": "1234"},
+                VolumesAuth(mode=VolumesAuthMode.PIN, passphrase=None, pin="1234"),
+            ],
+        )
+    )
+    async def test_guided_core_boot(self, va_input, va_expected):
         disk = make_disk(self.fsc.model)
         arbitrary_uuid = str(uuid.uuid4())
         self._add_details_for_structures(
@@ -1979,7 +2426,13 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 ),
             ]
         )
-        await self.fsc.guided_core_boot(disk)
+        if va_input is not None:
+            self.choice = attrs.evolve(self.choice, **va_input)
+        await self.fsc.guided_core_boot(disk, self.choice)
+        if va_expected is None:
+            self.assertIsNone(self.fsc._volumes_auth)
+        else:
+            self.assertEqual(va_expected, self.fsc._volumes_auth)
         [part1, part2] = disk.partitions()
         self.assertEqual(part1.offset, 1 << 20)
         self.assertEqual(part1.size, 1 << 30)
@@ -2014,7 +2467,8 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 ),
             ]
         )
-        await self.fsc.guided_core_boot(disk)
+        await self.fsc.guided_core_boot(disk, self.choice)
+        self.assertIsNone(self.fsc._volumes_auth)
         [part] = disk.partitions()
         self.assertEqual(reused_part, part)
         self.assertEqual(reused_part.wipe, "superblock")
@@ -2035,7 +2489,8 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 ),
             ]
         )
-        await self.fsc.guided_core_boot(disk)
+        await self.fsc.guided_core_boot(disk, self.choice)
+        self.assertIsNone(self.fsc._volumes_auth)
         [part] = disk.partitions()
         self.assertEqual(existing_part, part)
         self.assertEqual(existing_part.wipe, None)
@@ -2062,7 +2517,8 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 ),
             ]
         )
-        await self.fsc.guided_core_boot(disk)
+        await self.fsc.guided_core_boot(disk, self.choice)
+        self.assertIsNone(self.fsc._volumes_auth)
         [bios_part, part] = disk.partitions()
         self.assertEqual(part.offset, 2 << 20)
         self.assertEqual(part.partition_name, "ptname")
@@ -2119,7 +2575,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         with mock.patch.object(
             snapdapi, "post_and_wait", new_callable=mock.AsyncMock
         ) as mocked:
-            mocked.return_value = snapdtypes.SystemActionResponse(
+            mocked.return_value = snapdtypes.SystemActionResponseSetupEncryption(
                 encrypted_devices={
                     snapdtypes.Role.SYSTEM_DATA: "enc-system-data",
                 },
@@ -2135,7 +2591,9 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         with mock.patch.object(
             snapdapi, "post_and_wait", new_callable=mock.AsyncMock
         ) as mocked:
-            await self.fsc.finish_install(context=self.fsc.context)
+            await self.fsc.finish_install(
+                context=self.fsc.context, kernel_components=[]
+            )
         mocked.assert_called_once()
         [call] = mocked.mock_calls
         request = call.args[2]
@@ -2276,3 +2734,144 @@ class TestResetPartitionLookAhead(IsolatedAsyncioTestCase):
         self.app.autoinstall_config = config
 
         self.assertEqual(self.fsc.is_reset_partition_only(), expected)
+
+
+class TestGuidedChoiceValidation(IsolatedAsyncioTestCase):
+    def test_pin_and_pass(self):
+        reformat = GuidedStorageTargetReformat
+        tpmfde = GuidedCapability.CORE_BOOT_ENCRYPTED
+        choice = GuidedChoiceV2(
+            target=reformat, capability=tpmfde, pin="01234", password="asdf"
+        )
+        with self.assertRaises(StorageRecoverableError):
+            choice.validate()
+
+    @parameterized.expand(
+        (
+            (GuidedCapability.MANUAL, False, False),
+            (GuidedCapability.LVM_LUKS, False, True),
+            (GuidedCapability.CORE_BOOT_ENCRYPTED, True, True),
+            (GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED, True, True),
+        )
+    )
+    def test_capability_pin_pass_validation(self, capability, pin_ok, pass_ok):
+        def maybe_assert_raises(ok: bool):
+            if ok:
+                return contextlib.nullcontext()
+            else:
+                return self.assertRaises(StorageRecoverableError)
+
+        reformat = GuidedStorageTargetReformat
+        choice = GuidedChoiceV2(target=reformat, capability=capability)
+        pin_choice = attrs.evolve(choice, pin="01234")
+        with maybe_assert_raises(pin_ok):
+            pin_choice.validate()
+
+        passphrase_choice = attrs.evolve(choice, password="asdf")
+        with maybe_assert_raises(pass_ok):
+            passphrase_choice.validate()
+
+
+class TestCalculateEntropy(IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.app = make_app()
+        self.app.opts.bootloader = None
+        self.fsc = FilesystemController(app=self.app)
+        self.fsc._info = mock.Mock()
+        self.fsc._info.needs_systems_mount = False
+
+    async def test_both_pin_and_pass(self):
+        with self.assertRaises(StorageRecoverableError):
+            await self.fsc.v2_calculate_entropy_POST(
+                CalculateEntropyRequest(passphrase="asdf", pin="01234")
+            )
+
+    async def test_neither_pin_and_pass(self):
+        with self.assertRaises(StorageRecoverableError):
+            await self.fsc.v2_calculate_entropy_POST(CalculateEntropyRequest())
+
+    @parameterized.expand(
+        (
+            ["asdf"],
+            ["+1"],
+            ["-1"],
+        )
+    )
+    async def test_invalid_pin(self, pin):
+        with self.assertRaises(StorageRecoverableError):
+            await self.fsc.v2_calculate_entropy_POST(CalculateEntropyRequest(pin=pin))
+
+    @parameterized.expand(
+        (
+            (
+                "pin",
+                "012",
+                EntropyResponse(False, 3, 4, 5, failure_reasons=["low-entropy"]),
+                "invalid-pin",
+            ),
+            (
+                "passphrase",
+                "asdf",
+                EntropyResponse(False, 8, 8, 10, failure_reasons=["low-entropy"]),
+                "invalid-passphrase",
+            ),
+        )
+    )
+    async def test_stub_invalid(self, type_, pin_or_pass, expected_entropy, kind):
+        label = self.fsc._info.label
+        self.app.snapd = AsyncSnapd(get_fake_connection())
+
+        with mock.patch(
+            "subiquity.server.controllers.filesystem.snapdapi.make_api_client",
+            return_value=self.app.snapdapi,
+        ):
+            with mock.patch.object(
+                self.app.snapdapi.v2.systems[label],
+                "POST",
+                new_callable=mock.AsyncMock,
+                return_value=snapdtypes.EntropyCheckResponse(
+                    kind=kind,
+                    message="did not pass quality checks",
+                    value=snapdtypes.InsufficientEntropyDetails(
+                        reasons=[snapdtypes.InsufficientEntropyReasons.LOW_ENTROPY],
+                        entropy_bits=expected_entropy.entropy_bits,
+                        min_entropy_bits=expected_entropy.min_entropy_bits,
+                        optimal_entropy_bits=expected_entropy.optimal_entropy_bits,
+                    ),
+                ),
+            ):
+                actual = await self.fsc.v2_calculate_entropy_POST(
+                    CalculateEntropyRequest(**{type_: pin_or_pass})
+                )
+
+        self.assertEqual(expected_entropy, actual)
+
+    @parameterized.expand(
+        (
+            ("pin", "01234", EntropyResponse(True, 5, 4, 8)),
+            ("passphrase", "asdfasdf", EntropyResponse(True, 8, 8, 16)),
+        )
+    )
+    async def test_stub_valid(self, type_, pin_or_pass, expected_entropy):
+        label = self.fsc._info.label
+        self.app.snapd = AsyncSnapd(get_fake_connection())
+
+        with mock.patch(
+            "subiquity.server.controllers.filesystem.snapdapi.make_api_client",
+            return_value=self.app.snapdapi,
+        ):
+            with mock.patch.object(
+                self.app.snapdapi.v2.systems[label],
+                "POST",
+                new_callable=mock.AsyncMock,
+                return_value=snapdtypes.EntropyCheckResponse(
+                    entropy_bits=expected_entropy.entropy_bits,
+                    min_entropy_bits=expected_entropy.min_entropy_bits,
+                    optimal_entropy_bits=expected_entropy.optimal_entropy_bits,
+                ),
+            ):
+                actual = await self.fsc.v2_calculate_entropy_POST(
+                    CalculateEntropyRequest(**{type_: pin_or_pass})
+                )
+
+        self.assertEqual(expected_entropy, actual)

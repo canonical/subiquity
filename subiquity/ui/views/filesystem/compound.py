@@ -24,7 +24,7 @@ from subiquity.models.filesystem import humanize_size
 from subiquitycore.ui.container import WidgetWrap
 from subiquitycore.ui.form import Form, Toggleable, WantsToKnowFormField, simple_field
 from subiquitycore.ui.selector import Selector
-from subiquitycore.ui.table import TablePile, TableRow
+from subiquitycore.ui.table import ColSpec, TablePile, TableRow
 from subiquitycore.ui.utils import Color
 
 log = logging.getLogger("subiquity.ui.views.filesystem.compound")
@@ -37,7 +37,8 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
     signals = ["change"]
 
     def __init__(self):
-        self.table = TablePile([], spacing=1)
+        colspecs = {0: ColSpec(can_shrink=True, rpad=1)}
+        self.table = TablePile([], spacing=1, colspecs=colspecs)
         self.device_to_checkbox = {}
         self.device_to_selector = {}
         self.devices = {}  # {device:active|spare}

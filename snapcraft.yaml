@@ -80,7 +80,7 @@ parts:
 
     source: https://git.launchpad.net/curtin
     source-type: git
-    source-commit: "0ded564bde89cbf2ede7a9c3d6e1c260688b37cb"
+    source-commit: "5fd4993b45cda829b41b1173237e36a8b405ba8d"
 
     override-pull: |
       craftctl default
@@ -136,6 +136,7 @@ parts:
       - python3-minimal
       - python3-more-itertools
       - python3-oauthlib
+      - python3-packaging
       - python3-passlib
       - python3-pkg-resources
       - python3-pyroute2
@@ -231,7 +232,7 @@ parts:
 
     source: https://github.com/canonical/probert.git
     source-type: git
-    source-commit: "83d25c873a4a7d93c158d76da86cb9c612c29572"
+    source-commit: "36086af03fc4941a8ac219648ce77401743f3ae0"
 
     override-build: *pyinstall
 

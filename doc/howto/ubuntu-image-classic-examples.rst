@@ -122,7 +122,7 @@ In this example, you create a simple classical Ubuntu image for the **amd64** ar
     [19] generate_package_manifest
     Build successful
 
-   The resulting artefacts are:
+   The resulting artifacts are:
 
    * The generated image itself: :file:`ubuntu-classical-amd64.img`
    * The build manifest: :file:`ubuntu-classical-amd64.manifest`

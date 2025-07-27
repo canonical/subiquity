@@ -45,14 +45,12 @@ class TestClient(unittest.TestCase):
         @api
         class API:
             class endpoint:
-                def GET() -> str:
-                    ...
+                def GET() -> str: ...
 
-                def POST(data: Payload[str]) -> None:
-                    ...
+                def POST(data: Payload[str]) -> None: ...
 
         @contextlib.asynccontextmanager
-        async def make_request(method, path, *, params, json):
+        async def make_request(method, path, *, params, json, raise_for_status):
             requests.append((method, path, params, json))
             if method == "GET":
                 v = "value"
@@ -75,11 +73,10 @@ class TestClient(unittest.TestCase):
     def test_args(self):
         @api
         class API:
-            def GET(arg: str) -> str:
-                ...
+            def GET(arg: str) -> str: ...
 
         @contextlib.asynccontextmanager
-        async def make_request(method, path, *, params, json):
+        async def make_request(method, path, *, params, json, raise_for_status):
             requests.append((method, path, params, json))
             yield FakeResponse(params["arg"])
 
@@ -95,11 +92,10 @@ class TestClient(unittest.TestCase):
         class API:
             @path_parameter
             class param:
-                def GET(arg: str) -> str:
-                    ...
+                def GET(arg: str) -> str: ...
 
         @contextlib.asynccontextmanager
-        async def make_request(method, path, *, params, json):
+        async def make_request(method, path, *, params, json, raise_for_status):
             requests.append((method, path, params, json))
             yield FakeResponse(params["arg"])
 
@@ -115,21 +111,18 @@ class TestClient(unittest.TestCase):
         class API:
             serialize_query_args = False
 
-            def GET(arg: str) -> str:
-                ...
+            def GET(arg: str) -> str: ...
 
             class meth:
-                def GET(arg: str, payload: Payload[int]) -> str:
-                    ...
+                def GET(arg: str, payload: Payload[int]) -> str: ...
 
                 class more:
                     serialize_query_args = True
 
-                    def GET(arg: str) -> str:
-                        ...
+                    def GET(arg: str) -> str: ...
 
         @contextlib.asynccontextmanager
-        async def make_request(method, path, *, params, json):
+        async def make_request(method, path, *, params, json, raise_for_status):
             requests.append((method, path, params, json))
             yield FakeResponse(params["arg"])
 
@@ -151,8 +144,7 @@ class TestClient(unittest.TestCase):
         class API2:
             serialize_query_args = False
 
-            def GET(arg: int) -> str:
-                ...
+            def GET(arg: int) -> str: ...
 
         with self.assertRaises(InvalidQueryArgs):
             api(API2)

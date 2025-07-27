@@ -129,7 +129,7 @@ def get_ips_standalone():
     from subiquitycore.models.network import NETDEV_IGNORED_IFACE_TYPES
 
     prober = Prober()
-    prober.probe_network()
+    prober.probe_network(with_wlan_listener=False)
     links = prober.get_results()["network"]["links"]
     ips = []
     for link in sorted(links, key=lambda link: link["netlink_data"]["name"]):

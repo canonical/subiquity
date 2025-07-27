@@ -33,7 +33,7 @@ def _wrap(make_request, path, meth, serializer, serialize_query_args):
             payload_ann = param.annotation.__args__[0]
     r_ann = sig.return_annotation
 
-    async def impl(self, *args, **kw):
+    async def impl(self, *args, raise_for_status=True, **kw):
         args = sig.bind(*args, **kw)
         query_args = {}
         data = None
@@ -45,9 +45,14 @@ def _wrap(make_request, path, meth, serializer, serialize_query_args):
                     value = serializer.to_json(meth_params[arg_name].annotation, value)
                 query_args[arg_name] = value
         async with make_request(
-            meth.__name__, path.format(**self.path_args), json=data, params=query_args
+            meth.__name__,
+            path.format(**self.path_args),
+            json=data,
+            params=query_args,
+            raise_for_status=raise_for_status,
         ) as resp:
-            resp.raise_for_status()
+            if raise_for_status:
+                resp.raise_for_status()
             return serializer.deserialize(r_ann, await resp.json())
 
     return impl
@@ -104,7 +109,7 @@ def make_client_for_conn(
     session = aiohttp.ClientSession(connector=conn, connector_owner=False)
 
     @contextlib.asynccontextmanager
-    async def make_request(method, path, *, params, json):
+    async def make_request(method, path, *, params, json, raise_for_status):
         # session.request needs a full URL with scheme and host even though
         # that's in some ways a bit silly with a unix socket, so we just
         # hardcode something here (I guess the "a" gets sent along to the

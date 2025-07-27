@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-""" Module that defines the model for Ubuntu Pro configuration. """
+"""Module that defines the model for Ubuntu Pro configuration."""
 
 import logging
 

@@ -181,7 +181,7 @@ def make_partition(
     model = device._m
     if size is None or size == -1 or offset is None:
         if offset is None:
-            gap = gaps.largest_gap(device)
+            gap = gaps.largest_gap(device, in_extended=flag == "logical")
             offset = gap.offset
         else:
             gap = gaps.includes(device, offset)
@@ -206,6 +206,10 @@ def make_partition(
 
 def make_filesystem(model, partition, *, fstype="ext4", **kw):
     return Filesystem(m=model, volume=partition, fstype=fstype, **kw)
+
+
+def make_mount(model, fs: Filesystem, path):
+    return model.add_mount(fs, path)
 
 
 def make_model_and_partition(bootloader=None):
@@ -286,6 +290,10 @@ def make_nvme_controller(
     )
     model._actions.append(ctrler)
     return ctrler
+
+
+def make_dm_crypt(model, device):
+    return model.add_dm_crypt(device)
 
 
 class TestFilesystemModel(unittest.TestCase):
@@ -484,6 +492,39 @@ class TestFilesystemModel(unittest.TestCase):
             m_needs_bootloader.assert_called_once()
         else:
             m_needs_bootloader.assert_not_called()
+
+    @parameterized.expand(
+        (
+            (1, True, False),
+            (2, True, False),
+            (5, True, True),
+            (6, True, True),
+            (1, False, False),
+            (2, False, False),
+            (5, False, False),
+            (6, False, False),
+        )
+    )
+    def test_remove_partition__renumbers(
+        self, pnumber: int, allow_renumbering: bool, expect_call: bool
+    ):
+        m, d = make_model_and_disk(ptable="dos", storage_version=2)
+
+        make_partition(m, d, preserve=True)
+        make_partition(m, d, preserve=True)
+        make_partition(m, d, preserve=True, flag="extended")
+        make_partition(m, d, preserve=True, flag="logical")
+        make_partition(m, d, preserve=True, flag="logical")
+
+        part = next(iter([p for p in d.partitions() if p.number == pnumber]))
+
+        with mock.patch.object(d, "renumber_logical_partitions") as m_renumber:
+            m.remove_partition(part, allow_renumbering=allow_renumbering)
+
+        if expect_call:
+            m_renumber.assert_called_once_with(part)
+        else:
+            m_renumber.assert_not_called()
 
 
 def fake_up_blockdata_disk(disk, **kw):
@@ -1529,7 +1570,7 @@ class TestDisk(unittest.TestCase):
         self.assertIsNot(d._partitions, d2._partitions)
 
     def test__reformatted__with_partitions(self):
-        m, d = make_model_and_disk()
+        m, d = make_model_and_disk(ptable="gpt")
 
         p1 = make_partition(m, d)
         p2 = make_partition(m, d)
@@ -1540,8 +1581,11 @@ class TestDisk(unittest.TestCase):
         self.assertEqual(d.partitions(), [p1, p2])
         self.assertEqual(d2.partitions(), [])
 
+        self.assertEqual("gpt", d.ptable)
+        self.assertIsNone(d2.ptable)
+
     def test__reformatted__with_in_use_parts(self):
-        m, d = make_model_and_disk()
+        m, d = make_model_and_disk(ptable="gpt")
 
         p1 = make_partition(m, d, is_in_use=True)
         p2 = make_partition(m, d, is_in_use=True)
@@ -1554,6 +1598,9 @@ class TestDisk(unittest.TestCase):
         self.assertIsNot(d, d2)
         self.assertEqual(d.partitions(), [p1, p2, p3, p4, p5])
         self.assertEqual(d2.partitions(), [p1, p2, p4])
+
+        self.assertEqual("gpt", d.ptable)
+        self.assertEqual("gpt", d2.ptable)
 
     def test__excluding_partition(self):
         m, d = make_model_and_disk()
@@ -1585,6 +1632,48 @@ class TestPartition(unittest.TestCase):
         self.assertTrue(p5.is_logical)
         self.assertTrue(p6.is_logical)
         self.assertTrue(p7.is_logical)
+
+    def test_os(self):
+        m = make_model(storage_version=2)
+        d = make_disk(m, ptable="gpt")
+
+        p1 = make_partition(m, d, preserve=True)
+        p2 = make_partition(m, d, preserve=True)
+
+        os_info = {
+            "label": "Ubuntu",
+            "long": "Ubuntu 22.04.1 LTS",
+            "type": "linux",
+            "version": "22.04.1",
+        }
+
+        m._probe_data["os"] = {p1._path(): os_info}
+
+        self.assertEqual("Ubuntu", p1.os.label)
+        self.assertEqual("Ubuntu 22.04.1 LTS", p1.os.long)
+        self.assertEqual("linux", p1.os.type)
+        self.assertEqual("22.04.1", p1.os.version)
+        self.assertIsNone(p1.os.subpath)
+        self.assertIsNone(p2.os)
+
+    def test_os__recreated_partition(self):
+        m = make_model(storage_version=2)
+        d = make_disk(m, ptable="gpt")
+
+        # We do not mark the partition preserved, which means we either
+        # formatted the disk or deleted / recreated the partition.
+        p = make_partition(m, d)
+
+        os_info = {
+            "label": "Ubuntu",
+            "long": "Ubuntu 22.04.1 LTS",
+            "type": "linux",
+            "version": "22.04.1",
+        }
+
+        m._probe_data["os"] = {p._path(): os_info}
+
+        self.assertIsNone(p.os)
 
 
 class TestCanmount(SubiTestCase):
@@ -2032,6 +2121,16 @@ class TestDiskForMatch(SubiTestCase):
         d2 = make_disk(m, serial="s", path="/dev/d2", wwn="w")
         self.assertEqual(d1, m.disk_for_match([d2, d1], {"size": sort_criteria}))
         self.assertEqual([d1, d2], m.disks_for_match([d2, d1], {"size": sort_criteria}))
+
+    def test_sort_disks_none_values(self):
+        m = make_model()
+        d1 = make_disk(m, wwn=None, serial="s", path="/dev/d1")
+        d2 = make_disk(m, wwn="w", serial=None, path="/dev/d2")
+        d3 = make_disk(m, wwn="w", serial="s", path=None)
+        self.assertEqual(d1, m.disk_for_match([d3, d2, d1], {"size": "largest"}))
+        self.assertEqual(
+            [d1, d2, d3], m.disks_for_match([d3, d2, d1], {"size": "largest"})
+        )
 
     def test_sort_raid(self):
         m = make_model()

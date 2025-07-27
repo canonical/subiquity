@@ -1,0 +1,37 @@
+name: TICS
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 5 * * 6'  # Run at 5:17a (arbitrary) on Saturday
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  TICS:
+    runs-on: [self-hosted, linux, amd64, tiobe, noble]
+    steps:
+      - name: Checkout the project
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Dependencies
+        run: |
+          sudo ./scripts/installdeps.sh
+
+      - name: Coverage
+        run: |
+          make coverage
+
+      - name: Run TICS analysis with github-action
+        uses: tiobe/tics-github-action@v3
+        with:
+          mode: qserver
+          project: subiquity
+          branchdir: .
+          viewerUrl: https://canonical.tiobe.com/tiobeweb/TICS/api/cfg?name=default
+          ticsAuthToken: ${{ secrets.TICSAUTHTOKEN }}
+          installTics: true

@@ -32,7 +32,7 @@ Now you can invoke the validation script with:
 
 .. code:: none
 
-   ./scripts/validate-autoinstall-user-data <path-to-config>
+   ./scripts/validate-autoinstall-user-data.py <path-to-config>
 
 
 or you can feed the configuration data via stdin:
@@ -41,7 +41,7 @@ or you can feed the configuration data via stdin:
 .. code:: none
 
    # a trivial example
-   cat <config> | ./scripts/validate-autoinstall-user-data
+   cat <config> | ./scripts/validate-autoinstall-user-data.py
 
 .. warning::
 
@@ -81,7 +81,7 @@ If you want to validate autoinstall configurations which will be delivered via t
    autoinstall:
       # autoinstall directives
 
-then this can be signalled by passing the ``--no-expect-cloudconfig`` flag. Both formats in this delivery method, with or without a top-level ``autoinstall`` keyword, are supported in this mode.
+then this can be signaled by passing the ``--no-expect-cloudconfig`` flag. Both formats in this delivery method, with or without a top-level ``autoinstall`` keyword, are supported in this mode.
 
 .. _validator-limitations:
 

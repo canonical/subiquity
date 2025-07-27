@@ -43,11 +43,11 @@ def extend_dec_special_charmap():
             ord("\N{BLACK LEFT-POINTING SMALL TRIANGLE}"): "<",
             ord("\N{BLACK DOWN-POINTING SMALL TRIANGLE}"): "v",
             ord("\N{BLACK UP-POINTING SMALL TRIANGLE}"): "^",
-            ord("\N{check mark}"): "*",
-            ord("\N{circled white star}"): "*",
-            ord("\N{bullet}"): "*",
-            ord("\N{lower half block}"): "=",
-            ord("\N{upper half block}"): "=",
+            ord("\N{CHECK MARK}"): "*",
+            ord("\N{CIRCLED WHITE STAR}"): "*",
+            ord("\N{BULLET}"): "*",
+            ord("\N{LOWER HALF BLOCK}"): "=",
+            ord("\N{UPPER HALF BLOCK}"): "=",
             ord("\N{FULL BLOCK}"): urwid.escape.DEC_SPECIAL_CHARMAP[
                 ord("\N{BOX DRAWINGS LIGHT VERTICAL}")
             ],

@@ -32,7 +32,7 @@ When providing autoinstall via cloud-init, the autoinstall configuration is prov
 
 .. note::
 
-   :external+cloud-init:ref:`user_data_formats-cloud_config` files must contain the ``#cloud-config`` header to be recognised as a valid cloud configuration data file.
+   :external+cloud-init:ref:`user_data_formats-cloud_config` files must contain the ``#cloud-config`` header to be recognized as a valid cloud configuration data file.
 
 
 Autoinstall on the installation media

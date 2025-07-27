@@ -35,7 +35,7 @@ validate () {
         autoinstall-reset-only)
             python3 scripts/validate-yaml.py --no-root-mount "${cfgs[@]}"
             ;;
-        answers-core-desktop|answers-uc24)
+        answers-core-desktop|autoinstall-ubuntu-core-installer|answers-uc24)
             ;;
         *)
             python3 scripts/validate-yaml.py "${cfgs[@]}"
@@ -46,7 +46,7 @@ validate () {
         exit 1
     fi
     case $testname in
-        answers-core-desktop|answers-uc24)
+        answers-core-desktop|autoinstall-ubuntu-core-installer|answers-uc24)
             ;;
         answers-bridge)
             python3 scripts/check-yaml-fields.py $tmpdir/var/log/installer/curtin-install/subiquity-curthooks.conf \
@@ -140,7 +140,7 @@ for answers in examples/answers/*.yaml; do
         --source-catalog $catalog
     validate install
     case $testname in
-        answers-core-desktop|answers-uc24)
+        answers-core-desktop|autoinstall-ubuntu-core-installer|answers-uc24)
             ;;
         *)
             grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' $tmpdir/subiquity-server-debug.log
@@ -215,6 +215,41 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --kernel-cmdline autoinstall \
     --source-catalog examples/sources/tpm.yaml
 validate
+
+clean
+testname=autoinstall-kernel-components
+# components install with fake nvidia pci devices
+LANG=C.UTF-8 timeout --foreground 60 \
+    python3 -m subiquity.cmd.tui \
+    --dry-run \
+    --output-base "$tmpdir" \
+    --machine-config examples/machines/simple.json \
+    --autoinstall examples/autoinstall/hybrid.yaml \
+    --dry-run-config examples/dry-run-configs/tpm.yaml \
+    --bootloader uefi \
+    --snaps-from-examples \
+    --kernel-cmdline autoinstall \
+    --source-catalog examples/sources/tpm.yaml
+validate
+grep -q "finish_install: kernel_components=\['nvidia-510-uda-ko', 'nvidia-510-uda-user'\]" \
+	$tmpdir/subiquity-server-debug.log
+
+clean
+testname=autoinstall-ubuntu-core-installer
+# ubuntu-core-installer install (check that optional snaps are installed)
+LANG=C.UTF-8 timeout --foreground 60 \
+    python3 -m subiquity.cmd.tui \
+    --dry-run \
+    --output-base "$tmpdir" \
+    --machine-config examples/machines/simple.json \
+    --autoinstall examples/autoinstall/core-installer.yaml \
+    --bootloader uefi \
+    --snaps-from-examples \
+    --kernel-cmdline autoinstall \
+    --source-catalog examples/sources/core-installer.yaml
+validate
+grep -F "finish_install: optional_install=OptionalInstall(snaps=['console-conf'], components={'pc-kernel': []}, all=False)" \
+	$tmpdir/subiquity-server-debug.log
 
 clean
 testname=autoinstall-reset-only

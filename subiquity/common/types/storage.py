@@ -65,8 +65,18 @@ class Partition:
     estimated_min_size: Optional[int] = -1
     resize: Optional[bool] = None
     path: Optional[str] = None
+    # Be careful, this corresponds to the partition_name field (not the name
+    # field) in the associated fsobject
+    name: Optional[str] = None
     # Was this partition mounted when the installer started?
     is_in_use: bool = False
+    # read-only views of mount, format, and encryption status.  Used to
+    # simplify display of complex constructed objects - maybe this partition
+    # isn't mounted directly but contains other devices which eventually have
+    # information that we want to show.
+    effective_mount: Optional[str] = None
+    effective_format: Optional[str] = None
+    effectively_encrypted: Optional[bool] = None
 
 
 @attr.s(auto_attribs=True)
@@ -114,6 +124,14 @@ class Disk:
     model: Optional[str] = None
     vendor: Optional[str] = None
     has_in_use_partition: bool = False
+    # Going forward, we want the v2 storage responses to return a list of
+    # operations (e.g., reformat, add-partition, delete-partition ...) that can
+    # be performed on a given disk. But we don't have this implemented yet.
+    # The requires_reformat field is essentially a way to tell clients that
+    # only the "reformat" operation is currently possible. No partition can be
+    # added, deleted or otherwise modified on this disk until a reformat is
+    # performed.
+    requires_reformat: Optional[bool] = None
 
 
 class GuidedCapability(enum.Enum):
@@ -162,6 +180,26 @@ class GuidedCapability(enum.Enum):
         return self in [
             GuidedCapability.ZFS,
             GuidedCapability.ZFS_LUKS_KEYSTORE,
+        ]
+
+    def is_tpm_backed(self) -> bool:
+        return self in [
+            GuidedCapability.CORE_BOOT_ENCRYPTED,
+            GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+        ]
+
+    def supports_passphrase(self) -> bool:
+        return self in [
+            GuidedCapability.LVM_LUKS,
+            GuidedCapability.CORE_BOOT_ENCRYPTED,
+            GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+            GuidedCapability.ZFS_LUKS_KEYSTORE,
+        ]
+
+    def supports_pin(self) -> bool:
+        return self in [
+            GuidedCapability.CORE_BOOT_ENCRYPTED,
+            GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
         ]
 
 
@@ -226,6 +264,8 @@ class GuidedResizeValues:
 @attr.s(auto_attribs=True)
 class GuidedStorageTargetReformat:
     disk_id: str
+    # ptable=None means to use the default (GPT in most scenarios)
+    ptable: Optional[str] = None
     allowed: List[GuidedCapability] = attr.Factory(list)
     disallowed: List[GuidedDisallowedCapability] = attr.Factory(list)
 
@@ -315,13 +355,26 @@ class GuidedChoiceV2:
     target: GuidedStorageTarget
     capability: GuidedCapability
 
-    # Those two fields are only used when using LVM+LUKS
+    # password is used in the LUKS encryption cases, and also with TPMFDE in
+    # the PASSPHRASE authentication_mode.
     password: Optional[str] = attr.ib(default=None, repr=False)
+    # pin is only used with TPMFDE in the PIN authentication_mode.
+    pin: Optional[str] = attr.ib(default=None, repr=False)
     recovery_key: Optional[RecoveryKey] = None
 
     sizing_policy: Optional[SizingPolicy] = SizingPolicy.SCALED
     reset_partition: bool = False
     reset_partition_size: Optional[int] = None
+
+    def validate(self):
+        from subiquity.server.controllers.filesystem import validate_pin_pass
+
+        validate_pin_pass(
+            passphrase_allowed=self.capability.supports_passphrase(),
+            pin_allowed=self.capability.supports_pin(),
+            passphrase=self.password,
+            pin=self.pin,
+        )
 
 
 @attr.s(auto_attribs=True)
@@ -349,3 +402,21 @@ class ModifyPartitionV2:
 class ReformatDisk:
     disk_id: str
     ptable: Optional[str] = None
+
+
+@attr.s(auto_attribs=True)
+class CalculateEntropyRequest:
+    passphrase: Optional[str] = None
+    pin: Optional[str] = None
+
+
+@attr.s(auto_attribs=True)
+class EntropyResponse:
+    success: bool
+
+    entropy_bits: int
+    min_entropy_bits: int
+    optimal_entropy_bits: int
+
+    # Set to None if success is True
+    failure_reasons: Optional[List[str]] = None

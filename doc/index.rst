@@ -59,7 +59,7 @@ Discuss:
 Contribute:
   * `Contribution guidelines`_ on GitHub
   * `Issue tracker`_ on Launchpad
-  * `Localisation`_ on Launchpad
+  * `Localization`_ on Launchpad
 
 .. toctree::
    :hidden:
@@ -76,5 +76,5 @@ Contribute:
 .. _Ubuntu Foundations: https://discourse.ubuntu.com/c/foundations/
 .. _Libera.Chat: https://libera.chat/
 .. _Contribution guidelines: https://github.com/canonical/subiquity/blob/main/CONTRIBUTING.md
-.. _Localisation: https://translations.launchpad.net/ubuntu/+source/subiquity/
+.. _Localization: https://translations.launchpad.net/ubuntu/+source/subiquity/
 .. _Issue tracker: https://bugs.launchpad.net/subiquity

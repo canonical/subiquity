@@ -69,9 +69,12 @@ class TestInputSource(unittest.IsolatedAsyncioTestCase):
         ]
     )
     async def test_input_source(self, layout, variant, expected_xkb):
-        with patch(
-            "subiquity.server.controllers.keyboard.arun_command"
-        ) as mock_arun_command, patch("pwd.getpwnam") as mock_getpwnam:
+        with (
+            patch(
+                "subiquity.server.controllers.keyboard.arun_command"
+            ) as mock_arun_command,
+            patch("pwd.getpwnam") as mock_getpwnam,
+        ):
             m = Mock()
             m.pw_uid = "99"
             mock_getpwnam.return_value = m

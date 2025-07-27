@@ -14,12 +14,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from subiquity.server.autoinstall import AutoinstallValidationError
-from subiquity.server.controller import SubiquityController
+from subiquity.server.controller import NonInteractiveController, SubiquityController
+from subiquity.server.types import InstallerChannels
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.parameterized import parameterized
 
 
 class TestController(SubiTestCase):
@@ -89,3 +91,122 @@ class TestController(SubiTestCase):
         # This only checks that controllers do not manually create an apport
         # report on validation. Should also be tested in Server
         self.controller.app.make_apport_report.assert_not_called()
+
+
+class TestControllerInteractive(SubiTestCase):
+    def setUp(self):
+        self.controller = SubiquityController(make_app())
+        self.controller.autoinstall_key = "mock"
+        self.controller.autoinstall_key_alias = "mock-alias"
+
+    def test_interactive_with_no_autoinstall(self):
+        """Test the controller is interactive when not autoinstalling."""
+        self.controller.app.autoinstall_config = {}
+        self.assertTrue(self.controller.interactive())
+
+    @parameterized.expand(
+        (
+            (True, {"interactive-sections": ["mock"]}),
+            (True, {"interactive-sections": ["mock-alias"]}),
+            (True, {"interactive-sections": ["*"]}),
+            (False, {"interactive-sections": ["not-mock"]}),
+            (False, {"interactive-sections": []}),
+        )
+    )
+    def test_interactive_sections(self, interactive, config):
+        """Test controller interactivity honors interactive-sections."""
+        self.controller.app.autoinstall_config = config
+        self.assertEqual(interactive, self.controller.interactive())
+
+    def test_interactive_returns_state_variable(self):
+        """Test interactive returns the _active state variable."""
+        self.controller._active = False
+        # By default _active is True, but can be modified by _confirmed for
+        # interactive_for_variants functionality.
+        self.controller.app.autoinstall_config = {}
+        self.assertFalse(self.controller.interactive())
+
+    def test_interactive_fallthrough_is_false(self):
+        """Test interactive returns False as the fallthrough return.
+
+        bool(None) == False, but None != False. This feels like a bug waiting
+        to happen. Let's really make sure it's False.
+        """
+        self.controller.app.autoinstall_config = {"mocked": "stuff"}
+        self.assertEqual(False, self.controller.interactive())
+        self.assertNotEqual(None, self.controller.interactive())
+
+
+class TestNonInteractiveControllerInteractive(SubiTestCase):
+    def setUp(self):
+        self.controller = NonInteractiveController(make_app())
+        self.controller.autoinstall_key = "mock"
+        self.controller.autoinstall_key_alias = "mock-alias"
+
+    @parameterized.expand(
+        (
+            ({},),
+            ({"interactive-sections": ["mock"]},),
+            ({"interactive-sections": ["mock-alias"]},),
+            ({"interactive-sections": ["*"]},),
+            ({"interactive-sections": ["not-mock"]},),
+            ({"interactive-sections": []},),
+        )
+    )
+    def test_always_non_interactive(self, config):
+        """Test NonInteractiveControllers are always non-interactive"""
+        self.controller.app.autoinstall_config = config
+        self.assertFalse(self.controller.interactive())
+
+
+class TestInteractiveForVariant(SubiTestCase):
+    async def test_no_variant_integration(self):
+        """Test no interactive for variant integration by default."""
+
+        class MockController(SubiquityController):
+            _confirmed = AsyncMock()
+
+        controller = MockController(make_app())
+        self.assertIsNone(controller.interactive_for_variants)
+
+        # Use abroadcast to explicitly block until this broadcast is done
+        await controller.app.hub.abroadcast(InstallerChannels.INSTALL_CONFIRMED)
+        controller._confirmed.assert_not_awaited()
+
+    async def test_variant_integration_subscription(self):
+        """Test _confirmed is called when interative for variants is supported."""
+
+        class MockController(SubiquityController):
+            _confirmed = AsyncMock()
+            interactive_for_variants = ["mock-server"]
+
+        controller = MockController(make_app())
+
+        # Use abroadcast to explicitly block until this broadcast is done
+        await controller.app.hub.abroadcast(InstallerChannels.INSTALL_CONFIRMED)
+        controller._confirmed.assert_awaited()
+
+    @parameterized.expand(
+        (
+            (True, "mock-server", ["mock-server", "mock-desktop"]),
+            (True, "mock-desktop", ["mock-server", "mock-desktop"]),
+            (False, "mock-core", ["mock-server", "mock-desktop"]),
+        )
+    )
+    async def test_variant_confirmed_call(self, active, app_variant, variant_support):
+        """Test no interactive for variant integration by default."""
+
+        class MockController(SubiquityController):
+            configured = AsyncMock()
+            interactive_for_variants = variant_support
+
+        controller = MockController(make_app())
+        controller.app.base_model.source.current.variant = app_variant
+
+        await controller._confirmed()
+        if active:
+            controller.configured.assert_not_awaited()
+            self.assertTrue(controller._active)
+        else:
+            controller.configured.assert_awaited()
+            self.assertFalse(controller._active)

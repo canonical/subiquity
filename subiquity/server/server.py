@@ -59,6 +59,7 @@ from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.pkghelper import get_package_installer
 from subiquity.server.runner import get_command_runner
 from subiquity.server.snapd.api import make_api_client
+from subiquity.server.snapd.info import SnapdInfo
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import run_bg_task, run_in_thread
 from subiquitycore.context import Context, with_context
@@ -114,10 +115,11 @@ class MetaController:
             if controller.endpoint in endpoints:
                 await controller.configured()
 
+    # TODO: Make post to /meta/client_variant a RecoverableError (it doesn't
+    # have to be fatal and it's currently only pseudo-fatal).
     async def client_variant_POST(self, variant: str) -> None:
         if variant not in self.app.supported_variants:
             raise ValueError(f"unrecognized client variant {variant}")
-        self.app.base_model.set_source_variant(variant)
         self.app.set_source_variant(variant)
 
     async def client_variant_GET(self) -> str:
@@ -283,12 +285,16 @@ class SubiquityServer(Application):
         "Shutdown",
     ]
 
-    supported_variants = ["server", "desktop"]
+    supported_variants = ["server", "desktop", "core"]
 
     def make_model(self):
         root = "/"
         if self.opts.dry_run:
             root = os.path.abspath(self.opts.output_base)
+        # TODO: Set the model source variant before returning it?
+        #       This _will_ eventually get set by the source controller,
+        #       but before then it's in a state that only requires the
+        #       "default" models i.e., the base set all variants require.
         return SubiquityModel(
             root,
             self.hub,
@@ -300,7 +306,7 @@ class SubiquityServer(Application):
     def __init__(self, opts, block_log_dir):
         super().__init__(opts)
         self.dr_cfg: Optional[DRConfig] = None
-        self.set_source_variant(self.supported_variants[0])
+        self._set_source_variant(self.supported_variants[0])
         self.block_log_dir = block_log_dir
         self.cloud_init_ok = None
         self.state_event = asyncio.Event()
@@ -332,10 +338,13 @@ class SubiquityServer(Application):
             connection = get_fake_connection(self.scale_factor, opts.output_base)
             self.snapd = AsyncSnapd(connection)
             self.snapdapi = make_api_client(self.snapd)
+            self.snapdinfo = SnapdInfo(self.snapdapi)
         elif os.path.exists(self.snapd_socket_path):
             connection = SnapdConnection(self.root, self.snapd_socket_path)
             self.snapd = AsyncSnapd(connection)
-            self.snapdapi = make_api_client(self.snapd)
+            log_snapd = "subiquity-log-snapd" in self.opts.kernel_cmdline
+            self.snapdapi = make_api_client(self.snapd, log_responses=log_snapd)
+            self.snapdinfo = SnapdInfo(self.snapdapi)
         else:
             log.info("no snapd socket found. Snap support is disabled")
             self.snapd = None
@@ -351,8 +360,25 @@ class SubiquityServer(Application):
 
         self.geoip = GeoIP(self, strategy=geoip_strategy)
 
-    def set_source_variant(self, variant):
+    def _set_source_variant(self, variant):
         self.variant = variant
+
+    def set_source_variant(self, variant):
+        """Set the source variant for the install.
+
+        This is the public interface for setting the variant for the install.
+        This ensures that both the server and the model's understanding of the
+        variant is updated in one place.
+
+        Any extra logic for updating the variant in the server should go into
+        the private method _set_source_variant. This is separated out because
+        the sever needs to seed the initial variant state during __init__
+        but the base_model isn't attached to the server object until the .Run()
+        method is called.
+        """
+        self._set_source_variant(variant)
+
+        self.base_model.set_source_variant(variant)
 
     def load_serialized_state(self):
         for controller in self.controllers.instances:

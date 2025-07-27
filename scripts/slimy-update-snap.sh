@@ -55,6 +55,7 @@ do_mount $old old
 add_overlay old new
 
 rm -rf new/lib/python3.12/site-packages/curtin
+rm -rf new/lib/python3.12/site-packages/probert
 
 if [ -d new/lib/python3.12/site-packages/subiquity ] ; then
     subiquity_dest=new/lib/python3.12/site-packages
@@ -71,8 +72,13 @@ rm -rf "${subiquity_dest}/subiquity"
 rm -rf "${subiquity_dest}/subiquitycore"
 
 (cd "${src}" && ./scripts/update-part.py curtin)
+(cd "${src}" && ./scripts/update-part.py probert)
+
+# Build probert for the C extensions
+(cd "${src}"/probert && python3.12 setup.py build_ext --inplace)
 
 rsync -a --chown 0:0 $src/curtin/curtin new/lib/python3.12/site-packages
+rsync -a --chown 0:0 $src/probert/probert new/lib/python3.12/site-packages
 rsync -a --chown 0:0 $src/subiquity $src/subiquitycore $subiquity_dest
 rsync -a --chown 0:0 $src/system_scripts/ $bin_dest
 

@@ -143,7 +143,7 @@ class TestMetapackageSelection(SubiTestCase):
             [None, {"flavor": "bbbb"}, "linux-bbbb-20.04"],
         ]
     )
-    def test_ai(self, mpfile_data, ai_data, metapkg_name):
+    async def test_ai(self, mpfile_data, ai_data, metapkg_name):
         if mpfile_data is not None:
             self.setup_mpfile("etc/subiquity", mpfile_data)
         self.controller.load_autoinstall_data(ai_data)

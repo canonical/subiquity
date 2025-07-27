@@ -13,14 +13,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import contextlib
 import glob
 import json
 import logging
 import os
 import time
 from functools import partial
+from typing import Any
 from urllib.parse import quote_plus, urlencode
 
+import attrs
 import requests_unixsocket
 
 from subiquitycore.async_helpers import run_in_thread
@@ -55,7 +58,7 @@ class SnapdConnection:
         with requests_unixsocket.Session() as session:
             return session.post(
                 self.url_base + path,
-                data=json.dumps(body),
+                json=body,
                 timeout=self.default_timeout_seconds,
             )
 
@@ -88,9 +91,9 @@ class _FakeFileResponse:
             return json.load(fp)
 
 
+@attrs.define
 class _FakeMemoryResponse:
-    def __init__(self, data):
-        self.data = data
+    data: Any
 
     def raise_for_status(self):
         pass
@@ -145,7 +148,51 @@ class FakeSnapdConnection:
         log.debug("pretending to restart snapd to pick up proxy config")
         time.sleep(2 / self.scale_factor)
 
-    def post(self, path, body, **args):
+    def _fake_entropy(self, body) -> _FakeMemoryResponse:
+        if body["action"] == "check-passphrase":
+            entropy_bits = len(body["passphrase"])
+            min_entropy_bits = 8
+            optimal_entropy_bits = 10
+            kind = "invalid-passphrase"
+        else:
+            entropy_bits = len(body["pin"])
+            min_entropy_bits = 4
+            optimal_entropy_bits = 6
+            kind = "invalid-pin"
+
+        if entropy_bits < min_entropy_bits:
+            return _FakeMemoryResponse(
+                {
+                    "type": "error",
+                    "status-code": 400,
+                    "status": "Bad Request",
+                    "result": {
+                        "kind": kind,
+                        "message": "did not pass quality checks",
+                        "value": {
+                            "entropy-bits": entropy_bits,
+                            "min-entropy-bits": min_entropy_bits,
+                            "optimal-entropy-bits": optimal_entropy_bits,
+                            "reasons": ["low-entropy"],
+                        },
+                    },
+                }
+            )
+
+        return _FakeMemoryResponse(
+            {
+                "type": "sync",
+                "status-code": 200,
+                "status": "OK",
+                "result": {
+                    "entropy-bits": entropy_bits,
+                    "min-entropy-bits": min_entropy_bits,
+                    "optimal-entropy-bits": optimal_entropy_bits,
+                },
+            }
+        )
+
+    def post(self, path, body, *, raise_for_status=True, **args):
         if path == "v2/snaps/subiquity" and body["action"] == "refresh":
             # The post-refresh hook does this in the real world.
             update_marker_file = self.output_base + "/run/subiquity/updating"
@@ -159,6 +206,7 @@ class FakeSnapdConnection:
                 }
             )
         change = None
+        sync_result = None
         if path == "v2/snaps/subiquity" and body["action"] == "switch":
             change = "8"
         if path.startswith("v2/systems/") and body["action"] == "install":
@@ -171,6 +219,14 @@ class FakeSnapdConnection:
                     change = "5"
             elif step == "setup-storage-encryption":
                 change = "6"
+            elif step == "generate-recovery-key":
+                sync_result = {"recovery-key": "my-recovery-key"}
+        elif path.startswith("v2/systems/") and body["action"] in (
+            "check-passphrase",
+            "check-pin",
+        ):
+            return self._fake_entropy(body)
+
         if change is not None:
             return _FakeMemoryResponse(
                 {
@@ -180,6 +236,15 @@ class FakeSnapdConnection:
                     "status": "Accepted",
                 }
             )
+        elif sync_result:
+            return _FakeMemoryResponse(
+                {
+                    "type": "sync",
+                    "status-code": 200,
+                    "status": "OK",
+                    "result": sync_result,
+                }
+            )
         if path in self.post_cb:
             return _FakeMemoryResponse(self.post_cb[path](path, body, **args))
 
@@ -187,7 +252,7 @@ class FakeSnapdConnection:
             "Don't know how to fake POST response to {}".format((path, args))
         )
 
-    def get(self, path, **args):
+    def get(self, path, *, raise_for_status=True, **args):
         if "change" not in path:
             time.sleep(1 / self.scale_factor)
         filename = path.replace("/", "-")
@@ -220,23 +285,28 @@ class AsyncSnapd:
     def __init__(self, connection):
         self.connection = connection
 
-    async def get(self, path, **args):
+    async def get(self, path, raise_for_status=True, **args):
         response = await run_in_thread(partial(self.connection.get, path, **args))
-        response.raise_for_status()
+        if raise_for_status:
+            response.raise_for_status()
         return response.json()
 
-    async def post(self, path, body, **args):
+    async def post(self, path, body, raise_for_status=True, **args):
         response = await run_in_thread(
             partial(self.connection.post, path, body, **args)
         )
-        response.raise_for_status()
+        if raise_for_status:
+            response.raise_for_status()
         return response.json()
 
     async def post_and_wait(self, path, body, **args):
         change = (await self.post(path, body, **args))["change"]
         change_path = "v2/changes/{}".format(change)
+        get_kwargs = {}
+        with contextlib.suppress(KeyError):
+            get_kwargs["raise_for_status"] = args["raise_for_status"]
         while True:
-            result = await self.get(change_path)
+            result = await self.get(change_path, **get_kwargs)
             if result["result"]["status"] == "Done":
                 break
             await asyncio.sleep(0.1)

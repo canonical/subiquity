@@ -91,8 +91,8 @@ def check_mark() -> Tuple[Tuple[str, str], ...]:
     # invisible in rich-mode. In basic mode, they both get substituted with a
     # star.
     return (
-        ("verified", "\N{check mark}"),
-        ("verified invisible", "\N{check mark}"),
+        ("verified", "\N{CHECK MARK}"),
+        ("verified invisible", "\N{CHECK MARK}"),
     )
 
 
@@ -201,7 +201,7 @@ class SnapInfoView(WidgetWrap):
             publisher.append(" ")
             publisher.extend(check_mark())
         elif snap.starred:
-            publisher.append(("starred", " \N{circled white star}"))
+            publisher.append(("starred", " \N{CIRCLED WHITE STAR}"))
 
         title = Columns(
             [
@@ -484,7 +484,7 @@ class SnapListView(BaseView):
             if snap.verified:
                 publisher.extend(check_mark())
             elif snap.starred:
-                publisher.append(("starred", "\N{circled white star}"))
+                publisher.append(("starred", "\N{CIRCLED WHITE STAR}"))
             row = [
                 box,
                 Text(publisher),

@@ -111,7 +111,35 @@ class SubiquityController(BaseController):
         """
         pass
 
-    def interactive(self):
+    def interactive(self) -> bool:
+        """Return whether this controller is "interactive".
+
+        An "interactive" controller is one the installer client is expected to
+        ask the user questions about.  Why would a controller not be
+        interactive? There are a few reasons:
+
+         1. Some controllers do not have an associated UI and can only be
+            configured via autoinstall (e.g. the kernel controller)
+         2. When autoinstalling, the default is that _no_ controllers are
+            interactive, although this can be controlled via
+            `interactive-sections` in the autoinstall config.
+         3. Some controllers are not relevant when installing a particular
+            variant, e.g., we do not ask the user about timezone when
+            installing a server system.
+
+        Interactive controllers are marked configured when the user moves on
+        from the screen for that controller. Non-interactive controllers are
+        configured at different times:
+
+         1. Controllers with no UI are always marked configured by the
+            SubiquityServer during startup, after running the controller's
+            apply_autoinstall_config method.
+         2. During an autoinstall, controllers not listed under
+            'interactive-sections' become non-interactive and are marked
+            configured at the same time as (1).
+         3. Controllers not applicable for a variant are marked configured
+            when the install is confirmed.
+        """
         if not self.app.autoinstall_config:
             return self._active
         i_sections = self.app.autoinstall_config.get("interactive-sections", [])
@@ -127,6 +155,8 @@ class SubiquityController(BaseController):
             and self.autoinstall_key_alias in i_sections
         ):
             return self._active
+
+        return False
 
     async def configured(self):
         """Let the world know that this controller's model is now configured."""

@@ -68,9 +68,9 @@ class Header(WidgetWrap):
         super().__init__(
             Pile(
                 [
-                    (1, Color.frame_header_fringe(SolidFill("\N{lower half block}"))),
+                    (1, Color.frame_header_fringe(SolidFill("\N{LOWER HALF BLOCK}"))),
                     Color.frame_header(title),
-                    (1, Color.frame_header_fringe(SolidFill("\N{upper half block}"))),
+                    (1, Color.frame_header_fringe(SolidFill("\N{UPPER HALF BLOCK}"))),
                 ]
             )
         )

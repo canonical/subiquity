@@ -23,19 +23,19 @@ import pathlib
 import shutil
 import subprocess
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from contextlib import AsyncExitStack
+from typing import Any, Callable, Dict, List, Optional, Self, Sequence, Type, Union
 
 import attr
 import pyudev
-import requests
 from curtin import swap
-from curtin.commands.extract import AbstractSourceHandler
 from curtin.storage_config import ptable_part_type_to_flag
 from curtin.util import human2bytes
 
+from subiquity.common.api.defs import Payload, api, path_parameter
 from subiquity.common.api.recoverable_error import RecoverableError
 from subiquity.common.apidef import API
-from subiquity.common.errorreport import ErrorReportKind
+from subiquity.common.errorreport import ErrorReport, ErrorReportKind
 from subiquity.common.filesystem import boot, gaps, labels, sizes
 from subiquity.common.filesystem.actions import DeviceAction
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
@@ -43,7 +43,9 @@ from subiquity.common.filesystem.spec import FileSystemSpec, PartitionSpec, VolG
 from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
+    CalculateEntropyRequest,
     Disk,
+    EntropyResponse,
     GuidedCapability,
     GuidedChoiceV2,
     GuidedDisallowedCapability,
@@ -85,19 +87,15 @@ from subiquity.models.filesystem import (
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
-from subiquity.server.mounter import Mounter
 from subiquity.server.nonreportable import NonReportableException
 from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
-from subiquity.server.snapd.types import (
-    StorageEncryptionSupport,
-    StorageSafety,
-    SystemDetails,
-)
+from subiquity.server.snapd.system_getter import SystemGetter, SystemsDirMounter
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import (
     SingleInstanceTask,
     TaskAlreadyRunningError,
+    exclusive,
     schedule_task,
 )
 from subiquitycore.context import with_context
@@ -126,10 +124,6 @@ system_non_gpt_text = _(
 
 
 DRY_RUN_RESET_SIZE = 500 * MiB
-
-
-class NoSnapdSystemsOnSource(Exception):
-    pass
 
 
 class NonReportableSVE(RecoverableError, NonReportableException):
@@ -212,8 +206,17 @@ class VariationInfo:
     label: Optional[str]
     capability_info: CapabilityInfo = attr.Factory(CapabilityInfo)
     min_size: Optional[int] = None
-    system: Optional[SystemDetails] = None
+    system: Optional[snapdtypes.SystemDetails] = None
     needs_systems_mount: bool = False
+
+    @property
+    def available_kernel_components(self) -> List[str]:
+        if not self.system.available_optional:
+            return []
+        kernels = self.system.model.snaps_of_type(snapdtypes.ModelSnapType.KERNEL)
+        if len(kernels) != 1:
+            return []
+        return self.system.available_optional.components.get(kernels[0].name, [])
 
     def is_core_boot_classic(self) -> bool:
         return self.label is not None
@@ -238,7 +241,7 @@ class VariationInfo:
         return r
 
     @classmethod
-    def classic(cls, name: str, min_size: int):
+    def classic(cls, name: str, min_size: int) -> Self:
         return cls(
             name=name,
             label=None,
@@ -255,7 +258,7 @@ class VariationInfo:
         )
 
     @classmethod
-    def dd(cls, name: str, min_size: int):
+    def dd(cls, name: str, min_size: int) -> Self:
         return cls(
             name=name,
             label=None,
@@ -268,6 +271,23 @@ class VariationInfo:
         )
 
 
+def validate_pin_pass(
+    passphrase_allowed: bool,
+    pin_allowed: bool,
+    passphrase: Optional[str],
+    pin: Optional[str],
+) -> None:
+    if passphrase is not None and pin is not None:
+        raise StorageRecoverableError("must supply at most one of pin and passphrase")
+    if not pin_allowed and pin is not None:
+        raise StorageRecoverableError("unexpected pin supplied")
+    if not passphrase_allowed and passphrase is not None:
+        raise StorageRecoverableError("unexpected passphrase supplied")
+
+    if pin is not None and not pin.isdecimal():
+        raise StorageRecoverableError("pin is a string of digits")
+
+
 class FilesystemController(SubiquityController, FilesystemManipulator):
     endpoint = API.storage
 
@@ -277,16 +297,16 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     _configured = False
 
-    def __init__(self, app):
-        self.ai_data = {}
+    def __init__(self, app) -> None:
+        self.ai_data: Optional[dict[str, Any]] = {}
         super().__init__(app)
         self.model.target = app.base_model.target
         if self.opts.dry_run and self.opts.bootloader:
             name = self.opts.bootloader.upper()
             self.model.bootloader = getattr(Bootloader, name)
         self.model.storage_version = self.opts.storage_version
-        self._monitor = None
-        self._errors = {}
+        self._monitor: Optional[pyudev.Monitor] = None
+        self._errors: dict[bool, tuple[Exception, ErrorReport]] = {}
         self._probe_once_task = SingleInstanceTask(
             self._probe_once, propagate_errors=False
         )
@@ -302,9 +322,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.app.hub.subscribe(InstallerChannels.PRE_SHUTDOWN, self._pre_shutdown)
         self._variation_info: Dict[str, VariationInfo] = {}
         self._info: Optional[VariationInfo] = None
+        self._system_getter = SystemGetter(self.app)
         self._on_volume: Optional[snapdtypes.OnVolume] = None
-        self._source_handler: Optional[AbstractSourceHandler] = None
-        self._system_mounter: Optional[Mounter] = None
+        self._volumes_auth: Optional[snapdtypes.VolumesAuth] = None
         self._role_to_device: Dict[Union[str, snapdtypes.Role], _Device] = {}
         self._device_to_structure: Dict[_Device, snapdtypes.OnVolume] = {}
         self._pyudev_context: Optional[pyudev.Context] = None
@@ -341,6 +361,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return layout.get("reset-partition-only", False)
 
     async def configured(self):
+        # set_info_capability() requires variations info to be populated, so
+        # wait for it.
+        await self._examine_systems_task.wait()
         self._configured = True
         if self._info is None:
             self.set_info_for_capability(GuidedCapability.DIRECT)
@@ -352,70 +375,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         await super().configured()
         self.stop_monitor()
 
-    async def _mount_systems_dir(self, variation_name):
-        self._source_handler = self.app.controllers.Source.get_handler(variation_name)
-        if self._source_handler is None:
-            raise NoSnapdSystemsOnSource
-        source_path = self._source_handler.setup()
-        cur_systems_dir = "/var/lib/snapd/seed/systems"
-        source_systems_dir = os.path.join(source_path, cur_systems_dir[1:])
-        if self.app.opts.dry_run:
-            systems_dir_exists = self.app.dr_cfg.systems_dir_exists
-        else:
-            systems_dir_exists = pathlib.Path(source_systems_dir).is_dir()
-        if not systems_dir_exists:
-            raise NoSnapdSystemsOnSource
-        self._system_mounter = Mounter(self.app)
-        if not self.app.opts.dry_run:
-            await self._system_mounter.bind_mount_tree(
-                source_systems_dir, cur_systems_dir
-            )
-
-        cur_snaps_dir = "/var/lib/snapd/seed/snaps"
-        source_snaps_dir = os.path.join(source_path, cur_snaps_dir[1:])
-        if not self.app.opts.dry_run:
-            await self._system_mounter.bind_mount_tree(source_snaps_dir, cur_snaps_dir)
-
-    async def _unmount_systems_dir(self):
-        if self._system_mounter is not None:
-            await self._system_mounter.cleanup()
-            self._system_mounter = None
-        if self._source_handler is not None:
-            self._source_handler.cleanup()
-            self._source_handler = None
-
-    async def _get_system(
-        self, variation_name, label
-    ) -> Tuple[Optional[SystemDetails], bool]:
-        """Return system information for a given system label.
-
-        The return value is a SystemDetails object (if any) and True if
-        the system was found in the layer that the installer is running
-        in or False if the source layer needed to be mounted to find
-        it.
-        """
-        systems = await self.app.snapdapi.v2.systems.GET()
-        labels = {system.label for system in systems.systems}
-        if label in labels:
-            try:
-                return await self.app.snapdapi.v2.systems[label].GET(), True
-            except requests.exceptions.HTTPError as http_err:
-                log.warning("v2/systems/%s returned %s", label, http_err.response.text)
-                raise
-        else:
-            try:
-                await self._mount_systems_dir(variation_name)
-            except NoSnapdSystemsOnSource:
-                return None, False
-            try:
-                return await self.app.snapdapi.v2.systems[label].GET(), False
-            except requests.exceptions.HTTPError as http_err:
-                log.warning("v2/systems/%s returned %s", label, http_err.response.text)
-                raise
-            finally:
-                await self._unmount_systems_dir()
-
-    def info_for_system(self, name: str, label: str, system: SystemDetails):
+    def info_for_system(
+        self,
+        name: str,
+        label: str,
+        system: snapdtypes.SystemDetails,
+        has_beta_entropy_check: bool,
+    ) -> Optional[VariationInfo]:
         if len(system.volumes) > 1:
             log.error("Skipping uninstallable system: %s", system_multiple_volumes_text)
             return None
@@ -431,7 +397,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             system=system,
         )
 
-        def disallowed_encryption(msg):
+        def disallowed_encryption(msg) -> GuidedDisallowedCapability:
             GCDR = GuidedDisallowedCapabilityReason
             reason = GCDR.CORE_BOOT_ENCRYPTION_UNAVAILABLE
             return GuidedDisallowedCapability(
@@ -441,7 +407,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             )
 
         se = system.storage_encryption
-        if se.support == StorageEncryptionSupport.DEFECTIVE:
+        if se.support == snapdtypes.StorageEncryptionSupport.DEFECTIVE:
             info.capability_info.disallowed = [
                 disallowed_encryption(se.unavailable_reason)
             ]
@@ -451,23 +417,27 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         _structure, last_offset, last_size = offsets_and_sizes[-1]
         info.min_size = last_offset + last_size
 
-        if se.support == StorageEncryptionSupport.DISABLED:
+        if se.support == snapdtypes.StorageEncryptionSupport.DISABLED:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
             msg = _("TPM backed full-disk encryption has been disabled")
             info.capability_info.disallowed = [disallowed_encryption(msg)]
-        elif se.support == StorageEncryptionSupport.UNAVAILABLE:
+        elif se.support == snapdtypes.StorageEncryptionSupport.UNAVAILABLE:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
             info.capability_info.disallowed = [
                 disallowed_encryption(se.unavailable_reason)
             ]
+        elif not has_beta_entropy_check:
+            info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
+            msg = _("snapd version is too old, please refresh")
+            info.capability_info.disallowed = [disallowed_encryption(msg)]
         else:
-            if se.storage_safety == StorageSafety.ENCRYPTED:
+            if se.storage_safety == snapdtypes.StorageSafety.ENCRYPTED:
                 info.capability_info.allowed = [GuidedCapability.CORE_BOOT_ENCRYPTED]
-            elif se.storage_safety == StorageSafety.PREFER_ENCRYPTED:
+            elif se.storage_safety == snapdtypes.StorageSafety.PREFER_ENCRYPTED:
                 info.capability_info.allowed = [
                     GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED
                 ]
-            elif se.storage_safety == StorageSafety.PREFER_UNENCRYPTED:
+            elif se.storage_safety == snapdtypes.StorageSafety.PREFER_UNENCRYPTED:
                 info.capability_info.allowed = [
                     GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED
                 ]
@@ -484,33 +454,75 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             )
         search_drivers = self.app.base_model.source.search_drivers
         if search_drivers is not SEARCH_DRIVERS_AUTOINSTALL_DEFAULT and search_drivers:
-            log.debug(
-                "Disabling core boot based install options as third-party "
-                "drivers selected"
-            )
-            info.capability_info.disallow_if(
-                lambda cap: cap.is_core_boot(),
-                GuidedDisallowedCapabilityReason.THIRD_PARTY_DRIVERS,
-                _(
-                    "Enhanced secure boot options cannot currently install "
-                    "third party drivers."
-                ),
-            )
+            has_nvidia_component = False
+            for component_name in info.available_kernel_components:
+                if "nvidia" in component_name:
+                    has_nvidia_component = True
+            if not has_nvidia_component:
+                log.debug(
+                    "Disabling core boot based install options as third-party "
+                    "drivers selected"
+                )
+                info.capability_info.disallow_if(
+                    lambda cap: cap.is_core_boot(),
+                    GuidedDisallowedCapabilityReason.THIRD_PARTY_DRIVERS,
+                    _(
+                        "Enhanced secure boot options cannot currently install "
+                        "third party drivers."
+                    ),
+                )
 
-    async def _examine_systems(self):
+    async def _examine_systems(self) -> None:
         self._variation_info.clear()
         catalog_entry = self.app.base_model.source.current
+
+        try:
+            has_beta_entropy_check = await self.app.snapdinfo.has_beta_entropy_check()
+        except ValueError as exc:
+            log.debug(
+                "cannot check if snapd has beta entropy check, assuming yes: %s", exc
+            )
+            has_beta_entropy_check = True
+
         for name, variation in catalog_entry.variations.items():
             system = None
             label = variation.snapd_system_label
             if label is not None:
-                system, in_live_layer = await self._get_system(name, label)
+                # We do not want to unconditionally propagate cancellation to
+                # _system_getter.get. If it gets cancelled during its critical
+                # section, it won't be able to properly clean up after itself
+                # (see LP: #2084032).
+                # Therefore we use an asyncio.Task (coupled with
+                # asyncio.shield) so we can prevent propagation.
+                in_critical_section = asyncio.Event()
+                task = asyncio.create_task(
+                    self._system_getter.get(
+                        name,
+                        label,
+                        source_id=catalog_entry.id,
+                        started_event=in_critical_section,
+                    )
+                )
+                try:
+                    system, in_live_layer = await asyncio.shield(task)
+                except asyncio.CancelledError:
+                    if not in_critical_section.is_set():
+                        # Just to make sure we don't end up with a large queue of
+                        # _system_getter.get() tasks.
+                        task.cancel()
+                    # _system_getter.get is marked async_helpers.exclusive
+                    # so it should be safe to let it finish "unsupervised" even
+                    # though it might be called again concurrently.
+                    raise
+
             log.debug("got system %s for variation %s", system, name)
             if system is not None and len(system.volumes) > 0:
                 if not self.app.opts.enhanced_secureboot:
                     log.debug("Not offering enhanced_secureboot: commandline disabled")
                     continue
-                info = self.info_for_system(name, label, system)
+                info = self.info_for_system(
+                    name, label, system, has_beta_entropy_check=has_beta_entropy_check
+                )
                 if info is None:
                     continue
                 if not in_live_layer:
@@ -701,7 +713,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if not p._is_in_use:
                     self.delete_partition(p)
         else:
-            self.reformat(disk, wipe="superblock-recursive")
+            self.reformat(disk, ptable=target.ptable, wipe="superblock-recursive")
         return gaps.largest_gap(disk)
 
     @start_guided.register
@@ -746,7 +758,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 '"Erase and Install" requires storage version 2'
             )
         partition = self.get_partition(disk, target.partition_number)
-        self.delete_partition(partition, override_preserve=True)
+        # Do not renumber logical partitions.
+        # In this scenario we will create a new partition in the resulting gap
+        # so the number of logical partitions should not change.
+        self.delete_partition(
+            partition, override_preserve=True, allow_renumbering=False
+        )
         return gaps.find_gap_after_removal(disk, removed_partition=partition)
 
     def set_info_for_capability(self, capability: GuidedCapability):
@@ -778,6 +795,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def guided(
         self, choice: GuidedChoiceV2, reset_partition_only: bool = False
     ) -> None:
+        choice.validate()
+
         self.model.dd_target = None
         if choice.capability == GuidedCapability.MANUAL:
             return
@@ -794,8 +813,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     "Not using enhanced_secureboot: disabled on commandline"
                 )
             assert isinstance(choice.target, GuidedStorageTargetReformat)
-            self.use_tpm = choice.capability == GuidedCapability.CORE_BOOT_ENCRYPTED
-            await self.guided_core_boot(disk)
+            self.use_tpm = choice.capability.is_tpm_backed()
+            await self.guided_core_boot(disk, choice)
             return
 
         gap = self.start_guided(choice.target, disk)
@@ -923,8 +942,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             disks.append(disk)
         return [d for d in disks]
 
-    def _offsets_and_sizes_for_volume(self, volume):
+    def _offsets_and_sizes_for_volume(self, volume: snapdtypes.Volume):
         offset = self.model._partition_alignment_data["gpt"].min_start_offset
+        assert volume.structure is not None
         for structure in volume.structure:
             if structure.role == snapdtypes.Role.MBR:
                 continue
@@ -933,14 +953,15 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             yield (structure, offset, structure.size)
             offset = offset + structure.size
 
-    async def guided_core_boot(self, disk: Disk):
+    async def guided_core_boot(self, disk: Disk, choice: GuidedChoiceV2):
         if self._info.needs_systems_mount:
-            await self._mount_systems_dir(self._info.name)
+            await SystemsDirMounter(self.app, self._info.name).mount()
         # Formatting for a core boot classic system relies on some curtin
         # features that are only available with v2 partitioning.
         self.model.storage_version = 2
         [volume] = self._info.system.volumes.values()
         self._on_volume = snapdtypes.OnVolume.from_volume(volume)
+        self._volumes_auth = snapdtypes.VolumesAuth.from_choice(choice)
 
         preserved_parts = set()
 
@@ -992,7 +1013,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 part.wipe = "superblock"
                 self.delete_filesystem(part.fs())
                 fs = self.model.add_filesystem(
-                    part, structure.filesystem, label=structure.label
+                    part, structure.filesystem, label=structure.filesystem_label
                 )
                 if structure.role == snapdtypes.Role.SYSTEM_DATA:
                     self.model.add_mount(fs, "/")
@@ -1020,15 +1041,18 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     @with_context(description="configuring TPM-backed full disk encryption")
     async def setup_encryption(self, context):
         label = self._info.label
+        kwargs = dict(
+            action=snapdtypes.SystemAction.INSTALL,
+            step=snapdtypes.SystemActionStep.SETUP_STORAGE_ENCRYPTION,
+            on_volumes=self._on_volumes(),
+        )
+        if self._volumes_auth is not None:
+            kwargs["volumes_auth"] = self._volumes_auth
         result = await snapdapi.post_and_wait(
             self.app.snapdapi,
             self.app.snapdapi.v2.systems[label].POST,
-            snapdtypes.SystemActionRequest(
-                action=snapdtypes.SystemAction.INSTALL,
-                step=snapdtypes.SystemActionStep.SETUP_STORAGE_ENCRYPTION,
-                on_volumes=self._on_volumes(),
-            ),
-            ann=snapdtypes.SystemActionResponse,
+            snapdtypes.SystemActionRequest(**kwargs),
+            ann=snapdtypes.SystemActionResponseSetupEncryption,
         )
         for role, enc_path in result.encrypted_devices.items():
             arb_device = ArbitraryDevice(m=self.model, path=enc_path)
@@ -1038,9 +1062,65 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if fs.volume == part:
                     fs.volume = arb_device
 
-    @with_context(description="making system bootable")
-    async def finish_install(self, context):
+    async def fetch_core_boot_recovery_key(self):
+        """Fetch the recovery key from snapd and store it in the model."""
+
+        # TODO This is a workaround!
+        # Ideally, we'd want to use self.app.snapdapi here, but SnapdAPI
+        # defines the return type of POST /v2/systems/{system-label} as a
+        # ChangeID (which is only true for async responses) and we don't have
+        # the needed support for Union types.
+        # For now, let's define a fake API definition and create a new snapd
+        # client out of it.
+        @api
+        class AlternateSnapdAPI:
+            class v2:
+                class systems:
+                    @path_parameter
+                    class label:
+                        def POST(
+                            action: Payload[snapdtypes.SystemActionRequest],
+                        ) -> snapdtypes.SystemActionResponseGenerateRecoveryKey: ...
+
+        snapd_client = snapdapi.make_api_client(
+            self.app.snapd,
+            api_class=AlternateSnapdAPI,
+            log_responses=self.app.snapdapi.log_responses,
+        )
+
         label = self._info.label
+
+        result = await snapd_client.v2.systems[label].POST(
+            snapdtypes.SystemActionRequest(
+                action=snapdtypes.SystemAction.INSTALL,
+                step=snapdtypes.SystemActionStep.GENERATE_RECOVERY_KEY,
+                on_volumes={},
+            ),
+        )
+
+        self.model.set_core_boot_recovery_key(result.recovery_key)
+
+    @with_context(description="making system bootable")
+    async def finish_install(self, context, kernel_components):
+        log.debug(f"finish_install: {kernel_components=}")
+        label = self._info.label
+        kernels = self._info.system.model.snaps_of_type(snapdtypes.ModelSnapType.KERNEL)
+        if len(kernels) == 1:
+            optional_snaps = []
+            if (optionals := self._info.system.available_optional) is not None:
+                optional_snaps = optionals.snaps
+
+            optional_install = snapdtypes.OptionalInstall(
+                components={kernels[0].name: kernel_components},
+                snaps=optional_snaps,
+            )
+        else:
+            log.error(f"unexpected number of kernel snaps {len(kernels)}")
+            # multi-kernel model case unknown, let snapd try to install all
+            # optional things here.
+            optional_install = snapdtypes.OptionalInstall(all=True)
+        log.debug(f"finish_install: {optional_install=}")
+
         await snapdapi.post_and_wait(
             self.app.snapdapi,
             self.app.snapdapi.v2.systems[label].POST,
@@ -1048,6 +1128,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 action=snapdtypes.SystemAction.INSTALL,
                 step=snapdtypes.SystemActionStep.FINISH,
                 on_volumes=self._on_volumes(),
+                optional_install=optional_install,
             ),
         )
 
@@ -1207,11 +1288,36 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             disk, resized_partition=resized
         )
 
+    def available_target_reformat_scenarios(
+        self, install_min: int
+    ) -> list[tuple[int, GuidedStorageTargetReformat]]:
+        scenarios: list[tuple[int, GuidedStorageTargetReformat]] = []
+
+        for disk in self.potential_boot_disks(with_reformatting=True):
+            capability_info = CapabilityInfo()
+            for variation in self._variation_info.values():
+                gap = gaps.largest_gap(disk._reformatted())
+                capability_info.combine(
+                    variation.capability_info_for_gap(gap, install_min)
+                )
+            reformat = GuidedStorageTargetReformat(
+                disk_id=disk.id,
+                allowed=capability_info.allowed,
+                disallowed=capability_info.disallowed,
+            )
+            scenarios.append((disk.size, reformat))
+        return scenarios
+
     def available_use_gap_scenarios(
         self, install_min: int
     ) -> list[tuple[int, GuidedStorageTargetUseGap]]:
         scenarios: list[tuple[int, GuidedStorageTargetUseGap]] = []
         for disk in self.potential_boot_disks(with_reformatting=False):
+            if disk.ptable == "unsupported":
+                # In theory, this check is not needed since largest_gap will
+                # return None. But let's make it obvious that we don't want to
+                # deal with unsupported ptables.
+                continue
             parts = [
                 p
                 for p in disk.partitions()
@@ -1253,6 +1359,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         scenarios: list[tuple[int, GuidedStorageTargetResize]] = []
 
         for disk in self.potential_boot_disks(check_boot=False):
+            if disk.ptable == "unsupported":
+                continue
             part_align = disk.alignment_data().part_align
             for partition in disk.partitions():
                 if partition._is_in_use:
@@ -1294,6 +1402,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         for disk in self.potential_boot_disks(check_boot=False):
             # Skip RAID until we know how to proceed.
             if not isinstance(disk, ModelDisk):
+                continue
+
+            if disk.ptable == "unsupported":
+                # Let's not mess up with unsupported ptables. We can't remove
+                # partitions on these.
                 continue
 
             for partition in disk.partitions():
@@ -1361,20 +1474,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if GuidedCapability.DIRECT in classic_capabilities:
             scenarios.append((0, GuidedStorageTargetManual()))
 
-        for disk in self.potential_boot_disks(with_reformatting=True):
-            capability_info = CapabilityInfo()
-            for variation in self._variation_info.values():
-                gap = gaps.largest_gap(disk._reformatted())
-                capability_info.combine(
-                    variation.capability_info_for_gap(gap, install_min)
-                )
-            reformat = GuidedStorageTargetReformat(
-                disk_id=disk.id,
-                allowed=capability_info.allowed,
-                disallowed=capability_info.disallowed,
-            )
-            scenarios.append((disk.size, reformat))
-
+        scenarios.extend(self.available_target_reformat_scenarios(install_min))
         scenarios.extend(self.available_use_gap_scenarios(install_min))
         scenarios.extend(self.available_target_resize_scenarios(install_min))
         scenarios.extend(self.available_erase_install_scenarios(install_min))
@@ -1407,6 +1507,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug("v2_add_boot_partition: disk-id: %s", disk_id)
         self.locked_probe_data = True
         disk = self.model._one(id=disk_id)
+        if disk.ptable == "unsupported":
+            raise StorageRecoverableError(
+                "cannot modify a disk with an unsupported partition table"
+            )
         if boot.is_boot_device(disk):
             raise StorageRecoverableError("device already has bootloader partition")
         if DeviceAction.TOGGLE_BOOT not in DeviceAction.supported(disk):
@@ -1420,6 +1524,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if data.partition.boot is not None:
             raise ValueError("add_partition does not support changing boot")
         disk = self.model._one(id=data.disk_id)
+        if disk.ptable == "unsupported":
+            raise StorageRecoverableError(
+                "cannot modify a disk with an unsupported partition table"
+            )
         requested_size = data.partition.size or 0
         if requested_size > data.gap.size:
             raise ValueError("new partition too large")
@@ -1433,6 +1541,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             spec["fstype"] = fstype
         if data.partition.mount is not None:
             spec["mount"] = data.partition.mount
+        if data.partition.name is not None:
+            raise StorageRecoverableError(
+                "setting the partition name is not implemented"
+            )
 
         gap = gaps.at_offset(disk, data.gap.offset).split(requested_size)[0]
         self.create_partition(disk, gap, spec, wipe="superblock")
@@ -1444,6 +1556,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug(data)
         self.locked_probe_data = True
         disk = self.model._one(id=data.disk_id)
+        if disk.ptable == "unsupported":
+            raise StorageRecoverableError(
+                "cannot modify a disk with an unsupported partition table"
+            )
         partition = self.get_partition(disk, data.partition.number)
         self.delete_partition(partition)
         return await self.v2_GET()
@@ -1454,6 +1570,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug(data)
         self.locked_probe_data = True
         disk = self.model._one(id=data.disk_id)
+        if disk.ptable == "unsupported":
+            raise StorageRecoverableError(
+                "cannot modify a disk with an unsupported partition table"
+            )
         partition = self.get_partition(disk, data.partition.number)
         if (
             data.partition.size not in (None, partition.size)
@@ -1462,6 +1582,25 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise ValueError("edit_partition does not support changing size")
         if data.partition.boot is not None and data.partition.boot != partition.boot:
             raise ValueError("edit_partition does not support changing boot")
+        if data.partition.name != partition.partition_name:
+            if data.partition.name is None:
+                # FIXME Instead of checking if data.partition.name is None,
+                # what we really want to know is whether the name field is
+                # present in the request. Unfortunately, None is the default
+                # value so there is no easy way to make the distinction between
+                # these two scenarios:
+                # 1. No intention to change the partition name:
+                #     {"partition": {"number": 1, ...}
+                # 2. Attemping to reset the partition name:
+                #     {"partition": {"number": 1, "name": null, ...}
+                log.warning(
+                    "cannot tell if the user wants to keep the current"
+                    " partition name or reset it ; assuming they want to keep it"
+                )
+            else:
+                raise ValueError(
+                    "edit_partition does not support changing partition name"
+                )
         spec: PartitionSpec = {"mount": data.partition.mount or partition.mount}
         if data.partition.format is not None:
             if data.partition.format != partition.original_fstype():
@@ -1508,6 +1647,139 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         self.delete_raid(raid)
         return await self.v2_GET()
+
+    @exclusive
+    async def do_entropy_check(
+        self,
+        snapd_client,
+        request: snapdtypes.SystemActionRequest,
+        variation_info: VariationInfo,
+    ) -> snapdtypes.EntropyCheckResponse:
+        async with AsyncExitStack() as es:
+            if variation_info.needs_systems_mount:
+                mounter = SystemsDirMounter(self.app, variation_info.name)
+                await es.enter_async_context(mounter.mounted())
+
+            return await snapd_client.v2.systems[variation_info.label].POST(
+                request, raise_for_status=False
+            )
+
+    async def v2_calculate_entropy_POST(
+        self, data: CalculateEntropyRequest
+    ) -> EntropyResponse:
+        validate_pin_pass(
+            passphrase_allowed=True,
+            pin_allowed=True,
+            passphrase=data.passphrase,
+            pin=data.pin,
+        )
+
+        if data.passphrase is None and data.pin is None:
+            raise StorageRecoverableError("must supply one of pin and passphrase")
+
+        # checking entropy requires an encrypted core boot system to refer to
+        info = self._info
+        if info is None:
+            caps = {
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
+            }
+            for candidate_info in self._variation_info.values():
+                if caps & set(candidate_info.capability_info.allowed):
+                    info = candidate_info
+                    break
+
+        if info is None:
+            raise StorageRecoverableError("no suitable system found")
+
+        if data.pin is not None:
+            request = snapdtypes.SystemActionRequest(
+                action=snapdtypes.SystemAction.CHECK_PIN, pin=data.pin
+            )
+        else:
+            request = snapdtypes.SystemActionRequest(
+                action=snapdtypes.SystemAction.CHECK_PASSPHRASE,
+                passphrase=data.passphrase,
+            )
+
+        # TODO This is a workaround!
+        # Ideally, we'd want to use self.app.snapdapi here, but SnapdAPI
+        # defines the return type of POST /v2/systems/{system-label} as a
+        # ChangeID (which is only true for async responses) and we don't have
+        # the needed support for Union types.
+        # For now, let's define a fake API definition and create a new snapd
+        # client out of it.
+        @api
+        class AlternateSnapdAPI:
+            class v2:
+                class systems:
+                    @path_parameter
+                    class label:
+                        def POST(
+                            action: Payload[snapdtypes.SystemActionRequest],
+                        ) -> snapdtypes.EntropyCheckResponse: ...
+
+        snapd_client = snapdapi.make_api_client(
+            self.app.snapd,
+            api_class=AlternateSnapdAPI,
+            log_responses=self.app.snapdapi.log_responses,
+        )
+
+        result = await self.do_entropy_check(snapd_client, request, info)
+
+        # TODO check the response-code instead.
+        if result.entropy_bits is not None:
+            # Let's consider this a "good" response
+            return EntropyResponse(
+                success=True,
+                entropy_bits=result.entropy_bits,
+                min_entropy_bits=result.min_entropy_bits,
+                optimal_entropy_bits=result.optimal_entropy_bits,
+            )
+
+        if result.kind == snapdtypes.EntropyCheckResponseKind.UNSUPPORTED:
+            # TODO determine why we're running into UNSUPPORTED sometimes.
+            log.warning(
+                'v2/systems/%s action="%s" returned "%s"',
+                info.label,
+                request.action,
+                result.kind,
+            )
+            raise StorageRecoverableError(
+                'entropy check failed: snapd returned "unsupported"'
+            )
+
+        assert result.value is not None
+
+        # This is a bad response
+        return EntropyResponse(
+            success=False,
+            entropy_bits=result.value.entropy_bits,
+            min_entropy_bits=result.value.min_entropy_bits,
+            optimal_entropy_bits=result.value.optimal_entropy_bits,
+            failure_reasons=[reason.value for reason in result.value.reasons],
+        )
+
+    async def v2_core_boot_recovery_key_GET(self) -> str:
+        if not self._configured:
+            raise StorageRecoverableError("storage model is not yet configured")
+        if (self.model.guided_configuration is None) or (
+            self.model.guided_configuration.capability
+            != GuidedCapability.CORE_BOOT_ENCRYPTED
+        ):
+            raise StorageRecoverableError("not using core boot encrypted")
+
+        if self.model.core_boot_recovery_key is None:
+            # The recovery key only becomes available just before we get to the
+            # finish-install step, which is very late.
+            raise StorageRecoverableError("recovery key is not yet available")
+
+        key = self.model.core_boot_recovery_key._key
+
+        assert key is not None  # To help the static type checker
+
+        return key
 
     async def dry_run_wait_probe_POST(self) -> None:
         if not self.app.opts.dry_run:
@@ -1654,6 +1926,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         assert matching_disks
         return matching_disks[0]
 
+    def has_valid_non_core_boot_variation(self) -> bool:
+        for variation in self._variation_info.values():
+            if not variation.is_valid():
+                continue
+            if not variation.is_core_boot_classic():
+                return True
+        return False
+
     async def run_autoinstall_guided(self, layout):
         name = layout["name"]
         password = None
@@ -1700,12 +1980,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         else:
             # this check is conceptually unnecessary but results in a
             # much cleaner error message...
-            for variation in self._variation_info.values():
-                if not variation.is_valid():
-                    continue
-                if not variation.is_core_boot_classic():
-                    break
-            else:
+            if not self.has_valid_non_core_boot_variation():
                 raise Exception(
                     "must use name: hybrid when installing core boot classic"
                 )
@@ -1740,8 +2015,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         if mode == "reformat_disk":
             match = layout.get("match", {"size": "largest"})
+            ptable = layout.get("ptable")
             disk = self.get_bootable_matching_disk(match)
-            target = GuidedStorageTargetReformat(disk_id=disk.id, allowed=[])
+            target = GuidedStorageTargetReformat(
+                disk_id=disk.id, ptable=ptable, allowed=[]
+            )
         elif mode == "use_gap":
             match = layout.get("match", {})
             bootable_disks = self.get_bootable_matching_disks(match)
@@ -1793,6 +2071,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     @with_context()
     async def convert_autoinstall_config(self, context=None):
+        assert self.ai_data is not None
         # Log disabled to prevent LUKS password leak
         # log.debug("self.ai_data = %s", self.ai_data)
         if "layout" in self.ai_data:

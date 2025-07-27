@@ -13,8 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Types defined in this module are deprecated and will at some point be
-replaced by `attr.s` structures or similar. """
+"""Types defined in this module are deprecated and will at some point be
+replaced by `attr.s` structures or similar."""
 
 
 import typing
