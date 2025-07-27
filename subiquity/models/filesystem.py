@@ -2147,8 +2147,8 @@ class FilesystemModel:
             config["swap"] = self.swap
         elif not self.should_add_swapfile():
             config["swap"] = {"size": 0}
-        if self.grub is not None:
-            config["grub"] = self.grub
+        # if self.grub is not None:
+        #     config["grub"] = self.grub
         return config
 
     def load_probe_data(self, probe_data):
