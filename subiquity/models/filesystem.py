@@ -1335,7 +1335,7 @@ class ArbitraryDevice(_Device):
 
 @fsobj("format")
 class Filesystem:
-    fstype: str
+    fstype: str = None
     volume: _Formattable = attributes.ref(backlink="_fs")
 
     label: Optional[str] = None
@@ -1365,10 +1365,6 @@ class Mount:
     device: Filesystem = attributes.ref(backlink="_mount", default=None)
     options: Optional[str] = None
     spec: Optional[str] = None
-
-    @property
-    def fstype(self):
-        return self.device.fstype
 
     def can_delete(self):
         from subiquity.common.filesystem import boot
@@ -1538,6 +1534,7 @@ class ActionRenderMode(enum.Enum):
 
 class FilesystemModel:
     target = None
+    fstype = None 
 
     _partition_alignment_data = {
         "gpt": PartitionAlignmentData(
@@ -2454,7 +2451,7 @@ class FilesystemModel:
     def should_add_swapfile(self):
         mount = self._mount_for_path("/")
         if mount is not None:
-            if not can_use_swapfile("/", mount.fstype):
+            if not can_use_swapfile("/", mount.device.volume._fs.fstype):
                 return False
         for swap in self._all(type="format", fstype="swap"):
             if swap.mount():

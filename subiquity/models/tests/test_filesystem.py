@@ -1327,6 +1327,51 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertTrue(disk2p1.id in rendered_ids)
 
 
+    def test_bind_mount_fstype_tmpfs(self):
+        model = make_model(Bootloader.NONE, storage_version=2)
+        disk = make_disk(model, path="/tmp", preserve=True)
+        fake_up_blockdata(model)
+        fs = model.add_filesystem(volume=disk, fstype="tmpfs", preserve=False)
+        actions = model._render_actions(ActionRenderMode.DEFAULT)
+        rendered_by_id = {action["id"]: action for action in actions}
+        mount = model.add_mount(fs=fs, path="/tmp")
+        model.apply_autoinstall_config(
+            [
+                {
+                    "id": "tmpfs1",
+                    "type": "mount",
+                    "spec": "none",
+                    "path": "/tmp",
+                    "size": "4194304",
+                    "fstype": "tmpfs",
+                    "options": "mode=1777,nosuid,nodev",
+                },
+            ]
+        )
+        self.assertEqual(rendered_by_id["format-0"]["fstype"], "tmpfs")
+
+    def test_bind_mount_fstype_zfs(self):
+        model = make_model(Bootloader.NONE, storage_version=2)
+        disk = make_disk(model, path="/tmp", preserve=True)
+        fake_up_blockdata(model)
+        fs = model.add_filesystem(volume=disk, fstype="zfs", preserve=False)
+        actions = model._render_actions(ActionRenderMode.DEFAULT)
+        rendered_by_id = {action["id"]: action for action in actions}
+        mount = model.add_mount(fs=fs, path="/tmp")
+        model.apply_autoinstall_config(
+            [
+                {
+                    "id": "zfs1",
+                    "type": "mount",
+                    "spec": "none",
+                    "path": "/tmp",
+                    "size": "4194304",
+                    "fstype": "zfs",
+                },
+            ]
+        )
+        self.assertEqual(rendered_by_id["format-0"]["fstype"], "zfs")
+
 class TestPartitionNumbering(unittest.TestCase):
     def setUp(self):
         self.cur_idx = 1
