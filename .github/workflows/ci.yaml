@@ -17,7 +17,6 @@ jobs:
         image:
           - ubuntu-daily:jammy
           - ubuntu-daily:noble
-          - ubuntu-daily:oracular
     steps:
     - uses: actions/checkout@v4
     - name: run
@@ -33,7 +32,6 @@ jobs:
         image:
           - ubuntu-daily:jammy     # match the core snap we're running against
           - ubuntu-daily:noble     # future core snap
-          - ubuntu-daily:oracular  # latest
     steps:
     - uses: actions/checkout@v4
     - name: lint
