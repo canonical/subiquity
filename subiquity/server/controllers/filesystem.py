@@ -1736,9 +1736,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 request.action,
                 result.kind,
             )
-            raise StorageRecoverableError(
-                'entropy check failed: snapd returned "unsupported"'
-            )
+            raise RuntimeError('entropy check failed: snapd returned "unsupported"')
 
         assert result.value is not None
 
