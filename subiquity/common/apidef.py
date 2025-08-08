@@ -70,6 +70,7 @@ from subiquity.common.types import (
 from subiquity.common.types.storage import (
     AddPartitionV2,
     CalculateEntropyRequest,
+    CoreBootTPMKeyEncryption,
     Disk,
     EntropyResponse,
     GuidedChoiceV2,
@@ -399,6 +400,9 @@ class API:
 
             class core_boot_recovery_key:
                 def GET() -> str: ...
+
+            class core_boot_tpm_key_encryption:
+                def GET() -> List[CoreBootTPMKeyEncryption]: ...
 
     class codecs:
         def GET() -> CodecsData: ...
