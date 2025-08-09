@@ -1602,10 +1602,16 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     "edit_partition does not support changing partition name"
                 )
         spec: PartitionSpec = {"mount": data.partition.mount or partition.mount}
+        # NOTE from ogayot: it is my understanding that in this context, having
+        # format=None (which is the default value) means to keep the current
+        # format. To change from ext4 to "unformatted", one must specify
+        # format="".
         if data.partition.format is not None:
             if data.partition.format != partition.original_fstype():
-                if data.partition.wipe is None:
-                    raise ValueError("changing partition format requires a wipe value")
+                if data.partition.wipe is None and partition.preserve:
+                    raise ValueError(
+                        "changing format of existing partition requires a wipe value"
+                    )
             spec["fstype"] = data.partition.format
         if data.partition.size is not None:
             spec["size"] = data.partition.size
