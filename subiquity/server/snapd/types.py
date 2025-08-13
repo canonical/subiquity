@@ -197,12 +197,19 @@ class EncryptionType(enum.Enum):
     DEVICE_SETUP_HOOK = "device-setup-hook"
 
 
+class EncryptionFeature(enum.Enum):
+    PASSPHRASE_AUTH = "passphrase-auth"
+    PIN_AUTH = "pin-auth"
+
+
 @snapdtype
 class StorageEncryption:
     support: StorageEncryptionSupport
     storage_safety: StorageSafety
     encryption_type: EncryptionType = EncryptionType.NONE
     unavailable_reason: str = ""
+    # Since snapd 2.68
+    features: Optional[List[EncryptionFeature]] = None
 
 
 @snapdtype

@@ -33,6 +33,7 @@ from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
     CalculateEntropyRequest,
+    CoreBootEncryptionFeatures,
     EntropyResponse,
     Gap,
     GapUsable,
@@ -701,6 +702,95 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             StorageRecoverableError, msg="recovery key is not yet available"
         ):
             await self.fsc.v2_core_boot_recovery_key_GET()
+
+    @parameterized.expand(
+        (
+            (
+                [
+                    snapdtypes.EncryptionFeature.PIN_AUTH,
+                    snapdtypes.EncryptionFeature.PASSPHRASE_AUTH,
+                ],
+                [
+                    CoreBootEncryptionFeatures.PIN_AUTH,
+                    CoreBootEncryptionFeatures.PASSPHRASE_AUTH,
+                ],
+            ),
+            (
+                [snapdtypes.EncryptionFeature.PIN_AUTH],
+                [CoreBootEncryptionFeatures.PIN_AUTH],
+            ),
+            (
+                [snapdtypes.EncryptionFeature.PASSPHRASE_AUTH],
+                [CoreBootEncryptionFeatures.PASSPHRASE_AUTH],
+            ),
+        )
+    )
+    async def test_v2_core_boot_encryption_features_GET(
+        self,
+        snapd_features: list[snapdtypes.EncryptionFeature],
+        expected: list[CoreBootEncryptionFeatures],
+    ):
+        self.fsc.model = make_model()
+
+        self.fsc._variation_info = {
+            "mimimal-enhanced-secureboot": VariationInfo(
+                name="minimal-enhanced-secureboot",
+                label="enhanced-secureboot-desktop",
+                system=snapdtypes.SystemDetails(
+                    model=snapdtypes.Model(architecture="amd64", snaps=[]),
+                    label="enhanced-secureboot-desktop",
+                    storage_encryption=snapdtypes.StorageEncryption(
+                        support=snapdtypes.StorageEncryptionSupport.AVAILABLE,
+                        storage_safety=snapdtypes.StorageSafety.PREFER_ENCRYPTED,
+                        features=snapd_features,
+                    ),
+                ),
+            ),
+        }
+
+        self.assertEqual(
+            expected, await self.fsc.v2_core_boot_encryption_features_GET()
+        )
+
+    async def test_v2_core_boot_encryption_features_GET__snapd_2_67(self):
+        self.fsc.model = make_model()
+
+        self.fsc._variation_info = {
+            "mimimal-enhanced-secureboot": VariationInfo(
+                name="minimal-enhanced-secureboot",
+                label="enhanced-secureboot-desktop",
+                system=snapdtypes.SystemDetails(
+                    model=snapdtypes.Model(architecture="amd64", snaps=[]),
+                    label="enhanced-secureboot-desktop",
+                    storage_encryption=snapdtypes.StorageEncryption(
+                        support=snapdtypes.StorageEncryptionSupport.AVAILABLE,
+                        storage_safety=snapdtypes.StorageSafety.PREFER_ENCRYPTED,
+                        features=None,
+                    ),
+                ),
+            ),
+        }
+
+        self.assertEqual([], await self.fsc.v2_core_boot_encryption_features_GET())
+
+    async def test_v2_core_boot_encryption_features_GET__no_suitable_variation(self):
+        self.fsc.model = make_model()
+
+        self.fsc._variation_info = {}
+
+        with self.assertRaises(
+            StorageRecoverableError, msg="no suitable variation for core boot"
+        ):
+            await self.fsc.v2_core_boot_encryption_features_GET()
+
+        self.fsc._variation_info = {
+            "minimal": VariationInfo(name="minimal", label=None, system=None),
+        }
+
+        with self.assertRaises(
+            StorageRecoverableError, msg="no suitable variation for core boot"
+        ):
+            await self.fsc.v2_core_boot_encryption_features_GET()
 
     @parameterized.expand(((True,), (False,)))
     async def test__pre_shutdown_install_started(self, zfsutils_linux_installed: bool):
