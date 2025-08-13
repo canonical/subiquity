@@ -168,18 +168,31 @@ def _make_handler(
                     headers={"x-status": "ok"},
                 )
             except Exception as exc:
+                # NOTE: HTTP headers are a bit restrictive when it comes to storing
+                # free text (e.g., they cannot store newline characters). The
+                # workaround we use is to JSON "minify" content that we don't
+                # fully control. Ideally though, we should store most content
+                # in the body of the response, and include an
+                # "application/json" content type header.
                 tb = traceback.TracebackException.from_exception(exc)
+                headers = {
+                    "x-status": "error",
+                    "x-error-type": type(exc).__name__,
+                    # aiohttp will reject a header if its value contains a
+                    # "\r" or "\n" character. By using compact JSON, we
+                    # ensure those characters are escaped.
+                    "x-error-msg": json.dumps(str(exc), indent=None),
+                }
+                if not isinstance(exc, RecoverableError) or exc.produce_crash_report:
+                    status = 500
+                else:
+                    status = 422
+                    headers["x-error-code"] = exc.code
+                    headers["x-error-title"] = json.dumps(exc.title, indent=None)
                 resp = web.Response(
                     text="".join(tb.format()),
-                    status=422 if isinstance(exc, RecoverableError) else 500,
-                    headers={
-                        "x-status": "error",
-                        "x-error-type": type(exc).__name__,
-                        # aiohttp will reject a header if its value contains a
-                        # "\r" or "\n" character. By using compact JSON, we
-                        # ensure those characters are escaped.
-                        "x-error-msg": json.dumps(str(exc), indent=None),
-                    },
+                    status=status,
+                    headers=headers,
                 )
                 resp["exception"] = exc
             context.description = "{} {}".format(resp.status, trim(resp.text))
