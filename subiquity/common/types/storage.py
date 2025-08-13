@@ -420,3 +420,8 @@ class EntropyResponse:
 
     # Set to None if success is True
     failure_reasons: Optional[List[str]] = None
+
+
+class CoreBootEncryptionFeatures(enum.Enum):
+    PASSPHRASE_AUTH = "passphrase-auth"
+    PIN_AUTH = "pin-auth"

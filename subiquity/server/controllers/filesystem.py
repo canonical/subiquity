@@ -44,6 +44,7 @@ from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
     CalculateEntropyRequest,
+    CoreBootEncryptionFeatures,
     Disk,
     EntropyResponse,
     GuidedCapability,
@@ -1780,6 +1781,34 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         assert key is not None  # To help the static type checker
 
         return key
+
+    async def v2_core_boot_encryption_features_GET(
+        self,
+    ) -> List[CoreBootEncryptionFeatures]:
+        """Return a list of encryption features (i.e., pin, passphrase)
+        supported when installing with TPM/FDE. If multiple variations support
+        TPM/FDE, only the first one is accounted for. Although it sounds like
+        an arbitrary choice, it is consistent with the implementation of
+        set_info_for_capability, which is used when doing a POST to
+        /storage/v2/guided (the user does not choose which variation to use)."""
+        # Typically, this endpoint is used by the desktop installer before any
+        # POST /storage/* is done. This means we can't "guess" what the user
+        # wants to do, not even if they really want to do TPM/FDE.
+        for variation in self._variation_info.values():
+            try:
+                features: list[snapdtypes.EncryptionFeature] = (
+                    variation.system.storage_encryption.features
+                )
+            except AttributeError:
+                continue
+
+            if features is None:
+                # Snapd is too old
+                return []
+
+            return [CoreBootEncryptionFeatures(feature.value) for feature in features]
+
+        raise StorageRecoverableError("no suitable variation for core boot")
 
     async def dry_run_wait_probe_POST(self) -> None:
         if not self.app.opts.dry_run:
