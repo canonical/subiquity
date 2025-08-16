@@ -28,7 +28,7 @@ being installed, they must appear under a :ref:`ai-user-data` section under
         # and configure the target system to be installed.
 
         user-data:
-            # cloud-init directives may also be optionally be specified here.
+            # cloud-init directives may also be optionally specified here.
             # These directives also affect the target system to be installed,
             # and are processed on first boot.
 
