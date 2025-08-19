@@ -71,6 +71,7 @@ rm -rf "${subiquity_dest}/subiquitycore"
 (cd "${src}" && ./scripts/update-part.py curtin)
 
 rsync -a --chown 0:0 $src/curtin/curtin new/lib/python3.10/site-packages
+rsync -a --chown 0:0 $src/probert/probert new/lib/python3.10/site-packages
 rsync -a --chown 0:0 $src/subiquity $src/subiquitycore $subiquity_dest
 
 snapcraft pack new --output $new

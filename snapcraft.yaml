@@ -224,18 +224,9 @@ parts:
     source: https://github.com/canonical/probert.git
     source-type: git
     # Tracks the ubuntu/noble branch
-    source-commit: ee45ec6103d235884828ad7aca5018fafdfc4a62
+    source-commit: 26175bb2fb952335cc652c602e7c5ae6ef7ac82b
 
     override-build: *pyinstall
 
     build-packages:
-      - build-essential
-      - libnl-3-dev
-      - libnl-genl-3-dev
-      - libnl-route-3-dev
-      - pkg-config
-      - python3-dev
       - python3-pip
-
-    build-attributes:
-      - enable-patchelf
