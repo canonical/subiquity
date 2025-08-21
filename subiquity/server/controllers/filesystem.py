@@ -764,8 +764,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         gap = gaps.after(disk, partition.offset)
         if gap is None:
             pgs = gaps.parts_and_gaps(disk)
+            log.debug("gap not found after resize, pgs=%s", pgs)
             raise StorageConstraintViolationError(
-                f"gap not found after resize, pgs={pgs}"
+                "failed to locate gap after resizing partition"
             )
         return gap
 
