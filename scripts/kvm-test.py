@@ -228,6 +228,14 @@ parser.add_argument('--nic', action="append", dest="nics",
                     metavar="argument",
                     help='pass custom -nic argument to QEMU'
                          ' - overrides --nets')
+parser.add_argument('--usb-passthrough', nargs=2, action='append', default=[],
+                    metavar=("BUS", "ADDRESS"),
+                    help='pairs of (BUS, ADDRESS) USB devices to give to the guest.\n'
+                         'For instance specify `--usb-passthrough 1 13` for the following device:\n'
+                         '"Bus 001 Device 013: ID 0bda:8179 Realtek Semiconductor Corp.'
+                         ' RTL8188EUS 802.11n Wireless Network Adapter".\n'
+                         'The current user must have write permission on the device.\n'
+                         'Try `chown $UID /dev/bus/001/013` as an example.')
 target_overwrite_group = parser.add_mutually_exclusive_group()
 target_overwrite_group.add_argument('--preserve-target',
                                     dest='target_overwrite',
@@ -512,6 +520,21 @@ def nets(ctx) -> List[str]:
     return nics
 
 
+def usb_passthrough_devs(ctx) -> list[str]:
+    devs: list[str] = []
+
+    if not ctx.args.usb_passthrough:
+        return []
+
+    # Maybe we want that somewhere more global but for now that's fine.
+    devs.append("-usb")
+
+    for bus, addr in ctx.args.usb_passthrough:
+        devs.extend(("-device", f"usb-host,hostbus={bus},hostaddr={addr}"))
+
+    return devs
+
+
 @dataclasses.dataclass(frozen=True)
 class TPMEmulator:
     socket: Path
@@ -556,6 +579,7 @@ def kvm_prepare_common(ctx):
     ret.extend(memory(ctx))
     ret.extend(bios(ctx))
     ret.extend(nets(ctx))
+    ret.extend(usb_passthrough_devs(ctx))
     if ctx.args.sound:
         ret.extend(('-device', 'AC97', '-device', 'usb-ehci'))
 
