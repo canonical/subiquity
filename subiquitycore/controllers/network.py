@@ -173,6 +173,8 @@ class BaseNetworkController(BaseController):
         self.network_event_receiver = SubiquityNetworkEventReceiver.create(
             self, self.opts.dry_run
         )
+        # We override this in subclasses when relevant.
+        self.with_wlan_listener = True
 
     def parse_netplan_configs(self):
         self.model.parse_netplan_configs(self.root)
@@ -181,7 +183,7 @@ class BaseNetworkController(BaseController):
         self._observer_handles = []
         self.observer, self._observer_fds = self.app.prober.probe_network(
             self.network_event_receiver,
-            with_wlan_listener=self.app.opts.with_wlan_listener,
+            with_wlan_listener=self.with_wlan_listener,
         )
         self.start_watching()
 
