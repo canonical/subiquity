@@ -95,6 +95,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
         self.clients = {}
         self.install_wpasupplicant_task = None
         self.pending_wlan_devices = set()
+        self.with_wlan_listener = app.opts.with_wlan_listener
 
     def maybe_start_install_wpasupplicant(self):
         log.debug("maybe_start_install_wpasupplicant")
