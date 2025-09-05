@@ -449,6 +449,13 @@ class NetworkDev:
         else:
             self.config.pop("routes", None)
 
+    def has_incomplete_config(self) -> bool:
+        """Netplan will be upset if devices have incomplete configuration, such
+        as IP addressing but no SSID configured for Wi-Fi interfaces."""
+        if self.type == "wlan" and self.configured_ssid == (None, None):
+            return True
+        return False
+
 
 class NetworkModel(object):
     """ """
@@ -580,8 +587,27 @@ class NetworkModel(object):
         for dev in self.get_all_netdevs():
             key = type_to_key[dev.type]
             configs = config["network"].setdefault(key, {})
-            if dev.config or dev.is_used:
-                configs[dev.name] = dev.config
+            if not dev.config and not dev.is_used:
+                continue
+
+            if dev.has_incomplete_config():
+                if not dev.is_used:
+                    continue
+                # TODO ideally we want to avoid producing the warning below.
+                # But using "continue" unconditionally here would introduce
+                # another issue. Netplan does complain if we configure a
+                # virtual device (e.g., bond or bridge) device without
+                # configuring the underlying device.
+                # If the underlying device indeed has an incomplete
+                # configuration, maybe we should mark it as "disabled" in
+                # netplan.
+                log.warning(
+                    "netdev %s is marked as used but has an incomplete"
+                    " configuration. Netplan will probably be upset.",
+                    dev.name,
+                )
+
+            configs[dev.name] = dev.config
 
         return config
 
