@@ -17,7 +17,7 @@ import ipaddress
 import logging
 from gettext import pgettext
 from socket import AF_INET, AF_INET6
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import attr
 import yaml
@@ -193,7 +193,7 @@ class NetworkDev:
         self._model = model
         self._name = name
         self.type = typ
-        self.config = {}
+        self.config: Optional[dict[str, Any]] = {}
 
         # import done here to break a chain where anybody importing
         # subiquity.common.types has to have probert
@@ -461,7 +461,8 @@ class NetworkModel(object):
     """ """
 
     def __init__(self, project):
-        self.devices_by_name = {}  # Maps interface names to NetworkDev
+        # Maps interface names to NetworkDev
+        self.devices_by_name: dict[str, NetworkDev] = {}
         self._has_network = False
         self.project = project
         self.force_offline = False
@@ -555,13 +556,13 @@ class NetworkModel(object):
         dev.config = bond_config.to_config()
         return dev
 
-    def get_all_netdevs(self, include_deleted=False):
+    def get_all_netdevs(self, include_deleted=False) -> list[NetworkDev]:
         devs = [v for k, v in sorted(self.devices_by_name.items())]
         if not include_deleted:
             devs = [v for v in devs if v.config is not None]
         return devs
 
-    def get_netdev_by_name(self, name):
+    def get_netdev_by_name(self, name) -> NetworkDev:
         return self.devices_by_name[name]
 
     def stringify_config(self, config):
