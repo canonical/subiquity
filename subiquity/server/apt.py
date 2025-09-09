@@ -319,9 +319,9 @@ class AptConfigurer:
             shutil.rmtree(target_mnt.p(dir))
             await self.app.command_runner.run(
                 [
-                    "cp",
-                    "-aT",
-                    self.configured_tree.p(dir),
+                    "rsync",
+                    "-a",
+                    self.configured_tree.p(dir) + "/",
                     target_mnt.p(dir),
                 ]
             )

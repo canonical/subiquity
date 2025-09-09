@@ -111,7 +111,7 @@ class ShutdownController(SubiquityController):
         else:
             await self.copy_cloud_init_logs(target_logs)
             await self.app.command_runner.run(
-                ["cp", "-aT", "/var/log/installer", target_logs]
+                ["rsync", "-a", "/var/log/installer/", target_logs]
             )
             # explicitly setting the expected permissions on this dir
             set_log_perms(target_logs, mode=0o770, group="adm")

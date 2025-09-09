@@ -51,6 +51,7 @@ python3-systemd
 python3-urwid
 python3-wheel
 python3-yaml
+rsync
 ssh-import-id
 ubuntu-drivers-common
 umockdev
