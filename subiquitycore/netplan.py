@@ -69,13 +69,13 @@ class Config:
 
     def config_for_device(self, link):
         if link.is_virtual:
-            for dev in self.virtual_devices:
+            for dev in sorted(self.virtual_devices, key=lambda x: x.name):
                 if dev.name == link.name:
                     return copy.deepcopy(dev.config)
         else:
             allowed_matches = ("macaddress",)
             match_key = "match"
-            for dev in self.physical_devices:
+            for dev in sorted(self.physical_devices, key=lambda x: x.name):
                 if dev.matches_link(link):
                     config = copy.deepcopy(dev.config)
                     if match_key in config:
@@ -108,6 +108,11 @@ class Config:
 
 class _PhysicalDevice:
     def __init__(self, name, config):
+        # Name of the config section.
+        # Different configs are sorted by section name (using lexical order).
+        # If two config sections match the same interface, whichever comes
+        # first is honored.
+        self.name = name
         match = config.get("match")
         if match is None:
             self.match_name = name
