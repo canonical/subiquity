@@ -41,6 +41,9 @@ class Config:
     def __init__(self):
         self.physical_devices = []
         self.virtual_devices = []
+        # TODO we probably want to get rid of self.config.
+        # If we load multiple configs using parse_netplan_config() (which is
+        # the intended behavior), it only stores the last one.
         self.config = {}
 
     def parse_netplan_config(self, config):
