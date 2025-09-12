@@ -138,6 +138,7 @@ class _PhysicalDevice:
 
 class _VirtualDevice:
     def __init__(self, name, config):
+        # TODO support match directives?
         self.name = name
         self.config = config
         log.debug("config for %s = %s" % (name, sanitize_interface_config(self.config)))
