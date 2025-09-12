@@ -89,6 +89,11 @@ class Config:
         return {}
 
     def load_from_root(self, root):
+        # This does something similar to netplan-get, except that it:
+        # * only loads netplan files from /etc, not /lib and /run.
+        # * does not merge configs.
+        # Using netplan-get would have the benefit of merging configs that have
+        # the same name.
         for path in configs_in_root(root):
             try:
                 fp = open(path)
