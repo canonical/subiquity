@@ -17,7 +17,7 @@ import ipaddress
 import logging
 from gettext import pgettext
 from socket import AF_INET, AF_INET6
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import attr
 import yaml
@@ -193,7 +193,7 @@ class NetworkDev:
         self._model = model
         self._name = name
         self.type = typ
-        self.config = {}
+        self.config: Optional[dict[str, Any]] = {}
 
         # import done here to break a chain where anybody importing
         # subiquity.common.types has to have probert
@@ -449,12 +449,20 @@ class NetworkDev:
         else:
             self.config.pop("routes", None)
 
+    def has_incomplete_config(self) -> bool:
+        """Netplan will be upset if devices have incomplete configuration, such
+        as IP addressing but no SSID configured for Wi-Fi interfaces."""
+        if self.type == "wlan" and self.configured_ssid == (None, None):
+            return True
+        return False
+
 
 class NetworkModel(object):
     """ """
 
     def __init__(self, project):
-        self.devices_by_name = {}  # Maps interface names to NetworkDev
+        # Maps interface names to NetworkDev
+        self.devices_by_name: dict[str, NetworkDev] = {}
         self._has_network = False
         self.project = project
         self.force_offline = False
@@ -548,13 +556,13 @@ class NetworkModel(object):
         dev.config = bond_config.to_config()
         return dev
 
-    def get_all_netdevs(self, include_deleted=False):
+    def get_all_netdevs(self, include_deleted=False) -> list[NetworkDev]:
         devs = [v for k, v in sorted(self.devices_by_name.items())]
         if not include_deleted:
             devs = [v for v in devs if v.config is not None]
         return devs
 
-    def get_netdev_by_name(self, name):
+    def get_netdev_by_name(self, name) -> NetworkDev:
         return self.devices_by_name[name]
 
     def stringify_config(self, config):
@@ -580,8 +588,27 @@ class NetworkModel(object):
         for dev in self.get_all_netdevs():
             key = type_to_key[dev.type]
             configs = config["network"].setdefault(key, {})
-            if dev.config or dev.is_used:
-                configs[dev.name] = dev.config
+            if not dev.config and not dev.is_used:
+                continue
+
+            if dev.has_incomplete_config():
+                if not dev.is_used:
+                    continue
+                # TODO ideally we want to avoid producing the warning below.
+                # But using "continue" unconditionally here would introduce
+                # another issue. Netplan does complain if we configure a
+                # virtual device (e.g., bond or bridge) device without
+                # configuring the underlying device.
+                # If the underlying device indeed has an incomplete
+                # configuration, maybe we should mark it as "disabled" in
+                # netplan.
+                log.warning(
+                    "netdev %s is marked as used but has an incomplete"
+                    " configuration. Netplan will probably be upset.",
+                    dev.name,
+                )
+
+            configs[dev.name] = dev.config
 
         return config
 
