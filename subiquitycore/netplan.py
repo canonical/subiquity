@@ -41,6 +41,9 @@ class Config:
     def __init__(self):
         self.physical_devices = []
         self.virtual_devices = []
+        # TODO we probably want to get rid of self.config.
+        # If we load multiple configs using parse_netplan_config() (which is
+        # the intended behavior), it only stores the last one.
         self.config = {}
 
     def parse_netplan_config(self, config):
@@ -66,13 +69,16 @@ class Config:
 
     def config_for_device(self, link):
         if link.is_virtual:
-            for dev in self.virtual_devices:
+            for dev in sorted(self.virtual_devices, key=lambda x: x.name):
                 if dev.name == link.name:
                     return copy.deepcopy(dev.config)
         else:
             allowed_matches = ("macaddress",)
             match_key = "match"
-            for dev in self.physical_devices:
+            # Different configs are sorted by section name (using lexical
+            # order). If two config sections match the same interface,
+            # whichever comes first is honored.
+            for dev in sorted(self.physical_devices, key=lambda x: x.name):
                 if dev.matches_link(link):
                     config = copy.deepcopy(dev.config)
                     if match_key in config:
@@ -89,6 +95,11 @@ class Config:
         return {}
 
     def load_from_root(self, root):
+        # This does something similar to netplan-get, except that it:
+        # * only loads netplan files from /etc, not /lib and /run.
+        # * does not merge configs.
+        # Using netplan-get would have the benefit of merging configs that have
+        # the same name.
         for path in configs_in_root(root):
             try:
                 fp = open(path)
@@ -100,6 +111,10 @@ class Config:
 
 class _PhysicalDevice:
     def __init__(self, name, config):
+        # Name of the config section. If no match statement is present, this
+        # corresponds to the name of the interface. Otherwise, this is
+        # essentially free text (but is important for sorting).
+        self.name = name
         match = config.get("match")
         if match is None:
             self.match_name = name
@@ -130,6 +145,7 @@ class _PhysicalDevice:
 
 class _VirtualDevice:
     def __init__(self, name, config):
+        # TODO support match directives?
         self.name = name
         self.config = config
         log.debug("config for %s = %s" % (name, sanitize_interface_config(self.config)))
