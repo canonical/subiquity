@@ -40,7 +40,6 @@ except ImportError:
 from curtin.config import merge_config
 
 from subiquity.common.pkg import TargetPkg
-from subiquity.common.resources import get_users_and_groups
 from subiquity.server.types import InstallerChannels
 from subiquitycore.file_util import generate_timestamped_header, write_file
 from subiquitycore.lsb_release import lsb_release
@@ -359,13 +358,8 @@ class SubiquityModel:
             config["preserve_hostname"] = True
         user = self.identity.user
         if user:
-            groups = get_users_and_groups(self.chroot_prefix)
             user_info = {
                 "name": user.username,
-                "gecos": user.realname,
-                "passwd": user.password,
-                "shell": "/bin/bash",
-                "groups": ",".join(sorted(groups)),
                 "lock_passwd": False,
             }
             if self.ssh.authorized_keys:

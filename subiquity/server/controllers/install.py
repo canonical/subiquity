@@ -34,6 +34,7 @@ from curtin.config import merge_config
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.pkg import TargetPkg
+from subiquity.common.resources import get_users_and_groups
 from subiquity.common.types import ApplicationState, PackageInstallState
 from subiquity.journald import journald_listen
 from subiquity.models.filesystem import ActionRenderMode, Partition
@@ -648,11 +649,45 @@ class InstallController(SubiquityController):
                     log.warning("chreipl stderr:\n%s", cpe.stderr)
                 raise
 
+    async def create_users(self, context):
+        user = self.model.identity.user
+
+        if user is None:
+            return
+
+        groups = get_users_and_groups(self.model.chroot_prefix)
+
+        cmd = [
+            "useradd",
+            user.username,
+            "--comment",
+            user.realname,
+            "--password",
+            user.password,
+            "--shell",
+            "/bin/bash",
+            "--groups",
+            ",".join(sorted(groups)),
+            "--create-home",
+        ]
+
+        await run_curtin_command(
+            self.app,
+            context,
+            "in-target",
+            "-t",
+            self.tpath(),
+            "--",
+            *cmd,
+            private_mounts=False,
+        )
+
     @with_context(
         description="final system configuration", level="INFO", childlevel="DEBUG"
     )
     async def postinstall(self, *, context):
         self.write_autoinstall_config()
+        await self.create_users(context)
         try:
             if self.supports_apt():
                 packages = await self.get_target_packages(context=context)
