@@ -13,6 +13,7 @@ libsystemd-dev
 lsb-release
 os-prober
 pandoc
+passwd
 pre-commit
 python3-aiohttp
 python3-aioresponses
