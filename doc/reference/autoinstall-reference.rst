@@ -1133,7 +1133,8 @@ Example:
 .. code-block:: yaml
 
    autoinstall:
-     # 1. Disable SSH password authentication for root (which is actually the
+     # 1. Make sure history files are purged if one runs `apt purge etckeeper`
+     # 2. Disable SSH password authentication for root (which is actually the
      # default behavior)
      # Watch out, permit-root-login does basically the opposite of
      # PermitRootLogin (see man 8 sshd_config):
@@ -1141,9 +1142,10 @@ Example:
      #  * openssh-server/permit-root-login boolean true   <=>  # PermitRootLogin prohibit-password
      # See https://salsa.debian.org/ssh-team/openssh/-/blob/78b01f70b043846640887cc295f66ecd66ac0714/debian/openssh-server.postinst#L70-73
      # and LP: #2128863
-     # 2. Start the ufw firewall automatically.
+     # 3. Start the ufw firewall automatically.
 
      debconf-selections: |
+       etckeeper etckeeper/purge boolean true
        openssh-server openssh-server/permit-root-login boolean true
        ufw ufw/enable boolean true
 
