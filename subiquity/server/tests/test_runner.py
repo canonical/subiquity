@@ -17,8 +17,23 @@ import os
 import subprocess
 from unittest.mock import ANY, patch
 
-from subiquity.server.runner import DryRunCommandRunner, LoggedCommandRunner
+from subiquity.server.runner import (
+    DryRunCommandRunner,
+    LoggedCommandRunner,
+    _dollar_escape,
+)
 from subiquitycore.tests import SubiTestCase
+
+
+class TestDollarEscape(SubiTestCase):
+    def test_no_dollar(self):
+        self.assertEqual("No dollar sign", _dollar_escape("No dollar sign"))
+
+    def test_encrypted_password(self):
+        self.assertEqual("$$6$$xxx", _dollar_escape("$6$xxx"))
+
+    def test_multiple_dollars(self):
+        self.assertEqual("a$$$$$$b", _dollar_escape("a$$$b"))
 
 
 class TestLoggedCommandRunner(SubiTestCase):
@@ -101,6 +116,26 @@ class TestLoggedCommandRunner(SubiTestCase):
             "--",
             "/bin/ls",
             "/root",
+        ]
+        self.assertEqual(cmd, expected)
+
+        # Make sure $ signs are escaped.
+        with patch.dict(os.environ, {}, clear=True):
+            cmd = runner._forge_systemd_cmd(
+                ["/usr/bin/echo", "$6$123456"], private_mounts=False, capture=True
+            )
+
+        expected = [
+            "systemd-run",
+            "--wait",
+            "--same-dir",
+            "--property",
+            "SyslogIdentifier=my-id",
+            "--user",
+            "--pipe",
+            "--",
+            "/usr/bin/echo",
+            "$$6$$123456",
         ]
         self.assertEqual(cmd, expected)
 
