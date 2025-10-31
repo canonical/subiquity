@@ -14,27 +14,28 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from typing import Optional
 
 import attr
 
 log = logging.getLogger("subiquity.models.identity")
 
 
-@attr.s
-class User(object):
-    realname = attr.ib()
-    username = attr.ib()
-    password = attr.ib()
+@attr.s(auto_attribs=True)
+class User:
+    realname: str
+    username: str
+    password: str
 
 
-class IdentityModel(object):
+class IdentityModel:
     """Model representing user identity"""
 
-    def __init__(self):
-        self._user = None
-        self._hostname = None
+    def __init__(self) -> None:
+        self._user: Optional[User] = None
+        self._hostname: Optional[str] = None
 
-    def add_user(self, identity_data):
+    def add_user(self, identity_data) -> None:
         self._hostname = identity_data.hostname
         d = {}
         d["realname"] = identity_data.realname
@@ -45,11 +46,11 @@ class IdentityModel(object):
         self._user = User(**d)
 
     @property
-    def hostname(self):
+    def hostname(self) -> Optional[str]:
         return self._hostname
 
     @property
-    def user(self):
+    def user(self) -> Optional[User]:
         return self._user
 
     def __repr__(self):
