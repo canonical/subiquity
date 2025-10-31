@@ -20,21 +20,21 @@ import attr
 log = logging.getLogger("subiquity.models.identity")
 
 
-@attr.s
-class User(object):
-    realname = attr.ib()
-    username = attr.ib()
-    password = attr.ib()
+@attr.s(auto_attribs=True)
+class User:
+    realname: str
+    username: str
+    password: str
 
 
-class IdentityModel(object):
+class IdentityModel:
     """Model representing user identity"""
 
-    def __init__(self):
-        self._user = None
-        self._hostname = None
+    def __init__(self) -> None:
+        self._user: User | None = None
+        self._hostname: str | None = None
 
-    def add_user(self, identity_data):
+    def add_user(self, identity_data) -> None:
         self._hostname = identity_data.hostname
         d = {}
         d["realname"] = identity_data.realname
@@ -45,11 +45,11 @@ class IdentityModel(object):
         self._user = User(**d)
 
     @property
-    def hostname(self):
+    def hostname(self) -> str | None:
         return self._hostname
 
     @property
-    def user(self):
+    def user(self) -> User | None:
         return self._user
 
     def __repr__(self):
