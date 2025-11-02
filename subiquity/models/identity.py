@@ -14,9 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import Optional, Type
+from typing import Any, Optional, Type
 
 import attr
+
+from subiquity.common.types import IdentityData
 
 log = logging.getLogger("subiquity.models.identity")
 
@@ -33,32 +35,65 @@ class User:
 
     groups: set[str | Type[DefaultGroups]]
 
+    @classmethod
+    def from_identity_data(cls, data: IdentityData) -> "User":
+        return cls(
+            username=data.username,
+            password=data.crypted_password,
+            realname=data.realname if data.realname else data.username,
+            groups={DefaultGroups},
+        )
+
+    @classmethod
+    def from_autoinstall(cls, data: dict[str, Any]) -> "User":
+        if "groups" not in data:
+            groups = {DefaultGroups}
+        elif isinstance(data["groups"], list):
+            groups = set(data["groups"])
+        elif isinstance(data["groups"], dict):
+            if "override" in data["groups"]:
+                groups = set(data["groups"]["override"])
+            elif "append" in data["groups"]:
+                groups = {DefaultGroups}
+                groups.update(set(data["groups"]["append"]))
+            else:
+                raise ValueError
+        else:
+            raise ValueError
+        return cls(
+            username=data["username"],
+            realname=data.get("realname", ""),
+            password=data["password"],
+            groups=groups,
+        )
+
+    def to_autoinstall(self) -> dict[str, Any]:
+        d = {
+            "realname": self.realname,
+            "username": self.username,
+            "password": self.password,
+        }
+
+        if self.groups == {DefaultGroups}:
+            # This is the default
+            pass
+        elif DefaultGroups in self.groups:
+            d["groups"] = {"add": sorted(self.groups - {DefaultGroups})}
+        else:
+            d["groups"] = {"override": sorted(self.groups)}
+        return d
+
 
 class IdentityModel:
     """Model representing user identity"""
 
     def __init__(self) -> None:
-        self._user: Optional[User] = None
-        self._hostname: Optional[str] = None
+        self.user: Optional[User] = None
+        self.hostname: Optional[str] = None
 
-    def add_user(self, identity_data) -> None:
-        self._hostname = identity_data.hostname
-        d = {}
-        d["realname"] = identity_data.realname
-        d["username"] = identity_data.username
-        d["password"] = identity_data.crypted_password
-        if not d["realname"]:
-            d["realname"] = identity_data.username
-        d["groups"] = {DefaultGroups}
-        self._user = User(**d)
-
-    @property
-    def hostname(self) -> Optional[str]:
-        return self._hostname
-
-    @property
-    def user(self) -> Optional[User]:
-        return self._user
+    def add_user(self, data: IdentityData) -> None:
+        self.hostname = data.hostname
+        self.user = User.from_identity_data(data)
 
     def __repr__(self):
         return "<LocalUser: {} {}>".format(self.user, self.hostname)
