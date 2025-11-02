@@ -25,7 +25,7 @@ from unittest.mock import ANY, AsyncMock, Mock, call, mock_open, patch
 from curtin.util import EFIBootEntry, EFIBootState
 
 from subiquity.common.types import PackageInstallState
-from subiquity.models.identity import User
+from subiquity.models.identity import DefaultGroups, User
 from subiquity.models.tests.test_filesystem import make_model_and_partition
 from subiquity.server.controllers.install import CurtinInstallError, InstallController
 from subiquity.server.mounter import Mountpoint
@@ -286,7 +286,12 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
         with patch.object(
             self.controller.model.identity,
             "user",
-            User(username="user", password="$6$xxx12345", realname="my user"),
+            User(
+                username="user",
+                password="$6$xxx12345",
+                realname="my user",
+                groups={DefaultGroups},
+            ),
         ):
             await self.controller.create_users(Mock())
         expected_useradd = [

@@ -734,7 +734,10 @@ class InstallController(SubiquityController):
         if user is None:
             return
 
-        groups = get_users_and_groups(self.model.chroot_prefix)
+        # Include default groups if needed
+        groups = user.resolved_groups(
+            default=get_users_and_groups(self.model.chroot_prefix)
+        )
 
         async def run_in_target(cmd: list[str], **kwargs):
             await run_curtin_command(

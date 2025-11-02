@@ -20,11 +20,24 @@ import attr
 log = logging.getLogger("subiquity.models.identity")
 
 
+class DefaultGroups:
+    """Special value for unresolved default groups"""
+
+
 @attr.s(auto_attribs=True)
 class User:
     realname: str
     username: str
     password: str
+
+    groups: set[str | type[DefaultGroups]]
+
+    def resolved_groups(self, *, default: set[str]) -> set[str]:
+        groups = self.groups.copy()
+        if DefaultGroups in groups:
+            groups.remove(DefaultGroups)
+            groups.update(default)
+        return groups
 
 
 class IdentityModel:
@@ -42,6 +55,7 @@ class IdentityModel:
         d["password"] = identity_data.crypted_password
         if not d["realname"]:
             d["realname"] = identity_data.username
+        d["groups"] = {DefaultGroups}
         self._user = User(**d)
 
     @property
