@@ -818,7 +818,7 @@ identity
 
 Configure the initial user for the system. This is the only configuration key that must be present (unless the :ref:`user-data section <ai-user-data>` is present, in which case it is optional).
 
-A mapping that can contain keys, all of which take string values:
+A mapping that can contain keys, all of which but groups take string values:
 
 realname
 ^^^^^^^^
@@ -844,6 +844,24 @@ The encrypted password string must conform to what the ``passwd`` command requir
 
 Several tools can generate the encrypted password, such as ``mkpasswd`` from the ``whois`` package, or ``openssl passwd``.
 
+groups
+^^^^^^
+
+* **type:** mapping or list of strings (see below)
+* **default:** hard-coded list of groups (e.g., `sudo`, `admin`)
+
+Configures which groups the newly created user should belong to. The hard-coded groups (i.e., `sudo`, `admin`) can either be included or excluded.
+
+The mapping contains the `override` and `append` keys, which are mutually exclusive. The groups directive also accepts a list of strings, providing syntactic sugar for `{override: ...}`.
+
+* `override`
+
+Specifies the list of groups that the user should belong to, ignoring groups hard-coded in Subiquity.
+
+* `append`
+
+Specifies the list of groups that the user should belong to, in addition to the defaults.
+
 Example:
 
 .. _ai-identity-example:
@@ -856,6 +874,28 @@ Example:
         username: ubuntu
         password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
         hostname: ubuntu
+
+    autoinstall:
+      identity:
+        username: ubuntu
+        password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
+        hostname: ubuntu
+        # Specifies the list of groups the user should belong to.
+        groups: [adm, sudo, lpadmin]
+        # Alternative syntax:
+        # groups:
+        #   override: [adm, sudo, lpadmin]
+
+    autoinstall:
+      identity:
+        username: ubuntu
+        password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
+        hostname: ubuntu
+        # Ensure the user is part of supplementary groups.
+        groups:
+          append: [adm, sudo, lpadmin]
+
+Note that in any case, one more group will be created for the user, with the same name as their username (see `useradd(8)`). This behavior cannot currently be disabled.
 
 .. _ai-active-directory:
 
