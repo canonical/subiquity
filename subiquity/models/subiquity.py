@@ -36,7 +36,7 @@ from .ad import AdModel
 from .codecs import CodecsModel
 from .drivers import DriversModel
 from .filesystem import FilesystemModel
-from .identity import IdentityModel
+from .identity import DefaultGroups, IdentityModel
 from .integrity import IntegrityModel
 from .kernel import KernelModel
 from .kernel_crash_dumps import KernelCrashDumpsModel
@@ -322,7 +322,11 @@ class SubiquityModel:
             config["preserve_hostname"] = True
         user = self.identity.user
         if user:
-            groups = get_users_and_groups(self.chroot_prefix)
+            groups = user.groups
+            # Resolve the default groups if present
+            if DefaultGroups in groups:
+                groups.remove(DefaultGroups)
+                groups.update(get_users_and_groups(self.chroot_prefix))
             user_info = {
                 "name": user.username,
                 "gecos": user.realname,

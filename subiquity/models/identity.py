@@ -14,11 +14,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import Optional
+from typing import Optional, Type
 
 import attr
 
 log = logging.getLogger("subiquity.models.identity")
+
+
+class DefaultGroups:
+    """Special value for unresolved default groups"""
 
 
 @attr.s(auto_attribs=True)
@@ -26,6 +30,8 @@ class User:
     realname: str
     username: str
     password: str
+
+    groups: set[str | Type[DefaultGroups]]
 
 
 class IdentityModel:
@@ -43,6 +49,7 @@ class IdentityModel:
         d["password"] = identity_data.crypted_password
         if not d["realname"]:
             d["realname"] = identity_data.username
+        d["groups"] = {DefaultGroups}
         self._user = User(**d)
 
     @property

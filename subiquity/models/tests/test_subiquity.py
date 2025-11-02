@@ -29,6 +29,7 @@ from subiquity.common.types import IdentityData
 from subiquity.models.subiquity import (
     CLOUDINIT_CLEAN_FILE_TMPL,
     HOSTS_CONTENT,
+    DefaultGroups,
     ModelNames,
     SubiquityModel,
 )
@@ -207,6 +208,39 @@ class TestSubiquityModel(SubiTestCase):
         model.mirror.create_primary_candidate(mirror_val).elect()
         config = model.render()
         self.assertNotIn("apt", config)
+
+    @mock.patch(
+        "subiquity.models.subiquity.get_users_and_groups",
+        mock.Mock(return_value=["sudo", "admin"]),
+    )
+    def test_cloud_init_config__groups(self):
+        model = self.make_model()
+        model.identity.add_user(
+            IdentityData(
+                username="mainuser", crypted_password="$6$xxxx", hostname="host"
+            )
+        )
+
+        # By default, user.groups = {DefaultGroups}
+        cloud_init_config = model._cloud_init_config()
+        self.assertEqual(cloud_init_config["users"][0]["groups"], "admin,sudo")
+
+        # If we add supplementary groups
+        model.identity.user.groups = {DefaultGroups, "lpadmin", "wheel"}
+        cloud_init_config = model._cloud_init_config()
+        self.assertEqual(
+            cloud_init_config["users"][0]["groups"], "admin,lpadmin,sudo,wheel"
+        )
+
+        # If we add extra groups that are already in the default set
+        model.identity.user.groups = {DefaultGroups, "sudo"}
+        cloud_init_config = model._cloud_init_config()
+        self.assertEqual(cloud_init_config["users"][0]["groups"], "admin,sudo")
+
+        # If we replace the groups completely
+        model.identity.user.groups = {"wheel", "sudo"}
+        cloud_init_config = model._cloud_init_config()
+        self.assertEqual(cloud_init_config["users"][0]["groups"], "sudo,wheel")
 
     @mock.patch("subiquitycore.utils.run_command")
     def test_cloud_init_user_list_merge(self, run_cmd):
