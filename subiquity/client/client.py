@@ -109,6 +109,7 @@ class SubiquityClient(TuiApplication):
             "Refresh",
             "Filesystem",
             "Identity",
+            "HomenodeToken",
             "UbuntuPro",
             "SSH",
             "Drivers",

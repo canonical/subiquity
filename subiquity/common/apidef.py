@@ -95,6 +95,7 @@ class API:
     locale = simple_endpoint(str)
     proxy = simple_endpoint(str)
     updates = simple_endpoint(str)
+    homenode_token = simple_endpoint(str)
 
     class meta:
         class status:

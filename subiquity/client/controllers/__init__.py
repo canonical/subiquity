@@ -17,6 +17,7 @@ from subiquitycore.tuicontroller import RepeatedController
 
 from .drivers import DriversController
 from .filesystem import FilesystemController
+from .homenode_token import HomenodeTokenController
 from .identity import IdentityController
 from .keyboard import KeyboardController
 from .mirror import MirrorController
@@ -36,6 +37,7 @@ from .zdev import ZdevController
 __all__ = [
     "DriversController",
     "FilesystemController",
+    "HomenodeTokenController",
     "IdentityController",
     "KeyboardController",
     "MirrorController",

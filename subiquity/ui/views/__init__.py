@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .filesystem import FilesystemView, GuidedDiskSelectionView
+from .homenode_token import HomenodeTokenView
 from .identity import IdentityView
 from .installprogress import ProgressView
 from .keyboard import KeyboardView
@@ -23,6 +24,7 @@ from .zdev import ZdevView
 __all__ = [
     "FilesystemView",
     "GuidedDiskSelectionView",
+    "HomenodeTokenView",
     "IdentityView",
     "KeyboardView",
     "ProgressView",
