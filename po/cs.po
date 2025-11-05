@@ -7,19 +7,19 @@ msgid ""
 msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-06 15:13-0600\n"
+"POT-Creation-Date: 2025-11-03 07:46+0000\n"
 "PO-Revision-Date: 2023-10-04 14:07+0000\n"
 "Last-Translator: Tomáš Marný <tomik.marny@gmail.com>\n"
 "Language-Team: Czech <cs@li.org>\n"
+"Language: cs\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "X-Launchpad-Export-Date: 2023-10-05 04:42+0000\n"
 "X-Generator: Launchpad (build bd6cfd0cfc024dbe1dcd7d5d91165fb4f6a6c596)\n"
-"Language: cs\n"
 
-#: ../subiquity/client/client.py:58
+#: ../subiquity/client/client.py:68
 msgid ""
 "Installer shell session activated.\n"
 "\n"
@@ -41,74 +41,73 @@ msgstr ""
 "případně provedete, po restartu zaniknou. Pokud byla zahájena instalace,\n"
 "instalovaný systém bude připojený pod /target."
 
-#: ../subiquity/client/client.py:214
+#: ../subiquity/client/client.py:242
 msgid "yes"
 msgstr "ano"
 
-#: ../subiquity/client/client.py:215
+#: ../subiquity/client/client.py:243
 msgid "no"
 msgstr "ne"
 
-#: ../subiquity/client/client.py:217
+#: ../subiquity/client/client.py:245
 msgid "Confirmation is required to continue."
 msgstr "Pokud chcete pokračovat, je třeba potvrdit."
 
-#: ../subiquity/client/client.py:218
+#: ../subiquity/client/client.py:246
 msgid "Add 'autoinstall' to your kernel command line to avoid this"
 msgstr ""
 "Pokud se tomuto chcete vyhnout, přidejte do řádku parametrů zavádění jádra "
 "parametr „autoinstall“"
 
-#: ../subiquity/client/client.py:220
+#: ../subiquity/client/client.py:248
 msgid "Continue with autoinstall?"
 msgstr "Pokračovat v automatické instalaci?"
 
-#: ../subiquity/client/controllers/ssh.py:79
+#: ../subiquity/client/controllers/ssh.py:101
 msgid "Importing keys failed:"
 msgstr "Import klíčů se nezdařil:"
 
-#: ../subiquity/client/controllers/ssh.py:85
+#: ../subiquity/client/controllers/ssh.py:108
 msgid "ssh-keygen failed to show fingerprint of downloaded keys:"
 msgstr "nástroji ssh-keygen se nepodařilo zobrazit otisk stažených klíčů:"
 
 #: ../subiquity/common/filesystem/actions.py:162
 #, python-brace-format
 msgid "Cannot edit {selflabel} as it is part of the {cdtype} {cdname}."
-msgstr ""
-"{selflabel} není možné upravit, protože je součástí {cdtype} {cdname}."
+msgstr "{selflabel} není možné upravit, protože je součástí {cdtype} {cdname}."
 
-#: ../subiquity/common/filesystem/actions.py:180
+#: ../subiquity/common/filesystem/actions.py:182
 msgid "Cannot edit pre-existing RAIDs."
 msgstr "Není možné upravovat už existující RAID pole."
 
-#: ../subiquity/common/filesystem/actions.py:182
+#: ../subiquity/common/filesystem/actions.py:184
 #, python-brace-format
 msgid "Cannot edit {raidlabel} because it has partitions."
 msgstr "Není možné upravovat {raidlabel} protože se na něm nacházejí oddíly."
 
-#: ../subiquity/common/filesystem/actions.py:192
+#: ../subiquity/common/filesystem/actions.py:194
 msgid "Cannot edit pre-existing volume groups."
 msgstr "Není možné upravovat už existující skupiny svazků."
 
-#: ../subiquity/common/filesystem/actions.py:194
+#: ../subiquity/common/filesystem/actions.py:196
 #, python-brace-format
 msgid "Cannot edit {vglabel} because it has logical volumes."
 msgstr "Není možné upravit {vglabel} protože obsahuje logické svazky."
 
-#: ../subiquity/common/filesystem/actions.py:225
+#: ../subiquity/common/filesystem/actions.py:227
 msgid "Primary partition limit reached"
 msgstr "Byl dosažen limit primárního oddílu"
 
-#: ../subiquity/common/filesystem/actions.py:226
+#: ../subiquity/common/filesystem/actions.py:228
 msgid "Unusable space"
 msgstr "Nepoužitelné místo"
 
-#: ../subiquity/common/filesystem/actions.py:250
+#: ../subiquity/common/filesystem/actions.py:252
 #, python-brace-format
 msgid "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
 msgstr "Není možné odebrat {selflabel} z už existujícího {cdtype} {cdlabel}."
 
-#: ../subiquity/common/filesystem/actions.py:262
+#: ../subiquity/common/filesystem/actions.py:264
 #, python-brace-format
 msgid ""
 "Removing {selflabel} would leave the {cdtype} {cdlabel} with less than "
@@ -117,28 +116,27 @@ msgstr ""
 "Odebrání {selflabel} by zanechalo {cdtype} {cdlabel} s méně než "
 "{min_devices} zařízeními."
 
-#: ../subiquity/common/filesystem/actions.py:273
+#: ../subiquity/common/filesystem/actions.py:275
 #, python-brace-format
 msgid ""
 "Removing {selflabel} would leave the {cdtype} {cdlabel} with no devices."
 msgstr "Odebrání {selflabel} by zanechalo {cdtype} {cdlabel} bez zařízení."
 
-#: ../subiquity/common/filesystem/actions.py:291
+#: ../subiquity/common/filesystem/actions.py:293
 #, python-brace-format
 msgid "Cannot delete {selflabel} as it is part of the {cdtype} {cdname}."
-msgstr ""
-"{selflabel} není možné smazat, protože je součástí {cdtype} {cdname}."
+msgstr "{selflabel} není možné smazat, protože je součástí {cdtype} {cdname}."
 
-#: ../subiquity/common/filesystem/actions.py:303
+#: ../subiquity/common/filesystem/actions.py:307
 msgid ""
 "Cannot delete a single partition from a device that already has partitions."
 msgstr "Není možné smazat jediný oddíl na zařízení, které už má oddíly."
 
-#: ../subiquity/common/filesystem/actions.py:307
+#: ../subiquity/common/filesystem/actions.py:311
 msgid "Cannot delete required bootloader partition"
 msgstr "Není možné smazat nepostradatelný oddíl, obsahující zavadeč systému"
 
-#: ../subiquity/common/filesystem/actions.py:321
+#: ../subiquity/common/filesystem/actions.py:325
 #, python-brace-format
 msgid ""
 "Cannot delete {devicelabel} as partition {partnum} is part of the {cdtype} "
@@ -147,19 +145,18 @@ msgstr ""
 "Není možné smazat {devicelabel}, protože oddíl {partnum} je součástí "
 "{cdtype} {cdname}."
 
-#: ../subiquity/common/filesystem/actions.py:331
+#: ../subiquity/common/filesystem/actions.py:335
 #, python-brace-format
-msgid ""
-"Cannot delete {devicelabel} because it has {count} mounted partitions."
+msgid "Cannot delete {devicelabel} because it has {count} mounted partitions."
 msgstr ""
 "Není možné smazat {devicelabel}, protože je z něho připojeno {count} oddílů."
 
-#: ../subiquity/common/filesystem/actions.py:335
+#: ../subiquity/common/filesystem/actions.py:339
 #, python-brace-format
 msgid "Cannot delete {devicelabel} because it has 1 mounted partition."
 msgstr "Není možné smazat {devicelabel}, protože je z něho připojen 1 oddíl."
 
-#: ../subiquity/common/filesystem/actions.py:345
+#: ../subiquity/common/filesystem/actions.py:349
 msgid ""
 "Cannot delete a single logical volume from a volume group that already has "
 "logical volumes."
@@ -168,202 +165,217 @@ msgstr ""
 "logické svazky."
 
 #. A pre-existing device such as a partition or RAID
-#: ../subiquity/common/filesystem/labels.py:37
+#: ../subiquity/common/filesystem/labels.py:38
 msgid "existing"
 msgstr "existující"
 
 #. A newly created device such as a partition or RAID
-#: ../subiquity/common/filesystem/labels.py:40
+#: ../subiquity/common/filesystem/labels.py:41
 msgid "new"
 msgstr "nové"
 
-#: ../subiquity/common/filesystem/labels.py:64
+#: ../subiquity/common/filesystem/labels.py:65
 msgid "PReP"
 msgstr "PReP"
 
 #. boot loader partition
-#: ../subiquity/common/filesystem/labels.py:68
-#: ../subiquity/common/filesystem/labels.py:82
+#: ../subiquity/common/filesystem/labels.py:69
+#: ../subiquity/common/filesystem/labels.py:83
 msgid "configured"
 msgstr "nastaveno"
 
 #. boot loader partition
-#: ../subiquity/common/filesystem/labels.py:71
-#: ../subiquity/common/filesystem/labels.py:84
+#: ../subiquity/common/filesystem/labels.py:72
+#: ../subiquity/common/filesystem/labels.py:85
 msgid "unconfigured"
 msgstr "nenastaveno"
 
-#: ../subiquity/common/filesystem/labels.py:74
+#: ../subiquity/common/filesystem/labels.py:75
 msgid "primary ESP"
 msgstr "hlavní ESP"
 
-#: ../subiquity/common/filesystem/labels.py:76
+#: ../subiquity/common/filesystem/labels.py:77
 msgid "backup ESP"
 msgstr "záložní ESP"
 
-#: ../subiquity/common/filesystem/labels.py:78
+#: ../subiquity/common/filesystem/labels.py:79
 msgid "unused ESP"
 msgstr "nevyužitý ESP"
 
-#: ../subiquity/common/filesystem/labels.py:85
+#: ../subiquity/common/filesystem/labels.py:86
 msgid "BIOS grub spacer"
 msgstr "Výplň pro zavaděč grub a BIOS"
 
 #. extended partition
-#: ../subiquity/common/filesystem/labels.py:88
+#: ../subiquity/common/filesystem/labels.py:89
 msgid "extended"
 msgstr "rozšířený"
 
 #. logical partition
-#: ../subiquity/common/filesystem/labels.py:92
+#: ../subiquity/common/filesystem/labels.py:93
 msgid "logical"
 msgstr "logický"
 
 #. Flag for a LVM volume group
-#: ../subiquity/common/filesystem/labels.py:103
+#: ../subiquity/common/filesystem/labels.py:104
 msgid "encrypted"
 msgstr "šifrovaná"
 
-#: ../subiquity/common/filesystem/labels.py:119
+#: ../subiquity/common/filesystem/labels.py:120
 msgid "multipath device"
 msgstr "multipath zařízení"
 
-#: ../subiquity/common/filesystem/labels.py:120
+#: ../subiquity/common/filesystem/labels.py:123
+msgid "NVMe/TCP drive"
+msgstr ""
+
+#. At time of writing, only NVMe/TCP drives will report as "remote".
+#. Let's set a default label for potential transports that we may
+#. support in the future.
+#: ../subiquity/common/filesystem/labels.py:127
+msgid "remote drive"
+msgstr ""
+
+#: ../subiquity/common/filesystem/labels.py:128
 msgid "local disk"
 msgstr "místní disk"
 
-#: ../subiquity/common/filesystem/labels.py:125
+#: ../subiquity/common/filesystem/labels.py:133
 #, python-brace-format
 msgid "partition of {device}"
 msgstr "oddíl na {device}"
 
-#: ../subiquity/common/filesystem/labels.py:138
+#: ../subiquity/common/filesystem/labels.py:146
 msgid "software"
 msgstr "software"
 
-#: ../subiquity/common/filesystem/labels.py:139
+#: ../subiquity/common/filesystem/labels.py:147
 #, python-brace-format
 msgid "{type} RAID {level}"
 msgstr "{type} RAID {level}"
 
-#: ../subiquity/common/filesystem/labels.py:144
+#: ../subiquity/common/filesystem/labels.py:152
 msgid "LVM volume group"
 msgstr "LVM skupina svazků"
 
-#: ../subiquity/common/filesystem/labels.py:149
+#: ../subiquity/common/filesystem/labels.py:157
 msgid "LVM logical volume"
 msgstr "LVM logický svazek"
 
 #. This is only used in text "cannot add partition {desc}"... bit hackish.
-#: ../subiquity/common/filesystem/labels.py:155
+#: ../subiquity/common/filesystem/labels.py:163
 msgid "to gap"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:160
+#: ../subiquity/common/filesystem/labels.py:168
 msgid "zpool"
 msgstr ""
 
-#: ../subiquity/common/filesystem/labels.py:198
-#: ../subiquity/ui/views/filesystem/guided.py:112
+#: ../subiquity/common/filesystem/labels.py:206
+#: ../subiquity/ui/views/filesystem/guided.py:120
 #, python-brace-format
 msgid "partition {number}"
 msgstr "oddíl {number}"
 
-#: ../subiquity/common/filesystem/labels.py:200
+#: ../subiquity/common/filesystem/labels.py:208
 #, python-brace-format
 msgid "partition {number} of {device}"
 msgstr "oddíl {number} na {device}"
 
-#: ../subiquity/common/filesystem/labels.py:207
+#: ../subiquity/common/filesystem/labels.py:215
 msgid "free space"
 msgstr "volné místo"
 
-#: ../subiquity/common/filesystem/labels.py:217
+#: ../subiquity/common/filesystem/labels.py:225
 #, python-brace-format
 msgid "{component_name} of {desc} {name}"
 msgstr "{component_name} od {desc} {name}"
 
-#: ../subiquity/common/filesystem/labels.py:224
+#: ../subiquity/common/filesystem/labels.py:232
 #, python-brace-format
 msgid "already formatted as {fstype}"
 msgstr "už obsahuje souborový systém {fstype}"
 
-#: ../subiquity/common/filesystem/labels.py:226
+#: ../subiquity/common/filesystem/labels.py:234
 #, python-brace-format
 msgid "to be reformatted as {fstype}"
 msgstr "znovu vytvořit souborový systém {fstype}"
 
-#: ../subiquity/common/filesystem/labels.py:228
+#: ../subiquity/common/filesystem/labels.py:236
 #, python-brace-format
 msgid "to be formatted as {fstype}"
 msgstr "bude vytvořen souborový systém {fstype}"
 
 #. A filesytem
-#: ../subiquity/common/filesystem/labels.py:234
+#: ../subiquity/common/filesystem/labels.py:242
 #, python-brace-format
 msgid "mounted at {path}"
 msgstr "připojeno v {path}"
 
-#: ../subiquity/common/filesystem/labels.py:236
+#: ../subiquity/common/filesystem/labels.py:244
 msgid "in use"
 msgstr "používá se"
 
 #. A filesytem
-#: ../subiquity/common/filesystem/labels.py:239
+#: ../subiquity/common/filesystem/labels.py:247
 msgid "not mounted"
 msgstr "nepřipojeno"
 
 #. A filesytem that cannot be mounted (i.e. swap)
 #. is used or unused
-#: ../subiquity/common/filesystem/labels.py:244
-#: ../subiquity/common/filesystem/labels.py:254
+#: ../subiquity/common/filesystem/labels.py:252
+#: ../subiquity/common/filesystem/labels.py:262
 msgid "unused"
 msgstr "nepoužíván"
 
 #. A filesytem that cannot be mounted (i.e. swap)
 #. is used or unused
-#: ../subiquity/common/filesystem/labels.py:248
+#: ../subiquity/common/filesystem/labels.py:256
 msgid "used"
 msgstr "používán"
 
-#: ../subiquity/common/filesystem/labels.py:283
+#: ../subiquity/common/filesystem/labels.py:287
+msgid "unsupported partition table"
+msgstr ""
+
+#: ../subiquity/common/filesystem/labels.py:296
 #, python-brace-format
 msgid "container for {devices}"
 msgstr "kontejner pro {devices}"
 
-#: ../subiquity/common/types.py:39
+#: ../subiquity/common/types/__init__.py:39
 msgid "Block device probe failure"
 msgstr "Zjišťování blokových zařízení se nezdařilo"
 
-#: ../subiquity/common/types.py:40
+#: ../subiquity/common/types/__init__.py:40
 msgid "Disk probe failure"
 msgstr "Nezdar při zjišťování disku"
 
-#: ../subiquity/common/types.py:41
+#: ../subiquity/common/types/__init__.py:41
 msgid "Install failure"
 msgstr "Nezdar při instalaci"
 
-#: ../subiquity/common/types.py:42
+#: ../subiquity/common/types/__init__.py:42
 msgid "Installer crash"
 msgstr "Instalátor zhavaroval"
 
-#: ../subiquity/common/types.py:43
+#: ../subiquity/common/types/__init__.py:43
 msgid "Network error"
 msgstr "Chyba sítě"
 
-#: ../subiquity/common/types.py:44
+#: ../subiquity/common/types/__init__.py:44
 msgid "Network client error"
 msgstr "Chyba síťového klienta"
 
-#: ../subiquity/common/types.py:45
+#: ../subiquity/common/types/__init__.py:45
 msgid "Server request failure"
 msgstr "Nezdar požadavku na server"
 
-#: ../subiquity/common/types.py:46
+#: ../subiquity/common/types/__init__.py:46
 msgid "Unknown error"
 msgstr "Neznámá chyba"
 
-#: ../subiquitycore/controllers/network.py:230
+#: ../subiquitycore/controllers/network.py:233
 msgid "autoconfiguration failed"
 msgstr "automatické nastavení se nezdařilo"
 
@@ -380,204 +392,204 @@ msgstr ""
 "Otisk {keytype} klíče hostitele je:\n"
 "    {fingerprint}\n"
 
-#: ../subiquitycore/ui/form.py:270
+#: ../subiquitycore/ui/form.py:272
 #, python-brace-format
 msgid "{desc} do not match"
 msgstr "{desc} neodpovídá"
 
-#: ../subiquitycore/ui/form.py:379
+#: ../subiquitycore/ui/form.py:381
 msgid ", or "
 msgstr ", nebo "
 
-#: ../subiquitycore/ui/form.py:381
+#: ../subiquitycore/ui/form.py:383
 msgid " or "
 msgstr " nebo "
 
-#: ../subiquitycore/ui/form.py:385
+#: ../subiquitycore/ui/form.py:387
 #, python-brace-format
 msgid "This field must be a {schemes} URL."
 msgstr "Je třeba, aby obsahem této kolonky bylo {schemes} URL."
 
-#: ../subiquitycore/ui/form.py:458 ../subiquitycore/ui/views/network.py:353
-#: ../subiquity/ui/views/filesystem/filesystem.py:509
-#: ../subiquity/ui/views/snaplist.py:504
+#: ../subiquitycore/ui/form.py:460 ../subiquitycore/ui/views/network.py:355
+#: ../subiquity/ui/views/filesystem/filesystem.py:519
+#: ../subiquity/ui/views/snaplist.py:513
 msgid "Done"
 msgstr "Hotovo"
 
-#: ../subiquitycore/ui/form.py:459 ../subiquitycore/ui/utils.py:372
+#: ../subiquitycore/ui/form.py:461 ../subiquitycore/ui/utils.py:371
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:18
 #: ../subiquity/ui/views/filesystem/delete.py:97
 #: ../subiquity/ui/views/filesystem/delete.py:164
-#: ../subiquity/ui/views/keyboard.py:91 ../subiquity/ui/views/keyboard.py:351
-#: ../subiquity/ui/views/mirror.py:228 ../subiquity/ui/views/snaplist.py:289
-#: ../subiquity/ui/views/ssh.py:141
+#: ../subiquity/ui/views/keyboard.py:91 ../subiquity/ui/views/keyboard.py:355
+#: ../subiquity/ui/views/mirror.py:229 ../subiquity/ui/views/snaplist.py:289
+#: ../subiquity/ui/views/ssh.py:185
 msgid "Cancel"
 msgstr "Storno"
 
-#: ../subiquitycore/ui/interactive.py:103 ../subiquity/ui/views/keyboard.py:229
-#: ../subiquity/ui/views/ssh.py:168
+#: ../subiquitycore/ui/interactive.py:101 ../subiquity/ui/views/keyboard.py:229
+#: ../subiquity/ui/views/ssh.py:212
 msgid "Yes"
 msgstr "Ano"
 
-#: ../subiquitycore/ui/interactive.py:103
-#: ../subiquity/ui/views/installprogress.py:247
-#: ../subiquity/ui/views/keyboard.py:230 ../subiquity/ui/views/ssh.py:72
-#: ../subiquity/ui/views/ssh.py:169
+#: ../subiquitycore/ui/interactive.py:101
+#: ../subiquity/ui/views/installprogress.py:276
+#: ../subiquity/ui/views/keyboard.py:230 ../subiquity/ui/views/ssh.py:213
 msgid "No"
 msgstr "Ne"
 
-#: ../subiquitycore/ui/utils.py:341
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:308
-#: ../subiquity/ui/views/error.py:37
-#: ../subiquity/ui/views/filesystem/disk_info.py:54
+#: ../subiquitycore/ui/utils.py:340
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:307
+#: ../subiquity/ui/views/error.py:38 ../subiquity/ui/views/error.py:476
+#: ../subiquity/ui/views/filesystem/disk_info.py:55
 #: ../subiquity/ui/views/filesystem/filesystem.py:217
-#: ../subiquity/ui/views/help.py:38 ../subiquity/ui/views/installprogress.py:72
-#: ../subiquity/ui/views/snaplist.py:344 ../subiquity/ui/views/welcome.py:117
+#: ../subiquity/ui/views/help.py:38 ../subiquity/ui/views/installprogress.py:75
+#: ../subiquity/ui/views/snaplist.py:344 ../subiquity/ui/views/ssh.py:161
+#: ../subiquity/ui/views/welcome.py:117
 msgid "Close"
 msgstr "Zavřít"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:74
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:144
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:370
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:412
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:73
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:143
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:369
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:411
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:35
 #: ../subiquity/ui/views/filesystem/lvm.py:159
-#: ../subiquity/ui/views/filesystem/partition.py:436
+#: ../subiquity/ui/views/filesystem/partition.py:460
 #: ../subiquity/ui/views/filesystem/raid.py:137
 msgid "Save"
 msgstr "Uložit"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:76
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:75
 msgid "Subnet:"
 msgstr "Podsíť:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:77
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:76
 msgid "Address:"
 msgstr "Adresa:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:78
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:77
 msgid "Gateway:"
 msgstr "Brána:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:80
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:79
 msgid "Name servers:"
 msgstr "DNS servery:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:80
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:79
 msgid "IP addresses, comma separated"
 msgstr "IP adresy, oddělované čárkou"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:83
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:82
 msgid "Search domains:"
 msgstr "Prohledávat domény:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:83
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:82
 msgid "Domains, comma separated"
 msgstr "Domény, oddělované čárkou"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:93
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:92
 #, python-brace-format
 msgid "should be in CIDR form ({example})"
 msgstr "mělo by být v CIDR zápisu ({example})"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:105
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:104
 #, python-brace-format
 msgid "'{address}' is not contained in '{subnet}'"
 msgstr "„{address}“ by byla mimo „{subnet}“ (což nelze)"
 
 #. A choice for how to configure a network interface
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:135
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:134
 msgid "Automatic (DHCP)"
 msgstr "Automaticky (DHCP)"
 
 #. A choice for how to configure a network interface
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:137
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:136
 msgid "Manual"
 msgstr "Ručně"
 
 #. A choice for how to configure a network interface
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:139
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:138
 msgid "Disabled"
 msgstr "Vypnuto"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:155
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:154
 #, python-brace-format
 msgid "IPv{v} Method: "
 msgstr "IPv{v} metoda: "
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:255
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:397
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:254
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:396
 #: ../subiquity/ui/views/filesystem/lvm.py:144
-#: ../subiquity/ui/views/filesystem/partition.py:422
+#: ../subiquity/ui/views/filesystem/partition.py:446
 #: ../subiquity/ui/views/filesystem/raid.py:121
 msgid "Create"
 msgstr "Vytvořit"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:262
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:261
 msgid "VLAN ID:"
 msgstr "Identif. VLAN:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:270
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:269
 msgid "VLAN ID must be between 1 and 4095"
 msgstr "Je třeba, aby identif. VLAN byl z rozmezí 1 až 4095"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:276
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:275
 #, python-brace-format
 msgid "{netdev} already exists"
 msgstr "{netdev} už existuje"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:287
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:286
 msgid "Add a VLAN tag"
 msgstr "Přidat VLAN štítek"
 
 #. {device} is the name of a network device
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:311
-#: ../subiquity/ui/views/filesystem/disk_info.py:56
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:310
+#: ../subiquity/ui/views/filesystem/disk_info.py:57
 #, python-brace-format
 msgid "Info for {device}"
 msgstr "informace pro {device}"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:363
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:362
 #: ../subiquity/ui/views/filesystem/lvm.py:76
 #: ../subiquity/ui/views/filesystem/raid.py:83
 msgid "Name:"
 msgstr "Název:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:364
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:363
 msgid "Devices: "
 msgstr "Zařízení: "
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:365
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:364
 msgid "Bond mode:"
 msgstr "Režim spřáhnutí:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:367
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:366
 msgid "XMIT hash policy:"
 msgstr "Zásada XMIT otisku:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:369
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:368
 msgid "LACP rate:"
 msgstr "Četnost LACP:"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:381
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:380
 #, python-brace-format
 msgid "There is already a network device named \"{netdev}\""
 msgstr "Už zde existuje síťové zařízení nazvané „{netdev}“"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:385
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:384
 msgid "Name cannot be empty"
 msgstr "Název je třeba vyplnit"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:387
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:386
 msgid "Name cannot be more than 16 characters long"
 msgstr "Název nemůže být delší, než 16 znaků"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:396
-#: ../subiquitycore/ui/views/network.py:280
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:395
+#: ../subiquitycore/ui/views/network.py:279
 msgid "Create bond"
 msgstr "Vytvořit spřažení (bond)"
 
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:411
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:410
 msgid "Edit bond"
 msgstr "Upravit spřažení (bond)"
 
@@ -590,44 +602,44 @@ msgstr "Vybrat síť"
 msgid "Network interface {nic} WIFI configuration"
 msgstr "Nastavení WiFi pro rozhraní {nic}"
 
-#: ../subiquitycore/ui/views/network.py:110
+#: ../subiquitycore/ui/views/network.py:111
 #, python-brace-format
 msgid "VLAN {id} on interface {link}"
 msgstr "VLAN {id} na rozhraní {link}"
 
-#: ../subiquitycore/ui/views/network.py:114
+#: ../subiquitycore/ui/views/network.py:115
 #, python-brace-format
 msgid "bond master for {interfaces}"
 msgstr "řídící celé spřažení pro {interfaces}"
 
-#: ../subiquitycore/ui/views/network.py:139
+#: ../subiquitycore/ui/views/network.py:140
 #, python-brace-format
 msgid "ssid: {ssid}"
 msgstr "ssid: {ssid}"
 
-#: ../subiquitycore/ui/views/network.py:141
-#: ../subiquitycore/ui/views/network.py:143
+#: ../subiquitycore/ui/views/network.py:142
+#: ../subiquitycore/ui/views/network.py:144
 msgid "not connected"
 msgstr "nepřipojeno"
 
-#: ../subiquitycore/ui/views/network.py:146
+#: ../subiquitycore/ui/views/network.py:147
 #, python-brace-format
 msgid "enslaved to {device}"
 msgstr "podřízeno {device}"
 
-#: ../subiquitycore/ui/views/network.py:171
+#: ../subiquitycore/ui/views/network.py:170
 msgid "timed out"
 msgstr "překročen časový limit"
 
-#: ../subiquitycore/ui/views/network.py:177
+#: ../subiquitycore/ui/views/network.py:176
 msgid "static"
 msgstr "statické"
 
-#: ../subiquitycore/ui/views/network.py:185
+#: ../subiquitycore/ui/views/network.py:184
 msgid "disabled"
 msgstr "vypnuto"
 
-#: ../subiquitycore/ui/views/network.py:211
+#: ../subiquitycore/ui/views/network.py:210
 msgid ""
 "A wifi device was detected but the necessary support packages were not\n"
 "available.\n"
@@ -635,25 +647,26 @@ msgstr ""
 "Bylo zjištěno wifi zařízení, ale nejsou k dispozici potřebné balíčky pro "
 "jeho podporu.\n"
 
-#: ../subiquitycore/ui/views/network.py:217
+#: ../subiquitycore/ui/views/network.py:216
 msgid "Wifi support packages are being installed.\n"
 msgstr "Balíčky pro podporu wifi jsou instalovány.\n"
 
-#: ../subiquitycore/ui/views/network.py:222
+#: ../subiquitycore/ui/views/network.py:221
 msgid "Wifi support packages failed to install. Please check the logs.\n"
 msgstr ""
 "Balíčky pro podporu wifi se nepodařilo nainstalovat. Zkontrolujte záznamy "
 "událostí.\n"
 
-#: ../subiquitycore/ui/views/network.py:227
+#: ../subiquitycore/ui/views/network.py:226
 msgid "Wifi support packages will be installed in the target system.\n"
 msgstr "Balíčky pro podporu wifi budou nainstalovány do cílového systému.\n"
 
-#: ../subiquitycore/ui/views/network.py:235
-msgid "Network connections"
-msgstr "Síťová připojení"
+#: ../subiquitycore/ui/views/network.py:234
+#, fuzzy
+msgid "Network configuration"
+msgstr "Nastavení úložiště"
 
-#: ../subiquitycore/ui/views/network.py:237
+#: ../subiquitycore/ui/views/network.py:236
 msgid ""
 "Configure at least one interface this server can use to talk to other "
 "machines, and which preferably provides sufficient access for updates."
@@ -663,68 +676,70 @@ msgstr ""
 "aktualizacím."
 
 #. See _route_watcher
-#: ../subiquitycore/ui/views/network.py:292
-#: ../subiquity/ui/views/filesystem/filesystem.py:514
-#: ../subiquity/ui/views/filesystem/guided.py:252
-#: ../subiquity/ui/views/filesystem/guided.py:356
-#: ../subiquity/ui/views/filesystem/guided.py:366
+#: ../subiquitycore/ui/views/network.py:291
+#: ../subiquity/ui/views/filesystem/filesystem.py:524
+#: ../subiquity/ui/views/filesystem/guided.py:269
+#: ../subiquity/ui/views/filesystem/guided.py:484
+#: ../subiquity/ui/views/filesystem/guided.py:494
+#: ../subiquity/ui/views/filesystem/guided.py:503
 #: ../subiquity/ui/views/filesystem/probing.py:47
 #: ../subiquity/ui/views/filesystem/probing.py:77
-#: ../subiquity/ui/views/keyboard.py:369 ../subiquity/ui/views/mirror.py:69
-#: ../subiquity/ui/views/proxy.py:39 ../subiquity/ui/views/refresh.py:148
-#: ../subiquity/ui/views/refresh.py:176 ../subiquity/ui/views/refresh.py:208
-#: ../subiquity/ui/views/refresh.py:279 ../subiquity/ui/views/snaplist.py:505
-#: ../subiquity/ui/views/ssh.py:83 ../subiquity/ui/views/welcome.py:94
-#: ../subiquity/ui/views/zdev.py:163
+#: ../subiquity/ui/views/homenode_token.py:36
+#: ../subiquity/ui/views/keyboard.py:373 ../subiquity/ui/views/mirror.py:69
+#: ../subiquity/ui/views/proxy.py:39 ../subiquity/ui/views/refresh.py:149
+#: ../subiquity/ui/views/refresh.py:177 ../subiquity/ui/views/refresh.py:209
+#: ../subiquity/ui/views/refresh.py:281 ../subiquity/ui/views/snaplist.py:514
+#: ../subiquity/ui/views/ssh.py:176 ../subiquity/ui/views/welcome.py:94
+#: ../subiquity/ui/views/zdev.py:164
 msgid "Back"
 msgstr "Zpět"
 
-#: ../subiquitycore/ui/views/network.py:355
+#: ../subiquitycore/ui/views/network.py:357
 msgid "Continue without network"
 msgstr "Pokračovat bez sítě"
 
-#: ../subiquitycore/ui/views/network.py:370
+#: ../subiquitycore/ui/views/network.py:371
 msgid "Applying changes"
 msgstr "Provádějí se změny"
 
 #. for translators: this is a description of a RAID level
-#: ../subiquity/models/filesystem.py:281
+#: ../subiquity/models/filesystem.py:325
 msgid "0 (striped)"
 msgstr "0 (prostřídáváno)"
 
 #. for translators: this is a description of a RAID level
-#: ../subiquity/models/filesystem.py:283
+#: ../subiquity/models/filesystem.py:327
 msgid "1 (mirrored)"
 msgstr "1 (zrcadleno)"
 
-#: ../subiquity/models/filesystem.py:284
+#: ../subiquity/models/filesystem.py:328
 msgid "5"
 msgstr "5"
 
-#: ../subiquity/models/filesystem.py:285
+#: ../subiquity/models/filesystem.py:329
 msgid "6"
 msgstr "6"
 
-#: ../subiquity/models/filesystem.py:286
+#: ../subiquity/models/filesystem.py:330
 msgid "10"
 msgstr "10"
 
-#: ../subiquity/models/filesystem.py:287
+#: ../subiquity/models/filesystem.py:331
 msgid "Container"
 msgstr "Kontejner"
 
 #. Attempting to convert input to a size
-#: ../subiquity/models/filesystem.py:322
+#: ../subiquity/models/filesystem.py:366
 msgid "input cannot be empty"
 msgstr "nemůže zůstat nevyplněné"
 
 #. Attempting to convert input to a size
-#: ../subiquity/models/filesystem.py:334 ../subiquity/models/filesystem.py:347
+#: ../subiquity/models/filesystem.py:378 ../subiquity/models/filesystem.py:391
 msgid "{input!r} is not valid input"
 msgstr "{input!r} není platné zadání"
 
-#: ../subiquity/server/controllers/filesystem.py:99
-#: ../subiquity/ui/views/filesystem/guided.py:149
+#: ../subiquity/server/controllers/filesystem.py:111
+#: ../subiquity/ui/views/filesystem/guided.py:157
 #, python-brace-format
 msgid ""
 "TPM backed full-disk encryption is not available on this device (the reason "
@@ -733,7 +748,7 @@ msgstr ""
 "Šifrování celého disku založené na TPM není na tomto zařízení k dispozici "
 "(uvedený důvod byl „{reason}“)."
 
-#: ../subiquity/server/controllers/filesystem.py:104
+#: ../subiquity/server/controllers/filesystem.py:116
 msgid ""
 "TPM backed full-disk encryption is not yet supported when the target spans "
 "multiple volumes."
@@ -741,7 +756,7 @@ msgstr ""
 "Šifrování celého disku založené na TPM zatím není podporováno, pokud cíl "
 "zahrnuje více svazků."
 
-#: ../subiquity/server/controllers/filesystem.py:109
+#: ../subiquity/server/controllers/filesystem.py:121
 msgid ""
 "TPM backed full-disk encryption is only supported with a target volume "
 "partition table of GPT."
@@ -749,9 +764,35 @@ msgstr ""
 "Šifrování celého disku založené na TPM je podporováno pouze s tabulkou "
 "oddílů GPT cílového svazku."
 
-#: ../subiquity/server/controllers/filesystem.py:353
+#: ../subiquity/server/controllers/filesystem.py:137
+msgid "Invalid use of storage endpoint"
+msgstr ""
+
+#: ../subiquity/server/controllers/filesystem.py:148
+#, fuzzy
+msgid "Storage constraint violated"
+msgstr "Nastavení úložiště"
+
+#: ../subiquity/server/controllers/filesystem.py:156
+msgid "Storage entity not found"
+msgstr ""
+
+#: ../subiquity/server/controllers/filesystem.py:438
 msgid "TPM backed full-disk encryption has been disabled"
 msgstr "Šifrování celého disku založené na TPM bylo zakázáno"
+
+#: ../subiquity/server/controllers/filesystem.py:447
+msgid "snapd version is too old, please refresh"
+msgstr ""
+
+#: ../subiquity/server/controllers/filesystem.py:469
+msgid "Enhanced secure boot options only available on UEFI systems."
+msgstr ""
+
+#: ../subiquity/server/controllers/filesystem.py:486
+msgid ""
+"Enhanced secure boot options cannot currently install third party drivers."
+msgstr ""
 
 #: ../subiquity/ui/mount.py:60
 msgid "Other"
@@ -761,7 +802,7 @@ msgstr "Ostatní"
 msgid "Leave unmounted"
 msgstr "Ponechat nepřipojené"
 
-#: ../subiquity/ui/views/error.py:45 ../subiquity/ui/views/error.py:50
+#: ../subiquity/ui/views/error.py:46 ../subiquity/ui/views/error.py:51
 msgid ""
 "\n"
 "Sorry, there was a problem examining the storage devices on this system.\n"
@@ -770,7 +811,7 @@ msgstr ""
 "Omlouváme se, došlo k problému při zkoumání úložných zařízení na tomto "
 "systému.\n"
 
-#: ../subiquity/ui/views/error.py:55
+#: ../subiquity/ui/views/error.py:56
 msgid ""
 "\n"
 "Sorry, there was a problem completing the installation.\n"
@@ -778,7 +819,7 @@ msgstr ""
 "\n"
 "Omlouváme se, došlo k problému s dokončováním instalace.\n"
 
-#: ../subiquity/ui/views/error.py:60
+#: ../subiquity/ui/views/error.py:61
 msgid ""
 "\n"
 "Sorry, there was a problem applying the network configuration.\n"
@@ -786,7 +827,7 @@ msgstr ""
 "\n"
 "Omlouváme se, došlo k problému s uplatněním nastavení sítě.\n"
 
-#: ../subiquity/ui/views/error.py:65
+#: ../subiquity/ui/views/error.py:66
 msgid ""
 "\n"
 "Sorry, the installer has encountered an internal error.\n"
@@ -794,7 +835,7 @@ msgstr ""
 "\n"
 "Je nám líto, instalátor narazil na vnitřní chybu.\n"
 
-#: ../subiquity/ui/views/error.py:70
+#: ../subiquity/ui/views/error.py:71
 msgid ""
 "\n"
 "Sorry, the installer has restarted because of an error.\n"
@@ -802,7 +843,7 @@ msgstr ""
 "\n"
 "Omlouváme se, instalátor byl kvůli chybě restartován.\n"
 
-#: ../subiquity/ui/views/error.py:75
+#: ../subiquity/ui/views/error.py:76
 msgid ""
 "\n"
 "Sorry, an unknown error occurred.\n"
@@ -810,7 +851,7 @@ msgstr ""
 "\n"
 "Omlouváme se, došlo k neznámé chybě.\n"
 
-#: ../subiquity/ui/views/error.py:84
+#: ../subiquity/ui/views/error.py:85
 msgid ""
 "\n"
 "Information is being collected from the system that will help the\n"
@@ -820,7 +861,7 @@ msgstr ""
 "Ze systému jsou shromažďovány informace, které vývojářům\n"
 "pomohou s diagnostikou hlášení.\n"
 
-#: ../subiquity/ui/views/error.py:93
+#: ../subiquity/ui/views/error.py:94
 msgid ""
 "\n"
 "Loading report...\n"
@@ -828,7 +869,7 @@ msgstr ""
 "\n"
 "Načítání hlášení…\n"
 
-#: ../subiquity/ui/views/error.py:101
+#: ../subiquity/ui/views/error.py:102
 msgid ""
 "\n"
 "Collecting information from the system failed. See the files in\n"
@@ -838,7 +879,7 @@ msgstr ""
 "Shromažďování informací ze systému se nezdařilo. Další informace\n"
 "viz soubory ve /var/log/installer\n"
 
-#: ../subiquity/ui/views/error.py:110
+#: ../subiquity/ui/views/error.py:111
 msgid ""
 "\n"
 "Loading the report failed. See the files in /var/log/installer for more.\n"
@@ -846,7 +887,7 @@ msgstr ""
 "\n"
 "Načítání hlášení se nezdařilo. Viz soubory ve /var/log/installer\n"
 
-#: ../subiquity/ui/views/error.py:121
+#: ../subiquity/ui/views/error.py:122
 msgid ""
 "\n"
 "You can continue and the installer will just present the disks present\n"
@@ -860,7 +901,7 @@ msgstr ""
 "tento problém přepnutím do příkazového řádku a ručním\n"
 "přenastavením systémových blokových zařízení.\n"
 
-#: ../subiquity/ui/views/error.py:132
+#: ../subiquity/ui/views/error.py:133
 msgid ""
 "\n"
 "You may be able to fix the issue by switching to a shell and\n"
@@ -870,7 +911,7 @@ msgstr ""
 "Může být možné problém opravit přepnutím se do příkazového\n"
 "řádku a ručním přenastavením systémových blokových zařízení.\n"
 
-#: ../subiquity/ui/views/error.py:141
+#: ../subiquity/ui/views/error.py:142
 msgid ""
 "\n"
 "You can continue with the installation but it will be assumed the network\n"
@@ -880,7 +921,7 @@ msgstr ""
 "V instalaci je možné pokračovat, ale bude se předpokládat, že síť není\n"
 "funkční.\n"
 
-#: ../subiquity/ui/views/error.py:150
+#: ../subiquity/ui/views/error.py:151
 msgid ""
 "\n"
 "You can continue or restart the installer.\n"
@@ -888,7 +929,7 @@ msgstr ""
 "\n"
 "Můžete pokračovat nebo instalátor zrestartovat.\n"
 
-#: ../subiquity/ui/views/error.py:158
+#: ../subiquity/ui/views/error.py:159
 msgid ""
 "\n"
 "Do you want to try starting the installation again?\n"
@@ -896,11 +937,11 @@ msgstr ""
 "\n"
 "Chcete zkusit spustit instalaci znovu?\n"
 
-#: ../subiquity/ui/views/error.py:165
+#: ../subiquity/ui/views/error.py:166
 msgid "Select continue to try the installation again."
 msgstr "Pokud chcete provést opětovný pokus o instalaci, vyberte Pokračovat."
 
-#: ../subiquity/ui/views/error.py:173
+#: ../subiquity/ui/views/error.py:174
 msgid ""
 "\n"
 "If you want to help improve the installer, you can send an error report.\n"
@@ -909,7 +950,7 @@ msgstr ""
 "Pokud chcete pomoci ve zlepšení instalátoru, můžete nám poslat hlášení "
 "chyby.\n"
 
-#: ../subiquity/ui/views/error.py:179
+#: ../subiquity/ui/views/error.py:180
 msgid ""
 "\n"
 "The install media checksum verification failed.  It's possible that this "
@@ -923,45 +964,46 @@ msgstr ""
 "tento pád souvisí s tímto selháním kontrolního součtu. Zvažte ověření\n"
 "instalačního média a opakování instalace.\n"
 
-#: ../subiquity/ui/views/error.py:203
+#: ../subiquity/ui/views/error.py:207
 msgid "Cancel upload"
 msgstr "Zrušit odesílání"
 
-#: ../subiquity/ui/views/error.py:204
+#: ../subiquity/ui/views/error.py:208
 msgid "Close report"
 msgstr "Zavřít hlášení"
 
-#: ../subiquity/ui/views/error.py:205
-#: ../subiquity/ui/views/installprogress.py:55
-#: ../subiquity/ui/views/installprogress.py:248
-#: ../subiquity/ui/views/mirror.py:227 ../subiquity/ui/views/snaplist.py:386
-#: ../subiquity/ui/views/snaplist.py:415 ../subiquity/ui/views/zdev.py:162
+#: ../subiquity/ui/views/error.py:209
+#: ../subiquity/ui/views/homenode_token.py:37
+#: ../subiquity/ui/views/installprogress.py:58
+#: ../subiquity/ui/views/installprogress.py:277
+#: ../subiquity/ui/views/mirror.py:228 ../subiquity/ui/views/snaplist.py:395
+#: ../subiquity/ui/views/snaplist.py:424 ../subiquity/ui/views/zdev.py:163
 msgid "Continue"
 msgstr "Pokračovat"
 
-#: ../subiquity/ui/views/error.py:206
-#: ../subiquity/ui/views/installprogress.py:284
+#: ../subiquity/ui/views/error.py:210 ../subiquity/ui/views/error.py:477
+#: ../subiquity/ui/views/installprogress.py:313
 #: ../subiquity/ui/views/welcome.py:116
 msgid "Switch to a shell"
 msgstr "Přepnout do příkazového řádku"
 
-#: ../subiquity/ui/views/error.py:207
+#: ../subiquity/ui/views/error.py:211 ../subiquity/ui/views/error.py:478
 msgid "Restart the installer"
 msgstr "Restartovat instalátor"
 
-#: ../subiquity/ui/views/error.py:208
+#: ../subiquity/ui/views/error.py:212
 msgid "Send to Canonical"
 msgstr "Odeslat společnosti Canonical"
 
-#: ../subiquity/ui/views/error.py:209
+#: ../subiquity/ui/views/error.py:213
 msgid "Sent to Canonical"
 msgstr "Odesláno společnosti Canonical"
 
-#: ../subiquity/ui/views/error.py:210
+#: ../subiquity/ui/views/error.py:214
 msgid "View full report"
 msgstr "Zobrazit celé hlášení"
 
-#: ../subiquity/ui/views/error.py:280
+#: ../subiquity/ui/views/error.py:290
 msgid ""
 "The error report has been saved to\n"
 "\n"
@@ -975,50 +1017,98 @@ msgstr ""
 "\n"
 "na souborový systém se štítkem {label!r}."
 
-#: ../subiquity/ui/views/error.py:369
+#: ../subiquity/ui/views/error.py:390
 msgid "DATE"
 msgstr "DATUM"
 
-#: ../subiquity/ui/views/error.py:370
+#: ../subiquity/ui/views/error.py:391
 msgid "KIND"
 msgstr "DRUH"
 
-#: ../subiquity/ui/views/error.py:371
+#: ../subiquity/ui/views/error.py:392
 msgid "STATUS"
 msgstr "STAV"
 
-#: ../subiquity/ui/views/error.py:384
+#: ../subiquity/ui/views/error.py:405
 msgid "Select an error report to view:"
 msgstr "Vyberte hlášení chyby, které zobrazit:"
 
-#: ../subiquity/ui/views/error.py:397
+#: ../subiquity/ui/views/error.py:418
 msgid "VIEWED"
 msgstr "ZOBRAZENO"
 
-#: ../subiquity/ui/views/error.py:398
+#: ../subiquity/ui/views/error.py:419
 msgid "UNVIEWED"
 msgstr "NEZOBRAZENO"
 
-#: ../subiquity/ui/views/filesystem/compound.py:108
+#: ../subiquity/ui/views/error.py:448
+#, fuzzy
+msgid "an Autoinstall error"
+msgstr "Spouštění instalátoru"
+
+#: ../subiquity/ui/views/error.py:449
+msgid "an Autoinstall validation error"
+msgstr ""
+
+#: ../subiquity/ui/views/error.py:450
+msgid "a cloud-init schema validation error"
+msgstr ""
+
+#: ../subiquity/ui/views/error.py:455
+msgid ""
+"The installation will be unable to proceed with the provided Autoinstall "
+"file. Please modify it and try again."
+msgstr ""
+
+#: ../subiquity/ui/views/error.py:459
+msgid ""
+"The installer has detected an issue with the provided Autoinstall file. "
+"Please modify it and try again."
+msgstr ""
+
+#: ../subiquity/ui/views/error.py:463
+msgid ""
+"The installer has detected a cloud-init schema validation error that will "
+"likely cause the installation to not proceed as intended. Please address the "
+"validation errors and try again."
+msgstr ""
+
+#. An exception type name
+#. Title
+#: ../subiquity/ui/views/error.py:498
+msgid "The installation has halted due to"
+msgstr ""
+
+#: ../subiquity/ui/views/error.py:505
+msgid "error"
+msgstr ""
+
+#: ../subiquity/ui/views/error.py:516
+msgid ""
+"The installation is unable to be completed. You may switch to a shell to "
+"inspect the situation or restart the installer to try again."
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/compound.py:109
 #, python-brace-format
 msgid "formatted as {fstype}"
 msgstr "formatováno jako {fstype}"
 
-#: ../subiquity/ui/views/filesystem/compound.py:110
+#: ../subiquity/ui/views/filesystem/compound.py:111
 #, python-brace-format
 msgid ", mounted at {path}"
 msgstr ", připojeno v {path}"
 
-#: ../subiquity/ui/views/filesystem/compound.py:112
+#: ../subiquity/ui/views/filesystem/compound.py:113
 msgid ", not mounted"
 msgstr ", souborový systém nepřipojen"
 
-#: ../subiquity/ui/views/filesystem/compound.py:114
+#: ../subiquity/ui/views/filesystem/compound.py:115
 #, python-brace-format
 msgid "unused {device}"
 msgstr "nepoužito {device}"
 
-#: ../subiquity/ui/views/filesystem/compound.py:197
+#: ../subiquity/ui/views/filesystem/compound.py:200
 msgid ""
 "If you put all disks into RAIDs or LVM VGs, there will be nowhere to put the "
 "boot partition."
@@ -1072,6 +1162,7 @@ msgid "It is not formatted or mounted."
 msgstr "Neobsahuje souborový systém nebo není nikam připojeno."
 
 #: ../subiquity/ui/views/filesystem/delete.py:91
+#: ../subiquity/ui/views/ssh.py:380
 msgid "Delete"
 msgstr "Smazat"
 
@@ -1212,34 +1303,38 @@ msgstr "VYUŽITÁ ZAŘÍZENÍ"
 msgid "Mount a filesystem at /"
 msgstr "Připojit souborový systém pod /"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:492
+#: ../subiquity/ui/views/filesystem/filesystem.py:500
+#, fuzzy
+msgid "Mount a local filesystem at /boot"
+msgstr "Připojit souborový systém pod /"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:502
 msgid "Select a boot disk"
 msgstr "Vybrat disk pro zavádění systému"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:498
+#: ../subiquity/ui/views/filesystem/filesystem.py:508
 msgid "To continue you need to:"
 msgstr "Aby bylo možné pokračovat, bude zapotřebí:"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:513
+#: ../subiquity/ui/views/filesystem/filesystem.py:523
 msgid "Reset"
 msgstr "Vrátit na výchozí"
 
-#: ../subiquity/ui/views/filesystem/guided.py:53
+#: ../subiquity/ui/views/filesystem/guided.py:59
 msgid "Configure a guided storage layout, or create a custom one:"
-msgstr ""
-"Nastavit rozvržení úložiště vedeně, nebo vytvořit uživatelsky určené:"
+msgstr "Nastavit rozvržení úložiště vedeně, nebo vytvořit uživatelsky určené:"
 
-#: ../subiquity/ui/views/filesystem/guided.py:57
+#: ../subiquity/ui/views/filesystem/guided.py:63
 #: ../subiquity/ui/views/filesystem/lvm.py:80
 msgid "Passphrase:"
 msgstr "Heslová fráze:"
 
-#: ../subiquity/ui/views/filesystem/guided.py:58
+#: ../subiquity/ui/views/filesystem/guided.py:64
 #: ../subiquity/ui/views/filesystem/lvm.py:81
 msgid "Confirm passphrase:"
 msgstr "Zopakování heslové fráze:"
 
-#: ../subiquity/ui/views/filesystem/guided.py:62
+#: ../subiquity/ui/views/filesystem/guided.py:68
 msgid ""
 "The key will be stored as ~/recovery-key.txt in the live system and will be "
 "copied to /var/log/installer/ in the target system."
@@ -1247,21 +1342,21 @@ msgstr ""
 "Klíč bude uložen jako ~/recovery-key.txt v aktivním živém systému a bude "
 "zkopírován do /var/log/installer/ v cílovém systému."
 
-#: ../subiquity/ui/views/filesystem/guided.py:71
+#: ../subiquity/ui/views/filesystem/guided.py:77
 #: ../subiquity/ui/views/filesystem/lvm.py:122
 msgid "Passphrase must be set"
 msgstr "Je třeba, aby heslová fráze byla nastavena"
 
-#: ../subiquity/ui/views/filesystem/guided.py:75
+#: ../subiquity/ui/views/filesystem/guided.py:81
 #: ../subiquity/ui/views/filesystem/lvm.py:129
 msgid "Passphrases do not match"
 msgstr "Zadaní heslové fráze nejsou stejná"
 
-#: ../subiquity/ui/views/filesystem/guided.py:88
+#: ../subiquity/ui/views/filesystem/guided.py:94
 msgid "Encrypt the LVM group with LUKS"
 msgstr "Šifrovat LVM skupinu pomocí LUKS"
 
-#: ../subiquity/ui/views/filesystem/guided.py:139
+#: ../subiquity/ui/views/filesystem/guided.py:147
 msgid ""
 "The entire disk will be encrypted and protected by the TPM. If this option "
 "is deselected, the disk will be unencrypted and without any protection."
@@ -1269,27 +1364,27 @@ msgstr ""
 "Celý disk bude zašifrován a chráněn modulem TPM. Pokud tato možnost není "
 "zaškrtnuta, disk bude nešifrovaný a bez jakékoli ochrany."
 
-#: ../subiquity/ui/views/filesystem/guided.py:144
+#: ../subiquity/ui/views/filesystem/guided.py:152
 msgid "The entire disk will be encrypted and protected by the TPM."
 msgstr "Celý disk bude zašifrován a chráněn modulem TPM."
 
-#: ../subiquity/ui/views/filesystem/guided.py:174
+#: ../subiquity/ui/views/filesystem/guided.py:182
 msgid "Set up this disk as an LVM group"
 msgstr "Nastavit tento disk jako LVM skupinu"
 
-#: ../subiquity/ui/views/filesystem/guided.py:176
+#: ../subiquity/ui/views/filesystem/guided.py:184
 msgid "Full disk encryption with TPM"
 msgstr "Šifrování celého disku pomocí TPM"
 
-#: ../subiquity/ui/views/filesystem/guided.py:248
+#: ../subiquity/ui/views/filesystem/guided.py:265
 msgid "Use an entire disk"
 msgstr "Použít celý disk"
 
-#: ../subiquity/ui/views/filesystem/guided.py:250
+#: ../subiquity/ui/views/filesystem/guided.py:267
 msgid "Custom storage layout"
 msgstr "Uživatelsky určené rozvržení úložiště"
 
-#: ../subiquity/ui/views/filesystem/guided.py:266
+#: ../subiquity/ui/views/filesystem/guided.py:283
 msgid ""
 "\n"
 "\n"
@@ -1352,7 +1447,7 @@ msgstr ""
 "souborový systém na /.\n"
 "\n"
 
-#: ../subiquity/ui/views/filesystem/guided.py:298
+#: ../subiquity/ui/views/filesystem/guided.py:315
 msgid ""
 "\n"
 "Block probing did not discover any disks big enough to support guided "
@@ -1366,7 +1461,7 @@ msgstr ""
 "být\n"
 "možné provést ruční uspořádání.\n"
 
-#: ../subiquity/ui/views/filesystem/guided.py:306
+#: ../subiquity/ui/views/filesystem/guided.py:323
 msgid ""
 "\n"
 "Block probing did not discover any disks. Unfortunately this means that\n"
@@ -1376,36 +1471,40 @@ msgstr ""
 "Zjišťování blokových zařízení neobjevilo žádné disky. Žel to znamená, že\n"
 "nelze provést instalaci.\n"
 
-#: ../subiquity/ui/views/filesystem/guided.py:314
+#: ../subiquity/ui/views/filesystem/guided.py:439
 msgid "Guided storage configuration"
 msgstr "Vedené uspořádání úložiště"
 
-#: ../subiquity/ui/views/filesystem/guided.py:342
+#: ../subiquity/ui/views/filesystem/guided.py:470
 msgid "Choose a disk to install to:"
 msgstr "Vyberte disk, na který chcete instalovat:"
 
-#: ../subiquity/ui/views/filesystem/guided.py:357
+#: ../subiquity/ui/views/filesystem/guided.py:485
 msgid "Cannot install core boot classic system"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/guided.py:365
-#: ../subiquity/ui/views/filesystem/partition.py:476
+#: ../subiquity/ui/views/filesystem/guided.py:493
+#: ../subiquity/ui/views/filesystem/partition.py:508
 #: ../subiquity/ui/views/keyboard.py:90 ../subiquity/ui/views/keyboard.py:135
-#: ../subiquity/ui/views/keyboard.py:350
+#: ../subiquity/ui/views/keyboard.py:354
 msgid "OK"
 msgstr "OK"
 
-#: ../subiquity/ui/views/filesystem/guided.py:374
+#: ../subiquity/ui/views/filesystem/guided.py:504
+msgid "Refresh"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/guided.py:510
 msgid "Help on guided storage configuration"
 msgstr "Nápověda k vedenému uspořádání úložiště"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:47
 msgid ""
-"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
-"9, +, _, . and -"
+"The only characters permitted in the name of a volume group are a-z, A-Z, "
+"0-9, +, _, . and -"
 msgstr ""
-"Jedinými znaky, povolenými v názvu skupiny svazků, jsou a-z, A-Z, 0-9, +, _, "
-". a -"
+"Jedinými znaky, povolenými v názvu skupiny svazků, jsou a-z, A-Z, 0-9, +, "
+"_, . a -"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:72
 msgid "Passphrases"
@@ -1440,8 +1539,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/lvm.py:104
 msgid "Select at least one device to be part of the volume group."
-msgstr ""
-"Vyberte alespoň jedno zařízení, aby se stalo součástí skupiny svazků."
+msgstr "Vyberte alespoň jedno zařízení, aby se stalo součástí skupiny svazků."
 
 #: ../subiquity/ui/views/filesystem/lvm.py:109
 msgid "The name of a volume group cannot be empty"
@@ -1494,68 +1592,68 @@ msgid ""
 "The only characters permitted in the name of a logical volume are a-z, A-Z, "
 "0-9, +, _, . and -"
 msgstr ""
-"Jedinými povolenými znaky v názvu logického svazku jsou a-z, A-Z, 0-9, +, _, "
-". a -"
+"Jedinými povolenými znaky v názvu logického svazku jsou a-z, A-Z, 0-9, +, "
+"_, . a -"
 
-#: ../subiquity/ui/views/filesystem/partition.py:181
+#: ../subiquity/ui/views/filesystem/partition.py:191
 #, python-brace-format
 msgid "Size (max {size}):"
 msgstr "Velikost (max {size}):"
 
-#: ../subiquity/ui/views/filesystem/partition.py:217
+#: ../subiquity/ui/views/filesystem/partition.py:230
 msgid "Name: "
 msgstr "Název: "
 
-#: ../subiquity/ui/views/filesystem/partition.py:219
+#: ../subiquity/ui/views/filesystem/partition.py:232
 msgid "Format:"
 msgstr "Formát:"
 
-#: ../subiquity/ui/views/filesystem/partition.py:220
+#: ../subiquity/ui/views/filesystem/partition.py:233
 msgid "Mount:"
 msgstr "Připojení:"
 
-#: ../subiquity/ui/views/filesystem/partition.py:222
+#: ../subiquity/ui/views/filesystem/partition.py:235
 msgid "Use as swap"
 msgstr "Použít pro odkládání stránek paměti (swap)"
 
-#: ../subiquity/ui/views/filesystem/partition.py:222
+#: ../subiquity/ui/views/filesystem/partition.py:235
 msgid "Use this swap partition in the installed system."
 msgstr ""
 "Použít tento oddíl pro odkládání stránek paměti v instalovaném systému."
 
-#: ../subiquity/ui/views/filesystem/partition.py:247
+#: ../subiquity/ui/views/filesystem/partition.py:260
 msgid "The name of a logical volume cannot be empty"
 msgstr "Název logického svazku je třeba vyplnit"
 
-#: ../subiquity/ui/views/filesystem/partition.py:249
+#: ../subiquity/ui/views/filesystem/partition.py:262
 msgid "The name of a logical volume cannot start with a hyphen"
 msgstr "Název logického svazku nemůže začínat spojovníkem"
 
-#: ../subiquity/ui/views/filesystem/partition.py:251
+#: ../subiquity/ui/views/filesystem/partition.py:264
 #, python-brace-format
 msgid "A logical volume may not be called {name}"
 msgstr "Logický svazek nemůže být nazván {name}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:267
+#: ../subiquity/ui/views/filesystem/partition.py:280
 #, python-brace-format
 msgid "The name of a logical volume may not contain \"{substring}\""
 msgstr "Název logického svazku nemůže obsahovat „{substring}“"
 
-#: ../subiquity/ui/views/filesystem/partition.py:270
+#: ../subiquity/ui/views/filesystem/partition.py:283
 #, python-brace-format
 msgid "There is already a logical volume named {name}."
 msgstr "Už se zde nachází logický svazek nazvaný {name}."
 
-#: ../subiquity/ui/views/filesystem/partition.py:280
+#: ../subiquity/ui/views/filesystem/partition.py:293
 msgid "Path exceeds PATH_MAX"
 msgstr "Délka popisu umístění přesahuje PATH_MAX"
 
-#: ../subiquity/ui/views/filesystem/partition.py:283
+#: ../subiquity/ui/views/filesystem/partition.py:296
 #, python-brace-format
 msgid "{device} is already mounted at {path}."
 msgstr "{device} už je připojeno do {path}."
 
-#: ../subiquity/ui/views/filesystem/partition.py:294
+#: ../subiquity/ui/views/filesystem/partition.py:307
 #, python-brace-format
 msgid ""
 "Mounting an existing filesystem at {mountpoint} is usually a bad idea, "
@@ -1564,7 +1662,14 @@ msgstr ""
 "Připojování existujícího souborového systému do {mountpoint} obvykle není "
 "dobrý nápad, pokračujte pouze obezřetně."
 
-#: ../subiquity/ui/views/filesystem/partition.py:313
+#: ../subiquity/ui/views/filesystem/partition.py:318
+#, python-brace-format
+msgid ""
+"The filesystem for {mount} should be stored on local storage. Storing it on "
+"remote storage will likely prevent the system for booting."
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/partition.py:337
 #, python-brace-format
 msgid ""
 "Bootloader partition\n"
@@ -1587,7 +1692,7 @@ msgstr ""
 "Ten nebude obsahovat souborový systém a nebude připojen (mount),\n"
 "a není ho možné zde upravovat.\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:327
+#: ../subiquity/ui/views/filesystem/partition.py:351
 msgid ""
 "If this disk is selected as a boot device, GRUB will be installed onto\n"
 "the target disk's MBR."
@@ -1595,7 +1700,7 @@ msgstr ""
 "Pokud je disk označen jako zařízení pro zavádění systému, bude do\n"
 "MBR záznamu cílového disku nainstalován zavaděč GRUB."
 
-#: ../subiquity/ui/views/filesystem/partition.py:333
+#: ../subiquity/ui/views/filesystem/partition.py:357
 msgid ""
 "As this disk has been selected as a boot device, GRUB will be\n"
 "installed onto the target disk's MBR."
@@ -1603,7 +1708,7 @@ msgstr ""
 "Protože tento disk byl vybrán jako zařízení pro zavádění systému,\n"
 "GRUB bude nainstalován do MBR oblasti cílového disku."
 
-#: ../subiquity/ui/views/filesystem/partition.py:339
+#: ../subiquity/ui/views/filesystem/partition.py:363
 msgid ""
 "Bootloader partition\n"
 "\n"
@@ -1617,7 +1722,7 @@ msgstr ""
 "je disk označen jako zařízení pro zavádění systému, GRUB bude\n"
 "nainstalován na tento oddíl, na kterém musí být souborový systém fat32.\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:349
+#: ../subiquity/ui/views/filesystem/partition.py:373
 msgid ""
 "Bootloader partition\n"
 "\n"
@@ -1631,12 +1736,12 @@ msgstr ""
 "disk byl označen jako zařízení pro zavádění systému, GRUB bude\n"
 "nainstalován na tento oddíl, na kterém musí být souborový systém fat32.\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:359
+#: ../subiquity/ui/views/filesystem/partition.py:383
 msgid "The only aspect of this partition that can be edited is the size.\n"
 msgstr ""
 "Jediným aspektem tohoto oddílu, který je možné upravovat, je velikost.\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:365
+#: ../subiquity/ui/views/filesystem/partition.py:389
 msgid ""
 "You can choose whether to use the existing filesystem on this\n"
 "partition or reformat it.\n"
@@ -1644,7 +1749,7 @@ msgstr ""
 "Je možné zvolit, zda chcete použít stávající souborový systém\n"
 "na tomto oddílu, nebo ho naformátovat znovu.\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:372
+#: ../subiquity/ui/views/filesystem/partition.py:396
 msgid ""
 "Required bootloader partition\n"
 "\n"
@@ -1657,7 +1762,7 @@ msgstr ""
 "je tento disk označen jako zařízení pro zavádění systému, GRUB bude\n"
 "nainstalován  na tento oddíl.\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:381
+#: ../subiquity/ui/views/filesystem/partition.py:405
 msgid ""
 "Required bootloader partition\n"
 "\n"
@@ -1671,35 +1776,35 @@ msgstr ""
 "byl tento disk označen jako zařízení pro zavádění systému, GRUB bude\n"
 "nainstalován  na tento oddíl.\n"
 
-#: ../subiquity/ui/views/filesystem/partition.py:482
+#: ../subiquity/ui/views/filesystem/partition.py:514
 msgid "Use existing fat32 filesystem"
 msgstr "Použít stávající souborový systém fat32"
 
-#: ../subiquity/ui/views/filesystem/partition.py:485
+#: ../subiquity/ui/views/filesystem/partition.py:517
 msgid "Reformat as fresh fat32 filesystem"
 msgstr "Znovu vytvořit čistý souborový systém fat32"
 
-#: ../subiquity/ui/views/filesystem/partition.py:567
+#: ../subiquity/ui/views/filesystem/partition.py:599
 #, python-brace-format
 msgid "Adding logical volume to {vgname}"
 msgstr "Přidává se logický svazek do {vgname}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:571
+#: ../subiquity/ui/views/filesystem/partition.py:603
 #, python-brace-format
 msgid "Adding {ptype} partition to {device}"
 msgstr "Přidává se {ptype} oddíl do {device}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:577
+#: ../subiquity/ui/views/filesystem/partition.py:609
 #, python-brace-format
 msgid "Editing logical volume {lvname} of {vgname}"
 msgstr "Upravuje se logický svazek {lvname} z {vgname}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:581
+#: ../subiquity/ui/views/filesystem/partition.py:613
 #, python-brace-format
 msgid "Editing partition {number} of {device}"
 msgstr "Upravuje se oddíl {number} na {device}"
 
-#: ../subiquity/ui/views/filesystem/partition.py:641
+#: ../subiquity/ui/views/filesystem/partition.py:674
 msgid ""
 "Formatting and mounting a disk directly is unusual. You probably want to add "
 "a partition instead."
@@ -1707,7 +1812,7 @@ msgstr ""
 "Vytvoření souborového systému a jeho připojení přímo na nerozděleném "
 "úložišti není obvyklé. Nejspíš namísto toho chcete přidat oddíl."
 
-#: ../subiquity/ui/views/filesystem/partition.py:655
+#: ../subiquity/ui/views/filesystem/partition.py:688
 #, python-brace-format
 msgid "Format and/or mount {device}"
 msgstr "Formátovat a/nebo připojit {device}"
@@ -1765,8 +1870,7 @@ msgstr ". a .. nejsou platné názvy pro RAID zařízení"
 #: ../subiquity/ui/views/filesystem/raid.py:107
 #, python-brace-format
 msgid "RAID Level \"{level}\" requires at least {min_active} active devices"
-msgstr ""
-"RAID úroveň „{level}“ vyžaduje alespoň {min_active} aktivních zařízení"
+msgstr "RAID úroveň „{level}“ vyžaduje alespoň {min_active} aktivních zařízení"
 
 #: ../subiquity/ui/views/filesystem/raid.py:120
 msgid "Create software RAID (\"MD\") disk"
@@ -1778,10 +1882,10 @@ msgid "Edit software RAID disk \"{name}\""
 msgstr "Upravit disk „{name}“ v softwarovém RAID poli"
 
 #: ../subiquity/ui/views/help.py:43
-#, python-brace-format
+#, fuzzy, python-brace-format
 msgid ""
 "\n"
-"Welcome to the Ubuntu Server Installer!\n"
+"Welcome to Subiquity, the Ubuntu Server Installer!\n"
 "\n"
 "The most popular server Linux in the cloud and data centre, this\n"
 "release of Ubuntu will receive updates for 9 months from release.\n"
@@ -1895,8 +1999,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/help.py:115
 msgid "You can log in with one of the following keys:\n"
-msgstr ""
-"Přihlásit se je možné prostřednictvím jednoho z následujících klíčů:\n"
+msgstr "Přihlásit se je možné prostřednictvím jednoho z následujících klíčů:\n"
 
 #: ../subiquity/ui/views/help.py:121
 #, python-brace-format
@@ -2039,7 +2142,7 @@ msgstr "Klávesové zkratky"
 msgid "Enter shell"
 msgstr "Vstoupit do příkazového řádku"
 
-#: ../subiquity/ui/views/help.py:316 ../subiquity/ui/views/help.py:493
+#: ../subiquity/ui/views/help.py:316 ../subiquity/ui/views/help.py:497
 msgid "Help on SSH access"
 msgstr "Nápověda k SSH přístupu"
 
@@ -2059,7 +2162,7 @@ msgstr "Zobrazit hlášení chyb"
 msgid "Help"
 msgstr "Nápověda"
 
-#: ../subiquity/ui/views/help.py:484
+#: ../subiquity/ui/views/help.py:488
 msgid "About the installer"
 msgstr "O instalátoru"
 
@@ -2069,173 +2172,211 @@ msgstr ""
 "Znaky „:“ (dvojtečka), „,“ (čárka) a = (rovnítko) není v této kolonce možné "
 "použít"
 
-#: ../subiquity/ui/views/identity.py:94
+#: ../subiquity/ui/views/identity.py:66
 msgid "The only characters permitted in this field are a-z, 0-9, _ and -"
 msgstr ""
 "Jedinými znaky, které je možné v této kolonce použít, jsou a-z (bez "
 "diakritiky), 0-9, _ (podtržítko) a - (mínus/spojovník)"
 
-#: ../subiquity/ui/views/identity.py:120
+#: ../subiquity/ui/views/identity.py:115
 msgid "Your name:"
 msgstr "Vaše jméno:"
 
-#: ../subiquity/ui/views/identity.py:122
+#: ../subiquity/ui/views/identity.py:117
 msgid "Your server's name:"
 msgstr "Název pro váš server:"
 
-#: ../subiquity/ui/views/identity.py:123
+#: ../subiquity/ui/views/identity.py:118
 msgid "The name it uses when it talks to other computers."
 msgstr "Název se používá při komunikaci s ostatními počítači."
 
-#: ../subiquity/ui/views/identity.py:125
+#: ../subiquity/ui/views/identity.py:120
 msgid "Pick a username:"
 msgstr "Vyberte uživatelské jméno:"
 
-#: ../subiquity/ui/views/identity.py:126
+#: ../subiquity/ui/views/identity.py:121
 msgid "Choose a password:"
 msgstr "Zvolte heslo:"
 
-#: ../subiquity/ui/views/identity.py:127
+#: ../subiquity/ui/views/identity.py:122
 msgid "Confirm your password:"
 msgstr "Potvrďte své heslo:"
 
-#: ../subiquity/ui/views/identity.py:131
+#: ../subiquity/ui/views/identity.py:126
 #, python-brace-format
 msgid "Name too long, must be less than {limit}"
 msgstr "Název je příliš dlouhý, je třeba, aby byl kratší než {limit}"
 
-#: ../subiquity/ui/views/identity.py:137
+#: ../subiquity/ui/views/identity.py:132
 msgid "Server name must not be empty"
 msgstr "Název serveru nemůže zůstat nevyplněný"
 
-#: ../subiquity/ui/views/identity.py:140
+#: ../subiquity/ui/views/identity.py:135
 #, python-brace-format
 msgid "Server name too long, must be less than {limit}"
-msgstr ""
-"Název serveru je příliš dlouhý, je třeba, aby byl kratší než  {limit}"
+msgstr "Název serveru je příliš dlouhý, je třeba, aby byl kratší než  {limit}"
 
-#: ../subiquity/ui/views/identity.py:145
+#: ../subiquity/ui/views/identity.py:140
 msgid "Hostname must match HOSTNAME_REGEX: "
 msgstr ""
 "Je třeba, aby název stroje odpovídal regulárnímu výrazu HOSTNAME_REGEX: "
 
-#: ../subiquity/ui/views/identity.py:150
+#: ../subiquity/ui/views/identity.py:145
 msgid "Username missing"
 msgstr "Chybí uživatelské jméno"
 
-#: ../subiquity/ui/views/identity.py:153
+#: ../subiquity/ui/views/identity.py:148
 #, python-brace-format
 msgid "Username too long, must be less than {limit}"
 msgstr ""
 "Uživatelské jméno je příliš dlouhé, je třeba, aby byl kratší než {limit}"
 
-#: ../subiquity/ui/views/identity.py:158
+#: ../subiquity/ui/views/identity.py:153
 msgid "Username must match USERNAME_REGEX: "
 msgstr ""
 "Je třeba, aby uživatelské jméno odpovídalo regulárnímu výrazu "
 "USERNAME_REGEX: "
 
-#: ../subiquity/ui/views/identity.py:163
+#: ../subiquity/ui/views/identity.py:158
 #, python-brace-format
 msgid "The username \"{username}\" is reserved for use by the system."
 msgstr "Uživatelské jméno „{username}“ je vyhrazeno pro použití systémem."
 
-#: ../subiquity/ui/views/identity.py:167
+#: ../subiquity/ui/views/identity.py:162
 #, python-brace-format
 msgid "The username \"{username}\" is already in use."
 msgstr "Uživatelské jméno „{username}“ se již používá."
 
-#: ../subiquity/ui/views/identity.py:173
+#: ../subiquity/ui/views/identity.py:168
 msgid "Password must be set"
 msgstr "Je třeba nastavit heslo"
 
-#: ../subiquity/ui/views/identity.py:177
+#: ../subiquity/ui/views/identity.py:172
 msgid "Passwords do not match"
 msgstr "Zadání hesla se neshodují"
 
-#: ../subiquity/ui/views/identity.py:181
-msgid "Profile setup"
-msgstr "Nastavení profilu"
+#: ../subiquity/ui/views/identity.py:176
+#, fuzzy
+msgid "Profile configuration"
+msgstr "Nastavení úložiště"
 
-#: ../subiquity/ui/views/identity.py:183
+#: ../subiquity/ui/views/identity.py:178
+#, fuzzy
 msgid ""
 "Enter the username and password you will use to log in to the system. You "
-"can configure SSH access on the next screen but a password is still needed "
+"can configure SSH access on a later screen, but a password is still needed "
 "for sudo."
 msgstr ""
 "Zadejte uživatelské jméno a heslo které budete používat pro přihlašování se "
 "do systému. Na následující obrazovce můžete nastavit přístup přes SSH, ale "
 "heslo je pořád potřebné pro sudo."
 
-#: ../subiquity/ui/views/identity.py:212
+#: ../subiquity/ui/views/identity.py:207
 msgid "Passwords"
 msgstr "Hesla"
 
+#: ../subiquity/ui/views/homenode_token.py:40
+msgid "Token:"
+msgstr ""
+
+#: ../subiquity/ui/views/homenode_token.py:41
+msgid ""
+"Enter five words separated by dashes (e.g., word1-word2-word3-word4-word5)"
+msgstr ""
+
+#: ../subiquity/ui/views/homenode_token.py:48
+#, fuzzy
+msgid "Token cannot be empty"
+msgstr "Název je třeba vyplnit"
+
+#: ../subiquity/ui/views/homenode_token.py:51
+msgid ""
+"Token must be exactly five words separated by dashes (e.g., word1-word2-"
+"word3-word4-word5)"
+msgstr ""
+
+#: ../subiquity/ui/views/homenode_token.py:55
+msgid "Homenode Token"
+msgstr ""
+
+#: ../subiquity/ui/views/homenode_token.py:66
+msgid "Enter your Homenode token consisting of five words separated by dashes."
+msgstr ""
+
 #: ../subiquity/ui/views/installprogress.py:44
-msgid "Install progress"
-msgstr "Postup instalace"
+#, fuzzy
+msgid "Installation progress"
+msgstr "Provádí se instalace:"
 
 #. context_id -> line containing a spinner
 #: ../subiquity/ui/views/installprogress.py:50
-#: ../subiquity/ui/views/installprogress.py:168
-#: ../subiquity/ui/views/installprogress.py:175
+#: ../subiquity/ui/views/installprogress.py:186
+#: ../subiquity/ui/views/installprogress.py:201
 msgid "Reboot Now"
 msgstr "Restartovat nyní"
 
 #: ../subiquity/ui/views/installprogress.py:52
+#, fuzzy
+msgid "Restart Installer"
+msgstr "Restartovat instalátor"
+
+#: ../subiquity/ui/views/installprogress.py:55
 msgid "View error report"
 msgstr "Zobrazit hlášení chyb"
 
-#: ../subiquity/ui/views/installprogress.py:54
+#: ../subiquity/ui/views/installprogress.py:57
 msgid "View full log"
 msgstr "Zobrazit celý záznam událostí"
 
-#: ../subiquity/ui/views/installprogress.py:69
+#: ../subiquity/ui/views/installprogress.py:72
 msgid "Full installer output"
 msgstr "Úplný výstup z instalátoru"
 
-#: ../subiquity/ui/views/installprogress.py:134
-#: ../subiquity/ui/views/installprogress.py:146
-#: ../subiquity/ui/views/installprogress.py:149
+#: ../subiquity/ui/views/installprogress.py:161
+#: ../subiquity/ui/views/installprogress.py:173
+#: ../subiquity/ui/views/installprogress.py:176
 msgid "Installing system"
 msgstr "Instaluje se systém"
 
-#: ../subiquity/ui/views/installprogress.py:137
+#: ../subiquity/ui/views/installprogress.py:164
 msgid "Starting installer"
 msgstr "Spouštění instalátoru"
 
-#: ../subiquity/ui/views/installprogress.py:140
+#: ../subiquity/ui/views/installprogress.py:167
 msgid "Waiting on cloud-init"
 msgstr "Čekání na cloud-init"
 
-#: ../subiquity/ui/views/installprogress.py:143
+#: ../subiquity/ui/views/installprogress.py:170
 msgid "Running early-commands"
 msgstr "Spouštění časných příkazů"
 
-#: ../subiquity/ui/views/installprogress.py:152
-#: ../subiquity/ui/views/installprogress.py:159
-#: ../subiquity/ui/views/installprogress.py:167
-msgid "Install complete!"
+#: ../subiquity/ui/views/installprogress.py:179
+#, fuzzy
+msgid "Updating system"
+msgstr "Instaluje se systém"
+
+#: ../subiquity/ui/views/installprogress.py:182
+#, fuzzy
+msgid "Running late-commands"
+msgstr "Spouštění časných příkazů"
+
+#: ../subiquity/ui/views/installprogress.py:185
+msgid "Installation complete!"
 msgstr "Instalace dokončena!"
 
-#: ../subiquity/ui/views/installprogress.py:153
-msgid "Cancel update and reboot"
-msgstr "Zrušit aktualizaci a restartovat"
-
-#: ../subiquity/ui/views/installprogress.py:160
-#: ../subiquity/ui/views/installprogress.py:211
-msgid "Rebooting..."
-msgstr "Restartování…"
-
-#: ../subiquity/ui/views/installprogress.py:174
+#: ../subiquity/ui/views/installprogress.py:192
 msgid "An error occurred during installation"
 msgstr "V průběhu instalace došlo k chybě"
 
-#: ../subiquity/ui/views/installprogress.py:183
+#: ../subiquity/ui/views/installprogress.py:209
 msgid "Subiquity server process has exited"
 msgstr "Proces serveru Subiquity byl ukončen"
 
-#: ../subiquity/ui/views/installprogress.py:228
+#: ../subiquity/ui/views/installprogress.py:237
+msgid "Rebooting..."
+msgstr "Restartování…"
+
+#: ../subiquity/ui/views/installprogress.py:257
 msgid ""
 "Selecting Continue below will begin the installation process and\n"
 "result in the loss of data on the disks selected to be formatted.\n"
@@ -2253,11 +2394,11 @@ msgstr ""
 "\n"
 "Opravdu chcete pokračovat?"
 
-#: ../subiquity/ui/views/installprogress.py:253
+#: ../subiquity/ui/views/installprogress.py:282
 msgid "Confirm destructive action"
 msgstr "Potvrdit destruktivní akci"
 
-#: ../subiquity/ui/views/installprogress.py:272
+#: ../subiquity/ui/views/installprogress.py:301
 #, python-brace-format
 msgid ""
 "The installer running on {tty} is currently installing the system.\n"
@@ -2320,7 +2461,7 @@ msgstr "Vstup nebyl rozpoznán, zkuste to znovu"
 msgid "Is the following key present on your keyboard?"
 msgstr "Nachází se následující klávesa na vaší klávesnici?"
 
-#: ../subiquity/ui/views/keyboard.py:290
+#: ../subiquity/ui/views/keyboard.py:294
 msgid ""
 "You will need a way to toggle the keyboard between the national layout and "
 "the standard Latin layout.\n"
@@ -2343,95 +2484,95 @@ msgstr ""
 "\n"
 "Ne všechny vypsané klávesy se nacházejí na všech klávesnicích. "
 
-#: ../subiquity/ui/views/keyboard.py:304
+#: ../subiquity/ui/views/keyboard.py:308
 msgid "Caps Lock"
 msgstr "Caps Lock"
 
-#: ../subiquity/ui/views/keyboard.py:305
+#: ../subiquity/ui/views/keyboard.py:309
 msgid "Right Alt (AltGr)"
 msgstr "Pravý Alt (AltGr)"
 
-#: ../subiquity/ui/views/keyboard.py:306
+#: ../subiquity/ui/views/keyboard.py:310
 msgid "Right Control"
 msgstr "Pravý Ctrl"
 
-#: ../subiquity/ui/views/keyboard.py:307
+#: ../subiquity/ui/views/keyboard.py:311
 msgid "Right Shift"
 msgstr "Pravý Shift"
 
-#: ../subiquity/ui/views/keyboard.py:308
+#: ../subiquity/ui/views/keyboard.py:312
 msgid "Right Logo key"
 msgstr "Pravá klávesa logo"
 
-#: ../subiquity/ui/views/keyboard.py:309
+#: ../subiquity/ui/views/keyboard.py:313
 msgid "Menu key"
 msgstr "Klávesa Menu"
 
-#: ../subiquity/ui/views/keyboard.py:310
+#: ../subiquity/ui/views/keyboard.py:314
 msgid "Alt+Shift"
 msgstr "Alt+Shift"
 
-#: ../subiquity/ui/views/keyboard.py:311
+#: ../subiquity/ui/views/keyboard.py:315
 msgid "Control+Shift"
 msgstr "Control+Shift"
 
-#: ../subiquity/ui/views/keyboard.py:312
+#: ../subiquity/ui/views/keyboard.py:316
 msgid "Control+Alt"
 msgstr "Control+Alt"
 
-#: ../subiquity/ui/views/keyboard.py:313
+#: ../subiquity/ui/views/keyboard.py:317
 msgid "Alt+Caps Lock"
 msgstr "Alt+Caps Lock"
 
-#: ../subiquity/ui/views/keyboard.py:314
+#: ../subiquity/ui/views/keyboard.py:318
 msgid "Left Control+Left Shift"
 msgstr "Levý Control+levý Shift"
 
-#: ../subiquity/ui/views/keyboard.py:315
+#: ../subiquity/ui/views/keyboard.py:319
 msgid "Left Alt"
 msgstr "Levý Alt"
 
-#: ../subiquity/ui/views/keyboard.py:316
+#: ../subiquity/ui/views/keyboard.py:320
 msgid "Left Control"
 msgstr "Levý Ctrl"
 
-#: ../subiquity/ui/views/keyboard.py:317
+#: ../subiquity/ui/views/keyboard.py:321
 msgid "Left Shift"
 msgstr "Levý Shift"
 
-#: ../subiquity/ui/views/keyboard.py:318
+#: ../subiquity/ui/views/keyboard.py:322
 msgid "Left Logo key"
 msgstr "Levá klávesa logo"
 
-#: ../subiquity/ui/views/keyboard.py:319
+#: ../subiquity/ui/views/keyboard.py:323
 msgid "Scroll Lock key"
 msgstr "Klávesa Scroll Lock"
 
-#: ../subiquity/ui/views/keyboard.py:320
+#: ../subiquity/ui/views/keyboard.py:324
 msgid "No toggling"
 msgstr "Bez přepínání"
 
-#: ../subiquity/ui/views/keyboard.py:342
+#: ../subiquity/ui/views/keyboard.py:346
 msgid "Shortcut: "
 msgstr "Klávesová zkratka: "
 
-#: ../subiquity/ui/views/keyboard.py:356
+#: ../subiquity/ui/views/keyboard.py:360
 msgid "Select layout toggle"
 msgstr "Vyberte přepínání rozvržení"
 
-#: ../subiquity/ui/views/keyboard.py:371
+#: ../subiquity/ui/views/keyboard.py:375
 msgid "Layout:"
 msgstr "Rozvržení:"
 
-#: ../subiquity/ui/views/keyboard.py:372
+#: ../subiquity/ui/views/keyboard.py:376
 msgid "Variant:"
 msgstr "Varianta:"
 
-#: ../subiquity/ui/views/keyboard.py:376
+#: ../subiquity/ui/views/keyboard.py:380
 msgid "Keyboard configuration"
 msgstr "Nastavení klávesnice"
 
-#: ../subiquity/ui/views/keyboard.py:397
+#: ../subiquity/ui/views/keyboard.py:401
 msgid ""
 "Please select the layout of the keyboard directly attached to the system, if "
 "any."
@@ -2439,7 +2580,7 @@ msgstr ""
 "Vyberte rozvržení klávesnice, která je přímo připojená k systému (pokud je "
 "připojená)."
 
-#: ../subiquity/ui/views/keyboard.py:402
+#: ../subiquity/ui/views/keyboard.py:406
 msgid ""
 "Please select your keyboard layout below, or select \"Identify keyboard\" to "
 "detect your layout automatically."
@@ -2447,52 +2588,54 @@ msgstr ""
 "Níže vyberte rozvržení své klávesnice, nebo vyberte „identifikovat "
 "klávesnici“ pro automatické zjištění rozvržení."
 
-#: ../subiquity/ui/views/keyboard.py:413
+#: ../subiquity/ui/views/keyboard.py:417
 msgid "Identify keyboard"
 msgstr "Identifikovat klávesnici"
 
-#: ../subiquity/ui/views/keyboard.py:448
+#: ../subiquity/ui/views/keyboard.py:453
 msgid "Applying config"
 msgstr "Uplatňování nastavení"
 
-#: ../subiquity/ui/views/mirror.py:38
-msgid ""
-"You may provide an archive mirror that will be used instead of the default."
+#: ../subiquity/ui/views/mirror.py:37
+#, fuzzy
+msgid "You may provide an archive mirror to be used instead of the default."
 msgstr ""
 "Je možné zadat zrcadlo archivu, které bude použito namísto toho výchozího."
 
-#: ../subiquity/ui/views/mirror.py:43
+#: ../subiquity/ui/views/mirror.py:41
 msgid "Mirror check still running"
 msgstr "Kontrola zrcadla stále běží"
 
-#: ../subiquity/ui/views/mirror.py:45
+#: ../subiquity/ui/views/mirror.py:43
+#, fuzzy
 msgid ""
-"The check of the mirror URL is still running. You can continue but there is "
+"The check of the mirror URL is still running. You can continue, but there is "
 "a chance that the installation will fail."
 msgstr ""
 "Kontrola adresy URL zrcadla stále probíhá. Můžete pokračovat, ale existuje "
 "šance, že instalace selže."
 
-#: ../subiquity/ui/views/mirror.py:50
+#: ../subiquity/ui/views/mirror.py:48
 msgid "Mirror check failed"
 msgstr "Kontrola zrcadla se nezdařila"
 
-#: ../subiquity/ui/views/mirror.py:52
+#: ../subiquity/ui/views/mirror.py:50
 msgid ""
-"The check of the mirror URL failed. You can continue but it is very likely "
-"that the installation will fail."
+"The check of the mirror URL failed. If you decide to continue, only packages "
+"present on the installation media will be considered for installation. "
+"Remember to install security updates after booting your newly installed "
+"system."
 msgstr ""
-"Kontrola adresy URL zrcadla se nezdařila. Můžete pokračovat, ale je velmi "
-"pravděpodobné, že instalace selže."
 
 #: ../subiquity/ui/views/mirror.py:57
 msgid "Mirror check has not run"
 msgstr "Kontrola zrcadla neproběhla"
 
 #: ../subiquity/ui/views/mirror.py:59
+#, fuzzy
 msgid ""
-"The check of the mirror has not yet started. You can continue but there is a "
-"chance that the installation will fail."
+"The check of the mirror has not yet started. You can continue, but there is "
+"a chance that the installation will fail."
 msgstr ""
 "Kontrola zrcadla ještě nezačala. Můžete pokračovat, ale existuje šance, že "
 "instalace selže."
@@ -2509,8 +2652,9 @@ msgstr ""
 "síť."
 
 #: ../subiquity/ui/views/mirror.py:85
-msgid "The mirror location has not yet started."
-msgstr ""
+#, fuzzy
+msgid "Testing of the mirror location has not yet started."
+msgstr "Testuje se umístění zrcadla."
 
 #: ../subiquity/ui/views/mirror.py:86
 msgid "The mirror location is being tested."
@@ -2532,7 +2676,8 @@ msgstr ""
 "nastavené systémové hodiny).\n"
 
 #: ../subiquity/ui/views/mirror.py:99
-msgid "Configure Ubuntu archive mirror"
+#, fuzzy
+msgid "Ubuntu archive mirror configuration"
 msgstr "Nastavit zrcadlo Ubuntu archivu"
 
 #: ../subiquity/ui/views/mirror.py:100
@@ -2550,22 +2695,23 @@ msgid ""
 "If you need to use a HTTP proxy to access the outside world, enter the proxy "
 "information here. Otherwise, leave this blank.\n"
 "\n"
-"The proxy information should be given in the standard form of "
-"\"http://[[user][:pass]@]host[:port]/\"."
+"The proxy information should be given in the standard form of \"http://"
+"[[user][:pass]@]host[:port]/\"."
 msgstr ""
 "Pokud pro přístup do okolního světa potřebujete HTTP proxy, zadejte "
 "informace o proxy sem. Jinak ponechte nevyplněné.\n"
 "\n"
-"Informace o proxy by měly být zadány ve standardní podobě "
-"„http://[[uzivatel][:heslo]@]stroj[:port]/“."
+"Informace o proxy by měly být zadány ve standardní podobě „http://[[uzivatel]"
+"[:heslo]@]stroj[:port]/“."
 
 #: ../subiquity/ui/views/proxy.py:41
 msgid "Proxy address:"
 msgstr "Adresa proxy:"
 
 #: ../subiquity/ui/views/proxy.py:45
-msgid "Configure proxy"
-msgstr "Nastavit proxy"
+#, fuzzy
+msgid "Proxy configuration"
+msgstr "Nastavení úložiště"
 
 #: ../subiquity/ui/views/proxy.py:47
 msgid ""
@@ -2575,11 +2721,11 @@ msgstr ""
 "Pokud tento systém potřebuje pro připojení k Internetu proxy, zadejte "
 "podrobnosti o ní sem."
 
-#: ../subiquity/ui/views/refresh.py:105
+#: ../subiquity/ui/views/refresh.py:106
 msgid "Checking for installer update..."
 msgstr "Zjišťuje se aktualizace instalátoru…"
 
-#: ../subiquity/ui/views/refresh.py:107
+#: ../subiquity/ui/views/refresh.py:108
 msgid ""
 "Contacting the snap store to check if a new version of the installer is "
 "available."
@@ -2587,30 +2733,30 @@ msgstr ""
 "Kontaktuje se sklad snap balíčků aby se zjistilo, zda je k dispozici novější "
 "verze instalátoru."
 
-#: ../subiquity/ui/views/refresh.py:111
+#: ../subiquity/ui/views/refresh.py:112
 msgid "Contacting the snap store failed"
 msgstr "Kontaktování skladu se snap balíčky se nezdařilo"
 
-#: ../subiquity/ui/views/refresh.py:112
+#: ../subiquity/ui/views/refresh.py:113
 msgid "Contacting the snap store failed:"
 msgstr "Kontaktování skladu se snap balíčky se nezdařilo:"
 
-#: ../subiquity/ui/views/refresh.py:114
+#: ../subiquity/ui/views/refresh.py:115
 msgid "Installer update available"
 msgstr "Je k dispozici aktualizace instalátoru"
 
-#: ../subiquity/ui/views/refresh.py:116
+#: ../subiquity/ui/views/refresh.py:117
 #, python-brace-format
 msgid ""
 "Version {new} of the installer is now available ({current} is currently "
 "running)."
 msgstr "Je k dispozici instalátor verze {new} (nyní je spuštěná {current})."
 
-#: ../subiquity/ui/views/refresh.py:120
+#: ../subiquity/ui/views/refresh.py:121
 msgid "Downloading update..."
 msgstr "Stahování aktualizace…"
 
-#: ../subiquity/ui/views/refresh.py:122
+#: ../subiquity/ui/views/refresh.py:123
 msgid ""
 "Please wait while the updated installer is being downloaded. The installer "
 "will restart automatically when the download is complete."
@@ -2618,29 +2764,29 @@ msgstr ""
 "Vyčkejte na dokončení stažení aktualizovaného instalátoru. Instalátor se "
 "poté automaticky zrestartuje."
 
-#: ../subiquity/ui/views/refresh.py:126
+#: ../subiquity/ui/views/refresh.py:127
 msgid "Update failed"
 msgstr "Aktualizace se nezdařila"
 
-#: ../subiquity/ui/views/refresh.py:127
+#: ../subiquity/ui/views/refresh.py:128
 msgid "Downloading and applying the update:"
 msgstr "Stahování a instalace aktualizace:"
 
-#: ../subiquity/ui/views/refresh.py:147 ../subiquity/ui/views/refresh.py:175
-#: ../subiquity/ui/views/refresh.py:207 ../subiquity/ui/views/refresh.py:278
+#: ../subiquity/ui/views/refresh.py:148 ../subiquity/ui/views/refresh.py:176
+#: ../subiquity/ui/views/refresh.py:208 ../subiquity/ui/views/refresh.py:280
 msgid "Continue without updating"
 msgstr "Pokračovat bez aktualizace"
 
-#: ../subiquity/ui/views/refresh.py:174 ../subiquity/ui/views/refresh.py:277
-#: ../subiquity/ui/views/snaplist.py:288 ../subiquity/ui/views/snaplist.py:414
+#: ../subiquity/ui/views/refresh.py:175 ../subiquity/ui/views/refresh.py:279
+#: ../subiquity/ui/views/snaplist.py:288 ../subiquity/ui/views/snaplist.py:423
 msgid "Try again"
 msgstr "Zkusit znovu"
 
-#: ../subiquity/ui/views/refresh.py:192
+#: ../subiquity/ui/views/refresh.py:193
 msgid "You can read the release notes for each version at:"
 msgstr "Poznámky k vydání pro každou z verzí je možné si přečíst na:"
 
-#: ../subiquity/ui/views/refresh.py:198
+#: ../subiquity/ui/views/refresh.py:199
 msgid ""
 "If you choose to update, the update will be downloaded and the installation "
 "will continue from here."
@@ -2648,7 +2794,7 @@ msgstr ""
 "Pokud zvolíte aktualizovat, aktualizace bude stažená a instalace bude "
 "pokračovat odtud."
 
-#: ../subiquity/ui/views/refresh.py:206
+#: ../subiquity/ui/views/refresh.py:207
 msgid "Update to the new installer"
 msgstr "Aktualizovat na nový instalátor"
 
@@ -2723,19 +2869,20 @@ msgstr "Stahování si informací pro {snap} se nezdařilo"
 msgid "Fetching info for {snap}"
 msgstr "Stahování si informací pro {snap}"
 
-#: ../subiquity/ui/views/snaplist.py:371
-msgid "Featured Server Snaps"
+#: ../subiquity/ui/views/snaplist.py:376
+#, fuzzy
+msgid "Featured server snaps"
 msgstr "Propagované serverové snap balíčky"
 
-#: ../subiquity/ui/views/snaplist.py:387
+#: ../subiquity/ui/views/snaplist.py:396
 msgid "Loading server snaps from store, please wait..."
 msgstr "Načítání serverových snap balíčků ze skladu, čekejte…"
 
-#: ../subiquity/ui/views/snaplist.py:412
+#: ../subiquity/ui/views/snaplist.py:421
 msgid "Sorry, loading snaps from the store failed."
 msgstr "Je nám líto, načítání snap balíčků ze skladu se nezdařilo."
 
-#: ../subiquity/ui/views/snaplist.py:511
+#: ../subiquity/ui/views/snaplist.py:520
 msgid ""
 "These are popular snaps in server environments. Select or deselect with "
 "SPACE, press ENTER to see more details of the package, publisher and "
@@ -2745,30 +2892,31 @@ msgstr ""
 "výběr rušte) pomocí MEZERNÍKU. Podrobnosti o balíčku, vydavateli a verzích "
 "obdržíte stiskem ENTER."
 
-#: ../subiquity/ui/views/ssh.py:39
-msgid "Import Username:"
-msgstr "Uživatelské jméno importu:"
+#. account for lp: or gh:
+#: ../subiquity/ui/views/ssh.py:45 ../subiquity/ui/views/ssh.py:130
+#, fuzzy
+msgid "Import SSH key"
+msgstr "Importovat SSH identitu:"
 
-#: ../subiquity/ui/views/ssh.py:46
+#: ../subiquity/ui/views/ssh.py:49
 msgid "GitHub Username:"
 msgstr "Uživatelské jméno na GitHub:"
 
-#: ../subiquity/ui/views/ssh.py:47
+#: ../subiquity/ui/views/ssh.py:50
 msgid "Enter your GitHub username."
 msgstr "Zadejte své uživatelské jméno na GitHub."
 
-#: ../subiquity/ui/views/ssh.py:50
-msgid ""
-"A GitHub username may only contain alphanumeric characters or hyphens."
+#: ../subiquity/ui/views/ssh.py:53
+msgid "A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
 "Uživatelské jméno na GitHub může obsahovat pouze písmena a číslice nebo "
 "spojovníky."
 
-#: ../subiquity/ui/views/ssh.py:54
+#: ../subiquity/ui/views/ssh.py:57
 msgid "Launchpad Username:"
 msgstr "Launchpad uživatelské jméno:"
 
-#: ../subiquity/ui/views/ssh.py:58
+#: ../subiquity/ui/views/ssh.py:61
 msgid ""
 "A Launchpad username may only contain lower-case alphanumeric characters, "
 "hyphens, plus, or periods."
@@ -2776,11 +2924,7 @@ msgstr ""
 "Uživatelské jméno z portálu Launchpad může obsahovat pouze malá písmena a "
 "číslice, spojovníky, plus nebo tečky."
 
-#: ../subiquity/ui/views/ssh.py:67
-msgid "Install OpenSSH server"
-msgstr "Nainstalovat OpenSSH server"
-
-#: ../subiquity/ui/views/ssh.py:70
+#: ../subiquity/ui/views/ssh.py:71
 msgid "Import SSH identity:"
 msgstr "Importovat SSH identitu:"
 
@@ -2796,19 +2940,15 @@ msgstr "z účtu na Launchpad"
 msgid "You can import your SSH keys from GitHub or Launchpad."
 msgstr "Své SSH klíče můžete importovat z portálu GitHub nebo Launchpad."
 
-#: ../subiquity/ui/views/ssh.py:81
-msgid "Allow password authentication over SSH"
-msgstr "Umožnit ověřovat se pro SSH heslem"
-
-#: ../subiquity/ui/views/ssh.py:113
+#: ../subiquity/ui/views/ssh.py:92
 msgid "This field must not be blank."
 msgstr "Tuto kolonku je třeba vyplnit."
 
-#: ../subiquity/ui/views/ssh.py:115
+#: ../subiquity/ui/views/ssh.py:94
 msgid "SSH id too long, must be < "
 msgstr "SSH identifikátor je příliš dlouhý – je třeba, aby byl kratší než "
 
-#: ../subiquity/ui/views/ssh.py:120
+#: ../subiquity/ui/views/ssh.py:99
 msgid ""
 "A Launchpad username must start with a letter or number. All letters must be "
 "lower-case. The characters +, - and . are also allowed after the first "
@@ -2818,7 +2958,7 @@ msgstr ""
 "číslici. Dále je třeba, aby všechna písmena byla malá. Znaky +,- a . jsou "
 "povolené až někde za prvním znakem."
 
-#: ../subiquity/ui/views/ssh.py:129
+#: ../subiquity/ui/views/ssh.py:108
 msgid ""
 "A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
@@ -2826,39 +2966,65 @@ msgstr ""
 "Uživatelské jméno na GitHub může obsahovat pouze písmena a číslice nebo "
 "jednotlivé spojovníky, na které nemůže začínat či končit."
 
-#: ../subiquity/ui/views/ssh.py:140
+#: ../subiquity/ui/views/ssh.py:164
+#, fuzzy
+msgid "SSH key"
+msgstr "Potvrďte SSH klíč"
+
+#: ../subiquity/ui/views/ssh.py:172
+msgid "Install OpenSSH server"
+msgstr "Nainstalovat OpenSSH server"
+
+#: ../subiquity/ui/views/ssh.py:174
+msgid "Allow password authentication over SSH"
+msgstr "Umožnit ověřovat se pro SSH heslem"
+
+#: ../subiquity/ui/views/ssh.py:184
 msgid "Fetching SSH keys..."
 msgstr "Stahování SSH klíčů…"
 
-#: ../subiquity/ui/views/ssh.py:172
+#: ../subiquity/ui/views/ssh.py:216
 msgid "Confirm SSH keys"
 msgstr "Potvrďte SSH klíče"
 
-#: ../subiquity/ui/views/ssh.py:174
+#: ../subiquity/ui/views/ssh.py:218
 msgid ""
 "Keys with the following fingerprints were fetched. Do you want to use them?"
 msgstr "Byly staženy klíče s následujícími otisky. Chcete je použít?"
 
-#: ../subiquity/ui/views/ssh.py:178
+#: ../subiquity/ui/views/ssh.py:222
 msgid "Confirm SSH key"
 msgstr "Potvrďte SSH klíč"
 
-#: ../subiquity/ui/views/ssh.py:180
+#: ../subiquity/ui/views/ssh.py:224
 msgid ""
 "A key with the following fingerprint was fetched. Do you want to use it?"
 msgstr "Byl stažen klíč s následujícím otiskem. Chcete ho použít?"
 
-#: ../subiquity/ui/views/ssh.py:210
-msgid "SSH Setup"
-msgstr "Nastavení SSH"
+#: ../subiquity/ui/views/ssh.py:255
+#, fuzzy
+msgid "SSH configuration"
+msgstr "Nastavení úložiště"
 
-#: ../subiquity/ui/views/ssh.py:212
+#: ../subiquity/ui/views/ssh.py:257
 msgid ""
 "You can choose to install the OpenSSH server package to enable secure remote "
 "access to your server."
 msgstr ""
 "Je možné zvolit instalaci serverového balíčku OpenSSH a zapnout tak "
 "zabezpečený vzdálený přístup ke svému serveru."
+
+#: ../subiquity/ui/views/ssh.py:294
+msgid "AUTHORIZED KEYS"
+msgstr ""
+
+#: ../subiquity/ui/views/ssh.py:370
+msgid "No authorized key"
+msgstr ""
+
+#: ../subiquity/ui/views/ssh.py:386
+msgid "Show"
+msgstr ""
 
 #: ../subiquity/ui/views/welcome.py:37
 msgid ""
@@ -2897,38 +3063,70 @@ msgstr "v provozu"
 msgid "No zdev devices found."
 msgstr "Nenalezena žádná zdev zařízení."
 
-#: ../subiquity/ui/views/zdev.py:80
+#: ../subiquity/ui/views/zdev.py:81
 msgid "ID"
 msgstr "IDENTIF"
 
-#: ../subiquity/ui/views/zdev.py:81
+#: ../subiquity/ui/views/zdev.py:82
 msgid "ONLINE"
 msgstr "V PROVOZU"
 
-#: ../subiquity/ui/views/zdev.py:82
+#: ../subiquity/ui/views/zdev.py:83
 msgid "NAMES"
 msgstr "NÁZVY"
 
-#: ../subiquity/ui/views/zdev.py:118
+#: ../subiquity/ui/views/zdev.py:119
 msgid "Enable"
 msgstr "Zapnout"
 
-#: ../subiquity/ui/views/zdev.py:119
+#: ../subiquity/ui/views/zdev.py:120
 msgid "Disable"
 msgstr "Vypnout"
 
-#: ../subiquity/ui/views/zdev.py:146
-msgid "Zdev setup"
-msgstr "Nastavení Zdev zařízení"
+#: ../subiquity/ui/views/zdev.py:147
+#, fuzzy
+msgid "Zdev configuration"
+msgstr "Nastavení úložiště"
+
+#~ msgid "Network connections"
+#~ msgstr "Síťová připojení"
+
+#~ msgid "Profile setup"
+#~ msgstr "Nastavení profilu"
+
+#~ msgid "Install progress"
+#~ msgstr "Postup instalace"
+
+#~ msgid "Install complete!"
+#~ msgstr "Instalace dokončena!"
+
+#~ msgid "Cancel update and reboot"
+#~ msgstr "Zrušit aktualizaci a restartovat"
+
+#~ msgid ""
+#~ "The check of the mirror URL failed. You can continue but it is very "
+#~ "likely that the installation will fail."
+#~ msgstr ""
+#~ "Kontrola adresy URL zrcadla se nezdařila. Můžete pokračovat, ale je velmi "
+#~ "pravděpodobné, že instalace selže."
+
+#~ msgid "Configure proxy"
+#~ msgstr "Nastavit proxy"
+
+#~ msgid "Import Username:"
+#~ msgstr "Uživatelské jméno importu:"
+
+#~ msgid "SSH Setup"
+#~ msgstr "Nastavení SSH"
+
+#~ msgid "Zdev setup"
+#~ msgstr "Nastavení Zdev zařízení"
 
 #~ msgid "Filesystem setup"
 #~ msgstr "Nastavení souborového systému"
 
 #~ msgid "An error has occurred"
 #~ msgstr "Došlo k chybě"
-
-#~ msgid "Installation complete!"
-#~ msgstr "Instalace dokončena!"
 
 #~ msgid "starting..."
 #~ msgstr "spouštění…"
@@ -2985,10 +3183,10 @@ msgstr "Nastavení Zdev zařízení"
 #~ "\n"
 #~ "GRUB bude nainstalován do MBR cílového disku.\n"
 #~ "\n"
-#~ "Nicméně, na disku s GPT tabulkou oddílů, není dostatek prostoru za MBR pro "
-#~ "uložení druhé fáze GRUB, core.img, takže je třeba malého, nezformátovaného "
-#~ "oddílu na začátku disku. Nebude obsahovat souborový systém a nebude připojen "
-#~ "a není možné ho zde upravit."
+#~ "Nicméně, na disku s GPT tabulkou oddílů, není dostatek prostoru za MBR "
+#~ "pro uložení druhé fáze GRUB, core.img, takže je třeba malého, "
+#~ "nezformátovaného oddílu na začátku disku. Nebude obsahovat souborový "
+#~ "systém a nebude připojen a není možné ho zde upravit."
 
 #~ msgid "Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
@@ -2999,8 +3197,8 @@ msgstr "Nastavení Zdev zařízení"
 #~ "A Github username may only contain alphanumeric characters or single "
 #~ "hyphens, and cannot begin or end with a hyphen."
 #~ msgstr ""
-#~ "Github uživatelské jméno může obsahovat pouze písmena a číslice a jednotlivé "
-#~ "spojovníky a nemůže začínat nebo končit na spojovník."
+#~ "Github uživatelské jméno může obsahovat pouze písmena a číslice a "
+#~ "jednotlivé spojovníky a nemůže začínat nebo končit na spojovník."
 
 #~ msgid "Keyboard auto detection failed, sorry"
 #~ msgstr "Automatické zjištění rozvržení klávesnice se nezdařilo, je nám líto"
@@ -3052,8 +3250,8 @@ msgstr "Nastavení Zdev zařízení"
 #, python-brace-format
 #~ msgid "Cannot delete {selflabel} because it has {count} mounted partitions."
 #~ msgstr ""
-#~ "{selflabel} není možné smazat, protože je z něho připojeno (mount) {count} "
-#~ "oddílů."
+#~ "{selflabel} není možné smazat, protože je z něho připojeno (mount) "
+#~ "{count} oddílů."
 
 #, python-brace-format
 #~ msgid "Cannot delete {selflabel} because it has 1 mounted partition."
@@ -3155,8 +3353,8 @@ msgstr "Nastavení Zdev zařízení"
 #~ msgid ""
 #~ "Required bootloader partition\n"
 #~ "\n"
-#~ "This is the PReP partion which is required on POWER. Grub will be installed "
-#~ "onto this partition."
+#~ "This is the PReP partion which is required on POWER. Grub will be "
+#~ "installed onto this partition."
 #~ msgstr ""
 #~ "Vyžadován oddíl pro zavaděč systému\n"
 #~ "\n"
@@ -3170,28 +3368,25 @@ msgstr "Nastavení Zdev zařízení"
 #~ msgstr "Upravit softwarové RAID úložiště „{}“"
 
 #~ msgid ""
-#~ "The LVM guided partitioning scheme creates three partitions on the selected "
-#~ "disk: one as required by the bootloader, one for '/boot', and one covering "
-#~ "the rest of the disk.\n"
+#~ "The LVM guided partitioning scheme creates three partitions on the "
+#~ "selected disk: one as required by the bootloader, one for '/boot', and "
+#~ "one covering the rest of the disk.\n"
 #~ "\n"
-#~ "A LVM volume group is created containing the large partition. A 4 gigabyte "
-#~ "logical volume is created for the root filesystem. It can easily be enlarged "
-#~ "with standard LVM command line tools."
+#~ "A LVM volume group is created containing the large partition. A 4 "
+#~ "gigabyte logical volume is created for the root filesystem. It can easily "
+#~ "be enlarged with standard LVM command line tools."
 #~ msgstr ""
 #~ "LVM vedené schéma rozdělení na oddíly vytvoří na vybraném úložišti tři "
 #~ "oddíly: jednu pro zavaděč systému, jednu pro „/boot“ a jednu pokrývající "
 #~ "zbytek úložiště.\n"
 #~ "\n"
-#~ "Dále je vytvořena LVM skupina svazků, obsahující posledně zmíněný oddíl. V "
-#~ "ní je vytvořen 4 gigabajtový logický svazek pro kořenový souborový systém. "
-#~ "Ten je snadno možné zvětšit pomocí standardních LVM nástrojů pro příkazový "
-#~ "řádek."
+#~ "Dále je vytvořena LVM skupina svazků, obsahující posledně zmíněný oddíl. "
+#~ "V ní je vytvořen 4 gigabajtový logický svazek pro kořenový souborový "
+#~ "systém. Ten je snadno možné zvětšit pomocí standardních LVM nástrojů pro "
+#~ "příkazový řádek."
 
 #~ msgid "-"
 #~ msgstr "–"
-
-#~ msgid "Install in progress:"
-#~ msgstr "Provádí se instalace:"
 
 #~ msgid "Finished install!"
 #~ msgstr "Instalace dokončena!"
@@ -3204,8 +3399,8 @@ msgstr "Nastavení Zdev zařízení"
 #~ "Cannot delete {selflabel} as partition {partnum} is part of the {cdtype} "
 #~ "{cdname}."
 #~ msgstr ""
-#~ "{selflabel} není možné smazat, protože oddíl {partnum} je součástí {cdtype} "
-#~ "{cdname}."
+#~ "{selflabel} není možné smazat, protože oddíl {partnum} je součástí "
+#~ "{cdtype} {cdname}."
 
 #~ msgid "Format"
 #~ msgstr "Vytvořit souborový systém"
@@ -3217,16 +3412,16 @@ msgstr "Nastavení Zdev zařízení"
 #~ msgstr "se souborovým systémem {}"
 
 #~ msgid ""
-#~ "Selecting Continue below will begin the installation process and result in "
-#~ "the loss of data on the disks selected to be formatted.\n"
+#~ "Selecting Continue below will begin the installation process and result "
+#~ "in the loss of data on the disks selected to be formatted.\n"
 #~ "\n"
 #~ "You will not be able to return to this or a previous screen once the "
 #~ "installation has started.\n"
 #~ "\n"
 #~ "Are you sure you want to continue?"
 #~ msgstr ""
-#~ "Vybrání Pokračovat (níže) zahájí proces instalace a povede ke ztrátě dat na "
-#~ "úložištích, na kterých mají být vytvořeny souborové systémy.\n"
+#~ "Vybrání Pokračovat (níže) zahájí proces instalace a povede ke ztrátě dat "
+#~ "na úložištích, na kterých mají být vytvořeny souborové systémy.\n"
 #~ "\n"
 #~ "Jakmile se instalace spustí, nebude už možné se vrátit na tuto nebo "
 #~ "předchozí obrazovky.\n"
@@ -3238,8 +3433,8 @@ msgstr "Nastavení Zdev zařízení"
 
 #~ msgid "Select available disks to format and mount"
 #~ msgstr ""
-#~ "Vyberte dostupná úložiště, na kterých vytvořit souborové systémy a připojit "
-#~ "je"
+#~ "Vyberte dostupná úložiště, na kterých vytvořit souborové systémy a "
+#~ "připojit je"
 
 #~ msgid "Use An Entire Disk"
 #~ msgstr "Využít celé úložiště"
@@ -3250,9 +3445,9 @@ msgstr "Nastavení Zdev zařízení"
 #~ "the rest of the disk, formatted as ext4 and mounted at '/'."
 #~ msgstr ""
 #~ "Zvolené schéma vedeného rozdělení na oddíly vytvoří potřebný oddíl pro "
-#~ "zavaděč systému na zvoleném úložišti a pak vytvoří jediný oddíl pokrývající "
-#~ "zbytek úložiště, na kterém bude vytvořen souborový systém ext4 a připojen "
-#~ "jako „/“."
+#~ "zavaděč systému na zvoleném úložišti a pak vytvoří jediný oddíl "
+#~ "pokrývající zbytek úložiště, na kterém bude vytvořen souborový systém "
+#~ "ext4 a připojen jako „/“."
 
 #~ msgid ""
 #~ "The installer can guide you through partitioning an entire disk either "
@@ -3264,8 +3459,8 @@ msgstr "Nastavení Zdev zařízení"
 #~ "Instalátor vás může provést rozdělením celého úložiště buď přímo, nebo s "
 #~ "použitím LVM. Nebo – pokud upřednostňujete – je možné to udělat ručně.\n"
 #~ "\n"
-#~ "Pokud zvolíte rozdělení celého úložiště, pořád máte možnost prohlédnout si a "
-#~ "upravit výsledky."
+#~ "Pokud zvolíte rozdělení celého úložiště, pořád máte možnost prohlédnout "
+#~ "si a upravit výsledky."
 
 #~ msgid "Choose the disk to install to:"
 #~ msgstr "Zvolte úložiště, na které nainstalovat:"
@@ -3297,18 +3492,18 @@ msgstr "Nastavení Zdev zařízení"
 #~ "Mounting an existing filesystem at {} is usually a bad idea, proceed only "
 #~ "with caution."
 #~ msgstr ""
-#~ "Připojování existujícího souborového systému do {} je obvykle špatný nápad, "
-#~ "pokračujte pouze s obezřetností."
+#~ "Připojování existujícího souborového systému do {} je obvykle špatný "
+#~ "nápad, pokračujte pouze s obezřetností."
 
 #~ msgid " The only aspect of this partition that can be edited is the size."
 #~ msgstr " Jediné hledisko tohoto oddílu, který je možné měnit, je velikost."
 
 #~ msgid ""
-#~ " You can choose whether to use the existing filesystem on this partition or "
-#~ "reformat it."
+#~ " You can choose whether to use the existing filesystem on this partition "
+#~ "or reformat it."
 #~ msgstr ""
-#~ " Je možné zvolit zda použít stávající souborový systém na tomto oddílu, nebo "
-#~ "ho vytvořit znovu."
+#~ " Je možné zvolit zda použít stávající souborový systém na tomto oddílu, "
+#~ "nebo ho vytvořit znovu."
 
 #~ msgid "Edit Wifi"
 #~ msgstr "Upravit Wi-Fi"
@@ -3327,8 +3522,8 @@ msgstr "Nastavení Zdev zařízení"
 
 #~ msgid "Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 #~ msgstr ""
-#~ "Je třeba, aby se název stroje odpovídal regulárnímu výrazu NAME_REGEX, tj. "
-#~ "[a-z_][a-z0-9_-]*"
+#~ "Je třeba, aby se název stroje odpovídal regulárnímu výrazu NAME_REGEX, "
+#~ "tj. [a-z_][a-z0-9_-]*"
 
 #~ msgid "Leave formatted as {}"
 #~ msgstr "Ponechat se souborovým systémem jako {}"
@@ -3342,8 +3537,8 @@ msgstr "Nastavení Zdev zařízení"
 #~ "Vyžadován oddíl pro zavaděč systému\n"
 #~ "\n"
 #~ "Toto je ESP / „EFI system partition“ vyžadované UEFI firmwarem. Grub bude "
-#~ "nainstalován na tento oddíl, na kterém je třeba, aby byl vytvořen souborový "
-#~ "systém fat32."
+#~ "nainstalován na tento oddíl, na kterém je třeba, aby byl vytvořen "
+#~ "souborový systém fat32."
 
 #~ msgid "from Github"
 #~ msgstr "z účtu na Github"
@@ -3361,16 +3556,18 @@ msgstr "Nastavení Zdev zařízení"
 #~ msgid ""
 #~ "A Github username may only contain alphanumeric characters or hyphens."
 #~ msgstr ""
-#~ "Uživatelské jméno z portálu Github může obsahovat pouze písmena a číslice, "
-#~ "případně ještě spojovníky."
+#~ "Uživatelské jméno z portálu Github může obsahovat pouze písmena a "
+#~ "číslice, případně ještě spojovníky."
 
 #~ msgid ""
 #~ "\n"
 #~ "\n"
-#~ "The \"Use an entire disk\" option installs Ubuntu onto the selected disk,\n"
+#~ "The \"Use an entire disk\" option installs Ubuntu onto the selected "
+#~ "disk,\n"
 #~ "replacing any partitions and data already there.\n"
 #~ "\n"
-#~ "If the platform requires it, a bootloader partition is created on the disk.\n"
+#~ "If the platform requires it, a bootloader partition is created on the "
+#~ "disk.\n"
 #~ "\n"
 #~ "If you choose to use LVM, two additional partitions are then created,\n"
 #~ "one for /boot and one covering the rest of the disk. An LVM volume\n"
@@ -3383,7 +3580,8 @@ msgstr "Nastavení Zdev zařízení"
 #~ "setting a password, that one will need to type on every boot before\n"
 #~ "the system boots.\n"
 #~ "\n"
-#~ "If you do not choose to use LVM, a single partition is created covering the\n"
+#~ "If you do not choose to use LVM, a single partition is created covering "
+#~ "the\n"
 #~ "rest of the disk which is then formatted as ext4 and mounted at /.\n"
 #~ "\n"
 #~ "In either case, you will still have a chance to review and modify the "
@@ -3406,16 +3604,18 @@ msgstr "Nastavení Zdev zařízení"
 #~ "\n"
 #~ "Pokud zvolíte použití LVM, budou vytvořeny dva další oddíly – jeden pro\n"
 #~ "/boot a druhý pokrývající zbytek disku. Dále bude vytvořena LVM skupina\n"
-#~ "svazků, zabírající velký oddíl. Bude vytvořen logický svazek pro kořenový\n"
+#~ "svazků, zabírající velký oddíl. Bude vytvořen logický svazek pro "
+#~ "kořenový\n"
 #~ "souborový systém, s velikostí určenou pomocí jednoduché heuristiky. Je\n"
 #~ "možné ho snadno zvětšit pomocí standardních LVM nástrojů pro příkazový\n"
 #~ "řádek (nebo na následující obrazovce).\n"
 #~ "\n"
-#~ "Skupinu svazků je také možné zašifrovat LVM. To vyžaduje nastavení hesla,\n"
+#~ "Skupinu svazků je také možné zašifrovat LVM. To vyžaduje nastavení "
+#~ "hesla,\n"
 #~ "které bude třeba zadávat v rámci každého spouštění operačního systému.\n"
 #~ "\n"
-#~ "Pokud nezvolíte použití LVM, bude vytvořen jediný oddíl pokrývající zbytek "
-#~ "disku\n"
+#~ "Pokud nezvolíte použití LVM, bude vytvořen jediný oddíl pokrývající "
+#~ "zbytek disku\n"
 #~ "a ten pak naformátován jako ext4 a připojen do /.\n"
 #~ "\n"
 #~ "V každém případě budete mít možnost zrevidovat a upravit výsledky.\n"
