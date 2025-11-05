@@ -280,6 +280,7 @@ class SubiquityServer(Application):
         "Drivers",
         "OEM",
         "TimeZone",
+        "HomenodeToken",
         "Install",
         "Updates",
         "Late",

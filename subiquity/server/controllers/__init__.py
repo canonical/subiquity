@@ -19,6 +19,7 @@ from .codecs import CodecsController
 from .debconf import DebconfController
 from .drivers import DriversController
 from .filesystem import FilesystemController
+from .homenode_token import HomenodeTokenController
 from .identity import IdentityController
 from .install import InstallController
 from .integrity import IntegrityController
@@ -51,6 +52,7 @@ __all__ = [
     "EarlyController",
     "ErrorController",
     "FilesystemController",
+    "HomenodeTokenController",
     "IdentityController",
     "IntegrityController",
     "InstallController",
