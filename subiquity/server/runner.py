@@ -23,6 +23,12 @@ from typing import List, Optional
 from subiquitycore.utils import astart_command
 
 
+def _dollar_escape(s: str) -> str:
+    """Return the string passed as a parameter with dollar signs escaped
+    for systemd-run."""
+    return s.replace("$", "$$")
+
+
 class LoggedCommandRunner:
     """Class that executes commands using systemd-run."""
 
@@ -68,7 +74,7 @@ class LoggedCommandRunner:
 
         prefix.append("--")
 
-        return prefix + cmd
+        return prefix + [_dollar_escape(arg) for arg in cmd]
 
     async def start(
         self,
