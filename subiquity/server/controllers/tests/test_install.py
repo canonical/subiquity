@@ -25,6 +25,7 @@ from unittest.mock import ANY, AsyncMock, Mock, mock_open, patch
 from curtin.util import EFIBootEntry, EFIBootState
 
 from subiquity.common.types import PackageInstallState
+from subiquity.models.identity import User
 from subiquity.models.tests.test_filesystem import make_model_and_partition
 from subiquity.server.controllers.install import CurtinInstallError, InstallController
 from subiquity.server.mounter import Mountpoint
@@ -272,6 +273,45 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
         with open(self.controller.tpath("etc/grub.d/99_reset")) as fp:
             cfg = fp.read()
         self.assertIn("--fs-uuid fsuuid", cfg)
+
+    @patch("subiquity.server.controllers.install.run_curtin_command")
+    @patch(
+        "subiquity.server.controllers.install.get_users_and_groups",
+        Mock(return_value=["admin", "sudo"]),
+    )
+    async def test_create_users(self, run_curtin_cmd):
+        self.controller.model = Mock()
+        self.controller.tpath = Mock(return_value="/tmp/foo")
+        with patch.object(
+            self.controller.model.identity,
+            "user",
+            User(username="user", password="$6$xxx12345", realname="my user"),
+        ):
+            await self.controller.create_users(Mock())
+        expected_cmd = [
+            "useradd",
+            "user",
+            "--comment",
+            "my user",
+            "--password",
+            "$6$xxx12345",
+            "--shell",
+            "/bin/bash",
+            "--groups",
+            "admin,sudo",
+            "--create-home",
+        ]
+        run_curtin_cmd.assert_called_once_with(
+            ANY, ANY, "in-target", "-t", ANY, "--", *expected_cmd, private_mounts=False
+        )
+
+    @patch("subiquity.server.controllers.install.run_curtin_command")
+    async def test_create_users_no_identity(self, run_curtin_cmd):
+        self.controller.model = Mock()
+        with patch.object(self.controller.model.identity, "user", None):
+            await self.controller.create_users(Mock())
+
+        run_curtin_cmd.assert_not_called()
 
     @patch("platform.machine", return_value="s390x")
     @patch("subiquity.server.controllers.install.arun_command")
