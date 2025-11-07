@@ -42,7 +42,7 @@ from subiquity.journald import journald_listen
 from subiquity.server.server import POSTINSTALL_MODEL_NAMES
 from subiquity.ui.frame import SubiquityUI
 from subiquity.ui.views.error import ErrorReportStretchy, NonReportableErrorStretchy
-from subiquity.ui.views.help import HelpMenu, ssh_help_texts
+from subiquity.ui.views.help import HelpMenu
 from subiquity.ui.views.installprogress import InstallConfirmation
 from subiquity.ui.views.welcome import CloudInitFail
 from subiquitycore.async_helpers import run_bg_task, run_in_thread
@@ -347,21 +347,7 @@ class SubiquityClient(TuiApplication):
             # The server could end up in an error state before we get here
             # so skip to allow urwid to come up and show an error screen
             if status.state != ApplicationState.ERROR:
-                if self.opts.ssh:
-                    ssh_info = await self.client.meta.ssh_info.GET()
-                    texts = ssh_help_texts(ssh_info)
-                    for line in texts:
-                        import urwid
-
-                        if isinstance(line, urwid.Widget):
-                            line = "\n".join(
-                                [
-                                    line.decode("utf-8").rstrip()
-                                    for line in line.render((1000,)).text
-                                ]
-                            )
-                        print(line)
-                    return
+                # SSH info display removed for security
 
                 # Get the variant from the server and reload desired
                 # controllers if an override exists
@@ -586,8 +572,6 @@ class SubiquityClient(TuiApplication):
         if key == "f1":
             if not self.ui.right_icon.current_help:
                 self.ui.right_icon.open_pop_up()
-        elif key in ["ctrl z", "f2"]:
-            self.request_debug_shell()
         elif self.opts.dry_run:
             self.unhandled_input_dry_run(key)
         else:

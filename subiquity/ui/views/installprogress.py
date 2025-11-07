@@ -301,7 +301,7 @@ running_text = _(
     """\
 The installer running on {tty} is currently installing the system.
 
-You can wait for this to complete or switch to a shell.
+Please wait for this to complete.
 """
 )
 
@@ -309,21 +309,8 @@ You can wait for this to complete or switch to a shell.
 class InstallRunning(Stretchy):
     def __init__(self, app, tty):
         self.app = app
-        self.btn = Toggleable(
-            other_btn(_("Switch to a shell"), on_press=self._debug_shell)
-        )
-        self.btn.enabled = False
-        self._enable_task = asyncio.create_task(self._enable())
         widgets = [
             Text(rewrap(_(running_text).format(tty=tty))),
             Text(""),
-            button_pile([self.btn]),
         ]
-        super().__init__("", widgets, stretchy_index=0, focus_index=2)
-
-    async def _enable(self):
-        await asyncio.sleep(0.5)
-        self.btn.enabled = True
-
-    def _debug_shell(self, sender):
-        self.app.request_debug_shell()
+        super().__init__("", widgets, stretchy_index=0, focus_index=0)

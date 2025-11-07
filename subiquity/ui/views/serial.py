@@ -41,12 +41,6 @@ which uses unicode, colours and supports many languages.
 
 """
 
-SSH_TEXT = """
-You can also connect to the installer over the network via SSH, which
-will allow use of rich mode.
-"""
-
-
 class SerialView(BaseView):
     title = "Serial"
 
@@ -68,12 +62,6 @@ class SerialView(BaseView):
             Text(rewrap(SERIAL_TEXT)),
             Text(""),
         ]
-        if self.ssh_info:
-            widgets.append(Text(rewrap(SSH_TEXT)))
-            widgets.append(Text(""))
-            btns.append(
-                other_btn(label="View SSH instructions", on_press=self.ssh_help)
-            )
         return screen(widgets, btns)
 
     def rich_mode(self, sender):
@@ -81,8 +69,3 @@ class SerialView(BaseView):
 
     def basic_mode(self, sender):
         self.controller.done(False)
-
-    def ssh_help(self, sender):
-        menu = self.controller.app.help_menu
-        menu.ssh_info = self.ssh_info
-        menu.ssh_help()

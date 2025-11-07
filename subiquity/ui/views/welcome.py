@@ -113,17 +113,13 @@ class WelcomeView(BaseView):
 class CloudInitFail(Stretchy):
     def __init__(self, app):
         self.app = app
-        self.shell_btn = other_btn(_("Switch to a shell"), on_press=self._debug_shell)
         self.close_btn = other_btn(_("Close"), on_press=self._close)
         widgets = [
             Text(rewrap(_(CLOUD_INIT_FAIL_TEXT))),
             Text(""),
-            button_pile([self.shell_btn, self.close_btn]),
+            button_pile([self.close_btn]),
         ]
         super().__init__("", widgets, stretchy_index=0, focus_index=2)
-
-    def _debug_shell(self, sender):
-        self.app.request_debug_shell()
 
     def _close(self, sender):
         self.app.remove_global_overlay(self)

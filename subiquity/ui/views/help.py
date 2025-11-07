@@ -238,7 +238,6 @@ The following keys can be used at any time:"""
 GLOBAL_KEYS = (
     (_("ESC"), _("go back")),
     (_("F1"), _("open help menu")),
-    (_("Control-Z, F2"), _("switch to shell")),
     (_("Control-L, F3"), _("redraw screen")),
 )
 
@@ -305,16 +304,11 @@ class OpenHelpMenu(WidgetWrap):
         close = header_btn(parent.base_widget.label)
         about = menu_item(_("About this installer"), on_press=self.parent.about)
         keys = menu_item(_("Keyboard shortcuts"), on_press=self.parent.shortcuts)
-        drop_to_shell = menu_item(_("Enter shell"), on_press=self.parent.debug_shell)
         buttons = {
             about,
             close,
-            drop_to_shell,
             keys,
         }
-        if self.parent.ssh_info is not None:
-            ssh_help = menu_item(_("Help on SSH access"), on_press=self.parent.ssh_help)
-            buttons.add(ssh_help)
         if self.parent.app.opts.run_on_serial:
             rich = menu_item(_("Toggle rich mode"), on_press=self.parent.toggle_rich)
             buttons.add(rich)
@@ -347,14 +341,10 @@ class OpenHelpMenu(WidgetWrap):
         entries = [
             local,
             keys,
-            drop_to_shell,
             view_errors,
             hline,
             about,
         ]
-
-        if self.parent.ssh_info is not None:
-            entries.append(ssh_help)
 
         if self.parent.app.opts.run_on_serial:
             entries.extend(
@@ -422,19 +412,9 @@ class HelpMenu(PopUpLauncher):
         self.current_help = None
         super().__init__(self.btn)
 
-    async def _get_ssh_info(self):
-        self.ssh_info = await self.app.wait_with_text_dialog(
-            self.app.client.meta.ssh_info.GET(), "Getting SSH info"
-        )
-        self.open_pop_up()
-
     def _open(self, sender):
-        async def get_ssh_info_and_redraw():
-            await self._get_ssh_info()
-            await self.app.redraw_screen()
-
         log.debug("open help menu")
-        run_bg_task(get_ssh_info_and_redraw())
+        self.open_pop_up()
 
     def create_pop_up(self):
         self._menu = OpenHelpMenu(self)
@@ -488,17 +468,6 @@ class HelpMenu(PopUpLauncher):
             SimpleTextStretchy(self.app, _("About the installer"), self._about_message)
         )
 
-    def ssh_help(self, sender=None):
-        texts = ssh_help_texts(self.ssh_info)
-
-        self._show_overlay(
-            SimpleTextStretchy(
-                self.app,
-                _("Help on SSH access"),
-                *texts,
-            )
-        )
-
     def show_local(self, local_title, local_doc):
         def cb(sender=None):
             self._show_overlay(SimpleTextStretchy(self.app, local_title, local_doc))
@@ -507,9 +476,6 @@ class HelpMenu(PopUpLauncher):
 
     def shortcuts(self, sender):
         self._show_overlay(GlobalKeyStretchy(self.app))
-
-    def debug_shell(self, sender):
-        self.app.request_debug_shell()
 
     def toggle_rich(self, sender):
         self.app.toggle_rich()

@@ -121,21 +121,18 @@ error_report_options = {
         _(
             """
 You can continue and the installer will just present the disks present
-in the system and not other block devices, or you may be able to fix
-the issue by switching to a shell and reconfiguring the system's block
-devices manually.
+in the system and not other block devices.
 """
         ),
-        ["debug_shell", "continue"],
+        ["continue"],
     ),
     ErrorReportKind.DISK_PROBE_FAIL: (
         _(
             """
-You may be able to fix the issue by switching to a shell and
-reconfiguring the system's block devices manually.
+Please restart the installer to try again.
 """
         ),
-        ["debug_shell", "continue"],
+        ["continue"],
     ),
     ErrorReportKind.NETWORK_FAIL: (
         _(
@@ -207,7 +204,6 @@ class ErrorReportStretchy(Stretchy):
             "cancel": other_btn(_("Cancel upload"), on_press=self.cancel_upload),
             "close": close_btn(self, _("Close report")),
             "continue": close_btn(self, _("Continue")),
-            "debug_shell": other_btn(_("Switch to a shell"), on_press=self.debug_shell),
             "restart": other_btn(_("Restart the installer"), on_press=self.restart),
             "submit": other_btn(_("Send to Canonical"), on_press=self.submit),
             "submitted": disabled(other_btn(_("Sent to Canonical"))),
@@ -354,9 +350,6 @@ class ErrorReportStretchy(Stretchy):
                 self.pile.focus_position += 1
         await self.app.redraw_screen()
 
-    def debug_shell(self, sender):
-        self.app.request_debug_shell()
-
     def restart(self, sender):
         self.app.restart(restart_server=True)
 
@@ -474,7 +467,6 @@ class NonReportableErrorStretchy(Stretchy):
 
         self.btns: dict[str, AttrMap] = {
             "close": close_btn(self, _("Close")),
-            "debug_shell": other_btn(_("Switch to a shell"), on_press=self.debug_shell),
             "restart": other_btn(_("Restart the installer"), on_press=self.restart),
         }
         # Get max button width and create even button sizes
@@ -514,24 +506,19 @@ class NonReportableErrorStretchy(Stretchy):
         # Footer and Buttons
         footer_text_default: str = _(
             "The installation is unable to be completed. You may "
-            "switch to a shell to inspect the situation or restart "
-            "the installer to try again."
+            "restart the installer to try again."
         )
         footer_text: str = nonreportable_footers.get(cause, footer_text_default)
         widgets.extend(
             [
                 Text(rewrap(footer_text)),
                 Text(""),
-                btns["debug_shell"],
                 btns["restart"],
                 btns["close"],
             ]
         )
 
         return widgets
-
-    def debug_shell(self, sender):
-        self.app.request_debug_shell()
 
     def restart(self, sender):
         self.app.restart(restart_server=True)
