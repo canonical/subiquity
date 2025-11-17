@@ -45,6 +45,8 @@ from subiquity.common.types.storage import (
     CalculateEntropyRequest,
     CoreBootEncryptionFeatures,
     CoreBootEncryptionSupportError,
+    CoreBootFixAction,
+    CoreBootFixEncryptionSupport,
     Disk,
     EntropyResponse,
     GuidedCapability,
@@ -1807,6 +1809,52 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             return [CoreBootEncryptionFeatures(feature.value) for feature in features]
 
         raise StorageInvalidUsageError("no suitable variation for core boot")
+
+    async def v2_core_boot_fix_encryption_support_POST(
+        self, data: CoreBootFixEncryptionSupport
+    ) -> None:
+        # Note that although we could, we currently do not look for
+        # self._info.label here if the system label is not specified. This is
+        # because in the normal flow, fix-encryption-support is called *before*
+        # choosing a variation.
+        for variation in self._variation_info.values():
+            if data.system_label is not None and variation.label != data.system_label:
+                continue
+            if variation.is_core_boot_classic():
+                break
+        else:
+            raise RuntimeError("could not find relevant core boot classic variation")
+
+        if data.action in (CoreBootFixAction.REBOOT, CoreBootFixAction.SHUTDOWN):
+            # TODO implement here.
+            raise NotImplementedError
+
+        system = await self.app.snapdapi.v2.systems[variation.label].POST(
+            snapdtypes.SystemActionRequest(
+                action=snapdtypes.SystemAction.FIX_ENCRYPTION_SUPPORT,
+                fix_action=data.action,
+            ),
+            return_type=snapdtypes.SystemDetails,
+        )
+
+        # Ideally, we should update the existing variation rather than recreating it.
+        # This will save us a call to snapd and the logic will be cleaner.
+        try:
+            has_beta_entropy_check = await self.app.snapdinfo.has_beta_entropy_check()
+        except ValueError as exc:
+            log.debug(
+                "cannot check if snapd has beta entropy check, assuming yes: %s", exc
+            )
+            has_beta_entropy_check = True
+
+        info = self.info_for_system(
+            variation.name,
+            variation.label,
+            system,
+            has_beta_entropy_check=has_beta_entropy_check,
+        )
+        self._maybe_disable_encryption(info)
+        self._variation_info[variation.name] = info
 
     async def dry_run_wait_probe_POST(self) -> None:
         if not self.app.opts.dry_run:
