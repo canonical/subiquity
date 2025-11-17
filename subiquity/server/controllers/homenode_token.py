@@ -95,8 +95,12 @@ class HomenodeTokenController(SubiquityController):
         Returns:
             HomenodeTokenCheckAnswer with validation status
         """
+        log.info("check_token_GET called with token: %s", token[:10] + "..." if len(token) > 10 else token)
+        log.info("Network status: has_network=%s", self.app.base_model.network.has_network)
+        
         # Check if network is available
         if not self.app.base_model.network.has_network:
+            log.warning("Network not available, returning NO_NETWORK status")
             return HomenodeTokenCheckAnswer(
                 status=HomenodeTokenCheckStatus.NO_NETWORK,
                 message="Network is not available. Please configure network first."
@@ -104,6 +108,7 @@ class HomenodeTokenController(SubiquityController):
 
         try:
             # Verify installation key with Akash API
+            log.info("Calling akash_api.verify_installation_key")
             result = await self.akash_api.verify_installation_key(token)
             log.info("Installation key validation successful: %s", token[:10] + "...")
             return HomenodeTokenCheckAnswer(

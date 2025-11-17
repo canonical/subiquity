@@ -83,15 +83,23 @@ class HomenodeTokenView(BaseView):
         log.debug("User input: %s", result.as_data())
         token = result.as_data()["token"]
         
-        # If network is available, validate installation key before proceeding
-        if self.has_network:
-            self._validate_and_submit(token)
-        else:
-            # No network, just submit without validation
-            self.controller.done(token)
+        log.info("HomenodeTokenView.done called with has_network=%s", self.has_network)
+        log.info("Token value: %s (length: %d)", token[:20] + "..." if len(token) > 20 else token, len(token))
+        
+        # Always try to validate if network might be available
+        # The API endpoint will check network status again
+        log.info("Attempting to validate installation key via API")
+        self._validate_and_submit(token)
 
     def _validate_and_submit(self, token: str):
         """Validate installation key via API and then submit if valid."""
+        log.info("_validate_and_submit called for token: %s", token[:10] + "..." if len(token) > 10 else token)
+        log.info("View has_network flag: %s", self.has_network)
+        
+        # Disable the form button to prevent multiple submissions
+        self.form.done_btn.enabled = False
+        self.form.validated()
+        
         # Show checking overlay
         spinner = Spinner(style="dots", app=self.controller.app)
         spinner.start()
@@ -110,21 +118,43 @@ class HomenodeTokenView(BaseView):
         )
         self.show_stretchy_overlay(overlay_widget)
         self.request_redraw_if_visible()
+        log.info("Overlay shown, calling check_token")
 
         def on_success():
+            log.info("Token validation successful, proceeding to next screen")
             self.remove_overlay()
+            # Only proceed if validation succeeded
             self.controller.done(token)
 
         def on_failure(status, message):
+            log.warning("Token validation failed: status=%s, message=%s", status, message)
             self.remove_overlay()
+            # Re-enable the form button so user can try again
+            self.form.done_btn.enabled = True
+            self.form.validated()
             self._show_validation_error(status, message)
 
-        self.controller.check_token(token, on_success, on_failure)
+        log.info("About to call controller.check_token with token length: %d", len(token))
+        try:
+            self.controller.check_token(token, on_success, on_failure)
+            log.info("controller.check_token called successfully")
+        except Exception as e:
+            log.exception("Exception calling controller.check_token: %s", e)
+            self.remove_overlay()
+            self.form.done_btn.enabled = True
+            self.form.validated()
+            self._show_validation_error(
+                HomenodeTokenCheckStatus.UNKNOWN_ERROR,
+                f"Failed to start validation: {str(e)}"
+            )
 
     def _cancel_validation(self):
         """Cancel installation key validation."""
         self.controller.cancel_check_token()
         self.remove_overlay()
+        # Re-enable the form button
+        self.form.done_btn.enabled = True
+        self.form.validated()
 
     def _show_validation_error(self, status: HomenodeTokenCheckStatus, message: str):
         """Show validation error message."""

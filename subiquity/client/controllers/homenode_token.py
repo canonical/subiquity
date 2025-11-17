@@ -53,13 +53,22 @@ class HomenodeTokenController(SubiquityTuiController):
         on_failure: Callable[[TokenStatus, Optional[str]], None],
     ) -> None:
         """Asynchronously check the installation key via remote API."""
+        log.info("HomenodeTokenController.check_token called for token: %s", token[:10] + "..." if len(token) > 10 else token)
 
         async def inner() -> None:
-            answer = await self.endpoint.check_token.GET(token)
-            if answer.status == TokenStatus.VALID_TOKEN:
-                on_success()
-            else:
-                on_failure(answer.status, answer.message)
+            try:
+                log.info("Making API call to check_token endpoint")
+                answer = await self.endpoint.check_token.GET(token)
+                log.info("API response: status=%s, message=%s", answer.status, answer.message)
+                if answer.status == TokenStatus.VALID_TOKEN:
+                    log.info("Token is valid, calling on_success")
+                    on_success()
+                else:
+                    log.warning("Token validation failed, calling on_failure")
+                    on_failure(answer.status, answer.message)
+            except Exception as e:
+                log.exception("Exception during token check: %s", e)
+                on_failure(TokenStatus.UNKNOWN_ERROR, str(e))
 
         self._check_task = schedule_task(inner())
 
