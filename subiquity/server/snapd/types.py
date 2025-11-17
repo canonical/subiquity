@@ -293,6 +293,7 @@ class SystemAction(enum.Enum):
     INSTALL = "install"
     CHECK_PASSPHRASE = "check-passphrase"
     CHECK_PIN = "check-pin"
+    FIX_ENCRYPTION_SUPPORT = "fix-encryption-support"
 
 
 class SystemActionStep(enum.Enum):
@@ -349,6 +350,9 @@ class SystemActionRequest:
 
     # For action=CHECK_PASSPHRASE
     passphrase: Optional[str] = None
+
+    # For action=FIX_ENCRYPTION_SUPPORT
+    fix_action: Optional[AvailabilityAction] = None
 
 
 @snapdtype

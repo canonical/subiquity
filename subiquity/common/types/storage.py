@@ -491,3 +491,13 @@ class EntropyResponse:
 class CoreBootEncryptionFeatures(enum.Enum):
     PASSPHRASE_AUTH = "passphrase-auth"
     PIN_AUTH = "pin-auth"
+
+
+@attr.s(auto_attribs=True)
+class CoreBootFixEncryptionSupport:
+    action: CoreBootFixAction
+
+    # If specified, operate on the specified snapd system.
+    # Otherwise, operate on the first core boot classic variation of the
+    # current source.
+    system_label: Optional[str] = None
