@@ -3,7 +3,7 @@
   "status-code": 200,
   "status": "OK",
   "result": {
-    "label": "prefer-encrypted",
+    "label": "prefer-encrypted-passphrase-pin",
     "model": {
       "architecture": "amd64",
       "authority-id": "9XoOBkC2zdzx5CVZdl0ZVYuLpCo15ww0",
