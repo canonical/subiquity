@@ -1,0 +1,238 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": {
+    "label": "prefer-encrypted-passphrase-pin",
+    "model": {
+      "architecture": "amd64",
+      "authority-id": "9XoOBkC2zdzx5CVZdl0ZVYuLpCo15ww0",
+      "base": "core22",
+      "brand-id": "9XoOBkC2zdzx5CVZdl0ZVYuLpCo15ww0",
+      "classic": "true",
+      "distribution": "ubuntu",
+      "grade": "dangerous",
+      "model": "mwhudson-22-classic-dangerous",
+      "serial-authority": [
+        "generic"
+      ],
+      "series": "16",
+      "sign-key-sha3-384": "AWEzKBCuROAYkR0dQfdgI95Ih9sWqwxpU1yezWkKT3EUX6LgNNgXFWSNUxC1S2_v",
+      "snaps": [
+        {
+          "default-channel": "22/edge",
+          "id": "UqFziVZDHLSyO3TqSWgNBoAdHbLI4dAH",
+          "name": "pc",
+          "type": "gadget"
+        },
+        {
+          "default-channel": "22/edge",
+          "id": "pYVQrBcKmBa0mZ4CCN7ExT6jH8rY1hza",
+          "name": "pc-kernel",
+          "type": "kernel"
+        },
+        {
+          "default-channel": "latest/edge",
+          "id": "amcUKQILKXHHTlmSa7NMdnXSx02dNeeT",
+          "name": "core22",
+          "type": "base"
+        },
+        {
+          "default-channel": "latest/edge",
+          "id": "PMrrV4ml8uWuEUDBT8dSGnKUYbevVhc4",
+          "name": "snapd",
+          "type": "snapd"
+        }
+      ],
+      "timestamp": "2022-10-07T02:25:51+00:00",
+      "type": "model"
+    },
+    "brand": {
+      "id": "9XoOBkC2zdzx5CVZdl0ZVYuLpCo15ww0",
+      "username": "mwhudson",
+      "display-name": "Michael Hudson-Doyle",
+      "validation": "unproven"
+    },
+    "actions": [
+      {
+        "title": "Install",
+        "mode": "install"
+      }
+    ],
+    "volumes": {
+      "pc": {
+        "schema": "gpt",
+        "bootloader": "grub",
+        "id": "",
+        "structure": [
+          {
+            "name": "mbr",
+            "filesystem-label": "",
+            "offset": null,
+            "offset-write": null,
+            "size": 440,
+            "type": "mbr",
+            "role": "mbr",
+            "id": "",
+            "filesystem": "",
+            "content": [
+              {
+                "source": "",
+                "target": "",
+                "image": "pc-boot.img",
+                "offset": null,
+                "offset-write": null,
+                "size": 0,
+                "unpack": false
+              }
+            ],
+            "update": {
+              "edition": 1,
+              "preserve": null
+            }
+          },
+          {
+            "name": "BIOS Boot",
+            "filesystem-label": "",
+            "offset": 1048576,
+            "offset-write": {
+              "relative-to": "mbr",
+              "offset": 92
+            },
+            "size": 1048576,
+            "type": "DA,21686148-6449-6E6F-744E-656564454649",
+            "role": "",
+            "id": "",
+            "filesystem": "",
+            "content": [
+              {
+                "source": "",
+                "target": "",
+                "image": "pc-core.img",
+                "offset": null,
+                "offset-write": null,
+                "size": 0,
+                "unpack": false
+              }
+            ],
+            "update": {
+              "edition": 2,
+              "preserve": null
+            }
+          },
+          {
+            "name": "ubuntu-seed",
+            "filesystem-label": "ubuntu-seed",
+            "offset": null,
+            "offset-write": null,
+            "size": 1258291200,
+            "type": "EF,C12A7328-F81F-11D2-BA4B-00A0C93EC93B",
+            "role": "system-seed",
+            "id": "",
+            "filesystem": "vfat",
+            "content": [
+              {
+                "source": "grubx64.efi",
+                "target": "EFI/boot/grubx64.efi",
+                "image": "",
+                "offset": null,
+                "offset-write": null,
+                "size": 0,
+                "unpack": false
+              },
+              {
+                "source": "shim.efi.signed",
+                "target": "EFI/boot/bootx64.efi",
+                "image": "",
+                "offset": null,
+                "offset-write": null,
+                "size": 0,
+                "unpack": false
+              }
+            ],
+            "update": {
+              "edition": 2,
+              "preserve": null
+            }
+          },
+          {
+            "name": "ubuntu-boot",
+            "filesystem-label": "ubuntu-boot",
+            "offset": null,
+            "offset-write": null,
+            "size": 786432000,
+            "type": "83,0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+            "role": "system-boot",
+            "id": "",
+            "filesystem": "ext4",
+            "content": [
+              {
+                "source": "grubx64.efi",
+                "target": "EFI/boot/grubx64.efi",
+                "image": "",
+                "offset": null,
+                "offset-write": null,
+                "size": 0,
+                "unpack": false
+              },
+              {
+                "source": "shim.efi.signed",
+                "target": "EFI/boot/bootx64.efi",
+                "image": "",
+                "offset": null,
+                "offset-write": null,
+                "size": 0,
+                "unpack": false
+              }
+            ],
+            "update": {
+              "edition": 1,
+              "preserve": null
+            }
+          },
+          {
+            "name": "ubuntu-save",
+            "filesystem-label": "ubuntu-save",
+            "offset": null,
+            "offset-write": null,
+            "size": 33554432,
+            "type": "83,0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+            "role": "system-save",
+            "id": "",
+            "filesystem": "ext4",
+            "content": null,
+            "update": {
+              "edition": 0,
+              "preserve": null
+            }
+          },
+          {
+            "name": "ubuntu-data",
+            "filesystem-label": "ubuntu-data",
+            "offset": null,
+            "offset-write": null,
+            "size": 1073741824,
+            "type": "83,0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+            "role": "system-data",
+            "id": "",
+            "filesystem": "ext4",
+            "content": null,
+            "update": {
+              "edition": 0,
+              "preserve": null
+            }
+          }
+        ]
+      }
+    },
+    "storage-encryption": {
+      "support": "available",
+      "storage-safety": "prefer-encrypted",
+      "encryption-type": "cryptsetup",
+      "features": [
+          "passphrase-auth",
+          "pin-auth"
+      ]
+    }
+  }
+}
