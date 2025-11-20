@@ -44,6 +44,7 @@ from subiquity.common.types.storage import (
     Bootloader,
     CalculateEntropyRequest,
     CoreBootEncryptionFeatures,
+    CoreBootEncryptionSupportError,
     Disk,
     EntropyResponse,
     GuidedCapability,
@@ -412,19 +413,24 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             system=system,
         )
 
-        def disallowed_encryption(msg) -> GuidedDisallowedCapability:
+        def disallowed_encryption(
+            msg: str, errors: list[CoreBootEncryptionSupportError] | None = None
+        ) -> GuidedDisallowedCapability:
             GCDR = GuidedDisallowedCapabilityReason
             reason = GCDR.CORE_BOOT_ENCRYPTION_UNAVAILABLE
             return GuidedDisallowedCapability(
                 capability=GuidedCapability.CORE_BOOT_ENCRYPTED,
                 reason=reason,
                 message=msg,
+                errors=errors,
             )
 
         se = system.storage_encryption
         if se.support == snapdtypes.StorageEncryptionSupport.DEFECTIVE:
             info.capability_info.disallowed = [
-                disallowed_encryption(se.unavailable_reason)
+                disallowed_encryption(
+                    se.unavailable_reason, errors=se.availability_check_errors
+                )
             ]
             return info
 
@@ -439,7 +445,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         elif se.support == snapdtypes.StorageEncryptionSupport.UNAVAILABLE:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
             info.capability_info.disallowed = [
-                disallowed_encryption(se.unavailable_reason)
+                disallowed_encryption(
+                    se.unavailable_reason, errors=se.availability_check_errors
+                )
             ]
         elif not has_beta_entropy_check:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
