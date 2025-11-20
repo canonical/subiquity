@@ -32,7 +32,6 @@ from curtin import swap
 from curtin.storage_config import ptable_part_type_to_flag
 from curtin.util import human2bytes
 
-from subiquity.common.api.defs import Payload, api, path_parameter
 from subiquity.common.api.recoverable_error import RecoverableError
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReport, ErrorReportKind
@@ -1093,38 +1092,15 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def fetch_core_boot_recovery_key(self):
         """Fetch the recovery key from snapd and store it in the model."""
-
-        # TODO This is a workaround!
-        # Ideally, we'd want to use self.app.snapdapi here, but SnapdAPI
-        # defines the return type of POST /v2/systems/{system-label} as a
-        # ChangeID (which is only true for async responses) and we don't have
-        # the needed support for Union types.
-        # For now, let's define a fake API definition and create a new snapd
-        # client out of it.
-        @api
-        class AlternateSnapdAPI:
-            class v2:
-                class systems:
-                    @path_parameter
-                    class label:
-                        def POST(
-                            action: Payload[snapdtypes.SystemActionRequest],
-                        ) -> snapdtypes.SystemActionResponseGenerateRecoveryKey: ...
-
-        snapd_client = snapdapi.make_api_client(
-            self.app.snapd,
-            api_class=AlternateSnapdAPI,
-            log_responses=self.app.snapdapi.log_responses,
-        )
-
         label = self._info.label
 
-        result = await snapd_client.v2.systems[label].POST(
+        result = await self.app.snapdapi.v2.systems[label].POST(
             snapdtypes.SystemActionRequest(
                 action=snapdtypes.SystemAction.INSTALL,
                 step=snapdtypes.SystemActionStep.GENERATE_RECOVERY_KEY,
                 on_volumes={},
             ),
+            return_type=snapdtypes.SystemActionResponseGenerateRecoveryKey,
         )
 
         self.model.set_core_boot_recovery_key(result.recovery_key)
@@ -1690,7 +1666,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     @exclusive
     async def do_entropy_check(
         self,
-        snapd_client,
         request: snapdtypes.SystemActionRequest,
         variation_info: VariationInfo,
     ) -> snapdtypes.EntropyCheckResponse:
@@ -1699,8 +1674,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 mounter = SystemsDirMounter(self.app, variation_info.name)
                 await es.enter_async_context(mounter.mounted())
 
-            return await snapd_client.v2.systems[variation_info.label].POST(
-                request, raise_for_status=False
+            return await self.app.snapdapi.v2.systems[variation_info.label].POST(
+                request,
+                raise_for_status=False,
+                return_type=snapdtypes.EntropyCheckResponse,
             )
 
     async def v2_calculate_entropy_POST(
@@ -1742,30 +1719,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 passphrase=data.passphrase,
             )
 
-        # TODO This is a workaround!
-        # Ideally, we'd want to use self.app.snapdapi here, but SnapdAPI
-        # defines the return type of POST /v2/systems/{system-label} as a
-        # ChangeID (which is only true for async responses) and we don't have
-        # the needed support for Union types.
-        # For now, let's define a fake API definition and create a new snapd
-        # client out of it.
-        @api
-        class AlternateSnapdAPI:
-            class v2:
-                class systems:
-                    @path_parameter
-                    class label:
-                        def POST(
-                            action: Payload[snapdtypes.SystemActionRequest],
-                        ) -> snapdtypes.EntropyCheckResponse: ...
-
-        snapd_client = snapdapi.make_api_client(
-            self.app.snapd,
-            api_class=AlternateSnapdAPI,
-            log_responses=self.app.snapdapi.log_responses,
-        )
-
-        result = await self.do_entropy_check(snapd_client, request, info)
+        result = await self.do_entropy_check(request, info)
 
         # TODO check the response-code instead.
         if result.entropy_bits is not None:
