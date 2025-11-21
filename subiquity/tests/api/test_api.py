@@ -674,6 +674,98 @@ class TestCore(TestAPI):
             with self.assertRaises(ClientResponseError):
                 await inst.post("/storage/v2/guided", data)
 
+    @timeout()
+    async def test_core_boot_with_recovery_key(self):
+        cfg = self.machineConfig("examples/machines/simple.json")
+        with cfg.edit() as data:
+            attrs = data["storage"]["blockdev"]["/dev/sda"]["attrs"]
+            attrs["size"] = str(25 << 30)
+        kw = dict(
+            extra_args=[
+                "--storage-version",
+                "2",
+                "--source-catalog",
+                "examples/sources/tpm.yaml",
+                "--dry-run-config",
+                "examples/dry-run-configs/tpm.yaml",
+            ],
+        )
+        async with start_server(cfg, **kw) as inst:
+            await inst.post("/source", source_id="src-mandatory")
+            resp = await inst.get("/storage/v2/guided", wait=True)
+            [reformat] = resp["targets"]
+            self.assertEqual("GuidedStorageTargetReformat", reformat["$type"])
+            self.assertEqual(["CORE_BOOT_ENCRYPTED"], reformat["allowed"])
+            data = {
+                "target": reformat,
+                "capability": "CORE_BOOT_ENCRYPTED",
+            }
+            resp = await inst.post("/storage/v2/guided", data)
+            await inst.post("/storage/v2")
+            names = [
+                "locale",
+                "keyboard",
+                "source",
+                "network",
+                "proxy",
+                "mirror",
+                "ubuntu_pro",
+                "identity",
+                "codecs",
+                "timezone",
+                "drivers",
+            ]
+            await inst.post("/meta/mark_configured", endpoint_names=names)
+            await inst.get("/meta/status", cur="WAITING")
+            await inst.post("/meta/confirm", tty="/dev/tty1")
+            await inst.get("/meta/status", cur="NEEDS_CONFIRMATION")
+            for state in "RUNNING", "WAITING", "RUNNING", "UU_RUNNING":
+                await inst.get("/meta/status", cur=state)
+            key = await inst.get("/storage/v2/core_boot_recovery_key")
+            self.assertEqual("my-recovery-key", key)
+
+    @timeout()
+    async def test_core_boot_with_passphrase(self):
+        cfg = self.machineConfig("examples/machines/simple.json")
+        with cfg.edit() as data:
+            attrs = data["storage"]["blockdev"]["/dev/sda"]["attrs"]
+            attrs["size"] = str(25 << 30)
+        kw = dict(
+            extra_args=[
+                "--storage-version",
+                "2",
+                "--source-catalog",
+                "examples/sources/tpm.yaml",
+                "--dry-run-config",
+                "examples/dry-run-configs/tpm.yaml",
+            ],
+        )
+        async with start_server(cfg, **kw) as inst:
+            await inst.post("/source", source_id="src-prefer-encrypted-passphrase")
+            resp = await inst.get("/storage/v2/guided", wait=True)
+            [reformat] = resp["targets"]
+            self.assertEqual("GuidedStorageTargetReformat", reformat["$type"])
+            self.assertEqual(["CORE_BOOT_PREFER_ENCRYPTED"], reformat["allowed"])
+            resp = await inst.get("/storage/v2/core_boot_encryption_features")
+            self.assertEqual(["PASSPHRASE_AUTH"], resp)
+            resp = await inst.post("/storage/v2/calculate_entropy", {"passphrase": "a"})
+            self.assertFalse(resp["success"])
+            self.assertEqual(["low-entropy"], resp["failure_reasons"])
+            # Make sure the passphrase is long enough (3 is an arbitrary number)
+            passphrase = "a" * resp["min_entropy_bits"] * 3
+            resp = await inst.post(
+                "/storage/v2/calculate_entropy", {"passphrase": passphrase}
+            )
+            self.assertTrue(resp["success"])
+            self.assertIsNone(resp["failure_reasons"])
+            data = {
+                "target": reformat,
+                "capability": "CORE_BOOT_ENCRYPTED",
+                "password": passphrase,
+            }
+            await inst.post("/storage/v2/guided", data)
+            await inst.post("/storage/v2")
+
 
 class TestAdd(TestAPI):
     @timeout()
