@@ -14,9 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
+import typing
 import unittest
 
-from subiquity.common.api.client import make_client
+from subiquity.common.api.client import make_client, validate_types_compatibles
 from subiquity.common.api.defs import InvalidQueryArgs, Payload, api, path_parameter
 
 
@@ -38,6 +39,28 @@ class FakeResponse:
 
     async def json(self):
         return self.data
+
+
+class TestValidateTypesCompatible(unittest.TestCase):
+    def test_equal_types(self):
+        # No type narrowing
+        validate_types_compatibles(int, int)
+
+    def test_narrow(self):
+        validate_types_compatibles(typing.Union[int, str], int)
+        validate_types_compatibles(typing.Union[int, str], str)
+
+    def test_narrow_pep604(self):
+        validate_types_compatibles(int | str, int)
+        validate_types_compatibles(int | str, str)
+
+    def test_not_union(self):
+        with self.assertRaisesRegex(ValueError, r"only supported with union"):
+            validate_types_compatibles(int, str)
+
+    def test_not_narrow(self):
+        with self.assertRaisesRegex(ValueError, r"invalid type narrowing"):
+            validate_types_compatibles(int | str, float)
 
 
 class TestClient(unittest.TestCase):

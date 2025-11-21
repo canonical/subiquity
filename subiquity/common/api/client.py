@@ -15,12 +15,34 @@
 
 import contextlib
 import inspect
+import types
+import typing
 
 import aiohttp
 
 from subiquity.common.serialize import Serializer
 
 from .defs import Payload
+
+
+def validate_types_compatibles(orig, expected):
+    """Ensure that the expected type is compatible with orig. It must either be
+    the same type or a narrower version of it."""
+    if expected == orig:
+        # Types are the same, no narrowing but types are compatible.
+        return
+    if not (
+        typing.get_origin(orig) is typing.Union
+        or typing.get_origin(orig) is types.UnionType
+    ):
+        raise ValueError("type narrowing only supported with union types")
+
+    for arg in orig.__args__:
+        if arg == expected:
+            # This is actual narrowing
+            return
+
+    raise ValueError(f"invalid type narrowing: {expected} is not in {orig}")
 
 
 def _wrap(make_request, path, meth, serializer, serialize_query_args):
@@ -34,6 +56,12 @@ def _wrap(make_request, path, meth, serializer, serialize_query_args):
     r_ann = sig.return_annotation
 
     async def impl(self, *args, raise_for_status=True, **kw):
+        if "return_type" in kw:
+            validate_types_compatibles(orig=r_ann, expected=kw["return_type"])
+            return_annotation = kw.pop("return_type")
+        else:
+            return_annotation = r_ann
+
         args = sig.bind(*args, **kw)
         query_args = {}
         data = None
@@ -53,7 +81,7 @@ def _wrap(make_request, path, meth, serializer, serialize_query_args):
         ) as resp:
             if raise_for_status:
                 resp.raise_for_status()
-            return serializer.deserialize(r_ann, await resp.json())
+            return serializer.deserialize(return_annotation, await resp.json())
 
     return impl
 
