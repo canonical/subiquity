@@ -45,6 +45,9 @@ from subiquity.common.types.storage import (
     Bootloader,
     CalculateEntropyRequest,
     CoreBootEncryptionFeatures,
+    CoreBootEncryptionSupportError,
+    CoreBootFixAction,
+    CoreBootFixEncryptionSupport,
     Disk,
     EntropyResponse,
     GuidedCapability,
@@ -413,19 +416,24 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             system=system,
         )
 
-        def disallowed_encryption(msg) -> GuidedDisallowedCapability:
+        def disallowed_encryption(
+            msg: str, errors: list[CoreBootEncryptionSupportError] | None = None
+        ) -> GuidedDisallowedCapability:
             GCDR = GuidedDisallowedCapabilityReason
             reason = GCDR.CORE_BOOT_ENCRYPTION_UNAVAILABLE
             return GuidedDisallowedCapability(
                 capability=GuidedCapability.CORE_BOOT_ENCRYPTED,
                 reason=reason,
                 message=msg,
+                errors=errors,
             )
 
         se = system.storage_encryption
         if se.support == snapdtypes.StorageEncryptionSupport.DEFECTIVE:
             info.capability_info.disallowed = [
-                disallowed_encryption(se.unavailable_reason)
+                disallowed_encryption(
+                    se.unavailable_reason, errors=se.availability_check_errors
+                )
             ]
             return info
 
@@ -440,7 +448,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         elif se.support == snapdtypes.StorageEncryptionSupport.UNAVAILABLE:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
             info.capability_info.disallowed = [
-                disallowed_encryption(se.unavailable_reason)
+                disallowed_encryption(
+                    se.unavailable_reason, errors=se.availability_check_errors
+                )
             ]
         elif not has_beta_entropy_check:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
@@ -1845,6 +1855,74 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             return [CoreBootEncryptionFeatures(feature.value) for feature in features]
 
         raise StorageInvalidUsageError("no suitable variation for core boot")
+
+    async def v2_core_boot_fix_encryption_support_POST(
+        self, data: CoreBootFixEncryptionSupport
+    ) -> None:
+        # TODO This is a workaround!
+        # Ideally, we'd want to use self.app.snapdapi here, but SnapdAPI
+        # defines the return type of POST /v2/systems/{system-label} as a
+        # ChangeID (which is only true for async responses) and we don't have
+        # the needed support for Union types.
+        # For now, let's define a fake API definition and create a new snapd
+        # client out of it.
+        @api
+        class AlternateSnapdAPI:
+            class v2:
+                class systems:
+                    @path_parameter
+                    class label:
+                        def POST(
+                            action: Payload[snapdtypes.SystemActionRequest],
+                        ) -> snapdtypes.SystemDetails: ...
+
+        snapd_client = snapdapi.make_api_client(
+            self.app.snapd,
+            api_class=AlternateSnapdAPI,
+            log_responses=self.app.snapdapi.log_responses,
+        )
+
+        # Note that although we could, we currently do not look for
+        # self._info.label here if the system label is not specified. This is
+        # because in the normal flow, fix-encryption-support is called *before*
+        # choosing a variation.
+        for variation in self._variation_info.values():
+            if data.system_label is not None and variation.label != data.system_label:
+                continue
+            if variation.is_core_boot_classic():
+                break
+        else:
+            raise RuntimeError("could not find relevant core boot classic variation")
+
+        if data.action in (CoreBootFixAction.REBOOT, CoreBootFixAction.SHUTDOWN):
+            # TODO implement here.
+            raise NotImplementedError
+
+        system = await snapd_client.v2.systems[variation.label].POST(
+            snapdtypes.SystemActionRequest(
+                action=snapdtypes.SystemAction.FIX_ENCRYPTION_SUPPORT,
+                fix_action=data.action,
+            ),
+        )
+
+        # Ideally, we should update the existing variation rather than recreating it.
+        # This will save us a call to snapd and the logic will be cleaner.
+        try:
+            has_beta_entropy_check = await self.app.snapdinfo.has_beta_entropy_check()
+        except ValueError as exc:
+            log.debug(
+                "cannot check if snapd has beta entropy check, assuming yes: %s", exc
+            )
+            has_beta_entropy_check = True
+
+        info = self.info_for_system(
+            variation.name,
+            variation.label,
+            system,
+            has_beta_entropy_check=has_beta_entropy_check,
+        )
+        self._maybe_disable_encryption(info)
+        self._variation_info[variation.name] = info
 
     async def dry_run_wait_probe_POST(self) -> None:
         if not self.app.opts.dry_run:
