@@ -30,5 +30,11 @@ async def initiate_reboot() -> None:
     await arun_command(["systemctl", "reboot", "--ignore-inhibitors"])
 
 
+async def initiate_reboot_to_fw_settings() -> None:
+    await arun_command(
+        ["systemctl", "reboot", "--firmware-setup", "--ignore-inhibitors"]
+    )
+
+
 async def initiate_poweroff() -> None:
     await arun_command(["systemctl", "poweroff", "--ignore-inhibitors"])

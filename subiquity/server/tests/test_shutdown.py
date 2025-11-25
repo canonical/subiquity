@@ -40,6 +40,27 @@ class TestInitiateShutdown(unittest.IsolatedAsyncioTestCase):
             ["systemctl", "reboot", "--ignore-inhibitors"]
         )
 
+    async def test_reboot_to_fw_success(self, arun_command):
+        await shutdown.initiate_reboot_to_fw_settings()
+        arun_command.assert_called_once_with(
+            ["systemctl", "reboot", "--firmware-setup", "--ignore-inhibitors"]
+        )
+
+    async def test_reboot_to_fw_failure(self, arun_command):
+        arun_command.side_effect = subprocess.CalledProcessError(
+            cmd=["systemctl", "..."],
+            returncode=1,
+            stderr="Cannot indicate to EFI to boot into setup mode:"
+            " Firmware does not support boot into firmware.",
+        )
+
+        with self.assertRaises(subprocess.CalledProcessError):
+            await shutdown.initiate_reboot_to_fw_settings()
+
+        arun_command.assert_called_once_with(
+            ["systemctl", "reboot", "--firmware-setup", "--ignore-inhibitors"]
+        )
+
     async def test_poweroff_success(self, arun_command):
         await shutdown.initiate_poweroff()
         arun_command.assert_called_once_with(
