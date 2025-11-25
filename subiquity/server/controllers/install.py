@@ -718,29 +718,41 @@ class InstallController(SubiquityController):
 
         groups = get_users_and_groups(self.model.chroot_prefix)
 
-        cmd = [
-            "useradd",
-            user.username,
-            "--comment",
-            user.realname,
-            "--password",
-            user.password,
-            "--shell",
-            "/bin/bash",
-            "--groups",
-            ",".join(sorted(groups)),
-            "--create-home",
-        ]
+        async def run_in_target(cmd: list[str], **kwargs):
+            await run_curtin_command(
+                self.app,
+                context,
+                "in-target",
+                "-t",
+                self.tpath(),
+                "--",
+                *cmd,
+                private_mounts=False,
+                **kwargs,
+            )
 
-        await run_curtin_command(
-            self.app,
-            context,
-            "in-target",
-            "-t",
-            self.tpath(),
-            "--",
-            *cmd,
-            private_mounts=False,
+        # NOTE: useradd supports the --password option but using it here would
+        # leak the hashed password if something logs the call to useradd. This
+        # is true for us since we're leaning on systemd-run to execute
+        # commands. Instead, we create a password-less user and immediately
+        # call chpasswd, which can read the password via stdin.
+        await run_in_target(
+            [
+                "useradd",
+                user.username,
+                "--comment",
+                user.realname,
+                "--shell",
+                "/bin/bash",
+                "--groups",
+                ",".join(sorted(groups)),
+                "--create-home",
+            ]
+        )
+        await run_in_target(
+            ["chpasswd", "--encrypted"],
+            input=f"{user.username}:{user.password}".encode("utf-8"),
+            capture=True,
         )
 
     @with_context(

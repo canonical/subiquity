@@ -20,7 +20,7 @@ import tempfile
 import unittest
 import uuid
 from pathlib import Path
-from unittest.mock import ANY, AsyncMock, Mock, mock_open, patch
+from unittest.mock import ANY, AsyncMock, Mock, call, mock_open, patch
 
 from curtin.util import EFIBootEntry, EFIBootState
 
@@ -288,22 +288,44 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
             User(username="user", password="$6$xxx12345", realname="my user"),
         ):
             await self.controller.create_users(Mock())
-        expected_cmd = [
+        expected_useradd = [
             "useradd",
             "user",
             "--comment",
             "my user",
-            "--password",
-            "$6$xxx12345",
             "--shell",
             "/bin/bash",
             "--groups",
             "admin,sudo",
             "--create-home",
         ]
-        run_curtin_cmd.assert_called_once_with(
-            ANY, ANY, "in-target", "-t", ANY, "--", *expected_cmd, private_mounts=False
-        )
+        expected_chpasswd = ["chpasswd", "--encrypted"]
+
+        expected_calls = [
+            call(
+                ANY,
+                ANY,
+                "in-target",
+                "-t",
+                ANY,
+                "--",
+                *expected_useradd,
+                private_mounts=False,
+            ),
+            call(
+                ANY,
+                ANY,
+                "in-target",
+                "-t",
+                ANY,
+                "--",
+                *expected_chpasswd,
+                private_mounts=False,
+                input=b"user:$6$xxx12345",
+                capture=True,
+            ),
+        ]
+        self.assertEqual(expected_calls, run_curtin_cmd.mock_calls)
 
     @patch("subiquity.server.controllers.install.run_curtin_command")
     async def test_create_users_no_identity(self, run_curtin_cmd):
