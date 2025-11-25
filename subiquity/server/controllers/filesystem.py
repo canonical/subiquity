@@ -87,6 +87,7 @@ from subiquity.models.filesystem import (
     align_up,
     humanize_size,
 )
+from subiquity.server import shutdown
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
@@ -1813,6 +1814,16 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_core_boot_fix_encryption_support_POST(
         self, data: CoreBootFixEncryptionSupport
     ) -> None:
+        if data.action == CoreBootFixAction.REBOOT:
+            await shutdown.initiate_reboot()
+            return
+        elif data.action == CoreBootFixAction.REBOOT_TO_FW_SETTINGS:
+            await shutdown.initiate_reboot_to_fw_settings()
+            return
+        elif data.action == CoreBootFixAction.SHUTDOWN:
+            await shutdown.initiate_poweroff()
+            return
+
         # Note that although we could, we currently do not look for
         # self._info.label here if the system label is not specified. This is
         # because in the normal flow, fix-encryption-support is called *before*
@@ -1824,10 +1835,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 break
         else:
             raise RuntimeError("could not find relevant core boot classic variation")
-
-        if data.action in (CoreBootFixAction.REBOOT, CoreBootFixAction.SHUTDOWN):
-            # TODO implement here.
-            raise NotImplementedError
 
         system = await self.app.snapdapi.v2.systems[variation.label].POST(
             snapdtypes.SystemActionRequest(
