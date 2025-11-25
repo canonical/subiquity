@@ -26,7 +26,7 @@ from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.context import with_context
 from subiquitycore.file_util import open_perms, set_log_perms
-from subiquitycore.utils import run_command
+from subiquitycore.utils import arun_command
 
 log = logging.getLogger("subiquity.server.controllers.shutdown")
 
@@ -143,6 +143,6 @@ class ShutdownController(SubiquityController):
             # --ignore-inhibitors, or the --force option is used.
             # See LP: #2092438
             if self.mode == ShutdownMode.REBOOT:
-                run_command(["systemctl", "reboot", "--ignore-inhibitors"])
+                await arun_command(["systemctl", "reboot", "--ignore-inhibitors"])
             elif self.mode == ShutdownMode.POWEROFF:
-                run_command(["systemctl", "poweroff", "--ignore-inhibitors"])
+                await arun_command(["systemctl", "poweroff", "--ignore-inhibitors"])
