@@ -451,12 +451,12 @@ class SubiquityModel:
 
     def render(self):
         config = {
-            "grub": {
-                "terminal": "unmodified",
-                "probe_additional_os": True,
-                "reorder_uefi": False,
-                "remove_old_uefi_loaders": False,
-            },
+            # "grub": {
+            #     "terminal": "unmodified",
+            #     "probe_additional_os": True,
+            #     "reorder_uefi": False,
+            #     "remove_old_uefi_loaders": False,
+            # },
             "install": {
                 "unmount": "disabled",
                 "save_install_config": False,
