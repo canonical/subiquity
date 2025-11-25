@@ -17,7 +17,7 @@ import asyncio
 import os
 import subprocess
 from contextlib import suppress
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from subiquitycore.utils import astart_command
 
@@ -47,7 +47,11 @@ class LoggedCommandRunner:
             self.use_systemd_user = os.geteuid() != 0
 
     def _forge_systemd_cmd(
-        self, cmd: List[str], private_mounts: bool, capture: bool
+        self,
+        cmd: List[str],
+        private_mounts: bool,
+        capture: bool,
+        stdin: Literal[subprocess.PIPE, subprocess.DEVNULL],
     ) -> List[str]:
         """Return the supplied command prefixed with the systemd-run stuff."""
         prefix = [
@@ -61,11 +65,9 @@ class LoggedCommandRunner:
             prefix.extend(("--property", "PrivateMounts=yes"))
         if self.use_systemd_user:
             prefix.append("--user")
-        if capture:
-            # NOTE Using --pipe seems to be the simplest way to capture the
-            # output of the child process.  However, let's keep in mind that
-            # --pipe also opens a pipe on stdin. This will effectively make the
-            # child process behave differently if it reads from stdin.
+        if stdin == subprocess.PIPE or capture:
+            if stdin == subprocess.PIPE and not capture:
+                raise ValueError("cannot pipe stdin but not stdout/stderr")
             prefix.append("--pipe")
         for key in self.env_allowlist:
             with suppress(KeyError):
@@ -81,19 +83,28 @@ class LoggedCommandRunner:
         *,
         private_mounts: bool = False,
         capture: bool = False,
+        stdin: Literal[subprocess.PIPE, subprocess.DEVNULL] = subprocess.DEVNULL,
         **astart_kwargs,
     ) -> asyncio.subprocess.Process:
         forged: List[str] = self._forge_systemd_cmd(
-            cmd, private_mounts=private_mounts, capture=capture
+            cmd,
+            private_mounts=private_mounts,
+            capture=capture,
+            stdin=stdin,
         )
-        proc = await astart_command(forged, **astart_kwargs)
+
+        proc = await astart_command(forged, stdin=stdin, **astart_kwargs)
+
         proc.args = forged
+
         return proc
 
     async def wait(
-        self, proc: asyncio.subprocess.Process
+        self,
+        proc: asyncio.subprocess.Process,
+        input: Optional[bytes] = None,
     ) -> subprocess.CompletedProcess:
-        stdout, stderr = await proc.communicate()
+        stdout, stderr = await proc.communicate(input=input)
         # .communicate() forces returncode to be set to a value
         assert proc.returncode is not None
         if proc.returncode != 0:
@@ -105,9 +116,12 @@ class LoggedCommandRunner:
                 proc.args, proc.returncode, stdout=stdout, stderr=stderr
             )
 
-    async def run(self, cmd: List[str], **opts) -> subprocess.CompletedProcess:
-        proc = await self.start(cmd, **opts)
-        return await self.wait(proc)
+    async def run(
+        self, cmd: List[str], input: Optional[bytes] = None, **opts
+    ) -> subprocess.CompletedProcess:
+        stdin = subprocess.PIPE if input is not None else subprocess.DEVNULL
+        proc = await self.start(cmd, stdin=stdin, **opts)
+        return await self.wait(proc, input=input)
 
 
 class DryRunCommandRunner(LoggedCommandRunner):
@@ -118,7 +132,11 @@ class DryRunCommandRunner(LoggedCommandRunner):
         self.delay = delay
 
     def _forge_systemd_cmd(
-        self, cmd: List[str], private_mounts: bool, capture: bool
+        self,
+        cmd: List[str],
+        private_mounts: bool,
+        capture: bool,
+        stdin: Literal[subprocess.PIPE, subprocess.DEVNULL],
     ) -> List[str]:
         if "scripts/replay-curtin-log.py" in cmd:
             # We actually want to run this command
@@ -127,7 +145,10 @@ class DryRunCommandRunner(LoggedCommandRunner):
             prefixed_command = ["echo", "not running:"] + cmd
 
         return super()._forge_systemd_cmd(
-            prefixed_command, private_mounts=private_mounts, capture=capture
+            prefixed_command,
+            private_mounts=private_mounts,
+            capture=capture,
+            stdin=stdin,
         )
 
     def _get_delay_for_cmd(self, cmd: List[str]) -> float:
