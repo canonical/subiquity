@@ -21,7 +21,7 @@ import os
 import re
 import subprocess
 import sys
-from typing import Dict, List, Type
+from typing import Dict, List, Optional, Type
 
 import yaml
 
@@ -121,8 +121,8 @@ class _CurtinCommand:
             self._cmd, **opts, private_mounts=self.private_mounts
         )
 
-    async def wait(self):
-        result = await self.runner.wait(self.proc)
+    async def wait(self, input: Optional[bytes] = None):
+        result = await self.runner.wait(self.proc, input=input)
         waited = 0.0
         while len(self._event_contexts) > 1 and waited < 5.0:
             await asyncio.sleep(0.1)
@@ -216,8 +216,21 @@ async def start_curtin_command(
 
 
 async def run_curtin_command(
-    app, context, command: str, *args: str, config=None, private_mounts: bool, **opts
+    app,
+    context,
+    command: str,
+    *args: str,
+    config=None,
+    private_mounts: bool,
+    input: Optional[bytes] = None,
+    **opts,
 ) -> subprocess.CompletedProcess:
+
+    if input is not None:
+        stdin = subprocess.PIPE
+    else:
+        stdin = subprocess.DEVNULL
+
     cmd = await start_curtin_command(
         app,
         context,
@@ -225,6 +238,7 @@ async def run_curtin_command(
         *args,
         config=config,
         private_mounts=private_mounts,
+        stdin=stdin,
         **opts,
     )
-    return await cmd.wait()
+    return await cmd.wait(input=input)
