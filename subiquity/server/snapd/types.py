@@ -19,7 +19,7 @@ from typing import Dict, List, Optional, Self
 import attr
 
 from subiquity.common.serialize import NonExhaustive, named_field
-from subiquity.common.types.storage import GuidedChoiceV2
+from subiquity.common.types import storage as storagetypes
 
 RFC3339 = "%Y-%m-%dT%H:%M:%S.%fZ"
 
@@ -202,6 +202,18 @@ class EncryptionFeature(enum.Enum):
     PIN_AUTH = "pin-auth"
 
 
+AvailabilityAction = storagetypes.CoreBootFixAction
+AvailabilityErrorKind = storagetypes.CoreBootAvailabilityErrorKind
+
+
+@snapdtype
+class AvailabilityCheckError:
+    kind: AvailabilityErrorKind
+    message: str
+    # TODO args
+    actions: List[AvailabilityAction]
+
+
 @snapdtype
 class StorageEncryption:
     support: StorageEncryptionSupport
@@ -210,6 +222,9 @@ class StorageEncryption:
     unavailable_reason: str = ""
     # Since snapd 2.68
     features: Optional[List[EncryptionFeature]] = None
+
+    # Since snapd 2.71 <-- to be confirmed once released.
+    availability_check_errors: Optional[List[AvailabilityCheckError]] = None
 
 
 @snapdtype
@@ -278,6 +293,7 @@ class SystemAction(enum.Enum):
     INSTALL = "install"
     CHECK_PASSPHRASE = "check-passphrase"
     CHECK_PIN = "check-pin"
+    FIX_ENCRYPTION_SUPPORT = "fix-encryption-support"
 
 
 class SystemActionStep(enum.Enum):
@@ -307,7 +323,9 @@ class VolumesAuth:
     # kdf-type: Optional["argon2id"|"argon2i"|"pbkdf2"]
 
     @classmethod
-    def from_choice(cls, choice: GuidedChoiceV2) -> Optional["VolumesAuth"]:
+    def from_choice(
+        cls, choice: storagetypes.GuidedChoiceV2
+    ) -> Optional["VolumesAuth"]:
         if choice.password is not None:
             return cls(mode=VolumesAuthMode.PASSPHRASE, passphrase=choice.password)
         elif choice.pin is not None:
@@ -332,6 +350,9 @@ class SystemActionRequest:
 
     # For action=CHECK_PASSPHRASE
     passphrase: Optional[str] = None
+
+    # For action=FIX_ENCRYPTION_SUPPORT
+    fix_action: Optional[AvailabilityAction] = None
 
 
 @snapdtype

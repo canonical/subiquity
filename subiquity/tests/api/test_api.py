@@ -766,6 +766,45 @@ class TestCore(TestAPI):
             await inst.post("/storage/v2/guided", data)
             await inst.post("/storage/v2")
 
+    async def test_core_boot_fix_encryption_support(self):
+        cfg = self.machineConfig("examples/machines/simple.json")
+        with cfg.edit() as data:
+            attrs = data["storage"]["blockdev"]["/dev/sda"]["attrs"]
+            attrs["size"] = str(25 << 30)
+        kw = dict(
+            extra_args=[
+                "--storage-version",
+                "2",
+                "--source-catalog",
+                "examples/sources/tpm.yaml",
+                "--dry-run-config",
+                "examples/dry-run-configs/tpm.yaml",
+            ],
+        )
+        async with start_server(cfg, **kw) as inst:
+            await inst.post("/source", source_id="src-unavailable")
+            resp = await inst.get("/storage/v2/guided", wait=True)
+            [reformat] = resp["targets"]
+            self.assertEqual(["CORE_BOOT_UNENCRYPTED"], reformat["allowed"])
+            [cap] = reformat["disallowed"]
+            self.assertEqual("CORE_BOOT_ENCRYPTED", cap["capability"])
+            expected_errors = [
+                {
+                    "kind": "TPM_DEVICE_DISABLED",
+                    "message": "...",
+                    "actions": ["ENABLE_TPM_VIA_FIRMWARE"],
+                },
+            ]
+            self.assertEqual(expected_errors, cap["errors"])
+            data = {
+                "action": "ENABLE_TPM_VIA_FIRMWARE",
+            }
+            await inst.post("/storage/v2/core_boot_fix_encryption_support", data)
+            resp = await inst.get("/storage/v2/guided", wait=True)
+            [reformat] = resp["targets"]
+            self.assertEqual(["CORE_BOOT_PREFER_ENCRYPTED"], reformat["allowed"])
+            self.assertFalse(reformat["disallowed"])
+
 
 class TestAdd(TestAPI):
     @timeout()
