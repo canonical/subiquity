@@ -1814,15 +1814,20 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_core_boot_fix_encryption_support_POST(
         self, data: CoreBootFixEncryptionSupport
     ) -> None:
-        if data.action == CoreBootFixAction.REBOOT:
-            await shutdown.initiate_reboot()
-            return
-        elif data.action == CoreBootFixAction.REBOOT_TO_FW_SETTINGS:
-            await shutdown.initiate_reboot_to_fw_settings()
-            return
-        elif data.action == CoreBootFixAction.SHUTDOWN:
-            await shutdown.initiate_poweroff()
-            return
+        # Actions that are handled by Subiquity, not snapd.
+        local_actions = {
+            CoreBootFixAction.REBOOT: shutdown.initiate_reboot,
+            CoreBootFixAction.REBOOT_TO_FW_SETTINGS: shutdown.initiate_reboot_to_fw_settings,
+            CoreBootFixAction.SHUTDOWN: shutdown.initiate_poweroff,
+        }
+
+        if data.action in local_actions:
+            if self.app.opts.dry_run:
+                self.app.exit()
+                return
+            else:
+                await local_actions[data.action]()
+                return
 
         # Note that although we could, we currently do not look for
         # self._info.label here if the system label is not specified. This is
