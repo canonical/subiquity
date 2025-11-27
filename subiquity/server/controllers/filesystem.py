@@ -465,10 +465,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         se = system.storage_encryption
         if se.support == snapdtypes.StorageEncryptionSupport.DEFECTIVE:
+            errs = None
+            if se.availability_check_errors is not None:
+                errs = [
+                    CoreBootEncryptionSupportError.from_snapd(err)
+                    for err in se.availability_check_errors
+                ]
             info.capability_info.disallowed = [
-                disallowed_encryption(
-                    se.unavailable_reason, errors=se.availability_check_errors
-                )
+                disallowed_encryption(se.unavailable_reason, errors=errs)
             ]
             return info
 
@@ -482,10 +486,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             info.capability_info.disallowed = [disallowed_encryption(msg)]
         elif se.support == snapdtypes.StorageEncryptionSupport.UNAVAILABLE:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
+            errs = None
+            if se.availability_check_errors is not None:
+                errs = [
+                    CoreBootEncryptionSupportError.from_snapd(err)
+                    for err in se.availability_check_errors
+                ]
             info.capability_info.disallowed = [
-                disallowed_encryption(
-                    se.unavailable_reason, errors=se.availability_check_errors
-                )
+                disallowed_encryption(se.unavailable_reason, errors=errs)
             ]
         elif not has_beta_entropy_check:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
