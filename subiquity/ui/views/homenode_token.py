@@ -19,11 +19,11 @@ import re
 from urwid import LineBox, Pile, Text, connect_signal
 
 from subiquity.common.types import HomenodeTokenCheckStatus
-from subiquitycore.ui.buttons import button_pile, cancel_btn, done_btn
+from subiquitycore.ui.buttons import cancel_btn, done_btn
 from subiquitycore.ui.form import Form, simple_field
 from subiquitycore.ui.interactive import StringEditor
 from subiquitycore.ui.spinner import Spinner
-from subiquitycore.ui.utils import Color, screen
+from subiquitycore.ui.utils import Color, button_pile, screen
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquity.ui.views.homenode_token")
