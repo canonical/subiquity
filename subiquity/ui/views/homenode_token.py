@@ -16,13 +16,14 @@
 import logging
 import re
 
-from urwid import LineBox, Pile, Text, connect_signal
+from urwid import Text, connect_signal
 
 from subiquity.common.types import HomenodeTokenCheckStatus
 from subiquitycore.ui.buttons import cancel_btn, done_btn
 from subiquitycore.ui.form import Form, simple_field
 from subiquitycore.ui.interactive import StringEditor
 from subiquitycore.ui.spinner import Spinner
+from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.utils import Color, button_pile, screen
 from subiquitycore.view import BaseView
 
@@ -33,6 +34,45 @@ TOKEN_PATTERN = r"^[a-zA-Z0-9]+-[a-zA-Z0-9]+-[a-zA-Z0-9]+-[a-zA-Z0-9]+-[a-zA-Z0-
 
 
 TokenField = simple_field(StringEditor)
+
+
+class CheckingTokenStretchy(Stretchy):
+    """Overlay that shows a spinner while checking the installation key."""
+    
+    def __init__(self, parent, on_cancel):
+        self.parent = parent
+        self.on_cancel = on_cancel
+        
+        spinner = Spinner(style="dots", app=parent.controller.app)
+        spinner.start()
+        
+        widgets = [
+            Text(_("Checking installation key...")),
+            spinner,
+            Text(""),
+            button_pile([cancel_btn(label=_("Cancel"), on_press=self._cancel)]),
+        ]
+        super().__init__(_("Validating"), widgets, 0, 0)
+    
+    def _cancel(self, sender=None):
+        self.on_cancel()
+
+
+class TokenValidationErrorStretchy(Stretchy):
+    """Overlay that shows an error message when token validation fails."""
+    
+    def __init__(self, parent, error_msg):
+        self.parent = parent
+        
+        widgets = [
+            Color.info_error(Text(error_msg)),
+            Text(""),
+            button_pile([done_btn(label=_("OK"), on_press=self._close)]),
+        ]
+        super().__init__(_("Validation Error"), widgets, 0, 2)
+    
+    def _close(self, sender=None):
+        self.parent.remove_overlay()
 
 
 class HomenodeTokenForm(Form):
@@ -101,22 +141,7 @@ class HomenodeTokenView(BaseView):
         self.form.validated()
         
         # Show checking overlay
-        spinner = Spinner(style="dots", app=self.controller.app)
-        spinner.start()
-        checking_text = Text(_("Checking installation key..."))
-        cancel_button = cancel_btn(
-            label=_("Cancel"),
-            on_press=lambda sender: self._cancel_validation()
-        )
-        
-        overlay_widget = LineBox(
-            Pile([
-                ("pack", checking_text),
-                ("pack", spinner),
-                ("pack", button_pile([cancel_button])),
-            ])
-        )
-        self.show_stretchy_overlay(overlay_widget)
+        self.show_stretchy_overlay(CheckingTokenStretchy(self, self._cancel_validation))
         self.request_redraw_if_visible()
         log.info("Overlay shown, calling check_token")
 
@@ -167,19 +192,7 @@ class HomenodeTokenView(BaseView):
         else:
             error_msg = message or _("Failed to verify installation key. Please try again.")
 
-        error_text = Color.info_error(Text(error_msg))
-        ok_button = done_btn(
-            label=_("OK"),
-            on_press=lambda sender: self.remove_overlay()
-        )
-        
-        overlay_widget = LineBox(
-            Pile([
-                ("pack", error_text),
-                ("pack", button_pile([ok_button])),
-            ])
-        )
-        self.show_stretchy_overlay(overlay_widget)
+        self.show_stretchy_overlay(TokenValidationErrorStretchy(self, error_msg))
         self.request_redraw_if_visible()
 
     def cancel(self, result=None):
