@@ -84,7 +84,7 @@ class HomenodeTokenController(SubiquityController):
         has_network = self.app.base_model.network.has_network
         return HomenodeTokenResponse(token=self.token or "", has_network=has_network)
 
-    async def POST(self, data: str):
+    async def POST(self, data: str) -> None:
         self.token = data
         self._save_token(data)
         await self.configured()
