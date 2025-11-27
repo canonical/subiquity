@@ -24,7 +24,7 @@ import aiohttp
 log = logging.getLogger("subiquity.server.akash_homenode")
 
 # Akash HomeNode API base URL
-AKASH_API_BASE_URL = "https://provider-console-beta.akash.network"
+AKASH_API_BASE_URL = "https://provider-console-api-beta.akash.network"
 AKASH_VERIFY_ENDPOINT = "/home-node/verify/installation-key"
 
 
