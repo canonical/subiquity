@@ -189,6 +189,9 @@ class CoreBootFixAction(enum.Enum):
     CLEAR_TPM = "clear-tpm"
     PROCEED = "proceed"
 
+    def is_for_user(self):
+        return self in [self.CONTACT_OEM, self.CONTACT_OS_VENDOR]
+
 
 class GuidedCapability(enum.Enum):
     # The order listed here is the order they will be presented as options
@@ -267,10 +270,31 @@ class GuidedDisallowedCapabilityReason(enum.Enum):
 
 
 @attr.s(auto_attribs=True)
+class CoreBootFixActionWithCategory:
+    type: CoreBootFixAction
+    # Says whether the action should be performed manually by the user or by
+    # the installer.
+    for_user: bool
+
+
+@attr.s(auto_attribs=True)
 class CoreBootEncryptionSupportError:
     kind: CoreBootAvailabilityErrorKind
     message: str
-    actions: List[CoreBootFixAction]
+    actions: List[CoreBootFixActionWithCategory]
+
+    @classmethod
+    def from_snapd(cls, snapd_error):
+        return cls(
+            kind=snapd_error.kind,
+            message=snapd_error.message,
+            actions=[
+                CoreBootFixActionWithCategory(
+                    type=action, for_user=action.is_for_user()
+                )
+                for action in snapd_error.actions
+            ],
+        )
 
 
 @attr.s(auto_attribs=True)
