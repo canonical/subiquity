@@ -24,8 +24,8 @@ import aiohttp
 log = logging.getLogger("subiquity.server.akash_homenode")
 
 # Akash HomeNode API base URL
-AKASH_API_BASE_URL = "https://provider-console-api-beta.akash.network"
-AKASH_VERIFY_ENDPOINT = "/home-node/verify/installation-key"
+AKASH_API_BASE_URL = "https://homenode-api-beta.akash.network/api/v1"
+AKASH_VERIFY_ENDPOINT = "/installation-key/verify"
 
 
 class InvalidTokenError(Exception):
