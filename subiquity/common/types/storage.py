@@ -272,6 +272,16 @@ class CoreBootEncryptionSupportError:
     message: str
     actions: List[CoreBootFixAction]
 
+    @classmethod
+    def from_snapd(cls, snapd_error):
+        actions = [] if snapd_error.actions is None else snapd_error.actions
+
+        return cls(
+            kind=snapd_error.kind,
+            message=snapd_error.message,
+            actions=actions,
+        )
+
 
 @attr.s(auto_attribs=True)
 class GuidedDisallowedCapability:
