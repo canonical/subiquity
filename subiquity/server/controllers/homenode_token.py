@@ -35,6 +35,7 @@ from subiquity.server.controller import SubiquityController
 log = logging.getLogger("subiquity.server.controllers.homenode_token")
 
 TOKEN_FILE = "/tmp/token"
+INSTALL_ID_FILE = "/tmp/install_id"
 
 
 class HomenodeTokenController(SubiquityController):
@@ -49,6 +50,7 @@ class HomenodeTokenController(SubiquityController):
     def __init__(self, app):
         super().__init__(app)
         self.token = None
+        self.install_id = None
         # Initialize Akash API interface
         if app.opts.dry_run:
             strategy = MockedAkashAPIStrategy()
@@ -78,6 +80,15 @@ class HomenodeTokenController(SubiquityController):
             log.info("Saved homenode installation key to %s", TOKEN_FILE)
         except Exception as e:
             log.error("Failed to save installation key to %s: %s", TOKEN_FILE, e)
+
+    def _save_install_id(self, install_id):
+        """Save the install_id to /tmp/install_id."""
+        try:
+            with open(INSTALL_ID_FILE, "w") as f:
+                f.write(install_id)
+            log.info("Saved install_id to %s", INSTALL_ID_FILE)
+        except Exception as e:
+            log.error("Failed to save install_id to %s: %s", INSTALL_ID_FILE, e)
 
     async def GET(self) -> HomenodeTokenResponse:
         """Handle a GET request coming from the client-side controller."""
@@ -111,6 +122,16 @@ class HomenodeTokenController(SubiquityController):
             log.info("Calling akash_api.verify_installation_key")
             result = await self.akash_api.verify_installation_key(token)
             log.info("Installation key validation successful: %s", token[:10] + "...")
+            
+            # Extract and save install_id if present
+            install_id = result.get("data", {}).get("install_id")
+            if install_id:
+                self.install_id = install_id
+                self._save_install_id(install_id)
+                log.info("Extracted and saved install_id: %s", install_id[:10] + "..." if len(install_id) > 10 else install_id)
+            else:
+                log.warning("install_id not found in API response")
+            
             return HomenodeTokenCheckAnswer(
                 status=HomenodeTokenCheckStatus.VALID_TOKEN,
                 message=result.get("data", {}).get("message", "Installation key is valid")

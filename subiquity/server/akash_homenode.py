@@ -104,8 +104,19 @@ class HTTPAkashAPIStrategy(AkashAPIStrategy):
                             return data
                         else:
                             # API returned success status but with error message
-                            error_msg = data.get("detail", "Unknown error")
-                            if "expired" in error_msg.lower():
+                            detail = data.get("detail", "Unknown error")
+                            
+                            # Handle detail being a dict or string
+                            if isinstance(detail, dict):
+                                error_msg = detail.get("error", str(detail))
+                            else:
+                                error_msg = str(detail)
+                            
+                            # Also check for error field at top level
+                            if not error_msg or error_msg == str(detail):
+                                error_msg = data.get("error", "Unknown error")
+                            
+                            if "expired" in str(error_msg).lower():
                                 raise ExpiredTokenError(token, error_msg)
                             else:
                                 raise InvalidTokenError(token, error_msg)
@@ -113,11 +124,21 @@ class HTTPAkashAPIStrategy(AkashAPIStrategy):
                         # Unauthorized - invalid token
                         try:
                             error_data = await response.json()
-                            error_msg = error_data.get("detail", "Invalid or expired installation key")
+                            detail = error_data.get("detail", "Invalid or expired installation key")
+                            
+                            # Handle detail being a dict or string
+                            if isinstance(detail, dict):
+                                error_msg = detail.get("error", str(detail))
+                            else:
+                                error_msg = str(detail)
+                            
+                            # Also check for error field at top level
+                            if not error_msg or error_msg == str(detail):
+                                error_msg = error_data.get("error", "Invalid or expired installation key")
                         except Exception:
                             error_msg = "Invalid or expired installation key"
                         
-                        if "expired" in error_msg.lower():
+                        if "expired" in str(error_msg).lower():
                             raise ExpiredTokenError(token, error_msg)
                         else:
                             raise InvalidTokenError(token, error_msg)
@@ -125,7 +146,17 @@ class HTTPAkashAPIStrategy(AkashAPIStrategy):
                         # Other HTTP errors
                         try:
                             error_data = await response.json()
-                            error_msg = error_data.get("detail", f"HTTP {response.status}")
+                            detail = error_data.get("detail", f"HTTP {response.status}")
+                            
+                            # Handle detail being a dict or string
+                            if isinstance(detail, dict):
+                                error_msg = detail.get("error", str(detail))
+                            else:
+                                error_msg = str(detail)
+                            
+                            # Also check for error field at top level
+                            if not error_msg or error_msg == str(detail):
+                                error_msg = error_data.get("error", f"HTTP {response.status}")
                         except Exception:
                             error_msg = f"HTTP {response.status}"
                         raise CheckTokenError(token, error_msg)
@@ -166,6 +197,9 @@ class MockedAkashAPIStrategy(AkashAPIStrategy):
             return {
                 "status": "success",
                 "data": {
+                    "valid": True,
+                    "expired": False,
+                    "install_id": "mock-install-id-12345",
                     "message": "Installation key is valid for this user"
                 }
             }
