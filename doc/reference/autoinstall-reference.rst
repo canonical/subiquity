@@ -37,7 +37,7 @@ used.
 Command lists
 -------------
 
-Several configuration keys are lists of commands to be executed. Each command can be a string (in which case it is executed via :command:`sh -c`) or a list, in which case it is executed directly. Any command exiting with a non-zero return code is considered an error and aborts the installation (except for error-commands, where it is ignored).
+Several configuration keys are lists of commands to be executed. Each command can be a string (in which case it is executed via :command:`sh -c`) or a list, in which case it is executed directly. The commands are run as root. Any command exiting with a non-zero return code is considered an error and aborts the installation (except for error-commands, where it is ignored).
 
 .. _ai-top-level-keys:
 
