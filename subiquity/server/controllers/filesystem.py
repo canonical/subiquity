@@ -87,7 +87,7 @@ from subiquity.models.filesystem import (
     align_up,
     humanize_size,
 )
-from subiquity.server import shutdown
+from subiquity.server import casper, shutdown
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
@@ -1822,6 +1822,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_core_boot_fix_encryption_support_POST(
         self, data: CoreBootFixEncryptionSupport
     ) -> None:
+        async def shutdown_action(action):
+            casper.disable_stop_prompt()
+            await action()
+
         # Actions that are handled by Subiquity, not snapd.
         local_actions = {
             CoreBootFixAction.REBOOT: shutdown.initiate_reboot,
@@ -1834,7 +1838,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 self.app.exit()
                 return
             else:
-                await local_actions[data.action]()
+                await shutdown_action(local_actions[data.action])
                 return
 
         # Note that although we could, we currently do not look for

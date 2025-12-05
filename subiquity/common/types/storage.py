@@ -285,15 +285,20 @@ class CoreBootEncryptionSupportError:
 
     @classmethod
     def from_snapd(cls, snapd_error):
-        return cls(
-            kind=snapd_error.kind,
-            message=snapd_error.message,
-            actions=[
+        if snapd_error.actions is None:
+            actions = []
+        else:
+            actions = [
                 CoreBootFixActionWithCategory(
                     type=action, for_user=action.is_for_user()
                 )
                 for action in snapd_error.actions
-            ],
+            ]
+
+        return cls(
+            kind=snapd_error.kind,
+            message=snapd_error.message,
+            actions=actions,
         )
 
 

@@ -211,7 +211,7 @@ class AvailabilityCheckError:
     kind: AvailabilityErrorKind
     message: str
     # TODO args
-    actions: List[AvailabilityAction]
+    actions: Optional[List[AvailabilityAction]] = None
 
 
 @snapdtype
