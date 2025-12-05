@@ -1345,7 +1345,7 @@ late-commands
 * **default:** no commands
 * **can be interactive:** no
 
-Shell commands to run after the installation has completed successfully and any updates and packages installed, just before the system reboots. The commands are run in the installer environment with the installed system mounted at ``/target``. You can run ``curtin in-target -- $shell_command`` (with the version of Subiquity
+Shell commands to run after the installation has completed successfully and any updates and packages installed, just before the system reboots. The commands are run as root in the installer environment with the installed system mounted at ``/target``. You can run ``curtin in-target -- $shell_command`` (with the version of Subiquity
 released with 20.04 GA, you need to specify this as ``curtin in-target --target=/target -- $shell_command``) to run in the target system (similar to how plain ``in-target`` can be used in ``d-i preseed/late_command``).
 
 
