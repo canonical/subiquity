@@ -34,6 +34,8 @@ from subiquity.common.types.storage import (
     Bootloader,
     CalculateEntropyRequest,
     CoreBootEncryptionFeatures,
+    CoreBootFixAction,
+    CoreBootFixEncryptionSupport,
     EntropyResponse,
     Gap,
     GapUsable,
@@ -168,6 +170,92 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
         self.fsc = FilesystemController(app=self.app)
         self.fsc._configured = True
+
+    def test_find_variations__no_filter(self):
+        self.fsc._variation_info = {
+            "one": VariationInfo(
+                name="one",
+                label="enhanced-secureboot-desktop",
+                system=mock.Mock(),
+            ),
+            "two": VariationInfo(
+                name="two",
+                label=None,
+                system=None,
+            ),
+        }
+        v1, v2 = self.fsc.find_variations()
+
+        self.assertEqual("one", v1.name)
+        self.assertEqual("two", v2.name)
+
+        # This is the same with explicit values.
+        v1, v2 = self.fsc.find_variations(
+            valid=None, core_boot_classic=None, label=False
+        )
+
+        self.assertEqual("one", v1.name)
+        self.assertEqual("two", v2.name)
+
+    def test_find_variations__label_filter(self):
+        self.fsc._variation_info = {
+            "one": VariationInfo(
+                name="one",
+                label="enhanced-secureboot-desktop",
+                system=mock.Mock(),
+            ),
+            "two": VariationInfo(
+                name="two",
+                label=None,
+            ),
+        }
+        [v1] = self.fsc.find_variations(label="enhanced-secureboot-desktop")
+        [v2] = self.fsc.find_variations(label=None)
+
+        self.assertEqual("one", v1.name)
+        self.assertEqual("two", v2.name)
+
+    def test_find_variations__core_boot_classic_filter(self):
+        self.fsc._variation_info = {
+            "one": VariationInfo(
+                name="one",
+                label="enhanced-secureboot-desktop",
+                system=mock.Mock(),
+            ),
+            "two": VariationInfo(
+                name="two",
+                label=None,
+            ),
+        }
+        [v1] = self.fsc.find_variations(core_boot_classic=True)
+        [v2] = self.fsc.find_variations(core_boot_classic=False)
+
+        self.assertEqual("one", v1.name)
+        self.assertEqual("two", v2.name)
+
+    def test_find_variations__valid_filter(self):
+        self.fsc._variation_info = {
+            "one": VariationInfo(
+                name="one",
+                label="enhanced-secureboot-desktop",
+                system=mock.Mock(),
+            ),
+            "two": VariationInfo.classic(name="two", min_size=mock.Mock()),
+        }
+        [v1] = self.fsc.find_variations(valid=False)
+        [v2] = self.fsc.find_variations(valid=True)
+
+        self.assertEqual("one", v1.name)
+        self.assertEqual("two", v2.name)
+
+    def test_find_variations__no_match(self):
+        self.fsc._variation_info = {
+            "one": VariationInfo.dd(name="one", min_size=mock.Mock()),
+            "two": VariationInfo.classic(name="two", min_size=mock.Mock()),
+        }
+        variations = self.fsc.find_variations(core_boot_classic=True)
+
+        self.assertEqual([], list(variations))
 
     async def test_probe_restricted(self):
         await self.fsc._probe_once(context=None, restricted=True)
@@ -798,6 +886,63 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             StorageInvalidUsageError, msg="no suitable variation for core boot"
         ):
             await self.fsc.v2_core_boot_encryption_features_GET()
+
+    # Just to make sure we don't reboot/shutdown if other assertions fail.
+    @mock.patch(
+        "subiquity.server.controllers.filesystem.shutdown.arun_command",
+        new=mock.AsyncMock(),
+    )
+    @mock.patch("subiquity.server.controllers.filesystem.shutdown.initiate_reboot")
+    async def test_v2_core_boot_fix_encryption_support__reboot(self, m_initiate_reboot):
+        self.fsc.model = make_model()
+
+        # If dry_run is True, we won't call the initiate method.
+        self.app.opts.dry_run = False
+        await self.fsc.v2_core_boot_fix_encryption_support_POST(
+            CoreBootFixEncryptionSupport(action=CoreBootFixAction.REBOOT)
+        )
+
+        m_initiate_reboot.assert_called_once()
+
+    # Just to make sure we don't reboot/shutdown if other assertions fail.
+    @mock.patch(
+        "subiquity.server.controllers.filesystem.shutdown.arun_command",
+        new=mock.AsyncMock(),
+    )
+    @mock.patch(
+        "subiquity.server.controllers.filesystem.shutdown.initiate_reboot_to_fw_settings"
+    )
+    async def test_v2_core_boot_fix_encryption_support__reboot_to_fw(
+        self, m_initiate_reboot_to_fw
+    ):
+        self.fsc.model = make_model()
+
+        # If dry_run is True, we won't call the initiate method.
+        self.app.opts.dry_run = False
+        await self.fsc.v2_core_boot_fix_encryption_support_POST(
+            CoreBootFixEncryptionSupport(action=CoreBootFixAction.REBOOT_TO_FW_SETTINGS)
+        )
+
+        m_initiate_reboot_to_fw.assert_called_once()
+
+    # Just to make sure we don't reboot/shutdown if other assertions fail.
+    @mock.patch(
+        "subiquity.server.controllers.filesystem.shutdown.arun_command",
+        new=mock.AsyncMock(),
+    )
+    @mock.patch("subiquity.server.controllers.filesystem.shutdown.initiate_poweroff")
+    async def test_v2_core_boot_fix_encryption_support__poweroff(
+        self, m_initiate_poweroff
+    ):
+        self.fsc.model = make_model()
+
+        # If dry_run is True, we won't call the initiate method.
+        self.app.opts.dry_run = False
+        await self.fsc.v2_core_boot_fix_encryption_support_POST(
+            CoreBootFixEncryptionSupport(action=CoreBootFixAction.SHUTDOWN)
+        )
+
+        m_initiate_poweroff.assert_called_once()
 
     @parameterized.expand(((True,), (False,)))
     async def test__pre_shutdown_install_started(self, zfsutils_linux_installed: bool):

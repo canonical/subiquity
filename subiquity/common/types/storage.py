@@ -134,6 +134,62 @@ class Disk:
     requires_reformat: Optional[bool] = None
 
 
+# Shared enum used by the snapd API
+# See https://github.com/canonical/secboot/blob/master/efi/preinstall/error_kinds.go
+class CoreBootAvailabilityErrorKind(enum.Enum):
+    INTERNAL = "internal-error"
+    SHUTDOWN_REQUIRED = "shutdown-required"
+    REBOOT_REQUIRED = "reboot-required"
+    UNEXPECTED_ACTION = "unexpected-action"
+    MISSING_ARGUMENT = "missing-argument"
+    INVALID_ARGUMENT = "invalid-argument"
+    ACTION_FAILED = "action-failed"
+    RUNNING_IN_VM = "running-in-vm"
+    SYSTEM_NOT_EFI = "system-not-efi"
+    EFI_VARIABLE_ACCESS = "efi-variable-access"
+    NO_SUITABLE_TPM2_DEVICE = "no-suitable-tpm2-device"
+    TPM_DEVICE_FAILURE = "tpm-device-failure"
+    TPM_DEVICE_DISABLED = "tpm-device-disabled"
+    TPM_HIERARCHIES_OWNED = "tpm-hierarchies-owned"
+    TPM_DEVICE_LOCKOUT_LOCKED_OUT = "tpm-device-lockout-locked-out"
+    INSUFFICIENT_TPM_STORAGE = "insufficient-tpm-storage"
+    NO_SUITABLE_PCR_BANK = "no-suitable-pcr-bank"
+    MEASURED_BOOT = "measured-boot"
+    EMPTY_PCR_BANKS = "empty-pcr-banks"
+    TPM_COMMAND_FAILED = "tpm-command-failed"
+    INVALID_TPM_RESPONSE = "invalid-tpm-response"
+    TPM_COMMUNICATION = "tpm-communication"
+    UNSUPPORTED_PLATFORM = "unsupported-platform"
+    UEFI_DEBUGGING_ENABLED = "uefi-debugging-enabled"
+    INSUFFICIENT_DMA_PROTECTION = "insufficient-dma-protection"
+    NO_KERNEL_IOMMU = "no-kernel-iommu"
+    TPM_STARTUP_LOCALITY_NOT_PROTECTED = "tpm-startup-locality-not-protected"
+    HOST_SECURITY = "host-security"
+    PCR_UNUSABLE = "tpm-pcr-unusable"
+    PCR_UNSUPPORTED = "tpm-pcr-unsupported"
+    VAR_SUPPLIED_DRIVERS_PRESENT = "var-supplied-drivers-present"
+    SYS_PREP_APPLICATIONS_PRESENT = "sys-prep-applications-present"
+    ABSOLUTE_PRESENT = "absolute-present"
+    INVALID_SECURE_BOOT_MODE = "invalid-secure-boot-mode"
+    WEAK_SECURE_BOOT_ALGORITHM_DETECTED = "weak-secure-boot-algorithms-detected"
+    PRE_OS_DIGEST_VERIFICATION_DETECTED = "pre-os-digest-verification-detected"
+
+
+# Shared enum used by the snapd API
+# See https://github.com/canonical/secboot/blob/master/efi/preinstall/actions.go
+class CoreBootFixAction(enum.Enum):
+    REBOOT = "reboot"
+    SHUTDOWN = "shutdown"
+    REBOOT_TO_FW_SETTINGS = "reboot-to-fw-settings"
+    CONTACT_OEM = "contact-oem"
+    CONTACT_OS_VENDOR = "contact-os-vendor"
+    ENABLE_TPM_VIA_FIRMWARE = "enable-tpm-via-firmware"
+    ENABLE_AND_CLEAR_TPM_VIA_FIRMWARE = "enable-and-clear-tpm-via-firmware"
+    CLEAR_TPM_VIA_FIRMWARE = "clear-tpm-via-firmware"
+    CLEAR_TPM = "clear-tpm"
+    PROCEED = "proceed"
+
+
 class GuidedCapability(enum.Enum):
     # The order listed here is the order they will be presented as options
 
@@ -211,10 +267,20 @@ class GuidedDisallowedCapabilityReason(enum.Enum):
 
 
 @attr.s(auto_attribs=True)
+class CoreBootEncryptionSupportError:
+    kind: CoreBootAvailabilityErrorKind
+    message: str
+    actions: List[CoreBootFixAction]
+
+
+@attr.s(auto_attribs=True)
 class GuidedDisallowedCapability:
     capability: GuidedCapability
     reason: GuidedDisallowedCapabilityReason
     message: Optional[str] = None
+
+    # Only for core boot encryption.
+    errors: Optional[List[CoreBootEncryptionSupportError]] = None
 
 
 @attr.s(auto_attribs=True)
@@ -425,3 +491,13 @@ class EntropyResponse:
 class CoreBootEncryptionFeatures(enum.Enum):
     PASSPHRASE_AUTH = "passphrase-auth"
     PIN_AUTH = "pin-auth"
+
+
+@attr.s(auto_attribs=True)
+class CoreBootFixEncryptionSupport:
+    action: CoreBootFixAction
+
+    # If specified, operate on the specified snapd system.
+    # Otherwise, operate on the first core boot classic variation of the
+    # current source.
+    system_label: Optional[str] = None

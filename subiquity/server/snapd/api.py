@@ -79,6 +79,7 @@ class SnapdAPI:
                     ChangeID,
                     SystemActionResponseGenerateRecoveryKey,
                     EntropyCheckResponse,
+                    SystemDetails,
                 ]: ...
 
 

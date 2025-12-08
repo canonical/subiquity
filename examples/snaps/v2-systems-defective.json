@@ -229,7 +229,16 @@
       "support": "defective",
       "storage-safety": "encrypted",
       "encryption-type": "cryptsetup",
-      "unavailable-reason": "not encrypting device storage as checking TPM gave: secure boot is disabled"
+      "unavailable-reason": "not encrypting device storage as checking TPM gave: secure boot is disabled",
+      "availability-check-errors": [
+        {
+          "kind": "invalid-secure-boot-mode",
+          "message": "...",
+          "actions": [
+            "reboot-to-fw-settings"
+          ]
+        }
+      ]
     }
   }
 }

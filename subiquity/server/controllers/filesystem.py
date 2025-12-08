@@ -24,7 +24,18 @@ import shutil
 import subprocess
 import time
 from contextlib import AsyncExitStack
-from typing import Any, Callable, Dict, List, Optional, Self, Sequence, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Self,
+    Sequence,
+    Union,
+)
 
 import attr
 import pyudev
@@ -44,6 +55,9 @@ from subiquity.common.types.storage import (
     Bootloader,
     CalculateEntropyRequest,
     CoreBootEncryptionFeatures,
+    CoreBootEncryptionSupportError,
+    CoreBootFixAction,
+    CoreBootFixEncryptionSupport,
     Disk,
     EntropyResponse,
     GuidedCapability,
@@ -84,6 +98,7 @@ from subiquity.models.filesystem import (
     align_up,
     humanize_size,
 )
+from subiquity.server import shutdown
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
@@ -375,6 +390,30 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         layout = storage_config.get("layout", {})
         return layout.get("reset-partition-only", False)
 
+    def find_variations(
+        self,
+        *,
+        core_boot_classic: bool | None = None,
+        valid: bool | None = None,
+        label: str | None | Literal[False] = False,
+    ) -> Iterator[VariationInfo]:
+        """Find the variations (from the currently configured source) matching
+        the specified filters.
+        When a filter is None - except for label - it means that the filter is
+        disabled. For label, specifying None means to filter on variations that
+        have no label. If you want to disable the label filter, use False instead."""
+        for variation in self._variation_info.values():
+            if (
+                core_boot_classic is not None
+                and variation.is_core_boot_classic() != core_boot_classic
+            ):
+                continue
+            if valid is not None and variation.is_valid() != valid:
+                continue
+            if label is not False and variation.label != label:
+                continue
+            yield variation
+
     async def configured(self):
         # set_info_capability() requires variations info to be populated, so
         # wait for it.
@@ -412,19 +451,24 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             system=system,
         )
 
-        def disallowed_encryption(msg) -> GuidedDisallowedCapability:
+        def disallowed_encryption(
+            msg: str, errors: list[CoreBootEncryptionSupportError] | None = None
+        ) -> GuidedDisallowedCapability:
             GCDR = GuidedDisallowedCapabilityReason
             reason = GCDR.CORE_BOOT_ENCRYPTION_UNAVAILABLE
             return GuidedDisallowedCapability(
                 capability=GuidedCapability.CORE_BOOT_ENCRYPTED,
                 reason=reason,
                 message=msg,
+                errors=errors,
             )
 
         se = system.storage_encryption
         if se.support == snapdtypes.StorageEncryptionSupport.DEFECTIVE:
             info.capability_info.disallowed = [
-                disallowed_encryption(se.unavailable_reason)
+                disallowed_encryption(
+                    se.unavailable_reason, errors=se.availability_check_errors
+                )
             ]
             return info
 
@@ -439,7 +483,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         elif se.support == snapdtypes.StorageEncryptionSupport.UNAVAILABLE:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
             info.capability_info.disallowed = [
-                disallowed_encryption(se.unavailable_reason)
+                disallowed_encryption(
+                    se.unavailable_reason, errors=se.availability_check_errors
+                )
             ]
         elif not has_beta_entropy_check:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
@@ -1342,9 +1388,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 continue
 
             capability_info = CapabilityInfo()
-            for variation in self._variation_info.values():
-                if variation.is_core_boot_classic():
-                    continue
+            for variation in self.find_variations(core_boot_classic=False):
                 capability_info.combine(
                     variation.capability_info_for_gap(gap, install_min)
                 )
@@ -1442,9 +1486,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     continue
 
                 capability_info = CapabilityInfo()
-                for variation in self._variation_info.values():
-                    if variation.is_core_boot_classic():
-                        continue
+                for variation in self.find_variations(core_boot_classic=False):
                     capability_info.combine(
                         variation.capability_info_for_gap(gap, install_min)
                     )
@@ -1800,6 +1842,63 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         raise StorageInvalidUsageError("no suitable variation for core boot")
 
+    async def v2_core_boot_fix_encryption_support_POST(
+        self, data: CoreBootFixEncryptionSupport
+    ) -> None:
+        # Actions that are handled by Subiquity, not snapd.
+        local_actions = {
+            CoreBootFixAction.REBOOT: shutdown.initiate_reboot,
+            CoreBootFixAction.REBOOT_TO_FW_SETTINGS: shutdown.initiate_reboot_to_fw_settings,
+            CoreBootFixAction.SHUTDOWN: shutdown.initiate_poweroff,
+        }
+
+        if data.action in local_actions:
+            if self.app.opts.dry_run:
+                self.app.exit()
+                return
+            else:
+                await local_actions[data.action]()
+                return
+
+        # Note that although we could, we currently do not look for
+        # self._info.label here if the system label is not specified. This is
+        # because in the normal flow, fix-encryption-support is called *before*
+        # choosing a variation.
+        label_filter = data.system_label if data.system_label is not None else False
+        try:
+            variation = next(
+                self.find_variations(core_boot_classic=True, label=label_filter)
+            )
+        except StopIteration:
+            raise RuntimeError("could not find relevant core boot classic variation")
+
+        system = await self.app.snapdapi.v2.systems[variation.label].POST(
+            snapdtypes.SystemActionRequest(
+                action=snapdtypes.SystemAction.FIX_ENCRYPTION_SUPPORT,
+                fix_action=data.action,
+            ),
+            return_type=snapdtypes.SystemDetails,
+        )
+
+        # Ideally, we should update the existing variation rather than recreating it.
+        # This will save us a call to snapd and the logic will be cleaner.
+        try:
+            has_beta_entropy_check = await self.app.snapdinfo.has_beta_entropy_check()
+        except ValueError as exc:
+            log.debug(
+                "cannot check if snapd has beta entropy check, assuming yes: %s", exc
+            )
+            has_beta_entropy_check = True
+
+        info = self.info_for_system(
+            variation.name,
+            variation.label,
+            system,
+            has_beta_entropy_check=has_beta_entropy_check,
+        )
+        self._maybe_disable_encryption(info)
+        self._variation_info[variation.name] = info
+
     async def dry_run_wait_probe_POST(self) -> None:
         if not self.app.opts.dry_run:
             raise NotImplementedError
@@ -1946,12 +2045,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return matching_disks[0]
 
     def has_valid_non_core_boot_variation(self) -> bool:
-        for variation in self._variation_info.values():
-            if not variation.is_valid():
-                continue
-            if not variation.is_core_boot_classic():
-                return True
-        return False
+        try:
+            next(self.find_variations(valid=True, core_boot_classic=False))
+        except StopIteration:
+            return False
+        return True
 
     async def run_autoinstall_guided(self, layout):
         name = layout["name"]
@@ -1963,11 +2061,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             # this check is conceptually unnecessary but results in a
             # much cleaner error message...
             core_boot_caps = set()
-            for variation in self._variation_info.values():
-                if not variation.is_valid():
-                    continue
-                if variation.is_core_boot_classic():
-                    core_boot_caps.update(variation.capability_info.allowed)
+            for variation in self.find_variations(valid=True, core_boot_classic=True):
+                core_boot_caps.update(variation.capability_info.allowed)
             if not core_boot_caps:
                 raise Exception(
                     "can only use name: hybrid when installing core boot classic"
@@ -2106,12 +2201,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             # XXX in principle should there be a way to influence the
             # variation chosen here? Not with current use cases for
             # variations anyway.
-            for variation in self._variation_info.values():
-                if not variation.is_valid():
-                    continue
-                if not variation.is_core_boot_classic():
-                    self._info = variation
-                    break
+            for variation in self.find_variations(valid=True, core_boot_classic=False):
+                self._info = variation
+                break
             else:
                 raise Exception(
                     "must not use config: when installing core boot classic"
