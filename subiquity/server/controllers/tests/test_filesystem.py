@@ -171,6 +171,92 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.fsc = FilesystemController(app=self.app)
         self.fsc._configured = True
 
+    def test_find_variations__no_filter(self):
+        self.fsc._variation_info = {
+            "one": VariationInfo(
+                name="one",
+                label="enhanced-secureboot-desktop",
+                system=mock.Mock(),
+            ),
+            "two": VariationInfo(
+                name="two",
+                label=None,
+                system=None,
+            ),
+        }
+        v1, v2 = self.fsc.find_variations()
+
+        self.assertEqual("one", v1.name)
+        self.assertEqual("two", v2.name)
+
+        # This is the same with explicit values.
+        v1, v2 = self.fsc.find_variations(
+            valid=None, core_boot_classic=None, label=False
+        )
+
+        self.assertEqual("one", v1.name)
+        self.assertEqual("two", v2.name)
+
+    def test_find_variations__label_filter(self):
+        self.fsc._variation_info = {
+            "one": VariationInfo(
+                name="one",
+                label="enhanced-secureboot-desktop",
+                system=mock.Mock(),
+            ),
+            "two": VariationInfo(
+                name="two",
+                label=None,
+            ),
+        }
+        [v1] = self.fsc.find_variations(label="enhanced-secureboot-desktop")
+        [v2] = self.fsc.find_variations(label=None)
+
+        self.assertEqual("one", v1.name)
+        self.assertEqual("two", v2.name)
+
+    def test_find_variations__core_boot_classic_filter(self):
+        self.fsc._variation_info = {
+            "one": VariationInfo(
+                name="one",
+                label="enhanced-secureboot-desktop",
+                system=mock.Mock(),
+            ),
+            "two": VariationInfo(
+                name="two",
+                label=None,
+            ),
+        }
+        [v1] = self.fsc.find_variations(core_boot_classic=True)
+        [v2] = self.fsc.find_variations(core_boot_classic=False)
+
+        self.assertEqual("one", v1.name)
+        self.assertEqual("two", v2.name)
+
+    def test_find_variations__valid_filter(self):
+        self.fsc._variation_info = {
+            "one": VariationInfo(
+                name="one",
+                label="enhanced-secureboot-desktop",
+                system=mock.Mock(),
+            ),
+            "two": VariationInfo.classic(name="two", min_size=mock.Mock()),
+        }
+        [v1] = self.fsc.find_variations(valid=False)
+        [v2] = self.fsc.find_variations(valid=True)
+
+        self.assertEqual("one", v1.name)
+        self.assertEqual("two", v2.name)
+
+    def test_find_variations__no_match(self):
+        self.fsc._variation_info = {
+            "one": VariationInfo.dd(name="one", min_size=mock.Mock()),
+            "two": VariationInfo.classic(name="two", min_size=mock.Mock()),
+        }
+        variations = self.fsc.find_variations(core_boot_classic=True)
+
+        self.assertEqual([], list(variations))
+
     async def test_probe_restricted(self):
         await self.fsc._probe_once(context=None, restricted=True)
         expected = {"blockdev", "filesystem", "nvme"}

@@ -24,7 +24,18 @@ import shutil
 import subprocess
 import time
 from contextlib import AsyncExitStack
-from typing import Any, Callable, Dict, List, Optional, Self, Sequence, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Self,
+    Sequence,
+    Union,
+)
 
 import attr
 import pyudev
@@ -378,6 +389,30 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         storage_config = self.app.autoinstall_config.get(self.autoinstall_key, {})
         layout = storage_config.get("layout", {})
         return layout.get("reset-partition-only", False)
+
+    def find_variations(
+        self,
+        *,
+        core_boot_classic: bool | None = None,
+        valid: bool | None = None,
+        label: str | None | Literal[False] = False,
+    ) -> Iterator[VariationInfo]:
+        """Find the variations (from the currently configured source) matching
+        the specified filters.
+        When a filter is None - except for label - it means that the filter is
+        disabled. For label, specifying None means to filter on variations that
+        have no label. If you want to disable the label filter, use False instead."""
+        for variation in self._variation_info.values():
+            if (
+                core_boot_classic is not None
+                and variation.is_core_boot_classic() != core_boot_classic
+            ):
+                continue
+            if valid is not None and variation.is_valid() != valid:
+                continue
+            if label is not False and variation.label != label:
+                continue
+            yield variation
 
     async def configured(self):
         # set_info_capability() requires variations info to be populated, so
@@ -1353,9 +1388,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 continue
 
             capability_info = CapabilityInfo()
-            for variation in self._variation_info.values():
-                if variation.is_core_boot_classic():
-                    continue
+            for variation in self.find_variations(core_boot_classic=False):
                 capability_info.combine(
                     variation.capability_info_for_gap(gap, install_min)
                 )
@@ -1453,9 +1486,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     continue
 
                 capability_info = CapabilityInfo()
-                for variation in self._variation_info.values():
-                    if variation.is_core_boot_classic():
-                        continue
+                for variation in self.find_variations(core_boot_classic=False):
                     capability_info.combine(
                         variation.capability_info_for_gap(gap, install_min)
                     )
@@ -1833,12 +1864,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # self._info.label here if the system label is not specified. This is
         # because in the normal flow, fix-encryption-support is called *before*
         # choosing a variation.
-        for variation in self._variation_info.values():
-            if data.system_label is not None and variation.label != data.system_label:
-                continue
-            if variation.is_core_boot_classic():
-                break
-        else:
+        label_filter = data.system_label if data.system_label is not None else False
+        try:
+            variation = next(
+                self.find_variations(core_boot_classic=True, label=label_filter)
+            )
+        except StopIteration:
             raise RuntimeError("could not find relevant core boot classic variation")
 
         system = await self.app.snapdapi.v2.systems[variation.label].POST(
@@ -2014,12 +2045,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return matching_disks[0]
 
     def has_valid_non_core_boot_variation(self) -> bool:
-        for variation in self._variation_info.values():
-            if not variation.is_valid():
-                continue
-            if not variation.is_core_boot_classic():
-                return True
-        return False
+        try:
+            next(self.find_variations(valid=True, core_boot_classic=False))
+        except StopIteration:
+            return False
+        return True
 
     async def run_autoinstall_guided(self, layout):
         name = layout["name"]
@@ -2031,11 +2061,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             # this check is conceptually unnecessary but results in a
             # much cleaner error message...
             core_boot_caps = set()
-            for variation in self._variation_info.values():
-                if not variation.is_valid():
-                    continue
-                if variation.is_core_boot_classic():
-                    core_boot_caps.update(variation.capability_info.allowed)
+            for variation in self.find_variations(valid=True, core_boot_classic=True):
+                core_boot_caps.update(variation.capability_info.allowed)
             if not core_boot_caps:
                 raise Exception(
                     "can only use name: hybrid when installing core boot classic"
@@ -2174,12 +2201,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             # XXX in principle should there be a way to influence the
             # variation chosen here? Not with current use cases for
             # variations anyway.
-            for variation in self._variation_info.values():
-                if not variation.is_valid():
-                    continue
-                if not variation.is_core_boot_classic():
-                    self._info = variation
-                    break
+            for variation in self.find_variations(valid=True, core_boot_classic=False):
+                self._info = variation
+                break
             else:
                 raise Exception(
                     "must not use config: when installing core boot classic"
