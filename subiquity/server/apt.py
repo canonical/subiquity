@@ -73,7 +73,7 @@ def apt_sourceparts_files(mp: Mountpoint) -> List[str]:
     root = mp.pp()
     sources_list_d = root / "etc/apt/sources.list.d"
     paths = list(sources_list_d.glob("*.list")) + list(sources_list_d.glob("*.sources"))
-    return [str(p.relative_to(root)) for p in paths]
+    return [str(p.relative_to(root)) for p in paths if p.name != "cdrom.sources"]
 
 
 class AptConfigurer:
@@ -242,6 +242,8 @@ class AptConfigurer:
         self.install_tree.pp("cdrom").mkdir()
         await self.mounter.mount("/cdrom", self.install_tree.p("cdrom"), options="bind")
 
+        new_style_iso = self.configured_tree.pp("etc/apt/sources.list.d/cdrom.sources")
+
         if self.app.base_model.network.has_network:
             with contextlib.suppress(FileNotFoundError):
                 self.install_tree.pp("etc/apt/sources.list").rename(
@@ -257,11 +259,13 @@ class AptConfigurer:
 
         codename = lsb_release(dry_run=self.app.opts.dry_run)["codename"]
 
-        write_file(
-            self.install_tree.p("etc/apt/sources.list"),
-            f"deb [check-date=no] file:///cdrom {codename} main restricted\n",
-            mode=0o644,
-        )
+        if not new_style_iso:
+            # ISOs for 26.04 and later have the cdrom source enabled in the squashfs.
+            write_file(
+                self.install_tree.p("etc/apt/sources.list"),
+                f"deb [check-date=no] file:///cdrom {codename} main restricted\n",
+                mode=0o644,
+            )
 
         # workaround LP: #2105480 and many many many like it
         apt_lists = self.install_tree.pp("var/lib/apt/lists")
@@ -328,6 +332,9 @@ class AptConfigurer:
 
         def _restore_file(path: str) -> None:
             shutil.copyfile(self.configured_tree.p(path), target_mnt.p(path))
+
+        # If the ISO came with a cdrom.sources, delete it.
+        target_mnt.pp("etc/apt/sources.list.d/cdrom.sources").unlink(missing_ok=True)
 
         # The file only exists if we are online
         target_mnt.pp("etc/apt/sources.list.d/original.list").unlink(missing_ok=True)
