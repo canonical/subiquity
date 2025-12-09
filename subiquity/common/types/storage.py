@@ -269,33 +269,61 @@ class GuidedDisallowedCapabilityReason(enum.Enum):
     THIRD_PARTY_DRIVERS = enum.auto()
 
 
+class CoreBootFixActionArgs:
+    # -- Supported arguments vary from one action type to another and from one
+    # argument name to another.
+    # Hopefully, we won't have the same argument name with distinct types for
+    # two different action types.
+
+    # This is for type=CoreBootFixAction.PROCEED
+    # The argument is optional for PROCEED. If not provided, it means proceed
+    # with all errors that support it.
+    error_kinds: Optional[List[CoreBootAvailabilityErrorKind]] = None
+
+
 @attr.s(auto_attribs=True)
-class CoreBootFixActionWithCategory:
+class CoreBootFixActionWithArgs:
+    type: CoreBootFixAction
+    args: Optional[CoreBootFixActionArgs] = None
+
+
+@attr.s(auto_attribs=True)
+class CoreBootFixActionWithCategoryAndArgs:
     type: CoreBootFixAction
     # Says whether the action should be performed manually by the user or by
     # the installer.
     for_user: bool
+    args: Optional[CoreBootFixActionArgs] = None
 
 
 @attr.s(auto_attribs=True)
 class CoreBootEncryptionSupportError:
     kind: CoreBootAvailabilityErrorKind
     message: str
-    actions: List[CoreBootFixActionWithCategory]
+    actions: List[CoreBootFixActionWithCategoryAndArgs]
 
     @classmethod
     def from_snapd(cls, snapd_error):
-        actions = [] if snapd_error.actions is None else snapd_error.actions
+        actions: list[CoreBootFixActionWithCategoryAndArgs] = []
+
+        snapd_actions = [] if snapd_error.actions is None else snapd_error.actions
+        for action in snapd_actions:
+            args = None
+            # We decided that the desktop installer should not use PROCEED with
+            # no argument, because the user must know precisely what they
+            # accept by using PROCEED.
+            if action == CoreBootFixAction.PROCEED:
+                args = CoreBootFixActionArgs(error_kinds=[snapd_error.kind])
+            actions.append(
+                CoreBootFixActionWithCategoryAndArgs(
+                    type=action, args=args, for_user=action.is_for_user()
+                )
+            )
 
         return cls(
             kind=snapd_error.kind,
             message=snapd_error.message,
-            actions=[
-                CoreBootFixActionWithCategory(
-                    type=action, for_user=action.is_for_user()
-                )
-                for action in actions
-            ],
+            actions=actions,
         )
 
 
@@ -521,7 +549,7 @@ class CoreBootEncryptionFeatures(enum.Enum):
 
 @attr.s(auto_attribs=True)
 class CoreBootFixEncryptionSupport:
-    action: CoreBootFixAction
+    action: CoreBootFixActionWithArgs
 
     # If specified, operate on the specified snapd system.
     # Otherwise, operate on the first core boot classic variation of the

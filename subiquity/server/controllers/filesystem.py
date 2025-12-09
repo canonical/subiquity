@@ -1880,8 +1880,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             ),
         }
 
-        if data.action in local_actions:
-            action = local_actions[data.action]
+        if data.action.type in local_actions:
+            action = local_actions[data.action.type]
             await action.coroutine_function(*action.args)
             return
 
@@ -1900,7 +1900,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         system = await self.app.snapdapi.v2.systems[variation.label].POST(
             snapdtypes.SystemActionRequest(
                 action=snapdtypes.SystemAction.FIX_ENCRYPTION_SUPPORT,
-                fix_action=data.action,
+                fix_action=data.action.type,
+                args=data.action.args,
             ),
             return_type=snapdtypes.SystemDetails,
         )
