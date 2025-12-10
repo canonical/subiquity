@@ -203,6 +203,7 @@ class EncryptionFeature(enum.Enum):
 
 
 AvailabilityAction = storagetypes.CoreBootFixAction
+AvailabilityActionArgs = storagetypes.CoreBootFixActionArgs
 AvailabilityErrorKind = storagetypes.CoreBootAvailabilityErrorKind
 
 
@@ -353,6 +354,7 @@ class SystemActionRequest:
 
     # For action=FIX_ENCRYPTION_SUPPORT
     fix_action: Optional[AvailabilityAction] = None
+    args: Optional[AvailabilityActionArgs] = None
 
 
 @snapdtype

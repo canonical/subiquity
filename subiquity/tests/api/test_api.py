@@ -792,12 +792,18 @@ class TestCore(TestAPI):
                 {
                     "kind": "TPM_DEVICE_DISABLED",
                     "message": "...",
-                    "actions": [{"type": "ENABLE_TPM_VIA_FIRMWARE", "for_user": False}],
+                    "actions": [
+                        {
+                            "type": "ENABLE_TPM_VIA_FIRMWARE",
+                            "for_user": False,
+                            "args": None,
+                        }
+                    ],
                 },
             ]
             self.assertEqual(expected_errors, cap["errors"])
             data = {
-                "action": "ENABLE_TPM_VIA_FIRMWARE",
+                "action": {"type": "ENABLE_TPM_VIA_FIRMWARE"},
             }
             await inst.post("/storage/v2/core_boot_fix_encryption_support", data)
             resp = await inst.get("/storage/v2/guided", wait=True)

@@ -35,6 +35,7 @@ from subiquity.common.types.storage import (
     CalculateEntropyRequest,
     CoreBootEncryptionFeatures,
     CoreBootFixAction,
+    CoreBootFixActionWithArgs,
     CoreBootFixEncryptionSupport,
     EntropyResponse,
     Gap,
@@ -900,7 +901,9 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         # If dry_run is True, we won't call the initiate method.
         self.app.opts.dry_run = False
         await self.fsc.v2_core_boot_fix_encryption_support_POST(
-            CoreBootFixEncryptionSupport(action=CoreBootFixAction.REBOOT)
+            CoreBootFixEncryptionSupport(
+                action=CoreBootFixActionWithArgs(type=CoreBootFixAction.REBOOT),
+            ),
         )
 
         m_initiate_reboot.assert_called_once()
@@ -922,7 +925,11 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         # If dry_run is True, we won't call the initiate method.
         self.app.opts.dry_run = False
         await self.fsc.v2_core_boot_fix_encryption_support_POST(
-            CoreBootFixEncryptionSupport(action=CoreBootFixAction.REBOOT_TO_FW_SETTINGS)
+            CoreBootFixEncryptionSupport(
+                action=CoreBootFixActionWithArgs(
+                    type=CoreBootFixAction.REBOOT_TO_FW_SETTINGS
+                ),
+            ),
         )
 
         m_initiate_reboot_to_fw.assert_called_once()
@@ -942,7 +949,9 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         # If dry_run is True, we won't call the initiate method.
         self.app.opts.dry_run = False
         await self.fsc.v2_core_boot_fix_encryption_support_POST(
-            CoreBootFixEncryptionSupport(action=CoreBootFixAction.SHUTDOWN)
+            CoreBootFixEncryptionSupport(
+                action=CoreBootFixActionWithArgs(type=CoreBootFixAction.SHUTDOWN),
+            ),
         )
 
         m_initiate_poweroff.assert_called_once()
