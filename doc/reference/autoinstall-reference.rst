@@ -37,7 +37,7 @@ used.
 Command lists
 -------------
 
-Several configuration keys are lists of commands to be executed. Each command can be a string (in which case it is executed via :command:`sh -c`) or a list, in which case it is executed directly. Any command exiting with a non-zero return code is considered an error and aborts the installation (except for error-commands, where it is ignored).
+Several configuration keys are lists of commands to be executed. Each command can be a string (in which case it is executed via :command:`sh -c`) or a list, in which case it is executed directly. The commands are run as root. Any command exiting with a non-zero return code is considered an error and aborts the installation (except for error-commands, where it is ignored).
 
 .. _ai-top-level-keys:
 
@@ -238,8 +238,6 @@ Corresponds to the value of ``grp:`` option from the ``XKBOPTIONS`` setting. Acc
 * ``lwin_toggle``
 * ``sclk_toggle``
 
-.. warning:: The version of Subiquity released with 20.04 GA does not accept ``null`` for this field due to a bug.
-
 keyboard examples:
 
 .. code-block:: yaml
@@ -379,20 +377,6 @@ For example, to run DHCP version 6 on a specific network interface:
         ethernets:
           enp0s31f6:
             dhcp6: true
-
-Note that in the 20.04 GA release of Subiquity, the behavior is slightly different and requires you to write this with an extra ``network:`` key:
-
-.. code-block:: yaml
-
-    autoinstall:
-      network:
-        network:
-          version: 2
-          ethernets:
-            enp0s31f6:
-              dhcp6: true
-
-Versions later than 20.04 support this syntax, too (for compatibility). When using a newer version, use the regular syntax.
 
 .. _ai-proxy:
 
@@ -1345,8 +1329,7 @@ late-commands
 * **default:** no commands
 * **can be interactive:** no
 
-Shell commands to run after the installation has completed successfully and any updates and packages installed, just before the system reboots. The commands are run in the installer environment with the installed system mounted at ``/target``. You can run ``curtin in-target -- $shell_command`` (with the version of Subiquity
-released with 20.04 GA, you need to specify this as ``curtin in-target --target=/target -- $shell_command``) to run in the target system (similar to how plain ``in-target`` can be used in ``d-i preseed/late_command``).
+Shell commands to run after the installation has completed successfully and any updates and packages installed, just before the system reboots. The commands are run in the installer environment with the installed system mounted at ``/target``. You can run ``curtin in-target -- $shell_command`` to run in the target system (similar to how plain ``in-target`` can be used in ``d-i preseed/late_command``).
 
 
 Example late commands:
