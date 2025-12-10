@@ -453,15 +453,23 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         )
 
         def disallowed_encryption(
-            msg: str, errors: list[CoreBootEncryptionSupportError] | None = None
+            msg: str, errors: list[snapdtypes.AvailabilityCheckError] | None = None
         ) -> GuidedDisallowedCapability:
             GCDR = GuidedDisallowedCapabilityReason
             reason = GCDR.CORE_BOOT_ENCRYPTION_UNAVAILABLE
+
+            if errors is not None:
+                errs = [
+                    CoreBootEncryptionSupportError.from_snapd(err) for err in errors
+                ]
+            else:
+                errs = None
+
             return GuidedDisallowedCapability(
                 capability=GuidedCapability.CORE_BOOT_ENCRYPTED,
                 reason=reason,
                 message=msg,
-                errors=errors,
+                errors=errs,
             )
 
         se = system.storage_encryption

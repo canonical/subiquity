@@ -792,7 +792,7 @@ class TestCore(TestAPI):
                 {
                     "kind": "TPM_DEVICE_DISABLED",
                     "message": "...",
-                    "actions": ["ENABLE_TPM_VIA_FIRMWARE"],
+                    "actions": [{"type": "ENABLE_TPM_VIA_FIRMWARE", "for_user": False}],
                 },
             ]
             self.assertEqual(expected_errors, cap["errors"])
