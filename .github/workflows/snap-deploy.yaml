@@ -1,0 +1,38 @@
+name: Build and Deploy Snap
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install snapcraft
+        run: sudo snap install snapcraft --classic
+      
+      - name: Build snap
+        run: |
+          snapcraft clean
+          snapcraft snap
+      
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Deploy snap
+        run: |
+          SNAP_FILE=$(ls *.snap)
+          SNAP_NAME=$(basename "$SNAP_FILE")
+          
+          # Copy with actual name
+          scp "$SNAP_FILE" ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_PATH }}/"$SNAP_NAME"
+          
+          # Copy as latest
+          scp "$SNAP_FILE" ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_PATH }}/subiquity_latest.snap
