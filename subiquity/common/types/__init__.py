@@ -468,6 +468,28 @@ class UbuntuProCheckTokenAnswer:
     subscription: Optional[UbuntuProSubscription]
 
 
+class HomenodeTokenCheckStatus(enum.Enum):
+    VALID_TOKEN = enum.auto()
+    INVALID_TOKEN = enum.auto()
+    EXPIRED_TOKEN = enum.auto()
+    NO_NETWORK = enum.auto()
+    UNKNOWN_ERROR = enum.auto()
+
+
+@attr.s(auto_attribs=True)
+class HomenodeTokenResponse:
+    """Response to GET request to /homenode_token"""
+
+    token: str = attr.ib(repr=False)
+    has_network: bool
+
+
+@attr.s(auto_attribs=True)
+class HomenodeTokenCheckAnswer:
+    status: HomenodeTokenCheckStatus
+    message: Optional[str] = None
+
+
 class ShutdownMode(enum.Enum):
     REBOOT = enum.auto()
     POWEROFF = enum.auto()

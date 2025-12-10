@@ -37,6 +37,8 @@ from subiquity.common.types import (
     DriversPayload,
     DriversResponse,
     ErrorReportRef,
+    HomenodeTokenCheckAnswer,
+    HomenodeTokenResponse,
     IdentityData,
     KeyboardSetting,
     KeyboardSetup,
@@ -95,7 +97,6 @@ class API:
     locale = simple_endpoint(str)
     proxy = simple_endpoint(str)
     updates = simple_endpoint(str)
-    homenode_token = simple_endpoint(str)
 
     class meta:
         class status:
@@ -455,6 +456,14 @@ class API:
                 def POST() -> None: ...
 
         fallback = simple_endpoint(MirrorSelectionFallback)
+
+    class homenode_token:
+        def GET() -> HomenodeTokenResponse: ...
+
+        def POST(data: str) -> None: ...
+
+        class check_token:
+            def GET(token: str) -> HomenodeTokenCheckAnswer: ...
 
     class ubuntu_pro:
         def GET() -> UbuntuProResponse: ...

@@ -2031,31 +2031,55 @@ msgstr ""
 msgid "Passwords"
 msgstr ""
 
-#: ../subiquity/ui/views/homenode_token.py:40
-msgid "Token:"
+#: ../subiquity/ui/views/homenode_token.py:43
+msgid "Installation Key:"
 msgstr ""
 
-#: ../subiquity/ui/views/homenode_token.py:41
+#: ../subiquity/ui/views/homenode_token.py:44
 msgid ""
 "Enter five words separated by dashes (e.g., word1-word2-word3-word4-word5)"
 msgstr ""
 
-#: ../subiquity/ui/views/homenode_token.py:48
-msgid "Token cannot be empty"
-msgstr ""
-
 #: ../subiquity/ui/views/homenode_token.py:51
+msgid "Installation key cannot be empty"
+msgstr ""
+
+#: ../subiquity/ui/views/homenode_token.py:54
 msgid ""
-"Token must be exactly five words separated by dashes (e.g., word1-word2-"
-"word3-word4-word5)"
+"Installation key must be exactly five words separated by dashes (e.g., "
+"word1-word2-word3-word4-word5)"
 msgstr ""
 
-#: ../subiquity/ui/views/homenode_token.py:55
-msgid "Homenode Token"
+#: ../subiquity/ui/views/homenode_token.py:58
+msgid "Homenode Installation Key"
 msgstr ""
 
-#: ../subiquity/ui/views/homenode_token.py:66
-msgid "Enter your Homenode token consisting of five words separated by dashes."
+#: ../subiquity/ui/views/homenode_token.py:74
+msgid "Enter your Homenode installation key consisting of five words separated by dashes."
+msgstr ""
+
+#: ../subiquity/ui/views/homenode_token.py:77
+msgid "Network is not available. Please configure network first to validate your installation key."
+msgstr ""
+
+#: ../subiquity/ui/views/homenode_token.py:98
+msgid "Checking installation key..."
+msgstr ""
+
+#: ../subiquity/ui/views/homenode_token.py:132
+msgid "Invalid installation key. Please check and try again."
+msgstr ""
+
+#: ../subiquity/ui/views/homenode_token.py:134
+msgid "Installation key has expired. Please use a valid key."
+msgstr ""
+
+#: ../subiquity/ui/views/homenode_token.py:136
+msgid "Network is not available. Please configure network first."
+msgstr ""
+
+#: ../subiquity/ui/views/homenode_token.py:138
+msgid "Failed to verify installation key. Please try again."
 msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:44
