@@ -893,6 +893,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         new=mock.AsyncMock(),
     )
     @mock.patch("subiquity.server.controllers.filesystem.shutdown.initiate_reboot")
+    @mock.patch("subiquity.server.casper.disable_media_eject_prompt", mock.Mock())
     async def test_v2_core_boot_fix_encryption_support__reboot(self, m_initiate_reboot):
         self.fsc.model = make_model()
 
@@ -912,6 +913,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
     @mock.patch(
         "subiquity.server.controllers.filesystem.shutdown.initiate_reboot_to_fw_settings"
     )
+    @mock.patch("subiquity.server.casper.disable_media_eject_prompt", mock.Mock())
     async def test_v2_core_boot_fix_encryption_support__reboot_to_fw(
         self, m_initiate_reboot_to_fw
     ):
@@ -931,6 +933,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         new=mock.AsyncMock(),
     )
     @mock.patch("subiquity.server.controllers.filesystem.shutdown.initiate_poweroff")
+    @mock.patch("subiquity.server.casper.disable_media_eject_prompt", mock.Mock())
     async def test_v2_core_boot_fix_encryption_support__poweroff(
         self, m_initiate_poweroff
     ):

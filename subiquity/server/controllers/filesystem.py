@@ -27,6 +27,7 @@ from contextlib import AsyncExitStack
 from typing import (
     Any,
     Callable,
+    Coroutine,
     Dict,
     Iterator,
     List,
@@ -98,7 +99,7 @@ from subiquity.models.filesystem import (
     align_up,
     humanize_size,
 )
-from subiquity.server import shutdown
+from subiquity.server import casper, shutdown
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
@@ -1845,20 +1846,36 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_core_boot_fix_encryption_support_POST(
         self, data: CoreBootFixEncryptionSupport
     ) -> None:
-        # Actions that are handled by Subiquity, not snapd.
-        local_actions = {
-            CoreBootFixAction.REBOOT: shutdown.initiate_reboot,
-            CoreBootFixAction.REBOOT_TO_FW_SETTINGS: shutdown.initiate_reboot_to_fw_settings,
-            CoreBootFixAction.SHUTDOWN: shutdown.initiate_poweroff,
-        }
-
-        if data.action in local_actions:
+        async def shutdown_action(action):
             if self.app.opts.dry_run:
                 self.app.exit()
                 return
-            else:
-                await local_actions[data.action]()
-                return
+
+            casper.disable_media_eject_prompt()
+            await action()
+
+        @attr.s(auto_attribs=True)
+        class LocalAction:
+            coroutine_function: Callable[..., Coroutine[Any, Any, None]]
+            args: list[Any]
+
+        # Actions that are handled by Subiquity, not snapd.
+        local_actions = {
+            CoreBootFixAction.REBOOT: LocalAction(
+                shutdown_action, [shutdown.initiate_reboot]
+            ),
+            CoreBootFixAction.REBOOT_TO_FW_SETTINGS: LocalAction(
+                shutdown_action, [shutdown.initiate_reboot_to_fw_settings]
+            ),
+            CoreBootFixAction.SHUTDOWN: LocalAction(
+                shutdown_action, [shutdown.initiate_poweroff]
+            ),
+        }
+
+        if data.action in local_actions:
+            action = local_actions[data.action]
+            await action.coroutine_function(*action.args)
+            return
 
         # Note that although we could, we currently do not look for
         # self._info.label here if the system label is not specified. This is
