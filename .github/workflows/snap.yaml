@@ -14,3 +14,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: canonical/action-build@v1
+      id: build-snap
+    - uses: actions/upload-artifact@v4
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      with:
+        name: subiquity-snap
+        path: ${{ steps.build-snap.outputs.snap }}

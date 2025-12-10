@@ -1,23 +1,23 @@
 name: Build and Deploy Snap
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Snap"]
+    types:
+      - completed
     branches:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install snapcraft
-        run: sudo snap install snapcraft --classic
-      
-      - name: Build snap
-        run: |
-          snapcraft clean
-          snapcraft snap
+      - uses: actions/download-artifact@v4
+        with:
+          name: subiquity-snap
+          path: .
+          run-id: ${{ github.event.workflow_run.id }}
       
       - name: Setup SSH
         run: |
@@ -28,7 +28,7 @@ jobs:
       
       - name: Deploy snap
         run: |
-          SNAP_FILE=$(ls *.snap)
+          SNAP_FILE=$(ls *.snap | head -n 1)
           SNAP_NAME=$(basename "$SNAP_FILE")
           
           # Copy with actual name
