@@ -1847,6 +1847,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self, data: CoreBootFixEncryptionSupport
     ) -> None:
         async def shutdown_action(action):
+            if self.app.opts.dry_run:
+                self.app.exit()
+                return
+
             casper.disable_media_eject_prompt()
             await action()
 
@@ -1869,13 +1873,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         }
 
         if data.action in local_actions:
-            if self.app.opts.dry_run:
-                self.app.exit()
-                return
-            else:
-                action = local_actions[data.action]
-                await action.coroutine_function(*action.args)
-                return
+            action = local_actions[data.action]
+            await action.coroutine_function(*action.args)
+            return
 
         # Note that although we could, we currently do not look for
         # self._info.label here if the system label is not specified. This is
