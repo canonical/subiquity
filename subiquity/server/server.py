@@ -127,36 +127,8 @@ class MetaController:
         return self.app.variant
 
     async def ssh_info_GET(self) -> Optional[LiveSessionSSHInfo]:
-        ips: List[str] = []
-        if self.app.base_model.network:
-            for dev in self.app.base_model.network.get_all_netdevs():
-                if dev.info is None:
-                    continue
-                ips.extend(map(str, dev.actual_global_ip_addresses))
-        if not ips:
-            return None
-        username = self.app.installer_user_name
-        if username is None:
-            return None
-        user_fingerprints = [
-            KeyFingerprint(keytype, fingerprint)
-            for keytype, fingerprint in user_key_fingerprints(username)
-        ]
-        if self.app.installer_user_passwd_kind == PasswordKind.NONE:
-            if not user_key_fingerprints:
-                return None
-        host_fingerprints = [
-            KeyFingerprint(keytype, fingerprint)
-            for keytype, fingerprint in host_key_fingerprints()
-        ]
-        return LiveSessionSSHInfo(
-            username=username,
-            password_kind=self.app.installer_user_passwd_kind,
-            password=self.app.installer_user_passwd,
-            authorized_key_fingerprints=user_fingerprints,
-            ips=ips,
-            host_key_fingerprints=host_fingerprints,
-        )
+        # Disable SSH info display - no remote access allowed during installation
+        return None
 
     async def free_only_GET(self) -> bool:
         return self.free_only
@@ -977,58 +949,59 @@ class SubiquityServer(Application):
                     return True
         return False
 
+    def disable_ssh_access(self):
+        """Stop and disable SSH service to prevent remote access during installation."""
+        if self.opts.dry_run:
+            return
+
+        log.info("Disabling SSH access to installer")
+
+        # Try both common service names
+        for service_name in ["ssh.service", "sshd.service"]:
+            run_command(["systemctl", "stop", service_name], check=False)
+            run_command(["systemctl", "mask", service_name], check=False)
+
+        log.info("SSH service stopped and masked")
+
+    def disable_alternate_ttys(self):
+        """Disable getty services on tty2-tty6 to prevent shell access via Alt+F2, etc."""
+        if self.opts.dry_run:
+            return
+
+        log.info("Disabling alternate virtual terminals (tty2-tty6)")
+
+        for tty_num in range(2, 7):  # tty2 through tty6
+            tty_name = f"getty@tty{tty_num}.service"
+            run_command(["systemctl", "stop", tty_name], check=False)
+            run_command(["systemctl", "mask", tty_name], check=False)
+
+        log.info("Alternate TTYs disabled")
+
     def set_installer_password(self):
         if self.installer_user_name is None:
             # there was no default user or cloud-init was disabled.
             return
 
-        passfile = self.state_path("installer-user-passwd")
-
-        if os.path.exists(passfile):
-            with open(passfile) as fp:
-                contents = fp.read()
-            self.installer_user_passwd_kind = PasswordKind.KNOWN
-            self.installer_user_name, self.installer_user_passwd = contents.split(
-                ":", 1
-            )
-            return
-
-        def use_passwd(passwd):
-            self.installer_user_passwd = passwd
-            self.installer_user_passwd_kind = PasswordKind.KNOWN
-            with open(passfile, "w") as fp:
-                fp.write(self.installer_user_name + ":" + passwd)
+        # Always set password kind to NONE to disable SSH access
+        self.installer_user_passwd_kind = PasswordKind.NONE
+        self.installer_user_passwd = None
 
         if self.opts.dry_run:
-            self.installer_user_name = os.environ["USER"]
-            use_passwd(rand_user_password())
             return
 
+        # Lock the installer user account to prevent any password-based login
         username = self.installer_user_name
-
-        if self._user_has_password(username):
-            # Was the password set to a random password by a version of
-            # cloud-init that records the username in the log?  (This is the
-            # case we hit on upgrading the subiquity snap)
-            passwd = get_installer_password_from_cloudinit_log()
-            if passwd:
-                use_passwd(passwd)
-            else:
-                self.installer_user_passwd_kind = PasswordKind.UNKNOWN
-        elif not user_key_fingerprints(username):
-            passwd = rand_user_password()
-            cp = run_command("chpasswd", input=username + ":" + passwd + "\n")
-            if cp.returncode == 0:
-                use_passwd(passwd)
-            else:
-                log.info("setting installer password failed %s", cp)
-                self.installer_user_passwd_kind = PasswordKind.NONE
-        else:
-            self.installer_user_passwd_kind = PasswordKind.NONE
+        run_command(["passwd", "-l", username], check=False)
+        log.info("Locked installer user account: %s", username)
 
     async def start(self):
         self.controllers.load_all()
         await self.start_api_server()
+
+        # Disable all external access to the installer
+        self.disable_ssh_access()
+        self.disable_alternate_ttys()
+
         self.update_state(ApplicationState.CLOUD_INIT_WAIT)
         await self.wait_for_cloudinit()
         self.set_installer_password()
