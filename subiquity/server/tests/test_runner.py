@@ -15,7 +15,7 @@
 
 import os
 import subprocess
-from unittest.mock import ANY, patch
+from unittest.mock import ANY, Mock, patch
 
 from subiquity.server.runner import (
     DryRunCommandRunner,
@@ -66,7 +66,10 @@ class TestLoggedCommandRunner(SubiTestCase):
 
         with patch.dict(os.environ, environ, clear=True):
             cmd = runner._forge_systemd_cmd(
-                ["/bin/ls", "/root"], private_mounts=True, capture=False
+                ["/bin/ls", "/root"],
+                private_mounts=True,
+                capture=False,
+                stdin=subprocess.DEVNULL,
             )
 
         expected = [
@@ -100,7 +103,10 @@ class TestLoggedCommandRunner(SubiTestCase):
         }
         with patch.dict(os.environ, environ, clear=True):
             cmd = runner._forge_systemd_cmd(
-                ["/bin/ls", "/root"], private_mounts=False, capture=True
+                ["/bin/ls", "/root"],
+                private_mounts=False,
+                capture=True,
+                stdin=subprocess.DEVNULL,
             )
 
         expected = [
@@ -122,7 +128,10 @@ class TestLoggedCommandRunner(SubiTestCase):
         # Make sure $ signs are escaped.
         with patch.dict(os.environ, {}, clear=True):
             cmd = runner._forge_systemd_cmd(
-                ["/usr/bin/echo", "$6$123456"], private_mounts=False, capture=True
+                ["/usr/bin/echo", "$6$123456"],
+                private_mounts=False,
+                capture=True,
+                stdin=subprocess.DEVNULL,
             )
 
         expected = [
@@ -139,14 +148,50 @@ class TestLoggedCommandRunner(SubiTestCase):
         ]
         self.assertEqual(cmd, expected)
 
-    async def test_start(self):
+    async def test_start__no_input(self):
         runner = LoggedCommandRunner(ident="my-id", use_systemd_user=False)
 
         with patch("subiquity.server.runner.astart_command") as astart_mock:
             await runner.start(["/bin/ls"], stdout=subprocess.PIPE)
 
         expected_cmd = ANY
-        astart_mock.assert_called_once_with(expected_cmd, stdout=subprocess.PIPE)
+        astart_mock.assert_called_once_with(
+            expected_cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE
+        )
+
+    async def test_start__pipe_stdin_and_capture(self):
+        runner = LoggedCommandRunner(ident="my-id", use_systemd_user=False)
+
+        with patch("subiquity.server.runner.astart_command") as astart_mock:
+            await runner.start(["/bin/cat"], stdin=subprocess.PIPE, capture=True)
+
+        expected_cmd = ANY
+        astart_mock.assert_called_once_with(expected_cmd, stdin=subprocess.PIPE)
+
+    async def test_start__pipe_stdin_and_no_capture(self):
+        runner = LoggedCommandRunner(ident="my-id", use_systemd_user=False)
+
+        with patch("subiquity.server.runner.astart_command") as astart_mock:
+            with self.assertRaisesRegex(
+                ValueError, r"cannot pipe stdin but not stdout"
+            ):
+                await runner.start(["/bin/cat"], stdin=subprocess.PIPE)
+
+        astart_mock.assert_not_called()
+
+    async def test_run__no_input(self):
+        runner = LoggedCommandRunner(ident="my-id", use_systemd_user=False)
+
+        proc_mock = Mock()
+
+        p_start = patch.object(runner, "start", return_value=proc_mock)
+        p_wait = patch.object(runner, "wait")
+
+        with p_start as m_start, p_wait as m_wait:
+            await runner.run(["/bin/cat"])
+
+        m_start.assert_called_once_with(["/bin/cat"], stdin=subprocess.DEVNULL)
+        m_wait.assert_called_once_with(proc_mock, input=None)
 
 
 class TestDryRunCommandRunner(SubiTestCase):
@@ -163,21 +208,31 @@ class TestDryRunCommandRunner(SubiTestCase):
     @patch.object(LoggedCommandRunner, "_forge_systemd_cmd")
     def test_forge_systemd_cmd(self, mock_super):
         self.runner._forge_systemd_cmd(
-            ["/bin/ls", "/root"], private_mounts=True, capture=True
-        )
-        mock_super.assert_called_once_with(
-            ["echo", "not running:", "/bin/ls", "/root"],
+            ["/bin/cat", "-e"],
             private_mounts=True,
             capture=True,
+            stdin=subprocess.PIPE,
+        )
+        mock_super.assert_called_once_with(
+            ["echo", "not running:", "/bin/cat", "-e"],
+            private_mounts=True,
+            capture=True,
+            stdin=subprocess.PIPE,
         )
 
         mock_super.reset_mock()
         # Make sure exceptions are handled.
         self.runner._forge_systemd_cmd(
-            ["scripts/replay-curtin-log.py"], private_mounts=True, capture=False
+            ["scripts/replay-curtin-log.py"],
+            private_mounts=True,
+            capture=False,
+            stdin=subprocess.DEVNULL,
         )
         mock_super.assert_called_once_with(
-            ["scripts/replay-curtin-log.py"], private_mounts=True, capture=False
+            ["scripts/replay-curtin-log.py"],
+            private_mounts=True,
+            capture=False,
+            stdin=subprocess.DEVNULL,
         )
 
     def test_get_delay_for_cmd(self):
