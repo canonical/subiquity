@@ -136,6 +136,23 @@ def make_client_for_conn(
 ):
     session = aiohttp.ClientSession(connector=conn, connector_owner=False)
 
+    # Some of the GET request handlers in the Subiquity API are not idempotent.
+    # Starting with aiohttp 3.11, which is included in Ubuntu 25.10,
+    # ClientSession-s are more aggressive with retries, and that can result in
+    # GET requests being retried after cancellation.
+    # Ideally, we should fix the GET request handlers but in the meantime,
+    # setting _retry_connection to False should be enough to disable unwanted
+    # retries. This is what aiohttp does to disable retries in tests.
+    # Note that before aiohttp 3.11, the _retry_connection did not exist, so
+    # checking the version is advisable.  See LP: #2122423.
+    client_version = aiohttp.__version__.split(".")
+    client_version_major = int(client_version[0])
+    client_version_minor = int(client_version[1])
+    if client_version_major > 3 or (
+        client_version_major == 3 and client_version_minor >= 11
+    ):
+        session._retry_connection = False
+
     @contextlib.asynccontextmanager
     async def make_request(method, path, *, params, json, raise_for_status):
         # session.request needs a full URL with scheme and host even though
