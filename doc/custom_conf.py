@@ -175,5 +175,5 @@ copybutton_prompt_text = '$ '
 copybutton_only_copy_prompt_lines = False
 
 extlinks = {
-    'manualpage': ( 'https://manpages.ubuntu.com/manpages/lunar/en/%s', '' )
+    'manualpage': ( 'https://manpages.ubuntu.com/manpages/noble/en/%s', '' )
 }
