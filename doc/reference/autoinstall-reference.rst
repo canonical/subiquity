@@ -419,6 +419,7 @@ By default, these layouts install to the largest disk in a system, but you can s
 By default (except on s390x), the matching disk will be partitioned using a GUID Partition Table (GPT). But you can specifically request a MSDOS (aka. MBR) partition table:
 
 .. code-block:: yaml
+
     autoinstall:
       storage:
         layout:
