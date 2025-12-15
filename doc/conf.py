@@ -316,8 +316,6 @@ root_doc = "index"
 copybutton_prompt_text = "$ "
 copybutton_only_copy_prompt_lines = False
 
-extlinks = {"manualpage": ("https://manpages.ubuntu.com/manpages/lunar/en/%s", "")}
-
 
 # Redefine the Sphinx 'command' role to behave/render like 'literal'
 
