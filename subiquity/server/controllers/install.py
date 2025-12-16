@@ -34,6 +34,7 @@ from curtin.config import merge_config
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.pkg import TargetPkg
+from subiquity.common.resources import get_users_and_groups
 from subiquity.common.types import ApplicationState, PackageInstallState
 from subiquity.journald import journald_listen
 from subiquity.models.filesystem import ActionRenderMode, Partition
@@ -648,11 +649,57 @@ class InstallController(SubiquityController):
                     log.warning("chreipl stderr:\n%s", cpe.stderr)
                 raise
 
+    async def create_users(self, context):
+        user = self.model.identity.user
+
+        if user is None:
+            return
+
+        groups = get_users_and_groups(self.model.chroot_prefix)
+
+        async def run_in_target(cmd: list[str], **kwargs):
+            await run_curtin_command(
+                self.app,
+                context,
+                "in-target",
+                "-t",
+                self.tpath(),
+                "--",
+                *cmd,
+                private_mounts=False,
+                **kwargs,
+            )
+
+        # NOTE: useradd supports the --password option but using it here would
+        # leak the hashed password if something logs the call to useradd. This
+        # is true for us since we're leaning on systemd-run to execute
+        # commands. Instead, we create a password-less user and immediately
+        # call chpasswd, which can read the password via stdin.
+        await run_in_target(
+            [
+                "useradd",
+                user.username,
+                "--comment",
+                user.realname,
+                "--shell",
+                "/bin/bash",
+                "--groups",
+                ",".join(sorted(groups)),
+                "--create-home",
+            ]
+        )
+        await run_in_target(
+            ["chpasswd", "--encrypted"],
+            input=f"{user.username}:{user.password}".encode("utf-8"),
+            capture=True,
+        )
+
     @with_context(
         description="final system configuration", level="INFO", childlevel="DEBUG"
     )
     async def postinstall(self, *, context):
         self.write_autoinstall_config()
+        await self.create_users(context)
         try:
             if self.supports_apt():
                 packages = await self.get_target_packages(context=context)

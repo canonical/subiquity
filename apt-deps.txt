@@ -17,6 +17,7 @@ libsystemd-dev
 lsb-release
 os-prober
 pandoc
+passwd
 pkg-config
 python3-aiohttp
 python3-aioresponses
