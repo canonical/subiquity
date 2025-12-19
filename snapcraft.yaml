@@ -66,7 +66,7 @@ parts:
     source: https://git.launchpad.net/curtin
     source-type: git
     # Tracks the ubuntu/noble branch
-    source-commit: "0ab394917d66d2b6c51e297bf9bf5d26ef36c360"
+    source-commit: "0fd15cd64ba6380f3835d9c2226fae1061547c31"
 
     override-pull: |
       craftctl default
