@@ -67,13 +67,13 @@ def get_index_targets() -> List[str]:
     return [key for key in targets if key.count("::") == 3]
 
 
-def apt_sourceparts_files(mp: Mountpoint) -> List[str]:
+def apt_sourceparts_files(mp: Mountpoint) -> List[pathlib.Path]:
     # Return the relative path of the files from
     # mp("etc/apt/sources.list.d") that apt will read.
     root = mp.pp()
     sources_list_d = root / "etc/apt/sources.list.d"
     paths = list(sources_list_d.glob("*.list")) + list(sources_list_d.glob("*.sources"))
-    return [str(p.relative_to(root)) for p in paths if p.name != "cdrom.sources"]
+    return [p.relative_to(root) for p in paths]
 
 
 class AptConfigurer:
@@ -242,7 +242,9 @@ class AptConfigurer:
         self.install_tree.pp("cdrom").mkdir()
         await self.mounter.mount("/cdrom", self.install_tree.p("cdrom"), options="bind")
 
-        new_style_iso = self.configured_tree.pp("etc/apt/sources.list.d/cdrom.sources")
+        new_style_iso = self.configured_tree.pp(
+            "etc/apt/sources.list.d/cdrom.sources"
+        ).exists()
 
         if self.app.base_model.network.has_network:
             with contextlib.suppress(FileNotFoundError):
@@ -255,12 +257,19 @@ class AptConfigurer:
                 missing_ok=True
             )
             for relpath in apt_sourceparts_files(self.configured_tree):
+                # If there is an apt source called cdrom.sources since it's
+                # the file we use, we assume this is an ISO for 26.04 which
+                # has the ISO pool enabled in the squashfs and so leave it in
+                # place.
+                if relpath.name == "cdrom.sources":
+                    continue
                 self.install_tree.pp(relpath).unlink()
 
         codename = lsb_release(dry_run=self.app.opts.dry_run)["codename"]
 
         if not new_style_iso:
-            # ISOs for 26.04 and later have the cdrom source enabled in the squashfs.
+            # If we _didn't_ find a cdrom.sources, we need to add the ISO pool
+            # as a package source.
             write_file(
                 self.install_tree.p("etc/apt/sources.list"),
                 f"deb [check-date=no] file:///cdrom {codename} main restricted\n",
@@ -330,11 +339,8 @@ class AptConfigurer:
                 ]
             )
 
-        def _restore_file(path: str) -> None:
+        def _restore_file(path: str | pathlib.Path) -> None:
             shutil.copyfile(self.configured_tree.p(path), target_mnt.p(path))
-
-        # If the ISO came with a cdrom.sources, delete it.
-        target_mnt.pp("etc/apt/sources.list.d/cdrom.sources").unlink(missing_ok=True)
 
         # The file only exists if we are online
         target_mnt.pp("etc/apt/sources.list.d/original.list").unlink(missing_ok=True)
@@ -362,6 +368,9 @@ class AptConfigurer:
             for relpath in apt_sourceparts_files(self.configured_tree):
                 _restore_file(relpath)
             await _restore_dir("var/lib/apt/lists")
+
+        # If the ISO came with a cdrom.sources, delete it.
+        target_mnt.pp("etc/apt/sources.list.d/cdrom.sources").unlink(missing_ok=True)
 
         await self.cleanup()
         try:
