@@ -269,6 +269,7 @@ class GuidedDisallowedCapabilityReason(enum.Enum):
     THIRD_PARTY_DRIVERS = enum.auto()
 
 
+@attr.s(auto_attribs=True)
 class CoreBootFixActionArgs:
     # -- Supported arguments vary from one action type to another and from one
     # argument name to another.
