@@ -581,6 +581,7 @@ class NetworkModel(object):
         }
         type_to_key = {
             "eth": "ethernets",
+            "ibchild": "ethernets",
             "bond": "bonds",
             "wlan": "wifis",
             "vlan": "vlans",
