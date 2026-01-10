@@ -21,6 +21,7 @@ from subiquity.server.dryrun import DRConfig
 from subiquity.server.ubuntu_drivers import (
     CommandNotFoundError,
     UbuntuDriversClientInterface,
+    UbuntuDriversHasDriversInterface,
     UbuntuDriversInterface,
     UbuntuDriversRunDriversInterface,
 )
@@ -255,3 +256,26 @@ class TestUbuntuDriversRunDriversInterface(unittest.IsolatedAsyncioTestCase):
         mock_arun_command.assert_called_once_with(
             ["sh", "-c", "command -v ubuntu-drivers"], check=True
         )
+
+
+class TestDriversFromOutput(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.ud = UbuntuDriversHasDriversInterface(make_app(), False)
+
+    async def test_empty(self):
+        self.assertEqual([], self.ud._drivers_from_output(""))
+
+    async def test_space_split(self):
+        self.assertEqual(["a"], self.ud._drivers_from_output("a b"))
+
+    async def test_two(self):
+        output = "a\nb\n"
+        self.assertEqual(["a", "b"], self.ud._drivers_from_output(output))
+
+    async def test_skip_oem_and_hwe(self):
+        output = """
+a
+oem-foo-meta
+hwe-foo-meta
+"""
+        self.assertEqual(["a"], self.ud._drivers_from_output(output))

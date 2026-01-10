@@ -101,10 +101,14 @@ class UbuntuDriversInterface(ABC):
             if not line:
                 continue
             package = line.split(" ", maxsplit=1)[0]
-            if package.startswith("oem-") and package.endswith("-meta"):
-                # Ignore oem-*-meta packages (this would not be needed if we
-                # had passed --no-oem but ..)
-                continue
+            if package.endswith("-meta"):
+                if package.startswith("oem-") or package.startswith("hwe-"):
+                    # Ignore oem-*-meta and hwe-*-meta packages
+                    # We do so because we want to treat those as oem packages
+                    # which can get installed automatically on appropriate
+                    # hardware, instead of gated behind the drivers checkbox
+                    # that this function is concerned with.
+                    continue
             drivers.append(package)
 
         return drivers
