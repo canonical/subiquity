@@ -158,6 +158,9 @@ class Mounter:
         self._mounts.append(m)
         return m
 
+    async def bind_mount(self, src: Path | str, dst: Path | str) -> Mountpoint:
+        return await self.mount(src, dst, options="bind")
+
     async def unmount(self, mountpoint: Mountpoint, remove=True) -> None:
         if remove:
             self._mounts.remove(mountpoint)
@@ -232,6 +235,16 @@ class Mounter:
         type=None,
     ) -> AsyncGenerator[Mountpoint, None]:
         mp = await self.mount(device, mountpoint, options, type)
+        try:
+            yield mp
+        finally:
+            await self.unmount(mp)
+
+    @contextlib.asynccontextmanager
+    async def bind_mounted(
+        self, src: Path | str, dst: Path | str
+    ) -> AsyncGenerator[Mountpoint, None]:
+        mp = await self.bind_mount(src, dst)
         try:
             yield mp
         finally:
