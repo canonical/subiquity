@@ -19,6 +19,7 @@ import logging
 import os
 import shutil
 import tempfile
+from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -116,12 +117,14 @@ def _lowerdir_for_lst(lst):
 
 
 class Mounter:
-    def __init__(self, app):
+    def __init__(self, app) -> None:
         self.app = app
         self.tmpfiles = TmpFileSet()
         self._mounts: List[Mountpoint] = []
 
-    async def mount(self, device, mountpoint=None, options=None, type=None):
+    async def mount(
+        self, device: str, mountpoint: str | None = None, options=None, type=None
+    ) -> Mountpoint:
         opts = []
         if options is not None:
             opts.extend(["-o", options])
@@ -146,7 +149,7 @@ class Mounter:
         self._mounts.append(m)
         return m
 
-    async def unmount(self, mountpoint: Mountpoint, remove=True):
+    async def unmount(self, mountpoint: Mountpoint, remove=True) -> None:
         if remove:
             self._mounts.remove(mountpoint)
         await self.app.command_runner.run(
@@ -184,12 +187,12 @@ class Mounter:
 
         return OverlayMountpoint(lowers=lowers, mountpoint=mount.p(), upperdir=upperdir)
 
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         for m in reversed(self._mounts):
             await self.unmount(m, remove=False)
         self.tmpfiles.cleanup()
 
-    async def bind_mount_tree(self, src, dst):
+    async def bind_mount_tree(self, src: str, dst: str) -> None:
         """bind-mount files and directories from src that are not already
         present into dst"""
         if not os.path.exists(dst):
@@ -207,7 +210,9 @@ class Mounter:
                     dirnames.remove(name)
 
     @contextlib.asynccontextmanager
-    async def mounted(self, device, mountpoint=None, options=None, type=None):
+    async def mounted(
+        self, device: str, mountpoint: str | None = None, options=None, type=None
+    ) -> AsyncGenerator[Mountpoint, None]:
         mp = await self.mount(device, mountpoint, options, type)
         try:
             yield mp
