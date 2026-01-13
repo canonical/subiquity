@@ -20,6 +20,7 @@ from subiquity.common.api.defs import (
     Payload,
     allowed_before_start,
     api,
+    redacted_response,
     simple_endpoint,
 )
 from subiquity.common.types import (
@@ -521,6 +522,7 @@ class API:
                 ...
 
     class identity:
+        @redacted_response
         def GET() -> IdentityData:
             ...
 
