@@ -123,8 +123,17 @@ class Mounter:
         self._mounts: List[Mountpoint] = []
 
     async def mount(
-        self, device: str, mountpoint: str | None = None, options=None, type=None
+        self,
+        device: Path | str,
+        mountpoint: Path | str | None = None,
+        options=None,
+        type=None,
     ) -> Mountpoint:
+        if isinstance(device, Path):
+            device = str(device)
+        if isinstance(mountpoint, Path):
+            mountpoint = str(mountpoint)
+
         opts = []
         if options is not None:
             opts.extend(["-o", options])
@@ -192,9 +201,14 @@ class Mounter:
             await self.unmount(m, remove=False)
         self.tmpfiles.cleanup()
 
-    async def bind_mount_tree(self, src: str, dst: str) -> None:
+    async def bind_mount_tree(self, src: Path | str, dst: Path | str) -> None:
         """bind-mount files and directories from src that are not already
         present into dst"""
+        if isinstance(src, Path):
+            src = str(src)
+        if isinstance(dst, Path):
+            dst = str(dst)
+
         if not os.path.exists(dst):
             await self.mount(src, dst, options="bind")
             return
@@ -211,7 +225,11 @@ class Mounter:
 
     @contextlib.asynccontextmanager
     async def mounted(
-        self, device: str, mountpoint: str | None = None, options=None, type=None
+        self,
+        device: Path | str,
+        mountpoint: Path | str | None = None,
+        options=None,
+        type=None,
     ) -> AsyncGenerator[Mountpoint, None]:
         mp = await self.mount(device, mountpoint, options, type)
         try:
