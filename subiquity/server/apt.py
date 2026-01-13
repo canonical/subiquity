@@ -242,10 +242,6 @@ class AptConfigurer:
         self.install_tree.pp("cdrom").mkdir()
         await self.mounter.mount("/cdrom", self.install_tree.p("cdrom"), options="bind")
 
-        new_style_iso = self.configured_tree.pp(
-            "etc/apt/sources.list.d/cdrom.sources"
-        ).exists()
-
         if self.app.base_model.network.has_network:
             with contextlib.suppress(FileNotFoundError):
                 self.install_tree.pp("etc/apt/sources.list").rename(
@@ -266,6 +262,10 @@ class AptConfigurer:
                 self.install_tree.pp(relpath).unlink()
 
         codename = lsb_release(dry_run=self.app.opts.dry_run)["codename"]
+
+        new_style_iso = self.configured_tree.pp(
+            "etc/apt/sources.list.d/cdrom.sources"
+        ).exists()
 
         if not new_style_iso:
             # If we _didn't_ find a cdrom.sources, we need to add the ISO pool
