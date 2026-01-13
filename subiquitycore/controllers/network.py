@@ -266,11 +266,6 @@ class BaseNetworkController(BaseController):
     def _write_config(self):
         config = self.model.render_config()
 
-        log.debug(
-            "network config: \n%s",
-            yaml.dump(netplan.sanitize_config(config), default_flow_style=False),
-        )
-
         for p in netplan.configs_in_root(self.root, masked=True):
             if p == self.netplan_path:
                 continue

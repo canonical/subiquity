@@ -206,6 +206,7 @@ class API:
                 ...
 
     class network:
+        @redacted_response
         def GET() -> NetworkStatus:
             ...
 
