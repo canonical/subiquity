@@ -788,6 +788,7 @@ class InstallController(SubiquityController):
             await fs_controller.finish_install(
                 context=context, kernel_components=self.kernel_components()
             )
+            await fs_controller.snapd_target_preseed(Path(self.model.target))
 
         if self.supports_apt():
             if self.model.drivers.do_install:

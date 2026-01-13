@@ -236,6 +236,8 @@ class FakeSnapdConnection:
                     change = "5"
             elif step == "setup-storage-encryption":
                 change = "6"
+            elif step == "preseed":
+                change = "10"
             elif step == "generate-recovery-key":
                 sync_result = {"recovery-key": "my-recovery-key"}
         elif path.startswith("v2/systems/") and body["action"] in (
