@@ -129,32 +129,30 @@ class Mounter:
         options=None,
         type=None,
     ) -> Mountpoint:
-        if isinstance(device, Path):
-            device = str(device)
-        if isinstance(mountpoint, Path):
-            mountpoint = str(mountpoint)
-
+        if isinstance(device, str):
+            device = Path(device)
+        if isinstance(mountpoint, str):
+            mountpoint = Path(mountpoint)
         opts = []
         if options is not None:
             opts.extend(["-o", options])
         if type is not None:
             opts.extend(["-t", type])
         if mountpoint is None:
-            mountpoint = tempfile.mkdtemp()
+            mountpoint = Path(tempfile.mkdtemp())
             created = True
-        elif os.path.exists(mountpoint):
+        elif mountpoint.exists():
             created = False
         else:
-            path = Path(device)
-            if options == "bind" and not path.is_dir():
-                Path(mountpoint).touch(exist_ok=False)
+            if options == "bind" and not device.is_dir():
+                mountpoint.touch(exist_ok=False)
             else:
-                os.makedirs(mountpoint, exist_ok=False)
+                mountpoint.mkdir(parents=True, exist_ok=False)
             created = True
         await self.app.command_runner.run(
-            ["mount"] + opts + [device, mountpoint], private_mounts=False
+            ["mount"] + opts + [str(device), str(mountpoint)], private_mounts=False
         )
-        m = Mountpoint(mountpoint=mountpoint, created=created)
+        m = Mountpoint(mountpoint=str(mountpoint), created=created)
         self._mounts.append(m)
         return m
 
