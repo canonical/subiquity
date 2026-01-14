@@ -117,11 +117,19 @@ class TestMounter(SubiTestCase):
             await mounter.bind_mount_tree(src, dst)
         mocked.assert_has_calls(
             [
-                call(f"{src}/only-src-file", f"{dst}/only-src-file", options="bind"),
-                call(f"{src}/only-src-dir", f"{dst}/only-src-dir", options="bind"),
                 call(
-                    f"{src}/both-dir/only-src-file",
-                    f"{dst}/both-dir/only-src-file",
+                    Path(src) / "only-src-file",
+                    Path(dst) / "only-src-file",
+                    options="bind",
+                ),
+                call(
+                    Path(src) / "only-src-dir",
+                    Path(dst) / "only-src-dir",
+                    options="bind",
+                ),
+                call(
+                    Path(src) / "both-dir/only-src-file",
+                    Path(dst) / "both-dir/only-src-file",
                     options="bind",
                 ),
             ],
@@ -138,7 +146,7 @@ class TestMounter(SubiTestCase):
 
         with patch.object(mounter, "mount", new_callable=AsyncMock) as mocked:
             await mounter.bind_mount_tree(src, dst)
-        mocked.assert_called_once_with(src, dst, options="bind")
+        mocked.assert_called_once_with(Path(src), Path(dst), options="bind")
 
     async def test_bind_mount_creates_dest_dir(self):
         mounter = Mounter(self.app)

@@ -205,21 +205,21 @@ class Mounter:
     async def bind_mount_tree(self, src: Path | str, dst: Path | str) -> None:
         """bind-mount files and directories from src that are not already
         present into dst"""
-        if isinstance(src, Path):
-            src = str(src)
-        if isinstance(dst, Path):
-            dst = str(dst)
+        if isinstance(src, str):
+            src = Path(src)
+        if isinstance(dst, str):
+            dst = Path(dst)
 
-        if not os.path.exists(dst):
+        if not dst.exists():
             await self.mount(src, dst, options="bind")
             return
-        for src_dirpath, dirnames, filenames in os.walk(src):
-            dst_dirpath = src_dirpath.replace(src, dst)
+        for src_dirpath, dirnames, filenames in os.walk(str(src)):
+            dst_dirpath = src_dirpath.replace(str(src), str(dst))
             for name in dirnames + filenames:
-                dst_path = os.path.join(dst_dirpath, name)
-                if os.path.exists(dst_path):
+                dst_path = Path(dst_dirpath) / name
+                if dst_path.exists():
                     continue
-                src_path = os.path.join(src_dirpath, name)
+                src_path = Path(src_dirpath) / name
                 await self.mount(src_path, dst_path, options="bind")
                 if name in dirnames:
                     dirnames.remove(name)
