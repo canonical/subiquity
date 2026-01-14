@@ -189,7 +189,7 @@ class Mounter:
         upperdir = f"{tdir}/upper"
         workdir = f"{tdir}/work"
         for d in target, workdir, upperdir:
-            os.mkdir(d)
+            Path(d).mkdir()
 
         options = f"lowerdir={lowerdir},upperdir={upperdir},workdir={workdir}"
 
@@ -265,7 +265,7 @@ class DryRunMounter(Mounter):
         else:
             source = lowerdir
         target = self.tmpfiles.tdir()
-        os.mkdir(f"{target}/etc")
+        (Path(target) / "etc").mkdir()
 
         # In dry run mode we copy the apt config from the running
         # system into the "target". Some files associated with Ubuntu
