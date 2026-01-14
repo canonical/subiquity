@@ -103,6 +103,7 @@ from subiquity.server import casper, shutdown
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
+from subiquity.server.mounter import Mounter
 from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
 from subiquity.server.snapd.system_getter import SystemGetter, SystemsDirMounter
@@ -1159,6 +1160,40 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         )
 
         self.model.set_core_boot_recovery_key(result.recovery_key)
+
+    async def snapd_target_preseed(self, target: pathlib.Path):
+        async with AsyncExitStack() as es:
+            # Bind-mount required filesystems
+            # Some of these might already be mounted by curtin, but
+            # it should be fine to bind-mount twice.
+            mounter = Mounter(self.app)
+
+            to_bind_mount = [
+                "dev",
+                "proc",
+                "sys",
+                "sys/kernel/security",
+                "var/lib/snapd/seed",
+            ]
+
+            for fs in to_bind_mount:
+                # Needed at least for var/lib/snapd/seed in dry-run mode.
+                (target / fs).parent.mkdir(parents=True, exist_ok=True)
+
+                await es.enter_async_context(
+                    mounter.bind_mounted(pathlib.Path("/") / fs, target / fs)
+                )
+
+            label = self._info.label
+            await snapdapi.post_and_wait(
+                self.app.snapdapi,
+                self.app.snapdapi.v2.systems[label].POST,
+                snapdtypes.SystemActionRequest(
+                    action=snapdtypes.SystemAction.INSTALL,
+                    step=snapdtypes.SystemActionStep.PRESEED,
+                    target_root=str(target),
+                ),
+            )
 
     @with_context(description="making system bootable")
     async def finish_install(self, context, kernel_components):

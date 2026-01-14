@@ -1237,6 +1237,27 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
 
         m_set_key.assert_called_once_with("my-recovery-key")
 
+    @mock.patch("subiquity.server.mounter.Mounter.bind_mounted")
+    async def test_snapd_target_preseed(self, m_bind_mounted):
+        self.fsc._info = mock.Mock(label="mock-label")
+
+        with mock.patch.object(snapdapi, "post_and_wait") as mock_post:
+            await self.fsc.snapd_target_preseed(Path("/target"))
+
+        expected_mounted_calls = [
+            mock.call(Path("/dev"), Path("/target/dev")),
+            mock.call(Path("/proc"), Path("/target/proc")),
+            mock.call(Path("/sys"), Path("/target/sys")),
+            mock.call(
+                Path("/sys/kernel/security"), Path("/target/sys/kernel/security")
+            ),
+            mock.call(Path("/var/lib/snapd/seed"), Path("/target/var/lib/snapd/seed")),
+        ]
+
+        self.assertEqual(expected_mounted_calls, m_bind_mounted.call_args_list)
+
+        mock_post.assert_called_once()
+
     async def test_finish_install(self):
         self.app.snapdapi = snapdapi.make_api_client(AsyncSnapd(get_fake_connection()))
         variation_info = VariationInfo(

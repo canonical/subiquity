@@ -300,6 +300,7 @@ class SystemAction(enum.Enum):
 class SystemActionStep(enum.Enum):
     SETUP_STORAGE_ENCRYPTION = "setup-storage-encryption"
     GENERATE_RECOVERY_KEY = "generate-recovery-key"
+    PRESEED = "preseed"
     FINISH = "finish"
 
 
@@ -341,10 +342,13 @@ class SystemActionRequest:
 
     # For action=INSTALL
     step: Optional[SystemActionStep] = None
+    # -- for step=SETUP_STORAGE_ENCRYPTION
     on_volumes: Optional[Dict[str, OnVolume]] = None
     # When optional_install=None it is equivalent to OptionalInstall(all=True)
     optional_install: Optional[OptionalInstall] = None
     volumes_auth: Optional[VolumesAuth] = None
+    # -- for step=PRESEED
+    target_root: Optional[str] = None
 
     # For action=CHECK_PIN
     pin: Optional[str] = None
