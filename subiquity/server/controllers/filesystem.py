@@ -1879,7 +1879,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 continue
 
             if features is None:
-                # Snapd is too old
+                # Snapd is not offering pin/passphrase.
                 return []
 
             return [CoreBootEncryptionFeatures(feature.value) for feature in features]

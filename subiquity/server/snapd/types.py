@@ -221,7 +221,8 @@ class StorageEncryption:
     storage_safety: StorageSafety
     encryption_type: EncryptionType = EncryptionType.NONE
     unavailable_reason: str = ""
-    # Since snapd 2.68
+    # Introduced in snapd 2.68, but can be None if snapd does not want to offer
+    # pin/passphrase.
     features: Optional[List[EncryptionFeature]] = None
 
     # Since snapd 2.71 <-- to be confirmed once released.
