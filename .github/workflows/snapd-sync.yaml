@@ -1,0 +1,16 @@
+name: snapd-sync
+
+on:
+  push:
+    paths-ignore:
+      - 'doc/**'
+jobs:
+  check-on-sync-types:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: run
+      run: |
+        sudo apt-get install --assume-yes make golang-go
+        sudo make install_deps
+        sudo ./scripts/check-snapd-types-on-sync.py --snapd-revision master
