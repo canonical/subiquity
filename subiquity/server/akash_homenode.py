@@ -16,6 +16,7 @@
 
 import base64
 import logging
+import socket
 from abc import ABC, abstractmethod
 from typing import Dict, Optional
 
@@ -96,7 +97,9 @@ class HTTPAkashAPIStrategy(AkashAPIStrategy):
         }
 
         try:
-            async with aiohttp.ClientSession() as session:
+            # Force IPv4 to avoid issues with broken IPv6 connectivity
+            connector = aiohttp.TCPConnector(family=socket.AF_INET)
+            async with aiohttp.ClientSession(connector=connector) as session:
                 async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
                     if response.status == 200:
                         data = await response.json()
