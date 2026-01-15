@@ -185,6 +185,7 @@ class CoreBootFixAction(enum.Enum):
     ENABLE_TPM_VIA_FIRMWARE = "enable-tpm-via-firmware"
     ENABLE_AND_CLEAR_TPM_VIA_FIRMWARE = "enable-and-clear-tpm-via-firmware"
     CLEAR_TPM_VIA_FIRMWARE = "clear-tpm-via-firmware"
+    CLEAR_TPM_SIMPLE = "clear-tpm-simple"
     CLEAR_TPM = "clear-tpm"
     PROCEED = "proceed"
 
