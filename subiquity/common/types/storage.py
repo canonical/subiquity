@@ -155,23 +155,22 @@ class CoreBootAvailabilityErrorKind(enum.Enum):
     INSUFFICIENT_TPM_STORAGE = "insufficient-tpm-storage"
     NO_SUITABLE_PCR_BANK = "no-suitable-pcr-bank"
     MEASURED_BOOT = "measured-boot"
-    EMPTY_PCR_BANKS = "empty-pcr-banks"
     TPM_COMMAND_FAILED = "tpm-command-failed"
     INVALID_TPM_RESPONSE = "invalid-tpm-response"
     TPM_COMMUNICATION = "tpm-communication"
     UNSUPPORTED_PLATFORM = "unsupported-platform"
-    UEFI_DEBUGGING_ENABLED = "uefi-debugging-enabled"
     INSUFFICIENT_DMA_PROTECTION = "insufficient-dma-protection"
     NO_KERNEL_IOMMU = "no-kernel-iommu"
     HOST_SECURITY = "host-security"
     PCR_UNUSABLE = "tpm-pcr-unusable"
-    PCR_UNSUPPORTED = "tpm-pcr-unsupported"
     ADDON_DRIVERS_PRESENT = "addon-drivers-present"
     SYS_PREP_APPLICATIONS_PRESENT = "sys-prep-applications-present"
     ABSOLUTE_PRESENT = "absolute-present"
     INVALID_SECURE_BOOT_MODE = "invalid-secure-boot-mode"
     WEAK_SECURE_BOOT_ALGORITHM_DETECTED = "weak-secure-boot-algorithms-detected"
-    PRE_OS_DIGEST_VERIFICATION_DETECTED = "pre-os-digest-verification-detected"
+    PRE_OS_SECURE_BOOT_AUTH_BY_ENROLLED_DIGESTS = (
+        "pre-os-secure-boot-auth-by-enrolled-digests"
+    )
 
 
 # Shared enum used by the snapd API
@@ -185,6 +184,7 @@ class CoreBootFixAction(enum.Enum):
     ENABLE_TPM_VIA_FIRMWARE = "enable-tpm-via-firmware"
     ENABLE_AND_CLEAR_TPM_VIA_FIRMWARE = "enable-and-clear-tpm-via-firmware"
     CLEAR_TPM_VIA_FIRMWARE = "clear-tpm-via-firmware"
+    CLEAR_TPM_SIMPLE = "clear-tpm-simple"
     CLEAR_TPM = "clear-tpm"
     PROCEED = "proceed"
 
