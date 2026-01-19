@@ -21,11 +21,12 @@ import os
 import re
 import subprocess
 import sys
-from typing import Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
 import yaml
 
 from subiquity.journald import journald_listen
+from subiquity.server.runner import LoggedCommandRunner
 from subiquitycore.context import Context, Status
 
 log = logging.getLogger("subiquity.server.curtin")
@@ -35,7 +36,13 @@ class _CurtinCommand:
     _count = 0
 
     def __init__(
-        self, opts, runner, command: str, *args: str, config=None, private_mounts: bool
+        self,
+        opts,
+        runner,
+        command: str,
+        *args: str,
+        config=None,
+        runner_kwargs: dict[str, Any],
     ):
         self.opts = opts
         self.runner = runner
@@ -48,7 +55,7 @@ class _CurtinCommand:
         self._fd = None
         self.proc = None
         self._cmd = self.make_command(command, *args, config=config)
-        self.private_mounts = private_mounts
+        self.runner_kwargs = runner_kwargs
 
     def _event(self, event):
         e = {
@@ -118,7 +125,9 @@ class _CurtinCommand:
         await asyncio.sleep(0)
         self._event_contexts[""] = context
         self.proc = await self.runner.start(
-            self._cmd, **opts, private_mounts=self.private_mounts
+            self._cmd,
+            **opts,
+            **self.runner_kwargs,
         )
 
     async def wait(self, input: Optional[bytes] = None):
@@ -193,7 +202,14 @@ class _FailingDryRunCurtinCommand(_DryRunCurtinCommand):
 
 
 async def start_curtin_command(
-    app, context, command: str, *args: str, config=None, private_mounts: bool, **opts
+    app,
+    context,
+    command: str,
+    *args: str,
+    config=None,
+    runner=None,
+    private_mounts: bool,
+    **opts,
 ) -> _CurtinCommand:
     cls: Type[_CurtinCommand]
     if app.opts.dry_run:
@@ -203,13 +219,30 @@ async def start_curtin_command(
             cls = _DryRunCurtinCommand
     else:
         cls = _CurtinCommand
+
+    if runner is None:
+        runner = app.command_runner
+
+    # Not strictly necessary but makes the error move obvious.
+    # Also, this will become necessary if we make 'private_mounts' an attribute
+    # of the runner.
+    if private_mounts and not isinstance(runner, LoggedCommandRunner):
+        raise NotImplementedError(
+            "private-mounts support is only provided by systemd-run based runners"
+        )
+
+    runner_kwargs = {}
+
+    if private_mounts:
+        runner_kwargs["private_mounts"] = private_mounts
+
     curtin_cmd = cls(
         app.opts,
-        app.command_runner,
+        runner if runner is not None else app.command_runner,
         command,
         *args,
         config=config,
-        private_mounts=private_mounts,
+        runner_kwargs=runner_kwargs,
     )
     await curtin_cmd.start(context, **opts)
     return curtin_cmd
@@ -221,6 +254,7 @@ async def run_curtin_command(
     command: str,
     *args: str,
     config=None,
+    runner=None,
     private_mounts: bool,
     input: Optional[bytes] = None,
     **opts,
@@ -237,6 +271,7 @@ async def run_curtin_command(
         command,
         *args,
         config=config,
+        runner=runner,
         private_mounts=private_mounts,
         stdin=stdin,
         **opts,
