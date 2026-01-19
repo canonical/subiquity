@@ -16,6 +16,8 @@
 
 import base64
 import logging
+import os
+import ssl
 import socket
 from abc import ABC, abstractmethod
 from typing import Dict, Optional
@@ -98,9 +100,27 @@ class HTTPAkashAPIStrategy(AkashAPIStrategy):
 
         try:
             # Force IPv4 to avoid issues with broken IPv6 connectivity
-            connector = aiohttp.TCPConnector(family=socket.AF_INET)
+            # Create SSL context with default certificate verification
+            # Try to use system CA bundle explicitly
+            ssl_context = ssl.create_default_context()
+            # Try common CA bundle locations in case default doesn't work
+            ca_bundle_paths = [
+                "/etc/ssl/certs/ca-certificates.crt",
+                "/etc/ssl/certs/ca-bundle.crt",
+                "/usr/lib/ssl/certs/ca-certificates.crt",
+            ]
+            for ca_path in ca_bundle_paths:
+                if os.path.exists(ca_path):
+                    log.debug("Using CA bundle: %s", ca_path)
+                    ssl_context.load_verify_locations(ca_path)
+                    break
+            connector = aiohttp.TCPConnector(
+                family=socket.AF_INET,
+                ssl=ssl_context,
+            )
             async with aiohttp.ClientSession(connector=connector) as session:
-                async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                log.debug("Making API request to %s", url)
+                async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=30)) as response:
                     if response.status == 200:
                         data = await response.json()
                         if data.get("status") == "success":
@@ -169,11 +189,26 @@ class HTTPAkashAPIStrategy(AkashAPIStrategy):
             raise
         except CheckTokenError:
             raise
+        except aiohttp.ClientConnectorError as e:
+            log.error("Connection error verifying installation key: %s (type: %s)", e, type(e).__name__)
+            # Check if it's an SSL error
+            if "SSL" in str(e) or "certificate" in str(e).lower():
+                raise CheckTokenError(token, f"SSL/Certificate error: {e}")
+            raise CheckTokenError(token, f"Connection error: {e}")
+        except aiohttp.ClientSSLError as e:
+            log.error("SSL error verifying installation key: %s (type: %s)", e, type(e).__name__)
+            raise CheckTokenError(token, f"SSL error: {e}")
+        except aiohttp.ServerTimeoutError as e:
+            log.error("Timeout error verifying installation key: %s", e)
+            raise CheckTokenError(token, f"Request timeout: {e}")
         except aiohttp.ClientError as e:
-            log.error("Network error verifying installation key: %s", e)
+            log.error("Network error verifying installation key: %s (type: %s)", e, type(e).__name__)
             raise CheckTokenError(token, f"Network error: {e}")
+        except ssl.SSLError as e:
+            log.error("SSL error verifying installation key: %s", e)
+            raise CheckTokenError(token, f"SSL error: {e}")
         except Exception as e:
-            log.error("Unexpected error verifying installation key: %s", e)
+            log.error("Unexpected error verifying installation key: %s (type: %s)", e, type(e).__name__, exc_info=True)
             raise CheckTokenError(token, f"Unexpected error: {e}")
 
 
