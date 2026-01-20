@@ -18,6 +18,8 @@ from typing import List, Optional, TypedDict
 import attr
 import yaml
 
+from subiquitycore import async_helpers
+
 
 class DryRunController:
     def __init__(self, app):
@@ -25,7 +27,11 @@ class DryRunController:
         self.context = app.context.child("DryRun")
 
     async def crash_GET(self) -> None:
-        1 / 0
+        async def fail():
+            1 / 0
+
+        task = async_helpers.schedule_task(fail(), propagate_errors=True)
+        await task
 
 
 class KnownMirror(TypedDict, total=False):
