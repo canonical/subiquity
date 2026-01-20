@@ -17,6 +17,7 @@ import asyncio
 import copy
 import logging
 import os
+import subprocess
 import sys
 import time
 from typing import Any, List, Optional
@@ -50,7 +51,11 @@ from subiquity.common.types import (
     PasswordKind,
 )
 from subiquity.models.subiquity import ModelNames, SubiquityModel
-from subiquity.server.autoinstall import AutoinstallError, AutoinstallValidationError
+from subiquity.server.autoinstall import (
+    AutoinstallError,
+    AutoinstallUserSuppliedCmdError,
+    AutoinstallValidationError,
+)
 from subiquity.server.controller import SubiquityController
 from subiquity.server.dryrun import DRConfig
 from subiquity.server.errors import ErrorController
@@ -1040,7 +1045,10 @@ class SubiquityServer(Application):
                 # Just wait a second for any clients to get ready to print
                 # output.
                 await asyncio.sleep(1)
-                await self.controllers.Early.run()
+                try:
+                    await self.controllers.Early.run()
+                except subprocess.CalledProcessError as exc:
+                    raise AutoinstallUserSuppliedCmdError(cmd=exc.cmd, details=str(exc))
                 open(stamp_file, "w").close()
                 await asyncio.sleep(1)
         self.load_autoinstall_config(only_early=False)

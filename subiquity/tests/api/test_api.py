@@ -2229,15 +2229,8 @@ class TestAutoinstallServer(TestAPI):
             self.assertIn("details", error)
             self.assertEqual(error["cause"], "AutoinstallValidationError")
 
-    # This test isn't perfect, because in the future we should
-    # really throw an AutoinstallError when a user provided
-    # command fails, but this is the simplest way to test
-    # the non-reportable errors are still reported correctly.
-    # This has the added bonus of failing in the future when
-    # we want to implement this behavior in the command
-    # controllers
     @timeout(multiplier=2)
-    async def test_autoinstall_not_autoinstall_error(self):
+    async def test_autoinstall_early_cmd_autoinstall_error(self):
         cfg = "examples/machines/simple.json"
         extra = [
             "--autoinstall",
@@ -2247,6 +2240,25 @@ class TestAutoinstallServer(TestAPI):
         async with start_server_factory(
             Server, cfg, extra_args=extra, allow_error=True
         ) as inst:
+            resp = await inst.get("/meta/status")
+
+            error = resp["nonreportable_error"]
+            self.assertIsNone(resp["error"])
+
+            self.assertIsNotNone(error)
+            self.assertIn("cause", error)
+            self.assertIn("message", error)
+            self.assertIn("details", error)
+            self.assertEqual(error["cause"], "AutoinstallUserSuppliedCmdError")
+
+    @timeout(multiplier=2)
+    async def test_autoinstall_reportable_error(self):
+        cfg = "examples/machines/simple.json"
+        # bare server factory for early fail
+        async with start_server_factory(Server, cfg, allow_error=True) as inst:
+            with contextlib.suppress(aiohttp.ClientResponseError):
+                # This returns HTTP 500
+                await inst.get("/dry_run/crash")
             resp = await inst.get("/meta/status")
 
             error = resp["error"]
