@@ -73,8 +73,13 @@ class CmdListController(NonInteractiveController):
 
     @with_context()
     async def run(self, context):
+        await self.run_builtin()
+        await self.run_user_supplied()
+        await self.finished()
+
+    async def _run_commands(self, cmds, *, context) -> None:
         env = self.env()
-        for i, cmd in enumerate(tuple(self.builtin_cmds) + tuple(self.cmds)):
+        for i, cmd in enumerate(tuple(cmds)):
             desc = cmd.desc()
             with context.child("command_{}".format(i), desc):
                 args = cmd.as_args_list()
@@ -88,6 +93,16 @@ class CmdListController(NonInteractiveController):
                 await arun_command(
                     args, env=env, stdin=None, stdout=None, stderr=None, check=cmd.check
                 )
+
+    @with_context()
+    async def run_user_supplied(self, context):
+        await self._run_commands(self.cmds, context=context)
+
+    @with_context()
+    async def run_builtin(self, context):
+        await self._run_commands(self.builtin_cmds, context=context)
+
+    async def finished(self):
         self.run_event.set()
 
 
