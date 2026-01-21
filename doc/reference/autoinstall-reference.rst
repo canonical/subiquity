@@ -419,6 +419,7 @@ By default, these layouts install to the largest disk in a system, but you can s
 By default (except on s390x), the matching disk will be partitioned using a GUID Partition Table (GPT). But you can specifically request a MSDOS (aka. MBR) partition table:
 
 .. code-block:: yaml
+
     autoinstall:
       storage:
         layout:
@@ -661,6 +662,8 @@ The encrypted password string must conform to what the ``passwd`` command requir
 Several tools can generate the encrypted password, such as ``mkpasswd`` from the ``whois`` package, or ``openssl passwd``.
 
 Example:
+
+.. _ai-identity-example:
 
 .. code-block:: yaml
 
@@ -1000,4 +1003,18 @@ user-data
 * **default:** ``{}``
 * **can be interactive:** no
 
-Provide cloud-init user data, which will be merged with the user data the installer produces. If you supply this, you don't need to supply an :ref:`identity section <ai-identity>` (in that case, ensure you can log in to the installed system).
+Provide cloud-init user data, which will be merged with the user data that the installer may produce. If you supply this, you don't need to supply an :ref:`identity section <ai-identity>` (in that case, ensure you can log in to the installed system). For more details on cloud-init user-data, see :doc:`cloud-init:reference/examples`.
+
+The following example uses user-data and is roughly equivalent to what the :ref:`identity section<ai-identity>` can be used for. The main difference is the timing of user creation. While users specified using the identity section are created during the installation, users created using cloud-init user-data will be created on first boot.
+
+.. code-block:: yaml
+
+  autoinstall:
+    user-data:
+       users:
+         - name: ubuntu
+           gecos: 'Ubuntu User'
+           passwd: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
+           groups: adm, cdrom, dip, lxd, plugdev, sudo
+           shell: /bin/bash
+           lock_passwd: False
