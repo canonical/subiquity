@@ -39,6 +39,10 @@ from subiquity.common.resources import get_users_and_groups
 from subiquity.common.types import ApplicationState, PackageInstallState
 from subiquity.journald import journald_listen
 from subiquity.models.filesystem import ActionRenderMode, Partition
+from subiquity.server.autoinstall import (
+    AutoinstallError,
+    AutoinstallUserSuppliedCmdError,
+)
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.filesystem import VariationInfo
 from subiquity.server.curtin import run_curtin_command
@@ -646,9 +650,17 @@ class InstallController(SubiquityController):
             await self.postinstall(context=context)
 
             self.app.update_state(ApplicationState.LATE_COMMANDS)
-            await self.app.controllers.Late.run()
+
+            await self.app.controllers.Late.run_builtin()
+            try:
+                await self.app.controllers.Late.run_user_supplied()
+            except subprocess.CalledProcessError as exc:
+                raise AutoinstallUserSuppliedCmdError(cmd=exc.cmd, details=str(exc))
+            await self.app.controllers.Late.finished()
 
             self.app.update_state(ApplicationState.DONE)
+        except AutoinstallError:
+            raise
         except Exception as exc:
             kw = {}
             if self.tb_extractor.traceback:
