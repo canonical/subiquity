@@ -1,0 +1,21 @@
+name: snapd-sync
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '27 3 * * *'  # Run daily at 3:27a (arbitrary)
+  pull_request:
+    paths:
+      - 'subiquity/common/types/storage.py'
+      - 'subiquity/server/snapd/types.py'
+
+jobs:
+  check-on-sync-types:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: run
+      run: |
+        sudo apt-get install --assume-yes make golang-go
+        sudo make install_deps
+        sudo ./scripts/check-snapd-types-on-sync.py --snapd-revision master
