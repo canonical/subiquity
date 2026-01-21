@@ -1,3 +1,4 @@
 canonical-sphinx[full]
 sphinxcontrib-svg2pdfconverter[CairoSVG]
 sphinx-last-updated-by-git
+myst-parser~=4.0   # v5.0.0 causes version conflicts
