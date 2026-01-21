@@ -1238,6 +1238,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         m_set_key.assert_called_once_with("my-recovery-key")
 
     @mock.patch("subiquity.server.mounter.Mounter.bind_mounted")
+    @mock.patch.object(Path, "mkdir", mock.Mock())
     async def test_snapd_target_preseed(self, m_bind_mounted):
         self.fsc._info = mock.Mock(label="mock-label")
 
