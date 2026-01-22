@@ -63,7 +63,7 @@ parts:
   curtin:
     plugin: nil
 
-    source: https://git.launchpad.net/curtin
+    source: https://git.launchpad.net/~ogayot/curtin
     source-type: git
     # Tracks the ubuntu/noble branch
     source-commit: "0fd15cd64ba6380f3835d9c2226fae1061547c31"
