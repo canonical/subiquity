@@ -11,6 +11,7 @@ jq
 language-selector-common
 libsystemd-dev
 lsb-release
+make
 os-prober
 pandoc
 passwd
