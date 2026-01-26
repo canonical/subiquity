@@ -8,6 +8,12 @@ source-code: https://github.com/canonical/subiquity
 issues: https://bugs.launchpad.net/subiquity/+filebug
 contact: https://bugs.launchpad.net/subiquity/+filebug
 
+# pyroute2 from core22 is not compatible with the pure Python implementation of
+# probert.
+package-repositories:
+    - type: apt
+      ppa: subiquity/core22
+
 apps:
   subiquity:
     command: usr/bin/subiquity-cmd $SNAP/usr/bin/python3.10 -m subiquity
