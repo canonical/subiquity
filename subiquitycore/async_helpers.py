@@ -14,7 +14,9 @@
 
 import asyncio
 import concurrent.futures
+import contextlib
 import logging
+from collections.abc import Iterable
 from typing import Optional
 
 log = logging.getLogger("subiquitycore.async_helpers")
@@ -51,6 +53,26 @@ def run_bg_task(coro, *args, **kwargs) -> None:
     task = asyncio.create_task(coro, *args, **kwargs)
     background_tasks.add(task)
     task.add_done_callback(background_tasks.discard)
+
+
+def observe_in_background(
+    task: asyncio.Task, *, suppress: type[Exception] | Iterable[type[Exception]] = ()
+) -> None:
+    """Observe the task in the background, this will make sure the exception
+    handler is invoked immediately for non-suppressed exception types."""
+
+    if isinstance(suppress, type):
+        suppress = (suppress,)
+    else:
+        suppress = tuple(suppress)
+
+    async def observe(task):
+        # The documented (and expected) usage when using contextlib.suppress is
+        # to pass it multiple arguments, rather than a tuple.
+        with contextlib.suppress(*suppress):
+            await asyncio.shield(task)
+
+    run_bg_task(observe(task))
 
 
 async def run_in_thread(func, *args):
