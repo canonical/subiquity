@@ -98,7 +98,7 @@ fi
 if [ -n "$snapd_pkg" ]; then
     add_livefs_opts --setup-rootfs \
                     --cp "$snapd_pkg" rootfs \
-                    --shell "chroot rootfs dpkg -i $(basename "$snapd_pkg")"
+                    --shell "chroot rootfs dpkg -i $(basename "$snapd_pkg")" \
                     --shell "rm rootfs/$(basename "$snapd_pkg")"
 fi
 
