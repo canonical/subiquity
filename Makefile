@@ -98,7 +98,6 @@ curtin: snapcraft.yaml
 
 probert: snapcraft.yaml
 	./scripts/update-part.py probert
-	(cd probert && $(PYTHON) setup.py build_ext -i);
 
 .PHONY: gitdeps
 gitdeps: curtin probert

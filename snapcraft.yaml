@@ -8,6 +8,12 @@ source-code: https://github.com/canonical/subiquity
 issues: https://bugs.launchpad.net/subiquity/+filebug
 contact: https://bugs.launchpad.net/subiquity/+filebug
 
+# pyroute2 from core22 is not compatible with the pure Python implementation of
+# probert (LP: #2139131).
+package-repositories:
+    - type: apt
+      ppa: subiquity/core22
+
 apps:
   subiquity:
     command: usr/bin/subiquity-cmd $SNAP/usr/bin/python3.10 -m subiquity
@@ -224,18 +230,9 @@ parts:
     source: https://github.com/canonical/probert.git
     source-type: git
     # Tracks the ubuntu/noble branch
-    source-commit: ee45ec6103d235884828ad7aca5018fafdfc4a62
+    source-commit: 26175bb2fb952335cc652c602e7c5ae6ef7ac82b
 
     override-build: *pyinstall
 
     build-packages:
-      - build-essential
-      - libnl-3-dev
-      - libnl-genl-3-dev
-      - libnl-route-3-dev
-      - pkg-config
-      - python3-dev
       - python3-pip
-
-    build-attributes:
-      - enable-patchelf
