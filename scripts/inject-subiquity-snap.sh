@@ -12,10 +12,10 @@ snapd_pkg=
 store_url=
 tracking=stable
 
-LIVEFS_OPTS=
+LIVEFS_OPTS=()
 
 add_livefs_opts () {
-    LIVEFS_OPTS="${LIVEFS_OPTS+$LIVEFS_OPTS }$@"
+    LIVEFS_OPTS+=("$@")
 }
 
 while getopts ":ifc:s:n:p:u:t:" opt; do
@@ -102,4 +102,4 @@ if [ -n "$snapd_pkg" ]; then
                     --shell "rm rootfs/$(basename "$snapd_pkg")"
 fi
 
-PYTHONPATH=$LIVEFS_EDITOR python3 -m livefs_edit $OLD_ISO $NEW_ISO --inject-snap $SUBIQUITY_SNAP_PATH $tracking $LIVEFS_OPTS
+PYTHONPATH=$LIVEFS_EDITOR python3 -m livefs_edit "$OLD_ISO" "$NEW_ISO" --inject-snap "$SUBIQUITY_SNAP_PATH" "$tracking" "${LIVEFS_OPTS[@]}"
