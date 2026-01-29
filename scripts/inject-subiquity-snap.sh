@@ -27,7 +27,7 @@ while getopts ":ifc:s:n:p:u:t:" opt; do
             add_livefs_opts --shell "${OPTARG}"
             ;;
         f|s|n)
-            echo "switch to livefs-editor directly please" >2
+            echo "switch to livefs-editor directly please" >&2
             exit 1
             ;;
         p)
