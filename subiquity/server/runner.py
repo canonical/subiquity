@@ -143,7 +143,12 @@ class DryRunCommandRunner(LoggedCommandRunner):
             # We actually want to run this command
             prefixed_command = cmd
         else:
-            prefixed_command = ["echo", "not running:"] + cmd
+            prefixed_command = [
+                "scripts/sleep-then-execute.sh",
+                str(self._get_delay_for_cmd(cmd)),
+                "echo",
+                "not running:",
+            ] + cmd
 
         return super()._forge_systemd_cmd(
             prefixed_command,
@@ -170,11 +175,9 @@ class DryRunCommandRunner(LoggedCommandRunner):
         capture: bool = False,
         **astart_kwargs,
     ) -> asyncio.subprocess.Process:
-        delay = self._get_delay_for_cmd(cmd)
         proc = await super().start(
             cmd, private_mounts=private_mounts, capture=capture, **astart_kwargs
         )
-        await asyncio.sleep(delay)
         return proc
 
 
