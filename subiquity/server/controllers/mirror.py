@@ -33,6 +33,7 @@ from subiquity.models.mirror import filter_candidates
 from subiquity.server.apt import AptConfigCheckError, AptConfigurer, get_apt_configurer
 from subiquity.server.controller import SubiquityController
 from subiquity.server.types import InstallerChannels
+from subiquitycore import async_helpers
 from subiquitycore.context import with_context
 
 log = logging.getLogger("subiquity.server.controllers.mirror")
@@ -444,9 +445,15 @@ class MirrorController(SubiquityController):
             else:
                 assert False
         output = io.StringIO()
+
+        task = asyncio.create_task(self.run_mirror_testing(output))
+        async_helpers.observe_in_background(
+            task, suppress=(AptConfigCheckError, asyncio.CancelledError)
+        )
+
         self.mirror_check = MirrorCheck(
             uri=self.model.primary_staged.uri,
-            task=asyncio.create_task(self.run_mirror_testing(output)),
+            task=task,
             output=output,
         )
 
