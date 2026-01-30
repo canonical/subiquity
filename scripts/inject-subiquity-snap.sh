@@ -12,10 +12,10 @@ snapd_pkg=
 store_url=
 tracking=stable
 
-LIVEFS_OPTS=
+LIVEFS_OPTS=()
 
 add_livefs_opts () {
-    LIVEFS_OPTS="${LIVEFS_OPTS+$LIVEFS_OPTS }$@"
+    LIVEFS_OPTS+=("$@")
 }
 
 while getopts ":ifc:s:n:p:u:t:" opt; do
@@ -27,7 +27,7 @@ while getopts ":ifc:s:n:p:u:t:" opt; do
             add_livefs_opts --shell "${OPTARG}"
             ;;
         f|s|n)
-            echo "switch to livefs-editor directly please" >2
+            echo "switch to livefs-editor directly please" >&2
             exit 1
             ;;
         p)
@@ -46,6 +46,28 @@ while getopts ":ifc:s:n:p:u:t:" opt; do
     esac
 done
 shift $((OPTIND-1))
+
+if [ "$#" -lt 3 ]; then
+    cat >&2 <<EOF
+usage: $0 [option...] <SRC_ISO> <SNAP> <DEST_ISO>
+
+positional arguments:
+  SRC_ISO    path to the source ISO to use
+  SNAP       path to the snap to inject
+  DEST_ISO   path to the destination ISO to create
+
+options:
+  -i            launch an interactive shell in the unpacked rootfs
+  -c COMMAND    execute a command in the rootfs
+  -p SNAPD_DEB  path to a snapd deb package to install
+  -u URL        override the URL of the snap store
+  -t CHANNEL    make the subiquity snap track the specified channel (default: stable)
+
+example:
+  $0 /srv/iso/noble-live-server-amd64.iso subiquity_6871.snap custom.iso
+EOF
+    exit 1
+fi
 
 # inject-subiquity-snap.sh $old_iso $subiquity_snap $new_iso
 
@@ -76,8 +98,8 @@ fi
 if [ -n "$snapd_pkg" ]; then
     add_livefs_opts --setup-rootfs \
                     --cp "$snapd_pkg" rootfs \
-                    --shell "chroot rootfs dpkg -i $(basename "$snapd_pkg")"
+                    --shell "chroot rootfs dpkg -i $(basename "$snapd_pkg")" \
                     --shell "rm rootfs/$(basename "$snapd_pkg")"
 fi
 
-PYTHONPATH=$LIVEFS_EDITOR python3 -m livefs_edit $OLD_ISO $NEW_ISO --inject-snap $SUBIQUITY_SNAP_PATH $tracking $LIVEFS_OPTS
+PYTHONPATH=$LIVEFS_EDITOR python3 -m livefs_edit "$OLD_ISO" "$NEW_ISO" --inject-snap "$SUBIQUITY_SNAP_PATH" "$tracking" "${LIVEFS_OPTS[@]}"
