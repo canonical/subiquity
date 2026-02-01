@@ -1386,7 +1386,6 @@ The configuration is similar to that used by curtin. See the `Reporting <https:/
 Each key in the ``reporting`` mapping in the configuration defines a destination where the ``type`` sub-key is one of:
 
 * ``print``: print progress information on ``tty1`` and any configured serial console. There is no other configuration.
-* ``rsyslog``: report progress via rsyslog. The ``destination`` key specifies where to send output. (The rsyslog reporter does not yet exist.)
 * ``webhook``: report progress by sending JSON reports to a URL using POST requests. Accepts the same `configuration as curtin <https://curtin.readthedocs.io/en/latest/topics/reporting.html#webhook-reporter>`_.
 * ``none``: do not report progress. Only useful to inhibit the default output.
 
@@ -1400,16 +1399,6 @@ The default configuration is:
      reporting:
        builtin:
          type: print
-
-Report to rsyslog:
-
-.. code-block:: yaml
-
-   autoinstall:
-     reporting:
-       central:
-         type: rsyslog
-         destination: "@192.168.0.1"
 
 
 Suppress the default output:
@@ -1434,7 +1423,6 @@ Report to a curtin-style webhook:
          consumer_secret: "cs_value"
          token_key: "tk_value"
          token_secret: "tk_secret"
-         level: INFO
 
 .. _ai-user-data:
 
