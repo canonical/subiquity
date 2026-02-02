@@ -110,42 +110,24 @@ class SleepAndEchoWrapper:
             ] + cmd
 
 
-class LoggedCommandRunner:
-    def __init__(self, ident, *, use_systemd_user: Optional[bool] = None) -> None:
-        self.systemd_run_wrapper = SystemdRunWrapper(
-            ident=ident,
-            use_systemd_user=use_systemd_user,
-        )
-
-    def wrap_command(self, cmd: list[str], *args, **kwargs) -> list[str]:
-        return self.systemd_run_wrapper.wrap(cmd, *args, **kwargs)
+class AstartBackend:
+    """Backend implementation based on astart_command (which supports binary
+    data only)"""
 
     async def start(
         self,
-        cmd: List[str],
-        *,
-        private_mounts: bool = False,
-        capture: bool = False,
-        stdin: Literal[subprocess.PIPE, subprocess.DEVNULL] = subprocess.DEVNULL,
-        **astart_kwargs,
+        cmd: list[str],
+        **kwargs,
     ) -> asyncio.subprocess.Process:
-        wrapped: List[str] = self.wrap_command(
-            cmd,
-            private_mounts=private_mounts,
-            capture=capture,
-            stdin=stdin,
-        )
-
-        proc = await astart_command(wrapped, stdin=stdin, **astart_kwargs)
-
-        proc.args = wrapped
-
+        proc = await astart_command(cmd, **kwargs)
+        proc.args = cmd
         return proc
 
     async def wait(
         self,
         proc: asyncio.subprocess.Process,
-        input: Optional[bytes] = None,
+        *,
+        input: bytes | None,
     ) -> subprocess.CompletedProcess:
         stdout, stderr = await proc.communicate(input=input)
         # .communicate() forces returncode to be set to a value
@@ -160,11 +142,62 @@ class LoggedCommandRunner:
             )
 
     async def run(
-        self, cmd: List[str], input: Optional[bytes] = None, **opts
+        self, cmd: list[str], *, input: bytes | None, **kwargs
     ) -> subprocess.CompletedProcess:
         stdin = subprocess.PIPE if input is not None else subprocess.DEVNULL
-        proc = await self.start(cmd, stdin=stdin, **opts)
+        proc = await self.start(cmd, stdin=stdin, **kwargs)
         return await self.wait(proc, input=input)
+
+
+class LoggedCommandRunner:
+    def __init__(self, ident, *, use_systemd_user: Optional[bool] = None) -> None:
+        self.systemd_run_wrapper = SystemdRunWrapper(
+            ident=ident,
+            use_systemd_user=use_systemd_user,
+        )
+        self.backend = AstartBackend()
+
+    def wrap_command(self, cmd: list[str], *args, **kwargs) -> list[str]:
+        return self.systemd_run_wrapper.wrap(cmd, *args, **kwargs)
+
+    async def start(
+        self,
+        cmd: List[str],
+        *,
+        private_mounts: bool = False,
+        capture: bool = False,
+        stdin: Literal[subprocess.PIPE, subprocess.DEVNULL] = subprocess.DEVNULL,
+        **backend_kwargs,
+    ) -> asyncio.subprocess.Process:
+        wrapped: List[str] = self.wrap_command(
+            cmd,
+            private_mounts=private_mounts,
+            capture=capture,
+            stdin=stdin,
+        )
+
+        return await self.backend.start(wrapped, stdin=stdin, **backend_kwargs)
+
+    async def wait(
+        self,
+        proc: asyncio.subprocess.Process,
+        input: bytes | None,
+    ) -> subprocess.CompletedProcess:
+        return await self.backend.wait(proc, input=input)
+
+    async def run(
+        self,
+        cmd: List[str],
+        input: Optional[bytes] = None,
+        private_mounts: bool = False,
+        capture: bool = False,
+        **backend_kwargs,
+    ) -> subprocess.CompletedProcess:
+        stdin = subprocess.PIPE if input is not None else subprocess.DEVNULL
+        wrapped = self.wrap_command(
+            cmd, private_mounts=private_mounts, capture=capture, stdin=stdin
+        )
+        return await self.backend.run(wrapped, input=input, **backend_kwargs)
 
 
 class DryRunCommandRunner(LoggedCommandRunner):
