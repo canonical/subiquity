@@ -165,19 +165,6 @@ class DryRunCommandRunner(LoggedCommandRunner):
         else:
             return self.delay
 
-    async def start(
-        self,
-        cmd: List[str],
-        *,
-        private_mounts: bool = False,
-        capture: bool = False,
-        **astart_kwargs,
-    ) -> asyncio.subprocess.Process:
-        proc = await super().start(
-            cmd, private_mounts=private_mounts, capture=capture, **astart_kwargs
-        )
-        return proc
-
 
 def get_command_runner(app):
     if app.opts.dry_run:
