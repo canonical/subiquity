@@ -29,11 +29,18 @@ def _dollar_escape(s: str) -> str:
     return s.replace("$", "$$")
 
 
-class LoggedCommandRunner:
-    """Class that executes commands using systemd-run."""
-
-    def __init__(self, ident, *, use_systemd_user: Optional[bool] = None) -> None:
+class SystemdRunWrapper:
+    def __init__(
+        self,
+        *,
+        ident: str,
+        use_systemd_user: bool | None = None,
+    ) -> None:
         self.ident = ident
+        if use_systemd_user is not None:
+            self.use_systemd_user = use_systemd_user
+        else:
+            self.use_systemd_user = os.geteuid() != 0
         self.env_allowlist = [
             "PATH",
             "PYTHONPATH",
@@ -42,18 +49,15 @@ class LoggedCommandRunner:
             "SNAP",
             "SUBIQUITY_REPLAY_TIMESCALE",
         ]
-        if use_systemd_user is not None:
-            self.use_systemd_user = use_systemd_user
-        else:
-            self.use_systemd_user = os.geteuid() != 0
 
-    def _forge_systemd_cmd(
+    def wrap(
         self,
-        cmd: List[str],
+        cmd: list[str],
+        *,
         private_mounts: bool,
         capture: bool,
         stdin: Literal[subprocess.PIPE, subprocess.DEVNULL],
-    ) -> List[str]:
+    ) -> list[str]:
         """Return the supplied command prefixed with the systemd-run stuff."""
         prefix = [
             "systemd-run",
@@ -78,6 +82,44 @@ class LoggedCommandRunner:
 
         return prefix + [_dollar_escape(arg) for arg in cmd]
 
+
+class SleepAndEchoWrapper:
+    def __init__(self, *, delay_multiplier: float) -> None:
+        self.delay_multiplier = delay_multiplier
+
+    def _get_delay_for_cmd(self, cmd: list[str]) -> float:
+        if "scripts/replay-curtin-log.py" in cmd:
+            return 0
+        elif "unattended-upgrades" in cmd:
+            return 3 * self.delay_multiplier
+        elif "chzdev" in cmd:
+            return 0.4 * random.random() * self.delay_multiplier
+        else:
+            return self.delay_multiplier
+
+    def wrap(self, cmd: list[str]) -> list[str]:
+        if "scripts/replay-curtin-log.py" in cmd:
+            # We actually want to run this command
+            return cmd
+        else:
+            return [
+                "scripts/sleep-then-execute.sh",
+                str(self._get_delay_for_cmd(cmd)),
+                "echo",
+                "not running:",
+            ] + cmd
+
+
+class LoggedCommandRunner:
+    def __init__(self, ident, *, use_systemd_user: Optional[bool] = None) -> None:
+        self.systemd_run_wrapper = SystemdRunWrapper(
+            ident=ident,
+            use_systemd_user=use_systemd_user,
+        )
+
+    def wrap_command(self, cmd: list[str], *args, **kwargs) -> list[str]:
+        return self.systemd_run_wrapper.wrap(cmd, *args, **kwargs)
+
     async def start(
         self,
         cmd: List[str],
@@ -87,16 +129,16 @@ class LoggedCommandRunner:
         stdin: Literal[subprocess.PIPE, subprocess.DEVNULL] = subprocess.DEVNULL,
         **astart_kwargs,
     ) -> asyncio.subprocess.Process:
-        forged: List[str] = self._forge_systemd_cmd(
+        wrapped: List[str] = self.wrap_command(
             cmd,
             private_mounts=private_mounts,
             capture=capture,
             stdin=stdin,
         )
 
-        proc = await astart_command(forged, stdin=stdin, **astart_kwargs)
+        proc = await astart_command(wrapped, stdin=stdin, **astart_kwargs)
 
-        proc.args = forged
+        proc.args = wrapped
 
         return proc
 
@@ -128,42 +170,12 @@ class LoggedCommandRunner:
 class DryRunCommandRunner(LoggedCommandRunner):
     def __init__(self, *args, delay, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.delay = delay
+        self.sleep_and_echo_wrapper = SleepAndEchoWrapper(delay_multiplier=delay)
 
-    def _forge_systemd_cmd(
-        self,
-        cmd: List[str],
-        private_mounts: bool,
-        capture: bool,
-        stdin: Literal[subprocess.PIPE, subprocess.DEVNULL],
-    ) -> List[str]:
-        if "scripts/replay-curtin-log.py" in cmd:
-            # We actually want to run this command
-            prefixed_command = cmd
-        else:
-            prefixed_command = [
-                "scripts/sleep-then-execute.sh",
-                str(self._get_delay_for_cmd(cmd)),
-                "echo",
-                "not running:",
-            ] + cmd
-
-        return super()._forge_systemd_cmd(
-            prefixed_command,
-            private_mounts=private_mounts,
-            capture=capture,
-            stdin=stdin,
+    def wrap_command(self, cmd: list[str], *args, **kwargs) -> list[str]:
+        return super().wrap_command(
+            self.sleep_and_echo_wrapper.wrap(cmd), *args, **kwargs
         )
-
-    def _get_delay_for_cmd(self, cmd: List[str]) -> float:
-        if "scripts/replay-curtin-log.py" in cmd:
-            return 0
-        elif "unattended-upgrades" in cmd:
-            return 3 * self.delay
-        elif "chzdev" in cmd:
-            return 0.4 * random.random() * self.delay
-        else:
-            return self.delay
 
 
 def get_command_runner(app):
