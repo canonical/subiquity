@@ -15,9 +15,10 @@
 
 import os
 import subprocess
-from unittest.mock import ANY, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 from subiquity.server.runner import (
+    AstartBackend,
     DryRunCommandRunner,
     LoggedCommandRunner,
     SleepAndEchoWrapper,
@@ -217,6 +218,79 @@ class TestSleepAndEchoWrapper(SubiTestCase):
         )
 
 
+class TestAstartBackend(SubiTestCase):
+    @patch("subiquity.server.runner.astart_command", autospec=True)
+    async def test_start(self, astart_mock):
+        backend = AstartBackend()
+
+        proc = await backend.start(["/bin/ls", "-l"], stdout=subprocess.PIPE)
+
+        astart_mock.assert_called_once_with(["/bin/ls", "-l"], stdout=subprocess.PIPE)
+
+        self.assertEqual(["/bin/ls", "-l"], proc.args)
+
+    async def test_wait__success(self):
+        backend = AstartBackend()
+
+        proc = Mock()
+        proc.args = ["ls", "/home"]
+        proc.communicate = AsyncMock(return_value=(b"ubuntu\n", b""))
+        proc.returncode = 0
+
+        completed_process = await backend.wait(proc, input=None)
+
+        self.assertEqual(0, completed_process.returncode)
+        self.assertEqual(["ls", "/home"], completed_process.args)
+        self.assertEqual(b"", completed_process.stderr)
+        self.assertEqual(b"ubuntu\n", completed_process.stdout)
+
+    async def test_wait__failure(self):
+        backend = AstartBackend()
+
+        proc = Mock()
+        proc.args = ["ls", "/root"]
+        proc.communicate = AsyncMock(
+            return_value=(b"", b"ls: '/root': Permission denied\n")
+        )
+        proc.returncode = 1
+
+        with self.assertRaises(subprocess.CalledProcessError) as m_exc:
+            await backend.wait(proc, input=None)
+
+        self.assertEqual(1, m_exc.exception.returncode)
+        self.assertEqual(["ls", "/root"], m_exc.exception.cmd)
+        self.assertEqual(b"ls: '/root': Permission denied\n", m_exc.exception.stderr)
+        self.assertEqual(b"", m_exc.exception.output)
+
+    async def test_run(self):
+        backend = AstartBackend()
+
+        proc_mock = Mock()
+
+        p_start = patch.object(backend, "start", return_value=proc_mock, autospec=True)
+        p_wait = patch.object(backend, "wait")
+
+        with p_start as m_start, p_wait as m_wait:
+            await backend.run(["/bin/cat"], input=b"hi")
+
+        m_start.assert_called_once_with(["/bin/cat"], stdin=subprocess.PIPE)
+        m_wait.assert_called_once_with(proc_mock, input=b"hi")
+
+    async def test_run__no_input(self):
+        backend = AstartBackend()
+
+        proc_mock = Mock()
+
+        p_start = patch.object(backend, "start", return_value=proc_mock, autospec=True)
+        p_wait = patch.object(backend, "wait")
+
+        with p_start as m_start, p_wait as m_wait:
+            await backend.run(["/bin/cat"], input=None)
+
+        m_start.assert_called_once_with(["/bin/cat"], stdin=subprocess.DEVNULL)
+        m_wait.assert_called_once_with(proc_mock, input=None)
+
+
 class TestLoggedCommandRunner(SubiTestCase):
     def test_init(self):
         with patch(
@@ -267,39 +341,53 @@ class TestLoggedCommandRunner(SubiTestCase):
             stdin=subprocess.DEVNULL,
         )
 
-    async def test_start__no_input(self):
+    async def test_start(self):
         runner = LoggedCommandRunner(ident="my-id", use_systemd_user=False)
 
-        with patch("subiquity.server.runner.astart_command") as astart_mock:
-            await runner.start(["/bin/ls"], stdout=subprocess.PIPE)
+        with patch.object(
+            runner,
+            "wrap_command",
+            autospec=True,
+            return_value=["systemd-run", "/bin/ls"],
+        ) as m_wrap_command:
+            with patch.object(
+                runner.backend, "start", autospec=True
+            ) as m_backend_start:
+                await runner.start(["/bin/ls"], stdout=subprocess.PIPE)
 
-        expected_cmd = ANY
-        astart_mock.assert_called_once_with(
-            expected_cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE
+        m_wrap_command.assert_called_once_with(
+            ["/bin/ls"], private_mounts=False, capture=False, stdin=subprocess.DEVNULL
+        )
+        m_backend_start.assert_called_once_with(
+            ["systemd-run", "/bin/ls"], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE
         )
 
-    async def test_start__pipe_stdin_and_capture(self):
+    @staticmethod
+    def _fake_wrap(cmd: list[str], **kwargs) -> list[str]:
+        return ["faked"] + cmd
+
+    async def test_run(self):
         runner = LoggedCommandRunner(ident="my-id", use_systemd_user=False)
 
-        with patch("subiquity.server.runner.astart_command") as astart_mock:
-            await runner.start(["/bin/cat"], stdin=subprocess.PIPE, capture=True)
+        with patch.object(runner.backend, "run", autospec=True) as m_backend_run:
+            with patch.object(runner.systemd_run_wrapper, "wrap", self._fake_wrap):
+                await runner.run(["/bin/cat"], input=b"Hi!", capture=True)
 
-        expected_cmd = ANY
-        astart_mock.assert_called_once_with(expected_cmd, stdin=subprocess.PIPE)
+        m_backend_run.assert_called_once_with(["faked", "/bin/cat"], input=b"Hi!")
 
     async def test_run__no_input(self):
         runner = LoggedCommandRunner(ident="my-id", use_systemd_user=False)
 
-        proc_mock = Mock()
+        def fake_wrap(cmd: list[str], **kwargs) -> list[str]:
+            return ["faked"] + cmd
 
-        p_start = patch.object(runner, "start", return_value=proc_mock, autospec=True)
-        p_wait = patch.object(runner, "wait")
+        with patch.object(runner.backend, "run", autospec=True) as m_backend_run:
+            with patch.object(runner.systemd_run_wrapper, "wrap", self._fake_wrap):
+                await runner.run(["/bin/cat", "/etc/group"])
 
-        with p_start as m_start, p_wait as m_wait:
-            await runner.run(["/bin/cat"])
-
-        m_start.assert_called_once_with(["/bin/cat"], stdin=subprocess.DEVNULL)
-        m_wait.assert_called_once_with(proc_mock, input=None)
+        m_backend_run.assert_called_once_with(
+            ["faked", "/bin/cat", "/etc/group"], input=None
+        )
 
 
 class TestDryRunCommandRunner(SubiTestCase):
