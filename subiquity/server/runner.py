@@ -117,12 +117,15 @@ class AstartBackend:
     """Backend implementation based on astart_command (which supports binary
     data only)"""
 
+    def __init__(self, *, logged=True):
+        self.logged = logged
+
     async def start(
         self,
         cmd: list[str],
         **kwargs,
     ) -> asyncio.subprocess.Process:
-        proc = await astart_command(cmd, **kwargs)
+        proc = await astart_command(cmd, logged=self.logged, **kwargs)
         proc.args = cmd
         return proc
 
@@ -150,6 +153,35 @@ class AstartBackend:
         stdin = subprocess.PIPE if input is not None else subprocess.DEVNULL
         proc = await self.start(cmd, stdin=stdin, **kwargs)
         return await self.wait(proc, input=input)
+
+
+class RedactedAstartBackend(AstartBackend):
+    """Backend implementation based on astart_command that prevents the command
+    args to leak"""
+
+    def __init__(self, *, logged=False):
+        super().__init__(logged=logged)
+
+    async def start(self, *args, **kwargs) -> asyncio.subprocess.Process:
+        try:
+            proc = await super().start(*args, **kwargs)
+        except subprocess.CalledProcessError as exc:
+            raise subprocess.CalledProcessError(
+                returncode=exc.returncode, cmd=["<redacted>"]
+            )
+        else:
+            proc.args = ["<redacted>"]
+            return proc
+
+    async def wait(self, *args, **kwargs) -> subprocess.CompletedProcess:
+        try:
+            completed_process = await super().wait(*args, **kwargs)
+        except subprocess.CalledProcessError as exc:
+            raise subprocess.CalledProcessError(
+                returncode=exc.returncode, cmd=["<redacted>"]
+            )
+        completed_process.args = ["<redacted>"]
+        return completed_process
 
 
 class Runner:
