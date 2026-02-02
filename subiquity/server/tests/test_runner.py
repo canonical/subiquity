@@ -214,7 +214,14 @@ class TestDryRunCommandRunner(SubiTestCase):
             stdin=subprocess.PIPE,
         )
         mock_super.assert_called_once_with(
-            ["echo", "not running:", "/bin/cat", "-e"],
+            [
+                "scripts/sleep-then-execute.sh",
+                "10",
+                "echo",
+                "not running:",
+                "/bin/cat",
+                "-e",
+            ],
             private_mounts=True,
             capture=True,
             stdin=subprocess.PIPE,
