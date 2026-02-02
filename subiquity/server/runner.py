@@ -126,10 +126,8 @@ class LoggedCommandRunner:
 
 
 class DryRunCommandRunner(LoggedCommandRunner):
-    def __init__(
-        self, ident, delay, *, use_systemd_user: Optional[bool] = None
-    ) -> None:
-        super().__init__(ident, use_systemd_user=use_systemd_user)
+    def __init__(self, *args, delay, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.delay = delay
 
     def _forge_systemd_cmd(
@@ -183,6 +181,6 @@ class DryRunCommandRunner(LoggedCommandRunner):
 
 def get_command_runner(app):
     if app.opts.dry_run:
-        return DryRunCommandRunner(app.log_syslog_id, 2 / app.scale_factor)
+        return DryRunCommandRunner(app.log_syslog_id, delay=2 / app.scale_factor)
     else:
         return LoggedCommandRunner(app.log_syslog_id)
