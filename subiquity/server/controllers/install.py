@@ -699,8 +699,11 @@ class InstallController(SubiquityController):
         # Components have the naming convention nvidia-$ver-{erd,uda}-{user,ko}
         # erd are the Server drivers, uda are Desktop drivers.  Support the
         # desktop ones for now.
+
+        # Any variation of server and open driver is deliberately mapped to
+        # what we have.
         for driver in sorted(self.app.controllers.Drivers.drivers, reverse=True):
-            m = re.fullmatch("nvidia-driver-([0-9]+)", driver)
+            m = re.fullmatch("nvidia-driver-([0-9]+)(-server)?(-open)?", driver)
             if not m:
                 continue
             nvidia_driver_offered = True

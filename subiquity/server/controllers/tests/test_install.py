@@ -470,6 +470,24 @@ class TestInstallControllerDriverMatch(unittest.TestCase):
                 ["nvidia-driver-510"],
                 ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
             ),
+            # match, open driver
+            (
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+                ["nvidia-driver-510-open"],
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+            ),
+            # match, server driver
+            (
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+                ["nvidia-driver-510-server"],
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+            ),
+            # match, open server driver
+            (
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+                ["nvidia-driver-510-server-open"],
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+            ),
             # prefer "newer" based on a reversed sort
             (
                 [
