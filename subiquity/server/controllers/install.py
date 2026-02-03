@@ -707,10 +707,10 @@ class InstallController(SubiquityController):
             if not m:
                 continue
             nvidia_driver_offered = True
-            v = m.group(1)
+            ver = m.group(1)
             for branch in ("uda", "erd"):
-                ko = f"nvidia-{v}-{branch}-ko"
-                user = f"nvidia-{v}-{branch}-user"
+                ko = f"nvidia-{ver}-{branch}-ko"
+                user = f"nvidia-{ver}-{branch}-user"
                 if ko in kernel_components and user in kernel_components:
                     return [ko, user]
 
@@ -721,9 +721,9 @@ class InstallController(SubiquityController):
                 if not m:
                     continue
                 ko = component
-                v = m.group(1)
+                ver = m.group(1)
                 branch = m.group(2)
-                user = f"nvidia-{v}-{branch}-user"
+                user = f"nvidia-{ver}-{branch}-user"
                 if user in kernel_components:
                     return [ko, user]
         return []
