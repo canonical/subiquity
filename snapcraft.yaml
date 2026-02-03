@@ -78,7 +78,7 @@ parts:
   curtin:
     plugin: nil
 
-    source: https://git.launchpad.net/curtin
+    source: https://github.com/canonical/curtin
     source-type: git
     source-commit: "e7e57942f1f76537d670916adbaa374c62d48fab"
 
