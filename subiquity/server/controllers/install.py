@@ -708,19 +708,22 @@ class InstallController(SubiquityController):
                 continue
             nvidia_driver_offered = True
             v = m.group(1)
-            ko = f"nvidia-{v}-uda-ko"
-            user = f"nvidia-{v}-uda-user"
-            if ko in kernel_components and user in kernel_components:
-                return [ko, user]
+            for branch in ("uda", "erd"):
+                ko = f"nvidia-{v}-{branch}-ko"
+                user = f"nvidia-{v}-{branch}-user"
+                if ko in kernel_components and user in kernel_components:
+                    return [ko, user]
+
         # if we don't match there, accept the newest reasonable version
         if nvidia_driver_offered:
             for component in sorted(kernel_components, reverse=True):
-                m = re.fullmatch("nvidia-([0-9]+)-uda-ko", component)
+                m = re.fullmatch("nvidia-([0-9]+)-([a-z]+)-ko", component)
                 if not m:
                     continue
                 ko = component
                 v = m.group(1)
-                user = f"nvidia-{v}-uda-user"
+                branch = m.group(2)
+                user = f"nvidia-{v}-{branch}-user"
                 if user in kernel_components:
                     return [ko, user]
         return []
