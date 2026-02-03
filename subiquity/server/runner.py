@@ -57,6 +57,7 @@ class SystemdRunWrapper:
         private_mounts: bool,
         capture: bool,
         stdin: Literal[subprocess.PIPE, subprocess.DEVNULL],
+        **kwargs,
     ) -> list[str]:
         """Return the supplied command prefixed with the systemd-run stuff."""
         prefix = [
@@ -97,7 +98,7 @@ class SleepAndEchoWrapper:
         else:
             return self.delay_multiplier
 
-    def wrap(self, cmd: list[str]) -> list[str]:
+    def wrap(self, cmd: list[str], **kwargs) -> list[str]:
         if "scripts/replay-curtin-log.py" in cmd:
             # We actually want to run this command
             return cmd
@@ -149,16 +150,39 @@ class AstartBackend:
         return await self.wait(proc, input=input)
 
 
-class LoggedCommandRunner:
+class CommandRunner:
+    def __init__(self, *, backend) -> None:
+        self.backend = backend
+        self.wrappers = []
+
+    def wrap_command(self, cmd: list[str], **kwargs) -> list[str]:
+        for wrapper in self.wrappers:
+            cmd = wrapper.wrap(cmd, **kwargs)
+        return cmd
+
+    async def start(
+        self, cmd: list[str], *, wrapper_args={}, **backend_kwargs
+    ) -> asyncio.subprocess.Process:
+        return await self.backend.start(
+            self.wrap_command(cmd, **wrapper_args), **backend_kwargs
+        )
+
+    async def wait(
+        self,
+        proc: asyncio.subprocess.Process,
+        input: bytes | None,
+    ) -> subprocess.CompletedProcess:
+        return await self.backend.wait(proc, input=input)
+
+
+class LoggedCommandRunner(CommandRunner):
     def __init__(self, ident, *, use_systemd_user: Optional[bool] = None) -> None:
         self.systemd_run_wrapper = SystemdRunWrapper(
             ident=ident,
             use_systemd_user=use_systemd_user,
         )
-        self.backend = AstartBackend()
-
-    def wrap_command(self, cmd: list[str], *args, **kwargs) -> list[str]:
-        return self.systemd_run_wrapper.wrap(cmd, *args, **kwargs)
+        super().__init__(backend=AstartBackend())
+        self.wrappers = [self.systemd_run_wrapper]
 
     async def start(
         self,
@@ -169,21 +193,16 @@ class LoggedCommandRunner:
         stdin: Literal[subprocess.PIPE, subprocess.DEVNULL] = subprocess.DEVNULL,
         **backend_kwargs,
     ) -> asyncio.subprocess.Process:
-        wrapped: List[str] = self.wrap_command(
-            cmd,
-            private_mounts=private_mounts,
-            capture=capture,
-            stdin=stdin,
+
+        wrapper_args = {
+            "private_mounts": private_mounts,
+            "capture": capture,
+            "stdin": stdin,
+        }
+
+        return await super().start(
+            cmd, wrapper_args=wrapper_args, stdin=stdin, **backend_kwargs
         )
-
-        return await self.backend.start(wrapped, stdin=stdin, **backend_kwargs)
-
-    async def wait(
-        self,
-        proc: asyncio.subprocess.Process,
-        input: bytes | None,
-    ) -> subprocess.CompletedProcess:
-        return await self.backend.wait(proc, input=input)
 
     async def run(
         self,
@@ -204,11 +223,7 @@ class DryRunCommandRunner(LoggedCommandRunner):
     def __init__(self, *args, delay, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.sleep_and_echo_wrapper = SleepAndEchoWrapper(delay_multiplier=delay)
-
-    def wrap_command(self, cmd: list[str], *args, **kwargs) -> list[str]:
-        return super().wrap_command(
-            self.sleep_and_echo_wrapper.wrap(cmd), *args, **kwargs
-        )
+        self.wrappers = [self.sleep_and_echo_wrapper, self.systemd_run_wrapper]
 
 
 def get_command_runner(app):

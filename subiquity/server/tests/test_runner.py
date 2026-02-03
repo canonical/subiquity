@@ -19,6 +19,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 from subiquity.server.runner import (
     AstartBackend,
+    CommandRunner,
     DryRunCommandRunner,
     LoggedCommandRunner,
     SleepAndEchoWrapper,
@@ -291,6 +292,29 @@ class TestAstartBackend(SubiTestCase):
         m_wait.assert_called_once_with(proc_mock, input=None)
 
 
+class TestCommandRunner(SubiTestCase):
+    def test_init(self):
+        backend = Mock()
+        runner = CommandRunner(backend=backend)
+        self.assertIs(backend, runner.backend)
+
+    def test_wrap_command(self):
+        runner = CommandRunner(backend=Mock())
+
+        wrapper1 = Mock(wrap=lambda x: ["timeout", "1"] + x)
+        wrapper2 = Mock(wrap=lambda x: ["echo", "-n"] + x)
+
+        runner.wrappers = [
+            wrapper1,
+            wrapper2,
+        ]
+
+        self.assertEqual(
+            ["echo", "-n", "timeout", "1", "ls", "-l"],
+            runner.wrap_command(["ls", "-l"]),
+        )
+
+
 class TestLoggedCommandRunner(SubiTestCase):
     def test_init(self):
         with patch(
@@ -321,24 +345,6 @@ class TestLoggedCommandRunner(SubiTestCase):
             LoggedCommandRunner(ident="my-identifier", use_systemd_user=False)
         m_wrapper_init.assert_called_once_with(
             ident="my-identifier", use_systemd_user=False
-        )
-
-    def test_wrap_command(self):
-        runner = LoggedCommandRunner(ident="my-identifier")
-
-        with patch.object(runner.systemd_run_wrapper, "wrap", autospec=True) as m_wrap:
-            runner.wrap_command(
-                ["dpkg", "-i", "wpa-supplicant"],
-                private_mounts=False,
-                capture=True,
-                stdin=subprocess.DEVNULL,
-            )
-
-        m_wrap.assert_called_once_with(
-            ["dpkg", "-i", "wpa-supplicant"],
-            private_mounts=False,
-            capture=True,
-            stdin=subprocess.DEVNULL,
         )
 
     async def test_start(self):
@@ -400,32 +406,7 @@ class TestDryRunCommandRunner(SubiTestCase):
         self.assertEqual(self.runner.systemd_run_wrapper.ident, "my-identifier")
         self.assertEqual(self.runner.systemd_run_wrapper.use_systemd_user, True)
         self.assertEqual(self.runner.sleep_and_echo_wrapper.delay_multiplier, 10)
-
-    @patch.object(
-        LoggedCommandRunner,
-        "wrap_command",
-        wraps=LoggedCommandRunner.wrap_command,
-        autospec=True,
-    )
-    def test_wrap_command(self, mock_super):
-        rv = Mock()
-
-        with patch.object(
-            self.runner.sleep_and_echo_wrapper, "wrap", return_value=[rv]
-        ) as m_wrap:
-            self.runner.wrap_command(
-                ["dpkg", "-i", "wpa-supplicant"],
-                private_mounts=False,
-                capture=True,
-                stdin=subprocess.DEVNULL,
-            )
-
-        m_wrap.assert_called_once_with(["dpkg", "-i", "wpa-supplicant"])
-        # We use patch(..., wraps=...), so expect arg1 to be "self" (i.e., the runner).
-        mock_super.assert_called_once_with(
-            self.runner,
-            [rv],
-            private_mounts=False,
-            capture=True,
-            stdin=subprocess.DEVNULL,
+        self.assertEqual(
+            self.runner.wrappers,
+            [self.runner.sleep_and_echo_wrapper, self.runner.systemd_run_wrapper],
         )
