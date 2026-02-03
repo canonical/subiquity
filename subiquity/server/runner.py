@@ -149,13 +149,25 @@ class AstartBackend:
         return await self.wait(proc, input=input)
 
 
-class LoggedCommandRunner:
+class CommandRunner:
+    def __init__(self, *, backend) -> None:
+        self.backend = backend
+
+    async def wait(
+        self,
+        proc: asyncio.subprocess.Process,
+        input: bytes | None,
+    ) -> subprocess.CompletedProcess:
+        return await self.backend.wait(proc, input=input)
+
+
+class LoggedCommandRunner(CommandRunner):
     def __init__(self, ident, *, use_systemd_user: Optional[bool] = None) -> None:
         self.systemd_run_wrapper = SystemdRunWrapper(
             ident=ident,
             use_systemd_user=use_systemd_user,
         )
-        self.backend = AstartBackend()
+        super().__init__(backend=AstartBackend())
 
     def wrap_command(self, cmd: list[str], *args, **kwargs) -> list[str]:
         return self.systemd_run_wrapper.wrap(cmd, *args, **kwargs)
@@ -177,13 +189,6 @@ class LoggedCommandRunner:
         )
 
         return await self.backend.start(wrapped, stdin=stdin, **backend_kwargs)
-
-    async def wait(
-        self,
-        proc: asyncio.subprocess.Process,
-        input: bytes | None,
-    ) -> subprocess.CompletedProcess:
-        return await self.backend.wait(proc, input=input)
 
     async def run(
         self,

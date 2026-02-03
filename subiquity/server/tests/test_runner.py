@@ -19,6 +19,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 from subiquity.server.runner import (
     AstartBackend,
+    CommandRunner,
     DryRunCommandRunner,
     LoggedCommandRunner,
     SleepAndEchoWrapper,
@@ -289,6 +290,13 @@ class TestAstartBackend(SubiTestCase):
 
         m_start.assert_called_once_with(["/bin/cat"], stdin=subprocess.DEVNULL)
         m_wait.assert_called_once_with(proc_mock, input=None)
+
+
+class TestCommandRunner(SubiTestCase):
+    def test_init(self):
+        backend = Mock()
+        runner = CommandRunner(backend=backend)
+        self.assertIs(backend, runner.backend)
 
 
 class TestLoggedCommandRunner(SubiTestCase):
