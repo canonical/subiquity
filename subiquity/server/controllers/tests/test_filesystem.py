@@ -956,10 +956,27 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
 
         m_initiate_poweroff.assert_called_once()
 
-    @parameterized.expand(((True,), (False,)))
-    async def test__pre_shutdown_install_started(self, zfsutils_linux_installed: bool):
+    @parameterized.expand(
+        (
+            (True, 4),
+            (True, 0),
+            (False, -1),
+        )
+    )
+    async def test__pre_shutdown_install_started(
+        self, zfsutils_linux_installed: bool, cryptsetup_status: int
+    ):
+        keystore_status = ["cryptsetup", "status", "keystore-rpool"]
+
+        async def fake_run(cmd, **kwargs):
+            if cryptsetup_status > 0 and cmd == keystore_status:
+                raise subprocess.CalledProcessError(
+                    cmd=cmd,
+                    returncode=cryptsetup_status,
+                )
+
         self.fsc.reset_partition_only = False
-        run = mock.patch.object(self.app.command_runner, "run")
+        run = mock.patch.object(self.app.command_runner, "run", side_effect=fake_run)
         _all = mock.patch.object(self.fsc.model, "_all")
         which_rv = "/usr/sbin/zpool" if zfsutils_linux_installed else None
         which = mock.patch(
@@ -974,6 +991,11 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             mock.call(["umount", "--recursive", "/target"]),
         ]
         if zfsutils_linux_installed:
+            expected_calls.append(mock.call(keystore_status))
+            if cryptsetup_status == 0:
+                expected_calls.append(
+                    mock.call(["cryptsetup", "close", "keystore-rpool"])
+                )
             expected_calls.append(mock.call(["zpool", "export", "-a"]))
         self.assertEqual(expected_calls, mock_run.mock_calls)
 
@@ -981,8 +1003,10 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
     async def test__pre_shutdown_install_not_started(
         self, zfsutils_linux_installed: bool
     ):
+        keystore_status = ["cryptsetup", "status", "keystore-rpool"]
+
         async def fake_run(cmd, **kwargs):
-            if cmd == ["mountpoint", "/target"]:
+            if cmd == ["mountpoint", "/target"] or cmd == keystore_status:
                 raise subprocess.CalledProcessError(cmd=cmd, returncode=1)
 
         self.fsc.reset_partition_only = False
@@ -999,6 +1023,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             mock.call(["mountpoint", "/target"]),
         ]
         if zfsutils_linux_installed:
+            expected_calls.append(mock.call(keystore_status))
             expected_calls.append(mock.call(["zpool", "export", "-a"]))
         self.assertEqual(expected_calls, mock_run.mock_calls)
 
