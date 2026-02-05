@@ -82,7 +82,7 @@ class TestRefreshController(SubiTestCase):
         stub_snaps = {"subiquity": StubSnap()}
 
         # Test with the snap following the expected channel
-        subiquity_info.channel = "stable/ubuntu-XX.YY"
+        subiquity_info.tracking_channel = "stable/ubuntu-XX.YY"
 
         with mock.patch.object(self.rc, "get_refresh_channel") as grc:
             grc.return_value = ("newchan", SnapChannelSource.DISK_INFO_FILE)
@@ -96,7 +96,7 @@ class TestRefreshController(SubiTestCase):
         self.assertEqual(request.channel, "newchan")
 
         # Test with the snap not following the expected channel
-        subiquity_info.channel = "something-custom"
+        subiquity_info.tracking_channel = "something-custom"
 
         with mock.patch.object(self.rc, "get_refresh_channel") as grc:
             with mock.patch.object(self.rc.app.snapdapi.v2, "snaps", new=stub_snaps):

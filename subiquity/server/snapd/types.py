@@ -68,6 +68,7 @@ class Snap:
     version: str
     revision: str
     channel: str
+    tracking_channel: Optional[str] = None
     publisher: Optional[Publisher] = None
 
 
