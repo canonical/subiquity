@@ -20,6 +20,7 @@
     "type": "app",
     "version": "19.04.2",
     "channel": "stable",
+    "tracking-channel": "stable",
     "ignore-validation": false,
     "revision": "804",
     "confinement": "classic",
