@@ -699,25 +699,31 @@ class InstallController(SubiquityController):
         # Components have the naming convention nvidia-$ver-{erd,uda}-{user,ko}
         # erd are the Server drivers, uda are Desktop drivers.  Support the
         # desktop ones for now.
+
+        # Any variation of server and open driver is deliberately mapped to
+        # what we have.
         for driver in sorted(self.app.controllers.Drivers.drivers, reverse=True):
-            m = re.fullmatch("nvidia-driver-([0-9]+)", driver)
+            m = re.fullmatch("nvidia-driver-([0-9]+)(-server)?(-open)?", driver)
             if not m:
                 continue
             nvidia_driver_offered = True
-            v = m.group(1)
-            ko = f"nvidia-{v}-uda-ko"
-            user = f"nvidia-{v}-uda-user"
-            if ko in kernel_components and user in kernel_components:
-                return [ko, user]
+            ver = m.group(1)
+            for branch in ("uda", "erd"):
+                ko = f"nvidia-{ver}-{branch}-ko"
+                user = f"nvidia-{ver}-{branch}-user"
+                if ko in kernel_components and user in kernel_components:
+                    return [ko, user]
+
         # if we don't match there, accept the newest reasonable version
         if nvidia_driver_offered:
             for component in sorted(kernel_components, reverse=True):
-                m = re.fullmatch("nvidia-([0-9]+)-uda-ko", component)
+                m = re.fullmatch("nvidia-([0-9]+)-([a-z]+)-ko", component)
                 if not m:
                     continue
                 ko = component
-                v = m.group(1)
-                user = f"nvidia-{v}-uda-user"
+                ver = m.group(1)
+                branch = m.group(2)
+                user = f"nvidia-{ver}-{branch}-user"
                 if user in kernel_components:
                     return [ko, user]
         return []

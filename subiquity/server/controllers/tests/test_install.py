@@ -470,6 +470,30 @@ class TestInstallControllerDriverMatch(unittest.TestCase):
                 ["nvidia-driver-510"],
                 ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
             ),
+            # match, open driver
+            (
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+                ["nvidia-driver-510-open"],
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+            ),
+            # match, server driver
+            (
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+                ["nvidia-driver-510-server"],
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+            ),
+            # match, open server driver
+            (
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+                ["nvidia-driver-510-server-open"],
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+            ),
+            # match, open server driver, erd
+            (
+                ["nvidia-510-erd-ko", "nvidia-510-erd-user"],
+                ["nvidia-driver-510-server-open"],
+                ["nvidia-510-erd-ko", "nvidia-510-erd-user"],
+            ),
             # prefer "newer" based on a reversed sort
             (
                 [
@@ -497,6 +521,12 @@ class TestInstallControllerDriverMatch(unittest.TestCase):
                 ["nvidia-driver-999"],
                 ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
             ),
+            # wrong driver version, erd
+            (
+                ["nvidia-510-erd-ko", "nvidia-510-erd-user"],
+                ["nvidia-driver-999"],
+                ["nvidia-510-erd-ko", "nvidia-510-erd-user"],
+            ),
             # wrong driver version, use newer
             (
                 [
@@ -513,6 +543,12 @@ class TestInstallControllerDriverMatch(unittest.TestCase):
                 ["nvidia-1-uda-ko", "nvidia-2-uda-ko", "nvidia-1-uda-user"],
                 ["nvidia-driver-999"],
                 ["nvidia-1-uda-ko", "nvidia-1-uda-user"],
+            ),
+            # branch mismatch
+            (
+                ["nvidia-1-uda-ko", "nvidia-1-erd-user"],
+                ["nvidia-driver-999"],
+                [],
             ),
         )
     )
