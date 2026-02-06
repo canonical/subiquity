@@ -127,7 +127,7 @@ class RefreshController(SubiquityController):
             log.debug("no refresh channel found")
             return
         info = lsb_release(dry_run=self.app.opts.dry_run)
-        expected_channel = "stable/ubuntu-" + info["release"]
+        expected_channel = info["release"] + "/stable/ubuntu-" + info["release"]
         if (
             source == SnapChannelSource.DISK_INFO_FILE
             and snap.tracking_channel != expected_channel
