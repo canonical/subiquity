@@ -65,7 +65,7 @@ class TestRefreshController(SubiTestCase):
     @mock.patch("subiquity.server.controllers.refresh.lsb_release")
     async def test_configure_snapd_disk_info(self, m_lsb):
         # If a snap channel is found via .disk/info it is applying if
-        # and only if the snap is already tracking stable/ubuntu-XX.YY
+        # and only if the snap is already tracking XX.YY/stable/ubuntu-XX.YY
 
         m_lsb.return_value = {"release": "XX.YY"}
 
@@ -82,7 +82,7 @@ class TestRefreshController(SubiTestCase):
         stub_snaps = {"subiquity": StubSnap()}
 
         # Test with the snap following the expected channel
-        subiquity_info.tracking_channel = "stable/ubuntu-XX.YY"
+        subiquity_info.tracking_channel = "XX.YY/stable/ubuntu-XX.YY"
 
         with mock.patch.object(self.rc, "get_refresh_channel") as grc:
             grc.return_value = ("newchan", SnapChannelSource.DISK_INFO_FILE)
