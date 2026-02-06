@@ -2369,6 +2369,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             try:
                 await self.app.command_runner.run(["mountpoint", "/target"])
             except subprocess.CalledProcessError:
+                # breakpoint()
                 log.debug(
                     "/target does not exist or is not mounted,"
                     " skipping call to umount --recursive"
@@ -2380,4 +2381,18 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # installer environment. It gets dynamically installed by curtin when
         # needed.
         if shutil.which("zpool") is not None:
+            try:
+                keystore_status = ["cryptsetup", "status", "keystore-rpool"]
+                await self.app.command_runner.run(keystore_status)
+            except subprocess.CalledProcessError:
+                # breakpoint()
+                pass
+            else:
+                # LP: #2140415
+                # If we're here, the keystore is open.  This is intentional, so
+                # that the needed tools are in the dracut initrd so that we can
+                # decrypt the rootfs.  But if we continue to leave the keystore
+                # open, `zpool export` will block, so close the keystore now.
+                keystore_close = ["cryptsetup", "close", "keystore-rpool"]
+                await self.app.command_runner.run(keystore_close)
             await self.app.command_runner.run(["zpool", "export", "-a"])
