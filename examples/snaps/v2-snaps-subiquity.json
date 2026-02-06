@@ -4,10 +4,10 @@
   "status": "OK",
   "result": {
     "id": "ba2aj8guta0zSRlT3QM5aJNAUXPlBtf9",
-    "title": "subiquity",
     "summary": "Ubuntu installer",
     "description": "The Ubuntu server installer",
-    "installed-size": 51191808,
+    "installed-size": 22728704,
+    "install-date": "2025-10-07T09:51:58Z",
     "name": "subiquity",
     "publisher": {
       "id": "canonical",
@@ -18,10 +18,12 @@
     "developer": "canonical",
     "status": "active",
     "type": "app",
-    "version": "19.04.2",
-    "channel": "stable",
+    "base": "core24",
+    "version": "25.10",
+    "channel": "",
+    "tracking-channel": "25.10/stable",
     "ignore-validation": false,
-    "revision": "804",
+    "revision": "6871",
     "confinement": "classic",
     "private": false,
     "devmode": false,
@@ -29,7 +31,7 @@
     "apps": [
       {
         "snap": "subiquity",
-        "name": "console-conf"
+        "name": "curtin"
       },
       {
         "snap": "subiquity",
@@ -41,22 +43,33 @@
       },
       {
         "snap": "subiquity",
-        "name": "subiquity-configure-apt"
-      },
-      {
-        "snap": "subiquity",
-        "name": "subiquity-loadkeys"
+        "name": "subiquity-server",
+        "daemon": "simple",
+        "daemon-scope": "system",
+        "enabled": true,
+        "active": true
       },
       {
         "snap": "subiquity",
         "name": "subiquity-service",
         "daemon": "simple",
+        "daemon-scope": "system",
         "enabled": true,
         "active": true
       }
     ],
-    "contact": "mailto:mathieu.trudel-lapierre@canonical.com",
-    "mounted-from": "/var/lib/snapd/snaps/subiquity_804.snap",
-    "install-date": "2019-04-09T23:06:31.014843014+12:00"
+    "mounted-from": "/var/lib/snapd/snaps/subiquity_6871.snap",
+    "links": {
+      "contact": [
+        "https://bugs.launchpad.net/subiquity/+filebug"
+      ],
+      "issues": [
+        "https://bugs.launchpad.net/subiquity/+filebug"
+      ],
+      "source-code": [
+        "https://github.com/canonical/subiquity"
+      ]
+    },
+    "contact": "https://bugs.launchpad.net/subiquity/+filebug"
   }
 }
