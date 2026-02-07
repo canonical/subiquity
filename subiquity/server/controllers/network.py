@@ -15,6 +15,7 @@
 
 import asyncio
 import logging
+import os
 import shutil
 from typing import List, Optional
 
@@ -106,11 +107,26 @@ class NetworkController(BaseNetworkController, SubiquityController):
             self._install_wpasupplicant()
         )
 
+    def _wpa_supplicant_path(self):
+        for path in (
+            "/usr/sbin/wpa_supplicant",
+            "/sbin/wpa_supplicant",
+            "/usr/bin/wpa_supplicant",
+            "/bin/wpa_supplicant",
+        ):
+            if os.access(path, os.X_OK):
+                return path
+        return shutil.which("wpa_supplicant")
+
     def wlan_support_install_state(self):
         # If wpa_supplicant is already available, expose WLAN immediately.
-        if shutil.which("wpa_supplicant") is not None:
+        wpa_path = self._wpa_supplicant_path()
+        if wpa_path is not None:
+            log.debug("wpa_supplicant found at %s; enabling WLAN", wpa_path)
             return PackageInstallState.DONE
-        return self.app.package_installer.state_for_pkg("wpasupplicant")
+        state = self.app.package_installer.state_for_pkg("wpasupplicant")
+        log.debug("wpa_supplicant not found; state=%s", state)
+        return state
 
     async def _install_wpasupplicant(self):
         r = await self.app.package_installer.install_pkg("wpasupplicant")
@@ -230,12 +246,8 @@ class NetworkController(BaseNetworkController, SubiquityController):
             self.update_initial_configs()
             self.apply_config(silent=True)
             self.view_shown = True
-        if self.wlan_support_install_state() == PackageInstallState.DONE:
-            devices = self.model.get_all_netdevs()
-        else:
-            devices = [
-                dev for dev in self.model.get_all_netdevs() if dev.type != "wlan"
-            ]
+        # Always expose WLAN devices; support state drives the UI message.
+        devices = self.model.get_all_netdevs()
         return NetworkStatus(
             devices=[dev.netdev_info() for dev in devices],
             wlan_support_install_state=self.wlan_support_install_state(),
@@ -337,13 +349,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
             state = self.wlan_support_install_state()
             if state == PackageInstallState.INSTALLING:
                 self.pending_wlan_devices.add(dev)
-                return
-            elif state in [
-                PackageInstallState.FAILED,
-                PackageInstallState.NOT_AVAILABLE,
-            ]:
-                return
-            # PackageInstallState.DONE falls through
+            # Always send WLAN devices to the UI; support state will show status.
         self._send_update(LinkAction.NEW, dev)
 
     def update_link(self, dev):
