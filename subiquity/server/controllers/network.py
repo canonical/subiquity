@@ -15,6 +15,7 @@
 
 import asyncio
 import logging
+import shutil
 from typing import List, Optional
 
 import aiohttp
@@ -106,6 +107,9 @@ class NetworkController(BaseNetworkController, SubiquityController):
         )
 
     def wlan_support_install_state(self):
+        # If wpa_supplicant is already available, expose WLAN immediately.
+        if shutil.which("wpa_supplicant") is not None:
+            return PackageInstallState.DONE
         return self.app.package_installer.state_for_pkg("wpasupplicant")
 
     async def _install_wpasupplicant(self):
