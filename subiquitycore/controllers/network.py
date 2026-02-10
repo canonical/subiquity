@@ -215,8 +215,8 @@ class BaseNetworkController(BaseController):
 
     def update_initial_configs(self):
         # Any device that does not have a (global) address by the time
-        # we get to the network screen is marked as disabled, with an
-        # explanation.
+        # we get to the network screen is configured with DHCPv4
+        # enabled so it can attempt to acquire an address.
         log.debug("updating initial NIC config")
         for dev in self.model.get_all_netdevs():
             has_global_address = False
@@ -227,10 +227,8 @@ class BaseNetworkController(BaseController):
                     has_global_address = True
                     break
             if not has_global_address:
-                dev.remove_ip_networks_for_version(4)
-                dev.remove_ip_networks_for_version(6)
-                log.debug("disabling %s", dev.name)
-                dev.disabled_reason = _("autoconfiguration failed")
+                dev.config["dhcp4"] = True
+                log.debug("enabling DHCPv4 on %s", dev.name)
 
     @property
     def netplan_path(self):
