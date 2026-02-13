@@ -257,7 +257,10 @@ parser.add_argument('-s', '--serial', default=False, action='store_true',
                     help='attach to serial console')
 parser.add_argument('-S', '--sound', default=False, action='store_true',
                     help='enable sound')
-parser.add_argument('--iso', action='store', help='use this iso')
+iso_group = parser.add_mutually_exclusive_group()
+iso_group.add_argument('--iso', action='store', help='use this iso')
+iso_group.add_argument('--netboot', action='store_true',
+                       help='attempt to netboot')
 parser.add_argument('-u', '--update', action='store',
                     help='subiquity-channel argument')
 parser.add_argument('-m', '--memory', action='store',
@@ -700,15 +703,19 @@ the ESC button when the QEMU window opens. Then select "Device Manager" and \
         appends = ctx.args.kernel_appends
 
         with kvm_prepare_common(ctx) as kvm:
-
-            if ctx.args.iso:
+            if ctx.args.netboot:
+                iso = None
+            elif ctx.args.iso:
                 iso = ctx.args.iso
             elif ctx.args.base:
                 iso = ctx.baseiso
             else:
                 iso = ctx.iso
 
-            kvm.extend(('-cdrom', str(iso), '-boot', ','.join(boot_opts)))
+            if iso is not None:
+                kvm.extend(('-cdrom', str(iso), '-boot', ','.join(boot_opts)))
+            else:
+                kvm.extend(('-boot', 'order=n'))
 
             if ctx.args.serial:
                 kvm.append('-nographic')
@@ -741,6 +748,8 @@ the ESC button when the QEMU window opens. Then select "Device Manager" and \
                     appends.append('autoinstall')
 
             if len(appends) > 0:
+                if ctx.args.netboot:
+                    raise NotImplementedError('currently, netboot is only supported with very few options')
                 with mounter(iso, mntdir):
                     appends.extend(get_grub_appends(ctx, mntdir))
                     # no additional appends should be added after the grub ones
