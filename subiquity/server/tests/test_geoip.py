@@ -103,3 +103,12 @@ class TestGeoIPBadData(SubiTestCase):
             )
             self.assertFalse(await self.geoip.lookup())
         self.assertIsNone(self.geoip.timezone)
+
+    async def test_lookup_timeout(self):
+        with aioresponses() as mocked:
+            mocked.get(
+                "https://geoip.ubuntu.com/lookup",
+                exception=TimeoutError(),
+            )
+            self.assertFalse(await self.geoip.lookup())
+        self.assertIsNone(self.geoip.timezone)

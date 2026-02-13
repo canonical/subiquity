@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import enum
 import logging
 from abc import ABC, abstractmethod
@@ -115,7 +116,7 @@ class GeoIP:
     async def _lookup(self):
         try:
             self.response_text = await self.strategy.get_response()
-        except aiohttp.ClientError as le:
+        except (aiohttp.ClientError, asyncio.TimeoutError) as le:
             log.warning("geoip lookup failed: %r", le)
             return False
         try:
