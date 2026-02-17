@@ -416,7 +416,7 @@ This section has historically used the same format as curtin, which is documente
 - The ``geoip`` key controls whether to perform IP-based geolocation to determine the correct country mirror.
 
 
-All other sections behave as defined in curtin. See the curtin `documentation <https://curtin.readthedocs.io/en/latest/topics/apt_source.html#common-snippets>`_ and its `example apt configurations <https://git.launchpad.net/curtin/tree/examples/apt-source.yaml>`_ for usage examples of these sections, such as how to add a PPA using the ``sources`` section.
+All other sections behave as defined in curtin. See the curtin `documentation <https://curtin.readthedocs.io/en/latest/topics/apt_source.html#common-snippets>`_ and its `example apt configurations <https://github.com/canonical/curtin/blob/main/examples/apt-source.yaml>`_ for usage examples of these sections, such as how to add a PPA using the ``sources`` section.
 
 The default apt configuration in Subiquity is equivalent to:
 
