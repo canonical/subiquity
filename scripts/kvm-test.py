@@ -210,6 +210,10 @@ parser.add_argument('--no-disk', action='store_const', const=0,
 
 parser.add_argument('--disk-interface', help='type of interface for the disk(s)',
                     choices=('nvme', 'virtio', 'scsi', 'scsi-multipath'), default='virtio')
+parser.add_argument('--disk-phy-sector-size', type=int, choices=(512, 4096), default=512,
+                    help='physical sector size for the disk(s). If 4096, you must use the scsi disk interface.')
+parser.add_argument('--disk-log-sector-size', type=int, choices=(512, 4096), default=512,
+                    help='logical sector size for the disk(s). If 4096, you must use the scsi disk interface.')
 parser.add_argument('-d', '--disksize', action='append', dest='disks_sizes', default=[],
                     help='size of disk to create (12G default) (repeat to specify size of extra disks)')
 parser.add_argument('-i', '--img', action='store', help='use this img')
@@ -623,6 +627,14 @@ def storage_args(ctx) -> list[str]:
         return []
 
     args = []
+
+    if ctx.args.disk_phy_sector_size != 512 and ctx.args.disk_interface != 'scsi':
+        raise NotImplementedError('only scsi supports physical sector size != 512')
+    if ctx.args.disk_log_sector_size != 512 and ctx.args.disk_interface != 'scsi':
+        raise NotImplementedError('only scsi supports logical sector size != 512')
+    physical_block_size = ctx.args.disk_phy_sector_size
+    logical_block_size = ctx.args.disk_log_sector_size
+
     match ctx.args.disk_interface:
         case 'virtio':
             for idx, target in enumerate(ctx.targets):
@@ -635,7 +647,14 @@ def storage_args(ctx) -> list[str]:
             args.extend(('-device', 'virtio-scsi-pci,id=scsi'))
             for idx, target in enumerate(ctx.targets):
                 args.extend(drive(target, id_=f'localdisk{idx}', if_="none"))
-                args.extend(('-device', f'scsi-hd,drive=localdisk{idx},serial=deadbeef{idx}'))
+                hd_opts = [
+                    'scsi-hd',
+                    f'drive=localdisk{idx}',
+                    f'serial=deadbeef{idx}',
+                    f'physical_block_size={physical_block_size}',
+                    f'logical_block_size={logical_block_size}',
+                ]
+                args.extend(('-device', ','.join(hd_opts)))
             note = '''
 NOTE:
 ----
