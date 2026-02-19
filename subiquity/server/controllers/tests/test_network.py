@@ -99,6 +99,9 @@ class TestNetworkAutoDisableInterfaces(SubiTestCase):
         live_config = {"dhcp4": True}
         live_dev.config = copy(live_config)
         live_dev.info = Mock(addresses={"addr": Mock(scope="global")})
+        # DHCPv6 is always enabled on all detected interfaces, even those
+        # that already have a global address.
+        live_config_after_update = {"dhcp4": True, "dhcp6": True}
         self.controller.model.devices_by_name["testdev0"] = live_dev
 
         dead_dev = NetworkDev(self.controller.model, "testdev1", "eth")
@@ -110,10 +113,17 @@ class TestNetworkAutoDisableInterfaces(SubiTestCase):
         with patch("subiquity.server.controller.open"):
             await self.controller.configured()
 
-        # Live config shouldn't be modified no matter what
-        self.assertEqual(live_dev.config, live_config)
+        # Live config: DHCPv6 is always enabled, but otherwise unchanged
+        if modify:
+            self.assertEqual(live_dev.config, live_config_after_update)
+        else:
+            self.assertEqual(live_dev.config, live_config)
 
         if modify:
-            self.assertEqual(dead_dev.config, {})
+            # Disconnected devices get DHCPv4 and DHCPv6 enabled so they
+            # can attempt to acquire addresses.
+            self.assertEqual(
+                dead_dev.config, {"dhcp4": True, "dhcp6": True}
+            )
         else:
             self.assertEqual(dead_dev.config, dead_config)

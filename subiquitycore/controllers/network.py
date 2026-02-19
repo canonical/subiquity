@@ -215,8 +215,10 @@ class BaseNetworkController(BaseController):
 
     def update_initial_configs(self):
         # Any device that does not have a (global) address by the time
-        # we get to the network screen is configured with DHCPv4
-        # enabled so it can attempt to acquire an address.
+        # we get to the network screen is configured with DHCPv4 and
+        # DHCPv6 enabled so it can attempt to acquire an address.
+        # DHCPv6 is always enabled on all detected interfaces regardless
+        # of whether they already have a global address.
         log.debug("updating initial NIC config")
         for dev in self.model.get_all_netdevs():
             has_global_address = False
@@ -226,6 +228,9 @@ class BaseNetworkController(BaseController):
                 if a.scope == "global":
                     has_global_address = True
                     break
+            if not dev.config.get("dhcp6", False):
+                dev.config["dhcp6"] = True
+                log.debug("enabling DHCPv6 on %s", dev.name)
             if not has_global_address:
                 dev.config["dhcp4"] = True
                 log.debug("enabling DHCPv4 on %s", dev.name)
@@ -507,9 +512,10 @@ class BaseNetworkController(BaseController):
         device = self.model.get_netdev_by_name(dev_name)
         cur_ssid, cur_psk = device.configured_ssid
         if wlan.ssid and not cur_ssid:
-            # Turn DHCP4 on by default when specifying an SSID for
-            # the first time...
+            # Turn DHCP4 and DHCP6 on by default when specifying an
+            # SSID for the first time...
             device.config["dhcp4"] = True
+            device.config["dhcp6"] = True
         device.set_ssid_psk(wlan.ssid, wlan.psk)
         self.update_link(device)
         self.apply_config()
