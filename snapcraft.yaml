@@ -84,7 +84,7 @@ parts:
 
     override-pull: |
       craftctl default
-      PACKAGED_VERSION="$(git describe --long --abbrev=9 --match=[0-9][0-9]* 2>/dev/null || echo "0.0.0-0-g$(git rev-parse --short=9 HEAD)")"
+      PACKAGED_VERSION="$(git describe --long --abbrev=9 --match=[0-9][0-9]*)"
       sed -e "s,@@PACKAGED_VERSION@@,$PACKAGED_VERSION,g" -i curtin/version.py
     override-build: &pyinstall |
       # We install without dependencies because all dependencies come from
