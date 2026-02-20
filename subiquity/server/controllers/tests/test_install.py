@@ -230,6 +230,7 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
         self.controller.app.root = tempfile.mkdtemp()
         os.makedirs(os.path.join(self.controller.model.target, "etc/grub.d"))
         self.addCleanup(shutil.rmtree, self.controller.model.target)
+        self.addCleanup(shutil.rmtree, self.controller.app.root)
 
     @patch("asyncio.sleep")
     async def test_install_package(self, m_sleep):
