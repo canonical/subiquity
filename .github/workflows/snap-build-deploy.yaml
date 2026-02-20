@@ -12,6 +12,8 @@ jobs:
     - uses: actions/checkout@v4
     - uses: canonical/action-build@v1
       id: build-snap
+      with:
+        snapcraft-channel: 8.x/stable
     - uses: actions/upload-artifact@v4
       with:
         name: subiquity-snap
