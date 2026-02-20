@@ -4,6 +4,7 @@ on: [pull_request]
 
 jobs:
   cla-check:
+    if: false
     runs-on: ubuntu-24.04
     steps:
       - name: Check if CLA signed

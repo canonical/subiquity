@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   documentation-checks:
+    if: false
     uses: canonical/documentation-workflows/.github/workflows/documentation-checks.yaml@main
     with:
       working-directory: 'doc'

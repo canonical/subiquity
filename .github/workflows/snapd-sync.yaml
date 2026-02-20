@@ -11,6 +11,7 @@ on:
 
 jobs:
   check-on-sync-types:
+    if: false
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4

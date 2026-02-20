@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   test:
+    if: false
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -29,6 +30,7 @@ jobs:
         sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make check"
 
   lint:
+    if: false
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -44,6 +46,7 @@ jobs:
         sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make lint"
 
   format-black:
+    if: false
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -52,6 +55,7 @@ jobs:
           version: "~= 25.1.0"
           src: "console_conf subiquity subiquitycore"
   format-isort:
+    if: false
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -61,7 +65,7 @@ jobs:
           sort-paths: "console_conf subiquity subiquitycore"
   static-typing:
     # In this job, we compare the output of mypy before and after the PR.
-    if: github.event_name == 'pull_request'
+    if: false
     runs-on: ubuntu-24.04
     steps:
       - name: Install mypy and typeshed

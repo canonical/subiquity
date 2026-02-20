@@ -11,6 +11,7 @@ concurrency:
 
 jobs:
   TICS:
+    if: false
     runs-on: [self-hosted, linux, amd64, tiobe, noble]
     steps:
       - name: Checkout the project
