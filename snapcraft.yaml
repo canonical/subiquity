@@ -84,6 +84,8 @@ parts:
 
     override-pull: |
       craftctl default
+      # Since snapcraft 8.14, the tags are not automatically fetched
+      git fetch --tags
       PACKAGED_VERSION="$(git describe --long --abbrev=9 --match=[0-9][0-9]*)"
       sed -e "s,@@PACKAGED_VERSION@@,$PACKAGED_VERSION,g" -i curtin/version.py
     override-build: &pyinstall |
