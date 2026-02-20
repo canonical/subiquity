@@ -35,9 +35,14 @@ from curtin.distro import list_kernels
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.pkg import TargetPkg
+from subiquity.common.resources import get_users_and_groups
 from subiquity.common.types import ApplicationState, PackageInstallState
 from subiquity.journald import journald_listen
 from subiquity.models.filesystem import ActionRenderMode, Partition
+from subiquity.server.autoinstall import (
+    AutoinstallError,
+    AutoinstallUserSuppliedCmdError,
+)
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.filesystem import VariationInfo
 from subiquity.server.curtin import run_curtin_command
@@ -645,9 +650,17 @@ class InstallController(SubiquityController):
             await self.postinstall(context=context)
 
             self.app.update_state(ApplicationState.LATE_COMMANDS)
-            await self.app.controllers.Late.run()
+
+            await self.app.controllers.Late.run_builtin()
+            try:
+                await self.app.controllers.Late.run_user_supplied()
+            except subprocess.CalledProcessError as exc:
+                raise AutoinstallUserSuppliedCmdError(cmd=exc.cmd, details=str(exc))
+            await self.app.controllers.Late.finished()
 
             self.app.update_state(ApplicationState.DONE)
+        except AutoinstallError:
+            raise
         except Exception as exc:
             kw = {}
             if self.tb_extractor.traceback:
@@ -686,34 +699,86 @@ class InstallController(SubiquityController):
         # Components have the naming convention nvidia-$ver-{erd,uda}-{user,ko}
         # erd are the Server drivers, uda are Desktop drivers.  Support the
         # desktop ones for now.
+
+        # Any variation of server and open driver is deliberately mapped to
+        # what we have.
         for driver in sorted(self.app.controllers.Drivers.drivers, reverse=True):
-            m = re.fullmatch("nvidia-driver-([0-9]+)", driver)
+            m = re.fullmatch("nvidia-driver-([0-9]+)(-server)?(-open)?", driver)
             if not m:
                 continue
             nvidia_driver_offered = True
-            v = m.group(1)
-            ko = f"nvidia-{v}-uda-ko"
-            user = f"nvidia-{v}-uda-user"
-            if ko in kernel_components and user in kernel_components:
-                return [ko, user]
+            ver = m.group(1)
+            for branch in ("uda", "erd"):
+                ko = f"nvidia-{ver}-{branch}-ko"
+                user = f"nvidia-{ver}-{branch}-user"
+                if ko in kernel_components and user in kernel_components:
+                    return [ko, user]
+
         # if we don't match there, accept the newest reasonable version
         if nvidia_driver_offered:
             for component in sorted(kernel_components, reverse=True):
-                m = re.fullmatch("nvidia-([0-9]+)-uda-ko", component)
+                m = re.fullmatch("nvidia-([0-9]+)-([a-z]+)-ko", component)
                 if not m:
                     continue
                 ko = component
-                v = m.group(1)
-                user = f"nvidia-{v}-uda-user"
+                ver = m.group(1)
+                branch = m.group(2)
+                user = f"nvidia-{ver}-{branch}-user"
                 if user in kernel_components:
                     return [ko, user]
         return []
+
+    async def create_users(self, context):
+        user = self.model.identity.user
+
+        if user is None:
+            return
+
+        groups = get_users_and_groups(self.model.chroot_prefix)
+
+        async def run_in_target(cmd: list[str], **kwargs):
+            await run_curtin_command(
+                self.app,
+                context,
+                "in-target",
+                "-t",
+                self.tpath(),
+                "--",
+                *cmd,
+                private_mounts=False,
+                **kwargs,
+            )
+
+        # NOTE: useradd supports the --password option but using it here would
+        # leak the hashed password if something logs the call to useradd. This
+        # is true for us since we're leaning on systemd-run to execute
+        # commands. Instead, we create a password-less user and immediately
+        # call chpasswd, which can read the password via stdin.
+        await run_in_target(
+            [
+                "useradd",
+                user.username,
+                "--comment",
+                user.realname,
+                "--shell",
+                "/bin/bash",
+                "--groups",
+                ",".join(sorted(groups)),
+                "--create-home",
+            ]
+        )
+        await run_in_target(
+            ["chpasswd", "--encrypted"],
+            input=f"{user.username}:{user.password}".encode("utf-8"),
+            capture=True,
+        )
 
     @with_context(
         description="final system configuration", level="INFO", childlevel="DEBUG"
     )
     async def postinstall(self, *, context):
         self.write_autoinstall_config()
+        await self.create_users(context)
         try:
             if self.supports_apt():
                 packages = await self.get_target_packages(context=context)
@@ -741,6 +806,7 @@ class InstallController(SubiquityController):
             await fs_controller.finish_install(
                 context=context, kernel_components=self.kernel_components()
             )
+            await fs_controller.snapd_target_preseed(Path(self.model.target))
 
         if self.supports_apt():
             if self.model.drivers.do_install:

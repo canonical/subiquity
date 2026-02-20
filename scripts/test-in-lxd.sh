@@ -32,7 +32,7 @@ fi
 # includes some uncopyable stuff
 lxc exec $TESTER -- sh -ec "
     cd ~
-    sudo cp -a /subiquity . || true
+    sudo cp -a --no-preserve=ownership /subiquity . || true
     [ -d ~/subiquity ]
     "
 

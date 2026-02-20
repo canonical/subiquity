@@ -33,3 +33,14 @@ class AutoinstallValidationError(AutoinstallError):
         self.message = f"Malformed autoinstall in {owner!r} section"
         self.owner = owner
         super().__init__(self.message, details=details)
+
+
+class AutoinstallUserSuppliedCmdError(AutoinstallError):
+    def __init__(
+        self,
+        cmd: list[str],
+        details: Optional[str] = None,
+    ):
+        self.message = f"Command execution failure: {cmd!r}"
+        self.cmd = cmd
+        super().__init__(self.message, details=details)

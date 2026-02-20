@@ -20,11 +20,12 @@ import tempfile
 import unittest
 import uuid
 from pathlib import Path
-from unittest.mock import ANY, AsyncMock, Mock, mock_open, patch
+from unittest.mock import ANY, AsyncMock, Mock, call, mock_open, patch
 
 from curtin.util import EFIBootEntry, EFIBootState
 
 from subiquity.common.types import PackageInstallState
+from subiquity.models.identity import User
 from subiquity.models.tests.test_filesystem import make_model_and_partition
 from subiquity.server.controllers.install import CurtinInstallError, InstallController
 from subiquity.server.mounter import Mountpoint
@@ -229,6 +230,7 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
         self.controller.app.root = tempfile.mkdtemp()
         os.makedirs(os.path.join(self.controller.model.target, "etc/grub.d"))
         self.addCleanup(shutil.rmtree, self.controller.model.target)
+        self.addCleanup(shutil.rmtree, self.controller.app.root)
 
     @patch("asyncio.sleep")
     async def test_install_package(self, m_sleep):
@@ -272,6 +274,67 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
         with open(self.controller.tpath("etc/grub.d/99_reset")) as fp:
             cfg = fp.read()
         self.assertIn("--fs-uuid fsuuid", cfg)
+
+    @patch("subiquity.server.controllers.install.run_curtin_command")
+    @patch(
+        "subiquity.server.controllers.install.get_users_and_groups",
+        Mock(return_value=["admin", "sudo"]),
+    )
+    async def test_create_users(self, run_curtin_cmd):
+        self.controller.model = Mock()
+        self.controller.tpath = Mock(return_value="/tmp/foo")
+        with patch.object(
+            self.controller.model.identity,
+            "user",
+            User(username="user", password="$6$xxx12345", realname="my user"),
+        ):
+            await self.controller.create_users(Mock())
+        expected_useradd = [
+            "useradd",
+            "user",
+            "--comment",
+            "my user",
+            "--shell",
+            "/bin/bash",
+            "--groups",
+            "admin,sudo",
+            "--create-home",
+        ]
+        expected_chpasswd = ["chpasswd", "--encrypted"]
+
+        expected_calls = [
+            call(
+                ANY,
+                ANY,
+                "in-target",
+                "-t",
+                ANY,
+                "--",
+                *expected_useradd,
+                private_mounts=False,
+            ),
+            call(
+                ANY,
+                ANY,
+                "in-target",
+                "-t",
+                ANY,
+                "--",
+                *expected_chpasswd,
+                private_mounts=False,
+                input=b"user:$6$xxx12345",
+                capture=True,
+            ),
+        ]
+        self.assertEqual(expected_calls, run_curtin_cmd.mock_calls)
+
+    @patch("subiquity.server.controllers.install.run_curtin_command")
+    async def test_create_users_no_identity(self, run_curtin_cmd):
+        self.controller.model = Mock()
+        with patch.object(self.controller.model.identity, "user", None):
+            await self.controller.create_users(Mock())
+
+        run_curtin_cmd.assert_not_called()
 
     @patch("platform.machine", return_value="s390x")
     @patch("subiquity.server.controllers.install.arun_command")
@@ -408,6 +471,30 @@ class TestInstallControllerDriverMatch(unittest.TestCase):
                 ["nvidia-driver-510"],
                 ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
             ),
+            # match, open driver
+            (
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+                ["nvidia-driver-510-open"],
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+            ),
+            # match, server driver
+            (
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+                ["nvidia-driver-510-server"],
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+            ),
+            # match, open server driver
+            (
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+                ["nvidia-driver-510-server-open"],
+                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
+            ),
+            # match, open server driver, erd
+            (
+                ["nvidia-510-erd-ko", "nvidia-510-erd-user"],
+                ["nvidia-driver-510-server-open"],
+                ["nvidia-510-erd-ko", "nvidia-510-erd-user"],
+            ),
             # prefer "newer" based on a reversed sort
             (
                 [
@@ -435,6 +522,12 @@ class TestInstallControllerDriverMatch(unittest.TestCase):
                 ["nvidia-driver-999"],
                 ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
             ),
+            # wrong driver version, erd
+            (
+                ["nvidia-510-erd-ko", "nvidia-510-erd-user"],
+                ["nvidia-driver-999"],
+                ["nvidia-510-erd-ko", "nvidia-510-erd-user"],
+            ),
             # wrong driver version, use newer
             (
                 [
@@ -451,6 +544,12 @@ class TestInstallControllerDriverMatch(unittest.TestCase):
                 ["nvidia-1-uda-ko", "nvidia-2-uda-ko", "nvidia-1-uda-user"],
                 ["nvidia-driver-999"],
                 ["nvidia-1-uda-ko", "nvidia-1-uda-user"],
+            ),
+            # branch mismatch
+            (
+                ["nvidia-1-uda-ko", "nvidia-1-erd-user"],
+                ["nvidia-driver-999"],
+                [],
             ),
         )
     )

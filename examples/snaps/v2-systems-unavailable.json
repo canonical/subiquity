@@ -228,7 +228,16 @@
     "storage-encryption": {
       "support": "unavailable",
       "storage-safety": "prefer-encrypted",
-      "unavailable-reason": "not encrypting device storage as checking TPM gave: secure boot is disabled"
+      "unavailable-reason": "not encrypting device storage as checking TPM gave: TPM is disabled",
+      "availability-check-errors": [
+        {
+          "kind": "tpm-device-disabled",
+          "message": "...",
+          "actions": [
+            "enable-tpm-via-firmware"
+          ]
+        }
+      ]
     }
   }
 }

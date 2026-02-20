@@ -18,7 +18,7 @@ import contextlib
 import json
 import logging
 import tempfile
-from typing import List
+from typing import List, Union
 
 import aiohttp
 
@@ -28,11 +28,13 @@ from subiquity.common.serialize import Serializer
 from subiquity.common.types import Change, TaskStatus
 from subiquity.server.snapd.types import (
     ChangeID,
+    EntropyCheckResponse,
     Response,
     ResponseType,
     Snap,
     SnapActionRequest,
     SystemActionRequest,
+    SystemActionResponseGenerateRecoveryKey,
     SystemDetails,
     SystemsResponse,
 )
@@ -68,10 +70,17 @@ class SnapdAPI:
             class label:
                 def GET() -> SystemDetails: ...
 
-                # TODO The return type is correct only for async responses, but
-                # not all responses are async. We'd need to extend support for
-                # Union types e.g., Union[ChangeID, SystemActionResponse]
-                def POST(action: Payload[SystemActionRequest]) -> ChangeID: ...
+                # The return value here depends largely on the request content.
+                # It can return a sync response (e.g. GenerateRecoveryKey,
+                # EntropyCheck) or an async response (e.g., SetupEncryption).
+                def POST(
+                    action: Payload[SystemActionRequest],
+                ) -> Union[
+                    ChangeID,
+                    SystemActionResponseGenerateRecoveryKey,
+                    EntropyCheckResponse,
+                    SystemDetails,
+                ]: ...
 
 
 class _FakeResponse:
@@ -131,7 +140,7 @@ snapd_serializer = Serializer(ignore_unknown_fields=True, serialize_enums_by="va
 
 
 async def post_and_wait(client, meth, *args, ann=None, **kw):
-    change_id = await meth(*args, **kw)
+    change_id = await meth(*args, **kw, return_type=ChangeID)
     log.debug("post_and_wait %s", change_id)
 
     while True:

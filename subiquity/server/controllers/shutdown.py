@@ -22,11 +22,11 @@ from subiquity.common.apidef import API
 from subiquity.common.types import ShutdownMode
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.install import ApplicationState
+from subiquity.server.shutdown import initiate_poweroff, initiate_reboot
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.context import with_context
 from subiquitycore.file_util import open_perms, set_log_perms
-from subiquitycore.utils import run_command
 
 log = logging.getLogger("subiquity.server.controllers.shutdown")
 
@@ -137,12 +137,7 @@ class ShutdownController(SubiquityController):
         if self.opts.dry_run:
             self.app.exit()
         else:
-            # On desktop, a systemd inhibitor is in place to block shutdown.
-            # Starting with systemd 257, the inhibitor also prevents the root
-            # user from shutting down unless the --check-inhibitors=no,
-            # --ignore-inhibitors, or the --force option is used.
-            # See LP: #2092438
             if self.mode == ShutdownMode.REBOOT:
-                run_command(["systemctl", "reboot", "--ignore-inhibitors"])
+                await initiate_reboot()
             elif self.mode == ShutdownMode.POWEROFF:
-                run_command(["systemctl", "poweroff", "--ignore-inhibitors"])
+                await initiate_poweroff()

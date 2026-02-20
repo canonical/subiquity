@@ -440,6 +440,7 @@ class ErrorReportListStretchy(Stretchy):
 nonreportable_titles: dict[str, str] = {
     "AutoinstallError": _("an Autoinstall error"),
     "AutoinstallValidationError": _("an Autoinstall validation error"),
+    "AutoinstallUserSuppliedCmdError": _("a user-supplied Autoinstall command error"),
     "CloudInitSchemaValidationError": _("a cloud-init schema validation error"),
 }
 
@@ -451,6 +452,10 @@ nonreportable_footers: dict[str, str] = {
     "AutoinstallValidationError": _(
         "The installer has detected an issue with the provided Autoinstall "
         "file. Please modify it and try again."
+    ),
+    "AutoinstallUserSuppliedCmdError": _(
+        "The installation failed to execute a command supplied via the Autoinstall file. "
+        "Please modify the Autoinstall file and try again."
     ),
     "CloudInitSchemaValidationError": _(
         "The installer has detected a cloud-init schema validation error "

@@ -134,6 +134,64 @@ class Disk:
     requires_reformat: Optional[bool] = None
 
 
+# Shared enum used by the snapd API
+# See https://github.com/canonical/secboot/blob/master/efi/preinstall/error_kinds.go
+class CoreBootAvailabilityErrorKind(enum.Enum):
+    INTERNAL = "internal-error"
+    SHUTDOWN_REQUIRED = "shutdown-required"
+    REBOOT_REQUIRED = "reboot-required"
+    UNEXPECTED_ACTION = "unexpected-action"
+    MISSING_ARGUMENT = "missing-argument"
+    INVALID_ARGUMENT = "invalid-argument"
+    ACTION_FAILED = "action-failed"
+    RUNNING_IN_VM = "running-in-vm"
+    SYSTEM_NOT_EFI = "system-not-efi"
+    EFI_VARIABLE_ACCESS = "efi-variable-access"
+    NO_SUITABLE_TPM2_DEVICE = "no-suitable-tpm2-device"
+    TPM_DEVICE_FAILURE = "tpm-device-failure"
+    TPM_DEVICE_DISABLED = "tpm-device-disabled"
+    TPM_HIERARCHIES_OWNED = "tpm-hierarchies-owned"
+    TPM_DEVICE_LOCKOUT_LOCKED_OUT = "tpm-device-lockout-locked-out"
+    INSUFFICIENT_TPM_STORAGE = "insufficient-tpm-storage"
+    NO_SUITABLE_PCR_BANK = "no-suitable-pcr-bank"
+    MEASURED_BOOT = "measured-boot"
+    TPM_COMMAND_FAILED = "tpm-command-failed"
+    INVALID_TPM_RESPONSE = "invalid-tpm-response"
+    TPM_COMMUNICATION = "tpm-communication"
+    UNSUPPORTED_PLATFORM = "unsupported-platform"
+    INSUFFICIENT_DMA_PROTECTION = "insufficient-dma-protection"
+    NO_KERNEL_IOMMU = "no-kernel-iommu"
+    HOST_SECURITY = "host-security"
+    PCR_UNUSABLE = "tpm-pcr-unusable"
+    ADDON_DRIVERS_PRESENT = "addon-drivers-present"
+    SYS_PREP_APPLICATIONS_PRESENT = "sys-prep-applications-present"
+    ABSOLUTE_PRESENT = "absolute-present"
+    INVALID_SECURE_BOOT_MODE = "invalid-secure-boot-mode"
+    WEAK_SECURE_BOOT_ALGORITHM_DETECTED = "weak-secure-boot-algorithms-detected"
+    PRE_OS_SECURE_BOOT_AUTH_BY_ENROLLED_DIGESTS = (
+        "pre-os-secure-boot-auth-by-enrolled-digests"
+    )
+
+
+# Shared enum used by the snapd API
+# See https://github.com/canonical/secboot/blob/master/efi/preinstall/actions.go
+class CoreBootFixAction(enum.Enum):
+    REBOOT = "reboot"
+    SHUTDOWN = "shutdown"
+    REBOOT_TO_FW_SETTINGS = "reboot-to-fw-settings"
+    CONTACT_OEM = "contact-oem"
+    CONTACT_OS_VENDOR = "contact-os-vendor"
+    ENABLE_TPM_VIA_FIRMWARE = "enable-tpm-via-firmware"
+    ENABLE_AND_CLEAR_TPM_VIA_FIRMWARE = "enable-and-clear-tpm-via-firmware"
+    CLEAR_TPM_VIA_FIRMWARE = "clear-tpm-via-firmware"
+    CLEAR_TPM_SIMPLE = "clear-tpm-simple"
+    CLEAR_TPM = "clear-tpm"
+    PROCEED = "proceed"
+
+    def is_for_user(self):
+        return self in [self.CONTACT_OEM, self.CONTACT_OS_VENDOR]
+
+
 class GuidedCapability(enum.Enum):
     # The order listed here is the order they will be presented as options
 
@@ -211,10 +269,72 @@ class GuidedDisallowedCapabilityReason(enum.Enum):
 
 
 @attr.s(auto_attribs=True)
+class CoreBootFixActionArgs:
+    # -- Supported arguments vary from one action type to another and from one
+    # argument name to another.
+    # Hopefully, we won't have the same argument name with distinct types for
+    # two different action types.
+
+    # This is for type=CoreBootFixAction.PROCEED
+    # The argument is optional for PROCEED. If not provided, it means proceed
+    # with all errors that support it.
+    error_kinds: Optional[List[CoreBootAvailabilityErrorKind]] = None
+
+
+@attr.s(auto_attribs=True)
+class CoreBootFixActionWithArgs:
+    type: CoreBootFixAction
+    args: Optional[CoreBootFixActionArgs] = None
+
+
+@attr.s(auto_attribs=True)
+class CoreBootFixActionWithCategoryAndArgs:
+    type: CoreBootFixAction
+    # Says whether the action should be performed manually by the user or by
+    # the installer.
+    for_user: bool
+    args: Optional[CoreBootFixActionArgs] = None
+
+
+@attr.s(auto_attribs=True)
+class CoreBootEncryptionSupportError:
+    kind: CoreBootAvailabilityErrorKind
+    message: str
+    actions: List[CoreBootFixActionWithCategoryAndArgs]
+
+    @classmethod
+    def from_snapd(cls, snapd_error):
+        actions: list[CoreBootFixActionWithCategoryAndArgs] = []
+
+        snapd_actions = [] if snapd_error.actions is None else snapd_error.actions
+        for action in snapd_actions:
+            args = None
+            # We decided that the desktop installer should not use PROCEED with
+            # no argument, because the user must know precisely what they
+            # accept by using PROCEED.
+            if action == CoreBootFixAction.PROCEED:
+                args = CoreBootFixActionArgs(error_kinds=[snapd_error.kind])
+            actions.append(
+                CoreBootFixActionWithCategoryAndArgs(
+                    type=action, args=args, for_user=action.is_for_user()
+                )
+            )
+
+        return cls(
+            kind=snapd_error.kind,
+            message=snapd_error.message,
+            actions=actions,
+        )
+
+
+@attr.s(auto_attribs=True)
 class GuidedDisallowedCapability:
     capability: GuidedCapability
     reason: GuidedDisallowedCapabilityReason
     message: Optional[str] = None
+
+    # Only for core boot encryption.
+    errors: Optional[List[CoreBootEncryptionSupportError]] = None
 
 
 @attr.s(auto_attribs=True)
@@ -425,3 +545,13 @@ class EntropyResponse:
 class CoreBootEncryptionFeatures(enum.Enum):
     PASSPHRASE_AUTH = "passphrase-auth"
     PIN_AUTH = "pin-auth"
+
+
+@attr.s(auto_attribs=True)
+class CoreBootFixEncryptionSupport:
+    action: CoreBootFixActionWithArgs
+
+    # If specified, operate on the specified snapd system.
+    # Otherwise, operate on the first core boot classic variation of the
+    # current source.
+    system_label: Optional[str] = None

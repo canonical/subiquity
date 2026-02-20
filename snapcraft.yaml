@@ -78,12 +78,14 @@ parts:
   curtin:
     plugin: nil
 
-    source: https://git.launchpad.net/curtin
+    source: https://github.com/canonical/curtin
     source-type: git
-    source-commit: "ff79541249aa40f228f87681cdb028c69975cd8c"
+    source-commit: "e7e57942f1f76537d670916adbaa374c62d48fab"
 
     override-pull: |
       craftctl default
+      # Since snapcraft 8.14, the tags are not automatically fetched
+      git fetch --tags
       PACKAGED_VERSION="$(git describe --long --abbrev=9 --match=[0-9][0-9]*)"
       sed -e "s,@@PACKAGED_VERSION@@,$PACKAGED_VERSION,g" -i curtin/version.py
     override-build: &pyinstall |

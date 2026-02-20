@@ -210,6 +210,10 @@ parser.add_argument('--no-disk', action='store_const', const=0,
 
 parser.add_argument('--disk-interface', help='type of interface for the disk(s)',
                     choices=('nvme', 'virtio', 'scsi', 'scsi-multipath'), default='virtio')
+parser.add_argument('--disk-phy-sector-size', type=int, choices=(512, 4096), default=512,
+                    help='physical sector size for the disk(s). If 4096, you must use the scsi disk interface.')
+parser.add_argument('--disk-log-sector-size', type=int, choices=(512, 4096), default=512,
+                    help='logical sector size for the disk(s). If 4096, you must use the scsi disk interface.')
 parser.add_argument('-d', '--disksize', action='append', dest='disks_sizes', default=[],
                     help='size of disk to create (12G default) (repeat to specify size of extra disks)')
 parser.add_argument('-i', '--img', action='store', help='use this img')
@@ -257,7 +261,10 @@ parser.add_argument('-s', '--serial', default=False, action='store_true',
                     help='attach to serial console')
 parser.add_argument('-S', '--sound', default=False, action='store_true',
                     help='enable sound')
-parser.add_argument('--iso', action='store', help='use this iso')
+iso_group = parser.add_mutually_exclusive_group()
+iso_group.add_argument('--iso', action='store', help='use this iso')
+iso_group.add_argument('--netboot', action='store_true',
+                       help='attempt to netboot')
 parser.add_argument('-u', '--update', action='store',
                     help='subiquity-channel argument')
 parser.add_argument('-m', '--memory', action='store',
@@ -623,6 +630,14 @@ def storage_args(ctx) -> list[str]:
         return []
 
     args = []
+
+    if ctx.args.disk_phy_sector_size != 512 and ctx.args.disk_interface != 'scsi':
+        raise NotImplementedError('only scsi supports physical sector size != 512')
+    if ctx.args.disk_log_sector_size != 512 and ctx.args.disk_interface != 'scsi':
+        raise NotImplementedError('only scsi supports logical sector size != 512')
+    physical_block_size = ctx.args.disk_phy_sector_size
+    logical_block_size = ctx.args.disk_log_sector_size
+
     match ctx.args.disk_interface:
         case 'virtio':
             for idx, target in enumerate(ctx.targets):
@@ -635,7 +650,14 @@ def storage_args(ctx) -> list[str]:
             args.extend(('-device', 'virtio-scsi-pci,id=scsi'))
             for idx, target in enumerate(ctx.targets):
                 args.extend(drive(target, id_=f'localdisk{idx}', if_="none"))
-                args.extend(('-device', f'scsi-hd,drive=localdisk{idx},serial=deadbeef{idx}'))
+                hd_opts = [
+                    'scsi-hd',
+                    f'drive=localdisk{idx}',
+                    f'serial=deadbeef{idx}',
+                    f'physical_block_size={physical_block_size}',
+                    f'logical_block_size={logical_block_size}',
+                ]
+                args.extend(('-device', ','.join(hd_opts)))
             note = '''
 NOTE:
 ----
@@ -700,15 +722,19 @@ the ESC button when the QEMU window opens. Then select "Device Manager" and \
         appends = ctx.args.kernel_appends
 
         with kvm_prepare_common(ctx) as kvm:
-
-            if ctx.args.iso:
+            if ctx.args.netboot:
+                iso = None
+            elif ctx.args.iso:
                 iso = ctx.args.iso
             elif ctx.args.base:
                 iso = ctx.baseiso
             else:
                 iso = ctx.iso
 
-            kvm.extend(('-cdrom', str(iso), '-boot', ','.join(boot_opts)))
+            if iso is not None:
+                kvm.extend(('-cdrom', str(iso), '-boot', ','.join(boot_opts)))
+            else:
+                kvm.extend(('-boot', 'order=n'))
 
             if ctx.args.serial:
                 kvm.append('-nographic')
@@ -741,6 +767,8 @@ the ESC button when the QEMU window opens. Then select "Device Manager" and \
                     appends.append('autoinstall')
 
             if len(appends) > 0:
+                if ctx.args.netboot:
+                    raise NotImplementedError('currently, netboot is only supported with very few options')
                 with mounter(iso, mntdir):
                     appends.extend(get_grub_appends(ctx, mntdir))
                     # no additional appends should be added after the grub ones

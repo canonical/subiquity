@@ -117,7 +117,7 @@ class RefreshController(SubiquityController):
                 log.exception("getting snap details")
                 return
             self.status.current_snap_version = snap.version
-            for k in "channel", "revision", "version":
+            for k in "channel", "tracking_channel", "revision", "version":
                 self.app.note_data_for_apport("Snap" + k.title(), getattr(snap, k))
             subcontext.description = "current version of snap is: %r" % (
                 self.status.current_snap_version
@@ -130,10 +130,10 @@ class RefreshController(SubiquityController):
         expected_channel = "stable/ubuntu-" + info["release"]
         if (
             source == SnapChannelSource.DISK_INFO_FILE
-            and snap.channel != expected_channel
+            and snap.tracking_channel != expected_channel
         ):
             log.debug(
-                f"snap tracking {snap.channel}, not resetting based on .disk/info"
+                f"snap tracking {snap.tracking_channel}, not resetting based on .disk/info"
             )
             return
         desc = "switching {} to {}".format(self.snap_name, channel)

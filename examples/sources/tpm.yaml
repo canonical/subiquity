@@ -76,3 +76,25 @@
   type: fsimage
   variant: desktop
   snapd_system_label: components
+- description:
+    en: This test source has encryption support set to "prefer-encrypted" (and encryption + "passphrase-auth" available)
+  id: src-prefer-encrypted-passphrase
+  locale_support: none
+  name:
+    en: TPM encryption preferred with passphrase
+  path: foo.squashfs
+  size: 530485248
+  type: fsimage
+  variant: desktop
+  snapd_system_label: prefer-encrypted-passphrase
+- description:
+    en: This test source has encryption support set to "prefer-encrypted" (and encryption + "passphrase-auth" + "pin-auth" available)
+  id: src-prefer-encrypted-passphrase-pin
+  locale_support: none
+  name:
+    en: TPM encryption preferred with passphrase and PIN
+  path: foo.squashfs
+  size: 530485248
+  type: fsimage
+  variant: desktop
+  snapd_system_label: prefer-encrypted-passphrase-pin

@@ -31,6 +31,7 @@ import argparse
 import asyncio
 import io
 import json
+import os
 import sys
 import tempfile
 import traceback
@@ -54,6 +55,8 @@ probert_root = subiquity_root / "probert"
 sys.path.insert(0, str(subiquity_root))
 sys.path.insert(1, str(curtin_root))
 sys.path.insert(2, str(probert_root))
+
+os.environ["SNAP"] = str(subiquity_root)
 
 from subiquity.cmd.server import make_server_args_parser  # noqa: E402
 from subiquity.server.dryrun import DRConfig  # noqa: E402

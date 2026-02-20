@@ -192,6 +192,23 @@ class FakeSnapdConnection:
             }
         )
 
+    def _fake_fix_encryption(self, path: str, body) -> _FakeMemoryResponse:
+        filepath = os.path.join(self.snap_data_dir, path.replace("/", "-"))
+        with open(filepath + ".json") as fp:
+            data = json.load(fp)
+        storage_encryption = data["result"]["storage-encryption"]
+        errors = storage_encryption["availability-check-errors"]
+        for error in errors:
+            if body["fix-action"] in error["actions"]:
+                errors.remove(error)
+                if not errors:
+                    # No more errors, mark the device as "repaired"
+                    storage_encryption["support"] = "available"
+                    storage_encryption.pop("unavailable-reason")
+                return _FakeMemoryResponse(data)
+        # TODO replace by a proper error.
+        raise RuntimeError("could not find encryption error to fix")
+
     def post(self, path, body, *, raise_for_status=True, **args):
         if path == "v2/snaps/subiquity" and body["action"] == "refresh":
             # The post-refresh hook does this in the real world.
@@ -219,6 +236,8 @@ class FakeSnapdConnection:
                     change = "5"
             elif step == "setup-storage-encryption":
                 change = "6"
+            elif step == "preseed":
+                change = "10"
             elif step == "generate-recovery-key":
                 sync_result = {"recovery-key": "my-recovery-key"}
         elif path.startswith("v2/systems/") and body["action"] in (
@@ -226,6 +245,10 @@ class FakeSnapdConnection:
             "check-pin",
         ):
             return self._fake_entropy(body)
+        elif (
+            path.startswith("v2/systems") and body["action"] == "fix-encryption-support"
+        ):
+            return self._fake_fix_encryption(path, body)
 
         if change is not None:
             return _FakeMemoryResponse(

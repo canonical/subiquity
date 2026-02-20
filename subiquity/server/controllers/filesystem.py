@@ -24,7 +24,19 @@ import shutil
 import subprocess
 import time
 from contextlib import AsyncExitStack
-from typing import Any, Callable, Dict, List, Optional, Self, Sequence, Union
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Self,
+    Sequence,
+    Union,
+)
 
 import attr
 import pyudev
@@ -32,7 +44,6 @@ from curtin import swap
 from curtin.storage_config import ptable_part_type_to_flag
 from curtin.util import human2bytes
 
-from subiquity.common.api.defs import Payload, api, path_parameter
 from subiquity.common.api.recoverable_error import RecoverableError
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReport, ErrorReportKind
@@ -45,6 +56,9 @@ from subiquity.common.types.storage import (
     Bootloader,
     CalculateEntropyRequest,
     CoreBootEncryptionFeatures,
+    CoreBootEncryptionSupportError,
+    CoreBootFixAction,
+    CoreBootFixEncryptionSupport,
     Disk,
     EntropyResponse,
     GuidedCapability,
@@ -85,9 +99,11 @@ from subiquity.models.filesystem import (
     align_up,
     humanize_size,
 )
+from subiquity.server import casper, shutdown
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
+from subiquity.server.mounter import Mounter
 from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
 from subiquity.server.snapd.system_getter import SystemGetter, SystemsDirMounter
@@ -376,6 +392,30 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         layout = storage_config.get("layout", {})
         return layout.get("reset-partition-only", False)
 
+    def find_variations(
+        self,
+        *,
+        core_boot_classic: bool | None = None,
+        valid: bool | None = None,
+        label: str | None | Literal[False] = False,
+    ) -> Iterator[VariationInfo]:
+        """Find the variations (from the currently configured source) matching
+        the specified filters.
+        When a filter is None - except for label - it means that the filter is
+        disabled. For label, specifying None means to filter on variations that
+        have no label. If you want to disable the label filter, use False instead."""
+        for variation in self._variation_info.values():
+            if (
+                core_boot_classic is not None
+                and variation.is_core_boot_classic() != core_boot_classic
+            ):
+                continue
+            if valid is not None and variation.is_valid() != valid:
+                continue
+            if label is not False and variation.label != label:
+                continue
+            yield variation
+
     async def configured(self):
         # set_info_capability() requires variations info to be populated, so
         # wait for it.
@@ -413,19 +453,32 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             system=system,
         )
 
-        def disallowed_encryption(msg) -> GuidedDisallowedCapability:
+        def disallowed_encryption(
+            msg: str, errors: list[snapdtypes.AvailabilityCheckError] | None = None
+        ) -> GuidedDisallowedCapability:
             GCDR = GuidedDisallowedCapabilityReason
             reason = GCDR.CORE_BOOT_ENCRYPTION_UNAVAILABLE
+
+            if errors is not None:
+                errs = [
+                    CoreBootEncryptionSupportError.from_snapd(err) for err in errors
+                ]
+            else:
+                errs = None
+
             return GuidedDisallowedCapability(
                 capability=GuidedCapability.CORE_BOOT_ENCRYPTED,
                 reason=reason,
                 message=msg,
+                errors=errs,
             )
 
         se = system.storage_encryption
         if se.support == snapdtypes.StorageEncryptionSupport.DEFECTIVE:
             info.capability_info.disallowed = [
-                disallowed_encryption(se.unavailable_reason)
+                disallowed_encryption(
+                    se.unavailable_reason, errors=se.availability_check_errors
+                )
             ]
             return info
 
@@ -440,7 +493,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         elif se.support == snapdtypes.StorageEncryptionSupport.UNAVAILABLE:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
             info.capability_info.disallowed = [
-                disallowed_encryption(se.unavailable_reason)
+                disallowed_encryption(
+                    se.unavailable_reason, errors=se.availability_check_errors
+                )
             ]
         elif not has_beta_entropy_check:
             info.capability_info.allowed = [GuidedCapability.CORE_BOOT_UNENCRYPTED]
@@ -1093,41 +1148,52 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def fetch_core_boot_recovery_key(self):
         """Fetch the recovery key from snapd and store it in the model."""
-
-        # TODO This is a workaround!
-        # Ideally, we'd want to use self.app.snapdapi here, but SnapdAPI
-        # defines the return type of POST /v2/systems/{system-label} as a
-        # ChangeID (which is only true for async responses) and we don't have
-        # the needed support for Union types.
-        # For now, let's define a fake API definition and create a new snapd
-        # client out of it.
-        @api
-        class AlternateSnapdAPI:
-            class v2:
-                class systems:
-                    @path_parameter
-                    class label:
-                        def POST(
-                            action: Payload[snapdtypes.SystemActionRequest],
-                        ) -> snapdtypes.SystemActionResponseGenerateRecoveryKey: ...
-
-        snapd_client = snapdapi.make_api_client(
-            self.app.snapd,
-            api_class=AlternateSnapdAPI,
-            log_responses=self.app.snapdapi.log_responses,
-        )
-
         label = self._info.label
 
-        result = await snapd_client.v2.systems[label].POST(
+        result = await self.app.snapdapi.v2.systems[label].POST(
             snapdtypes.SystemActionRequest(
                 action=snapdtypes.SystemAction.INSTALL,
                 step=snapdtypes.SystemActionStep.GENERATE_RECOVERY_KEY,
                 on_volumes={},
             ),
+            return_type=snapdtypes.SystemActionResponseGenerateRecoveryKey,
         )
 
         self.model.set_core_boot_recovery_key(result.recovery_key)
+
+    async def snapd_target_preseed(self, target: pathlib.Path):
+        async with AsyncExitStack() as es:
+            # Bind-mount required filesystems
+            # Some of these might already be mounted by curtin, but
+            # it should be fine to bind-mount twice.
+            mounter = Mounter(self.app)
+
+            to_bind_mount = [
+                "dev",
+                "proc",
+                "sys",
+                "sys/kernel/security",
+                "var/lib/snapd/seed",
+            ]
+
+            for fs in to_bind_mount:
+                # Needed at least for var/lib/snapd/seed in dry-run mode.
+                (target / fs).parent.mkdir(parents=True, exist_ok=True)
+
+                await es.enter_async_context(
+                    mounter.bind_mounted(pathlib.Path("/") / fs, target / fs)
+                )
+
+            label = self._info.label
+            await snapdapi.post_and_wait(
+                self.app.snapdapi,
+                self.app.snapdapi.v2.systems[label].POST,
+                snapdtypes.SystemActionRequest(
+                    action=snapdtypes.SystemAction.INSTALL,
+                    step=snapdtypes.SystemActionStep.PRESEED,
+                    target_root=str(target),
+                ),
+            )
 
     @with_context(description="making system bootable")
     async def finish_install(self, context, kernel_components):
@@ -1366,9 +1432,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 continue
 
             capability_info = CapabilityInfo()
-            for variation in self._variation_info.values():
-                if variation.is_core_boot_classic():
-                    continue
+            for variation in self.find_variations(core_boot_classic=False):
                 capability_info.combine(
                     variation.capability_info_for_gap(gap, install_min)
                 )
@@ -1466,9 +1530,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     continue
 
                 capability_info = CapabilityInfo()
-                for variation in self._variation_info.values():
-                    if variation.is_core_boot_classic():
-                        continue
+                for variation in self.find_variations(core_boot_classic=False):
                     capability_info.combine(
                         variation.capability_info_for_gap(gap, install_min)
                     )
@@ -1690,7 +1752,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     @exclusive
     async def do_entropy_check(
         self,
-        snapd_client,
         request: snapdtypes.SystemActionRequest,
         variation_info: VariationInfo,
     ) -> snapdtypes.EntropyCheckResponse:
@@ -1699,8 +1760,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 mounter = SystemsDirMounter(self.app, variation_info.name)
                 await es.enter_async_context(mounter.mounted())
 
-            return await snapd_client.v2.systems[variation_info.label].POST(
-                request, raise_for_status=False
+            return await self.app.snapdapi.v2.systems[variation_info.label].POST(
+                request,
+                raise_for_status=False,
+                return_type=snapdtypes.EntropyCheckResponse,
             )
 
     async def v2_calculate_entropy_POST(
@@ -1742,30 +1805,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 passphrase=data.passphrase,
             )
 
-        # TODO This is a workaround!
-        # Ideally, we'd want to use self.app.snapdapi here, but SnapdAPI
-        # defines the return type of POST /v2/systems/{system-label} as a
-        # ChangeID (which is only true for async responses) and we don't have
-        # the needed support for Union types.
-        # For now, let's define a fake API definition and create a new snapd
-        # client out of it.
-        @api
-        class AlternateSnapdAPI:
-            class v2:
-                class systems:
-                    @path_parameter
-                    class label:
-                        def POST(
-                            action: Payload[snapdtypes.SystemActionRequest],
-                        ) -> snapdtypes.EntropyCheckResponse: ...
-
-        snapd_client = snapdapi.make_api_client(
-            self.app.snapd,
-            api_class=AlternateSnapdAPI,
-            log_responses=self.app.snapdapi.log_responses,
-        )
-
-        result = await self.do_entropy_check(snapd_client, request, info)
+        result = await self.do_entropy_check(request, info)
 
         # TODO check the response-code instead.
         if result.entropy_bits is not None:
@@ -1839,12 +1879,86 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 continue
 
             if features is None:
-                # Snapd is too old
+                # Snapd is not offering pin/passphrase.
                 return []
 
             return [CoreBootEncryptionFeatures(feature.value) for feature in features]
 
         raise StorageInvalidUsageError("no suitable variation for core boot")
+
+    async def v2_core_boot_fix_encryption_support_POST(
+        self, data: CoreBootFixEncryptionSupport
+    ) -> None:
+        async def shutdown_action(action):
+            if self.app.opts.dry_run:
+                self.app.exit()
+                return
+
+            casper.disable_media_eject_prompt()
+            await action()
+
+        @attr.s(auto_attribs=True)
+        class LocalAction:
+            coroutine_function: Callable[..., Coroutine[Any, Any, None]]
+            args: list[Any]
+
+        # Actions that are handled by Subiquity, not snapd.
+        local_actions = {
+            CoreBootFixAction.REBOOT: LocalAction(
+                shutdown_action, [shutdown.initiate_reboot]
+            ),
+            CoreBootFixAction.REBOOT_TO_FW_SETTINGS: LocalAction(
+                shutdown_action, [shutdown.initiate_reboot_to_fw_settings]
+            ),
+            CoreBootFixAction.SHUTDOWN: LocalAction(
+                shutdown_action, [shutdown.initiate_poweroff]
+            ),
+        }
+
+        if data.action.type in local_actions:
+            action = local_actions[data.action.type]
+            await action.coroutine_function(*action.args)
+            return
+
+        # Note that although we could, we currently do not look for
+        # self._info.label here if the system label is not specified. This is
+        # because in the normal flow, fix-encryption-support is called *before*
+        # choosing a variation.
+        label_filter = data.system_label if data.system_label is not None else False
+        try:
+            variation = next(
+                self.find_variations(core_boot_classic=True, label=label_filter)
+            )
+        except StopIteration:
+            raise RuntimeError("could not find relevant core boot classic variation")
+
+        system = await self.app.snapdapi.v2.systems[variation.label].POST(
+            snapdtypes.SystemActionRequest(
+                action=snapdtypes.SystemAction.FIX_ENCRYPTION_SUPPORT,
+                fix_action=data.action.type,
+                args=data.action.args,
+            ),
+            return_type=snapdtypes.SystemDetails,
+        )
+
+        # Ideally, we should update the existing variation rather than recreating it.
+        # This will save us a call to snapd and the logic will be cleaner.
+        try:
+            has_beta_entropy_check = await self.app.snapdinfo.has_beta_entropy_check()
+        except ValueError as exc:
+            log.debug(
+                "cannot check if snapd has beta entropy check, assuming yes: %s", exc
+            )
+            has_beta_entropy_check = True
+
+        info = self.info_for_system(
+            variation.name,
+            variation.label,
+            system,
+            has_beta_entropy_check=has_beta_entropy_check,
+        )
+        self._maybe_disable_encryption(info)
+        self._variation_info[variation.name] = info
 
     async def dry_run_wait_probe_POST(self) -> None:
         if not self.app.opts.dry_run:
@@ -1992,12 +2106,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         return matching_disks[0]
 
     def has_valid_non_core_boot_variation(self) -> bool:
-        for variation in self._variation_info.values():
-            if not variation.is_valid():
-                continue
-            if not variation.is_core_boot_classic():
-                return True
-        return False
+        try:
+            next(self.find_variations(valid=True, core_boot_classic=False))
+        except StopIteration:
+            return False
+        return True
 
     async def run_autoinstall_guided(self, layout):
         name = layout["name"]
@@ -2009,11 +2122,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             # this check is conceptually unnecessary but results in a
             # much cleaner error message...
             core_boot_caps = set()
-            for variation in self._variation_info.values():
-                if not variation.is_valid():
-                    continue
-                if variation.is_core_boot_classic():
-                    core_boot_caps.update(variation.capability_info.allowed)
+            for variation in self.find_variations(valid=True, core_boot_classic=True):
+                core_boot_caps.update(variation.capability_info.allowed)
             if not core_boot_caps:
                 raise Exception(
                     "can only use name: hybrid when installing core boot classic"
@@ -2152,12 +2262,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             # XXX in principle should there be a way to influence the
             # variation chosen here? Not with current use cases for
             # variations anyway.
-            for variation in self._variation_info.values():
-                if not variation.is_valid():
-                    continue
-                if not variation.is_core_boot_classic():
-                    self._info = variation
-                    break
+            for variation in self.find_variations(valid=True, core_boot_classic=False):
+                self._info = variation
+                break
             else:
                 raise Exception(
                     "must not use config: when installing core boot classic"

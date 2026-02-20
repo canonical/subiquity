@@ -8,6 +8,10 @@ on:
     paths-ignore:
       - 'doc/**'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-24.04
@@ -16,7 +20,7 @@ jobs:
       matrix:
         image:
           - ubuntu-daily:noble
-          - ubuntu-daily:plucky
+          - ubuntu-daily:resolute
     steps:
     - uses: actions/checkout@v4
     - name: run
@@ -31,7 +35,7 @@ jobs:
       matrix:
         image:
           - ubuntu-daily:noble     # match the core snap we're running against
-          - ubuntu-daily:plucky    # latest
+          - ubuntu-daily:resolute  # latest
     steps:
     - uses: actions/checkout@v4
     - name: lint

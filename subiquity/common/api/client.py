@@ -15,12 +15,34 @@
 
 import contextlib
 import inspect
+import types
+import typing
 
 import aiohttp
 
 from subiquity.common.serialize import Serializer
 
 from .defs import Payload
+
+
+def validate_types_compatibles(orig, expected):
+    """Ensure that the expected type is compatible with orig. It must either be
+    the same type or a narrower version of it."""
+    if expected == orig:
+        # Types are the same, no narrowing but types are compatible.
+        return
+    if not (
+        typing.get_origin(orig) is typing.Union
+        or typing.get_origin(orig) is types.UnionType
+    ):
+        raise ValueError("type narrowing only supported with union types")
+
+    for arg in orig.__args__:
+        if arg == expected:
+            # This is actual narrowing
+            return
+
+    raise ValueError(f"invalid type narrowing: {expected} is not in {orig}")
 
 
 def _wrap(make_request, path, meth, serializer, serialize_query_args):
@@ -34,6 +56,12 @@ def _wrap(make_request, path, meth, serializer, serialize_query_args):
     r_ann = sig.return_annotation
 
     async def impl(self, *args, raise_for_status=True, **kw):
+        if "return_type" in kw:
+            validate_types_compatibles(orig=r_ann, expected=kw["return_type"])
+            return_annotation = kw.pop("return_type")
+        else:
+            return_annotation = r_ann
+
         args = sig.bind(*args, **kw)
         query_args = {}
         data = None
@@ -53,7 +81,7 @@ def _wrap(make_request, path, meth, serializer, serialize_query_args):
         ) as resp:
             if raise_for_status:
                 resp.raise_for_status()
-            return serializer.deserialize(r_ann, await resp.json())
+            return serializer.deserialize(return_annotation, await resp.json())
 
     return impl
 
@@ -107,6 +135,23 @@ def make_client_for_conn(
     endpoint_cls, conn, resp_hook=lambda r: r, serializer=None, header_func=None
 ):
     session = aiohttp.ClientSession(connector=conn, connector_owner=False)
+
+    # Some of the GET request handlers in the Subiquity API are not idempotent.
+    # Starting with aiohttp 3.11, which is included in Ubuntu 25.10,
+    # ClientSession-s are more aggressive with retries, and that can result in
+    # GET requests being retried after cancellation.
+    # Ideally, we should fix the GET request handlers but in the meantime,
+    # setting _retry_connection to False should be enough to disable unwanted
+    # retries. This is what aiohttp does to disable retries in tests.
+    # Note that before aiohttp 3.11, the _retry_connection did not exist, so
+    # checking the version is advisable.  See LP: #2122423.
+    client_version = aiohttp.__version__.split(".")
+    client_version_major = int(client_version[0])
+    client_version_minor = int(client_version[1])
+    if client_version_major > 3 or (
+        client_version_major == 3 and client_version_minor >= 11
+    ):
+        session._retry_connection = False
 
     @contextlib.asynccontextmanager
     async def make_request(method, path, *, params, json, raise_for_status):
