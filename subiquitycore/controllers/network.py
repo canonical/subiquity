@@ -214,26 +214,20 @@ class BaseNetworkController(BaseController):
         self.observer.data_ready(fd)
 
     def update_initial_configs(self):
-        # Any device that does not have a (global) address by the time
-        # we get to the network screen is configured with DHCPv4 and
-        # DHCPv6 enabled so it can attempt to acquire an address.
-        # DHCPv6 is always enabled on all detected interfaces regardless
-        # of whether they already have a global address.
+        # Enable DHCP on all detected interfaces so they can acquire
+        # addresses.  When subiquity applies its config it replaces the
+        # cloud-init / casper netplan config, so every interface that
+        # should be up must have DHCP explicitly set here.
         log.debug("updating initial NIC config")
         for dev in self.model.get_all_netdevs():
-            has_global_address = False
             if dev.info is None or not dev.config:
                 continue
-            for a in dev.info.addresses.values():
-                if a.scope == "global":
-                    has_global_address = True
-                    break
+            if not dev.config.get("dhcp4", False):
+                dev.config["dhcp4"] = True
+                log.debug("enabling DHCPv4 on %s", dev.name)
             if not dev.config.get("dhcp6", False):
                 dev.config["dhcp6"] = True
                 log.debug("enabling DHCPv6 on %s", dev.name)
-            if not has_global_address:
-                dev.config["dhcp4"] = True
-                log.debug("enabling DHCPv4 on %s", dev.name)
 
     @property
     def netplan_path(self):
