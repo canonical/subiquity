@@ -168,7 +168,10 @@ class NetworkDeviceTable(WidgetWrap):
                     address_info.append((label, self.dhcp_spinner))
                 elif dhcp_status.state == DHCPState.TIMED_OUT:
                     address_info.append((label, Text(_("timed out"))))
-                elif dhcp_status.state == DHCPState.RECONFIGURE:
+                else:
+                    # Covers RECONFIGURE and None (initial state before
+                    # apply_config has run).  Without this fallback the
+                    # interface would incorrectly appear as "disabled".
                     address_info.append((label, Text("-")))
             elif static_config.addresses:
                 address_info.append(
