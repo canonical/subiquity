@@ -512,8 +512,15 @@ class NetworkModel(object):
             dev = NetworkDev(self, link.name, link.type)
             dev.info = link
             dev.config = config
-            # Ensure DHCPv6 is enabled by default on all detected
-            # interfaces so they can attempt to acquire an IPv6 address.
+            # Ensure DHCP is enabled by default on all detected
+            # interfaces so they can acquire addresses automatically.
+            if not dev.config.get("dhcp4", False):
+                dev.config["dhcp4"] = True
+                log.debug(
+                    "new_link %s %s: enabling DHCPv4 by default",
+                    ifindex,
+                    link.name,
+                )
             if not dev.config.get("dhcp6", False):
                 dev.config["dhcp6"] = True
                 log.debug(
