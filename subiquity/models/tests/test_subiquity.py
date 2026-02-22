@@ -190,7 +190,8 @@ class TestSubiquityModel(SubiTestCase):
         config = model.render()
         self.assertNotIn("apt", config)
 
-    def test_cloud_init_user_list_merge(self):
+    @mock.patch.object(SubiquityModel, "_get_cloud_init_groups", return_value=["sudo"])
+    def test_cloud_init_user_list_merge(self, m_groups):
         main_user = IdentityData(
             username="mainuser", crypted_password="sample_value", hostname="somehost"
         )
@@ -205,7 +206,14 @@ class TestSubiquityModel(SubiTestCase):
             self.assertEqual(len(cloud_init_config["users"]), 2)
             self.assertEqual(
                 cloud_init_config["users"][0],
-                {"name": "mainuser", "lock_passwd": False},
+                {
+                    "name": "mainuser",
+                    "gecos": "mainuser",
+                    "lock_passwd": False,
+                    "shell": "/bin/bash",
+                    "groups": "sudo",
+                    "passwd": "sample_value",
+                },
             )
             self.assertEqual(cloud_init_config["users"][1]["name"], "user2")
 
@@ -228,8 +236,9 @@ class TestSubiquityModel(SubiTestCase):
 
     @mock.patch("subiquity.models.subiquity.lsb_release")
     @mock.patch("subiquitycore.file_util.datetime.datetime", wraps=datetime.datetime)
+    @mock.patch.object(SubiquityModel, "_get_cloud_init_groups", return_value=["sudo"])
     def test_cloud_init_files_emits_datasource_config_and_clean_script(
-        self, m_datetime, lsb_release
+        self, m_groups, m_datetime, lsb_release
     ):
         m_datetime.now.return_value = datetime.datetime(
             2004, 3, 5, tzinfo=datetime.timezone.utc
@@ -312,6 +321,7 @@ grub_dpkg:
 
 # Patch os.environ for system_scripts
 @mock.patch.dict(os.environ, {"SNAP": str(Path(__file__).parents[3])})
+@mock.patch.object(SubiquityModel, "_get_cloud_init_groups", return_value=["sudo"])
 class TestUserCreationFlows(unittest.IsolatedAsyncioTestCase):
     """live-server and desktop have a key behavior difference: desktop will
     permit user creation on first boot, while server will do no such thing.
@@ -343,7 +353,14 @@ class TestUserCreationFlows(unittest.IsolatedAsyncioTestCase):
         self.model = SubiquityModel("test", MessageHub(), install, postinstall)
         self.user = dict(name="user", passwd="passw0rd")
         # Expected cloud-config user object if supplied in the identity model.
-        self.user_id_userdata = {"name": "user", "lock_passwd": False}
+        self.user_id_userdata = {
+            "name": "user",
+            "gecos": "user",
+            "lock_passwd": False,
+            "shell": "/bin/bash",
+            "groups": "sudo",
+            "passwd": "passw0rd",
+        }
         self.user_identity = IdentityData(
             username=self.user["name"], crypted_password=self.user["passwd"]
         )
@@ -354,19 +371,19 @@ class TestUserCreationFlows(unittest.IsolatedAsyncioTestCase):
             msg = f"expected[{key}] != actual[{key}]"
             self.assertEqual(expected[key], actual[key], msg)
 
-    def test_create_user_cases_1_3a(self):
+    def test_create_user_cases_1_3a(self, m_groups):
         self.assertIsNone(self.model.userdata)
         self.model.identity.add_user(self.user_identity)
         cloud_cfg = self.model._cloud_init_config()
         [actual] = cloud_cfg["users"]
         self.assertEqual(self.user_id_userdata, actual)
 
-    def test_assert_no_default_user_cases_2_4a2(self):
+    def test_assert_no_default_user_cases_2_4a2(self, m_groups):
         self.assertIsNone(self.model.userdata)
         cloud_cfg = self.model._cloud_init_config()
         self.assertEqual([], cloud_cfg["users"])
 
-    def test_create_user_but_no_merge_case_3b(self):
+    def test_create_user_but_no_merge_case_3b(self, m_groups):
         # near identical to cases 1 / 3a but user-data is present in
         # autoinstall, however this doesn't change the outcome.
         self.model.userdata = {}
@@ -375,7 +392,7 @@ class TestUserCreationFlows(unittest.IsolatedAsyncioTestCase):
         [actual] = cloud_cfg["users"]
         self.assertEqual(self.user_id_userdata, actual)
 
-    def test_create_user_and_merge_case_3c(self):
+    def test_create_user_and_merge_case_3c(self, m_groups):
         # now we have more user info to merge in
         self.model.userdata = {"users": ["default", self.foobar]}
         self.model.identity.add_user(self.user_identity)
@@ -389,7 +406,7 @@ class TestUserCreationFlows(unittest.IsolatedAsyncioTestCase):
                 else:
                     self.assertDictSubset(self.foobar, actual)
 
-    def test_create_user_and_merge_case_3c_empty(self):
+    def test_create_user_and_merge_case_3c_empty(self, m_groups):
         # another merge case, but a merge of an empty list, so we
         # have just supplied the `identity` user with extra steps
         self.model.userdata = {"users": []}
@@ -401,12 +418,12 @@ class TestUserCreationFlows(unittest.IsolatedAsyncioTestCase):
     # 4a1 fails before we get here, see TestControllerUserCreationFlows in
     # subiquity/server/controllers/tests/test_identity.py for details.
 
-    def test_create_nothing_case_4b(self):
+    def test_create_nothing_case_4b(self, m_groups):
         self.model.userdata = {}
         cloud_cfg = self.model._cloud_init_config()
         self.assertNotIn("users", cloud_cfg)
 
-    def test_create_only_merge_4c(self):
+    def test_create_only_merge_4c(self, m_groups):
         self.model.userdata = {"users": ["default", self.foobar]}
         cloud_cfg = self.model._cloud_init_config()
         for actual in cloud_cfg["users"]:
@@ -415,7 +432,7 @@ class TestUserCreationFlows(unittest.IsolatedAsyncioTestCase):
             else:
                 self.assertDictSubset(self.foobar, actual)
 
-    def test_create_only_merge_4c_empty(self):
+    def test_create_only_merge_4c_empty(self, m_groups):
         # explicitly saying no (additional) users, thank you very much
         self.model.userdata = {"users": []}
         cloud_cfg = self.model._cloud_init_config()

@@ -27,6 +27,7 @@ from curtin.config import merge_config
 
 from subiquity.cloudinit import validate_cloud_config_schema
 from subiquity.common.pkg import TargetPkg
+from subiquity.common.resources import resource_path
 from subiquity.server.types import InstallerChannels
 from subiquitycore.file_util import generate_timestamped_header, write_file
 from subiquitycore.lsb_release import lsb_release
@@ -310,6 +311,25 @@ class SubiquityModel:
         """Validate data config adheres to strict cloud-config schema."""
         validate_cloud_config_schema(data, data_source)
 
+    @staticmethod
+    def _get_cloud_init_groups():
+        """Read the groups list from users-and-groups file.
+
+        This reads the static groups file shipped with subiquity (no target
+        filesystem required) and appends 'sudo'.  Unlike
+        get_users_and_groups(), it does NOT run ``getent group`` against the
+        target, so it is safe to call before /target is mounted (e.g. during
+        tests or schema validation).  Cloud-init will silently ignore any
+        groups that do not exist on the target system.
+        """
+        users_and_groups_path = resource_path("users-and-groups")
+        groups = ["admin"]
+        if os.path.exists(users_and_groups_path):
+            with open(users_and_groups_path) as f:
+                groups = f.read().split()
+        groups.append("sudo")
+        return sorted(set(groups))
+
     def _cloud_init_config(self):
         config = {
             "growpart": {
@@ -321,10 +341,13 @@ class SubiquityModel:
             config["preserve_hostname"] = True
         user = self.identity.user
         if user:
+            groups = self._get_cloud_init_groups()
             user_info = {
                 "name": user.username,
+                "gecos": user.realname,
                 "lock_passwd": False,
                 "shell": "/bin/bash",
+                "groups": ",".join(groups),
             }
             if user.password:
                 user_info["passwd"] = user.password
