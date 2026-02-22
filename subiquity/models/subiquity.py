@@ -324,7 +324,10 @@ class SubiquityModel:
             user_info = {
                 "name": user.username,
                 "lock_passwd": False,
+                "shell": "/bin/bash",
             }
+            if user.password:
+                user_info["passwd"] = user.password
             if self.ssh.authorized_keys:
                 user_info["ssh_authorized_keys"] = self.ssh.authorized_keys
             config["users"] = [user_info]
