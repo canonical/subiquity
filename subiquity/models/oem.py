@@ -28,7 +28,7 @@ class OEMMetaPkg:
 
 
 class OEMModel:
-    def __init__(self):
+    def __init__(self, *, dry_run: bool = False):
         # List of OEM metapackages relevant to the current hardware.
         # When the list is None, it has not yet been retrieved.
         self.metapkgs: Optional[List[OEMMetaPkg]] = None

@@ -108,7 +108,13 @@ class TestSubiquityModel(SubiTestCase):
 
     async def test_configure(self):
         hub = MessageHub()
-        model = SubiquityModel("test", hub, ModelNames({"a", "b"}), ModelNames(set()))
+        model = SubiquityModel(
+            "test",
+            hub,
+            ModelNames({"a", "b"}),
+            ModelNames(set()),
+            dry_run=True,
+        )
         model.set_source_variant("var")
         await hub.abroadcast((InstallerChannels.CONFIGURED, "a"))
         self.assertFalse(model._install_event.is_set())
@@ -117,7 +123,11 @@ class TestSubiquityModel(SubiTestCase):
 
     def make_model(self):
         return SubiquityModel(
-            "test", MessageHub(), INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
+            "test",
+            MessageHub(),
+            INSTALL_MODEL_NAMES,
+            POSTINSTALL_MODEL_NAMES,
+            dry_run=True,
         )
 
     def test_proxy_set(self):
@@ -340,7 +350,9 @@ class TestUserCreationFlows(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         install = ModelNames(set())
         postinstall = ModelNames({"userdata"})
-        self.model = SubiquityModel("test", MessageHub(), install, postinstall)
+        self.model = SubiquityModel(
+            "test", MessageHub(), install, postinstall, dry_run=True
+        )
         self.user = dict(name="user", passwd="passw0rd")
         # Expected cloud-config user object if supplied in the identity model.
         self.user_id_userdata = {"name": "user", "lock_passwd": False}
