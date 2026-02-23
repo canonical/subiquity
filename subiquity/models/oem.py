@@ -36,11 +36,14 @@ class OEMModel:
         # By default, skip looking for OEM meta-packages if we are running
         # ubuntu-server. OEM meta-packages expect the default kernel flavor to
         # be HWE (which is only true for ubuntu-desktop).
-        self.install_on = {
+        self.install_on_defaults = {
             "server": False,
             "desktop": True,
             "core": False,
         }
+
+        # Should the OEM metapackages be installed on a given variant?
+        self.install_on = self.install_on_defaults.copy()
 
     def make_autoinstall(self) -> Dict[str, Union[str, bool]]:
         server = self.install_on["server"]
@@ -58,8 +61,7 @@ class OEMModel:
 
     def load_autoinstall_data(self, data: Dict[str, Any]) -> None:
         if data["install"] == "auto":
-            self.install_on["server"] = False
-            self.install_on["desktop"] = True
+            self.install_on = self.install_on_defaults.copy()
             return
 
         self.install_on["server"] = data["install"]
