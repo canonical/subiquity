@@ -45,24 +45,23 @@ class OEMModel:
         # Should the OEM metapackages be installed on a given variant?
         self.install_on = self.install_on_defaults.copy()
 
+        # has the user, by way of any supported mechanism (only autoinstall
+        # today) indicated that we should or should not install the OEM
+        # metapackages?  None implies that Subiquity chooses, dictated by
+        # indexing into self.install_on using the install variant as the key.
+        self.user_requested_install = None
+
     def make_autoinstall(self) -> Dict[str, Union[str, bool]]:
-        server = self.install_on["server"]
-        desktop = self.install_on["desktop"]
-
-        if server and desktop:
-            return {"install": True}
-        if not server and not desktop:
-            return {"install": False}
-
-        # Having server = True and desktop = False is not supported.
-        assert desktop and not server
-
-        return {"install": "auto"}
+        if self.user_requested_install is None:
+            return {"install": "auto"}
+        else:
+            return {"install": self.user_requested_install}
 
     def load_autoinstall_data(self, data: Dict[str, Any]) -> None:
         if data["install"] == "auto":
             self.install_on = self.install_on_defaults.copy()
             return
 
+        self.user_requested_install = data["install"]
         self.install_on["server"] = data["install"]
         self.install_on["desktop"] = data["install"]
