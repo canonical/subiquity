@@ -18,6 +18,8 @@ from typing import Any, Dict, List, Optional, Union
 
 import attr
 
+from subiquitycore.lsb_release import lsb_release
+
 log = logging.getLogger("subiquity.models.oem")
 
 
@@ -33,14 +35,17 @@ class OEMModel:
         # When the list is None, it has not yet been retrieved.
         self.metapkgs: Optional[List[OEMMetaPkg]] = None
 
-        # By default, skip looking for OEM meta-packages if we are running
-        # ubuntu-server. OEM meta-packages expect the default kernel flavor to
-        # be HWE (which is only true for ubuntu-desktop).
+        # Pre-26.04, OEM kernel install was off by default for server.  Set
+        # this to enabled for 26.04+.
+        # Desktop always has OEM kernel install on by default.
+        # OEM kernels doesn't make sense for core, so disable there.
         self.install_on_defaults = {
             "server": False,
             "desktop": True,
             "core": False,
         }
+        if lsb_release(dry_run=dry_run)["release"] >= "26.04":
+            self.install_on_defaults["server"] = True
 
         # Should the OEM metapackages be installed on a given variant?
         self.install_on = self.install_on_defaults.copy()
@@ -65,3 +70,4 @@ class OEMModel:
         self.user_requested_install = data["install"]
         self.install_on["server"] = data["install"]
         self.install_on["desktop"] = data["install"]
+        # no matter what autoinstall says, we don't do OEM kernels on core.
