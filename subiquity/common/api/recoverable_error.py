@@ -34,9 +34,7 @@ class RecoverableError(Exception):
     # raised in a request handler.
     # By default we produce a crash report but one can decide otherwise by
     # changing this value to False. This can be done globally or by setting
-    # produce_crash_report=False in a subclass. See
-    # subiquity.server.controllers.filesystem.set_user_error_reportable for an
-    # example.
+    # produce_crash_report=False in a subclass.
     # Currently, this value also controls whether the error would lead to a 500
     # or 422 HTTP status.
     produce_crash_report = True

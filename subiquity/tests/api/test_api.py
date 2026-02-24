@@ -2426,25 +2426,9 @@ class TestMountDetection(TestAPI):
 
 class TestFilesystemUserErrors(TestAPI):
     @timeout()
-    async def test_add_boot_partition__with_error_report(self):
+    async def test_add_boot_partition(self):
         cfg = "examples/machines/simple.json"
         extra = ["--storage-version", "2"]
-        async with start_server(cfg, extra_args=extra) as inst:
-            await inst.post("/storage/v2/add_boot_partition", disk_id="disk-sda")
-            try:
-                await inst.post("/storage/v2/add_boot_partition", disk_id="disk-sda")
-            except ClientResponseError as cre:
-                self.assertEqual(500, cre.status)
-                self.assertIn("x-error-report", cre.headers)
-                self.assertEqual(
-                    "device already has bootloader partition",
-                    json.loads(cre.headers["x-error-msg"]),
-                )
-
-    @timeout()
-    async def test_add_boot_partition__no_error_report(self):
-        cfg = "examples/machines/simple.json"
-        extra = ["--storage-version", "2", "--no-report-storage-user-error"]
         async with start_server(cfg, extra_args=extra) as inst:
             await inst.post("/storage/v2/add_boot_partition", disk_id="disk-sda")
             try:
