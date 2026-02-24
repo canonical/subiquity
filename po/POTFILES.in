@@ -163,7 +163,6 @@ subiquity/server/tests/__init__.py
 subiquity/server/tests/test_geoip.py
 subiquity/tests/fakes.py
 subiquity/tests/__init__.py
-subiquity/tests/test_timezonecontroller.py
 subiquity/ui/frame.py
 subiquity/ui/__init__.py
 subiquity/ui/mount.py
