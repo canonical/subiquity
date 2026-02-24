@@ -20,7 +20,10 @@ from jsonschema.validators import validator_for
 
 from subiquity.common.types import TimeZoneInfo
 from subiquity.models.timezone import TimeZoneModel
-from subiquity.server.controllers.timezone import TimeZoneController
+from subiquity.server.controllers.timezone import (
+    TimeZoneController,
+    UnknownTimezoneError,
+)
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 
@@ -106,7 +109,7 @@ class TestTimeZoneController(SubiTestCase):
             "notatimezone",
         ]
         for b in bads:
-            with self.assertRaises(ValueError):
+            with self.assertRaises(UnknownTimezoneError):
                 self.tzc.deserialize(b)
 
     @mock.patch("subprocess.run")

@@ -18,11 +18,25 @@ import os
 import subprocess
 from shutil import which
 
+from subiquity.common.api.recoverable_error import RecoverableError
 from subiquity.common.apidef import API
 from subiquity.common.types import TimeZoneInfo
+from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger("subiquity.server.controllers.timezone")
+
+
+class UnknownTimezoneError(RecoverableError):
+    """An error to raise if the timezone is invalid."""
+
+    code = "timezone-unknown-tz"
+    title = _("Unknown timezone")
+    produce_crash_report = False
+
+    def __init__(self, timezone: str) -> None:
+        self.timezone = timezone
+        super().__init__(f"unknown timezone: {timezone}")
 
 
 def active_timedatectl():
@@ -106,7 +120,7 @@ class TimeZoneController(SubiquityController):
         if data is None:
             return
         if data not in self.get_possible_tzs():
-            raise ValueError(f'Unrecognized time zone request "{data}"')
+            raise UnknownTimezoneError(data)
         self.model.set(data)
         if self.model.detect_with_geoip and self.app.geoip.timezone:
             self.model.timezone = self.app.geoip.timezone
