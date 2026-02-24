@@ -1985,7 +1985,7 @@ class TestOEM(TestAPI):
     @timeout()
     async def test_listing_certified_ubuntu_server(self):
         # Listing of OEM meta-packages is intentionally disabled on
-        # ubuntu-server.
+        # ubuntu-server pre-resolute (default dry-run lsb is Focal).
         await self._test_listing_certified(source_id="ubuntu-server", expected=[])
 
     @timeout()
