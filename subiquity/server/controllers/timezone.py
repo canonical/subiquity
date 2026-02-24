@@ -108,7 +108,10 @@ class TimeZoneController(SubiquityController):
         return self.possible
 
     def load_autoinstall_data(self, data):
-        self.deserialize(data)
+        try:
+            self.deserialize(data)
+        except UnknownTimezoneError as exc:
+            raise AutoinstallError(exc.args[0]) from exc
 
     def make_autoinstall(self):
         return self.serialize()

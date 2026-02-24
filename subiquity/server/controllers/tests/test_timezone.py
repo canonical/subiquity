@@ -20,6 +20,7 @@ from jsonschema.validators import validator_for
 
 from subiquity.common.types import TimeZoneInfo
 from subiquity.models.timezone import TimeZoneModel
+from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controllers.timezone import (
     TimeZoneController,
     UnknownTimezoneError,
@@ -49,6 +50,19 @@ class TestTimeZoneController(SubiTestCase):
         self.tzc.model = TimeZoneModel()
         self.tzc.app.geoip = MockGeoIP()
         self.tzc.app.geoip.text = tz_denver
+
+    def test_load_autoinstall_data(self):
+        data = "Europe/Kyiv"
+        with mock.patch.object(self.tzc, "deserialize"):
+            self.tzc.load_autoinstall_data(data)
+
+    def test_load_autoinstall_data__invalid_timezone(self):
+        data = "Europe/Kiev"
+        with mock.patch.object(
+            self.tzc, "deserialize", side_effect=UnknownTimezoneError("Europe/Kiev")
+        ):
+            with self.assertRaises(AutoinstallError):
+                self.tzc.load_autoinstall_data(data)
 
     @mock.patch("subiquity.server.controllers.timezone.timedatectl_settz")
     @mock.patch("subiquity.server.controllers.timezone.timedatectl_gettz")
