@@ -143,7 +143,7 @@ DRY_RUN_RESET_SIZE = 500 * MiB
 
 
 class StorageRecoverableError(RecoverableError):
-    pass
+    produce_crash_report = False
 
 
 class StorageInvalidUsageError(StorageRecoverableError):
@@ -170,11 +170,6 @@ class StorageNotFoundError(StorageRecoverableError):
 
     code = "storage-not-found"
     title = _("Storage entity not found")
-
-
-def set_user_error_reportable(reportable: bool) -> None:
-    global StorageRecoverableError
-    StorageRecoverableError.produce_crash_report = reportable
 
 
 @attr.s(auto_attribs=True)
