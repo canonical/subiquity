@@ -33,6 +33,7 @@ from subiquity.models.filesystem import (
     Partition,
     Raid,
     align_up,
+    humanize_size,
 )
 from subiquitycore.utils import write_named_tempfile
 
@@ -352,6 +353,92 @@ class FilesystemManipulator:
         self.create_partition(disk, gap, spec)
 
         log.debug("Successfully added partition")
+
+    def resize_partition_handler(self, partition, new_size, new_partition_spec):
+        """Resize an existing partition to new_size and create a new partition
+        in the freed space with the given spec.
+
+        Following the gparted approach:
+        1. Shrink the partition (model sets resize=True for curtin)
+        2. Create a new partition in the resulting gap
+        Curtin handles the actual resize2fs/partition table changes at install.
+        """
+        log.debug(
+            "resize_partition_handler: partition=%s new_size=%s spec=%s",
+            partition, new_size, new_partition_spec,
+        )
+
+        disk = partition.device
+        part_align = disk.alignment_data().part_align
+        new_size = align_up(new_size, part_align)
+
+        if new_size >= partition.size:
+            raise Exception("New size must be smaller than current size")
+
+        # Check that the partition supports resize
+        if not self.can_resize_partition(partition):
+            raise Exception("Partition filesystem does not support resize")
+
+        # Calculate how much space we're freeing
+        size_change = partition.size - new_size
+
+        # Get trailing partitions that may need to be moved
+        trailing, gap_size = gaps.movable_trailing_partitions_and_gap_size(partition)
+        if size_change > partition.size:
+            raise Exception("Cannot shrink partition below zero")
+
+        # Remember original size before modifying
+        original_size = partition.size
+
+        # Set the new size and mark for resize
+        partition.size = new_size
+        partition.resize = True
+
+        # Resize support in curtin requires storage version 2.
+        # Version 1's block-meta simple verifies partition sizes strictly
+        # without accounting for the resize flag.
+        if self.model.storage_version < 2:
+            log.debug("Upgrading storage_version to 2 for resize support")
+            self.model.storage_version = 2
+
+        # Construct the gap manually rather than relying on gaps.after(),
+        # which fails for storage_version=1 with pre-existing partitions
+        # (find_disk_gaps_v1 returns early without computing gaps).
+        gap_offset = align_up(partition.offset + new_size, part_align)
+        gap_size = original_size - new_size
+        # Account for the next partition if there is one
+        # The gap can't extend past the next partition's offset
+        parts_after = [
+            p for p in disk.partitions_by_offset()
+            if p.offset > partition.offset and p is not partition
+        ]
+        if parts_after:
+            next_part = parts_after[0]
+            max_gap_end = next_part.offset
+            if gap_offset + gap_size > max_gap_end:
+                gap_size = max_gap_end - gap_offset
+        gap = gaps.Gap(
+            device=disk,
+            offset=gap_offset,
+            size=gap_size,
+        )
+        log.debug(
+            "resize: constructed gap offset=%s size=%s (%s)",
+            gap.offset, gap.size, humanize_size(gap.size),
+        )
+
+        if gap.size < part_align:
+            raise Exception("Not enough freed space to create a new partition")
+
+        # Create the new partition in the freed space
+        if new_partition_spec.get("size") is None or \
+           new_partition_spec["size"] > gap.size:
+            new_partition_spec["size"] = gap.size
+
+        new_gap = gap.split(align_up(new_partition_spec["size"], part_align))[0]
+        self.create_partition(disk, new_gap, new_partition_spec)
+
+        log.debug("Successfully resized partition and created new partition")
 
     def logical_volume_handler(self, vg, spec: LogicalVolumeSpec, *, partition, gap):
         # keep the partition name for compat with PartitionStretchy.handler

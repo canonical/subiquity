@@ -46,7 +46,7 @@ from .delete import ConfirmDeleteStretchy, ConfirmReformatStretchy
 from .disk_info import DiskInfoStretchy
 from .helpers import summarize_device
 from .lvm import VolGroupStretchy
-from .partition import FormatEntireStretchy, PartitionStretchy
+from .partition import FormatEntireStretchy, PartitionStretchy, ResizePartitionStretchy
 from .raid import RaidStretchy
 
 log = logging.getLogger("subiquity.ui.views.filesystem.filesystem")
@@ -283,6 +283,9 @@ class DeviceList(WidgetWrap):
 
     _partition_EDIT = _stretchy_shower(
         lambda parent, part: PartitionStretchy(parent, part.device, partition=part)
+    )
+    _partition_RESIZE = _stretchy_shower(
+        lambda parent, part: ResizePartitionStretchy(parent, part)
     )
     _partition_REMOVE = _disk_REMOVE
     _partition_DELETE = _stretchy_shower(ConfirmDeleteStretchy)
