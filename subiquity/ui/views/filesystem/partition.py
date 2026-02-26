@@ -714,6 +714,11 @@ class ResizePartitionForm(Form):
         self.max_size = max_size
         # The new partition being created has no existing filesystem
         self.existing_fs_type = None
+        # MountField._make_widget accesses form.mountpoints during init
+        self.mountpoints = {
+            m.path: m.device.volume
+            for m in self.model.all_mounts()
+        }
         initial = {
             "size": humanize_size(max_size),
             "fstype": "ext4",
