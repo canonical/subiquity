@@ -394,6 +394,13 @@ class FilesystemManipulator:
         partition.size = new_size
         partition.resize = True
 
+        # Resize support in curtin requires storage version 2.
+        # Version 1's block-meta simple verifies partition sizes strictly
+        # without accounting for the resize flag.
+        if self.model.storage_version < 2:
+            log.debug("Upgrading storage_version to 2 for resize support")
+            self.model.storage_version = 2
+
         # Construct the gap manually rather than relying on gaps.after(),
         # which fails for storage_version=1 with pre-existing partitions
         # (find_disk_gaps_v1 returns early without computing gaps).
