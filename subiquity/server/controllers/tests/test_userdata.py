@@ -34,7 +34,11 @@ from subiquitycore.tests.mocks import make_app
 class TestUserdataController(unittest.TestCase):
     def setUp(self):
         base_model = SubiquityModel(
-            "test", MessageHub(), INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
+            "test",
+            MessageHub(),
+            INSTALL_MODEL_NAMES,
+            POSTINSTALL_MODEL_NAMES,
+            dry_run=True,
         )
         self.app = make_app(model=base_model)
         self.controller = UserdataController(self.app)

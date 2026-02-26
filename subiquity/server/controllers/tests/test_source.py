@@ -60,7 +60,11 @@ class TestSubiquityModel(unittest.TestCase):
 class TestSourceController(SubiTestCase):
     def setUp(self):
         self.base_model = SubiquityModel(
-            "test", MessageHub(), INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
+            "test",
+            MessageHub(),
+            INSTALL_MODEL_NAMES,
+            POSTINSTALL_MODEL_NAMES,
+            dry_run=True,
         )
         self.app = make_app(model=self.base_model)
         self.app.set_source_variant = functools.partial(

@@ -164,8 +164,10 @@ class SubiquityModel:
         install_model_names,
         postinstall_model_names,
         *,
+        dry_run: bool = False,
         opt_supports_nvme_tcp_booting: bool | None = None,
     ):
+        self.dry_run = dry_run
         self.root = root
         self.hub = hub
         if root != "/":
@@ -190,7 +192,7 @@ class SubiquityModel:
         self.locale = LocaleModel(self.chroot_prefix)
         self.mirror = MirrorModel()
         self.network = NetworkModel()
-        self.oem = OEMModel()
+        self.oem = OEMModel(dry_run=self.dry_run)
         self.packages: List[TargetPkg] = []
         self.proxy = ProxyModel()
         self.snaplist = SnapListModel()

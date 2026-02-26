@@ -306,6 +306,7 @@ class SubiquityServer(Application):
             self.hub,
             INSTALL_MODEL_NAMES,
             POSTINSTALL_MODEL_NAMES,
+            dry_run=self.opts.dry_run,
             opt_supports_nvme_tcp_booting=self.opts.supports_nvme_tcp_booting,
         )
 
