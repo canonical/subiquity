@@ -33,6 +33,7 @@ from subiquity.models.filesystem import (
     Partition,
     Raid,
     align_up,
+    humanize_size,
 )
 from subiquitycore.utils import write_named_tempfile
 
@@ -386,17 +387,41 @@ class FilesystemManipulator:
         if size_change > partition.size:
             raise Exception("Cannot shrink partition below zero")
 
+        # Remember original size before modifying
+        original_size = partition.size
+
         # Set the new size and mark for resize
         partition.size = new_size
         partition.resize = True
 
-        # Find the gap created after the resize
-        gap = gaps.after(disk, partition.offset)
-        if gap is None:
-            # The resize should have created a gap; try parts_and_gaps
-            pgs = gaps.parts_and_gaps(disk)
-            log.debug("gap not found after resize, pgs=%s", pgs)
-            raise Exception("Failed to locate gap after resizing partition")
+        # Construct the gap manually rather than relying on gaps.after(),
+        # which fails for storage_version=1 with pre-existing partitions
+        # (find_disk_gaps_v1 returns early without computing gaps).
+        gap_offset = align_up(partition.offset + new_size, part_align)
+        gap_size = original_size - new_size
+        # Account for the next partition if there is one
+        # The gap can't extend past the next partition's offset
+        parts_after = [
+            p for p in disk.partitions_by_offset()
+            if p.offset > partition.offset and p is not partition
+        ]
+        if parts_after:
+            next_part = parts_after[0]
+            max_gap_end = next_part.offset
+            if gap_offset + gap_size > max_gap_end:
+                gap_size = max_gap_end - gap_offset
+        gap = gaps.Gap(
+            device=disk,
+            offset=gap_offset,
+            size=gap_size,
+        )
+        log.debug(
+            "resize: constructed gap offset=%s size=%s (%s)",
+            gap.offset, gap.size, humanize_size(gap.size),
+        )
+
+        if gap.size < part_align:
+            raise Exception("Not enough freed space to create a new partition")
 
         # Create the new partition in the freed space
         if new_partition_spec.get("size") is None or \
