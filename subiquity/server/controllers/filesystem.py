@@ -994,6 +994,18 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.model._actions = self.model._actions_from_config(
             config, blockdevs=self.model._probe_data["blockdev"], is_probe_data=False
         )
+        # If any partition has resize=True, curtin needs storage version 2
+        # to handle the resize properly (v1's block-meta verifies sizes
+        # before resizing, which causes a RuntimeError).
+        if self.model.storage_version < 2:
+            for action in self.model._actions:
+                if getattr(action, "resize", False):
+                    log.debug(
+                        "Upgrading storage_version to 2: "
+                        "partition %s has resize=True", action.id
+                    )
+                    self.model.storage_version = 2
+                    break
         self.model.load_or_generate_recovery_keys()
         self.model.expose_recovery_keys()
         await self.configured()
