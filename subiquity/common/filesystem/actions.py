@@ -50,6 +50,7 @@ class DeviceAction(enum.Enum):
     EDIT = pgettext("DeviceAction", "Edit")
     REFORMAT = pgettext("DeviceAction", "Reformat")
     PARTITION = pgettext("DeviceAction", "Add Partition")
+    RESIZE = pgettext("DeviceAction", "Resize")
     FORMAT = pgettext("DeviceAction", "Format")
     REMOVE = pgettext("DeviceAction", "Remove from RAID/LVM")
     DELETE = pgettext("DeviceAction", "Delete")
@@ -95,6 +96,7 @@ def _disk_actions(disk):
 def _part_actions(part):
     return [
         DeviceAction.EDIT,
+        DeviceAction.RESIZE,
         DeviceAction.REMOVE,
         DeviceAction.DELETE,
     ]
@@ -349,6 +351,42 @@ def _can_delete_lv(lv):
             "Cannot delete a single logical volume from a volume "
             "group that already has logical volumes."
         )
+    return True
+
+
+_can_resize = make_checker(DeviceAction.RESIZE)
+
+
+@_can_resize.register(Partition)
+def _can_resize_partition(partition):
+    if partition._is_in_use:
+        return False
+    if not partition.on_supported_ptable():
+        return False
+    if boot.is_bootloader_partition(partition):
+        return _("Cannot resize a bootloader partition")
+    cd = partition.constructed_device()
+    if cd is not None:
+        return _("Cannot resize {selflabel} as it is part of the {cdtype} {cdname}.").format(
+            selflabel=labels.label(partition),
+            cdtype=labels.desc(cd),
+            cdname=labels.label(cd),
+        )
+    # For preserved partitions, check that the filesystem type supports resize
+    if partition.preserve and partition.format is not None:
+        try:
+            from curtin.block import get_resize_fstypes
+
+            if partition.format not in get_resize_fstypes():
+                return _("Filesystem type {fstype} does not support resize").format(
+                    fstype=partition.format
+                )
+        except ImportError:
+            pass
+    # Need trailing space or enough partition size to create the new partition
+    trailing, gap_size = gaps.movable_trailing_partitions_and_gap_size(partition)
+    if gap_size < 1 and partition.size < 2 * (1 << 30):
+        return _("Not enough space to resize this partition")
     return True
 
 

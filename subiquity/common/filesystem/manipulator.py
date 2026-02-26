@@ -353,6 +353,61 @@ class FilesystemManipulator:
 
         log.debug("Successfully added partition")
 
+    def resize_partition_handler(self, partition, new_size, new_partition_spec):
+        """Resize an existing partition to new_size and create a new partition
+        in the freed space with the given spec.
+
+        Following the gparted approach:
+        1. Shrink the partition (model sets resize=True for curtin)
+        2. Create a new partition in the resulting gap
+        Curtin handles the actual resize2fs/partition table changes at install.
+        """
+        log.debug(
+            "resize_partition_handler: partition=%s new_size=%s spec=%s",
+            partition, new_size, new_partition_spec,
+        )
+
+        disk = partition.device
+        part_align = disk.alignment_data().part_align
+        new_size = align_up(new_size, part_align)
+
+        if new_size >= partition.size:
+            raise Exception("New size must be smaller than current size")
+
+        # Check that the partition supports resize
+        if not self.can_resize_partition(partition):
+            raise Exception("Partition filesystem does not support resize")
+
+        # Calculate how much space we're freeing
+        size_change = partition.size - new_size
+
+        # Get trailing partitions that may need to be moved
+        trailing, gap_size = gaps.movable_trailing_partitions_and_gap_size(partition)
+        if size_change > partition.size:
+            raise Exception("Cannot shrink partition below zero")
+
+        # Set the new size and mark for resize
+        partition.size = new_size
+        partition.resize = True
+
+        # Find the gap created after the resize
+        gap = gaps.after(disk, partition.offset)
+        if gap is None:
+            # The resize should have created a gap; try parts_and_gaps
+            pgs = gaps.parts_and_gaps(disk)
+            log.debug("gap not found after resize, pgs=%s", pgs)
+            raise Exception("Failed to locate gap after resizing partition")
+
+        # Create the new partition in the freed space
+        if new_partition_spec.get("size") is None or \
+           new_partition_spec["size"] > gap.size:
+            new_partition_spec["size"] = gap.size
+
+        new_gap = gap.split(align_up(new_partition_spec["size"], part_align))[0]
+        self.create_partition(disk, new_gap, new_partition_spec)
+
+        log.debug("Successfully resized partition and created new partition")
+
     def logical_volume_handler(self, vg, spec: LogicalVolumeSpec, *, partition, gap):
         # keep the partition name for compat with PartitionStretchy.handler
         lv = partition

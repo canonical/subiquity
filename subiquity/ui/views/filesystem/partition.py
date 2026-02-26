@@ -697,3 +697,222 @@ class FormatEntireStretchy(Stretchy):
         self.controller.add_format_handler(self.device, form.as_data())
         self.parent.refresh_model_inputs()
         self.parent.remove_overlay()
+
+
+class ResizePartitionForm(Form):
+    """Form for resizing a partition and creating a new one in freed space.
+
+    Note: The size field is named 'size' (not 'new_partition_size') because
+    SizeWidget expects form.size, form.size_str, and form.max_size to exist.
+    """
+
+    def __init__(self, model, partition, alignment, min_size, max_size):
+        self.model = model
+        self.partition = partition
+        self.alignment = alignment
+        self.min_partition_size = min_size
+        self.max_size = max_size
+        # The new partition being created has no existing filesystem
+        self.existing_fs_type = None
+        initial = {
+            "size": humanize_size(max_size),
+            "fstype": "ext4",
+        }
+        self.size_str = humanize_size(max_size)
+        self.min_size_str = humanize_size(min_size)
+        self.size.caption = _(
+            "Size for new partition (min {min_size}, max {max_size}):"
+        ).format(min_size=self.min_size_str, max_size=self.size_str)
+        super().__init__(initial)
+        connect_signal(self.fstype.widget, "select", self.select_fstype)
+        self.select_fstype(None, self.fstype.widget.value)
+
+    size = SizeField()
+    fstype = FSTypeField(_("Format:"))
+    mount = MountField(_("Mount:"))
+
+    def select_fstype(self, sender, fstype):
+        if fstype is None:
+            self.mount.enabled = False
+        else:
+            fstype_for_check = fstype
+            self.mount.enabled = self.model.is_mounted_filesystem(fstype_for_check)
+
+    def clean_size(self, val):
+        if not val:
+            return self.max_size
+        suffixes = "".join(HUMAN_UNITS) + "".join(HUMAN_UNITS).lower()
+        if val[-1] not in suffixes:
+            val += self.size_str[-1]
+        if val == self.size_str:
+            return self.max_size
+        else:
+            return dehumanize_size(val)
+
+    def validate_size(self):
+        try:
+            sz = self.size.value
+        except ValueError:
+            return _("Invalid size")
+        aligned_sz = align_up(sz, self.alignment)
+        if aligned_sz < self.min_partition_size:
+            return _("Size must be at least {size}").format(
+                size=humanize_size(self.min_partition_size)
+            )
+        if aligned_sz > self.max_size:
+            return _("Size must be at most {size}").format(
+                size=humanize_size(self.max_size)
+            )
+
+    def validate_mount(self):
+        mount = self.mount.value
+        if mount is None:
+            return
+        if len(mount) > 4095:
+            return _("Path exceeds PATH_MAX")
+        mountpoints = {
+            m.path: m.device.volume
+            for m in self.model.all_mounts()
+        }
+        dev = mountpoints.get(mount)
+        if dev is not None:
+            return _("{device} is already mounted at {path}.").format(
+                device=labels.label(dev).title(), path=mount
+            )
+
+
+class ResizePartitionStretchy(Stretchy):
+    """Dialog for resizing an existing partition and creating a new one
+    in the freed space.
+
+    Following gparted's approach:
+    - Shrink the existing partition to free up space
+    - Create a new partition in the freed space
+    - The actual resize (resize2fs etc.) is handled by curtin at install time
+    """
+
+    def __init__(self, parent, partition):
+        self.partition = partition
+        self.disk = partition.device
+        self.model = parent.model
+        self.controller = parent.controller
+        self.parent = parent
+
+        part_align = self.disk.alignment_data().part_align
+
+        # Calculate size constraints
+        # Minimum: the partition's estimated minimum size (from filesystem),
+        # or a reasonable minimum if unknown
+        if hasattr(partition, 'estimated_min_size') and \
+           partition.estimated_min_size > 0:
+            self.min_keep_size = align_up(partition.estimated_min_size, part_align)
+        else:
+            # Default minimum: 1 GiB or 10% of current size, whichever is larger
+            self.min_keep_size = align_up(
+                max(1 << 30, partition.size // 10), part_align
+            )
+
+        # Get trailing gap info
+        trailing, gap_size = gaps.movable_trailing_partitions_and_gap_size(
+            partition
+        )
+
+        # Maximum space available for the new partition is:
+        # current partition size - min_keep + existing gap
+        self.max_new_size = align_up(
+            partition.size - self.min_keep_size + gap_size, part_align
+        )
+
+        # Minimum new partition size: at least 1 MiB (partition alignment)
+        self.min_new_size = part_align
+
+        if self.max_new_size < self.min_new_size:
+            self.max_new_size = self.min_new_size
+
+        self.form = ResizePartitionForm(
+            self.model,
+            partition,
+            part_align,
+            self.min_new_size,
+            self.max_new_size,
+        )
+
+        connect_signal(self.form, "submit", self.done)
+        connect_signal(self.form, "cancel", self.cancel)
+
+        current_size_str = humanize_size(partition.size)
+        current_fs = ""
+        if partition.fs():
+            current_fs = partition.fs().fstype
+        elif partition.original_fstype():
+            current_fs = partition.original_fstype()
+
+        rows = [
+            Text(rewrap(_(
+                "Resize partition {number} on {device} to free up space "
+                "for a new partition."
+            ).format(
+                number=partition.number,
+                device=labels.label(self.disk),
+            ))),
+            Text(""),
+            Text(_("Current partition size: {size} ({fstype})").format(
+                size=current_size_str,
+                fstype=current_fs or _("unformatted"),
+            )),
+            Text(_("Minimum partition size: {size}").format(
+                size=humanize_size(self.min_keep_size),
+            )),
+            Text(""),
+            Text(_("New partition to create in freed space:")),
+            Text(""),
+        ]
+        rows.extend(self.form.as_rows())
+        self.form.form_pile = Pile(rows)
+
+        widgets = [
+            self.form.form_pile,
+            Text(""),
+            self.form.buttons,
+        ]
+
+        title = _("Resize partition {number} of {device}").format(
+            number=partition.number,
+            device=labels.label(self.disk),
+        )
+
+        super().__init__(title, widgets, 0, 0)
+
+    def cancel(self, button=None):
+        self.parent.remove_overlay()
+
+    def done(self, form):
+        log.debug("Resize Partition Result: {}".format(form.as_data()))
+        data = form.as_data()
+
+        new_partition_size = align_up(
+            data["size"],
+            self.disk.alignment_data().part_align,
+        )
+
+        # Calculate the new size for the existing partition
+        new_existing_size = self.partition.size - new_partition_size
+        # Account for any trailing gap that is already available
+        trailing, gap_size = gaps.movable_trailing_partitions_and_gap_size(
+            self.partition
+        )
+        new_existing_size += gap_size
+
+        new_partition_spec = {
+            "size": new_partition_size,
+            "fstype": data.get("fstype"),
+            "mount": data.get("mount"),
+        }
+
+        self.controller.resize_partition_handler(
+            self.partition,
+            new_existing_size,
+            new_partition_spec,
+        )
+        self.parent.refresh_model_inputs()
+        self.parent.remove_overlay()
