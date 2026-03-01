@@ -34,8 +34,16 @@ from subiquity.common.types.storage import (
     GuidedStorageTargetUseGap,
     Partition,
     RecoveryKey,
+    SizingPolicy,
 )
-from subiquity.models.filesystem import humanize_size
+from subiquity.common.filesystem.sizes import get_bootfs_size
+from subiquity.models.filesystem import (
+    GiB,
+    MiB,
+    align_up,
+    dehumanize_size,
+    humanize_size,
+)
 from subiquitycore.ui.buttons import forward_btn, other_btn
 from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.form import (
@@ -53,6 +61,7 @@ from subiquitycore.ui.selector import Option
 from subiquitycore.ui.table import TablePile, TableRow
 from subiquitycore.ui.utils import Color, rewrap, screen
 from subiquitycore.view import BaseView
+from subiquity.ui.views.filesystem.partition import SizeField
 
 log = logging.getLogger("subiquity.ui.views.filesystem.guided")
 
@@ -567,6 +576,336 @@ class GuidedDiskSelectionView(BaseView):
 
     def refresh(self, sender):
         self.controller.guided()
+
+    def cancel(self, btn=None):
+        self.controller.cancel()
+
+
+# =============================================================================
+# Akash HomeNode Storage Configuration View
+# =============================================================================
+
+# Minimum storage requirement for Akash HomeNode (in bytes)
+HOMENODE_MIN_SIZE = 100 * GiB
+
+# Estimated overhead for /boot partition created by guided_lvm()
+# (the ESP is reused from the existing disk when installing alongside)
+BOOT_OVERHEAD = 2 * GiB
+
+
+class HomenodeStorageForm(Form):
+    """Simple 3-option form for Akash HomeNode storage configuration.
+
+    Options:
+        1. Use entire disk - wipe and use all space
+        2. Install alongside existing OS - resize largest partition
+        3. Custom storage layout - manual partitioning
+    """
+
+    group = []
+
+    use_entire_disk = RadioButtonField(
+        group, _("Use entire disk"), help=NO_HELP
+    )
+    install_alongside = RadioButtonField(
+        group, _("Install alongside existing OS"), help=NO_HELP
+    )
+    size = SizeField()
+    custom = RadioButtonField(
+        group, _("Custom storage layout"), help=NO_HELP
+    )
+
+    cancel_label = _("Back")
+
+    def __init__(
+        self,
+        alignment,
+        max_allocatable,
+        resize_available,
+    ):
+        self.alignment = alignment
+        self.max_size = max_allocatable
+        self.min_homenode_size = align_up(HOMENODE_MIN_SIZE, alignment)
+
+        if max_allocatable > 0:
+            self.size_str = humanize_size(max_allocatable)
+        else:
+            self.size_str = humanize_size(self.min_homenode_size)
+
+        initial = {
+            "size": humanize_size(self.min_homenode_size),
+        }
+
+        self.size.caption = _(
+            "Allocate to Akash HomeNode (min {min}, max {max}):"
+        ).format(
+            min=humanize_size(self.min_homenode_size),
+            max=humanize_size(max_allocatable) if max_allocatable > 0 else "N/A",
+        )
+
+        super().__init__(initial)
+
+        # Wire up radio button toggles
+        connect_signal(
+            self.use_entire_disk.widget, "change", self._toggle_option
+        )
+        connect_signal(
+            self.install_alongside.widget, "change", self._toggle_option
+        )
+        connect_signal(self.custom.widget, "change", self._toggle_option)
+
+        # If resize is not available, disable the option
+        if not resize_available:
+            self.install_alongside.enabled = False
+            self.size.enabled = False
+        else:
+            # Size field is only active when "install alongside" is selected
+            self.size.enabled = False
+
+    def _toggle_option(self, sender, new_value):
+        """Show/hide the size field based on which radio button is selected."""
+        if self.install_alongside.widget.state and self.install_alongside.enabled:
+            self.size.enabled = True
+        else:
+            self.size.enabled = False
+        self.validated()
+
+    def clean_size(self, val):
+        if not val:
+            return self.min_homenode_size
+        suffixes = "BKMGTP" + "bkmgtp"
+        if val[-1] not in suffixes:
+            unit = self.size_str[-1]
+            val += unit
+        if val == self.size_str:
+            return self.max_size
+        else:
+            return dehumanize_size(val)
+
+    def validate_size(self):
+        if not self.install_alongside.widget.state:
+            return None
+        try:
+            sz = self.size.value
+        except ValueError:
+            return _("Invalid size")
+        aligned_sz = align_up(sz, self.alignment)
+        if aligned_sz < self.min_homenode_size:
+            return _("Akash HomeNode requires at least {size}").format(
+                size=humanize_size(self.min_homenode_size)
+            )
+        if aligned_sz > self.max_size:
+            return _("Cannot allocate more than {size}").format(
+                size=humanize_size(self.max_size)
+            )
+
+
+class HomenodeStorageView(BaseView):
+    """Akash HomeNode storage configuration screen.
+
+    Presents three options:
+        1. Use entire disk - wipe largest disk, LVM, use all space
+        2. Install alongside - resize largest partition, LVM in freed space
+        3. Custom - go to manual partition editor
+    """
+
+    title = _("Storage configuration")
+
+    def __init__(self, controller, targets, disk_by_id):
+        self.controller = controller
+
+        # --- Find the best reformat target (largest disk) ---
+        self.reformat_target = None
+        reformat_disk_size = 0
+        for target in targets:
+            if not isinstance(target, GuidedStorageTargetReformat):
+                continue
+            if not target.allowed:
+                continue
+            disk = disk_by_id.get(target.disk_id)
+            if disk is None:
+                continue
+            if disk.has_in_use_partition:
+                continue
+            if disk.size > reformat_disk_size:
+                reformat_disk_size = disk.size
+                self.reformat_target = target
+
+        # Get the disk object for display
+        self.target_disk = None
+        if self.reformat_target is not None:
+            self.target_disk = disk_by_id.get(self.reformat_target.disk_id)
+
+        # --- Find the best resize target (on the same disk) ---
+        self.resize_target = None
+        self.resize_partition = None
+        resize_install_max = 0
+        for target in targets:
+            if not isinstance(target, GuidedStorageTargetResize):
+                continue
+            if not target.allowed:
+                continue
+            # Prefer resize on the same disk as the wipe target
+            if (
+                self.reformat_target is not None
+                and target.disk_id != self.reformat_target.disk_id
+            ):
+                continue
+            disk = disk_by_id.get(target.disk_id)
+            if disk is None:
+                continue
+            # Find the partition being resized
+            partition = None
+            for p in disk.partitions:
+                if isinstance(p, Partition) and p.number == target.partition_number:
+                    partition = p
+                    break
+            if partition is None:
+                continue
+            # Calculate how much we can free
+            max_free = partition.size - target.minimum
+            if max_free < HOMENODE_MIN_SIZE + BOOT_OVERHEAD:
+                continue
+            if max_free > resize_install_max:
+                resize_install_max = max_free
+                self.resize_target = target
+                self.resize_partition = partition
+
+        # --- Calculate size constraints for the resize option ---
+        resize_available = self.resize_target is not None
+        alignment = MiB  # default partition alignment
+        max_allocatable = 0
+
+        if resize_available and self.resize_partition is not None:
+            # Max we can free = partition_size - minimum_partition_size
+            max_free = self.resize_partition.size - self.resize_target.minimum
+            # Subtract boot overhead (guided_lvm creates /boot in the gap)
+            max_allocatable = max_free - BOOT_OVERHEAD
+            max_allocatable = max(0, max_allocatable)
+            if max_allocatable < HOMENODE_MIN_SIZE:
+                resize_available = False
+                max_allocatable = 0
+
+        # --- Build the form ---
+        self.form = HomenodeStorageForm(
+            alignment=alignment,
+            max_allocatable=max_allocatable,
+            resize_available=resize_available,
+        )
+
+        # -- Option 1: Use entire disk --
+        if self.target_disk is not None:
+            devpath = self.target_disk.path or self.target_disk.label
+            self.form.use_entire_disk.help = _(
+                "Erase all data on {dev} and use the full {size} "
+                "for Akash HomeNode."
+            ).format(dev=devpath, size=humanize_size(self.target_disk.size))
+
+        # -- Option 2: Install alongside --
+        if resize_available and self.resize_partition is not None:
+            part_desc = "partition {}".format(self.resize_partition.number)
+            if self.resize_partition.os:
+                part_desc = str(self.resize_partition.os)
+            part_fmt = self.resize_partition.format or "unknown"
+            self.form.install_alongside.help = _(
+                "Shrink {part} ({fmt}, {size}) and create a new "
+                "partition for Akash HomeNode.\n"
+                "The existing OS and its data will be preserved."
+            ).format(
+                part=part_desc,
+                fmt=part_fmt,
+                size=humanize_size(self.resize_partition.size),
+            )
+        else:
+            self.form.install_alongside.help = _(
+                "Not available - no resizable partition with enough "
+                "free space was found."
+            )
+
+        # -- Option 3: Custom --
+        self.form.custom.help = _(
+            "Manually configure partitions, LVM, and mount points."
+        )
+
+        # --- Wire up form signals ---
+        connect_signal(self.form, "submit", self.done)
+        connect_signal(self.form, "cancel", self.cancel)
+
+        # --- Build the excerpt text ---
+        excerpt_parts = []
+        if self.target_disk is not None:
+            disk_desc = self.target_disk.label
+            if self.target_disk.model:
+                disk_desc = self.target_disk.model
+            if self.target_disk.path:
+                disk_desc += " [{}]".format(self.target_disk.path)
+            excerpt_parts.append(
+                "Akash HomeNode requires at least 100 GB of storage.\n"
+                "Largest disk: {desc} ({size})".format(
+                    desc=disk_desc,
+                    size=humanize_size(self.target_disk.size),
+                )
+            )
+        else:
+            excerpt_parts.append(
+                "No suitable disk found for installation."
+            )
+
+        excerpt_text = "\n".join(excerpt_parts)
+
+        super().__init__(
+            self.form.as_screen(
+                focus_buttons=False,
+                excerpt=excerpt_text,
+            )
+        )
+
+    def done(self, sender):
+        data = self.form.as_data()
+
+        if data.get("use_entire_disk"):
+            if self.reformat_target is None:
+                return
+            choice = GuidedChoiceV2(
+                target=self.reformat_target,
+                capability=GuidedCapability.LVM,
+                sizing_policy=SizingPolicy.ALL,
+            )
+
+        elif data.get("install_alongside"):
+            if self.resize_target is None:
+                return
+            # Calculate new_size for the existing partition
+            try:
+                user_size = self.form.size.value
+            except ValueError:
+                return
+            user_size = align_up(user_size, self.form.alignment)
+
+            # The freed space needs to fit: user_size + boot overhead
+            freed_needed = user_size + BOOT_OVERHEAD
+            new_size = self.resize_partition.size - freed_needed
+            new_size = align_up(new_size, self.form.alignment)
+
+            # Clamp to valid range
+            new_size = max(new_size, self.resize_target.minimum)
+            new_size = min(new_size, self.resize_target.maximum)
+
+            self.resize_target.new_size = new_size
+            choice = GuidedChoiceV2(
+                target=self.resize_target,
+                capability=GuidedCapability.LVM,
+                sizing_policy=SizingPolicy.ALL,
+            )
+
+        else:
+            # Custom storage layout
+            choice = GuidedChoiceV2(
+                target=GuidedStorageTargetManual(),
+                capability=GuidedCapability.MANUAL,
+            )
+
+        self.controller.guided_choice(choice)
 
     def cancel(self, btn=None):
         self.controller.cancel()
