@@ -21,9 +21,10 @@ configuration.
 """
 
 from .filesystem import FilesystemView
-from .guided import GuidedDiskSelectionView
+from .guided import GuidedDiskSelectionView, HomenodeStorageView
 
 __all__ = [
     "FilesystemView",
     "GuidedDiskSelectionView",
+    "HomenodeStorageView",
 ]

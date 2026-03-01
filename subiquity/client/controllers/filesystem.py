@@ -36,7 +36,10 @@ from subiquity.models.filesystem import (
     raidlevels_by_value,
 )
 from subiquity.ui.views import FilesystemView, GuidedDiskSelectionView
-from subiquity.ui.views.filesystem.guided import GuidedDiskSelectionViewV2Debug
+from subiquity.ui.views.filesystem.guided import (
+    GuidedDiskSelectionViewV2Debug,
+    HomenodeStorageView,
+)
 from subiquity.ui.views.filesystem.probing import ProbingFailed, SlowProbing
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.lsb_release import lsb_release
@@ -108,7 +111,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             self.app.show_error_report(status.error_report)
 
         if not self.app.opts.debug_sv2_guided:
-            cls = GuidedDiskSelectionView
+            cls = HomenodeStorageView
         else:
             cls = GuidedDiskSelectionViewV2Debug
 
