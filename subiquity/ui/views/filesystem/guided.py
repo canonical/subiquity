@@ -40,6 +40,7 @@ from subiquity.common.filesystem.sizes import get_bootfs_size
 from subiquity.models.filesystem import (
     GiB,
     MiB,
+    align_down,
     align_up,
     dehumanize_size,
     humanize_size,
@@ -885,7 +886,7 @@ class HomenodeStorageView(BaseView):
             # The freed space needs to fit: user_size + boot overhead
             freed_needed = user_size + BOOT_OVERHEAD
             new_size = self.resize_partition.size - freed_needed
-            new_size = align_up(new_size, self.form.alignment)
+            new_size = align_down(new_size, self.form.alignment)
 
             # Clamp to valid range
             new_size = max(new_size, self.resize_target.minimum)
