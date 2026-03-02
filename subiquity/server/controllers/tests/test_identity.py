@@ -13,12 +13,22 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from unittest.mock import patch
+
 import jsonschema
 from jsonschema.validators import validator_for
 
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controllers.filesystem import FilesystemController
-from subiquity.server.controllers.identity import IdentityController
+from subiquity.server.controllers.identity import (
+    IdentityController,
+    UsernameError,
+    UsernameInUseError,
+    UsernameInvalidError,
+    UsernameSystemReservedError,
+    UsernameTooLongError,
+    UsernameValidation,
+)
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized
@@ -33,6 +43,72 @@ class TestIdentityController(SubiTestCase):
         )
 
         JsonValidator.check_schema(IdentityController.autoinstall_schema)
+
+    def test_validate_username__ok(self):
+        ctrler = IdentityController(make_app())
+        ctrler.existing_usernames = {"root"}
+        ctrler._system_reserved_names = {"nobody"}
+        ctrler.validate_username("myuser")
+
+    @parameterized.expand(
+        [
+            ("myuser" * 10, UsernameTooLongError),
+            ("my$user", UsernameInvalidError),
+            ("nobody", UsernameSystemReservedError),
+            ("root", UsernameInUseError),
+        ]
+    )
+    def test_validate_username__error(
+        self, username: str, expected: type[UsernameError]
+    ):
+        ctrler = IdentityController(make_app())
+        ctrler.existing_usernames = {"root"}
+        ctrler._system_reserved_names = {"nobody"}
+        with self.assertRaises(expected):
+            ctrler.validate_username(username)
+
+    async def test_validate_username_GET__ok(self):
+        ctrler = IdentityController(make_app())
+        ctrler.existing_usernames = {"root"}
+        ctrler._system_reserved_names = {"nobody"}
+        self.assertEqual(
+            UsernameValidation.OK, await ctrler.validate_username_GET("myuser")
+        )
+
+    async def test_validate_username_GET__error(self):
+        ctrler = IdentityController(make_app())
+        ctrler.existing_usernames = {"root"}
+        ctrler._system_reserved_names = {"nobody"}
+        self.assertEqual(
+            UsernameValidation.INVALID_CHARS,
+            await ctrler.validate_username_GET("my$user"),
+        )
+
+    def test_load_autoinstall_data(self):
+        ctrler = IdentityController(make_app())
+        data = {
+            "username": "ubuntu",
+            "realname": "Ubuntu User",
+            "password": "$6$xxxx",
+            "hostname": "myhostname",
+        }
+        with patch.object(ctrler, "validate_username", return_value=None) as m_validate:
+            ctrler.load_autoinstall_data(data)
+        m_validate.assert_called_once_with("ubuntu")
+
+    def test_load_autoinstall_data__root(self):
+        ctrler = IdentityController(make_app())
+        data = {
+            "username": "root",
+            "realname": "Root User",
+            "password": "$6$xxxx",
+            "hostname": "myhostname",
+        }
+        with patch.object(
+            ctrler, "validate_username", side_effect=UsernameInUseError("root")
+        ):
+            with self.assertRaises(AutoinstallError):
+                ctrler.load_autoinstall_data(data)
 
 
 class TestControllerUserCreationFlows(SubiTestCase):
