@@ -899,6 +899,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             await self.guided_core_boot(disk, choice)
             return
 
+        # Resize requires v2 gap calculation (v1 returns no gaps when
+        # the disk has preexisting partitions).
+        if isinstance(choice.target, GuidedStorageTargetResize):
+            self.model.storage_version = 2
+
         gap = self.start_guided(choice.target, disk)
         if DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk):
             self.add_boot_disk(disk)
