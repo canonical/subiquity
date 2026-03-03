@@ -44,6 +44,37 @@ def _reserved_names_from_file(path: str) -> Set[str]:
     return names
 
 
+class UsernameError(ValueError):
+    """Base class for username validation errors"""
+
+    # To override in child classes
+    api_enum: UsernameValidation | None = None
+    error = ""
+
+    def __init__(self, username: str) -> None:
+        self.username = username
+
+
+class UsernameInvalidError(UsernameError):
+    api_enum = UsernameValidation.INVALID_CHARS
+    error = _("Username contains invalid characters")
+
+
+class UsernameSystemReservedError(UsernameError):
+    api_enum = UsernameValidation.SYSTEM_RESERVED
+    error = _("Username is reserved by the system")
+
+
+class UsernameInUseError(UsernameError):
+    api_enum = UsernameValidation.ALREADY_IN_USE
+    error = _("Username is already in use")
+
+
+class UsernameTooLongError(UsernameError):
+    api_enum = UsernameValidation.TOO_LONG
+    error = _("Username is too long")
+
+
 class IdentityController(SubiquityController):
     endpoint = API.identity
 
@@ -70,6 +101,19 @@ class IdentityController(SubiquityController):
         # Let this field be the customisation point for variants.
         self.existing_usernames = {"root"}
 
+    def validate_username(self, username: str) -> None:
+        if username in self.existing_usernames:
+            raise UsernameInUseError(username)
+
+        if username in self._system_reserved_names:
+            raise UsernameSystemReservedError(username)
+
+        if not re.fullmatch(USERNAME_REGEX, username):
+            raise UsernameInvalidError(username)
+
+        if len(username) > USERNAME_MAXLEN:
+            raise UsernameTooLongError(username)
+
     def load_autoinstall_data(self, data):
         if data is not None:
             identity_data = IdentityData(
@@ -78,8 +122,14 @@ class IdentityController(SubiquityController):
                 hostname=data["hostname"],
                 crypted_password=data["password"],
             )
-            self.model.add_user(identity_data)
-            return
+
+            try:
+                self.validate_username(identity_data.username)
+            except UsernameError as e:
+                raise AutoinstallError(f"{e.error}: {e.username}")
+            else:
+                self.model.add_user(identity_data)
+                return
 
         # The identity section is required except if (any):
         # 1. a user-data section is provided
@@ -126,16 +176,9 @@ class IdentityController(SubiquityController):
         await self.configured()
 
     async def validate_username_GET(self, username: str) -> UsernameValidation:
-        if username in self.existing_usernames:
-            return UsernameValidation.ALREADY_IN_USE
-
-        if username in self._system_reserved_names:
-            return UsernameValidation.SYSTEM_RESERVED
-
-        if not re.fullmatch(USERNAME_REGEX, username):
-            return UsernameValidation.INVALID_CHARS
-
-        if len(username) > USERNAME_MAXLEN:
-            return UsernameValidation.TOO_LONG
-
-        return UsernameValidation.OK
+        try:
+            self.validate_username(username)
+        except UsernameError as e:
+            return e.api_enum
+        else:
+            return UsernameValidation.OK
