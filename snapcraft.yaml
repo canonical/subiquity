@@ -37,6 +37,8 @@ apps:
       PYTHON: $SNAP/usr/bin/python3.12
       PY3OR2_PYTHON: $SNAP/usr/bin/python3.12
       PATH: $PATH:$SNAP/bin
+  python:
+    command: usr/bin/subiquity-cmd $SNAP/usr/bin/python3.12
   subiquity-server:
     command: usr/bin/subiquity-server
     daemon: simple
