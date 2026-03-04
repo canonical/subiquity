@@ -73,7 +73,6 @@ fi
 
 OLD_ISO="$(readlink -f "${1}")"
 SUBIQUITY_SNAP_PATH="$(readlink -f "${2}")"
-SUBIQUITY_SNAP="$(basename $SUBIQUITY_SNAP_PATH)"
 NEW_ISO="$(readlink -f "${3}")"
 
 tmpdir="$(mktemp -d)"
