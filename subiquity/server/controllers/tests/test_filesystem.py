@@ -300,6 +300,164 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
 
         m_find_variations.assert_called_once_with(valid=True, core_boot_classic=True)
 
+    def test_find_disallowed_errors(self):
+        v = VariationInfo.dd(name="one", min_size=mock.Mock())
+
+        v.capability_info.disallow_all(GuidedDisallowedCapabilityReason.TOO_SMALL)
+
+        with mock.patch.object(self.fsc, "find_variations", return_value=iter([v])):
+            errors = self.fsc._find_disallowed_errors(GuidedCapability.DD)
+
+        self.assertIsNone(errors)
+
+    def test_find_disallowed_errors__core_boot(self):
+        v = VariationInfo(
+            name="one",
+            min_size=mock.Mock(),
+            label="enhanced-secureboot-desktop",
+            capability_info=CapabilityInfo(
+                allowed=[GuidedCapability.CORE_BOOT_ENCRYPTED]
+            ),
+        )
+
+        core_boot_errors = [mock.Mock(), mock.Mock()]
+
+        v.capability_info.disallow_all(
+            GuidedDisallowedCapabilityReason.TOO_SMALL, errors=core_boot_errors
+        )
+
+        with mock.patch.object(self.fsc, "find_variations", return_value=iter([v])):
+            errors = self.fsc._find_disallowed_errors(
+                GuidedCapability.CORE_BOOT_ENCRYPTED
+            )
+
+        self.assertIs(core_boot_errors, errors)
+
+    def test_find_disallowed_errors__core_boot_compatible(self):
+        v = VariationInfo(
+            name="one",
+            min_size=mock.Mock(),
+            label="enhanced-secureboot-desktop",
+            capability_info=CapabilityInfo(
+                allowed=[GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED]
+            ),
+        )
+
+        core_boot_errors = [mock.Mock(), mock.Mock()]
+
+        v.capability_info.disallow_all(
+            GuidedDisallowedCapabilityReason.TOO_SMALL, errors=core_boot_errors
+        )
+
+        with mock.patch.object(self.fsc, "find_variations", return_value=iter([v])):
+            errors = self.fsc._find_disallowed_errors(
+                GuidedCapability.CORE_BOOT_ENCRYPTED
+            )
+
+        self.assertIs(core_boot_errors, errors)
+
+    def test_find_disallowed_errors__allowed(self):
+        v = VariationInfo.dd(name="one", min_size=mock.Mock())
+
+        with mock.patch.object(self.fsc, "find_variations", return_value=iter([v])):
+            with self.assertRaises(ValueError):
+                self.fsc._find_disallowed_errors(GuidedCapability.DD)
+
+    def test_find_disallowed_errors__not_found(self):
+        v1 = VariationInfo.dd(name="one", min_size=mock.Mock())
+        v2 = VariationInfo.classic(name="two", min_size=mock.Mock())
+
+        with mock.patch.object(
+            self.fsc, "find_variations", return_value=iter([v1, v2])
+        ):
+            with self.assertRaises(ValueError):
+                self.fsc._find_disallowed_errors(GuidedCapability.CORE_BOOT_ENCRYPTED)
+
+    @parameterized.expand(
+        (
+            (
+                True,
+                {GuidedCapability.CORE_BOOT_ENCRYPTED},
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+            ),
+            (
+                True,
+                {GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED},
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+            ),
+            (
+                True,
+                {GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED},
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+            ),
+            (True, {GuidedCapability.CORE_BOOT_UNENCRYPTED}, AutoinstallError),
+            (True, set(), AutoinstallError),
+            (
+                False,
+                {GuidedCapability.CORE_BOOT_UNENCRYPTED},
+                GuidedCapability.CORE_BOOT_UNENCRYPTED,
+            ),
+            (
+                False,
+                {GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED},
+                GuidedCapability.CORE_BOOT_UNENCRYPTED,
+            ),
+            (
+                False,
+                {GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED},
+                GuidedCapability.CORE_BOOT_UNENCRYPTED,
+            ),
+            (False, {GuidedCapability.CORE_BOOT_ENCRYPTED}, AutoinstallError),
+            (False, set(), AutoinstallError),
+            (
+                None,
+                {GuidedCapability.CORE_BOOT_ENCRYPTED},
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+            ),
+            (
+                None,
+                {GuidedCapability.CORE_BOOT_UNENCRYPTED},
+                GuidedCapability.CORE_BOOT_UNENCRYPTED,
+            ),
+            (
+                None,
+                {GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED},
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+            ),
+            (
+                None,
+                {GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED},
+                GuidedCapability.CORE_BOOT_UNENCRYPTED,
+            ),
+            (
+                None,
+                {
+                    GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
+                    GuidedCapability.CORE_BOOT_ENCRYPTED,
+                },
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+            ),
+            (None, set(), AutoinstallError),
+        )
+    )
+    def test_get_core_boot_autoinstall_capability(
+        self, encrypted: bool, allowed_caps: set[GuidedCapability], expected
+    ):
+        with mock.patch.object(
+            self.fsc,
+            "find_allowed_capabilities",
+            side_effect=lambda **_: iter(allowed_caps),
+        ):
+            if expected is AutoinstallError:
+                ctx = self.assertRaises(expected)
+            else:
+                ctx = contextlib.nullcontext()
+            with ctx:
+                self.assertEqual(
+                    expected,
+                    self.fsc.get_core_boot_autoinstall_capability(encrypted=encrypted),
+                )
+
     async def test_probe_restricted(self):
         await self.fsc._probe_once(context=None, restricted=True)
         expected = {"blockdev", "filesystem", "nvme"}
