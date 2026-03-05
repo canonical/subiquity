@@ -2114,6 +2114,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         guided_recovery_key: Union[bool, RecoveryKey] = False
 
         if name == "hybrid":
+            if "mode" in layout:
+                raise AutoinstallError("cannot use 'mode' with hybrid layout")
             # this check is conceptually unnecessary but results in a
             # much cleaner error message...
             core_boot_caps = set()
@@ -2123,8 +2125,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 raise Exception(
                     "can only use name: hybrid when installing core boot classic"
                 )
-            if "mode" in layout:
-                raise Exception("cannot use 'mode' when installing core boot classic")
             encrypted = layout.get("encrypted", None)
             GC = GuidedCapability
             if encrypted is None:

@@ -1332,6 +1332,14 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
 
         self.assertEqual(expected_optional_install, actual)
 
+    async def test_run_autoinstall_guided__hybrid_with_mode(self):
+        with self.assertRaises(
+            AutoinstallError, msg="cannot use 'mode' with hybrid layout"
+        ):
+            await self.fsc.run_autoinstall_guided(
+                {"name": "hybrid", "mode": "reformat_disk"}
+            )
+
 
 class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):
     def setUp(self):
