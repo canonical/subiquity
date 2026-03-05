@@ -2,15 +2,12 @@
 
 set -eux
 
-LIVEFS_EDITOR="${LIVEFS_EDITOR-$(readlink -f "$(dirname $(dirname ${0}))/livefs-editor")}"
-[ -d $LIVEFS_EDITOR ] || git clone https://github.com/mwhudson/livefs-editor $LIVEFS_EDITOR
-
-LIVEFS_EDITOR=$(readlink -f $LIVEFS_EDITOR)
 
 # Path on disk to a custom snapd (e.g. one that trusts the test keys)
 snapd_pkg=
 store_url=
 tracking=stable
+use_lxd=
 
 LIVEFS_OPTS=()
 
@@ -18,7 +15,7 @@ add_livefs_opts () {
     LIVEFS_OPTS+=("$@")
 }
 
-while getopts ":ifc:s:n:p:u:t:" opt; do
+while getopts ":ifc:s:n:p:u:t:l" opt; do
     case "${opt}" in
         i)
             add_livefs_opts --shell
@@ -38,6 +35,9 @@ while getopts ":ifc:s:n:p:u:t:" opt; do
             ;;
         t)
             tracking="${OPTARG}"
+            ;;
+        l)
+            use_lxd=1
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
@@ -69,11 +69,29 @@ EOF
     exit 1
 fi
 
+if [ -n "${use_lxd}" ]; then
+    lxc launch ubuntu-daily:noble subiquity-inject --vm --ephemeral
+
+    # Wait until the LXD agent is up
+    until [ "$(lxc info subiquity-inject | grep Processes | awk '{print $2}')" -ge 0 ]; do
+        sleep 1
+    done
+
+    lxc exec subiquity-inject -- cloud-init status --wait
+
+    lxc exec subiquity-inject -- apt-get install --assume-yes xorriso
+    lxc exec subiquity-inject -- git clone https://github.com/mwhudson/livefs-editor /root/livefs-editor
+else
+    LIVEFS_EDITOR="${LIVEFS_EDITOR-$(readlink -f "$(dirname $(dirname ${0}))/livefs-editor")}"
+    [ -d $LIVEFS_EDITOR ] || git clone https://github.com/mwhudson/livefs-editor $LIVEFS_EDITOR
+
+    LIVEFS_EDITOR=$(readlink -f $LIVEFS_EDITOR)
+fi
+
 # inject-subiquity-snap.sh $old_iso $subiquity_snap $new_iso
 
 OLD_ISO="$(readlink -f "${1}")"
 SUBIQUITY_SNAP_PATH="$(readlink -f "${2}")"
-SUBIQUITY_SNAP="$(basename $SUBIQUITY_SNAP_PATH)"
 NEW_ISO="$(readlink -f "${3}")"
 
 tmpdir="$(mktemp -d)"
@@ -102,4 +120,31 @@ if [ -n "$snapd_pkg" ]; then
                     --shell "rm rootfs/$(basename "$snapd_pkg")"
 fi
 
-PYTHONPATH=$LIVEFS_EDITOR python3 -m livefs_edit "$OLD_ISO" "$NEW_ISO" --inject-snap "$SUBIQUITY_SNAP_PATH" "$tracking" "${LIVEFS_OPTS[@]}"
+if [ -n "$use_lxd" ]; then
+    old_iso=/old.iso
+    new_iso=/new.iso
+    snap=/to-inject.snap
+
+    lxc file push "$OLD_ISO" subiquity-inject"$old_iso" --uid 0 --gid 0
+    lxc file push "$SUBIQUITY_SNAP_PATH" subiquity-inject"$snap" --uid 0 --gid 0
+else
+    old_iso="$OLD_ISO"
+    new_iso="$NEW_ISO"
+    snap="$SUBIQUITY_SNAP_PATH"
+fi
+
+cmd=(python3 -m livefs_edit "$old_iso" "$new_iso" --inject-snap "$snap" "$tracking" "${LIVEFS_OPTS[@]}")
+
+if [ -n "$use_lxd" ]; then
+    lxc exec subiquity-inject --env PYTHONPATH=/root/livefs-editor -- "${cmd[@]}"
+
+    # lxc file pull considers that the target path is a directory, not a file,
+    # so we need to do the rename operation ourselves.
+    tmpdir=$(mktemp -d)
+    lxc file pull subiquity-inject"$new_iso" "$tmpdir"
+
+    mv -- "$tmpdir/$new_iso" "$NEW_ISO"
+    lxc stop subiquity-inject
+else
+    PYTHONPATH=$LIVEFS_EDITOR "${cmd[@]}"
+fi
