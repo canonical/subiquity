@@ -72,6 +72,7 @@ from subiquity.models.tests.test_filesystem import (
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controllers.filesystem import (
     DRY_RUN_RESET_SIZE,
+    CapabilityInfo,
     FilesystemController,
     StorageConstraintViolationError,
     StorageInvalidUsageError,
@@ -257,6 +258,47 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         variations = self.fsc.find_variations(core_boot_classic=True)
 
         self.assertEqual([], list(variations))
+
+    def test_find_allowed_capabilities(self):
+        v1 = VariationInfo.dd(name="one", min_size=mock.Mock())
+        v2 = VariationInfo.classic(name="two", min_size=mock.Mock())
+
+        v1.capability_info.disallow_all(GuidedDisallowedCapabilityReason.TOO_SMALL)
+
+        expected = {
+            GuidedCapability.DIRECT,
+            GuidedCapability.LVM,
+            GuidedCapability.LVM_LUKS,
+            GuidedCapability.ZFS,
+            GuidedCapability.ZFS_LUKS_KEYSTORE,
+        }
+
+        with mock.patch.object(
+            self.fsc, "find_variations", return_value=iter([v1, v2])
+        ) as m_find_variations:
+            self.assertEqual(expected, set(self.fsc.find_allowed_capabilities()))
+
+        m_find_variations.assert_called_once_with(valid=True, core_boot_classic=None)
+
+    def test_find_allowed_capabilities__core_boot(self):
+        v = VariationInfo(
+            name="two",
+            label="enhanced-secureboot-desktop",
+            min_size=mock.Mock(),
+            capability_info=CapabilityInfo(
+                allowed=[GuidedCapability.CORE_BOOT_ENCRYPTED]
+            ),
+        )
+
+        with mock.patch.object(
+            self.fsc, "find_variations", return_value=iter([v])
+        ) as m_find_variations:
+            self.assertEqual(
+                {GuidedCapability.CORE_BOOT_ENCRYPTED},
+                set(self.fsc.find_allowed_capabilities(core_boot_classic=True)),
+            )
+
+        m_find_variations.assert_called_once_with(valid=True, core_boot_classic=True)
 
     async def test_probe_restricted(self):
         await self.fsc._probe_once(context=None, restricted=True)

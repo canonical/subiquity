@@ -411,6 +411,15 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 continue
             yield variation
 
+    def find_allowed_capabilities(
+        self, *, core_boot_classic=None
+    ) -> Iterator[GuidedCapability]:
+        for variation in self.find_variations(
+            valid=True, core_boot_classic=core_boot_classic
+        ):
+            for cap in variation.capability_info.allowed:
+                yield cap
+
     async def configured(self):
         # set_info_capability() requires variations info to be populated, so
         # wait for it.
@@ -2118,9 +2127,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 raise AutoinstallError("cannot use 'mode' with hybrid layout")
             # this check is conceptually unnecessary but results in a
             # much cleaner error message...
-            core_boot_caps = set()
-            for variation in self.find_variations(valid=True, core_boot_classic=True):
-                core_boot_caps.update(variation.capability_info.allowed)
+            core_boot_caps = set(self.find_allowed_capabilities(core_boot_classic=True))
             if not core_boot_caps:
                 raise Exception(
                     "can only use name: hybrid when installing core boot classic"
