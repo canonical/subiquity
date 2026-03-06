@@ -2171,6 +2171,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         core_boot_caps = set(self.find_allowed_capabilities(core_boot_classic=True))
         GC = GuidedCapability
         if encrypted is None:
+            # NOTE: We try to decide here if we want to do encryption or not.
+            # But another approach would be to set:
+            #   capability = GC.CORE_BOOT_PREFER_ENCRYPTED
+            # and have the decision done in self.guided. This would require
+            # some code change such as making
+            # GuidedCapability.is_compatible_with() commutative though.
             if (
                 GC.CORE_BOOT_ENCRYPTED in core_boot_caps
                 or GC.CORE_BOOT_PREFER_ENCRYPTED in core_boot_caps
