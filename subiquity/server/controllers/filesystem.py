@@ -204,6 +204,8 @@ class CapabilityInfo:
         filter: Callable[[GuidedCapability], bool],
         reason: GuidedDisallowedCapabilityReason,
         message: Optional[str] = None,
+        *,
+        errors: list[CoreBootEncryptionSupportError] | None = None,
     ) -> None:
         new_allowed = []
         for cap in self.allowed:
@@ -213,6 +215,7 @@ class CapabilityInfo:
                         capability=cap,
                         reason=reason,
                         message=message,
+                        errors=errors,
                     )
                 )
             else:
@@ -223,8 +226,10 @@ class CapabilityInfo:
         self,
         reason: GuidedDisallowedCapabilityReason,
         message: Optional[str] = None,
+        *,
+        errors: list[CoreBootEncryptionSupportError] | None = None,
     ) -> None:
-        self.disallow_if(lambda cap: True, reason, message)
+        self.disallow_if(lambda cap: True, reason, message, errors=errors)
 
 
 @attr.s(auto_attribs=True)
