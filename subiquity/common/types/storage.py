@@ -260,6 +260,26 @@ class GuidedCapability(enum.Enum):
             GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
         ]
 
+    def is_compatible_with(self, other: "GuidedCapability") -> bool:
+        if self == other:
+            return True
+
+        # Define compability between types.
+        compat = {
+            GuidedCapability.CORE_BOOT_ENCRYPTED: {
+                GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+            },
+            GuidedCapability.CORE_BOOT_UNENCRYPTED: {
+                GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+            },
+        }
+
+        if other in compat.get(self, set()):
+            return True
+        return False
+
 
 class GuidedDisallowedCapabilityReason(enum.Enum):
     TOO_SMALL = enum.auto()
