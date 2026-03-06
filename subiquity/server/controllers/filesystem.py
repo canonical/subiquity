@@ -204,6 +204,8 @@ class CapabilityInfo:
         filter: Callable[[GuidedCapability], bool],
         reason: GuidedDisallowedCapabilityReason,
         message: Optional[str] = None,
+        *,
+        errors: list[CoreBootEncryptionSupportError] | None = None,
     ) -> None:
         new_allowed = []
         for cap in self.allowed:
@@ -213,6 +215,7 @@ class CapabilityInfo:
                         capability=cap,
                         reason=reason,
                         message=message,
+                        errors=errors,
                     )
                 )
             else:
@@ -223,8 +226,10 @@ class CapabilityInfo:
         self,
         reason: GuidedDisallowedCapabilityReason,
         message: Optional[str] = None,
+        *,
+        errors: list[CoreBootEncryptionSupportError] | None = None,
     ) -> None:
-        self.disallow_if(lambda cap: True, reason, message)
+        self.disallow_if(lambda cap: True, reason, message, errors=errors)
 
 
 @attr.s(auto_attribs=True)
@@ -410,6 +415,28 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             if label is not False and variation.label != label:
                 continue
             yield variation
+
+    def find_allowed_capabilities(
+        self, *, core_boot_classic=None
+    ) -> Iterator[GuidedCapability]:
+        for variation in self.find_variations(
+            valid=True, core_boot_classic=core_boot_classic
+        ):
+            for cap in variation.capability_info.allowed:
+                yield cap
+
+    def _find_disallowed_errors(
+        self, capability: GuidedCapability
+    ) -> list[CoreBootEncryptionSupportError] | None:
+        for variation in self.find_variations(
+            core_boot_classic=capability.is_core_boot()
+        ):
+            for disallowed in variation.capability_info.disallowed:
+                if capability.is_compatible_with(disallowed.capability):
+                    return disallowed.errors
+        raise ValueError(
+            f"{capability.name} (or a compatible one) is not disallowed in any variation"
+        )
 
     async def configured(self):
         # set_info_capability() requires variations info to be populated, so
@@ -2107,6 +2134,66 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             return False
         return True
 
+    def ensure_core_boot_autoinstall_capability_compatible(self, capability) -> None:
+        for allowed in self.find_allowed_capabilities(core_boot_classic=True):
+            if capability.is_compatible_with(allowed):
+                return
+
+        if capability == GuidedCapability.CORE_BOOT_ENCRYPTED:
+            encryption_text = _("with encryption")
+        elif capability == GuidedCapability.CORE_BOOT_UNENCRYPTED:
+            encryption_text = _("without encryption")
+        else:
+            raise RuntimeError(f"invalid capability {capability.name}")
+
+        # Now let's generate an autoinstall error that includes usable info
+        first_error = None
+        try:
+            disallowed_errors = self._find_disallowed_errors(capability)
+        except ValueError:
+            pass
+        else:
+            try:
+                first_error = next(iter(disallowed_errors)).kind.value
+            except StopIteration:
+                pass
+            else:
+                raise AutoinstallError(
+                    _(
+                        f"hybrid layout ({encryption_text}) is not available: {first_error}"
+                    )
+                )
+        raise AutoinstallError(f"hybrid layout ({encryption_text}) is not available")
+
+    def get_core_boot_autoinstall_capability(
+        self, *, encrypted: bool | None
+    ) -> GuidedCapability:
+        core_boot_caps = set(self.find_allowed_capabilities(core_boot_classic=True))
+        GC = GuidedCapability
+        if encrypted is None:
+            # NOTE: We try to decide here if we want to do encryption or not.
+            # But another approach would be to set:
+            #   capability = GC.CORE_BOOT_PREFER_ENCRYPTED
+            # and have the decision done in self.guided. This would require
+            # some code change such as making
+            # GuidedCapability.is_compatible_with() commutative though.
+            if (
+                GC.CORE_BOOT_ENCRYPTED in core_boot_caps
+                or GC.CORE_BOOT_PREFER_ENCRYPTED in core_boot_caps
+            ):
+                capability = GC.CORE_BOOT_ENCRYPTED
+            else:
+                capability = GC.CORE_BOOT_UNENCRYPTED
+        elif encrypted:
+            capability = GC.CORE_BOOT_ENCRYPTED
+        else:
+            capability = GC.CORE_BOOT_UNENCRYPTED
+
+        # this check is conceptually unnecessary but results in a
+        # much cleaner error message...
+        self.ensure_core_boot_autoinstall_capability_compatible(capability)
+        return capability
+
     async def run_autoinstall_guided(self, layout):
         name = layout["name"]
         password = None
@@ -2114,36 +2201,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         guided_recovery_key: Union[bool, RecoveryKey] = False
 
         if name == "hybrid":
-            # this check is conceptually unnecessary but results in a
-            # much cleaner error message...
-            core_boot_caps = set()
-            for variation in self.find_variations(valid=True, core_boot_classic=True):
-                core_boot_caps.update(variation.capability_info.allowed)
-            if not core_boot_caps:
-                raise Exception(
-                    "can only use name: hybrid when installing core boot classic"
-                )
             if "mode" in layout:
-                raise Exception("cannot use 'mode' when installing core boot classic")
-            encrypted = layout.get("encrypted", None)
-            GC = GuidedCapability
-            if encrypted is None:
-                if (
-                    GC.CORE_BOOT_ENCRYPTED in core_boot_caps
-                    or GC.CORE_BOOT_PREFER_ENCRYPTED in core_boot_caps
-                ):
-                    capability = GC.CORE_BOOT_ENCRYPTED
-                else:
-                    capability = GC.CORE_BOOT_UNENCRYPTED
-            elif encrypted:
-                capability = GC.CORE_BOOT_ENCRYPTED
-            else:
-                if (
-                    core_boot_caps == {GuidedCapability.CORE_BOOT_ENCRYPTED}
-                    and not encrypted
-                ):
-                    raise Exception("cannot install this model unencrypted")
-                capability = GC.CORE_BOOT_UNENCRYPTED
+                raise AutoinstallError("cannot use 'mode' with hybrid layout")
+            capability = self.get_core_boot_autoinstall_capability(
+                encrypted=layout.get("encrypted", None)
+            )
+
             match = layout.get("match", {"size": "largest"})
             disk = self.get_bootable_matching_disk(match)
             mode = "reformat_disk"

@@ -16,6 +16,7 @@
 import unittest
 
 from subiquity.common.types.storage import GuidedCapability, SizingPolicy
+from subiquitycore.tests.parameterized import parameterized
 
 
 class TestSizingPolicy(unittest.TestCase):
@@ -41,3 +42,44 @@ class TestCapabilities(unittest.TestCase):
 
     def test_order(self):
         self.assertLess(GuidedCapability.DIRECT, GuidedCapability.CORE_BOOT_ENCRYPTED)
+
+    @parameterized.expand(
+        (
+            (GuidedCapability.DIRECT, GuidedCapability.DIRECT, True),
+            (GuidedCapability.DD, GuidedCapability.DIRECT, False),
+            (
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+                True,
+            ),
+            (
+                GuidedCapability.CORE_BOOT_UNENCRYPTED,
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+                False,
+            ),
+            (
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+                True,
+            ),
+            (
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
+                True,
+            ),
+            (
+                GuidedCapability.CORE_BOOT_UNENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED,
+                True,
+            ),
+            (
+                GuidedCapability.CORE_BOOT_UNENCRYPTED,
+                GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED,
+                True,
+            ),
+        ),
+    )
+    def test_is_compatible_with(
+        self, cap: GuidedCapability, other_cap: GuidedCapability, compatible: bool
+    ):
+        self.assertEqual(compatible, cap.is_compatible_with(other_cap))
