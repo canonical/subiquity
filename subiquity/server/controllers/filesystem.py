@@ -1424,6 +1424,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self, install_min: int
     ) -> list[tuple[int, GuidedStorageTargetUseGap]]:
         scenarios: list[tuple[int, GuidedStorageTargetUseGap]] = []
+        # use_gap requires v2 gap calculation because v1 returns no gaps
+        # when the disk has preexisting partitions (e.g. Windows).
+        # Temporarily upgrade to v2 for gap detection; permanently upgrade
+        # only if we actually find viable use_gap scenarios.
+        orig_version = self.model.storage_version
+        if self.model.storage_version < 2:
+            self.model.storage_version = 2
         for disk in self.potential_boot_disks(with_reformatting=False):
             if disk.ptable == "unsupported":
                 # In theory, this check is not needed since largest_gap will
@@ -1461,6 +1468,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 disallowed=capability_info.disallowed,
             )
             scenarios.append((gap.size, use_gap))
+        if not scenarios:
+            self.model.storage_version = orig_version
         return scenarios
 
     def available_target_resize_scenarios(
@@ -2213,6 +2222,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 disk_id=disk.id, ptable=ptable, allowed=[]
             )
         elif mode == "use_gap":
+            # use_gap requires v2 gap calculation because v1 returns no gaps
+            # when the disk has preexisting partitions (e.g. Windows).
+            if self.model.storage_version < 2:
+                log.info(
+                    "Upgrading storage_version to 2: "
+                    "use_gap mode requires v2 gap detection"
+                )
+                self.model.storage_version = 2
             match = layout.get("match", {})
             bootable_disks = self.get_bootable_matching_disks(match)
             gap = gaps.largest_gap(bootable_disks)
