@@ -58,6 +58,19 @@ class HomenodeTokenController(SubiquityController):
             strategy = HTTPAkashAPIStrategy()
         self.akash_api = AkashAPIInterface(strategy)
 
+        # Pre-fill from Windows installer config if available
+        try:
+            from subiquity.server.akash_config_reader import read_windows_config
+
+            config = read_windows_config()
+            if config and config.get("installation_key"):
+                self.token = config["installation_key"]
+                log.info(
+                    "Pre-filled installation key from Windows installer config"
+                )
+        except Exception as e:
+            log.debug("Could not read Windows installer config: %s", e)
+
     def load_autoinstall_data(self, data):
         if data is not None:
             self.token = data

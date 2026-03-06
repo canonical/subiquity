@@ -164,7 +164,113 @@ class NetworkController(BaseNetworkController, SubiquityController):
                 schedule_task(self.unset_override_config())
         elif not self.interactive():
             self.initial_config = schedule_task(self.wait_for_initial_config())
+
+        # Pre-fill from Windows installer config if available
+        if self.ai_data is None:
+            try:
+                from subiquity.server.akash_config_reader import read_windows_config
+
+                config = read_windows_config()
+                if config and config.get("network"):
+                    netplan_config = self._build_netplan_from_installer_config(
+                        config["network"]
+                    )
+                    if netplan_config:
+                        self.model.override_config = netplan_config
+                        self.apply_config(silent=True)
+                        log.info(
+                            "Pre-filled network config from Windows installer"
+                        )
+                        if self.interactive():
+                            schedule_task(self.unset_override_config())
+            except Exception as e:
+                log.debug("Could not read Windows installer config: %s", e)
+
         super().start()
+
+    def _build_netplan_from_installer_config(self, net_config):
+        """Build a netplan config dict from the Windows installer's network config.
+
+        The installer config format:
+        {
+            "type": "wifi" | "ethernet",
+            "ssid": "...",          # for wifi
+            "password": "...",      # for wifi
+            "ip_config": "dhcp" | "static",
+            "static_ip": "...",     # for static
+            "subnet": "...",
+            "gateway": "...",
+            "dns": "..."
+        }
+        """
+        try:
+            net_type = net_config.get("type", "ethernet")
+            ip_config = net_config.get("ip_config", "dhcp")
+
+            if net_type == "wifi":
+                ssid = net_config.get("ssid", "")
+                password = net_config.get("password", "")
+                if not ssid:
+                    return None
+
+                wifi_config = {
+                    "access-points": {ssid: {"password": password}},
+                }
+
+                if ip_config == "dhcp":
+                    wifi_config["dhcp4"] = True
+                elif ip_config == "static":
+                    static_ip = net_config.get("static_ip", "")
+                    subnet = net_config.get("subnet", "24")
+                    gateway = net_config.get("gateway", "")
+                    dns = net_config.get("dns", "")
+                    wifi_config["addresses"] = [f"{static_ip}/{subnet}"]
+                    if gateway:
+                        wifi_config["routes"] = [
+                            {"to": "default", "via": gateway}
+                        ]
+                    if dns:
+                        wifi_config["nameservers"] = {"addresses": [dns]}
+
+                return {
+                    "network": {
+                        "version": 2,
+                        "wifis": {"wlan0": wifi_config},
+                    }
+                }
+            else:
+                # Ethernet
+                eth_config = {}
+
+                if ip_config == "dhcp":
+                    eth_config["dhcp4"] = True
+                elif ip_config == "static":
+                    static_ip = net_config.get("static_ip", "")
+                    subnet = net_config.get("subnet", "24")
+                    gateway = net_config.get("gateway", "")
+                    dns = net_config.get("dns", "")
+                    eth_config["addresses"] = [f"{static_ip}/{subnet}"]
+                    if gateway:
+                        eth_config["routes"] = [
+                            {"to": "default", "via": gateway}
+                        ]
+                    if dns:
+                        eth_config["nameservers"] = {"addresses": [dns]}
+
+                return {
+                    "network": {
+                        "version": 2,
+                        "ethernets": {
+                            "any-eth": {
+                                "match": {"name": "e*"},
+                                **eth_config,
+                            }
+                        },
+                    }
+                }
+        except Exception as e:
+            log.warning("Failed to build netplan from installer config: %s", e)
+            return None
 
     async def unset_override_config(self):
         await self.apply_config_task.wait()
