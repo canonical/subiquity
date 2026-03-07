@@ -339,6 +339,15 @@ class UbuntuDriversHasDriversInterface(UbuntuDriversInterface):
         return self.oem_metapackages
 
 
+class UbuntuDriversHasDriversNoOEMInterface(UbuntuDriversHasDriversInterface):
+    """A dry-run implementation of ubuntu-drivers that returns drivers package
+    and an empty OEM metapackage list."""
+
+    gpgpu_drivers: List[str] = ["nvidia-driver-470-server"]
+    not_gpgpu_drivers: List[str] = ["nvidia-driver-510"]
+    oem_metapackages: List[str] = []
+
+
 class UbuntuDriversNoDriversInterface(UbuntuDriversHasDriversInterface):
     """A dry-run implementation of ubuntu-drivers that returns a hard-coded
     empty list of drivers."""
@@ -408,7 +417,9 @@ def get_ubuntu_drivers_interface(app) -> UbuntuDriversInterface:
             cls = UbuntuDriversNoDriversInterface
         elif "run-drivers" in app.debug_flags:
             cls = UbuntuDriversRunDriversInterface
-        else:
+        elif "has-drivers-no-oem" in app.debug_flags:
+            cls = UbuntuDriversHasDriversNoOEMInterface
+        else:  # "has-drivers"
             cls = UbuntuDriversHasDriversInterface
 
     if app.opts.kernel_cmdline.get("subiquity-fake-pci-devices"):
