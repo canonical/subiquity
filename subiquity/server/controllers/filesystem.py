@@ -2417,21 +2417,30 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
            finished writing all data to the target disk and /target has
            been unmounted above.
         5. This function never returns — the reboot happens here.
+
+        IMPORTANT: All commands here use subprocess.run() directly instead
+        of self.app.command_runner.run() because the command runner wraps
+        everything in 'systemd-run --wait', which prevents reboot -f and
+        other shutdown-critical operations from working correctly.
         """
         log.debug("Windows loopback boot detected — tearing down loop "
                   "devices to avoid shutdown deadlock")
+
+        def _run(cmd):
+            """Run a command directly, bypassing the systemd-run wrapper."""
+            try:
+                subprocess.run(cmd, check=True, timeout=30,
+                               capture_output=True)
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired,
+                    Exception) as e:
+                log.debug("command %s failed: %s", cmd, e)
 
         # Lazy-unmount everything under /cdrom (the ISO mountpoint) and
         # any remaining squashfs/overlay mounts.  --lazy detaches
         # immediately even if busy — exactly what we need since the loop
         # device cannot be cleanly released while casper holds references.
-        # Also unmount any snap squashfs that reference loop devices.
         for mp in ("/cdrom", "/rofs", "/cow"):
-            try:
-                await self.app.command_runner.run(
-                    ["umount", "--lazy", mp])
-            except subprocess.CalledProcessError:
-                log.debug("umount %s failed (may not be mounted)", mp)
+            _run(["umount", "--lazy", mp])
 
         # Lazy-unmount all remaining loop-backed mounts (snap squashfs etc.)
         try:
@@ -2439,45 +2448,31 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             for line in proc_mounts.splitlines():
                 parts = line.split()
                 if len(parts) >= 2 and "/loop" in parts[0]:
-                    try:
-                        await self.app.command_runner.run(
-                            ["umount", "--lazy", parts[1]])
-                    except subprocess.CalledProcessError:
-                        pass
+                    _run(["umount", "--lazy", parts[1]])
         except Exception:
             log.debug("failed to parse /proc/mounts for loop cleanup")
 
         # Detach all remaining loop devices.
-        try:
-            await self.app.command_runner.run(["losetup", "-D"])
-        except subprocess.CalledProcessError:
-            log.debug("losetup -D failed")
+        _run(["losetup", "-D"])
 
         # Flush all pending I/O so the target disk is consistent.
-        try:
-            await self.app.command_runner.run(["sync"])
-        except subprocess.CalledProcessError:
-            pass
+        _run(["sync"])
 
         # Force immediate reboot, bypassing systemd entirely.
         # We try multiple methods to maximise the chance of success.
         log.debug("Forcing immediate reboot")
 
         # Method 1: reboot -f (skips systemd, calls reboot(2) directly)
-        try:
-            await self.app.command_runner.run(["reboot", "-f"])
-        except subprocess.CalledProcessError:
-            log.debug("reboot -f failed")
+        _run(["reboot", "-f"])
 
         # Method 2: sysrq — sync, remount-ro, immediate reboot
         try:
-            # Enable all sysrq functions first (may be restricted)
             with open("/proc/sys/kernel/sysrq", "w") as f:
                 f.write("1")
             for cmd in ("s", "u", "b"):
                 with open("/proc/sysrq-trigger", "w") as f:
                     f.write(cmd)
-                await asyncio.sleep(0.5)
+                time.sleep(0.5)
         except Exception:
             log.exception("sysrq reboot failed")
 
@@ -2485,7 +2480,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # otherwise the caller will run systemctl reboot which deadlocks.
         log.error("All reboot methods failed, waiting indefinitely")
         while True:
-            await asyncio.sleep(3600)
+            time.sleep(3600)
 
     async def _pre_shutdown(self):
         """This function is executed just before rebooting and after copying
