@@ -51,8 +51,31 @@ def read_windows_config() -> dict | None:
 
     log.info("akash.auto-config detected, searching for install config on NTFS partitions")
 
-    # Probe NTFS partitions
+    # Phase 1: Check NTFS partitions that are already mounted (e.g. by casper
+    # iso-scan).  When booting via iso-scan/filename, casper mounts the NTFS
+    # partition to access the ISO.  Trying to mount the same device again with
+    # ntfs3 can fail (EBUSY / driver conflict), so check existing mounts first.
+    already_mounted = _find_mounted_ntfs()
+    for dev, mp in already_mounted.items():
+        config_file = os.path.join(mp, CONFIG_PATH)
+        log.debug("Checking existing mount %s (%s) for %s", mp, dev, CONFIG_PATH)
+        try:
+            if os.path.exists(config_file):
+                with open(config_file) as f:
+                    config = json.load(f)
+                log.info("Loaded config from existing mount %s (%s)", mp, dev)
+                _cached_config = config
+                return config
+        except json.JSONDecodeError as e:
+            log.warning("Invalid JSON in config on %s (%s): %s", mp, dev, e)
+        except Exception as e:
+            log.debug("Failed to read from existing mount %s: %s", mp, e)
+
+    # Phase 2: Try mounting NTFS partitions that are NOT already mounted
+    mounted_devs = set(already_mounted.keys())
     for dev in _find_ntfs_partitions():
+        if dev in mounted_devs:
+            continue  # Already checked in phase 1
         mp = tempfile.mkdtemp(prefix="akash-ntfs-")
         try:
             subprocess.run(
@@ -87,6 +110,29 @@ def read_windows_config() -> dict | None:
 
     log.info("No install config found on any NTFS partition")
     return None
+
+
+def _find_mounted_ntfs() -> dict[str, str]:
+    """Find NTFS partitions that are already mounted (e.g. by casper iso-scan).
+
+    Returns a dict mapping device path -> mount point.
+    """
+    mounted = {}
+    try:
+        with open("/proc/mounts") as f:
+            for line in f:
+                parts = line.split()
+                if len(parts) < 3:
+                    continue
+                dev, mp, fstype = parts[0], parts[1], parts[2]
+                if fstype in ("ntfs", "ntfs3", "fuseblk"):
+                    # fuseblk is used by ntfs-3g (FUSE)
+                    mounted[dev] = mp
+        if mounted:
+            log.debug("Found already-mounted NTFS partitions: %s", mounted)
+    except Exception as e:
+        log.debug("Failed to read /proc/mounts: %s", e)
+    return mounted
 
 
 def _find_ntfs_partitions() -> list[str]:
