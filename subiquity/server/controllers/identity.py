@@ -17,11 +17,10 @@ import logging
 import re
 from typing import Set
 
-import attr
-
 from subiquity.common.apidef import API
 from subiquity.common.resources import resource_path
 from subiquity.common.types import IdentityData, UsernameValidation
+from subiquity.models.identity import User
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 
@@ -86,6 +85,18 @@ class IdentityController(SubiquityController):
             "username": {"type": "string"},
             "hostname": {"type": "string"},
             "password": {"type": "string"},
+            "groups": {
+                "oneOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {
+                        "type": "object",
+                        "properties": {
+                            "override": {"type": "array", "items": {"type": "string"}},
+                            "append": {"type": "array", "items": {"type": "string"}},
+                        },
+                    },
+                ],
+            },
         },
         "required": ["username", "hostname", "password"],
         "additionalProperties": False,
@@ -116,19 +127,14 @@ class IdentityController(SubiquityController):
 
     def load_autoinstall_data(self, data):
         if data is not None:
-            identity_data = IdentityData(
-                realname=data.get("realname", ""),
-                username=data["username"],
-                hostname=data["hostname"],
-                crypted_password=data["password"],
-            )
-
+            user = User.from_autoinstall(data)
             try:
-                self.validate_username(identity_data.username)
+                self.validate_username(user.username)
             except UsernameError as e:
                 raise AutoinstallError(f"{e.error}: {e.username}")
             else:
-                self.model.add_user(identity_data)
+                self.model.user = user
+                self.model.hostname = data["hostname"]
                 return
 
         # The identity section is required except if (any):
@@ -148,8 +154,9 @@ class IdentityController(SubiquityController):
 
     def make_autoinstall(self):
         if self.model.user is None:
+            # Do we want to still set the hostname maybe?
             return {}
-        r = attr.asdict(self.model.user)
+        r = self.model.user.to_autoinstall()
         r["hostname"] = self.model.hostname
         return r
 
@@ -172,7 +179,8 @@ class IdentityController(SubiquityController):
                 validated,
             )
 
-        self.model.add_user(data)
+        self.model.user = User.from_identity_data(data)
+        self.model.hostname = data.hostname
         await self.configured()
 
     async def validate_username_GET(self, username: str) -> UsernameValidation:
