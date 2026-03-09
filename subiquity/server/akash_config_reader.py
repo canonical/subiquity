@@ -1,9 +1,10 @@
 # Copyright 2024 Akash Network
 #
-# Utility to read install-config.json from an NTFS partition.
-# This is used when the Electron installer on Windows writes a config file
-# before rebooting into the Ubuntu installer, allowing subiquity to pre-fill
-# interactive prompts (installation key, network config).
+# Utility to read install-config.json written by the Windows Electron installer.
+# Supports two locations:
+#   1. ESP (FAT32 EFI System Partition) at EFI/akash-installer/install-config.json
+#      — used when booting from Windows (NTFS is locked by casper's ISO loop device)
+#   2. NTFS partition at akash-homenode/install-config.json (legacy/fallback)
 #
 # The config file is only read when the kernel param `akash.auto-config` is
 # present in /proc/cmdline (set by the Electron installer's grub.cfg).
@@ -17,6 +18,7 @@ import tempfile
 log = logging.getLogger("subiquity.server.akash_config_reader")
 
 CONFIG_PATH = "akash-homenode/install-config.json"
+ESP_CONFIG_PATH = "EFI/akash-installer/install-config.json"
 
 # Cache the config so we only read it once
 _cached_config = None
@@ -51,22 +53,16 @@ def read_windows_config() -> dict | None:
 
     log.info("akash.auto-config detected, searching for install config")
 
-    # Phase 0: Check /tmp/install-config.json (placed by early-commands when
-    # booting from the Windows installer).  The NTFS partition is locked by
-    # casper's ISO loop device, so the config is read from the ESP by an
-    # early-command and copied here.  Standalone ISO boots skip this path.
-    esp_config = "/tmp/install-config.json"
-    try:
-        if os.path.exists(esp_config):
-            with open(esp_config) as f:
-                config = json.load(f)
-            log.info("Loaded config from %s (ESP early-command)", esp_config)
-            _cached_config = config
-            return config
-    except json.JSONDecodeError as e:
-        log.warning("Invalid JSON in %s: %s", esp_config, e)
-    except Exception as e:
-        log.debug("Failed to read %s: %s", esp_config, e)
+    # Phase 0: Check the ESP (FAT32 EFI System Partition).
+    # When booting from the Windows installer, the NTFS partition is locked by
+    # casper's ISO loop device (device busy).  The Electron app writes
+    # install-config.json to the ESP alongside the boot files, so we mount
+    # the ESP directly and read from there.  Standalone ISO boots won't have
+    # the config on the ESP, so this falls through to NTFS phases.
+    config = _check_esp_config()
+    if config is not None:
+        _cached_config = config
+        return config
 
     # Phase 1: Check NTFS partitions that are already mounted (e.g. by casper
     # iso-scan).  When booting via iso-scan/filename, casper mounts the NTFS
@@ -150,6 +146,67 @@ def _find_mounted_ntfs() -> dict[str, str]:
     except Exception as e:
         log.debug("Failed to read /proc/mounts: %s", e)
     return mounted
+
+
+def _find_vfat_partitions() -> list[str]:
+    """Find all FAT32/vfat partitions (potential ESPs) using lsblk."""
+    try:
+        result = subprocess.run(
+            ["lsblk", "-nrpo", "NAME,FSTYPE"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        partitions = []
+        for line in result.stdout.strip().split("\n"):
+            parts = line.split()
+            if len(parts) >= 2 and parts[1] == "vfat":
+                partitions.append(parts[0])
+        log.debug("Found vfat partitions: %s", partitions)
+        return partitions
+    except Exception as e:
+        log.debug("Failed to find vfat partitions: %s", e)
+        return []
+
+
+def _check_esp_config() -> dict | None:
+    """Mount each vfat (ESP) partition and look for install-config.json."""
+    for dev in _find_vfat_partitions():
+        mp = tempfile.mkdtemp(prefix="akash-esp-")
+        try:
+            subprocess.run(
+                ["mount", "-t", "vfat", "-o", "ro", dev, mp],
+                check=True,
+                capture_output=True,
+            )
+            config_file = os.path.join(mp, ESP_CONFIG_PATH)
+            if os.path.exists(config_file):
+                with open(config_file) as f:
+                    config = json.load(f)
+                log.info("Loaded config from ESP %s (%s)", dev, config_file)
+                return config
+            else:
+                log.debug("Config not found on ESP %s", dev)
+        except subprocess.CalledProcessError as e:
+            log.debug(
+                "Failed to mount ESP %s: %s",
+                dev,
+                e.stderr.decode() if e.stderr else str(e),
+            )
+        except json.JSONDecodeError as e:
+            log.warning("Invalid JSON in ESP config on %s: %s", dev, e)
+        except Exception as e:
+            log.debug("Failed to read ESP %s: %s", dev, e)
+        finally:
+            try:
+                subprocess.run(["umount", mp], capture_output=True)
+            except Exception:
+                pass
+            try:
+                os.rmdir(mp)
+            except Exception:
+                pass
+    return None
 
 
 def _find_ntfs_partitions() -> list[str]:
