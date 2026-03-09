@@ -2405,45 +2405,23 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         When booted via GRUB loopback from an NTFS partition, the ISO is
         on loop0 and the entire live system (casper, squashfs, snaps) runs
         from it.  This loop device CANNOT be unmounted or detached — any
-        attempt to umount, losetup -D, or global sync will block forever
-        because the live filesystem holds references to it.
+        attempt to umount, losetup -D, or sync will block forever because
+        the live filesystem holds references to it.
 
-        Strategy:
-        1. Flush only the target filesystem (sync -f /target) so all data
-           written by curtin/late-commands is persisted to the real disk.
-           This uses syncfs() which syncs only that filesystem, NOT the
-           loop device.
-        2. Unmount /target so the filesystem is clean.
-        3. sysrq 'b' for immediate kernel reboot.
+        The only safe approach is to skip ALL cleanup and do an immediate
+        hard reboot via sysrq.  This is safe because:
+        - curtin has already finished writing to /target
+        - /target has already been unmounted by _pre_shutdown()
+        - The loop device is read-only (ISO), so no data loss
+        - The NTFS partition with the ISO doesn't need syncing
 
         This function never returns — the reboot happens here.
         """
-        log.debug("Windows loopback boot: syncing target and forcing "
-                   "immediate hard reboot")
+        log.debug("Windows loopback boot: forcing immediate hard reboot "
+                   "(skipping all cleanup — loop0 cannot be unmounted)")
 
-        # Flush the target filesystem to disk.  'sync -f' calls syncfs()
-        # which only syncs the filesystem containing the given path — it
-        # will NOT block on the loop device.  This ensures all data written
-        # by curtin and late-commands (including downloaded scripts) is
-        # persisted before the hard reboot.
-        try:
-            subprocess.run(
-                ["sync", "-f", "/target"],
-                timeout=30, capture_output=True)
-        except Exception:
-            log.debug("sync -f /target failed (may already be unmounted)")
-
-        # Try to unmount /target cleanly now that it's synced.
-        try:
-            subprocess.run(
-                ["umount", "--recursive", "/target"],
-                timeout=10, capture_output=True)
-        except Exception:
-            log.debug("umount /target failed (non-critical)")
-
-        # sysrq 'b' = immediate kernel reboot.  No further sync, no
-        # shutdown sequence.  Cannot be blocked by stuck I/O.
-        log.debug("Triggering sysrq reboot")
+        # sysrq 'b' = immediate kernel reboot.  No sync, no unmount,
+        # no shutdown sequence.  Cannot be blocked by stuck I/O.
         try:
             pathlib.Path("/proc/sys/kernel/sysrq").write_text("1")
             pathlib.Path("/proc/sysrq-trigger").write_text("b")
