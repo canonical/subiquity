@@ -16,6 +16,7 @@
 import asyncio
 import logging
 import os
+import pathlib
 import subprocess
 
 from subiquity.common.apidef import API
@@ -29,6 +30,20 @@ from subiquitycore.context import with_context
 from subiquitycore.file_util import open_perms, set_log_perms
 
 log = logging.getLogger("subiquity.server.controllers.shutdown")
+
+
+async def _run_direct(cmd, **kwargs):
+    """Run a command directly (no systemd-run wrapper).
+
+    Used on Windows loopback boot where systemd-run --wait deadlocks
+    due to loop device I/O issues.
+    """
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdin=subprocess.DEVNULL,
+        **kwargs,
+    )
+    await proc.communicate()
 
 
 class ShutdownController(SubiquityController):
@@ -71,8 +86,81 @@ class ShutdownController(SubiquityController):
     async def _wait_install(self):
         await self.app.controllers.Install.install_task
         await self.app.controllers.Late.run_event.wait()
-        await self.copy_logs_to_target()
+        if self._is_windows_loopback_boot():
+            # On Windows loopback boot, copy_logs_to_target() hangs because
+            # command_runner wraps every command in systemd-run --wait, which
+            # deadlocks due to loop device I/O issues.  Use direct subprocess
+            # calls instead so the logs still get copied, then let the normal
+            # shutdown path proceed to _pre_shutdown() which does sysrq-b.
+            log.debug("Windows loopback boot: copying logs without "
+                       "systemd-run")
+            await self._copy_logs_to_target_direct()
+        else:
+            await self.copy_logs_to_target()
         self.server_reboot_event.set()
+
+    @staticmethod
+    def _is_windows_loopback_boot():
+        """Check if we booted via the Windows installer's GRUB loopback."""
+        try:
+            cmdline = pathlib.Path("/proc/cmdline").read_text()
+            return "akash.from-windows" in cmdline
+        except Exception:
+            return False
+
+    async def _copy_logs_to_target_direct(self):
+        """Copy installer logs to /target without systemd-run.
+
+        On Windows loopback boot the normal copy_logs_to_target() deadlocks
+        because command_runner wraps commands in systemd-run --wait.  This
+        method runs the same cp/rsync/journalctl commands directly via
+        subprocess with timeouts so the logs are preserved and the shutdown
+        pipeline can proceed to _pre_shutdown() (which triggers sysrq-b).
+        """
+        if self.app.controllers.Filesystem.reset_partition_only:
+            return
+        target_logs = os.path.join(
+            self.app.base_model.target, "var/log/installer")
+        try:
+            os.makedirs(target_logs, exist_ok=True)
+        except Exception:
+            log.exception("failed to create target log dir")
+            return
+
+        # Copy cloud-init logs
+        for logfile in ("/var/log/cloud-init.log",
+                        "/var/log/cloud-init-output.log"):
+            if os.path.exists(logfile):
+                try:
+                    set_log_perms(logfile)
+                    await asyncio.wait_for(
+                        _run_direct(["cp", "-a", logfile,
+                                     "/var/log/installer"]),
+                        timeout=30)
+                except Exception:
+                    log.debug("direct cp %s failed", logfile)
+
+        # rsync installer logs
+        try:
+            await asyncio.wait_for(
+                _run_direct(["rsync", "-a", "/var/log/installer/",
+                             target_logs]),
+                timeout=60)
+            set_log_perms(target_logs, mode=0o770, group="adm")
+        except Exception:
+            log.debug("direct rsync to target failed")
+
+        # Save journal
+        journal_txt = os.path.join(target_logs, "installer-journal.txt")
+        try:
+            with open_perms(journal_txt) as output:
+                await asyncio.wait_for(
+                    _run_direct(["journalctl", "-b"],
+                                stdout=output,
+                                stderr=subprocess.STDOUT),
+                    timeout=30)
+        except Exception:
+            log.debug("direct journalctl save failed")
 
     async def _run(self):
         await self.server_reboot_event.wait()
