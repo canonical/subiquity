@@ -172,20 +172,51 @@ class NetworkController(BaseNetworkController, SubiquityController):
 
                 config = read_windows_config()
                 if config and config.get("network"):
-                    netplan_config = self._build_netplan_from_installer_config(
-                        config["network"]
-                    )
-                    if netplan_config:
-                        self.model.override_config = netplan_config
-                        self.apply_config(silent=True)
-                        log.info(
-                            "Pre-filled network config from Windows installer"
+                    net_config = config["network"]
+                    net_type = net_config.get("type", "ethernet")
+
+                    if net_type == "wifi":
+                        # For WiFi: store config and apply directly to the
+                        # device when it appears via new_link.  We must NOT
+                        # use override_config for WiFi because:
+                        #  - override replaces ALL network config (loses
+                        #    ethernet), and
+                        #  - the device's own config never gets WiFi
+                        #    access-points, so every apply_config sees a
+                        #    mismatch and downs wlp4s0, preventing
+                        #    wpa_supplicant from completing association.
+                        wifi_iface = self._find_wifi_interface()
+                        if wifi_iface:
+                            wifi_dev_config = (
+                                self._build_wifi_device_config(net_config)
+                            )
+                            if wifi_dev_config:
+                                self._pending_wifi_prefill = (
+                                    wifi_iface,
+                                    wifi_dev_config,
+                                )
+                                log.info(
+                                    "WiFi pre-fill stored for %s, "
+                                    "will apply when device appears",
+                                    wifi_iface,
+                                )
+                    else:
+                        # Ethernet: override_config works fine (wired
+                        # reconnects instantly after interface downing).
+                        netplan_config = (
+                            self._build_netplan_from_installer_config(
+                                net_config
+                            )
                         )
-                        # Do NOT unset override for WiFi pre-fill.
-                        # WiFi association + DHCP takes several seconds.
-                        # If the override is cleared before WiFi connects,
-                        # a subsequent apply_config writes netplan without
-                        # WiFi config, killing wpa_supplicant.
+                        if netplan_config:
+                            self.model.override_config = netplan_config
+                            self.apply_config(silent=True)
+                            log.info(
+                                "Pre-filled ethernet config from "
+                                "Windows installer"
+                            )
+                            if self.interactive():
+                                schedule_task(self.unset_override_config())
             except Exception as e:
                 log.debug("Could not read Windows installer config: %s", e)
 
@@ -292,6 +323,43 @@ class NetworkController(BaseNetworkController, SubiquityController):
         except Exception as e:
             log.debug("Failed to find WiFi interface: %s", e)
         return None
+
+    def _build_wifi_device_config(self, net_config) -> dict | None:
+        """Build a device-level WiFi config dict for direct assignment.
+
+        Returns a config suitable for dev.config (not wrapped in netplan
+        network/wifis structure).
+        """
+        try:
+            ssid = net_config.get("ssid", "")
+            password = net_config.get("password", "")
+            if not ssid:
+                return None
+
+            wifi_config = {
+                "access-points": {ssid: {"password": password}},
+            }
+
+            ip_config = net_config.get("ip_config", "dhcp")
+            if ip_config == "dhcp":
+                wifi_config["dhcp4"] = True
+            elif ip_config == "static":
+                static_ip = net_config.get("static_ip", "")
+                subnet = net_config.get("subnet", "24")
+                gateway = net_config.get("gateway", "")
+                dns = net_config.get("dns", "")
+                wifi_config["addresses"] = [f"{static_ip}/{subnet}"]
+                if gateway:
+                    wifi_config["routes"] = [
+                        {"to": "default", "via": gateway}
+                    ]
+                if dns:
+                    wifi_config["nameservers"] = {"addresses": [dns]}
+
+            return wifi_config
+        except Exception as e:
+            log.warning("Failed to build WiFi device config: %s", e)
+            return None
 
     async def unset_override_config(self):
         await self.apply_config_task.wait()
@@ -473,6 +541,24 @@ class NetworkController(BaseNetworkController, SubiquityController):
         super().new_link(dev)
         if dev.type == "wlan":
             self.maybe_start_install_wpasupplicant()
+            # Apply pending WiFi pre-fill from Windows installer config.
+            # Setting dev.config directly (instead of override_config)
+            # ensures the device config matches what render_config writes
+            # to netplan, so _apply_config won't repeatedly down the
+            # interface due to a config mismatch.
+            pending = getattr(self, "_pending_wifi_prefill", None)
+            if pending is not None:
+                iface_name, wifi_config = pending
+                if dev.name == iface_name:
+                    dev.config = wifi_config.copy()
+                    if not dev.config.get("dhcp6"):
+                        dev.config["dhcp6"] = True
+                    log.info(
+                        "Applied WiFi pre-fill config to device %s",
+                        dev.name,
+                    )
+                    self._pending_wifi_prefill = None
+                    self.apply_config(silent=True)
             state = self.wlan_support_install_state()
             if state == PackageInstallState.INSTALLING:
                 self.pending_wlan_devices.add(dev)
