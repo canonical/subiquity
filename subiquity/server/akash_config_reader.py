@@ -49,7 +49,24 @@ def read_windows_config() -> dict | None:
     except Exception:
         return None
 
-    log.info("akash.auto-config detected, searching for install config on NTFS partitions")
+    log.info("akash.auto-config detected, searching for install config")
+
+    # Phase 0: Check /tmp/install-config.json (placed by early-commands when
+    # booting from the Windows installer).  The NTFS partition is locked by
+    # casper's ISO loop device, so the config is read from the ESP by an
+    # early-command and copied here.  Standalone ISO boots skip this path.
+    esp_config = "/tmp/install-config.json"
+    try:
+        if os.path.exists(esp_config):
+            with open(esp_config) as f:
+                config = json.load(f)
+            log.info("Loaded config from %s (ESP early-command)", esp_config)
+            _cached_config = config
+            return config
+    except json.JSONDecodeError as e:
+        log.warning("Invalid JSON in %s: %s", esp_config, e)
+    except Exception as e:
+        log.debug("Failed to read %s: %s", esp_config, e)
 
     # Phase 1: Check NTFS partitions that are already mounted (e.g. by casper
     # iso-scan).  When booting via iso-scan/filename, casper mounts the NTFS
