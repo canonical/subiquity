@@ -232,15 +232,17 @@ class NetworkController(BaseNetworkController, SubiquityController):
                     if dns:
                         wifi_config["nameservers"] = {"addresses": [dns]}
 
+                # networkd backend doesn't support match: for wifi,
+                # must use the actual interface name.
+                wifi_iface = self._find_wifi_interface()
+                if not wifi_iface:
+                    log.warning("No WiFi interface found on system")
+                    return None
+
                 return {
                     "network": {
                         "version": 2,
-                        "wifis": {
-                            "any-wifi": {
-                                "match": {"name": "wl*"},
-                                **wifi_config,
-                            }
-                        },
+                        "wifis": {wifi_iface: wifi_config},
                     }
                 }
             else:
@@ -276,6 +278,17 @@ class NetworkController(BaseNetworkController, SubiquityController):
         except Exception as e:
             log.warning("Failed to build netplan from installer config: %s", e)
             return None
+
+    def _find_wifi_interface(self) -> str | None:
+        """Find the first wireless interface name from /sys/class/net/."""
+        try:
+            for iface in sorted(os.listdir("/sys/class/net/")):
+                if os.path.isdir(f"/sys/class/net/{iface}/wireless"):
+                    log.debug("Found WiFi interface: %s", iface)
+                    return iface
+        except Exception as e:
+            log.debug("Failed to find WiFi interface: %s", e)
+        return None
 
     async def unset_override_config(self):
         await self.apply_config_task.wait()
