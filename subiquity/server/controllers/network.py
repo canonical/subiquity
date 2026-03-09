@@ -181,8 +181,11 @@ class NetworkController(BaseNetworkController, SubiquityController):
                         log.info(
                             "Pre-filled network config from Windows installer"
                         )
-                        if self.interactive():
-                            schedule_task(self.unset_override_config())
+                        # Do NOT unset override for WiFi pre-fill.
+                        # WiFi association + DHCP takes several seconds.
+                        # If the override is cleared before WiFi connects,
+                        # a subsequent apply_config writes netplan without
+                        # WiFi config, killing wpa_supplicant.
             except Exception as e:
                 log.debug("Could not read Windows installer config: %s", e)
 
