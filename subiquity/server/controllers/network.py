@@ -235,7 +235,12 @@ class NetworkController(BaseNetworkController, SubiquityController):
                 return {
                     "network": {
                         "version": 2,
-                        "wifis": {"wlan0": wifi_config},
+                        "wifis": {
+                            "any-wifi": {
+                                "match": {"name": "wl*"},
+                                **wifi_config,
+                            }
+                        },
                     }
                 }
             else:
