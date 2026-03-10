@@ -376,6 +376,18 @@ class BaseNetworkController(BaseController):
                         ],
                         check=True,
                     )
+                # Always ensure networkd is unmasked — a cancelled apply may
+                # have left it masked if CancelledError hit between mask/unmask.
+                await arun_command(
+                    [
+                        "systemctl",
+                        "unmask",
+                        "--runtime",
+                        "systemd-networkd.service",
+                        "systemd-networkd.socket",
+                    ],
+                    check=False,
+                )
                 env = orig_environ(None)
                 try:
                     await arun_command(["netplan", "apply"], env=env, check=True)
