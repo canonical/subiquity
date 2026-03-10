@@ -135,6 +135,12 @@ class NetworkController(BaseNetworkController, SubiquityController):
         if r == PackageInstallState.DONE:
             for dev in self.pending_wlan_devices:
                 self._send_update(LinkAction.NEW, dev)
+            if getattr(self, "_deferred_wifi_apply", False):
+                self._deferred_wifi_apply = False
+                log.info(
+                    "wpa_supplicant installed, applying deferred WiFi config"
+                )
+                self.apply_config(silent=True)
         self.pending_wlan_devices = set()
         return r
 
@@ -558,7 +564,15 @@ class NetworkController(BaseNetworkController, SubiquityController):
                         dev.name,
                     )
                     self._pending_wifi_prefill = None
-                    self.apply_config(silent=True)
+                    state = self.wlan_support_install_state()
+                    if state == PackageInstallState.DONE:
+                        self.apply_config(silent=True)
+                    else:
+                        log.info(
+                            "Deferring WiFi apply — "
+                            "wpa_supplicant not yet installed"
+                        )
+                        self._deferred_wifi_apply = True
             state = self.wlan_support_install_state()
             if state == PackageInstallState.INSTALLING:
                 self.pending_wlan_devices.add(dev)
