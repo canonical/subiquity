@@ -1722,14 +1722,31 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 raise StorageInvalidUsageError(
                     "edit_partition does not support changing partition name"
                 )
-        spec: PartitionSpec = {"mount": data.partition.mount or partition.mount}
+        spec: PartitionSpec = {}
+
+        # Handle mounts
+        if data.partition.mount is None:
+            # Preserve the existing mount.
+            spec["mount"] = partition.mount
+        elif data.partition.mount == "":
+            # Make this partition unmounted
+            spec["mount"] = None
+        else:
+            spec["mount"] = data.partition.mount
+
+        # Handle filesystem format
         if data.partition.format is not None:
             if data.partition.format != partition.original_fstype():
-                if data.partition.wipe is None:
+                if data.partition.wipe is None and partition.preserve:
                     raise StorageInvalidUsageError(
-                        "changing partition format requires a wipe value"
+                        "changing format of an existing partition requires a wipe value"
                     )
-            spec["fstype"] = data.partition.format
+            if data.partition.format == "":
+                # Making this partition unformatted
+                spec["fstype"] = None
+            else:
+                spec["fstype"] = data.partition.format
+
         if data.partition.size is not None:
             spec["size"] = data.partition.size
         spec["wipe"] = data.partition.wipe

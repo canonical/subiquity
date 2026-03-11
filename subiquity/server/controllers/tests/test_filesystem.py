@@ -886,6 +886,74 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertTrue(self.fsc.locked_probe_data)
         handler.assert_not_called()
 
+    @parameterized.expand(((None,), ("/test",)))
+    async def test_v2_edit_partition_POST_preserve_mount(self, mount):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk()
+        data = ModifyPartitionV2(
+            disk_id=d.id,
+            partition=Partition(number=1, mount=mount),
+        )
+
+        existing = make_partition(
+            self.fsc.model,
+            d,
+            size=1000 << 20,
+        )
+        self.fsc.model.add_mount(
+            self.fsc.model.add_filesystem(existing, "ext4"), "/test"
+        )
+        with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
+            with mock.patch.object(self.fsc, "get_partition", return_value=existing):
+                await self.fsc.v2_edit_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        handler.assert_called_once()
+        self.assertEqual("/test", handler.mock_calls[0].args[1]["mount"])
+
+    async def test_v2_edit_partition_POST_remove_mountpoint(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk()
+        data = ModifyPartitionV2(
+            disk_id=d.id,
+            partition=Partition(number=1, mount=""),
+        )
+
+        existing = make_partition(
+            self.fsc.model,
+            d,
+            size=1000 << 20,
+        )
+        self.fsc.model.add_mount(
+            self.fsc.model.add_filesystem(existing, "ext4"), "/test"
+        )
+        with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
+            with mock.patch.object(self.fsc, "get_partition", return_value=existing):
+                await self.fsc.v2_edit_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        handler.assert_called_once()
+        self.assertIsNone(handler.mock_calls[0].args[1]["mount"])
+
+    async def test_v2_edit_partition_POST_remove_fs(self):
+        self.fsc.locked_probe_data = False
+        self.fsc.model, d = make_model_and_disk()
+        data = ModifyPartitionV2(
+            disk_id=d.id,
+            partition=Partition(number=1, format=""),
+        )
+
+        existing = make_partition(
+            self.fsc.model,
+            d,
+            size=1000 << 20,
+        )
+        self.fsc.model.add_filesystem(existing, "ext4")
+        with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
+            with mock.patch.object(self.fsc, "get_partition", return_value=existing):
+                await self.fsc.v2_edit_partition_POST(data)
+        self.assertTrue(self.fsc.locked_probe_data)
+        handler.assert_called_once()
+        self.assertIsNone(handler.mock_calls[0].args[1]["fstype"])
+
     async def test_v2_edit_partition_POST(self):
         self.fsc.locked_probe_data = False
         self.fsc.model, d = make_model_and_disk()
