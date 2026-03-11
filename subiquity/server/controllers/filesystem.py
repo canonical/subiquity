@@ -1741,7 +1741,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     raise StorageInvalidUsageError(
                         "changing format of an existing partition requires a wipe value"
                     )
-            spec["fstype"] = data.partition.format
+            if data.partition.format == "":
+                # Making this partition unformatted
+                spec["fstype"] = None
+            else:
+                spec["fstype"] = data.partition.format
 
         if data.partition.size is not None:
             spec["size"] = data.partition.size
