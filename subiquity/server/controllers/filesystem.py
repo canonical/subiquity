@@ -1371,12 +1371,24 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise ValueError("edit_partition does not support changing size")
         if data.partition.boot is not None and data.partition.boot != partition.boot:
             raise ValueError("edit_partition does not support changing boot")
-        spec = {"mount": data.partition.mount or partition.mount}
+        spec = {}
+        # Handle mounts
+        if data.partition.mount is None:
+            # Preserve the existing mount.
+            spec["mount"] = partition.mount
+        elif data.partition.mount == "":
+            # Make this partition unmounted
+            spec["mount"] = None
+        else:
+            spec["mount"] = data.partition.mount
+
+        # Handle filesystem format
         if data.partition.format is not None:
             if data.partition.format != partition.original_fstype():
                 if data.partition.wipe is None:
                     raise ValueError("changing partition format requires a wipe value")
             spec["fstype"] = data.partition.format
+
         if data.partition.size is not None:
             spec["size"] = data.partition.size
         spec["wipe"] = data.partition.wipe
