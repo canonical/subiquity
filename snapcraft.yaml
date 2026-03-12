@@ -131,6 +131,7 @@ parts:
       - lsb-release
       - ntfs-3g
       - python3-aiohttp
+      - python3-aiohttp-apispec
       - python3-apport
       - python3-attr
       - python3-bson

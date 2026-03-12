@@ -200,6 +200,9 @@ def _make_handler(
 
     handler.controller = controller
 
+    if hasattr(definition, "__apispec__"):
+        handler.__apispec__ = definition.__apispec__
+
     return handler
 
 
