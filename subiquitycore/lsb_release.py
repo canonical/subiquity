@@ -15,7 +15,7 @@ def lsb_release_from_path(path: str) -> Dict[str, str]:
         return ret
 
     for tok in shlex.split(content):
-        k, _, v = tok.partition("=")
+        k, sep, v = tok.partition("=")
         if not k.startswith("DISTRIB_") or not v:
             continue
         ret[k.replace("DISTRIB_", "").lower()] = v
