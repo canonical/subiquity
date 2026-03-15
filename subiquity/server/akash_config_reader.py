@@ -71,7 +71,11 @@ def read_windows_config() -> dict | None:
         except Exception as e:
             log.debug("Failed to read from existing mount %s: %s", mp, e)
 
-    # Phase 2: Try mounting NTFS partitions that are NOT already mounted
+    # Phase 2: Try mounting NTFS partitions that are NOT already mounted.
+    # casper's iso-scan may unmount the NTFS partition after loop-mounting
+    # the ISO, so we need to mount it ourselves.  Use auto-detect (no -t)
+    # because the kernel ntfs3 module may not be available in the live
+    # environment — ntfs-3g (FUSE, reported as fuseblk) is the fallback.
     mounted_devs = set(already_mounted.keys())
     for dev in _find_ntfs_partitions():
         if dev in mounted_devs:
@@ -79,7 +83,7 @@ def read_windows_config() -> dict | None:
         mp = tempfile.mkdtemp(prefix="akash-ntfs-")
         try:
             subprocess.run(
-                ["mount", "-t", "ntfs3", "-o", "ro", dev, mp],
+                ["mount", "-o", "ro", dev, mp],
                 check=True,
                 capture_output=True,
             )
