@@ -560,5 +560,5 @@ class TestInstallControllerDriverMatch(unittest.TestCase):
     )
     def test_kernel_components(self, comps, drivers, expected):
         self.ic.app.controllers.Filesystem._info.available_kernel_components = comps
-        self.ic.app.controllers.Drivers.drivers = drivers
+        self.ic.model.drivers.deb_drivers = drivers
         self.assertEqual(expected, self.ic.kernel_components())

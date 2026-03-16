@@ -19,4 +19,10 @@ log = logging.getLogger("subiquity.models.drivers")
 
 
 class DriversModel:
-    do_install = False
+    def __init__(self):
+        self.do_install = False
+
+        # Drivers that have been offered by ubuntu-drivers.
+        # None means that the list has not (yet) been retrieved whereas an
+        # empty list means that no drivers are available.
+        self.deb_drivers: list[str] | None = None

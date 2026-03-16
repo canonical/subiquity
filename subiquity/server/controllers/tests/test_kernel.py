@@ -179,7 +179,7 @@ class TestMetapackageSelection(SubiTestCase):
         else:
             drivers = ["something-else"]
         self.app.controllers.Drivers.model.do_install = scenario.drivers_do_install
-        self.app.controllers.Drivers.drivers = drivers
+        self.app.controllers.Drivers.model.deb_drivers = drivers
         await self.app.hub.abroadcast(InstallerChannels.DRIVERS_DECIDED)
 
         if scenario.use_bridge:

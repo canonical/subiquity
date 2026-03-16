@@ -702,7 +702,7 @@ class InstallController(SubiquityController):
 
         # Any variation of server and open driver is deliberately mapped to
         # what we have.
-        for driver in sorted(self.app.controllers.Drivers.drivers, reverse=True):
+        for driver in sorted(self.model.drivers.deb_drivers, reverse=True):
             m = re.fullmatch("nvidia-driver-([0-9]+)(-server)?(-open)?", driver)
             if not m:
                 continue
