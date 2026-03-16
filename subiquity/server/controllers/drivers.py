@@ -140,9 +140,20 @@ class DriversController(SubiquityController):
         if search_drivers is SEARCH_DRIVERS_AUTOINSTALL_DEFAULT:
             search_drivers = True
 
+        fs_ctrler = self.app.controllers.Filesystem
+        if self.model.deb_drivers and fs_ctrler.use_snapd_install_api():
+            # Having deb-drivers implies that the storage model is configured
+            # (otherwise, we'd still be waiting) so we can access the
+            # variation info (if TPM/FDE).
+            drivers = self.model.matching_kernel_components(
+                fs_ctrler._info.available_kernel_components
+            )
+        else:
+            drivers = self.model.deb_drivers
+
         return DriversResponse(
             install=self.model.do_install,
-            drivers=self.model.deb_drivers,
+            drivers=drivers,
             local_only=local_only,
             search_drivers=search_drivers,
         )
