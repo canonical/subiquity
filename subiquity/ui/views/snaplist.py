@@ -15,6 +15,7 @@
 
 import asyncio
 import datetime
+import functools
 import logging
 from typing import Tuple
 
@@ -122,12 +123,18 @@ class SnapInfoView(WidgetWrap):
                 channel=csi.channel_name,
                 classic=csi.confinement == "classic",
             )
+            # TODO Revert to using RadioButton's user_data parameter instead
+            # of partial after we move to core26.
+            # In urwid < 3.0.4 user_data is passed to the callback as the
+            # last argument. In urwid >= 3.0.4, it is passed as the first
+            # argument. See LP: #2144555
             btn = StarRadioButton(
                 radio_group,
                 csi.channel_name,
                 state=csi.channel_name == cur_channel,
-                on_state_change=self.state_change,
-                user_data=selection,
+                on_state_change=functools.partial(
+                    self.state_change, selection=selection
+                ),
             )
             channel_rows.append(
                 Color.menu_button(
