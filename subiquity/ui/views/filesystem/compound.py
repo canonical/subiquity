@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import functools
 import logging
 
 from urwid import CheckBox
@@ -144,8 +145,16 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
                     prefix = "      "
                 else:
                     raise Exception("unexpected kind {}".format(kind))
+                # TODO Revert to using CheckBox's user_data parameter instead
+                # of partial after we move to core26.
+                # In urwid < 3.0.4 user_data is passed to the callback as the
+                # last argument. In urwid >= 3.0.4, it is passed as the first
+                # argument. See LP: #2144555
                 box = CheckBox(
-                    label, on_state_change=self._state_change_device, user_data=device
+                    label,
+                    on_state_change=functools.partial(
+                        self._state_change_device, device=device
+                    ),
                 )
                 self.device_to_checkbox[device] = box
                 size = Text(humanize_size(device.size), align="right")
