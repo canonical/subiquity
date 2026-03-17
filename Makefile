@@ -11,7 +11,7 @@ DRYRUN?=--dry-run --bootloader uefi --machine-config examples/machines/simple.js
 	--postinst-hooks-dir examples/postinst.d/
 UNITTESTARGS?=
 COVERAGEARGS:=--cov=subiquity --cov=subiquitycore --cov=console_conf
-COVERAGEARGS+=--cov-report xml:.coverage/cobertura.xml
+COVERAGEARGS+=--cov-report xml:.coverage.xml
 export PYTHONPATH
 CWD := $(shell pwd)
 
