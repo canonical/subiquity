@@ -773,9 +773,14 @@ class InstallController(SubiquityController):
                 context=context, kernel_components=self.kernel_components()
             )
             await fs_controller.snapd_target_preseed(Path(self.model.target))
-
         if self.supports_apt():
-            if self.model.drivers.do_install:
+            # Don't run ubuntu-drivers install for TPM/FDE.
+            # The list of offered drivers is already used to extrapolate a list
+            # of kernel components.
+            if (
+                self.model.drivers.do_install
+                and not fs_controller.use_snapd_install_api()
+            ):
                 with context.child(
                     "ubuntu-drivers-install", "installing third-party drivers"
                 ) as child:
