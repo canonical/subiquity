@@ -1876,7 +1876,10 @@ class TestCancel(TestAPI):
 
                 # should not raise ServerDisconnectedError
                 resp = await inst.get("/drivers", wait=True)
-                self.assertEqual(["nvidia-driver-470-server"], resp["drivers"])
+                self.assertEqual(
+                    [{"type": "DEB", "name": "nvidia-driver-470-server"}],
+                    resp["drivers"],
+                )
 
 
 class TestDrivers(TestAPI):
@@ -1917,22 +1920,30 @@ class TestDrivers(TestAPI):
                 await inst.get("/meta/status", cur="NEEDS_CONFIRMATION")
 
                 resp = await inst.get("/drivers", wait=True)
-                self.assertEqual(expected_drivers, set(resp["drivers"]))
+                self.assertEqual(expected_drivers, resp["drivers"])
 
     @timeout()
     async def test_server_source(self):
-        await self._test_source("ubuntu-server-minimal", {"nvidia-driver-470-server"})
+        await self._test_source(
+            "ubuntu-server-minimal",
+            [{"type": "DEB", "name": "nvidia-driver-470-server"}],
+        )
 
     @timeout()
     async def test_desktop_source(self):
-        await self._test_source("ubuntu-desktop", {"nvidia-driver-510"})
+        await self._test_source(
+            "ubuntu-desktop", [{"type": "DEB", "name": "nvidia-driver-510"}]
+        )
 
     @timeout()
     async def test_desktop_tpmfde_source(self):
         # We should get kernel components instead of deb drivers.
         await self._test_source(
             "src-components",
-            {"nvidia-510-uda-user", "nvidia-510-uda-ko"},
+            [
+                {"type": "KERNEL_COMPONENT", "name": "nvidia-510-uda-ko"},
+                {"type": "KERNEL_COMPONENT", "name": "nvidia-510-uda-user"},
+            ],
             catalog="examples/sources/tpm.yaml",
             capability="CORE_BOOT_PREFER_ENCRYPTED",
         )

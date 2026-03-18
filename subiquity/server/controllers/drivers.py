@@ -18,7 +18,7 @@ import logging
 from typing import Optional
 
 from subiquity.common.apidef import API
-from subiquity.common.types import DriversPayload, DriversResponse
+from subiquity.common.types import Driver, DriversPayload, DriversResponse, DriverType
 from subiquity.server.apt import OverlayCleanupError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
@@ -145,12 +145,20 @@ class DriversController(SubiquityController):
             # Having deb-drivers implies that the storage model is configured
             # (otherwise, we'd still be waiting) so we can access the
             # variation info (if TPM/FDE).
-            drivers = self.model.matching_kernel_components(
-                fs_ctrler._info.available_kernel_components
-            )
+            drivers = [
+                Driver(type=DriverType.KERNEL_COMPONENT, name=name)
+                for name in self.model.matching_kernel_components(
+                    fs_ctrler._info.available_kernel_components
+                )
+            ]
         else:
-            drivers = self.model.deb_drivers
-
+            if self.model.deb_drivers is None:
+                drivers = None
+            else:
+                drivers = [
+                    Driver(type=DriverType.DEB, name=name)
+                    for name in self.model.deb_drivers
+                ]
         return DriversResponse(
             install=self.model.do_install,
             drivers=drivers,

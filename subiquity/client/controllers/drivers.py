@@ -35,14 +35,17 @@ class DriversController(SubiquityTuiController):
             await self.endpoint.POST(DriversPayload(install=False))
             raise Skip
 
-        return DriversView(
-            self, response.drivers, response.install, response.local_only
-        )
+        if response.drivers is None:
+            drivers = None
+        else:
+            drivers = [driver.name for driver in response.drivers]
+
+        return DriversView(self, drivers, response.install, response.local_only)
 
     async def _wait_drivers(self) -> List[str]:
         response: DriversResponse = await self.endpoint.GET(wait=True)
         assert response.drivers is not None
-        return response.drivers
+        return [driver.name for driver in response.drivers]
 
     async def run_answers(self):
         if "install" not in self.answers:
