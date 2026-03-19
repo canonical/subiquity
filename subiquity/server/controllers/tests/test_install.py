@@ -275,6 +275,34 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
             cfg = fp.read()
         self.assertIn("--fs-uuid fsuuid", cfg)
 
+    @parameterized.expand(
+        (
+            (False, False, False),
+            (True, False, False),
+            (False, True, False),
+            (True, True, True),
+        ),
+    )
+    def test_kernel_components(
+        self, supports_apt: bool, do_install: bool, expect_components: bool
+    ):
+        matching = ["nvidia-590-uda-ko", "nvidia-590-uda-user"]
+
+        ctrler = self.controller
+
+        p_supports_apt = patch.object(ctrler, "supports_apt", return_value=supports_apt)
+        p_do_install = patch.object(ctrler.model.drivers, "do_install", do_install)
+        p_matching_components = patch.object(
+            ctrler.model.drivers, "matching_kernel_components", return_value=matching
+        )
+
+        with p_supports_apt, p_do_install, p_matching_components:
+            if expect_components:
+                expected = matching
+            else:
+                expected = []
+            self.assertEqual(expected, ctrler.kernel_components())
+
     @patch("subiquity.server.controllers.install.run_curtin_command")
     @patch(
         "subiquity.server.controllers.install.get_users_and_groups",
@@ -448,117 +476,3 @@ linux /casper/vmlinuz layerfs-path=minimal.standard.live.squashfs nopersistent '
                 (d / ".disk/casper-uuid-generic").read_text().strip()
             )
             self.assertEqual(new_casper_uuid, casper_uuid_from_file)
-
-
-class TestInstallControllerDriverMatch(unittest.TestCase):
-    def setUp(self):
-        self.ic = InstallController(make_app())
-
-    @parameterized.expand(
-        (
-            # no components
-            ([], ["nvidia-driver-510"], []),
-            # no drivers detected
-            (["nvidia-510-uda-ko", "nvidia-510-uda-user"], [], []),
-            # missing user component
-            (["nvidia-510-uda-ko"], ["nvidia-driver-510"], []),
-            # missing ko component
-            (["nvidia-510-uda-user"], ["nvidia-driver-510"], []),
-            # mismatched component versions, nothing usable available
-            (
-                ["nvidia-2-uda-ko", "nvidia-1-uda-user"],
-                ["nvidia-driver-999"],
-                [],
-            ),
-            # match
-            (
-                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
-                ["nvidia-driver-510"],
-                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
-            ),
-            # match, open driver
-            (
-                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
-                ["nvidia-driver-510-open"],
-                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
-            ),
-            # match, server driver
-            (
-                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
-                ["nvidia-driver-510-server"],
-                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
-            ),
-            # match, open server driver
-            (
-                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
-                ["nvidia-driver-510-server-open"],
-                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
-            ),
-            # match, open server driver, erd
-            (
-                ["nvidia-510-erd-ko", "nvidia-510-erd-user"],
-                ["nvidia-driver-510-server-open"],
-                ["nvidia-510-erd-ko", "nvidia-510-erd-user"],
-            ),
-            # prefer "newer" based on a reversed sort
-            (
-                [
-                    "nvidia-1-uda-ko",
-                    "nvidia-1-uda-user",
-                    "nvidia-2-uda-ko",
-                    "nvidia-2-uda-user",
-                ],
-                ["nvidia-driver-1", "nvidia-driver-2"],
-                ["nvidia-2-uda-ko", "nvidia-2-uda-user"],
-            ),
-            (
-                [
-                    "nvidia-1-uda-ko",
-                    "nvidia-1-uda-user",
-                    "nvidia-2-uda-ko",
-                    "nvidia-2-uda-user",
-                ],
-                ["nvidia-driver-2", "nvidia-driver-1"],
-                ["nvidia-2-uda-ko", "nvidia-2-uda-user"],
-            ),
-            # wrong driver version
-            (
-                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
-                ["nvidia-driver-999"],
-                ["nvidia-510-uda-ko", "nvidia-510-uda-user"],
-            ),
-            # wrong driver version, erd
-            (
-                ["nvidia-510-erd-ko", "nvidia-510-erd-user"],
-                ["nvidia-driver-999"],
-                ["nvidia-510-erd-ko", "nvidia-510-erd-user"],
-            ),
-            # wrong driver version, use newer
-            (
-                [
-                    "nvidia-1-uda-ko",
-                    "nvidia-2-uda-user",
-                    "nvidia-2-uda-ko",
-                    "nvidia-1-uda-user",
-                ],
-                ["nvidia-driver-999"],
-                ["nvidia-2-uda-ko", "nvidia-2-uda-user"],
-            ),
-            # mismatched component versions, something usable available
-            (
-                ["nvidia-1-uda-ko", "nvidia-2-uda-ko", "nvidia-1-uda-user"],
-                ["nvidia-driver-999"],
-                ["nvidia-1-uda-ko", "nvidia-1-uda-user"],
-            ),
-            # branch mismatch
-            (
-                ["nvidia-1-uda-ko", "nvidia-1-erd-user"],
-                ["nvidia-driver-999"],
-                [],
-            ),
-        )
-    )
-    def test_kernel_components(self, comps, drivers, expected):
-        self.ic.app.controllers.Filesystem._info.available_kernel_components = comps
-        self.ic.app.controllers.Drivers.drivers = drivers
-        self.assertEqual(expected, self.ic.kernel_components())

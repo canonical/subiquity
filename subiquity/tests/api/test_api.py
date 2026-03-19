@@ -1876,14 +1876,24 @@ class TestCancel(TestAPI):
 
                 # should not raise ServerDisconnectedError
                 resp = await inst.get("/drivers", wait=True)
-                self.assertEqual(["nvidia-driver-470-server"], resp["drivers"])
+                self.assertEqual(
+                    [{"type": "DEB", "name": "nvidia-driver-470-server"}],
+                    resp["drivers"],
+                )
 
 
 class TestDrivers(TestAPI):
-    async def _test_source(self, source_id, expected_driver):
+    async def _test_source(
+        self,
+        source_id,
+        expected_drivers,
+        *,
+        catalog="examples/sources/mixed.yaml",
+        capability="DIRECT",
+    ):
         with patch.dict(os.environ, {"SUBIQUITY_DEBUG": "has-drivers"}):
             cfg = "examples/machines/simple.json"
-            extra = ["--source-catalog", "examples/sources/mixed.yaml"]
+            extra = ["--source-catalog", catalog, "--storage-version", "2"]
             async with start_server(cfg, extra_args=extra) as inst:
                 await inst.post("/source", source_id=source_id, search_drivers=True)
 
@@ -1894,23 +1904,49 @@ class TestDrivers(TestAPI):
                     "network",
                     "proxy",
                     "mirror",
-                    "storage",
                 ]
                 await inst.post("/meta/mark_configured", endpoint_names=names)
+                resp = await inst.get("/storage/v2/guided?wait=true")
+                [reformat] = match(resp["targets"], _type="GuidedStorageTargetReformat")
+                self.assertIn(capability, reformat["allowed"])
+                storage_data = {
+                    "target": reformat,
+                    "capability": capability,
+                }
+                await inst.post("/storage/v2/guided", storage_data)
+                await inst.post("/storage/v2")
                 await inst.get("/meta/status", cur="WAITING")
                 await inst.post("/meta/confirm", tty="/dev/tty1")
                 await inst.get("/meta/status", cur="NEEDS_CONFIRMATION")
 
                 resp = await inst.get("/drivers", wait=True)
-                self.assertEqual([expected_driver], resp["drivers"])
+                self.assertEqual(expected_drivers, resp["drivers"])
 
     @timeout()
     async def test_server_source(self):
-        await self._test_source("ubuntu-server-minimal", "nvidia-driver-470-server")
+        await self._test_source(
+            "ubuntu-server-minimal",
+            [{"type": "DEB", "name": "nvidia-driver-470-server"}],
+        )
 
     @timeout()
     async def test_desktop_source(self):
-        await self._test_source("ubuntu-desktop", "nvidia-driver-510")
+        await self._test_source(
+            "ubuntu-desktop", [{"type": "DEB", "name": "nvidia-driver-510"}]
+        )
+
+    @timeout()
+    async def test_desktop_tpmfde_source(self):
+        # We should get kernel components instead of deb drivers.
+        await self._test_source(
+            "src-components",
+            [
+                {"type": "KERNEL_COMPONENT", "name": "nvidia-510-uda-ko"},
+                {"type": "KERNEL_COMPONENT", "name": "nvidia-510-uda-user"},
+            ],
+            catalog="examples/sources/tpm.yaml",
+            capability="CORE_BOOT_PREFER_ENCRYPTED",
+        )
 
     @timeout()
     async def test_listing_ongoing(self):

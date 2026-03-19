@@ -344,6 +344,17 @@ class SnapInfo:
     channels: List[ChannelSnapInfo] = attr.Factory(list)
 
 
+class DriverType(enum.Enum):
+    DEB = enum.auto()
+    KERNEL_COMPONENT = enum.auto()
+
+
+@attr.s(auto_attribs=True)
+class Driver:
+    type: DriverType
+    name: str
+
+
 @attr.s(auto_attribs=True)
 class DriversResponse:
     """Response to GET request to drivers.
@@ -357,7 +368,7 @@ class DriversResponse:
     """
 
     install: bool
-    drivers: Optional[List[str]]
+    drivers: Optional[List[Driver]]
     local_only: bool
     search_drivers: bool
 

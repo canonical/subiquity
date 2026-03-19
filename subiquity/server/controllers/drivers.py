@@ -15,10 +15,10 @@
 
 import asyncio
 import logging
-from typing import List, Optional
+from typing import Optional
 
 from subiquity.common.apidef import API
-from subiquity.common.types import DriversPayload, DriversResponse
+from subiquity.common.types import Driver, DriversPayload, DriversResponse, DriverType
 from subiquity.server.apt import OverlayCleanupError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
@@ -55,10 +55,6 @@ class DriversController(SubiquityController):
         self.list_drivers_done_event = asyncio.Event()
         self.configured_event = asyncio.Event()
 
-        # None means that the list has not (yet) been retrieved whereas an
-        # empty list means that no drivers are available.
-        self.drivers: Optional[List[str]] = None
-
     def make_autoinstall(self):
         return {
             "install": self.model.do_install,
@@ -89,7 +85,7 @@ class DriversController(SubiquityController):
 
         self.ubuntu_drivers = get_ubuntu_drivers_interface(self.app)
 
-        self.drivers = None
+        self.model.deb_drivers = None
         self.list_drivers_done_event.clear()
         if self._list_drivers_task is not None:
             self._list_drivers_task.cancel()
@@ -106,7 +102,7 @@ class DriversController(SubiquityController):
         # source is already mounted so the user can't go back all the way to
         # the source screen to enable/disable the "search drivers" checkbox.
         if not self.app.controllers.Source.model.search_drivers:
-            self.drivers = []
+            self.model.deb_drivers = []
             self.list_drivers_done_event.set()
             return
         apt = self.app.controllers.Mirror.final_apt_configurer
@@ -116,19 +112,19 @@ class DriversController(SubiquityController):
                     # Make sure ubuntu-drivers is available.
                     await self.ubuntu_drivers.ensure_cmd_exists(d.mountpoint)
                 except CommandNotFoundError:
-                    self.drivers = []
+                    self.model.deb_drivers = []
                 else:
-                    self.drivers = await self.ubuntu_drivers.list_drivers(
+                    self.model.deb_drivers = await self.ubuntu_drivers.list_drivers(
                         root_dir=d.mountpoint, context=context
                     )
         except OverlayCleanupError:
             log.exception("Failed to cleanup overlay. Continuing anyway.")
         self.list_drivers_done_event.set()
-        log.debug("Available drivers to install: %s", self.drivers)
+        log.debug("Available drivers to install: %s", self.model.deb_drivers)
 
     async def _send_drivers_decided(self):
         await self.list_drivers_done_event.wait()
-        if self.drivers:
+        if self.model.deb_drivers:
             # If there are drivers, we need to wait until all
             # postinstall models are configured before we can be sure
             # if the user will change their mind or not.
@@ -144,9 +140,28 @@ class DriversController(SubiquityController):
         if search_drivers is SEARCH_DRIVERS_AUTOINSTALL_DEFAULT:
             search_drivers = True
 
+        fs_ctrler = self.app.controllers.Filesystem
+        if self.model.deb_drivers and fs_ctrler.use_snapd_install_api():
+            # Having deb-drivers implies that the storage model is configured
+            # (otherwise, we'd still be waiting) so we can access the
+            # variation info (if TPM/FDE).
+            drivers = [
+                Driver(type=DriverType.KERNEL_COMPONENT, name=name)
+                for name in self.model.matching_kernel_components(
+                    fs_ctrler._info.available_kernel_components
+                )
+            ]
+        else:
+            if self.model.deb_drivers is None:
+                drivers = None
+            else:
+                drivers = [
+                    Driver(type=DriverType.DEB, name=name)
+                    for name in self.model.deb_drivers
+                ]
         return DriversResponse(
             install=self.model.do_install,
-            drivers=self.drivers,
+            drivers=drivers,
             local_only=local_only,
             search_drivers=search_drivers,
         )

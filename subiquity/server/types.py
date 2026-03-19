@@ -52,7 +52,7 @@ class InstallerChannels(CoreChannels):
     #  b. which drivers ubuntu-drivers recommends for the system
     #  c. if the user has elected to install these drivers
     # Once this has been sent, it is safe to inspect
-    # app.controllers.Drivers.drivers to see which drivers will be
+    # app.models.Drivers.deb_drivers to see which drivers will be
     # installed.
     DRIVERS_DECIDED = "drivers-decided"
     # This message is sent when we know whether or not we need to

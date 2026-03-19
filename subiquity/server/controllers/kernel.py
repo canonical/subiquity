@@ -126,7 +126,9 @@ class KernelController(NonInteractiveController):
         self._maybe_set_bridge_kernel(
             BridgeKernelReason.DRIVERS,
             drivers_controller.model.do_install
-            and any("nvidia" in driver for driver in drivers_controller.drivers),
+            and any(
+                "nvidia" in driver for driver in drivers_controller.model.deb_drivers
+            ),
         )
 
     def load_autoinstall_data(self, data):
