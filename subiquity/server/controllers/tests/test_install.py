@@ -344,6 +344,7 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
                 ANY,
                 "--",
                 *expected_useradd,
+                runner=ANY,
                 private_mounts=False,
             ),
             call(
@@ -354,6 +355,7 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
                 ANY,
                 "--",
                 *expected_chpasswd,
+                runner=None,
                 private_mounts=False,
                 input=b"user:$6$xxx12345",
                 capture=True,

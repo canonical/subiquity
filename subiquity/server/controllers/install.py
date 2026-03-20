@@ -47,6 +47,7 @@ from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.filesystem import VariationInfo
 from subiquity.server.curtin import run_curtin_command
 from subiquity.server.mounter import Mounter, Mountpoint
+from subiquity.server.runner import get_redacted_command_runner
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import run_in_thread
 from subiquitycore.context import with_context
@@ -720,7 +721,12 @@ class InstallController(SubiquityController):
             default=get_users_and_groups(self.model.chroot_prefix)
         )
 
-        async def run_in_target(cmd: list[str], **kwargs):
+        async def run_in_target(cmd: list[str], redact: bool, **kwargs):
+            if redact:
+                runner = get_redacted_command_runner(self.app)
+            else:
+                # Use the default runner
+                runner = None
             await run_curtin_command(
                 self.app,
                 context,
@@ -729,6 +735,7 @@ class InstallController(SubiquityController):
                 self.tpath(),
                 "--",
                 *cmd,
+                runner=runner,
                 private_mounts=False,
                 **kwargs,
             )
@@ -749,10 +756,12 @@ class InstallController(SubiquityController):
                 "--groups",
                 ",".join(sorted(groups)),
                 "--create-home",
-            ]
+            ],
+            redact=True,
         )
         await run_in_target(
             ["chpasswd", "--encrypted"],
+            redact=False,
             input=f"{user.username}:{user.password}".encode("utf-8"),
             capture=True,
         )
