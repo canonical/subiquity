@@ -150,7 +150,7 @@ class AstartBackend:
         return await self.wait(proc, input=input)
 
 
-class CommandRunner:
+class Runner:
     def __init__(self, *, backend) -> None:
         self.backend = backend
         self.wrappers = []
@@ -175,7 +175,7 @@ class CommandRunner:
         return await self.backend.wait(proc, input=input)
 
 
-class LoggedCommandRunner(CommandRunner):
+class SystemdRunRunner(Runner):
     def __init__(self, ident, *, use_systemd_user: Optional[bool] = None) -> None:
         self.systemd_run_wrapper = SystemdRunWrapper(
             ident=ident,
@@ -219,7 +219,7 @@ class LoggedCommandRunner(CommandRunner):
         return await self.backend.run(wrapped, input=input, **backend_kwargs)
 
 
-class DryRunCommandRunner(LoggedCommandRunner):
+class DRSystemdRunRunner(SystemdRunRunner):
     def __init__(self, *args, delay, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.sleep_and_echo_wrapper = SleepAndEchoWrapper(delay_multiplier=delay)
@@ -228,6 +228,6 @@ class DryRunCommandRunner(LoggedCommandRunner):
 
 def get_command_runner(app):
     if app.opts.dry_run:
-        return DryRunCommandRunner(app.log_syslog_id, delay=2 / app.scale_factor)
+        return DRSystemdRunRunner(app.log_syslog_id, delay=2 / app.scale_factor)
     else:
-        return LoggedCommandRunner(app.log_syslog_id)
+        return SystemdRunRunner(app.log_syslog_id)

@@ -19,10 +19,10 @@ from unittest.mock import AsyncMock, Mock, patch
 
 from subiquity.server.runner import (
     AstartBackend,
-    CommandRunner,
-    DryRunCommandRunner,
-    LoggedCommandRunner,
+    DRSystemdRunRunner,
+    Runner,
     SleepAndEchoWrapper,
+    SystemdRunRunner,
     SystemdRunWrapper,
     _dollar_escape,
 )
@@ -292,14 +292,14 @@ class TestAstartBackend(SubiTestCase):
         m_wait.assert_called_once_with(proc_mock, input=None)
 
 
-class TestCommandRunner(SubiTestCase):
+class TestRunner(SubiTestCase):
     def test_init(self):
         backend = Mock()
-        runner = CommandRunner(backend=backend)
+        runner = Runner(backend=backend)
         self.assertIs(backend, runner.backend)
 
     def test_wrap_command(self):
-        runner = CommandRunner(backend=Mock())
+        runner = Runner(backend=Mock())
 
         wrapper1 = Mock(wrap=lambda x: ["timeout", "1"] + x)
         wrapper2 = Mock(wrap=lambda x: ["echo", "-n"] + x)
@@ -315,14 +315,14 @@ class TestCommandRunner(SubiTestCase):
         )
 
 
-class TestLoggedCommandRunner(SubiTestCase):
+class TestSystemdRunRunner(SubiTestCase):
     def test_init(self):
         with patch(
             "subiquity.server.runner.SystemdRunWrapper",
             return_value=None,
             autospec=True,
         ) as m_wrapper_init:
-            LoggedCommandRunner(ident="my-identifier")
+            SystemdRunRunner(ident="my-identifier")
         m_wrapper_init.assert_called_once_with(
             ident="my-identifier", use_systemd_user=None
         )
@@ -332,7 +332,7 @@ class TestLoggedCommandRunner(SubiTestCase):
             return_value=None,
             autospec=True,
         ) as m_wrapper_init:
-            LoggedCommandRunner(ident="my-identifier", use_systemd_user=True)
+            SystemdRunRunner(ident="my-identifier", use_systemd_user=True)
         m_wrapper_init.assert_called_once_with(
             ident="my-identifier", use_systemd_user=True
         )
@@ -342,13 +342,13 @@ class TestLoggedCommandRunner(SubiTestCase):
             return_value=None,
             autospec=True,
         ) as m_wrapper_init:
-            LoggedCommandRunner(ident="my-identifier", use_systemd_user=False)
+            SystemdRunRunner(ident="my-identifier", use_systemd_user=False)
         m_wrapper_init.assert_called_once_with(
             ident="my-identifier", use_systemd_user=False
         )
 
     async def test_start(self):
-        runner = LoggedCommandRunner(ident="my-id", use_systemd_user=False)
+        runner = SystemdRunRunner(ident="my-id", use_systemd_user=False)
 
         with patch.object(
             runner,
@@ -373,7 +373,7 @@ class TestLoggedCommandRunner(SubiTestCase):
         return ["faked"] + cmd
 
     async def test_run(self):
-        runner = LoggedCommandRunner(ident="my-id", use_systemd_user=False)
+        runner = SystemdRunRunner(ident="my-id", use_systemd_user=False)
 
         with patch.object(runner.backend, "run", autospec=True) as m_backend_run:
             with patch.object(runner.systemd_run_wrapper, "wrap", self._fake_wrap):
@@ -382,7 +382,7 @@ class TestLoggedCommandRunner(SubiTestCase):
         m_backend_run.assert_called_once_with(["faked", "/bin/cat"], input=b"Hi!")
 
     async def test_run__no_input(self):
-        runner = LoggedCommandRunner(ident="my-id", use_systemd_user=False)
+        runner = SystemdRunRunner(ident="my-id", use_systemd_user=False)
 
         def fake_wrap(cmd: list[str], **kwargs) -> list[str]:
             return ["faked"] + cmd
@@ -396,9 +396,9 @@ class TestLoggedCommandRunner(SubiTestCase):
         )
 
 
-class TestDryRunCommandRunner(SubiTestCase):
+class TestDRSystemdRunRunner(SubiTestCase):
     def setUp(self):
-        self.runner = DryRunCommandRunner(
+        self.runner = DRSystemdRunRunner(
             ident="my-identifier", delay=10, use_systemd_user=True
         )
 

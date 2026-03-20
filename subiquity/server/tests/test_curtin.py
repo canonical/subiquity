@@ -21,7 +21,7 @@ from subiquity.server.curtin import (
     _FailingDryRunCurtinCommand,
     start_curtin_command,
 )
-from subiquity.server.runner import LoggedCommandRunner
+from subiquity.server.runner import SystemdRunRunner
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized
 
@@ -32,7 +32,7 @@ class TestStartCurtinCommand(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
         self.app.debug_flags = ()
-        self.app.command_runner = mock.Mock(spec=LoggedCommandRunner)
+        self.app.command_runner = mock.Mock(spec=SystemdRunRunner)
 
     @parameterized.expand(
         (
