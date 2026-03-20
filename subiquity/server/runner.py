@@ -260,8 +260,27 @@ class DRSystemdRunRunner(SystemdRunRunner):
         self.wrappers = [self.sleep_and_echo_wrapper, self.systemd_run_wrapper]
 
 
+class RedactedRunner(Runner):
+    def __init__(self):
+        super().__init__(backend=RedactedAstartBackend())
+
+
+class DRRedactedRunner(RedactedRunner):
+    def __init__(self, *, delay: float) -> None:
+        super().__init__()
+        self.sleep_and_echo_wrapper = SleepAndEchoWrapper(delay_multiplier=delay)
+        self.wrappers = [self.sleep_and_echo_wrapper]
+
+
 def get_command_runner(app):
     if app.opts.dry_run:
         return DRSystemdRunRunner(app.log_syslog_id, delay=2 / app.scale_factor)
     else:
         return SystemdRunRunner(app.log_syslog_id)
+
+
+def get_redacted_command_runner(app):
+    if app.opts.dry_run:
+        return DRRedactedRunner(delay=2 / app.scale_factor)
+    else:
+        return RedactedRunner()
