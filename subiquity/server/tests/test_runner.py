@@ -331,24 +331,6 @@ class TestSystemdRunRunner(SubiTestCase):
             ident="my-identifier", use_systemd_user=False
         )
 
-    def test_wrap_command(self):
-        runner = SystemdRunRunner(ident="my-identifier")
-
-        with patch.object(runner.systemd_run_wrapper, "wrap", autospec=True) as m_wrap:
-            runner.wrap_command(
-                ["dpkg", "-i", "wpa-supplicant"],
-                private_mounts=False,
-                capture=True,
-                stdin=subprocess.DEVNULL,
-            )
-
-        m_wrap.assert_called_once_with(
-            ["dpkg", "-i", "wpa-supplicant"],
-            private_mounts=False,
-            capture=True,
-            stdin=subprocess.DEVNULL,
-        )
-
     async def test_start(self):
         runner = SystemdRunRunner(ident="my-id", use_systemd_user=False)
 
@@ -408,32 +390,7 @@ class TestDRSystemdRunRunner(SubiTestCase):
         self.assertEqual(self.runner.systemd_run_wrapper.ident, "my-identifier")
         self.assertEqual(self.runner.systemd_run_wrapper.use_systemd_user, True)
         self.assertEqual(self.runner.sleep_and_echo_wrapper.delay_multiplier, 10)
-
-    @patch.object(
-        SystemdRunRunner,
-        "wrap_command",
-        wraps=SystemdRunRunner.wrap_command,
-        autospec=True,
-    )
-    def test_wrap_command(self, mock_super):
-        rv = Mock()
-
-        with patch.object(
-            self.runner.sleep_and_echo_wrapper, "wrap", return_value=[rv]
-        ) as m_wrap:
-            self.runner.wrap_command(
-                ["dpkg", "-i", "wpa-supplicant"],
-                private_mounts=False,
-                capture=True,
-                stdin=subprocess.DEVNULL,
-            )
-
-        m_wrap.assert_called_once_with(["dpkg", "-i", "wpa-supplicant"])
-        # We use patch(..., wraps=...), so expect arg1 to be "self" (i.e., the runner).
-        mock_super.assert_called_once_with(
-            self.runner,
-            [rv],
-            private_mounts=False,
-            capture=True,
-            stdin=subprocess.DEVNULL,
+        self.assertEqual(
+            self.runner.wrappers,
+            [self.runner.sleep_and_echo_wrapper, self.runner.systemd_run_wrapper],
         )
