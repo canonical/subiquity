@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      prefix:
+        description: 'Snap name prefix (e.g. dev, alpha, beta). Leave empty to use branch name for non-main branches.'
+        required: false
+        default: ''
 
 jobs:
   snap-build:
@@ -27,21 +33,42 @@ jobs:
         with:
           name: subiquity-snap
           path: .
-      
+
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-      
+
+      - name: Determine snap prefix
+        id: prefix
+        run: |
+          BRANCH="${GITHUB_REF_NAME}"
+          INPUT_PREFIX="${{ inputs.prefix }}"
+
+          if [ "$BRANCH" = "main" ] && [ -z "$INPUT_PREFIX" ]; then
+            echo "value=" >> "$GITHUB_OUTPUT"
+          elif [ -n "$INPUT_PREFIX" ]; then
+            echo "value=${INPUT_PREFIX}" >> "$GITHUB_OUTPUT"
+          else
+            SANITIZED=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9._-]/-/g')
+            echo "value=${SANITIZED}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy snap
         run: |
           SNAP_FILE=$(ls *.snap | head -n 1)
           SNAP_NAME=$(basename "$SNAP_FILE")
-          
-          # Copy with actual name
+          PREFIX="${{ steps.prefix.outputs.value }}"
+
+          # Copy with actual build name
           scp "$SNAP_FILE" ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_PATH }}/"$SNAP_NAME"
-          
-          # Copy as latest
-          scp "$SNAP_FILE" ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_PATH }}/subiquity_latest.snap
+
+          # Copy as latest (with prefix if set)
+          if [ -n "$PREFIX" ]; then
+            LATEST_NAME="subiquity_${PREFIX}_latest.snap"
+          else
+            LATEST_NAME="subiquity_latest.snap"
+          fi
+          scp "$SNAP_FILE" ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_PATH }}/"$LATEST_NAME"
