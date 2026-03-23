@@ -17,10 +17,13 @@ from unittest import mock
 
 from subiquity.server.curtin import (
     _CurtinCommand,
+    _DryRunCurtinCommand,
+    _FailingDryRunCurtinCommand,
     start_curtin_command,
 )
 from subiquity.server.runner import LoggedCommandRunner
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.parameterized import parameterized
 
 
 @mock.patch.object(_CurtinCommand, "__init__", wraps=_CurtinCommand.__init__)
@@ -30,6 +33,42 @@ class TestStartCurtinCommand(unittest.IsolatedAsyncioTestCase):
         self.app = make_app()
         self.app.debug_flags = ()
         self.app.command_runner = mock.Mock(spec=LoggedCommandRunner)
+
+    @parameterized.expand(
+        (
+            (False, (), _CurtinCommand),
+            (True, (), _DryRunCurtinCommand),
+            (True, ("install-fail"), _FailingDryRunCurtinCommand),
+        ),
+    )
+    async def test_implementations(
+        self, m_curtin_command_init, dry_run, debug_flags, expected_type
+    ):
+        self.app.opts.dry_run = dry_run
+        self.app.debug_flags = debug_flags
+        cmd = await start_curtin_command(
+            self.app,
+            mock.Mock(),
+            "in-target",
+            "--target",
+            "/target",
+            "--",
+            "/bin/ls",
+            private_mounts=False,
+        )
+
+        m_curtin_command_init.assert_called_once_with(
+            self.app.opts,
+            self.app.command_runner,
+            "in-target",
+            "--target",
+            "/target",
+            "--",
+            "/bin/ls",
+            config=None,
+            runner_kwargs={},
+        )
+        self.assertEqual(expected_type, type(cmd))
 
     async def test_private_mounts(self, m_curtin_command_init):
         await start_curtin_command(
