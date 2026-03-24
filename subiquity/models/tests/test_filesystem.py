@@ -1559,7 +1559,7 @@ class TestDisk(unittest.TestCase):
 
         d._partitions.remove(pp)
 
-        with self.assertRaisesRegex(ValueError, r"^do not renumber"):
+        with self.assertRaisesRegex(ValueError, "^do not renumber"):
             d.renumber_logical_partitions(removed_partition=pp)
 
     def test__reformatted__empty_disk(self):

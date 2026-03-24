@@ -690,7 +690,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         )
         with mock.patch.object(self.fsc, "create_partition") as create_part:
             with self.assertRaisesRegex(
-                StorageInvalidUsageError, r"does\ not\ support\ changing\ boot"
+                StorageInvalidUsageError, "does not support changing boot"
             ):
                 await self.fsc.v2_add_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
@@ -712,7 +712,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             ),
         )
         with mock.patch.object(self.fsc, "create_partition") as create_part:
-            with self.assertRaisesRegex(StorageConstraintViolationError, r"too\ large"):
+            with self.assertRaisesRegex(StorageConstraintViolationError, "too large"):
                 await self.fsc.v2_add_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
         create_part.assert_not_called()
@@ -734,7 +734,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         )
         with mock.patch.object(self.fsc, "create_partition") as create_part:
             with self.assertRaisesRegex(
-                StorageInvalidUsageError, r"partition name is not implemented"
+                StorageInvalidUsageError, "partition name is not implemented"
             ):
                 await self.fsc.v2_add_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
@@ -758,7 +758,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         )
         with mock.patch.object(self.fsc, "create_partition") as create_part:
             with self.assertRaisesRegex(
-                StorageInvalidUsageError, r"unsupported partition table"
+                StorageInvalidUsageError, "unsupported partition table"
             ):
                 await self.fsc.v2_add_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
@@ -795,7 +795,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         with mock.patch.object(self.fsc, "delete_partition") as del_part:
             with mock.patch.object(self.fsc, "get_partition"):
                 with self.assertRaisesRegex(
-                    StorageInvalidUsageError, r"unsupported partition table"
+                    StorageInvalidUsageError, "unsupported partition table"
                 ):
                     await self.fsc.v2_delete_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
@@ -823,9 +823,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         existing = make_partition(self.fsc.model, d, size=1000 << 20)
         with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
             with mock.patch.object(self.fsc, "get_partition", return_value=existing):
-                with self.assertRaisesRegex(
-                    StorageInvalidUsageError, r"changing\ boot"
-                ):
+                with self.assertRaisesRegex(StorageInvalidUsageError, "changing boot"):
                     await self.fsc.v2_edit_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
         handler.assert_not_called()
@@ -844,7 +842,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
             with mock.patch.object(self.fsc, "get_partition", return_value=existing):
                 with self.assertRaisesRegex(
-                    StorageInvalidUsageError, r"changing partition name"
+                    StorageInvalidUsageError, "changing partition name"
                 ):
                     await self.fsc.v2_edit_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
@@ -880,7 +878,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         with mock.patch.object(self.fsc, "partition_disk_handler") as handler:
             with mock.patch.object(self.fsc, "get_partition", return_value=existing):
                 with self.assertRaisesRegex(
-                    StorageInvalidUsageError, r"unsupported partition table"
+                    StorageInvalidUsageError, "unsupported partition table"
                 ):
                     await self.fsc.v2_edit_partition_POST(data)
         self.assertTrue(self.fsc.locked_probe_data)
@@ -1002,7 +1000,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.fsc.model = make_model()
         with mock.patch.object(self.fsc, "delete_volgroup") as del_volgroup:
             with self.assertRaisesRegex(
-                StorageNotFoundError, r"could not find existing VG"
+                StorageNotFoundError, "could not find existing VG"
             ):
                 await self.fsc.v2_volume_group_DELETE(id="inexistent")
         self.assertTrue(self.fsc.locked_probe_data)
@@ -1021,7 +1019,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.fsc.model = make_model()
         with mock.patch.object(self.fsc, "delete_logical_volume") as del_lv:
             with self.assertRaisesRegex(
-                StorageNotFoundError, r"could not find existing LV"
+                StorageNotFoundError, "could not find existing LV"
             ):
                 await self.fsc.v2_logical_volume_DELETE(id="inexistent")
         self.assertTrue(self.fsc.locked_probe_data)
@@ -1040,7 +1038,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.fsc.model = make_model()
         with mock.patch.object(self.fsc, "delete_raid") as del_raid:
             with self.assertRaisesRegex(
-                StorageNotFoundError, r"could not find existing RAID"
+                StorageNotFoundError, "could not find existing RAID"
             ):
                 await self.fsc.v2_raid_DELETE(id="inexistent")
         self.assertTrue(self.fsc.locked_probe_data)
