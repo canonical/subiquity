@@ -26,7 +26,7 @@ from typing import Any, Dict, List, Optional, Type
 import yaml
 
 from subiquity.journald import journald_listen
-from subiquity.server.runner import LoggedCommandRunner
+from subiquity.server.runner import SystemdRunRunner
 from subiquitycore.context import Context, Status
 
 log = logging.getLogger("subiquity.server.curtin")
@@ -226,7 +226,7 @@ async def start_curtin_command(
     # Not strictly necessary but makes the error move obvious.
     # Also, this will become necessary if we make 'private_mounts' an attribute
     # of the runner.
-    if private_mounts and not isinstance(runner, LoggedCommandRunner):
+    if private_mounts and not isinstance(runner, SystemdRunRunner):
         raise NotImplementedError(
             "private-mounts support is only provided by systemd-run based runners"
         )
