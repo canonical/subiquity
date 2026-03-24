@@ -70,10 +70,11 @@ class PackageInstaller:
         if binpkg.installed:
             log.debug("%s already installed", pkgname)
             return PackageInstallState.DONE
-        if not binpkg.candidate.uri.startswith("cdrom:"):
-            log.debug(
-                "%s not available from cdrom (rather %s)", pkgname, binpkg.candidate.uri
-            )
+        uri = binpkg.candidate.uri
+        # Since 26.04, we started using the file:/cdrom scheme instead of
+        # cdrom:[...]/
+        if not uri.startswith("cdrom:") and not uri.startswith("file:/cdrom"):
+            log.debug("%s not available from cdrom (rather %s)", pkgname, uri)
             return PackageInstallState.NOT_AVAILABLE
         env = os.environ.copy()
         env["DEBIAN_FRONTEND"] = "noninteractive"

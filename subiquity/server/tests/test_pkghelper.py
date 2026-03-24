@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import subprocess
 from typing import Optional
 from unittest.mock import Mock, patch
 
@@ -26,6 +27,7 @@ from subiquity.server.pkghelper import (
 from subiquity.server.pkghelper import log as PkgHelperLogger
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.parameterized import parameterized
 
 
 class MockPackage:
@@ -49,6 +51,57 @@ class TestPackageInstaller(SubiTestCase):
     def setUp(self):
         self.pkginstaller = PackageInstaller()
 
+    @parameterized.expand(
+        (
+            (
+                "http://archive.ubuntu.com/ubuntu/pool/main/w/wpa/wpasupplicant_2.11-0ubuntu5_amd64.deb",  # noqa
+                False,
+                PackageInstallState.NOT_AVAILABLE,
+            ),
+            (
+                "cdrom://Ubuntu-Server 25.10 _Questing Quokka_ - Release amd64 (20251007.1)/pool/main/wpasupplicant_2%253a2.11-0ubuntu4_amd64.deb",  # noqa
+                True,
+                PackageInstallState.DONE,
+            ),
+            (
+                "file:/cdrom/pool/main/w/wpa/wpasupplicant_2%253a2.11-0ubuntu5_amd64.deb",
+                True,
+                PackageInstallState.DONE,
+            ),
+            (
+                "file:/cdrom/pool/main/w/wpa/wpasupplicant_2%253a2.11-0ubuntu5_amd64.deb",
+                False,
+                PackageInstallState.FAILED,
+            ),
+        ),
+    )
+    async def test_install_pkg(
+        self,
+        candidate_uri: str,
+        install_succeeds: bool,
+        expected_state: PackageInstallState,
+    ):
+        with patch.dict(
+            self.pkginstaller.cache,
+            {
+                "wpasupplicant": MockPackage(
+                    installed=False,
+                    name="wpasupplicant",
+                    candidate_uri=candidate_uri,
+                )
+            },
+        ):
+            with patch(
+                "subiquity.server.pkghelper.arun_command",
+                return_value=subprocess.CompletedProcess(
+                    [], 0 if install_succeeds else 1
+                ),
+            ):
+                self.assertEqual(
+                    expected_state,
+                    await self.pkginstaller.install_pkg("wpasupplicant"),
+                )
+
     async def test_install_pkg_not_found(self):
         self.assertEqual(
             await self.pkginstaller.install_pkg("sysvinit-core"),
@@ -63,22 +116,6 @@ class TestPackageInstaller(SubiTestCase):
             self.assertEqual(
                 await self.pkginstaller.install_pkg("util-linux"),
                 PackageInstallState.DONE,
-            )
-
-    async def test_install_pkg_not_from_cdrom(self):
-        with patch.dict(
-            self.pkginstaller.cache,
-            {
-                "python3-attr": MockPackage(
-                    installed=False,
-                    name="python3-attr",
-                    candidate_uri="http://archive.ubuntu.com",
-                )
-            },
-        ):
-            self.assertEqual(
-                await self.pkginstaller.install_pkg("python3-attr"),
-                PackageInstallState.NOT_AVAILABLE,
             )
 
 
