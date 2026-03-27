@@ -800,6 +800,7 @@ class Disk(_Device):
     preserve: bool = False
     name: str = ""
     grub_device: bool = False
+    skip_bootloader: bool = False
     device_id: Optional[str] = None
 
     _info: StorageInfo = attributes.for_api()
@@ -2146,8 +2147,8 @@ class FilesystemModel:
             config["swap"] = self.swap
         elif not self.should_add_swapfile():
             config["swap"] = {"size": 0}
-        if self.grub is not None:
-            config["grub"] = self.grub
+        # if self.grub is not None:
+        #     config["grub"] = self.grub
         return config
 
     def load_probe_data(self, probe_data):
@@ -2398,11 +2399,16 @@ class FilesystemModel:
         elif self.bootloader == Bootloader.BIOS:
             return self._one(type="disk", grub_device=True) is None
         elif self.bootloader == Bootloader.UEFI:
-            for esp in self._all(type="partition", grub_device=True):
-                if esp.fs() and esp.fs().mount():
-                    if esp.fs().mount().path == "/boot/efi":
-                        return False
-            return True
+            return False
+            # if len(self._all(type="disk")) > 0 and len(self._all(type="disk")) == len(
+            #     self._all(type="disk", grub_device=False)
+            # ):
+            #     return False
+            # for esp in self._all(type="partition", grub_device=True):
+            #     if esp.fs() and esp.fs().mount():
+            #         if esp.fs().mount().path == "/boot/efi":
+            #             return False
+            # return True
         elif self.bootloader == Bootloader.PREP:
             return self._one(type="partition", grub_device=True) is None
         else:
