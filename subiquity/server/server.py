@@ -1078,6 +1078,8 @@ class SubiquityServer(Application):
         self.hub.broadcast(InstallerChannels.SNAPD_NETWORK_CHANGE)
 
     def restart(self):
+        # FIXME this method can only work if we're running tle subiquity snap.
+        # For ubuntu-desktop-bootstrap, this would just cause a server shutdown.
         if not self.snapd:
             return
         cmdline = ["snap", "run", "subiquity.subiquity-server"]
