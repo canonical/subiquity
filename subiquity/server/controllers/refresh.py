@@ -64,6 +64,13 @@ class RefreshController(SubiquityController):
         self.app.hub.subscribe(
             InstallerChannels.SNAPD_NETWORK_CHANGE, self.snapd_network_changed
         )
+        # List of snapd change IDs for refresh operations that we initiated.
+        # We use a list because refresh operations can fail and be restarted.
+        # This was introduced to avoid accidentally restarting the server when
+        # a client queries progress using a change_id that that it not ours (or
+        # in practice, belongs to a server process that was running before the
+        # refresh.  See LP: #2146422.
+        self.initiated_changes: list[str] = []
 
     def load_autoinstall_data(self, data):
         if data is not None:
@@ -219,15 +226,21 @@ class RefreshController(SubiquityController):
                 "v2/snaps/%s returned %s", self.snap_name, http_err.response.text
             )
             raise
+        self.initiated_changes.append(change_id)
         context.description = "change id: {}".format(change_id)
         return change_id
 
     async def get_progress(self, change_id: str) -> Change:
         change = await self.app.snapdapi.v2.changes[change_id].GET()
         if change.status == TaskStatus.DONE:
-            # Clearly if we got here we didn't get restarted by
-            # snapd/systemctl (dry-run mode)
-            self.app.restart()
+            # TODO instead of relying on self.initiated_changes, we should
+            # move the call to self.app.restart away from the GET handler.
+            # Maybe we should start a monitoring task when we initiate the
+            # refresh.
+            if change_id in self.initiated_changes:
+                # Clearly if we got here we didn't get restarted by
+                # snapd/systemctl (dry-run mode)
+                self.app.restart()
         return change
 
     async def GET(self, wait: bool = False) -> RefreshStatus:
