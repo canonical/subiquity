@@ -20,6 +20,7 @@ import requests
 import requests_mock
 from jsonschema.validators import validator_for
 
+from subiquity.common.types import Change, TaskStatus
 from subiquity.server.controllers import refresh as refresh_mod
 from subiquity.server.controllers.refresh import RefreshController, SnapChannelSource
 from subiquity.server.snapd import api as snapdapi
@@ -27,6 +28,7 @@ from subiquity.server.snapd import types as snapdtypes
 from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.parameterized import parameterized
 
 
 class TestRefreshController(SubiTestCase):
@@ -142,3 +144,47 @@ class TestRefreshController(SubiTestCase):
                     await self.rc.start_update()
 
             self.assertIn('snap \\"subiquity\\" has \\"update\\"', logs.output[0])
+
+    @parameterized.expand(
+        (
+            # Here it's our own change
+            (7, TaskStatus.DO, [7], False),
+            (7, TaskStatus.DOING, [7], False),
+            (7, TaskStatus.DONE, [7], True),
+            (7, TaskStatus.DONE, [6, 7], True),
+            # And here, it's somebody else's
+            (7, TaskStatus.DO, [], False),
+            (7, TaskStatus.DOING, [], False),
+            (7, TaskStatus.DONE, [], False),
+            (7, TaskStatus.DONE, [1, 2, 3], False),
+        ),
+    )
+    async def test_get_progress(
+        self,
+        cid: str,
+        change_status: TaskStatus,
+        our_change_ids: list[str],
+        expect_server_restart: bool,
+    ):
+        self.app.restart = mock.Mock()
+
+        change = Change(
+            id=cid,
+            kind="refresh-snap",
+            summary='Refresh "Subiquity" snap',
+            status=change_status,
+            tasks=[],
+            ready=False,
+        )
+
+        self.rc.initiated_changes = our_change_ids
+
+        with mock.patch.object(
+            self.app.snapdapi.v2, "changes", {cid: mock.AsyncMock()}
+        ) as m_changes:
+            m_changes[cid].GET = mock.AsyncMock(return_value=change)
+            change = await self.rc.get_progress(cid)
+        if expect_server_restart:
+            self.app.restart.assert_called_once()
+        else:
+            self.app.restart.assert_not_called()
