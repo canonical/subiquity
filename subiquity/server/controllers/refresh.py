@@ -64,13 +64,13 @@ class RefreshController(SubiquityController):
         self.app.hub.subscribe(
             InstallerChannels.SNAPD_NETWORK_CHANGE, self.snapd_network_changed
         )
-        # List of snapd change IDs for refresh operations that we initiated.
-        # We use a list because refresh operations can fail and be restarted.
+        # Set of snapd change IDs for refresh operations that we initiated.
+        # We use a set because refresh operations can fail and be restarted.
         # This was introduced to avoid accidentally restarting the server when
-        # a client queries progress using a change_id that that it not ours (or
-        # in practice, belongs to a server process that was running before the
-        # refresh.  See LP: #2146422.
-        self.initiated_changes: list[str] = []
+        # a client queries progress using a change_id that is not ours (or, in
+        # practice, belongs to a server process that was running before the
+        # refresh).  See LP: #2146422.
+        self.initiated_changes: set[str] = set()
 
     def load_autoinstall_data(self, data):
         if data is not None:
@@ -226,7 +226,7 @@ class RefreshController(SubiquityController):
                 "v2/snaps/%s returned %s", self.snap_name, http_err.response.text
             )
             raise
-        self.initiated_changes.append(change_id)
+        self.initiated_changes.add(change_id)
         context.description = "change id: {}".format(change_id)
         return change_id
 
