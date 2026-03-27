@@ -148,15 +148,15 @@ class TestRefreshController(SubiTestCase):
     @parameterized.expand(
         (
             # Here it's our own change
-            (7, TaskStatus.DO, {7}, False),
-            (7, TaskStatus.DOING, {7}, False),
-            (7, TaskStatus.DONE, {7}, True),
-            (7, TaskStatus.DONE, {6, 7}, True),
+            ("7", TaskStatus.DO, {"7"}, False),
+            ("7", TaskStatus.DOING, {"7"}, False),
+            ("7", TaskStatus.DONE, {"7"}, True),
+            ("7", TaskStatus.DONE, {"6", "7"}, True),
             # And here, it's somebody else's
-            (7, TaskStatus.DO, set(), False),
-            (7, TaskStatus.DOING, set(), False),
-            (7, TaskStatus.DONE, set(), False),
-            (7, TaskStatus.DONE, {1, 2, 3}, False),
+            ("7", TaskStatus.DO, set(), False),
+            ("7", TaskStatus.DOING, set(), False),
+            ("7", TaskStatus.DONE, set(), False),
+            ("7", TaskStatus.DONE, {"1", "2", "3"}, False),
         ),
     )
     async def test_get_progress(
