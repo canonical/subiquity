@@ -94,6 +94,7 @@ from subiquity.models.filesystem import (
     Partition,
     Raid,
     RecoveryKeyHandler,
+    TooManyPartitionsError,
     _Device,
     align_down,
     align_up,
@@ -1664,7 +1665,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             )
 
         gap = gaps.at_offset(disk, data.gap.offset).split(requested_size)[0]
-        self.create_partition(disk, gap, spec, wipe="superblock")
+        try:
+            self.create_partition(disk, gap, spec, wipe="superblock")
+        except TooManyPartitionsError as exc:
+            raise StorageConstraintViolationError(
+                "exceeded number of partitions"
+            ) from exc
         return await self.v2_GET()
 
     async def v2_delete_partition_POST(
