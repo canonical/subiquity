@@ -67,6 +67,10 @@ class NotFinalPartitionError(Exception):
     the last one."""
 
 
+class TooManyPartitionsError(Exception):
+    """Exception to raise when exceeding the limit of partitions."""
+
+
 # a match directive is a dict that specifies
 # * zero or more keys to filter on
 # * an optional sort on size
@@ -954,7 +958,7 @@ class Partition(_Formattable):
             if num not in used_nums:
                 self.number = num
                 return
-        raise Exception("Exceeded number of available partitions")
+        raise TooManyPartitionsError
 
     @property
     def sort_key(self) -> Tuple:
