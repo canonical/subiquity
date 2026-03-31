@@ -354,10 +354,11 @@ class NetworkView(BaseView):
 
     def update_has_default_route(self, has_default_route):
         log.debug("view route_watcher %s", has_default_route)
+        self._has_default_route = has_default_route
         if has_default_route:
             label = _("Done")
         else:
-            label = _("Continue without network")
+            label = _("Network required to continue")
         self.buttons.base_widget[0].set_label(label)
         self.buttons.width = max(
             14,
@@ -520,6 +521,8 @@ class NetworkView(BaseView):
             )
 
     def done(self, result=None):
+        if not getattr(self, '_has_default_route', False):
+            return
         if self.error_showing:
             self.bottom.contents[0:2] = []
         self.controller.done()
