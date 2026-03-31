@@ -1005,8 +1005,7 @@ class SubiquityServer(Application):
 
         # Disable all external access to the installer
         self.disable_ssh_access()
-        # TODO: Re-enable after debugging config pre-fill issue
-        # self.disable_alternate_ttys()
+        self.disable_alternate_ttys()
 
         self.update_state(ApplicationState.CLOUD_INIT_WAIT)
         await self.wait_for_cloudinit()
