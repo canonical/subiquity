@@ -2269,3 +2269,46 @@ class TestDiskForMatch(SubiTestCase):
         ]
         self.assertEqual(vdb, m.disk_for_match([vda, vdb], match))
         self.assertEqual([vdb], m.disks_for_match([vda, vdb], match))
+
+
+class TestAssignOmittedOffsets(SubiTestCase):
+    def test_multi_disk_offsets_assigned(self):
+        """assign_omitted_offsets must process all disks, not just the first."""
+        m = make_model(storage_version=2)
+        d1 = make_disk(m, path="/dev/nvme0n1", ptable="gpt")
+        d2 = make_disk(m, path="/dev/nvme1n1", ptable="gpt")
+
+        p1 = make_partition(m, d1, size=50 * (2**30))
+        p2 = make_partition(m, d2, size=50 * (2**30))
+
+        # Clear offsets to simulate what _actions_from_config produces
+        # when the autoinstall config omits them.
+        p1.offset = None
+        p2.offset = None
+
+        m.assign_omitted_offsets()
+
+        self.assertIsNotNone(p1.offset)
+        self.assertIsNotNone(p2.offset)
+
+    def test_single_disk_no_logical(self):
+        """A single GPT disk with no logical parts gets offsets assigned."""
+        m = make_model(storage_version=2)
+        d = make_disk(m, ptable="gpt")
+        p = make_partition(m, d, size=10 * (2**30))
+        p.offset = None
+
+        m.assign_omitted_offsets()
+
+        self.assertIsNotNone(p.offset)
+
+    def test_storage_version_1_is_noop(self):
+        """assign_omitted_offsets does nothing for storage version 1."""
+        m = make_model(storage_version=1)
+        d = make_disk(m, ptable="gpt")
+        p = make_partition(m, d, size=10 * (2**30))
+        p.offset = None
+
+        m.assign_omitted_offsets()
+
+        self.assertIsNone(p.offset)
