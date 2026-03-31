@@ -1873,11 +1873,18 @@ class FilesystemModel:
                 prev_end = part.offset + part.size
 
             if not logical_parts:
-                return
+                continue
 
-            extended_part = next(
+            extended_parts = list(
                 filter(lambda x: x.flag == "extended", disk.partitions())
             )
+            if not extended_parts:
+                log.warning(
+                    "Disk %s has logical partitions but no extended partition",
+                    disk.path,
+                )
+                continue
+            extended_part = extended_parts[0]
 
             prev_end = extended_part.offset
             for part in logical_parts:
