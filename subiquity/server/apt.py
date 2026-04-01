@@ -153,15 +153,26 @@ class AptConfigurer:
         generate_config_yaml(str(config_location), self.apt_config(final))
         self.app.note_data_for_apport("CurtinAptConfig", str(config_location))
 
-        await run_curtin_command(
-            self.app,
-            context,
-            "apt-config",
-            "-t",
-            self.configured_tree.p(),
-            config=str(config_location),
-            private_mounts=True,
-        )
+        # If the apt config contains extra sources (e.g., a PPA defined using
+        # autoinstall apt directives), apt-config triggers a call to apt-get
+        # update.
+        # Maybe we should add an option to curtin to disable that behavior and
+        # use it here. But since we currently don't have that option, let's
+        # make sure apt-get can succeed. This means bind-mounting the /cdrom
+        # since an /etc/apt/sources.list.d/cdrom.sources file is present since
+        # Ubuntu 26.04.
+        async with self.mounter.bind_mounted(
+            pathlib.Path("/cdrom"), self.configured_tree.pp("cdrom")
+        ):
+            await run_curtin_command(
+                self.app,
+                context,
+                "apt-config",
+                "-t",
+                self.configured_tree.p(),
+                config=str(config_location),
+                private_mounts=True,
+            )
 
     async def run_apt_config_check(self, output: io.StringIO) -> None:
         """Run apt-get update (with various options limiting the amount of

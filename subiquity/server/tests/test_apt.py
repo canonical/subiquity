@@ -29,6 +29,7 @@ from subiquity.server.apt import (
     AptConfigCheckError,
     AptConfigurer,
     DryRunAptConfigurer,
+    Mountpoint,
     OverlayMountpoint,
 )
 from subiquity.server.dryrun import DRConfig
@@ -71,7 +72,9 @@ class TestAptConfigurer(SubiTestCase):
         self.model.locale.selected_language = "en_US.UTF-8"
         self.app = make_app(self.model)
         self.app.command_runner = AsyncMock()
-        self.configurer = AptConfigurer(self.app, AsyncMock(), TrivialSourceHandler(""))
+        self.configurer = AptConfigurer(
+            self.app, AsyncMock(), TrivialSourceHandler("/tmp/source")
+        )
 
         self.astart_sym = "subiquity.server.apt.astart_command"
 
@@ -87,6 +90,50 @@ class TestAptConfigurer(SubiTestCase):
         config = self.configurer.apt_config(final=True)
         self.assertEqual(proxy, config["apt"]["http_proxy"])
         self.assertEqual(proxy, config["apt"]["https_proxy"])
+
+    @patch("subiquity.server.apt.run_curtin_command")
+    # To avoid writing to a privileged location
+    @patch("subiquity.server.apt.generate_config_yaml", Mock())
+    async def test_apply_apt_config(self, m_run_curtin):
+        self.app.root = "/"
+        self.app.note_data_for_apport = Mock()
+
+        @contextlib.asynccontextmanager
+        async def fake_bind_mounted(src, dst):
+            yield Mountpoint(mountpoint=str(dst), created=False)
+
+        context = Mock()
+
+        p_setup_overlay = patch.object(
+            self.configurer.mounter,
+            "setup_overlay",
+            return_value=OverlayMountpoint(
+                mountpoint="/tmp/configured", upperdir="upperdir", lowers=["lower1"]
+            ),
+        )
+        p_bind_mounted = patch.object(
+            self.configurer.mounter,
+            "bind_mounted",
+            new_callable=Mock,
+            side_effect=fake_bind_mounted,
+        )
+
+        with p_setup_overlay as m_setup_overlay, p_bind_mounted as m_bind_mounted:
+            await self.configurer.apply_apt_config(context, final=True)
+
+        m_setup_overlay.assert_called_once_with(["/tmp/source"])
+        m_bind_mounted.assert_called_once_with(
+            pathlib.Path("/cdrom"), pathlib.Path("/tmp/configured/cdrom")
+        )
+        m_run_curtin.assert_called_once_with(
+            self.app,
+            context,
+            "apt-config",
+            "-t",
+            "/tmp/configured",
+            config="/var/log/installer/curtin-install/subiquity-curtin-apt.conf",
+            private_mounts=True,
+        )
 
     async def test_overlay(self):
         self.configurer.install_tree = OverlayMountpoint(
