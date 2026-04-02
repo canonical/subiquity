@@ -95,6 +95,8 @@ class SleepAndEchoWrapper:
             return 3 * self.delay_multiplier
         elif "chzdev" in cmd:
             return 0.4 * random.random() * self.delay_multiplier
+        elif "mount" in cmd or "umount" in cmd:
+            return 0.1 * self.delay_multiplier
         else:
             return self.delay_multiplier
 
