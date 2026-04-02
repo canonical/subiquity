@@ -156,7 +156,7 @@ class MirrorController(SubiquityController):
         self.test_apt_configurer: Optional[AptConfigurer] = None
         self.final_apt_configurer: Optional[AptConfigurer] = None
         self.mirror_check: Optional[MirrorCheck] = None
-        self.autoinstall_apply_started = False
+        self.ai_apply_task: asyncio.Task | None = None
 
     def load_autoinstall_data(self, data):
         if data is None:
@@ -279,8 +279,10 @@ class MirrorController(SubiquityController):
 
     @with_context()
     async def apply_autoinstall_config(self, context):
-        self.autoinstall_apply_started = True
-        await self.run_mirror_selection_or_fallback(context)
+        self.ai_apply_task = asyncio.create_task(
+            self.run_mirror_selection_or_fallback(context)
+        )
+        await self.ai_apply_task
 
     def on_geoip(self):
         if self.geoip_enabled:
@@ -288,7 +290,7 @@ class MirrorController(SubiquityController):
         self.cc_event.set()
 
     async def on_source(self):
-        if self.autoinstall_apply_started:
+        if self.ai_apply_task is not None:
             # Alternatively, we should cancel and restart the
             # apply_autoinstall_config but this is out of scope.
             raise RuntimeError(

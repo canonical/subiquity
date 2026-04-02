@@ -626,6 +626,24 @@ class InstallController(SubiquityController):
             if self.model.target is None:
                 for_install_path = None
             elif self.supports_apt():
+                # FIXME During an autoinstall on desktop, we could get here
+                # before subiquity/Mirror/apply_autoinstall_config is finished
+                # because:
+                # * the mirror model is not declared in desktop INSTALL_MODELS
+                #   (it probably should to satisfy autoinstall even though it
+                #   isn't interactive on desktop.
+                # * the desktop installer calls mark_configured with "mirror"
+                #
+                # subiquity/Mirror/apply_autoinstall_config involves deploying
+                # APT configuration (i.e., apt-config and running the mirror
+                # test).
+                # And if that is not finished, proceeding here with
+                # self.configure_apt() would cause a concurrent apt-config +
+                # mirror check.
+                # This can lead to various race conditions. Let's wait until
+                # that task is finished. See LP: #2147089
+                if self.app.controllers.Mirror.ai_apply_task is not None:
+                    await self.app.controllers.Mirror.ai_apply_task
                 for_install_path = "cp://" + await self.configure_apt(context=context)
 
                 await self.app.hub.abroadcast(InstallerChannels.APT_CONFIGURED)
