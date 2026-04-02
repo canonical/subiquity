@@ -199,6 +199,14 @@ class TestSleepAndEchoWrapper(SubiTestCase):
         self.assertEqual(delay, 1 * 0.4 * 10)
         m_random.assert_called_once()
 
+        # mount/umount commands have a shorter delay of 0.1 * default_delay
+        delay = wrapper._get_delay_for_cmd(
+            ["mount", "-o" "bind", "/cdrom", "/target/cdrom"]
+        )
+        self.assertEqual(delay, 1 * 0.1 * 10)
+        delay = wrapper._get_delay_for_cmd(["umount", "/target/cdrom"])
+        self.assertEqual(delay, 1 * 0.1 * 10)
+
     def test_wrap__default(self):
         wrapper = SleepAndEchoWrapper(delay_multiplier=10)
         expected = [
