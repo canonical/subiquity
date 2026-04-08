@@ -252,7 +252,7 @@ def filter_candidates(
     return candidates_iter
 
 
-class MirrorModel(object):
+class MirrorModel:
     def __init__(self):
         self.config = copy.deepcopy(DEFAULT)
         self.legacy_primary = False
