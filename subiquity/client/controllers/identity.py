@@ -46,7 +46,7 @@ class IdentityController(SubiquityTuiController):
         self.app.prev_screen()
 
     def done(self, identity_data):
-        log.debug("IdentityController.done next_screen user_spec=%s", identity_data)
+        log.debug("IdentityController.done next_screen")
         self.app.next_screen(self.endpoint.POST(identity_data))
 
     async def validate_username(self, username):

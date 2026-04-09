@@ -181,7 +181,10 @@ def _make_handler(
                     },
                 )
                 resp["exception"] = exc
-            context.description = "{} {}".format(resp.status, trim(resp.text))
+            if not getattr(definition, "redacted_response", False):
+                context.description = "{} {}".format(resp.status, trim(resp.text))
+            else:
+                context.description = "{} <REDACTED>".format(resp.status)
             return resp
 
     handler.controller = controller

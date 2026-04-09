@@ -512,12 +512,6 @@ class NetworkModel(object):
             dev = NetworkDev(self, link.name, link.type)
             dev.info = link
             dev.config = config
-            log.debug(
-                "new_link %s %s with config %s",
-                ifindex,
-                link.name,
-                netplan.sanitize_interface_config(dev.config),
-            )
             self.devices_by_name[link.name] = dev
         return dev
 
