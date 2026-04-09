@@ -116,3 +116,10 @@ def allowed_before_start(fun):
     want this."""
     fun.allowed_before_start = True
     return fun
+
+
+def redacted_response(fun):
+    """An endpoint may mark themselves as redacted_response if their response
+    should not be logged."""
+    fun.redacted_response = True
+    return fun

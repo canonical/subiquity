@@ -234,7 +234,9 @@ class TestAstartBackend(SubiTestCase):
 
         proc = await backend.start(["/bin/ls", "-l"], stdout=subprocess.PIPE)
 
-        astart_mock.assert_called_once_with(["/bin/ls", "-l"], stdout=subprocess.PIPE)
+        astart_mock.assert_called_once_with(
+            ["/bin/ls", "-l"], logged=True, stdout=subprocess.PIPE
+        )
 
         self.assertEqual(["/bin/ls", "-l"], proc.args)
 

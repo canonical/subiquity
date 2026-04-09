@@ -117,12 +117,15 @@ class AstartBackend:
     """Backend implementation based on astart_command (which supports binary
     data only)"""
 
+    def __init__(self, *, logged=True):
+        self.logged = logged
+
     async def start(
         self,
         cmd: list[str],
         **kwargs,
     ) -> asyncio.subprocess.Process:
-        proc = await astart_command(cmd, **kwargs)
+        proc = await astart_command(cmd, logged=self.logged, **kwargs)
         proc.args = cmd
         return proc
 
@@ -150,6 +153,35 @@ class AstartBackend:
         stdin = subprocess.PIPE if input is not None else subprocess.DEVNULL
         proc = await self.start(cmd, stdin=stdin, **kwargs)
         return await self.wait(proc, input=input)
+
+
+class RedactedAstartBackend(AstartBackend):
+    """Backend implementation based on astart_command that prevents the command
+    args to leak"""
+
+    def __init__(self, *, logged=False):
+        super().__init__(logged=logged)
+
+    async def start(self, *args, **kwargs) -> asyncio.subprocess.Process:
+        try:
+            proc = await super().start(*args, **kwargs)
+        except subprocess.CalledProcessError as exc:
+            raise subprocess.CalledProcessError(
+                returncode=exc.returncode, cmd=["<redacted>"]
+            )
+        else:
+            proc.args = ["<redacted>"]
+            return proc
+
+    async def wait(self, *args, **kwargs) -> subprocess.CompletedProcess:
+        try:
+            completed_process = await super().wait(*args, **kwargs)
+        except subprocess.CalledProcessError as exc:
+            raise subprocess.CalledProcessError(
+                returncode=exc.returncode, cmd=["<redacted>"]
+            )
+        completed_process.args = ["<redacted>"]
+        return completed_process
 
 
 class Runner:
@@ -228,8 +260,27 @@ class DRSystemdRunRunner(SystemdRunRunner):
         self.wrappers = [self.sleep_and_echo_wrapper, self.systemd_run_wrapper]
 
 
+class RedactedRunner(Runner):
+    def __init__(self):
+        super().__init__(backend=RedactedAstartBackend())
+
+
+class DRRedactedRunner(RedactedRunner):
+    def __init__(self, *, delay: float) -> None:
+        super().__init__()
+        self.sleep_and_echo_wrapper = SleepAndEchoWrapper(delay_multiplier=delay)
+        self.wrappers = [self.sleep_and_echo_wrapper]
+
+
 def get_command_runner(app):
     if app.opts.dry_run:
         return DRSystemdRunRunner(app.log_syslog_id, delay=2 / app.scale_factor)
     else:
         return SystemdRunRunner(app.log_syslog_id)
+
+
+def get_redacted_command_runner(app):
+    if app.opts.dry_run:
+        return DRRedactedRunner(delay=2 / app.scale_factor)
+    else:
+        return RedactedRunner()

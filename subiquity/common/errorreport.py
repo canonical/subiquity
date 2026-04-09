@@ -124,6 +124,13 @@ class ErrorReport(metaclass=urwid.MetaSignals):
                 report.meta = json.load(fp)
         return report
 
+    @staticmethod
+    def collect_filtered_journal():
+        return apport.hookutils.recent_syslog(
+            # Negative lookahead to filter out lines that contain "useradd"
+            re.compile(r"^(?!.*useradd).*")
+        )
+
     def add_info(self, _bg_attach_hook, wait=False):
         def _bg_add_info():
             _bg_attach_hook()
@@ -133,9 +140,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             if not self.reporter.dry_run:
                 self.pr.add_hooks_info(None)
                 apport.hookutils.attach_hardware(self.pr)
-            self.pr["InstallerJournal"] = apport.hookutils.recent_syslog(
-                re.compile(".")
-            )
+            self.pr["InstallerJournal"] = self.collect_filtered_journal()
             snap_name = os.environ.get("SNAP_NAME", "")
             if snap_name != "":
                 self.pr.add_tags([snap_name])

@@ -170,9 +170,11 @@ async def astart_command(
     stdin=subprocess.DEVNULL,
     env=None,
     clean_locale=True,
+    logged=True,
     **kw,
 ) -> asyncio.subprocess.Process:
-    log.debug("astart_command called: %s", cmd)
+    if logged:
+        log.debug("astart_command called: %s", cmd)
     return await asyncio.create_subprocess_exec(
         *cmd,
         stdout=stdout,
@@ -198,13 +200,15 @@ def start_command(
     errors="replace",
     env=None,
     clean_locale=True,
+    logged=True,
     **kw,
 ) -> subprocess.Popen:
     """A wrapper around subprocess.Popen with logging and different defaults.
 
     We never ever want a subprocess to inherit our file descriptors!
     """
-    log.debug("start_command called: %s", cmd)
+    if logged:
+        log.debug("start_command called: %s", cmd)
     return subprocess.Popen(
         cmd,
         stdin=stdin,

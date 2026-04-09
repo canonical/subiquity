@@ -20,6 +20,7 @@ from subiquity.common.api.defs import (
     Payload,
     allowed_before_start,
     api,
+    redacted_response,
     simple_endpoint,
 )
 from subiquity.common.types import (
@@ -190,6 +191,7 @@ class API:
             def POST(action: str, zdev: ZdevInfo) -> List[ZdevInfo]: ...
 
     class network:
+        @redacted_response
         def GET() -> NetworkStatus: ...
 
         def POST() -> None: ...
@@ -484,6 +486,7 @@ class API:
             def GET() -> UbuntuProGeneralInfo: ...
 
     class identity:
+        @redacted_response
         def GET() -> IdentityData: ...
 
         def POST(data: Payload[IdentityData]): ...
