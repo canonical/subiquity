@@ -101,28 +101,6 @@ log = logging.getLogger("subiquity.models.mirror")
 DEFAULT_SUPPORTED_ARCHES_URI = PRIMARY_ARCH_MIRRORS["PRIMARY"]
 DEFAULT_PORTS_ARCHES_URI = PORTS_MIRRORS["PRIMARY"]
 
-LEGACY_DEFAULT_PRIMARY_SECTION = [
-    {
-        "arches": PRIMARY_ARCHES,
-        "uri": DEFAULT_SUPPORTED_ARCHES_URI,
-    },
-    {
-        "arches": ["default"],
-        "uri": DEFAULT_PORTS_ARCHES_URI,
-    },
-]
-
-DEFAULT_SECURITY_SECTION = [
-    {
-        "arches": PRIMARY_ARCHES,
-        "uri": PRIMARY_ARCH_MIRRORS["SECURITY"],
-    },
-    {
-        "arches": PORTS_ARCHES,
-        "uri": PORTS_MIRRORS["SECURITY"],
-    },
-]
-
 DEFAULT = {
     "preserve_sources_list": False,
 }
@@ -222,7 +200,10 @@ class LegacyPrimaryEntry(BasePrimaryEntry):
 
     @classmethod
     def new_from_default(cls, parent: "MirrorModel") -> "LegacyPrimaryEntry":
-        return cls(copy.deepcopy(LEGACY_DEFAULT_PRIMARY_SECTION), parent=parent)
+        return cls(
+            copy.deepcopy(parent.default_sections.legacy_primary_section()),
+            parent=parent,
+        )
 
     def serialize_for_ai(self) -> List[Any]:
         return self.config
@@ -252,35 +233,72 @@ def filter_candidates(
     return candidates_iter
 
 
+class DefaultSections:
+    def __init__(self):
+        self.primary_arches: set[str] = set(PRIMARY_ARCHES)
+        self.ports_arches: set[str] = set(PORTS_ARCHES)
+
+    def security_section(self):
+        return [
+            {
+                "arches": sorted(self.primary_arches),
+                "uri": PRIMARY_ARCH_MIRRORS["SECURITY"],
+            },
+            {
+                "arches": sorted(self.ports_arches),
+                "uri": PORTS_MIRRORS["SECURITY"],
+            },
+        ]
+
+    def legacy_primary_section(self):
+        return [
+            {
+                "arches": sorted(self.primary_arches),
+                "uri": DEFAULT_SUPPORTED_ARCHES_URI,
+            },
+            {
+                "arches": ["default"],
+                "uri": DEFAULT_PORTS_ARCHES_URI,
+            },
+        ]
+
+    def primary_entries(self, *, parent: "MirrorModel") -> list[PrimaryEntry]:
+        return [
+            PrimaryEntry(parent=parent, country_mirror=True),
+            PrimaryEntry(
+                uri=DEFAULT_SUPPORTED_ARCHES_URI,
+                arches=sorted(self.primary_arches),
+                parent=parent,
+            ),
+            PrimaryEntry(
+                uri=DEFAULT_PORTS_ARCHES_URI,
+                arches=sorted(self.ports_arches),
+                parent=parent,
+            ),
+        ]
+
+
 class MirrorModel:
     def __init__(self):
+        self.default_sections = DefaultSections()
+
         self.config = copy.deepcopy(DEFAULT)
         self.legacy_primary = False
         self.disabled_components: Set[str] = set()
         self.primary_elected: Optional[BasePrimaryEntry] = None
         self.primary_candidates: List[BasePrimaryEntry] = (
-            self._default_primary_entries()
+            self.default_sections.primary_entries(parent=self)
         )
 
         self.primary_staged: Optional[BasePrimaryEntry] = None
 
         self.architecture = get_architecture()
+
         # Only useful for legacy primary sections
         self.default_mirror = LegacyPrimaryEntry.new_from_default(parent=self).uri
 
         # What to do if automatic mirror-selection fails.
         self.fallback = MirrorSelectionFallback.OFFLINE_INSTALL
-
-    def _default_primary_entries(self) -> List[PrimaryEntry]:
-        return [
-            PrimaryEntry(parent=self, country_mirror=True),
-            PrimaryEntry(
-                uri=DEFAULT_SUPPORTED_ARCHES_URI, arches=PRIMARY_ARCHES, parent=self
-            ),
-            PrimaryEntry(
-                uri=DEFAULT_PORTS_ARCHES_URI, arches=PORTS_ARCHES, parent=self
-            ),
-        ]
 
     def get_default_primary_candidates(
         self, legacy: Optional[bool] = None
@@ -289,7 +307,7 @@ class MirrorModel:
         if want_legacy:
             return [LegacyPrimaryEntry.new_from_default(parent=self)]
         else:
-            return self._default_primary_entries()
+            return self.default_sections.primary_entries(parent=self)
 
     def load_autoinstall_data(self, data):
         if "disable_components" in data:
@@ -327,7 +345,7 @@ class MirrorModel:
         config["disable_components"] = sorted(self.disabled_components)
 
         if "security" not in config:
-            config["security"] = DEFAULT_SECURITY_SECTION
+            config["security"] = self.default_sections.security_section()
 
         return config
 
@@ -387,7 +405,7 @@ class MirrorModel:
             if self.legacy_primary:
                 candidate.uri = countrify_uri(candidate.uri, cc=cc)
             else:
-                if self.architecture in PRIMARY_ARCHES:
+                if self.architecture in self.default_sections.primary_arches:
                     uri = DEFAULT_SUPPORTED_ARCHES_URI
                 else:
                     uri = DEFAULT_PORTS_ARCHES_URI

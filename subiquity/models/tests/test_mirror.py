@@ -18,8 +18,11 @@ import unittest
 from unittest import mock
 
 from subiquity.models.mirror import (
-    DEFAULT_SECURITY_SECTION,
-    LEGACY_DEFAULT_PRIMARY_SECTION,
+    DEFAULT_PORTS_ARCHES_URI,
+    DEFAULT_SUPPORTED_ARCHES_URI,
+    PORTS_MIRRORS,
+    PRIMARY_ARCH_MIRRORS,
+    DefaultSections,
     LegacyPrimaryEntry,
     MirrorModel,
     MirrorSelectionFallback,
@@ -102,7 +105,9 @@ class TestLegacyPrimaryEntry(unittest.TestCase):
 
     def test_new_from_default(self):
         primary = LegacyPrimaryEntry.new_from_default(parent=self.model)
-        self.assertEqual(primary.config, LEGACY_DEFAULT_PRIMARY_SECTION)
+        self.assertEqual(
+            primary.config, self.model.default_sections.legacy_primary_section()
+        )
 
     def test_get_uri(self):
         self.model.architecture = "amd64"
@@ -117,6 +122,52 @@ class TestLegacyPrimaryEntry(unittest.TestCase):
         self.assertEqual(primary.uri, "http://mymirror.invalid/")
 
 
+class TestDefaultSections(unittest.TestCase):
+    @mock.patch("subiquity.models.mirror.PRIMARY_ARCHES", {"amd64"})
+    @mock.patch("subiquity.models.mirror.PORTS_ARCHES", {"s390x"})
+    def test_security_section(self):
+        default_sections = DefaultSections()
+        self.assertEqual(
+            [
+                {"arches": ["amd64"], "uri": PRIMARY_ARCH_MIRRORS["SECURITY"]},
+                {"arches": ["s390x"], "uri": PORTS_MIRRORS["SECURITY"]},
+            ],
+            default_sections.security_section(),
+        )
+
+    @mock.patch("subiquity.models.mirror.PRIMARY_ARCHES", {"amd64"})
+    @mock.patch("subiquity.models.mirror.PORTS_ARCHES", {"s390x"})
+    def test_legacy_primary_section(self):
+        default_sections = DefaultSections()
+        self.assertEqual(
+            [
+                {"arches": ["amd64"], "uri": DEFAULT_SUPPORTED_ARCHES_URI},
+                {"arches": ["default"], "uri": DEFAULT_PORTS_ARCHES_URI},
+            ],
+            default_sections.legacy_primary_section(),
+        )
+
+    @mock.patch("subiquity.models.mirror.PRIMARY_ARCHES", {"amd64"})
+    @mock.patch("subiquity.models.mirror.PORTS_ARCHES", {"s390x"})
+    def test_primary_entries(self):
+        default_sections = DefaultSections()
+
+        model = mock.Mock()
+
+        self.assertEqual(
+            [
+                PrimaryEntry(parent=model, country_mirror=True),
+                PrimaryEntry(
+                    uri=DEFAULT_SUPPORTED_ARCHES_URI, arches=["amd64"], parent=model
+                ),
+                PrimaryEntry(
+                    uri=DEFAULT_PORTS_ARCHES_URI, arches=["s390x"], parent=model
+                ),
+            ],
+            default_sections.primary_entries(parent=model),
+        )
+
+
 class TestMirrorModel(unittest.TestCase):
     def setUp(self):
         self.model = MirrorModel()
@@ -127,7 +178,10 @@ class TestMirrorModel(unittest.TestCase):
         self.model_legacy.legacy_primary = True
         self.model_legacy.primary_candidates = [
             LegacyPrimaryEntry(
-                copy.deepcopy(LEGACY_DEFAULT_PRIMARY_SECTION), parent=self.model_legacy
+                copy.deepcopy(
+                    self.model_legacy.default_sections.legacy_primary_section()
+                ),
+                parent=self.model_legacy,
             ),
         ]
         self.candidate_legacy = self.model_legacy.primary_candidates[0]
@@ -184,7 +238,10 @@ class TestMirrorModel(unittest.TestCase):
         self.assertFalse(model.legacy_primary)
         model.primary_candidates[0].stage()
         self.assertEqual(set(["non-free"]), model.disabled_components)
-        self.assertEqual(model.primary_candidates, model._default_primary_entries())
+        self.assertEqual(
+            model.primary_candidates,
+            model.default_sections.primary_entries(parent=model),
+        )
 
     def test_from_autoinstall_modern(self):
         data = {
@@ -314,7 +371,9 @@ class TestMirrorModel(unittest.TestCase):
             set(config["disable_components"]), set(self.model.disabled_components)
         )
         self.assertEqual(set(config["disable_suites"]), {"security"})
-        self.assertEqual(config["security"], DEFAULT_SECURITY_SECTION)
+        self.assertEqual(
+            config["security"], self.model.default_sections.security_section()
+        )
 
     def test_get_apt_config_staged_with_config(self):
         self.model.legacy_primary = False
@@ -368,4 +427,6 @@ class TestMirrorModel(unittest.TestCase):
         self.assertEqual(
             set(config["disable_components"]), set(self.model.disabled_components)
         )
-        self.assertEqual(config["security"], DEFAULT_SECURITY_SECTION)
+        self.assertEqual(
+            config["security"], self.model.default_sections.security_section()
+        )
