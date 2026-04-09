@@ -65,7 +65,7 @@ They have been ignored, or old ones used instead.
 class TestAptConfigurer(SubiTestCase):
     def setUp(self):
         self.model = Mock()
-        self.model.mirror = MirrorModel()
+        self.model.mirror = MirrorModel(root=pathlib.Path("/"))
         self.model.mirror.create_primary_candidate("http://mymirror").elect()
         self.model.proxy = ProxyModel()
         self.model.debconf_selections = DebconfSelectionsModel()
@@ -285,7 +285,7 @@ class TestAptConfigurer(SubiTestCase):
 class TestDRAptConfigurer(SubiTestCase):
     def setUp(self):
         self.model = Mock()
-        self.model.mirror = MirrorModel()
+        self.model.mirror = MirrorModel(root=pathlib.Path("/"))
         self.candidate = self.model.mirror.primary_candidates[0]
         self.candidate.stage()
         self.app = make_app(self.model)

@@ -15,6 +15,7 @@
 
 import copy
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from subiquity.models.mirror import (
@@ -57,7 +58,7 @@ class TestCountrifyUrl(unittest.TestCase):
 
 class TestPrimaryEntry(unittest.TestCase):
     def test_initializer(self):
-        model = MirrorModel()
+        model = MirrorModel(root=Path("/"))
 
         entry = PrimaryEntry(parent=model)
         self.assertEqual(entry.parent, model)
@@ -75,7 +76,7 @@ class TestPrimaryEntry(unittest.TestCase):
         self.assertEqual(entry.arches, [])
 
     def test_from_config(self):
-        model = MirrorModel()
+        model = MirrorModel(root=Path("/"))
 
         entry = PrimaryEntry.from_config("country-mirror", parent=model)
         self.assertEqual(entry, PrimaryEntry(parent=model, country_mirror=True))
@@ -96,7 +97,7 @@ class TestPrimaryEntry(unittest.TestCase):
 
 class TestLegacyPrimaryEntry(unittest.TestCase):
     def setUp(self):
-        self.model = MirrorModel()
+        self.model = MirrorModel(root=Path("/"))
 
     def test_initializer(self):
         primary = LegacyPrimaryEntry([], parent=self.model)
@@ -123,10 +124,18 @@ class TestLegacyPrimaryEntry(unittest.TestCase):
 
 
 class TestDefaultSections(unittest.TestCase):
-    @mock.patch("subiquity.models.mirror.PRIMARY_ARCHES", {"amd64"})
-    @mock.patch("subiquity.models.mirror.PORTS_ARCHES", {"s390x"})
+    @mock.patch(
+        "subiquity.models.mirror.apt_config.get_primary_arches",
+        mock.Mock(return_value={"amd64"}),
+    )
+    @mock.patch(
+        "subiquity.models.mirror.apt_config.get_ports_arches",
+        mock.Mock(return_value={"s390x"}),
+    )
     def test_security_section(self):
-        default_sections = DefaultSections()
+        default_sections = DefaultSections(
+            os_release={"ID": "ubuntu", "VERSION_ID": "24.04"}
+        )
         self.assertEqual(
             [
                 {"arches": ["amd64"], "uri": PRIMARY_ARCH_MIRRORS["SECURITY"]},
@@ -135,10 +144,18 @@ class TestDefaultSections(unittest.TestCase):
             default_sections.security_section(),
         )
 
-    @mock.patch("subiquity.models.mirror.PRIMARY_ARCHES", {"amd64"})
-    @mock.patch("subiquity.models.mirror.PORTS_ARCHES", {"s390x"})
+    @mock.patch(
+        "subiquity.models.mirror.apt_config.get_primary_arches",
+        mock.Mock(return_value={"amd64"}),
+    )
+    @mock.patch(
+        "subiquity.models.mirror.apt_config.get_ports_arches",
+        mock.Mock(return_value={"s390x"}),
+    )
     def test_legacy_primary_section(self):
-        default_sections = DefaultSections()
+        default_sections = DefaultSections(
+            os_release={"ID": "ubuntu", "VERSION_ID": "24.04"}
+        )
         self.assertEqual(
             [
                 {"arches": ["amd64"], "uri": DEFAULT_SUPPORTED_ARCHES_URI},
@@ -147,10 +164,18 @@ class TestDefaultSections(unittest.TestCase):
             default_sections.legacy_primary_section(),
         )
 
-    @mock.patch("subiquity.models.mirror.PRIMARY_ARCHES", {"amd64"})
-    @mock.patch("subiquity.models.mirror.PORTS_ARCHES", {"s390x"})
+    @mock.patch(
+        "subiquity.models.mirror.apt_config.get_primary_arches",
+        mock.Mock(return_value={"amd64"}),
+    )
+    @mock.patch(
+        "subiquity.models.mirror.apt_config.get_ports_arches",
+        mock.Mock(return_value={"s390x"}),
+    )
     def test_primary_entries(self):
-        default_sections = DefaultSections()
+        default_sections = DefaultSections(
+            os_release={"ID": "ubuntu", "VERSION_ID": "24.04"}
+        )
 
         model = mock.Mock()
 
@@ -170,11 +195,11 @@ class TestDefaultSections(unittest.TestCase):
 
 class TestMirrorModel(unittest.TestCase):
     def setUp(self):
-        self.model = MirrorModel()
+        self.model = MirrorModel(root=Path("/"))
         self.candidate = self.model.primary_candidates[1]
         self.candidate.stage()
 
-        self.model_legacy = MirrorModel()
+        self.model_legacy = MirrorModel(root=Path("/"))
         self.model_legacy.legacy_primary = True
         self.model_legacy.primary_candidates = [
             LegacyPrimaryEntry(
@@ -188,7 +213,7 @@ class TestMirrorModel(unittest.TestCase):
         self.model_legacy.primary_staged = self.candidate_legacy
 
     def test_initializer(self):
-        model = MirrorModel()
+        model = MirrorModel(root=Path("/"))
         self.assertFalse(model.legacy_primary)
         self.assertIsNone(model.primary_staged)
 
@@ -229,7 +254,7 @@ class TestMirrorModel(unittest.TestCase):
 
     def test_from_autoinstall_no_primary(self):
         # autoinstall loads to the config directly
-        model = MirrorModel()
+        model = MirrorModel(root=Path("/"))
         data = {
             "disable_components": ["non-free"],
             "fallback": "offline-install",
@@ -254,7 +279,7 @@ class TestMirrorModel(unittest.TestCase):
                 ],
             }
         }
-        model = MirrorModel()
+        model = MirrorModel(root=Path("/"))
         model.load_autoinstall_data(data)
         self.assertEqual(
             model.primary_candidates,

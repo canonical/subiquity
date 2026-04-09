@@ -16,6 +16,7 @@
 import contextlib
 import io
 import unittest
+from pathlib import Path
 from unittest import mock
 
 import jsonschema
@@ -55,7 +56,7 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
         self.controller.test_apt_configurer = mock.AsyncMock()
 
     def test_make_autoinstall(self):
-        self.controller.model = MirrorModel()
+        self.controller.model = MirrorModel(root=Path("/"))
         self.controller.model.primary_candidates[0].elect()
         config = self.controller.make_autoinstall()
         self.assertIn("disable_components", config.keys())
@@ -65,7 +66,7 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("primary", config.keys())
 
     def test_make_autoinstall_legacy(self):
-        self.controller.model = MirrorModel()
+        self.controller.model = MirrorModel(root=Path("/"))
         self.controller.model.legacy_primary = True
         self.controller.model.primary_candidates = (
             self.controller.model.get_default_primary_candidates()
@@ -137,7 +138,7 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
     async def test_find_and_elect_candidate_mirror(self, mock_sleep):
         self.controller.app.context.child = contextlib.nullcontext
         self.controller.app.base_model.network.has_network = True
-        self.controller.model = MirrorModel()
+        self.controller.model = MirrorModel(root=Path("/"))
         self.controller.network_configured_event.set()
         self.controller.proxy_configured_event.set()
         self.controller.cc_event.set()
@@ -224,7 +225,7 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
     async def test_find_and_elect_candidate_mirror_no_network(self):
         self.controller.app.context.child = contextlib.nullcontext
         self.controller.app.base_model.network.has_network = False
-        self.controller.model = MirrorModel()
+        self.controller.model = MirrorModel(root=Path("/"))
         self.controller.network_configured_event.set()
         self.controller.proxy_configured_event.set()
         self.controller.cc_event.set()
@@ -235,7 +236,7 @@ class TestMirrorController(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(self.controller.model.primary_elected)
 
     async def test_apply_fallback(self):
-        model = self.controller.model = MirrorModel()
+        model = self.controller.model = MirrorModel(root=Path("/"))
         app = self.controller.app
 
         model.fallback = MirrorSelectionFallback.ABORT

@@ -19,8 +19,16 @@ curtin.
 
 There are a few notions worth explaining related to mirror selection:
 
-primary
--------
+primary vs ports architectures
+------------------------------
+ * a "primary" architecture is an "official" architecture served by
+   archive.ubuntu.com archive
+ * a "ports" architecture is more experimental and served by ports.ubuntu.com
+
+The list of primary/ports architectures is maintained in curtin.
+
+primary mirror
+--------------
  * a "primary mirror" (or a "primary archive") is what curtin historically
  considers as the main repository where it can download Debian packages.
  Surprisingly, there is no notion of "secondary mirror". Instead there is the
@@ -75,15 +83,16 @@ import abc
 import contextlib
 import copy
 import logging
+import pathlib
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Set, Union
 from urllib import parse
 
 import attr
+import curtin
+from curtin.commands import apt_config
 from curtin.commands.apt_config import (
-    PORTS_ARCHES,
     PORTS_MIRRORS,
     PRIMARY_ARCH_MIRRORS,
-    PRIMARY_ARCHES,
     get_arch_mirrorconfig,
     get_mirror,
 )
@@ -234,9 +243,11 @@ def filter_candidates(
 
 
 class DefaultSections:
-    def __init__(self):
-        self.primary_arches: set[str] = set(PRIMARY_ARCHES)
-        self.ports_arches: set[str] = set(PORTS_ARCHES)
+    def __init__(self, *, os_release):
+        self.primary_arches: set[str] = apt_config.get_primary_arches(
+            os_release=os_release
+        )
+        self.ports_arches: set[str] = apt_config.get_ports_arches(os_release=os_release)
 
     def security_section(self):
         return [
@@ -279,8 +290,14 @@ class DefaultSections:
 
 
 class MirrorModel:
-    def __init__(self):
-        self.default_sections = DefaultSections()
+    def __init__(self, *, root: pathlib.Path) -> None:
+        # TODO Ideally, the target we pass here should correspond to what we're
+        # installing, but it gets populated too late.
+        # For now, we assume we're installing the same version of Ubuntu that
+        # we're running in the live environment.
+        self.default_sections = DefaultSections(
+            os_release=curtin.distro.os_release(target=str(root)),
+        )
 
         self.config = copy.deepcopy(DEFAULT)
         self.legacy_primary = False
