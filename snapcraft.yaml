@@ -82,7 +82,7 @@ parts:
 
     source: https://github.com/canonical/curtin
     source-type: git
-    source-commit: "3cb4d6dba6e726bba290adcf3b6a76014ae06961"
+    source-commit: "67962f8bbfc52d3222f62a5ca2c61130781925a8"
 
     override-pull: |
       craftctl default
