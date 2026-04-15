@@ -177,6 +177,11 @@ parts:
       echo "get passwd/user-default-groups" | \
         debconf-communicate user-setup | \
         cut -d ' ' -f 2- > $CRAFT_PART_INSTALL/users-and-groups
+        # add lxd to the groups for the default user,
+        # but we don't want lxd added to the default groups in user-setup
+        if ! grep -q lxd $CRAFT_PART_INSTALL/users-and-groups; then \
+          sed -i $CRAFT_PART_INSTALL/users-and-groups -e '1s/$/ lxd/'; \
+        fi
     stage:
       - users-and-groups
 
