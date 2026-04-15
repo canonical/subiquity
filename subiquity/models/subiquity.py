@@ -18,6 +18,7 @@ import functools
 import json
 import logging
 import os
+import pathlib
 import uuid
 from collections import OrderedDict
 from typing import Any, Dict, List, Set, Tuple
@@ -190,7 +191,7 @@ class SubiquityModel:
         self.kernel_crash_dumps = KernelCrashDumpsModel()
         self.keyboard = KeyboardModel(self.root)
         self.locale = LocaleModel(self.chroot_prefix)
-        self.mirror = MirrorModel()
+        self.mirror = MirrorModel(root=pathlib.Path(self.root))
         self.network = NetworkModel()
         self.oem = OEMModel(dry_run=self.dry_run)
         self.packages: List[TargetPkg] = []
