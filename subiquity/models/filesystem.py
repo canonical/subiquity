@@ -2281,7 +2281,20 @@ class FilesystemModel:
             dasd.disk_layout = "cdl"
             dasd.blocksize = 4096
             dasd.preserve = False
-        self._actions.append(p)
+        # If we emit any "mount" action before emitting all "partition"
+        # actions for a given disk, we run into a situation where
+        # ioctl(BLKRRPART) fails (because partitions are already mounted).
+        # For sfdisk, curtin deals with the issue by passing the
+        # --no-reread option and calls partprobe immediately after.  But for
+        # fdasd, there is no such option.
+        # Ensuring that we stick all partition actions together for a given
+        # disk should make life simpler for curtin.  LP: #2146873
+        # We search in reverse to add the new partition right after the last
+        # one created.
+        for idx, action in enumerate(reversed(self._actions)):
+            if isinstance(action, Partition) and action.device is device:
+                break
+        self._actions.insert(len(self._actions) - idx, p)
         return p
 
     def remove_partition(self, part, *, allow_renumbering=True, allow_moving=True):
