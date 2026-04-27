@@ -55,11 +55,11 @@ class TestValidateTypesCompatible(unittest.TestCase):
         validate_types_compatibles(int | str, str)
 
     def test_not_union(self):
-        with self.assertRaisesRegex(ValueError, r"only supported with union"):
+        with self.assertRaisesRegex(ValueError, "only supported with union"):
             validate_types_compatibles(int, str)
 
     def test_not_narrow(self):
-        with self.assertRaisesRegex(ValueError, r"invalid type narrowing"):
+        with self.assertRaisesRegex(ValueError, "invalid type narrowing"):
             validate_types_compatibles(int | str, float)
 
 

@@ -157,7 +157,7 @@ class TestSystemdRunWrapper(SubiTestCase):
 
     def test_wrap__pipe_stdin_but_no_capture(self):
         wrapper = SystemdRunWrapper(ident="my-id", use_systemd_user=True)
-        with self.assertRaisesRegex(ValueError, r"cannot pipe stdin but not stdout"):
+        with self.assertRaisesRegex(ValueError, "cannot pipe stdin but not stdout"):
             wrapper.wrap(
                 ["cat", "/etc/shells"],
                 private_mounts=False,
