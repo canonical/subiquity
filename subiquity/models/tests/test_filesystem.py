@@ -38,6 +38,7 @@ from subiquity.models.filesystem import (
     RecoveryKeyHandler,
     ZPool,
     align_down,
+    asdict,
     dehumanize_size,
     get_canmount,
     get_raid_size,
@@ -1223,6 +1224,8 @@ class TestAutoInstallConfig(unittest.TestCase):
             ),
         )
 
+
+class TestRenderActions(unittest.TestCase):
     def test_render_does_not_include_unreferenced(self):
         model = make_model(Bootloader.NONE)
         disk1 = make_disk(model, preserve=True)
@@ -1325,6 +1328,40 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertTrue(disk1p1.id in rendered_ids)
         self.assertTrue(disk2.id in rendered_ids)
         self.assertTrue(disk2p1.id in rendered_ids)
+
+    def test_render_groups_partitions_together(self):
+        """Ensure that rendered partition actions for a given disk are grouped
+        together, even when the actions were not created back to back"""
+        model = make_model(Bootloader.NONE)
+
+        d1 = make_disk(model)
+        d1p1 = make_partition(model, d1)
+        d1p1fs = model.add_filesystem(d1p1, "ext4")
+        model.add_mount(d1p1fs, "/")
+        d1p2 = make_partition(model, d1)
+        d1p2fs = model.add_filesystem(d1p2, "ext4")
+        model.add_mount(d1p2fs, "/home")
+        d1p3 = make_partition(model, d1)
+        d1p3fs = model.add_filesystem(d1p3, "ext4")
+        model.add_mount(d1p3fs, "/boot")
+
+        d2 = make_disk(model)
+        d2p1 = make_partition(model, d2)
+        model.add_filesystem(d2p1, "ext4")
+        d2p2 = make_partition(model, d2)
+
+        rendered_actions = model._render_actions()
+
+        d1p1_idx = rendered_actions.index(asdict(d1p1, for_api=False))
+        d1p2_idx = rendered_actions.index(asdict(d1p2, for_api=False))
+        d1p3_idx = rendered_actions.index(asdict(d1p3, for_api=False))
+
+        d2p1_idx = rendered_actions.index(asdict(d2p1, for_api=False))
+        d2p2_idx = rendered_actions.index(asdict(d2p2, for_api=False))
+
+        self.assertEqual(1 + d1p1_idx, d1p2_idx)
+        self.assertEqual(1 + d1p2_idx, d1p3_idx)
+        self.assertEqual(1 + d2p1_idx, d2p2_idx)
 
 
 class TestPartitionNumbering(unittest.TestCase):
