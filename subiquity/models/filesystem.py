@@ -26,8 +26,10 @@ import secrets
 import tempfile
 from abc import ABC, abstractmethod
 from typing import (
+    Any,
     Callable,
     Dict,
+    Iterator,
     List,
     Literal,
     Optional,
@@ -2034,13 +2036,18 @@ class FilesystemModel:
         return objs
 
     def _render_actions(self, mode: ActionRenderMode = ActionRenderMode.DEFAULT):
-        # The curtin storage config has the constraint that an action must be
-        # preceded by all the things that it depends on.  We handle this by
-        # repeatedly iterating over all actions and checking if we can emit
-        # each action by checking if all of the actions it depends on have been
-        # emitted.  Eventually this will either emit all actions or stop making
-        # progress -- which means there is a cycle in the definitions,
-        # something the UI should have prevented <wink>.
+        # The curtin storage config has the following constraints:
+        #  * an action must be preceded by all the things that it depends on.
+        #    We handle this by repeatedly iterating over all actions and checking
+        #    if we can emit each action by checking if all of the actions it
+        #    depends on have been emitted.  Eventually this will either emit
+        #    all actions or stop making progress -- which means there is a
+        #    cycle in the definitions, something the UI should have prevented
+        #    <wink>.
+        #  * All {type: partition} actions for a given device must be grouped
+        #    together to avoid adding a partition to a device that is already
+        #    in use (i.e., typically because of a {type: mount} action).
+        #    See LP: #2146873
         r = []
         emitted_ids = set()
 
@@ -2090,6 +2097,27 @@ class FilesystemModel:
                             return False
             return True
 
+        def grouped_partition_actions(
+            actions: list[dict[str, Any]],
+        ) -> Iterator[dict[str, Any]]:
+            # While this function could work with model objects instead of
+            # rendered actions, it is currently executed after actions are
+            # emitted to avoid forgetting any partition.
+            # If we were to execute it before, we would not consider partitions
+            # actions automatically added as dependencies in "can_emit".
+            device_to_partitions = collections.defaultdict(list)
+
+            for action in actions:
+                if action["type"] == "partition":
+                    device_to_partitions[action["device"]].append(action)
+
+            for action in actions:
+                if action["type"] == "partition":
+                    if device_to_partitions[action["device"]][0] is action:
+                        yield from device_to_partitions[action["device"]]
+                else:
+                    yield action
+
         mountpoints = {m.path: m.id for m in self.all_mountlikes()}
         log.debug("mountpoints %s", mountpoints)
 
@@ -2128,7 +2156,7 @@ class FilesystemModel:
                     act["volume"] = device["id"]
             r = devices + r
 
-        return r
+        return list(grouped_partition_actions(r))
 
     def render(self, mode: ActionRenderMode = ActionRenderMode.DEFAULT):
         if self.dd_target is not None:
