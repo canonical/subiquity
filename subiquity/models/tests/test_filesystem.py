@@ -1223,6 +1223,8 @@ class TestAutoInstallConfig(unittest.TestCase):
             ),
         )
 
+
+class TestRenderActions(unittest.TestCase):
     def test_render_does_not_include_unreferenced(self):
         model = make_model(Bootloader.NONE)
         disk1 = make_disk(model, preserve=True)
