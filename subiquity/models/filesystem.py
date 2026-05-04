@@ -2155,6 +2155,12 @@ class FilesystemModel:
             config["swap"] = {"size": 0}
         if self.grub is not None:
             config["grub"] = self.grub
+        if self.all_raids():
+            config.setdefault("write_files", {})
+            config["write_files"]["grub_md_raid"] = {
+                "path": "etc/default/grub.d/50-curtin-md.cfg",
+                "content": 'GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX rd.auto=1"\n',
+            }
         return config
 
     def load_probe_data(self, probe_data):
