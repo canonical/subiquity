@@ -2372,22 +2372,19 @@ class TestActiveDirectory(TestAPI):
                 join_result = instance.get(join_result_ep, wait=True)
                 await asyncio.wait_for(join_result, timeout=1.5)
 
-    # Helper method
-    @staticmethod
-    async def target_packages() -> List[str]:
-        """Returns the list of packages the AD Model wants to install in the
-        target system."""
-        from subiquity.models.ad import AdModel
-
-        model = AdModel()
-        model.do_join = True
-        return await model.target_packages()
-
     async def packages_lookup(self, log_dir: str) -> Dict[str, bool]:
         """Returns a dictionary mapping the additional packages expected
         to be installed in the target system and whether they were
         referred to or not in the server log."""
-        expected_packages = await self.target_packages()
+        from subiquity.common.pkg import TargetPkg
+        from subiquity.models.ad import AdModel
+
+        async def target_packages() -> list[TargetPkg]:
+            model = AdModel()
+            model.do_join = True
+            return await model.target_packages()
+
+        expected_packages = await target_packages()
         packages_lookup = {p.name: False for p in expected_packages}
         log_path = os.path.join(log_dir, "subiquity-server-debug.log")
         find_start = "finish: subiquity/Install/install/postinstall/install_{}:"
