@@ -21,7 +21,6 @@ import shutil
 import tempfile
 from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import List, Optional, Union
 
 import attr
 
@@ -30,7 +29,7 @@ log = logging.getLogger("subiquity.server.mounter")
 
 class TmpFileSet:
     def __init__(self):
-        self._tdirs: List[str] = []
+        self._tdirs: list[str] = []
 
     def tdir(self):
         d = tempfile.mkdtemp()
@@ -55,14 +54,14 @@ class AbsolutePathError(Exception):
 
 
 class _MountBase:
-    def pp(self, *args: Union[str, Path]) -> Path:
+    def pp(self, *args: str | Path) -> Path:
         """Same as p() but returns a pathlib.Path."""
         for a in args:
             if Path(a).is_absolute():
                 raise AbsolutePathError("no absolute paths here please")
         return Path(self.mountpoint).joinpath(*args)
 
-    def p(self, *args: Union[str, Path]) -> str:
+    def p(self, *args: str | Path) -> str:
         return str(self.pp(*args))
 
     def write(self, path, content):
@@ -80,12 +79,12 @@ class Mountpoint(_MountBase):
 class OverlayMountpoint(_MountBase):
     # The first element in lowers will be the bottom layer and the last element
     # will be the top layer.
-    lowers: List["Lower"]
-    upperdir: Optional[str]
+    lowers: list["Lower"]
+    upperdir: str | None
     mountpoint: str
 
 
-Lower = Union[Mountpoint, str, OverlayMountpoint]
+Lower = Mountpoint | str | OverlayMountpoint
 
 
 @functools.singledispatch
@@ -120,7 +119,7 @@ class Mounter:
     def __init__(self, app) -> None:
         self.app = app
         self.tmpfiles = TmpFileSet()
-        self._mounts: List[Mountpoint] = []
+        self._mounts: list[Mountpoint] = []
 
     async def mount(
         self,
@@ -173,7 +172,7 @@ class Mounter:
             else:
                 path.unlink(missing_ok=True)
 
-    async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
+    async def setup_overlay(self, lowers: list[Lower]) -> OverlayMountpoint:
         """Setup a RW overlay FS over one or more lower layers.
         Be careful, when multiple lower layers are specified, they are stacked
         from the leftmost one and going right. This is the opposite of what the
@@ -250,7 +249,7 @@ class Mounter:
 
 
 class DryRunMounter(Mounter):
-    async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
+    async def setup_overlay(self, lowers: list[Lower]) -> OverlayMountpoint:
         # XXX This implementation expects that:
         # - on first invocation, the lowers list contains a single string
         # element.
