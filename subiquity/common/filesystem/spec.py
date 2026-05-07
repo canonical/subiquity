@@ -17,17 +17,7 @@
 replaced by `attr.s` structures or similar."""
 
 
-import typing
-from typing import Any, TypedDict
-
-try:
-    from typing import Required
-except ImportError:
-    # For compability with Python < 3.11.
-    # TODO Keep only what is in the try block when switching to core24.
-    class Required(typing.Generic[typing.TypeVar("T")]):
-        pass
-
+from typing import Any, Required, TypedDict
 
 from subiquity.models.filesystem import (
     Disk,
