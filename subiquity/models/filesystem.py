@@ -17,6 +17,7 @@ import collections
 import copy
 import enum
 import fnmatch
+import itertools
 import logging
 import math
 import os
@@ -174,12 +175,10 @@ class RecoveryKeyHandler:
 def _set_backlinks(obj):
     if obj.id is None:
         base = obj.type
-        i = 0
-        while True:
+        for i in itertools.count(start=0):
             val = "%s-%s" % (base, i)
             if val not in obj._m._all_ids:
                 break
-            i += 1
         obj.id = val
     obj._m._all_ids.add(obj.id)
     for field in attr.fields(type(obj)):
