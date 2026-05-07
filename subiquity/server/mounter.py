@@ -84,7 +84,7 @@ class OverlayMountpoint(_MountBase):
     mountpoint: str
 
 
-Lower = Mountpoint | str | OverlayMountpoint
+type Lower = Mountpoint | str | OverlayMountpoint
 
 
 @functools.singledispatch
