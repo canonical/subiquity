@@ -19,6 +19,7 @@ Provides storage device selection and additional storage
 configuration.
 
 """
+import itertools
 import logging
 import re
 from typing import Optional
@@ -479,12 +480,10 @@ class PartitionStretchy(Stretchy):
             initial["fstype"] = "ext4"
             max_size = self.gap.size
             if isinstance(disk, LVM_VolGroup):
-                x = 0
-                while True:
+                for x in itertools.count(start=0):
                     name = "lv-{}".format(x)
                     if name not in lvm_names:
                         break
-                    x += 1
                 initial["name"] = name
             remote_storage = disk.on_remote_storage()
 

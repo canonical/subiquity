@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import itertools
 import logging
 import re
 
@@ -119,12 +120,10 @@ class RaidStretchy(Stretchy):
         if existing is None:
             title = _('Create software RAID ("MD") disk')
             label = _("Create")
-            x = 0
-            while True:
+            for x in itertools.count(start=0):
                 name = "md{}".format(x)
                 if name not in raid_names:
                     break
-                x += 1
             initial = {
                 "devices": {},
                 "name": name,

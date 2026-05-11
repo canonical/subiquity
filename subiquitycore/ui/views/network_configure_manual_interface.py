@@ -13,6 +13,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import ipaddress
+import itertools
 import logging
 
 from urwid import CheckBox, Text, WidgetPlaceholder, connect_signal
@@ -394,12 +395,10 @@ class BondStretchy(Stretchy):
             self.existing_name = None
             title = _("Create bond")
             label = _("Create")
-            x = 0
-            while True:
+            for x in itertools.count(start=0):
                 name = "bond{}".format(x)
                 if name not in all_netdev_names:
                     break
-                x += 1
             initial = {
                 "interfaces": [],
                 "name": name,
