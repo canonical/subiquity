@@ -1,0 +1,4 @@
+name: subiquity-noble
+base: ubuntu@24.04
+sdks:
+  - name: project-install-deps

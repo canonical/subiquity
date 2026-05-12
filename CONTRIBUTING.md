@@ -38,3 +38,7 @@ Changes to this project should be proposed as pull requests on GitHub at:
   * all the rest - `make lint check`.
     * Prerequisites for running these locally can be installed with
     `make aptdeps`.
+      * Tools like [workshop](https://github.com/canonical/workshop) can
+        optionally be used to isolate the build and dependencies from the host
+        system. One can run `workshop launch && workshop shell` to avoid having
+        the `aptdeps` installed on the host system.

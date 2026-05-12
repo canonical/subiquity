@@ -1,0 +1,6 @@
+apt-get update
+apt-get install -y build-essential
+# Workaround suspend issue by removing udisks2.
+# Proper fix looks to be part of lxcfs.
+# https://github.com/canonical/lxd/issues/17983
+apt-get purge -y udisks2
