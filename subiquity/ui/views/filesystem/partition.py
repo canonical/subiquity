@@ -650,13 +650,15 @@ class FormatEntireStretchy(Stretchy):
             initial.update(initial_data_for_fs(fs))
         elif not isinstance(device, Disk):
             initial["fstype"] = "ext4"
+        # We're reusing the form meant for partitions but specify a maxsize of
+        # zero to hide the size field.
         self.form = PartitionForm(
             self.model,
             0,
             initial,
             None,
             device,
-            alignment=device.alignment_data().part_align,
+            alignment=0,
             remote_storage=device.on_remote_storage(),
         )
         self.form.remove_field("size")
