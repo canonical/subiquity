@@ -21,7 +21,6 @@ import shutil
 import tempfile
 from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import List, Optional, Union
 
 import attr
 
@@ -30,7 +29,7 @@ log = logging.getLogger("subiquity.server.mounter")
 
 class TmpFileSet:
     def __init__(self):
-        self._tdirs: List[str] = []
+        self._tdirs: list[str] = []
 
     def tdir(self):
         d = tempfile.mkdtemp()
@@ -55,14 +54,14 @@ class AbsolutePathError(Exception):
 
 
 class _MountBase:
-    def pp(self, *args: Union[str, Path]) -> Path:
+    def pp(self, *args: str | Path) -> Path:
         """Same as p() but returns a pathlib.Path."""
         for a in args:
             if Path(a).is_absolute():
                 raise AbsolutePathError("no absolute paths here please")
         return Path(self.mountpoint).joinpath(*args)
 
-    def p(self, *args: Union[str, Path]) -> str:
+    def p(self, *args: str | Path) -> str:
         return str(self.pp(*args))
 
     def write(self, path, content):
@@ -80,12 +79,12 @@ class Mountpoint(_MountBase):
 class OverlayMountpoint(_MountBase):
     # The first element in lowers will be the bottom layer and the last element
     # will be the top layer.
-    lowers: List["Lower"]
-    upperdir: Optional[str]
+    lowers: list["Lower"]
+    upperdir: str | None
     mountpoint: str
 
 
-Lower = Union[Mountpoint, str, OverlayMountpoint]
+type Lower = Mountpoint | str | OverlayMountpoint
 
 
 @functools.singledispatch
@@ -120,7 +119,7 @@ class Mounter:
     def __init__(self, app) -> None:
         self.app = app
         self.tmpfiles = TmpFileSet()
-        self._mounts: List[Mountpoint] = []
+        self._mounts: list[Mountpoint] = []
 
     async def mount(
         self,
@@ -129,32 +128,30 @@ class Mounter:
         options=None,
         type=None,
     ) -> Mountpoint:
-        if isinstance(device, Path):
-            device = str(device)
-        if isinstance(mountpoint, Path):
-            mountpoint = str(mountpoint)
-
+        if isinstance(device, str):
+            device = Path(device)
+        if isinstance(mountpoint, str):
+            mountpoint = Path(mountpoint)
         opts = []
         if options is not None:
             opts.extend(["-o", options])
         if type is not None:
             opts.extend(["-t", type])
         if mountpoint is None:
-            mountpoint = tempfile.mkdtemp()
+            mountpoint = Path(tempfile.mkdtemp())
             created = True
-        elif os.path.exists(mountpoint):
+        elif mountpoint.exists():
             created = False
         else:
-            path = Path(device)
-            if options == "bind" and not path.is_dir():
-                Path(mountpoint).touch(exist_ok=False)
+            if options == "bind" and not device.is_dir():
+                mountpoint.touch(exist_ok=False)
             else:
-                os.makedirs(mountpoint, exist_ok=False)
+                mountpoint.mkdir(parents=True, exist_ok=False)
             created = True
         await self.app.command_runner.run(
-            ["mount"] + opts + [device, mountpoint], private_mounts=False
+            ["mount"] + opts + [str(device), str(mountpoint)], private_mounts=False
         )
-        m = Mountpoint(mountpoint=mountpoint, created=created)
+        m = Mountpoint(mountpoint=str(mountpoint), created=created)
         self._mounts.append(m)
         return m
 
@@ -175,7 +172,7 @@ class Mounter:
             else:
                 path.unlink(missing_ok=True)
 
-    async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
+    async def setup_overlay(self, lowers: list[Lower]) -> OverlayMountpoint:
         """Setup a RW overlay FS over one or more lower layers.
         Be careful, when multiple lower layers are specified, they are stacked
         from the leftmost one and going right. This is the opposite of what the
@@ -191,7 +188,7 @@ class Mounter:
         upperdir = f"{tdir}/upper"
         workdir = f"{tdir}/work"
         for d in target, workdir, upperdir:
-            os.mkdir(d)
+            Path(d).mkdir()
 
         options = f"lowerdir={lowerdir},upperdir={upperdir},workdir={workdir}"
 
@@ -207,21 +204,21 @@ class Mounter:
     async def bind_mount_tree(self, src: Path | str, dst: Path | str) -> None:
         """bind-mount files and directories from src that are not already
         present into dst"""
-        if isinstance(src, Path):
-            src = str(src)
-        if isinstance(dst, Path):
-            dst = str(dst)
+        if isinstance(src, str):
+            src = Path(src)
+        if isinstance(dst, str):
+            dst = Path(dst)
 
-        if not os.path.exists(dst):
+        if not dst.exists():
             await self.mount(src, dst, options="bind")
             return
-        for src_dirpath, dirnames, filenames in os.walk(src):
-            dst_dirpath = src_dirpath.replace(src, dst)
+        for src_dirpath, dirnames, filenames in os.walk(str(src)):
+            dst_dirpath = src_dirpath.replace(str(src), str(dst))
             for name in dirnames + filenames:
-                dst_path = os.path.join(dst_dirpath, name)
-                if os.path.exists(dst_path):
+                dst_path = Path(dst_dirpath) / name
+                if dst_path.exists():
                     continue
-                src_path = os.path.join(src_dirpath, name)
+                src_path = Path(src_dirpath) / name
                 await self.mount(src_path, dst_path, options="bind")
                 if name in dirnames:
                     dirnames.remove(name)
@@ -252,7 +249,7 @@ class Mounter:
 
 
 class DryRunMounter(Mounter):
-    async def setup_overlay(self, lowers: List[Lower]) -> OverlayMountpoint:
+    async def setup_overlay(self, lowers: list[Lower]) -> OverlayMountpoint:
         # XXX This implementation expects that:
         # - on first invocation, the lowers list contains a single string
         # element.
@@ -267,7 +264,7 @@ class DryRunMounter(Mounter):
         else:
             source = lowerdir
         target = self.tmpfiles.tdir()
-        os.mkdir(f"{target}/etc")
+        (Path(target) / "etc").mkdir()
 
         # In dry run mode we copy the apt config from the running
         # system into the "target". Some files associated with Ubuntu
