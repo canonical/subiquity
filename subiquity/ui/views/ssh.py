@@ -395,12 +395,7 @@ class SSHView(BaseView):
                 make_action_menu_row(
                     [
                         Text("["),
-                        # LP: #2055702 wrap="ellipsis" looks better but it
-                        # produces crashes on non UTF-8 and/or serial
-                        # terminals,
-                        # We can move back to wrap="ellipsis" when we switch to
-                        # core24 or if the fix gets SRUd to jammy.
-                        Text(key, wrap="clip"),
+                        Text(key, wrap="ellipsis"),
                         menu,
                         Text("]"),
                     ],

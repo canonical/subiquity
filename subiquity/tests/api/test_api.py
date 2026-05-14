@@ -186,9 +186,6 @@ class Server(Client):
                 self.proc.kill()
             except ProcessLookupError:
                 pass
-            # https://github.com/python/cpython/issues/88050
-            # fixed in python 3.11
-            self.proc._transport.close()
 
 
 class TestAPI(SubiTestCase):

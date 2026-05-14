@@ -205,10 +205,6 @@ class NetworkController(BaseNetworkController, SubiquityController):
     async def _apply_config(self, *, context=None, silent=False):
         try:
             await super()._apply_config(context=context, silent=silent)
-        except asyncio.CancelledError:
-            # asyncio.CancelledError is a subclass of Exception in
-            # Python 3.6 (sadface)
-            raise
         except Exception:
             log.exception("_apply_config failed")
             self.model.has_network = False

@@ -2061,10 +2061,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 # self._probe_once_task.wait as if _probe_once_task
                 # gets cancelled, we should be cancelled too.
                 await asyncio.wait_for(self._probe_once_task.task, probert_timeout)
-            except asyncio.CancelledError:
-                # asyncio.CancelledError is a subclass of Exception in
-                # Python 3.6 (sadface)
-                raise
             except Exception as exc:
                 block_discover_log.exception(
                     "block probing failed restricted=%s", restricted
