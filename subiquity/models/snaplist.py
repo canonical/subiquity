@@ -43,9 +43,6 @@ class SnapListModel:
         for info in data["result"]:
             self.update(self._snap_for_name(info["name"]), info)
 
-    def add_partial_snap(self, name):
-        self._snaps_for_name(name)
-
     def update(self, snap, data):
         snap.summary = data["summary"]
         snap.publisher = data["developer"]
