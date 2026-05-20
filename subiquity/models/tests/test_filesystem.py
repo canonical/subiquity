@@ -1326,6 +1326,26 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertTrue(disk2.id in rendered_ids)
         self.assertTrue(disk2p1.id in rendered_ids)
 
+    def test_render_raid_adds_rd_auto_grub_cfg(self):
+        model, raid = make_model_and_raid()
+        fs = model.add_filesystem(raid, "ext4")
+        model.add_mount(fs, "/")
+        rendered = model.render()
+        self.assertIn("write_files", rendered)
+        self.assertIn("grub_md_raid", rendered["write_files"])
+        wf = rendered["write_files"]["grub_md_raid"]
+        self.assertEqual(wf["path"], "etc/default/grub.d/50-curtin-md.cfg")
+        self.assertIn("rd.auto=1", wf["content"])
+
+    def test_render_no_raid_omits_rd_auto_grub_cfg(self):
+        model = make_model(Bootloader.NONE)
+        disk = make_disk(model)
+        part = make_partition(model, disk)
+        fs = model.add_filesystem(part, "ext4")
+        model.add_mount(fs, "/")
+        rendered = model.render()
+        self.assertNotIn("write_files", rendered)
+
 
 class TestPartitionNumbering(unittest.TestCase):
     def setUp(self):
