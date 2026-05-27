@@ -72,7 +72,7 @@ parts:
     source: https://github.com/canonical/curtin
     source-type: git
     # Tracks the ubuntu/noble branch
-    source-commit: "8bc0121d6809719a611f3f9db9630122b0e8ed8f"
+    source-commit: "8c8ca80d22572e068a89badbbd53d6590ab9f17d"
 
     override-pull: |
       craftctl default
@@ -232,7 +232,7 @@ parts:
     source: https://github.com/canonical/probert.git
     source-type: git
     # Tracks the ubuntu/noble branch
-    source-commit: 26175bb2fb952335cc652c602e7c5ae6ef7ac82b
+    source-commit: cd86d1ed29e8da70ceead08697e62b3b09643b03
 
     override-build: *pyinstall
 
