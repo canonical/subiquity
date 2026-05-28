@@ -122,8 +122,8 @@ class TestValidatePinPass(TestCase):
         )
 
     def test_invalid_pin(self):
-        with self.assertRaises(
-            StorageInvalidUsageError, msg="pin is a string of digits"
+        with self.assertRaisesRegex(
+            StorageInvalidUsageError, "pin is a string of digits"
         ):
             validate_pin_pass(
                 passphrase_allowed=False, pin_allowed=True, passphrase=None, pin="abcd"
@@ -135,23 +135,25 @@ class TestValidatePinPass(TestCase):
         )
 
     def test_unexpected_passphrase(self):
-        with self.assertRaises(
-            StorageInvalidUsageError, msg="unexpected passphrase supplied"
+        with self.assertRaisesRegex(
+            StorageInvalidUsageError, "unexpected passphrase supplied"
         ):
             validate_pin_pass(
                 passphrase_allowed=False, pin_allowed=False, passphrase="abcd", pin=None
             )
 
     def test_unexpected_pin(self):
-        with self.assertRaises(StorageInvalidUsageError, msg="unexpected pin supplied"):
+        with self.assertRaisesRegex(
+            StorageInvalidUsageError, "unexpected pin supplied"
+        ):
             validate_pin_pass(
                 passphrase_allowed=False, pin_allowed=False, passphrase=None, pin="1234"
             )
 
     def test_pin_and_pass_supplied(self):
-        with self.assertRaises(
+        with self.assertRaisesRegex(
             StorageInvalidUsageError,
-            msg="must supply at most one of pin and passphrase",
+            "must supply at most one of pin and passphrase",
         ):
             validate_pin_pass(
                 passphrase_allowed=True, pin_allowed=True, passphrase="abcd", pin="1234"
@@ -630,8 +632,8 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
     async def test_v2_add_boot_partition_POST_existing_bootloader(self):
         self.fsc.locked_probe_data = False
         with mock.patch.object(self.fsc, "add_boot_disk") as add_boot_disk:
-            with self.assertRaises(
-                StorageConstraintViolationError, msg="device already has bootloader"
+            with self.assertRaisesRegex(
+                StorageConstraintViolationError, "device already has bootloader"
             ):
                 await self.fsc.v2_add_boot_partition_POST("dev-sda")
         self.assertTrue(self.fsc.locked_probe_data)
@@ -642,8 +644,8 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
     async def test_v2_add_boot_partition_POST_not_supported(self):
         self.fsc.locked_probe_data = False
         with mock.patch.object(self.fsc, "add_boot_disk") as add_boot_disk:
-            with self.assertRaises(
-                StorageConstraintViolationError, msg="disk does not support boot"
+            with self.assertRaisesRegex(
+                StorageConstraintViolationError, "disk does not support boot"
             ):
                 await self.fsc.v2_add_boot_partition_POST("dev-sda")
         self.assertTrue(self.fsc.locked_probe_data)
@@ -1055,15 +1057,15 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
     async def test_v2_core_boot_recovery_GET__not_yet_configured(self):
         self.fsc.model = make_model()
         self.fsc._configured = False
-        with self.assertRaises(
-            StorageInvalidUsageError, msg="storage model is not yet configured"
+        with self.assertRaisesRegex(
+            StorageInvalidUsageError, "storage model is not yet configured"
         ):
             await self.fsc.v2_core_boot_recovery_key_GET()
 
     async def test_v2_core_boot_recovery_GET__not_core_boot(self):
         self.fsc.model = make_model()
-        with self.assertRaises(
-            StorageInvalidUsageError, msg="not using core boot encrypted"
+        with self.assertRaisesRegex(
+            StorageInvalidUsageError, "not using core boot encrypted"
         ):
             await self.fsc.v2_core_boot_recovery_key_GET()
 
@@ -1071,8 +1073,8 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             capability=GuidedCapability.DIRECT
         )
 
-        with self.assertRaises(
-            StorageInvalidUsageError, msg="not using core boot encrypted"
+        with self.assertRaisesRegex(
+            StorageInvalidUsageError, "not using core boot encrypted"
         ):
             await self.fsc.v2_core_boot_recovery_key_GET()
 
@@ -1081,8 +1083,8 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.fsc.model.guided_configuration = mock.Mock(
             capability=GuidedCapability.CORE_BOOT_ENCRYPTED
         )
-        with self.assertRaises(
-            StorageInvalidUsageError, msg="recovery key is not yet available"
+        with self.assertRaisesRegex(
+            StorageInvalidUsageError, "recovery key is not yet available"
         ):
             await self.fsc.v2_core_boot_recovery_key_GET()
 
@@ -1161,8 +1163,8 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
 
         self.fsc._variation_info = {}
 
-        with self.assertRaises(
-            StorageInvalidUsageError, msg="no suitable variation for core boot"
+        with self.assertRaisesRegex(
+            StorageInvalidUsageError, "no suitable variation for core boot"
         ):
             await self.fsc.v2_core_boot_encryption_features_GET()
 
@@ -1170,8 +1172,8 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             "minimal": VariationInfo(name="minimal", label=None, system=None),
         }
 
-        with self.assertRaises(
-            StorageInvalidUsageError, msg="no suitable variation for core boot"
+        with self.assertRaisesRegex(
+            StorageInvalidUsageError, "no suitable variation for core boot"
         ):
             await self.fsc.v2_core_boot_encryption_features_GET()
 
@@ -1620,8 +1622,8 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertEqual(expected_optional_install, actual)
 
     async def test_run_autoinstall_guided__hybrid_with_mode(self):
-        with self.assertRaises(
-            AutoinstallError, msg="cannot use 'mode' with hybrid layout"
+        with self.assertRaisesRegex(
+            AutoinstallError, "cannot use 'mode' with hybrid layout"
         ):
             await self.fsc.run_autoinstall_guided(
                 {"name": "hybrid", "mode": "reformat_disk"}
