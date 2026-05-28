@@ -425,7 +425,7 @@ msgid "Save"
 msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:76
-msgid "Subnet:"
+msgid "Network address CIDR:"
 msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:77
