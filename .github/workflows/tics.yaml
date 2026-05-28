@@ -4,6 +4,12 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '17 5 * * 6'  # Run at 5:17a (arbitrary) on Saturday
+  push:
+    paths:
+      - '.github/workflows/tics.yaml'
+  pull_request:
+    paths:
+      - '.github/workflows/tics.yaml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,6 +31,13 @@ jobs:
       - name: Coverage
         run: |
           make coverage
+
+      - name: Detach TICS if needed
+        env:
+          TICSAUTHTOKEN: ${{ secrets.TICSAUTHTOKEN }}
+        run: |
+          source ~/.profile
+          TICSMaintenance -project subiquity -detach
 
       - name: Run TICS analysis with github-action
         uses: tiobe/tics-github-action@v3
