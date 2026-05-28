@@ -66,6 +66,8 @@ class CmdListController(NonInteractiveController):
         self.run_event = asyncio.Event()
 
     def load_autoinstall_data(self, data):
+        if data is None:
+            return
         self.cmds = [Command(args=cmd, check=self.cmd_check) for cmd in data]
 
     def env(self):
