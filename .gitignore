@@ -81,3 +81,6 @@ venv
 
 # ignore local vscode config
 .vscode
+
+# ignore container devel environment files
+.workshop.lock
