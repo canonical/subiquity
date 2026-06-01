@@ -199,7 +199,7 @@ class CompoundDiskForm(Form):
                     # An empty disk can always have a boot partition added.
                     potential_boot_disks.add(d)
                 elif d.preserve:
-                    # As can a disk that still has it's original
+                    # As can a disk that still has its original
                     # partition table (it can be reformatted, or it
                     # might already have a bootloader partition we can
                     # reuse)

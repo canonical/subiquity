@@ -538,7 +538,7 @@ class SubiquityServer(Application):
         # Some common errors have apport reports written closer to where the
         # exception was originally thrown. We write a generic "unknown error"
         # report for cases where it wasn't written already, except in cases
-        # where we want to explicitly supress report generation (e.g., bad
+        # where we want to explicitly suppress report generation (e.g., bad
         # autoinstall cases).
 
         report: Optional[ErrorReport] = None

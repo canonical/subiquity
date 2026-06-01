@@ -397,7 +397,7 @@ unconfigured_prep_partition_description = _(
     """\
 Required bootloader partition
 
-This is the PReP partion which is required on POWER. If this disk is
+This is the PReP partition which is required on POWER. If this disk is
 selected as a boot device, Grub will be installed onto this partition.
 """
 )
@@ -406,7 +406,7 @@ configured_prep_partition_description = _(
     """\
 Required bootloader partition
 
-This is the PReP partion which is required on POWER. As this disk has
+This is the PReP partition which is required on POWER. As this disk has
 been selected as a boot device, Grub will be installed onto this
 partition.
 """

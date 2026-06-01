@@ -355,7 +355,7 @@ class API:
                 default behavior expands partition to fill disk if size not
                 supplied or -1.
                 Other partition fields are ignored.
-                adding a partion when there is not yet a boot partition can
+                adding a partition when there is not yet a boot partition can
                 result in the boot partition being added automatically - see
                 add_boot_partition for more control over this.
                 format=None means an unformatted partition

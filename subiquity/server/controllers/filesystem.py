@@ -851,7 +851,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     def start_guided_erase_install(
         self, target: GuidedStorageTargetEraseInstall, disk: ModelDisk
     ) -> gaps.Gap:
-        """Remove the targetted partition and return the resulting gap. If
+        """Remove the targeted partition and return the resulting gap. If
         there was free space before or after the partition being removed, it
         will be included in the returned gap. Therefore gap.offset and gap.size
         will not necessarily match partition.offset and partition.size."""
@@ -1712,7 +1712,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 # these two scenarios:
                 # 1. No intention to change the partition name:
                 #     {"partition": {"number": 1, ...}
-                # 2. Attemping to reset the partition name:
+                # 2. Attempting to reset the partition name:
                 #     {"partition": {"number": 1, "name": null, ...}
                 log.warning(
                     "cannot tell if the user wants to keep the current"

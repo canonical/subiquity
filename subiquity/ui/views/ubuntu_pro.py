@@ -590,7 +590,7 @@ class UbuntuProView(BaseView):
 
     def on_contract_selected(self, contract_token: str) -> None:
         """Function to call when the contract selection has finished
-        succesfully."""
+        successfully."""
         checking_token_overlay = CheckingContractToken(self)
         self.show_overlay(
             checking_token_overlay, width=checking_token_overlay.width, min_width=None
@@ -603,7 +603,7 @@ class UbuntuProView(BaseView):
 
             log.error(
                 "contract-token obtained using contract-selection"
-                " counld not be validated: %r",
+                " could not be validated: %r",
                 status,
             )
             self._w = self.upgrade_mode_screen()
