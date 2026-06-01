@@ -3,7 +3,7 @@
 Autoinstall Validation
 =====================================
 
-The following how-to guide demonstrates how to perform pre-validation of a autoinstall config.
+The following how-to guide demonstrates how to perform pre-validation of an autoinstall config.
 
 Autoinstall config is validated against a :doc:`JSON schema <../reference/autoinstall-schema>` during runtime before it is applied. This check ensures existence of required keys and their data types, but does not guarantee total validity of the data provided (see the :ref:`Validator Limitations<validator-limitations>` section for more details).
 
@@ -90,7 +90,7 @@ Validator Limitations
 
 The autoinstall validator currently has the following limitations:
 
-1. The validator makes an assumption about the target installation media that may not necessarily be true about the actual installation media. It assumes that (1) the installation target is ubuntu-server and (2) the only valid install source is :code:`synthesized`. Some cases where this would cause the validator fail otherwise correct autoinstall configurations:
+1. The validator makes an assumption about the target installation media that may not necessarily be true about the actual installation media. It assumes that (1) the installation target is ubuntu-server and (2) the only valid install source is :code:`synthesized`. Some cases where this would cause the validator to fail on otherwise correct autoinstall configurations:
 
    a. Missing both an :code:`identity` and :code:`user-data` section for a Desktop target, where these sections are fully optional.
    b. A :code:`source` section which specifies any :code:`id` other than :code:`synthesized`, where the :code:`id` may really match a valid source on the target ISO.
@@ -166,7 +166,7 @@ Another common mistake is to forget the ``#cloud-config`` header in the cloud-co
             # autoinstall directives
 
 
-Again, this is not indicative of a real runtime error that would appear. Instead, this case would result in having the installer presenting a fully interactive install where a partially or fully automated installation was desired instead.
+Again, this is not indicative of a real runtime error that would appear. Instead, this case would result in the installer presenting a fully interactive install where a partially or fully automated installation was desired instead.
 
 Common Mistake #3
 ^^^^^^^^^^^^^^^^^

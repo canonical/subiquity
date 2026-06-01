@@ -62,7 +62,7 @@ Zdev (s390x only)
 
 This screen is only shown on the s390x architecture and allows z-specific configuration of devices.
 
-The list of devices can be long. Use the :kbd:`Home`, :kbd:`End`, :kbd:`PgUp` and :kbd:`PgDn` keys navigate through the list quickly.
+The list of devices can be long. Use the :kbd:`Home`, :kbd:`End`, :kbd:`PgUp` and :kbd:`PgDn` keys to navigate through the list quickly.
 
 Network
 -------
