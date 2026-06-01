@@ -418,8 +418,7 @@ class NetworkView(BaseView):
     def _remove_row(self, netdev_i):
         # MonitoredFocusList clamps the focus position to the new
         # length of the list when you remove elements but it doesn't
-        # check that that the element it moves the focus to is
-        # selectable...
+        # check that the element it moves the focus to is selectable...
         new_length = len(self.device_pile.contents) - 1
         refocus = self.device_pile.focus_position >= new_length
         del self.device_pile.contents[netdev_i]

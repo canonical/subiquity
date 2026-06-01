@@ -67,8 +67,8 @@ class RefreshController(SubiquityController):
         # List of snapd change IDs for refresh operations that we initiated.
         # We use a list because refresh operations can fail and be restarted.
         # This was introduced to avoid accidentally restarting the server when
-        # a client queries progress using a change_id that that it not ours (or
-        # in practice, belongs to a server process that was running before the
+        # a client queries progress using a change_id that is not ours (or in
+        # practice, belongs to a server process that was running before the
         # refresh.  See LP: #2146422.
         self.initiated_changes: list[str] = []
 

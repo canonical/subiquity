@@ -398,8 +398,7 @@ class TablePile(AbstractTable):
         self.invalidate()
         # MonitoredFocusList clamps the focus position to the new
         # length of the list when you remove elements but it doesn't
-        # check that that the element it moves the focus to is
-        # selectable...
+        # check that the element it moves the focus to is selectable...
         new_length = len(self._w.contents) - (end - start)
         refocus = self._w.focus_position >= new_length
         del self.table_rows[start:end]
