@@ -177,7 +177,7 @@ class TestRefreshController(SubiTestCase):
             ready=False,
         )
 
-        self.rc.initiated_changes = our_change_ids
+        self.rc.initiated_changes = set(our_change_ids)
 
         with mock.patch.object(
             self.app.snapdapi.v2, "changes", {cid: mock.AsyncMock()}
