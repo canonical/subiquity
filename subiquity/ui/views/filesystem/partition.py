@@ -248,7 +248,7 @@ class PartitionForm(Form):
             return dehumanize_size(val)
 
     def clean_mount(self, val):
-        if self.model.is_mounted_filesystem(self.fstype):
+        if self.model.is_mounted_filesystem(self.fstype.value):
             return val
         else:
             return None
