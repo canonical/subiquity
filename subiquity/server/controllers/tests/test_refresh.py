@@ -148,15 +148,15 @@ class TestRefreshController(SubiTestCase):
     @parameterized.expand(
         (
             # Here it's our own change
-            (7, TaskStatus.DO, [7], False),
-            (7, TaskStatus.DOING, [7], False),
-            (7, TaskStatus.DONE, [7], True),
-            (7, TaskStatus.DONE, [6, 7], True),
+            ("7", TaskStatus.DO, ["7"], False),
+            ("7", TaskStatus.DOING, ["7"], False),
+            ("7", TaskStatus.DONE, ["7"], True),
+            ("7", TaskStatus.DONE, ["6", "7"], True),
             # And here, it's somebody else's
-            (7, TaskStatus.DO, [], False),
-            (7, TaskStatus.DOING, [], False),
-            (7, TaskStatus.DONE, [], False),
-            (7, TaskStatus.DONE, [1, 2, 3], False),
+            ("7", TaskStatus.DO, [], False),
+            ("7", TaskStatus.DOING, [], False),
+            ("7", TaskStatus.DONE, [], False),
+            ("7", TaskStatus.DONE, ["1", "2", "3"], False),
         ),
     )
     async def test_get_progress(
@@ -177,7 +177,7 @@ class TestRefreshController(SubiTestCase):
             ready=False,
         )
 
-        self.rc.initiated_changes = our_change_ids
+        self.rc.initiated_changes = set(our_change_ids)
 
         with mock.patch.object(
             self.app.snapdapi.v2, "changes", {cid: mock.AsyncMock()}
