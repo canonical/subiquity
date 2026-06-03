@@ -1567,8 +1567,8 @@ class FilesystemModel:
         ),
     }
 
-    @classmethod
-    def is_mounted_filesystem(self, fstype):
+    @staticmethod
+    def is_mounted_filesystem(fstype):
         if fstype in [None, "swap"]:
             return False
         else:
