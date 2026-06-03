@@ -203,13 +203,16 @@ class PartitionForm(Form):
         show_use = False
         if fstype is None and self.existing_fs_type is not None:
             self.mount.widget.disable_unsuitable_mountpoints_for_existing_fs()
-            self.mount.value = self.mount.value
         else:
             self.mount.widget.enable_common_mountpoints()
-            self.mount.value = self.mount.value
         if self.remote_storage:
             self.mount.widget.disable_boot_boot_efi_mountpoints()
-            self.mount.value = self.mount.value
+        self.fstype.value = fstype
+        # The right side of the following expression is a getter that leans on
+        # clean_mount(), whose return value depends on self.fstype.value. It is
+        # important that fstype.value is set before, or we would be operating
+        # based on its previous value.
+        self.mount.value = self.mount.value
         if fstype is None:
             if self.existing_fs_type == "swap":
                 show_use = True
@@ -224,7 +227,6 @@ class PartitionForm(Form):
             if fstype_for_check is None:
                 fstype_for_check = self.existing_fs_type
             self.mount.enabled = self.model.is_mounted_filesystem(fstype_for_check)
-        self.fstype.value = fstype
         self.mount.showing_extra = False
         self.mount.validate()
 
@@ -248,7 +250,7 @@ class PartitionForm(Form):
             return dehumanize_size(val)
 
     def clean_mount(self, val):
-        if self.model.is_mounted_filesystem(self.fstype):
+        if self.model.is_mounted_filesystem(self.fstype.value):
             return val
         else:
             return None
