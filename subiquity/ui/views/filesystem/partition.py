@@ -318,7 +318,7 @@ class PartitionForm(Form):
                     _(
                         f"The filesystem for {mount} should be stored on local"
                         " storage. Storing it on remote storage will likely"
-                        " prevent the system for booting."
+                        " prevent the system from booting."
                     ),
                 )
             )
