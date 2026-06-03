@@ -68,7 +68,7 @@ flake8:
 .PHONY: unit
 unit: gitdeps
 	timeout 120 \
-	$(PYTHON) -m pytest --ignore curtin --ignore probert \
+	$(PYTHON) -m pytest console_conf subiquity subiquitycore \
 		--ignore subiquity/tests/api \
 		$(UNITTESTARGS)
 
