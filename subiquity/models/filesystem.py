@@ -1985,7 +1985,7 @@ class FilesystemModel:
         Perhaps surprisingly the order of the returned actions matters.
         The devices are presented in the filesystem view in the reverse
         of the order they appear in _actions, which means that e.g. a
-        RAID appears higher up the list than the disks is is composed
+        RAID appears higher up the list than the disks it is composed
         of. This is quite important as it makes "unpeeling" existing
         compound structures easy, you just delete the top device until
         you only have disks left.

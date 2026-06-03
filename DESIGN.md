@@ -401,8 +401,8 @@ installation. It was helpful to me when working on this to categorize
      least in part because a snap update may resolve them, so the user
      needs to be able to get to that screen before being bothered about them.
    * When the filesystem screen is not interactive, these errors
-     errors are handled as if an immediate error occured when the
-     filesystem config is needed.
+     are handled as if an immediate error occurred when the filesystem config
+     is needed.
  * **API** errors are when an exception occurs while handling an API
    call from the client.
    * These are always bugs and perhaps could be handled as immediate
@@ -544,11 +544,11 @@ see these results).
 
 When adding a new feature to subiquity, I have found it easiest to design the
 UI first and then "work inwards" to design the controller and the model.
-Subiquity is mostly a UI, after all, so starting there does made sense.  I also
+Subiquity is mostly a UI, after all, so starting there does make sense.  I also
 try not to worry about how hard a UI would be to implement!
 
 The model is sometimes quite trivial, because it's basically defined by the
-curtin config, and sometimes much less so (e.g. the fileystem model).
+curtin config, and sometimes much less so (e.g. the filesystem model).
 
 Once the view code and the model exist, the controller "just" sits between
 them. Again, often this is simple, but sometimes it is not.

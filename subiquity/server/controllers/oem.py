@@ -216,7 +216,7 @@ class OEMController(SubiquityController):
             if kernel_model.explicitly_requested:
                 msg = _(
                     """\
-A specific kernel flavor was requested but it cannot be satistified when \
+A specific kernel flavor was requested but it cannot be satisfied when \
 installing on certified hardware or other hardware covered by HWE kernels.
 You should either disable the installation of OEM meta-packages using the \
 following autoinstall snippet or let the installer decide which kernel to

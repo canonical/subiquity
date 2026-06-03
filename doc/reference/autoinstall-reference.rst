@@ -1095,7 +1095,7 @@ install
 ^^^^^^^
 
 * **type:** boolean or string (special value ``auto``)
-* **default:**: ``auto``
+* **default:** ``auto``
 
 Whether to install the available OEM meta-packages. The special value ``auto`` -- which is the default -- enables the installation on Ubuntu Desktop but not on Ubuntu Server. This option has no effect on core boot classic.
 

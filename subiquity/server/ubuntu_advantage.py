@@ -147,7 +147,7 @@ class MockedUAInterfaceStrategy(UAInterfaceStrategy):
         }
 
     async def magic_wait_v1(self, magic_token: str) -> dict:
-        """Simulate a timeout respnose from u.pro.attach.magic.wait.v1
+        """Simulate a timeout response from u.pro.attach.magic.wait.v1
         endpoint."""
         # Simulate a normal timeout
         await asyncio.sleep(600 / self.scale_factor)
@@ -165,7 +165,7 @@ class MockedUAInterfaceStrategy(UAInterfaceStrategy):
         }
 
     async def magic_revoke_v1(self, magic_token: str) -> dict:
-        """Simulate a success respnose from u.pro.attach.magic.revoke.v1
+        """Simulate a success response from u.pro.attach.magic.revoke.v1
         endpoint."""
         await asyncio.sleep(1 / self.scale_factor)
         return {

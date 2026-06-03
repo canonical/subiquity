@@ -27,6 +27,6 @@ To create a Launchpad bug report based on the contents of a crash report, use th
 
     apport-cli /path/to/report.crash
 
-To run ``apport-cli`` in the installer environment, switch to a shell. This way, ``apport`` can not open a browser to for you to complete the report. Instead, it provides a URL for completing the report, which you can do on another computer.
+To run ``apport-cli`` in the installer environment, switch to a shell. This inhibits ``apport`` from opening a browser for you to complete the report. Instead, it provides a URL for completing the report, which you can do on another computer.
 
 .. note:: Issues for the Subiquity autoinstaller are `tracked in Launchpad <https://bugs.launchpad.net/subiquity>`_.

@@ -154,7 +154,7 @@ class TestMetapackageSelection(SubiTestCase):
     async def test_bridge_options(self, scenario):
         # This test "knows" a bit too much about which conditions the
         # bridge kernel code uses to check for the various
-        # reasons. But its better than no tests.
+        # reasons. But it's better than no tests.
         source_model = self.app.base_model.source = SourceModel()
         source_model.catalog.kernel.default = "linux-default"
         source_model.catalog.kernel.bridge = "linux-bridge"

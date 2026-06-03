@@ -201,7 +201,7 @@ class AptConfigurer:
         try:
             shutil.chown(partial_dir, user="_apt")
         except (PermissionError, LookupError) as exc:
-            log.warning("could to set owner of file %s: %r", partial_dir, exc)
+            log.warning("could not set owner of file %s: %r", partial_dir, exc)
 
         apt_cmd = [
             "apt-get",
