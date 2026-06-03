@@ -44,9 +44,10 @@ from subiquitycore.view import BaseView
 
 from .delete import ConfirmDeleteStretchy, ConfirmReformatStretchy
 from .disk_info import DiskInfoStretchy
+from .format import FormatEntireStretchy
 from .helpers import summarize_device
 from .lvm import VolGroupStretchy
-from .partition import FormatEntireStretchy, PartitionStretchy
+from .partition import PartitionStretchy
 from .raid import RaidStretchy
 
 log = logging.getLogger("subiquity.ui.views.filesystem.filesystem")
