@@ -103,6 +103,13 @@ on_exit () {
     exit $ec
 }
 
+testenv() {
+    environ="${1:-/dev/null}"
+    shift
+
+    env $(< $environ) LANG=C.UTF-8 "$@"
+}
+
 trap on_exit EXIT
 tty=$(tty) || tty=/dev/console
 
@@ -113,6 +120,7 @@ for answers in examples/answers/*.yaml; do
     config=$(sed -n 's/^#machine-config: \(.*\)/\1/p' $answers || true)
     catalog=$(sed -n 's/^#source-catalog: \(.*\)/\1/p' $answers || true)
     dr_config=$(sed -n 's/^#dr-config: \(.*\)/\1/p' "$answers" || true)
+    environ=$(sed -n 's/^#environ: \(.*\)/\1/p' "$answers" || true)
     if [ -z "$config" ]; then
         config=examples/machines/simple.json
     fi
@@ -128,7 +136,7 @@ for answers in examples/answers/*.yaml; do
         opts+=(--dry-run-config "$dr_config")
     fi
     # The --foreground is important to avoid subiquity getting SIGTTOU-ed.
-    LANG=C.UTF-8 timeout --foreground 60 \
+    testenv "$environ" timeout --foreground 60 \
         python3 -m subiquity.cmd.tui < "$tty" \
         --dry-run \
         --output-base "$tmpdir" \

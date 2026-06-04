@@ -1,4 +1,5 @@
 #source-catalog: examples/sources/bridge.yaml
+#environ: examples/environ/has-drivers-no-oem
 Source:
   source: ubuntu-server
   search_drivers: true
