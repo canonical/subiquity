@@ -72,10 +72,12 @@ parts:
     source: https://github.com/canonical/curtin
     source-type: git
     # Tracks the ubuntu/noble branch
-    source-commit: "8bc0121d6809719a611f3f9db9630122b0e8ed8f"
+    source-commit: "8c8ca80d22572e068a89badbbd53d6590ab9f17d"
 
     override-pull: |
       craftctl default
+      # Since snapcraft 8.14, the tags are not automatically fetched
+      git fetch --tags
       PACKAGED_VERSION="$(git describe --long --abbrev=9 --match=[0-9][0-9]*)"
       sed -e "s,@@PACKAGED_VERSION@@,$PACKAGED_VERSION,g" -i curtin/version.py
     override-build: &pyinstall |
@@ -170,6 +172,11 @@ parts:
       echo "get passwd/user-default-groups" | \
         debconf-communicate user-setup | \
         cut -d ' ' -f 2- > $CRAFT_PART_INSTALL/users-and-groups
+        # add lxd to the groups for the default user,
+        # but we don't want lxd added to the default groups in user-setup
+        if ! grep -q lxd $CRAFT_PART_INSTALL/users-and-groups; then \
+          sed -i $CRAFT_PART_INSTALL/users-and-groups -e '1s/$/ lxd/'; \
+        fi
     stage:
       - users-and-groups
 
@@ -230,7 +237,7 @@ parts:
     source: https://github.com/canonical/probert.git
     source-type: git
     # Tracks the ubuntu/noble branch
-    source-commit: 26175bb2fb952335cc652c602e7c5ae6ef7ac82b
+    source-commit: cd86d1ed29e8da70ceead08697e62b3b09643b03
 
     override-build: *pyinstall
 

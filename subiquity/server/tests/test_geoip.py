@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+
 import aiohttp
 from aioresponses import aioresponses
 
@@ -100,6 +102,15 @@ class TestGeoIPBadData(SubiTestCase):
             mocked.get(
                 "https://geoip.ubuntu.com/lookup",
                 exception=aiohttp.ClientError("lookup failure"),
+            )
+            self.assertFalse(await self.geoip.lookup())
+        self.assertIsNone(self.geoip.timezone)
+
+    async def test_lookup_timeout(self):
+        with aioresponses() as mocked:
+            mocked.get(
+                "https://geoip.ubuntu.com/lookup",
+                exception=asyncio.TimeoutError(),
             )
             self.assertFalse(await self.geoip.lookup())
         self.assertIsNone(self.geoip.timezone)

@@ -20,6 +20,7 @@ from shutil import which
 
 from subiquity.common.apidef import API
 from subiquity.common.types import TimeZoneInfo
+from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger("subiquity.server.controllers.timezone")
@@ -94,7 +95,10 @@ class TimeZoneController(SubiquityController):
         return self.possible
 
     def load_autoinstall_data(self, data):
-        self.deserialize(data)
+        try:
+            self.deserialize(data)
+        except ValueError as exc:
+            raise AutoinstallError(exc.args[0]) from exc
 
     def make_autoinstall(self):
         return self.serialize()
