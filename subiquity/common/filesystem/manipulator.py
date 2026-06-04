@@ -32,6 +32,7 @@ from subiquity.models.filesystem import (
     LVM_VolGroup,
     Partition,
     Raid,
+    TooManyPartitionsError,
     align_up,
 )
 from subiquitycore.utils import write_named_tempfile
@@ -61,7 +62,12 @@ class FilesystemManipulator:
         if self.model.needs_bootloader_partition():
             vol = fs.volume
             if vol.type == "partition" and boot.can_be_boot_device(vol.device):
-                self.add_boot_disk(vol.device)
+                try:
+                    self.add_boot_disk(vol.device)
+                except TooManyPartitionsError:
+                    # Rollback to avoid leaving in an inconsistent state.
+                    self.model.remove_mount(mount)
+                    raise
         return mount
 
     def delete_mount(self, mount):
@@ -96,7 +102,13 @@ class FilesystemManipulator:
         elif spec.get("fstype") is None and spec.get("use_swap"):
             self.model.add_mount(fs, "")
         else:
-            self.create_mount(fs, spec)
+            try:
+                self.create_mount(fs, spec)
+            except TooManyPartitionsError:
+                # create_mount can trigger add_boot_disk. If that fails, let's
+                # try to rollback to avoid leaving in an inconsistent state.
+                self.model.remove_filesystem(fs)
+                raise
         return fs
 
     def delete_filesystem(self, fs):
@@ -115,10 +127,19 @@ class FilesystemManipulator:
                     f"overriding flag {flag} due to being in an extended partition"
                 )
             flag = "logical"
+
         part = self.model.add_partition(
             device, size=gap.size, offset=gap.offset, flag=flag, **kw
         )
-        self.create_filesystem(part, spec)
+        try:
+            self.create_filesystem(part, spec)
+        except TooManyPartitionsError:
+            # create_filesystem can trigger add_boot_disk. If that fails, let's
+            # try to rollback to avoid leaving in an inconsistent state.
+            self.model.remove_partition(
+                part, allow_renumbering=False, allow_moving=False
+            )
+            raise
         return part
 
     def delete_partition(
