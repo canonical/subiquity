@@ -391,67 +391,20 @@ class TestFilesystemModel(unittest.TestCase):
 
     @parameterized.expand(
         (
-            (True, True, True, True),
-            (True, True, False, True),
-            (True, False, False, True),
-            (False, True, True, False),
-            (False, True, False, True),
-            (False, False, False, False),
-        )
-    )
-    def test__can_install_remote(
-        self,
-        supports_nvmet_boot: bool,
-        boot_mounted: bool,
-        bootfs_remote: bool,
-        expected: bool,
-    ):
-        model = make_model()
-        p_supports_nvmet_boot = mock.patch(
-            "subiquity.models.filesystem.FilesystemModel.supports_nvme_tcp_booting",
-            new_callable=mock.PropertyMock,
-            return_value=supports_nvmet_boot,
-        )
-        p_boot_mounted = mock.patch.object(
-            model, "is_boot_mounted", return_value=boot_mounted
-        )
-        p_bootfs_remote = mock.patch.object(
-            model, "is_bootfs_on_remote_storage", return_value=bootfs_remote
-        )
-
-        with (
-            p_supports_nvmet_boot as m_supports_nvmet_boot,
-            p_boot_mounted as m_boot_mounted,
-            p_bootfs_remote as m_bootfs_remote,
-        ):
-            self.assertEqual(expected, model._can_install_remote())
-
-        m_supports_nvmet_boot.assert_called_once()
-
-        if supports_nvmet_boot:
-            m_boot_mounted.assert_not_called()
-            m_bootfs_remote.assert_not_called()
-        else:
-            m_boot_mounted.assert_called_once()
-            if boot_mounted:
-                m_bootfs_remote.assert_called_once()
-            else:
-                m_bootfs_remote.assert_not_called()
-
-    @parameterized.expand(
-        (
-            (False, False, False, False, False),
-            (True, False, False, False, True),
-            (True, True, False, False, False),
-            (True, True, True, False, True),
-            (True, False, False, True, False),
+            (False, False, False, False, False, False, False),
+            (True, False, False, False, False, False, True),
+            (True, True, False, False, False, False, False),
+            (True, True, True, False, False, False, True),
+            (True, False, False, False, False, True, False),
         )
     )
     def test_can_install(
         self,
         root_mounted: bool,
         rootfs_remote: bool,
-        can_install_remote: bool,
+        nvme_tcp: bool,
+        boot_mounted: bool,
+        bootfs_remote: bool,
         needs_bootloader: bool,
         expected: bool,
     ):
@@ -462,37 +415,31 @@ class TestFilesystemModel(unittest.TestCase):
         p_rootfs_remote = mock.patch.object(
             model, "is_rootfs_on_remote_storage", return_value=rootfs_remote
         )
-        p_can_install_remote = mock.patch.object(
-            model, "_can_install_remote", return_value=can_install_remote
+        p_nvme_tcp = mock.patch.object(
+            type(model),
+            "supports_nvme_tcp_booting",
+            new_callable=mock.PropertyMock,
+            return_value=nvme_tcp,
+        )
+        p_boot_mounted = mock.patch.object(
+            model, "is_boot_mounted", return_value=boot_mounted
+        )
+        p_bootfs_remote = mock.patch.object(
+            model, "is_bootfs_on_remote_storage", return_value=bootfs_remote
         )
         p_needs_bootloader = mock.patch.object(
             model, "needs_bootloader_partition", return_value=needs_bootloader
         )
 
         with (
-            p_root_mounted as m_root_mounted,
-            p_rootfs_remote as m_rootfs_remote,
-            p_can_install_remote as m_can_install_remote,
-            p_needs_bootloader as m_needs_bootloader,
+            p_root_mounted,
+            p_rootfs_remote,
+            p_nvme_tcp,
+            p_boot_mounted,
+            p_bootfs_remote,
+            p_needs_bootloader,
         ):
             self.assertEqual(expected, model.can_install())
-
-        m_root_mounted.assert_called_once()
-
-        if root_mounted:
-            m_rootfs_remote.assert_called_once()
-        else:
-            m_rootfs_remote.assert_not_called()
-
-        if root_mounted and rootfs_remote:
-            m_can_install_remote.assert_called_once()
-        else:
-            m_can_install_remote.assert_not_called()
-
-        if root_mounted and (not rootfs_remote or can_install_remote):
-            m_needs_bootloader.assert_called_once()
-        else:
-            m_needs_bootloader.assert_not_called()
 
     @parameterized.expand(
         (
