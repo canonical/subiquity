@@ -2458,11 +2458,21 @@ class StorageModel:
         else:
             raise AssertionError("unknown bootloader type {}".format(self.bootloader))
 
-    def _mount_for_path(self, path):
+    def _mount_for_path(self, path: str | pathlib.Path, *, parent_ok=False):
+        """Return the mount-like at *path*, or None.
+
+        Looks through MountlikeNames (mount, zpool, zfs) for an exact
+        match.  When *parent_ok* is True and no exact match is found,
+        retries with the parent directory, repeating until the root
+        (``/``) is reached.
+        """
+        path = pathlib.Path(path)
         for typename in MountlikeNames:
-            mount = self._one(type=typename, path=path)
+            mount = self._one(type=typename, path=str(path))
             if mount is not None:
                 return mount
+        if parent_ok and path.parent != path:
+            return self._mount_for_path(path.parent, parent_ok=parent_ok)
         return None
 
     def is_root_mounted(self):
