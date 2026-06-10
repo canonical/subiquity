@@ -20,7 +20,13 @@ from subiquity.common.storage.requirements import (
     RequirementSeverity,
     StorageRequirement,
 )
-from subiquity.models.tests.test_storage import make_model
+from subiquity.models.tests.test_storage import (
+    make_filesystem,
+    make_model,
+    make_model_and_disk,
+    make_mount,
+    make_partition,
+)
 from subiquitycore.tests.parameterized import parameterized
 
 
@@ -89,6 +95,7 @@ class TestRequirements(unittest.TestCase):
                 Requirements.ROOT_MOUNTED,
                 Requirements.REMOTE_BOOT_LOCAL,
                 Requirements.BOOTLOADER_NEEDED,
+                Requirements.BOOT_FILESYSTEM,
             ],
         )
 
@@ -175,3 +182,51 @@ class TestRequirements(unittest.TestCase):
             self.assertTrue(Requirements.BOOTLOADER_NEEDED.is_satisfied(model))
         with mock.patch.object(model, "needs_bootloader_partition", return_value=True):
             self.assertFalse(Requirements.BOOTLOADER_NEEDED.is_satisfied(model))
+
+    @parameterized.expand(
+        (
+            (False, False, False),
+            (False, True, False),
+            (True, False, False),
+            (True, True, True),
+        )
+    )
+    def test_BOOT_FILESYSTEM_applies_to(
+        self,
+        root_mounted: bool,
+        uses_signed_grub: bool,
+        expected: bool,
+    ):
+        model = make_model()
+        with (
+            mock.patch.object(model, "is_root_mounted", return_value=root_mounted),
+            mock.patch.object(model, "uses_signed_grub", return_value=uses_signed_grub),
+        ):
+            self.assertEqual(
+                expected, Requirements.BOOT_FILESYSTEM.is_applicable(model)
+            )
+
+    @parameterized.expand(
+        (
+            ("ext4", "ext4", True),
+            ("xfs", "ext4", False),
+            (None, "ext4", True),
+            (None, "xfs", False),
+        )
+    )
+    def test_BOOT_FILESYSTEM_check(
+        self,
+        boot_fstype: str | None,
+        root_fstype: str,
+        expected: bool,
+    ):
+        model, disk = make_model_and_disk()
+        p1 = make_partition(model, disk)
+        rootfs = make_filesystem(model, p1, fstype=root_fstype)
+        make_mount(model, rootfs, "/")
+        if boot_fstype is not None:
+            p2 = make_partition(model, disk)
+            boot_fs = make_filesystem(model, p2, fstype=boot_fstype)
+            make_mount(model, boot_fs, "/boot")
+
+        self.assertEqual(expected, Requirements.BOOT_FILESYSTEM.is_satisfied(model))

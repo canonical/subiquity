@@ -66,6 +66,17 @@ class StorageRequirement:
         return self.is_applicable(model) and not self.is_satisfied(model)
 
 
+def _is_boot_ext4(model) -> bool:
+    """Return True when /boot (or / if no separate boot) uses the ext4
+    filesystem.  Only meaningful on GRUB-based architectures where ext4
+    is the validated boot filesystem.  Other filesystems that GRUB
+    supports (ext2, ext3, FAT, ISO9660, ...) are not validated here."""
+    mount = model._mount_for_path("/boot", parent_ok=True)
+    if mount is None:
+        return False
+    return mount.fstype == "ext4"
+
+
 class Requirements:
     """Well-known install-readiness checks for storage setup.
 
@@ -91,6 +102,12 @@ class Requirements:
         severity=RequirementSeverity.BLOCKING,
         check=lambda m: not m.needs_bootloader_partition(),
     )
+    BOOT_FILESYSTEM = StorageRequirement(
+        guidance_message=_("Use the ext4 filesystem for /boot"),
+        severity=RequirementSeverity.BLOCKING,
+        check=_is_boot_ext4,
+        applies_to=lambda m: m.is_root_mounted() and m.uses_signed_grub(),
+    )
 
     @staticmethod
     def all() -> list[StorageRequirement]:
@@ -99,4 +116,5 @@ class Requirements:
             Requirements.ROOT_MOUNTED,
             Requirements.REMOTE_BOOT_LOCAL,
             Requirements.BOOTLOADER_NEEDED,
+            Requirements.BOOT_FILESYSTEM,
         ]

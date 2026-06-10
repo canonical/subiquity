@@ -2458,6 +2458,35 @@ class StorageModel:
         else:
             raise AssertionError("unknown bootloader type {}".format(self.bootloader))
 
+    def uses_grub(self) -> bool:
+        """Return True when the system's bootloader is GRUB-based.
+
+        Only s390x systems (``Bootloader.NONE``) do not use GRUB; all
+        other boot methods (BIOS, UEFI, PREP) rely on GRUB.
+
+        Curtin also has a ``uses_grub(machine)`` function in
+        curtin/commands/curthooks.py, which determines GRUB usage from
+        the machine architecture instead.  Consider consolidating.
+        """
+        return self.bootloader != Bootloader.NONE
+
+    def uses_signed_grub(self) -> bool:
+        """Return True when the system uses signed GRUB.
+
+        In curtin, a platform is assumed to use signed GRUB if the following
+        conditions are met:
+         * the system is currently booted using UEFI
+         * a grub-efi-{arch}-signed package exists in the archive (or pool)
+
+        Other platforms (for example BIOS and PREP) use unsigned GRUB.
+
+        Subiquity currently simplifies this policy by assuming that every UEFI
+        system should use signed GRUB, even on architectures where no signed
+        package currently exists (for example, riscv64 on 26.04). This makes
+        the installation layout more future-proof if signed packages become
+        available."""
+        return self.uses_grub() and self.bootloader == Bootloader.UEFI
+
     def _mount_for_path(self, path: str | pathlib.Path, *, parent_ok=False):
         """Return the mount-like at *path*, or None.
 

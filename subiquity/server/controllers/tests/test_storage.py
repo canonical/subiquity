@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import contextlib
 import copy
 import subprocess
@@ -61,11 +62,13 @@ from subiquity.models.storage import dehumanize_size
 from subiquity.models.tests.test_storage import (
     FakeStorageInfo,
     make_disk,
+    make_filesystem,
     make_model,
     make_model_and_disk,
     make_model_and_lv,
     make_model_and_raid,
     make_model_and_vg,
+    make_mount,
     make_nvme_controller,
     make_partition,
     make_raid,
@@ -635,6 +638,30 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
         await self.ctrler.convert_autoinstall_config()
         curtin_cfg = model.render()
         self.assertEqual(swapsize, curtin_cfg["swap"]["size"])
+
+    async def test_apply_autoinstall_config_rejects_non_ext4_boot(self):
+        model, disk = make_model_and_disk(Bootloader.UEFI)
+
+        part = make_partition(model, disk)
+        fs = make_filesystem(model, part, fstype="xfs")
+        make_mount(model, fs, "/")
+
+        self.ctrler.model = model
+        self.ctrler.reset_partition_only = False
+        self.ctrler.ai_data = {"layout": {"name": "direct"}}
+        self.ctrler._start_task = asyncio.Future()
+        self.ctrler._start_task.set_result(None)
+        self.ctrler._probe_task = mock.Mock(wait=mock.AsyncMock())
+        self.ctrler._probe_firmware_task = mock.Mock(wait=mock.AsyncMock())
+        self.ctrler._examine_systems_task = mock.Mock(wait=mock.AsyncMock())
+        self.ctrler._errors = {}
+
+        with mock.patch.object(self.ctrler, "convert_autoinstall_config"):
+            with mock.patch.object(
+                model, "needs_bootloader_partition", return_value=False
+            ):
+                with self.assertRaisesRegex(AutoinstallError, "ext4 filesystem"):
+                    await self.ctrler.apply_autoinstall_config()
 
     @mock.patch("subiquity.server.controllers.storage.open", mock.mock_open())
     async def test_probe_once_unlocked_probe_data(self):

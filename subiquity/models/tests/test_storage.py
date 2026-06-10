@@ -438,6 +438,44 @@ class TestStorageModel(unittest.TestCase):
 
     @parameterized.expand(
         (
+            (Bootloader.NONE, None, None, False, True),
+            (Bootloader.BIOS, "ext4", None, True, True),
+            (Bootloader.BIOS, "btrfs", None, True, True),
+            (Bootloader.UEFI, "ext4", None, True, True),
+            (Bootloader.UEFI, "xfs", None, True, False),
+            (Bootloader.PREP, "ext4", None, True, True),
+            (Bootloader.PREP, "zfs", None, True, True),
+            (Bootloader.BIOS, None, "ext4", False, True),
+            (Bootloader.BIOS, None, "btrfs", False, True),
+        )
+    )
+    def test_boot_filesystem_requirement(
+        self,
+        bootloader: Bootloader,
+        boot_fstype: str | None,
+        root_fstype: str | None,
+        has_separate_boot: bool,
+        expected: bool,
+    ):
+        model, disk = make_model_and_disk(bootloader)
+
+        with mock.patch.object(model, "needs_bootloader_partition", return_value=False):
+            if has_separate_boot:
+                part = make_partition(model, disk)
+                fs = make_filesystem(model, part, fstype=boot_fstype)
+                make_mount(model, fs, "/boot")
+                part_root = make_partition(model, disk)
+                fs_root = make_filesystem(model, part_root, fstype="ext4")
+                make_mount(model, fs_root, "/")
+            else:
+                part = make_partition(model, disk)
+                fs = make_filesystem(model, part, fstype=root_fstype)
+                make_mount(model, fs, "/")
+
+            self.assertEqual(expected, model.can_install())
+
+    @parameterized.expand(
+        (
             (1, True, False),
             (2, True, False),
             (5, True, True),
