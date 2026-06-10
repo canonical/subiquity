@@ -37,6 +37,7 @@ subiquity/common/filesystem/boot.py
 subiquity/common/filesystem/__init__.py
 subiquity/common/filesystem/labels.py
 subiquity/common/filesystem/manipulator.py
+subiquity/common/filesystem/requirements.py
 subiquity/common/filesystem/tests/__init__.py
 subiquity/common/filesystem/tests/test_actions.py
 subiquity/common/filesystem/tests/test_labels.py
