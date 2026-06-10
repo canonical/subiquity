@@ -50,6 +50,10 @@ from curtin.swap import can_use_swapfile
 from curtin.util import human2bytes
 from probert.storage import StorageInfo
 
+from subiquity.common.filesystem.requirements import (
+    Requirements,
+    RequirementSeverity,
+)
 from subiquity.common.types.storage import (
     Bootloader,
     OsProber,
@@ -2474,16 +2478,14 @@ class FilesystemModel:
         return self.is_boot_mounted() and not self.is_bootfs_on_remote_storage()
 
     def can_install(self) -> bool:
-        if not self.is_root_mounted():
-            return False
-
-        if self.is_rootfs_on_remote_storage() and not self._can_install_remote():
-            return False
-
-        if self.needs_bootloader_partition():
-            return False
-
+        for r in Requirements.all():
+            if r.severity == RequirementSeverity.BLOCKING and r.is_applicable(self):
+                if not r.is_satisfied(self):
+                    return False
         return True
+
+    def guidance_messages(self) -> list[str]:
+        return [r.guidance_message for r in Requirements.all() if r.is_violated(self)]
 
     def should_add_swapfile(self):
         mount = self._mount_for_path("/")

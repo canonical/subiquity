@@ -485,33 +485,19 @@ class FilesystemView(BaseView):
         self.refresh_model_inputs()
 
     def _guidance(self):
-        todos = []
-        if not self.model.is_root_mounted():
-            todos.append(_("Mount a filesystem at /"))
-        elif (
-            self.model.is_rootfs_on_remote_storage()
-            and not self.model.supports_nvme_tcp_booting
-        ):
-            # We need a /boot partition on local storage
-            if (
-                not self.model.is_boot_mounted()
-                or self.model.is_bootfs_on_remote_storage()
-            ):
-                todos.append(_("Mount a local filesystem at /boot"))
-        if self.model.needs_bootloader_partition():
-            todos.append(_("Select a boot disk"))
-        if not todos:
+        guidance = self.model.guidance_messages()
+        if not guidance:
             return None
         rows = [
             TableRow(
                 [
                     Text(_("To continue you need to:")),
-                    Text(todos[0]),
+                    Text(guidance[0]),
                 ]
             ),
         ]
-        for todo in todos[1:]:
-            rows.append(TableRow([Text(""), Text(todo)]))
+        for msg in guidance[1:]:
+            rows.append(TableRow([Text(""), Text(msg)]))
         rows.append(TableRow([Text("")]))
         return TablePile(rows)
 
