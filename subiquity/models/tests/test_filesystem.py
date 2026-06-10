@@ -1840,6 +1840,70 @@ class TestRootfs(SubiTestCase):
         self.assertFalse(m.is_root_mounted())
 
 
+class TestMountForPath(SubiTestCase):
+    def test_exact_match_parent_ok(self):
+        m, p = make_model_and_partition()
+        fs = make_filesystem(m, p, fstype="ext4")
+        make_mount(m, fs, "/boot")
+        mount = m._mount_for_path("/boot", parent_ok=True)
+        self.assertIsNotNone(mount)
+        self.assertEqual(mount.path, "/boot")
+
+    def test_fallback_to_parent(self):
+        m, p = make_model_and_partition()
+        fs = make_filesystem(m, p, fstype="ext4")
+        make_mount(m, fs, "/")
+        mount = m._mount_for_path("/boot", parent_ok=True)
+        self.assertIsNotNone(mount)
+        self.assertEqual(mount.path, "/")
+
+    def test_fallback_nested(self):
+        m, p = make_model_and_partition()
+        fs = make_filesystem(m, p, fstype="ext4")
+        make_mount(m, fs, "/")
+        mount = m._mount_for_path("/a/b", parent_ok=True)
+        self.assertIsNotNone(mount)
+        self.assertEqual(mount.path, "/")
+
+    def test_no_match_parent_ok(self):
+        m = make_model()
+        mount = m._mount_for_path("/boot", parent_ok=True)
+        self.assertIsNone(mount)
+
+    def test_exact_match_preferred_over_parent(self):
+        m, d = make_model_and_disk()
+        p1 = make_partition(m, d)
+        fs1 = make_filesystem(m, p1, fstype="ext4")
+        make_mount(m, fs1, "/")
+        p2 = make_partition(m, d)
+        fs2 = make_filesystem(m, p2, fstype="xfs")
+        make_mount(m, fs2, "/boot")
+        mount = m._mount_for_path("/boot", parent_ok=True)
+        self.assertIsNotNone(mount)
+        self.assertEqual(mount.path, "/boot")
+        self.assertEqual(mount.fstype, "xfs")
+
+    def test_without_parent_ok_no_fallback(self):
+        m, p = make_model_and_partition()
+        fs = make_filesystem(m, p, fstype="ext4")
+        make_mount(m, fs, "/")
+        mount = m._mount_for_path("/boot")
+        self.assertIsNone(mount)
+
+    def test_root_parent_ok_mounted(self):
+        m, p = make_model_and_partition()
+        fs = make_filesystem(m, p, fstype="ext4")
+        make_mount(m, fs, "/")
+        mount = m._mount_for_path("/", parent_ok=True)
+        self.assertIsNotNone(mount)
+        self.assertEqual(mount.path, "/")
+
+    def test_root_parent_ok_not_mounted(self):
+        m = make_model()
+        mount = m._mount_for_path("/", parent_ok=True)
+        self.assertIsNone(mount)
+
+
 class TestLivePackages(SubiTestCase):
     async def test_defaults(self):
         m = make_model()
