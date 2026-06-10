@@ -430,6 +430,7 @@ class TestFilesystemModel(unittest.TestCase):
         p_needs_bootloader = mock.patch.object(
             model, "needs_bootloader_partition", return_value=needs_bootloader
         )
+        p_signed_grub = mock.patch.object(model, "uses_signed_grub", return_value=False)
 
         with (
             p_root_mounted,
@@ -438,7 +439,46 @@ class TestFilesystemModel(unittest.TestCase):
             p_boot_mounted,
             p_bootfs_remote,
             p_needs_bootloader,
+            p_signed_grub,
         ):
+            self.assertEqual(expected, model.can_install())
+
+    @parameterized.expand(
+        (
+            (Bootloader.NONE, None, None, False, True),
+            (Bootloader.BIOS, "ext4", None, True, True),
+            (Bootloader.BIOS, "btrfs", None, True, True),
+            (Bootloader.UEFI, "ext4", None, True, True),
+            (Bootloader.UEFI, "xfs", None, True, False),
+            (Bootloader.PREP, "ext4", None, True, True),
+            (Bootloader.PREP, "zfs", None, True, True),
+            (Bootloader.BIOS, None, "ext4", False, True),
+            (Bootloader.BIOS, None, "btrfs", False, True),
+        )
+    )
+    def test_boot_filesystem_requirement(
+        self,
+        bootloader: Bootloader,
+        boot_fstype: str | None,
+        root_fstype: str | None,
+        has_separate_boot: bool,
+        expected: bool,
+    ):
+        model, disk = make_model_and_disk(bootloader)
+
+        with mock.patch.object(model, "needs_bootloader_partition", return_value=False):
+            if has_separate_boot:
+                part = make_partition(model, disk)
+                fs = make_filesystem(model, part, fstype=boot_fstype)
+                make_mount(model, fs, "/boot")
+                part_root = make_partition(model, disk)
+                fs_root = make_filesystem(model, part_root, fstype="ext4")
+                make_mount(model, fs_root, "/")
+            else:
+                part = make_partition(model, disk)
+                fs = make_filesystem(model, part, fstype=root_fstype)
+                make_mount(model, fs, "/")
+
             self.assertEqual(expected, model.can_install())
 
     @parameterized.expand(
