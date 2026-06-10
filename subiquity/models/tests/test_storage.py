@@ -23,6 +23,11 @@ import attr
 import yaml
 
 from subiquity.common.storage import gaps
+from subiquity.common.storage.requirements import (
+    Requirements,
+    RequirementSeverity,
+    StorageRequirement,
+)
 from subiquity.common.types.storage import RecoveryKey
 from subiquity.models.storage import (
     LVM_CHUNK_SIZE,
@@ -299,6 +304,17 @@ def make_dm_crypt(model, device):
     return model.add_dm_crypt(device)
 
 
+def make_req(*, blocking=True, satisfied=True, applies=True):
+    return StorageRequirement(
+        guidance_message=Mock(),
+        severity=(
+            RequirementSeverity.BLOCKING if blocking else RequirementSeverity.WARNING
+        ),
+        check=lambda m: satisfied,
+        applies_to=lambda m: applies,
+    )
+
+
 class TestStorageModel(unittest.TestCase):
     def _test_ok_for_xxx(self, model, make_new_device, attr, test_partitions=True):
         # Newly formatted devs are ok_for_raid
@@ -393,108 +409,32 @@ class TestStorageModel(unittest.TestCase):
 
     @parameterized.expand(
         (
-            (True, True, True, True),
-            (True, True, False, True),
-            (True, False, False, True),
-            (False, True, True, False),
-            (False, True, False, True),
-            (False, False, False, False),
+            # Zero requirement
+            ([], True),
+            # No violated requirement
+            (
+                [
+                    make_req(satisfied=True),
+                    make_req(satisfied=True),
+                    make_req(satisfied=True, blocking=False),
+                ],
+                True,
+            ),
+            # At least one violated requirement
+            ([make_req(satisfied=True), make_req(satisfied=False)], False),
+            # One violated requirement but it is only a warning.
+            (
+                [make_req(satisfied=True), make_req(satisfied=False, blocking=False)],
+                True,
+            ),
+            # One requirement not satisfied but not applicable to this platform.
+            ([make_req(satisfied=False, applies=False)], True),
         )
     )
-    def test__can_install_remote(
-        self,
-        supports_nvmet_boot: bool,
-        boot_mounted: bool,
-        bootfs_remote: bool,
-        expected: bool,
-    ):
+    def test_can_install(self, requirements, expected):
         model = make_model()
-        p_supports_nvmet_boot = mock.patch(
-            "subiquity.models.storage.StorageModel.supports_nvme_tcp_booting",
-            new_callable=mock.PropertyMock,
-            return_value=supports_nvmet_boot,
-        )
-        p_boot_mounted = mock.patch.object(
-            model, "is_boot_mounted", return_value=boot_mounted
-        )
-        p_bootfs_remote = mock.patch.object(
-            model, "is_bootfs_on_remote_storage", return_value=bootfs_remote
-        )
-
-        with (
-            p_supports_nvmet_boot as m_supports_nvmet_boot,
-            p_boot_mounted as m_boot_mounted,
-            p_bootfs_remote as m_bootfs_remote,
-        ):
-            self.assertEqual(expected, model._can_install_remote())
-
-        m_supports_nvmet_boot.assert_called_once()
-
-        if supports_nvmet_boot:
-            m_boot_mounted.assert_not_called()
-            m_bootfs_remote.assert_not_called()
-        else:
-            m_boot_mounted.assert_called_once()
-            if boot_mounted:
-                m_bootfs_remote.assert_called_once()
-            else:
-                m_bootfs_remote.assert_not_called()
-
-    @parameterized.expand(
-        (
-            (False, False, False, False, False),
-            (True, False, False, False, True),
-            (True, True, False, False, False),
-            (True, True, True, False, True),
-            (True, False, False, True, False),
-        )
-    )
-    def test_can_install(
-        self,
-        root_mounted: bool,
-        rootfs_remote: bool,
-        can_install_remote: bool,
-        needs_bootloader: bool,
-        expected: bool,
-    ):
-        model = make_model()
-        p_root_mounted = mock.patch.object(
-            model, "is_root_mounted", return_value=root_mounted
-        )
-        p_rootfs_remote = mock.patch.object(
-            model, "is_rootfs_on_remote_storage", return_value=rootfs_remote
-        )
-        p_can_install_remote = mock.patch.object(
-            model, "_can_install_remote", return_value=can_install_remote
-        )
-        p_needs_bootloader = mock.patch.object(
-            model, "needs_bootloader_partition", return_value=needs_bootloader
-        )
-
-        with (
-            p_root_mounted as m_root_mounted,
-            p_rootfs_remote as m_rootfs_remote,
-            p_can_install_remote as m_can_install_remote,
-            p_needs_bootloader as m_needs_bootloader,
-        ):
+        with mock.patch.object(Requirements, "all", return_value=requirements):
             self.assertEqual(expected, model.can_install())
-
-        m_root_mounted.assert_called_once()
-
-        if root_mounted:
-            m_rootfs_remote.assert_called_once()
-        else:
-            m_rootfs_remote.assert_not_called()
-
-        if root_mounted and rootfs_remote:
-            m_can_install_remote.assert_called_once()
-        else:
-            m_can_install_remote.assert_not_called()
-
-        if root_mounted and (not rootfs_remote or can_install_remote):
-            m_needs_bootloader.assert_called_once()
-        else:
-            m_needs_bootloader.assert_not_called()
 
     @parameterized.expand(
         (
