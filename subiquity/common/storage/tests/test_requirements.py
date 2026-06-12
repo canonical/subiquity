@@ -16,6 +16,7 @@ import unittest
 from unittest import mock
 
 from subiquity.common.storage.requirements import (
+    GuidanceMessageKind,
     Requirements,
     RequirementSeverity,
     StorageRequirement,
@@ -33,17 +34,17 @@ from subiquitycore.tests.parameterized import parameterized
 class TestStorageRequirement(unittest.TestCase):
     def test_init(self):
         req = StorageRequirement(
-            guidance_message="msg",
+            guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
             severity=RequirementSeverity.BLOCKING,
             check=lambda m: True,
             applies_to=lambda m: False,
         )
-        self.assertEqual(req.guidance_message, "msg")
+        self.assertEqual(req.guidance_message_kind, GuidanceMessageKind.MOUNT_ROOT)
         self.assertEqual(req.severity, RequirementSeverity.BLOCKING)
 
     def test_is_applicable(self):
         req = StorageRequirement(
-            guidance_message="msg",
+            guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
             severity=RequirementSeverity.WARNING,
             check=lambda m: True,
             applies_to=lambda m: False,
@@ -52,7 +53,7 @@ class TestStorageRequirement(unittest.TestCase):
 
     def test_is_satisfied(self):
         req = StorageRequirement(
-            guidance_message="msg",
+            guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
             severity=RequirementSeverity.WARNING,
             check=lambda m: False,
         )
@@ -60,7 +61,7 @@ class TestStorageRequirement(unittest.TestCase):
 
     def test_is_violated__applicable_not_satisfied(self):
         req = StorageRequirement(
-            guidance_message="msg",
+            guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
             severity=RequirementSeverity.BLOCKING,
             check=lambda m: False,
             applies_to=lambda m: True,
@@ -69,7 +70,7 @@ class TestStorageRequirement(unittest.TestCase):
 
     def test_is_violated__not_applicable(self):
         req = StorageRequirement(
-            guidance_message="msg",
+            guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
             severity=RequirementSeverity.BLOCKING,
             check=lambda m: False,
             applies_to=lambda m: False,
@@ -78,7 +79,7 @@ class TestStorageRequirement(unittest.TestCase):
 
     def test_is_violated__satisfied(self):
         req = StorageRequirement(
-            guidance_message="msg",
+            guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
             severity=RequirementSeverity.BLOCKING,
             check=lambda m: True,
             applies_to=lambda m: True,

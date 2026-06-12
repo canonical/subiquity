@@ -51,6 +51,7 @@ from curtin.util import human2bytes
 from probert.storage import StorageInfo
 
 from subiquity.common.storage.requirements import (
+    GuidanceMessageKind,
     Requirements,
     RequirementSeverity,
 )
@@ -2536,15 +2537,15 @@ class StorageModel:
         return True
 
     def guidance_messages(self, *, only_blocking=False) -> list[str]:
-        messages: list[str] = []
+        message_kinds: list[GuidanceMessageKind] = []
 
         for req in Requirements.all():
             if only_blocking and req.severity != RequirementSeverity.BLOCKING:
                 continue
             if req.is_violated(self):
-                messages.append(req.guidance_message)
+                message_kinds.append(req.guidance_message_kind)
 
-        return messages
+        return [message_kind.value for message_kind in message_kinds]
 
     def should_add_swapfile(self):
         mount = self._mount_for_path("/")

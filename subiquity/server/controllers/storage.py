@@ -667,8 +667,11 @@ class StorageController(SubiquityController, StorageManipulator):
         for r in Requirements.all():
             if r.severity == RequirementSeverity.BLOCKING and r.is_violated(self.model):
                 raise AutoinstallError(
-                    _("autoinstall config did not match requirement: {}").format(
-                        r.guidance_message
+                    _(
+                        "autoinstall config did not match requirement {kind}: {msg}"
+                    ).format(
+                        kind=r.guidance_message_kind.name,
+                        msg=r.guidance_message_kind.value,
                     )
                 )
 
