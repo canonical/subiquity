@@ -2518,7 +2518,11 @@ class FilesystemModel:
         return True
 
     def guidance_messages(self) -> list[str]:
-        return [r.guidance_message for r in Requirements.all() if r.is_violated(self)]
+        return [
+            r.guidance_message_kind.value
+            for r in Requirements.all()
+            if r.is_violated(self)
+        ]
 
     def should_add_swapfile(self):
         mount = self._mount_for_path("/")
