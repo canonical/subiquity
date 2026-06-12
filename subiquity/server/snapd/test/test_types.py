@@ -14,11 +14,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from unittest import TestCase
+from unittest.mock import Mock
 
 import attr
 import attrs
 
-from subiquity.server.snapd.types import snapdtype
+from subiquity.server.snapd.types import KeyboardConfig, snapdtype
 from subiquitycore.tests.parameterized import parameterized
 
 
@@ -38,3 +39,60 @@ class TestMetadataMerge(TestCase):
 
         [field] = attrs.fields(MetadataMerge)
         self.assertEqual(expected, field.metadata)
+
+
+class TestKeyboardConfig(TestCase):
+    def test_default_us_layout(self):
+        kb = Mock()
+        kb.setting.layout = "us"
+        kb.setting.variant = ""
+        kb.setting.toggle = None
+        config = KeyboardConfig.from_subiquity_kb_model(kb)
+        self.assertEqual(config.model, "pc105")
+        self.assertEqual(config.layout, "us")
+        self.assertEqual(config.variant, "")
+        self.assertEqual(config.options, [])
+
+    def test_with_toggle(self):
+        kb = Mock()
+        kb.setting.layout = "us"
+        kb.setting.variant = ""
+        kb.setting.toggle = "alt_shift_toggle"
+        config = KeyboardConfig.from_subiquity_kb_model(kb)
+        self.assertEqual(config.model, "pc105")
+        self.assertEqual(config.layout, "us")
+        self.assertEqual(config.variant, "")
+        self.assertEqual(config.options, ["grp:alt_shift_toggle"])
+
+    def test_with_variant(self):
+        kb = Mock()
+        kb.setting.layout = "us"
+        kb.setting.variant = "dvorak"
+        kb.setting.toggle = None
+        config = KeyboardConfig.from_subiquity_kb_model(kb)
+        self.assertEqual(config.model, "pc105")
+        self.assertEqual(config.layout, "us")
+        self.assertEqual(config.variant, "dvorak")
+        self.assertEqual(config.options, [])
+
+    def test_with_toggle_and_variant(self):
+        kb = Mock()
+        kb.setting.layout = "fr"
+        kb.setting.variant = "azerty"
+        kb.setting.toggle = "alt_shift_toggle"
+        config = KeyboardConfig.from_subiquity_kb_model(kb)
+        self.assertEqual(config.model, "pc105")
+        self.assertEqual(config.layout, "fr")
+        self.assertEqual(config.variant, "azerty")
+        self.assertEqual(config.options, ["grp:alt_shift_toggle"])
+
+    def test_with_multi_layout(self):
+        kb = Mock()
+        kb.setting.layout = "us,cz"
+        kb.setting.variant = ",bksl"
+        kb.setting.toggle = "alt_shift_toggle"
+        config = KeyboardConfig.from_subiquity_kb_model(kb)
+        self.assertEqual(config.model, "pc105")
+        self.assertEqual(config.layout, "us")
+        self.assertEqual(config.variant, "")
+        self.assertEqual(config.options, ["grp:alt_shift_toggle"])
