@@ -1155,6 +1155,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         )
         if self._volumes_auth is not None:
             kwargs["volumes_auth"] = self._volumes_auth
+        # This is required to have the proper keyboard layout on first boot
+        # before typing the passphrase.
+        # Only supported since 2.76 but ignored on older versions.
+        kwargs["keyboard_config"] = snapdtypes.KeyboardConfig.from_subiquity_kb_model(
+            self.app.base_model.keyboard
+        )
         result = await snapdapi.post_and_wait(
             self.app.snapdapi,
             self.app.snapdapi.v2.systems[label].POST,
