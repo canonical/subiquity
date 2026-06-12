@@ -487,6 +487,42 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertIsNone(self.fsc.queued_probe_data)
         load.assert_not_called()
 
+    async def test_setup_encryption__passes_keyboard_config(self):
+        self.fsc._info = mock.Mock()
+        self.fsc._info.label = "prefer-encrypted"
+        self.fsc._info.system.volumes = {"vol-key": mock.Mock()}
+        self.fsc._on_volume = mock.Mock()
+        self.fsc._volumes_auth = None
+
+        kb = self.app.base_model.keyboard
+        kb.setting.layout = "fr"
+        kb.setting.variant = "azerty"
+        kb.setting.toggle = "alt_shift_toggle"
+
+        with mock.patch.object(
+            snapdapi,
+            "post_and_wait",
+            return_value=mock.Mock(encrypted_devices={}),
+        ) as m_post:
+            await self.fsc.setup_encryption()
+
+        # post_and_wait is called as:
+        #   post_and_wait(client, meth, request, ann=...)
+        # so:
+        #   args[0] is the snapdapi client
+        #   args[1] is the systems[label].POST bound method
+        #   args[2] is the SystemActionRequest
+        req = m_post.call_args.args[2]
+        self.assertEqual(
+            snapdtypes.KeyboardConfig(
+                model="pc105",
+                layout="fr",
+                variant="azerty",
+                options=["grp:alt_shift_toggle"],
+            ),
+            req.keyboard_config,
+        )
+
     fw_lenovo = {
         "bios-vendor": "LENOVO",
         "bios-version": "R10ET39W (1.24 )",
@@ -3168,6 +3204,9 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
     async def test_from_sample_data(self):
         # calling this a unit test is definitely questionable. but it
         # runs much more quickly than the integration test!
+        self.app.base_model.keyboard.setting.layout = "us"
+        self.app.base_model.keyboard.setting.variant = ""
+        self.app.base_model.keyboard.setting.toggle = None
         self.fsc.model = model = make_model(Bootloader.UEFI)
         disk = make_disk(model)
         self.app.base_model.source.current.type = "fsimage"

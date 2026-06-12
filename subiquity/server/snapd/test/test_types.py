@@ -14,11 +14,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from unittest import TestCase
+from unittest.mock import Mock
 
 import attr
 import attrs
 
-from subiquity.server.snapd.types import snapdtype
+from subiquity.server.snapd.types import KeyboardConfig, snapdtype
 from subiquitycore.tests.parameterized import parameterized
 
 
@@ -38,3 +39,52 @@ class TestMetadataMerge(TestCase):
 
         [field] = attrs.fields(MetadataMerge)
         self.assertEqual(expected, field.metadata)
+
+
+class TestKeyboardConfig(TestCase):
+    @parameterized.expand(
+        (
+            # default us layout
+            ("us", "", None, "us", "", []),
+            # with toggle
+            ("us", "", "alt_shift_toggle", "us", "", ["grp:alt_shift_toggle"]),
+            # with variant
+            ("us", "dvorak", None, "us", "dvorak", []),
+            # with toggle and variant
+            (
+                "fr",
+                "azerty",
+                "alt_shift_toggle",
+                "fr",
+                "azerty",
+                ["grp:alt_shift_toggle"],
+            ),
+            # with multi layout
+            (
+                "us,cz",
+                ",bksl",
+                "alt_shift_toggle",
+                "us",
+                "",
+                ["grp:alt_shift_toggle"],
+            ),
+        )
+    )
+    def test_from_subiquity_kb_model(
+        self,
+        layout,
+        variant,
+        toggle,
+        expected_layout,
+        expected_variant,
+        expected_options,
+    ):
+        kb = Mock()
+        kb.setting.layout = layout
+        kb.setting.variant = variant
+        kb.setting.toggle = toggle
+        config = KeyboardConfig.from_subiquity_kb_model(kb)
+        self.assertEqual(config.model, "pc105")
+        self.assertEqual(config.layout, expected_layout)
+        self.assertEqual(config.variant, expected_variant)
+        self.assertEqual(config.options, expected_options)

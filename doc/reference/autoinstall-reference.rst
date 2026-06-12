@@ -197,6 +197,8 @@ The layout (or layouts) of any attached keyboard. The mapping keys correspond to
 
 Multiple layouts may be configured using comma-separated values, as documented in :manpage:`keyboard(5)`.
 
+.. note:: Known issue: for TPM-backed encrypted installations with a passphrase, the disk can only be unlocked using the primary layout.
+
 The mapping contains keys:
 
 layout
