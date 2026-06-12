@@ -31,14 +31,32 @@ class RequirementSeverity(enum.Enum):
     WARNING = "warning"
 
 
+class GuidanceMessageKind(enum.Enum):
+    """User-facing guidance messages shown when a storage requirement is
+    violated.
+
+    Use the member (e.g. ``GuidanceMessage.MOUNT_ROOT``) in APIs and wire
+    protocols — the member's **key** is the stable identifier.  The
+    ``.value`` is a locale-dependent translated string and **must not**
+    be sent over the API or stored in configuration.
+    """
+
+    MOUNT_ROOT = _("Mount a filesystem at /")
+    MOUNT_LOCAL_BOOT = _("Mount a local filesystem at /boot")
+    SELECT_BOOT_DISK = _("Select a boot disk")
+    USE_EXT4_BOOT = _("Use the ext4 filesystem for /boot")
+
+
 @attrs.define
 class StorageRequirement:
     """A single install-readiness check with a user-facing guidance message.
 
     Attributes
     ----------
-    guidance_message:
-        Translatable string shown to the user when the requirement is violated.
+    guidance_message_kind:
+        Enum member identifying the kind of guidance message to show the user
+        when the requirement is violated.  The enum's ``.value`` is a
+        locale-dependent translated string.
     severity:
         Whether a violation blocks installation or is merely advisory.
     check:
@@ -48,7 +66,7 @@ class StorageRequirement:
         the current system configuration.  Defaults to always applicable.
     """
 
-    guidance_message: str
+    guidance_message_kind: GuidanceMessageKind
     severity: RequirementSeverity
     check: Callable[["FilesystemModel"], bool]
     applies_to: Callable[["FilesystemModel"], bool] = lambda m: True
@@ -85,12 +103,12 @@ class Requirements:
     """
 
     ROOT_MOUNTED = StorageRequirement(
-        guidance_message=_("Mount a filesystem at /"),
+        guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
         severity=RequirementSeverity.BLOCKING,
         check=lambda m: m.is_root_mounted(),
     )
     REMOTE_BOOT_LOCAL = StorageRequirement(
-        guidance_message=_("Mount a local filesystem at /boot"),
+        guidance_message_kind=GuidanceMessageKind.MOUNT_LOCAL_BOOT,
         severity=RequirementSeverity.BLOCKING,
         check=lambda m: m.is_boot_mounted() and not m.is_bootfs_on_remote_storage(),
         applies_to=lambda m: m.is_root_mounted()
@@ -98,12 +116,12 @@ class Requirements:
         and not m.supports_nvme_tcp_booting,
     )
     BOOTLOADER_NEEDED = StorageRequirement(
-        guidance_message=_("Select a boot disk"),
+        guidance_message_kind=GuidanceMessageKind.SELECT_BOOT_DISK,
         severity=RequirementSeverity.BLOCKING,
         check=lambda m: not m.needs_bootloader_partition(),
     )
     BOOT_FILESYSTEM = StorageRequirement(
-        guidance_message=_("Use the ext4 filesystem for /boot"),
+        guidance_message_kind=GuidanceMessageKind.USE_EXT4_BOOT,
         severity=RequirementSeverity.BLOCKING,
         check=_is_boot_ext4,
         applies_to=lambda m: m.is_root_mounted() and m.uses_signed_grub(),
