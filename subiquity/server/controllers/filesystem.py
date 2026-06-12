@@ -667,7 +667,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             if r.severity == RequirementSeverity.BLOCKING and r.is_violated(self.model):
                 raise AutoinstallError(
                     _("autoinstall config did not match requirement: {}").format(
-                        r.guidance_message
+                        r.guidance_message_kind.value
                     )
                 )
 

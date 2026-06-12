@@ -304,7 +304,7 @@ def make_dm_crypt(model, device):
 
 def make_req(*, blocking=True, satisfied=True, applies=True):
     return StorageRequirement(
-        guidance_message=Mock(),
+        guidance_message_kind=Mock(),
         severity=(
             RequirementSeverity.BLOCKING if blocking else RequirementSeverity.WARNING
         ),
