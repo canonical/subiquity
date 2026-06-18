@@ -18,6 +18,8 @@ from typing import TYPE_CHECKING
 
 import attrs
 
+from subiquitycore.lsb_release import lsb_release
+
 if TYPE_CHECKING:
     # Avoid circular import: models/storage.py imports Requirements
     # from this module at the top level.
@@ -95,6 +97,14 @@ def _is_boot_ext4(model) -> bool:
     return mount.fstype == "ext4"
 
 
+def _needs_ext4_boot(model) -> bool:
+    """UEFI systems with signed GRUB require ext4 for /boot on 26.10+."""
+    if not model.is_root_mounted() or not model.uses_signed_grub():
+        return False
+    release = lsb_release(dry_run=model.dry_run)["release"]
+    return tuple(int(p) for p in release.split(".")) >= (26, 10)
+
+
 class Requirements:
     """Well-known install-readiness checks for storage setup.
 
@@ -124,7 +134,7 @@ class Requirements:
         guidance_message_kind=GuidanceMessageKind.USE_EXT4_BOOT,
         severity=RequirementSeverity.BLOCKING,
         check=_is_boot_ext4,
-        applies_to=lambda m: m.is_root_mounted() and m.uses_signed_grub(),
+        applies_to=_needs_ext4_boot,
     )
 
     @staticmethod

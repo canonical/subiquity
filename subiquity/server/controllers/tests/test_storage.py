@@ -660,8 +660,12 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
             with mock.patch.object(
                 model, "needs_bootloader_partition", return_value=False
             ):
-                with self.assertRaisesRegex(AutoinstallError, "ext4 filesystem"):
-                    await self.ctrler.apply_autoinstall_config()
+                with mock.patch(
+                    "subiquity.common.storage.requirements.lsb_release",
+                    return_value={"release": "26.10"},
+                ):
+                    with self.assertRaisesRegex(AutoinstallError, "ext4 filesystem"):
+                        await self.ctrler.apply_autoinstall_config()
 
     @mock.patch("subiquity.server.controllers.storage.open", mock.mock_open())
     async def test_probe_once_unlocked_probe_data(self):

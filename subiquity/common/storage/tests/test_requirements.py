@@ -202,6 +202,10 @@ class TestRequirements(unittest.TestCase):
         with (
             mock.patch.object(model, "is_root_mounted", return_value=root_mounted),
             mock.patch.object(model, "uses_signed_grub", return_value=uses_signed_grub),
+            mock.patch(
+                "subiquity.common.storage.requirements.lsb_release",
+                return_value={"release": "26.10"},
+            ),
         ):
             self.assertEqual(
                 expected, Requirements.BOOT_FILESYSTEM.is_applicable(model)
