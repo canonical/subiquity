@@ -66,7 +66,7 @@ class OEMController(SubiquityController):
 
         self.load_metapkgs_task: Optional[asyncio.Task] = None
         self.kernel_configured_event = asyncio.Event()
-        self.fs_configured_event = asyncio.Event()
+        self.storage_configured_event = asyncio.Event()
 
     def start(self) -> None:
         self._wait_confirmation = asyncio.Event()
@@ -79,7 +79,7 @@ class OEMController(SubiquityController):
             (InstallerChannels.CONFIGURED, "kernel"), self.kernel_configured_event.set
         )
         self.app.hub.subscribe(
-            (InstallerChannels.CONFIGURED, "filesystem"), self.fs_configured_event.set
+            (InstallerChannels.CONFIGURED, "storage"), self.storage_configured_event.set
         )
 
         async def list_and_mark_configured() -> None:
@@ -138,13 +138,13 @@ class OEMController(SubiquityController):
         # installs (especially in CI), it is possible that the events come in
         # the reverse order. Let's be prepared for it by also waiting for the
         # storage configured event.
-        await self.fs_configured_event.wait()
+        await self.storage_configured_event.wait()
 
         # Only look for OEM meta-packages on supported variants and if we are
         # not running core boot.
         variant: str = self.app.base_model.source.current.variant
-        fs_controller = self.app.controllers.Filesystem
-        if fs_controller.is_core_boot_classic():
+        storage_controller = self.app.controllers.Storage
+        if storage_controller.is_core_boot_classic():
             log.debug("listing of OEM meta-packages disabled on core boot classic")
             self.model.metapkgs = []
             return

@@ -25,7 +25,7 @@ from urwid import ListBox as UrwidListBox
 from urwid import RadioButton, SelectableIcon, SimpleFocusListWalker, Text
 
 from subiquity.common.types import SnapCheckState, SnapSelection
-from subiquity.models.filesystem import humanize_size
+from subiquity.models.storage import humanize_size
 from subiquitycore.async_helpers import schedule_task
 from subiquitycore.ui.buttons import cancel_btn, ok_btn, other_btn
 from subiquitycore.ui.container import (

@@ -38,13 +38,13 @@ from subiquity.common.pkg import TargetPkg
 from subiquity.common.resources import get_users_and_groups
 from subiquity.common.types import ApplicationState, PackageInstallState
 from subiquity.journald import journald_listen
-from subiquity.models.filesystem import ActionRenderMode, Partition
+from subiquity.models.storage import ActionRenderMode, Partition
 from subiquity.server.autoinstall import (
     AutoinstallError,
     AutoinstallUserSuppliedCmdError,
 )
 from subiquity.server.controller import SubiquityController
-from subiquity.server.controllers.filesystem import VariationInfo
+from subiquity.server.controllers.storage import VariationInfo
 from subiquity.server.curtin import run_curtin_command
 from subiquity.server.mounter import Mounter, Mountpoint
 from subiquity.server.runner import get_redacted_command_runner
@@ -138,7 +138,7 @@ class InstallController(SubiquityController):
     ) -> Dict[str, Any]:
         """Return configuration to be used as part of a curtin 'block-meta'
         step."""
-        cfg = self.model.filesystem.render(mode=mode)
+        cfg = self.model.storage.render(mode=mode)
         if "storage" in cfg and device_map_path is not None:
             cfg["storage"]["device_map_path"] = str(device_map_path)
         return cfg
@@ -192,8 +192,8 @@ class InstallController(SubiquityController):
     @with_context(description="configuring apt", level="INFO", childlevel="DEBUG")
     async def configure_apt(self, *, context):
         mirror = self.app.controllers.Mirror
-        fsc = self.app.controllers.Filesystem
-        configurer = await mirror.wait_config(fsc._info.name)
+        storage_ctrler = self.app.controllers.Storage
+        configurer = await mirror.wait_config(storage_ctrler._info.name)
         return await configurer.configure_for_install(context)
 
     async def setup_target(self, context):
@@ -264,7 +264,7 @@ class InstallController(SubiquityController):
         if device_map_path is not None:
             with open(device_map_path) as fp:
                 device_map = json.load(fp)
-            self.app.controllers.Filesystem.update_devices(device_map)
+            self.app.controllers.Storage.update_devices(device_map)
 
     async def pre_curthooks_oem_configuration(self, context):
         async def install_oem_metapackages(ctx):
@@ -354,7 +354,7 @@ class InstallController(SubiquityController):
         )
         self.app.note_file_for_apport("CurtinLog", base_config["install"]["log_file"])
 
-        fs_controller = self.app.controllers.Filesystem
+        storage_controller = self.app.controllers.Storage
 
         async def run_curtin_step(name, stages, step_config, source=None):
             config = copy.deepcopy(base_config)
@@ -371,7 +371,7 @@ class InstallController(SubiquityController):
 
         await run_curtin_step(name="initial", stages=[], step_config={})
 
-        if fs_controller.reset_partition_only:
+        if storage_controller.reset_partition_only:
             await run_curtin_step(
                 name="partitioning",
                 stages=["partitioning"],
@@ -379,7 +379,7 @@ class InstallController(SubiquityController):
                     device_map_path=logs_dir / "device-map.json",
                 ),
             )
-        elif fs_controller.use_snapd_install_api():
+        elif storage_controller.use_snapd_install_api():
             await run_curtin_step(
                 name="partitioning",
                 stages=["partitioning"],
@@ -388,8 +388,8 @@ class InstallController(SubiquityController):
                     device_map_path=logs_dir / "device-map-partition.json",
                 ),
             )
-            if fs_controller.use_tpm:
-                await fs_controller.setup_encryption(context=context)
+            if storage_controller.use_tpm:
+                await storage_controller.setup_encryption(context=context)
             await run_curtin_step(
                 name="formatting",
                 stages=["partitioning"],
@@ -467,7 +467,7 @@ class InstallController(SubiquityController):
             # really write recovery_system={snapd_system_label} to
             # {target}/var/lib/snapd/modeenv to get snapd to pick it up on
             # first boot. But not needed for now.
-        rp = fs_controller.model.reset_partition
+        rp = storage_controller.model.reset_partition
         if rp is not None:
             mounter = Mounter(self.app)
             rp_target = os.path.join(self.app.root, "factory-reset")
@@ -573,7 +573,7 @@ class InstallController(SubiquityController):
         if rp_partuuid is None:
             # Most likely case: we are not running from an reset partition
             return
-        rp = self.app.base_model.filesystem.partition_by_partuuid(rp_partuuid)
+        rp = self.app.base_model.storage.partition_by_partuuid(rp_partuuid)
         if rp is None:
             # This shouldn't happen, but don't crash.
             return
@@ -649,8 +649,10 @@ class InstallController(SubiquityController):
 
                 await self.app.hub.abroadcast(InstallerChannels.APT_CONFIGURED)
             else:
-                fsc = self.app.controllers.Filesystem
-                for_install_path = self.model.source.get_source(fsc._info.name)
+                storage_ctrler = self.app.controllers.Storage
+                for_install_path = self.model.source.get_source(
+                    storage_ctrler._info.name
+                )
 
             await self.install_live_packages(context=context)
 
@@ -705,7 +707,7 @@ class InstallController(SubiquityController):
             return []
         if not self.model.drivers.do_install:
             return []
-        info: VariationInfo = self.app.controllers.Filesystem._info
+        info: VariationInfo = self.app.controllers.Storage._info
         return self.model.drivers.matching_kernel_components(
             info.available_kernel_components
         )
@@ -787,26 +789,26 @@ class InstallController(SubiquityController):
         finally:
             await self.configure_cloud_init(context=context)
 
-        fs_controller = self.app.controllers.Filesystem
-        if fs_controller.use_snapd_install_api():
-            if fs_controller.use_tpm:
+        storage_controller = self.app.controllers.Storage
+        if storage_controller.use_snapd_install_api():
+            if storage_controller.use_tpm:
                 # This will generate a recovery key which will initially expire
                 # after a very short duration (e.g., 5 minutes).
                 # We need to reach the finish_install step within that timeframe,
                 # otherwise the key will be considered expired. So let's keep
                 # the two calls next to one another.
-                await fs_controller.fetch_core_boot_recovery_key()
-            await fs_controller.finish_install(
+                await storage_controller.fetch_core_boot_recovery_key()
+            await storage_controller.finish_install(
                 context=context, kernel_components=self.kernel_components()
             )
-            await fs_controller.snapd_target_preseed(Path(self.model.target))
+            await storage_controller.snapd_target_preseed(Path(self.model.target))
         if self.supports_apt():
             # Don't run ubuntu-drivers install for TPM/FDE.
             # The list of offered drivers is already used to extrapolate a list
             # of kernel components.
             if (
                 self.model.drivers.do_install
-                and not fs_controller.use_snapd_install_api()
+                and not storage_controller.use_snapd_install_api()
             ):
                 with context.child(
                     "ubuntu-drivers-install", "installing third-party drivers"
@@ -826,7 +828,7 @@ class InstallController(SubiquityController):
 
             await self.app.controllers.Ad.join_domain(hostname, context)
         await self.platform_postinstall()
-        self.model.filesystem.copy_artifacts_to_target()
+        self.model.storage.copy_artifacts_to_target()
 
     @with_context(description="configuring cloud-init")
     async def configure_cloud_init(self, context):

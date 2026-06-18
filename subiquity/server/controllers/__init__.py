@@ -18,7 +18,6 @@ from .cmdlist import EarlyController, ErrorController, LateController
 from .codecs import CodecsController
 from .debconf import DebconfController
 from .drivers import DriversController
-from .filesystem import FilesystemController
 from .identity import IdentityController
 from .install import InstallController
 from .integrity import IntegrityController
@@ -37,6 +36,7 @@ from .shutdown import ShutdownController
 from .snaplist import SnapListController
 from .source import SourceController
 from .ssh import SSHController
+from .storage import StorageController
 from .timezone import TimeZoneController
 from .ubuntu_pro import UbuntuProController
 from .updates import UpdatesController
@@ -50,7 +50,7 @@ __all__ = [
     "DriversController",
     "EarlyController",
     "ErrorController",
-    "FilesystemController",
+    "StorageController",
     "IdentityController",
     "IntegrityController",
     "InstallController",

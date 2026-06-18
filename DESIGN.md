@@ -135,7 +135,7 @@ lives in the server and the view in the client, and controller classes in both
 the server and client handle the communication.
 
 The model is ultimately the config that will be passed to curtin, which is
-broken apart into classes for the configuration of the network, the filesystem,
+broken apart into classes for the configuration of the network, the storage,
 the language, etc, etc.  The full model lives in `subiquity.models.subiquity`
 and the submodels live in modules like `subiquitycore.models.network` and
 `subiquity.models.keyboard`. Each model object gets an `asyncio.Event` object
@@ -397,11 +397,11 @@ installation. It was helpful to me when working on this to categorize
      autoinstall config, if any, being run.
  * **delayed** errors are not shown to the user until they become critical.
    * The only example of this at the time of writing is block probe
-     errors. These are not reported until the filesystem screen, at
+     errors. These are not reported until the storage screen, at
      least in part because a snap update may resolve them, so the user
      needs to be able to get to that screen before being bothered about them.
-   * When the filesystem screen is not interactive, these errors
-     are handled as if an immediate error occurred when the filesystem config
+   * When the storage screen is not interactive, these errors
+     are handled as if an immediate error occurred when the storage config
      is needed.
  * **API** errors are when an exception occurs while handling an API
    call from the client.
@@ -548,7 +548,7 @@ Subiquity is mostly a UI, after all, so starting there does make sense.  I also
 try not to worry about how hard a UI would be to implement!
 
 The model is sometimes quite trivial, because it's basically defined by the
-curtin config, and sometimes much less so (e.g. the filesystem model).
+curtin config, and sometimes much less so (e.g. the storage model).
 
 Once the view code and the model exist, the controller "just" sits between
 them. Again, often this is simple, but sometimes it is not.

@@ -680,7 +680,7 @@ class ZdevController(SubiquityController):
             await self.chzdev(action, zdevinfos[ai_action.id])
 
     def interactive(self):
-        if self.app.base_model.filesystem.bootloader != Bootloader.NONE:
+        if self.app.base_model.storage.bootloader != Bootloader.NONE:
             return False
         return super().interactive()
 

@@ -206,7 +206,7 @@ def get_installer_password_from_cloudinit_log():
 INSTALL_MODEL_NAMES = ModelNames(
     {
         "debconf_selections",
-        "filesystem",
+        "storage",
         "kernel",
         "kernel_crash_dumps",
         "keyboard",
@@ -276,7 +276,7 @@ class SubiquityServer(Application):
         "UbuntuPro",
         "Proxy",
         "Mirror",
-        "Filesystem",
+        "Storage",
         "Identity",
         "SSH",
         "SnapList",

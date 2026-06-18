@@ -107,7 +107,7 @@ class SubiquityClient(TuiApplication):
             "Proxy",
             "Mirror",
             "Refresh",
-            "Filesystem",
+            "Storage",
             "Identity",
             "UbuntuPro",
             "SSH",
@@ -123,7 +123,7 @@ class SubiquityClient(TuiApplication):
             "Network",
             "Refresh",
             "Source",
-            "Filesystem",
+            "Storage",
             "Progress",
         ],
     }
@@ -542,7 +542,7 @@ class SubiquityClient(TuiApplication):
         log.debug("showing InstallConfirmation over %s", self.ui.body)
         overlay = InstallConfirmation(self)
         self.add_global_overlay(overlay)
-        if self.answers.get("filesystem-confirmed", False):
+        if self.answers.get("storage-confirmed", False):
             overlay.ok(None)
 
     async def _start_answers_for_view(

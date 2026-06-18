@@ -508,7 +508,7 @@ class GuidedChoiceV2:
     reset_partition_size: Optional[int] = None
 
     def validate(self):
-        from subiquity.server.controllers.filesystem import validate_pin_pass
+        from subiquity.server.controllers.storage import validate_pin_pass
 
         validate_pin_pass(
             passphrase_allowed=self.capability.supports_passphrase(),
