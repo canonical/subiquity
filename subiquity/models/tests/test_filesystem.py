@@ -146,9 +146,17 @@ class FakeStorageInfo:
     raw = attr.ib(default=attr.Factory(dict))
 
 
-def make_model(bootloader=None, storage_version=None, supports_nvme_tcp_booting=False):
+def make_model(
+    bootloader=None,
+    storage_version=None,
+    *,
+    dry_run=False,
+    supports_nvme_tcp_booting=False,
+):
     model = FilesystemModel(
-        root="/tmp", opt_supports_nvme_tcp_booting=supports_nvme_tcp_booting
+        root="/tmp",
+        dry_run=dry_run,
+        opt_supports_nvme_tcp_booting=supports_nvme_tcp_booting,
     )
     if bootloader is not None:
         model.bootloader = bootloader
@@ -457,7 +465,13 @@ class TestFilesystemModel(unittest.TestCase):
     ):
         model, disk = make_model_and_disk(bootloader)
 
-        with mock.patch.object(model, "needs_bootloader_partition", return_value=False):
+        with (
+            mock.patch.object(model, "needs_bootloader_partition", return_value=False),
+            mock.patch(
+                "subiquity.common.filesystem.requirements.lsb_release",
+                return_value={"release": "26.10"},
+            ),
+        ):
             if has_separate_boot:
                 part = make_partition(model, disk)
                 fs = make_filesystem(model, part, fstype=boot_fstype)
@@ -470,6 +484,28 @@ class TestFilesystemModel(unittest.TestCase):
                 fs = make_filesystem(model, part, fstype=root_fstype)
                 make_mount(model, fs, "/")
 
+            self.assertEqual(expected, model.can_install())
+
+    @parameterized.expand(
+        (
+            ("26.04", True),
+            ("26.04.1", True),
+            ("26.10", False),
+            ("27.04", False),
+        )
+    )
+    def test_boot_filesystem_release_requirement(self, release, expected):
+        model, disk = make_model_and_disk(Bootloader.UEFI)
+        part = make_partition(model, disk)
+        fs = make_filesystem(model, part, fstype="xfs")
+        make_mount(model, fs, "/")
+        with (
+            mock.patch.object(model, "needs_bootloader_partition", return_value=False),
+            mock.patch(
+                "subiquity.common.filesystem.requirements.lsb_release",
+                return_value={"release": release},
+            ),
+        ):
             self.assertEqual(expected, model.can_install())
 
     @parameterized.expand(

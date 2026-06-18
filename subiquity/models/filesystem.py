@@ -1595,12 +1595,14 @@ class FilesystemModel:
         bootloader=None,
         *,
         root: str,
+        dry_run: bool,
         opt_supports_nvme_tcp_booting: bool | None = None,
         detected_supports_nvme_tcp_booting: bool | None = None,
     ):
         if bootloader is None:
             bootloader = self._probe_bootloader()
         self.bootloader = bootloader
+        self.dry_run = dry_run
         self.root = root
         self.opt_supports_nvme_tcp_booting: bool | None = opt_supports_nvme_tcp_booting
         self.detected_supports_nvme_tcp_booting: bool | None = (
@@ -1638,6 +1640,7 @@ class FilesystemModel:
         orig_model = FilesystemModel(
             self.bootloader,
             root=self.root,
+            dry_run=self.dry_run,
             opt_supports_nvme_tcp_booting=self.opt_supports_nvme_tcp_booting,
             detected_supports_nvme_tcp_booting=self.detected_supports_nvme_tcp_booting,
         )
