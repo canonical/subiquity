@@ -13,7 +13,7 @@ Proxy:
   proxy: ""
 Mirror:
   mirror: "http://us.archive.ubuntu.com"
-Filesystem:
+Storage:
   guided: yes
   guided-label: "md126"
 Identity:

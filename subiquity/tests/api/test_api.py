@@ -2034,7 +2034,7 @@ class TestOEM(TestAPI):
         # the following error:
         #   File "server/controllers/oem.py", in load_metapackages_list
         #     if fs_controller.is_core_boot_classic():
-        #   File "server/controllers/filesystem.py", in is_core_boot_classic
+        #   File "server/controllers/storage.py", in is_core_boot_classic
         #     return self._info.is_core_boot_classic()
         # AttributeError: 'NoneType' object has no attribute
         # 'is_core_boot_classic'
@@ -2454,7 +2454,7 @@ class TestMountDetection(TestAPI):
             self.assertTrue(disk1p2["is_in_use"])
 
 
-class TestFilesystemUserErrors(TestAPI):
+class TestStorageUserErrors(TestAPI):
     @timeout()
     async def test_add_boot_partition(self):
         cfg = "examples/machines/simple.json"

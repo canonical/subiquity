@@ -16,7 +16,7 @@ Proxy:
   proxy: ""
 Mirror:
   country-code: us
-Filesystem:
+Storage:
   guided: yes
   guided-index: 0
 Identity:

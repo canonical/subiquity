@@ -12,7 +12,7 @@ Proxy:
   proxy: ""
 Mirror:
   mirror: "http://us.archive.ubuntu.com"
-Filesystem:
+Storage:
   manual:
     - obj: [disk index 0]
       action: TOGGLE_BOOT

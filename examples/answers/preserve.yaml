@@ -13,7 +13,7 @@ Proxy:
   proxy: ""
 Mirror:
   mirror: "http://us.archive.ubuntu.com"
-Filesystem:
+Storage:
   manual:
     - obj: [disk serial serial1, part 5]
       action: EDIT
