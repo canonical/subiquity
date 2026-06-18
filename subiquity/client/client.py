@@ -107,7 +107,7 @@ class SubiquityClient(TuiApplication):
             "Proxy",
             "Mirror",
             "Refresh",
-            "Filesystem",
+            "Storage",
             "Identity",
             "UbuntuPro",
             "SSH",
@@ -123,7 +123,7 @@ class SubiquityClient(TuiApplication):
             "Network",
             "Refresh",
             "Source",
-            "Filesystem",
+            "Storage",
             "Progress",
         ],
     }

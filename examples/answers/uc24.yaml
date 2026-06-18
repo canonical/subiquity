@@ -13,7 +13,7 @@ Network:
   accept-default: yes
 Proxy:
   proxy: ""
-Filesystem:
+Storage:
   guided: yes
   guided-index: 0
 InstallProgress:

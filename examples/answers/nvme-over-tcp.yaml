@@ -13,7 +13,7 @@ Proxy:
   proxy: ""
 Mirror:
   mirror: "http://fr.archive.ubuntu.com"
-Filesystem:
+Storage:
   # 1. Reformat both disks
   # 2. Create the root filesystem on disk 0 (which is a local disk)
   # 3. Create the /home filesystem on disk 1 (which is a remote disk)

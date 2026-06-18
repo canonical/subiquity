@@ -79,7 +79,7 @@ class OEMController(SubiquityController):
             (InstallerChannels.CONFIGURED, "kernel"), self.kernel_configured_event.set
         )
         self.app.hub.subscribe(
-            (InstallerChannels.CONFIGURED, "filesystem"), self.fs_configured_event.set
+            (InstallerChannels.CONFIGURED, "storage"), self.fs_configured_event.set
         )
 
         async def list_and_mark_configured() -> None:
@@ -143,7 +143,7 @@ class OEMController(SubiquityController):
         # Only look for OEM meta-packages on supported variants and if we are
         # not running core boot.
         variant: str = self.app.base_model.source.current.variant
-        fs_controller = self.app.controllers.Filesystem
+        fs_controller = self.app.controllers.Storage
         if fs_controller.is_core_boot_classic():
             log.debug("listing of OEM meta-packages disabled on core boot classic")
             self.model.metapkgs = []

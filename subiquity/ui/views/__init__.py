@@ -13,15 +13,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .filesystem import FilesystemView, GuidedDiskSelectionView
 from .identity import IdentityView
 from .installprogress import ProgressView
 from .keyboard import KeyboardView
+from .storage import GuidedDiskSelectionView, StorageView
 from .welcome import WelcomeView
 from .zdev import ZdevView
 
 __all__ = [
-    "FilesystemView",
+    "StorageView",
     "GuidedDiskSelectionView",
     "IdentityView",
     "KeyboardView",

@@ -19,7 +19,6 @@ import jsonschema
 from jsonschema.validators import validator_for
 
 from subiquity.server.autoinstall import AutoinstallError
-from subiquity.server.controllers.filesystem import FilesystemController
 from subiquity.server.controllers.identity import (
     IdentityController,
     UsernameError,
@@ -29,6 +28,7 @@ from subiquity.server.controllers.identity import (
     UsernameTooLongError,
     UsernameValidation,
 )
+from subiquity.server.controllers.storage import StorageController
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized
@@ -117,7 +117,7 @@ class TestControllerUserCreationFlows(SubiTestCase):
     def setUp(self):
         self.app = make_app()
         self.app.opts.bootloader = False
-        self.app.controllers.Filesystem = FilesystemController(self.app)
+        self.app.controllers.Storage = StorageController(self.app)
         self.ic = IdentityController(self.app)
         self.ic.model.user = None
 

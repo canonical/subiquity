@@ -35,7 +35,6 @@ from subiquitycore.lsb_release import lsb_release
 from .ad import AdModel
 from .codecs import CodecsModel
 from .drivers import DriversModel
-from .filesystem import FilesystemModel
 from .identity import IdentityModel
 from .integrity import IntegrityModel
 from .kernel import KernelModel
@@ -49,6 +48,7 @@ from .proxy import ProxyModel
 from .snaplist import SnapListModel
 from .source import SourceModel
 from .ssh import SSHModel
+from .storage import StorageModel
 from .timezone import TimeZoneModel
 from .ubuntu_pro import UbuntuProModel
 from .updates import UpdatesModel
@@ -182,7 +182,7 @@ class SubiquityModel:
         self.codecs = CodecsModel()
         self.debconf_selections = DebconfSelectionsModel()
         self.drivers = DriversModel()
-        self.filesystem = FilesystemModel(
+        self.storage = StorageModel(
             root=root, opt_supports_nvme_tcp_booting=opt_supports_nvme_tcp_booting
         )
         self.identity = IdentityModel()
