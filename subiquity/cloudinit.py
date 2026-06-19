@@ -279,7 +279,12 @@ def rand_password(strlen: int = 32, select_from: Optional[Sequence] = None) -> s
     return "".join([r.choice(select_from) for _x in range(strlen)])
 
 
-# Generate random user passwords the same way cloud-init does
+# Generate random user passwords based on an older cloud-init implementation.
 # https://github.com/canonical/cloud-init/blob/6e4153b346bc0d3f3422c01a3f93ecfb28269da2/cloudinit/config/cc_set_passwords.py#L249  # noqa: E501
+# cloud-init has since removed the PW_SET variable and now generates passwords
+# under stricter rules, using a wider range of characters. See
+# https://github.com/canonical/cloud-init/commit/879945f56103d937a7fee84bfe7662dc2a5be708
+# Unfortunately, this led to a regression in Subiquity making it hard for users
+# to copy-and-paste passwords on serial consoles (see LP: #2118989).
 def rand_user_password(pwlen: int = 20) -> str:
     return rand_password(strlen=pwlen, select_from=CLOUD_INIT_PW_SET)
