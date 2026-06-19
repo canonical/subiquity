@@ -53,6 +53,7 @@ from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.common.filesystem.requirements import (
     Requirements,
     RequirementSeverity,
+    _needs_ext4_boot,
 )
 from subiquity.common.filesystem.spec import FileSystemSpec, PartitionSpec, VolGroupSpec
 from subiquity.common.types.storage import (
@@ -762,10 +763,6 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         uuid = gen_zsys_uuid()
 
-        bpool = self.create_zpool(bpart, "bpool", "/boot", boot=True, canmount="off")
-        bpool.create_zfs("BOOT", canmount="off", mountpoint="none")
-        bpool.create_zfs(f"BOOT/ubuntu_{uuid}", mountpoint="/boot")
-
         rpool = self.create_zpool(
             rpart,
             "rpool",
@@ -797,6 +794,16 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         rpool.create_zfs("USERDATA", canmount="off", mountpoint="none")
         rpool.create_zfs(f"USERDATA/root_{userdata_uuid}", mountpoint="/root")
         rpool.create_zfs(f"USERDATA/home_{userdata_uuid}", mountpoint="/home")
+
+        if _needs_ext4_boot(self.model):
+            self.create_filesystem(bpart, FileSystemSpec(fstype="ext4", mount="/boot"))
+        else:
+            # Use a ZFS pool for /boot, like we used to always do.
+            bpool = self.create_zpool(
+                bpart, "bpool", "/boot", boot=True, canmount="off"
+            )
+            bpool.create_zfs("BOOT", canmount="off", mountpoint="none")
+            bpool.create_zfs(f"BOOT/ubuntu_{uuid}", mountpoint="/boot")
 
     @functools.singledispatchmethod
     def start_guided(self, target: GuidedStorageTarget, disk: ModelDisk) -> gaps.Gap:

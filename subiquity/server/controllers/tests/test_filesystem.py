@@ -16,6 +16,7 @@
 import asyncio
 import contextlib
 import copy
+import itertools
 import subprocess
 import uuid
 from pathlib import Path
@@ -1904,18 +1905,30 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertFalse(d1p2.preserve)
         self.assertIsNone(gaps.largest_gap(self.d1))
 
-    @parameterized.expand(boot_expectations)
-    async def test_guided_zfs(self, bootloader, ptable, p1mnt):
+    @parameterized.expand(
+        [
+            (*be, needs_ext4_boot)
+            for be, needs_ext4_boot in itertools.product(
+                boot_expectations, (False, True)
+            )
+        ]
+    )
+    async def test_guided_zfs(self, bootloader, ptable, p1mnt, needs_ext4_boot):
         await self._guided_setup(bootloader, ptable)
-        target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, allowed=default_capabilities
-        )
-        await self.controller.guided(
-            GuidedChoiceV2(target=target, capability=GuidedCapability.ZFS)
-        )
+        with mock.patch(
+            "subiquity.server.controllers.filesystem._needs_ext4_boot",
+            return_value=needs_ext4_boot,
+        ):
+            await self.controller.guided(
+                GuidedChoiceV2(
+                    target=GuidedStorageTargetReformat(
+                        disk_id=self.d1.id, allowed=default_capabilities
+                    ),
+                    capability=GuidedCapability.ZFS,
+                )
+            )
         [firmware, boot, swap, root] = self.d1.partitions()
         self.assertEqual(p1mnt, firmware.mount)
-        self.assertIsNone(boot.mount)
         self.assertIsNone(root.mount)
         self.assertFalse(firmware.preserve)
         self.assertFalse(boot.preserve)
@@ -1927,35 +1940,52 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual([root], rpool.vdevs)
         self.assertIsNone(rpool.encryption_style)
         self.assertIsNone(rpool.keyfile)
-        [bpool] = self.model._all(type="zpool", pool="bpool")
-        self.assertIsNone(bpool.path)
-        self.assertEqual([boot], bpool.vdevs)
+        if needs_ext4_boot:
+            self.assertIsNotNone(boot.mount)
+            self.assertEqual([], self.model._all(type="zpool", pool="bpool"))
+            boot_mount = self.model._mount_for_path("/boot")
+            self.assertEqual("ext4", boot_mount.fstype)
+        else:
+            self.assertIsNone(boot.mount)
+            [bpool] = self.model._all(type="zpool", pool="bpool")
+            self.assertIsNone(bpool.path)
+            self.assertEqual([boot], bpool.vdevs)
+            zfs_boot = self.model._mount_for_path("/boot")
+            self.assertEqual("zfs", zfs_boot.type)
         zfs_rootfs = self.model._mount_for_path("/")
         self.assertEqual("zfs", zfs_rootfs.type)
-        zfs_boot = self.model._mount_for_path("/boot")
-        self.assertEqual("zfs", zfs_boot.type)
 
-        # checking that these were created
         [userdata] = self.model._all(type="zfs", volume="USERDATA")
         [userdata_home] = self.model._all(type="zfs", path="/home")
         [userdata_root] = self.model._all(type="zfs", path="/root")
 
-    @parameterized.expand(boot_expectations)
-    async def test_guided_zfs_luks_keystore(self, bootloader, ptable, p1mnt):
-        await self._guided_setup(bootloader, ptable)
-        target = GuidedStorageTargetReformat(
-            disk_id=self.d1.id, allowed=default_capabilities
-        )
-        await self.controller.guided(
-            GuidedChoiceV2(
-                target=target,
-                capability=GuidedCapability.ZFS_LUKS_KEYSTORE,
-                password="passw0rd",
+    @parameterized.expand(
+        [
+            (*be, needs_ext4_boot)
+            for be, needs_ext4_boot in itertools.product(
+                boot_expectations, (False, True)
             )
-        )
+        ]
+    )
+    async def test_guided_zfs_luks_keystore(
+        self, bootloader, ptable, p1mnt, needs_ext4_boot
+    ):
+        await self._guided_setup(bootloader, ptable)
+        with mock.patch(
+            "subiquity.server.controllers.filesystem._needs_ext4_boot",
+            return_value=needs_ext4_boot,
+        ):
+            await self.controller.guided(
+                GuidedChoiceV2(
+                    target=GuidedStorageTargetReformat(
+                        disk_id=self.d1.id, allowed=default_capabilities
+                    ),
+                    capability=GuidedCapability.ZFS_LUKS_KEYSTORE,
+                    password="passw0rd",
+                )
+            )
         [firmware, boot, swap, root] = self.d1.partitions()
         self.assertEqual(p1mnt, firmware.mount)
-        self.assertIsNone(boot.mount)
         self.assertIsNone(root.mount)
         self.assertFalse(firmware.preserve)
         self.assertFalse(boot.preserve)
@@ -1975,13 +2005,20 @@ class TestGuided(IsolatedAsyncioTestCase):
             # a tempfile is created outside of normal test tempfiles,
             # clean that up
             Path(rpool.keyfile).unlink()
-        [bpool] = self.model._all(type="zpool", pool="bpool")
-        self.assertIsNone(bpool.path)
-        self.assertEqual([boot], bpool.vdevs)
+        if needs_ext4_boot:
+            self.assertIsNotNone(boot.mount)
+            self.assertEqual([], self.model._all(type="zpool", pool="bpool"))
+            boot_mount = self.model._mount_for_path("/boot")
+            self.assertEqual("ext4", boot_mount.fstype)
+        else:
+            self.assertIsNone(boot.mount)
+            [bpool] = self.model._all(type="zpool", pool="bpool")
+            self.assertIsNone(bpool.path)
+            self.assertEqual([boot], bpool.vdevs)
+            zfs_boot = self.model._mount_for_path("/boot")
+            self.assertEqual("zfs", zfs_boot.type)
         zfs_rootfs = self.model._mount_for_path("/")
         self.assertEqual("zfs", zfs_rootfs.type)
-        zfs_boot = self.model._mount_for_path("/boot")
-        self.assertEqual("zfs", zfs_boot.type)
 
     async def test_guided_zfs_BIOS_MSDOS(self):
         await self._guided_setup(Bootloader.BIOS, "msdos")
