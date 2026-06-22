@@ -1363,6 +1363,9 @@ class Filesystem:
         else:
             return False
 
+    def on_remote_storage(self) -> bool:
+        return self.volume.on_remote_storage()
+
 
 @fsobj("mount")
 class Mount:
@@ -1389,6 +1392,9 @@ class Mount:
             # /boot/efi
             return False
         return True
+
+    def on_remote_storage(self) -> bool:
+        return self.device.on_remote_storage()
 
 
 def get_canmount(properties: Optional[dict], default: bool) -> bool:
@@ -1461,6 +1467,9 @@ class ZPool:
         self._m._actions.append(zfs)
         return zfs
 
+    def on_remote_storage(self) -> bool:
+        return any(vdev.on_remote_storage() for vdev in self.vdevs)
+
 
 @fsobj("zfs")
 class ZFS:
@@ -1483,6 +1492,9 @@ class ZFS:
             return self.properties.get("mountpoint", self.volume)
         else:
             return None
+
+    def on_remote_storage(self) -> bool:
+        return self.pool.on_remote_storage()
 
 
 ConstructedDevice = Union[Raid, LVM_VolGroup, ZPool]
@@ -2493,13 +2505,13 @@ class FilesystemModel:
         return self._mount_for_path("/") is not None
 
     def is_rootfs_on_remote_storage(self) -> bool:
-        return self._mount_for_path("/").device.volume.on_remote_storage()
+        return self._mount_for_path("/").on_remote_storage()
 
     def is_boot_mounted(self) -> bool:
         return self._mount_for_path("/boot") is not None
 
     def is_bootfs_on_remote_storage(self) -> bool:
-        return self._mount_for_path("/boot").device.volume.on_remote_storage()
+        return self._mount_for_path("/boot").on_remote_storage()
 
     def _can_install_remote(self) -> bool:
         """Tells whether installing with the rootfs on remote storage would be
