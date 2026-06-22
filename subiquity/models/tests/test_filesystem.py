@@ -2154,6 +2154,106 @@ class TestOnRemoteStorage(SubiTestCase):
         with mock.patch.object(vg, "on_remote_storage", return_value=True):
             self.assertTrue(lv.on_remote_storage())
 
+    def test_filesystem(self):
+        m, d = make_model_and_disk(name="sda", serial="sata0")
+        p = make_partition(model=m, device=d)
+        fs = make_filesystem(model=m, partition=p, fstype="ext4")
+
+        with mock.patch.object(p, "on_remote_storage", return_value=False):
+            self.assertFalse(fs.on_remote_storage())
+        with mock.patch.object(p, "on_remote_storage", return_value=True):
+            self.assertTrue(fs.on_remote_storage())
+
+    def test_mount(self):
+        m, d = make_model_and_disk(name="sda", serial="sata0")
+        p = make_partition(model=m, device=d)
+        fs = make_filesystem(model=m, partition=p, fstype="ext4")
+        mount = make_mount(model=m, fs=fs, path="/")
+
+        with mock.patch.object(fs, "on_remote_storage", return_value=False):
+            self.assertFalse(mount.on_remote_storage())
+        with mock.patch.object(fs, "on_remote_storage", return_value=True):
+            self.assertTrue(mount.on_remote_storage())
+
+    def test_zpool(self):
+        m = make_model()
+        d0 = make_disk(fs_model=m, name="sda", serial="sata0")
+        d1 = make_disk(fs_model=m, name="sdb", serial="sata1")
+
+        pool = m.add_zpool(device=d0, pool="pool0", mountpoint=None)
+
+        d0_local = mock.patch.object(d0, "on_remote_storage", return_value=False)
+        d0_remote = mock.patch.object(d0, "on_remote_storage", return_value=True)
+
+        with d0_local:
+            self.assertFalse(pool.on_remote_storage())
+        with d0_remote:
+            self.assertTrue(pool.on_remote_storage())
+
+        # With multiple vdevs — any remote makes pool remote.
+        pool.vdevs.append(d1)
+
+        d0_local = mock.patch.object(d0, "on_remote_storage", return_value=False)
+        d1_local = mock.patch.object(d1, "on_remote_storage", return_value=False)
+        d0_remote = mock.patch.object(d0, "on_remote_storage", return_value=True)
+        d1_remote = mock.patch.object(d1, "on_remote_storage", return_value=True)
+
+        with d0_local, d1_local:
+            self.assertFalse(pool.on_remote_storage())
+        with d0_local, d1_remote:
+            self.assertTrue(pool.on_remote_storage())
+        with d0_remote, d1_local:
+            self.assertTrue(pool.on_remote_storage())
+        with d0_remote, d1_remote:
+            self.assertTrue(pool.on_remote_storage())
+
+    def test_zfs(self):
+        m = make_model()
+        d = make_disk(fs_model=m, name="sda", serial="sata0")
+        pool = m.add_zpool(device=d, pool="pool0", mountpoint=None)
+        zfs = make_zfs(model=m, pool=pool, volume="pool0/test")
+
+        with mock.patch.object(pool, "on_remote_storage", return_value=False):
+            self.assertFalse(zfs.on_remote_storage())
+        with mock.patch.object(pool, "on_remote_storage", return_value=True):
+            self.assertTrue(zfs.on_remote_storage())
+
+    def test_is_rootfs_on_remote_storage_with_zfs(self):
+        m = make_model()
+        ctrler = make_nvme_controller(
+            model=m,
+            transport="tcp",
+            tcp_addr="172.16.82.78",
+            tcp_port=4420,
+        )
+        d = make_disk(fs_model=m, name="nvme0n1", nvme_controller=ctrler, serial="tcp0")
+        pool = m.add_zpool(device=d, pool="pool0", mountpoint=None)
+        make_zfs(
+            model=m,
+            pool=pool,
+            volume="pool0/root",
+            properties={"mountpoint": "/", "canmount": "on"},
+        )
+        self.assertTrue(m.is_rootfs_on_remote_storage())
+
+    def test_is_bootfs_on_remote_storage_with_zfs(self):
+        m = make_model()
+        ctrler = make_nvme_controller(
+            model=m,
+            transport="tcp",
+            tcp_addr="172.16.82.78",
+            tcp_port=4420,
+        )
+        d = make_disk(fs_model=m, name="nvme0n1", nvme_controller=ctrler, serial="tcp0")
+        pool = m.add_zpool(device=d, pool="pool0", mountpoint="/boot")
+        make_zfs(
+            model=m,
+            pool=pool,
+            volume="pool0/boot",
+            properties={"mountpoint": "/boot", "canmount": "on"},
+        )
+        self.assertTrue(m.is_bootfs_on_remote_storage())
+
 
 class TestDiskForMatch(SubiTestCase):
     match_sort_criteria = (["smallest"], ["largest"])
