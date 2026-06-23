@@ -31,7 +31,12 @@ class TuiController(BaseController):
     def __init__(self, app):
         super().__init__(app)
         self.ui = app.ui
-        self.answers = app.answers.get(self.name, {})
+        if self.name in app.answers:
+            self.answers = app.answers[self.name]
+        elif hasattr(self, "legacy_name") and self.legacy_name in app.answers:
+            self.answers = app.answers[self.legacy_name]
+        else:
+            self.answers = {}
 
     @abstractmethod
     def cancel(self):

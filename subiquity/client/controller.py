@@ -30,6 +30,5 @@ class SubiquityTuiController(TuiController):
 
     def __init__(self, app):
         super().__init__(app)
-        self.answers = app.answers.get(self.name, {})
         if self.endpoint_name is not None:
             self.endpoint = getattr(self.app.client, self.endpoint_name)

@@ -140,7 +140,7 @@ class DriversController(SubiquityController):
         if search_drivers is SEARCH_DRIVERS_AUTOINSTALL_DEFAULT:
             search_drivers = True
 
-        fs_ctrler = self.app.controllers.Filesystem
+        fs_ctrler = self.app.controllers.Storage
         if self.model.deb_drivers and fs_ctrler.use_snapd_install_api():
             # Having deb-drivers implies that the storage model is configured
             # (otherwise, we'd still be waiting) so we can access the

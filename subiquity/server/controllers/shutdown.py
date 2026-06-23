@@ -100,7 +100,7 @@ class ShutdownController(SubiquityController):
     async def copy_logs_to_target(self, context):
         if self.opts.dry_run and "copy-logs-fail" in self.app.debug_flags:
             raise PermissionError()
-        if self.app.controllers.Filesystem.reset_partition_only:
+        if self.app.controllers.Storage.reset_partition_only:
             return
         if self.app.base_model.source.current.variant == "core":
             # Possibly should copy logs somewhere else in this case?

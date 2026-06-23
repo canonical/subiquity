@@ -166,9 +166,9 @@ class TestMetapackageSelection(SubiTestCase):
         await self.app.hub.abroadcast((InstallerChannels.CONFIGURED, "source"))
 
         if BridgeKernelReason.ZFS in scenario.detected_reasons:
-            self.app.base_model.filesystem.uses_zfs.return_value = True
+            self.app.base_model.storage.uses_zfs.return_value = True
         else:
-            self.app.base_model.filesystem.uses_zfs.return_value = False
+            self.app.base_model.storage.uses_zfs.return_value = False
 
         await self.app.hub.abroadcast(InstallerChannels.INSTALL_CONFIRMED)
 

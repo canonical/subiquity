@@ -26,7 +26,7 @@ from curtin.util import EFIBootEntry, EFIBootState
 
 from subiquity.common.types import PackageInstallState
 from subiquity.models.identity import DefaultGroups, User
-from subiquity.models.tests.test_filesystem import make_model_and_partition
+from subiquity.models.tests.test_storage import make_model_and_partition
 from subiquity.server.controllers.install import CurtinInstallError, InstallController
 from subiquity.server.mounter import Mountpoint
 from subiquitycore.tests.mocks import make_app
@@ -256,8 +256,8 @@ class TestInstallController(unittest.IsolatedAsyncioTestCase):
     def setup_rp_test(self, lsblk_output=b"lsblk_output"):
         app = self.controller.app
         app.opts.dry_run = False
-        fsc = app.controllers.Filesystem
-        fsc.reset_partition_only = True
+        storage_ctrler = app.controllers.Storage
+        storage_ctrler.reset_partition_only = True
         app.package_installer = Mock()
         app.command_runner = AsyncMock()
         self.run = app.command_runner.run = AsyncMock(

@@ -145,7 +145,7 @@ class IdentityController(SubiquityController):
         if self.app.base_model.source.current.variant != "server":
             return
         # 3. we are only refreshing the reset partition
-        if self.app.controllers.Filesystem.is_reset_partition_only():
+        if self.app.controllers.Storage.is_reset_partition_only():
             return
         # 4. identity section is interactive
         if self.interactive():
