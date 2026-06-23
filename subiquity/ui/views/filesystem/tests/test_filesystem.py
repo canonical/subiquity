@@ -19,7 +19,9 @@ class FilesystemViewTests(unittest.TestCase):
         return FilesystemView(model, controller)
 
     def test_simple(self):
-        self.make_view(mock.create_autospec(spec=FilesystemModel))
+        model = mock.create_autospec(spec=FilesystemModel)
+        model.guidance_messages.return_value = []
+        self.make_view(model)
 
     def test_one_disk(self):
         model = make_model()
