@@ -16,6 +16,7 @@ pandoc
 passwd
 pre-commit
 python3-aiohttp
+python3-aiohttp-apispec
 python3-aioresponses
 python3-apport
 python3-async-timeout

@@ -16,6 +16,8 @@
 import enum
 from typing import List, Optional
 
+from aiohttp_apispec import docs
+
 from subiquity.common.api.defs import (
     Payload,
     allowed_before_start,
@@ -495,8 +497,22 @@ class API:
             def GET(username: str) -> UsernameValidation: ...
 
     class ssh:
+        @docs(
+            summary="Get SSH configuration",
+            description="""\
+Return the current SSH configuration, including whether the SSH server is \
+installed and enabled, and the list SSH keys imported.""",
+            responses={200: {"description": "OK"}},
+        )
         def GET() -> SSHData: ...
 
+        @docs(
+            summary="Configure the SSH server",
+            description="""\
+Configure if the SSH server is installed and enabled.
+One can also pass SSH keys to be added as authorized keys for the user.""",
+            responses={200: {"description": "OK"}},
+        )
         def POST(data: Payload[SSHData]) -> None: ...
 
         class fetch_id:
