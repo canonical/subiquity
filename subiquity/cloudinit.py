@@ -3,8 +3,10 @@
 import asyncio
 import json
 import logging
+import random
 import re
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Sequence
+from string import ascii_letters, digits
 from subprocess import CompletedProcess
 from typing import Optional
 
@@ -12,6 +14,11 @@ from subiquity.server.nonreportable import NonReportableException
 from subiquitycore.utils import arun_command, run_command
 
 log = logging.getLogger("subiquity.cloudinit")
+
+# We are removing certain 'painful' letters/numbers
+# Set copied from cloud-init
+# https://github.com/canonical/cloud-init/blob/6e4153b346bc0d3f3422c01a3f93ecfb28269da2/cloudinit/config/cc_set_passwords.py#L33  # noqa: E501
+CLOUD_INIT_PW_SET = "".join([x for x in ascii_letters + digits if x not in "loLOI01"])
 
 
 class CloudInitSchemaValidationError(NonReportableException):
@@ -153,3 +160,16 @@ async def validate_cloud_init_schema() -> None:
         raise CloudInitSchemaValidationError(keys=causes)
 
     return None
+
+
+def rand_str(strlen: int = 32, select_from: Optional[Sequence] = None) -> str:
+    r: random.SystemRandom = random.SystemRandom()
+    if not select_from:
+        select_from: str = ascii_letters + digits
+    return "".join([r.choice(select_from) for _x in range(strlen)])
+
+
+# Generate random user passwords the same way cloud-init does
+# https://github.com/canonical/cloud-init/blob/6e4153b346bc0d3f3422c01a3f93ecfb28269da2/cloudinit/config/cc_set_passwords.py#L249  # noqa: E501
+def rand_user_password(pwlen: int = 20) -> str:
+    return rand_str(strlen=pwlen, select_from=CLOUD_INIT_PW_SET)
