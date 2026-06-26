@@ -171,6 +171,7 @@ class CoreBootAvailabilityErrorKind(enum.Enum):
     PRE_OS_SECURE_BOOT_AUTH_BY_ENROLLED_DIGESTS = (
         "pre-os-secure-boot-auth-by-enrolled-digests"
     )
+    NO_HARDWARE_ROOT_OF_TRUST = "no-hardware-root-of-trust"
 
 
 # Shared enum used by the snapd API
