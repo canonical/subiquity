@@ -50,6 +50,7 @@ from subiquitycore.ui.form import (
     SubFormField,
 )
 from subiquitycore.ui.selector import Option
+from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.table import TablePile, TableRow
 from subiquitycore.ui.utils import Color, rewrap, screen
 from subiquitycore.view import BaseView
@@ -327,6 +328,28 @@ installation will not be possible.
 )
 
 
+class CapabilitySelectionStretchy(Stretchy):
+    def __init__(
+        self, parent: "GuidedDiskSelectionViewV2Debug", *, target, allowed_capabilities
+    ) -> None:
+        self.parent = parent
+        self.target = target
+
+        buttons = []
+        for cap in allowed_capabilities:
+            label = cap.name.replace("_", " ").title()
+            buttons.append(
+                forward_btn(label=label, on_press=self.proceed, user_arg=cap)
+            )
+
+        return super().__init__("Capability", buttons, 0, 0)
+
+    def proceed(self, sender, cap: GuidedCapability):
+        self.parent.controller.guided_choice(
+            GuidedChoiceV2(target=self.target, capability=cap)
+        )
+
+
 class GuidedDiskSelectionViewV2Debug(BaseView):
     title = "Guided storage configuration for storage version 2 (only for debugging)"
 
@@ -337,9 +360,7 @@ some storage-version=2 bugs that may have occurred using the desktop installer.
 Considerations:
  * The view is incomplete, has no translations, might crash in some scenarios, use \
 it at your own risk...
- * The allowed / disallowed capabilities are basically ignored. Selecting \
-a scenario will use the DIRECT capability (except for manual partitioning where \
-it will use MANUAL)
+ * Parameters of allowed capabilities (e.g., passphrase for LVM+LUKS) are not supported.
  * For target resize, the recommended size will be used (no slider is implemented).
  """
 
@@ -429,9 +450,11 @@ it will use MANUAL)
             if isinstance(target, GuidedStorageTargetResize):
                 # Feel free to add a slider or something to configure the size...
                 target.new_size = target.recommended
-            # Feel free to implement something more than DIRECT
-            self.controller.guided_choice(
-                GuidedChoiceV2(target=target, capability=GuidedCapability.DIRECT)
+            # The overlay will call the controller or close itself
+            self.show_stretchy_overlay(
+                CapabilitySelectionStretchy(
+                    parent=self, target=target, allowed_capabilities=target.allowed
+                )
             )
 
 
