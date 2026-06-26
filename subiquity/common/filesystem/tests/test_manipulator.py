@@ -83,6 +83,22 @@ class TestFilesystemManipulator(unittest.TestCase):
         dm_crypts = [a for a in manipulator.model._actions if a.type == "dm_crypt"]
         self.assertEqual(dm_crypts, [])
 
+    def test_delete_zpool(self):
+        manipulator, disk = make_manipulator_and_disk()
+        zpool = manipulator.model.add_zpool(device=disk, pool="pool0", mountpoint="/")
+        manipulator.delete_zpool(zpool)
+        self.assertNotIn(zpool, manipulator.model._actions)
+        self.assertEqual(disk.wipe, "superblock")
+
+    def test_delete_zpool_with_zfses(self):
+        manipulator, disk = make_manipulator_and_disk()
+        zpool = manipulator.model.add_zpool(device=disk, pool="pool0", mountpoint="/")
+        zfs = zpool.create_zfs(volume="pool0/ROOT")
+        manipulator.delete_zpool(zpool)
+        self.assertNotIn(zpool, manipulator.model._actions)
+        self.assertNotIn(zfs, manipulator.model._actions)
+        self.assertEqual(disk.wipe, "superblock")
+
     def test_wipe_existing_fs(self):
         # LP: #1983036 - edit a partition to wipe it and mount it, but not
         # actually change the fs type already there

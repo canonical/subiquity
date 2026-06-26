@@ -1870,6 +1870,21 @@ class TestZPool(SubiTestCase):
         self.assertEqual("/SRV/srv", zfs_zp2.volume)
         self.assertEqual("/srv", zfs_zp2.path)
 
+    def test_remove_zpool(self):
+        m = make_model()
+        d = make_disk(m)
+        zp = make_zpool(model=m, device=d, mountpoint="/", pool="p1")
+        m.remove_zpool(zp)
+        self.assertNotIn(zp, m._actions)
+
+    def test_remove_zpool_with_zfses_fails(self):
+        m = make_model()
+        d = make_disk(m)
+        zp = make_zpool(model=m, device=d, mountpoint="/", pool="p1")
+        make_zfs(model=m, pool=zp, volume="pool1/ROOT")
+        with self.assertRaisesRegex(Exception, "empty ZPOOL"):
+            m.remove_zpool(zp)
+
 
 class TestRootfs(SubiTestCase):
     def test_mount_rootfs(self):
