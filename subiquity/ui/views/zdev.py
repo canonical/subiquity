@@ -147,7 +147,7 @@ class ZdevView(BaseView):
     title = _("Zdev configuration")
 
     def __init__(self, controller, zdevinfos):
-        log.debug("FileSystemView init start()")
+        log.debug("ZdevView init start()")
         self.controller = controller
         self.zdev_list = ZdevList(self)
         self.zdev_list.update(zdevinfos)
