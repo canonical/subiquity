@@ -32,6 +32,7 @@ from subiquity.models.filesystem import (
     LVM_VolGroup,
     Partition,
     Raid,
+    ZPool,
     align_up,
 )
 from subiquitycore.utils import write_named_tempfile
@@ -187,6 +188,13 @@ class FilesystemManipulator:
         self.model.remove_volgroup(vg)
 
     delete_lvm_volgroup = delete_volgroup
+
+    def delete_zpool(self, zpool: ZPool):
+        for zfs in list(zpool._zfses):
+            self.model._remove(zfs)
+        for d in zpool.vdevs:
+            d.wipe = "superblock"
+        self.model.remove_zpool(zpool)
 
     def create_logical_volume(self, vg: LVM_VolGroup, spec: LogicalVolumeSpec):
         lv = self.model.add_logical_volume(vg=vg, name=spec["name"], size=spec["size"])

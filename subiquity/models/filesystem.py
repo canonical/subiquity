@@ -2533,6 +2533,11 @@ class FilesystemModel:
         self._actions.append(zpool)
         return zpool
 
+    def remove_zpool(self, zpool: ZPool):
+        if len(zpool._zfses):
+            raise Exception("can only remove empty ZPOOL")
+        self._remove(zpool)
+
     def uses_zfs(self):
         return self._one(type="zpool") is not None
 
