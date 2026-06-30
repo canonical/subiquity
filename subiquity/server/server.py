@@ -148,7 +148,7 @@ class MetaController:
             for keytype, fingerprint in user_key_fingerprints(username)
         ]
         if self.app.installer_user_passwd_kind == PasswordKind.NONE:
-            if not user_key_fingerprints:
+            if not user_fingerprints:
                 return None
         host_fingerprints = [
             KeyFingerprint(keytype, fingerprint)
