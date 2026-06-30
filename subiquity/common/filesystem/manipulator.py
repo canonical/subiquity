@@ -372,7 +372,7 @@ class FilesystemManipulator:
                 lv.name = spec["name"]
             if "size" in spec:
                 lv.size = align_up(spec["size"])
-                if gaps.largest_gap_size(vg) < 0:
+                if gaps.largest_gap_size(vg) < lv.size:
                     raise Exception("lv size too large")
             self.delete_filesystem(lv.fs())
             self.create_filesystem(lv, spec)
