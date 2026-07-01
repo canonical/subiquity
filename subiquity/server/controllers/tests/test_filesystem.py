@@ -33,7 +33,7 @@ from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
     CalculateEntropyRequest,
-    CoreBootEncryptionFeatures,
+    CoreBootEncryptionFeature,
     CoreBootEncryptionRequirement,
     CoreBootFixAction,
     CoreBootFixActionWithArgs,
@@ -1097,24 +1097,24 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
                     snapdtypes.EncryptionFeature.PASSPHRASE_AUTH,
                 ],
                 [
-                    CoreBootEncryptionFeatures.PIN_AUTH,
-                    CoreBootEncryptionFeatures.PASSPHRASE_AUTH,
+                    CoreBootEncryptionFeature.PIN_AUTH,
+                    CoreBootEncryptionFeature.PASSPHRASE_AUTH,
                 ],
             ),
             (
                 [snapdtypes.EncryptionFeature.PIN_AUTH],
-                [CoreBootEncryptionFeatures.PIN_AUTH],
+                [CoreBootEncryptionFeature.PIN_AUTH],
             ),
             (
                 [snapdtypes.EncryptionFeature.PASSPHRASE_AUTH],
-                [CoreBootEncryptionFeatures.PASSPHRASE_AUTH],
+                [CoreBootEncryptionFeature.PASSPHRASE_AUTH],
             ),
         )
     )
     async def test_v2_core_boot_encryption_features_GET(
         self,
         snapd_features: list[snapdtypes.EncryptionFeature],
-        expected: list[CoreBootEncryptionFeatures],
+        expected: list[CoreBootEncryptionFeature],
     ):
         self.fsc.model = make_model()
 

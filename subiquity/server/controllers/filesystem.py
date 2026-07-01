@@ -55,7 +55,7 @@ from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
     CalculateEntropyRequest,
-    CoreBootEncryptionFeatures,
+    CoreBootEncryptionFeature,
     CoreBootEncryptionRequirement,
     CoreBootEncryptionSupportError,
     CoreBootFixAction,
@@ -1900,7 +1900,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_core_boot_encryption_features_GET(
         self,
-    ) -> List[CoreBootEncryptionFeatures]:
+    ) -> List[CoreBootEncryptionFeature]:
         """Return a list of encryption features (i.e., pin, passphrase)
         supported when installing with TPM/FDE. If multiple variations support
         TPM/FDE, only the first one is accounted for. Although it sounds like
@@ -1922,7 +1922,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 # Snapd is not offering pin/passphrase.
                 return []
 
-            return [CoreBootEncryptionFeatures(feature.value) for feature in features]
+            return [CoreBootEncryptionFeature(feature.value) for feature in features]
 
         raise StorageInvalidUsageError("no suitable variation for core boot")
 

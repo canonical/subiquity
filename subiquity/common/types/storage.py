@@ -563,11 +563,14 @@ class EntropyResponse:
     failure_reasons: Optional[List[str]] = None
 
 
-class CoreBootEncryptionFeatures(enum.Enum):
+# Each value describes a single feature offered for a core-boot (TPM/FDE)
+# install.
+class CoreBootEncryptionFeature(enum.Enum):
     PASSPHRASE_AUTH = "passphrase-auth"
     PIN_AUTH = "pin-auth"
 
 
+# Requirements that must be met for storage encryption to be supported.
 class CoreBootEncryptionRequirement(enum.Enum):
     VOLUMES_AUTH = "volumes-auth"
 

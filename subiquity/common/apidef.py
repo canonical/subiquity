@@ -71,7 +71,7 @@ from subiquity.common.types import (
 from subiquity.common.types.storage import (
     AddPartitionV2,
     CalculateEntropyRequest,
-    CoreBootEncryptionFeatures,
+    CoreBootEncryptionFeature,
     CoreBootEncryptionRequirement,
     CoreBootFixEncryptionSupport,
     Disk,
@@ -406,7 +406,7 @@ class API:
                 def GET() -> str: ...
 
             class core_boot_encryption_features:
-                def GET() -> List[CoreBootEncryptionFeatures]: ...
+                def GET() -> List[CoreBootEncryptionFeature]: ...
 
             class core_boot_encryption_requirements:
                 def GET() -> List[CoreBootEncryptionRequirement]:
