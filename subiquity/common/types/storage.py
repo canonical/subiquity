@@ -568,6 +568,10 @@ class CoreBootEncryptionFeatures(enum.Enum):
     PIN_AUTH = "pin-auth"
 
 
+class CoreBootEncryptionRequirement(enum.Enum):
+    VOLUMES_AUTH = "volumes-auth"
+
+
 @attr.s(auto_attribs=True)
 class CoreBootFixEncryptionSupport:
     action: CoreBootFixActionWithArgs

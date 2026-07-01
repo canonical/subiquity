@@ -203,6 +203,8 @@ class EncryptionFeature(enum.Enum):
     PIN_AUTH = "pin-auth"
 
 
+EncryptionRequirement = storagetypes.CoreBootEncryptionRequirement
+
 AvailabilityAction = storagetypes.CoreBootFixAction
 AvailabilityActionArgs = storagetypes.CoreBootFixActionArgs
 AvailabilityErrorKind = storagetypes.CoreBootAvailabilityErrorKind
@@ -225,6 +227,8 @@ class StorageEncryption:
     # Introduced in snapd 2.68, but can be None if snapd does not want to offer
     # pin/passphrase.
     features: Optional[List[EncryptionFeature]] = None
+    # Introduced in snapd 2.76, but can be None if snapd has no requirement.
+    requirements: Optional[List[EncryptionRequirement]] = None
 
     # Since snapd 2.71 <-- to be confirmed once released.
     availability_check_errors: Optional[List[AvailabilityCheckError]] = None
