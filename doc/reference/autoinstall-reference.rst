@@ -193,7 +193,11 @@ keyboard
 * **default:** US English keyboard
 * **can be interactive:** true
 
-The layout of any attached keyboard. The mapping keys correspond to settings in the :file:`/etc/default/keyboard` configuration file. See the :manpage:`keyboard(5)` manual page for more details.
+The layout (or layouts) of any attached keyboard. The mapping keys correspond to settings in the :file:`/etc/default/keyboard` configuration file. See the :manpage:`keyboard(5)` manual page for more details.
+
+Multiple layouts may be configured using comma-separated values, as documented in :manpage:`keyboard(5)`.
+
+.. note:: Known issue: for TPM-backed encrypted installations with a passphrase, the disk can only be unlocked using the primary layout.
 
 The mapping contains keys:
 
