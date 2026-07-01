@@ -198,11 +198,9 @@ class EncryptionType(enum.Enum):
     DEVICE_SETUP_HOOK = "device-setup-hook"
 
 
-class EncryptionFeature(enum.Enum):
-    PASSPHRASE_AUTH = "passphrase-auth"
-    PIN_AUTH = "pin-auth"
-
-
+# Alias the snapd-side enums to the Subiquity API storage types so the two layers
+# cannot drift apart instead of duplicating the definitions here.
+EncryptionFeature = storagetypes.CoreBootEncryptionFeature
 EncryptionRequirement = storagetypes.CoreBootEncryptionRequirement
 
 AvailabilityAction = storagetypes.CoreBootFixAction
