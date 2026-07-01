@@ -34,6 +34,7 @@ from subiquity.common.types.storage import (
     Bootloader,
     CalculateEntropyRequest,
     CoreBootEncryptionFeatures,
+    CoreBootEncryptionRequirement,
     CoreBootFixAction,
     CoreBootFixActionWithArgs,
     CoreBootFixEncryptionSupport,
@@ -1176,6 +1177,67 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             StorageInvalidUsageError, msg="no suitable variation for core boot"
         ):
             await self.fsc.v2_core_boot_encryption_features_GET()
+
+    @parameterized.expand(
+        (
+            (
+                [snapdtypes.EncryptionRequirement.VOLUMES_AUTH],
+                [CoreBootEncryptionRequirement.VOLUMES_AUTH],
+            ),
+            (
+                # No requirement
+                None,
+                [],
+            ),
+        )
+    )
+    async def test_v2_core_boot_encryption_requirements_GET(
+        self,
+        snapd_requirements: list[snapdtypes.EncryptionRequirement],
+        expected: list[CoreBootEncryptionRequirement],
+    ):
+        self.fsc.model = make_model()
+
+        self.fsc._variation_info = {
+            "mimimal-enhanced-secureboot": VariationInfo(
+                name="minimal-enhanced-secureboot",
+                label="enhanced-secureboot-desktop",
+                system=snapdtypes.SystemDetails(
+                    model=snapdtypes.Model(architecture="amd64", snaps=[]),
+                    label="enhanced-secureboot-desktop",
+                    storage_encryption=snapdtypes.StorageEncryption(
+                        support=snapdtypes.StorageEncryptionSupport.AVAILABLE,
+                        storage_safety=snapdtypes.StorageSafety.PREFER_ENCRYPTED,
+                        requirements=snapd_requirements,
+                    ),
+                ),
+            ),
+        }
+
+        self.assertEqual(
+            expected, await self.fsc.v2_core_boot_encryption_requirements_GET()
+        )
+
+    async def test_v2_core_boot_encryption_requirements_GET__no_suitable_variation(
+        self,
+    ):
+        self.fsc.model = make_model()
+
+        self.fsc._variation_info = {}
+
+        with self.assertRaisesRegex(
+            StorageInvalidUsageError, "no suitable variation for core boot"
+        ):
+            await self.fsc.v2_core_boot_encryption_requirements_GET()
+
+        self.fsc._variation_info = {
+            "minimal": VariationInfo(name="minimal", label=None, system=None),
+        }
+
+        with self.assertRaisesRegex(
+            StorageInvalidUsageError, "no suitable variation for core boot"
+        ):
+            await self.fsc.v2_core_boot_encryption_requirements_GET()
 
     # Just to make sure we don't reboot/shutdown if other assertions fail.
     @mock.patch(
