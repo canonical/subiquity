@@ -60,6 +60,7 @@ bootable
 bootloader
 bootloaders
 codecs
+codename
 config
 conf
 crypto
