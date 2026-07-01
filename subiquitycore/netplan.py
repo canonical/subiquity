@@ -84,6 +84,7 @@ class Config:
                 fp = open(path)
             except OSError:
                 log.exception("opening %s failed", path)
+                continue
             with fp:
                 self.parse_netplan_config(fp.read())
 

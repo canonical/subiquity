@@ -33,7 +33,7 @@ class RecoveryChooserBaseController(TuiController):
         self.app.exit()
 
     def back(self):
-        self.app.prev_sceen()
+        self.app.prev_screen()
 
 
 class RecoveryChooserController(RecoveryChooserBaseController):
