@@ -16,7 +16,6 @@
 from subiquitycore.tuicontroller import RepeatedController
 
 from .drivers import DriversController
-from .filesystem import FilesystemController
 from .identity import IdentityController
 from .keyboard import KeyboardController
 from .mirror import MirrorController
@@ -28,6 +27,7 @@ from .serial import SerialController
 from .snaplist import SnapListController
 from .source import SourceController
 from .ssh import SSHController
+from .storage import StorageController
 from .ubuntu_pro import UbuntuProController
 from .welcome import WelcomeController
 from .zdev import ZdevController
@@ -35,7 +35,7 @@ from .zdev import ZdevController
 # see SubiquityClient.controllers for another list
 __all__ = [
     "DriversController",
-    "FilesystemController",
+    "StorageController",
     "IdentityController",
     "KeyboardController",
     "MirrorController",

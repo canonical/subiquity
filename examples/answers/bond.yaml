@@ -51,7 +51,7 @@ Proxy:
   proxy: ""
 Mirror:
   mirror: "http://us.archive.ubuntu.com"
-Filesystem:
+Storage:
   guided: yes
   guided-index: 0
 Identity:

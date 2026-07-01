@@ -15,14 +15,14 @@ import tempfile
 import uuid
 
 
-from subiquity.models.filesystem import (
+from subiquity.models.storage import (
     align_down,
     dehumanize_size,
     get_raid_size,
     humanize_size,
     raidlevels,
     )
-from subiquity.models.tests.test_filesystem import (
+from subiquity.models.tests.test_storage import (
     FakeDev,
     )
 
