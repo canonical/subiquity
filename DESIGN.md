@@ -49,7 +49,7 @@ it).
 
 subiquity has a few generic facilities for handling these:
 
- * The `subiquitycore.ui.containers` module defines a `ListBox` class that
+ * The `subiquitycore.ui.container` module defines a `ListBox` class that
    automatically handles scroll bars. It is used everywhere instead of urwid's
    `ListBox` class (it does not support lazy construction of widgets like
    urwid's does).
@@ -109,7 +109,7 @@ progress.
 
 ### Forms
 
-`subiquity.ui.form` defines classes for handling forms, somewhat patterned
+`subiquitycore.ui.form` defines classes for handling forms, somewhat patterned
 after Django's forms.  A form defines a sequence of fields and has a way of
 turning them into widgets for the UI, provides hooks for validation, handles
 initial data, supports enabling and disabling fields, etc.
@@ -506,7 +506,7 @@ characters. There are still plenty of characters in the standard font subiquity
 does not use, so we can add support for at least a dozen or so more glyphs if
 there's a need.
 
-`subiquity.palette` defines the 8 RGB colors and a bunch of named "styles" in
+`subiquitycore.palette` defines the 8 RGB colors and a bunch of named "styles" in
 terms of foreground and background colors.  `subiquitycore.screen` contains some
 rather hair-raising code for mangling these definitions so that using these
 style names in urwid comes out in the right color both in gnome-terminal (using
@@ -524,7 +524,7 @@ automatically.  There are some answers files in the `examples/` directory that
 are run as a sort of integration test for the UI.
 
 Tests (and lint checks) are run by github actions using lxd.  See
-`.github/workflows/build.yaml` and `./scripts/test-in-lxd.sh` and so
+`.github/workflows/ci.yaml` and `./scripts/test-in-lxd.sh` and so
 on.
 
 For "real" testing, you need to make a snap (`snapcraft pack`), mash
