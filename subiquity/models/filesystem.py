@@ -50,6 +50,10 @@ from curtin.swap import can_use_swapfile
 from curtin.util import human2bytes
 from probert.storage import StorageInfo
 
+from subiquity.common.filesystem.requirements import (
+    Requirements,
+    RequirementSeverity,
+)
 from subiquity.common.types.storage import (
     Bootloader,
     OsProber,
@@ -1603,12 +1607,14 @@ class FilesystemModel:
         bootloader=None,
         *,
         root: str,
+        dry_run: bool,
         opt_supports_nvme_tcp_booting: bool | None = None,
         detected_supports_nvme_tcp_booting: bool | None = None,
     ):
         if bootloader is None:
             bootloader = self._probe_bootloader()
         self.bootloader = bootloader
+        self.dry_run = dry_run
         self.root = root
         self.opt_supports_nvme_tcp_booting: bool | None = opt_supports_nvme_tcp_booting
         self.detected_supports_nvme_tcp_booting: bool | None = (
@@ -1646,6 +1652,7 @@ class FilesystemModel:
         orig_model = FilesystemModel(
             self.bootloader,
             root=self.root,
+            dry_run=self.dry_run,
             opt_supports_nvme_tcp_booting=self.opt_supports_nvme_tcp_booting,
             detected_supports_nvme_tcp_booting=self.detected_supports_nvme_tcp_booting,
         )
@@ -2454,11 +2461,44 @@ class FilesystemModel:
         else:
             raise AssertionError("unknown bootloader type {}".format(self.bootloader))
 
-    def _mount_for_path(self, path):
+    def uses_grub(self) -> bool:
+        """Return True when the system's bootloader is GRUB-based.
+
+        Only s390x systems (``Bootloader.NONE``) do not use GRUB; all
+        other boot methods (BIOS, UEFI, PREP) rely on GRUB.
+
+        Curtin also has a ``uses_grub(machine)`` function in
+        curtin/commands/curthooks.py, which determines GRUB usage from
+        the machine architecture instead.  Consider consolidating.
+        """
+        return self.bootloader != Bootloader.NONE
+
+    def uses_signed_grub(self) -> bool:
+        """Return True when the system uses signed GRUB (UEFI SecureBoot).
+
+        Signed GRUB is only required on UEFI systems.  BIOS and PREP use
+        unsigned GRUB.  In theory, not all UEFI platforms that use GRUB
+        have signed GRUB (riscv64 is an example).  In practice, we apply
+        the same requirement so that it's future-proof if those platforms
+        gain Secure Boot support.
+        """
+        return self.uses_grub() and self.bootloader == Bootloader.UEFI
+
+    def _mount_for_path(self, path: os.PathLike, *, parent_ok=False):
+        """Return the mount-like at *path*, or None.
+
+        Looks through MountlikeNames (mount, zpool, zfs) for an exact
+        match.  When *parent_ok* is True and no exact match is found,
+        retries with the parent directory, repeating until the root
+        (``/``) is reached.
+        """
+        path = pathlib.Path(path)
         for typename in MountlikeNames:
-            mount = self._one(type=typename, path=path)
+            mount = self._one(type=typename, path=str(path))
             if mount is not None:
                 return mount
+        if parent_ok and path.parent != path:
+            return self._mount_for_path(path.parent, parent_ok=parent_ok)
         return None
 
     def is_root_mounted(self):
@@ -2486,16 +2526,18 @@ class FilesystemModel:
         return self.is_boot_mounted() and not self.is_bootfs_on_remote_storage()
 
     def can_install(self) -> bool:
-        if not self.is_root_mounted():
-            return False
-
-        if self.is_rootfs_on_remote_storage() and not self._can_install_remote():
-            return False
-
-        if self.needs_bootloader_partition():
-            return False
-
+        for r in Requirements.all():
+            if r.severity == RequirementSeverity.BLOCKING and r.is_applicable(self):
+                if not r.is_satisfied(self):
+                    return False
         return True
+
+    def guidance_messages(self) -> list[str]:
+        return [
+            r.guidance_message_kind.value
+            for r in Requirements.all()
+            if r.is_violated(self)
+        ]
 
     def should_add_swapfile(self):
         mount = self._mount_for_path("/")

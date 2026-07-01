@@ -285,6 +285,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         self.model = FilesystemModel(
             status.bootloader,
             root="/",
+            dry_run=self.app.opts.dry_run,
             opt_supports_nvme_tcp_booting=self.supports_nvme_tcp_booting,
         )
         self.model.load_server_data(status)

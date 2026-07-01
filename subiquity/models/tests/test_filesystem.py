@@ -23,6 +23,11 @@ import attr
 import yaml
 
 from subiquity.common.filesystem import gaps
+from subiquity.common.filesystem.requirements import (
+    Requirements,
+    RequirementSeverity,
+    StorageRequirement,
+)
 from subiquity.common.types.storage import RecoveryKey
 from subiquity.models.filesystem import (
     LVM_CHUNK_SIZE,
@@ -141,9 +146,17 @@ class FakeStorageInfo:
     raw = attr.ib(default=attr.Factory(dict))
 
 
-def make_model(bootloader=None, storage_version=None, supports_nvme_tcp_booting=False):
+def make_model(
+    bootloader=None,
+    storage_version=None,
+    *,
+    dry_run=False,
+    supports_nvme_tcp_booting=False,
+):
     model = FilesystemModel(
-        root="/tmp", opt_supports_nvme_tcp_booting=supports_nvme_tcp_booting
+        root="/tmp",
+        dry_run=dry_run,
+        opt_supports_nvme_tcp_booting=supports_nvme_tcp_booting,
     )
     if bootloader is not None:
         model.bootloader = bootloader
@@ -297,6 +310,17 @@ def make_dm_crypt(model, device):
     return model.add_dm_crypt(device)
 
 
+def make_req(*, blocking=True, satisfied=True, applies=True):
+    return StorageRequirement(
+        guidance_message_kind=Mock(),
+        severity=(
+            RequirementSeverity.BLOCKING if blocking else RequirementSeverity.WARNING
+        ),
+        check=lambda m: satisfied,
+        applies_to=lambda m: applies,
+    )
+
+
 class TestFilesystemModel(unittest.TestCase):
     def _test_ok_for_xxx(self, model, make_new_device, attr, test_partitions=True):
         # Newly formatted devs are ok_for_raid
@@ -391,108 +415,98 @@ class TestFilesystemModel(unittest.TestCase):
 
     @parameterized.expand(
         (
-            (True, True, True, True),
-            (True, True, False, True),
-            (True, False, False, True),
-            (False, True, True, False),
-            (False, True, False, True),
-            (False, False, False, False),
+            # Zero requirement
+            ([], True),
+            # No violated requirement
+            (
+                [
+                    make_req(satisfied=True),
+                    make_req(satisfied=True),
+                    make_req(satisfied=True, blocking=False),
+                ],
+                True,
+            ),
+            # At least one violated requirement
+            ([make_req(satisfied=True), make_req(satisfied=False)], False),
+            # One violated requirement but it is only a warning.
+            (
+                [make_req(satisfied=True), make_req(satisfied=False, blocking=False)],
+                True,
+            ),
+            # One requirement not satisfied but not applicable to this platform.
+            ([make_req(satisfied=False, applies=False)], True),
         )
     )
-    def test__can_install_remote(
-        self,
-        supports_nvmet_boot: bool,
-        boot_mounted: bool,
-        bootfs_remote: bool,
-        expected: bool,
-    ):
+    def test_can_install(self, requirements, expected):
         model = make_model()
-        p_supports_nvmet_boot = mock.patch(
-            "subiquity.models.filesystem.FilesystemModel.supports_nvme_tcp_booting",
-            new_callable=mock.PropertyMock,
-            return_value=supports_nvmet_boot,
-        )
-        p_boot_mounted = mock.patch.object(
-            model, "is_boot_mounted", return_value=boot_mounted
-        )
-        p_bootfs_remote = mock.patch.object(
-            model, "is_bootfs_on_remote_storage", return_value=bootfs_remote
-        )
-
-        with (
-            p_supports_nvmet_boot as m_supports_nvmet_boot,
-            p_boot_mounted as m_boot_mounted,
-            p_bootfs_remote as m_bootfs_remote,
-        ):
-            self.assertEqual(expected, model._can_install_remote())
-
-        m_supports_nvmet_boot.assert_called_once()
-
-        if supports_nvmet_boot:
-            m_boot_mounted.assert_not_called()
-            m_bootfs_remote.assert_not_called()
-        else:
-            m_boot_mounted.assert_called_once()
-            if boot_mounted:
-                m_bootfs_remote.assert_called_once()
-            else:
-                m_bootfs_remote.assert_not_called()
+        with mock.patch.object(Requirements, "all", return_value=requirements):
+            self.assertEqual(expected, model.can_install())
 
     @parameterized.expand(
         (
-            (False, False, False, False, False),
-            (True, False, False, False, True),
-            (True, True, False, False, False),
-            (True, True, True, False, True),
-            (True, False, False, True, False),
+            (Bootloader.NONE, None, None, False, True),
+            (Bootloader.BIOS, "ext4", None, True, True),
+            (Bootloader.BIOS, "btrfs", None, True, True),
+            (Bootloader.UEFI, "ext4", None, True, True),
+            (Bootloader.UEFI, "xfs", None, True, False),
+            (Bootloader.PREP, "ext4", None, True, True),
+            (Bootloader.PREP, "zfs", None, True, True),
+            (Bootloader.BIOS, None, "ext4", False, True),
+            (Bootloader.BIOS, None, "btrfs", False, True),
         )
     )
-    def test_can_install(
+    def test_boot_filesystem_requirement(
         self,
-        root_mounted: bool,
-        rootfs_remote: bool,
-        can_install_remote: bool,
-        needs_bootloader: bool,
+        bootloader: Bootloader,
+        boot_fstype: str | None,
+        root_fstype: str | None,
+        has_separate_boot: bool,
         expected: bool,
     ):
-        model = make_model()
-        p_root_mounted = mock.patch.object(
-            model, "is_root_mounted", return_value=root_mounted
-        )
-        p_rootfs_remote = mock.patch.object(
-            model, "is_rootfs_on_remote_storage", return_value=rootfs_remote
-        )
-        p_can_install_remote = mock.patch.object(
-            model, "_can_install_remote", return_value=can_install_remote
-        )
-        p_needs_bootloader = mock.patch.object(
-            model, "needs_bootloader_partition", return_value=needs_bootloader
-        )
+        model, disk = make_model_and_disk(bootloader)
 
         with (
-            p_root_mounted as m_root_mounted,
-            p_rootfs_remote as m_rootfs_remote,
-            p_can_install_remote as m_can_install_remote,
-            p_needs_bootloader as m_needs_bootloader,
+            mock.patch.object(model, "needs_bootloader_partition", return_value=False),
+            mock.patch(
+                "subiquity.common.filesystem.requirements.lsb_release",
+                return_value={"release": "26.10"},
+            ),
         ):
+            if has_separate_boot:
+                part = make_partition(model, disk)
+                fs = make_filesystem(model, part, fstype=boot_fstype)
+                make_mount(model, fs, "/boot")
+                part_root = make_partition(model, disk)
+                fs_root = make_filesystem(model, part_root, fstype="ext4")
+                make_mount(model, fs_root, "/")
+            else:
+                part = make_partition(model, disk)
+                fs = make_filesystem(model, part, fstype=root_fstype)
+                make_mount(model, fs, "/")
+
             self.assertEqual(expected, model.can_install())
 
-        m_root_mounted.assert_called_once()
-
-        if root_mounted:
-            m_rootfs_remote.assert_called_once()
-        else:
-            m_rootfs_remote.assert_not_called()
-
-        if root_mounted and rootfs_remote:
-            m_can_install_remote.assert_called_once()
-        else:
-            m_can_install_remote.assert_not_called()
-
-        if root_mounted and (not rootfs_remote or can_install_remote):
-            m_needs_bootloader.assert_called_once()
-        else:
-            m_needs_bootloader.assert_not_called()
+    @parameterized.expand(
+        (
+            ("26.04", True),
+            ("26.04.1", True),
+            ("26.10", False),
+            ("27.04", False),
+        )
+    )
+    def test_boot_filesystem_release_requirement(self, release, expected):
+        model, disk = make_model_and_disk(Bootloader.UEFI)
+        part = make_partition(model, disk)
+        fs = make_filesystem(model, part, fstype="xfs")
+        make_mount(model, fs, "/")
+        with (
+            mock.patch.object(model, "needs_bootloader_partition", return_value=False),
+            mock.patch(
+                "subiquity.common.filesystem.requirements.lsb_release",
+                return_value={"release": release},
+            ),
+        ):
+            self.assertEqual(expected, model.can_install())
 
     @parameterized.expand(
         (
@@ -1913,6 +1927,70 @@ class TestRootfs(SubiTestCase):
         m = make_model()
         make_zpool(model=m, mountpoint="/srv")
         self.assertFalse(m.is_root_mounted())
+
+
+class TestMountForPath(SubiTestCase):
+    def test_exact_match_parent_ok(self):
+        m, p = make_model_and_partition()
+        fs = make_filesystem(m, p, fstype="ext4")
+        make_mount(m, fs, "/boot")
+        mount = m._mount_for_path("/boot", parent_ok=True)
+        self.assertIsNotNone(mount)
+        self.assertEqual(mount.path, "/boot")
+
+    def test_fallback_to_parent(self):
+        m, p = make_model_and_partition()
+        fs = make_filesystem(m, p, fstype="ext4")
+        make_mount(m, fs, "/")
+        mount = m._mount_for_path("/boot", parent_ok=True)
+        self.assertIsNotNone(mount)
+        self.assertEqual(mount.path, "/")
+
+    def test_fallback_nested(self):
+        m, p = make_model_and_partition()
+        fs = make_filesystem(m, p, fstype="ext4")
+        make_mount(m, fs, "/")
+        mount = m._mount_for_path("/a/b", parent_ok=True)
+        self.assertIsNotNone(mount)
+        self.assertEqual(mount.path, "/")
+
+    def test_no_match_parent_ok(self):
+        m = make_model()
+        mount = m._mount_for_path("/boot", parent_ok=True)
+        self.assertIsNone(mount)
+
+    def test_exact_match_preferred_over_parent(self):
+        m, d = make_model_and_disk()
+        p1 = make_partition(m, d)
+        fs1 = make_filesystem(m, p1, fstype="ext4")
+        make_mount(m, fs1, "/")
+        p2 = make_partition(m, d)
+        fs2 = make_filesystem(m, p2, fstype="xfs")
+        make_mount(m, fs2, "/boot")
+        mount = m._mount_for_path("/boot", parent_ok=True)
+        self.assertIsNotNone(mount)
+        self.assertEqual(mount.path, "/boot")
+        self.assertEqual(mount.fstype, "xfs")
+
+    def test_without_parent_ok_no_fallback(self):
+        m, p = make_model_and_partition()
+        fs = make_filesystem(m, p, fstype="ext4")
+        make_mount(m, fs, "/")
+        mount = m._mount_for_path("/boot")
+        self.assertIsNone(mount)
+
+    def test_root_parent_ok_mounted(self):
+        m, p = make_model_and_partition()
+        fs = make_filesystem(m, p, fstype="ext4")
+        make_mount(m, fs, "/")
+        mount = m._mount_for_path("/", parent_ok=True)
+        self.assertIsNotNone(mount)
+        self.assertEqual(mount.path, "/")
+
+    def test_root_parent_ok_not_mounted(self):
+        m = make_model()
+        mount = m._mount_for_path("/", parent_ok=True)
+        self.assertIsNone(mount)
 
 
 class TestLivePackages(SubiTestCase):
