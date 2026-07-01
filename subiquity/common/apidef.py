@@ -71,7 +71,8 @@ from subiquity.common.types import (
 from subiquity.common.types.storage import (
     AddPartitionV2,
     CalculateEntropyRequest,
-    CoreBootEncryptionFeatures,
+    CoreBootEncryptionFeature,
+    CoreBootEncryptionRequirement,
     CoreBootFixEncryptionSupport,
     Disk,
     EntropyResponse,
@@ -405,7 +406,13 @@ class API:
                 def GET() -> str: ...
 
             class core_boot_encryption_features:
-                def GET() -> List[CoreBootEncryptionFeatures]: ...
+                def GET() -> List[CoreBootEncryptionFeature]: ...
+
+            class core_boot_encryption_requirements:
+                def GET() -> List[CoreBootEncryptionRequirement]:
+                    """Return the storage-encryption requirements that must be
+                    met for a TPM/FDE install (e.g. "volumes-auth"), as
+                    reported by snapd."""
 
             class core_boot_fix_encryption_support:
                 def POST(data: Payload[CoreBootFixEncryptionSupport]) -> None: ...

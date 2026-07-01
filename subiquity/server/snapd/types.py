@@ -198,10 +198,10 @@ class EncryptionType(enum.Enum):
     DEVICE_SETUP_HOOK = "device-setup-hook"
 
 
-class EncryptionFeature(enum.Enum):
-    PASSPHRASE_AUTH = "passphrase-auth"
-    PIN_AUTH = "pin-auth"
-
+# Alias the snapd-side enums to the Subiquity API storage types so the two layers
+# cannot drift apart instead of duplicating the definitions here.
+EncryptionFeature = storagetypes.CoreBootEncryptionFeature
+EncryptionRequirement = storagetypes.CoreBootEncryptionRequirement
 
 AvailabilityAction = storagetypes.CoreBootFixAction
 AvailabilityActionArgs = storagetypes.CoreBootFixActionArgs
@@ -225,6 +225,8 @@ class StorageEncryption:
     # Introduced in snapd 2.68, but can be None if snapd does not want to offer
     # pin/passphrase.
     features: Optional[List[EncryptionFeature]] = None
+    # Introduced in snapd 2.76, but can be None if snapd has no requirement.
+    requirements: Optional[List[EncryptionRequirement]] = None
 
     # Since snapd 2.71 <-- to be confirmed once released.
     availability_check_errors: Optional[List[AvailabilityCheckError]] = None
