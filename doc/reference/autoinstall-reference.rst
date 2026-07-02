@@ -623,6 +623,33 @@ Additionally, TPM-backed encryption can be enabled by using the ``hybrid`` layou
           name: hybrid
           encrypted: yes
 
+TPM-backed encryption supports the additional ``auto-proceed`` property, specifying the list of pre-install errors that Subiquity should automatically attempt to proceed past.
+
+.. code-block:: yaml
+
+    autoinstall:
+      storage:
+        layout:
+          name: hybrid
+          encrypted: yes
+          auto-proceed: [running-in-vm]
+
+One can also specify ``auto-proceed`` as a single pre-install error (i.e., ``auto-proceed: running-in-vm``).
+
+The list of currently supported pre-install errors is:
+
+ * ``running-in-vm``
+ * ``insufficient-dma-protection``
+ * ``no-kernel-iommu``
+ * ``addon-drivers-present``
+ * ``sys-prep-applications-present``
+ * ``absolute-present``
+ * ``weak-secure-boot-algorithms-detected``
+ * ``pre-os-secure-boot-auth-by-enrolled-digests``
+ * ``no-hardware-root-of-trust``
+
+See the `upstream definition in Secboot <https://github.com/canonical/secboot/blob/457b03a16d19dadd703c5a33bf8565f16113023c/efi/preinstall/checks_context.go#L162-L172>`__
+
 Sizing-policy
 ^^^^^^^^^^^^^
 
