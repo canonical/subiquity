@@ -110,7 +110,7 @@ class UbuntuProController(SubiquityController):
             strategy = UAClientUAInterfaceStrategy(executable=executable)
         self.ua_interface = UAInterface(strategy)
         self.cs: Optional[ContractSelection] = None
-        self.magic_token = Optional[str]
+        self.magic_token: Optional[str] = None
         super().__init__(app)
 
     def load_autoinstall_data(self, data: dict) -> None:

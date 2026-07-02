@@ -121,7 +121,7 @@ def main():
         opts = parser.parse_args(args)
         if opts.socket is None:
             opts.socket = "/run/subiquity/socket"
-    os.makedirs(os.path.basename(opts.socket), exist_ok=True)
+    os.makedirs(os.path.dirname(opts.socket), exist_ok=True)
     logdir = LOGDIR
     if opts.dry_run:
         logdir = opts.output_base

@@ -112,7 +112,7 @@ class ContractSelection:
             except APIUsageError as e:
                 log.warning("failed to revoke magic-token: %r", e)
             else:
-                if answer["result"] != "success":
+                if answer["result"] == "success":
                     log.debug("successfully revoked magic-token")
                     return
                 for error in answer["errors"]:

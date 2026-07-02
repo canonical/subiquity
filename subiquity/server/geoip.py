@@ -142,7 +142,7 @@ class GeoIP:
         if tz is None or not tz.text:
             log.debug("no TimeZone found in %r", self.response_text)
             return False
-        if tz != self.tz:
+        if tz.text != self.tz:
             changed = True
             self.tz = tz.text
 
