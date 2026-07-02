@@ -55,10 +55,12 @@ from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
     CalculateEntropyRequest,
+    CoreBootAvailabilityErrorKind,
     CoreBootEncryptionFeatures,
     CoreBootEncryptionRequirement,
     CoreBootEncryptionSupportError,
     CoreBootFixAction,
+    CoreBootFixActionArgs,
     CoreBootFixActionWithArgs,
     CoreBootFixEncryptionSupport,
     Disk,
@@ -371,6 +373,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         # If needed, this can be moved outside of the storage/filesystem stuff.
         self._probe_firmware_task = SingleInstanceTask(self._probe_firmware)
+
+        # Pre-install error kinds that the user accepts (and that we should
+        # automatically proceed past for unattended installs).
+        self.accepted_errors: set[CoreBootAvailabilityErrorKind] = set()
 
     def is_core_boot_classic(self):
         return self._info.is_core_boot_classic()
@@ -2196,7 +2202,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             return False
         return True
 
-    def ensure_core_boot_autoinstall_capability_compatible(self, capability) -> None:
+    async def ensure_core_boot_autoinstall_capability_compatible(
+        self, capability, *, accepted_errors: set[CoreBootAvailabilityErrorKind] = set()
+    ) -> None:
         for allowed in self.find_allowed_capabilities(core_boot_classic=True):
             if capability.is_compatible_with(allowed):
                 return
@@ -2209,25 +2217,44 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             raise RuntimeError(f"invalid capability {capability.name}")
 
         # Now let's generate an autoinstall error that includes usable info
-        first_error = None
+        error = None
         try:
             disallowed_errors = self._find_disallowed_errors(capability)
         except ValueError:
             pass
         else:
             try:
-                first_error = next(iter(disallowed_errors)).kind.value
+                # We pick the first one ...
+                error = next(iter(disallowed_errors))
             except StopIteration:
                 pass
             else:
+                # Let's check if the user accepts this error
+                actions = {action.type for action in error.actions}
+                if (
+                    error.kind in accepted_errors
+                    and CoreBootFixAction.PROCEED in actions
+                ):
+                    # We do, let's proceed and retry
+                    action_proceed = CoreBootFixActionWithArgs(
+                        type=CoreBootFixAction.PROCEED,
+                        args=CoreBootFixActionArgs(
+                            error_kinds=[error.kind],
+                        ),
+                    )
+                    await self.execute_fix_action(action_proceed)
+                    await self.ensure_core_boot_autoinstall_capability_compatible(
+                        capability, accepted_errors=accepted_errors
+                    )
+                    return
                 raise AutoinstallError(
                     _(
-                        f"hybrid layout ({encryption_text}) is not available: {first_error}"
+                        f"hybrid layout ({encryption_text}) is not available: {error.kind.value}"
                     )
                 )
         raise AutoinstallError(f"hybrid layout ({encryption_text}) is not available")
 
-    def get_core_boot_autoinstall_capability(
+    async def get_core_boot_autoinstall_capability(
         self, *, encrypted: bool | None
     ) -> GuidedCapability:
         core_boot_caps = set(self.find_allowed_capabilities(core_boot_classic=True))
@@ -2253,7 +2280,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
         # this check is conceptually unnecessary but results in a
         # much cleaner error message...
-        self.ensure_core_boot_autoinstall_capability_compatible(capability)
+
+        await self.ensure_core_boot_autoinstall_capability_compatible(
+            capability,
+            accepted_errors=self.accepted_errors,
+        )
         return capability
 
     async def run_autoinstall_guided(self, layout):
@@ -2263,9 +2294,23 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         guided_recovery_key: Union[bool, RecoveryKey] = False
 
         if name == "hybrid":
+            if "accepted-errors" in layout:
+                accepted_errors = layout["accepted-errors"]
+                if isinstance(accepted_errors, str):
+                    accepted_errors = [accepted_errors]
+                kinds = set()
+                for kind in accepted_errors:
+                    try:
+                        kinds.add(CoreBootAvailabilityErrorKind(kind))
+                    except ValueError:
+                        raise AutoinstallError(
+                            f"invalid error kind {kind!r} in 'accepted-errors'"
+                        ) from None
+                self.accepted_errors = kinds
+
             if "mode" in layout:
                 raise AutoinstallError("cannot use 'mode' with hybrid layout")
-            capability = self.get_core_boot_autoinstall_capability(
+            capability = await self.get_core_boot_autoinstall_capability(
                 encrypted=layout.get("encrypted", None)
             )
 
