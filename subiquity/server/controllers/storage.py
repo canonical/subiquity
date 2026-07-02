@@ -59,6 +59,7 @@ from subiquity.common.types.storage import (
     CoreBootEncryptionRequirement,
     CoreBootEncryptionSupportError,
     CoreBootFixAction,
+    CoreBootFixActionWithArgs,
     CoreBootFixEncryptionSupport,
     Disk,
     EntropyResponse,
@@ -1964,8 +1965,8 @@ class StorageController(SubiquityController, StorageManipulator):
 
         raise StorageInvalidUsageError("no suitable variation for core boot")
 
-    async def v2_core_boot_fix_encryption_support_POST(
-        self, data: CoreBootFixEncryptionSupport
+    async def execute_fix_action(
+        self, action: CoreBootFixActionWithArgs, system_label: str | None
     ) -> None:
         async def shutdown_action(action):
             if self.app.opts.dry_run:
@@ -1993,8 +1994,8 @@ class StorageController(SubiquityController, StorageManipulator):
             ),
         }
 
-        if data.action.type in local_actions:
-            action = local_actions[data.action.type]
+        if action.type in local_actions:
+            action = local_actions[action.type]
             await action.coroutine_function(*action.args)
             return
 
@@ -2002,7 +2003,7 @@ class StorageController(SubiquityController, StorageManipulator):
         # self._info.label here if the system label is not specified. This is
         # because in the normal flow, fix-encryption-support is called *before*
         # choosing a variation.
-        label_filter = data.system_label if data.system_label is not None else False
+        label_filter = system_label if system_label is not None else False
         try:
             variation = next(
                 self.find_variations(core_boot_classic=True, label=label_filter)
@@ -2013,8 +2014,8 @@ class StorageController(SubiquityController, StorageManipulator):
         system = await self.app.snapdapi.v2.systems[variation.label].POST(
             snapdtypes.SystemActionRequest(
                 action=snapdtypes.SystemAction.FIX_ENCRYPTION_SUPPORT,
-                fix_action=data.action.type,
-                args=data.action.args,
+                fix_action=action.type,
+                args=action.args,
             ),
             return_type=snapdtypes.SystemDetails,
         )
@@ -2037,6 +2038,11 @@ class StorageController(SubiquityController, StorageManipulator):
         )
         self._maybe_disable_encryption(info)
         self._variation_info[variation.name] = info
+
+    async def v2_core_boot_fix_encryption_support_POST(
+        self, data: CoreBootFixEncryptionSupport
+    ) -> None:
+        await self.execute_fix_action(data.action, data.system_label)
 
     async def dry_run_wait_probe_POST(self) -> None:
         if not self.app.opts.dry_run:

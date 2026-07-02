@@ -1288,15 +1288,14 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
     )
     @mock.patch("subiquity.server.controllers.storage.shutdown.initiate_reboot")
     @mock.patch("subiquity.server.casper.disable_media_eject_prompt", mock.Mock())
-    async def test_v2_core_boot_fix_encryption_support__reboot(self, m_initiate_reboot):
+    async def test_execute_fix_action__reboot(self, m_initiate_reboot):
         self.ctrler.model = make_model()
 
         # If dry_run is True, we won't call the initiate method.
         self.app.opts.dry_run = False
-        await self.ctrler.v2_core_boot_fix_encryption_support_POST(
-            CoreBootFixEncryptionSupport(
-                action=CoreBootFixActionWithArgs(type=CoreBootFixAction.REBOOT),
-            ),
+        await self.ctrler.execute_fix_action(
+            CoreBootFixActionWithArgs(type=CoreBootFixAction.REBOOT),
+            system_label=None,
         )
 
         m_initiate_reboot.assert_called_once()
@@ -1310,19 +1309,14 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
         "subiquity.server.controllers.storage.shutdown.initiate_reboot_to_fw_settings"
     )
     @mock.patch("subiquity.server.casper.disable_media_eject_prompt", mock.Mock())
-    async def test_v2_core_boot_fix_encryption_support__reboot_to_fw(
-        self, m_initiate_reboot_to_fw
-    ):
+    async def test_execute_fix_action__reboot_to_fw(self, m_initiate_reboot_to_fw):
         self.ctrler.model = make_model()
 
         # If dry_run is True, we won't call the initiate method.
         self.app.opts.dry_run = False
-        await self.ctrler.v2_core_boot_fix_encryption_support_POST(
-            CoreBootFixEncryptionSupport(
-                action=CoreBootFixActionWithArgs(
-                    type=CoreBootFixAction.REBOOT_TO_FW_SETTINGS
-                ),
-            ),
+        await self.ctrler.execute_fix_action(
+            CoreBootFixActionWithArgs(type=CoreBootFixAction.REBOOT_TO_FW_SETTINGS),
+            system_label=None,
         )
 
         m_initiate_reboot_to_fw.assert_called_once()
@@ -1334,20 +1328,30 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
     )
     @mock.patch("subiquity.server.controllers.storage.shutdown.initiate_poweroff")
     @mock.patch("subiquity.server.casper.disable_media_eject_prompt", mock.Mock())
-    async def test_v2_core_boot_fix_encryption_support__poweroff(
-        self, m_initiate_poweroff
-    ):
+    async def test_execute_fix_action__poweroff(self, m_initiate_poweroff):
         self.ctrler.model = make_model()
 
         # If dry_run is True, we won't call the initiate method.
         self.app.opts.dry_run = False
-        await self.ctrler.v2_core_boot_fix_encryption_support_POST(
-            CoreBootFixEncryptionSupport(
-                action=CoreBootFixActionWithArgs(type=CoreBootFixAction.SHUTDOWN),
-            ),
+        await self.ctrler.execute_fix_action(
+            CoreBootFixActionWithArgs(type=CoreBootFixAction.SHUTDOWN),
+            system_label=None,
         )
 
         m_initiate_poweroff.assert_called_once()
+
+    async def test_v2_core_boot_fix_encryption_support(self):
+        action_with_args = mock.Mock()
+        with mock.patch.object(self.ctrler, "execute_fix_action") as m_fix_action:
+            await self.ctrler.v2_core_boot_fix_encryption_support_POST(
+                CoreBootFixEncryptionSupport(
+                    action=action_with_args,
+                    system_label="enhanced-secureboot-desktop",
+                ),
+            )
+        m_fix_action.assert_called_once_with(
+            action_with_args, "enhanced-secureboot-desktop"
+        )
 
     @parameterized.expand(((True,), (False,)))
     async def test__pre_shutdown_install_started(self, zfsutils_linux_installed: bool):
