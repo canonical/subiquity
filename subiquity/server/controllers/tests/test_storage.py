@@ -16,6 +16,7 @@
 import asyncio
 import contextlib
 import copy
+import re
 import subprocess
 import uuid
 from pathlib import Path
@@ -34,10 +35,14 @@ from subiquity.common.storage.actions import DeviceAction
 from subiquity.common.types.storage import (
     AddPartitionV2,
     CalculateEntropyRequest,
+    CoreBootAvailabilityErrorKind,
     CoreBootEncryptionFeature,
     CoreBootEncryptionRequirement,
+    CoreBootEncryptionSupportError,
     CoreBootFixAction,
+    CoreBootFixActionArgs,
     CoreBootFixActionWithArgs,
+    CoreBootFixActionWithCategoryAndArgs,
     CoreBootFixEncryptionSupport,
     EntropyResponse,
     FirmwareType,
@@ -537,7 +542,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
             (None, set(), AutoinstallError),
         )
     )
-    def test_get_core_boot_autoinstall_capability(
+    async def test_get_core_boot_autoinstall_capability(
         self, encrypted: bool, allowed_caps: set[GuidedCapability], expected
     ):
         with mock.patch.object(
@@ -552,10 +557,104 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
             with ctx:
                 self.assertEqual(
                     expected,
-                    self.ctrler.get_core_boot_autoinstall_capability(
+                    await self.ctrler.get_core_boot_autoinstall_capability(
                         encrypted=encrypted
                     ),
                 )
+
+    @staticmethod
+    def _make_core_boot_error(
+        kind=CoreBootAvailabilityErrorKind.RUNNING_IN_VM,
+        action_types=(CoreBootFixAction.PROCEED,),
+    ):
+        return CoreBootEncryptionSupportError(
+            kind=kind,
+            message="msg",
+            actions=[
+                CoreBootFixActionWithCategoryAndArgs(type=t, for_user=False, args=None)
+                for t in action_types
+            ],
+        )
+
+    @parameterized.expand(
+        (
+            # No accepted-errors
+            (CoreBootAvailabilityErrorKind.RUNNING_IN_VM, True, set(), False),
+            # We should proceed past the accepted error
+            (
+                CoreBootAvailabilityErrorKind.RUNNING_IN_VM,
+                True,
+                {CoreBootAvailabilityErrorKind.RUNNING_IN_VM},
+                True,
+            ),
+            # In the unlikely event that running-in-vm would not offer an Action.PROCEED
+            (
+                CoreBootAvailabilityErrorKind.RUNNING_IN_VM,
+                False,
+                {CoreBootAvailabilityErrorKind.RUNNING_IN_VM},
+                False,
+            ),
+            # No error found
+            (
+                None,
+                True,
+                {CoreBootAvailabilityErrorKind.RUNNING_IN_VM},
+                False,
+            ),
+        )
+    )
+    async def test_ensure_core_boot_autoinstall_capability_compatible(
+        self,
+        error_kind: CoreBootAvailabilityErrorKind | None,
+        has_proceed_action: bool,
+        accepted_errors: set[CoreBootAvailabilityErrorKind],
+        expect_success: bool,
+    ):
+        errors = []
+        if error_kind is not None:
+            action_types = [] if not has_proceed_action else [CoreBootFixAction.PROCEED]
+            errors.append(
+                self._make_core_boot_error(kind=error_kind, action_types=action_types)
+            )
+            not_avail_regex = f"not available: {re.escape(error_kind.value)}$"
+        else:
+            not_avail_regex = "not available$"
+        # First call to find_allowed_capabilities: no compatible cap, reach the
+        # disallowed-error path. Recursive second call (if any): a compatible
+        # cap is found, terminate the recursion.
+        p_find_allowed = mock.patch.object(
+            self.ctrler,
+            "find_allowed_capabilities",
+            side_effect=[
+                iter([]),
+                iter([GuidedCapability.CORE_BOOT_ENCRYPTED]),
+            ],
+        )
+        p_find_disallowed = mock.patch.object(
+            self.ctrler,
+            "_find_disallowed_errors",
+            return_value=errors,
+        )
+        p_fix_action = mock.patch.object(self.ctrler, "execute_fix_action")
+
+        with p_find_allowed, p_find_disallowed, p_fix_action as m_fix_action:
+            coro = self.ctrler.ensure_core_boot_autoinstall_capability_compatible(
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+                accepted_errors=accepted_errors,
+            )
+
+            if expect_success:
+                await coro
+                m_fix_action.assert_awaited_once_with(
+                    CoreBootFixActionWithArgs(
+                        type=CoreBootFixAction.PROCEED,
+                        args=CoreBootFixActionArgs(error_kinds=[error_kind]),
+                    )
+                )
+            else:
+                with self.assertRaisesRegex(AutoinstallError, not_avail_regex):
+                    await coro
+                m_fix_action.assert_not_awaited()
 
     async def test_probe_restricted(self):
         await self.ctrler._probe_once(context=None, restricted=True)
