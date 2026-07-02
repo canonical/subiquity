@@ -32,7 +32,7 @@ class Application:
     # controllers = [
     #         "Welcome",
     #         "Network",
-    #         "Filesystem",
+    #         "Storage",
     #         "Identity",
     #         "InstallProgress",
     # ]
