@@ -40,6 +40,7 @@ subiquity/common/storage/boot.py
 subiquity/common/storage/__init__.py
 subiquity/common/storage/labels.py
 subiquity/common/storage/manipulator.py
+subiquity/common/storage/requirements.py
 subiquity/common/storage/tests/__init__.py
 subiquity/common/storage/tests/test_actions.py
 subiquity/common/storage/tests/test_labels.py

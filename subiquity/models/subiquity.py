@@ -183,7 +183,9 @@ class SubiquityModel:
         self.debconf_selections = DebconfSelectionsModel()
         self.drivers = DriversModel()
         self.storage = StorageModel(
-            root=root, opt_supports_nvme_tcp_booting=opt_supports_nvme_tcp_booting
+            root=root,
+            dry_run=dry_run,
+            opt_supports_nvme_tcp_booting=opt_supports_nvme_tcp_booting,
         )
         self.identity = IdentityModel()
         self.integrity = IntegrityModel()

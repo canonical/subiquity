@@ -50,6 +50,10 @@ from subiquity.common.errorreport import ErrorReport, ErrorReportKind
 from subiquity.common.storage import boot, gaps, labels, sizes
 from subiquity.common.storage.actions import DeviceAction
 from subiquity.common.storage.manipulator import StorageManipulator
+from subiquity.common.storage.requirements import (
+    Requirements,
+    RequirementSeverity,
+)
 from subiquity.common.storage.spec import FileSystemSpec, PartitionSpec, VolGroupSpec
 from subiquity.common.types.storage import (
     AddPartitionV2,
@@ -660,12 +664,16 @@ class StorageController(SubiquityController, StorageManipulator):
         await self.convert_autoinstall_config(context=context)
         if self.reset_partition_only:
             return
-        if not self.model.is_root_mounted():
-            raise Exception("autoinstall config did not mount root")
-        if self.model.needs_bootloader_partition():
-            raise Exception(
-                "autoinstall config did not create needed bootloader partition"
-            )
+        for r in Requirements.all():
+            if r.severity == RequirementSeverity.BLOCKING and r.is_violated(self.model):
+                raise AutoinstallError(
+                    _(
+                        "autoinstall config did not match requirement {kind}: {msg}"
+                    ).format(
+                        kind=r.guidance_message_kind.name,
+                        msg=r.guidance_message_kind.value,
+                    )
+                )
 
     def update_devices(self, device_map):
         for action in self.model._actions:
