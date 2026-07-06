@@ -18,31 +18,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image:
-          - ubuntu-daily:noble
-          - ubuntu-daily:resolute
+        series:
+          - noble     # match core snap
+          - resolute  # latest
+        make-target:
+          - lint
+          - check
     steps:
     - uses: actions/checkout@v4
+    - uses: canonical/launch-workshop@v1
+      with:
+        workshop: subiquity-${{ matrix.series }}
     - name: run
-      run: |
-        sudo ./scripts/github-ci-lxd-setup.sh
-        sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make check"
-
-  lint:
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        image:
-          - ubuntu-daily:noble     # match the core snap we're running against
-          - ubuntu-daily:resolute  # latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: lint
-      run: |
-        sudo ./scripts/github-ci-lxd-setup.sh
-        sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make lint"
-
+      run: workshop exec subiquity-${{ matrix.series }} -- sudo make ${{ matrix.make-target }}
   format-black:
     runs-on: ubuntu-24.04
     steps:
