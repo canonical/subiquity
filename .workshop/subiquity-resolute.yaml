@@ -1,0 +1,4 @@
+name: subiquity-resolute
+base: ubuntu@26.04
+sdks:
+  - name: project-install-deps
