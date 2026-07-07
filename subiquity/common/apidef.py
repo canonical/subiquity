@@ -469,6 +469,7 @@ class API:
         fallback = simple_endpoint(MirrorSelectionFallback)
 
     class ubuntu_pro:
+        @redacted_response
         def GET() -> UbuntuProResponse: ...
 
         def POST(data: Payload[UbuntuProInfo]) -> None: ...
@@ -477,6 +478,7 @@ class API:
             def POST() -> None: ...
 
         class check_token:
+            @redacted_response
             def GET(token: Payload[str]) -> UbuntuProCheckTokenAnswer: ...
 
         class contract_selection:
@@ -484,6 +486,7 @@ class API:
                 def POST() -> UPCSInitiateResponse: ...
 
             class wait:
+                @redacted_response
                 def GET() -> UPCSWaitResponse: ...
 
             class cancel:
