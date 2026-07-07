@@ -82,7 +82,7 @@ parts:
 
     source: https://github.com/canonical/curtin
     source-type: git
-    source-commit: "ab0c9258d481182ba024445261fdc4dd501cd321"
+    source-commit: "0a18dc090a143437cda68700cd751dc1527d3e27"
 
     override-pull: |
       craftctl default
@@ -241,7 +241,7 @@ parts:
 
     source: https://github.com/canonical/probert.git
     source-type: git
-    source-commit: "4d33326e480fa61576667ac6d0819592877811bd"
+    source-commit: "59d25f683934b8160224a3bdfa08adc67c22bf14"
 
     override-build: *pyinstall
 
