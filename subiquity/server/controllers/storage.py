@@ -509,7 +509,7 @@ class StorageController(SubiquityController, StorageManipulator):
             ]
             return info
 
-        offsets_and_sizes = list(self._offsets_and_sizes_for_volume(volume))
+        offsets_and_sizes = list(volume.offsets_and_sizes())
         _structure, last_offset, last_size = offsets_and_sizes[-1]
         info.min_size = last_offset + last_size
 
@@ -1057,17 +1057,6 @@ class StorageController(SubiquityController, StorageManipulator):
             disks.append(disk)
         return [d for d in disks]
 
-    def _offsets_and_sizes_for_volume(self, volume: snapdtypes.Volume):
-        offset = self.model._partition_alignment_data["gpt"].min_start_offset
-        assert volume.structure is not None
-        for structure in volume.structure:
-            if structure.role == snapdtypes.Role.MBR:
-                continue
-            if structure.offset is not None:
-                offset = structure.offset
-            yield (structure, offset, structure.size)
-            offset = offset + structure.size
-
     async def guided_core_boot(self, disk: ModelDisk, choice: GuidedChoiceV2):
         if self._info.needs_systems_mount:
             await SystemsDirMounter(self.app, self._info.name).mount()
@@ -1088,9 +1077,7 @@ class StorageController(SubiquityController, StorageManipulator):
                 (part.offset, part.size): part for part in disk.partitions()
             }
 
-            for _struct, offset, size in self._offsets_and_sizes_for_volume(
-                self._on_volume
-            ):
+            for _struct, offset, size in self._on_volume.offsets_and_sizes():
                 if (offset, size) in parts_by_offset_size:
                     preserved_parts.add(parts_by_offset_size[(offset, size)])
 
@@ -1102,9 +1089,7 @@ class StorageController(SubiquityController, StorageManipulator):
         if not preserved_parts:
             self.reformat(disk, self._on_volume.schema)
 
-        for structure, offset, size in self._offsets_and_sizes_for_volume(
-            self._on_volume
-        ):
+        for structure, offset, size in self._on_volume.offsets_and_sizes():
             if (offset, size) in parts_by_offset_size:
                 part = parts_by_offset_size[(offset, size)]
             else:
