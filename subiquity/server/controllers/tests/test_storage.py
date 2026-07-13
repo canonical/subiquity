@@ -2901,6 +2901,26 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
         self.assertEqual(expected_scenario, scenarios != [])
 
+    @parameterized.expand(
+        (
+            (True, True),
+            (False, False),
+        )
+    )
+    async def test_available_use_gap_scenarios__core_boot(
+        self, flag_enabled: bool, expected_core_boot_encrypted: bool
+    ):
+        await self.setup_core_boot_use_gap()
+        install_min = self.ctrler.calculate_suggested_install_min()
+        self.app.opts.experimental_use_gap_tpm_fde = flag_enabled
+        scenarios = self.ctrler.available_use_gap_scenarios(install_min)
+        self.assertEqual(
+            expected_core_boot_encrypted,
+            any(
+                GuidedCapability.CORE_BOOT_ENCRYPTED in s[1].allowed for s in scenarios
+            ),
+        )
+
     async def test_available_erase_install_scenarios(self):
         await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
         install_min = self.ctrler.calculate_suggested_install_min()

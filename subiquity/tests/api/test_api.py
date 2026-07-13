@@ -617,6 +617,59 @@ class TestCore(TestAPI):
             self.assertDictSubset(dict(mount="/"), p4)
 
     @timeout()
+    async def test_guided_v2_use_gap_tpm_fde_api(self):
+        cfg = self.machineConfig("examples/machines/win10-along-ubuntu.json")
+        with cfg.edit() as data:
+            # Let's create a large gap at the beginning of the disk
+            pt = data["storage"]["blockdev"]["/dev/sda"]["partitiontable"]
+            for part_number, has_filesystem in (
+                (1, True),
+                (2, False),
+                (3, True),
+                (4, True),
+            ):
+                part_path = f"/dev/sda{part_number}"
+                [node] = match(pt["partitions"], node=part_path)
+                pt["partitions"].remove(node)
+                del data["storage"]["blockdev"][part_path]
+                if has_filesystem:
+                    del data["storage"]["filesystem"][part_path]
+        kw = {
+            "bootloader": "uefi",
+            "extra_args": [
+                "--storage-version",
+                "2",
+                "--source-catalog",
+                "examples/sources/desktop.yaml",
+                "--dry-run-config",
+                "examples/dry-run-configs/tpm.yaml",
+                "--experimental-use-gap-tpm-fde",
+            ],
+        }
+        async with start_server(cfg, **kw) as inst:
+            await inst.post("/source", source_id="ubuntu-desktop")
+            resp = await inst.get("/storage/v2/guided", wait=True)
+            [use_gap] = match(resp["targets"], _type="GuidedStorageTargetUseGap")
+            self.assertIn("CORE_BOOT_PREFER_ENCRYPTED", use_gap["allowed"])
+            data = {
+                "target": use_gap,
+                "capability": "CORE_BOOT_ENCRYPTED",
+            }
+            await inst.post("/storage/v2/guided", data)
+            v2resp = await inst.get("/storage/v2")
+            [d] = v2resp["disks"]
+            # FIXME The current model has a ~13GiB gap between p1 and p2.
+            #       Presumably this will be removed later.
+            [p1, g1, p2, p3, p4, p5] = d["partitions"]
+            esp = dict(offset=1 << 20, mount="/boot/efi")
+            self.assertDictSubset(esp, p1)
+            self.assertDictSubset(dict(mount="/boot"), p2)
+            self.assertDictSubset(dict(mount=None), p3)
+            self.assertDictSubset(dict(mount="/"), p4)
+            # This is the partition we didn't remove.
+            self.assertDictSubset(dict(mount=None), p5)
+
+    @timeout()
     async def test_basic_core_boot_cmdline_disable(self):
         cfg = self.machineConfig("examples/machines/simple.json")
         with cfg.edit() as data:

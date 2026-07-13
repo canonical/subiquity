@@ -1522,7 +1522,10 @@ class StorageController(SubiquityController, StorageManipulator):
                 continue
 
             capability_info = CapabilityInfo()
-            for variation in self.find_variations(core_boot_classic=False):
+            core_boot_classic = (
+                None if self.opts.experimental_use_gap_tpm_fde else False
+            )
+            for variation in self.find_variations(core_boot_classic=core_boot_classic):
                 capability_info.combine(
                     variation.capability_info_for_gap(gap, install_min)
                 )
