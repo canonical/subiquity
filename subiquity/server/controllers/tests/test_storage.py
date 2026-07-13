@@ -2382,6 +2382,33 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
                 offset=1 << 20,
             )
 
+    async def setup_core_boot_use_gap(self) -> GuidedChoiceV2:
+        await self._setup(Bootloader.UEFI, "gpt", fix_bios=True, size=100 << 30)
+        make_partition(self.model, self.disk, preserve=True, size=50 << 30)
+        self.ctrler._variation_info["core"] = VariationInfo(
+            name="core",
+            label="system",
+            system=snapdtypes.SystemDetails(
+                label="system",
+                volumes={
+                    "pc": snapdtypes.Volume(schema="gpt", structure=[]),
+                },
+                model=mock.Mock(),
+            ),
+            capability_info=CapabilityInfo(
+                allowed=[GuidedCapability.CORE_BOOT_ENCRYPTED]
+            ),
+        )
+        self.ctrler._info = self.ctrler._variation_info["core"]
+
+        target = GuidedStorageTargetUseGap(
+            disk_id=self.disk.id,
+            gap=labels.for_client(gaps.largest_gap(self.disk)),
+        )
+        return GuidedChoiceV2(
+            target=target, capability=GuidedCapability.CORE_BOOT_ENCRYPTED
+        )
+
     @parameterized.expand(bootloaders_and_ptables)
     async def test_blank_disk(self, bootloader, ptable):
         # blank disks should not report a UseGap case
@@ -3080,6 +3107,19 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         # if we're installing in a logical partition, we have enough room
         self.assertTrue(self.ctrler.resize_has_enough_room_for_partitions(disk, p5))
         self.assertTrue(self.ctrler.resize_has_enough_room_for_partitions(disk, p6))
+
+    async def test_guided_use_gap_core_boot_flag_disabled(self):
+        choice = await self.setup_core_boot_use_gap()
+        self.app.opts.experimental_use_gap_tpm_fde = False
+        with self.assertRaises(AssertionError):
+            await self.ctrler.guided(choice)
+
+    async def test_guided_use_gap_core_boot_flag_enabled(self):
+        choice = await self.setup_core_boot_use_gap()
+        self.app.opts.experimental_use_gap_tpm_fde = True
+        with mock.patch.object(self.ctrler, "guided_core_boot", return_value=None):
+            await self.ctrler.guided(choice)
+            self.ctrler.guided_core_boot.assert_called_once_with(self.disk, choice)
 
 
 class TestManualBoot(IsolatedAsyncioTestCase):

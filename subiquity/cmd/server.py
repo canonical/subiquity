@@ -135,6 +135,11 @@ def make_server_args_parser():
         action="store_false",
         default=True,
     )
+    parser.add_argument(
+        "--experimental-use-gap-tpm-fde",
+        action="store_true",
+        help="[EXPERIMENTAL] Enable TPM-backed FDE for use-gap guided scenarios",
+    )
 
     parser.add_argument("--storage-version", action="store", type=int)
     parser.add_argument("--use-os-prober", action="store_true", default=False)
