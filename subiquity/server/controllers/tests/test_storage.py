@@ -381,6 +381,91 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
                     GuidedCapability.CORE_BOOT_ENCRYPTED
                 )
 
+    # ------------------------------------------------------------------
+    # VariationInfo.is_core_boot_use_gap_compatible
+    # ------------------------------------------------------------------
+    # For a "gpt" volume, offsets_and_sizes() starts at the gpt
+    # min_start_offset (GPT_OVERHEAD // 2 == 1 MiB). With two non-MBR
+    # structures mimicking a real gadget (a 100 MiB system-boot and a
+    # 1 GiB system-data), the resulting spans are
+    # [1 MiB, 101 MiB] and [101 MiB, 1125 MiB], so the gap must cover
+    # [1 MiB, 1125 MiB] (1124 MiB) for the check to pass.
+    def _make_info_for_gap_compat(self, schema="gpt", structures=None) -> VariationInfo:
+        if structures is None:
+            structures = [
+                snapdtypes.VolumeStructure(size=100 << 20),
+                snapdtypes.VolumeStructure(size=1024 << 20),
+            ]
+        volume = snapdtypes.Volume(schema=schema, structure=structures)
+        system = snapdtypes.SystemDetails(
+            label="enhanced-secureboot-desktop",
+            model=snapdtypes.Model(architecture="amd64", snaps=[]),
+            volumes={"pc": volume},
+        )
+        return VariationInfo(
+            name="test",
+            label="enhanced-secureboot-desktop",
+            system=system,
+        )
+
+    def test_is_core_boot_use_gap_compatible__not_disk(self):
+        info = self._make_info_for_gap_compat()
+        gap = gaps.Gap(device=mock.Mock(), offset=0, size=1200 << 20)
+        self.assertFalse(info.is_core_boot_use_gap_compatible(gap))
+
+    def test_is_core_boot_use_gap_compatible__ptable_mismatch(self):
+        info = self._make_info_for_gap_compat(schema="gpt")
+        disk = make_disk(make_model(), ptable="msdos")
+        gap = gaps.Gap(device=disk, offset=0, size=1200 << 20)
+        self.assertFalse(info.is_core_boot_use_gap_compatible(gap))
+
+    def test_is_core_boot_use_gap_compatible__exact_fit(self):
+        info = self._make_info_for_gap_compat()
+        disk = make_disk(make_model(), ptable="gpt")
+        gap = gaps.Gap(device=disk, offset=1 << 20, size=1124 << 20)
+        self.assertTrue(info.is_core_boot_use_gap_compatible(gap))
+
+    def test_is_core_boot_use_gap_compatible__larger_gap(self):
+        info = self._make_info_for_gap_compat()
+        disk = make_disk(make_model(), ptable="gpt")
+        gap = gaps.Gap(device=disk, offset=0, size=1200 << 20)
+        self.assertTrue(info.is_core_boot_use_gap_compatible(gap))
+
+    def test_is_core_boot_use_gap_compatible__gap_starts_late(self):
+        info = self._make_info_for_gap_compat()
+        disk = make_disk(make_model(), ptable="gpt")
+        gap = gaps.Gap(device=disk, offset=50 << 20, size=1124 << 20)
+        self.assertFalse(info.is_core_boot_use_gap_compatible(gap))
+
+    def test_is_core_boot_use_gap_compatible__gap_ends_early(self):
+        info = self._make_info_for_gap_compat()
+        disk = make_disk(make_model(), ptable="gpt")
+        gap = gaps.Gap(device=disk, offset=1 << 20, size=50 << 20)
+        self.assertFalse(info.is_core_boot_use_gap_compatible(gap))
+
+    def test_is_core_boot_use_gap_compatible__mbr_skipped(self):
+        # An MBR-role structure is ignored by offsets_and_sizes(), so
+        # placing it outside the gap must not affect compatibility.
+        structures = [
+            snapdtypes.VolumeStructure(size=1 << 20, role=snapdtypes.Role.MBR),
+            snapdtypes.VolumeStructure(size=100 << 20),
+            snapdtypes.VolumeStructure(size=1024 << 20),
+        ]
+        info = self._make_info_for_gap_compat(structures=structures)
+        disk = make_disk(make_model(), ptable="gpt")
+        gap = gaps.Gap(device=disk, offset=1 << 20, size=1124 << 20)
+        self.assertTrue(info.is_core_boot_use_gap_compatible(gap))
+
+    def test_is_core_boot_use_gap_compatible__explicit_offset_outside_gap(self):
+        structures = [
+            snapdtypes.VolumeStructure(size=100 << 20),
+            snapdtypes.VolumeStructure(offset=2000 << 20, size=1024 << 20),
+        ]
+        info = self._make_info_for_gap_compat(structures=structures)
+        disk = make_disk(make_model(), ptable="gpt")
+        gap = gaps.Gap(device=disk, offset=1 << 20, size=1124 << 20)
+        self.assertFalse(info.is_core_boot_use_gap_compatible(gap))
+
     @parameterized.expand(
         (
             (

@@ -261,6 +261,28 @@ class VariationInfo:
     def is_valid(self) -> bool:
         return bool(self.capability_info.allowed)
 
+    def is_core_boot_use_gap_compatible(self, gap: gaps.Gap) -> bool:
+        [volume] = self.system.volumes.values()
+
+        if not isinstance(gap.device, ModelDisk):
+            return False
+
+        disk = gap.device
+
+        if disk.ptable != volume.schema:
+            return False
+
+        # TODO should we check the bootloader too? Typically it's "grub" in the
+        # gadget definition.
+
+        # Now we check that all partitions defined in the gadget fit in the
+        # gap.
+        for struct, offset, size in volume.offsets_and_sizes():
+            if not (gap.offset <= offset <= offset + size <= gap.offset + gap.size):
+                return False
+
+        return True
+
     def capability_info_for_gap(
         self,
         gap: gaps.Gap,
