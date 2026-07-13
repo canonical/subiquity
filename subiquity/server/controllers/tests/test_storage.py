@@ -1845,33 +1845,33 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
 
         self.assertEqual(expected_optional_install, actual)
 
-    async def test_run_autoinstall_guided__hybrid_with_mode(self):
-        with self.assertRaisesRegex(
-            AutoinstallError, "cannot use 'mode' with hybrid layout"
-        ):
-            await self.ctrler.run_autoinstall_guided(
-                {"name": "hybrid", "mode": "reformat_disk"}
-            )
-
 
 class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
         self.app.opts.bootloader = None
         self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
+        self.app.snapdapi = snapdapi.make_api_client(AsyncSnapd(get_fake_connection()))
         self.ctrler = StorageController(self.app)
-        self.model = self.ctrler.model = make_model()
+        self.model = self.ctrler.model = make_model(Bootloader.UEFI)
 
         # This is needed for examine_systems_task
         self.app.base_model.source.current.type = "fsimage"
+        self.app.base_model.source.search_drivers = False
         self.app.base_model.source.current.variations = {
             "default": CatalogEntryVariation(path="", size=1),
+            "core-boot": CatalogEntryVariation(
+                path="", size=1, snapd_system_label="prefer-encrypted"
+            ),
         }
 
     async def asyncSetUp(self):
-        self.ctrler._examine_systems_task.start_sync()
-
-        await self.ctrler._examine_systems_task.wait()
+        with mock.patch(
+            "subiquity.server.snapd.system_getter.SystemsDirMounter.mount",
+            new=mock.AsyncMock(return_value=(mock.Mock(), mock.AsyncMock())),
+        ):
+            self.ctrler._examine_systems_task.start_sync()
+            await self.ctrler._examine_systems_task.wait()
 
     async def test_direct_use_gap__install_media(self):
         """Match directives were previously not honored when using mode: use_gap.
@@ -1925,6 +1925,23 @@ class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):
             reset_partition=mock.ANY,
             reset_partition_size=mock.ANY,
         )
+
+    async def test_hybrid_with_unsupported_mode(self):
+        with self.assertRaisesRegex(
+            AutoinstallError, "Unknown layout mode erase_install"
+        ):
+            await self.ctrler.run_autoinstall_guided(
+                {"name": "hybrid", "mode": "erase_install"}
+            )
+
+    async def test_hybrid_use_gap_not_enabled(self):
+        self.app.opts.experimental_use_gap_tpm_fde = False
+        with self.assertRaisesRegex(
+            AutoinstallError, "requires the --experimental-use-gap-tpm-fde flag"
+        ):
+            await self.ctrler.run_autoinstall_guided(
+                {"name": "hybrid", "mode": "use_gap"}
+            )
 
 
 class TestGuided(IsolatedAsyncioTestCase):
@@ -3519,6 +3536,72 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
             ]
         )
         self.assertEqual(partition_count, len(disk.partitions()))
+
+    async def test_autoinstall_hybrid_use_gap_flag_disabled(self):
+        self.ctrler.model = model = make_model(Bootloader.UEFI)
+        disk = make_disk(model)
+        make_partition(model, disk, preserve=True, size=50 << 30)
+        self.app.base_model.source.current.variations = {
+            "default": CatalogEntryVariation(
+                path="", size=1, snapd_system_label="prefer-encrypted"
+            ),
+        }
+        self.app.dr_cfg.systems_dir_exists = True
+        await self.ctrler._examine_systems_task.start()
+        await self.ctrler._examine_systems_task.wait()
+        self.ctrler.start()
+
+        self.app.opts.experimental_use_gap_tpm_fde = False
+        with self.assertRaises(AutoinstallError):
+            await self.ctrler.run_autoinstall_guided(
+                {
+                    "name": "hybrid",
+                    "mode": "use_gap",
+                }
+            )
+
+    @parameterized.expand(
+        (
+            (True, True),
+            (False, False),
+        )
+    )
+    async def test_autoinstall_hybrid_use_gap(
+        self, flag_enabled: bool, expect_ok: bool
+    ):
+        self.ctrler.model = model = make_model(Bootloader.UEFI, storage_version=2)
+        disk = make_disk(model, size=100 << 30)
+        make_partition(model, disk, preserve=True, offset=50 << 30)
+        self.app.base_model.source.current.variations = {
+            "default": CatalogEntryVariation(
+                path="", size=1, snapd_system_label="prefer-encrypted"
+            ),
+        }
+        self.app.dr_cfg.systems_dir_exists = True
+        await self.ctrler._examine_systems_task.start()
+        await self.ctrler._examine_systems_task.wait()
+        self.ctrler.start()
+
+        self.app.opts.experimental_use_gap_tpm_fde = flag_enabled
+
+        with mock.patch.object(self.ctrler, "guided") as m_guided:
+            if expect_ok:
+                m_guided_assertion = m_guided.assert_called_once
+                context = contextlib.nullcontext()
+            else:
+                m_guided_assertion = m_guided.assert_not_called
+                context = self.assertRaisesRegex(
+                    AutoinstallError, "requires the --experimental-use-gap-tpm-fde flag"
+                )
+
+            with context:
+                await self.ctrler.run_autoinstall_guided(
+                    {
+                        "name": "hybrid",
+                        "mode": "use_gap",
+                    }
+                )
+            m_guided_assertion()
 
     async def test_from_sample_data_defective(self):
         self.ctrler.model = model = make_model(Bootloader.UEFI)

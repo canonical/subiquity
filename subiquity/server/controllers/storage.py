@@ -2317,15 +2317,22 @@ class StorageController(SubiquityController, StorageManipulator):
         guided_recovery_key: Union[bool, RecoveryKey] = False
 
         if name == "hybrid":
-            if "mode" in layout:
-                raise AutoinstallError("cannot use 'mode' with hybrid layout")
             capability = self.get_core_boot_autoinstall_capability(
                 encrypted=layout.get("encrypted", None)
             )
-
-            match = layout.get("match", {"size": "largest"})
-            disk = self.get_bootable_matching_disk(match)
-            mode = "reformat_disk"
+            # Default to reformat_disk for backward compatibility:
+            # mode was previously forbidden for hybrid, so all existing
+            # autoinstall configs implicitly relied on reformat_disk.
+            mode = layout.get("mode", "reformat_disk")
+            try:
+                self.validate_layout_mode(mode)
+            except ValueError as e:
+                raise AutoinstallError(str(e)) from None
+            if mode == "use_gap" and not self.opts.experimental_use_gap_tpm_fde:
+                raise AutoinstallError(
+                    "use_gap mode with hybrid (TPM/FDE) layout requires "
+                    "the --experimental-use-gap-tpm-fde flag"
+                )
         else:
             # this check is conceptually unnecessary but results in a
             # much cleaner error message...
