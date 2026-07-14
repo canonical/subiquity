@@ -44,6 +44,17 @@
   variant: desktop
   snapd_system_label: defective
 - description:
+    en: This test source includes the "no-hardware-root-of-trust" error which also enforces using PIN/pass via the "volumes-auth" requirement.
+  id: src-no-hwrot
+  locale_support: none
+  name:
+    en: TPM encryption no HWROT
+  path: foo.squashfs
+  size: 530485248
+  type: fsimage
+  variant: desktop
+  snapd_system_label: no-hwrot
+- description:
     en: This test source requires TPM backed full disk encryption.
   id: src-mandatory
   locale_support: none
