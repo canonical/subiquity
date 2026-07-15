@@ -1068,7 +1068,7 @@ class StorageController(SubiquityController, StorageManipulator):
             yield (structure, offset, structure.size)
             offset = offset + structure.size
 
-    async def guided_core_boot(self, disk: Disk, choice: GuidedChoiceV2):
+    async def guided_core_boot(self, disk: ModelDisk, choice: GuidedChoiceV2):
         if self._info.needs_systems_mount:
             await SystemsDirMounter(self.app, self._info.name).mount()
         # Formatting for a core boot classic system relies on some curtin
