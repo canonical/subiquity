@@ -3085,10 +3085,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.ctrler = StorageController(app=self.app)
         self.ctrler._configured = True
         self.ctrler.model = make_model(Bootloader.UEFI)
-        self.choice = GuidedChoiceV2(
-            target=GuidedStorageTargetReformat,
-            capability=GuidedCapability.CORE_BOOT_ENCRYPTED,
-        )
+        self.capability = GuidedCapability.CORE_BOOT_ENCRYPTED
 
         @contextlib.asynccontextmanager
         async def mounted(self, *, source_id):
@@ -3118,7 +3115,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
 
     @parameterized.expand(
         (
-            [None, None],
+            [{}, None],
             [
                 {"password": "asdf"},
                 VolumesAuth(
@@ -3148,9 +3145,14 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 ),
             ]
         )
-        if va_input is not None:
-            self.choice = attrs.evolve(self.choice, **va_input)
-        await self.ctrler.guided_core_boot(disk, self.choice)
+        choice = GuidedChoiceV2(
+            target=GuidedStorageTargetReformat(
+                disk_id=disk.id,
+            ),
+            capability=self.capability,
+            **va_input,
+        )
+        await self.ctrler.guided_core_boot(disk, choice)
         if va_expected is None:
             self.assertIsNone(self.ctrler._volumes_auth)
         else:
@@ -3189,7 +3191,13 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 ),
             ]
         )
-        await self.ctrler.guided_core_boot(disk, self.choice)
+        choice = GuidedChoiceV2(
+            target=GuidedStorageTargetReformat(
+                disk_id=disk.id,
+            ),
+            capability=self.capability,
+        )
+        await self.ctrler.guided_core_boot(disk, choice)
         self.assertIsNone(self.ctrler._volumes_auth)
         [part] = disk.partitions()
         self.assertEqual(reused_part, part)
@@ -3211,7 +3219,13 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 ),
             ]
         )
-        await self.ctrler.guided_core_boot(disk, self.choice)
+        choice = GuidedChoiceV2(
+            target=GuidedStorageTargetReformat(
+                disk_id=disk.id,
+            ),
+            capability=self.capability,
+        )
+        await self.ctrler.guided_core_boot(disk, choice)
         self.assertIsNone(self.ctrler._volumes_auth)
         [part] = disk.partitions()
         self.assertEqual(existing_part, part)
@@ -3239,7 +3253,13 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                 ),
             ]
         )
-        await self.ctrler.guided_core_boot(disk, self.choice)
+        choice = GuidedChoiceV2(
+            target=GuidedStorageTargetReformat(
+                disk_id=disk.id,
+            ),
+            capability=self.capability,
+        )
+        await self.ctrler.guided_core_boot(disk, choice)
         self.assertIsNone(self.ctrler._volumes_auth)
         [bios_part, part] = disk.partitions()
         self.assertEqual(part.offset, 2 << 20)
@@ -3467,7 +3487,7 @@ class TestResetPartitionLookAhead(IsolatedAsyncioTestCase):
 
 class TestGuidedChoiceValidation(IsolatedAsyncioTestCase):
     def test_pin_and_pass(self):
-        reformat = GuidedStorageTargetReformat
+        reformat = GuidedStorageTargetReformat(disk_id=mock.Mock())
         tpmfde = GuidedCapability.CORE_BOOT_ENCRYPTED
         choice = GuidedChoiceV2(
             target=reformat, capability=tpmfde, pin="01234", password="asdf"
@@ -3490,7 +3510,7 @@ class TestGuidedChoiceValidation(IsolatedAsyncioTestCase):
             else:
                 return self.assertRaises(StorageInvalidUsageError)
 
-        reformat = GuidedStorageTargetReformat
+        reformat = GuidedStorageTargetReformat(disk_id=mock.Mock())
         choice = GuidedChoiceV2(target=reformat, capability=capability)
         pin_choice = attrs.evolve(choice, pin="01234")
         with maybe_assert_raises(pin_ok):
