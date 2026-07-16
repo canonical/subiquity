@@ -24,7 +24,7 @@ import attrs
 
 from subiquity.common.apidef import API
 from subiquity.common.types import ZdevInfo
-from subiquity.common.types.storage import Bootloader
+from subiquity.common.types.storage import FirmwareType
 from subiquity.server.controller import SubiquityController
 from subiquitycore.async_helpers import schedule_task
 from subiquitycore.context import with_context
@@ -680,7 +680,7 @@ class ZdevController(SubiquityController):
             await self.chzdev(action, zdevinfos[ai_action.id])
 
     def interactive(self):
-        if self.app.base_model.storage.bootloader != Bootloader.NONE:
+        if self.app.base_model.storage.firmware_type != FirmwareType.NONE:
             return False
         return super().interactive()
 

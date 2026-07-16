@@ -149,7 +149,7 @@ class Server(Client):
             return
 
     async def spawn(
-        self, output_base, socket, machine_config, bootloader="uefi", extra_args=None
+        self, output_base, socket, machine_config, firmware_type="uefi", extra_args=None
     ):
         env = os.environ.copy()
         env["SUBIQUITY_REPLAY_TIMESCALE"] = "100"
@@ -158,8 +158,8 @@ class Server(Client):
             "-m",
             "subiquity.cmd.server",
             "--dry-run",
-            "--bootloader",
-            bootloader,
+            "--firmware-type",
+            firmware_type,
             "--socket",
             socket,
             "--output-base",
@@ -586,7 +586,7 @@ class TestCore(TestAPI):
             attrs = data["storage"]["blockdev"]["/dev/sda"]["attrs"]
             attrs["size"] = str(25 << 30)
         kw = dict(
-            bootloader="uefi",
+            firmware_type="uefi",
             extra_args=[
                 "--storage-version",
                 "2",
@@ -623,7 +623,7 @@ class TestCore(TestAPI):
             attrs = data["storage"]["blockdev"]["/dev/sda"]["attrs"]
             attrs["size"] = str(25 << 30)
         kw = dict(
-            bootloader="uefi",
+            firmware_type="uefi",
             extra_args=[
                 "--storage-version",
                 "2",
@@ -651,7 +651,7 @@ class TestCore(TestAPI):
             attrs = data["storage"]["blockdev"]["/dev/sda"]["attrs"]
             attrs["size"] = str(25 << 30)
         kw = dict(
-            bootloader="bios",
+            firmware_type="bios",
             extra_args=[
                 "--storage-version",
                 "2",

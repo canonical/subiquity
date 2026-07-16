@@ -22,7 +22,7 @@ from typing import Any, Optional
 import attr
 
 from subiquity.common.storage import gaps, sizes
-from subiquity.models.storage import Bootloader, Disk, Partition, Raid, align_up
+from subiquity.models.storage import Disk, FirmwareType, Partition, Raid, align_up
 
 log = logging.getLogger("subiquity.common.storage.boot")
 
@@ -35,19 +35,19 @@ def is_boot_device(device):
 
 @is_boot_device.register(Disk)
 def _is_boot_device_disk(disk):
-    bl = disk._m.bootloader
-    if bl == Bootloader.NONE:
+    fwt = disk._m.firmware_type
+    if fwt == FirmwareType.NONE:
         return False
-    elif bl == Bootloader.BIOS:
+    elif fwt == FirmwareType.BIOS:
         return disk.grub_device
-    elif bl in [Bootloader.PREP, Bootloader.UEFI]:
+    elif fwt in [FirmwareType.PREP, FirmwareType.UEFI]:
         return any(p.grub_device for p in disk._partitions)
 
 
 @is_boot_device.register(Raid)
 def _is_boot_device_raid(raid):
-    bl = raid._m.bootloader
-    if bl != Bootloader.UEFI:
+    fwt = raid._m.firmware_type
+    if fwt != FirmwareType.UEFI:
         return False
     if not raid.container or raid.container.metadata != "imsm":
         return False
@@ -321,19 +321,19 @@ def get_boot_device_plan_prep(device, resize_partition):
 
 
 def get_boot_device_plan(device, resize_partition=None):
-    bl = device._m.bootloader
-    if bl == Bootloader.BIOS:
+    fwt = device._m.firmware_type
+    if fwt == FirmwareType.BIOS:
         # we don't attempt resize_partition with BIOS,
         # a move might help but a resize alone won't
         # and we don't move preserved partitions.
         return get_boot_device_plan_bios(device)
-    if bl == Bootloader.UEFI:
+    if fwt == FirmwareType.UEFI:
         return get_boot_device_plan_uefi(device, resize_partition)
-    if bl == Bootloader.PREP:
+    if fwt == FirmwareType.PREP:
         return get_boot_device_plan_prep(device, resize_partition)
-    if bl == Bootloader.NONE:
+    if fwt == FirmwareType.NONE:
         return NoOpBootPlan()
-    raise Exception(f"unexpected bootloader {bl} here")
+    raise Exception(f"unexpected firmware type {fwt} here")
 
 
 @functools.singledispatch
@@ -362,8 +362,8 @@ def _can_be_boot_device_disk(disk, *, resize_partition=None, with_reformatting=F
 def _can_be_boot_device_raid(raid, *, resize_partition=None, with_reformatting=False):
     if raid.on_remote_storage():
         return False
-    bl = raid._m.bootloader
-    if bl != Bootloader.UEFI:
+    fwt = raid._m.firmware_type
+    if fwt != FirmwareType.UEFI:
         return False
     if not raid.container or raid.container.metadata != "imsm":
         return False
@@ -410,11 +410,11 @@ def all_boot_devices(model):
 
 
 def is_bootloader_partition(partition):
-    if partition._m.bootloader == Bootloader.BIOS:
+    if partition._m.firmware_type == FirmwareType.BIOS:
         return partition.flag == "bios_grub"
-    elif partition._m.bootloader == Bootloader.UEFI:
+    elif partition._m.firmware_type == FirmwareType.UEFI:
         return is_esp(partition)
-    elif partition._m.bootloader == Bootloader.PREP:
+    elif partition._m.firmware_type == FirmwareType.PREP:
         return partition.flag == "prep"
     else:
         return False

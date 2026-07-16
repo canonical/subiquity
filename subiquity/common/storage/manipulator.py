@@ -26,7 +26,7 @@ from subiquity.common.storage.spec import (
     RaidSpec,
     VolGroupSpec,
 )
-from subiquity.common.types.storage import Bootloader
+from subiquity.common.types.storage import FirmwareType
 from subiquity.models.storage import (
     LVM_LogicalVolume,
     LVM_VolGroup,
@@ -430,20 +430,20 @@ class StorageManipulator:
         self.model.add_mount(part.fs(), "/boot/efi")
 
     def remove_boot_disk(self, boot_disk):
-        if self.model.bootloader == Bootloader.BIOS:
+        if self.model.firmware_type == FirmwareType.BIOS:
             boot_disk.grub_device = False
         partitions = [
             p for p in boot_disk.partitions() if boot.is_bootloader_partition(p)
         ]
         remount = False
         if boot_disk.preserve:
-            if self.model.bootloader == Bootloader.BIOS:
+            if self.model.firmware_type == FirmwareType.BIOS:
                 return
             for p in partitions:
                 p.grub_device = False
-                if self.model.bootloader == Bootloader.PREP:
+                if self.model.firmware_type == FirmwareType.PREP:
                     p.wipe = None
-                elif self.model.bootloader == Bootloader.UEFI:
+                elif self.model.firmware_type == FirmwareType.UEFI:
                     if p.fs():
                         if p.fs().mount():
                             self.delete_mount(p.fs().mount())
@@ -464,7 +464,7 @@ class StorageManipulator:
             if full:
                 largest_part = max(boot_disk.partitions(), key=lambda p: p.size)
                 largest_part.size += tot_size
-        if self.model.bootloader == Bootloader.UEFI and remount:
+        if self.model.firmware_type == FirmwareType.UEFI and remount:
             part = self.model._one(type="partition", grub_device=True)
             if part:
                 self._mount_esp(part)

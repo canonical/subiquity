@@ -135,7 +135,7 @@ for answers in examples/answers/*.yaml; do
         --answers "$answers" \
         "${opts[@]}" \
         --machine-config "$config" \
-        --bootloader uefi \
+        --firmware-type uefi \
         --snaps-from-examples \
         --source-catalog $catalog
     validate install
@@ -155,7 +155,7 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --dry-run \
     --output-base "$tmpdir" \
     --machine-config examples/machines/existing-partitions.json \
-    --bootloader bios \
+    --firmware-type bios \
     --autoinstall examples/autoinstall/most-options.yaml \
     --dry-run-config examples/dry-run-configs/apt-local-mirror.yaml \
     --kernel-cmdline autoinstall \
@@ -211,7 +211,7 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --machine-config examples/machines/simple.json \
     --autoinstall examples/autoinstall/hybrid.yaml \
     --dry-run-config examples/dry-run-configs/tpm.yaml \
-    --bootloader uefi \
+    --firmware-type uefi \
     --kernel-cmdline autoinstall \
     --source-catalog examples/sources/tpm.yaml
 validate
@@ -226,7 +226,7 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --machine-config examples/machines/simple.json \
     --autoinstall examples/autoinstall/hybrid.yaml \
     --dry-run-config examples/dry-run-configs/tpm.yaml \
-    --bootloader uefi \
+    --firmware-type uefi \
     --snaps-from-examples \
     --kernel-cmdline autoinstall \
     --source-catalog examples/sources/tpm.yaml
@@ -243,7 +243,7 @@ LANG=C.UTF-8 timeout --foreground 60 \
     --output-base "$tmpdir" \
     --machine-config examples/machines/simple.json \
     --autoinstall examples/autoinstall/core-installer.yaml \
-    --bootloader uefi \
+    --firmware-type uefi \
     --snaps-from-examples \
     --kernel-cmdline autoinstall \
     --source-catalog examples/sources/core-installer.yaml

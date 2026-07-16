@@ -71,10 +71,12 @@ def make_server_args_parser():
         type=argparse.FileType(),
         help="Don't Probe. Use probe data file",
     )
+    # --bootloader is deprecated and will be removed soon.
     parser.add_argument(
+        "--firmware-type",
         "--bootloader",
         choices=["none", "bios", "prep", "uefi"],
-        help="Override style of bootloader to use",
+        help="Override firmware type to use",
     )
     parser.add_argument(
         "--autoinstall",
@@ -198,8 +200,8 @@ def main():
         if opts.snaps_from_examples is None:
             opts.snaps_from_examples = True
         logdir = opts.output_base
-        if opts.bootloader is None:
-            opts.bootloader = "uefi"
+        if opts.firmware_type is None:
+            opts.firmware_type = "uefi"
         # Set for system_scripts support in dry run
         if not os.environ.get("SNAP"):
             os.environ["SNAP"] = str(pathlib.Path(__file__).parents[2])

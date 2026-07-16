@@ -4,7 +4,7 @@ from unittest import mock
 import urwid
 
 from subiquity.client.controllers.storage import StorageController
-from subiquity.models.storage import Bootloader, Disk, StorageModel
+from subiquity.models.storage import Disk, FirmwareType, StorageModel
 from subiquity.models.tests.test_storage import FakeStorageInfo, make_model
 from subiquity.ui.views.storage.storage import StorageView
 from subiquitycore.testing import view_helpers
@@ -14,7 +14,7 @@ class StorageViewTests(unittest.TestCase):
     def make_view(self, model, devices=[]):
         controller = mock.create_autospec(spec=StorageController)
         controller.ui = mock.Mock()
-        model.bootloader = Bootloader.NONE
+        model.firmware_type = FirmwareType.NONE
         model.all_devices = mock.Mock(return_value=devices)
         return StorageView(model, controller)
 
