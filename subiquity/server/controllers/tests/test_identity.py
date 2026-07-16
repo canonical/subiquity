@@ -116,7 +116,7 @@ class TestControllerUserCreationFlows(SubiTestCase):
     # See subiquity/models/tests/test_subiquity.py for details.
     def setUp(self):
         self.app = make_app()
-        self.app.opts.bootloader = False
+        self.app.opts.firmware_type = False
         self.app.controllers.Storage = StorageController(self.app)
         self.ic = IdentityController(self.app)
         self.ic.model.user = None

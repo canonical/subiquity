@@ -32,7 +32,6 @@ from subiquity.common.storage import boot, gaps, labels
 from subiquity.common.storage.actions import DeviceAction
 from subiquity.common.types.storage import (
     AddPartitionV2,
-    Bootloader,
     CalculateEntropyRequest,
     CoreBootEncryptionFeature,
     CoreBootEncryptionRequirement,
@@ -40,6 +39,7 @@ from subiquity.common.types.storage import (
     CoreBootFixActionWithArgs,
     CoreBootFixEncryptionSupport,
     EntropyResponse,
+    FirmwareType,
     Gap,
     GapUsable,
     GuidedCapability,
@@ -96,9 +96,9 @@ from subiquitycore.tests.parameterized import parameterized
 from subiquitycore.tests.util import random_string
 from subiquitycore.utils import matching_dicts
 
-bootloaders = [(bl,) for bl in list(Bootloader)]
-bootloaders_and_ptables = [
-    (bl, pt) for bl in list(Bootloader) for pt in ("gpt", "msdos", "vtoc")
+firmware_types = [(fwt,) for fwt in list(FirmwareType)]
+firmware_types_and_ptables = [
+    (fwt, pt) for fwt in list(FirmwareType) for pt in ("gpt", "msdos", "vtoc")
 ]
 
 
@@ -169,7 +169,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
 
     def setUp(self):
         self.app = make_app()
-        self.app.opts.bootloader = "UEFI"
+        self.app.opts.firmware_type = "UEFI"
         self.app.command_runner = mock.AsyncMock()
         self.app.prober = mock.AsyncMock()
         self.app.prober.get_storage = mock.AsyncMock()
@@ -591,7 +591,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
         self.assertEqual(expect_log, found_log)
 
     async def test_layout_no_grub_or_swap(self):
-        self.ctrler.model = model = make_model(Bootloader.UEFI)
+        self.ctrler.model = model = make_model(FirmwareType.UEFI)
         self.ctrler.run_autoinstall_guided = mock.AsyncMock()
 
         self.ctrler.ai_data = {
@@ -605,7 +605,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
 
     @parameterized.expand(((True,), (False,)))
     async def test_layout_plus_grub(self, reorder_uefi):
-        self.ctrler.model = model = make_model(Bootloader.UEFI)
+        self.ctrler.model = model = make_model(FirmwareType.UEFI)
         self.ctrler.run_autoinstall_guided = mock.AsyncMock()
 
         self.ctrler.ai_data = {
@@ -630,7 +630,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
 
     @parameterized.expand(((0,), ("1G",)))
     async def test_layout_plus_swap(self, swapsize):
-        self.ctrler.model = model = make_model(Bootloader.UEFI)
+        self.ctrler.model = model = make_model(FirmwareType.UEFI)
         self.ctrler.run_autoinstall_guided = mock.AsyncMock()
 
         self.ctrler.ai_data = {"layout": {"name": "direct"}, "swap": {"size": swapsize}}
@@ -640,7 +640,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
         self.assertEqual(swapsize, curtin_cfg["swap"]["size"])
 
     async def test_apply_autoinstall_config_rejects_non_ext4_boot(self):
-        model, disk = make_model_and_disk(Bootloader.UEFI)
+        model, disk = make_model_and_disk(FirmwareType.UEFI)
 
         part = make_partition(model, disk)
         fs = make_filesystem(model, part, fstype="xfs")
@@ -1432,7 +1432,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
         # 'ubuntu-desktop'. The variations of those two sources are different.
         # Upon switching to the new source, we forgot to discard the old
         # variations. This lead to a crash further in the install.
-        self.ctrler.model = model = make_model(Bootloader.UEFI)
+        self.ctrler.model = model = make_model(FirmwareType.UEFI)
         make_disk(model)
         self.app.base_model.source.current.type = "fsimage"
         self.app.base_model.source.current.variations = {
@@ -1520,7 +1520,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
             self.assertIn("cannot load assertions for label", logs.output[0])
 
     def test_start_guided_reformat__no_in_use(self):
-        self.ctrler.model = model = make_model(Bootloader.UEFI)
+        self.ctrler.model = model = make_model(FirmwareType.UEFI)
         disk = make_disk(model)
 
         p1 = make_partition(model, disk, size=10 << 30)
@@ -1564,7 +1564,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
         partitions that should have been removed. Because we were iterating
         over device._partitions and calling delete_partition in the body, we
         failed to iterate over some of the partitions."""
-        self.ctrler.model = model = make_model(Bootloader.UEFI)
+        self.ctrler.model = model = make_model(FirmwareType.UEFI)
         disk = make_disk(model)
 
         p1 = make_partition(model, disk, size=10 << 30)
@@ -1595,7 +1595,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
         self.assertEqual(expected_del_calls, m_del_part.mock_calls)
 
     def test_start_guided_erase_install__no_free_space(self):
-        self.ctrler.model = model = make_model(Bootloader.UEFI, storage_version=2)
+        self.ctrler.model = model = make_model(FirmwareType.UEFI, storage_version=2)
         disk = make_disk(model)
 
         p1 = make_partition(model, disk, size=10 << 30)
@@ -1609,7 +1609,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
         self.assertEqual(p1.size, gap.size)
 
     def test_start_guided_erase_install__free_space_after(self):
-        self.ctrler.model = model = make_model(Bootloader.UEFI, storage_version=2)
+        self.ctrler.model = model = make_model(FirmwareType.UEFI, storage_version=2)
         disk = make_disk(model)
 
         part = make_partition(model, disk, size=10 << 30)
@@ -1624,7 +1624,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
         self.assertEqual(part.size + trailing_gap.size, gap.size)
 
     def test_start_guided_erase_install__free_space_before(self):
-        self.ctrler.model = model = make_model(Bootloader.UEFI, storage_version=2)
+        self.ctrler.model = model = make_model(FirmwareType.UEFI, storage_version=2)
         disk = make_disk(model)
 
         part = make_partition(model, disk, size=-1, offset=20 << 30)
@@ -1639,7 +1639,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
         self.assertEqual(part.size + leading_gap.size, gap.size)
 
     def test_start_guided_erase_install__free_space_before_and_after(self):
-        self.ctrler.model = model = make_model(Bootloader.UEFI, storage_version=2)
+        self.ctrler.model = model = make_model(FirmwareType.UEFI, storage_version=2)
         disk = make_disk(model)
 
         part = make_partition(model, disk, size=10 << 30, offset=20 << 30)
@@ -1772,7 +1772,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
 class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
-        self.app.opts.bootloader = None
+        self.app.opts.firmware_type = None
         self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
         self.ctrler = StorageController(self.app)
         self.model = self.ctrler.model = make_model()
@@ -1844,17 +1844,17 @@ class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):
 
 class TestGuided(IsolatedAsyncioTestCase):
     boot_expectations = [
-        (Bootloader.UEFI, "gpt", "/boot/efi"),
-        (Bootloader.UEFI, "msdos", "/boot/efi"),
-        (Bootloader.BIOS, "gpt", None),
+        (FirmwareType.UEFI, "gpt", "/boot/efi"),
+        (FirmwareType.UEFI, "msdos", "/boot/efi"),
+        (FirmwareType.BIOS, "gpt", None),
         # BIOS + msdos is different
-        (Bootloader.PREP, "gpt", None),
-        (Bootloader.PREP, "msdos", None),
+        (FirmwareType.PREP, "gpt", None),
+        (FirmwareType.PREP, "msdos", None),
     ]
 
-    async def _guided_setup(self, bootloader, ptable, storage_version=None):
+    async def _guided_setup(self, firmware_type, ptable, storage_version=None):
         self.app = make_app()
-        self.app.opts.bootloader = bootloader.value
+        self.app.opts.firmware_type = firmware_type.value
         self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
         self.controller = StorageController(self.app)
         self.controller.supports_resilient_boot = True
@@ -1867,13 +1867,13 @@ class TestGuided(IsolatedAsyncioTestCase):
         }
         self.app.controllers.Source.get_handler.return_value = TrivialSourceHandler("")
         await self.controller._examine_systems_task.wait()
-        self.model = make_model(bootloader, storage_version)
+        self.model = make_model(firmware_type, storage_version)
         self.controller.model = self.model
         self.d1 = make_disk(self.model, ptable=ptable)
 
     @parameterized.expand(boot_expectations)
-    async def test_guided_direct(self, bootloader, ptable, p1mnt):
-        await self._guided_setup(bootloader, ptable)
+    async def test_guided_direct(self, firmware_type, ptable, p1mnt):
+        await self._guided_setup(firmware_type, ptable)
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, allowed=default_capabilities
         )
@@ -1888,7 +1888,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertIsNone(gaps.largest_gap(self.d1))
 
     async def test_guided_reset_partition(self):
-        await self._guided_setup(Bootloader.UEFI, "gpt")
+        await self._guided_setup(FirmwareType.UEFI, "gpt")
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, allowed=default_capabilities
         )
@@ -1904,7 +1904,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual("/", d1p3.mount)
 
     async def test_fixed_reset_partition(self):
-        await self._guided_setup(Bootloader.UEFI, "gpt")
+        await self._guided_setup(FirmwareType.UEFI, "gpt")
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, allowed=default_capabilities
         )
@@ -1924,7 +1924,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual("/", d1p3.mount)
 
     async def test_guided_reset_partition_only(self):
-        await self._guided_setup(Bootloader.UEFI, "gpt")
+        await self._guided_setup(FirmwareType.UEFI, "gpt")
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, allowed=default_capabilities
         )
@@ -1952,7 +1952,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_rest_partition_size(
         self, ai_data, reset_partition, reset_partition_size
     ):
-        await self._guided_setup(Bootloader.UEFI, "gpt")
+        await self._guided_setup(FirmwareType.UEFI, "gpt")
         self.controller.guided = mock.AsyncMock()
         layout = ai_data | {"name": "direct"}
         await self.controller.run_autoinstall_guided(layout)
@@ -1961,7 +1961,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual(guided_choice.reset_partition_size, reset_partition_size)
 
     async def test_guided_direct_BIOS_MSDOS(self):
-        await self._guided_setup(Bootloader.BIOS, "msdos")
+        await self._guided_setup(FirmwareType.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, ptable="msdos", allowed=default_capabilities
         )
@@ -1974,8 +1974,8 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertIsNone(gaps.largest_gap(self.d1))
 
     @parameterized.expand(boot_expectations)
-    async def test_guided_lvm(self, bootloader, ptable, p1mnt):
-        await self._guided_setup(bootloader, ptable)
+    async def test_guided_lvm(self, firmware_type, ptable, p1mnt):
+        await self._guided_setup(firmware_type, ptable)
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, allowed=default_capabilities
         )
@@ -1995,7 +1995,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertIsNone(gaps.largest_gap(self.d1))
 
     async def test_guided_lvm_BIOS_MSDOS(self):
-        await self._guided_setup(Bootloader.BIOS, "msdos")
+        await self._guided_setup(FirmwareType.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, ptable="msdos", allowed=default_capabilities
         )
@@ -2013,8 +2013,8 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertIsNone(gaps.largest_gap(self.d1))
 
     @parameterized.expand(boot_expectations)
-    async def test_guided_zfs(self, bootloader, ptable, p1mnt):
-        await self._guided_setup(bootloader, ptable)
+    async def test_guided_zfs(self, firmware_type, ptable, p1mnt):
+        await self._guided_setup(firmware_type, ptable)
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, allowed=default_capabilities
         )
@@ -2049,8 +2049,8 @@ class TestGuided(IsolatedAsyncioTestCase):
         [userdata_root] = self.model._all(type="zfs", path="/root")
 
     @parameterized.expand(boot_expectations)
-    async def test_guided_zfs_luks_keystore(self, bootloader, ptable, p1mnt):
-        await self._guided_setup(bootloader, ptable)
+    async def test_guided_zfs_luks_keystore(self, firmware_type, ptable, p1mnt):
+        await self._guided_setup(firmware_type, ptable)
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, allowed=default_capabilities
         )
@@ -2092,7 +2092,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual("zfs", zfs_boot.type)
 
     async def test_guided_zfs_BIOS_MSDOS(self):
-        await self._guided_setup(Bootloader.BIOS, "msdos")
+        await self._guided_setup(FirmwareType.BIOS, "msdos")
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, ptable="msdos", allowed=default_capabilities
         )
@@ -2121,7 +2121,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_zfs_swap_size_lp_2034939(self, suggested):
         suggested.return_value = (1 << 30) + 1
         # crash due to add_partition for swap with unaligned size
-        await self._guided_setup(Bootloader.UEFI, "gpt")
+        await self._guided_setup(FirmwareType.UEFI, "gpt")
         target = GuidedStorageTargetReformat(
             disk_id=self.d1.id, allowed=default_capabilities
         )
@@ -2130,12 +2130,12 @@ class TestGuided(IsolatedAsyncioTestCase):
         )
         # just checking that this doesn't throw
 
-    async def _guided_side_by_side(self, bl, ptable):
-        await self._guided_setup(bl, ptable, storage_version=2)
+    async def _guided_side_by_side(self, fwt, ptable):
+        await self._guided_setup(fwt, ptable, storage_version=2)
         self.controller.add_boot_disk(self.d1)
         for p in self.d1._partitions:
             p.preserve = True
-            if bl == Bootloader.UEFI:
+            if fwt == FirmwareType.UEFI:
                 # let it pass the is_esp check
                 p._info = FakeStorageInfo(size=p.size)
                 p._info.raw["ID_PART_ENTRY_TYPE"] = str(0xEF)
@@ -2167,13 +2167,13 @@ class TestGuided(IsolatedAsyncioTestCase):
 
     @parameterized.expand(
         [
-            (bl, pt, flag)
-            for bl in list(Bootloader)
+            (fwt, pt, flag)
+            for fwt in list(FirmwareType)
             for pt, flag in (("msdos", "logical"), ("gpt", None))
         ]
     )
-    async def test_guided_direct_side_by_side(self, bl, pt, flag):
-        await self._guided_side_by_side(bl, pt)
+    async def test_guided_direct_side_by_side(self, fwt, pt, flag):
+        await self._guided_side_by_side(fwt, pt)
         parts_before = self.d1._partitions.copy()
         gap = gaps.largest_gap(self.d1)
         target = GuidedStorageTargetUseGap(
@@ -2190,13 +2190,13 @@ class TestGuided(IsolatedAsyncioTestCase):
 
     @parameterized.expand(
         [
-            (bl, pt, flag)
-            for bl in list(Bootloader)
+            (fwt, pt, flag)
+            for fwt in list(FirmwareType)
             for pt, flag in (("msdos", "logical"), ("gpt", None))
         ]
     )
-    async def test_guided_lvm_side_by_side(self, bl, pt, flag):
-        await self._guided_side_by_side(bl, pt)
+    async def test_guided_lvm_side_by_side(self, fwt, pt, flag):
+        await self._guided_side_by_side(fwt, pt)
         parts_before = self.d1._partitions.copy()
         gap = gaps.largest_gap(self.d1)
         target = GuidedStorageTargetUseGap(
@@ -2217,7 +2217,7 @@ class TestGuided(IsolatedAsyncioTestCase):
 class TestLayout(IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
-        self.app.opts.bootloader = None
+        self.app.opts.firmware_type = None
         self.ctrler = StorageController(app=self.app)
 
     @parameterized.expand([("reformat_disk",), ("use_gap",)])
@@ -2262,14 +2262,14 @@ class TestLayout(IsolatedAsyncioTestCase):
 
 
 class TestGuidedV2(IsolatedAsyncioTestCase):
-    async def _setup(self, bootloader, ptable, fix_bios=True, **kw):
+    async def _setup(self, firmware_type, ptable, fix_bios=True, **kw):
         self.app = make_app()
-        self.app.opts.bootloader = bootloader.value
+        self.app.opts.firmware_type = firmware_type.value
         self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
         self.ctrler = StorageController(app=self.app)
         self.ctrler.calculate_suggested_install_min = mock.Mock()
         self.ctrler.calculate_suggested_install_min.return_value = 10 << 30
-        self.ctrler.model = self.model = make_model(bootloader)
+        self.ctrler.model = self.model = make_model(firmware_type)
         self.ctrler._examine_systems_task.start_sync()
         self.app.dr_cfg = DRConfig()
         self.app.base_model.source.current.type = "fsimage"
@@ -2287,7 +2287,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         }
         self.ctrler._probe_task.task = mock.Mock()
         self.ctrler._examine_systems_task.task = mock.Mock()
-        if bootloader == Bootloader.BIOS and ptable != "msdos" and fix_bios:
+        if firmware_type == FirmwareType.BIOS and ptable != "msdos" and fix_bios:
             make_partition(
                 self.model,
                 self.disk,
@@ -2297,10 +2297,10 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
                 offset=1 << 20,
             )
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_blank_disk(self, bootloader, ptable):
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_blank_disk(self, firmware_type, ptable):
         # blank disks should not report a UseGap case
-        await self._setup(bootloader, ptable, fix_bios=False)
+        await self._setup(firmware_type, ptable, fix_bios=False)
         expected = [
             GuidedStorageTargetReformat(
                 disk_id=self.disk.id, allowed=default_capabilities
@@ -2311,16 +2311,16 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual(expected, resp.targets)
         self.assertEqual(ProbeStatus.DONE, resp.status)
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_probing(self, bootloader, ptable):
-        await self._setup(bootloader, ptable, fix_bios=False)
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_probing(self, firmware_type, ptable):
+        await self._setup(firmware_type, ptable, fix_bios=False)
         self.ctrler._probe_task.task = None
         resp = await self.ctrler.v2_guided_GET()
         self.assertEqual([], resp.targets)
         self.assertEqual(ProbeStatus.PROBING, resp.status)
 
     async def test_manual(self):
-        await self._setup(Bootloader.UEFI, "gpt")
+        await self._setup(FirmwareType.UEFI, "gpt")
         guided_get_resp = await self.ctrler.v2_guided_GET()
         [reformat, manual] = guided_get_resp.targets
         self.assertEqual(manual, GuidedStorageTargetManual())
@@ -2330,9 +2330,9 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         guided_get_resp = await self.ctrler.v2_guided_GET()
         self.assertEqual([reformat, manual], guided_get_resp.targets)
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_small_blank_disk_1GiB(self, bootloader, ptable):
-        await self._setup(bootloader, ptable, size=1 << 30)
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_small_blank_disk_1GiB(self, firmware_type, ptable):
+        await self._setup(firmware_type, ptable, size=1 << 30)
         resp = await self.ctrler.v2_guided_GET()
         expected = [
             GuidedStorageTargetReformat(
@@ -2344,9 +2344,9 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         ]
         self.assertEqual(expected, resp.targets)
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_small_blank_disk_1MiB(self, bootloader, ptable):
-        await self._setup(bootloader, ptable, size=1 << 20)
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_small_blank_disk_1MiB(self, firmware_type, ptable):
+        await self._setup(firmware_type, ptable, size=1 << 20)
         resp = await self.ctrler.v2_guided_GET()
 
         reformat = GuidedStorageTargetReformat(
@@ -2356,8 +2356,8 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         )
         manual = GuidedStorageTargetManual()
 
-        # depending on bootloader/ptable combo, GuidedStorageTargetReformat may
-        # show up but it will all be disallowed.
+        # depending on firmware-type/ptable combo, GuidedStorageTargetReformat
+        # may show up but it will all be disallowed.
         for target in resp.targets:
             if isinstance(target, GuidedStorageTargetManual):
                 self.assertEqual(target, manual)
@@ -2366,9 +2366,9 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             else:
                 raise Exception(f"unexpected target {target}")
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_used_half_disk(self, bootloader, ptable):
-        await self._setup(bootloader, ptable, size=100 << 30)
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_used_half_disk(self, firmware_type, ptable):
+        await self._setup(firmware_type, ptable, size=100 << 30)
         p = make_partition(self.model, self.disk, preserve=True, size=50 << 30)
         gap_offset = p.size + p.offset
         self.fs_probe[p._path()] = {"ESTIMATED_MIN_SIZE": 1 << 20}
@@ -2392,10 +2392,10 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
         self.assertEqual(1, len(resp.targets))
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_used_half_disk_mounted(self, bootloader, ptable):
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_used_half_disk_mounted(self, firmware_type, ptable):
         # When a partition is already mounted, it can't be resized.
-        await self._setup(bootloader, ptable, size=100 << 30)
+        await self._setup(firmware_type, ptable, size=100 << 30)
         p = make_partition(
             self.model, self.disk, preserve=True, size=50 << 30, is_in_use=True
         )
@@ -2411,9 +2411,9 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         )
         self.assertEqual(1, len(resp.targets))
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_used_full_disk(self, bootloader, ptable):
-        await self._setup(bootloader, ptable)
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_used_full_disk(self, firmware_type, ptable):
+        await self._setup(firmware_type, ptable)
         p = make_partition(
             self.model, self.disk, preserve=True, size=gaps.largest_gap_size(self.disk)
         )
@@ -2433,9 +2433,9 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertTrue(isinstance(resize, GuidedStorageTargetResize))
         self.assertEqual(1, len(resp.targets))
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_weighted_split(self, bootloader, ptable):
-        await self._setup(bootloader, ptable, size=250 << 30)
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_weighted_split(self, firmware_type, ptable):
+        await self._setup(firmware_type, ptable, size=250 << 30)
         # add an extra, filler, partition so that there is no use_gap result
         make_partition(self.model, self.disk, preserve=True, size=9 << 30)
         p = make_partition(self.model, self.disk, preserve=True, size=240 << 30)
@@ -2451,7 +2451,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             reformat,
         )
 
-        if ptable != "vtoc" or bootloader == Bootloader.NONE:
+        if ptable != "vtoc" or firmware_type == FirmwareType.NONE:
             # VTOC has primary_part_limit=3
             resize = possible.pop(0)
             expected = GuidedStorageTargetResize(
@@ -2466,9 +2466,9 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             self.assertEqual(expected, resize)
         self.assertEqual(1, len(possible))
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_half_disk_reformat(self, bootloader, ptable):
-        await self._setup(bootloader, ptable, size=100 << 30)
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_half_disk_reformat(self, firmware_type, ptable):
+        await self._setup(firmware_type, ptable, size=100 << 30)
         p = make_partition(self.model, self.disk, preserve=True, size=50 << 30)
         self.fs_probe[p._path()] = {"ESTIMATED_MIN_SIZE": 1 << 20}
 
@@ -2492,9 +2492,9 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertFalse(resp.need_boot)
         self.assertEqual(1, len(guided_get_resp.targets))
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_half_disk_use_gap(self, bootloader, ptable):
-        await self._setup(bootloader, ptable, size=100 << 30)
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_half_disk_use_gap(self, firmware_type, ptable):
+        await self._setup(firmware_type, ptable, size=100 << 30)
         p = make_partition(self.model, self.disk, preserve=True, size=50 << 30)
         self.fs_probe[p._path()] = {"ESTIMATED_MIN_SIZE": 1 << 20}
 
@@ -2527,9 +2527,9 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertFalse(resp.need_boot)
         self.assertEqual(1, len(guided_get_resp.targets))
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_half_disk_resize(self, bootloader, ptable):
-        await self._setup(bootloader, ptable, size=100 << 30)
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_half_disk_resize(self, firmware_type, ptable):
+        await self._setup(firmware_type, ptable, size=100 << 30)
         p = make_partition(self.model, self.disk, preserve=True, size=50 << 30)
         self.fs_probe[p._path()] = {"ESTIMATED_MIN_SIZE": 1 << 20}
 
@@ -2579,7 +2579,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
     )
     async def test_lvm_20G_bad_offset(self, disk_size):
         disk_size = disk_size << 30
-        await self._setup(Bootloader.BIOS, "gpt", size=disk_size)
+        await self._setup(FirmwareType.BIOS, "gpt", size=disk_size)
 
         guided_get_resp = await self.ctrler.v2_guided_GET()
 
@@ -2605,8 +2605,8 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             disk_size - (1 << 20), parts[-1].offset + parts[-1].size, disk_size
         )
 
-    async def _sizing_setup(self, bootloader, ptable, disk_size, policy):
-        await self._setup(bootloader, ptable, size=disk_size)
+    async def _sizing_setup(self, firmware_type, ptable, disk_size, policy):
+        await self._setup(firmware_type, ptable, size=disk_size)
 
         resp = await self.ctrler.v2_guided_GET()
         reformat = [
@@ -2628,32 +2628,32 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         size = dehumanize_size(lvm_partition["size"])
         return size, part_size
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_scaled_disk(self, bootloader, ptable):
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_scaled_disk(self, firmware_type, ptable):
         size, part_size = await self._sizing_setup(
-            bootloader, ptable, 50 << 30, SizingPolicy.SCALED
+            firmware_type, ptable, 50 << 30, SizingPolicy.SCALED
         )
         # expected to be about half, differing by boot and ptable types
         self.assertLess(20 << 30, size)
         self.assertLess(size, 30 << 30)
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_unscaled_disk(self, bootloader, ptable):
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_unscaled_disk(self, firmware_type, ptable):
         size, part_size = await self._sizing_setup(
-            bootloader, ptable, 50 << 30, SizingPolicy.ALL
+            firmware_type, ptable, 50 << 30, SizingPolicy.ALL
         )
         # there is some subtle differences in sizing depending on
-        # ptable/bootloader and how the rounding goes
+        # ptable/firmware_type and how the rounding goes
         self.assertLess(part_size - (5 << 20), size)
         self.assertLess(size, part_size)
         # but we should using most of the disk, minus boot partition(s)
         self.assertLess(45 << 30, size)
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_in_use(self, bootloader, ptable):
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_in_use(self, firmware_type, ptable):
         # Disks with "in use" partitions allow a reformat if there is
         # enough space on the rest of the disk.
-        await self._setup(bootloader, ptable, fix_bios=True)
+        await self._setup(firmware_type, ptable, fix_bios=True)
         make_partition(
             self.model, self.disk, preserve=True, size=4 << 30, is_in_use=True
         )
@@ -2667,12 +2667,12 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual(expected, resp.targets)
         self.assertEqual(ProbeStatus.DONE, resp.status)
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_in_use_full(self, bootloader, ptable):
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_in_use_full(self, firmware_type, ptable):
         # Disks with "in use" partitions allow a reformat (but not
         # usegap) if there is enough space on the rest of the disk,
         # even if the disk is full of other partitions.
-        await self._setup(bootloader, ptable, fix_bios=True)
+        await self._setup(firmware_type, ptable, fix_bios=True)
         make_partition(
             self.model, self.disk, preserve=True, size=4 << 30, is_in_use=True
         )
@@ -2689,11 +2689,11 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual(expected, resp.targets)
         self.assertEqual(ProbeStatus.DONE, resp.status)
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_in_use_too_small(self, bootloader, ptable):
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_in_use_too_small(self, firmware_type, ptable):
         # Disks with "in use" partitions do not allow a reformat if
         # there is not enough space on the rest of the disk.
-        await self._setup(bootloader, ptable, fix_bios=True, size=25 << 30)
+        await self._setup(firmware_type, ptable, fix_bios=True, size=25 << 30)
         make_partition(
             self.model, self.disk, preserve=True, size=23 << 30, is_in_use=True
         )
@@ -2711,12 +2711,12 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         ]
         self.assertEqual(expected, resp.targets)
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_in_use_reformat_and_gap(self, bootloader, ptable):
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_in_use_reformat_and_gap(self, firmware_type, ptable):
         # Disks with "in use" partitions allow both a reformat and a
         # usegap if there is an in use partition, another partition
         # and a big enough gap.
-        await self._setup(bootloader, ptable, fix_bios=True)
+        await self._setup(firmware_type, ptable, fix_bios=True)
         make_partition(
             self.model, self.disk, preserve=True, size=4 << 30, is_in_use=True
         )
@@ -2733,7 +2733,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             GuidedStorageTargetManual(),
         ]
         # VTOC does not have enough room for an ESP + 3 partitions, presumably.
-        if ptable != "vtoc" or bootloader == Bootloader.NONE:
+        if ptable != "vtoc" or firmware_type == FirmwareType.NONE:
             expected.insert(
                 1,
                 GuidedStorageTargetUseGap(
@@ -2765,7 +2765,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         create_boot_part: bool,
         expected_scenario: bool,
     ):
-        await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
+        await self._setup(FirmwareType.NONE, "gpt", fix_bios=True)
         install_min = self.ctrler.calculate_suggested_install_min()
 
         for _ in range(existing_primaries):
@@ -2790,7 +2790,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual(expected_scenario, scenarios != [])
 
     async def test_available_erase_install_scenarios(self):
-        await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
+        await self._setup(FirmwareType.NONE, "gpt", fix_bios=True)
         install_min = self.ctrler.calculate_suggested_install_min()
 
         p1 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
@@ -2827,7 +2827,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual(p2.number, scenario2.partition_number)
 
     async def test_available_erase_install_scenarios__no_os(self):
-        await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
+        await self._setup(FirmwareType.NONE, "gpt", fix_bios=True)
         install_min = self.ctrler.calculate_suggested_install_min()
 
         make_partition(self.model, self.disk, preserve=True, size=4 << 20)
@@ -2836,7 +2836,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertFalse(self.ctrler.available_erase_install_scenarios(install_min))
 
     async def test_available_erase_install_scenarios__full_primaries(self):
-        await self._setup(Bootloader.UEFI, "dos", fix_bios=True)
+        await self._setup(FirmwareType.UEFI, "dos", fix_bios=True)
         install_min = self.ctrler.calculate_suggested_install_min()
 
         p1 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
@@ -2862,7 +2862,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertFalse(self.ctrler.available_erase_install_scenarios(install_min))
 
     async def test_available_erase_install_scenarios__with_logical_partitions(self):
-        await self._setup(Bootloader.UEFI, "dos", fix_bios=True)
+        await self._setup(FirmwareType.UEFI, "dos", fix_bios=True)
         install_min = self.ctrler.calculate_suggested_install_min()
 
         model, disk = self.model, self.disk
@@ -2909,14 +2909,14 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertEqual(3, len(sorted_scenarios))
 
     async def test_resize_has_enough_room_for_partitions__one_primary(self):
-        await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
+        await self._setup(FirmwareType.NONE, "gpt", fix_bios=True)
 
         p = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
 
         self.assertTrue(self.ctrler.resize_has_enough_room_for_partitions(self.disk, p))
 
     async def test_resize_has_enough_room_for_partitions__full_primaries(self):
-        await self._setup(Bootloader.NONE, "dos", fix_bios=True)
+        await self._setup(FirmwareType.NONE, "dos", fix_bios=True)
 
         p1 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
         p2 = make_partition(self.model, self.disk, preserve=True, size=4 << 20)
@@ -2938,7 +2938,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
     @mock.patch("subiquity.server.controllers.storage.boot.get_boot_device_plan")
     async def test_resize_has_enough_room_for_partitions__one_more(self, p_boot_plan):
-        await self._setup(Bootloader.NONE, "dos", fix_bios=True)
+        await self._setup(FirmwareType.NONE, "dos", fix_bios=True)
 
         model = self.model
         disk = self.disk
@@ -2962,7 +2962,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
     @mock.patch("subiquity.server.controllers.storage.boot.get_boot_device_plan")
     async def test_resize_has_enough_room_for_partitions__logical(self, p_boot_plan):
-        await self._setup(Bootloader.NONE, "dos", fix_bios=True)
+        await self._setup(FirmwareType.NONE, "dos", fix_bios=True)
 
         model = self.model
         disk = self.disk
@@ -2998,29 +2998,29 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
 
 class TestManualBoot(IsolatedAsyncioTestCase):
-    def _setup(self, bootloader, ptable, **kw):
+    def _setup(self, firmware_type, ptable, **kw):
         self.app = make_app()
-        self.app.opts.bootloader = bootloader.value
+        self.app.opts.firmware_type = firmware_type.value
         self.ctrler = StorageController(app=self.app)
         self.ctrler.calculate_suggested_install_min = mock.Mock()
         self.ctrler.calculate_suggested_install_min.return_value = 10 << 30
-        self.ctrler.model = self.model = make_model(bootloader)
+        self.ctrler.model = self.model = make_model(firmware_type)
         self.model.storage_version = 2
         self.ctrler._probe_task.task = mock.Mock()
         self.ctrler._probe_firmware_task.task = mock.Mock()
         self.ctrler._examine_systems_task.task = mock.Mock()
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_get_boot_disks_only(self, bootloader, ptable):
-        self._setup(bootloader, ptable)
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_get_boot_disks_only(self, firmware_type, ptable):
+        self._setup(firmware_type, ptable)
         make_disk(self.model)
         resp = await self.ctrler.v2_GET()
         [d] = resp.disks
         self.assertTrue(d.can_be_boot_device)
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_get_boot_disks_all(self, bootloader, ptable):
-        self._setup(bootloader, ptable)
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_get_boot_disks_all(self, firmware_type, ptable):
+        self._setup(firmware_type, ptable)
         make_disk(self.model)
         make_disk(self.model)
         resp = await self.ctrler.v2_GET()
@@ -3028,9 +3028,9 @@ class TestManualBoot(IsolatedAsyncioTestCase):
         self.assertTrue(d1.can_be_boot_device)
         self.assertTrue(d2.can_be_boot_device)
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_get_boot_disks_some(self, bootloader, ptable):
-        self._setup(bootloader, ptable)
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_get_boot_disks_some(self, firmware_type, ptable):
+        self._setup(firmware_type, ptable)
         ctrler = make_nvme_controller(
             model=self.model, transport="tcp", tcp_addr="172.16.82.78", tcp_port=4420
         )
@@ -3039,7 +3039,7 @@ class TestManualBoot(IsolatedAsyncioTestCase):
         d2 = make_disk(self.model)
         make_disk(self.model, nvme_controller=ctrler)
         make_partition(self.model, d1, size=gaps.largest_gap_size(d1), preserve=True)
-        if bootloader == Bootloader.NONE:
+        if firmware_type == FirmwareType.NONE:
             # NONE will always pass the boot check, even on a full disk
             # .. well unless if it is a "remote" disk.
             bootable = set([d1.id, d2.id])
@@ -3049,9 +3049,9 @@ class TestManualBoot(IsolatedAsyncioTestCase):
         for d in resp.disks:
             self.assertEqual(d.id in bootable, d.can_be_boot_device)
 
-    @parameterized.expand(bootloaders_and_ptables)
-    async def test_get_boot_disks_no_remote(self, bootloader, ptable):
-        self._setup(bootloader, ptable)
+    @parameterized.expand(firmware_types_and_ptables)
+    async def test_get_boot_disks_no_remote(self, firmware_type, ptable):
+        self._setup(firmware_type, ptable)
         d = make_disk(self.model)
         with mock.patch.object(d, "on_remote_storage", return_value=False):
             resp = await self.ctrler.v2_GET()
@@ -3065,7 +3065,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
         self.app.command_runner = mock.AsyncMock()
-        self.app.opts.bootloader = "UEFI"
+        self.app.opts.firmware_type = "UEFI"
         self.app.opts.block_probing_timeout = None
         self.app.prober = mock.Mock()
         self.app.prober.get_storage = mock.AsyncMock()
@@ -3084,7 +3084,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.app.base_model.source.search_drivers = False
         self.ctrler = StorageController(app=self.app)
         self.ctrler._configured = True
-        self.ctrler.model = make_model(Bootloader.UEFI)
+        self.ctrler.model = make_model(FirmwareType.UEFI)
         self.capability = GuidedCapability.CORE_BOOT_ENCRYPTED
 
         @contextlib.asynccontextmanager
@@ -3278,7 +3278,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.app.base_model.keyboard.setting.layout = "us"
         self.app.base_model.keyboard.setting.variant = ""
         self.app.base_model.keyboard.setting.toggle = None
-        self.ctrler.model = model = make_model(Bootloader.UEFI)
+        self.ctrler.model = model = make_model(FirmwareType.UEFI)
         disk = make_disk(model)
         self.app.base_model.source.current.type = "fsimage"
         self.app.base_model.source.current.variations = {
@@ -3348,7 +3348,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
     async def test_from_sample_data_autoinstall(self):
         # calling this a unit test is definitely questionable. but it
         # runs much more quickly than the integration test!
-        self.ctrler.model = model = make_model(Bootloader.UEFI)
+        self.ctrler.model = model = make_model(FirmwareType.UEFI)
         disk = make_disk(model)
         self.app.base_model.source.current.variations = {
             "default": CatalogEntryVariation(
@@ -3376,7 +3376,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.assertEqual(partition_count, len(disk.partitions()))
 
     async def test_from_sample_data_defective(self):
-        self.ctrler.model = model = make_model(Bootloader.UEFI)
+        self.ctrler.model = model = make_model(FirmwareType.UEFI)
         make_disk(model)
         self.app.base_model.source.current.type = "fsimage"
         self.app.base_model.source.current.variations = {
@@ -3400,11 +3400,11 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
 
 class TestMatchingDisks(IsolatedAsyncioTestCase):
     def setUp(self):
-        bootloader = Bootloader.UEFI
+        firmware_type = FirmwareType.UEFI
         self.app = make_app()
-        self.app.opts.bootloader = bootloader.value
+        self.app.opts.firmware_type = firmware_type.value
         self.ctrler = StorageController(app=self.app)
-        self.ctrler.model = make_model(bootloader)
+        self.ctrler.model = make_model(firmware_type)
 
     def test_no_match_raises_AutoinstallError(self):
         with self.assertRaises(AutoinstallError):
@@ -3441,7 +3441,7 @@ class TestMatchingDisks(IsolatedAsyncioTestCase):
 class TestResetPartitionLookAhead(IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
-        self.app.opts.bootloader = None
+        self.app.opts.firmware_type = None
         self.ctrler = StorageController(app=self.app)
 
     @parameterized.expand(
@@ -3524,7 +3524,7 @@ class TestGuidedChoiceValidation(IsolatedAsyncioTestCase):
 class TestCalculateEntropy(IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
-        self.app.opts.bootloader = None
+        self.app.opts.firmware_type = None
         self.ctrler = StorageController(app=self.app)
         self.ctrler._info = mock.Mock()
         self.ctrler._info.needs_systems_mount = False

@@ -31,7 +31,7 @@ from subiquity.common.types.storage import (
 )
 from subiquity.models.storage import (
     ActionRenderMode,
-    Bootloader,
+    FirmwareType,
     StorageModel,
     raidlevels_by_value,
 )
@@ -283,13 +283,13 @@ class StorageController(SubiquityTuiController, StorageManipulator):
         # Technically, we don't know if NVMe/TCP support was detected or
         # specified on CLI ; but that's okay.
         self.model = StorageModel(
-            status.bootloader,
+            status.firmware_type,
             root="/",
             dry_run=self.app.opts.dry_run,
             opt_supports_nvme_tcp_booting=self.supports_nvme_tcp_booting,
         )
         self.model.load_server_data(status)
-        if self.model.bootloader == Bootloader.PREP:
+        if self.model.firmware_type == FirmwareType.PREP:
             self.supports_resilient_boot = False
         else:
             release = lsb_release(dry_run=self.app.opts.dry_run)["release"]
