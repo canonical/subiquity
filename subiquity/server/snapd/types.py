@@ -203,6 +203,8 @@ class EncryptionFeature(enum.Enum):
     PIN_AUTH = "pin-auth"
 
 
+EncryptionRequirement = storagetypes.CoreBootEncryptionRequirement
+
 AvailabilityAction = storagetypes.CoreBootFixAction
 AvailabilityActionArgs = storagetypes.CoreBootFixActionArgs
 AvailabilityErrorKind = storagetypes.CoreBootAvailabilityErrorKind
@@ -225,6 +227,8 @@ class StorageEncryption:
     # Introduced in snapd 2.68, but can be None if snapd does not want to offer
     # pin/passphrase.
     features: Optional[List[EncryptionFeature]] = None
+    # Introduced in snapd 2.76, but can be None if snapd has no requirement.
+    requirements: Optional[List[EncryptionRequirement]] = None
 
     # Since snapd 2.71 <-- to be confirmed once released.
     availability_check_errors: Optional[List[AvailabilityCheckError]] = None
@@ -339,6 +343,29 @@ class VolumesAuth:
 
 
 @snapdtype
+class KeyboardConfig:
+    model: str
+    layout: str
+    variant: str
+    options: List[str]
+
+    @classmethod
+    def from_subiquity_kb_model(cls, model) -> "KeyboardConfig":
+        # KeyboardSetting.layout/variant can hold comma-separated multi-layout
+        # values, but snapd's KeyboardConfig only accepts a single layout/variant
+        # (its Validate() rejects commas). snapd's KernelCommandLineFragment only
+        # uses the first layout anyway, so we send only the primary one.
+        layout = model.setting.layout.split(",")[0]
+        variant = model.setting.variant.split(",")[0]
+        return cls(
+            model="pc105",
+            layout=layout,
+            variant=variant,
+            options=[] if not model.setting.toggle else [f"grp:{model.setting.toggle}"],
+        )
+
+
+@snapdtype
 class SystemActionRequest:
     action: Optional[SystemAction] = None
 
@@ -349,6 +376,7 @@ class SystemActionRequest:
     # When optional_install=None it is equivalent to OptionalInstall(all=True)
     optional_install: Optional[OptionalInstall] = None
     volumes_auth: Optional[VolumesAuth] = None
+    keyboard_config: Optional[KeyboardConfig] = None  # New in snapd 2.76
     # -- for step=PRESEED
     target_root: Optional[str] = None
 

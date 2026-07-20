@@ -56,6 +56,7 @@ from subiquity.common.types.storage import (
     Bootloader,
     CalculateEntropyRequest,
     CoreBootEncryptionFeatures,
+    CoreBootEncryptionRequirement,
     CoreBootEncryptionSupportError,
     CoreBootFixAction,
     CoreBootFixEncryptionSupport,
@@ -1154,6 +1155,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         )
         if self._volumes_auth is not None:
             kwargs["volumes_auth"] = self._volumes_auth
+        # This is required to have the proper keyboard layout on first boot
+        # before typing the passphrase.
+        # Only supported since 2.76 but ignored on older versions.
+        kwargs["keyboard_config"] = snapdtypes.KeyboardConfig.from_subiquity_kb_model(
+            self.app.base_model.keyboard
+        )
         result = await snapdapi.post_and_wait(
             self.app.snapdapi,
             self.app.snapdapi.v2.systems[label].POST,
@@ -1922,6 +1929,38 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 return []
 
             return [CoreBootEncryptionFeatures(feature.value) for feature in features]
+
+        raise StorageInvalidUsageError("no suitable variation for core boot")
+
+    async def v2_core_boot_encryption_requirements_GET(
+        self,
+    ) -> List[CoreBootEncryptionRequirement]:
+        """Return a list of requirements that must be met for storage
+        encryption to be supported when installing with TPM/FDE. If multiple
+        variations support TPM/FDE, only the first one is accounted for.
+        Although it sounds like an arbitrary choice, it is consistent with the
+        implementation of set_info_for_capability, which is used when doing a
+        POST to /storage/v2/guided (the user does not choose which variation
+        to use)."""
+        # Typically, this endpoint is used by the desktop installer before any
+        # POST /storage/* is done. This means we can't "guess" what the user
+        # wants to do, not even if they really want to do TPM/FDE.
+        for variation in self._variation_info.values():
+            try:
+                requirements: list[snapdtypes.EncryptionRequirement] = (
+                    variation.system.storage_encryption.requirements
+                )
+            except AttributeError:
+                continue
+
+            if requirements is None:
+                # Snapd is not reporting any requirement.
+                return []
+
+            return [
+                CoreBootEncryptionRequirement(requirement.value)
+                for requirement in requirements
+            ]
 
         raise StorageInvalidUsageError("no suitable variation for core boot")
 
