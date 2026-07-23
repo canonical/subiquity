@@ -57,7 +57,6 @@ from subiquity.common.storage.requirements import (
 from subiquity.common.storage.spec import FileSystemSpec, PartitionSpec, VolGroupSpec
 from subiquity.common.types.storage import (
     AddPartitionV2,
-    Bootloader,
     CalculateEntropyRequest,
     CoreBootEncryptionFeature,
     CoreBootEncryptionRequirement,
@@ -66,6 +65,7 @@ from subiquity.common.types.storage import (
     CoreBootFixEncryptionSupport,
     Disk,
     EntropyResponse,
+    FirmwareType,
     GuidedCapability,
     GuidedChoiceV2,
     GuidedDisallowedCapability,
@@ -338,9 +338,9 @@ class StorageController(SubiquityController, StorageManipulator):
         self.ai_data: Optional[dict[str, Any]] = {}
         super().__init__(app)
         self.model.target = app.base_model.target
-        if self.opts.dry_run and self.opts.bootloader:
-            name = self.opts.bootloader.upper()
-            self.model.bootloader = getattr(Bootloader, name)
+        if self.opts.dry_run and self.opts.firmware_type:
+            name = self.opts.firmware_type.upper()
+            self.model.firmware_type = getattr(FirmwareType, name)
         self.model.storage_version = self.opts.storage_version
         self._monitor: Optional[pyudev.Monitor] = None
         self._errors: dict[bool, tuple[Exception, ErrorReport]] = {}
@@ -543,7 +543,7 @@ class StorageController(SubiquityController, StorageManipulator):
         return info
 
     def _maybe_disable_encryption(self, info: VariationInfo) -> None:
-        if self.model.bootloader != Bootloader.UEFI:
+        if self.model.firmware_type != FirmwareType.UEFI:
             log.debug("Disabling core boot based install options on non-UEFI system")
             info.capability_info.disallow_if(
                 lambda cap: cap.is_core_boot(),
@@ -1003,7 +1003,9 @@ class StorageController(SubiquityController, StorageManipulator):
     def _done_response(self):
         return StorageResponse(
             status=ProbeStatus.DONE,
-            bootloader=self.model.bootloader,
+            firmware_type=self.model.firmware_type,
+            # Temporary, for backward compatibility
+            bootloader=self.model.firmware_type,
             error_report=self.full_probe_error(),
             orig_config=self.model._orig_config,
             config=self.model._render_actions(mode=ActionRenderMode.FOR_API),
@@ -2392,7 +2394,7 @@ class StorageController(SubiquityController, StorageManipulator):
         self.model.grub = self.ai_data.get("grub")
 
     def start(self):
-        if self.model.bootloader == Bootloader.PREP:
+        if self.model.firmware_type == FirmwareType.PREP:
             self.supports_resilient_boot = False
         else:
             release = lsb_release(dry_run=self.app.opts.dry_run)["release"]

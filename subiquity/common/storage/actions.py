@@ -20,8 +20,8 @@ from gettext import pgettext
 from subiquity.common.storage import boot, gaps, labels
 from subiquity.common.types.storage import GapUsable
 from subiquity.models.storage import (
-    Bootloader,
     Disk,
+    FirmwareType,
     LVM_LogicalVolume,
     LVM_VolGroup,
     Partition,
@@ -86,7 +86,7 @@ def _disk_actions(disk):
         DeviceAction.FORMAT,
         DeviceAction.REMOVE,
     ]
-    if disk._m.bootloader != Bootloader.NONE:
+    if disk._m.firmware_type != FirmwareType.NONE:
         actions.append(DeviceAction.TOGGLE_BOOT)
     return actions
 
@@ -115,7 +115,7 @@ def _raid_actions(raid):
             DeviceAction.DELETE,
             DeviceAction.REFORMAT,
         ]
-        if raid._m.bootloader == Bootloader.UEFI:
+        if raid._m.firmware_type == FirmwareType.UEFI:
             if raid.container and raid.container.metadata == "imsm":
                 actions.append(DeviceAction.TOGGLE_BOOT)
         return actions

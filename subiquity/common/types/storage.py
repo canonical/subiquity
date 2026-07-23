@@ -30,9 +30,9 @@ class ProbeStatus(enum.Enum):
     DONE = enum.auto()
 
 
-class Bootloader(enum.Enum):
+class FirmwareType(enum.Enum):
     NONE = "NONE"  # a system where the bootloader is external, e.g. s390x
-    BIOS = "BIOS"  # BIOS, where the bootloader dd-ed to the start of a device
+    BIOS = "BIOS"  # BIOS, where the bootloader gets dd-ed to the start of a device
     UEFI = "UEFI"  # UEFI, ESPs and /boot/efi and all that (amd64 and arm64)
     PREP = "PREP"  # ppc64el, which puts grub on a PReP partition
 
@@ -362,7 +362,9 @@ class GuidedDisallowedCapability:
 class StorageResponse:
     status: ProbeStatus
     error_report: Optional[ErrorReportRef] = None
-    bootloader: Optional[Bootloader] = None
+    firmware_type: Optional[FirmwareType] = None
+    # Deprecated, for backward compatibility
+    bootloader: Optional[FirmwareType] = None
     orig_config: Optional[list] = None
     config: Optional[list] = None
     dasd: Optional[dict] = None
