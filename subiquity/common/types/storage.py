@@ -287,6 +287,7 @@ class GuidedDisallowedCapabilityReason(enum.Enum):
     CORE_BOOT_ENCRYPTION_UNAVAILABLE = enum.auto()
     NOT_UEFI = enum.auto()
     THIRD_PARTY_DRIVERS = enum.auto()
+    INCOMPATIBLE_LOCATION = enum.auto()
 
 
 @attr.s(auto_attribs=True)

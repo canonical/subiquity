@@ -381,6 +381,91 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
                     GuidedCapability.CORE_BOOT_ENCRYPTED
                 )
 
+    # ------------------------------------------------------------------
+    # VariationInfo.is_core_boot_use_gap_compatible
+    # ------------------------------------------------------------------
+    # For a "gpt" volume, offsets_and_sizes() starts at the gpt
+    # min_start_offset (GPT_OVERHEAD // 2 == 1 MiB). With two non-MBR
+    # structures mimicking a real gadget (a 100 MiB system-boot and a
+    # 1 GiB system-data), the resulting spans are
+    # [1 MiB, 101 MiB] and [101 MiB, 1125 MiB], so the gap must cover
+    # [1 MiB, 1125 MiB] (1124 MiB) for the check to pass.
+    def _make_info_for_gap_compat(self, schema="gpt", structures=None) -> VariationInfo:
+        if structures is None:
+            structures = [
+                snapdtypes.VolumeStructure(size=100 << 20),
+                snapdtypes.VolumeStructure(size=1024 << 20),
+            ]
+        volume = snapdtypes.Volume(schema=schema, structure=structures)
+        system = snapdtypes.SystemDetails(
+            label="enhanced-secureboot-desktop",
+            model=snapdtypes.Model(architecture="amd64", snaps=[]),
+            volumes={"pc": volume},
+        )
+        return VariationInfo(
+            name="test",
+            label="enhanced-secureboot-desktop",
+            system=system,
+        )
+
+    def test_is_core_boot_use_gap_compatible__not_disk(self):
+        info = self._make_info_for_gap_compat()
+        gap = gaps.Gap(device=mock.Mock(), offset=0, size=1200 << 20)
+        self.assertFalse(info.is_core_boot_use_gap_compatible(gap))
+
+    def test_is_core_boot_use_gap_compatible__ptable_mismatch(self):
+        info = self._make_info_for_gap_compat(schema="gpt")
+        disk = make_disk(make_model(), ptable="msdos")
+        gap = gaps.Gap(device=disk, offset=0, size=1200 << 20)
+        self.assertFalse(info.is_core_boot_use_gap_compatible(gap))
+
+    def test_is_core_boot_use_gap_compatible__exact_fit(self):
+        info = self._make_info_for_gap_compat()
+        disk = make_disk(make_model(), ptable="gpt")
+        gap = gaps.Gap(device=disk, offset=1 << 20, size=1124 << 20)
+        self.assertTrue(info.is_core_boot_use_gap_compatible(gap))
+
+    def test_is_core_boot_use_gap_compatible__larger_gap(self):
+        info = self._make_info_for_gap_compat()
+        disk = make_disk(make_model(), ptable="gpt")
+        gap = gaps.Gap(device=disk, offset=0, size=1200 << 20)
+        self.assertTrue(info.is_core_boot_use_gap_compatible(gap))
+
+    def test_is_core_boot_use_gap_compatible__gap_starts_late(self):
+        info = self._make_info_for_gap_compat()
+        disk = make_disk(make_model(), ptable="gpt")
+        gap = gaps.Gap(device=disk, offset=50 << 20, size=1124 << 20)
+        self.assertFalse(info.is_core_boot_use_gap_compatible(gap))
+
+    def test_is_core_boot_use_gap_compatible__gap_ends_early(self):
+        info = self._make_info_for_gap_compat()
+        disk = make_disk(make_model(), ptable="gpt")
+        gap = gaps.Gap(device=disk, offset=1 << 20, size=50 << 20)
+        self.assertFalse(info.is_core_boot_use_gap_compatible(gap))
+
+    def test_is_core_boot_use_gap_compatible__mbr_skipped(self):
+        # An MBR-role structure is ignored by offsets_and_sizes(), so
+        # placing it outside the gap must not affect compatibility.
+        structures = [
+            snapdtypes.VolumeStructure(size=1 << 20, role=snapdtypes.Role.MBR),
+            snapdtypes.VolumeStructure(size=100 << 20),
+            snapdtypes.VolumeStructure(size=1024 << 20),
+        ]
+        info = self._make_info_for_gap_compat(structures=structures)
+        disk = make_disk(make_model(), ptable="gpt")
+        gap = gaps.Gap(device=disk, offset=1 << 20, size=1124 << 20)
+        self.assertTrue(info.is_core_boot_use_gap_compatible(gap))
+
+    def test_is_core_boot_use_gap_compatible__explicit_offset_outside_gap(self):
+        structures = [
+            snapdtypes.VolumeStructure(size=100 << 20),
+            snapdtypes.VolumeStructure(offset=2000 << 20, size=1024 << 20),
+        ]
+        info = self._make_info_for_gap_compat(structures=structures)
+        disk = make_disk(make_model(), ptable="gpt")
+        gap = gaps.Gap(device=disk, offset=1 << 20, size=1124 << 20)
+        self.assertFalse(info.is_core_boot_use_gap_compatible(gap))
+
     @parameterized.expand(
         (
             (
@@ -1760,33 +1845,33 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
 
         self.assertEqual(expected_optional_install, actual)
 
-    async def test_run_autoinstall_guided__hybrid_with_mode(self):
-        with self.assertRaisesRegex(
-            AutoinstallError, "cannot use 'mode' with hybrid layout"
-        ):
-            await self.ctrler.run_autoinstall_guided(
-                {"name": "hybrid", "mode": "reformat_disk"}
-            )
-
 
 class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):
     def setUp(self):
         self.app = make_app()
         self.app.opts.bootloader = None
         self.app.snapdinfo = mock.Mock(spec=SnapdInfo)
+        self.app.snapdapi = snapdapi.make_api_client(AsyncSnapd(get_fake_connection()))
         self.ctrler = StorageController(self.app)
-        self.model = self.ctrler.model = make_model()
+        self.model = self.ctrler.model = make_model(Bootloader.UEFI)
 
         # This is needed for examine_systems_task
         self.app.base_model.source.current.type = "fsimage"
+        self.app.base_model.source.search_drivers = False
         self.app.base_model.source.current.variations = {
             "default": CatalogEntryVariation(path="", size=1),
+            "core-boot": CatalogEntryVariation(
+                path="", size=1, snapd_system_label="prefer-encrypted"
+            ),
         }
 
     async def asyncSetUp(self):
-        self.ctrler._examine_systems_task.start_sync()
-
-        await self.ctrler._examine_systems_task.wait()
+        with mock.patch(
+            "subiquity.server.snapd.system_getter.SystemsDirMounter.mount",
+            new=mock.AsyncMock(return_value=(mock.Mock(), mock.AsyncMock())),
+        ):
+            self.ctrler._examine_systems_task.start_sync()
+            await self.ctrler._examine_systems_task.wait()
 
     async def test_direct_use_gap__install_media(self):
         """Match directives were previously not honored when using mode: use_gap.
@@ -1840,6 +1925,23 @@ class TestRunAutoinstallGuided(IsolatedAsyncioTestCase):
             reset_partition=mock.ANY,
             reset_partition_size=mock.ANY,
         )
+
+    async def test_hybrid_with_unsupported_mode(self):
+        with self.assertRaisesRegex(
+            AutoinstallError, "Unknown layout mode erase_install"
+        ):
+            await self.ctrler.run_autoinstall_guided(
+                {"name": "hybrid", "mode": "erase_install"}
+            )
+
+    async def test_hybrid_use_gap_not_enabled(self):
+        self.app.opts.experimental_use_gap_tpm_fde = False
+        with self.assertRaisesRegex(
+            AutoinstallError, "requires the --experimental-use-gap-tpm-fde flag"
+        ):
+            await self.ctrler.run_autoinstall_guided(
+                {"name": "hybrid", "mode": "use_gap"}
+            )
 
 
 class TestGuided(IsolatedAsyncioTestCase):
@@ -2296,6 +2398,33 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
                 size=1 << 20,
                 offset=1 << 20,
             )
+
+    async def setup_core_boot_use_gap(self) -> GuidedChoiceV2:
+        await self._setup(Bootloader.UEFI, "gpt", fix_bios=True, size=100 << 30)
+        make_partition(self.model, self.disk, preserve=True, size=50 << 30)
+        self.ctrler._variation_info["core"] = VariationInfo(
+            name="core",
+            label="system",
+            system=snapdtypes.SystemDetails(
+                label="system",
+                volumes={
+                    "pc": snapdtypes.Volume(schema="gpt", structure=[]),
+                },
+                model=mock.Mock(),
+            ),
+            capability_info=CapabilityInfo(
+                allowed=[GuidedCapability.CORE_BOOT_ENCRYPTED]
+            ),
+        )
+        self.ctrler._info = self.ctrler._variation_info["core"]
+
+        target = GuidedStorageTargetUseGap(
+            disk_id=self.disk.id,
+            gap=labels.for_client(gaps.largest_gap(self.disk)),
+        )
+        return GuidedChoiceV2(
+            target=target, capability=GuidedCapability.CORE_BOOT_ENCRYPTED
+        )
 
     @parameterized.expand(bootloaders_and_ptables)
     async def test_blank_disk(self, bootloader, ptable):
@@ -2789,6 +2918,26 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
 
         self.assertEqual(expected_scenario, scenarios != [])
 
+    @parameterized.expand(
+        (
+            (True, True),
+            (False, False),
+        )
+    )
+    async def test_available_use_gap_scenarios__core_boot(
+        self, flag_enabled: bool, expected_core_boot_encrypted: bool
+    ):
+        await self.setup_core_boot_use_gap()
+        install_min = self.ctrler.calculate_suggested_install_min()
+        self.app.opts.experimental_use_gap_tpm_fde = flag_enabled
+        scenarios = self.ctrler.available_use_gap_scenarios(install_min)
+        self.assertEqual(
+            expected_core_boot_encrypted,
+            any(
+                GuidedCapability.CORE_BOOT_ENCRYPTED in s[1].allowed for s in scenarios
+            ),
+        )
+
     async def test_available_erase_install_scenarios(self):
         await self._setup(Bootloader.NONE, "gpt", fix_bios=True)
         install_min = self.ctrler.calculate_suggested_install_min()
@@ -2995,6 +3144,19 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         # if we're installing in a logical partition, we have enough room
         self.assertTrue(self.ctrler.resize_has_enough_room_for_partitions(disk, p5))
         self.assertTrue(self.ctrler.resize_has_enough_room_for_partitions(disk, p6))
+
+    async def test_guided_use_gap_core_boot_flag_disabled(self):
+        choice = await self.setup_core_boot_use_gap()
+        self.app.opts.experimental_use_gap_tpm_fde = False
+        with self.assertRaises(AssertionError):
+            await self.ctrler.guided(choice)
+
+    async def test_guided_use_gap_core_boot_flag_enabled(self):
+        choice = await self.setup_core_boot_use_gap()
+        self.app.opts.experimental_use_gap_tpm_fde = True
+        with mock.patch.object(self.ctrler, "guided_core_boot", return_value=None):
+            await self.ctrler.guided(choice)
+            self.ctrler.guided_core_boot.assert_called_once_with(self.disk, choice)
 
 
 class TestManualBoot(IsolatedAsyncioTestCase):
@@ -3374,6 +3536,72 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
             ]
         )
         self.assertEqual(partition_count, len(disk.partitions()))
+
+    async def test_autoinstall_hybrid_use_gap_flag_disabled(self):
+        self.ctrler.model = model = make_model(Bootloader.UEFI)
+        disk = make_disk(model)
+        make_partition(model, disk, preserve=True, size=50 << 30)
+        self.app.base_model.source.current.variations = {
+            "default": CatalogEntryVariation(
+                path="", size=1, snapd_system_label="prefer-encrypted"
+            ),
+        }
+        self.app.dr_cfg.systems_dir_exists = True
+        await self.ctrler._examine_systems_task.start()
+        await self.ctrler._examine_systems_task.wait()
+        self.ctrler.start()
+
+        self.app.opts.experimental_use_gap_tpm_fde = False
+        with self.assertRaises(AutoinstallError):
+            await self.ctrler.run_autoinstall_guided(
+                {
+                    "name": "hybrid",
+                    "mode": "use_gap",
+                }
+            )
+
+    @parameterized.expand(
+        (
+            (True, True),
+            (False, False),
+        )
+    )
+    async def test_autoinstall_hybrid_use_gap(
+        self, flag_enabled: bool, expect_ok: bool
+    ):
+        self.ctrler.model = model = make_model(Bootloader.UEFI, storage_version=2)
+        disk = make_disk(model, size=100 << 30)
+        make_partition(model, disk, preserve=True, offset=50 << 30)
+        self.app.base_model.source.current.variations = {
+            "default": CatalogEntryVariation(
+                path="", size=1, snapd_system_label="prefer-encrypted"
+            ),
+        }
+        self.app.dr_cfg.systems_dir_exists = True
+        await self.ctrler._examine_systems_task.start()
+        await self.ctrler._examine_systems_task.wait()
+        self.ctrler.start()
+
+        self.app.opts.experimental_use_gap_tpm_fde = flag_enabled
+
+        with mock.patch.object(self.ctrler, "guided") as m_guided:
+            if expect_ok:
+                m_guided_assertion = m_guided.assert_called_once
+                context = contextlib.nullcontext()
+            else:
+                m_guided_assertion = m_guided.assert_not_called
+                context = self.assertRaisesRegex(
+                    AutoinstallError, "requires the --experimental-use-gap-tpm-fde flag"
+                )
+
+            with context:
+                await self.ctrler.run_autoinstall_guided(
+                    {
+                        "name": "hybrid",
+                        "mode": "use_gap",
+                    }
+                )
+            m_guided_assertion()
 
     async def test_from_sample_data_defective(self):
         self.ctrler.model = model = make_model(Bootloader.UEFI)

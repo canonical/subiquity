@@ -177,6 +177,10 @@ class StorageNotFoundError(StorageRecoverableError):
     title = _("Storage entity not found")
 
 
+class IncompatibleLocationError(Exception):
+    pass
+
+
 @attr.s(auto_attribs=True)
 class CapabilityInfo:
     allowed: List[GuidedCapability] = attr.Factory(list)
@@ -261,6 +265,28 @@ class VariationInfo:
     def is_valid(self) -> bool:
         return bool(self.capability_info.allowed)
 
+    def is_core_boot_use_gap_compatible(self, gap: gaps.Gap) -> bool:
+        [volume] = self.system.volumes.values()
+
+        if not isinstance(gap.device, ModelDisk):
+            return False
+
+        disk = gap.device
+
+        if disk.ptable is not None and disk.ptable != volume.schema:
+            return False
+
+        # TODO should we check the bootloader too? Typically it's "grub" in the
+        # gadget definition.
+
+        # Now we check that all partitions defined in the gadget fit in the
+        # gap.
+        for struct, offset, size in volume.offsets_and_sizes():
+            if not (gap.offset <= offset <= offset + size <= gap.offset + gap.size):
+                return False
+
+        return True
+
     def capability_info_for_gap(
         self,
         gap: gaps.Gap,
@@ -271,10 +297,19 @@ class VariationInfo:
         else:
             gap_size = gap.size
         r = self.capability_info.copy()
-        if gap_size < install_min:
-            r.disallow_all(
-                reason=GuidedDisallowedCapabilityReason.TOO_SMALL,
-            )
+        if self.is_core_boot_classic():
+            # I guess we can ignore install_min.
+            # The volume definition should include correct sizes for the
+            # partitions, right?
+            if not self.is_core_boot_use_gap_compatible(gap):
+                r.disallow_all(
+                    reason=GuidedDisallowedCapabilityReason.INCOMPATIBLE_LOCATION,
+                )
+        else:
+            if gap_size < install_min:
+                r.disallow_all(
+                    reason=GuidedDisallowedCapabilityReason.TOO_SMALL,
+                )
         return r
 
     @classmethod
@@ -509,7 +544,7 @@ class StorageController(SubiquityController, StorageManipulator):
             ]
             return info
 
-        offsets_and_sizes = list(self._offsets_and_sizes_for_volume(volume))
+        offsets_and_sizes = list(volume.offsets_and_sizes())
         _structure, last_offset, last_size = offsets_and_sizes[-1]
         info.min_size = last_offset + last_size
 
@@ -925,7 +960,13 @@ class StorageController(SubiquityController, StorageManipulator):
                 raise StorageConstraintViolationError(
                     "Not using enhanced_secureboot: disabled on commandline"
                 )
-            assert isinstance(choice.target, GuidedStorageTargetReformat)
+            allowed_guided_types: tuple[type, ...] = (GuidedStorageTargetReformat,)
+            if self.app.opts.experimental_use_gap_tpm_fde:
+                allowed_guided_types = (
+                    GuidedStorageTargetReformat,
+                    GuidedStorageTargetUseGap,
+                )
+            assert isinstance(choice.target, allowed_guided_types)
             self.use_tpm = choice.capability.is_tpm_backed()
             await self.guided_core_boot(disk, choice)
             return
@@ -1057,18 +1098,7 @@ class StorageController(SubiquityController, StorageManipulator):
             disks.append(disk)
         return [d for d in disks]
 
-    def _offsets_and_sizes_for_volume(self, volume: snapdtypes.Volume):
-        offset = self.model._partition_alignment_data["gpt"].min_start_offset
-        assert volume.structure is not None
-        for structure in volume.structure:
-            if structure.role == snapdtypes.Role.MBR:
-                continue
-            if structure.offset is not None:
-                offset = structure.offset
-            yield (structure, offset, structure.size)
-            offset = offset + structure.size
-
-    async def guided_core_boot(self, disk: Disk, choice: GuidedChoiceV2):
+    async def guided_core_boot(self, disk: ModelDisk, choice: GuidedChoiceV2):
         if self._info.needs_systems_mount:
             await SystemsDirMounter(self.app, self._info.name).mount()
         # Formatting for a core boot classic system relies on some curtin
@@ -1078,33 +1108,56 @@ class StorageController(SubiquityController, StorageManipulator):
         self._on_volume = snapdtypes.OnVolume.from_volume(volume)
         self._volumes_auth = snapdtypes.VolumesAuth.from_choice(choice)
 
-        preserved_parts = set()
-
-        if self._on_volume.schema != disk.ptable:
-            disk.ptable = self._on_volume.schema
+        if isinstance(choice.target, GuidedStorageTargetUseGap):
+            # In theory we could set parts_by_offset_size for existing
+            # partitions outside the gap. But with the current implementation,
+            # this is unnecessary.
             parts_by_offset_size = {}
+
+            for part_or_gap in gaps.parts_and_gaps(disk):
+                if not isinstance(part_or_gap, gaps.Gap):
+                    continue
+                gap = part_or_gap
+                # Maybe we want to be more forgiving here and accept if the
+                # requested gap is contained inside an actual gap.
+                if (
+                    gap.offset == choice.target.gap.offset
+                    and gap.size == choice.target.gap.size
+                ):
+                    break
+            else:
+                raise RuntimeError("cannot find matching gap")
+
+            if not self._info.is_core_boot_use_gap_compatible(gap):
+                raise IncompatibleLocationError
+        elif isinstance(choice.target, GuidedStorageTargetReformat):
+            preserved_parts = set()
+
+            if self._on_volume.schema != disk.ptable:
+                parts_by_offset_size = {}
+                disk.ptable = self._on_volume.schema
+            else:
+                parts_by_offset_size = {
+                    (part.offset, part.size): part for part in disk.partitions()
+                }
+
+                for _struct, offset, size in self._on_volume.offsets_and_sizes():
+                    if (offset, size) in parts_by_offset_size:
+                        preserved_parts.add(parts_by_offset_size[(offset, size)])
+
+                for part in list(disk.partitions()):
+                    if part not in preserved_parts:
+                        self.delete_partition(part)
+                        del parts_by_offset_size[(part.offset, part.size)]
+
+            if not preserved_parts:
+                self.reformat(disk, self._on_volume.schema)
         else:
-            parts_by_offset_size = {
-                (part.offset, part.size): part for part in disk.partitions()
-            }
+            raise RuntimeError(
+                "only reformat (and experimental use-gap) are supported for TPM/FDE"
+            )
 
-            for _struct, offset, size in self._offsets_and_sizes_for_volume(
-                self._on_volume
-            ):
-                if (offset, size) in parts_by_offset_size:
-                    preserved_parts.add(parts_by_offset_size[(offset, size)])
-
-            for part in list(disk.partitions()):
-                if part not in preserved_parts:
-                    self.delete_partition(part)
-                    del parts_by_offset_size[(part.offset, part.size)]
-
-        if not preserved_parts:
-            self.reformat(disk, self._on_volume.schema)
-
-        for structure, offset, size in self._offsets_and_sizes_for_volume(
-            self._on_volume
-        ):
+        for structure, offset, size in self._on_volume.offsets_and_sizes():
             if (offset, size) in parts_by_offset_size:
                 part = parts_by_offset_size[(offset, size)]
             else:
@@ -1469,7 +1522,10 @@ class StorageController(SubiquityController, StorageManipulator):
                 continue
 
             capability_info = CapabilityInfo()
-            for variation in self.find_variations(core_boot_classic=False):
+            core_boot_classic = (
+                None if self.opts.experimental_use_gap_tpm_fde else False
+            )
+            for variation in self.find_variations(core_boot_classic=core_boot_classic):
                 capability_info.combine(
                     variation.capability_info_for_gap(gap, install_min)
                 )
@@ -2261,15 +2317,22 @@ class StorageController(SubiquityController, StorageManipulator):
         guided_recovery_key: Union[bool, RecoveryKey] = False
 
         if name == "hybrid":
-            if "mode" in layout:
-                raise AutoinstallError("cannot use 'mode' with hybrid layout")
             capability = self.get_core_boot_autoinstall_capability(
                 encrypted=layout.get("encrypted", None)
             )
-
-            match = layout.get("match", {"size": "largest"})
-            disk = self.get_bootable_matching_disk(match)
-            mode = "reformat_disk"
+            # Default to reformat_disk for backward compatibility:
+            # mode was previously forbidden for hybrid, so all existing
+            # autoinstall configs implicitly relied on reformat_disk.
+            mode = layout.get("mode", "reformat_disk")
+            try:
+                self.validate_layout_mode(mode)
+            except ValueError as e:
+                raise AutoinstallError(str(e)) from None
+            if mode == "use_gap" and not self.opts.experimental_use_gap_tpm_fde:
+                raise AutoinstallError(
+                    "use_gap mode with hybrid (TPM/FDE) layout requires "
+                    "the --experimental-use-gap-tpm-fde flag"
+                )
         else:
             # this check is conceptually unnecessary but results in a
             # much cleaner error message...
@@ -2345,18 +2408,21 @@ class StorageController(SubiquityController, StorageManipulator):
             f"autoinstall: running guided {capability} install in "
             f"mode {mode} using {target}"
         )
-        await self.guided(
-            GuidedChoiceV2(
-                target=target,
-                capability=capability,
-                password=password,
-                recovery_key=guided_recovery_key,
-                sizing_policy=sizing_policy,
-                reset_partition=reset_partition,
-                reset_partition_size=reset_partition_size,
-            ),
-            reset_partition_only=layout.get("reset-partition-only", False),
-        )
+        try:
+            await self.guided(
+                GuidedChoiceV2(
+                    target=target,
+                    capability=capability,
+                    password=password,
+                    recovery_key=guided_recovery_key,
+                    sizing_policy=sizing_policy,
+                    reset_partition=reset_partition,
+                    reset_partition_size=reset_partition_size,
+                ),
+                reset_partition_only=layout.get("reset-partition-only", False),
+            )
+        except IncompatibleLocationError as e:
+            raise AutoinstallError(_("cannot install at this location")) from e
 
     def validate_layout_mode(self, mode):
         if mode not in ("reformat_disk", "use_gap"):
