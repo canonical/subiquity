@@ -54,6 +54,8 @@ log = logging.getLogger("subiquity.ui.views.filesystem.filesystem")
 
 @attr.s
 class MountInfo:
+    # FIXME: `mount` is assumed to have a .device property here,
+    # which is not the case for tmpfs mounts.
     mount = attr.ib(default=None)
 
     @property
