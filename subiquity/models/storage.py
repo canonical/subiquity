@@ -562,24 +562,25 @@ def asdict(inst, *, for_api: bool):
     r = collections.OrderedDict()
     for field in attr.fields(type(inst)):
         metadata = field.metadata
-        if not for_api or not metadata.get("for_api", False):
-            if field.name.startswith("_"):
-                continue
         name = field.name.lstrip("_")
         m = getattr(inst, "serialize_" + name, None)
         if m:
+            # Serialize_* should run for public and private fields.
             r.update(m())
-        else:
-            v = getattr(inst, field.name)
-            if v is not None:
-                if metadata.get("ref", False):
-                    r[name] = v.id
-                elif metadata.get("reflist", False):
-                    r[name] = [elem.id for elem in v]
-                elif isinstance(v, StorageInfo):
-                    r[name] = {v.name: v.raw}
-                else:
-                    r[name] = v
+            continue
+        if not for_api or not metadata.get("for_api", False):
+            if field.name.startswith("_"):
+                continue
+        v = getattr(inst, field.name)
+        if v is not None:
+            if metadata.get("ref", False):
+                r[name] = v.id
+            elif metadata.get("reflist", False):
+                r[name] = [elem.id for elem in v]
+            elif isinstance(v, StorageInfo):
+                r[name] = {v.name: v.raw}
+            else:
+                r[name] = v
     return r
 
 
@@ -1374,10 +1375,24 @@ class Mount:
     device: Filesystem = attributes.ref(backlink="_mount", default=None)
     options: Optional[str] = None
     spec: Optional[str] = None
+    # Used for mounts that are not backed by a formatted device (e.g. tmpfs).
+    # For device backed mounts the fstype is retrieved from the property.
+    # This keeps the same fstype interface as the other Mountlikes (ZPool, ZFS).
+    _fstype: Optional[str] = None
 
     @property
     def fstype(self):
-        return self.device.fstype
+        if self._fstype is not None:
+            return self._fstype
+        if self.device is not None:
+            return self.device.fstype
+        return None
+
+    def serialize_fstype(self):
+        # Return an fstype for device-less mounts (e.g. tmpfs).
+        if self._fstype is None:
+            return {}
+        return {"fstype": self._fstype}
 
     def can_delete(self):
         from subiquity.common.storage import boot
@@ -1386,6 +1401,9 @@ class Mount:
         if not self.path:
             # swap mount
             return False
+        if self.device is None:
+            # device-less mounts (like tmpfs) are never /boot/efi
+            return True
         if not isinstance(self.device.volume, Partition):
             # Can't be /boot/efi if volume is not a partition
             return True
@@ -1395,6 +1413,8 @@ class Mount:
         return True
 
     def on_remote_storage(self) -> bool:
+        if self.device is None:
+            return False
         return self.device.on_remote_storage()
 
 

@@ -37,6 +37,7 @@ from subiquity.models.storage import (
     Disk,
     Filesystem,
     FirmwareType,
+    Mount,
     NotFinalPartitionError,
     NVMeController,
     Partition,
@@ -1937,6 +1938,59 @@ class TestRootfs(SubiTestCase):
         m = make_model()
         make_zpool(model=m, mountpoint="/srv")
         self.assertFalse(m.is_root_mounted())
+
+
+class TestMountFstype(SubiTestCase):
+    def test_fstype_from_device(self):
+        m, p = make_model_and_partition()
+        fs = make_filesystem(m, p, fstype="ext4")
+        mount = make_mount(m, fs, "/")
+        self.assertEqual("ext4", mount.fstype)
+
+    def test_device_backed_mount_does_not_serialize_fstype(self):
+        # curtin derives the fstype from the referenced format action.
+        m, p = make_model_and_partition()
+        fs = make_filesystem(m, p, fstype="ext4")
+        mount = make_mount(m, fs, "/")
+        self.assertEqual({}, mount.serialize_fstype())
+        self.assertNotIn("fstype", asdict(mount, for_api=False))
+
+    def test_deviceless_mount_uses_explicit_fstype(self):
+        m = make_model()
+        mount = Mount(m=m, path="/tmp", spec="none", fstype="tmpfs")
+        self.assertEqual("tmpfs", mount.fstype)
+        self.assertEqual({"fstype": "tmpfs"}, mount.serialize_fstype())
+        self.assertEqual("tmpfs", asdict(mount, for_api=False)["fstype"])
+
+    def test_explicit_fstype_takes_precedence_over_device(self):
+        m, p = make_model_and_partition()
+        fs = make_filesystem(m, p, fstype="ext4")
+        mount = Mount(m=m, device=fs, path="/", fstype="xfs")
+        self.assertEqual("xfs", mount.fstype)
+
+    def test_bare_mount_has_no_fstype(self):
+        m = make_model()
+        mount = Mount(m=m, path="/tmp", spec="none")
+        self.assertIsNone(mount.fstype)
+        self.assertEqual({}, mount.serialize_fstype())
+
+    def test_explicit_fstype_round_trips_through_config(self):
+        m = make_model()
+        [mount] = m._actions_from_config(
+            [
+                {
+                    "type": "mount",
+                    "id": "tmpfs1",
+                    "path": "/tmp",
+                    "spec": "none",
+                    "fstype": "tmpfs",
+                }
+            ],
+            blockdevs={},
+            is_probe_data=False,
+        )
+        self.assertEqual("tmpfs", mount.fstype)
+        self.assertEqual("tmpfs", asdict(mount, for_api=False)["fstype"])
 
 
 class TestMountForPath(SubiTestCase):
