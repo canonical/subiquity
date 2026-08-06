@@ -17,7 +17,7 @@ import unittest
 
 from subiquity.common.storage import gaps
 from subiquity.common.storage.actions import DeviceAction
-from subiquity.models.storage import Bootloader
+from subiquity.models.storage import FirmwareType
 from subiquity.models.tests.test_storage import (
     make_disk,
     make_lv,
@@ -129,11 +129,11 @@ class TestActions(unittest.TestCase):
         self.assertActionNotSupported(disk, DeviceAction.DELETE)
 
     def test_disk_action_TOGGLE_BOOT_NONE(self):
-        model, disk = make_model_and_disk(Bootloader.NONE)
+        model, disk = make_model_and_disk(FirmwareType.NONE)
         self.assertActionNotSupported(disk, DeviceAction.TOGGLE_BOOT)
 
     def test_disk_action_TOGGLE_BOOT_BIOS(self):
-        model = make_model(Bootloader.BIOS)
+        model = make_model(FirmwareType.BIOS)
         # Disks with msdos partition tables can always be the BIOS boot disk.
         dos_disk = make_disk(model, ptable="msdos", preserve=True)
         self.assertActionPossible(dos_disk, DeviceAction.TOGGLE_BOOT)
@@ -187,11 +187,11 @@ class TestActions(unittest.TestCase):
         )
         self.assertActionNotPossible(gpt_disk4, DeviceAction.TOGGLE_BOOT)
 
-    def _test_TOGGLE_BOOT_boot_partition(self, bl, flag):
+    def _test_TOGGLE_BOOT_boot_partition(self, fwt, flag):
         # The logic for when TOGGLE_BOOT is enabled for both UEFI and PREP
         # bootloaders turns out to be the same, modulo the special flag that
         # has to be present on a partition.
-        model = make_model(bl)
+        model = make_model(fwt)
         # A disk with a new partition table can always be the UEFI/PREP boot
         # disk.
         new_disk = make_disk(model, preserve=False)
@@ -214,10 +214,10 @@ class TestActions(unittest.TestCase):
         self.assertActionPossible(old_disk, DeviceAction.TOGGLE_BOOT)
 
     def test_disk_action_TOGGLE_BOOT_UEFI(self):
-        self._test_TOGGLE_BOOT_boot_partition(Bootloader.UEFI, "boot")
+        self._test_TOGGLE_BOOT_boot_partition(FirmwareType.UEFI, "boot")
 
     def test_disk_action_TOGGLE_BOOT_PREP(self):
-        self._test_TOGGLE_BOOT_boot_partition(Bootloader.PREP, "prep")
+        self._test_TOGGLE_BOOT_boot_partition(FirmwareType.PREP, "prep")
 
     def test_partition_action_INFO(self):
         model, part = make_model_and_partition()
@@ -261,11 +261,11 @@ class TestActions(unittest.TestCase):
         model.add_volgroup("vg1", {part2})
         self.assertActionNotPossible(part2, DeviceAction.DELETE)
 
-        part = make_partition(make_model(Bootloader.BIOS), flag="bios_grub")
+        part = make_partition(make_model(FirmwareType.BIOS), flag="bios_grub")
         self.assertActionNotPossible(part, DeviceAction.DELETE)
-        part = make_partition(make_model(Bootloader.UEFI), flag="boot")
+        part = make_partition(make_model(FirmwareType.UEFI), flag="boot")
         self.assertActionNotPossible(part, DeviceAction.DELETE)
-        part = make_partition(make_model(Bootloader.PREP), flag="prep")
+        part = make_partition(make_model(FirmwareType.PREP), flag="prep")
         self.assertActionNotPossible(part, DeviceAction.DELETE)
 
         # You cannot delete a partition from a disk that has

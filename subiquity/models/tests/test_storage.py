@@ -33,9 +33,9 @@ from subiquity.models.storage import (
     LVM_CHUNK_SIZE,
     ZFS,
     ActionRenderMode,
-    Bootloader,
     Disk,
     Filesystem,
+    FirmwareType,
     NotFinalPartitionError,
     NVMeController,
     Partition,
@@ -147,7 +147,7 @@ class FakeStorageInfo:
 
 
 def make_model(
-    bootloader=None,
+    firmware_type=None,
     storage_version=None,
     *,
     dry_run=False,
@@ -158,8 +158,8 @@ def make_model(
         dry_run=dry_run,
         opt_supports_nvme_tcp_booting=supports_nvme_tcp_booting,
     )
-    if bootloader is not None:
-        model.bootloader = bootloader
+    if firmware_type is not None:
+        model.firmware_type = firmware_type
     if storage_version is not None:
         model.storage_version = storage_version
     model._probe_data = {}
@@ -183,8 +183,8 @@ def make_disk(storage_model=None, **kw):
     return disk
 
 
-def make_model_and_disk(bootloader=None, storage_version=None, **kw):
-    model = make_model(bootloader, storage_version)
+def make_model_and_disk(firmware_type=None, storage_version=None, **kw):
+    model = make_model(firmware_type, storage_version)
     return model, make_disk(model, **kw)
 
 
@@ -228,8 +228,8 @@ def make_mount(model, fs: Filesystem, path):
     return model.add_mount(fs, path)
 
 
-def make_model_and_partition(bootloader=None):
-    model, disk = make_model_and_disk(bootloader)
+def make_model_and_partition(firmware_type=None):
+    model, disk = make_model_and_disk(firmware_type)
     return model, make_partition(model, disk)
 
 
@@ -246,8 +246,8 @@ def make_raid(model, disks=None, **kw):
     return r
 
 
-def make_model_and_raid(bootloader=None):
-    model = make_model(bootloader)
+def make_model_and_raid(firmware_type=None):
+    model = make_model(firmware_type)
     return model, make_raid(model)
 
 
@@ -260,8 +260,8 @@ def make_vg(model, pvs=None):
     return model.add_volgroup(name, pvs)
 
 
-def make_model_and_vg(bootloader=None):
-    model = make_model(bootloader)
+def make_model_and_vg(firmware_type=None):
+    model = make_model(firmware_type)
     return model, make_vg(model)
 
 
@@ -273,8 +273,8 @@ def make_lv(model, vg=None, size=None):
     return model.add_logical_volume(vg, name, size)
 
 
-def make_model_and_lv(bootloader=None, lv_size=None):
-    model = make_model(bootloader)
+def make_model_and_lv(firmware_type=None, lv_size=None):
+    model = make_model(firmware_type)
     return model, make_lv(model, size=lv_size)
 
 
@@ -362,13 +362,13 @@ class TestStorageModel(unittest.TestCase):
         self._test_ok_for_xxx(model, make_partition, "ok_for_raid", False)
         self._test_ok_for_xxx(model, make_partition, "ok_for_lvm_vg", False)
 
-        part = make_partition(make_model(Bootloader.BIOS), flag="bios_grub")
+        part = make_partition(make_model(FirmwareType.BIOS), flag="bios_grub")
         self.assertFalse(part.ok_for_raid)
         self.assertFalse(part.ok_for_lvm_vg)
-        part = make_partition(make_model(Bootloader.UEFI), flag="boot")
+        part = make_partition(make_model(FirmwareType.UEFI), flag="boot")
         self.assertFalse(part.ok_for_raid)
         self.assertFalse(part.ok_for_lvm_vg)
-        part = make_partition(make_model(Bootloader.PREP), flag="prep")
+        part = make_partition(make_model(FirmwareType.PREP), flag="prep")
         self.assertFalse(part.ok_for_raid)
         self.assertFalse(part.ok_for_lvm_vg)
 
@@ -446,26 +446,26 @@ class TestStorageModel(unittest.TestCase):
 
     @parameterized.expand(
         (
-            (Bootloader.NONE, None, None, False, True),
-            (Bootloader.BIOS, "ext4", None, True, True),
-            (Bootloader.BIOS, "btrfs", None, True, True),
-            (Bootloader.UEFI, "ext4", None, True, True),
-            (Bootloader.UEFI, "xfs", None, True, False),
-            (Bootloader.PREP, "ext4", None, True, True),
-            (Bootloader.PREP, "zfs", None, True, True),
-            (Bootloader.BIOS, None, "ext4", False, True),
-            (Bootloader.BIOS, None, "btrfs", False, True),
+            (FirmwareType.NONE, None, None, False, True),
+            (FirmwareType.BIOS, "ext4", None, True, True),
+            (FirmwareType.BIOS, "btrfs", None, True, True),
+            (FirmwareType.UEFI, "ext4", None, True, True),
+            (FirmwareType.UEFI, "xfs", None, True, False),
+            (FirmwareType.PREP, "ext4", None, True, True),
+            (FirmwareType.PREP, "zfs", None, True, True),
+            (FirmwareType.BIOS, None, "ext4", False, True),
+            (FirmwareType.BIOS, None, "btrfs", False, True),
         )
     )
     def test_boot_filesystem_requirement(
         self,
-        bootloader: Bootloader,
+        firmware_type: FirmwareType,
         boot_fstype: str | None,
         root_fstype: str | None,
         has_separate_boot: bool,
         expected: bool,
     ):
-        model, disk = make_model_and_disk(bootloader)
+        model, disk = make_model_and_disk(firmware_type)
 
         with (
             mock.patch.object(model, "needs_bootloader_partition", return_value=False),
@@ -497,7 +497,7 @@ class TestStorageModel(unittest.TestCase):
         )
     )
     def test_boot_filesystem_release_requirement(self, release, expected):
-        model, disk = make_model_and_disk(Bootloader.UEFI)
+        model, disk = make_model_and_disk(FirmwareType.UEFI)
         part = make_partition(model, disk)
         fs = make_filesystem(model, part, fstype="xfs")
         make_mount(model, fs, "/")
@@ -907,7 +907,7 @@ class TestAutoInstallConfig(unittest.TestCase):
             )
 
     def test_extended_partition_remaining_size(self):
-        model = make_model(bootloader=Bootloader.BIOS, storage_version=2)
+        model = make_model(firmware_type=FirmwareType.BIOS, storage_version=2)
         make_disk(model, serial="aaaa", size=dehumanize_size("100M"))
 
         fake_up_blockdata(model)
@@ -956,7 +956,7 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertEqual(extended.size, 120832 * 512)
 
     def test_logical_partition_remaining_size(self):
-        model = make_model(bootloader=Bootloader.BIOS, storage_version=2)
+        model = make_model(firmware_type=FirmwareType.BIOS, storage_version=2)
         make_disk(model, serial="aaaa", size=dehumanize_size("100M"))
 
         fake_up_blockdata(model)
@@ -1009,7 +1009,7 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertEqual(logical.size, extended.size - ebr_space)
 
     def test_partition_remaining_size_in_extended_and_logical(self):
-        model = make_model(bootloader=Bootloader.BIOS, storage_version=2)
+        model = make_model(firmware_type=FirmwareType.BIOS, storage_version=2)
         make_disk(model, serial="aaaa", size=dehumanize_size("100M"))
         fake_up_blockdata(model)
         model.apply_autoinstall_config(
@@ -1073,7 +1073,7 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertEqual(p6.size, 96256 * 512)
 
     def test_partition_remaining_size_in_extended_and_logical_multiple(self):
-        model = make_model(bootloader=Bootloader.BIOS, storage_version=2)
+        model = make_model(firmware_type=FirmwareType.BIOS, storage_version=2)
         make_disk(model, serial="aaaa", size=dehumanize_size("20G"))
         fake_up_blockdata(model)
         model.apply_autoinstall_config(
@@ -1243,7 +1243,7 @@ class TestAutoInstallConfig(unittest.TestCase):
 
 class TestRenderActions(unittest.TestCase):
     def test_render_does_not_include_unreferenced(self):
-        model = make_model(Bootloader.NONE)
+        model = make_model(FirmwareType.NONE)
         disk1 = make_disk(model, preserve=True)
         disk2 = make_disk(model, preserve=True)
         disk1p1 = make_partition(model, disk1, preserve=True)
@@ -1257,7 +1257,7 @@ class TestRenderActions(unittest.TestCase):
         self.assertTrue(disk2p1.id not in rendered_ids)
 
     def test_render_for_api_does_include_unreferenced(self):
-        model = make_model(Bootloader.NONE)
+        model = make_model(FirmwareType.NONE)
         disk1 = make_disk(model, preserve=True)
         disk2 = make_disk(model, preserve=True)
         disk1p1 = make_partition(model, disk1, preserve=True)
@@ -1273,7 +1273,7 @@ class TestRenderActions(unittest.TestCase):
         self.assertTrue(disk2p1.id in rendered_ids)
 
     def test_render_devices_skips_format_mount(self):
-        model = make_model(Bootloader.NONE)
+        model = make_model(FirmwareType.NONE)
         disk1 = make_disk(model, preserve=True)
         disk1p1 = make_partition(model, disk1, preserve=True)
         fs = model.add_filesystem(disk1p1, "ext4")
@@ -1287,7 +1287,7 @@ class TestRenderActions(unittest.TestCase):
         self.assertTrue(mnt.id not in rendered_ids)
 
     def test_render_format_mount(self):
-        model = make_model(Bootloader.NONE)
+        model = make_model(FirmwareType.NONE)
         disk1 = make_disk(model, preserve=True)
         disk1p1 = make_partition(model, disk1, preserve=True)
         disk1p1.path = "/dev/vda1"
@@ -1304,7 +1304,7 @@ class TestRenderActions(unittest.TestCase):
         self.assertEqual(rendered_by_id[vol_id]["path"], "/dev/vda1")
 
     def test_render_includes_all_partitions(self):
-        model = make_model(Bootloader.NONE)
+        model = make_model(FirmwareType.NONE)
         disk1 = make_disk(model, preserve=True)
         disk1p1 = make_partition(
             model, disk1, preserve=True, offset=1 << 20, size=512 << 20
@@ -1320,7 +1320,7 @@ class TestRenderActions(unittest.TestCase):
         self.assertTrue(disk1p2.id in rendered_ids)
 
     def test_render_numbers_existing_partitions(self):
-        model = make_model(Bootloader.NONE)
+        model = make_model(FirmwareType.NONE)
         disk1 = make_disk(model, preserve=True)
         disk1p1 = make_partition(model, disk1, preserve=True)
         fs = model.add_filesystem(disk1p1, "ext4")
@@ -1332,7 +1332,7 @@ class TestRenderActions(unittest.TestCase):
             self.assertEqual(action["number"], 1)
 
     def test_render_includes_unmounted_new_partition(self):
-        model = make_model(Bootloader.NONE)
+        model = make_model(FirmwareType.NONE)
         disk1 = make_disk(model, preserve=True)
         disk2 = make_disk(model)
         disk1p1 = make_partition(model, disk1, preserve=True)
@@ -1348,7 +1348,7 @@ class TestRenderActions(unittest.TestCase):
     def test_render_groups_partitions_together(self):
         """Ensure that rendered partition actions for a given disk are grouped
         together, even when the actions were not created back to back"""
-        model = make_model(Bootloader.NONE)
+        model = make_model(FirmwareType.NONE)
 
         d1 = make_disk(model)
         d1p1 = make_partition(model, d1)
@@ -1544,7 +1544,7 @@ class TestSwap(unittest.TestCase):
         ]
     )
     def test_should_add_swapfile_nomount(self, fs):
-        m, d1 = make_model_and_disk(Bootloader.BIOS)
+        m, d1 = make_model_and_disk(FirmwareType.BIOS)
         d1p1 = make_partition(m, d1)
         m.add_filesystem(d1p1, fs)
         self.assertTrue(m.should_add_swapfile())
@@ -1558,7 +1558,7 @@ class TestSwap(unittest.TestCase):
         ]
     )
     def test_should_add_swapfile(self, fs, kern_maj_ver, expected):
-        m, d1 = make_model_and_disk(Bootloader.BIOS)
+        m, d1 = make_model_and_disk(FirmwareType.BIOS)
         d1p1 = make_partition(m, d1)
         m.add_mount(m.add_filesystem(d1p1, fs), "/")
         with mock.patch(
@@ -1568,7 +1568,7 @@ class TestSwap(unittest.TestCase):
             self.assertEqual(expected, m.should_add_swapfile())
 
     def test_should_add_swapfile_has_swappart(self):
-        m, d1 = make_model_and_disk(Bootloader.BIOS)
+        m, d1 = make_model_and_disk(FirmwareType.BIOS)
         d1p1 = make_partition(m, d1)
         d1p2 = make_partition(m, d1)
         m.add_mount(m.add_filesystem(d1p1, "ext4"), "/")

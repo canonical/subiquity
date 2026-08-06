@@ -28,7 +28,7 @@ from subiquitycore.tests.mocks import make_app
 class TestMd5Check(SubiTestCase):
     def setUp(self):
         self.app = make_app()
-        self.app.opts.bootloader = "UEFI"
+        self.app.opts.firmware_type = "uefi"
         self.ic = IntegrityController(app=self.app)
         self.ic.model = IntegrityModel()
 

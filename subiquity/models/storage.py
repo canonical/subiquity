@@ -56,7 +56,7 @@ from subiquity.common.storage.requirements import (
     RequirementSeverity,
 )
 from subiquity.common.types.storage import (
-    Bootloader,
+    FirmwareType,
     OsProber,
     RecoveryKey,
     StorageResponse,
@@ -1591,30 +1591,30 @@ class StorageModel:
         else:
             return True
 
-    def _probe_bootloader(self):
+    def _probe_firmware_type(self) -> FirmwareType:
         # This will at some point change to return a list so that we can
         # configure BIOS _and_ UEFI on amd64 systems.
         if os.path.exists("/sys/firmware/efi"):
-            return Bootloader.UEFI
+            return FirmwareType.UEFI
         elif platform.machine().startswith("ppc64"):
-            return Bootloader.PREP
+            return FirmwareType.PREP
         elif platform.machine() == "s390x":
-            return Bootloader.NONE
+            return FirmwareType.NONE
         else:
-            return Bootloader.BIOS
+            return FirmwareType.BIOS
 
     def __init__(
         self,
-        bootloader=None,
+        firmware_type=None,
         *,
         root: str,
         dry_run: bool,
         opt_supports_nvme_tcp_booting: bool | None = None,
         detected_supports_nvme_tcp_booting: bool | None = None,
     ):
-        if bootloader is None:
-            bootloader = self._probe_bootloader()
-        self.bootloader = bootloader
+        if firmware_type is None:
+            firmware_type = self._probe_firmware_type()
+        self.firmware_type = firmware_type
         self.dry_run = dry_run
         self.root = root
         self.opt_supports_nvme_tcp_booting: bool | None = opt_supports_nvme_tcp_booting
@@ -1651,7 +1651,7 @@ class StorageModel:
         # expressed in terms of curtin actions, which are not what we want to
         # use on the V2 storage API.
         orig_model = StorageModel(
-            self.bootloader,
+            self.firmware_type,
             root=self.root,
             dry_run=self.dry_run,
             opt_supports_nvme_tcp_booting=self.opt_supports_nvme_tcp_booting,
@@ -2447,32 +2447,32 @@ class StorageModel:
     def needs_bootloader_partition(self):
         """true if no disk have a boot partition, and one is needed"""
         # s390x has no such thing
-        if self.bootloader == Bootloader.NONE:
+        if self.firmware_type == FirmwareType.NONE:
             return False
-        elif self.bootloader == Bootloader.BIOS:
+        elif self.firmware_type == FirmwareType.BIOS:
             return self._one(type="disk", grub_device=True) is None
-        elif self.bootloader == Bootloader.UEFI:
+        elif self.firmware_type == FirmwareType.UEFI:
             for esp in self._all(type="partition", grub_device=True):
                 if esp.fs() and esp.fs().mount():
                     if esp.fs().mount().path == "/boot/efi":
                         return False
             return True
-        elif self.bootloader == Bootloader.PREP:
+        elif self.firmware_type == FirmwareType.PREP:
             return self._one(type="partition", grub_device=True) is None
         else:
-            raise AssertionError("unknown bootloader type {}".format(self.bootloader))
+            raise AssertionError("unknown firmware type {}".format(self.firmware_type))
 
     def uses_grub(self) -> bool:
         """Return True when the system's bootloader is GRUB-based.
 
-        Only s390x systems (``Bootloader.NONE``) do not use GRUB; all
+        Only s390x systems (``FirmwareType.NONE``) do not use GRUB; all
         other boot methods (BIOS, UEFI, PREP) rely on GRUB.
 
         Curtin also has a ``uses_grub(machine)`` function in
         curtin/commands/curthooks.py, which determines GRUB usage from
         the machine architecture instead.  Consider consolidating.
         """
-        return self.bootloader != Bootloader.NONE
+        return self.firmware_type != FirmwareType.NONE
 
     def uses_signed_grub(self) -> bool:
         """Return True when the system uses signed GRUB.
@@ -2489,7 +2489,7 @@ class StorageModel:
         package currently exists (for example, riscv64 on 26.04). This makes
         the installation layout more future-proof if signed packages become
         available."""
-        return self.uses_grub() and self.bootloader == Bootloader.UEFI
+        return self.uses_grub() and self.firmware_type == FirmwareType.UEFI
 
     def _mount_for_path(self, path: str | pathlib.Path, *, parent_ok=False):
         """Return the mount-like at *path*, or None.

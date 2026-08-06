@@ -6,7 +6,7 @@ PYTHONSRC=$(NAME)
 PYTHONPATH=$(shell pwd):$(shell pwd)/probert:$(shell pwd)/curtin
 PROBERTDIR=./probert
 PROBERT_REPO=https://github.com/canonical/probert
-DRYRUN?=--dry-run --bootloader uefi --machine-config examples/machines/simple.json \
+DRYRUN?=--dry-run --firmware-type uefi --machine-config examples/machines/simple.json \
 	--source-catalog examples/sources/install.yaml \
 	--postinst-hooks-dir examples/postinst.d/
 UNITTESTARGS?=
