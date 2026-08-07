@@ -21,10 +21,8 @@ LSB_RELEASE_EXAMPLE = Path("examples/lsb-release-focal")
 
 def lsb_release_from_path(path: Path) -> dict[str, str]:
     ret: dict[str, str] = {}
-    try:
-        content = path.read_text()
-    except FileNotFoundError:
-        return ret
+
+    content = path.read_text()
 
     for tok in shlex.split(content):
         k, _, v = tok.partition("=")

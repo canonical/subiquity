@@ -41,7 +41,8 @@ DISTRIB_DESCRIPTION="Ubuntu 21.10"
         with patch.object(
             Path, "read_text", autospec=True, side_effect=FileNotFoundError
         ) as patched:
-            self.assertEqual(lsb_release(Path("/inexistent")), {})
+            with self.assertRaises(FileNotFoundError):
+                lsb_release(Path("/inexistent"))
         self.assertEqual(Path("/inexistent"), patched.call_args.args[0])
 
     def test_lsb_release_default(self):
