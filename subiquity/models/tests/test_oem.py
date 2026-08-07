@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from contextlib import contextmanager
+from pathlib import Path
 from unittest import mock
 
 from subiquity.models.oem import OEMModel
@@ -26,7 +27,7 @@ class TestOEMModel(SubiTestCase):
     @contextmanager
     def patch_lsb_release(self, series):
         def fake_lsb_release(*args, **kwargs):
-            return lsb_release(path=f"examples/lsb-release-{series}")
+            return lsb_release(path=Path(f"examples/lsb-release-{series}"))
 
         with mock.patch(
             "subiquity.models.oem.lsb_release",

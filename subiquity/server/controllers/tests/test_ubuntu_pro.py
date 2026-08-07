@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from pathlib import Path
 from unittest import mock
 
 import jsonschema
@@ -61,7 +62,7 @@ class TestUbuntuProController(SubiTestCase):
         self, series: str, universe_pkgs: int, main_pkgs: int, esm_eol_year: int | None
     ):
         def fake_lsb_release(*args, **kwargs):
-            return lsb_release_from_path(f"examples/lsb-release-{series}")
+            return lsb_release_from_path(Path(f"examples/lsb-release-{series}"))
 
         with mock.patch(
             "subiquity.server.controllers.ubuntu_pro.lsb_release",
