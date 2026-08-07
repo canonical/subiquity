@@ -21,16 +21,15 @@ from subiquitycore.lsb_release import lsb_release
 class TestLSBRelease(unittest.TestCase):
     def setUp(self):
         self.target = "subiquitycore.lsb_release.open"
-
-    def test_lsb_release(self):
-        lsb_str = """
+        self.lsb_str = """
 DISTRIB_ID=Ubuntu
 DISTRIB_RELEASE=21.10
 DISTRIB_CODENAME=impish
 DISTRIB_DESCRIPTION="Ubuntu 21.10"
         """
 
-        with patch(self.target, mock_open(read_data=lsb_str)) as patched:
+    def test_lsb_release(self):
+        with patch(self.target, mock_open(read_data=self.lsb_str)) as patched:
             distro = lsb_release(path="sample")
             patched.assert_called_once_with("sample", "r")
             self.assertEqual(distro["id"], "Ubuntu")
@@ -43,12 +42,12 @@ DISTRIB_DESCRIPTION="Ubuntu 21.10"
             self.assertEqual(lsb_release("/inexistent"), {})
 
     def test_lsb_release_default(self):
-        with patch(self.target, side_effect=FileNotFoundError) as patched:
+        with patch(self.target, mock_open(read_data=self.lsb_str)) as patched:
             lsb_release(path=None)
             patched.assert_called_once_with("/etc/lsb-release", "r")
 
     def test_lsb_release_dry_run(self):
-        with patch(self.target, side_effect=FileNotFoundError) as patched:
+        with patch(self.target, mock_open(read_data=self.lsb_str)) as patched:
             lsb_release(dry_run=True)
             patched.assert_called_once_with("examples/lsb-release-focal", "r")
 
