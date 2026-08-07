@@ -17,26 +17,34 @@ from pathlib import Path
 from unittest.mock import patch
 
 from subiquitycore.os import (
-    LSB_RELEASE_EXAMPLE,
-    LSB_RELEASE_FILE,
+    LEGACY_LSB_RELEASE,
+    LEGACY_LSB_RELEASE_EXAMPLE,
     UbuntuInfo,
     lsb_release,
+    read_ubuntu_info,
 )
 
 
 class TestUbuntuInfo(unittest.TestCase):
-    def test_from_lsb_release_props(self):
-        props = {
-            "id": "Ubuntu",
-            "release": "26.10",
-            "codename": "stonking",
-            "description": "Ubuntu 26.10",
-        }
-        info = UbuntuInfo.from_lsb_release_props(props)
+    def test_from_lsb_release(self):
+        content = Path("examples/lsb-release-resolute").read_text()
 
-        self.assertEqual("stonking", info.codename)
-        self.assertEqual("26.10", info.release)
-        self.assertEqual("Ubuntu 26.10", info.pretty_name)
+        with patch("subiquitycore.os.Path.read_text", return_value=content):
+            info = UbuntuInfo.from_lsb_release(path=Path("/dev/null"))
+
+        self.assertEqual("resolute", info.codename)
+        self.assertEqual("26.04", info.release)
+        self.assertEqual("Ubuntu 26.04 LTS", info.pretty_name)
+
+    def test_from_os_release(self):
+        content = Path("examples/os-release-resolute").read_text()
+
+        with patch("subiquitycore.os.Path.read_text", return_value=content):
+            info = UbuntuInfo.from_os_release(path=Path("/dev/null"))
+
+        self.assertEqual("resolute", info.codename)
+        self.assertEqual("26.04", info.release)
+        self.assertEqual("Ubuntu 26.04 LTS", info.pretty_name)
 
 
 class TestLSBRelease(unittest.TestCase):
@@ -70,15 +78,48 @@ DISTRIB_DESCRIPTION="Ubuntu 21.10"
             Path, "read_text", autospec=True, return_value=self.lsb_str
         ) as patched:
             lsb_release(path=None)
-        self.assertEqual(LSB_RELEASE_FILE, patched.call_args.args[0])
+        self.assertEqual(LEGACY_LSB_RELEASE, patched.call_args.args[0])
 
     def test_lsb_release_dry_run(self):
         with patch.object(
             Path, "read_text", autospec=True, return_value=self.lsb_str
         ) as patched:
             lsb_release(dry_run=True)
-        self.assertEqual(LSB_RELEASE_EXAMPLE, patched.call_args.args[0])
+        self.assertEqual(LEGACY_LSB_RELEASE_EXAMPLE, patched.call_args.args[0])
 
     def test_lsb_release_mutually_exclusive(self):
         with self.assertRaises(ValueError):
             lsb_release(path=Path("sample"), dry_run=True)
+
+
+class TestReadUbuntuInfo(unittest.TestCase):
+    resolute = UbuntuInfo(
+        codename="resolute",
+        release="26.04",
+        pretty_name="Ubuntu 26.04 LTS",
+    )
+
+    @patch.object(UbuntuInfo, "from_os_release", return_value=resolute)
+    @patch.object(UbuntuInfo, "from_lsb_release", return_value=resolute)
+    def test_os_release_exists(self, m_lsb_release, m_os_release):
+        self.assertEqual(self.resolute, read_ubuntu_info())
+
+        m_os_release.assert_called_once_with(path=Path("/etc/os-release"))
+        m_lsb_release.assert_not_called()
+
+    @patch.object(UbuntuInfo, "from_os_release", side_effect=FileNotFoundError)
+    @patch.object(UbuntuInfo, "from_lsb_release", return_value=resolute)
+    def test_only_lsb_release_exists(self, m_lsb_release, m_os_release):
+        self.assertEqual(self.resolute, read_ubuntu_info())
+
+        m_os_release.assert_called_once_with(path=Path("/etc/os-release"))
+        m_lsb_release.assert_called_once_with(path=Path("/etc/lsb-release"))
+
+    @patch.object(UbuntuInfo, "from_os_release", side_effect=FileNotFoundError)
+    @patch.object(UbuntuInfo, "from_lsb_release", side_effect=FileNotFoundError)
+    def test_none_exists(self, m_lsb_release, m_os_release):
+        with self.assertRaises(FileNotFoundError):
+            read_ubuntu_info()
+
+        m_os_release.assert_called_once_with(path=Path("/etc/os-release"))
+        m_lsb_release.assert_called_once_with(path=Path("/etc/lsb-release"))

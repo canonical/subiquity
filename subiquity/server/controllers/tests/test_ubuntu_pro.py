@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pathlib import Path
 from unittest import mock
 
 import jsonschema
@@ -21,7 +20,7 @@ from jsonschema.validators import validator_for
 
 from subiquity.server.controllers.ubuntu_pro import UbuntuProController
 from subiquity.server.dryrun import DRConfig
-from subiquitycore.os import lsb_release_from_path
+from subiquitycore.os import UbuntuInfo
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized
@@ -61,16 +60,18 @@ class TestUbuntuProController(SubiTestCase):
     async def test_info_GET__series(
         self, series: str, universe_pkgs: int, main_pkgs: int, esm_eol_year: int | None
     ):
-        def fake_lsb_release(*args, **kwargs):
-            return lsb_release_from_path(Path(f"examples/lsb-release-{series}"))
-
+        ubuntu_info = UbuntuInfo(
+            codename=series,
+            release="xx.yy",
+            pretty_name="mock-pretty-name",
+        )
         with mock.patch(
-            "subiquitycore.os.lsb_release",
-            wraps=fake_lsb_release,
-        ) as m_lsb_release:
+            "subiquity.server.controllers.ubuntu_pro.read_ubuntu_info",
+            return_value=ubuntu_info,
+        ) as m_read_ubuntu_info:
             info = await self.controller.info_GET()
 
-        m_lsb_release.assert_called_once()
+        m_read_ubuntu_info.assert_called_once()
 
         self.assertEqual(universe_pkgs, info.universe_packages)
         self.assertEqual(main_pkgs, info.main_packages)

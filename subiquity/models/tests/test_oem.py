@@ -13,39 +13,34 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from contextlib import contextmanager
-from pathlib import Path
 from unittest import mock
 
 from subiquity.models.oem import OEMModel
-from subiquitycore.os import lsb_release
+from subiquitycore.os import UbuntuInfo
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.parameterized import parameterized
 
 
 class TestOEMModel(SubiTestCase):
-    @contextmanager
-    def patch_lsb_release(self, series):
-        def fake_lsb_release(*args, **kwargs):
-            return lsb_release(path=Path(f"examples/lsb-release-{series}"))
-
-        with mock.patch(
-            "subiquitycore.os.lsb_release",
-            wraps=fake_lsb_release,
-        ):
-            yield
-
     @parameterized.expand(
         [
-            ["resolute", "server", True],
-            ["resolute", "desktop", True],
-            ["resolute", "core", False],
-            ["questing", "server", False],
-            ["noble", "server", False],
-            ["noble", "desktop", True],
+            ["26.04", "server", True],
+            ["26.04", "desktop", True],
+            ["26.04", "core", False],
+            ["25.10", "server", False],
+            ["24.04", "server", False],
+            ["24.04", "desktop", True],
         ]
     )
     def test_install_on(self, series, variant, expected):
-        with self.patch_lsb_release(series):
+        ubuntu_info = UbuntuInfo(
+            codename="mock-codename",
+            release=series,
+            pretty_name="mock-pretty-name",
+        )
+
+        with mock.patch(
+            "subiquity.models.oem.read_ubuntu_info", return_value=ubuntu_info
+        ):
             model = OEMModel(dry_run=False)
             self.assertEqual(expected, model.install_on[variant])

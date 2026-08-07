@@ -12,13 +12,34 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
+import logging
 import shlex
 from pathlib import Path
 
 import attrs
 
-LSB_RELEASE_FILE = Path("/etc/lsb-release")
-LSB_RELEASE_EXAMPLE = Path("examples/lsb-release-focal")
+log = logging.getLogger("subiquitycore.os")
+
+
+OS_RELEASE = Path("/etc/os-release")
+OS_RELEASE_EXAMPLE = Path("examples/os-release-focal")
+
+LEGACY_LSB_RELEASE = Path("/etc/lsb-release")
+LEGACY_LSB_RELEASE_EXAMPLE = Path("examples/lsb-release-focal")
+
+
+def _parse_content(content: str, *, key_predicate) -> dict[str, str]:
+    ret: dict[str, str] = {}
+    for tok in shlex.split(content):
+        k, _, v = tok.partition("=")
+        if not v:
+            # Empty value or .partition() did not find the separator.
+            continue
+        if not key_predicate(k):
+            continue
+        ret[k] = v
+    return ret
 
 
 @attrs.define
@@ -36,13 +57,23 @@ class UbuntuInfo:
     pretty_name: str
 
     @classmethod
-    def from_lsb_release_props(cls, props: dict[str, str]) -> "UbuntuInfo":
-        # Note that the DISTRIB_ prefix has already been removed and the
-        # resulting keys have been lower-cased.
+    def from_lsb_release(cls, path: Path) -> "UbuntuInfo":
+        props = _parse_content(
+            path.read_text(), key_predicate=lambda x: x.startswith("DISTRIB_")
+        )
         return UbuntuInfo(
-            codename=props["codename"],
-            release=props["release"],
-            pretty_name=props["description"],
+            codename=props["DISTRIB_CODENAME"],
+            release=props["DISTRIB_RELEASE"],
+            pretty_name=props["DISTRIB_DESCRIPTION"],
+        )
+
+    @classmethod
+    def from_os_release(cls, path: Path) -> "UbuntuInfo":
+        props = _parse_content(path.read_text(), key_predicate=lambda _: True)
+        return UbuntuInfo(
+            codename=props["UBUNTU_CODENAME"],
+            release=props["VERSION_ID"],
+            pretty_name=props["PRETTY_NAME"],
         )
 
 
@@ -66,12 +97,24 @@ def lsb_release(path: Path | None = None, dry_run: bool = False) -> dict[str, st
         raise ValueError("Both dry_run and path are specified.")
 
     if path is None:
-        path = LSB_RELEASE_EXAMPLE if dry_run else LSB_RELEASE_FILE
+        path = LEGACY_LSB_RELEASE_EXAMPLE if dry_run else LEGACY_LSB_RELEASE
 
     return lsb_release_from_path(path)
 
 
 def read_ubuntu_info(*, dry_run=False) -> UbuntuInfo:
-    """Return Ubuntu information obtained using our parser implementation of
-    lsb_release."""
-    return UbuntuInfo.from_lsb_release_props(lsb_release(dry_run=dry_run))
+    """Return Ubuntu information obtained either from our parsing
+    implementation of /etc/os-release or legacy /etc/lsb-release (which is not
+    present anymore in 26.10)."""
+    os_release = OS_RELEASE
+    legacy_lsb_release = LEGACY_LSB_RELEASE
+
+    if dry_run:
+        os_release = OS_RELEASE_EXAMPLE
+        legacy_lsb_release = LEGACY_LSB_RELEASE_EXAMPLE
+
+    with contextlib.suppress(FileNotFoundError):
+        return UbuntuInfo.from_os_release(path=os_release)
+
+    log.debug("cannot find os-release file, falling back to lsb-release")
+    return UbuntuInfo.from_lsb_release(path=legacy_lsb_release)
