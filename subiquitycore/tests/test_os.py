@@ -1,4 +1,4 @@
-# Copyright 2021 Canonical, Ltd.
+# Copyright 2026 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,13 +16,12 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from subiquitycore.lsb_release import LSB_RELEASE_EXAMPLE, LSB_RELEASE_FILE, lsb_release
+from subiquitycore.os import LSB_RELEASE_EXAMPLE, LSB_RELEASE_FILE, lsb_release
 
 
 class TestLSBRelease(unittest.TestCase):
     def setUp(self):
         self.lsb_str = """
-    def test_lsb_release(self):
 DISTRIB_ID=Ubuntu
 DISTRIB_RELEASE=21.10
 DISTRIB_CODENAME=impish

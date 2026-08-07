@@ -120,7 +120,7 @@ from subiquitycore.async_helpers import (
     schedule_task,
 )
 from subiquitycore.context import with_context
-from subiquitycore.lsb_release import lsb_release
+from subiquitycore.os import lsb_release
 from subiquitycore.utils import arun_command, gen_zsys_uuid, run_command
 
 log = logging.getLogger("subiquity.server.controllers.storage")

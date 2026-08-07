@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquitycore.lsb_release import lsb_release
+from subiquitycore.os import lsb_release
 
 
 def flavor_to_pkgname(flavor: str, *, dry_run: bool) -> str:

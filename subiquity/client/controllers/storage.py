@@ -39,7 +39,7 @@ from subiquity.ui.views import GuidedDiskSelectionView, StorageView
 from subiquity.ui.views.storage.guided import GuidedDiskSelectionViewV2Debug
 from subiquity.ui.views.storage.probing import ProbingFailed, SlowProbing
 from subiquitycore.async_helpers import run_bg_task
-from subiquitycore.lsb_release import lsb_release
+from subiquitycore.os import lsb_release
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquity.client.controllers.storage")

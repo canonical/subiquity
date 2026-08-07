@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 
 import attrs
 
-from subiquitycore.lsb_release import lsb_release
+from subiquitycore.os import lsb_release
 
 if TYPE_CHECKING:
     # Avoid circular import: models/storage.py imports Requirements

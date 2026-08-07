@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import attr
 
-from subiquitycore.lsb_release import lsb_release
+from subiquitycore.os import lsb_release
 
 log = logging.getLogger("subiquity.models.oem")
 

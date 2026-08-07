@@ -37,7 +37,7 @@ from subiquity.ui.views.ubuntu_pro import (
     UpgradeYesNoForm,
 )
 from subiquitycore.async_helpers import schedule_task
-from subiquitycore.lsb_release import lsb_release
+from subiquitycore.os import lsb_release
 from subiquitycore.tuicontroller import Skip
 
 log = logging.getLogger("subiquity.client.controllers.ubuntu_pro")

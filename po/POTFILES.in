@@ -60,10 +60,10 @@ subiquitycore/file_util.py
 subiquitycore/i18n.py
 subiquitycore/__init__.py
 subiquitycore/log.py
-subiquitycore/lsb_release.py
 subiquitycore/models/__init__.py
 subiquitycore/models/network.py
 subiquitycore/netplan.py
+subiquitycore/os.py
 subiquitycore/palette.py
 subiquitycore/prober.py
 subiquitycore/pubsub.py

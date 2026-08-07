@@ -21,7 +21,7 @@ from jsonschema.validators import validator_for
 
 from subiquity.server.controllers.ubuntu_pro import UbuntuProController
 from subiquity.server.dryrun import DRConfig
-from subiquitycore.lsb_release import lsb_release_from_path
+from subiquitycore.os import lsb_release_from_path
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized

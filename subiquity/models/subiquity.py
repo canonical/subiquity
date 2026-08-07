@@ -30,7 +30,7 @@ from subiquity.cloudinit import validate_cloud_config_schema
 from subiquity.common.pkg import TargetPkg
 from subiquity.server.types import InstallerChannels
 from subiquitycore.file_util import generate_timestamped_header, write_file
-from subiquitycore.lsb_release import lsb_release
+from subiquitycore.os import lsb_release
 
 from .ad import AdModel
 from .codecs import CodecsModel

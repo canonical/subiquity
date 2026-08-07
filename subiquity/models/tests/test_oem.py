@@ -18,7 +18,7 @@ from pathlib import Path
 from unittest import mock
 
 from subiquity.models.oem import OEMModel
-from subiquitycore.lsb_release import lsb_release
+from subiquitycore.os import lsb_release
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.parameterized import parameterized
 

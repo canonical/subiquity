@@ -39,7 +39,7 @@ from subiquity.server.mounter import (
     OverlayMountpoint,
 )
 from subiquitycore.file_util import generate_config_yaml, write_file
-from subiquitycore.lsb_release import lsb_release
+from subiquitycore.os import lsb_release
 from subiquitycore.utils import astart_command, orig_environ
 
 log = logging.getLogger("subiquity.server.apt")

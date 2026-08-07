@@ -43,7 +43,7 @@ from subiquity.server.ubuntu_advantage import (
     UAInterface,
     UAInterfaceStrategy,
 )
-from subiquitycore.lsb_release import lsb_release
+from subiquitycore.os import lsb_release
 
 log = logging.getLogger("subiquity.server.controllers.ubuntu_pro")
 

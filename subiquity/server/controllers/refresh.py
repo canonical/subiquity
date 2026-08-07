@@ -29,7 +29,7 @@ from subiquity.server.snapd.types import SnapAction, SnapActionRequest
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import SingleInstanceTask, schedule_task
 from subiquitycore.context import with_context
-from subiquitycore.lsb_release import lsb_release
+from subiquitycore.os import lsb_release
 
 log = logging.getLogger("subiquity.server.controllers.refresh")
 
