@@ -31,7 +31,3 @@ def lsb_release(path: Path | None = None, dry_run: bool = False) -> dict[str, st
         path = LSB_RELEASE_EXAMPLE if dry_run else LSB_RELEASE_FILE
 
     return lsb_release_from_path(path)
-
-
-if __name__ == "__main__":
-    print(lsb_release())
