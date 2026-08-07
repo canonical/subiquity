@@ -16,7 +16,27 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from subiquitycore.os import LSB_RELEASE_EXAMPLE, LSB_RELEASE_FILE, lsb_release
+from subiquitycore.os import (
+    LSB_RELEASE_EXAMPLE,
+    LSB_RELEASE_FILE,
+    UbuntuInfo,
+    lsb_release,
+)
+
+
+class TestUbuntuInfo(unittest.TestCase):
+    def test_from_lsb_release_props(self):
+        props = {
+            "id": "Ubuntu",
+            "release": "26.10",
+            "codename": "stonking",
+            "description": "Ubuntu 26.10",
+        }
+        info = UbuntuInfo.from_lsb_release_props(props)
+
+        self.assertEqual("stonking", info.codename)
+        self.assertEqual("26.10", info.release)
+        self.assertEqual("Ubuntu 26.10", info.pretty_name)
 
 
 class TestLSBRelease(unittest.TestCase):

@@ -15,8 +15,35 @@
 import shlex
 from pathlib import Path
 
+import attrs
+
 LSB_RELEASE_FILE = Path("/etc/lsb-release")
 LSB_RELEASE_EXAMPLE = Path("examples/lsb-release-focal")
+
+
+@attrs.define
+class UbuntuInfo:
+    # resolute, stonking, ...
+    codename: str
+
+    # x.y
+    release: str
+
+    # Ubuntu 25.10
+    # Ubuntu 26.04 LTS
+    # Ubuntu 24.04.4 LTS
+    # Ubuntu Stonking Stingray (development branch)
+    pretty_name: str
+
+    @classmethod
+    def from_lsb_release_props(cls, props: dict[str, str]) -> "UbuntuInfo":
+        # Note that the DISTRIB_ prefix has already been removed and the
+        # resulting keys have been lower-cased.
+        return UbuntuInfo(
+            codename=props["codename"],
+            release=props["release"],
+            pretty_name=props["description"],
+        )
 
 
 def lsb_release_from_path(path: Path) -> dict[str, str]:
@@ -42,3 +69,9 @@ def lsb_release(path: Path | None = None, dry_run: bool = False) -> dict[str, st
         path = LSB_RELEASE_EXAMPLE if dry_run else LSB_RELEASE_FILE
 
     return lsb_release_from_path(path)
+
+
+def read_ubuntu_info(*, dry_run=False) -> UbuntuInfo:
+    """Return Ubuntu information obtained using our parser implementation of
+    lsb_release."""
+    return UbuntuInfo.from_lsb_release_props(lsb_release(dry_run=dry_run))
