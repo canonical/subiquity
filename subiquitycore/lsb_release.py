@@ -1,14 +1,13 @@
 # This file is part of subiquity. See LICENSE file for license information.
 import shlex
 from pathlib import Path
-from typing import Dict
 
 LSB_RELEASE_FILE = Path("/etc/lsb-release")
 LSB_RELEASE_EXAMPLE = Path("examples/lsb-release-focal")
 
 
-def lsb_release_from_path(path: Path) -> Dict[str, str]:
-    ret: Dict[str, str] = {}
+def lsb_release_from_path(path: Path) -> dict[str, str]:
+    ret: dict[str, str] = {}
     try:
         content = path.read_text()
     except FileNotFoundError:
@@ -22,7 +21,7 @@ def lsb_release_from_path(path: Path) -> Dict[str, str]:
     return ret
 
 
-def lsb_release(path: Path | None = None, dry_run: bool = False) -> Dict[str, str]:
+def lsb_release(path: Path | None = None, dry_run: bool = False) -> dict[str, str]:
     """return a dictionary of values from /etc/lsb-release.
     keys are lower case with DISTRIB_ prefix removed."""
     if dry_run and path is not None:
