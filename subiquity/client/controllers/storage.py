@@ -39,7 +39,7 @@ from subiquity.ui.views import GuidedDiskSelectionView, StorageView
 from subiquity.ui.views.storage.guided import GuidedDiskSelectionViewV2Debug
 from subiquity.ui.views.storage.probing import ProbingFailed, SlowProbing
 from subiquitycore.async_helpers import run_bg_task
-from subiquitycore.os import lsb_release
+from subiquitycore.os import read_ubuntu_info
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquity.client.controllers.storage")
@@ -292,7 +292,7 @@ class StorageController(SubiquityTuiController, StorageManipulator):
         if self.model.firmware_type == FirmwareType.PREP:
             self.supports_resilient_boot = False
         else:
-            release = lsb_release(dry_run=self.app.opts.dry_run)["release"]
+            release = read_ubuntu_info(dry_run=self.app.opts.dry_run).release
             self.supports_resilient_boot = release >= "20.04"
         self.ui.set_body(StorageView(self.model, self))
 

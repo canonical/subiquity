@@ -21,7 +21,7 @@ from urwid import Divider, Filler, PopUpLauncher, Text, connect_signal
 from subiquity.common.types import PasswordKind
 from subiquity.ui.views.error import ErrorReportListStretchy
 from subiquitycore.async_helpers import run_bg_task
-from subiquitycore.os import lsb_release
+from subiquitycore.os import read_ubuntu_info
 from subiquitycore.ssh import summarize_host_keys
 from subiquitycore.ui.buttons import header_btn, other_btn
 from subiquitycore.ui.container import Columns, Pile, WidgetWrap
@@ -467,8 +467,8 @@ class HelpMenu(PopUpLauncher):
         self.app.add_global_overlay(stretchy)
 
     def _default_about_msg(self):
-        info = lsb_release(dry_run=self.app.opts.dry_run)
-        if "LTS" in info["description"]:
+        info = read_ubuntu_info(dry_run=self.app.opts.dry_run)
+        if "LTS" in info.pretty_name:
             template = _(ABOUT_INSTALLER_LTS)
         else:
             template = _(ABOUT_INSTALLER)

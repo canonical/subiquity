@@ -14,10 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from unittest.mock import ANY, AsyncMock, patch
+from unittest.mock import ANY, AsyncMock, Mock, patch
 
 from subiquity.client.controllers.ubuntu_pro import UbuntuProController
 from subiquity.common.types import UbuntuProResponse
+from subiquitycore.os import UbuntuInfo
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tuicontroller import Skip
 
@@ -31,10 +32,16 @@ class TestUbuntuProController(unittest.IsolatedAsyncioTestCase):
 
     @patch("subiquity.client.controllers.ubuntu_pro.UbuntuProView")
     @patch(
-        "subiquity.client.controllers.ubuntu_pro.lsb_release",
-        return_value={"description": "Ubuntu 22.04 LTS", "release": "22.04"},
+        "subiquity.client.controllers.ubuntu_pro.read_ubuntu_info",
+        Mock(
+            return_value=UbuntuInfo(
+                release="22.04",
+                codename="jammy",
+                pretty_name="Ubuntu 22.04 LTS",
+            )
+        ),
     )
-    async def test_make_ui__lts(self, release, view):
+    async def test_make_ui__lts(self, view):
         ctrler = self.ctrler
 
         rv = UbuntuProResponse(token="", has_network=False)
@@ -48,10 +55,16 @@ class TestUbuntuProController(unittest.IsolatedAsyncioTestCase):
 
     @patch("subiquity.client.controllers.ubuntu_pro.UbuntuProView")
     @patch(
-        "subiquity.client.controllers.ubuntu_pro.lsb_release",
-        return_value={"description": "Ubuntu 23.10", "release": "23.10"},
+        "subiquity.client.controllers.ubuntu_pro.read_ubuntu_info",
+        Mock(
+            return_value=UbuntuInfo(
+                release="23.10",
+                codename="mantic",
+                pretty_name="Ubuntu 23.10",
+            )
+        ),
     )
-    async def test_make_ui__not_lts(self, release, view):
+    async def test_make_ui__not_lts(self, view):
         with self.assertRaises(Skip):
             await self.ctrler.make_ui()
 
@@ -59,13 +72,16 @@ class TestUbuntuProController(unittest.IsolatedAsyncioTestCase):
 
     @patch("subiquity.client.controllers.ubuntu_pro.UbuntuProView")
     @patch(
-        "subiquity.client.controllers.ubuntu_pro.lsb_release",
-        return_value={
-            "description": "Ubuntu Noble Numbat (development branch)",
-            "release": "24.04",
-        },
+        "subiquity.client.controllers.ubuntu_pro.read_ubuntu_info",
+        Mock(
+            return_value=UbuntuInfo(
+                release="24.04",
+                codename="noble",
+                pretty_name="Ubuntu Noble Numbat (development branch)",
+            )
+        ),
     )
-    async def test_make_ui__noble_devel(self, release, view):
+    async def test_make_ui__noble_devel(self, view):
         ctrler = self.ctrler
 
         rv = UbuntuProResponse(token="", has_network=False)
@@ -81,13 +97,16 @@ class TestUbuntuProController(unittest.IsolatedAsyncioTestCase):
 
     @patch("subiquity.client.controllers.ubuntu_pro.UbuntuProView")
     @patch(
-        "subiquity.client.controllers.ubuntu_pro.lsb_release",
-        return_value={
-            "description": "Ubuntu R R (development branch)",
-            "release": "26.04",
-        },
+        "subiquity.client.controllers.ubuntu_pro.read_ubuntu_info",
+        Mock(
+            return_value=UbuntuInfo(
+                release="26.04",
+                codename="resolute",
+                pretty_name="Ubuntu Resolute Raccoon (development branch)",
+            )
+        ),
     )
-    async def test_make_ui__26_04_future(self, release, view):
+    async def test_make_ui__26_04_future(self, view):
         ctrler = self.ctrler
 
         rv = UbuntuProResponse(token="", has_network=False)

@@ -30,7 +30,7 @@ class TestOEMModel(SubiTestCase):
             return lsb_release(path=Path(f"examples/lsb-release-{series}"))
 
         with mock.patch(
-            "subiquity.models.oem.lsb_release",
+            "subiquitycore.os.lsb_release",
             wraps=fake_lsb_release,
         ):
             yield

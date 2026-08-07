@@ -25,6 +25,7 @@ from subiquity.server.controllers import refresh as refresh_mod
 from subiquity.server.controllers.refresh import RefreshController, SnapChannelSource
 from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
+from subiquitycore.os import UbuntuInfo
 from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
@@ -64,13 +65,19 @@ class TestRefreshController(SubiTestCase):
 
         paw.assert_not_called()
 
-    @mock.patch("subiquity.server.controllers.refresh.lsb_release")
-    async def test_configure_snapd_disk_info(self, m_lsb):
-        # If a snap channel is found via .disk/info it is applying if
-        # and only if the snap is already tracking stable/ubuntu-XX.YY
-
-        m_lsb.return_value = {"release": "XX.YY"}
-
+    # If a snap channel is found via .disk/info it is applying if and only if
+    # the snap is already tracking stable/ubuntu-XX.YY
+    @mock.patch(
+        "subiquity.server.controllers.refresh.read_ubuntu_info",
+        mock.Mock(
+            return_value=UbuntuInfo(
+                release="XX.YY",
+                codename="mock-codename",
+                pretty_name="mock-pretty-name",
+            )
+        ),
+    )
+    async def test_configure_snapd_disk_info(self):
         # The ...v2.snaps[snap_name].GET() style of API is cute but
         # not very easy to mock out.
         subiquity_info = await self.app.snapdapi.v2.snaps["subiquity"].GET()

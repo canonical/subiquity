@@ -90,6 +90,7 @@ from subiquity.server.snapd import types as snapdtypes
 from subiquity.server.snapd.info import SnapdInfo
 from subiquity.server.snapd.system_getter import SystemGetter
 from subiquity.server.snapd.types import VolumesAuth, VolumesAuthMode
+from subiquitycore.os import UbuntuInfo
 from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized
@@ -661,8 +662,12 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
                 model, "needs_bootloader_partition", return_value=False
             ):
                 with mock.patch(
-                    "subiquity.common.storage.requirements.lsb_release",
-                    return_value={"release": "26.10"},
+                    "subiquity.common.storage.requirements.read_ubuntu_info",
+                    return_value=UbuntuInfo(
+                        release="26.10",
+                        codename="stonking",
+                        pretty_name="Ubuntu Stonking Stingray (development branch)",
+                    ),
                 ):
                     with self.assertRaisesRegex(AutoinstallError, "ext4 filesystem"):
                         await self.ctrler.apply_autoinstall_config()

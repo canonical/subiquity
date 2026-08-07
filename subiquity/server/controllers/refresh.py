@@ -29,7 +29,7 @@ from subiquity.server.snapd.types import SnapAction, SnapActionRequest
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import SingleInstanceTask, schedule_task
 from subiquitycore.context import with_context
-from subiquitycore.os import lsb_release
+from subiquitycore.os import read_ubuntu_info
 
 log = logging.getLogger("subiquity.server.controllers.refresh")
 
@@ -133,8 +133,8 @@ class RefreshController(SubiquityController):
         if source == SnapChannelSource.NOT_FOUND:
             log.debug("no refresh channel found")
             return
-        info = lsb_release(dry_run=self.app.opts.dry_run)
-        expected_channel = "stable/ubuntu-" + info["release"]
+        info = read_ubuntu_info(dry_run=self.app.opts.dry_run)
+        expected_channel = "stable/ubuntu-" + info.release
         if (
             source == SnapChannelSource.DISK_INFO_FILE
             and snap.tracking_channel != expected_channel

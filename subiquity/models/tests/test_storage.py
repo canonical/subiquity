@@ -49,6 +49,7 @@ from subiquity.models.storage import (
     get_raid_size,
     humanize_size,
 )
+from subiquitycore.os import UbuntuInfo
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.parameterized import parameterized
 from subiquitycore.utils import matching_dicts
@@ -470,8 +471,12 @@ class TestStorageModel(unittest.TestCase):
         with (
             mock.patch.object(model, "needs_bootloader_partition", return_value=False),
             mock.patch(
-                "subiquity.common.storage.requirements.lsb_release",
-                return_value={"release": "26.10"},
+                "subiquity.common.storage.requirements.read_ubuntu_info",
+                return_value=UbuntuInfo(
+                    release="26.10",
+                    codename="stonking",
+                    pretty_name="Ubuntu Stonking Stingray (development branch)",
+                ),
             ),
         ):
             if has_separate_boot:
@@ -503,8 +508,12 @@ class TestStorageModel(unittest.TestCase):
         with (
             mock.patch.object(model, "needs_bootloader_partition", return_value=False),
             mock.patch(
-                "subiquity.common.storage.requirements.lsb_release",
-                return_value={"release": release},
+                "subiquity.common.storage.requirements.read_ubuntu_info",
+                return_value=UbuntuInfo(
+                    release=release,
+                    codename="mock-codename",
+                    pretty_name="mock-pretty-name",
+                ),
             ),
         ):
             self.assertEqual(expected, model.can_install())

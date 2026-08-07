@@ -39,7 +39,7 @@ from subiquity.server.mounter import (
     OverlayMountpoint,
 )
 from subiquitycore.file_util import generate_config_yaml, write_file
-from subiquitycore.os import lsb_release
+from subiquitycore.os import read_ubuntu_info
 from subiquitycore.utils import astart_command, orig_environ
 
 log = logging.getLogger("subiquity.server.apt")
@@ -272,7 +272,7 @@ class AptConfigurer:
                     continue
                 self.install_tree.pp(relpath).unlink()
 
-        codename = lsb_release(dry_run=self.app.opts.dry_run)["codename"]
+        codename = read_ubuntu_info(dry_run=self.app.opts.dry_run).codename
 
         new_style_iso = self.configured_tree.pp(
             "etc/apt/sources.list.d/cdrom.sources"
@@ -435,17 +435,17 @@ class DryRunAptConfigurer(AptConfigurer):
         """Pretend that the execution of the apt-get update command results in
         a failure."""
         url = self.app.base_model.mirror.primary_staged.uri
-        release = lsb_release(dry_run=True)["codename"]
+        codename = read_ubuntu_info(dry_run=True).codename
         host = url.split("/")[2]
 
         output.write(
             f"""\
-Ign:1 {url} {release} InRelease
-Ign:2 {url} {release}-updates InRelease
-Ign:3 {url} {release}-backports InRelease
-Ign:4 {url} {release}-security InRelease
-Ign:2 {url} {release} InRelease
-Ign:3 {url} {release}-updates InRelease
+Ign:1 {url} {codename} InRelease
+Ign:2 {url} {codename}-updates InRelease
+Ign:3 {url} {codename}-backports InRelease
+Ign:4 {url} {codename}-security InRelease
+Ign:2 {url} {codename} InRelease
+Ign:3 {url} {codename}-updates InRelease
 Err:1 {url} kinetic InRelease
  Temporary failure resolving '{host}'
 Err:2 {url} kinetic-updates InRelease
@@ -455,13 +455,13 @@ Err:3 {url} kinetic-backports InRelease
 Err:4 {url} kinetic-security InRelease
  Temporary failure resolving '{host}'
 Reading package lists...
-E: Failed to fetch {url}/dists/{release}/InRelease\
+E: Failed to fetch {url}/dists/{codename}/InRelease\
   Temporary failure resolving '{host}'
-E: Failed to fetch {url}/dists/{release}-updates/InRelease\
+E: Failed to fetch {url}/dists/{codename}-updates/InRelease\
   Temporary failure resolving '{host}'
-E: Failed to fetch {url}/dists/{release}-backports/InRelease\
+E: Failed to fetch {url}/dists/{codename}-backports/InRelease\
   Temporary failure resolving '{host}'
-E: Failed to fetch {url}/dists/{release}-security/InRelease\
+E: Failed to fetch {url}/dists/{codename}-security/InRelease\
   Temporary failure resolving '{host}'
 E: Some index files failed to download. They have been ignored,
  or old ones used instead.
@@ -473,14 +473,14 @@ E: Some index files failed to download. They have been ignored,
         """Pretend that the execution of the apt-get update command results in
         a success."""
         url = self.app.base_model.mirror.primary_staged.uri
-        release = lsb_release(dry_run=True)["codename"]
+        codename = read_ubuntu_info(dry_run=True).codename
 
         output.write(
             f"""\
-Get:1 {url} {release} InRelease [267 kB]
-Get:2 {url} {release}-updates InRelease [109 kB]
-Get:3 {url} {release}-backports InRelease [99.9 kB]
-Get:4 {url} {release}-security InRelease [109 kB]
+Get:1 {url} {codename} InRelease [267 kB]
+Get:2 {url} {codename}-updates InRelease [109 kB]
+Get:3 {url} {codename}-backports InRelease [99.9 kB]
+Get:4 {url} {codename}-security InRelease [109 kB]
 Fetched 585 kB in 1s (1057 kB/s)
 Reading package lists...
 """

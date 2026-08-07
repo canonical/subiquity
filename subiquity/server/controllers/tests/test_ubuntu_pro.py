@@ -65,7 +65,7 @@ class TestUbuntuProController(SubiTestCase):
             return lsb_release_from_path(Path(f"examples/lsb-release-{series}"))
 
         with mock.patch(
-            "subiquity.server.controllers.ubuntu_pro.lsb_release",
+            "subiquitycore.os.lsb_release",
             wraps=fake_lsb_release,
         ) as m_lsb_release:
             info = await self.controller.info_GET()
