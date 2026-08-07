@@ -1695,7 +1695,9 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
             system=snapdtypes.SystemDetails(
                 label="mock-label",
                 volumes={
-                    "mockVol": snapdtypes.Volume(schema="mock", structure=None),
+                    "mockVol": snapdtypes.Volume(
+                        schema="mock", structure=None, bootloader="grub"
+                    ),
                 },
                 model=snapdtypes.Model(
                     architecture="mock-arch",
@@ -3104,7 +3106,9 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
             system=snapdtypes.SystemDetails(
                 label="system",
                 volumes={
-                    "pc": snapdtypes.Volume(schema="gpt", structure=structures),
+                    "pc": snapdtypes.Volume(
+                        schema="gpt", structure=structures, bootloader="grub"
+                    ),
                 },
                 model=snapdtypes.Model(
                     architecture="amd64",
