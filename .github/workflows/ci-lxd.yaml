@@ -1,0 +1,44 @@
+name: CI-lxd
+
+on:
+  push:
+    paths-ignore:
+      - 'doc/**'
+  pull_request:
+    paths-ignore:
+      - 'doc/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - ubuntu-daily:noble
+          - ubuntu-daily:resolute
+    steps:
+    - uses: actions/checkout@v4
+    - name: run
+      run: |
+        sudo ./scripts/github-ci-lxd-setup.sh
+        sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make check"
+
+  lint:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - ubuntu-daily:noble     # match the core snap we're running against
+          - ubuntu-daily:resolute  # latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: lint
+      run: |
+        sudo ./scripts/github-ci-lxd-setup.sh
+        sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make lint"
