@@ -18,6 +18,7 @@ import shlex
 from pathlib import Path
 
 import attrs
+import curtin.util
 
 log = logging.getLogger("subiquity.common.os")
 
@@ -27,19 +28,6 @@ OS_RELEASE_EXAMPLE = Path("examples/os-release-focal")
 
 LEGACY_LSB_RELEASE = Path("/etc/lsb-release")
 LEGACY_LSB_RELEASE_EXAMPLE = Path("examples/lsb-release-focal")
-
-
-def _parse_content(content: str, *, key_predicate) -> dict[str, str]:
-    ret: dict[str, str] = {}
-    for tok in shlex.split(content):
-        k, _, v = tok.partition("=")
-        if not v:
-            # Empty value or .partition() did not find the separator.
-            continue
-        if not key_predicate(k):
-            continue
-        ret[k] = v
-    return ret
 
 
 @attrs.define
@@ -67,9 +55,16 @@ class UbuntuInfo:
 
     @classmethod
     def from_lsb_release(cls, path: Path) -> "UbuntuInfo":
-        props = _parse_content(
-            path.read_text(), key_predicate=lambda x: x.startswith("DISTRIB_")
-        )
+        props: dict[str, str] = {}
+        for tok in shlex.split(path.read_text()):
+            k, _, v = tok.partition("=")
+            if not v:
+                # Empty value or .partition() did not find the separator.
+                continue
+            if not k.startswith("DISTRIB"):
+                continue
+            props[k] = v
+
         return UbuntuInfo(
             codename=props["DISTRIB_CODENAME"],
             release=props["DISTRIB_RELEASE"],
@@ -78,7 +73,7 @@ class UbuntuInfo:
 
     @classmethod
     def from_os_release(cls, path: Path) -> "UbuntuInfo":
-        props = _parse_content(path.read_text(), key_predicate=lambda _: True)
+        props = curtin.util.load_os_release(path.read_text())
         return UbuntuInfo(
             codename=props["UBUNTU_CODENAME"],
             release=props["VERSION_ID"],
