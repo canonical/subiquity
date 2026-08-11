@@ -65,7 +65,7 @@ class UbuntuProController(SubiquityTuiController):
 
         info = read_ubuntu_info(dry_run=dry_run)
 
-        if "LTS" not in info.pretty_name:
+        if not info.is_marked_lts():
             major, minor = info.release.split(".")
 
             if int(major) >= 20 and int(major) % 2 == 0 and minor == "04":

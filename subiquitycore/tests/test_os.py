@@ -46,6 +46,19 @@ class TestUbuntuInfo(unittest.TestCase):
         self.assertEqual("26.04", info.release)
         self.assertEqual("Ubuntu 26.04 LTS", info.pretty_name)
 
+    def test_is_marked_lts(self):
+        info = UbuntuInfo(
+            codename="resolute",
+            release="26.04",
+            pretty_name="Ubuntu 26.04 LTS",
+        )
+
+        self.assertTrue(info.is_marked_lts())
+
+        info.pretty_name = "Ubuntu 26.04"
+
+        self.assertFalse(info.is_marked_lts())
+
 
 class TestLSBRelease(unittest.TestCase):
     def setUp(self):

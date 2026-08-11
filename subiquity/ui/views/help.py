@@ -468,7 +468,7 @@ class HelpMenu(PopUpLauncher):
 
     def _default_about_msg(self):
         info = read_ubuntu_info(dry_run=self.app.opts.dry_run)
-        if "LTS" in info.pretty_name:
+        if info.is_marked_lts():
             template = _(ABOUT_INSTALLER_LTS)
         else:
             template = _(ABOUT_INSTALLER)

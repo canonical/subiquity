@@ -56,6 +56,10 @@ class UbuntuInfo:
     # Ubuntu Stonking Stingray (development branch)
     pretty_name: str
 
+    def is_marked_lts(self) -> bool:
+        """Tells whether the version of Ubuntu is marked LTS."""
+        return "LTS" in self.pretty_name
+
     @classmethod
     def from_lsb_release(cls, path: Path) -> "UbuntuInfo":
         props = _parse_content(
