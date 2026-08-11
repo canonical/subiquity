@@ -22,6 +22,7 @@ from unittest.mock import Mock
 import attr
 import yaml
 
+from subiquity.common.os import UbuntuInfo
 from subiquity.common.storage import gaps
 from subiquity.common.storage.requirements import (
     Requirements,
@@ -49,7 +50,6 @@ from subiquity.models.storage import (
     get_raid_size,
     humanize_size,
 )
-from subiquitycore.os import UbuntuInfo
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.parameterized import parameterized
 from subiquitycore.utils import matching_dicts

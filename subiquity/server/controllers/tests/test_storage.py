@@ -28,6 +28,7 @@ import requests_mock
 from curtin.commands.extract import TrivialSourceHandler
 from jsonschema.validators import validator_for
 
+from subiquity.common.os import UbuntuInfo
 from subiquity.common.storage import boot, gaps, labels
 from subiquity.common.storage.actions import DeviceAction
 from subiquity.common.types.storage import (
@@ -90,7 +91,6 @@ from subiquity.server.snapd import types as snapdtypes
 from subiquity.server.snapd.info import SnapdInfo
 from subiquity.server.snapd.system_getter import SystemGetter
 from subiquity.server.snapd.types import VolumesAuth, VolumesAuthMode
-from subiquitycore.os import UbuntuInfo
 from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized

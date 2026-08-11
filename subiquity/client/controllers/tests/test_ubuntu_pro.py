@@ -17,8 +17,8 @@ import unittest
 from unittest.mock import ANY, AsyncMock, Mock, patch
 
 from subiquity.client.controllers.ubuntu_pro import UbuntuProController
+from subiquity.common.os import UbuntuInfo
 from subiquity.common.types import UbuntuProResponse
-from subiquitycore.os import UbuntuInfo
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tuicontroller import Skip
 

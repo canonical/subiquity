@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquitycore.os import read_ubuntu_info
+from subiquity.common.os import read_ubuntu_info
 
 
 def flavor_to_pkgname(flavor: str, *, dry_run: bool) -> str:

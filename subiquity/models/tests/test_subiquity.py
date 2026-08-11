@@ -25,6 +25,7 @@ from unittest import mock
 import yaml
 
 from subiquity.cloudinit import CloudInitSchemaValidationError
+from subiquity.common.os import UbuntuInfo
 from subiquity.common.types import IdentityData
 from subiquity.models.subiquity import (
     CLOUDINIT_CLEAN_FILE_TMPL,
@@ -34,7 +35,6 @@ from subiquity.models.subiquity import (
 )
 from subiquity.server.server import INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES
 from subiquity.server.types import InstallerChannels
-from subiquitycore.os import UbuntuInfo
 from subiquitycore.pubsub import MessageHub
 from subiquitycore.tests import SubiTestCase
 

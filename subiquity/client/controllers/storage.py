@@ -18,6 +18,7 @@ import logging
 from typing import Callable, Optional
 
 from subiquity.client.controller import SubiquityTuiController
+from subiquity.common.os import read_ubuntu_info
 from subiquity.common.storage import gaps
 from subiquity.common.storage.manipulator import StorageManipulator
 from subiquity.common.types.storage import (
@@ -39,7 +40,6 @@ from subiquity.ui.views import GuidedDiskSelectionView, StorageView
 from subiquity.ui.views.storage.guided import GuidedDiskSelectionViewV2Debug
 from subiquity.ui.views.storage.probing import ProbingFailed, SlowProbing
 from subiquitycore.async_helpers import run_bg_task
-from subiquitycore.os import read_ubuntu_info
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquity.client.controllers.storage")

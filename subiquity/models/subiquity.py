@@ -27,10 +27,10 @@ import yaml
 from curtin.config import merge_config
 
 from subiquity.cloudinit import validate_cloud_config_schema
+from subiquity.common.os import read_ubuntu_info
 from subiquity.common.pkg import TargetPkg
 from subiquity.server.types import InstallerChannels
 from subiquitycore.file_util import generate_timestamped_header, write_file
-from subiquitycore.os import read_ubuntu_info
 
 from .ad import AdModel
 from .codecs import CodecsModel

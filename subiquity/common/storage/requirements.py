@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 
 import attrs
 
-from subiquitycore.os import read_ubuntu_info
+from subiquity.common.os import read_ubuntu_info
 
 if TYPE_CHECKING:
     # Avoid circular import: models/storage.py imports Requirements

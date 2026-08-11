@@ -18,9 +18,9 @@ from unittest import mock
 import jsonschema
 from jsonschema.validators import validator_for
 
+from subiquity.common.os import UbuntuInfo
 from subiquity.server.controllers.ubuntu_pro import UbuntuProController
 from subiquity.server.dryrun import DRConfig
-from subiquitycore.os import UbuntuInfo
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized

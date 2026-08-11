@@ -19,7 +19,7 @@ from pathlib import Path
 
 import attrs
 
-log = logging.getLogger("subiquitycore.os")
+log = logging.getLogger("subiquity.common.os")
 
 
 OS_RELEASE = Path("/etc/os-release")

@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import attr
 
-from subiquitycore.os import read_ubuntu_info
+from subiquity.common.os import read_ubuntu_info
 
 log = logging.getLogger("subiquity.models.oem")
 

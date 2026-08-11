@@ -23,6 +23,7 @@ import aiohttp
 from urwid import Widget
 
 from subiquity.client.controller import SubiquityTuiController
+from subiquity.common.os import read_ubuntu_info
 from subiquity.common.types import UbuntuProCheckTokenStatus as TokenStatus
 from subiquity.common.types import (
     UbuntuProInfo,
@@ -37,7 +38,6 @@ from subiquity.ui.views.ubuntu_pro import (
     UpgradeYesNoForm,
 )
 from subiquitycore.async_helpers import schedule_task
-from subiquitycore.os import read_ubuntu_info
 from subiquitycore.tuicontroller import Skip
 
 log = logging.getLogger("subiquity.client.controllers.ubuntu_pro")

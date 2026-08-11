@@ -20,12 +20,12 @@ import requests
 import requests_mock
 from jsonschema.validators import validator_for
 
+from subiquity.common.os import UbuntuInfo
 from subiquity.common.types import Change, TaskStatus
 from subiquity.server.controllers import refresh as refresh_mod
 from subiquity.server.controllers.refresh import RefreshController, SnapChannelSource
 from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
-from subiquitycore.os import UbuntuInfo
 from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app

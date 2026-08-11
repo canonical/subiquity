@@ -22,6 +22,7 @@ from typing import Optional
 import distro_info
 
 from subiquity.common.apidef import API
+from subiquity.common.os import read_ubuntu_info
 from subiquity.common.types import (
     UbuntuProCheckTokenAnswer,
     UbuntuProCheckTokenStatus,
@@ -43,7 +44,6 @@ from subiquity.server.ubuntu_advantage import (
     UAInterface,
     UAInterfaceStrategy,
 )
-from subiquitycore.os import read_ubuntu_info
 
 log = logging.getLogger("subiquity.server.controllers.ubuntu_pro")
 

@@ -30,6 +30,7 @@ import apt_pkg
 from curtin.commands.extract import AbstractSourceHandler
 from curtin.config import merge_config
 
+from subiquity.common.os import read_ubuntu_info
 from subiquity.server.curtin import run_curtin_command
 from subiquity.server.mounter import (
     DryRunMounter,
@@ -39,7 +40,6 @@ from subiquity.server.mounter import (
     OverlayMountpoint,
 )
 from subiquitycore.file_util import generate_config_yaml, write_file
-from subiquitycore.os import read_ubuntu_info
 from subiquitycore.utils import astart_command, orig_environ
 
 log = logging.getLogger("subiquity.server.apt")

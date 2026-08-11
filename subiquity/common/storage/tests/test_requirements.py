@@ -15,6 +15,7 @@
 import unittest
 from unittest import mock
 
+from subiquity.common.os import UbuntuInfo
 from subiquity.common.storage.requirements import (
     GuidanceMessageKind,
     Requirements,
@@ -28,7 +29,6 @@ from subiquity.models.tests.test_storage import (
     make_mount,
     make_partition,
 )
-from subiquitycore.os import UbuntuInfo
 from subiquitycore.tests.parameterized import parameterized
 
 

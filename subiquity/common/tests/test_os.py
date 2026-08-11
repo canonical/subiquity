@@ -16,7 +16,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from subiquitycore.os import (
+from subiquity.common.os import (
     LEGACY_LSB_RELEASE,
     LEGACY_LSB_RELEASE_EXAMPLE,
     UbuntuInfo,
@@ -29,7 +29,7 @@ class TestUbuntuInfo(unittest.TestCase):
     def test_from_lsb_release(self):
         content = Path("examples/lsb-release-resolute").read_text()
 
-        with patch("subiquitycore.os.Path.read_text", return_value=content):
+        with patch("subiquity.common.os.Path.read_text", return_value=content):
             info = UbuntuInfo.from_lsb_release(path=Path("/dev/null"))
 
         self.assertEqual("resolute", info.codename)
@@ -39,7 +39,7 @@ class TestUbuntuInfo(unittest.TestCase):
     def test_from_os_release(self):
         content = Path("examples/os-release-resolute").read_text()
 
-        with patch("subiquitycore.os.Path.read_text", return_value=content):
+        with patch("subiquity.common.os.Path.read_text", return_value=content):
             info = UbuntuInfo.from_os_release(path=Path("/dev/null"))
 
         self.assertEqual("resolute", info.codename)

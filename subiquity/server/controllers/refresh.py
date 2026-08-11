@@ -22,6 +22,7 @@ from typing import Tuple
 import requests.exceptions
 
 from subiquity.common.apidef import API
+from subiquity.common.os import read_ubuntu_info
 from subiquity.common.types import Change, RefreshCheckState, RefreshStatus, TaskStatus
 from subiquity.server.controller import SubiquityController
 from subiquity.server.snapd.api import post_and_wait
@@ -29,7 +30,6 @@ from subiquity.server.snapd.types import SnapAction, SnapActionRequest
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import SingleInstanceTask, schedule_task
 from subiquitycore.context import with_context
-from subiquitycore.os import read_ubuntu_info
 
 log = logging.getLogger("subiquity.server.controllers.refresh")
 

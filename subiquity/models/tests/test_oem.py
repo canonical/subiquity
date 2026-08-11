@@ -15,8 +15,8 @@
 
 from unittest import mock
 
+from subiquity.common.os import UbuntuInfo
 from subiquity.models.oem import OEMModel
-from subiquitycore.os import UbuntuInfo
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.parameterized import parameterized
 

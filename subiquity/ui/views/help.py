@@ -18,10 +18,10 @@ import os
 
 from urwid import Divider, Filler, PopUpLauncher, Text, connect_signal
 
+from subiquity.common.os import read_ubuntu_info
 from subiquity.common.types import PasswordKind
 from subiquity.ui.views.error import ErrorReportListStretchy
 from subiquitycore.async_helpers import run_bg_task
-from subiquitycore.os import read_ubuntu_info
 from subiquitycore.ssh import summarize_host_keys
 from subiquitycore.ui.buttons import header_btn, other_btn
 from subiquitycore.ui.container import Columns, Pile, WidgetWrap
