@@ -2397,8 +2397,10 @@ class StorageController(SubiquityController, StorageManipulator):
         if self.model.firmware_type == FirmwareType.PREP:
             self.supports_resilient_boot = False
         else:
-            release = read_ubuntu_info(dry_run=self.app.opts.dry_run).release
-            self.supports_resilient_boot = release >= "20.04"
+            version_number = read_ubuntu_info(
+                dry_run=self.app.opts.dry_run
+            ).version_number()
+            self.supports_resilient_boot = version_number >= (20, 4)
         self._start_task = schedule_task(self._start())
 
     async def _start(self):

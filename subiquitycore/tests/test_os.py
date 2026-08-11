@@ -59,6 +59,15 @@ class TestUbuntuInfo(unittest.TestCase):
 
         self.assertFalse(info.is_marked_lts())
 
+    def test_version_number(self):
+        info = UbuntuInfo(
+            codename="noble",
+            release="24.04",
+            pretty_name="Ubuntu 24.04 LTS",
+        )
+
+        self.assertEqual((24, 4), info.version_number())
+
 
 class TestLSBRelease(unittest.TestCase):
     def setUp(self):

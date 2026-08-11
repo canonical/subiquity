@@ -60,6 +60,11 @@ class UbuntuInfo:
         """Tells whether the version of Ubuntu is marked LTS."""
         return "LTS" in self.pretty_name
 
+    def version_number(self) -> tuple[int, int]:
+        """Returns the release number as a sequence of integers."""
+        major, minor = self.release.split(".")
+        return int(major), int(minor)
+
     @classmethod
     def from_lsb_release(cls, path: Path) -> "UbuntuInfo":
         props = _parse_content(

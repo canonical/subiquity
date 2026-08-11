@@ -292,8 +292,8 @@ class StorageController(SubiquityTuiController, StorageManipulator):
         if self.model.firmware_type == FirmwareType.PREP:
             self.supports_resilient_boot = False
         else:
-            release = read_ubuntu_info(dry_run=self.app.opts.dry_run).release
-            self.supports_resilient_boot = release >= "20.04"
+            info = read_ubuntu_info(dry_run=self.app.opts.dry_run)
+            self.supports_resilient_boot = info.version_number() >= (20, 4)
         self.ui.set_body(StorageView(self.model, self))
 
     def guided_choice(self, choice):

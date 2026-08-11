@@ -44,7 +44,7 @@ class OEMModel:
             "desktop": True,
             "core": False,
         }
-        if read_ubuntu_info(dry_run=dry_run).release >= "26.04":
+        if read_ubuntu_info(dry_run=dry_run).version_number() >= (26, 4):
             self.install_on_defaults["server"] = True
 
         # Should the OEM metapackages be installed on a given variant?

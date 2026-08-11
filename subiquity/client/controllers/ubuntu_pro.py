@@ -66,9 +66,9 @@ class UbuntuProController(SubiquityTuiController):
         info = read_ubuntu_info(dry_run=dry_run)
 
         if not info.is_marked_lts():
-            major, minor = info.release.split(".")
+            major, minor = info.version_number()
 
-            if int(major) >= 20 and int(major) % 2 == 0 and minor == "04":
+            if major >= 20 and major % 2 == 0 and minor == 4:
                 # If running a pre-LTS (e.g., 24.04, 26.04, ...), show the SSH
                 # UI for testing, but with a warning.
                 pre_release = True
