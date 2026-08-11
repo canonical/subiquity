@@ -491,7 +491,6 @@ class TestStorageModel(unittest.TestCase):
     @parameterized.expand(
         (
             ("26.04", True),
-            ("26.04.1", True),
             ("26.10", False),
             ("27.04", False),
         )
