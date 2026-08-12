@@ -30,11 +30,35 @@ class ProbeStatus(enum.Enum):
     DONE = enum.auto()
 
 
+class Bootloader(enum.Enum):
+    GRUB = "GRUB"
+
+    @classmethod
+    def from_snapd(cls, value: str):
+        # Typically, snapd uses "grub" as the bootloader.
+        # But it also supports:
+        # * "android-boot"
+        # * "lk"
+        # * "u-boot"
+        # * "piboot"
+        # https://github.com/canonical/snapd/blob/b247de9fd0682c56d463d2ab2e906a6dfa234296/gadget/gadget.go#L111-L115
+        return cls(value.upper())
+
+
 class FirmwareType(enum.Enum):
     NONE = "NONE"  # a system where the bootloader is external, e.g. s390x
     BIOS = "BIOS"  # BIOS, where the bootloader gets dd-ed to the start of a device
     UEFI = "UEFI"  # UEFI, ESPs and /boot/efi and all that (amd64 and arm64)
     PREP = "PREP"  # ppc64el, which puts grub on a PReP partition
+
+    def _bootloader(self) -> Bootloader | None:
+        """Returns the bootloader typically used on a platform with this
+        firmware type.
+        In the future, this function might be moved outside of FirmwareType,
+        thus the leading underscore in the name."""
+        if self == self.NONE:
+            return None
+        return Bootloader.GRUB
 
 
 @attr.s(auto_attribs=True)
@@ -287,6 +311,7 @@ class GuidedDisallowedCapabilityReason(enum.Enum):
     CORE_BOOT_ENCRYPTION_UNAVAILABLE = enum.auto()
     NOT_UEFI = enum.auto()
     THIRD_PARTY_DRIVERS = enum.auto()
+    INCOMPATIBLE_LOCATION = enum.auto()
 
 
 @attr.s(auto_attribs=True)

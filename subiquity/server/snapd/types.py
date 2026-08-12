@@ -14,12 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import enum
-from typing import Dict, List, Optional, Self
+from typing import Dict, Iterator, List, Optional, Self
 
 import attr
 
 from subiquity.common.serialize import NonExhaustive, named_field
 from subiquity.common.types import storage as storagetypes
+from subiquity.models.storage import StorageModel
 
 RFC3339 = "%Y-%m-%dT%H:%M:%S.%fZ"
 
@@ -154,6 +155,17 @@ class Volume:
     bootloader: str = ""
     id: str = ""
     structure: Optional[List[VolumeStructure]] = None
+
+    def offsets_and_sizes(self) -> Iterator[tuple[VolumeStructure, int, int]]:
+        offset = StorageModel._partition_alignment_data[self.schema].min_start_offset
+        assert self.structure is not None
+        for structure in self.structure:
+            if structure.role == Role.MBR:
+                continue
+            if structure.offset is not None:
+                offset = structure.offset
+            yield (structure, offset, structure.size)
+            offset = offset + structure.size
 
 
 @snapdtype
