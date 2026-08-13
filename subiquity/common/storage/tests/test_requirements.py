@@ -15,6 +15,7 @@
 import unittest
 from unittest import mock
 
+from subiquity.common.os import UbuntuInfo
 from subiquity.common.storage.requirements import (
     GuidanceMessageKind,
     Requirements,
@@ -203,8 +204,12 @@ class TestRequirements(unittest.TestCase):
             mock.patch.object(model, "is_root_mounted", return_value=root_mounted),
             mock.patch.object(model, "uses_signed_grub", return_value=uses_signed_grub),
             mock.patch(
-                "subiquity.common.storage.requirements.lsb_release",
-                return_value={"release": "26.10"},
+                "subiquity.common.storage.requirements.read_ubuntu_info",
+                return_value=UbuntuInfo(
+                    release="26.10",
+                    codename="stonking",
+                    pretty_name="Ubuntu Stonking Stingray (development branch)",
+                ),
             ),
         ):
             self.assertEqual(

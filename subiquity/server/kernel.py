@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquitycore.lsb_release import lsb_release
+from subiquity.common.os import read_ubuntu_info
 
 
 def flavor_to_pkgname(flavor: str, *, dry_run: bool) -> str:
@@ -22,7 +22,7 @@ def flavor_to_pkgname(flavor: str, *, dry_run: bool) -> str:
     if flavor == "hwe":
         flavor = "generic-hwe"
 
-    release = lsb_release(dry_run=dry_run)["release"]
+    release = read_ubuntu_info(dry_run=dry_run).release
     # Should check this package exists really but
     # that's a bit tricky until we get cleverer about
     # the apt config in general.

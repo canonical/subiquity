@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 
 import attrs
 
-from subiquitycore.lsb_release import lsb_release
+from subiquity.common.os import read_ubuntu_info
 
 if TYPE_CHECKING:
     # Avoid circular import: models/storage.py imports Requirements
@@ -101,8 +101,8 @@ def _needs_ext4_boot(model) -> bool:
     """UEFI systems with signed GRUB require ext4 for /boot on 26.10+."""
     if not model.is_root_mounted() or not model.uses_signed_grub():
         return False
-    release = lsb_release(dry_run=model.dry_run)["release"]
-    return tuple(int(p) for p in release.split(".")) >= (26, 10)
+    version_number = read_ubuntu_info(dry_run=model.dry_run).version_number()
+    return version_number >= (26, 10)
 
 
 class Requirements:

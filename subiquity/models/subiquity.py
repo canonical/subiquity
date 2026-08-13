@@ -27,10 +27,10 @@ import yaml
 from curtin.config import merge_config
 
 from subiquity.cloudinit import validate_cloud_config_schema
+from subiquity.common.os import read_ubuntu_info
 from subiquity.common.pkg import TargetPkg
 from subiquity.server.types import InstallerChannels
 from subiquitycore.file_util import generate_timestamped_header, write_file
-from subiquitycore.lsb_release import lsb_release
 
 from .ad import AdModel
 from .codecs import CodecsModel
@@ -353,7 +353,7 @@ class SubiquityModel:
             merge_config(config, {"packages": list(self.cloud_init_packages)})
         if self.userdata is not None:
             merge_cloud_init_config(config, self.userdata)
-        if lsb_release()["release"] not in ("20.04", "22.04"):
+        if read_ubuntu_info().version_number() not in ((20, 4), (22, 4)):
             config.setdefault("write_files", []).append(CLOUDINIT_DISABLE_AFTER_INSTALL)
         self.validate_cloudconfig_schema(data=config, data_source="system install")
         return config
@@ -414,7 +414,7 @@ class SubiquityModel:
         # Add cloud-init clean hooks to support golden-image creation.
         cfg_files = ["/" + path for (path, _content, _mode) in files]
         cfg_files.extend(self.network.rendered_config_paths())
-        if lsb_release()["release"] not in ("20.04", "22.04"):
+        if read_ubuntu_info().version_number() not in ((20, 4), (22, 4)):
             cfg_files.append("/etc/cloud/cloud-init.disabled")
 
         if self.identity.hostname is not None:

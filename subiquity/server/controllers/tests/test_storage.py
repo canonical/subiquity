@@ -28,6 +28,7 @@ import requests_mock
 from curtin.commands.extract import TrivialSourceHandler
 from jsonschema.validators import validator_for
 
+from subiquity.common.os import UbuntuInfo
 from subiquity.common.storage import boot, gaps, labels
 from subiquity.common.storage.actions import DeviceAction
 from subiquity.common.types.storage import (
@@ -748,8 +749,12 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
                 model, "needs_bootloader_partition", return_value=False
             ):
                 with mock.patch(
-                    "subiquity.common.storage.requirements.lsb_release",
-                    return_value={"release": "26.10"},
+                    "subiquity.common.storage.requirements.read_ubuntu_info",
+                    return_value=UbuntuInfo(
+                        release="26.10",
+                        codename="stonking",
+                        pretty_name="Ubuntu Stonking Stingray (development branch)",
+                    ),
                 ):
                     with self.assertRaisesRegex(AutoinstallError, "ext4 filesystem"):
                         await self.ctrler.apply_autoinstall_config()

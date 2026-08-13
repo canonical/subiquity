@@ -22,6 +22,7 @@ from typing import Optional
 import distro_info
 
 from subiquity.common.apidef import API
+from subiquity.common.os import read_ubuntu_info
 from subiquity.common.types import (
     UbuntuProCheckTokenAnswer,
     UbuntuProCheckTokenStatus,
@@ -43,7 +44,6 @@ from subiquity.server.ubuntu_advantage import (
     UAInterface,
     UAInterfaceStrategy,
 )
-from subiquitycore.lsb_release import lsb_release
 
 log = logging.getLogger("subiquity.server.controllers.ubuntu_pro")
 
@@ -212,7 +212,7 @@ class UbuntuProController(SubiquityController):
         universe_packages = 23000
         eol_esm_year: Optional[int] = None
 
-        series = lsb_release(dry_run=self.app.opts.dry_run)["codename"]
+        series = read_ubuntu_info(dry_run=self.app.opts.dry_run).codename
 
         for release in distro_info.UbuntuDistroInfo()._releases:
             if release.series == series:

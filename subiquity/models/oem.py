@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import attr
 
-from subiquitycore.lsb_release import lsb_release
+from subiquity.common.os import read_ubuntu_info
 
 log = logging.getLogger("subiquity.models.oem")
 
@@ -44,7 +44,7 @@ class OEMModel:
             "desktop": True,
             "core": False,
         }
-        if lsb_release(dry_run=dry_run)["release"] >= "26.04":
+        if read_ubuntu_info(dry_run=dry_run).version_number() >= (26, 4):
             self.install_on_defaults["server"] = True
 
         # Should the OEM metapackages be installed on a given variant?

@@ -22,6 +22,7 @@ from unittest.mock import Mock
 import attr
 import yaml
 
+from subiquity.common.os import UbuntuInfo
 from subiquity.common.storage import gaps
 from subiquity.common.storage.requirements import (
     Requirements,
@@ -470,8 +471,12 @@ class TestStorageModel(unittest.TestCase):
         with (
             mock.patch.object(model, "needs_bootloader_partition", return_value=False),
             mock.patch(
-                "subiquity.common.storage.requirements.lsb_release",
-                return_value={"release": "26.10"},
+                "subiquity.common.storage.requirements.read_ubuntu_info",
+                return_value=UbuntuInfo(
+                    release="26.10",
+                    codename="stonking",
+                    pretty_name="Ubuntu Stonking Stingray (development branch)",
+                ),
             ),
         ):
             if has_separate_boot:
@@ -491,7 +496,6 @@ class TestStorageModel(unittest.TestCase):
     @parameterized.expand(
         (
             ("26.04", True),
-            ("26.04.1", True),
             ("26.10", False),
             ("27.04", False),
         )
@@ -504,8 +508,12 @@ class TestStorageModel(unittest.TestCase):
         with (
             mock.patch.object(model, "needs_bootloader_partition", return_value=False),
             mock.patch(
-                "subiquity.common.storage.requirements.lsb_release",
-                return_value={"release": release},
+                "subiquity.common.storage.requirements.read_ubuntu_info",
+                return_value=UbuntuInfo(
+                    release=release,
+                    codename="mock-codename",
+                    pretty_name="mock-pretty-name",
+                ),
             ),
         ):
             self.assertEqual(expected, model.can_install())

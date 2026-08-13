@@ -23,6 +23,7 @@ import aiohttp
 from urwid import Widget
 
 from subiquity.client.controller import SubiquityTuiController
+from subiquity.common.os import read_ubuntu_info
 from subiquity.common.types import UbuntuProCheckTokenStatus as TokenStatus
 from subiquity.common.types import (
     UbuntuProInfo,
@@ -37,7 +38,6 @@ from subiquity.ui.views.ubuntu_pro import (
     UpgradeYesNoForm,
 )
 from subiquitycore.async_helpers import schedule_task
-from subiquitycore.lsb_release import lsb_release
 from subiquitycore.tuicontroller import Skip
 
 log = logging.getLogger("subiquity.client.controllers.ubuntu_pro")
@@ -63,14 +63,14 @@ class UbuntuProController(SubiquityTuiController):
         dry_run: bool = self.app.opts.dry_run
         pre_release = False
 
-        lsb = lsb_release(dry_run=dry_run)
+        info = read_ubuntu_info(dry_run=dry_run)
 
-        if "LTS" not in lsb["description"]:
-            major, minor = lsb["release"].split(".")
+        if not info.is_marked_lts():
+            major, minor = info.version_number()
 
-            # If running a pre-LTS (e.g., 24.04, 26.04, ...), show the SSH UI
-            # for testing, but with a warning.
-            if int(major) >= 20 and int(major) % 2 == 0 and minor == "04":
+            if major >= 20 and major % 2 == 0 and minor == 4:
+                # If running a pre-LTS (e.g., 24.04, 26.04, ...), show the SSH
+                # UI for testing, but with a warning.
                 pre_release = True
             else:
                 await self.endpoint.skip.POST()

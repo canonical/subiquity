@@ -47,6 +47,7 @@ from curtin.util import human2bytes
 from subiquity.common.api.recoverable_error import RecoverableError
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReport, ErrorReportKind
+from subiquity.common.os import read_ubuntu_info
 from subiquity.common.storage import boot, gaps, labels, sizes
 from subiquity.common.storage.actions import DeviceAction
 from subiquity.common.storage.manipulator import StorageManipulator
@@ -121,7 +122,6 @@ from subiquitycore.async_helpers import (
     schedule_task,
 )
 from subiquitycore.context import with_context
-from subiquitycore.lsb_release import lsb_release
 from subiquitycore.utils import arun_command, gen_zsys_uuid, run_command
 
 log = logging.getLogger("subiquity.server.controllers.storage")
@@ -2470,8 +2470,10 @@ class StorageController(SubiquityController, StorageManipulator):
         if self.model.firmware_type == FirmwareType.PREP:
             self.supports_resilient_boot = False
         else:
-            release = lsb_release(dry_run=self.app.opts.dry_run)["release"]
-            self.supports_resilient_boot = release >= "20.04"
+            version_number = read_ubuntu_info(
+                dry_run=self.app.opts.dry_run
+            ).version_number()
+            self.supports_resilient_boot = version_number >= (20, 4)
         self._start_task = schedule_task(self._start())
 
     async def _start(self):
