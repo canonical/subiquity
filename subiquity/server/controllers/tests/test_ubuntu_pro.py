@@ -57,11 +57,15 @@ class TestUbuntuProController(SubiTestCase):
             ("noble", 23000, 2300, 2034),
         ]
     )
-    async def test_info_GET__series(
-        self, series: str, universe_pkgs: int, main_pkgs: int, esm_eol_year: int | None
+    async def test_info_GET__release(
+        self,
+        codename: str,
+        universe_pkgs: int,
+        main_pkgs: int,
+        esm_eol_year: int | None,
     ):
         ubuntu_info = UbuntuInfo(
-            codename=series,
+            codename=codename,
             release="xx.yy",
             pretty_name="mock-pretty-name",
         )
