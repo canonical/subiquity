@@ -32,10 +32,10 @@ class TestOEMModel(SubiTestCase):
             ["24.04", "desktop", True],
         ]
     )
-    def test_install_on(self, series, variant, expected):
+    def test_install_on(self, release, variant, expected):
         ubuntu_info = UbuntuInfo(
             codename="mock-codename",
-            release=series,
+            release=release,
             pretty_name="mock-pretty-name",
         )
 

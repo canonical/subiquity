@@ -212,17 +212,17 @@ class UbuntuProController(SubiquityController):
         universe_packages = 23000
         eol_esm_year: Optional[int] = None
 
-        series = read_ubuntu_info(dry_run=self.app.opts.dry_run).codename
+        codename = read_ubuntu_info(dry_run=self.app.opts.dry_run).codename
 
         for release in distro_info.UbuntuDistroInfo()._releases:
-            if release.series == series:
+            if release.series == codename:
                 try:
                     eol_esm_year = release.eol_esm.year
                 except AttributeError:
-                    log.warning("series %s does not have an ESM EOL date", series)
+                    log.warning("%s does not have an ESM EOL date", codename)
                 break
         else:
-            log.warning("could not find distro info for %s", series)
+            log.warning("could not find distro info for %s", codename)
 
         return UbuntuProGeneralInfo(
             eol_esm_year=eol_esm_year,
