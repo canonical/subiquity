@@ -8,6 +8,15 @@ source-code: https://github.com/canonical/subiquity
 issues: https://bugs.launchpad.net/subiquity/+filebug
 contact: https://bugs.launchpad.net/subiquity/+filebug
 
+# The version of console-setup currently in noble has an incomplete pc105.tree
+# file.
+# Let's pull version 1.226ubuntu1.1 that we're currrently SRUing. Once the
+# package makes it to -updates, we can drop this PPA.
+# See LP: #2152901
+package-repositories:
+  - type: apt
+    ppa: subiquity/core24
+
 apps:
   subiquity:
     command: usr/bin/subiquity-cmd $SNAP/usr/bin/python3.12 -m subiquity
