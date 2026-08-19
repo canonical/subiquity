@@ -60,12 +60,13 @@ class CoreBootInstaller:
         self.plan: CoreBootInstallPlan = plan
 
     def _on_volumes(self) -> dict[str, snapdtypes.OnVolume]:
-        # Return a value suitable for use as the 'on-volumes' part of a
-        # SystemActionRequest.
-        #
-        # This must be run after curtin partitioning, which will result in a
-        # call to update_devices which will have set .path on all block
-        # devices.
+        """Return a value suitable for use as the 'on-volumes' part of a
+        SystemActionRequest.
+
+        This must be run after curtin partitioning, which will result in a
+        call to update_devices which will have set .path on all block
+        devices.
+        """
         [key] = self.plan.info.system.volumes.keys()
         return {key: self.plan.on_volume}
 
