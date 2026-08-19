@@ -115,7 +115,7 @@ class CoreBootInstaller:
 
         return result.recovery_key
 
-    async def snapd_target_preseed(self, target: pathlib.Path) -> None:
+    async def target_preseed(self, target: pathlib.Path) -> None:
         async with AsyncExitStack() as es:
             # Bind-mount required filesystems
             # Some of these might already be mounted by curtin, but

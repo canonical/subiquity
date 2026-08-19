@@ -92,7 +92,7 @@ class TestCoreBootInstaller(IsolatedAsyncioTestCase):
 
     @mock.patch("subiquity.server.mounter.Mounter.bind_mounted")
     @mock.patch.object(Path, "mkdir", mock.Mock())
-    async def test_snapd_target_preseed(self, m_bind_mounted):
+    async def test_target_preseed(self, m_bind_mounted):
         info = mock.Mock(label="mock-label")
         plan = CoreBootInstallPlan(
             info=info,
@@ -102,7 +102,7 @@ class TestCoreBootInstaller(IsolatedAsyncioTestCase):
 
         with mock.patch.object(snapdapi, "post_and_wait") as mock_post:
             installer = CoreBootInstaller(self.app, plan)
-            await installer.snapd_target_preseed(Path("/target"))
+            await installer.target_preseed(Path("/target"))
 
         expected_mounted_calls = [
             mock.call(Path("/dev"), Path("/target/dev")),

@@ -810,7 +810,7 @@ class InstallController(SubiquityController):
             await installer.finish_install(
                 context=context, kernel_components=self.kernel_components()
             )
-            await installer.snapd_target_preseed(Path(self.model.target))
+            await installer.target_preseed(Path(self.model.target))
         if self.supports_apt():
             # Don't run ubuntu-drivers install for TPM/FDE.
             # The list of offered drivers is already used to extrapolate a list
