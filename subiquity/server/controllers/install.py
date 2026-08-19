@@ -48,6 +48,7 @@ from subiquity.server.controllers.storage import VariationInfo
 from subiquity.server.curtin import run_curtin_command
 from subiquity.server.mounter import Mounter, Mountpoint
 from subiquity.server.runner import get_redacted_command_runner
+from subiquity.server.snapd.core_boot_installer import CoreBootInstaller
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import run_in_thread
 from subiquitycore.context import with_context
@@ -389,7 +390,13 @@ class InstallController(SubiquityController):
                 ),
             )
             if storage_controller.use_tpm:
-                await storage_controller.setup_encryption(context=context)
+                installer = CoreBootInstaller(
+                    self.app, storage_controller.core_boot_plan
+                )
+                await installer.setup_encryption(
+                    context=context,
+                    apply_encrypted_devices=storage_controller.apply_encrypted_devices,
+                )
             await run_curtin_step(
                 name="formatting",
                 stages=["partitioning"],
@@ -791,17 +798,19 @@ class InstallController(SubiquityController):
 
         storage_controller = self.app.controllers.Storage
         if storage_controller.use_snapd_install_api():
+            installer = CoreBootInstaller(self.app, storage_controller.core_boot_plan)
             if storage_controller.use_tpm:
                 # This will generate a recovery key which will initially expire
                 # after a very short duration (e.g., 5 minutes).
                 # We need to reach the finish_install step within that timeframe,
                 # otherwise the key will be considered expired. So let's keep
                 # the two calls next to one another.
-                await storage_controller.fetch_core_boot_recovery_key()
-            await storage_controller.finish_install(
+                key = await installer.fetch_core_boot_recovery_key()
+                storage_controller.model.set_core_boot_recovery_key(key)
+            await installer.finish_install(
                 context=context, kernel_components=self.kernel_components()
             )
-            await storage_controller.snapd_target_preseed(Path(self.model.target))
+            await installer.snapd_target_preseed(Path(self.model.target))
         if self.supports_apt():
             # Don't run ubuntu-drivers install for TPM/FDE.
             # The list of offered drivers is already used to extrapolate a list
