@@ -690,7 +690,8 @@
                 "USAGE": "filesystem",
                 "UUID": "19e681fc-9577-4cfc-96ea-ebfebaa3aba6",
                 "UUID_ENC": "19e681fc-9577-4cfc-96ea-ebfebaa3aba6",
-                "VERSION": "1.0"
+                "VERSION": "1.0",
+                "ESTIMATED_MIN_SIZE": 2147483648
             },
             "/dev/sr0": {
                 "BOOT_SYSTEM_ID": "EL\\x20TORITO\\x20SPECIFICATION",
