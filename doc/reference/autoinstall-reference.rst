@@ -623,6 +623,41 @@ Additionally, TPM-backed encryption can be enabled by using the ``hybrid`` layou
           name: hybrid
           encrypted: yes
 
+TPM-backed encryption supports the additional ``accepted-errors`` property, which lists the pre-install errors that the user accepts. For each accepted error, Subiquity automatically executes the corresponding ``proceed`` action that snapd offers for it, allowing the unattended installation to continue.
+
+.. code-block:: yaml
+
+    autoinstall:
+      storage:
+        layout:
+          name: hybrid
+          encrypted: yes
+          accepted-errors: [running-in-vm]
+
+One can also specify ``accepted-errors`` as a single pre-install error (i.e., ``accepted-errors: running-in-vm``).
+
+The list of currently supported pre-install errors is:
+
+ * ``running-in-vm``
+ * ``insufficient-dma-protection``
+ * ``no-kernel-iommu``
+ * ``addon-drivers-present``
+ * ``sys-prep-applications-present``
+ * ``absolute-present``
+ * ``weak-secure-boot-algorithms-detected``
+ * ``pre-os-secure-boot-auth-by-enrolled-digests``
+ * ``no-hardware-root-of-trust``
+
+See the `upstream definition in Secboot <https://github.com/canonical/secboot/blob/457b03a16d19dadd703c5a33bf8565f16113023c/efi/preinstall/checks_context.go#L162-L172>`__
+
+.. note::
+
+   Listing an error kind means you accept the associated risk. Several errors kinds such as ``weak-secure-boot-algorithms-detected`` indicate a reduced security posture; only list them when you understand the implications for the installed system.
+
+.. note::
+
+   Only errors for which snapd offers a ``proceed`` action can be honored. Other errors (those that require a different action such as ``reboot``, ``enable-tpm-via-firmware`` or ``clear-tpm``) are **not** handled and will still cause the installation to fail, even if listed under ``accepted-errors``.
+
 Sizing-policy
 ^^^^^^^^^^^^^
 
