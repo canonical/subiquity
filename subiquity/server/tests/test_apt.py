@@ -39,23 +39,23 @@ from subiquitycore.tests.parameterized import parameterized
 from subiquitycore.utils import astart_command
 
 APT_UPDATE_SUCCESS = """\
-Hit:1 http://mirror focal InRelease
-Get:2 http://mirror focal-updates InRelease [109 kB]
-Get:3 http://mirror focal-backports InRelease [99,9 kB]
-Get:4 http://mirror focal-security InRelease [109 kB]
-Get:5 http://mirror focal-updates/main amd64 DEP-11 Metadata [22,5 kB]
-Get:6 http://mirror focal-updates/universe amd64 DEP-11 Metadata [33,6 kB]
+Hit:1 http://mirror stonking InRelease
+Get:2 http://mirror stonking-updates InRelease [109 kB]
+Get:3 http://mirror stonking-backports InRelease [99,9 kB]
+Get:4 http://mirror stonking-security InRelease [109 kB]
+Get:5 http://mirror stonking-updates/main amd64 DEP-11 Metadata [22,5 kB]
+Get:6 http://mirror stonking-updates/universe amd64 DEP-11 Metadata [33,6 kB]
 """
 
 APT_UPDATE_FAILURE = """\
-Err:1 http://bad-mirror focal-updates InRelease
+Err:1 http://bad-mirror stonking-updates InRelease
   Could not resolve 'arcive.ubuntu.com'
-Hit:2 http://mirror focal InRelease
-Hit:3 http://security.ubuntu.com/ubuntu focal-security InRelease
-Hit:4 http://mirror focal-updates InRelease
-Hit:5 http://mirror focal-backports InRelease
+Hit:2 http://mirror stonking InRelease
+Hit:3 http://security.ubuntu.com/ubuntu stonking-security InRelease
+Hit:4 http://mirror stonking-updates InRelease
+Hit:5 http://mirror stonking-backports InRelease
 Reading package lists... Done
-E: Failed to fetch http://bad-mirror/dists/focal-updates/InRelease \
+E: Failed to fetch http://bad-mirror/dists/stonking-updates/InRelease \
 Could not resolve 'bad-mirror'
 E: Some index files failed to download. \
 They have been ignored, or old ones used instead.

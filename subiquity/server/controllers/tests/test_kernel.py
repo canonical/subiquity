@@ -16,9 +16,12 @@
 import itertools
 import os
 import os.path
+from pathlib import Path
+from unittest.mock import Mock, patch
 
 import attr
 
+from subiquity.common.os import UbuntuInfo
 from subiquity.models.kernel import KernelModel
 from subiquity.models.source import BridgeKernelReason, SourceModel
 from subiquity.server.controllers.kernel import KernelController
@@ -79,6 +82,10 @@ for bridge_zfs, bridge_drivers, has_zfs, has_drivers in n_booleans(n=4):
         )
 
 
+@patch(
+    "subiquity.server.kernel.read_ubuntu_info",
+    Mock(return_value=UbuntuInfo.from_lsb_release(Path("examples/lsb-release-noble"))),
+)
 class TestMetapackageSelection(SubiTestCase):
     def setUp(self):
         self.app = make_app()
@@ -139,8 +146,8 @@ class TestMetapackageSelection(SubiTestCase):
             [None, {"package": "linux-aaaa", "flavor": "bbbb"}, "linux-aaaa"],
             [None, {"flavor": None}, "linux-generic"],
             [None, {"flavor": "generic"}, "linux-generic"],
-            [None, {"flavor": "hwe"}, "linux-generic-hwe-20.04"],
-            [None, {"flavor": "bbbb"}, "linux-bbbb-20.04"],
+            [None, {"flavor": "hwe"}, "linux-generic-hwe-24.04"],
+            [None, {"flavor": "bbbb"}, "linux-bbbb-24.04"],
         ]
     )
     async def test_ai(self, mpfile_data, ai_data, metapkg_name):
