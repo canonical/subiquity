@@ -167,7 +167,7 @@ class Requirements:
         severity=RequirementSeverity.BLOCKING,
         check=lambda m: not m.needs_bootloader_partition(),
     )
-    BOOT_FILESYSTEM = StorageRequirement(
+    BOOT_EXT4 = StorageRequirement(
         guidance_message_kind=GuidanceMessageKind.USE_EXT4_BOOT,
         severity=RequirementSeverity.BLOCKING,
         check=_is_boot_ext4,
@@ -189,6 +189,6 @@ class Requirements:
             Requirements.ROOT_MOUNTED,
             Requirements.REMOTE_BOOT_LOCAL,
             Requirements.BOOTLOADER_NEEDED,
-            Requirements.BOOT_FILESYSTEM,
+            Requirements.BOOT_EXT4,
             Requirements.BOOT_ON_SIMPLE_SETUP,
         ]

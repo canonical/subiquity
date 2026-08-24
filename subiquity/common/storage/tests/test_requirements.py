@@ -102,7 +102,7 @@ class TestRequirements(unittest.TestCase):
                 Requirements.ROOT_MOUNTED,
                 Requirements.REMOTE_BOOT_LOCAL,
                 Requirements.BOOTLOADER_NEEDED,
-                Requirements.BOOT_FILESYSTEM,
+                Requirements.BOOT_EXT4,
                 Requirements.BOOT_ON_SIMPLE_SETUP,
             ],
         )
@@ -199,7 +199,7 @@ class TestRequirements(unittest.TestCase):
             (True, True, True),
         )
     )
-    def test_BOOT_FILESYSTEM_applies_to(
+    def test_BOOT_EXT4_applies_to(
         self,
         root_mounted: bool,
         uses_signed_grub: bool,
@@ -218,9 +218,7 @@ class TestRequirements(unittest.TestCase):
                 ),
             ),
         ):
-            self.assertEqual(
-                expected, Requirements.BOOT_FILESYSTEM.is_applicable(model)
-            )
+            self.assertEqual(expected, Requirements.BOOT_EXT4.is_applicable(model))
 
     @parameterized.expand(
         (
@@ -230,7 +228,7 @@ class TestRequirements(unittest.TestCase):
             (None, "xfs", False),
         )
     )
-    def test_BOOT_FILESYSTEM_check(
+    def test_BOOT_EXT4_check(
         self,
         boot_fstype: str | None,
         root_fstype: str,
@@ -245,7 +243,7 @@ class TestRequirements(unittest.TestCase):
             boot_fs = make_filesystem(model, p2, fstype=boot_fstype)
             make_mount(model, boot_fs, "/boot")
 
-        self.assertEqual(expected, Requirements.BOOT_FILESYSTEM.is_satisfied(model))
+        self.assertEqual(expected, Requirements.BOOT_EXT4.is_satisfied(model))
 
     def test_BOOT_ON_SIMPLE_SETUP_check__disk(self):
         model, disk = make_model_and_disk()
