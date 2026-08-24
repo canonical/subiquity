@@ -47,6 +47,7 @@ class GuidanceMessageKind(enum.Enum):
     MOUNT_LOCAL_BOOT = _("Mount a local filesystem at /boot")
     SELECT_BOOT_DISK = _("Select a boot disk")
     USE_EXT4_BOOT = _("Use the ext4 filesystem for /boot")
+    BOOT_ON_SIMPLE_SETUP = _("Place /boot on a partition of a disk (or RAID 1 disk)")
 
 
 @attrs.define
@@ -97,7 +98,43 @@ def _is_boot_ext4(model) -> bool:
     return mount.fstype == "ext4"
 
 
-def _needs_ext4_boot(model) -> bool:
+def _is_boot_on_simple_setup(model) -> bool:
+    """Signed GRUB on 26.10+ can only boot from simple storage setups.
+
+    The /boot filesystem (or / if /boot is not mounted separately) must
+    sit on one of the following, and nothing else:
+    * a directly-formatted disk
+    * a partition on a disk
+    * a RAID 1 (optionally with partitions on top)
+
+    Any other volume type is rejected: LVM (volume groups and logical
+    volumes), LUKS/dm-crypt, ZFS (zpools and datasets), non-RAID-1 RAID
+    levels, and arbitrary devices.
+
+    Walks the full storage chain backing the /boot mount and checks that
+    every element is one of the accepted types (and that any RAID is
+    level 1).
+
+    See https://discourse.ubuntu.com/t/streamlining-secure-boot-for-26-10/79069
+    """
+    mount = model._mount_for_path("/boot", parent_ok=True)
+    if mount is None:
+        return False
+
+    # Deferred import: subiquity.models.storage imports this module at top
+    # level, so importing it here avoids a circular import at module load.
+    from subiquity.models.storage import Disk, Filesystem, Mount, Partition, Raid
+
+    accepted = (Disk, Filesystem, Mount, Partition, Raid)
+    for element in mount.iter_storage_chain():
+        if not isinstance(element, accepted):
+            return False
+        if isinstance(element, Raid) and element.raidlevel != "raid1":
+            return False
+    return True
+
+
+def _uses_signed_grub_26_10(model) -> bool:
     """UEFI systems with signed GRUB require ext4 for /boot on 26.10+."""
     if not model.is_root_mounted() or not model.uses_signed_grub():
         return False
@@ -134,7 +171,15 @@ class Requirements:
         guidance_message_kind=GuidanceMessageKind.USE_EXT4_BOOT,
         severity=RequirementSeverity.BLOCKING,
         check=_is_boot_ext4,
-        applies_to=_needs_ext4_boot,
+        applies_to=_uses_signed_grub_26_10,
+    )
+    # This requirement could be merged with BOOT_EXT4, but the resulting error
+    # message would become a bit vague.
+    BOOT_ON_SIMPLE_SETUP = StorageRequirement(
+        guidance_message_kind=GuidanceMessageKind.BOOT_ON_SIMPLE_SETUP,
+        severity=RequirementSeverity.BLOCKING,
+        check=_is_boot_on_simple_setup,
+        applies_to=_uses_signed_grub_26_10,
     )
 
     @staticmethod
@@ -145,4 +190,5 @@ class Requirements:
             Requirements.REMOTE_BOOT_LOCAL,
             Requirements.BOOTLOADER_NEEDED,
             Requirements.BOOT_FILESYSTEM,
+            Requirements.BOOT_ON_SIMPLE_SETUP,
         ]

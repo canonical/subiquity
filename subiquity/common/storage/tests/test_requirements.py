@@ -23,11 +23,16 @@ from subiquity.common.storage.requirements import (
     StorageRequirement,
 )
 from subiquity.models.tests.test_storage import (
+    make_dm_crypt,
     make_filesystem,
+    make_lv,
     make_model,
     make_model_and_disk,
+    make_model_and_partition,
+    make_model_and_vg,
     make_mount,
     make_partition,
+    make_raid,
 )
 from subiquitycore.tests.parameterized import parameterized
 
@@ -98,6 +103,7 @@ class TestRequirements(unittest.TestCase):
                 Requirements.REMOTE_BOOT_LOCAL,
                 Requirements.BOOTLOADER_NEEDED,
                 Requirements.BOOT_FILESYSTEM,
+                Requirements.BOOT_ON_SIMPLE_SETUP,
             ],
         )
 
@@ -240,3 +246,43 @@ class TestRequirements(unittest.TestCase):
             make_mount(model, boot_fs, "/boot")
 
         self.assertEqual(expected, Requirements.BOOT_FILESYSTEM.is_satisfied(model))
+
+    def test_BOOT_ON_SIMPLE_SETUP_check__disk(self):
+        model, disk = make_model_and_disk()
+        make_mount(model, make_filesystem(model, disk, fstype="ext4"), "/boot")
+        self.assertTrue(Requirements.BOOT_ON_SIMPLE_SETUP.is_satisfied(model))
+
+    def test_BOOT_ON_SIMPLE_SETUP_check__partition(self):
+        model, partition = make_model_and_partition()
+        make_mount(model, make_filesystem(model, partition, fstype="ext4"), "/boot")
+        self.assertTrue(Requirements.BOOT_ON_SIMPLE_SETUP.is_satisfied(model))
+
+    def test_BOOT_ON_SIMPLE_SETUP_check__raid1(self):
+        model = make_model()
+        raid1 = make_raid(model)
+        make_mount(model, make_filesystem(model, raid1, fstype="ext4"), "/boot")
+        self.assertTrue(Requirements.BOOT_ON_SIMPLE_SETUP.is_satisfied(model))
+
+    def test_BOOT_ON_SIMPLE_SETUP_check__raid1_partition(self):
+        model = make_model()
+        raid1p1 = make_partition(model, make_raid(model))
+        make_mount(model, make_filesystem(model, raid1p1, fstype="ext4"), "/boot")
+        self.assertTrue(Requirements.BOOT_ON_SIMPLE_SETUP.is_satisfied(model))
+
+    def test_BOOT_ON_SIMPLE_SETUP_check__raid0(self):
+        model = make_model()
+        raid0 = make_raid(model, raidlevel="raid0")
+        make_mount(model, make_filesystem(model, raid0, fstype="ext4"), "/boot")
+        self.assertFalse(Requirements.BOOT_ON_SIMPLE_SETUP.is_satisfied(model))
+
+    def test_BOOT_ON_SIMPLE_SETUP_check__lvm_lv(self):
+        model, vg = make_model_and_vg()
+        lv = make_lv(model, vg=vg)
+        make_mount(model, make_filesystem(model, lv, fstype="ext4"), "/boot")
+        self.assertFalse(Requirements.BOOT_ON_SIMPLE_SETUP.is_satisfied(model))
+
+    def test_BOOT_ON_SIMPLE_SETUP_check__encrypted_partition(self):
+        model, partition = make_model_and_partition()
+        dmcrypt = make_dm_crypt(model, partition)
+        make_mount(model, make_filesystem(model, dmcrypt, fstype="ext4"), "/boot")
+        self.assertFalse(Requirements.BOOT_ON_SIMPLE_SETUP.is_satisfied(model))
