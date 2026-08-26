@@ -339,6 +339,13 @@ class UbuntuDriversHasDriversInterface(UbuntuDriversInterface):
         return self.oem_metapackages
 
 
+class UbuntuDriversHasDriversNoOEMInterface(UbuntuDriversHasDriversInterface):
+    """A dry-run implementation of ubuntu-drivers that returns a hard-coded
+    list of drivers, but no OEM metapackage."""
+
+    oem_metapackages: list[str] = []
+
+
 class UbuntuDriversNoDriversInterface(UbuntuDriversHasDriversInterface):
     """A dry-run implementation of ubuntu-drivers that returns a hard-coded
     empty list of drivers."""
@@ -407,6 +414,7 @@ def get_ubuntu_drivers_interface(app) -> UbuntuDriversInterface:
         strat_to_interface = {
             "no-drivers": UbuntuDriversNoDriversInterface,
             "has-drivers": UbuntuDriversHasDriversInterface,
+            "has-drivers-no-oem": UbuntuDriversHasDriversNoOEMInterface,
             "run-drivers": UbuntuDriversRunDriversInterface,
         }
         # debug flags have precendence over dry-run config
