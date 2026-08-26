@@ -91,6 +91,9 @@ class DRConfig:
         "examples/umockdev/dell-certified+nvidia.yaml"
     )
 
+    # Can be overridden by SUBIQUITY_DEBUG flags.
+    ubuntu_drivers_strategy: str = "has-drivers"
+
     @classmethod
     def load(cls, stream):
         data = yaml.safe_load(stream)
