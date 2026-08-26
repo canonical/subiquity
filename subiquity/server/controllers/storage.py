@@ -110,9 +110,8 @@ from subiquity.server import casper, shutdown
 from subiquity.server.autoinstall import AutoinstallError
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.source import SEARCH_DRIVERS_AUTOINSTALL_DEFAULT
-from subiquity.server.mounter import Mounter
-from subiquity.server.snapd import api as snapdapi
 from subiquity.server.snapd import types as snapdtypes
+from subiquity.server.snapd.core_boot_installer import CoreBootInstallData
 from subiquity.server.snapd.system_getter import SystemGetter, SystemsDirMounter
 from subiquity.server.types import InstallerChannels
 from subiquitycore.async_helpers import (
@@ -402,8 +401,7 @@ class StorageController(SubiquityController, StorageManipulator):
         self._variation_info: Dict[str, VariationInfo] = {}
         self._info: Optional[VariationInfo] = None
         self._system_getter = SystemGetter(self.app)
-        self._on_volume: Optional[snapdtypes.OnVolume] = None
-        self._volumes_auth: Optional[snapdtypes.VolumesAuth] = None
+        self.core_boot_data: Optional[CoreBootInstallData] = None
         self._role_to_device: Dict[Union[str, snapdtypes.Role], _Device] = {}
         self._device_to_structure: Dict[_Device, snapdtypes.OnVolume] = {}
         self._pyudev_context: Optional[pyudev.Context] = None
@@ -421,7 +419,7 @@ class StorageController(SubiquityController, StorageManipulator):
         return self._info.is_core_boot_classic()
 
     def use_snapd_install_api(self):
-        return self._on_volume is not None
+        return self.core_boot_data is not None
 
     def load_autoinstall_data(self, data):
         # Log disabled to prevent LUKS password leak
@@ -1114,8 +1112,12 @@ class StorageController(SubiquityController, StorageManipulator):
         # features that are only available with v2 partitioning.
         self.model.storage_version = 2
         [volume] = self._info.system.volumes.values()
-        self._on_volume = snapdtypes.OnVolume.from_volume(volume)
-        self._volumes_auth = snapdtypes.VolumesAuth.from_choice(choice)
+        on_volume = snapdtypes.OnVolume.from_volume(volume)
+        self.core_boot_data = CoreBootInstallData(
+            info=self._info,
+            on_volume=on_volume,
+            volumes_auth=snapdtypes.VolumesAuth.from_choice(choice),
+        )
 
         if isinstance(choice.target, GuidedStorageTargetUseGap):
             # In theory we could set parts_by_offset_size for existing
@@ -1142,15 +1144,15 @@ class StorageController(SubiquityController, StorageManipulator):
         elif isinstance(choice.target, GuidedStorageTargetReformat):
             preserved_parts = set()
 
-            if self._on_volume.schema != disk.ptable:
+            if on_volume.schema != disk.ptable:
                 parts_by_offset_size = {}
-                disk.ptable = self._on_volume.schema
+                disk.ptable = on_volume.schema
             else:
                 parts_by_offset_size = {
                     (part.offset, part.size): part for part in disk.partitions()
                 }
 
-                for _struct, offset, size in self._on_volume.offsets_and_sizes():
+                for _struct, offset, size in on_volume.offsets_and_sizes():
                     if (offset, size) in parts_by_offset_size:
                         preserved_parts.add(parts_by_offset_size[(offset, size)])
 
@@ -1160,19 +1162,19 @@ class StorageController(SubiquityController, StorageManipulator):
                         del parts_by_offset_size[(part.offset, part.size)]
 
             if not preserved_parts:
-                self.reformat(disk, self._on_volume.schema)
+                self.reformat(disk, on_volume.schema)
         else:
             raise RuntimeError(
                 "only reformat (and experimental use-gap) are supported for TPM/FDE"
             )
 
-        for structure, offset, size in self._on_volume.offsets_and_sizes():
+        for structure, offset, size in on_volume.offsets_and_sizes():
             if (offset, size) in parts_by_offset_size:
                 part = parts_by_offset_size[(offset, size)]
             else:
                 if (
                     structure.role == snapdtypes.Role.SYSTEM_DATA
-                    and structure == self._on_volume.structure[-1]
+                    and structure == on_volume.structure[-1]
                 ):
                     gap = gaps.at_offset(disk, offset)
                     size = gap.size
@@ -1205,126 +1207,19 @@ class StorageController(SubiquityController, StorageManipulator):
 
         disk._partitions.sort(key=lambda p: p.number)
 
-    def _on_volumes(self) -> Dict[str, snapdtypes.OnVolume]:
-        # Return a value suitable for use as the 'on-volumes' part of a
-        # SystemActionRequest.
-        #
-        # This must be run after curtin partitioning, which will result in a
-        # call to update_devices which will have set .path on all block
-        # devices.
-        [key] = self._info.system.volumes.keys()
-        return {key: self._on_volume}
-
-    @with_context(description="configuring TPM-backed full disk encryption")
-    async def setup_encryption(self, context):
-        label = self._info.label
-        kwargs = dict(
-            action=snapdtypes.SystemAction.INSTALL,
-            step=snapdtypes.SystemActionStep.SETUP_STORAGE_ENCRYPTION,
-            on_volumes=self._on_volumes(),
-        )
-        if self._volumes_auth is not None:
-            kwargs["volumes_auth"] = self._volumes_auth
-        # This is required to have the proper keyboard layout on first boot
-        # before typing the passphrase.
-        # Only supported since 2.76 but ignored on older versions.
-        kwargs["keyboard_config"] = snapdtypes.KeyboardConfig.from_subiquity_kb_model(
-            self.app.base_model.keyboard
-        )
-        result = await snapdapi.post_and_wait(
-            self.app.snapdapi,
-            self.app.snapdapi.v2.systems[label].POST,
-            snapdtypes.SystemActionRequest(**kwargs),
-            ann=snapdtypes.SystemActionResponseSetupEncryption,
-        )
-        for role, enc_path in result.encrypted_devices.items():
+    def apply_encrypted_devices(
+        self, encrypted_devices: dict[str | snapdtypes.Role, str]
+    ) -> None:
+        """Update the storage model using the encrypted devices reported by
+        snapd.
+        """
+        for role, enc_path in encrypted_devices.items():
             arb_device = ArbitraryDevice(m=self.model, path=enc_path)
             self.model._actions.append(arb_device)
             part = self._role_to_device[role]
             for fs in self.model._all(type="format"):
                 if fs.volume == part:
                     fs.volume = arb_device
-
-    async def fetch_core_boot_recovery_key(self):
-        """Fetch the recovery key from snapd and store it in the model."""
-        label = self._info.label
-
-        result = await self.app.snapdapi.v2.systems[label].POST(
-            snapdtypes.SystemActionRequest(
-                action=snapdtypes.SystemAction.INSTALL,
-                step=snapdtypes.SystemActionStep.GENERATE_RECOVERY_KEY,
-                on_volumes={},
-            ),
-            return_type=snapdtypes.SystemActionResponseGenerateRecoveryKey,
-        )
-
-        self.model.set_core_boot_recovery_key(result.recovery_key)
-
-    async def snapd_target_preseed(self, target: pathlib.Path):
-        async with AsyncExitStack() as es:
-            # Bind-mount required filesystems
-            # Some of these might already be mounted by curtin, but
-            # it should be fine to bind-mount twice.
-            mounter = Mounter(self.app)
-
-            to_bind_mount = [
-                "dev",
-                "proc",
-                "sys",
-                "sys/kernel/security",
-                "var/lib/snapd/seed",
-            ]
-
-            for fs in to_bind_mount:
-                # Needed at least for var/lib/snapd/seed in dry-run mode.
-                (target / fs).parent.mkdir(parents=True, exist_ok=True)
-
-                await es.enter_async_context(
-                    mounter.bind_mounted(pathlib.Path("/") / fs, target / fs)
-                )
-
-            label = self._info.label
-            await snapdapi.post_and_wait(
-                self.app.snapdapi,
-                self.app.snapdapi.v2.systems[label].POST,
-                snapdtypes.SystemActionRequest(
-                    action=snapdtypes.SystemAction.INSTALL,
-                    step=snapdtypes.SystemActionStep.PRESEED,
-                    target_root=str(target),
-                ),
-            )
-
-    @with_context(description="making system bootable")
-    async def finish_install(self, context, kernel_components):
-        log.debug(f"finish_install: {kernel_components=}")
-        label = self._info.label
-        kernels = self._info.system.model.snaps_of_type(snapdtypes.ModelSnapType.KERNEL)
-        if len(kernels) == 1:
-            optional_snaps = []
-            if (optionals := self._info.system.available_optional) is not None:
-                optional_snaps = optionals.snaps
-
-            optional_install = snapdtypes.OptionalInstall(
-                components={kernels[0].name: kernel_components},
-                snaps=optional_snaps,
-            )
-        else:
-            log.error(f"unexpected number of kernel snaps {len(kernels)}")
-            # multi-kernel model case unknown, let snapd try to install all
-            # optional things here.
-            optional_install = snapdtypes.OptionalInstall(all=True)
-        log.debug(f"finish_install: {optional_install=}")
-
-        await snapdapi.post_and_wait(
-            self.app.snapdapi,
-            self.app.snapdapi.v2.systems[label].POST,
-            snapdtypes.SystemActionRequest(
-                action=snapdtypes.SystemAction.INSTALL,
-                step=snapdtypes.SystemActionStep.FINISH,
-                on_volumes=self._on_volumes(),
-                optional_install=optional_install,
-            ),
-        )
 
     async def has_rst_GET(self) -> bool:
         search = "/sys/module/ahci/drivers/pci:ahci/*/remapped_nvme"
