@@ -22,8 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         series:
-          - noble     # match core snap
-          - resolute  # latest
+          - resolute  # match core snap
         make-target:
           - lint
           - check

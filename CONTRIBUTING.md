@@ -41,4 +41,4 @@ Changes to this project should be proposed as pull requests on GitHub at:
       * Tools like [workshop](https://github.com/canonical/workshop) can
         optionally be used to isolate the build and dependencies from the host
         system. One can run
-        `workshop launch subiquity-noble && workshop shell subiquity-noble`
+        `workshop launch subiquity-resolute && workshop shell subiquity-resolute`
