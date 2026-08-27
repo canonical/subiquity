@@ -16,6 +16,7 @@
 import logging
 import os
 
+import attrs
 from urwid import Divider, Filler, PopUpLauncher, Text, connect_signal
 
 from subiquity.common.os import read_ubuntu_info
@@ -472,13 +473,14 @@ class HelpMenu(PopUpLauncher):
             template = _(ABOUT_INSTALLER_LTS)
         else:
             template = _(ABOUT_INSTALLER)
-        info.update(
+        fields = attrs.asdict(info)
+        fields.update(
             {
                 "snap_version": os.environ.get("SNAP_VERSION", "SNAP_VERSION"),
                 "snap_revision": os.environ.get("SNAP_REVISION", "SNAP_REVISION"),
             }
         )
-        return template.format(**info)
+        return template.format(**fields)
 
     def about(self, sender=None):
         if not self._about_message:
