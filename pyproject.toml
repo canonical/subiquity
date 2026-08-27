@@ -1,5 +1,5 @@
 [tool.black]
-target-version = ['py312']
+target-version = ['py314']
 
 [tool.isort]
 profile = "black"
