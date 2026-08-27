@@ -24,10 +24,10 @@ log = logging.getLogger("subiquity.common.os")
 
 
 OS_RELEASE = Path("/etc/os-release")
-OS_RELEASE_EXAMPLE = Path("examples/os-release-focal")
+OS_RELEASE_EXAMPLE = Path("examples/os-release-stonking")
 
 LEGACY_LSB_RELEASE = Path("/etc/lsb-release")
-LEGACY_LSB_RELEASE_EXAMPLE = Path("examples/lsb-release-focal")
+LEGACY_LSB_RELEASE_EXAMPLE = Path("examples/lsb-release-stonking")
 
 
 @attrs.define
