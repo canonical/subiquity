@@ -623,6 +623,10 @@ class _Formattable(ABC):
         else:
             return cd
 
+    def iter_underlying(self) -> Iterator["_Formattable"]:
+        """Yield the volumes backing this one, depth-first, down to the Disk(s)."""
+        yield from ()
+
     @property
     def format(self):
         if not self._fs:
@@ -1054,6 +1058,10 @@ class Partition(_Formattable):
     def on_supported_ptable(self) -> bool:
         return self.device.ptable != "unsupported"
 
+    def iter_underlying(self) -> Iterator["_Formattable"]:
+        yield self.device
+        yield from self.device.iter_underlying()
+
 
 @fsobj("raid")
 class Raid(_Device):
@@ -1149,6 +1157,13 @@ class Raid(_Device):
 
         return False
 
+    def iter_underlying(self) -> Iterator["_Formattable"]:
+        # Walk every member (data + spare) of the array.  Members can be
+        # Disks, Partitions or nested Raids.
+        for dev in self.devices | self.spare_devices:
+            yield dev
+            yield from dev.iter_underlying()
+
 
 @fsobj("lvm_volgroup")
 class LVM_VolGroup(_Device):
@@ -1184,6 +1199,11 @@ class LVM_VolGroup(_Device):
                 return True
         return False
 
+    def iter_underlying(self) -> Iterator["_Formattable"]:
+        for dev in self.devices:
+            yield dev
+            yield from dev.iter_underlying()
+
 
 @fsobj("lvm_partition")
 class LVM_LogicalVolume(_Formattable):
@@ -1217,6 +1237,10 @@ class LVM_LogicalVolume(_Formattable):
 
     def on_remote_storage(self) -> bool:
         return self.volgroup.on_remote_storage()
+
+    def iter_underlying(self) -> Iterator["_Formattable"]:
+        yield self.volgroup
+        yield from self.volgroup.iter_underlying()
 
 
 LUKS_OVERHEAD = 16 * (2**20)
@@ -1321,6 +1345,10 @@ class DM_Crypt(_Formattable):
     def on_remote_storage(self) -> bool:
         return self.volume.on_remote_storage()
 
+    def iter_underlying(self) -> Iterator["_Formattable"]:
+        yield self.volume
+        yield from self.volume.iter_underlying()
+
 
 @fsobj("device")
 class ArbitraryDevice(_Device):
@@ -1397,6 +1425,22 @@ class Mount:
     def on_remote_storage(self) -> bool:
         return self.device.on_remote_storage()
 
+    def iter_storage_chain(self) -> Iterator[Any]:
+        """Yield the full stack backing this mount, depth-first, from the
+        Mount itself down through the Filesystem, the formatted volume and
+        every underlying volume all the way to the Disk(s).
+
+        Yields: self, the Filesystem (if any), the top-level volume, then
+        everything produced by that volume's ``iter_underlying``.
+        """
+        yield self
+        fs = self.device
+        if fs is None:
+            return
+        yield fs
+        yield fs.volume
+        yield from fs.volume.iter_underlying()
+
 
 def get_canmount(properties: Optional[dict], default: bool) -> bool:
     """Handle the possible values of the zfs canmount property, which should be
@@ -1471,6 +1515,17 @@ class ZPool:
     def on_remote_storage(self) -> bool:
         return any(vdev.on_remote_storage() for vdev in self.vdevs)
 
+    def iter_underlying(self) -> Iterator["_Formattable"]:
+        for vdev in self.vdevs:
+            yield vdev
+            yield from vdev.iter_underlying()
+
+    def iter_storage_chain(self) -> Iterator[Any]:
+        """Yield the full stack backing this zpool mountlike, depth-first,
+        from the ZPool itself down through every vdev to the Disk(s)."""
+        yield self
+        yield from self.iter_underlying()
+
 
 @fsobj("zfs")
 class ZFS:
@@ -1496,6 +1551,13 @@ class ZFS:
 
     def on_remote_storage(self) -> bool:
         return self.pool.on_remote_storage()
+
+    def iter_storage_chain(self) -> Iterator[Any]:
+        """Yield the full stack backing this zfs mountlike, depth-first,
+        from the ZFS dataset itself down through the pool to the Disk(s)."""
+        yield self
+        yield self.pool
+        yield from self.pool.iter_underlying()
 
 
 ConstructedDevice = Union[Raid, LVM_VolGroup, ZPool]
