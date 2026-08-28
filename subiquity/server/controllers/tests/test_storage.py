@@ -1991,7 +1991,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     async def test_guided_zfs(self, firmware_type, ptable, p1mnt, needs_ext4_boot):
         await self._guided_setup(firmware_type, ptable)
         with mock.patch(
-            "subiquity.server.controllers.storage._needs_ext4_boot",
+            "subiquity.server.controllers.storage.Requirements.BOOT_EXT4.applies_to",
             return_value=needs_ext4_boot,
         ):
             await self.controller.guided(
@@ -2047,7 +2047,7 @@ class TestGuided(IsolatedAsyncioTestCase):
     ):
         await self._guided_setup(firmware_type, ptable)
         with mock.patch(
-            "subiquity.server.controllers.storage._needs_ext4_boot",
+            "subiquity.server.controllers.storage.Requirements.BOOT_EXT4.applies_to",
             return_value=needs_ext4_boot,
         ):
             await self.controller.guided(

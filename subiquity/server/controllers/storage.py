@@ -54,7 +54,6 @@ from subiquity.common.storage.manipulator import StorageManipulator
 from subiquity.common.storage.requirements import (
     Requirements,
     RequirementSeverity,
-    _needs_ext4_boot,
 )
 from subiquity.common.storage.spec import FileSystemSpec, PartitionSpec, VolGroupSpec
 from subiquity.common.types.storage import (
@@ -839,7 +838,7 @@ class StorageController(SubiquityController, StorageManipulator):
         rpool.create_zfs(f"USERDATA/root_{userdata_uuid}", mountpoint="/root")
         rpool.create_zfs(f"USERDATA/home_{userdata_uuid}", mountpoint="/home")
 
-        if _needs_ext4_boot(self.model):
+        if Requirements.BOOT_EXT4.applies_to(self.model):
             self.create_filesystem(bpart, FileSystemSpec(fstype="ext4", mount="/boot"))
         else:
             # Use a ZFS pool for /boot, like we used to always do.
