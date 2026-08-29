@@ -56,6 +56,8 @@ class UbuntuDriversInterface(ABC):
         # This is not ideal but should be acceptable because we want OEM
         # meta-packages installed unconditionally (except in autoinstall).
         self.install_drivers_cmd = [
+            "env",
+            "DEBIAN_FRONTEND=noninteractive",
             "ubuntu-drivers",
             "install",
             "--no-oem",
