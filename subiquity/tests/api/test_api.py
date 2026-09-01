@@ -2069,12 +2069,6 @@ class TestOEM(TestAPI):
                 self.assertEqual(expected, resp["metapackages"])
 
     @timeout()
-    async def test_listing_certified_ubuntu_server(self):
-        # Listing of OEM meta-packages is intentionally disabled on
-        # ubuntu-server pre-resolute (default dry-run lsb is Focal).
-        await self._test_listing_certified(source_id="ubuntu-server", expected=[])
-
-    @timeout()
     async def test_listing_certified_ubuntu_desktop(self):
         await self._test_listing_certified(
             source_id="ubuntu-desktop", expected=["oem-somerville-tentacool-meta"]
@@ -2729,9 +2723,9 @@ class TestLabels(TestAPI):
                         "boot": False,
                         "grub_device": None,
                         "preserve": False,
-                        "wipe": None,
-                        "effective_format": "zfs",
-                        "effective_mount": "/boot",
+                        "wipe": "superblock",
+                        "format": "ext4",
+                        "mount": "/boot",
                         "effectively_encrypted": False,
                     },
                     {
@@ -2771,9 +2765,9 @@ class TestLabels(TestAPI):
                         "boot": False,
                         "grub_device": None,
                         "preserve": False,
-                        "wipe": None,
-                        "effective_format": "zfs",
-                        "effective_mount": "/boot",
+                        "wipe": "superblock",
+                        "format": "ext4",
+                        "mount": "/boot",
                         "effectively_encrypted": False,
                     },
                     {

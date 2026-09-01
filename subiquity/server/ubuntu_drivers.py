@@ -339,6 +339,13 @@ class UbuntuDriversHasDriversInterface(UbuntuDriversInterface):
         return self.oem_metapackages
 
 
+class UbuntuDriversHasDriversNoOEMInterface(UbuntuDriversHasDriversInterface):
+    """A dry-run implementation of ubuntu-drivers that returns a hard-coded
+    list of drivers, but no OEM metapackage."""
+
+    oem_metapackages: list[str] = []
+
+
 class UbuntuDriversNoDriversInterface(UbuntuDriversHasDriversInterface):
     """A dry-run implementation of ubuntu-drivers that returns a hard-coded
     empty list of drivers."""
@@ -404,12 +411,18 @@ def get_ubuntu_drivers_interface(app) -> UbuntuDriversInterface:
     use_gpgpu = app.base_model.source.current.variant == "server"
     cls: Type[UbuntuDriversInterface] = UbuntuDriversClientInterface
     if app.opts.dry_run:
-        if "no-drivers" in app.debug_flags:
-            cls = UbuntuDriversNoDriversInterface
-        elif "run-drivers" in app.debug_flags:
-            cls = UbuntuDriversRunDriversInterface
+        strat_to_interface = {
+            "no-drivers": UbuntuDriversNoDriversInterface,
+            "has-drivers": UbuntuDriversHasDriversInterface,
+            "has-drivers-no-oem": UbuntuDriversHasDriversNoOEMInterface,
+            "run-drivers": UbuntuDriversRunDriversInterface,
+        }
+        # debug flags have precendence over dry-run config
+        matching_flags = set(app.debug_flags) & set(strat_to_interface.keys())
+        if matching_flags:
+            cls = strat_to_interface[list(matching_flags)[0]]
         else:
-            cls = UbuntuDriversHasDriversInterface
+            cls = strat_to_interface[app.dr_cfg.ubuntu_drivers_strategy]
 
     if app.opts.kernel_cmdline.get("subiquity-fake-pci-devices"):
         log.debug("Using umockdev wrapper")

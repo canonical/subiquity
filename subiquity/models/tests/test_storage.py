@@ -2003,6 +2003,77 @@ class TestMountForPath(SubiTestCase):
         self.assertIsNone(mount)
 
 
+class TestIterStorageChain(SubiTestCase):
+    """Tests for Mountlike.iter_storage_chain() and the per-volume
+    iter_underlying() helpers that back it."""
+
+    def _types(self, chain):
+        return [type(x).__name__ for x in chain]
+
+    def test_disk_directly_formatted(self):
+        m, d = make_model_and_disk()
+        fs = make_filesystem(m, d)
+        mt = make_mount(m, fs, "/boot")
+        self.assertEqual(
+            self._types(mt.iter_storage_chain()),
+            ["Mount", "Filesystem", "Disk"],
+        )
+
+    def test_disk_partition(self):
+        m, d = make_model_and_disk()
+        p = make_partition(m, d)
+        fs = make_filesystem(m, p)
+        mt = make_mount(m, fs, "/boot")
+        self.assertEqual(
+            self._types(mt.iter_storage_chain()),
+            ["Mount", "Filesystem", "Partition", "Disk"],
+        )
+
+    def test_raid1(self):
+        m = make_model()
+        r = make_raid(m)
+        fs = make_filesystem(m, r)
+        mt = make_mount(m, fs, "/boot")
+        chain = list(mt.iter_storage_chain())
+        self.assertEqual(chain[0:3], [mt, fs, r])
+        # raid1 is built from two disks (see make_raid).
+        self.assertEqual(self._types(chain[3:]), ["Disk", "Disk"])
+        self.assertEqual(r.raidlevel, "raid1")
+
+    def test_lvm(self):
+        m = make_model()
+        vg = make_vg(m)
+        lv = make_lv(m, vg=vg)
+        fs = make_filesystem(m, lv)
+        mt = make_mount(m, fs, "/boot")
+        self.assertEqual(
+            self._types(mt.iter_storage_chain()),
+            ["Mount", "Filesystem", "LVM_LogicalVolume", "LVM_VolGroup", "Disk"],
+        )
+
+    def test_dm_crypt_on_partition(self):
+        m, d = make_model_and_disk()
+        p = make_partition(m, d)
+        dm = make_dm_crypt(m, p)
+        fs = make_filesystem(m, dm)
+        mt = make_mount(m, fs, "/boot")
+        self.assertEqual(
+            self._types(mt.iter_storage_chain()),
+            ["Mount", "Filesystem", "DM_Crypt", "Partition", "Disk"],
+        )
+
+    def test_zpool_mountlike(self):
+        m = make_model()
+        zp = make_zpool(model=m, mountpoint="/boot")
+        self.assertEqual(self._types(zp.iter_storage_chain()), ["ZPool", "Disk"])
+
+    def test_zfs_mountlike(self):
+        m = make_model()
+        zp = make_zpool(model=m, mountpoint="/")
+        z = make_zfs(m, pool=zp, volume="rpool/boot")
+        self.assertEqual(self._types(z.iter_storage_chain()), ["ZFS", "ZPool", "Disk"])
+
+
 class TestLivePackages(SubiTestCase):
     async def test_defaults(self):
         m = make_model()
