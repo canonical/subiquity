@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: psf/black@stable
         with:
-          version: "~= 25.1.0"
+          version: "~= 26.5.1"
           src: "console_conf subiquity subiquitycore"
   format-isort:
     runs-on: ubuntu-24.04
@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: isort/isort-action@v1
         with:
-          isort-version: "6.0.1"
+          isort-version: "9.0.1"
           sort-paths: "console_conf subiquity subiquitycore"
   static-typing:
     # In this job, we compare the output of mypy before and after the PR.
