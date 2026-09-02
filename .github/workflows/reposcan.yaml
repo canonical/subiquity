@@ -1,0 +1,19 @@
+name: security-scan
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write   # upload SARIF to the code-scanning pane
+  pull-requests: write     # comment on the PR
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
+        with:
+          persist-credentials: false
+      - uses: canonical/reposcan@8bf5694d328598b837717a86ee16a0fa7ad01551  # v0.2.0
