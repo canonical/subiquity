@@ -44,7 +44,6 @@ of widgets and index to be scrollable is bundled up into an object
 called a "stretchy" but is a bad name but at least easily greppable.
 """
 
-
 import urwid
 
 from subiquitycore.ui.container import ListBox, Pile

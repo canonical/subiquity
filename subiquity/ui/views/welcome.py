@@ -33,12 +33,10 @@ from subiquitycore.view import BaseView
 log = logging.getLogger("subiquity.ui.views.welcome")
 
 
-HELP = _(
-    """
+HELP = _("""
 Select the language to use for the installer and to be configured in the
 installed system.
-"""
-)
+""")
 
 CLOUD_INIT_FAIL_TEXT = """
 cloud-init failed to complete after 10 minutes of waiting. This

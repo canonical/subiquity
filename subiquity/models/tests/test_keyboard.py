@@ -87,13 +87,11 @@ class TestKeyboardModel(SubiTestCase):
     def testLoadSuggestions(self):
         data = self.tmp_path("kbd.yaml")
         with open(data, "w") as fp:
-            fp.write(
-                """
+            fp.write("""
 aa_BB.UTF-8:
   layout: aa
   variant: cc
-"""
-            )
+""")
         actual = self.model.load_layout_suggestions(data)
         expected = {"aa_BB.UTF-8": KeyboardSetting(layout="aa", variant="cc")}
         self.assertEqual(expected, actual)

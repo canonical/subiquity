@@ -44,7 +44,7 @@ class WelcomeController(SubiquityTuiController):
         respectively.
         """
         # ('de_DE.UTF-8', 'Deutsch')
-        (code, display_name) = lang
+        code, display_name = lang
         log.debug("WelcomeController.done %s next_screen", code)
         i18n.switch_language(code)
         self.app.native_language = display_name

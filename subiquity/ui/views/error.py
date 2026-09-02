@@ -42,124 +42,92 @@ def close_btn(stretchy, label=None):
 
 
 error_report_intros = {
-    ErrorReportKind.BLOCK_PROBE_FAIL: _(
-        """
+    ErrorReportKind.BLOCK_PROBE_FAIL: _("""
 Sorry, there was a problem examining the storage devices on this system.
-"""
-    ),
-    ErrorReportKind.DISK_PROBE_FAIL: _(
-        """
+"""),
+    ErrorReportKind.DISK_PROBE_FAIL: _("""
 Sorry, there was a problem examining the storage devices on this system.
-"""
-    ),
-    ErrorReportKind.INSTALL_FAIL: _(
-        """
+"""),
+    ErrorReportKind.INSTALL_FAIL: _("""
 Sorry, there was a problem completing the installation.
-"""
-    ),
-    ErrorReportKind.NETWORK_FAIL: _(
-        """
+"""),
+    ErrorReportKind.NETWORK_FAIL: _("""
 Sorry, there was a problem applying the network configuration.
-"""
-    ),
-    ErrorReportKind.SERVER_REQUEST_FAIL: _(
-        """
+"""),
+    ErrorReportKind.SERVER_REQUEST_FAIL: _("""
 Sorry, the installer has encountered an internal error.
-"""
-    ),
-    ErrorReportKind.UI: _(
-        """
+"""),
+    ErrorReportKind.UI: _("""
 Sorry, the installer has restarted because of an error.
-"""
-    ),
-    ErrorReportKind.UNKNOWN: _(
-        """
+"""),
+    ErrorReportKind.UNKNOWN: _("""
 Sorry, an unknown error occurred.
-"""
-    ),
+"""),
 }
 
 error_report_state_descriptions = {
     ErrorReportState.INCOMPLETE: (
-        _(
-            """
+        _("""
 Information is being collected from the system that will help the
 developers diagnose the report.
-"""
-        ),
+"""),
         True,
     ),
     ErrorReportState.LOADING: (
-        _(
-            """
+        _("""
 Loading report...
-"""
-        ),
+"""),
         True,
     ),
     ErrorReportState.ERROR_GENERATING: (
-        _(
-            """
+        _("""
 Collecting information from the system failed. See the files in
 /var/log/installer for more.
-"""
-        ),
+"""),
         False,
     ),
     ErrorReportState.ERROR_LOADING: (
-        _(
-            """
+        _("""
 Loading the report failed. See the files in /var/log/installer for more.
-"""
-        ),
+"""),
         False,
     ),
 }
 
 error_report_options = {
     ErrorReportKind.BLOCK_PROBE_FAIL: (
-        _(
-            """
+        _("""
 You can continue and the installer will just present the disks present
 in the system and not other block devices, or you may be able to fix
 the issue by switching to a shell and reconfiguring the system's block
 devices manually.
-"""
-        ),
+"""),
         ["debug_shell", "continue"],
     ),
     ErrorReportKind.DISK_PROBE_FAIL: (
-        _(
-            """
+        _("""
 You may be able to fix the issue by switching to a shell and
 reconfiguring the system's block devices manually.
-"""
-        ),
+"""),
         ["debug_shell", "continue"],
     ),
     ErrorReportKind.NETWORK_FAIL: (
-        _(
-            """
+        _("""
 You can continue with the installation but it will be assumed the network
 is not functional.
-"""
-        ),
+"""),
         ["continue"],
     ),
     ErrorReportKind.SERVER_REQUEST_FAIL: (
-        _(
-            """
+        _("""
 You can continue or restart the installer.
-"""
-        ),
+"""),
         ["continue", "restart"],
     ),
     ErrorReportKind.INSTALL_FAIL: (
-        _(
-            """
+        _("""
 Do you want to try starting the installation again?
-"""
-        ),
+"""),
         ["restart", "close"],
     ),
     ErrorReportKind.UI: (
@@ -170,19 +138,15 @@ Do you want to try starting the installation again?
 }
 
 
-submit_text = _(
-    """
+submit_text = _("""
 If you want to help improve the installer, you can send an error report.
-"""
-)
+""")
 
-integrity_check_fail_text = _(
-    """
+integrity_check_fail_text = _("""
 The install media checksum verification failed.  It's possible that this crash
 is related to that checksum failure.  Consider verifying the install media and
 retrying the install.
-"""
-)
+""")
 
 
 class ErrorReportStretchy(Stretchy):

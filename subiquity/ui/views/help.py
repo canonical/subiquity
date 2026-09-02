@@ -40,8 +40,7 @@ def close_btn(app, stretchy):
     )
 
 
-ABOUT_INSTALLER = _(
-    """
+ABOUT_INSTALLER = _("""
 Welcome to Subiquity, the Ubuntu Server Installer!
 
 The most popular server Linux in the cloud and data centre, this
@@ -54,12 +53,10 @@ The installer only requires the up and down arrow keys, space (or
 return) and the occasional bit of typing.
 
 This is version {snap_version} of the installer.
-"""
-)
+""")
 
 
-ABOUT_INSTALLER_LTS = _(
-    """
+ABOUT_INSTALLER_LTS = _("""
 Welcome to the Ubuntu Server Installer!
 
 The most popular server Linux in the cloud and data centre, you can
@@ -72,75 +69,52 @@ The installer only requires the up and down arrow keys, space (or
 return) and the occasional bit of typing.
 
 This is version {snap_version} of the installer.
-"""
-)
+""")
 
 
-SSH_HELP_PROLOGUE = _(
-    """
+SSH_HELP_PROLOGUE = _("""
 It is possible to connect to the installer over the network, which
 might allow the use of a more capable terminal and can offer more languages
-than can be rendered in the Linux console."""
-)
+than can be rendered in the Linux console.""")
 
-SSH_HELP_MULTIPLE_ADDRESSES = _(
-    """
+SSH_HELP_MULTIPLE_ADDRESSES = _("""
 To connect, SSH to any of these addresses:
-"""
-)
+""")
 
-SSH_HELP_ONE_ADDRESSES = _(
-    """
-To connect, SSH to {username}@{ip}."""
-)
+SSH_HELP_ONE_ADDRESSES = _("""
+To connect, SSH to {username}@{ip}.""")
 
-SSH_HELP_EPILOGUE_KNOWN_PASS_NO_KEYS = _(
-    """\
-The password you should use is "{password}"."""
-)
+SSH_HELP_EPILOGUE_KNOWN_PASS_NO_KEYS = _("""\
+The password you should use is "{password}".""")
 
-SSH_HELP_EPILOGUE_UNKNOWN_PASS_NO_KEYS = _(
-    """\
-You should use the preconfigured password passed to cloud-init."""
-)
+SSH_HELP_EPILOGUE_UNKNOWN_PASS_NO_KEYS = _("""\
+You should use the preconfigured password passed to cloud-init.""")
 
-SSH_HELP_EPILOGUE_ONE_KEY = _(
-    """\
+SSH_HELP_EPILOGUE_ONE_KEY = _("""\
 You can log in with the {keytype} key with fingerprint:
 
     {fingerprint}
-"""
-)
+""")
 
-SSH_HELP_EPILOGUE_MULTIPLE_KEYS = _(
-    """\
+SSH_HELP_EPILOGUE_MULTIPLE_KEYS = _("""\
 You can log in with one of the following keys:
-"""
-)
+""")
 
-SSH_HELP_EPILOGUE_KNOWN_PASS_KEYS = _(
-    """
-Or you can use the password "{password}"."""
-)
+SSH_HELP_EPILOGUE_KNOWN_PASS_KEYS = _("""
+Or you can use the password "{password}".""")
 
-SSH_HELP_EPILOGUE_UNKNOWN_PASS_KEYS = _(
-    """
-Or you can use the preconfigured password passed to cloud-init."""
-)
+SSH_HELP_EPILOGUE_UNKNOWN_PASS_KEYS = _("""
+Or you can use the preconfigured password passed to cloud-init.""")
 
-SSH_HELP_NO_ADDRESSES = _(
-    """
+SSH_HELP_NO_ADDRESSES = _("""
 Unfortunately this system seems to have no global IP addresses at this
 time.
-"""
-)
+""")
 
-SSH_HELP_NO_PASSWORD = _(
-    """
+SSH_HELP_NO_PASSWORD = _("""
 Unfortunately the installer was unable to detect the password that has
 been set.
-"""
-)
+""")
 
 
 def ssh_help_texts(ssh_info):
@@ -231,10 +205,8 @@ class SimpleTextStretchy(Stretchy):
         super().__init__(title, widgets, 0, len(widgets) - 1)
 
 
-GLOBAL_KEY_HELP = _(
-    """\
-The following keys can be used at any time:"""
-)
+GLOBAL_KEY_HELP = _("""\
+The following keys can be used at any time:""")
 
 GLOBAL_KEYS = (
     (_("ESC"), _("go back")),

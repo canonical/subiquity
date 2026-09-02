@@ -64,8 +64,7 @@ class RecoverableClientError(ValueError):
     pass
 
 
-DEBUG_SHELL_INTRO = _(
-    """\
+DEBUG_SHELL_INTRO = _("""\
 Installer shell session activated.
 
 This shell session is running inside the installer environment.  You
@@ -74,8 +73,7 @@ example by typing Control-D or 'exit'.
 
 Be aware that this is an ephemeral environment.  Changes to this
 environment will not survive a reboot. If the install has started, the
-installed system will be mounted at /target."""
-)
+installed system will be mounted at /target.""")
 
 
 class SubiquityClient(TuiApplication):

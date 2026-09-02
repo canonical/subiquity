@@ -81,12 +81,10 @@ class DryRunSSHKeyFetcher(SSHKeyFetcher):
 
     async def fetch_keys_fake_success(self, user_id: str) -> List[str]:
         unused, username = user_id.split(":", maxsplit=1)
-        return [
-            f"""\
+        return [f"""\
 ssh-ed25519\
  AAAAC3NzaC1lZDI1NTE5AAAAIMM/qhS3hS3+IjpJBYXZWCqPKPH9Zag8QYbS548iEjoZ\
- {username}@earth # ssh-import-id {user_id}"""
-        ]
+ {username}@earth # ssh-import-id {user_id}"""]
 
     async def fetch_keys_fake_failure(self, user_id: str) -> List[str]:
         unused, username = user_id.split(":", maxsplit=1)

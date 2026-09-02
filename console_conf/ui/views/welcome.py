@@ -17,6 +17,7 @@
 Welcome provides user with language selection
 
 """
+
 import logging
 
 from subiquitycore.ui.buttons import done_btn

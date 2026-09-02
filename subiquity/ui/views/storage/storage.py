@@ -19,6 +19,7 @@ Provides storage device selection and additional storage
 configuration.
 
 """
+
 import logging
 
 import attr

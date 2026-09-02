@@ -280,8 +280,7 @@ class GuidedForm(Form):
         self.validated()
 
 
-HELP = _(
-    """
+HELP = _("""
 
 The "Use an entire disk" option installs Ubuntu onto the selected disk,
 replacing any partitions and data already there.
@@ -308,24 +307,19 @@ If you choose to use a custom storage layout, no changes are made to the disks
 and you will have to, at a minimum, select a boot disk and mount a filesystem
 at /.
 
-"""
-)
+""")
 
 
-no_big_disks = _(
-    """
+no_big_disks = _("""
 Block probing did not discover any disks big enough to support guided storage
 configuration. Manual configuration may still be possible.
-"""
-)
+""")
 
 
-no_disks = _(
-    """
+no_disks = _("""
 Block probing did not discover any disks. Unfortunately this means that
 installation will not be possible.
-"""
-)
+""")
 
 
 class CapabilitySelectionStretchy(Stretchy):

@@ -16,7 +16,6 @@
 """Types defined in this module are deprecated and will at some point be
 replaced by `attr.s` structures or similar."""
 
-
 from typing import Any, Required, TypedDict
 
 from subiquity.models.storage import (

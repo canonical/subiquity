@@ -59,21 +59,17 @@ def fingerprints(keyfile):
     return info
 
 
-host_keys_intro = _(
-    """\
+host_keys_intro = _("""\
 The host key fingerprints are:
-"""
-)
+""")
 
 host_key_tmpl = """
     {keytype:{width}} {fingerprint}"""
 
-single_host_key_tmpl = _(
-    """\
+single_host_key_tmpl = _("""\
 The {keytype} host key fingerprint is:
     {fingerprint}
-"""
-)
+""")
 
 
 def host_key_info(runtime_state_dir=None):
