@@ -222,7 +222,9 @@ def make_partition(
 
 
 def make_filesystem(model, partition, *, fstype="ext4", **kw):
-    return Filesystem(m=model, volume=partition, fstype=fstype, **kw)
+    fs = Filesystem(m=model, volume=partition, fstype=fstype, **kw)
+    model._actions.append(fs)
+    return fs
 
 
 def make_mount(model, fs: Filesystem, path):
