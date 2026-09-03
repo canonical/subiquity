@@ -28,7 +28,7 @@ jobs:
           - lint
           - check
     steps:
-    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       with:
         persist-credentials: false
     - uses: canonical/launch-workshop@b9e184e38f49808ced78e25de19483fe02484c46  # v1
@@ -39,7 +39,7 @@ jobs:
   pre-commit:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
           # part of our pre-commit is a documentation check, and that needs
@@ -59,7 +59,7 @@ jobs:
       - name: Install mypy and typeshed
         run: sudo apt-get install -y python3-mypy python3-typeshed
       - name: Checkout the pull request branch
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
           # When no ref is specified, a merge commit (from PR branch to target
@@ -81,7 +81,7 @@ jobs:
               "${{ github.event.pull_request.head.sha }}")
           echo "base_commit=$ancestor" >> "$GITHUB_OUTPUT"
       - name: Checkout the base commit (most recent common ancestor)
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ steps.determine_base_commit.outputs.base_commit }}
