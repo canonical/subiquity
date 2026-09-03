@@ -108,7 +108,6 @@ class TestStorageManipulator(unittest.TestCase):
         fs = make_filesystem(
             manipulator.model, partition=p, fstype="ext2", preserve=True
         )
-        manipulator.model._actions.append(fs)
         manipulator.delete_filesystem(fs)
         spec = {"wipe": "random"}
         with mock.patch.object(p, "original_fstype") as original_fstype:
