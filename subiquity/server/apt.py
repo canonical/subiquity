@@ -438,8 +438,7 @@ class DryRunAptConfigurer(AptConfigurer):
         codename = read_ubuntu_info(dry_run=True).codename
         host = url.split("/")[2]
 
-        output.write(
-            f"""\
+        output.write(f"""\
 Ign:1 {url} {codename} InRelease
 Ign:2 {url} {codename}-updates InRelease
 Ign:3 {url} {codename}-backports InRelease
@@ -465,8 +464,7 @@ E: Failed to fetch {url}/dists/{codename}-security/InRelease\
   Temporary failure resolving '{host}'
 E: Some index files failed to download. They have been ignored,
  or old ones used instead.
-"""
-        )
+""")
         raise AptConfigCheckError
 
     async def apt_config_check_success(self, output: io.StringIO) -> None:
@@ -475,16 +473,14 @@ E: Some index files failed to download. They have been ignored,
         url = self.app.base_model.mirror.primary_staged.uri
         codename = read_ubuntu_info(dry_run=True).codename
 
-        output.write(
-            f"""\
+        output.write(f"""\
 Get:1 {url} {codename} InRelease [267 kB]
 Get:2 {url} {codename}-updates InRelease [109 kB]
 Get:3 {url} {codename}-backports InRelease [99.9 kB]
 Get:4 {url} {codename}-security InRelease [109 kB]
 Fetched 585 kB in 1s (1057 kB/s)
 Reading package lists...
-"""
-        )
+""")
 
     async def run_apt_config_check(self, output: io.StringIO) -> None:
         """Dry-run implementation of the Apt config check.

@@ -2254,12 +2254,10 @@ class TestAutoinstallServer(TestAPI):
     async def test_interactive(self):
         cfg = "examples/machines/simple.json"
         with tempfile.NamedTemporaryFile(mode="w") as tf:
-            tf.write(
-                """
+            tf.write("""
                 version: 1
                 interactive-sections: ['*']
-            """
-            )
+            """)
             tf.flush()
             extra = ["--autoinstall", tf.name]
             async with start_server(cfg, extra_args=extra) as inst:

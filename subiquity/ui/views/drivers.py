@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """Module defining the view for third-party drivers installation."""
+
 import logging
 from enum import Enum, auto
 from typing import List, Optional

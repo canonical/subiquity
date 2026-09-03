@@ -18,6 +18,7 @@
 Provides high level options for Ubuntu install
 
 """
+
 import logging
 
 from urwid import connect_signal

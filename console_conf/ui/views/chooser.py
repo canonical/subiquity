@@ -17,6 +17,7 @@
 Chooser provides a view with recovery chooser actions.
 
 """
+
 import logging
 
 from urwid import Text, connect_signal

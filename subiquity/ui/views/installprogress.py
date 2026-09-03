@@ -253,16 +253,14 @@ class ProgressView(BaseView):
         self._w = self.event_pile
 
 
-confirmation_text = _(
-    """\
+confirmation_text = _("""\
 Selecting Continue below will begin the installation process and
 result in the loss of data on the disks selected to be formatted.
 
 You will not be able to return to this or a previous screen once
 the installation has started.
 
-Are you sure you want to continue?"""
-)
+Are you sure you want to continue?""")
 
 
 class InstallConfirmation(Stretchy):
@@ -297,13 +295,11 @@ class InstallConfirmation(Stretchy):
             self.app.ui.body.show_continue()
 
 
-running_text = _(
-    """\
+running_text = _("""\
 The installer running on {tty} is currently installing the system.
 
 You can wait for this to complete or switch to a shell.
-"""
-)
+""")
 
 
 class InstallRunning(Stretchy):

@@ -17,6 +17,8 @@ concurrency:
 
 jobs:
   documentation-checks:
-    uses: canonical/documentation-workflows/.github/workflows/documentation-checks.yaml@main
+    # FIXME convert to following a tag when available
+    # https://redirect.github.com/canonical/documentation-workflows/issues/6
+    uses: canonical/documentation-workflows/.github/workflows/documentation-checks.yaml@309dd382b6a07cbd23d84e3912fb05e6bc1f4ffb  # main
     with:
       working-directory: 'doc'

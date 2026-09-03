@@ -14,8 +14,9 @@ jobs:
     runs-on: [self-hosted, linux, amd64, tiobe, noble]
     steps:
       - name: Checkout the project
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Dependencies
@@ -27,7 +28,7 @@ jobs:
           make coverage
 
       - name: Run TICS analysis with github-action
-        uses: tiobe/tics-github-action@v3
+        uses: tiobe/tics-github-action@016a4d79f3027fe7b4a2901619a58c745ab7cadf  # v3
         with:
           mode: qserver
           project: subiquity

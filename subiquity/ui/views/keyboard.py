@@ -96,21 +96,17 @@ class AutoDetectIntro(AutoDetectBase):
 
 
 class AutoDetectResult(AutoDetectBase):
-    preamble = _(
-        """\
+    preamble = _("""\
 Keyboard auto detection completed.
 
 Your keyboard was detected as:
-"""
-    )
-    postamble = _(
-        """\
+""")
+    postamble = _("""\
 
 If this is correct, select Done on the next screen. If not you can select \
 another layout or run the automated detection again.
 
-"""
-    )
+""")
 
     @property
     def _kview(self):
@@ -290,8 +286,7 @@ class Detector:
         self.keyboard_view.show_overlay(self.overlay)
 
 
-toggle_text = _(
-    """\
+toggle_text = _("""\
 You will need a way to toggle the keyboard between the national layout and \
 the standard Latin layout.
 
@@ -300,8 +295,7 @@ latter case, use the combination Shift+Caps Lock for normal Caps toggle). \
 Alt+Shift is also a popular combination; it will however lose its usual \
 behavior in Emacs and other programs that use it for specific needs.
 
-Not all listed keys are present on all keyboards. """
-)
+Not all listed keys are present on all keyboards. """)
 
 
 toggle_options = [

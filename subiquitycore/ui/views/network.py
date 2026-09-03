@@ -206,27 +206,19 @@ class NetworkDeviceTable(WidgetWrap):
 
 
 wlan_support_install_state_texts = {
-    "NOT_AVAILABLE": _(
-        """\
+    "NOT_AVAILABLE": _("""\
 A wifi device was detected but the necessary support packages were not
 available.
-"""
-    ),
-    "INSTALLING": _(
-        """\
+"""),
+    "INSTALLING": _("""\
 Wifi support packages are being installed.
-"""
-    ),
-    "FAILED": _(
-        """\
+"""),
+    "FAILED": _("""\
 Wifi support packages failed to install. Please check the logs.
-"""
-    ),
-    "DONE": _(
-        """\
+"""),
+    "DONE": _("""\
 Wifi support packages will be installed in the target system.
-"""
-    ),
+"""),
 }
 
 

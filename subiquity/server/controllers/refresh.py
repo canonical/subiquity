@@ -129,7 +129,7 @@ class RefreshController(SubiquityController):
             subcontext.description = "current version of snap is: %r" % (
                 self.status.current_snap_version
             )
-        (channel, source) = self.get_refresh_channel()
+        channel, source = self.get_refresh_channel()
         if source == SnapChannelSource.NOT_FOUND:
             log.debug("no refresh channel found")
             return

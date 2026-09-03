@@ -142,11 +142,9 @@ class TestUbuntuDriversClientInterface(unittest.IsolatedAsyncioTestCase):
     @patch("subiquity.server.ubuntu_drivers.run_curtin_command")
     async def test_list_drivers(self, mock_run_curtin_command):
         # Make sure this gets decoded as utf-8.
-        mock_run_curtin_command.return_value = Mock(
-            stdout=b"""\
+        mock_run_curtin_command.return_value = Mock(stdout=b"""\
 nvidia-driver-510 linux-modules-nvidia-510-generic-hwe-20.04
-"""
-        )
+""")
         drivers = await self.ubuntu_drivers.list_drivers(
             root_dir="/target", context="listing third-party drivers"
         )
@@ -170,11 +168,9 @@ nvidia-driver-510 linux-modules-nvidia-510-generic-hwe-20.04
     @patch("subiquity.server.ubuntu_drivers.run_curtin_command")
     async def test_list_oem(self, mock_run_curtin_command):
         # Make sure this gets decoded as utf-8.
-        mock_run_curtin_command.return_value = Mock(
-            stdout=b"""\
+        mock_run_curtin_command.return_value = Mock(stdout=b"""\
 oem-somerville-tentacool-meta
-"""
-        )
+""")
         drivers = await self.ubuntu_drivers.list_oem(
             root_dir="/target", context="listing OEM meta-packages"
         )

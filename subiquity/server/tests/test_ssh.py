@@ -108,12 +108,10 @@ class TestDryRunSSHKeyFetcher(unittest.IsolatedAsyncioTestCase):
 
     async def test_fetch_keys_fake_success(self):
         result = await self.fetcher.fetch_keys_fake_success("lp:test")
-        expected = [
-            """\
+        expected = ["""\
 ssh-ed25519\
  AAAAC3NzaC1lZDI1NTE5AAAAIMM/qhS3hS3+IjpJBYXZWCqPKPH9Zag8QYbS548iEjoZ\
- test@earth # ssh-import-id lp:test"""
-        ]
+ test@earth # ssh-import-id lp:test"""]
         self.assertEqual(result, expected)
 
     async def test_fetch_keys_fake_failure(self):

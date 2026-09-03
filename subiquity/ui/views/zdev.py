@@ -18,6 +18,7 @@
 Provides device activation and configuration on s390x
 
 """
+
 import logging
 
 from urwid import Text, connect_signal
