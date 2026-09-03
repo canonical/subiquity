@@ -28,6 +28,7 @@ from subiquity.common.storage.spec import (
 )
 from subiquity.common.types.storage import FirmwareType
 from subiquity.models.storage import (
+    LVM_CHUNK_SIZE,
     LVM_LogicalVolume,
     LVM_VolGroup,
     Partition,
@@ -197,7 +198,9 @@ class StorageManipulator:
         self.model.remove_zpool(zpool)
 
     def create_logical_volume(self, vg: LVM_VolGroup, spec: LogicalVolumeSpec):
-        lv = self.model.add_logical_volume(vg=vg, name=spec["name"], size=spec["size"])
+        lv = self.model.add_logical_volume(
+            vg=vg, name=spec["name"], size=align_up(spec["size"], LVM_CHUNK_SIZE)
+        )
         self.create_filesystem(lv, spec)
         return lv
 
@@ -371,7 +374,7 @@ class StorageManipulator:
             if "name" in spec:
                 lv.name = spec["name"]
             if "size" in spec:
-                lv.size = align_up(spec["size"])
+                lv.size = align_up(spec["size"], LVM_CHUNK_SIZE)
                 if gaps.largest_gap_size(vg) < 0:
                     raise Exception("lv size too large")
             self.delete_filesystem(lv.fs())
