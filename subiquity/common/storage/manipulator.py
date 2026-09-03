@@ -374,9 +374,11 @@ class StorageManipulator:
             if "name" in spec:
                 lv.name = spec["name"]
             if "size" in spec:
-                lv.size = align_up(spec["size"], LVM_CHUNK_SIZE)
-                if gaps.largest_gap_size(vg) < 0:
+                new_size = align_up(spec["size"], LVM_CHUNK_SIZE)
+                size_change = new_size - lv.size
+                if size_change > gaps.largest_gap_size(vg):
                     raise Exception("lv size too large")
+                lv.size = new_size
             self.delete_filesystem(lv.fs())
             self.create_filesystem(lv, spec)
             return
