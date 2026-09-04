@@ -204,15 +204,12 @@ class UAClientUAInterfaceStrategy(UAInterfaceStrategy):
     @contextlib.contextmanager
     def uaclient_config_file(self) -> str:
         """Yields a path to a file that contains the uaclient configuration."""
-        try:
-            if self.uaclient_config is None:
-                yield "/etc/ubuntu-advantage/uaclient.conf"
-            else:
-                with tempfile.NamedTemporaryFile(mode="w") as fh:
-                    yaml.dump(self.uaclient_config, fh)
-                    yield fh.name
-        finally:
-            pass
+        if self.uaclient_config is None:
+            yield "/etc/ubuntu-advantage/uaclient.conf"
+        else:
+            with tempfile.NamedTemporaryFile(mode="w") as fh:
+                yaml.dump(self.uaclient_config, fh)
+                yield fh.name
 
     async def query_info(self, token: str) -> dict:
         """Return the subscription info associated with the supplied
