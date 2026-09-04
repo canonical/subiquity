@@ -26,8 +26,10 @@ from subiquity.models.storage import FirmwareType, MiB, Partition
 from subiquity.models.tests.test_storage import (
     make_disk,
     make_filesystem,
+    make_lv,
     make_model,
     make_partition,
+    make_vg,
 )
 from subiquitycore.tests.parameterized import parameterized
 
@@ -108,7 +110,6 @@ class TestStorageManipulator(unittest.TestCase):
         fs = make_filesystem(
             manipulator.model, partition=p, fstype="ext2", preserve=True
         )
-        manipulator.model._actions.append(fs)
         manipulator.delete_filesystem(fs)
         spec = {"wipe": "random"}
         with mock.patch.object(p, "original_fstype") as original_fstype:
@@ -791,3 +792,40 @@ class TestCanResize(unittest.TestCase):
         part = make_partition(self.manipulator.model, disk, preserve=True)
         make_filesystem(self.manipulator.model, partition=part, fstype="asdf")
         self.assertTrue(self.manipulator.can_resize_partition(part, wipe="superblock"))
+
+
+class TestLogicalVolumeResize(unittest.TestCase):
+    # LP: #2166333
+    def setUp(self):
+        self.manipulator = make_manipulator()
+
+    def _make_vg_with_half_lv(self):
+        disk = make_disk(self.manipulator.model)
+        vg = make_vg(self.manipulator.model, [disk])
+        half = gaps.align_down(gaps.largest_gap_size(vg) // 2, gaps.LVM_CHUNK_SIZE)
+        lv = make_lv(self.manipulator.model, vg=vg, size=half)
+        make_filesystem(self.manipulator.model, partition=lv, fstype="ext4")
+        return vg, lv
+
+    def test_resize_lv_to_max_allowed(self):
+        vg, lv = self._make_vg_with_half_lv()
+        free = gaps.largest_gap_size(vg)
+        max_size = lv.size + free
+        self.manipulator.logical_volume_handler(
+            vg,
+            {"size": max_size, "fstype": "ext4"},
+            partition=lv,
+            gap=None,
+        )
+        self.assertEqual(lv.size, max_size)
+
+    def test_resize_lv_too_large(self):
+        vg, lv = self._make_vg_with_half_lv()
+        free = gaps.largest_gap_size(vg)
+        with self.assertRaisesRegex(Exception, "lv size too large"):
+            self.manipulator.logical_volume_handler(
+                vg,
+                {"size": lv.size + free + gaps.LVM_CHUNK_SIZE, "fstype": "ext4"},
+                partition=lv,
+                gap=None,
+            )
