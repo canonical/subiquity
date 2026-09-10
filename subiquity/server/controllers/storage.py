@@ -1155,6 +1155,11 @@ class StorageController(SubiquityController, StorageManipulator):
             if not self._info.is_core_boot_use_gap_compatible(gap):
                 raise IncompatibleLocationError
         elif isinstance(choice.target, GuidedStorageTargetReformat):
+            # NOTE: it is not obvious why we try to preserve existing
+            # partitions here rather than simply deleting and recreating
+            # them all, which would be simpler and is cheap for GPT.
+            # This behavior was introduced in commit 72c7e8df and carried
+            # over since.
             preserved_parts = set()
 
             if on_volume.schema != disk.ptable:
