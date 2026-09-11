@@ -578,6 +578,40 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         self.assertEqual(len(self.fsc._variation_info), 1)
         self.assertEqual(self.fsc._variation_info["default"].name, "default")
 
+    async def test_examine_systems_missing_snapd_system(self):
+        # When SystemGetter.get returns no system for a variation that has a
+        # snapd_system_label, the snapd system referenced by that label could
+        # not be found on the source. This means the ISO is broken; the
+        # variation must be skipped rather than mis-handled as a classic/dd
+        # variation.
+        # LP: #2167127
+        self.fsc._get_system = mock.AsyncMock(return_value=None)
+
+        self.app.base_model.source.current.type = "fsimage"
+        self.app.base_model.source.current.variations = {
+            "core-boot": CatalogEntryVariation(
+                path="", size=1, snapd_system_label="prefer-encrypted"
+            ),
+            "classic": CatalogEntryVariation(path="", size=1),
+        }
+
+        with self.assertLogs(
+            "subiquity.server.controllers.filesystem", level="WARNING"
+        ) as logs:
+            await self.fsc._examine_systems()
+
+        # The broken "core-boot" variation is skipped entirely.
+        self.assertNotIn("core-boot", self.fsc._variation_info)
+        # The unlabelled "classic" variation is unaffected.
+        self.assertIn("classic", self.fsc._variation_info)
+        self.assertEqual(self.fsc._variation_info["classic"].name, "classic")
+        # The getter is only called for the labelled variation.
+        self.fsc._get_system.assert_awaited_once()
+        # A warning was emitted mentioning both the variation and its label.
+        self.assertEqual(len(logs.output), 1)
+        self.assertIn("core-boot", logs.output[0])
+        self.assertIn("prefer-encrypted", logs.output[0])
+
     def test_valid_schema(self):
         """Test that the expected autoinstall JSON schema is valid"""
 

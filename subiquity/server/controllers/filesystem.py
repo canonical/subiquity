@@ -461,7 +461,22 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     # though it might be called again concurrently.
                     raise
 
+                if system is None:
+                    # The snapd system referenced by this variation's label
+                    # could not be found on the source, which means the ISO
+                    # is broken; skip it rather than mis-handling it as a
+                    # classic/dd variation.
+                    # See LP: #2167127
+                    log.warning(
+                        "ignoring variation [%s] because the snapd system"
+                        " with label [%s] is missing",
+                        name,
+                        label,
+                    )
+                    continue
+
             log.debug("got system %s for variation %s", system, name)
+
             if system is not None and len(system.volumes) > 0:
                 if not self.app.opts.enhanced_secureboot:
                     log.debug("Not offering enhanced_secureboot: commandline disabled")
