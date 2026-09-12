@@ -1170,6 +1170,11 @@ class StorageController(SubiquityController, StorageManipulator):
             if not self._info.is_core_boot_use_gap_compatible(gap):
                 raise IncompatibleLocationError
         elif isinstance(choice.target, GuidedStorageTargetReformat):
+            # NOTE: it is not obvious why we try to preserve existing
+            # partitions here rather than simply deleting and recreating
+            # them all, which would be simpler and is cheap for GPT.
+            # This behavior was introduced in commit 72c7e8df and carried
+            # over since.
             preserved_parts = set()
 
             if on_volume.schema != disk.ptable:
@@ -1181,8 +1186,18 @@ class StorageController(SubiquityController, StorageManipulator):
                 }
 
                 for _struct, offset, size in on_volume.offsets_and_sizes():
-                    if (offset, size) in parts_by_offset_size:
-                        preserved_parts.add(parts_by_offset_size[(offset, size)])
+                    if (offset, size) not in parts_by_offset_size:
+                        continue
+                    part = parts_by_offset_size[(offset, size)]
+                    if on_volume.schema == "gpt":
+                        # Curtin explicitly checks if partitions that we
+                        # preserve have the expected flag.
+                        type_uuid = _struct.gpt_part_type_uuid()
+                        if type_uuid and part.flag != ptable_part_type_to_flag(
+                            type_uuid
+                        ):
+                            continue
+                    preserved_parts.add(part)
 
                 for part in list(disk.partitions()):
                     if part not in preserved_parts:
