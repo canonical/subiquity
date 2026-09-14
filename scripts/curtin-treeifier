@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+
+# unroll curtin storage configs into a more readable tree
+
+import argparse
+import json
+import humanize
+import yaml
+
+parser = argparse.ArgumentParser()
+parser.add_argument('input')
+args = parser.parse_args()
+
+with open(args.input, 'r') as fp:
+    data = yaml.safe_load(fp)
+
+# Attempt to get the storage -> config section from the input file.
+# Or maybe we were just handed the array of configs directly.
+if isinstance(data, dict):
+    if 'autoinstall' in data:
+        data = data['autoinstall']
+    if 'storage' in data:
+        data = data['storage']
+    if 'config' in data:
+        data = data['config']
+if isinstance(data, list):
+    configs = data
+else:
+    breakpoint()
+    raise Exception('do not know how to handle input data')
+
+def get_parent(cfg, key):
+    parent_id = cfg[key]
+    return storage_config[parent_id]
+
+to_display = {'disk', 'image', 'raid', 'device', 'zpool'}
+
+# build a tree from the flat objects - associate child configs with parent
+storage_config = {}
+
+for cfg in configs:
+    storage_config[cfg['id']] = cfg
+    type = cfg['type']
+    if type == 'partition':
+        disk = get_parent(cfg, 'device')
+        disk.setdefault('partitions', []).append(cfg)
+    elif type == 'format':
+        partition = get_parent(cfg, 'volume')
+        partition['format'] = cfg
+        saved_format = cfg
+    elif type == 'mount':
+        format = get_parent(cfg, 'device')
+        partition = get_parent(format, 'volume')
+        partition['mount'] = cfg
+    elif type == 'dm_crypt':
+        partition = get_parent(cfg, 'volume')
+        partition['dm_crypt'] = cfg
+    elif type == 'lvm_volgroup':
+        devices = cfg['devices']
+        if len(devices) == 1:
+            parent_id = devices[0]
+            parent = storage_config[parent_id]
+            parent['lvm_volgroup'] = cfg
+        else:
+            for device_id in devices:
+                device = storage_config[device_id]
+                device['lvm_volgroup'] = cfg['name']
+    elif type == 'lvm_partition':
+        volgroup = get_parent(cfg, 'volgroup')
+        volgroup.setdefault('lvm_partitions', []).append(cfg)
+    elif type == 'zfs':
+        zpool = get_parent(cfg, 'pool')
+        try:
+            mountpoint = cfg['properties']['mountpoint']
+            zpool.setdefault('datasets', []).append(mountpoint)
+        except KeyError:
+            volume = cfg['volume']
+            zpool.setdefault('datasets', []).append(volume)
+    elif type == "nvme_controller":
+        pass
+    elif type in to_display:
+        pass
+    else:
+        print('unhandled ' + type)
+        raise Exception
+
+# display interesting top-level nodes
+display = [v for v in storage_config.values() if v['type'] in to_display]
+
+# remove these keys from the configs, to make the output shorter
+filter_keys = set((
+    'id',
+    'device',
+    'devices',
+    'volume',
+    'keyfile',
+    'volgroup',
+    'preserve',
+    'wipe',
+    'serial',
+    'name',
+    'grub_device',
+    'type',
+    'flag',
+))
+
+size_keys = set(('size', 'offset'))
+
+for cfg in storage_config.values():
+    for key in filter_keys:
+        cfg.pop(key, None)
+    for key in size_keys:
+        if key in cfg:
+            val = cfg[key]
+            if isinstance(val, str) and val[-1].lower() == 'b':
+                val = val[:-1]
+            cfg[key] = humanize.naturalsize(val)
+
+for cfg in display:
+    print(json.dumps(cfg, indent=4))
