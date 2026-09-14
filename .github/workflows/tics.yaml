@@ -4,6 +4,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '17 5 * * 6'  # Run at 5:17a (arbitrary) on Saturday
+  pull_request:
+    paths:
+      - .github/workflows/tics.yaml
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
