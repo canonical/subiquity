@@ -2571,6 +2571,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             "filesystem": self.fs_probe,
         }
         self.ctrler._probe_task.task = mock.Mock()
+        self.ctrler._probe_firmware_task.task = mock.Mock()
         self.ctrler._examine_systems_task.task = mock.Mock()
         if firmware_type == FirmwareType.BIOS and ptable != "msdos" and fix_bios:
             make_partition(
