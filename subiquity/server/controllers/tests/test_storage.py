@@ -33,6 +33,7 @@ from jsonschema.validators import validator_for
 from subiquity.common.os import UbuntuInfo
 from subiquity.common.storage import boot, gaps, labels
 from subiquity.common.storage.actions import DeviceAction
+from subiquity.common.storage.requirements import Requirements
 from subiquity.common.types.storage import (
     AddPartitionV2,
     CalculateEntropyRequest,
@@ -2271,9 +2272,17 @@ class TestGuided(IsolatedAsyncioTestCase):
     )
     async def test_guided_zfs(self, firmware_type, ptable, p1mnt, needs_ext4_boot):
         await self._guided_setup(firmware_type, ptable)
-        with mock.patch(
-            "subiquity.server.controllers.storage.Requirements.BOOT_EXT4.applies_to",
-            return_value=needs_ext4_boot,
+        with (
+            mock.patch.object(
+                Requirements.BOOT_EXT4,
+                "platform_applies_to",
+                lambda m: True,
+            ),
+            mock.patch.object(
+                Requirements.BOOT_EXT4,
+                "layout_applies_to",
+                lambda m: needs_ext4_boot,
+            ),
         ):
             await self.controller.guided(
                 GuidedChoiceV2(
@@ -2327,9 +2336,17 @@ class TestGuided(IsolatedAsyncioTestCase):
         self, firmware_type, ptable, p1mnt, needs_ext4_boot
     ):
         await self._guided_setup(firmware_type, ptable)
-        with mock.patch(
-            "subiquity.server.controllers.storage.Requirements.BOOT_EXT4.applies_to",
-            return_value=needs_ext4_boot,
+        with (
+            mock.patch.object(
+                Requirements.BOOT_EXT4,
+                "platform_applies_to",
+                lambda m: True,
+            ),
+            mock.patch.object(
+                Requirements.BOOT_EXT4,
+                "layout_applies_to",
+                lambda m: needs_ext4_boot,
+            ),
         ):
             await self.controller.guided(
                 GuidedChoiceV2(

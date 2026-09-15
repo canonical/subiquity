@@ -43,7 +43,8 @@ class TestStorageRequirement(unittest.TestCase):
             guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
             severity=RequirementSeverity.BLOCKING,
             check=lambda m: True,
-            applies_to=lambda m: False,
+            platform_applies_to=lambda m: True,
+            layout_applies_to=lambda m: False,
         )
         self.assertEqual(req.guidance_message_kind, GuidanceMessageKind.MOUNT_ROOT)
         self.assertEqual(req.severity, RequirementSeverity.BLOCKING)
@@ -53,15 +54,36 @@ class TestStorageRequirement(unittest.TestCase):
             guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
             severity=RequirementSeverity.WARNING,
             check=lambda m: True,
-            applies_to=lambda m: False,
+            platform_applies_to=lambda m: True,
+            layout_applies_to=lambda m: False,
         )
         self.assertFalse(req.is_applicable("model"))
+
+    def test_is_applicable__platform_not_applicable(self):
+        req = StorageRequirement(
+            guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
+            severity=RequirementSeverity.WARNING,
+            check=lambda m: True,
+            platform_applies_to=lambda m: False,
+            layout_applies_to=lambda m: True,
+        )
+        self.assertFalse(req.is_applicable("model"))
+
+    def test_is_platform_applicable(self):
+        req = StorageRequirement(
+            guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
+            severity=RequirementSeverity.WARNING,
+            check=lambda m: True,
+            platform_applies_to=lambda m: False,
+        )
+        self.assertFalse(req.is_platform_applicable("model"))
 
     def test_is_satisfied(self):
         req = StorageRequirement(
             guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
             severity=RequirementSeverity.WARNING,
             check=lambda m: False,
+            platform_applies_to=lambda m: True,
         )
         self.assertFalse(req.is_satisfied("model"))
 
@@ -70,7 +92,8 @@ class TestStorageRequirement(unittest.TestCase):
             guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
             severity=RequirementSeverity.BLOCKING,
             check=lambda m: False,
-            applies_to=lambda m: True,
+            platform_applies_to=lambda m: True,
+            layout_applies_to=lambda m: True,
         )
         self.assertTrue(req.is_violated("model"))
 
@@ -79,7 +102,8 @@ class TestStorageRequirement(unittest.TestCase):
             guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
             severity=RequirementSeverity.BLOCKING,
             check=lambda m: False,
-            applies_to=lambda m: False,
+            platform_applies_to=lambda m: True,
+            layout_applies_to=lambda m: False,
         )
         self.assertFalse(req.is_violated("model"))
 
@@ -88,7 +112,8 @@ class TestStorageRequirement(unittest.TestCase):
             guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
             severity=RequirementSeverity.BLOCKING,
             check=lambda m: True,
-            applies_to=lambda m: True,
+            platform_applies_to=lambda m: True,
+            layout_applies_to=lambda m: True,
         )
         self.assertFalse(req.is_violated("model"))
 
@@ -114,8 +139,11 @@ class TestRequirements(unittest.TestCase):
         with mock.patch.object(model, "is_root_mounted", return_value=False):
             self.assertFalse(Requirements.ROOT_MOUNTED.is_satisfied(model))
 
-    def test_ROOT_MOUNTED_applies_to(self):
-        self.assertTrue(Requirements.ROOT_MOUNTED.is_applicable(make_model()))
+    def test_ROOT_MOUNTED_layout_applies_to(self):
+        self.assertTrue(Requirements.ROOT_MOUNTED.layout_applies_to(make_model()))
+
+    def test_ROOT_MOUNTED_platform_applies_to(self):
+        self.assertTrue(Requirements.ROOT_MOUNTED.platform_applies_to(make_model()))
 
     @parameterized.expand(
         (
@@ -141,25 +169,18 @@ class TestRequirements(unittest.TestCase):
                 expected, Requirements.REMOTE_BOOT_LOCAL.is_satisfied(model)
             )
 
-    # Full truth table: applies only when root_mounted AND rootfs_remote
-    # AND NOT nvme_tcp.  All other combinations should not apply.
     @parameterized.expand(
         (
-            (False, False, False, False),
-            (False, False, True, False),
-            (False, True, False, False),
-            (False, True, True, False),
-            (True, False, False, False),
-            (True, False, True, False),
-            (True, True, False, True),
-            (True, True, True, False),
+            (False, False, False),
+            (False, True, False),
+            (True, False, False),
+            (True, True, True),
         )
     )
-    def test_REMOTE_BOOT_LOCAL_applies_to(
+    def test_REMOTE_BOOT_LOCAL_layout_applies_to(
         self,
         root_mounted: bool,
         rootfs_remote: bool,
-        nvme_tcp: bool,
         expected: bool,
     ):
         model = make_model()
@@ -170,15 +191,31 @@ class TestRequirements(unittest.TestCase):
                 "is_rootfs_on_remote_storage",
                 return_value=rootfs_remote,
             ),
-            mock.patch.object(
-                type(model),
-                "supports_nvme_tcp_booting",
-                new_callable=mock.PropertyMock,
-                return_value=nvme_tcp,
-            ),
         ):
             self.assertEqual(
-                expected, Requirements.REMOTE_BOOT_LOCAL.is_applicable(model)
+                expected, Requirements.REMOTE_BOOT_LOCAL.layout_applies_to(model)
+            )
+
+    @parameterized.expand(
+        (
+            (True, False),
+            (False, True),
+        )
+    )
+    def test_REMOTE_BOOT_LOCAL_platform_applies_to(
+        self, supports_nvme_tcp_boot, expected
+    ):
+        model = make_model()
+
+        with mock.patch.object(
+            type(model),
+            "supports_nvme_tcp_booting",
+            new_callable=mock.PropertyMock,
+            return_value=supports_nvme_tcp_boot,
+        ):
+
+            self.assertEqual(
+                expected, Requirements.REMOTE_BOOT_LOCAL.platform_applies_to(model)
             )
 
     def test_BOOTLOADER_NEEDED_check(self):
@@ -188,8 +225,13 @@ class TestRequirements(unittest.TestCase):
         with mock.patch.object(model, "needs_bootloader_partition", return_value=True):
             self.assertFalse(Requirements.BOOTLOADER_NEEDED.is_satisfied(model))
 
-    def test_BOOTLOADER_NEEDED_applies_to(self):
-        self.assertTrue(Requirements.BOOTLOADER_NEEDED.is_applicable(make_model()))
+    def test_BOOTLOADER_NEEDED_layout_applies_to(self):
+        self.assertTrue(Requirements.BOOTLOADER_NEEDED.layout_applies_to(make_model()))
+
+    def test_BOOTLOADER_NEEDED_platform_applies_to(self):
+        self.assertTrue(
+            Requirements.BOOTLOADER_NEEDED.platform_applies_to(make_model())
+        )
 
     @parameterized.expand(
         (
@@ -218,21 +260,26 @@ class TestRequirements(unittest.TestCase):
 
     @parameterized.expand(
         (
-            (False, False, False),
-            (False, True, False),
-            (True, False, False),
-            (True, True, True),
+            (False, False),
+            (True, True),
         )
     )
-    def test_BOOT_EXT4_applies_to(
-        self,
-        root_mounted: bool,
-        uses_signed_grub: bool,
-        expected: bool,
+    def test_BOOT_EXT4_layout_applies_to(self, root_mounted: bool, expected: bool):
+        model = make_model()
+        with mock.patch.object(model, "is_root_mounted", return_value=root_mounted):
+            self.assertEqual(expected, Requirements.BOOT_EXT4.layout_applies_to(model))
+
+    @parameterized.expand(
+        (
+            (False, False),
+            (True, True),
+        )
+    )
+    def test_BOOT_EXT4_platform_applies_to(
+        self, uses_signed_grub: bool, expected: bool
     ):
         model = make_model()
         with (
-            mock.patch.object(model, "is_root_mounted", return_value=root_mounted),
             mock.patch.object(model, "uses_signed_grub", return_value=uses_signed_grub),
             mock.patch(
                 "subiquity.common.storage.requirements.read_ubuntu_info",
@@ -243,7 +290,9 @@ class TestRequirements(unittest.TestCase):
                 ),
             ),
         ):
-            self.assertEqual(expected, Requirements.BOOT_EXT4.is_applicable(model))
+            self.assertEqual(
+                expected, Requirements.BOOT_EXT4.platform_applies_to(model)
+            )
 
     def test_BOOT_ON_SIMPLE_SETUP_check__disk(self):
         model, disk = make_model_and_disk()
@@ -284,3 +333,46 @@ class TestRequirements(unittest.TestCase):
         dmcrypt = make_dm_crypt(model, partition)
         make_mount(model, make_filesystem(model, dmcrypt, fstype="ext4"), "/boot")
         self.assertFalse(Requirements.BOOT_ON_SIMPLE_SETUP.is_satisfied(model))
+
+    @parameterized.expand(
+        (
+            (False, False),
+            (True, True),
+        )
+    )
+    def test_BOOT_ON_SIMPLE_SETUP_layout_applies_to(
+        self, root_mounted: bool, expected: bool
+    ):
+        model = make_model()
+        with mock.patch.object(model, "is_root_mounted", return_value=root_mounted):
+            self.assertEqual(
+                expected, Requirements.BOOT_ON_SIMPLE_SETUP.layout_applies_to(model)
+            )
+
+    @parameterized.expand(
+        (
+            (False, False),
+            (True, True),
+            (False, False),
+            (True, True),
+        )
+    )
+    def test_BOOT_ON_SIMPLE_SETUP_platform_applies_to(
+        self, uses_signed_grub: bool, expected: bool
+    ):
+        model = make_model()
+        with (
+            mock.patch.object(model, "uses_signed_grub", return_value=uses_signed_grub),
+            mock.patch(
+                "subiquity.common.storage.requirements.read_ubuntu_info",
+                return_value=UbuntuInfo(
+                    release="26.10",
+                    codename="stonking",
+                    pretty_name="Ubuntu Stonking Stingray (development branch)",
+                ),
+            ),
+        ):
+            self.assertEqual(
+                expected,
+                Requirements.BOOT_ON_SIMPLE_SETUP.platform_applies_to(model),
+            )

@@ -64,19 +64,31 @@ class StorageRequirement:
         Whether a violation blocks installation or is merely advisory.
     check:
         Callable that returns True when the requirement is satisfied.
-    applies_to:
-        Callable that returns True when this requirement is relevant for
-        the current system configuration.  Defaults to always applicable.
+    platform_applies_to:
+        Callable that returns True when this requirement is relevant at the
+        platform level only (i.e., firmware, Ubuntu version, CPU arch, ...).
+        It must not depend on the storage layout the user has built.
+        Defaults to always applicable.
+    layout_applies_to:
+        Callable that returns True when this requirement is relevant given
+        the current layout state (e.g. "root must be mounted"). This
+        only contains layout-dependent guards.
+        Defaults to always applicable.
     """
 
     guidance_message_kind: GuidanceMessageKind
     severity: RequirementSeverity
     check: Callable[["StorageModel"], bool]
-    applies_to: Callable[["StorageModel"], bool] = lambda m: True
+    platform_applies_to: Callable[["StorageModel"], bool] = lambda m: True
+    layout_applies_to: Callable[["StorageModel"], bool] = lambda m: True
+
+    def is_platform_applicable(self, model) -> bool:
+        """Return True if this requirement applies at the platform level."""
+        return self.platform_applies_to(model)
 
     def is_applicable(self, model) -> bool:
         """Return True if this requirement applies to the given model."""
-        return self.applies_to(model)
+        return self.layout_applies_to(model) and self.is_platform_applicable(model)
 
     def is_satisfied(self, model) -> bool:
         """Return True if this requirement's condition is met."""
@@ -135,8 +147,8 @@ def _is_boot_on_simple_setup(model) -> bool:
 
 
 def _uses_signed_grub_26_10(model) -> bool:
-    """UEFI systems with signed GRUB require ext4 for /boot on 26.10+."""
-    if not model.is_root_mounted() or not model.uses_signed_grub():
+    """True on systems that use signed GRUB on Ubuntu 26.10 or later."""
+    if not model.uses_signed_grub():
         return False
     version_number = read_ubuntu_info(dry_run=model.dry_run).version_number()
     return version_number >= (26, 10)
@@ -158,9 +170,9 @@ class Requirements:
         guidance_message_kind=GuidanceMessageKind.MOUNT_LOCAL_BOOT,
         severity=RequirementSeverity.BLOCKING,
         check=lambda m: m.is_boot_mounted() and not m.is_bootfs_on_remote_storage(),
-        applies_to=lambda m: m.is_root_mounted()
-        and m.is_rootfs_on_remote_storage()
-        and not m.supports_nvme_tcp_booting,
+        layout_applies_to=lambda m: m.is_root_mounted()
+        and m.is_rootfs_on_remote_storage(),
+        platform_applies_to=lambda m: not m.supports_nvme_tcp_booting,
     )
     BOOTLOADER_NEEDED = StorageRequirement(
         guidance_message_kind=GuidanceMessageKind.SELECT_BOOT_DISK,
@@ -171,7 +183,8 @@ class Requirements:
         guidance_message_kind=GuidanceMessageKind.USE_EXT4_BOOT,
         severity=RequirementSeverity.BLOCKING,
         check=_is_boot_ext4,
-        applies_to=_uses_signed_grub_26_10,
+        layout_applies_to=lambda m: m.is_root_mounted(),
+        platform_applies_to=_uses_signed_grub_26_10,
     )
     # This requirement could be merged with BOOT_EXT4, but the resulting error
     # message would become a bit vague.
@@ -179,7 +192,8 @@ class Requirements:
         guidance_message_kind=GuidanceMessageKind.BOOT_ON_SIMPLE_SETUP,
         severity=RequirementSeverity.BLOCKING,
         check=_is_boot_on_simple_setup,
-        applies_to=_uses_signed_grub_26_10,
+        layout_applies_to=lambda m: m.is_root_mounted(),
+        platform_applies_to=_uses_signed_grub_26_10,
     )
 
     @staticmethod

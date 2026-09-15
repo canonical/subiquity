@@ -322,7 +322,8 @@ def make_req(*, blocking=True, satisfied=True, applies=True):
             RequirementSeverity.BLOCKING if blocking else RequirementSeverity.WARNING
         ),
         check=lambda m: satisfied,
-        applies_to=lambda m: applies,
+        platform_applies_to=lambda m: True,
+        layout_applies_to=lambda m: applies,
     )
 
 
