@@ -33,7 +33,7 @@ from jsonschema.validators import validator_for
 from subiquity.common.os import UbuntuInfo
 from subiquity.common.storage import boot, gaps, labels
 from subiquity.common.storage.actions import DeviceAction
-from subiquity.common.storage.requirements import Requirements
+from subiquity.common.storage.requirements import GuidanceMessageKind, Requirements
 from subiquity.common.types.storage import (
     AddPartitionV2,
     CalculateEntropyRequest,
@@ -64,6 +64,7 @@ from subiquity.common.types.storage import (
     ProbeStatus,
     ReformatDisk,
     SizingPolicy,
+    StorageRequirementStatus,
 )
 from subiquity.models.source import CatalogEntryVariation
 from subiquity.models.storage import dehumanize_size
@@ -2679,6 +2680,18 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertFalse(resp.need_root)
         self.assertFalse(resp.need_boot)
         self.assertEqual(1, len(guided_get_resp.targets))
+
+    async def test_v2_GET_populates_requirements(self):
+        await self._setup(FirmwareType.UEFI, "gpt")
+        statuses = [
+            StorageRequirementStatus(
+                kind=GuidanceMessageKind.BOOT_ON_SIMPLE_SETUP,
+                satisfied=False,
+            )
+        ]
+        with mock.patch.object(Requirements, "for_client", return_value=statuses):
+            resp = await self.ctrler.v2_GET()
+        self.assertEqual(resp.requirements, statuses)
 
     @parameterized.expand(firmware_types_and_ptables)
     async def test_half_disk_use_gap(self, firmware_type, ptable):
