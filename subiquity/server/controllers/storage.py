@@ -1050,13 +1050,14 @@ class StorageController(SubiquityController, StorageManipulator):
             raise StorageInvalidUsageError("cannot process capability")
 
     async def _probe_response(self, wait, resp_cls):
-        if not self._probe_task.done():
-            if wait:
-                await self._start_task
-                await self._probe_task.wait()
-                await self._probe_firmware_task.wait()
-            else:
-                return resp_cls(status=ProbeStatus.PROBING)
+        # Wait for both probing tasks to be finished.
+        for task in self._probe_task, self._probe_firmware_task:
+            if not task.done():
+                if wait:
+                    await self._start_task
+                    await task.wait()
+                else:
+                    return resp_cls(status=ProbeStatus.PROBING)
         if True in self._errors:
             return resp_cls(
                 status=ProbeStatus.FAILED, error_report=self._errors[True][1].ref()
