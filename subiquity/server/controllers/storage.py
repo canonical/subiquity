@@ -860,7 +860,7 @@ class StorageController(SubiquityController, StorageManipulator):
         rpool.create_zfs(f"USERDATA/root_{userdata_uuid}", mountpoint="/root")
         rpool.create_zfs(f"USERDATA/home_{userdata_uuid}", mountpoint="/home")
 
-        if Requirements.BOOT_EXT4.applies_to(self.model):
+        if Requirements.BOOT_EXT4.is_applicable(self.model):
             self.create_filesystem(bpart, FileSystemSpec(fstype="ext4", mount="/boot"))
         else:
             # Use a ZFS pool for /boot, like we used to always do.
