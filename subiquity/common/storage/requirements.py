@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 import attrs
 
 from subiquity.common.os import read_ubuntu_info
+from subiquity.common.types.storage import GuidanceMessageKind, StorageRequirementStatus
 
 if TYPE_CHECKING:
     # Avoid circular import: models/storage.py imports Requirements
@@ -31,23 +32,6 @@ class RequirementSeverity(enum.Enum):
 
     BLOCKING = "blocking"
     WARNING = "warning"
-
-
-class GuidanceMessageKind(enum.Enum):
-    """User-facing guidance messages shown when a storage requirement is
-    violated.
-
-    Use the member (e.g. ``GuidanceMessageKind.MOUNT_ROOT``) in APIs and wire
-    protocols — the member's **key** is the stable identifier.  The
-    ``.value`` is a locale-dependent translated string and **must not**
-    be sent over the API or stored in configuration.
-    """
-
-    MOUNT_ROOT = _("Mount a filesystem at /")
-    MOUNT_LOCAL_BOOT = _("Mount a local filesystem at /boot")
-    SELECT_BOOT_DISK = _("Select a boot disk")
-    USE_EXT4_BOOT = _("Use the ext4 filesystem for /boot")
-    BOOT_ON_SIMPLE_SETUP = _("Place /boot on a partition of a disk (or RAID 1 disk)")
 
 
 @attrs.define
@@ -205,4 +189,19 @@ class Requirements:
             Requirements.BOOTLOADER_NEEDED,
             Requirements.BOOT_EXT4,
             Requirements.BOOT_ON_SIMPLE_SETUP,
+        ]
+
+    @staticmethod
+    def for_client(model) -> list[StorageRequirementStatus]:
+        """Return the status of every platform-applicable requirement, as
+        sent to clients of the v2 API."""
+        return [
+            StorageRequirementStatus(
+                kind=r.guidance_message_kind,
+                # Here we don't use r.is_satisfied() because it would be false
+                # if the requirement is not yet applicable.
+                satisfied=not r.is_violated(model),
+            )
+            for r in Requirements.all()
+            if r.is_platform_applicable(model)
         ]

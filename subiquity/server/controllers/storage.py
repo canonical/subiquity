@@ -1410,6 +1410,7 @@ class StorageController(SubiquityController, StorageManipulator):
             need_root=not model.is_root_mounted(),
             need_boot=model.needs_bootloader_partition(),
             install_minimum_size=minsize,
+            requirements=Requirements.for_client(model),
         )
 
     async def generate_recovery_key_GET(self) -> str:

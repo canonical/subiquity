@@ -425,6 +425,66 @@ class TestFlow(TestAPI):
             # posting to the endpoint shouldn't change the answer
             self.assertEqual(after_guided_resp, post_resp)
 
+    @timeout()
+    async def test_storage_requirements(self):
+        # This test assumes we're installing 26.10 on amd64.
+        def find_requirement(requirements, kind: str):
+            for r in requirements:
+                if r["kind"] == kind:
+                    return r
+            raise KeyError
+
+        def assert_requirement_satisfied(requirements, kind: str):
+            self.assertTrue(find_requirement(requirements, kind)["satisfied"])
+
+        def assert_requirement_violated(requirements, kind: str):
+            self.assertFalse(find_requirement(requirements, kind)["satisfied"])
+
+        async with start_server("examples/machines/simple.json") as inst:
+            resp = await inst.post("/storage/v2/reformat_disk", {"disk_id": "disk-sda"})
+            # Before any filesystem is mounted at /, MOUNT_ROOT is present and
+            # unsatisfied.
+            assert_requirement_violated(resp["requirements"], kind="MOUNT_ROOT")
+            [gap] = resp["disks"][0]["partitions"]
+            resp = await inst.post(
+                "/storage/v2/add_partition",
+                {
+                    "disk_id": "disk-sda",
+                    "gap": gap,
+                    "partition": {"format": "ext4", "mount": "/"},
+                },
+            )
+            # Once a clean ext4 / is laid down, every applicable requirement
+            # is expected to be satisfied.
+            self.assertTrue(resp["requirements"])
+            for r in resp["requirements"]:
+                self.assertTrue(r["satisfied"], r)
+            # Make sure the requirement did not disappear.
+            assert_requirement_satisfied(resp["requirements"], kind="MOUNT_ROOT")
+
+            # Now let's test with a non ext4 /
+            await inst.post("/storage/v2/reformat_disk", {"disk_id": "disk-sda"})
+            resp = await inst.post(
+                "/storage/v2/add_partition",
+                {
+                    "disk_id": "disk-sda",
+                    "gap": gap,
+                    "partition": {"format": "xfs", "mount": "/", "size": 10 << 30},
+                },
+            )
+            assert_requirement_violated(resp["requirements"], kind="USE_EXT4_BOOT")
+            # Beware, add_partition also creates the ESP / bios-grub
+            [_, _, gap] = resp["disks"][0]["partitions"]
+            resp = await inst.post(
+                "/storage/v2/add_partition",
+                {
+                    "disk_id": "disk-sda",
+                    "gap": gap,
+                    "partition": {"format": "ext4", "mount": "/boot"},
+                },
+            )
+            assert_requirement_satisfied(resp["requirements"], kind="USE_EXT4_BOOT")
+
 
 class TestGuided(TestAPI):
     @timeout()
