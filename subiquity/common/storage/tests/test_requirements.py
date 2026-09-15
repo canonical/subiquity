@@ -114,8 +114,8 @@ class TestRequirements(unittest.TestCase):
         with mock.patch.object(model, "is_root_mounted", return_value=False):
             self.assertFalse(Requirements.ROOT_MOUNTED.is_satisfied(model))
 
-    def test_BOOTLOADER_NEEDED_applies_to(self):
-        self.assertTrue(Requirements.BOOTLOADER_NEEDED.is_applicable(make_model()))
+    def test_ROOT_MOUNTED_applies_to(self):
+        self.assertTrue(Requirements.ROOT_MOUNTED.is_applicable(make_model()))
 
     @parameterized.expand(
         (
@@ -181,15 +181,40 @@ class TestRequirements(unittest.TestCase):
                 expected, Requirements.REMOTE_BOOT_LOCAL.is_applicable(model)
             )
 
-    def test_ROOT_MOUNTED_applies_to(self):
-        self.assertTrue(Requirements.ROOT_MOUNTED.is_applicable(make_model()))
-
     def test_BOOTLOADER_NEEDED_check(self):
         model = make_model()
         with mock.patch.object(model, "needs_bootloader_partition", return_value=False):
             self.assertTrue(Requirements.BOOTLOADER_NEEDED.is_satisfied(model))
         with mock.patch.object(model, "needs_bootloader_partition", return_value=True):
             self.assertFalse(Requirements.BOOTLOADER_NEEDED.is_satisfied(model))
+
+    def test_BOOTLOADER_NEEDED_applies_to(self):
+        self.assertTrue(Requirements.BOOTLOADER_NEEDED.is_applicable(make_model()))
+
+    @parameterized.expand(
+        (
+            ("ext4", "ext4", True),
+            ("xfs", "ext4", False),
+            (None, "ext4", True),
+            (None, "xfs", False),
+        )
+    )
+    def test_BOOT_EXT4_check(
+        self,
+        boot_fstype: str | None,
+        root_fstype: str,
+        expected: bool,
+    ):
+        model, disk = make_model_and_disk()
+        p1 = make_partition(model, disk)
+        rootfs = make_filesystem(model, p1, fstype=root_fstype)
+        make_mount(model, rootfs, "/")
+        if boot_fstype is not None:
+            p2 = make_partition(model, disk)
+            boot_fs = make_filesystem(model, p2, fstype=boot_fstype)
+            make_mount(model, boot_fs, "/boot")
+
+        self.assertEqual(expected, Requirements.BOOT_EXT4.is_satisfied(model))
 
     @parameterized.expand(
         (
@@ -219,31 +244,6 @@ class TestRequirements(unittest.TestCase):
             ),
         ):
             self.assertEqual(expected, Requirements.BOOT_EXT4.is_applicable(model))
-
-    @parameterized.expand(
-        (
-            ("ext4", "ext4", True),
-            ("xfs", "ext4", False),
-            (None, "ext4", True),
-            (None, "xfs", False),
-        )
-    )
-    def test_BOOT_EXT4_check(
-        self,
-        boot_fstype: str | None,
-        root_fstype: str,
-        expected: bool,
-    ):
-        model, disk = make_model_and_disk()
-        p1 = make_partition(model, disk)
-        rootfs = make_filesystem(model, p1, fstype=root_fstype)
-        make_mount(model, rootfs, "/")
-        if boot_fstype is not None:
-            p2 = make_partition(model, disk)
-            boot_fs = make_filesystem(model, p2, fstype=boot_fstype)
-            make_mount(model, boot_fs, "/boot")
-
-        self.assertEqual(expected, Requirements.BOOT_EXT4.is_satisfied(model))
 
     def test_BOOT_ON_SIMPLE_SETUP_check__disk(self):
         model, disk = make_model_and_disk()
