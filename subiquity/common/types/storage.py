@@ -426,9 +426,9 @@ class StorageResponseV2:
     status: ProbeStatus
     error_report: Optional[ErrorReportRef] = None
     disks: List[Disk] = attr.Factory(list)
-    # if need_root == True, there is not yet a partition mounted at "/"
+    # Deprecated, see requirement with kind="MOUNT_ROOT"
     need_root: Optional[bool] = None
-    # if need_boot == True, there is not yet a boot partition
+    # Deprecated, see requirement with kind="SELECT_BOOT_DISK"
     need_boot: Optional[bool] = None
     install_minimum_size: Optional[int] = None
     # The storage requirements that apply to this system.
