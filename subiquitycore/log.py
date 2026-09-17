@@ -14,12 +14,15 @@
 
 import logging
 import os
+from pathlib import Path
 
 from subiquitycore.file_util import set_log_perms
 
 
 def setup_logger(dir, base="subiquity"):
-    os.makedirs(dir, exist_ok=True)
+    logdir = Path(dir)
+
+    logdir.mkdir(parents=True, exist_ok=True)
     # Create the log directory in such a way that users in the group may
     # write to this directory in the installation environment.
     log_dir_group = "adm"
@@ -29,7 +32,7 @@ def setup_logger(dir, base="subiquity"):
         # fine though as the snap is already run as the root user and
         # effectively the logs location will be more closed
         log_dir_group = "root"
-    set_log_perms(dir, mode=0o770, group=log_dir_group)
+    set_log_perms(str(logdir), mode=0o770, group=log_dir_group)
 
     logger = logging.getLogger("")
     logger.setLevel(logging.DEBUG)
@@ -37,15 +40,19 @@ def setup_logger(dir, base="subiquity"):
     r = {}
 
     for level in "info", "debug":
-        nopid_file = os.path.join(dir, "{}-{}.log".format(base, level))
-        logfile = "{}.{}".format(nopid_file, os.getpid())
+        nopid_filename = f"{base}-{level}.log"
+        pid_filename = f"{base}-{level}.log.{os.getpid()}"
+
+        nopid_symlink = logdir / nopid_filename
+        logfile = logdir / pid_filename
+
         handler = logging.FileHandler(logfile)
-        set_log_perms(logfile, group_write=False)
-        # os.symlink cannot replace an existing file or symlink so create
-        # it and then rename it over.
-        tmplink = logfile + ".link"
-        os.symlink(os.path.basename(logfile), tmplink)
-        os.rename(tmplink, nopid_file)
+        set_log_perms(str(logfile), group_write=False)
+        # symlink_to cannot replace an existing file or symlink so create it
+        # and then rename it over.
+        tmplink = logfile.with_name(f"{pid_filename}.link")
+        tmplink.symlink_to(logfile.name)
+        tmplink.rename(nopid_symlink)
 
         handler.setLevel(getattr(logging, level.upper()))
         handler.setFormatter(
@@ -55,6 +62,6 @@ def setup_logger(dir, base="subiquity"):
         )
 
         logger.addHandler(handler)
-        r[level] = logfile
+        r[level] = str(logfile)
 
     return r
