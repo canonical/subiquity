@@ -118,6 +118,9 @@ default_capabilities = [
     GuidedCapability.ZFS_LUKS_KEYSTORE,
 ]
 
+# GPT type UUID for a Linux filesystem data partition (curtin flag "linux").
+GPT_LINUX_TYPE = "0FC63DAF-8483-4772-8E79-3D69D8477DE4"
+
 
 default_capabilities_disallowed_too_small = [
     GuidedDisallowedCapability(
@@ -3368,7 +3371,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.assertEqual(part1.fs().fstype, "ext4")
         self.assertEqual(part1.flag, "linux")
         self.assertEqual(part1.partition_name, "one")
-        self.assertEqual(part1.partition_type, "0FC63DAF-8483-4772-8E79-3D69D8477DE4")
+        self.assertEqual(part1.partition_type, GPT_LINUX_TYPE)
         self.assertEqual(part2.flag, None)
         self.assertEqual(part2.partition_type, arbitrary_uuid)
 
@@ -3376,7 +3379,12 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         disk = make_disk(self.ctrler.model)
         # Add a partition that matches one in the volume structure
         reused_part = make_partition(
-            self.ctrler.model, disk, offset=1 << 20, size=1 << 30, preserve=True
+            self.ctrler.model,
+            disk,
+            offset=1 << 20,
+            size=1 << 30,
+            preserve=True,
+            flag="linux",
         )
         self.ctrler.model.add_filesystem(reused_part, "ext4")
         # And two that do not.
@@ -3389,7 +3397,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self._add_details_for_structures(
             [
                 snapdtypes.VolumeStructure(
-                    type="0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+                    type=GPT_LINUX_TYPE,
                     offset=1 << 20,
                     size=1 << 30,
                     filesystem="ext4",
@@ -3412,12 +3420,17 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
     async def test_guided_core_boot_reuse_no_format(self):
         disk = make_disk(self.ctrler.model)
         existing_part = make_partition(
-            self.ctrler.model, disk, offset=1 << 20, size=1 << 30, preserve=True
+            self.ctrler.model,
+            disk,
+            offset=1 << 20,
+            size=1 << 30,
+            preserve=True,
+            flag="linux",
         )
         self._add_details_for_structures(
             [
                 snapdtypes.VolumeStructure(
-                    type="0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+                    type=GPT_LINUX_TYPE,
                     offset=1 << 20,
                     size=1 << 30,
                     filesystem=None,
@@ -3436,6 +3449,49 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
         self.assertEqual(existing_part, part)
         self.assertEqual(existing_part.wipe, None)
 
+    async def test_guided_core_boot_reuse_wrong_type(self):
+        """LP: #2166668 - a partition at the right offset/size but with the
+        wrong type must not be preserved, or curtin fails flag verification."""
+        disk = make_disk(self.ctrler.model)
+        # Add a partition at the right offset and size, but with a
+        # partition type that does not match the volume structure. It
+        # must not be preserved, otherwise curtin would fail verifying
+        # the partition flag/type.
+        wrong_part = make_partition(
+            self.ctrler.model,
+            disk,
+            offset=1 << 20,
+            size=1 << 30,
+            preserve=True,
+            flag="bios_grub",
+        )
+        self._add_details_for_structures(
+            [
+                snapdtypes.VolumeStructure(
+                    type=GPT_LINUX_TYPE,
+                    offset=1 << 20,
+                    size=1 << 30,
+                    filesystem="ext4",
+                ),
+            ]
+        )
+        choice = GuidedChoiceV2(
+            target=GuidedStorageTargetReformat(
+                disk_id=disk.id,
+            ),
+            capability=self.capability,
+        )
+        await self.ctrler.guided_core_boot(disk, choice)
+        self.assertIsNone(self.ctrler.core_boot_data.volumes_auth)
+        [part] = disk.partitions()
+        self.assertNotEqual(wrong_part, part)
+        self.assertEqual(part.offset, 1 << 20)
+        self.assertEqual(part.size, 1 << 30)
+        self.assertEqual(part.flag, "linux")
+        self.assertEqual(part.partition_type, GPT_LINUX_TYPE)
+        self.assertFalse(part.preserve)
+        self.assertEqual(part.fs().fstype, "ext4")
+
     async def test_guided_core_boot_system_data(self):
         disk = make_disk(self.ctrler.model)
         self._add_details_for_structures(
@@ -3449,7 +3505,7 @@ class TestCoreBootInstallMethods(IsolatedAsyncioTestCase):
                     filesystem="",
                 ),
                 snapdtypes.VolumeStructure(
-                    type="0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+                    type=GPT_LINUX_TYPE,
                     offset=2 << 20,
                     name="ptname",
                     size=2 << 30,
