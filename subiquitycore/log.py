@@ -39,29 +39,58 @@ def setup_logger(dir, base="subiquity"):
 
     r = {}
 
-    for level in "info", "debug":
-        nopid_filename = f"{base}-{level}.log"
-        pid_filename = f"{base}-{level}.log.{os.getpid()}"
+    formatter = logging.Formatter(
+        "%(asctime)s %(levelname)s %(name)s:%(lineno)d %(message)s"
+    )
 
-        nopid_symlink = logdir / nopid_filename
-        logfile = logdir / pid_filename
+    def add_file_handle(
+        symlink_name: str,
+        *,
+        level: str,
+        crash_report_identifier: str | None,
+        logger=logger,
+        formatter=formatter,
+    ):
+        filename = f"{symlink_name}.{os.getpid()}"
+        logfile = logdir / filename
 
         handler = logging.FileHandler(logfile)
         set_log_perms(str(logfile), group_write=False)
-        # symlink_to cannot replace an existing file or symlink so create it
-        # and then rename it over.
-        tmplink = logfile.with_name(f"{pid_filename}.link")
+
+        # Now, let's update the symlink.
+        # Path.symlink_to() cannot replace an existing file or symlink so
+        # create it with a temporary name and rename it over.
+        tmplink = logfile.with_name(f"{filename}.link")
         tmplink.symlink_to(logfile.name)
-        tmplink.rename(nopid_symlink)
+        tmplink.rename(logdir / symlink_name)
+
+        if crash_report_identifier is not None:
+            r[crash_report_identifier] = str(logfile)
 
         handler.setLevel(getattr(logging, level.upper()))
-        handler.setFormatter(
-            logging.Formatter(
-                "%(asctime)s %(levelname)s %(name)s:%(lineno)d %(message)s"
-            )
-        )
+        handler.setFormatter(formatter)
 
         logger.addHandler(handler)
-        r[level] = str(logfile)
+
+    add_file_handle(
+        symlink_name=f"{base}-info.log",
+        level="info",
+        crash_report_identifier="info",
+    )
+    add_file_handle(
+        symlink_name=f"{base}-debug.log",
+        level="debug",
+        crash_report_identifier="debug",
+    )
+    add_file_handle(
+        symlink_name=f"{base}-security-events.log.ndjson",
+        level="info",
+        crash_report_identifier=None,
+        logger=logging.getLogger("owasp"),
+        # The OWASPLogger methods ensure the message passed to logging.log is a
+        # one-line JSON record, including all necessary info. To make sure we
+        # have a valid NDJSON file, let's not involve any further formatting.
+        formatter=None,
+    )
 
     return r
