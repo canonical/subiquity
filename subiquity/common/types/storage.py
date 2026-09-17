@@ -396,16 +396,45 @@ class StorageResponse:
     storage_version: int = 1
 
 
+class GuidanceMessageKind(enum.Enum):
+    """User-facing guidance messages shown when a storage requirement is
+    violated.
+
+    Use the member (e.g. ``GuidanceMessageKind.MOUNT_ROOT``) in APIs and
+    client protocols — the member's **key** is the stable identifier.  The
+    ``.value`` is a locale-dependent translated string and **must not**
+    be sent over the API or stored in configuration.
+    """
+
+    MOUNT_ROOT = _("Mount a filesystem at /")
+    MOUNT_LOCAL_BOOT = _("Mount a local filesystem at /boot")
+    SELECT_BOOT_DISK = _("Select a boot disk")
+    USE_EXT4_BOOT = _("Use the ext4 filesystem for /boot")
+    BOOT_ON_SIMPLE_SETUP = _("Place /boot on a partition of a disk (or RAID 1 disk)")
+
+
+@attr.s(auto_attribs=True)
+class StorageRequirementStatus:
+    """The state of a single storage requirement."""
+
+    kind: GuidanceMessageKind
+    satisfied: bool
+
+
 @attr.s(auto_attribs=True)
 class StorageResponseV2:
     status: ProbeStatus
     error_report: Optional[ErrorReportRef] = None
     disks: List[Disk] = attr.Factory(list)
-    # if need_root == True, there is not yet a partition mounted at "/"
+    # Deprecated, see requirement with kind="MOUNT_ROOT"
     need_root: Optional[bool] = None
-    # if need_boot == True, there is not yet a boot partition
+    # Deprecated, see requirement with kind="SELECT_BOOT_DISK"
     need_boot: Optional[bool] = None
     install_minimum_size: Optional[int] = None
+    # The storage requirements that apply to this system.
+    # None while probing or after a probe failure; an empty list means probing
+    # is done but no requirements apply to this system.
+    requirements: Optional[List[StorageRequirementStatus]] = None
 
 
 class SizingPolicy(enum.Enum):
