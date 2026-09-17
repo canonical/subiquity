@@ -16,6 +16,8 @@ import logging
 import os
 from pathlib import Path
 
+import owasp_logger
+
 from subiquitycore.file_util import set_log_perms
 
 
@@ -93,4 +95,22 @@ def setup_logger(dir, base="subiquity"):
         formatter=None,
     )
 
+    owasp_log = get_owasp_logger()
+    owasp_log.appid = base
+
     return r
+
+
+def get_owasp_logger():
+    """Return a shared instance of OWASPLogger"""
+    global _owasp_logger
+
+    _owasp_logger = None
+
+    if _owasp_logger is None:
+        # We set the appid to a temporary value. One should use setup_logger to
+        # set it correctly.
+        _owasp_logger = owasp_logger.OWASPLogger(
+            appid="subiquity", logger=logging.getLogger("owasp")
+        )
+    return _owasp_logger
