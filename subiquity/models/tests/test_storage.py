@@ -1250,6 +1250,46 @@ class TestAutoInstallConfig(unittest.TestCase):
             ),
         )
 
+    def test_btrfs_subvolume(self):
+        model, disk = make_model_and_disk()
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config(
+            [
+                {"type": "disk", "id": "disk0"},
+                {
+                    "type": "partition",
+                    "id": "part0",
+                    "device": "disk0",
+                    "size": 10 * (2**30),
+                },
+                {
+                    "type": "format",
+                    "id": "fmt0",
+                    "volume": "part0",
+                    "fstype": "btrfs",
+                },
+                {
+                    "type": "btrfs_subvolume",
+                    "id": "subvol0",
+                    "volume": "fmt0",
+                    "subvolume": "@",
+                },
+                {
+                    "type": "mount",
+                    "id": "mnt0",
+                    "device": "fmt0",
+                    "path": "/",
+                    "options": "subvol=@",
+                },
+            ]
+        )
+        subvol = model._one(type="btrfs_subvolume")
+        self.assertEqual(subvol.subvolume, "@")
+        self.assertEqual(subvol.volume.fstype, "btrfs")
+        self.assertEqual(subvol.fstype, "btrfs")
+        mount = model._one(type="mount", path="/")
+        self.assertEqual(mount.device, subvol.volume)
+
 
 class TestRenderActions(unittest.TestCase):
     def test_render_does_not_include_unreferenced(self):

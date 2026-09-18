@@ -59,7 +59,7 @@ class StorageManipulator:
     def create_mount(self, fs, spec: FileSystemSpec):
         if spec.get("mount") is None:
             return
-        mount = self.model.add_mount(fs, spec["mount"])
+        mount = self.model.add_mount(fs, spec["mount"], options=spec.get("options"))
         if self.model.needs_bootloader_partition():
             vol = fs.volume
             if vol.type == "partition" and boot.can_be_boot_device(vol.device):
@@ -104,7 +104,12 @@ class StorageManipulator:
     def delete_filesystem(self, fs):
         if fs is None:
             return
-        self.delete_mount(fs.mount())
+        for sv in list(fs._subvolumes):
+            self.delete_mount(sv._mount)
+            self.model._remove(sv)
+        # fs.mount() only knows about one of possibly several mounts
+        for mount in [m for m in self.model._all(type="mount") if m.device is fs]:
+            self.delete_mount(mount)
         self.model.remove_filesystem(fs)
 
     delete_format = delete_filesystem

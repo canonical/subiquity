@@ -1378,6 +1378,9 @@ class Filesystem:
     extra_options: Optional[List[str]] = None
 
     _mount: Optional["Mount"] = attributes.backlink()
+    _subvolumes: List["BtrfsSubvolume"] = attributes.backlink(
+        default=attr.Factory(list)
+    )
 
     def mount(self):
         return self._mount
@@ -1558,6 +1561,21 @@ class ZFS:
         yield self
         yield self.pool
         yield from self.pool.iter_underlying()
+
+
+@fsobj("btrfs_subvolume")
+class BtrfsSubvolume:
+    volume: Filesystem = attributes.ref(backlink="_subvolumes")
+    subvolume: str
+
+    _mount: Optional["Mount"] = attributes.backlink()
+
+    @property
+    def fstype(self):
+        return self.volume.fstype
+
+    def on_remote_storage(self) -> bool:
+        return self.volume.on_remote_storage()
 
 
 ConstructedDevice = Union[Raid, LVM_VolGroup, ZPool]
@@ -2493,15 +2511,20 @@ class StorageModel:
             raise Exception("can only remove unmounted filesystem")
         self._remove(fs)
 
-    def add_mount(self, fs: Filesystem, path):
-        if fs._mount is not None:
+    def add_mount(self, fs: Filesystem, path, options=None):
+        # multiple mounts are legitimate for a btrfs fs with subvolumes
+        if fs._mount is not None and not fs._subvolumes:
             raise Exception(f"{fs} is already mounted")
-        options = None
-        if fs.volume.on_remote_storage():
+        if options is None and fs.volume.on_remote_storage():
             options = "defaults,_netdev"
         m = Mount(m=self, device=fs, path=path, options=options)
         self._actions.append(m)
         return m
+
+    def add_btrfs_subvolume(self, fs: Filesystem, subvolume: str):
+        sv = BtrfsSubvolume(m=self, volume=fs, subvolume=subvolume)
+        self._actions.append(sv)
+        return sv
 
     def remove_mount(self, mount):
         self._remove(mount)
