@@ -334,6 +334,7 @@ class VariationInfo:
                     GuidedCapability.LVM_LUKS,
                     GuidedCapability.ZFS,
                     GuidedCapability.ZFS_LUKS_KEYSTORE,
+                    GuidedCapability.BTRFS,
                 ]
             ),
         )
@@ -870,6 +871,21 @@ class StorageController(SubiquityController, StorageManipulator):
             bpool.create_zfs("BOOT", canmount="off", mountpoint="none")
             bpool.create_zfs(f"BOOT/ubuntu_{uuid}", mountpoint="/boot")
 
+    def guided_btrfs(self, gap):
+        device = gap.device
+        part_align = device.alignment_data().part_align
+        bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
+        gap_boot, gap_rest = gap.split(bootfs_size)
+        fs_spec = FileSystemSpec(fstype="ext4", mount="/boot")
+        self.create_partition(device, gap_boot, fs_spec)
+        part = self.create_partition(device, gap_rest, FileSystemSpec(fstype="btrfs"))
+        fs = part.fs()
+        self.model.add_btrfs_subvolume(fs, "@")
+        self.model.add_btrfs_subvolume(fs, "@home")
+        # the singular _mount backlink should end up on the root mount
+        self.create_mount(fs, FileSystemSpec(mount="/home", options="subvol=@home"))
+        self.create_mount(fs, FileSystemSpec(mount="/", options="subvol=@"))
+
     @functools.singledispatchmethod
     def start_guided(self, target: GuidedStorageTarget, disk: ModelDisk) -> gaps.Gap:
         """Setup changes to the disk to prepare the gap that we will be
@@ -1042,6 +1058,8 @@ class StorageController(SubiquityController, StorageManipulator):
             self.guided_lvm(gap, choice)
         elif choice.capability.is_zfs():
             self.guided_zfs(gap, choice)
+        elif choice.capability.is_btrfs():
+            self.guided_btrfs(gap)
         elif choice.capability == GuidedCapability.DIRECT:
             self.guided_direct(gap)
         elif choice.capability == GuidedCapability.DD:
@@ -2342,6 +2360,8 @@ class StorageController(SubiquityController, StorageManipulator):
                     capability = GuidedCapability.ZFS_LUKS_KEYSTORE
                 else:
                     capability = GuidedCapability.ZFS
+            elif name == "btrfs":
+                capability = GuidedCapability.BTRFS
             else:
                 capability = GuidedCapability.DIRECT
 

@@ -53,6 +53,7 @@ FileSystemSpec = TypedDict(
         "mount": str | None,
         "wipe": str | None,  # NOTE: no wipe is different from wipe=None
         "use_swap": bool,
+        "options": str | None,  # mount options, e.g. subvol=@ for btrfs
     },
     total=False,
 )
