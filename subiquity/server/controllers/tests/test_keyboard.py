@@ -15,7 +15,7 @@
 
 import os
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 import jsonschema
 from jsonschema.validators import validator_for
@@ -64,11 +64,21 @@ class TestInputSource(unittest.IsolatedAsyncioTestCase):
 
     @parameterized.expand(
         [
-            ("us", "", "[('xkb','us')]"),
-            ("fr", "latin9", "[('xkb','fr+latin9')]"),
+            ("us", "", "[('xkb','us')]", "us", ""),
+            ("fr", "latin9", "[('xkb','fr+latin9')]", "fr", "latin9"),
+            # non-latin layouts get expanded to a dual layout with a latin
+            # fallback, same as for the "main" set_keyboard flow.
+            ("ru", "", "[('xkb','ru')]", "us,ru", ","),
         ]
     )
-    async def test_input_source(self, layout, variant, expected_xkb):
+    async def test_input_source(
+        self,
+        layout,
+        variant,
+        expected_xkb,
+        expected_locale_layout,
+        expected_locale_variant,
+    ):
         with (
             patch(
                 "subiquity.server.controllers.keyboard.arun_command"
@@ -87,7 +97,7 @@ class TestInputSource(unittest.IsolatedAsyncioTestCase):
                 "sources",
                 expected_xkb,
             ]
-            cmd = [
+            gsettings_cmd = [
                 "systemd-run",
                 "--wait",
                 "--uid=99",
@@ -97,4 +107,17 @@ class TestInputSource(unittest.IsolatedAsyncioTestCase):
                 "--",
                 *gsettings,
             ]
-            mock_arun_command.assert_called_once_with(cmd)
+            localectl_cmd = [
+                "localectl",
+                "--no-ask-password",
+                "--no-convert",
+                "--",
+                "set-x11-keymap",
+                expected_locale_layout,
+                "",
+                expected_locale_variant,
+            ]
+            self.assertEqual(
+                mock_arun_command.call_args_list,
+                [call(gsettings_cmd), call(localectl_cmd, check=True)],
+            )
