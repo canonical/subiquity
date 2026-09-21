@@ -25,11 +25,12 @@ import yaml
 from subiquity.common.os import UbuntuInfo
 from subiquity.common.storage import gaps
 from subiquity.common.storage.requirements import (
+    GuidanceMessageKind,
     Requirements,
     RequirementSeverity,
     StorageRequirement,
 )
-from subiquity.common.types.storage import RecoveryKey
+from subiquity.common.types.storage import RecoveryKey, StorageRequirementStatus
 from subiquity.models.storage import (
     LVM_CHUNK_SIZE,
     ZFS,
@@ -322,7 +323,8 @@ def make_req(*, blocking=True, satisfied=True, applies=True):
             RequirementSeverity.BLOCKING if blocking else RequirementSeverity.WARNING
         ),
         check=lambda m: satisfied,
-        applies_to=lambda m: applies,
+        platform_applies_to=lambda m: True,
+        layout_applies_to=lambda m: applies,
     )
 
 
@@ -446,6 +448,46 @@ class TestStorageModel(unittest.TestCase):
         model = make_model()
         with mock.patch.object(Requirements, "all", return_value=requirements):
             self.assertEqual(expected, model.can_install())
+
+    def test_for_client__platform_applicable_only(self):
+        # Only requirements whose platform_applies_to holds appear in the
+        # API response; layout_applies_to is not consulted.
+        platform_yes = make_req(satisfied=True)
+        platform_no = StorageRequirement(
+            guidance_message_kind=Mock(),
+            severity=RequirementSeverity.BLOCKING,
+            check=lambda m: True,
+            platform_applies_to=lambda m: False,
+            layout_applies_to=lambda m: True,
+        )
+        model = make_model()
+        with mock.patch.object(
+            Requirements, "all", return_value=[platform_yes, platform_no]
+        ):
+            statuses = Requirements.for_client(model)
+        self.assertEqual(len(statuses), 1)
+        self.assertIsInstance(statuses[0], StorageRequirementStatus)
+
+    def test_for_client__reflects_satisfied(self):
+        sat = make_req(satisfied=True, blocking=True)
+        unsat = make_req(satisfied=False, blocking=True)
+        model = make_model()
+        with mock.patch.object(Requirements, "all", return_value=[sat, unsat]):
+            statuses = Requirements.for_client(model)
+        self.assertEqual([s.satisfied for s in statuses], [True, False])
+
+    def test_for_client__kind_from_guidance_message_kind(self):
+        req = StorageRequirement(
+            guidance_message_kind=GuidanceMessageKind.MOUNT_ROOT,
+            severity=RequirementSeverity.BLOCKING,
+            check=lambda m: True,
+            platform_applies_to=lambda m: True,
+        )
+        model = make_model()
+        with mock.patch.object(Requirements, "all", return_value=[req]):
+            (status,) = Requirements.for_client(model)
+        self.assertEqual(status.kind, GuidanceMessageKind.MOUNT_ROOT)
+        self.assertTrue(status.satisfied)
 
     @parameterized.expand(
         (

@@ -860,7 +860,7 @@ class StorageController(SubiquityController, StorageManipulator):
         rpool.create_zfs(f"USERDATA/root_{userdata_uuid}", mountpoint="/root")
         rpool.create_zfs(f"USERDATA/home_{userdata_uuid}", mountpoint="/home")
 
-        if Requirements.BOOT_EXT4.applies_to(self.model):
+        if Requirements.BOOT_EXT4.is_applicable(self.model):
             self.create_filesystem(bpart, FileSystemSpec(fstype="ext4", mount="/boot"))
         else:
             # Use a ZFS pool for /boot, like we used to always do.
@@ -1050,13 +1050,14 @@ class StorageController(SubiquityController, StorageManipulator):
             raise StorageInvalidUsageError("cannot process capability")
 
     async def _probe_response(self, wait, resp_cls):
-        if not self._probe_task.done():
-            if wait:
-                await self._start_task
-                await self._probe_task.wait()
-                await self._probe_firmware_task.wait()
-            else:
-                return resp_cls(status=ProbeStatus.PROBING)
+        # Wait for both probing tasks to be finished.
+        for task in self._probe_task, self._probe_firmware_task:
+            if not task.done():
+                if wait:
+                    await self._start_task
+                    await task.wait()
+                else:
+                    return resp_cls(status=ProbeStatus.PROBING)
         if True in self._errors:
             return resp_cls(
                 status=ProbeStatus.FAILED, error_report=self._errors[True][1].ref()
@@ -1304,6 +1305,7 @@ class StorageController(SubiquityController, StorageManipulator):
             need_root=not model.is_root_mounted(),
             need_boot=model.needs_bootloader_partition(),
             install_minimum_size=minsize,
+            requirements=Requirements.for_client(model),
         )
 
     async def generate_recovery_key_GET(self) -> str:
