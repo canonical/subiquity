@@ -556,7 +556,7 @@ Storage configuration is a complex topic, and the description of the desired con
 Supported layouts
 ^^^^^^^^^^^^^^^^^
 
-The three supported layouts at the time of writing are ``lvm``, ``direct`` and ``zfs``.
+The supported layouts at the time of writing are ``lvm``, ``direct``, ``zfs`` and ``btrfs``.
 
 .. code-block:: yaml
 
@@ -570,6 +570,9 @@ The three supported layouts at the time of writing are ``lvm``, ``direct`` and `
       storage:
         layout:
           name: zfs
+      storage:
+        layout:
+          name: btrfs
 
 
 By default, these layouts install to the largest disk in a system, but you can supply a match spec (see below) to indicate which disk to use:
@@ -610,6 +613,8 @@ When using the ``lvm`` layout, LUKS encryption can be enabled by supplying a pas
         layout:
           name: lvm
           password: LUKS_PASSPHRASE
+
+The ``btrfs`` layout creates a btrfs filesystem with ``@`` and ``@home`` subvolumes, mounted at ``/`` and ``/home``.
 
 The default is to use the ``lvm`` layout.
 
