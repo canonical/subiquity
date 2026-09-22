@@ -1272,7 +1272,7 @@ class TestAutoInstallConfig(unittest.TestCase):
                     "type": "btrfs_subvolume",
                     "id": "subvol0",
                     "volume": "fmt0",
-                    "subvolume": "@",
+                    "name": "@",
                 },
                 {
                     "type": "mount",
@@ -1284,7 +1284,7 @@ class TestAutoInstallConfig(unittest.TestCase):
             ]
         )
         subvol = model._one(type="btrfs_subvolume")
-        self.assertEqual(subvol.subvolume, "@")
+        self.assertEqual(subvol.name, "@")
         self.assertEqual(subvol.volume.fstype, "btrfs")
         self.assertEqual(subvol.fstype, "btrfs")
         mount = model._one(type="mount", path="/")

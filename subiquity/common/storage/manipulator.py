@@ -104,7 +104,7 @@ class StorageManipulator:
     def delete_filesystem(self, fs):
         if fs is None:
             return
-        for sv in list(fs._subvolumes):
+        for sv in list(fs._btrfs_subvolumes):
             self.delete_mount(sv._mount)
             self.model._remove(sv)
         # fs.mount() only knows about one of possibly several mounts

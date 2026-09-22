@@ -1378,7 +1378,7 @@ class Filesystem:
     extra_options: Optional[List[str]] = None
 
     _mount: Optional["Mount"] = attributes.backlink()
-    _subvolumes: List["BtrfsSubvolume"] = attributes.backlink(
+    _btrfs_subvolumes: List["BtrfsSubvolume"] = attributes.backlink(
         default=attr.Factory(list)
     )
 
@@ -1565,8 +1565,8 @@ class ZFS:
 
 @fsobj("btrfs_subvolume")
 class BtrfsSubvolume:
-    volume: Filesystem = attributes.ref(backlink="_subvolumes")
-    subvolume: str
+    volume: Filesystem = attributes.ref(backlink="_btrfs_subvolumes")
+    name: str
 
     _mount: Optional["Mount"] = attributes.backlink()
 
@@ -2513,7 +2513,7 @@ class StorageModel:
 
     def add_mount(self, fs: Filesystem, path, options=None):
         # multiple mounts are legitimate for a btrfs fs with subvolumes
-        if fs._mount is not None and not fs._subvolumes:
+        if fs._mount is not None and not fs._btrfs_subvolumes:
             raise Exception(f"{fs} is already mounted")
         if options is None and fs.volume.on_remote_storage():
             options = "defaults,_netdev"
@@ -2521,8 +2521,8 @@ class StorageModel:
         self._actions.append(m)
         return m
 
-    def add_btrfs_subvolume(self, fs: Filesystem, subvolume: str):
-        sv = BtrfsSubvolume(m=self, volume=fs, subvolume=subvolume)
+    def add_btrfs_subvolume(self, fs: Filesystem, name: str):
+        sv = BtrfsSubvolume(m=self, volume=fs, name=name)
         self._actions.append(sv)
         return sv
 
