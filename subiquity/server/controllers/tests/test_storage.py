@@ -2150,6 +2150,22 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual(d1p3.fs(), home_mount.device)
         self.assertIsNone(gaps.largest_gap(self.d1))
 
+    async def test_autoinstall_guided_btrfs(self):
+        await self._guided_setup(FirmwareType.UEFI, "gpt")
+        await self.controller.run_autoinstall_guided({"name": "btrfs"})
+        [d1p1, d1p2, d1p3] = self.d1.partitions()
+        self.assertEqual("/boot/efi", d1p1.mount)
+        self.assertEqual("/boot", d1p2.mount)
+        self.assertEqual("/", d1p3.mount)
+        self.assertEqual("btrfs", d1p3.fs().fstype)
+        [sv_root, sv_home] = self.model._all(type="btrfs_subvolume")
+        self.assertEqual("@", sv_root.name)
+        self.assertEqual("@home", sv_home.name)
+        root_mount = self.model._mount_for_path("/")
+        home_mount = self.model._mount_for_path("/home")
+        self.assertEqual("subvol=@", root_mount.options)
+        self.assertEqual("subvol=@home", home_mount.options)
+
     @parameterized.expand(
         [
             (*be, needs_ext4_boot)
