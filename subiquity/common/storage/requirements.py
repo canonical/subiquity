@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 import attrs
 
 from subiquity.common.os import read_ubuntu_info
+from subiquity.common.types.storage import GuidanceMessageKind, StorageRequirementStatus
 
 if TYPE_CHECKING:
     # Avoid circular import: models/storage.py imports Requirements
@@ -31,23 +32,6 @@ class RequirementSeverity(enum.Enum):
 
     BLOCKING = "blocking"
     WARNING = "warning"
-
-
-class GuidanceMessageKind(enum.Enum):
-    """User-facing guidance messages shown when a storage requirement is
-    violated.
-
-    Use the member (e.g. ``GuidanceMessageKind.MOUNT_ROOT``) in APIs and wire
-    protocols — the member's **key** is the stable identifier.  The
-    ``.value`` is a locale-dependent translated string and **must not**
-    be sent over the API or stored in configuration.
-    """
-
-    MOUNT_ROOT = _("Mount a filesystem at /")
-    MOUNT_LOCAL_BOOT = _("Mount a local filesystem at /boot")
-    SELECT_BOOT_DISK = _("Select a boot disk")
-    USE_EXT4_BOOT = _("Use the ext4 filesystem for /boot")
-    BOOT_ON_SIMPLE_SETUP = _("Place /boot on a partition of a disk (or RAID 1 disk)")
 
 
 @attrs.define
@@ -64,19 +48,31 @@ class StorageRequirement:
         Whether a violation blocks installation or is merely advisory.
     check:
         Callable that returns True when the requirement is satisfied.
-    applies_to:
-        Callable that returns True when this requirement is relevant for
-        the current system configuration.  Defaults to always applicable.
+    platform_applies_to:
+        Callable that returns True when this requirement is relevant at the
+        platform level only (i.e., firmware, Ubuntu version, CPU arch, ...).
+        It must not depend on the storage layout the user has built.
+        Defaults to always applicable.
+    layout_applies_to:
+        Callable that returns True when this requirement is relevant given
+        the current layout state (e.g. "root must be mounted"). This
+        only contains layout-dependent guards.
+        Defaults to always applicable.
     """
 
     guidance_message_kind: GuidanceMessageKind
     severity: RequirementSeverity
     check: Callable[["StorageModel"], bool]
-    applies_to: Callable[["StorageModel"], bool] = lambda m: True
+    platform_applies_to: Callable[["StorageModel"], bool] = lambda m: True
+    layout_applies_to: Callable[["StorageModel"], bool] = lambda m: True
+
+    def is_platform_applicable(self, model) -> bool:
+        """Return True if this requirement applies at the platform level."""
+        return self.platform_applies_to(model)
 
     def is_applicable(self, model) -> bool:
         """Return True if this requirement applies to the given model."""
-        return self.applies_to(model)
+        return self.layout_applies_to(model) and self.is_platform_applicable(model)
 
     def is_satisfied(self, model) -> bool:
         """Return True if this requirement's condition is met."""
@@ -135,8 +131,8 @@ def _is_boot_on_simple_setup(model) -> bool:
 
 
 def _uses_signed_grub_26_10(model) -> bool:
-    """UEFI systems with signed GRUB require ext4 for /boot on 26.10+."""
-    if not model.is_root_mounted() or not model.uses_signed_grub():
+    """True on systems that use signed GRUB on Ubuntu 26.10 or later."""
+    if not model.uses_signed_grub():
         return False
     version_number = read_ubuntu_info(dry_run=model.dry_run).version_number()
     return version_number >= (26, 10)
@@ -158,9 +154,9 @@ class Requirements:
         guidance_message_kind=GuidanceMessageKind.MOUNT_LOCAL_BOOT,
         severity=RequirementSeverity.BLOCKING,
         check=lambda m: m.is_boot_mounted() and not m.is_bootfs_on_remote_storage(),
-        applies_to=lambda m: m.is_root_mounted()
-        and m.is_rootfs_on_remote_storage()
-        and not m.supports_nvme_tcp_booting,
+        layout_applies_to=lambda m: m.is_root_mounted()
+        and m.is_rootfs_on_remote_storage(),
+        platform_applies_to=lambda m: not m.supports_nvme_tcp_booting,
     )
     BOOTLOADER_NEEDED = StorageRequirement(
         guidance_message_kind=GuidanceMessageKind.SELECT_BOOT_DISK,
@@ -171,7 +167,8 @@ class Requirements:
         guidance_message_kind=GuidanceMessageKind.USE_EXT4_BOOT,
         severity=RequirementSeverity.BLOCKING,
         check=_is_boot_ext4,
-        applies_to=_uses_signed_grub_26_10,
+        layout_applies_to=lambda m: m.is_root_mounted(),
+        platform_applies_to=_uses_signed_grub_26_10,
     )
     # This requirement could be merged with BOOT_EXT4, but the resulting error
     # message would become a bit vague.
@@ -179,7 +176,8 @@ class Requirements:
         guidance_message_kind=GuidanceMessageKind.BOOT_ON_SIMPLE_SETUP,
         severity=RequirementSeverity.BLOCKING,
         check=_is_boot_on_simple_setup,
-        applies_to=_uses_signed_grub_26_10,
+        layout_applies_to=lambda m: m.is_root_mounted(),
+        platform_applies_to=_uses_signed_grub_26_10,
     )
 
     @staticmethod
@@ -191,4 +189,19 @@ class Requirements:
             Requirements.BOOTLOADER_NEEDED,
             Requirements.BOOT_EXT4,
             Requirements.BOOT_ON_SIMPLE_SETUP,
+        ]
+
+    @staticmethod
+    def for_client(model) -> list[StorageRequirementStatus]:
+        """Return the status of every platform-applicable requirement, as
+        sent to clients of the v2 API."""
+        return [
+            StorageRequirementStatus(
+                kind=r.guidance_message_kind,
+                # Here we don't use r.is_satisfied() because it would be false
+                # if the requirement is not yet applicable.
+                satisfied=not r.is_violated(model),
+            )
+            for r in Requirements.all()
+            if r.is_platform_applicable(model)
         ]

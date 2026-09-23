@@ -33,6 +33,7 @@ from jsonschema.validators import validator_for
 from subiquity.common.os import UbuntuInfo
 from subiquity.common.storage import boot, gaps, labels
 from subiquity.common.storage.actions import DeviceAction
+from subiquity.common.storage.requirements import GuidanceMessageKind, Requirements
 from subiquity.common.types.storage import (
     AddPartitionV2,
     CalculateEntropyRequest,
@@ -63,6 +64,7 @@ from subiquity.common.types.storage import (
     ProbeStatus,
     ReformatDisk,
     SizingPolicy,
+    StorageRequirementStatus,
 )
 from subiquity.models.source import CatalogEntryVariation
 from subiquity.models.storage import dehumanize_size
@@ -2271,9 +2273,17 @@ class TestGuided(IsolatedAsyncioTestCase):
     )
     async def test_guided_zfs(self, firmware_type, ptable, p1mnt, needs_ext4_boot):
         await self._guided_setup(firmware_type, ptable)
-        with mock.patch(
-            "subiquity.server.controllers.storage.Requirements.BOOT_EXT4.applies_to",
-            return_value=needs_ext4_boot,
+        with (
+            mock.patch.object(
+                Requirements.BOOT_EXT4,
+                "platform_applies_to",
+                lambda m: True,
+            ),
+            mock.patch.object(
+                Requirements.BOOT_EXT4,
+                "layout_applies_to",
+                lambda m: needs_ext4_boot,
+            ),
         ):
             await self.controller.guided(
                 GuidedChoiceV2(
@@ -2327,9 +2337,17 @@ class TestGuided(IsolatedAsyncioTestCase):
         self, firmware_type, ptable, p1mnt, needs_ext4_boot
     ):
         await self._guided_setup(firmware_type, ptable)
-        with mock.patch(
-            "subiquity.server.controllers.storage.Requirements.BOOT_EXT4.applies_to",
-            return_value=needs_ext4_boot,
+        with (
+            mock.patch.object(
+                Requirements.BOOT_EXT4,
+                "platform_applies_to",
+                lambda m: True,
+            ),
+            mock.patch.object(
+                Requirements.BOOT_EXT4,
+                "layout_applies_to",
+                lambda m: needs_ext4_boot,
+            ),
         ):
             await self.controller.guided(
                 GuidedChoiceV2(
@@ -2571,6 +2589,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
             "filesystem": self.fs_probe,
         }
         self.ctrler._probe_task.task = mock.Mock()
+        self.ctrler._probe_firmware_task.task = mock.Mock()
         self.ctrler._examine_systems_task.task = mock.Mock()
         if firmware_type == FirmwareType.BIOS and ptable != "msdos" and fix_bios:
             make_partition(
@@ -2805,6 +2824,18 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.assertFalse(resp.need_root)
         self.assertFalse(resp.need_boot)
         self.assertEqual(1, len(guided_get_resp.targets))
+
+    async def test_v2_GET_populates_requirements(self):
+        await self._setup(FirmwareType.UEFI, "gpt")
+        statuses = [
+            StorageRequirementStatus(
+                kind=GuidanceMessageKind.BOOT_ON_SIMPLE_SETUP,
+                satisfied=False,
+            )
+        ]
+        with mock.patch.object(Requirements, "for_client", return_value=statuses):
+            resp = await self.ctrler.v2_GET()
+        self.assertEqual(resp.requirements, statuses)
 
     @parameterized.expand(firmware_types_and_ptables)
     async def test_half_disk_use_gap(self, firmware_type, ptable):
