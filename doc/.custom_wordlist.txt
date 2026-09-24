@@ -60,6 +60,7 @@ boolean
 bootable
 bootloader
 bootloaders
+btrfs
 codecs
 codename
 config
@@ -77,6 +78,7 @@ debian
 dir
 el
 enablement
+filesystem
 flavor
 geoip
 geolocation

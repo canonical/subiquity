@@ -2846,6 +2846,40 @@ class TestLabels(TestAPI):
                     },
                 ),
             ),
+            (
+                "BTRFS",
+                None,
+                (
+                    {
+                        "number": 1,
+                        "boot": True,
+                        "grub_device": True,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "fat32",
+                        "mount": "/boot/efi",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 2,
+                        "boot": False,
+                        "grub_device": None,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "ext4",
+                        "mount": "/boot",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 3,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "btrfs",
+                        "mount": "/",
+                        "effectively_encrypted": False,
+                    },
+                ),
+            ),
         )
     )
     @timeout()
