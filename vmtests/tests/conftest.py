@@ -3,6 +3,7 @@ import json
 import re
 import subprocess
 import time
+import traceback
 from datetime import datetime
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, CompletedProcess
@@ -11,10 +12,21 @@ from typing import Optional, Sequence
 
 import pytest
 import yaml
+from cloudinit.util import mergemanydict
 
 from subiquity.models.source import SourceModel
 
 from . import Firmware
+
+
+@contextlib.contextmanager
+def _timer(label):
+    start_time = time.perf_counter()
+    try:
+        yield
+    finally:
+        end_time = time.perf_counter()
+        print(f"{label} took {end_time - start_time:.4f}s")
 
 
 class VM:
@@ -122,7 +134,7 @@ class VM:
             merged_cc = base_cc_data
         else:
             cc_data = yaml.safe_load(cloud_config)
-            merged_cc = _merge_data(cc_data, base_cc_data)
+            merged_cc = mergemanydict([cc_data, base_cc_data])
 
         # add test ssh key for install system.  This, and everything else
         # below, is done after merge of test cloud-config because it's core
@@ -158,10 +170,10 @@ class VM:
                 return
             case "ERROR":
                 # install failure
-                pytest.fail("install failed and reached ERROR state")
+                raise RuntimeError("install failed and reached ERROR state")
             case _:
                 # should never happen
-                pytest.fail(f"unexpected state={data['state']}")
+                raise RuntimeError(f"unexpected state={data['state']}")
 
     @contextlib.contextmanager
     def _install(self, **kwargs) -> None:
@@ -193,6 +205,12 @@ class VM:
             "autoinstall",
             "--noautoconsole",
         ]
+        if self.firmware == Firmware.UEFI:
+            cmd.extend(["--boot", "uefi"])
+        elif self.firmware != Firmware.BIOS:
+            raise NotImplementedError(
+                f"virt-install integration for {self.firmware} not supported"
+            )
 
         try:
             print(f"creating install domain {self.domain}")
@@ -218,8 +236,12 @@ class VM:
             label = f"subiquity-vmtest-{self.vmm.test_name}-{ts}"
             dest = Path(f"/tmp/{label}")
             dest.mkdir(exist_ok=False)
-            self._collect_logs(label, dest)
-            print(f"logs written to {dest}")
+            try:
+                self._collect_logs(label, dest)
+                print(f"logs written to {dest}")
+            except Exception:
+                print("log collection failed")
+                traceback.print_exc()
             raise
 
         finally:
@@ -227,7 +249,12 @@ class VM:
                 _virsh(["destroy", self.domain], check=False)
 
             finally:
-                undefine = ["undefine", self.domain, "--remove-all-storage"]
+                undefine = [
+                    "undefine",
+                    self.domain,
+                    "--remove-all-storage",
+                    "--nvram",
+                ]
                 _virsh(undefine, stdout=DEVNULL)
 
     def _collect_logs(self, label, dest):
@@ -236,9 +263,13 @@ class VM:
                 "sudo",
                 "sh -c 'journalctl -b > /var/log/installer/installer-journal.log'",
             ],
+            check=False,
         )
         tarball = f"/tmp/{label}.tgz"
-        self.ssh(["sudo", "tar", "zcvf", tarball, "/var/log/installer"], check=False)
+        self.ssh(
+            ["sudo", "tar", "zcvf", tarball, "/var/log/installer"],
+            check=False,
+        )
         self._scp_get(tarball, str(dest), check=False)
 
     def _scp_get(self, infile, dest, check=True) -> None:
@@ -265,7 +296,7 @@ class VM:
             time.sleep(1)
             print(".", end="", flush=True)
         else:
-            pytest.fail(f"{label} never happened")
+            raise RuntimeError(f"{label} never happened")
         print("done")
 
     def _wait_for_ip(self) -> None:
@@ -301,9 +332,10 @@ class VM:
     def _wait_for_socket(self):
         self._wait_for_ssh_cmd(["test", "-S", "/run/subiquity/socket"], "socket")
 
-    def _wait_for_finish_sentinel(self):
+    def _wait_for_finish_sentinel(self, wait_seconds=3000):
         print("wait for end state.", end="", flush=True)
-        while True:
+        data = {"state": "UNKNOWN"}
+        for _ in range(wait_seconds):
             sp = self.ssh(
                 ["curl", "--unix-socket", "/run/subiquity/socket", "a/meta/status"],
             )
@@ -312,6 +344,10 @@ class VM:
                 break
             print(".", end="", flush=True)
             time.sleep(1)
+        else:
+            raise RuntimeError(
+                f"timed out waiting for final state, current state {data['state']}"
+            )
         print(f"done: {data['state']}")
         self._assert_state_late_commands(data)
 
@@ -392,7 +428,8 @@ class VMM:
         Build a VM, establish the hardware configuration, and start an install.
         """
         result = self.exit_stack.enter_context(VM(vmm=self, **kwargs))
-        self.exit_stack.enter_context(result._install())
+        with _timer("install"):
+            self.exit_stack.enter_context(result._install())
         return result
 
     def _create_ssh_key(self) -> str:
@@ -408,7 +445,7 @@ def vmm(request, option_iso):
 
     isofile = Path(option_iso)
     if not isofile.exists() or not isofile.is_file():
-        pytest.fail(f"{option_iso} is not a valid install iso")
+        raise RuntimeError(f"{option_iso} is not a valid install iso")
 
     with VMM(request, isofile) as _vmm:
         yield _vmm
@@ -440,24 +477,3 @@ def _runcmd(cmd, check=True, **kwargs):
 
 def _virsh(cmd, **kwargs):
     return _runcmd(["virsh", "--connect", "qemu:///system"] + cmd, **kwargs)
-
-
-def _merge_data(src: dict, dest: dict) -> dict:
-    """
-    Merge data from src to dest, without modifying src or dst.
-    Return the merged data.
-    """
-    dest = dest.copy()
-    for key, value in src.items():
-        if key in dest and type(value) != type(dest[key]):
-            raise ValueError(
-                f"merge undefined for {key=} src_val={value} dest_val={dest[key]}"
-            )
-
-        if isinstance(value, dict) and key in dest:
-            dest[key] = _merge_data(value, dest[key])
-        elif isinstance(value, list) and key in dest:
-            dest[key].extend(value)
-        else:
-            dest[key] = value
-    return dest
