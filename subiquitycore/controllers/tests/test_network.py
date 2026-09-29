@@ -170,3 +170,32 @@ class TestSetStaticConfig(unittest.TestCase):
             self.controller, "eth0", 4, self.dev.netdev_info().static4
         )
         self.assertEqual(expected, self.dev.config)
+
+    def test_keep_default_route_of_other_ip_version(self):
+        # LP: #1993792
+        self.set_static_config(4, addresses=["10.0.1.15/24"], gateway="10.0.1.1")
+        self.set_static_config(6, addresses=["fd00::15/64"], gateway="fd00::1")
+        self.assertCountEqual(
+            [
+                {"to": "default", "via": "10.0.1.1"},
+                {"to": "default", "via": "fd00::1"},
+            ],
+            self.dev.config["routes"],
+        )
+
+        self.set_static_config(4, addresses=["10.0.1.15/24"], gateway="10.0.1.254")
+        self.assertCountEqual(
+            [
+                {"to": "default", "via": "10.0.1.254"},
+                {"to": "default", "via": "fd00::1"},
+            ],
+            self.dev.config["routes"],
+        )
+
+    def test_remove_gateway(self):
+        self.set_static_config(4, addresses=["10.0.1.15/24"], gateway="10.0.1.1")
+        self.set_static_config(6, addresses=["fd00::15/64"], gateway="fd00::1")
+        self.set_static_config(4, addresses=["10.0.1.15/24"])
+        self.assertEqual(
+            [{"to": "default", "via": "fd00::1"}], self.dev.config["routes"]
+        )
