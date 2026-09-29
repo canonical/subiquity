@@ -199,3 +199,28 @@ class TestSetStaticConfig(unittest.TestCase):
         self.assertEqual(
             [{"to": "default", "via": "fd00::1"}], self.dev.config["routes"]
         )
+
+    def test_no_duplicate_nameservers(self):
+        # LP: #1998920
+        self.set_static_config(
+            4,
+            addresses=["10.0.1.15/24"],
+            nameservers=["10.0.1.2"],
+            searchdomains=["example.com"],
+        )
+        self.set_static_config(
+            6,
+            addresses=["fd00::15/64"],
+            nameservers=["fd00::2", "10.0.1.2"],
+            searchdomains=["example.com"],
+        )
+        self.set_static_config(
+            4,
+            addresses=["10.0.1.15/24"],
+            nameservers=["10.0.1.2"],
+            searchdomains=["example.com"],
+        )
+        self.assertEqual(
+            {"addresses": ["10.0.1.2", "fd00::2"], "search": ["example.com"]},
+            self.dev.config["nameservers"],
+        )
