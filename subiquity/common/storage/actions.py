@@ -321,6 +321,16 @@ def _can_delete_raid_vg(device):
             mounted_partitions += 1
         elif p.constructed_device():
             cd = p.constructed_device()
+            if isinstance(p, LVM_LogicalVolume):
+                return _(
+                    "Cannot delete {devicelabel} as logical volume {lvname} is "
+                    "part of the {cdtype} {cdname}."
+                ).format(
+                    devicelabel=labels.label(device),
+                    lvname=p.name,
+                    cdtype=labels.desc(cd),
+                    cdname=labels.label(cd),
+                )
             return _(
                 "Cannot delete {devicelabel} as partition {partnum} is part "
                 "of the {cdtype} {cdname}."
