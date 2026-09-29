@@ -12,10 +12,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import unittest
 from unittest.mock import Mock
 
-from subiquitycore.controllers.network import SubiquityNetworkEventReceiver
+from subiquitycore.controllers.network import (
+    BaseNetworkController,
+    SubiquityNetworkEventReceiver,
+)
+from subiquitycore.models.network import NetworkDev, StaticConfig
 
 
 class TestRoutes(unittest.IsolatedAsyncioTestCase):
@@ -134,3 +139,34 @@ class TestRoutes(unittest.IsolatedAsyncioTestCase):
         ]
 
         self.assertFalse(self.er._default_route_exists(routes))
+
+
+class TestSetStaticConfig(unittest.TestCase):
+    def setUp(self):
+        model = Mock(get_all_netdevs=Mock(return_value=[]))
+        self.dev = NetworkDev(model, "eth0", "eth")
+        self.controller = Mock()
+        self.controller.model.get_netdev_by_name.return_value = self.dev
+
+    def set_static_config(self, ip_version, **kwargs):
+        BaseNetworkController.set_static_config(
+            self.controller, "eth0", ip_version, StaticConfig(**kwargs)
+        )
+
+    def test_edit_round_trip(self):
+        # LP: #2041828 - saving the configuration shown when editing an
+        # interface should not lose the gateway nor the name servers.
+        config = StaticConfig(
+            addresses=["10.0.1.15/24"],
+            gateway="10.0.1.1",
+            nameservers=["10.0.1.2"],
+            searchdomains=["example.com"],
+        )
+        BaseNetworkController.set_static_config(self.controller, "eth0", 4, config)
+        self.assertEqual(config, self.dev.netdev_info().static4)
+
+        expected = copy.deepcopy(self.dev.config)
+        BaseNetworkController.set_static_config(
+            self.controller, "eth0", 4, self.dev.netdev_info().static4
+        )
+        self.assertEqual(expected, self.dev.config)
