@@ -1570,7 +1570,7 @@ class Subvolume:
 
     @property
     def fstype(self):
-        return self.volume.fstype
+        return "btrfs"
 
     def on_remote_storage(self) -> bool:
         return self.volume.on_remote_storage()
