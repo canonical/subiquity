@@ -420,9 +420,17 @@ class BaseNetworkController(BaseController):
             dev.config.setdefault("routes", []).append(
                 {"to": "default", "via": static_config.gateway}
             )
+        # The name servers and search domains are shared between IPv4 and
+        # IPv6, so make sure we do not add duplicates.
         ns = dev.config.setdefault("nameservers", {})
-        ns.setdefault("addresses", []).extend(static_config.nameservers)
-        ns.setdefault("search", []).extend(static_config.searchdomains)
+        for key, values in (
+            ("addresses", static_config.nameservers),
+            ("search", static_config.searchdomains),
+        ):
+            existing = ns.setdefault(key, [])
+            for value in values:
+                if value not in existing:
+                    existing.append(value)
         self.update_link(dev)
         self.apply_config()
 
