@@ -7,9 +7,10 @@ import attr
 import urwid
 
 from subiquitycore.controllers.network import NetworkController
-from subiquitycore.models.network import NetDevInfo, StaticConfig
+from subiquitycore.models.network import NetDevInfo, StaticConfig, VLANConfig
 from subiquitycore.testing import view_helpers
 from subiquitycore.ui.views.network_configure_manual_interface import (
+    AddVlanStretchy,
     BondForm,
     EditNetworkStretchy,
     ViewInterfaceInfo,
@@ -124,38 +125,113 @@ class TestNetworkConfigureIPv4InterfaceView(unittest.TestCase):
 
 
 class TestVlanForm(unittest.TestCase):
-    def make_form(self, dev_name, cur_netdev_names=()):
-        parent = mock.Mock(cur_netdev_names=list(cur_netdev_names))
+    def make_form(self, dev_name, cur_netdev_names=(), vlans=()):
+        dev_name_to_table = {}
+        for name, link, vlan_id in vlans:
+            dev_info = mock.Mock(vlan=VLANConfig(id=vlan_id, link=link))
+            dev_name_to_table[name] = mock.Mock(dev_info=dev_info)
+        parent = mock.Mock(
+            cur_netdev_names=list(cur_netdev_names),
+            dev_name_to_table=dev_name_to_table,
+        )
         return VlanForm(parent, dev_name)
 
     def test_valid(self):
         form = self.make_form("eth0")
         view_helpers.enter_data(form, {"vlan": "100"})
         form.vlan.validate()
+        self.assertEqual("eth0.100", form.name.value)
         self.assertFalse(form.vlan.in_error)
+        self.assertFalse(form.name.in_error)
         self.assertTrue(form.done_btn.enabled)
 
-    def test_already_exists(self):
+    def test_name_follows_vlan_id(self):
+        form = self.make_form("eth0")
+        for vlan_id in "1", "10", "100":
+            view_helpers.enter_data(form, {"vlan": vlan_id})
+            self.assertEqual(f"eth0.{vlan_id}", form.name.value)
+
+        # Once the name is changed by the user, it is left alone.
+        view_helpers.enter_data(form, {"name": "myvlan"})
+        view_helpers.enter_data(form, {"vlan": "200"})
+        self.assertEqual("myvlan", form.name.value)
+
+    def test_name_already_exists(self):
         form = self.make_form("eth0", cur_netdev_names=["eth0", "eth0.100"])
+        view_helpers.enter_data(form, {"vlan": "100"})
+        self.assertTrue(form.name.in_error)
+        self.assertFalse(form.done_btn.enabled)
+
+    def test_vlan_id_already_used(self):
+        form = self.make_form(
+            "eth0",
+            cur_netdev_names=["eth0", "myvlan"],
+            vlans=[("myvlan", "eth0", 100)],
+        )
         view_helpers.enter_data(form, {"vlan": "100"})
         form.vlan.validate()
         self.assertTrue(form.vlan.in_error)
         self.assertFalse(form.done_btn.enabled)
+
+        # The same VLAN ID on another device is fine.
+        form = self.make_form(
+            "eth1",
+            cur_netdev_names=["eth0", "eth1", "myvlan"],
+            vlans=[("myvlan", "eth0", 100)],
+        )
+        view_helpers.enter_data(form, {"vlan": "100"})
+        form.vlan.validate()
+        self.assertFalse(form.vlan.in_error)
+        self.assertTrue(form.done_btn.enabled)
 
     def test_name_too_long(self):
         # LP: #2126729 - netplan ignores interfaces whose name is longer than
         # 15 characters.
         form = self.make_form("enp175s0f0np0")
         view_helpers.enter_data(form, {"vlan": "1606"})
-        form.vlan.validate()
-        self.assertTrue(form.vlan.in_error)
+        self.assertEqual("enp175s0f0np0.1606", form.name.value)
+        # The error is reported without waiting for the name to be focused.
+        self.assertTrue(form.name.in_error)
+        self.assertNotEqual("", form.name.under_text.text)
         self.assertFalse(form.done_btn.enabled)
 
+        # The user can pick another name.
+        view_helpers.enter_data(form, {"name": "vlan1606"})
+        form.name.validate()
+        self.assertFalse(form.name.in_error)
+        self.assertTrue(form.done_btn.enabled)
+
+    def test_name_at_length_limit(self):
+        form = self.make_form("enp175s0f0np0")
         # enp175s0f0np0.7 is exactly 15 characters long.
         view_helpers.enter_data(form, {"vlan": "7"})
-        form.vlan.validate()
-        self.assertFalse(form.vlan.in_error)
+        form.name.validate()
+        self.assertFalse(form.name.in_error)
         self.assertTrue(form.done_btn.enabled)
+
+
+class TestAddVlanStretchy(unittest.TestCase):
+    def make_stretchy(self):
+        parent = mock.Mock(cur_netdev_names=["eth0"], dev_name_to_table={})
+        dev_info = mock.Mock()
+        dev_info.name = "eth0"
+        return AddVlanStretchy(parent, dev_info)
+
+    def test_default_name(self):
+        stretchy = self.make_stretchy()
+        view_helpers.enter_data(stretchy.form, {"vlan": "100"})
+        stretchy.form._click_done(None)
+        stretchy.parent.controller.add_vlan.assert_called_once_with(
+            "eth0", 100, "eth0.100"
+        )
+
+    def test_custom_name(self):
+        stretchy = self.make_stretchy()
+        view_helpers.enter_data(stretchy.form, {"vlan": "100", "name": "myvlan"})
+        stretchy.form._click_done(None)
+        stretchy.parent.controller.add_vlan.assert_called_once_with(
+            "eth0", 100, "myvlan"
+        )
 
 
 class TestBondForm(unittest.TestCase):
