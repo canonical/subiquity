@@ -10,6 +10,7 @@ from subiquitycore.controllers.network import NetworkController
 from subiquitycore.models.network import NetDevInfo, StaticConfig
 from subiquitycore.testing import view_helpers
 from subiquitycore.ui.views.network_configure_manual_interface import (
+    BondForm,
     EditNetworkStretchy,
     ViewInterfaceInfo,
     VlanForm,
@@ -155,6 +156,19 @@ class TestVlanForm(unittest.TestCase):
         form.vlan.validate()
         self.assertFalse(form.vlan.in_error)
         self.assertTrue(form.done_btn.enabled)
+
+
+class TestBondForm(unittest.TestCase):
+    def test_name_length(self):
+        form = BondForm({}, candidate_netdevs=[], all_netdev_names=set())
+        # The kernel does not allow interface names longer than 15 characters.
+        view_helpers.enter_data(form, {"name": "b" * 15})
+        form.name.validate()
+        self.assertFalse(form.name.in_error)
+
+        view_helpers.enter_data(form, {"name": "b" * 16})
+        form.name.validate()
+        self.assertTrue(form.name.in_error)
 
 
 class FakeLink:

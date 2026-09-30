@@ -392,8 +392,10 @@ class BondForm(Form):
             )
         if len(name) == 0:
             return _("Name cannot be empty")
-        if len(name) > 16:
-            return _("Name cannot be more than 16 characters long")
+        if len(name) > IFNAME_MAX_LEN:
+            return _("Name cannot be more than {limit} characters long").format(
+                limit=IFNAME_MAX_LEN
+            )
 
 
 class BondStretchy(Stretchy):
