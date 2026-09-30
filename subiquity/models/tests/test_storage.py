@@ -1739,6 +1739,42 @@ class TestPartition(unittest.TestCase):
         self.assertTrue(p6.is_logical)
         self.assertTrue(p7.is_logical)
 
+    def test_probe_data_partition_at_offset_zero(self):
+        # LP: #2093314 - curtin does not specify the offset of partitions that
+        # start at the very beginning of the disk.
+        m = make_model(storage_version=2)
+        d = make_disk(m, ptable="msdos")
+        fake_up_blockdata(m)
+        blockdevs = m._probe_data["blockdev"]
+        config = [
+            dict(
+                type="disk",
+                id=d.id,
+                path=d.path,
+                ptable="msdos",
+                serial=d.serial,
+                info={d.path: blockdevs[d.path]},
+            ),
+            dict(type="partition", id="part-1", device=d.id, number=1, size=500 << 20),
+            dict(
+                type="partition",
+                id="part-2",
+                device=d.id,
+                number=2,
+                size=4 << 20,
+                offset=500 << 20,
+            ),
+        ]
+        disk, p1, p2 = m._actions_from_config(
+            config, blockdevs=blockdevs, is_probe_data=True
+        )
+        self.assertEqual(0, p1.offset)
+        self.assertEqual(500 << 20, p2.offset)
+        self.assertEqual([p1, p2], disk.partitions_by_offset())
+        # This used to fail with "'<' not supported between instances of
+        # 'int' and 'NoneType'".
+        self.assertEqual([p1, p2], gaps.parts_and_gaps(disk)[:2])
+
     def test_os(self):
         m = make_model(storage_version=2)
         d = make_disk(m, ptable="gpt")
