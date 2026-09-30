@@ -223,6 +223,53 @@ efi_state_with_dup_rp = EFIBootState(
 )
 
 
+class TestLogEvent(unittest.TestCase):
+    def setUp(self):
+        self.controller = InstallController(make_app())
+
+    def test_extract_traceback(self):
+        for line in (
+            "Some output",
+            "Traceback (most recent call last):",
+            '  File "script.py", line 1, in <module>',
+            "ValueError: oops",
+            "Some more output",
+        ):
+            self.controller.log_event({"MESSAGE": line})
+        self.assertEqual(
+            [
+                "Traceback (most recent call last):",
+                '  File "script.py", line 1, in <module>',
+                "ValueError: oops",
+            ],
+            self.controller.tb_extractor.traceback,
+        )
+
+    def test_no_message(self):
+        # LP: #2076010 - A journal entry does not necessarily have a MESSAGE
+        # field.
+        self.controller.log_event({"SYSLOG_IDENTIFIER": "subiquity_log.1234"})
+        self.assertEqual([], self.controller.tb_extractor.traceback)
+
+    def test_message_not_utf8(self):
+        # python-systemd leaves the value of the MESSAGE field as bytes if it
+        # is not valid UTF-8.
+        for line in (
+            b"Traceback (most recent call last):",
+            b'  File "\xff.py", line 1, in <module>',
+            b"ValueError: oops",
+        ):
+            self.controller.log_event({"MESSAGE": line})
+        self.assertEqual(
+            [
+                "Traceback (most recent call last):",
+                '  File "\ufffd.py", line 1, in <module>',
+                "ValueError: oops",
+            ],
+            self.controller.tb_extractor.traceback,
+        )
+
+
 class TestInstallController(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.controller = InstallController(make_app())
