@@ -12,6 +12,7 @@ from subiquitycore.testing import view_helpers
 from subiquitycore.ui.views.network_configure_manual_interface import (
     EditNetworkStretchy,
     ViewInterfaceInfo,
+    VlanForm,
 )
 from subiquitycore.view import BaseView
 
@@ -119,6 +120,41 @@ class TestNetworkConfigureIPv4InterfaceView(unittest.TestCase):
         view.controller.set_static_config.assert_called_once_with(
             stretchy.dev_info.name, 4, expected
         )
+
+
+class TestVlanForm(unittest.TestCase):
+    def make_form(self, dev_name, cur_netdev_names=()):
+        parent = mock.Mock(cur_netdev_names=list(cur_netdev_names))
+        return VlanForm(parent, dev_name)
+
+    def test_valid(self):
+        form = self.make_form("eth0")
+        view_helpers.enter_data(form, {"vlan": "100"})
+        form.vlan.validate()
+        self.assertFalse(form.vlan.in_error)
+        self.assertTrue(form.done_btn.enabled)
+
+    def test_already_exists(self):
+        form = self.make_form("eth0", cur_netdev_names=["eth0", "eth0.100"])
+        view_helpers.enter_data(form, {"vlan": "100"})
+        form.vlan.validate()
+        self.assertTrue(form.vlan.in_error)
+        self.assertFalse(form.done_btn.enabled)
+
+    def test_name_too_long(self):
+        # LP: #2126729 - netplan ignores interfaces whose name is longer than
+        # 15 characters.
+        form = self.make_form("enp175s0f0np0")
+        view_helpers.enter_data(form, {"vlan": "1606"})
+        form.vlan.validate()
+        self.assertTrue(form.vlan.in_error)
+        self.assertFalse(form.done_btn.enabled)
+
+        # enp175s0f0np0.7 is exactly 15 characters long.
+        view_helpers.enter_data(form, {"vlan": "7"})
+        form.vlan.validate()
+        self.assertFalse(form.vlan.in_error)
+        self.assertTrue(form.done_btn.enabled)
 
 
 class FakeLink:

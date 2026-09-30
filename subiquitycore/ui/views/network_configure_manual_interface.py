@@ -35,6 +35,10 @@ from subiquitycore.ui.utils import button_pile
 
 log = logging.getLogger("subiquitycore.ui.views.network_configure_manual_interface")
 
+# The kernel limits the length of network interface names to IFNAMSIZ - 1
+# characters. Netplan ignores interfaces with a longer name.
+IFNAME_MAX_LEN = 15
+
 ip_families = {
     4: {
         "address_cls": ipaddress.IPv4Address,
@@ -274,6 +278,11 @@ class VlanForm(Form):
         new_name = "%s.%s" % (self.dev_name, self.vlan.value)
         if new_name in self.parent.cur_netdev_names:
             return _("{netdev} already exists").format(netdev=new_name)
+        if len(new_name) > IFNAME_MAX_LEN:
+            return _(
+                "{netdev} is too long for an interface name (the limit is "
+                "{limit} characters)"
+            ).format(netdev=new_name, limit=IFNAME_MAX_LEN)
 
 
 class AddVlanStretchy(Stretchy):
