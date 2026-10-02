@@ -519,9 +519,11 @@ geoip
 * **type:** boolean
 * **default:** ``true``
 
-If ``geoip`` is set to ``true`` and one of the candidate primary mirrors has the special value ``country-mirror``, a request is made to ``https://geoip.ubuntu.com/lookup``. Subiquity then sets the mirror URI to ``http://CC.archive.ubuntu.com/ubuntu`` where ``CC`` is the country code returned by the lookup. If this section is not interactive, the request expires after 10 seconds.
+If ``geoip`` is set to ``true`` and one of the candidate primary mirrors has the special value ``country-mirror``, Subiquity uses the result of a request to ``https://geoip.ubuntu.com/lookup`` to set the mirror URI to ``http://CC.archive.ubuntu.com/ubuntu``, where ``CC`` is the country code returned by the lookup. If this section is not interactive, the request expires after 10 seconds.
 
-If the legacy behavior (i.e., without mirror-selection) is in use, the geolocation request is made if the mirror to be used is the default, and its URI is replaced by the proper country mirror URI.
+Setting ``geoip`` to ``false`` only disables the selection of a country mirror. It does not prevent the request to ``https://geoip.ubuntu.com/lookup``, which Subiquity makes as soon as the network is up because its result is also used for other purposes, such as detecting the time zone.
+
+If the legacy behavior (i.e., without mirror-selection) is in use, the result of the geolocation request is used if the mirror to be used is the default, and its URI is replaced by the proper country mirror URI.
 
 Examples:
 
