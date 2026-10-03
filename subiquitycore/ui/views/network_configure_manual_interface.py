@@ -18,7 +18,12 @@ import logging
 
 from urwid import CheckBox, Text, WidgetPlaceholder, connect_signal
 
-from subiquitycore.models.network import BondConfig, BondParameters, StaticConfig
+from subiquitycore.models.network import (
+    BondConfig,
+    BondParameters,
+    StaticConfig,
+    default_vlan_name,
+)
 from subiquitycore.ui.buttons import done_btn
 from subiquitycore.ui.container import Pile, WidgetWrap
 from subiquitycore.ui.form import (
@@ -34,6 +39,10 @@ from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.utils import button_pile
 
 log = logging.getLogger("subiquitycore.ui.views.network_configure_manual_interface")
+
+# The kernel limits the length of network interface names to IFNAMSIZ - 1
+# characters. Netplan ignores interfaces with a longer name.
+IFNAME_MAX_LEN = 15
 
 ip_families = {
     4: {
@@ -258,8 +267,27 @@ class VlanForm(Form):
         self.parent = parent
         self.dev_name = dev_name
         super().__init__()
+        connect_signal(self.vlan.widget, "change", self._change_vlan)
 
     vlan = StringField(_("VLAN ID:"))
+    name = StringField(_("Name:"))
+
+    def _default_name(self, vlan_id: str) -> str:
+        try:
+            return default_vlan_name(self.dev_name, int(vlan_id))
+        except ValueError:
+            return ""
+
+    def _change_vlan(self, sender, new_value):
+        # The name follows the VLAN ID (i.e., <device>.<VLAN ID>) unless the
+        # user has changed it. Note that the widget still holds the previous
+        # value of the VLAN ID when the "change" signal is emitted.
+        if self.name.value not in ("", self._default_name(self.vlan.widget.value)):
+            return
+        self.name.value = self._default_name(new_value)
+        if self.name.value:
+            # Report straight away if the generated name cannot be used.
+            self.name.validate()
 
     def clean_vlan(self, value):
         try:
@@ -271,9 +299,25 @@ class VlanForm(Form):
         return vlanid
 
     def validate_vlan(self):
-        new_name = "%s.%s" % (self.dev_name, self.vlan.value)
-        if new_name in self.parent.cur_netdev_names:
-            return _("{netdev} already exists").format(netdev=new_name)
+        for table in self.parent.dev_name_to_table.values():
+            vlan = table.dev_info.vlan
+            if vlan is None:
+                continue
+            if vlan.link == self.dev_name and vlan.id == self.vlan.value:
+                return _("There is already a VLAN with ID {id} on {netdev}").format(
+                    id=vlan.id, netdev=self.dev_name
+                )
+
+    def validate_name(self):
+        name = self.name.value
+        if len(name) == 0:
+            return _("Name cannot be empty")
+        if name in self.parent.cur_netdev_names:
+            return _("{netdev} already exists").format(netdev=name)
+        if len(name) > IFNAME_MAX_LEN:
+            return _("Name cannot be more than {limit} characters long").format(
+                limit=IFNAME_MAX_LEN
+            )
 
 
 class AddVlanStretchy(Stretchy):
@@ -291,8 +335,15 @@ class AddVlanStretchy(Stretchy):
         )
 
     def done(self, sender):
-        log.debug("AddVlanStretchy.done %s %s", self.dev_name, self.form.vlan.value)
-        self.parent.controller.add_vlan(self.dev_name, self.form.vlan.value)
+        log.debug(
+            "AddVlanStretchy.done %s %s %s",
+            self.dev_name,
+            self.form.vlan.value,
+            self.form.name.value,
+        )
+        self.parent.controller.add_vlan(
+            self.dev_name, self.form.vlan.value, self.form.name.value
+        )
         self.parent.remove_overlay()
 
     def cancel(self, sender=None):
@@ -383,8 +434,10 @@ class BondForm(Form):
             )
         if len(name) == 0:
             return _("Name cannot be empty")
-        if len(name) > 16:
-            return _("Name cannot be more than 16 characters long")
+        if len(name) > IFNAME_MAX_LEN:
+            return _("Name cannot be more than {limit} characters long").format(
+                limit=IFNAME_MAX_LEN
+            )
 
 
 class BondStretchy(Stretchy):
