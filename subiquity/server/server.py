@@ -933,7 +933,10 @@ class SubiquityServer(Application):
         log.debug("waited %ss for cloud-init", time.time() - ci_start)
         log.debug("cloud-init status: %r", status)
         if self.cloud_init_ok:
-            if "disabled" in status:
+            # The status can be None if we failed to parse the output of
+            # cloud-init status. Only skip loading the cloud-config if we know
+            # for sure that cloud-init is disabled.
+            if status is not None and "disabled" in status:
                 log.debug("Skip cloud-init autoinstall, cloud-init is disabled")
             else:
                 await self.load_cloud_config()
