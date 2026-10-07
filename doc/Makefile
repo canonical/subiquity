@@ -31,6 +31,7 @@ help:
 	@echo "* clean built doc files:                     make clean-doc"
 	@echo "* clean full environment:                    make clean"
 	@echo "* check links:                               make linkcheck"
+	@echo "* check repo-local rules:                    make local-checks"
 	@echo "* check spelling:                            make spelling"
 	@echo "* check spelling (without building again):   make spellcheck"
 	@echo "* check inclusive language:                  make woke"
@@ -43,8 +44,8 @@ help:
 	@echo
 
 .PHONY: full-help spellcheck-install pa11y-install install run html \
-        epub serve clean clean-doc spelling spellcheck linkcheck woke \
-        allmetrics pa11y pdf-prep-force pdf-prep pdf vale-install vale \
+        epub serve clean clean-doc spelling spellcheck linkcheck local-checks \
+        woke allmetrics pa11y pdf-prep-force pdf-prep pdf vale-install vale \
 		update
 
 full-help: $(VENVDIR)
@@ -122,6 +123,10 @@ spelling: html spellcheck
 linkcheck: install
 	. $(VENV) ; $(SPHINXBUILD) -b linkcheck "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) || { grep --color -F "[broken]" "$(BUILDDIR)/output.txt"; exit 1; }
 	exit 0
+
+local-checks: install
+	@. $(VENV); pip install $(PIPOPTS) --require-virtualenv distro_info
+	@. $(VENV); python3 local-checks.py
 
 pa11y: pa11y-install html
 	find $(BUILDDIR) -name *.html -print0 | xargs -n 1 -0 $(PA11Y)

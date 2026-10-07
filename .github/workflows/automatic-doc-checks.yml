@@ -22,3 +22,11 @@ jobs:
     uses: canonical/documentation-workflows/.github/workflows/documentation-checks.yaml@309dd382b6a07cbd23d84e3912fb05e6bc1f4ffb  # main
     with:
       working-directory: 'doc'
+
+  local-documentation-checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: make -C doc local-checks
