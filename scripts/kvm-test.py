@@ -558,7 +558,6 @@ def tpm(emulator: Optional[TPMEmulator]) -> List[str]:
 
 
 def bios(ctx):
-    # https://help.ubuntu.com/community/UEFI
     if ctx.args.bios:
         return []
     elif ctx.args.secureboot:
