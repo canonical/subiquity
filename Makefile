@@ -27,7 +27,9 @@ all: dryrun
 
 .PHONY: aptdeps
 aptdeps:
-	sudo apt update && \
+	# TODO Update to a PPA inside ~subiquity
+	sudo add-apt-repository -y --ppa ogayot/test-python-owasp-logger --no-update
+	sudo apt update
 	sudo apt-get install -y $(shell cat apt-deps.txt)
 
 .PHONY: install_deps
