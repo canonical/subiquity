@@ -90,7 +90,12 @@ class StorageManipulator:
         fs = self.model.add_filesystem(volume, fstype, preserve)
         if isinstance(volume, Partition):
             if fstype == "swap":
-                volume.flag = "swap"
+                # The type of an existing partition is left untouched, and
+                # curtin checks that it matches the flag. Setting the flag
+                # would make the installation fail unless the partition is
+                # already a swap partition. LP: #2072409
+                if not volume.preserve:
+                    volume.flag = "swap"
             elif volume.flag == "swap":
                 volume.flag = ""
         if spec.get("fstype") == "swap":
