@@ -558,11 +558,10 @@ def tpm(emulator: Optional[TPMEmulator]) -> List[str]:
 
 
 def bios(ctx):
-    # https://help.ubuntu.com/community/UEFI
     if ctx.args.bios:
         return []
     elif ctx.args.secureboot:
-        # Speical setup for a secureboot virtual machine
+        # Special setup for a secureboot virtual machine
         # https://wiki.debian.org/SecureBoot/VirtualMachine
         return ['-machine',  'q35,smm=on',
                '-global', 'driver=cfi.pflash01,property=secure,value=on',
