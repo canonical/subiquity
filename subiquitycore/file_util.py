@@ -17,6 +17,7 @@ import datetime
 import grp
 import logging
 import os
+import pathlib
 import shutil
 import tempfile
 
@@ -28,12 +29,14 @@ _DEF_GROUP = "root"
 log = logging.getLogger("subiquitycore.file_util")
 
 
-def set_log_perms(target, *, group_write=False, mode=None, group=_DEF_GROUP):
+def set_log_perms(
+    target: pathlib.Path | str, *, group_write=False, mode=None, group=_DEF_GROUP
+):
     if os.getuid() != 0:
         log.warning(
             "set_log_perms: running as non-root - not adjusting"
-            + " group owner or permissions for "
-            + target
+            " group owner or permissions for %s",
+            target,
         )
         return
     if mode is None:
