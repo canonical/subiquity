@@ -7,12 +7,16 @@ updates:
 
   - package-ecosystem: "github-actions"
     directory: "/"
+    cooldown:
+      default-days: 7
     schedule:
       # Check for updates to GitHub Actions every week
       interval: "weekly"
 
   - package-ecosystem: "pre-commit"
     directory: "/"
+    cooldown:
+      default-days: 7
     schedule:
       # Check for updates to pre-commit hooks every week
       interval: "weekly"
