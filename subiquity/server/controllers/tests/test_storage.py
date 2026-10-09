@@ -118,6 +118,7 @@ default_capabilities = [
     GuidedCapability.LVM_LUKS,
     GuidedCapability.ZFS,
     GuidedCapability.ZFS_LUKS_KEYSTORE,
+    GuidedCapability.BTRFS,
 ]
 
 # GPT type UUID for a Linux filesystem data partition (curtin flag "linux").
@@ -290,6 +291,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
             GuidedCapability.LVM_LUKS,
             GuidedCapability.ZFS,
             GuidedCapability.ZFS_LUKS_KEYSTORE,
+            GuidedCapability.BTRFS,
         }
 
         with mock.patch.object(
@@ -2121,6 +2123,53 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertFalse(d1p1.preserve)
         self.assertFalse(d1p2.preserve)
         self.assertIsNone(gaps.largest_gap(self.d1))
+
+    @parameterized.expand(boot_expectations)
+    async def test_guided_btrfs(self, firmware_type, ptable, p1mnt):
+        await self._guided_setup(firmware_type, ptable)
+        target = GuidedStorageTargetReformat(
+            disk_id=self.d1.id, allowed=default_capabilities
+        )
+        await self.controller.guided(
+            GuidedChoiceV2(target=target, capability=GuidedCapability.BTRFS)
+        )
+        [d1p1, d1p2, d1p3] = self.d1.partitions()
+        self.assertEqual(p1mnt, d1p1.mount)
+        self.assertEqual("/boot", d1p2.mount)
+        self.assertEqual("ext4", d1p2.fs().fstype)
+        self.assertEqual("/", d1p3.mount)
+        self.assertFalse(d1p1.preserve)
+        self.assertFalse(d1p2.preserve)
+        self.assertFalse(d1p3.preserve)
+        self.assertEqual("btrfs", d1p3.fs().fstype)
+        [sv_root, sv_home] = self.model._all(type="btrfs_subvolume")
+        self.assertEqual("@", sv_root.name)
+        self.assertEqual("@home", sv_home.name)
+        self.assertEqual(d1p3.fs(), sv_root.volume)
+        self.assertEqual(d1p3.fs(), sv_home.volume)
+        root_mount = self.model._mount_for_path("/")
+        home_mount = self.model._mount_for_path("/home")
+        self.assertEqual("subvol=@", root_mount.options)
+        self.assertEqual("subvol=@home", home_mount.options)
+        self.assertEqual(d1p3.fs(), root_mount.device)
+        self.assertEqual(d1p3.fs(), home_mount.device)
+        self.assertIsNone(gaps.largest_gap(self.d1))
+
+    async def test_autoinstall_guided_btrfs(self):
+        await self._guided_setup(FirmwareType.UEFI, "gpt")
+        await self.controller.run_autoinstall_guided({"name": "btrfs"})
+        [d1p1, d1p2, d1p3] = self.d1.partitions()
+        self.assertEqual("/boot/efi", d1p1.mount)
+        self.assertEqual("/boot", d1p2.mount)
+        self.assertEqual("/", d1p3.mount)
+        self.assertEqual("btrfs", d1p3.fs().fstype)
+        [sv_root, sv_home] = self.model._all(type="btrfs_subvolume")
+        self.assertEqual("@", sv_root.name)
+        self.assertEqual("@home", sv_home.name)
+        root_mount = self.model._mount_for_path("/")
+        home_mount = self.model._mount_for_path("/home")
+        self.assertEqual("subvol=@", root_mount.options)
+        self.assertEqual("subvol=@home", home_mount.options)
 
     @parameterized.expand(
         [
