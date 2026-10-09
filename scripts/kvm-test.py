@@ -15,6 +15,7 @@ import copy
 import dataclasses
 import enum
 from itertools import zip_longest
+import ipaddress
 import os
 from pathlib import Path
 import re
@@ -476,10 +477,18 @@ class NetFactory:
     """ Generate -nic options for QEMU. """
     ports_finder = PortFinder()
 
+    # We start at 10.0.2.0/24 and go up 10.0.3.0/24, ..., until 10.0.255.0/24
+    user_subnets = ipaddress.IPv4Network("10.0.0.0/16").subnets(prefixlen_diff=8)
+    # Let's skip 10.0.0.0/24 and 10.0.1.0/24 so it starts with the default
+    # 10.0.2.0/24
+    next(user_subnets)
+    next(user_subnets)
+
     def user(self) -> Tuple[str, ...]:
         """ User host network with SSH forwarding """
         port = self.ports_finder.get()
-        return ('-nic', f'user,model=virtio-net-pci,hostfwd=tcp::{port}-:22')
+        subnet = next(self.user_subnets)
+        return ('-nic', f'user,model=virtio-net-pci,hostfwd=tcp::{port}-:22,net={subnet}')
 
     def tap(self, ifname: str) -> Tuple[str, ...]:
         """ Network using an existing TAP interface. """
@@ -497,7 +506,8 @@ class NetFactory:
 
     def deadnet(self) -> Tuple[str, ...]:
         """ NIC present but restricted - simulate deadnet environment """
-        return ('-nic', 'user,model=virtio-net-pci,restrict=on')
+        subnet = next(self.user_subnets)
+        return ('-nic', f'user,model=virtio-net-pci,restrict=on,net={subnet}')
 
     def nonet(self) -> Tuple[str, ...]:
         """ No network """
