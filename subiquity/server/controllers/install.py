@@ -108,7 +108,14 @@ class InstallController(SubiquityController):
         return os.path.join(self.model.target, *path)
 
     def log_event(self, event):
-        self.tb_extractor.feed(event["MESSAGE"])
+        # Not all journal entries have a MESSAGE field. Also, python-systemd
+        # leaves the value as bytes if it is not valid UTF-8.
+        message = event.get("MESSAGE")
+        if message is None:
+            return
+        if isinstance(message, bytes):
+            message = message.decode("utf-8", errors="replace")
+        self.tb_extractor.feed(message)
 
     def write_config(self, config_file: Path, config: Any) -> None:
         """Create a YAML file that represents the curtin install configuration
