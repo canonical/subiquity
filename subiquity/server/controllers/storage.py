@@ -1149,11 +1149,6 @@ class StorageController(SubiquityController, StorageManipulator):
         )
 
         if isinstance(choice.target, GuidedStorageTargetUseGap):
-            # In theory we could set parts_by_offset_size for existing
-            # partitions outside the gap. But with the current implementation,
-            # this is unnecessary.
-            parts_by_offset_size = {}
-
             for part_or_gap in gaps.parts_and_gaps(disk):
                 if not isinstance(part_or_gap, gaps.Gap):
                     continue
@@ -1171,60 +1166,27 @@ class StorageController(SubiquityController, StorageManipulator):
             if not self._info.is_core_boot_use_gap_compatible(gap):
                 raise IncompatibleLocationError
         elif isinstance(choice.target, GuidedStorageTargetReformat):
-            # NOTE: it is not obvious why we try to preserve existing
-            # partitions here rather than simply deleting and recreating
-            # them all, which would be simpler and is cheap for GPT.
-            # This behavior was introduced in commit 72c7e8df and carried
-            # over since.
-            preserved_parts = set()
-
-            if on_volume.schema != disk.ptable:
-                parts_by_offset_size = {}
-                disk.ptable = on_volume.schema
-            else:
-                parts_by_offset_size = {
-                    (part.offset, part.size): part for part in disk.partitions()
-                }
-
-                for _struct, offset, size in on_volume.offsets_and_sizes():
-                    if (offset, size) not in parts_by_offset_size:
-                        continue
-                    part = parts_by_offset_size[(offset, size)]
-                    if on_volume.schema == "gpt":
-                        # Curtin explicitly checks if partitions that we
-                        # preserve have the expected flag.
-                        type_uuid = _struct.gpt_part_type_uuid()
-                        if type_uuid and part.flag != ptable_part_type_to_flag(
-                            type_uuid
-                        ):
-                            continue
-                    preserved_parts.add(part)
-
-                for part in list(disk.partitions()):
-                    if part not in preserved_parts:
-                        self.delete_partition(part)
-                        del parts_by_offset_size[(part.offset, part.size)]
-
-            if not preserved_parts:
-                self.reformat(disk, on_volume.schema)
+            # We used to try to preserve existing partitions that matched
+            # the volume structure by offset, size and type. This was
+            # removed as it added complexity and was a source of bugs
+            # (LP: #2166668). We now always reformat the disk and recreate
+            # all partitions from the volume structure instead.
+            self.reformat(disk, on_volume.schema)
         else:
             raise RuntimeError(
                 "only reformat (and experimental use-gap) are supported for TPM/FDE"
             )
 
         for structure, offset, size in on_volume.offsets_and_sizes():
-            if (offset, size) in parts_by_offset_size:
-                part = parts_by_offset_size[(offset, size)]
-            else:
-                if (
-                    structure.role == snapdtypes.Role.SYSTEM_DATA
-                    and structure == on_volume.structure[-1]
-                ):
-                    gap = gaps.at_offset(disk, offset)
-                    size = gap.size
-                part = self.model.add_partition(
-                    disk, offset=offset, size=size, check_alignment=False
-                )
+            if (
+                structure.role == snapdtypes.Role.SYSTEM_DATA
+                and structure == on_volume.structure[-1]
+            ):
+                gap = gaps.at_offset(disk, offset)
+                size = gap.size
+            part = self.model.add_partition(
+                disk, offset=offset, size=size, check_alignment=False
+            )
 
             type_uuid = structure.gpt_part_type_uuid()
             if type_uuid:
