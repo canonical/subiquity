@@ -357,8 +357,10 @@ class NetworkController(BaseNetworkController, SubiquityController):
     async def disable_POST(self, dev_name: str, ip_version: int) -> None:
         self.disable_network(dev_name, ip_version)
 
-    async def vlan_PUT(self, dev_name: str, vlan_id: int) -> None:
-        self.add_vlan(dev_name, vlan_id)
+    async def vlan_PUT(
+        self, dev_name: str, vlan_id: int, name: Optional[str] = None
+    ) -> None:
+        self.add_vlan(dev_name, vlan_id, name)
 
     async def add_or_edit_bond_POST(
         self, existing_name: Optional[str], new_name: str, bond_config: BondConfig
