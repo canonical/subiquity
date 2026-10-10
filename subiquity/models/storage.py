@@ -2131,11 +2131,6 @@ class StorageModel:
                     kw["info"] = StorageInfo({path: blockdevs[path]})
             if is_probe_data:
                 kw["preserve"] = True
-                if c is Partition and kw.get("offset") is None:
-                    # curtin omits the offset of partitions that start at the
-                    # very beginning of the disk, which can happen with some
-                    # images written to a USB stick. LP: #2093314
-                    kw["offset"] = 0
             obj = byid[action["id"]] = c(m=self, **kw)
             objs.append(obj)
 
