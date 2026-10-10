@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import json
 import pathlib
 import unittest
 from typing import Optional
@@ -1738,6 +1739,24 @@ class TestPartition(unittest.TestCase):
         self.assertTrue(p5.is_logical)
         self.assertTrue(p6.is_logical)
         self.assertTrue(p7.is_logical)
+
+    def test_disk_with_partition_at_offset_zero(self):
+        # LP: #2093314 - The first partition of /dev/vda starts at offset 0,
+        # which curtin reports as an unsupported partition table. The disk can
+        # only be used if it is reformatted.
+        with open("examples/machines/existing-partitions.json") as fp:
+            probe_data = json.load(fp)["storage"]
+        for storage_version in 1, 2:
+            with self.subTest(storage_version=storage_version):
+                m = make_model(storage_version=storage_version)
+                m.target = "/target"
+                m.load_probe_data(probe_data)
+                [disk] = [d for d in m.all_disks() if d.path == "/dev/vda"]
+                self.assertEqual("unsupported", disk.ptable)
+                # This used to crash because the offset of the partition at
+                # offset 0 is not specified.
+                gaps.parts_and_gaps(disk, ignore_disk_fs=True)
+                self.assertIsNone(gaps.largest_gap(disk))
 
     def test_os(self):
         m = make_model(storage_version=2)
