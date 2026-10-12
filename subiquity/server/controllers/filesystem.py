@@ -435,13 +435,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     def _find_disallowed_errors(
         self, capability: GuidedCapability
-    ) -> list[CoreBootEncryptionSupportError] | None:
+    ) -> tuple[VariationInfo, list[CoreBootEncryptionSupportError] | None]:
         for variation in self.find_variations(
             core_boot_classic=capability.is_core_boot()
         ):
             for disallowed in variation.capability_info.disallowed:
                 if capability.is_compatible_with(disallowed.capability):
-                    return disallowed.errors
+                    return variation, disallowed.errors
         raise ValueError(
             f"{capability.name} (or a compatible one) is not disallowed in any variation"
         )
@@ -2219,7 +2219,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         # Now let's generate an autoinstall error that includes usable info
         error = None
         try:
-            disallowed_errors = self._find_disallowed_errors(capability)
+            variation, disallowed_errors = self._find_disallowed_errors(capability)
         except ValueError:
             pass
         else:
@@ -2242,7 +2242,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                             error_kinds=[error.kind],
                         ),
                     )
-                    await self.execute_fix_action(action_proceed)
+                    await self.execute_fix_action(
+                        action_proceed, system_label=variation.label
+                    )
                     await self.ensure_core_boot_autoinstall_capability_compatible(
                         capability, accepted_errors=accepted_errors
                     )
