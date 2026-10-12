@@ -321,8 +321,9 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
         v.capability_info.disallow_all(GuidedDisallowedCapabilityReason.TOO_SMALL)
 
         with mock.patch.object(self.ctrler, "find_variations", return_value=iter([v])):
-            errors = self.ctrler._find_disallowed_errors(GuidedCapability.DD)
+            var, errors = self.ctrler._find_disallowed_errors(GuidedCapability.DD)
 
+        self.assertEqual(v, var)
         self.assertIsNone(errors)
 
     def test_find_disallowed_errors__core_boot(self):
@@ -342,10 +343,11 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(self.ctrler, "find_variations", return_value=iter([v])):
-            errors = self.ctrler._find_disallowed_errors(
+            var, errors = self.ctrler._find_disallowed_errors(
                 GuidedCapability.CORE_BOOT_ENCRYPTED
             )
 
+        self.assertEqual(v, var)
         self.assertIs(core_boot_errors, errors)
 
     def test_find_disallowed_errors__core_boot_compatible(self):
@@ -365,10 +367,11 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(self.ctrler, "find_variations", return_value=iter([v])):
-            errors = self.ctrler._find_disallowed_errors(
+            var, errors = self.ctrler._find_disallowed_errors(
                 GuidedCapability.CORE_BOOT_ENCRYPTED
             )
 
+        self.assertEqual(v, var)
         self.assertIs(core_boot_errors, errors)
 
     def test_find_disallowed_errors__allowed(self):
@@ -635,7 +638,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
         p_find_disallowed = mock.patch.object(
             self.ctrler,
             "_find_disallowed_errors",
-            return_value=errors,
+            return_value=(VariationInfo(name="foo", label="my-label"), errors),
         )
         p_fix_action = mock.patch.object(self.ctrler, "execute_fix_action")
 
@@ -651,7 +654,8 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
                     CoreBootFixActionWithArgs(
                         type=CoreBootFixAction.PROCEED,
                         args=CoreBootFixActionArgs(error_kinds=[error_kind]),
-                    )
+                    ),
+                    system_label="my-label",
                 )
             else:
                 with self.assertRaisesRegex(AutoinstallError, not_avail_regex):
