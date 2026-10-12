@@ -1,7 +1,7 @@
 files: "(console_conf|subiquity|subiquitycore|vmtests|doc)"
 repos:
   - repo: https://github.com/psf/black
-    rev: 87928e6d6761a4a6d22250e1fee5601b3998086e  # 26.5.1
+    rev: 4f1883b1f15305a0e83a7c87991f46292bf09f85  # 26.10.0
     hooks:
       - id: black
         files: "(console_conf|subiquity|subiquitycore|vmtests)"
