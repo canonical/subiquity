@@ -6,7 +6,7 @@ repos:
       - id: black
         files: "(console_conf|subiquity|subiquitycore|vmtests)"
   - repo: https://github.com/pycqa/isort
-    rev: 131f4adcd5582bfc53928ab0d740eceb8b506b6c  # 9.0.1
+    rev: 9f905615631c545f5aea2516508109350d1d2f7d  # 9.0.2
     hooks:
       - id: isort
         name: isort
