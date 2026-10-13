@@ -120,6 +120,34 @@ class TestStorageManipulator(unittest.TestCase):
         self.assertFalse(fs.preserve)
         self.assertEqual("ext2", fs.fstype)
 
+    def test_format_new_partition_as_swap(self):
+        manipulator, d = make_manipulator_and_disk()
+        p = make_partition(manipulator.model, d)
+        fs = manipulator.create_filesystem(p, {"fstype": "swap"})
+        self.assertEqual("swap", fs.fstype)
+        self.assertEqual("swap", p.flag)
+
+    def test_format_existing_partition_as_swap(self):
+        # LP: #2072409 - curtin checks that the type of an existing partition
+        # matches its flag, so we must not change the flag.
+        manipulator, d = make_manipulator_and_disk()
+        p = make_partition(manipulator.model, d, preserve=True, flag="linux")
+        fs = make_filesystem(
+            manipulator.model, partition=p, fstype="ext4", preserve=True
+        )
+        manipulator.delete_filesystem(fs)
+        fs = manipulator.create_filesystem(p, {"fstype": "swap", "wipe": "superblock"})
+        self.assertEqual("swap", fs.fstype)
+        self.assertTrue(p.preserve)
+        self.assertEqual("linux", p.flag)
+
+    def test_format_existing_swap_partition_as_swap(self):
+        manipulator, d = make_manipulator_and_disk()
+        p = make_partition(manipulator.model, d, preserve=True, flag="swap")
+        fs = manipulator.create_filesystem(p, {"fstype": "swap", "wipe": "superblock"})
+        self.assertEqual("swap", fs.fstype)
+        self.assertEqual("swap", p.flag)
+
     def test_can_only_add_boot_once(self):
         # This is really testing model code but it's much easier to test with a
         # manipulator around.
