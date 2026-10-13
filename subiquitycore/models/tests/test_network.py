@@ -14,7 +14,12 @@
 
 from unittest.mock import Mock
 
-from subiquitycore.models.network import BondConfig, BondParameters, NetworkDev
+from subiquitycore.models.network import (
+    BondConfig,
+    BondParameters,
+    NetworkDev,
+    StaticConfig,
+)
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.parameterized import parameterized
 
@@ -72,6 +77,64 @@ class TestNetworkDev(SubiTestCase):
         nd.config = bond.to_config()
         info = nd.netdev_info()
         self.assertEqual(info.bond, bond)
+
+    def test_netdev_info_static_config(self):
+        # LP: #2041828 - the gateway and name servers should be reported so
+        # that they are shown when editing the configuration.
+        nd = NetworkDev(self.model, "testdev0", "eth")
+        nd.config = {
+            "addresses": ["10.0.1.15/24", "fd00::15/64"],
+            "routes": [
+                {"to": "default", "via": "fd00::1"},
+                {"to": "default", "via": "10.0.1.1"},
+            ],
+            "nameservers": {
+                "addresses": ["10.0.1.2", "fd00::2"],
+                "search": ["example.com"],
+            },
+        }
+        info = nd.netdev_info()
+        self.assertEqual(
+            StaticConfig(
+                addresses=["10.0.1.15/24"],
+                gateway="10.0.1.1",
+                nameservers=["10.0.1.2", "fd00::2"],
+                searchdomains=["example.com"],
+            ),
+            info.static4,
+        )
+        self.assertEqual(
+            StaticConfig(
+                addresses=["fd00::15/64"],
+                gateway="fd00::1",
+                nameservers=["10.0.1.2", "fd00::2"],
+                searchdomains=["example.com"],
+            ),
+            info.static6,
+        )
+
+    def test_default_gateway(self):
+        nd = NetworkDev(self.model, "testdev0", "eth")
+        nd.config = {
+            "routes": [
+                {"to": "10.0.2.0/24", "via": "10.0.1.254"},
+                {"to": "0.0.0.0/0", "via": "10.0.1.1"},
+            ],
+        }
+        self.assertEqual("10.0.1.1", nd.default_gateway(4))
+        self.assertIsNone(nd.default_gateway(6))
+
+    def test_default_gateway__deprecated_keys(self):
+        nd = NetworkDev(self.model, "testdev0", "eth")
+        nd.config = {"gateway4": "10.0.1.1", "gateway6": "fd00::1"}
+        self.assertEqual("10.0.1.1", nd.default_gateway(4))
+        self.assertEqual("fd00::1", nd.default_gateway(6))
+
+    def test_default_gateway__no_config(self):
+        nd = NetworkDev(self.model, "testdev0", "eth")
+        nd.config = None
+        self.assertIsNone(nd.default_gateway(4))
+        self.assertIsNone(nd.default_gateway(6))
 
     def test_remove_ip_network__no_nameserver(self):
         """Test remove nameservers when no static addresses remain."""
