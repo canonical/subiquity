@@ -1294,6 +1294,49 @@ class TestAutoInstallConfig(unittest.TestCase):
         )
 
 
+class TestPreservedRaidFromAutoinstall(unittest.TestCase):
+    def make_model_and_config(self, *, md0_in_probe_data: bool):
+        model = make_model()
+        make_disk(model, serial="d1")
+        make_disk(model, serial="d2")
+        fake_up_blockdata(model)
+        if md0_in_probe_data:
+            model._probe_data["blockdev"]["/dev/md0"] = {
+                "DEVTYPE": "disk",
+                "attrs": {"size": 10 << 30},
+            }
+        config = [
+            {"type": "disk", "id": "disk-1", "serial": "d1", "preserve": True},
+            {"type": "disk", "id": "disk-2", "serial": "d2", "preserve": True},
+            {
+                "type": "raid",
+                "id": "raid-1",
+                "name": "md0",
+                "raidlevel": "raid1",
+                "devices": ["disk-1", "disk-2"],
+                "preserve": True,
+            },
+        ]
+        return model, config
+
+    def test_size_from_probe_data(self):
+        # LP: #2119507 - It used to be possible to omit the path of a
+        # pre-existing RAID.
+        model, config = self.make_model_and_config(md0_in_probe_data=True)
+        model.apply_autoinstall_config(config)
+        [raid] = model._all(type="raid")
+        self.assertEqual(10 << 30, raid.size)
+        # This used to crash with AttributeError
+        model._render_actions()
+
+    def test_size_not_in_probe_data(self):
+        model, config = self.make_model_and_config(md0_in_probe_data=False)
+        model.apply_autoinstall_config(config)
+        [raid] = model._all(type="raid")
+        self.assertEqual(get_raid_size("raid1", raid.devices), raid.size)
+        model._render_actions()
+
+
 class TestRenderActions(unittest.TestCase):
     def test_render_does_not_include_unreferenced(self):
         model = make_model(FirmwareType.NONE)
