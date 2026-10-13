@@ -258,7 +258,9 @@ class API:
             def POST(dev_name: str, ip_version: int) -> None: ...
 
         class vlan:
-            def PUT(dev_name: str, vlan_id: int) -> None: ...
+            def PUT(
+                dev_name: str, vlan_id: int, name: Optional[str] = None
+            ) -> None: ...
 
         class add_or_edit_bond:
             def POST(
