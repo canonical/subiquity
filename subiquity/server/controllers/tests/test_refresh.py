@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 from unittest import mock
 
 import jsonschema
@@ -151,6 +152,69 @@ class TestRefreshController(SubiTestCase):
                     await self.rc.start_update()
 
             self.assertIn('snap \\"subiquity\\" has \\"update\\"', logs.output[0])
+
+    def make_change(self, cid: str, *, ready: bool) -> Change:
+        return Change(
+            id=cid,
+            kind="refresh-snap",
+            summary='Refresh "subiquity" snap',
+            status=TaskStatus.ERROR if ready else TaskStatus.DOING,
+            tasks=[],
+            ready=ready,
+        )
+
+    def mock_snapd(self, snap_post, change_get):
+        snap = mock.Mock(POST=snap_post)
+        changes = mock.MagicMock()
+        changes.__getitem__.return_value = mock.Mock(GET=change_get)
+        return (
+            mock.patch.object(self.app.snapdapi.v2, "snaps", {self.rc.snap_name: snap}),
+            mock.patch.object(self.app.snapdapi.v2, "changes", changes),
+        )
+
+    async def test_start_update_while_in_progress(self):
+        # LP: #2061756 - If the client asks for a refresh twice (e.g., double
+        # click), the second request should not make snapd start another
+        # refresh, which would fail with 409 Conflict.
+        async def post(request):
+            await asyncio.sleep(0.1)
+            return "4"
+
+        snap_post = mock.AsyncMock(side_effect=post)
+        change_get = mock.AsyncMock(return_value=self.make_change("4", ready=False))
+        p_snaps, p_changes = self.mock_snapd(snap_post, change_get)
+        with p_snaps, p_changes:
+            results = await asyncio.gather(
+                self.rc.start_update(), self.rc.start_update()
+            )
+            results.append(await self.rc.start_update())
+
+        self.assertEqual(["4", "4", "4"], results)
+        snap_post.assert_called_once()
+
+    async def test_start_update_after_previous_finished(self):
+        # e.g., the previous refresh failed and the user wants to try again.
+        snap_post = mock.AsyncMock(side_effect=["4", "5"])
+        change_get = mock.AsyncMock(return_value=self.make_change("4", ready=True))
+        p_snaps, p_changes = self.mock_snapd(snap_post, change_get)
+        with p_snaps, p_changes:
+            self.assertEqual("4", await self.rc.start_update())
+            self.assertEqual("5", await self.rc.start_update())
+
+        self.assertEqual({"4", "5"}, self.rc.initiated_changes)
+
+    async def test_start_update_previous_status_unknown(self):
+        # If we cannot get the status of the previous refresh, let snapd
+        # decide whether another refresh can be started.
+        snap_post = mock.AsyncMock(side_effect=["4", "5"])
+        change_get = mock.AsyncMock(side_effect=ValueError("unexpected"))
+        p_snaps, p_changes = self.mock_snapd(snap_post, change_get)
+        with p_snaps, p_changes:
+            self.assertEqual("4", await self.rc.start_update())
+            with self.assertLogs(
+                "subiquity.server.controllers.refresh", level="WARNING"
+            ):
+                self.assertEqual("5", await self.rc.start_update())
 
     @parameterized.expand(
         (
