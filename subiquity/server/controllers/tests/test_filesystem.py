@@ -15,6 +15,7 @@
 
 import contextlib
 import copy
+import re
 import subprocess
 import uuid
 from pathlib import Path
@@ -33,10 +34,14 @@ from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
     CalculateEntropyRequest,
+    CoreBootAvailabilityErrorKind,
     CoreBootEncryptionFeatures,
     CoreBootEncryptionRequirement,
+    CoreBootEncryptionSupportError,
     CoreBootFixAction,
+    CoreBootFixActionArgs,
     CoreBootFixActionWithArgs,
+    CoreBootFixActionWithCategoryAndArgs,
     CoreBootFixEncryptionSupport,
     EntropyResponse,
     Gap,
@@ -307,8 +312,9 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         v.capability_info.disallow_all(GuidedDisallowedCapabilityReason.TOO_SMALL)
 
         with mock.patch.object(self.fsc, "find_variations", return_value=iter([v])):
-            errors = self.fsc._find_disallowed_errors(GuidedCapability.DD)
+            var, errors = self.fsc._find_disallowed_errors(GuidedCapability.DD)
 
+        self.assertEqual(v, var)
         self.assertIsNone(errors)
 
     def test_find_disallowed_errors__core_boot(self):
@@ -328,10 +334,11 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(self.fsc, "find_variations", return_value=iter([v])):
-            errors = self.fsc._find_disallowed_errors(
+            var, errors = self.fsc._find_disallowed_errors(
                 GuidedCapability.CORE_BOOT_ENCRYPTED
             )
 
+        self.assertEqual(v, var)
         self.assertIs(core_boot_errors, errors)
 
     def test_find_disallowed_errors__core_boot_compatible(self):
@@ -351,10 +358,11 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(self.fsc, "find_variations", return_value=iter([v])):
-            errors = self.fsc._find_disallowed_errors(
+            var, errors = self.fsc._find_disallowed_errors(
                 GuidedCapability.CORE_BOOT_ENCRYPTED
             )
 
+        self.assertEqual(v, var)
         self.assertIs(core_boot_errors, errors)
 
     def test_find_disallowed_errors__allowed(self):
@@ -441,7 +449,7 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             (None, set(), AutoinstallError),
         )
     )
-    def test_get_core_boot_autoinstall_capability(
+    async def test_get_core_boot_autoinstall_capability(
         self, encrypted: bool, allowed_caps: set[GuidedCapability], expected
     ):
         with mock.patch.object(
@@ -456,8 +464,105 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
             with ctx:
                 self.assertEqual(
                     expected,
-                    self.fsc.get_core_boot_autoinstall_capability(encrypted=encrypted),
+                    await self.fsc.get_core_boot_autoinstall_capability(
+                        encrypted=encrypted
+                    ),
                 )
+
+    @staticmethod
+    def _make_core_boot_error(
+        kind=CoreBootAvailabilityErrorKind.RUNNING_IN_VM,
+        action_types=(CoreBootFixAction.PROCEED,),
+    ):
+        return CoreBootEncryptionSupportError(
+            kind=kind,
+            message="msg",
+            actions=[
+                CoreBootFixActionWithCategoryAndArgs(type=t, for_user=False, args=None)
+                for t in action_types
+            ],
+        )
+
+    @parameterized.expand(
+        (
+            # No accepted-errors
+            (CoreBootAvailabilityErrorKind.RUNNING_IN_VM, True, set(), False),
+            # We should proceed past the accepted error
+            (
+                CoreBootAvailabilityErrorKind.RUNNING_IN_VM,
+                True,
+                {CoreBootAvailabilityErrorKind.RUNNING_IN_VM},
+                True,
+            ),
+            # In the unlikely event that running-in-vm would not offer an Action.PROCEED
+            (
+                CoreBootAvailabilityErrorKind.RUNNING_IN_VM,
+                False,
+                {CoreBootAvailabilityErrorKind.RUNNING_IN_VM},
+                False,
+            ),
+            # No error found
+            (
+                None,
+                True,
+                {CoreBootAvailabilityErrorKind.RUNNING_IN_VM},
+                False,
+            ),
+        )
+    )
+    async def test_ensure_core_boot_autoinstall_capability_compatible(
+        self,
+        error_kind: CoreBootAvailabilityErrorKind | None,
+        has_proceed_action: bool,
+        accepted_errors: set[CoreBootAvailabilityErrorKind],
+        expect_success: bool,
+    ):
+        errors = []
+        if error_kind is not None:
+            action_types = [] if not has_proceed_action else [CoreBootFixAction.PROCEED]
+            errors.append(
+                self._make_core_boot_error(kind=error_kind, action_types=action_types)
+            )
+            not_avail_regex = f"not available: {re.escape(error_kind.value)}$"
+        else:
+            not_avail_regex = "not available$"
+        # First call to find_allowed_capabilities: no compatible cap, reach the
+        # disallowed-error path. Recursive second call (if any): a compatible
+        # cap is found, terminate the recursion.
+        p_find_allowed = mock.patch.object(
+            self.fsc,
+            "find_allowed_capabilities",
+            side_effect=[
+                iter([]),
+                iter([GuidedCapability.CORE_BOOT_ENCRYPTED]),
+            ],
+        )
+        p_find_disallowed = mock.patch.object(
+            self.fsc,
+            "_find_disallowed_errors",
+            return_value=(VariationInfo(name="foo", label="my-label"), errors),
+        )
+        p_fix_action = mock.patch.object(self.fsc, "execute_fix_action")
+
+        with p_find_allowed, p_find_disallowed, p_fix_action as m_fix_action:
+            coro = self.fsc.ensure_core_boot_autoinstall_capability_compatible(
+                GuidedCapability.CORE_BOOT_ENCRYPTED,
+                accepted_errors=accepted_errors,
+            )
+
+            if expect_success:
+                await coro
+                m_fix_action.assert_awaited_once_with(
+                    CoreBootFixActionWithArgs(
+                        type=CoreBootFixAction.PROCEED,
+                        args=CoreBootFixActionArgs(error_kinds=[error_kind]),
+                    ),
+                    system_label="my-label",
+                )
+            else:
+                with self.assertRaisesRegex(AutoinstallError, not_avail_regex):
+                    await coro
+                m_fix_action.assert_not_awaited()
 
     async def test_probe_restricted(self):
         await self.fsc._probe_once(context=None, restricted=True)
@@ -1282,15 +1387,14 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
     )
     @mock.patch("subiquity.server.controllers.filesystem.shutdown.initiate_reboot")
     @mock.patch("subiquity.server.casper.disable_media_eject_prompt", mock.Mock())
-    async def test_v2_core_boot_fix_encryption_support__reboot(self, m_initiate_reboot):
+    async def test_execute_fix_action__reboot(self, m_initiate_reboot):
         self.fsc.model = make_model()
 
         # If dry_run is True, we won't call the initiate method.
         self.app.opts.dry_run = False
-        await self.fsc.v2_core_boot_fix_encryption_support_POST(
-            CoreBootFixEncryptionSupport(
-                action=CoreBootFixActionWithArgs(type=CoreBootFixAction.REBOOT),
-            ),
+        await self.fsc.execute_fix_action(
+            CoreBootFixActionWithArgs(type=CoreBootFixAction.REBOOT),
+            system_label=None,
         )
 
         m_initiate_reboot.assert_called_once()
@@ -1304,19 +1408,14 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
         "subiquity.server.controllers.filesystem.shutdown.initiate_reboot_to_fw_settings"
     )
     @mock.patch("subiquity.server.casper.disable_media_eject_prompt", mock.Mock())
-    async def test_v2_core_boot_fix_encryption_support__reboot_to_fw(
-        self, m_initiate_reboot_to_fw
-    ):
+    async def test_execute_fix_action__reboot_to_fw(self, m_initiate_reboot_to_fw):
         self.fsc.model = make_model()
 
         # If dry_run is True, we won't call the initiate method.
         self.app.opts.dry_run = False
-        await self.fsc.v2_core_boot_fix_encryption_support_POST(
-            CoreBootFixEncryptionSupport(
-                action=CoreBootFixActionWithArgs(
-                    type=CoreBootFixAction.REBOOT_TO_FW_SETTINGS
-                ),
-            ),
+        await self.fsc.execute_fix_action(
+            CoreBootFixActionWithArgs(type=CoreBootFixAction.REBOOT_TO_FW_SETTINGS),
+            system_label=None,
         )
 
         m_initiate_reboot_to_fw.assert_called_once()
@@ -1328,20 +1427,30 @@ class TestSubiquityControllerFilesystem(IsolatedAsyncioTestCase):
     )
     @mock.patch("subiquity.server.controllers.filesystem.shutdown.initiate_poweroff")
     @mock.patch("subiquity.server.casper.disable_media_eject_prompt", mock.Mock())
-    async def test_v2_core_boot_fix_encryption_support__poweroff(
-        self, m_initiate_poweroff
-    ):
+    async def test_execute_fix_action__poweroff(self, m_initiate_poweroff):
         self.fsc.model = make_model()
 
         # If dry_run is True, we won't call the initiate method.
         self.app.opts.dry_run = False
-        await self.fsc.v2_core_boot_fix_encryption_support_POST(
-            CoreBootFixEncryptionSupport(
-                action=CoreBootFixActionWithArgs(type=CoreBootFixAction.SHUTDOWN),
-            ),
+        await self.fsc.execute_fix_action(
+            CoreBootFixActionWithArgs(type=CoreBootFixAction.SHUTDOWN),
+            system_label=None,
         )
 
         m_initiate_poweroff.assert_called_once()
+
+    async def test_v2_core_boot_fix_encryption_support(self):
+        action_with_args = mock.Mock()
+        with mock.patch.object(self.fsc, "execute_fix_action") as m_fix_action:
+            await self.fsc.v2_core_boot_fix_encryption_support_POST(
+                CoreBootFixEncryptionSupport(
+                    action=action_with_args,
+                    system_label="enhanced-secureboot-desktop",
+                ),
+            )
+        m_fix_action.assert_called_once_with(
+            action_with_args, "enhanced-secureboot-desktop"
+        )
 
     @parameterized.expand(((True,), (False,)))
     async def test__pre_shutdown_install_started(self, zfsutils_linux_installed: bool):
