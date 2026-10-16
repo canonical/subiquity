@@ -10,7 +10,7 @@ Get the installer
 
 Installer images for the supported and development series are created (approximately) daily and are available under the `<codename>/daily-live/current` directory from the `Ubuntu Server <https://cdimage.ubuntu.com/ubuntu-server/>`__ page. These images are not tested as extensively as the images from release days, but they contain the latest packages and installer. Therefore, fewer updates are required during or after installation.
 
-Download the server installer for amd64 from the `Ubuntu Server <https://ubuntu.com/download/server>`_ page and other architectures from the `release directory <http://cdimage.ubuntu.com/releases/20.04/release/>`_.
+Download the server installer from the `Ubuntu Server <https://ubuntu.com/download/server>`_ page. The default is an image for the amd64 architecture but there are links for other architectures under the "alternative architectures" section.
 
 Installer UI navigation
 -----------------------

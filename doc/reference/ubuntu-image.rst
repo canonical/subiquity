@@ -201,7 +201,7 @@ The following environment variable is recognized by ``ubuntu-image``.
 
 .. LINKS
 
-.. _snap: http://snapcraft.io/
+.. _snap: https://snapcraft.io/
 .. _gadget snap: https://snapcraft.io/docs/the-gadget-snap
 .. _gadget tree: https://github.com/snapcore/pc-gadget
 .. _image_definition.yaml: https://github.com/canonical/ubuntu-image/tree/main/internal/imagedefinition#readme
