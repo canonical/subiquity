@@ -11,8 +11,8 @@ users:
     shell: /bin/bash
     lock_passwd: false
 
-bootcmd:
-  - apt install -y openssh-server
+runcmd:
+  - apt-get install -y openssh-server curl
 
 autoinstall:
   version: 1
