@@ -201,11 +201,11 @@ The following environment variable is recognized by ``ubuntu-image``.
 
 .. LINKS
 
-.. _snap: http://snapcraft.io/
+.. _snap: https://snapcraft.io/
 .. _gadget snap: https://snapcraft.io/docs/the-gadget-snap
 .. _gadget tree: https://github.com/snapcore/pc-gadget
 .. _image_definition.yaml: https://github.com/canonical/ubuntu-image/tree/main/internal/imagedefinition#readme
 .. _gadgetyaml: https://forum.snapcraft.io/t/gadget-snaps/696
 .. _model assertion: https://ubuntu.com/core/docs/reference/assertions/model
 .. _gadget tree: https://github.com/snapcore/pc-gadget
-.. _cloud-config: https://help.ubuntu.com/community/CloudInit
+.. _cloud-config: https://docs.cloud-init.io

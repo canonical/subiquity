@@ -60,7 +60,7 @@ Plug the USB stick into the system to be installed and (re)start it.
 Many computers automatically boot from available USB or DVD media. If you don't see the boot message and
 the :guilabel:`Welcome` screen, set your computer to boot from the installation media.
 
-.. note:: See your computer manual for instructions on how to select the boot source. You can also watch the screen during computer (re)start for a message with what key to press to access settings or a boot menu. Depending on the manufacturer, this can be :kbd:`Escape`, :kbd:`Enter`, :kbd:`F2`, :kbd:`F10` or :kbd:`F12`. Restart your computer and hold down this key until the boot menu appears, then select the drive with the Ubuntu installation medium. See also `Ubuntu Community documentation on booting from CD/DVD <https://help.ubuntu.com/community/BootFromCD>`_.
+.. note:: See your computer manual for instructions on how to select the boot source. You can also watch the screen during computer (re)start for a message with what key to press to access settings or a boot menu. Depending on the manufacturer, this can be :kbd:`Escape`, :kbd:`Enter`, :kbd:`F2`, :kbd:`F10` or :kbd:`F12`. Restart your computer and hold down this key until the boot menu appears, then select the drive with the Ubuntu installation medium.
 
 After a few moments, the installer starts in its language selection screen.
 
