@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
@@ -36,7 +36,7 @@ jobs:
     - name: run
       run: workshop exec subiquity-${{ matrix.series }} -- sudo make ${{ matrix.make-target }}
   pre-commit:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -53,7 +53,7 @@ jobs:
   static-typing:
     # In this job, we compare the output of mypy before and after the PR.
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Install mypy and typeshed
         run: sudo apt-get install -y python3-mypy python3-typeshed
