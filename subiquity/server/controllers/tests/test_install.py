@@ -478,3 +478,42 @@ linux /casper/vmlinuz layerfs-path=minimal.standard.live.squashfs nopersistent '
                 (d / ".disk/casper-uuid-generic").read_text().strip()
             )
             self.assertEqual(new_casper_uuid, casper_uuid_from_file)
+
+    @parameterized.expand(
+        (
+            # Server ISO: "---" is the only argument after the kernel path.
+            (
+                "\tlinux\t/casper/vmlinuz  ---\n",
+                "linux /casper/vmlinuz uuid={new} rp-partuuid={part} ---\n",
+            ),
+            # Several arguments, none of them uuid= or rp-partuuid=.
+            (
+                "\tlinux\t/casper/vmlinuz quiet splash --- quiet splash\n",
+                "linux /casper/vmlinuz quiet splash uuid={new} rp-partuuid={part}"
+                " --- quiet splash\n",
+            ),
+            # Partition copied from one that already had both arguments.
+            (
+                "\tlinux\t/casper/vmlinuz uuid=old rp-partuuid=old ---\n",
+                "linux /casper/vmlinuz uuid={new} rp-partuuid={part} ---\n",
+            ),
+        ),
+    )
+    async def test_adjust_rp_kernel_args_position(self, orig_line, expected_line):
+        partuuid = str(uuid.uuid4())
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            d = Path(tempdir)
+            (d / "boot/grub").mkdir(parents=True)
+            (d / "boot/grub/grub.cfg").write_text(orig_line)
+            (d / ".disk").mkdir()
+            (d / ".disk/casper-uuid-generic").write_text(str(uuid.uuid4()))
+
+            mp = Mountpoint(mountpoint=tempdir)
+            self.setup_rp_test(f"{partuuid}".encode("ascii"))
+            new_casper_uuid = await self.controller.adjust_rp(self.part, mp)
+
+            self.assertEqual(
+                expected_line.format(new=new_casper_uuid, part=partuuid),
+                (d / "boot/grub/grub.cfg").read_text(),
+            )
