@@ -32,11 +32,7 @@ from setuptools import (
     find_packages,
     setup,
 )
-
-# any remaining distutils must be imported after setuptools
-# https://github.com/pypa/setuptools/issues/2591 discusses build.build and
-# alternatives
-import distutils.command.build
+from setuptools.command.build import build as build_orig
 
 
 def spawn(cmd):
@@ -83,14 +79,14 @@ class build_i18n(Command):
             mo_file = os.path.join(mo_dir, "subiquity.mo")
             if not os.path.exists(mo_dir):
                 os.makedirs(mo_dir)
-            distutils.spawn.spawn(["msgfmt", po_file, "-o", mo_file])
+            spawn(["msgfmt", po_file, "-o", mo_file])
             targetpath = os.path.join("share/locale", lang, "LC_MESSAGES")
             data_files.append((targetpath, (mo_file,)))
 
 
-class build(distutils.command.build.build):
+class build(build_orig):
 
-    sub_commands = distutils.command.build.build.sub_commands + [
+    sub_commands = build_orig.sub_commands + [
         ("build_i18n", None)]
 
 
