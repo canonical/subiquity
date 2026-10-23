@@ -143,8 +143,8 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
     def disable_network(self, dev_name: str, ip_version: int) -> None:
         run_bg_task(self.endpoint.disable.POST(dev_name, ip_version))
 
-    def add_vlan(self, dev_name: str, vlan_id: int):
-        run_bg_task(self.endpoint.vlan.PUT(dev_name, vlan_id))
+    def add_vlan(self, dev_name: str, vlan_id: int, name: Optional[str] = None):
+        run_bg_task(self.endpoint.vlan.PUT(dev_name, vlan_id, name))
 
     def set_wlan(self, dev_name: str, wlan: WLANConfig) -> None:
         run_bg_task(self.endpoint.set_wlan.POST(dev_name, wlan))

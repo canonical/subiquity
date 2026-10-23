@@ -2623,6 +2623,19 @@ class TestNetwork(TestAPI):
             ethernets = conf_data["network"]["ethernets"]
             self.assertIn("ens4", ethernets)
 
+    @timeout()
+    async def test_add_vlan(self):
+        cfg = "examples/machines/two-nics-one-up-one-down.json"
+        async with start_server(cfg) as inst:
+            await inst.request("PUT", "/network/vlan", dev_name="ens3", vlan_id=100)
+            await inst.request(
+                "PUT", "/network/vlan", dev_name="ens3", vlan_id=200, name="myvlan"
+            )
+            resp = await inst.get("/network")
+            devs = {dev["name"]: dev for dev in resp["devices"]}
+            self.assertEqual({"id": 100, "link": "ens3"}, devs["ens3.100"]["vlan"])
+            self.assertEqual({"id": 200, "link": "ens3"}, devs["myvlan"]["vlan"])
+
 
 class TestServerVariantSupport(TestAPI):
     @parameterized.expand(
