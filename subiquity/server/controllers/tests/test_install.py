@@ -263,7 +263,7 @@ class TestLogEvent(unittest.TestCase):
         self.assertEqual(
             [
                 "Traceback (most recent call last):",
-                '  File "\ufffd.py", line 1, in <module>',
+                '  File "\\xff.py", line 1, in <module>',
                 "ValueError: oops",
             ],
             self.controller.tb_extractor.traceback,

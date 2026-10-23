@@ -114,7 +114,7 @@ class InstallController(SubiquityController):
         if message is None:
             return
         if isinstance(message, bytes):
-            message = message.decode("utf-8", errors="replace")
+            message = message.decode("utf-8", errors="backslashreplace")
         self.tb_extractor.feed(message)
 
     def write_config(self, config_file: Path, config: Any) -> None:
