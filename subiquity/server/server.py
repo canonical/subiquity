@@ -25,6 +25,7 @@ from typing import Any, List, Optional
 import jsonschema
 import yaml
 from aiohttp import web
+from aiohttp_apispec import setup_aiohttp_apispec
 from jsonschema.exceptions import ValidationError
 from systemd import journal
 
@@ -803,6 +804,13 @@ class SubiquityServer(Application):
             bind(app.router, API.dry_run, DryRunController(self))
         for controller in self.controllers.instances:
             controller.add_routes(app)
+        setup_aiohttp_apispec(
+            app=app,
+            title="Subiquity API documentation",
+            version="v1",
+            url="/swagger.json",
+            swagger_path="/docs",
+        )
         runner = web.AppRunner(app, keepalive_timeout=0xFFFFFFFF, access_log=None)
         await runner.setup()
         site = web.UnixSite(runner, self.opts.socket)
