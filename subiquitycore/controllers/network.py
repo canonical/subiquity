@@ -229,6 +229,15 @@ class BaseNetworkController(BaseController):
             if not has_global_address:
                 dev.remove_ip_networks_for_version(4)
                 dev.remove_ip_networks_for_version(6)
+                if not dev.is_used:
+                    # The configuration from the live environment can also
+                    # identify the device (e.g., cloud-init renders "match"
+                    # and "set-name"). Keeping these alone would make the
+                    # device appear as configured in the target system, where
+                    # systemd-networkd-wait-online would wait for it.
+                    # LP: #2150177
+                    dev.config.pop("match", None)
+                    dev.config.pop("set-name", None)
                 log.debug("disabling %s", dev.name)
                 dev.disabled_reason = _("autoconfiguration failed")
 
