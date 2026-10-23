@@ -1,0 +1,40 @@
+name: Coverage
+
+# FIXME compare entire workflow to other workflows we use today
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'doc/**'
+
+jobs:
+  coverage:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y $(cat apt-deps.txt)
+
+      - name: Fetch git dependencies (curtin, probert)
+        run: make gitdeps
+
+      - name: Run unit tests with coverage
+        run: make coverage | tee pytest-coverage.txt
+        continue-on-error: true
+
+      - name: Save PR number for coverage comment workflow
+        run: echo "${{ github.event.pull_request.number }}" > pr-number.txt
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage-report
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            pytest-coverage.txt
+            .coverage.xml
+            pr-number.txt

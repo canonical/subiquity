@@ -12,6 +12,7 @@ DRYRUN?=--dry-run --firmware-type uefi --machine-config examples/machines/simple
 UNITTESTARGS?=
 COVERAGEARGS:=--cov=subiquity --cov=subiquitycore --cov=console_conf
 COVERAGEARGS+=--cov-report xml:.coverage.xml
+COVERAGEARGS+=--cov-report term-missing
 export PYTHONPATH
 CWD := $(shell pwd)
 

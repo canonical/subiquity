@@ -1,0 +1,36 @@
+name: Coverage Comment
+
+on:
+  workflow_run:
+    workflows: ["Coverage"]
+    types: [completed]
+
+jobs:
+  comment:
+    runs-on: ubuntu-24.04
+    if: |
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    permissions:
+      pull-requests: write
+      actions: read
+    steps:
+      - name: Download coverage artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: coverage-report
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Read PR number
+        id: pr
+        run: echo "number=$(cat pr-number.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Post coverage comment on PR
+        uses: MishaKav/pytest-coverage-comment@287292879eaaff04116f36d3eb1a670f6e5df1a4 # v1.7.1
+        with:
+          pytest-coverage-path: ./pytest-coverage.txt
+          title: Coverage Report
+          badge-title: Coverage
+          report-only-changed-files: true
+          issue-number: ${{ steps.pr.outputs.number }}
