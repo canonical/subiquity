@@ -408,6 +408,16 @@ class TestActions(unittest.TestCase):
         model.add_mount(fs, "/")
         self.assertActionNotPossible(vg, DeviceAction.DELETE)
 
+    def test_vg_action_DELETE__lv_part_of_other_device(self):
+        # LP: #2065711 - A logical volume can itself be part of another device,
+        # e.g., when a volume group was created on top of it.
+        model, vg = make_model_and_vg()
+        lv = make_lv(model, vg)
+        make_vg(model, pvs={lv})
+        self.assertActionNotPossible(vg, DeviceAction.DELETE)
+        _, reason = DeviceAction.DELETE.can(vg)
+        self.assertIn(lv.name, reason)
+
     def test_vg_action_TOGGLE_BOOT(self):
         model, vg = make_model_and_vg()
         self.assertActionNotSupported(vg, DeviceAction.TOGGLE_BOOT)
