@@ -438,8 +438,8 @@ class BaseNetworkController(BaseController):
         self.update_link(dev)
         self.apply_config()
 
-    def add_vlan(self, dev_name: str, id: int):
-        new = self.model.new_vlan(dev_name, id)
+    def add_vlan(self, dev_name: str, id: int, name: Optional[str] = None):
+        new = self.model.new_vlan(dev_name, id, name)
         self.new_link(new)
         dev = self.model.get_netdev_by_name(dev_name)
         self.update_link(dev)
