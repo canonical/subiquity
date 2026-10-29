@@ -265,7 +265,8 @@ class BoundFormField(object):
     def use_as_confirmation(self, for_field: "BoundFormField", desc: str) -> None:
         """Mark this field as a confirmation field for another field.
         This will automatically compare the value of both fields when this
-        field (a.k.a., the confirmation field) is changed."""
+        field (a.k.a., the confirmation field) is changed. This field is also
+        validated again when the other field is changed."""
 
         def _check_confirmation(sender, new_text):
             if not for_field.value.startswith(new_text):
@@ -273,7 +274,17 @@ class BoundFormField(object):
             else:
                 self.show_extra("")
 
+        def _recheck_confirmation(sender, old_text):
+            # The "postchange" signal is emitted after the value of the other
+            # field is updated. If the confirmation was already entered, it
+            # needs to be validated again so that a stale error does not stick
+            # around (or so that a new mismatch gets reported).
+            if self.value:
+                self.showing_extra = False
+                self.validate()
+
         connect_signal(self.widget, "change", _check_confirmation)
+        connect_signal(for_field.widget, "postchange", _recheck_confirmation)
 
 
 class BoundSubFormField(BoundFormField):

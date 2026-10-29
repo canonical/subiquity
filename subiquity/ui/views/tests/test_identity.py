@@ -99,6 +99,28 @@ class IdentityViewTests(unittest.IsolatedAsyncioTestCase):
         await widget.validation_task
         self.assertFalse(view.form.done_btn.enabled)
 
+    def test_password_mismatch_fixed_in_password_field(self):
+        # LP: #1938369 - Fixing the password (rather than its confirmation)
+        # should clear the error.
+        view = self.make_view()
+        form = view.form
+        view_helpers.enter_data(
+            form, {**valid_data, "password": "qwerty", "confirm_password": "asdf"}
+        )
+        # The confirmation field losing focus triggers its validation.
+        form.confirm_password.validate()
+        self.assertTrue(form.confirm_password.in_error)
+        self.assertFalse(form.done_btn.enabled)
+
+        form.password.value = "asdf"
+        self.assertFalse(form.confirm_password.in_error)
+        self.assertEqual("", form.confirm_password.under_text.text)
+        self.assertTrue(form.done_btn.enabled)
+
+        form.password.value = "asdfg"
+        self.assertTrue(form.confirm_password.in_error)
+        self.assertFalse(form.done_btn.enabled)
+
     def test_username_validation_too_long(self):
         view = self.make_view()
         view_helpers.enter_data(view.form, too_long)
