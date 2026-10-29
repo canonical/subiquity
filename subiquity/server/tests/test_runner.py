@@ -61,8 +61,8 @@ class TestSystemdRunWrapper(SubiTestCase):
         wrapper = SystemdRunWrapper(ident="my-id", use_systemd_user=False)
         environ = {
             "PATH": "/snap/subiquity/x1/bin",
-            "PYTHONPATH": "/usr/lib/python3.12/site-packages",
-            "PYTHON": "/snap/subiquity/x1/usr/bin/python3.12",
+            "PYTHONPATH": "/usr/lib/python3.14/site-packages",
+            "PYTHON": "/snap/subiquity/x1/usr/bin/python3.14",
             "TARGET_MOUNT_POINT": "/target",
             "SNAP": "/snap/subiquity/x1",
             "SAMPLE": "should-not-be-exported",
@@ -87,9 +87,9 @@ class TestSystemdRunWrapper(SubiTestCase):
             "--setenv",
             "PATH=/snap/subiquity/x1/bin",
             "--setenv",
-            "PYTHONPATH=/usr/lib/python3.12/site-packages",
+            "PYTHONPATH=/usr/lib/python3.14/site-packages",
             "--setenv",
-            "PYTHON=/snap/subiquity/x1/usr/bin/python3.12",
+            "PYTHON=/snap/subiquity/x1/usr/bin/python3.14",
             "--setenv",
             "TARGET_MOUNT_POINT=/target",
             "--setenv",
@@ -104,7 +104,7 @@ class TestSystemdRunWrapper(SubiTestCase):
         wrapper = SystemdRunWrapper(ident="my-id", use_systemd_user=True)
         # Make sure unset variables are ignored
         environ = {
-            "PYTHONPATH": "/usr/lib/python3.12/site-packages",
+            "PYTHONPATH": "/usr/lib/python3.14/site-packages",
         }
         with patch.dict(os.environ, environ, clear=True):
             cmd = wrapper.wrap(
@@ -123,7 +123,7 @@ class TestSystemdRunWrapper(SubiTestCase):
             "--user",
             "--pipe",
             "--setenv",
-            "PYTHONPATH=/usr/lib/python3.12/site-packages",
+            "PYTHONPATH=/usr/lib/python3.14/site-packages",
             "--",
             "/bin/ls",
             "/root",

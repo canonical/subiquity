@@ -93,7 +93,7 @@ class TaskProgress(WidgetWrap):
 def exc_message(exc):
     try:
         result = exc.response.json()
-    except (AttributeError, json.decoder.JSONDecodeError):
+    except AttributeError, json.decoder.JSONDecodeError:
         message = None
     else:
         message = result.get("result", {}).get("message")
