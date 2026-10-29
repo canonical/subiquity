@@ -248,6 +248,14 @@ class TestAutoinstallValidation(SubiTestCase):
                         await server.wait_for_cloudinit()
                 log.assert_called_with("cloud-init status: %r", "enabled")
                 load_cloud_config.assert_called_with()
+            with self.subTest("Perform load_cloud_config when status is unknown"):
+                load_cloud_config.reset_mock()
+                with patch(
+                    "subiquity.server.server.cloud_init_status_wait",
+                    AsyncMock(return_value=(True, None)),
+                ):
+                    await server.wait_for_cloudinit()
+                load_cloud_config.assert_called_once_with()
 
     def test_autoinstall_validation__error_type(self):
         """Test that bad autoinstall data throws AutoinstallValidationError"""
