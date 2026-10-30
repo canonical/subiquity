@@ -525,7 +525,6 @@ class InstallController(SubiquityController):
             for line in fp:
                 words = shlex.split(line)
                 if words and words[0] == "linux" and "---" in words:
-                    index = words.index("---")
                     words = [
                         word
                         for word in words
@@ -533,7 +532,12 @@ class InstallController(SubiquityController):
                             word.startswith("uuid=") or word.startswith("rp-partuuid=")
                         )
                     ]
-                    words[index - 1 : index - 1] = [
+                    # Insert the new arguments immediately before "---", so
+                    # they always follow the kernel path, even when "---" is
+                    # its only argument (as on the server ISO). The index is
+                    # computed after removing any previous values.
+                    index = words.index("---")
+                    words[index:index] = [
                         "uuid=" + new_casper_uuid,
                         "rp-partuuid=" + rp_uuid,
                     ]
