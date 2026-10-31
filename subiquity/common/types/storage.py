@@ -226,6 +226,7 @@ class GuidedCapability(enum.Enum):
     LVM_LUKS = enum.auto()
     ZFS = enum.auto()
     ZFS_LUKS_KEYSTORE = enum.auto()
+    BTRFS = enum.auto()
 
     CORE_BOOT_ENCRYPTED = enum.auto()
     CORE_BOOT_UNENCRYPTED = enum.auto()
@@ -264,6 +265,9 @@ class GuidedCapability(enum.Enum):
             GuidedCapability.ZFS,
             GuidedCapability.ZFS_LUKS_KEYSTORE,
         ]
+
+    def is_btrfs(self) -> bool:
+        return self == GuidedCapability.BTRFS
 
     def is_tpm_backed(self) -> bool:
         return self in [

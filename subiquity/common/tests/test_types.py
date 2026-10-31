@@ -40,6 +40,12 @@ class TestCapabilities(unittest.TestCase):
     def test_is_zfs(self):
         self.assertTrue(GuidedCapability.ZFS.is_zfs())
 
+    def test_not_btrfs(self):
+        self.assertFalse(GuidedCapability.DIRECT.is_btrfs())
+
+    def test_is_btrfs(self):
+        self.assertTrue(GuidedCapability.BTRFS.is_btrfs())
+
     def test_order(self):
         self.assertLess(GuidedCapability.DIRECT, GuidedCapability.CORE_BOOT_ENCRYPTED)
 
