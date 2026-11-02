@@ -481,16 +481,16 @@ linux /casper/vmlinuz layerfs-path=minimal.standard.live.squashfs nopersistent '
 
     @parameterized.expand(
         (
-            # Server ISO: "---" is the only argument after the kernel path.
+            # "---" is the only argument after the kernel path.
             (
                 "\tlinux\t/casper/vmlinuz  ---\n",
                 "linux /casper/vmlinuz uuid={new} rp-partuuid={part} ---\n",
             ),
             # Several arguments, none of them uuid= or rp-partuuid=.
             (
-                "\tlinux\t/casper/vmlinuz quiet splash --- quiet splash\n",
-                "linux /casper/vmlinuz quiet splash uuid={new} rp-partuuid={part}"
-                " --- quiet splash\n",
+                "\tlinux\t/casper/vmlinuz foo=bar abc --- arg1 arg2\n",
+                "linux /casper/vmlinuz foo=bar abc uuid={new} rp-partuuid={part}"
+                " --- arg1 arg2\n",
             ),
             # Partition copied from one that already had both arguments.
             (
