@@ -527,7 +527,7 @@ class InstallController(SubiquityController):
                     ]
                     # Insert the new arguments immediately before "---", so
                     # they always follow the kernel path, even when "---" is
-                    # its only argument (as on the server ISO). The index is
+                    # its only argument. The index is
                     # computed after removing any previous values.
                     index = words.index("---")
                     words[index:index] = [
