@@ -212,7 +212,7 @@ class VM:
                 # first boot should call reboot() before those assertions.
                 self.reboot()
 
-        except (Exception, KeyboardInterrupt):
+        except Exception, KeyboardInterrupt:
             now = datetime.now()
             ts = f"{now:%Y-%m-%d-%H-%M-%S}"
             label = f"subiquity-vmtest-{self.vmm.test_name}-{ts}"

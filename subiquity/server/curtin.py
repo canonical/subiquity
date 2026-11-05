@@ -162,7 +162,7 @@ class _DryRunCurtinCommand(_CurtinCommand):
             try:
                 with open(config, mode="r") as fh:
                     log_file = yaml.safe_load(fh)["install"]["log_file"]
-            except (TypeError, AttributeError):
+            except TypeError, AttributeError:
                 log_file = "/dev/null"
 
             # Check the arguments to find the stages that we are running.
