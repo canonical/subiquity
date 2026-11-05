@@ -3,6 +3,7 @@ import json
 import re
 import subprocess
 import time
+import traceback
 from datetime import datetime
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, CompletedProcess
@@ -11,10 +12,32 @@ from typing import Optional, Sequence
 
 import pytest
 import yaml
+from cloudinit.util import mergemanydict
 
 from subiquity.models.source import SourceModel
 
 from . import Firmware
+
+# REBOOT_HOLD_READY_SENTINEL_FILE is created by late-commands to signal that
+# the install is functionally complete and the system has entered the
+# reboot-hold: the window after install is done but before Subiquity exits and
+# reboots, during which install-time assertions can run.
+REBOOT_HOLD_READY_SENTINEL_FILE = "/run/reboot-hold-ready"
+
+# REBOOT_HOLD_RELEASE_SENTINEL_FILE is created by the test harness, after the
+# install-time assertions have run, to release the reboot-hold and let
+# Subiquity proceed to reboot.
+REBOOT_HOLD_RELEASE_SENTINEL_FILE = "/run/reboot-hold-release"
+
+
+@contextlib.contextmanager
+def _timer(label):
+    start_time = time.perf_counter()
+    try:
+        yield
+    finally:
+        end_time = time.perf_counter()
+        print(f"{label} took {end_time - start_time:.4f}s")
 
 
 class VM:
@@ -94,17 +117,16 @@ class VM:
 
     def _merge_cloud_config(self, cloud_config, pubkey) -> Path:
         """
-        merge test_cloud_config with the base config, write the result to a
-        temp file, add a few additional test requirements, and return that file
+        Merge cloud_config from the test with the base cloud configuration,
+        set some required infrastructure in that merged config, write the
+        result to a temp file, and return the Path to that file.
         """
         with open("vmtests/base-cloud-config.yaml", "r") as fp:
             base_cc_data = yaml.safe_load(fp)
 
-        # default to the minimal source.  As the id names vary by ISO, we have
-        # to guess that out, but they should be the one that ends in -minimal.
-        # this default to minimal behavior is done before the merge of test
-        # cloud-config data, as it's intended to be part of the
-        # base-cloud-config.
+        # Examine install-sources.yaml and select the minimal source.
+        # TODO: take a parameter to choose standard instead, so that tests of
+        # the standard source are generic to server/desktop/flavors.
         source = SourceModel()
         with _mounter(self.vmm.option_iso) as iso:
             with Path(iso / "casper/install-sources.yaml").open() as fp:
@@ -121,27 +143,34 @@ class VM:
         if cloud_config is None:
             merged_cc = base_cc_data
         else:
+            # Merge test cloud-config over base config. Uses cloud-init's
+            # standard merger rules; cc_data wins on scalar/dict conflicts,
+            # and lists are NOT concatenated (first source's list is kept).
+            # See https://cloudinit.readthedocs.io/en/latest/reference/merging.html
             cc_data = yaml.safe_load(cloud_config)
-            merged_cc = _merge_data(cc_data, base_cc_data)
+            merged_cc = mergemanydict([cc_data, base_cc_data])
 
         # add test ssh key for install system.  This, and everything else
         # below, is done after merge of test cloud-config because it's core
-        # test infrastructure that tests may not overwrite.
+        # infrastructure that tests may not overwrite.
         merged_cc["users"][1]["ssh_authorized_keys"] = pubkey
 
         # add test ssh key for target system.
         merged_cc["autoinstall"]["ssh"]["authorized-keys"] = [pubkey]
 
+        # all tests must run these commands.
         late_cmds = merged_cc["autoinstall"].setdefault("late-commands", [])
-        # all tests should run these commands.  The first one allows us to know
-        # that any test-defined late-commands have completed.  We want to run
-        # test assertions after those test defined late-commands have executed.
-        late_cmds.append("touch /run/wait_for_finish")
-        # This second one is a documented trick for autoinstall to not reboot
-        # until we're ready for it.  This holds the reboot and gives us room to
-        # actually run the test assertions.  When we're ready to reboot to the
-        # target system, we touch /run/finish to move things along.
-        late_cmds.append("while [ ! -f /run/finish ] ; do sleep 1 ; done")
+        # Signal that the install is functionally complete and the
+        # reboot-hold has been entered, so VMM.install() may return and
+        # assertions can proceed.
+        late_cmds.append(f"touch {REBOOT_HOLD_READY_SENTINEL_FILE}")
+        # Hold the reboot in the reboot-hold window until assertions have run.
+        # This is the documented trick to keep autoinstall from rebooting
+        # until we're ready; touching REBOOT_HOLD_RELEASE_SENTINEL_FILE from
+        # the harness releases the hold and lets Subiquity proceed to reboot.
+        late_cmds.append(
+            f"while [ ! -f {REBOOT_HOLD_RELEASE_SENTINEL_FILE} ] ; do sleep 1 ; done"
+        )
 
         result = self.tempdir / "cloud-config.yaml"
         result.write_text("#cloud-config\n" + yaml.dump(merged_cc))
@@ -153,15 +182,15 @@ class VM:
             case "LATE_COMMANDS":
                 # the good scenario - we have done autoinstall almost to the
                 # end, and are only being held up by active late-commands.
-                # Usually this is just waiting for /run/finish to exist, or it
-                # could be late-commands in the test.
+                # Usually this is waiting for REBOOT_HOLD_RELEASE_SENTINEL_FILE
+                # to exist, or it could be late-commands in the test.
                 return
             case "ERROR":
                 # install failure
-                pytest.fail("install failed and reached ERROR state")
+                raise RuntimeError("install failed and reached ERROR state")
             case _:
                 # should never happen
-                pytest.fail(f"unexpected state={data['state']}")
+                raise RuntimeError(f"unexpected state={data['state']}")
 
     @contextlib.contextmanager
     def _install(self, **kwargs) -> None:
@@ -203,7 +232,7 @@ class VM:
             self._wait_for_ssh()
             self._detect_SNAP()
             self._wait_for_socket()
-            self._wait_for_finish_sentinel()
+            self._wait_for_reboot_hold()
             yield
 
             if self.live_boot:
@@ -218,8 +247,12 @@ class VM:
             label = f"subiquity-vmtest-{self.vmm.test_name}-{ts}"
             dest = Path(f"/tmp/{label}")
             dest.mkdir(exist_ok=False)
-            self._collect_logs(label, dest)
-            print(f"logs written to {dest}")
+            try:
+                self._collect_logs(label, dest)
+                print(f"logs written to {dest}")
+            except Exception:
+                print(f"log collection to {dest} failed")
+                traceback.print_exc()
             raise
 
         finally:
@@ -227,7 +260,12 @@ class VM:
                 _virsh(["destroy", self.domain], check=False)
 
             finally:
-                undefine = ["undefine", self.domain, "--remove-all-storage"]
+                undefine = [
+                    "undefine",
+                    self.domain,
+                    "--remove-all-storage",
+                    "--nvram",
+                ]
                 _virsh(undefine, stdout=DEVNULL)
 
     def _collect_logs(self, label, dest):
@@ -236,16 +274,20 @@ class VM:
                 "sudo",
                 "sh -c 'journalctl -b > /var/log/installer/installer-journal.log'",
             ],
+            check=False,
         )
         tarball = f"/tmp/{label}.tgz"
-        self.ssh(["sudo", "tar", "zcvf", tarball, "/var/log/installer"], check=False)
+        self.ssh(
+            ["sudo", "tar", "zcvf", tarball, "/var/log/installer"],
+            check=False,
+        )
         self._scp_get(tarball, str(dest), check=False)
 
-    def _scp_get(self, infile, dest, check=True) -> None:
+    def _scp_get(self, infile, dest, check=True) -> CompletedProcess:
         if self.ip is None:
             raise RuntimeError("attempted to ssh prior to SUT having an IP")
         cmd = ["scp", *self._ssh_common(), f"ubuntu@{self.ip}:{infile}", dest]
-        _runcmd(cmd, stdout=PIPE, stderr=DEVNULL, check=check)
+        return _runcmd(cmd, stdout=PIPE, stderr=DEVNULL, check=check)
 
     def _get_ip(self) -> Optional[str]:
         sp = _virsh(["domifaddr", self.domain], stdout=PIPE, check=False)
@@ -265,7 +307,7 @@ class VM:
             time.sleep(1)
             print(".", end="", flush=True)
         else:
-            pytest.fail(f"{label} never happened")
+            raise RuntimeError(f"{label} never happened")
         print("done")
 
     def _wait_for_ip(self) -> None:
@@ -301,26 +343,37 @@ class VM:
     def _wait_for_socket(self):
         self._wait_for_ssh_cmd(["test", "-S", "/run/subiquity/socket"], "socket")
 
-    def _wait_for_finish_sentinel(self):
+    def _wait_for_reboot_hold(self, wait_seconds=3600):
         print("wait for end state.", end="", flush=True)
-        while True:
+        data = {"state": "UNKNOWN"}
+        for i in range(wait_seconds):
+            print(f"try {i} / {wait_seconds}", flush=True)
             sp = self.ssh(
                 ["curl", "--unix-socket", "/run/subiquity/socket", "a/meta/status"],
+                check=False,
             )
-            data = json.loads(sp.stdout)
-            if data["state"] in ("LATE_COMMANDS", "DONE", "ERROR", "EXITED"):
-                break
+            # there can be a ssh socket reset, seemingly triggered by
+            # cloud-init installing openssh-server (unconfirmed)
+            # tolerate that and continue
+            if sp.returncode == 0:
+                data = json.loads(sp.stdout)
+                print(f"data['state']={data['state']}", flush=True)
+                if data["state"] in ("LATE_COMMANDS", "DONE", "ERROR", "EXITED"):
+                    break
             print(".", end="", flush=True)
             time.sleep(1)
+        else:
+            raise RuntimeError(
+                f"timed out waiting for final state, current state {data['state']}"
+            )
         print(f"done: {data['state']}")
         self._assert_state_late_commands(data)
 
-        # We use late-commands to catch the install nearly being complete but
-        # not 100% done.  If a test uses late commands, wait for those to be
-        # done.  Before waiting on /run/finish, late-commands will create
-        # /run/wait_for_finish, which signifies that that the install is
-        # functionally complete and ready for our test assertions.
-        sentinel_cmd = ["test", "-f", "/run/wait_for_finish"]
+        # Subiquity has reached the LATE_COMMANDS state.  The late-commands
+        # create REBOOT_HOLD_READY_SENTINEL_FILE just before blocking on the
+        # reboot-hold, signifying the install is functionally complete and
+        # assertions can run.  Wait for that sentinel to appear.
+        sentinel_cmd = ["test", "-f", REBOOT_HOLD_READY_SENTINEL_FILE]
         self._wait_for_ssh_cmd(sentinel_cmd, "install completion")
 
     def _ssh_common(self) -> Sequence:
@@ -348,7 +401,7 @@ class VM:
 
     def _poweroff(self) -> None:
         if self.live_boot:
-            self.ssh(["sudo", "touch", "/run/finish"])
+            self.ssh(["sudo", "touch", REBOOT_HOLD_RELEASE_SENTINEL_FILE])
             self.live_boot = False
         else:
             _virsh(["shutdown", self.domain], stdout=DEVNULL)
@@ -392,7 +445,8 @@ class VMM:
         Build a VM, establish the hardware configuration, and start an install.
         """
         result = self.exit_stack.enter_context(VM(vmm=self, **kwargs))
-        self.exit_stack.enter_context(result._install())
+        with _timer("install (pre-reboot)"):
+            self.exit_stack.enter_context(result._install())
         return result
 
     def _create_ssh_key(self) -> str:
@@ -408,7 +462,7 @@ def vmm(request, option_iso):
 
     isofile = Path(option_iso)
     if not isofile.exists() or not isofile.is_file():
-        pytest.fail(f"{option_iso} is not a valid install iso")
+        raise RuntimeError(f"{option_iso} is not a valid install iso")
 
     with VMM(request, isofile) as _vmm:
         yield _vmm
@@ -433,31 +487,10 @@ def _mounter(src):
             _runcmd(["fusermount", "-u", td])
 
 
-def _runcmd(cmd, check=True, **kwargs):
+def _runcmd(cmd, check=True, **kwargs) -> CompletedProcess:
     print(f'running command "{cmd}"')
     return subprocess.run(cmd, check=check, **kwargs)
 
 
 def _virsh(cmd, **kwargs):
     return _runcmd(["virsh", "--connect", "qemu:///system"] + cmd, **kwargs)
-
-
-def _merge_data(src: dict, dest: dict) -> dict:
-    """
-    Merge data from src to dest, without modifying src or dst.
-    Return the merged data.
-    """
-    dest = dest.copy()
-    for key, value in src.items():
-        if key in dest and type(value) != type(dest[key]):
-            raise ValueError(
-                f"merge undefined for {key=} src_val={value} dest_val={dest[key]}"
-            )
-
-        if isinstance(value, dict) and key in dest:
-            dest[key] = _merge_data(value, dest[key])
-        elif isinstance(value, list) and key in dest:
-            dest[key].extend(value)
-        else:
-            dest[key] = value
-    return dest
