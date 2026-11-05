@@ -15,7 +15,11 @@
 import unittest
 from unittest.mock import Mock
 
-from subiquitycore.controllers.network import SubiquityNetworkEventReceiver
+from subiquitycore.controllers.network import (
+    BaseNetworkController,
+    SubiquityNetworkEventReceiver,
+)
+from subiquitycore.models.network import NetworkDev, NetworkModel
 
 
 class TestRoutes(unittest.IsolatedAsyncioTestCase):
@@ -134,3 +138,56 @@ class TestRoutes(unittest.IsolatedAsyncioTestCase):
         ]
 
         self.assertFalse(self.er._default_route_exists(routes))
+
+
+class TestUpdateInitialConfigs(unittest.TestCase):
+    def setUp(self):
+        self.model = NetworkModel("subiquity")
+        self.controller = Mock(model=self.model)
+
+    def add_dev(self, name, typ, config, addresses=()):
+        dev = NetworkDev(self.model, name, typ)
+        dev.config = config
+        dev.info = Mock(
+            addresses={a: Mock(scope=scope) for a, scope in addresses},
+        )
+        self.model.devices_by_name[name] = dev
+        return dev
+
+    def cloud_init_config(self, name):
+        return {
+            "dhcp4": True,
+            "match": {"macaddress": "52:54:00:12:34:56"},
+            "set-name": name,
+        }
+
+    def test_disconnected_nic(self):
+        # LP: #2150177 - A NIC that did not get an address must not end up in
+        # the configuration of the target system.
+        dev = self.add_dev("ens4", "eth", self.cloud_init_config("ens4"))
+        BaseNetworkController.update_initial_configs(self.controller)
+        self.assertEqual({}, dev.config)
+        self.assertIsNotNone(dev.disabled_reason)
+        ethernets = self.model.render_config()["network"].get("ethernets", {})
+        self.assertNotIn("ens4", ethernets)
+
+    def test_connected_nic(self):
+        config = self.cloud_init_config("ens3")
+        dev = self.add_dev(
+            "ens3", "eth", config.copy(), addresses=[("10.0.2.15/24", "global")]
+        )
+        BaseNetworkController.update_initial_configs(self.controller)
+        self.assertEqual(config, dev.config)
+        self.assertIsNone(dev.disabled_reason)
+
+    def test_bond_member(self):
+        # Members of a bond have no address but must stay configured.
+        dev = self.add_dev("ens4", "eth", self.cloud_init_config("ens4"))
+        bond = NetworkDev(self.model, "bond0", "bond")
+        bond.config = {"interfaces": ["ens4"], "parameters": {"mode": "802.3ad"}}
+        self.model.devices_by_name["bond0"] = bond
+        BaseNetworkController.update_initial_configs(self.controller)
+        self.assertEqual(
+            {"match": {"macaddress": "52:54:00:12:34:56"}, "set-name": "ens4"},
+            dev.config,
+        )
