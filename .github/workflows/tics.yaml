@@ -31,7 +31,7 @@ jobs:
           make coverage
 
       - name: Run TICS analysis with github-action
-        uses: tiobe/tics-github-action@06afa6781ba53ab58efbe766d41d84febad1f683  # v4.0.0
+        uses: tiobe/tics-github-action@48afe561ae55edd1e1ec484505dba636e90ba0a6  # v4.1.0
         with:
           mode: qserver
           project: subiquity
