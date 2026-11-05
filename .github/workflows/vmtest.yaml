@@ -1,0 +1,124 @@
+name: VM Tests
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'doc/**'
+
+jobs:
+  vmtest:
+    # Expects a self-hosted runner with /dev/kvm available (i.e. real
+    # hardware virtualization, not nested).  Narrow the label below to
+    # match the runner you register (e.g. [self-hosted, ubuntu-24.04]).
+    # runs-on: [self-hosted, linux, amd64, resolute, large]
+    runs-on: [self-hosted, linux, amd64, noble, medium]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install vmtest dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pytest python3-yaml \
+            virtinst \
+            fuseiso fuse3 \
+            libvirt-clients \
+            libvirt-daemon \
+            libvirt-daemon-driver-qemu \
+            libvirt-daemon-system \
+            libvirt-daemon-config-network \
+            dnsmasq-base \
+            openssh-client \
+            snapd \
+            xorriso squashfs-tools liblz4-tool python3-debian gpg \
+            rsync
+
+      - name: install snapcraft
+        run: |
+          if ! command -v snapcraft >/dev/null 2>&1; then
+            sudo snap install snapcraft --classic
+          fi
+          snapcraft --version
+
+      - name: configure libvirt
+        run: |
+          # QEMU runs under an AppArmor profile that only allows reading
+          # files from a small set of paths.  The ISO lives under
+          # $RUNNER_TEMP, so disable the security driver entirely.
+          sudo tee -a /etc/libvirt/qemu.conf >/dev/null <<'EOF'
+          security_driver = "none"
+          EOF
+          sudo systemctl enable --now libvirtd
+          # Bring up the default NAT network (needed for domifaddr/DHCP).
+          sudo virsh net-start default || true
+          sudo virsh net-autostart default || true
+
+      - name: check virt capabilities
+        run: |
+          if [ ! -e /dev/kvm ]; then
+            echo "no /dev/kvm on this runner - vmtest requires real KVM" >&2
+            exit 1
+          fi
+          ls -l /dev/kvm
+          sudo virsh net-list --all
+          sudo virsh capabilities | head -40
+
+      - name: download ISO
+        run: |
+          cd ${{ runner.temp }}
+          wget -nv -O stonking-live-server-amd64.iso \
+            https://cdimage.ubuntu.com/ubuntu-server/daily-live/current/stonking-live-server-amd64.iso
+          wget -nv -O SHA256SUMS \
+            https://cdimage.ubuntu.com/ubuntu-server/daily-live/current/SHA256SUMS
+          sha256sum -c SHA256SUMS --ignore-missing
+          ls -lh stonking-live-server-amd64.iso
+
+      - name: build test ISO from this branch
+        run: |
+          cd ${{ github.workspace }}
+          # quick-test-this-branch.sh uses livefs-editor + slimy-update-snap.sh
+          # to swap the subiquity snap on the ISO for one built from this
+          # branch.  It needs root for the mounts, and snapcraft for the
+          # repack.
+          sudo env PYTHONPATH=. \
+            ./scripts/quick-test-this-branch.sh \
+            ${{ runner.temp }}/stonking-live-server-amd64.iso \
+            ${{ runner.temp }}/stonking-live-server-amd64-test.iso
+          ls -lh ${{ runner.temp }}/stonking-live-server-amd64-test.iso
+
+      - name: run vmtest
+        run: |
+          cd ${{ github.workspace }}
+          sudo env PYTHONPATH=. pytest-3 -v \
+            --iso=${{ runner.temp }}/stonking-live-server-amd64-test.iso \
+            -k test_bios_direct vmtests
+
+      - name: dump diagnostics on failure
+        if: failure()
+        run: |
+          echo '== virsh list --all =='
+          sudo virsh list --all || true
+          echo '== running domains =='
+          for d in $(sudo virsh list --name || true); do
+            echo "-- $d --"
+            sudo virsh dominfo "$d" || true
+            sudo virsh domifaddr "$d" || true
+          done
+          echo '== collected logs =='
+          sudo find /tmp -maxdepth 2 -name 'subiquity-vmtest-*' -print 2>/dev/null || true
+          sudo find /tmp -maxdepth 2 -name 'subiquity-vmtest-*.tgz' -exec ls -lh {} \; 2>/dev/null || true
+
+      - name: cleanup
+        if: always()
+        run: |
+          rm -f ${{ runner.temp }}/stonking-live-server-amd64.iso \
+                ${{ runner.temp }}/stonking-live-server-amd64-test.iso
+          for d in $(sudo virsh list --all --name || true); do
+            case "$d" in
+              subiquity-vmtest-*)
+                sudo virsh destroy "$d" 2>/dev/null || true
+                sudo virsh undefine "$d" --remove-all-storage 2>/dev/null || true
+                ;;
+            esac
+          done
