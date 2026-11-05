@@ -61,11 +61,11 @@ There are two locations that Subiquity checks for the :code:`autoinstall.yaml` f
 
 * On the root file system of the installation system - this option typically requires modifying the installation ISO and is not recommended.
 
-Alternatively, you can pass the location of the autoinstall file on the kernel command line via the :code:`subiquity.autoinstallpath` parameter, where the path is relative to the root directory of the installation system. For example:
+Alternatively, you can pass the location of the autoinstall file on the kernel command line via the :code:`subiquity.autoinstallpath` parameter. Use an absolute path in the installation system. For example, the installation medium is mounted at :code:`/cdrom` in the installation system, so to use the :code:`path/to/autoinstall.yaml` file from the installation medium, pass:
 
 .. code-block::
 
-    subiquity.autoinstallpath=path/to/autoinstall.yaml
+    subiquity.autoinstallpath=/cdrom/path/to/autoinstall.yaml
 
 
 Order of precedence for autoinstall locations
