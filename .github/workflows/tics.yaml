@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   TICS:
-    runs-on: [self-hosted, linux, amd64, tiobe, noble]
+    runs-on: [self-hosted, linux, amd64, tiobe, resolute]
     steps:
       - name: Checkout the project
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
