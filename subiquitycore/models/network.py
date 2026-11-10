@@ -44,6 +44,10 @@ def addr_version(ip):
     return ipaddress.ip_interface(ip).version
 
 
+def default_vlan_name(device_name: str, vlan_id: int) -> str:
+    return "{name}.{tag}".format(name=device_name, tag=vlan_id)
+
+
 class NetDevAction(enum.Enum):
     # Information about a network interface
     INFO = pgettext("NetDevAction", "Info")
@@ -536,8 +540,9 @@ class NetworkModel(object):
                     del self.devices_by_name[name]
                 return dev
 
-    def new_vlan(self, device_name, tag):
-        name = "{name}.{tag}".format(name=device_name, tag=tag)
+    def new_vlan(self, device_name, tag, name: Optional[str] = None):
+        if name is None:
+            name = default_vlan_name(device_name, tag)
         dev = self.devices_by_name[name] = NetworkDev(self, name, "vlan")
         dev.config = {
             "link": device_name,
