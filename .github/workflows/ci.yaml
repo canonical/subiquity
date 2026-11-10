@@ -17,13 +17,12 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
         series:
-          - noble     # match core snap
-          - resolute  # latest
+          - resolute  # match core snap
         make-target:
           - lint
           - check
@@ -37,7 +36,7 @@ jobs:
     - name: run
       run: workshop exec subiquity-${{ matrix.series }} -- sudo make ${{ matrix.make-target }}
   pre-commit:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -47,14 +46,14 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
-          python-version: '3.12'
+          python-version: '3.14'
       - name: Install aspell for doc-spelling hook
         run: make -C doc spellcheck-install CONFIRM_SUDO=y
       - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd  # v3.0.1
   static-typing:
     # In this job, we compare the output of mypy before and after the PR.
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Install mypy and typeshed
         run: sudo apt-get install -y python3-mypy python3-typeshed
