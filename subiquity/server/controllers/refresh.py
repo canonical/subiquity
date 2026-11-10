@@ -17,7 +17,7 @@ import asyncio
 import enum
 import logging
 import os
-from typing import Tuple
+from typing import Optional, Tuple
 
 import requests.exceptions
 
@@ -71,6 +71,12 @@ class RefreshController(SubiquityController):
         # ours (or in practice, belongs to a server process that was running
         # before the refresh.  See LP: #2146422.
         self.initiated_changes: set[str] = set()
+        # The refresh operation we initiated most recently. Requests to start
+        # a refresh while it is still in progress (e.g., when the client sends
+        # the request twice) reuse it. Otherwise, snapd would refuse to start
+        # another refresh with 409 Conflict. See LP: #2061756.
+        self.last_change_id: Optional[str] = None
+        self.start_update_lock = asyncio.Lock()
 
     def load_autoinstall_data(self, data):
         if data is not None:
@@ -215,20 +221,47 @@ class RefreshController(SubiquityController):
             context.description = "no new version of snap available"
         self.status.availability = RefreshCheckState.UNAVAILABLE
 
+    async def ongoing_refresh(self) -> Optional[str]:
+        """Return the change ID of the refresh we initiated most recently if
+        it is still in progress. Otherwise, return None."""
+        if self.last_change_id is None:
+            return None
+        try:
+            change = await self.app.snapdapi.v2.changes[self.last_change_id].GET()
+        except Exception:
+            # We cannot tell, so let snapd decide.
+            log.warning(
+                "could not determine the status of change %s",
+                self.last_change_id,
+                exc_info=True,
+            )
+            return None
+        if change.ready:
+            return None
+        return self.last_change_id
+
     @with_context()
     async def start_update(self, context):
-        try:
-            change_id = await self.app.snapdapi.v2.snaps[self.snap_name].POST(
-                SnapActionRequest(action=SnapAction.REFRESH, ignore_running=True)
-            )
-        except requests.exceptions.HTTPError as http_err:
-            log.warning(
-                "v2/snaps/%s returned %s", self.snap_name, http_err.response.text
-            )
-            raise
-        self.initiated_changes.add(change_id)
-        context.description = "change id: {}".format(change_id)
-        return change_id
+        async with self.start_update_lock:
+            change_id = await self.ongoing_refresh()
+            if change_id is not None:
+                context.description = "change id: {} (already in progress)".format(
+                    change_id
+                )
+                return change_id
+            try:
+                change_id = await self.app.snapdapi.v2.snaps[self.snap_name].POST(
+                    SnapActionRequest(action=SnapAction.REFRESH, ignore_running=True)
+                )
+            except requests.exceptions.HTTPError as http_err:
+                log.warning(
+                    "v2/snaps/%s returned %s", self.snap_name, http_err.response.text
+                )
+                raise
+            self.initiated_changes.add(change_id)
+            self.last_change_id = change_id
+            context.description = "change id: {}".format(change_id)
+            return change_id
 
     async def get_progress(self, change_id: str) -> Change:
         change = await self.app.snapdapi.v2.changes[change_id].GET()
