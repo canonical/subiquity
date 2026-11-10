@@ -1110,7 +1110,7 @@ class Raid(_Device):
 
     @property
     def size(self):
-        if self.preserve:
+        if self.preserve and self._info is not None:
             return self._info.size
         return get_raid_size(self.raidlevel, self.devices)
 
@@ -2129,6 +2129,13 @@ class StorageModel:
                 elif "path" in kw:
                     path = kw["path"]
                     kw["info"] = StorageInfo({path: blockdevs[path]})
+                elif c is Raid and kw.get("preserve") and blockdevs:
+                    # The path of a pre-existing RAID does not have to be
+                    # specified, it used to be looked up from its name.
+                    # LP: #2119507
+                    path = "/dev/" + kw["name"]
+                    if path in blockdevs:
+                        kw["info"] = StorageInfo({path: blockdevs[path]})
             if is_probe_data:
                 kw["preserve"] = True
             obj = byid[action["id"]] = c(m=self, **kw)
