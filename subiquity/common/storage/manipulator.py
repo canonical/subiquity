@@ -29,6 +29,7 @@ from subiquity.common.storage.spec import (
 from subiquity.common.types.storage import FirmwareType
 from subiquity.models.storage import (
     LVM_CHUNK_SIZE,
+    Filesystem,
     LVM_LogicalVolume,
     LVM_VolGroup,
     Partition,
@@ -71,6 +72,12 @@ class StorageManipulator:
             return
         self.model.remove_mount(mount)
 
+    def create_subvolume(self, fs: Filesystem, name: str, spec: FileSystemSpec):
+        """Create a subvolume on fs and mount it according to spec."""
+        subvolume = self.model.add_btrfs_subvolume(fs, name)
+        self.create_mount(fs, spec)
+        return subvolume
+
     def create_filesystem(self, volume, spec: FileSystemSpec):
         if spec.get("fstype") is None:
             # prep partitions are always wiped (and never have a filesystem)
@@ -106,7 +113,7 @@ class StorageManipulator:
             return
         for sv in list(fs._btrfs_subvolumes):
             self.delete_mount(sv._mount)
-            self.model._remove(sv)
+            self.model.remove_btrfs_subvolume(sv)
         # fs.mount() only knows about one of possibly several mounts
         for mount in [m for m in self.model._all(type="mount") if m.device is fs]:
             self.delete_mount(mount)

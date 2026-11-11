@@ -2515,19 +2515,25 @@ class StorageModel:
         # multiple mounts are legitimate for a btrfs fs with subvolumes
         if fs._mount is not None and not fs._btrfs_subvolumes:
             raise Exception(f"{fs} is already mounted")
-        if options is None and fs.volume.on_remote_storage():
-            options = "defaults,_netdev"
+        if fs.volume.on_remote_storage():
+            if options is None:
+                options = "defaults"
+            if "_netdev" not in options.split(","):
+                options += ",_netdev"
         m = Mount(m=self, device=fs, path=path, options=options)
         self._actions.append(m)
         return m
+
+    def remove_mount(self, mount):
+        self._remove(mount)
 
     def add_btrfs_subvolume(self, fs: Filesystem, name: str):
         sv = BtrfsSubvolume(m=self, volume=fs, name=name)
         self._actions.append(sv)
         return sv
 
-    def remove_mount(self, mount):
-        self._remove(mount)
+    def remove_btrfs_subvolume(self, subvolume):
+        self._remove(subvolume)
 
     def needs_bootloader_partition(self):
         """true if no disk have a boot partition, and one is needed"""

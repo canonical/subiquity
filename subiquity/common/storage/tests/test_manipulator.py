@@ -22,6 +22,7 @@ import attr
 from subiquity.common.storage import boot, gaps, sizes
 from subiquity.common.storage.actions import DeviceAction
 from subiquity.common.storage.manipulator import StorageManipulator
+from subiquity.common.storage.spec import FileSystemSpec
 from subiquity.models.storage import FirmwareType, MiB, Partition
 from subiquity.models.tests.test_storage import (
     make_disk,
@@ -119,6 +120,21 @@ class TestStorageManipulator(unittest.TestCase):
         self.assertEqual("random", p.wipe)
         self.assertFalse(fs.preserve)
         self.assertEqual("ext2", fs.fstype)
+
+    def test_create_subvolume(self):
+        manipulator, disk = make_manipulator_and_disk()
+        p = make_partition(manipulator.model, disk)
+        fs = make_filesystem(manipulator.model, partition=p, fstype="btrfs")
+        sv = manipulator.create_subvolume(
+            fs, "@", FileSystemSpec(mount="/", options="subvol=@")
+        )
+        self.assertEqual("@", sv.name)
+        self.assertIs(fs, sv.volume)
+        self.assertIn(sv, manipulator.model._actions)
+        mount = manipulator.model._one(type="mount")
+        self.assertEqual("/", mount.path)
+        self.assertEqual("subvol=@", mount.options)
+        self.assertIs(mount, fs.mount())
 
     def test_can_only_add_boot_once(self):
         # This is really testing model code but it's much easier to test with a

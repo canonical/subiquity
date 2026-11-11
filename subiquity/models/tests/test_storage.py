@@ -449,6 +449,22 @@ class TestStorageModel(unittest.TestCase):
 
     @parameterized.expand(
         (
+            (None, False, None),
+            ("defaults,subvol=@", False, "defaults,subvol=@"),
+            (None, True, "defaults,_netdev"),
+            ("defaults,subvol=@", True, "defaults,subvol=@,_netdev"),
+            ("defaults,subvol=@,_netdev", True, "defaults,subvol=@,_netdev"),
+        )
+    )
+    def test_add_mount_netdev_option_merge(self, options, remote, expected):
+        model, partition = make_model_and_partition()
+        fs = make_filesystem(model=model, partition=partition, fstype="btrfs")
+        with mock.patch.object(fs.volume, "on_remote_storage", return_value=remote):
+            mount = model.add_mount(fs, "/", options=options)
+        self.assertEqual(mount.options, expected)
+
+    @parameterized.expand(
+        (
             (FirmwareType.NONE, None, None, False, True),
             (FirmwareType.BIOS, "ext4", None, True, True),
             (FirmwareType.BIOS, "btrfs", None, True, True),
