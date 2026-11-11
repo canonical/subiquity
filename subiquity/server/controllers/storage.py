@@ -876,15 +876,18 @@ class StorageController(SubiquityController, StorageManipulator):
         part_align = device.alignment_data().part_align
         bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
         gap_boot, gap_rest = gap.split(bootfs_size)
-        fs_spec = FileSystemSpec(fstype="ext4", mount="/boot")
-        self.create_partition(device, gap_boot, fs_spec)
-        part = self.create_partition(device, gap_rest, FileSystemSpec(fstype="btrfs"))
-        fs = part.fs()
-        self.model.add_btrfs_subvolume(fs, "@")
-        self.model.add_btrfs_subvolume(fs, "@home")
-        # the singular _mount backlink should end up on the root mount
-        self.create_mount(fs, FileSystemSpec(mount="/home", options="subvol=@home"))
-        self.create_mount(fs, FileSystemSpec(mount="/", options="subvol=@"))
+        bootfs_spec = FileSystemSpec(fstype="ext4", mount="/boot")
+        self.create_partition(device, gap_boot, bootfs_spec)
+        rootdev = self.create_partition(
+            device, gap_rest, FileSystemSpec(fstype="btrfs")
+        )
+        rootfs = rootdev.fs()
+        self.create_mounted_subvolume(
+            rootfs, "@home", FileSystemSpec(mount="/home", options="subvol=@home")
+        )
+        self.create_mounted_subvolume(
+            rootfs, "@", FileSystemSpec(mount="/", options="subvol=@")
+        )
 
     @functools.singledispatchmethod
     def start_guided(self, target: GuidedStorageTarget, disk: ModelDisk) -> gaps.Gap:
