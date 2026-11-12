@@ -1,0 +1,135 @@
+name: VM Tests
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'doc/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vmtest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vmtest:
+    name: bios direct
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    env:
+      ISO_NAME: tenacious-live-server-amd64.iso
+      ISO_URL: https://cdimage.ubuntu.com/ubuntu-server/tenacious/daily-live/current
+      # Stage the test ISO into libvirt's default pool, where qemu can read it
+      # under the stock AppArmor profile.
+      ISO_DIR: /var/lib/libvirt/images
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Fast path failure.
+      - name: ensure /dev/kvm exists
+        run: |
+          if [ ! -e /dev/kvm ]; then
+            echo "no /dev/kvm on this runner - vmtest requires nested virtualization" >&2
+            exit 1
+          fi
+          ls -l /dev/kvm
+
+      - name: install vmtest dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pytest python3-yaml \
+            cloud-init python3-attr \
+            virtinst \
+            fuseiso fuse3 \
+            libvirt-clients \
+            libvirt-daemon \
+            libvirt-daemon-driver-qemu \
+            libvirt-daemon-system \
+            libvirt-daemon-config-network \
+            dnsmasq-base \
+            openssh-client \
+            snapd wget git rsync \
+            xorriso squashfs-tools lz4 python3-debian gpg
+
+      - name: install snapcraft
+        run: |
+          if ! command -v snapcraft >/dev/null 2>&1; then
+            sudo snap install snapcraft --classic
+          fi
+          snapcraft --version
+
+      - name: configure libvirt
+        run: |
+          sudo systemctl enable --now libvirtd
+          # Bring up the default NAT network (needed for domifaddr/DHCP).
+          sudo virsh net-start default || true
+          sudo virsh net-autostart default || true
+
+      - name: check virt capabilities
+        run: |
+          sudo virsh net-list --all
+          sudo virt-host-validate qemu || true
+          # The following will exit non-zero if kvm is unavailable.
+          if ! sudo virsh domcapabilities --virttype kvm > /dev/null; then
+            echo "KVM hardware virtualization is unavailable on this runner" >&2
+            exit 1
+          fi
+
+      - name: download ISO
+        run: |
+          cd "${{ runner.temp }}"
+          wget -nv -O "$ISO_NAME" "$ISO_URL/$ISO_NAME"
+          wget -nv -O SHA256SUMS "$ISO_URL/SHA256SUMS"
+          sha256sum -c SHA256SUMS --ignore-missing
+
+      - name: build test ISO from this branch
+        run: |
+          set -x
+          # Repack the subiquity snap on the ISO with the contents from this branch.
+          sudo env PYTHONPATH=. \
+            ./scripts/quick-test-this-branch.sh \
+            "${{ runner.temp }}/$ISO_NAME" \
+            "$ISO_DIR/${ISO_NAME%.iso}-test.iso"
+          ls -lh "$ISO_DIR/${ISO_NAME%.iso}-test.iso"
+
+      - name: run vmtest
+        run: |
+          sudo env PYTHONPATH=. pytest-3 -v \
+            --iso="$ISO_DIR/${ISO_NAME%.iso}-test.iso" \
+            -k test_bios_direct vmtests
+
+      - name: dump diagnostics on failure
+        if: failure()
+        run: |
+          echo '== virsh list --all =='
+          sudo virsh list --all || true
+          echo '== running domains =='
+          for d in $(sudo virsh list --name || true); do
+            echo "-- $d --"
+            sudo virsh dominfo "$d" || true
+            sudo virsh domifaddr "$d" || true
+          done
+          echo '== collected logs =='
+          sudo find /tmp -maxdepth 2 -name 'subiquity-vmtest-*' -print 2>/dev/null || true
+          sudo find /tmp -maxdepth 2 -name 'subiquity-vmtest-*.tgz' -exec ls -lh {} \; 2>/dev/null || true
+
+      - name: cleanup
+        if: always()
+        run: |
+          sudo rm -f \
+                "${{ runner.temp }}/$ISO_NAME" \
+                "${{ runner.temp }}/SHA256SUMS" \
+                "$ISO_DIR/${ISO_NAME%.iso}-test.iso"
+
+          for d in $(sudo virsh list --all --name || true); do
+            case "$d" in
+              subiquity-vmtest-*)
+                sudo virsh destroy "$d" 2>/dev/null || true
+                sudo virsh undefine "$d" --remove-all-storage 2>/dev/null || true
+                ;;
+            esac
+          done
