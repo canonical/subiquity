@@ -1,0 +1,145 @@
+name: VM Tests
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'doc/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vmtest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  snap-build:
+    name: build snap
+    runs-on: ubuntu-26.04
+    outputs:
+      subiquity: ${{ steps.upload-snap.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: build subiquity snap
+        uses: canonical/action-build@3bdaa03e1ba6bf59a65f84a751d943d549a54e79  # v1
+        id: build-snap
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        id: upload-snap
+        with:
+          name: subiquity.snap
+          path: ${{ steps.build-snap.outputs.snap }}
+
+  vmtest:
+    name: bios direct
+    needs: snap-build
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    env:
+      ISO_NAME: tenacious-live-server-amd64.iso
+      ISO_URL: https://cdimage.ubuntu.com/ubuntu-server/tenacious/daily-live/current
+      # Stage the test ISO into libvirt's default pool, where qemu can read it
+      # under the stock AppArmor profile.
+      ISO_DIR: /var/lib/libvirt/images
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Fast path failure.
+      - name: ensure /dev/kvm exists
+        run: |
+          if [ ! -e /dev/kvm ]; then
+            echo "no /dev/kvm on this runner - vmtest requires nested virtualization" >&2
+            exit 1
+          fi
+          ls -l /dev/kvm
+
+      - name: install vmtest dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pytest openssh-client \
+            virtinst libvirt-daemon-system \
+            cloud-init python3-attr \
+            fuseiso squashfs-tools lz4 python3-debian gpg \
+            wget git
+
+      - name: configure libvirt
+        run: |
+          sudo systemctl enable --now libvirtd
+          # Ensure the default NAT network (needed for domifaddr/DHCP) is
+          # started.
+          sudo virsh net-start default || true # Errors when network is already active.
+          sudo virsh net-autostart default
+
+      - name: check virt capabilities
+        run: |
+          sudo virsh net-list --all
+          sudo virt-host-validate qemu
+
+      - name: download built snap
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          artifact-ids: ${{ needs.snap-build.outputs.subiquity }}
+
+      - name: download daily ISO
+        run: |
+          cd "$RUNNER_TEMP"
+          wget -nv -O "$ISO_NAME" "$ISO_URL/$ISO_NAME"
+          wget -nv -O SHA256SUMS "$ISO_URL/SHA256SUMS"
+          sha256sum -c SHA256SUMS --ignore-missing
+
+      - name: build test ISO using newly built snap
+        run: |
+          set -x
+          sudo ./scripts/inject-subiquity-snap.sh \
+            "$RUNNER_TEMP/$ISO_NAME" \
+            subiquity*.snap \
+            "$ISO_DIR/${ISO_NAME%.iso}-test.iso"
+          ls -lh "$ISO_DIR/${ISO_NAME%.iso}-test.iso"
+
+      - name: run vmtest
+        run: |
+          sudo PYTHONPATH=. pytest-3 -v \
+            --iso="$ISO_DIR/${ISO_NAME%.iso}-test.iso" \
+            -k test_bios_direct vmtests
+
+      - name: dump diagnostics on failure
+        if: failure()
+        run: |
+          echo '== virsh list --all =='
+          sudo virsh list --all || true
+          echo '== running domains =='
+          for d in $(sudo virsh list --name); do
+            echo "-- $d --"
+            sudo virsh dominfo "$d" || true
+            sudo virsh domifaddr "$d" || true
+          done
+          echo '== collected logs =='
+          sudo find /tmp -maxdepth 2 -name 'subiquity-vmtest-*' -ls || true
+
+      - name: upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: installer-logs
+          path: /tmp/subiquity-vmtest-*/*.tgz
+
+      - name: cleanup
+        if: always()
+        run: |
+          sudo rm -f -- \
+                "$RUNNER_TEMP/$ISO_NAME" \
+                "$RUNNER_TEMP/SHA256SUMS" \
+                "$ISO_DIR/${ISO_NAME%.iso}-test.iso"
+
+          for d in $(sudo virsh list --all --name); do
+            case "$d" in
+              subiquity-vmtest-*)
+                sudo virsh destroy "$d" || true
+                sudo virsh undefine "$d" --remove-all-storage || true
+                ;;
+            esac
+          done
