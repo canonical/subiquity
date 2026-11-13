@@ -1266,7 +1266,7 @@ class TestAutoInstallConfig(unittest.TestCase):
             ),
         )
 
-    def test_btrfs_subvolume(self):
+    def test_subvolume(self):
         model, disk = make_model_and_disk()
         fake_up_blockdata(model)
         model.apply_autoinstall_config(
@@ -1285,7 +1285,7 @@ class TestAutoInstallConfig(unittest.TestCase):
                     "fstype": "btrfs",
                 },
                 {
-                    "type": "btrfs_subvolume",
+                    "type": "subvolume",
                     "id": "subvol0",
                     "volume": "fmt0",
                     "name": "@",
@@ -1299,7 +1299,7 @@ class TestAutoInstallConfig(unittest.TestCase):
                 },
             ]
         )
-        subvol = model._one(type="btrfs_subvolume")
+        subvol = model._one(type="subvolume")
         self.assertEqual(subvol.name, "@")
         self.assertEqual(subvol.volume.fstype, "btrfs")
         self.assertEqual(subvol.fstype, "btrfs")

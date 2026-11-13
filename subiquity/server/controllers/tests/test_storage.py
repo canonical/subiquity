@@ -2138,7 +2138,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertFalse(d1p3.preserve)
         self.assertEqual("btrfs", d1p3.fs().fstype)
         [sv_root, sv_home] = sorted(
-            self.model._all(type="btrfs_subvolume"), key=lambda sv: sv.name
+            self.model._all(type="subvolume"), key=lambda sv: sv.name
         )
         self.assertEqual("@", sv_root.name)
         self.assertEqual("@home", sv_home.name)
@@ -2161,7 +2161,7 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual("/", d1p3.mount)
         self.assertEqual("btrfs", d1p3.fs().fstype)
         [sv_root, sv_home] = sorted(
-            self.model._all(type="btrfs_subvolume"), key=lambda sv: sv.name
+            self.model._all(type="subvolume"), key=lambda sv: sv.name
         )
         self.assertEqual("@", sv_root.name)
         self.assertEqual("@home", sv_home.name)

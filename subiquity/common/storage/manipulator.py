@@ -74,7 +74,7 @@ class StorageManipulator:
 
     def create_subvolume(self, fs: Filesystem, name: str, spec: FileSystemSpec):
         """Create a subvolume on fs and mount it according to spec."""
-        subvolume = self.model.add_btrfs_subvolume(fs, name)
+        subvolume = self.model.add_subvolume(fs, name)
         self.create_mount(fs, spec)
         return subvolume
 
@@ -111,9 +111,9 @@ class StorageManipulator:
     def delete_filesystem(self, fs):
         if fs is None:
             return
-        for sv in list(fs._btrfs_subvolumes):
+        for sv in list(fs._subvolumes):
             self.delete_mount(sv._mount)
-            self.model.remove_btrfs_subvolume(sv)
+            self.model.remove_subvolume(sv)
         # fs.mount() only knows about one of possibly several mounts
         for mount in [m for m in self.model._all(type="mount") if m.device is fs]:
             self.delete_mount(mount)
