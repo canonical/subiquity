@@ -117,6 +117,7 @@ default_capabilities = [
     GuidedCapability.ZFS,
     GuidedCapability.ZFS_LUKS_KEYSTORE,
     GuidedCapability.BTRFS,
+    GuidedCapability.BTRFS_LUKS,
 ]
 
 
@@ -287,6 +288,7 @@ class TestSubiquityControllerStorage(IsolatedAsyncioTestCase):
             GuidedCapability.ZFS,
             GuidedCapability.ZFS_LUKS_KEYSTORE,
             GuidedCapability.BTRFS,
+            GuidedCapability.BTRFS_LUKS,
         }
 
         with mock.patch.object(
@@ -2152,6 +2154,48 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual(d1p3.fs(), home_mount.device)
         self.assertIsNone(gaps.largest_gap(self.d1))
 
+    @parameterized.expand(boot_expectations)
+    async def test_guided_btrfs_luks(self, firmware_type, ptable, p1mnt):
+        await self._guided_setup(firmware_type, ptable)
+        target = GuidedStorageTargetReformat(
+            disk_id=self.d1.id, allowed=default_capabilities
+        )
+        await self.controller.guided(
+            GuidedChoiceV2(
+                target=target,
+                capability=GuidedCapability.BTRFS_LUKS,
+                password="passw0rd",
+            )
+        )
+        [d1p1, d1p2, d1p3] = self.d1.partitions()
+        self.assertEqual(p1mnt, d1p1.mount)
+        self.assertEqual("/boot", d1p2.mount)
+        self.assertEqual("ext4", d1p2.fs().fstype)
+        self.assertIsNone(d1p3.mount)
+        self.assertIsNone(d1p3.fs())
+        self.assertFalse(d1p1.preserve)
+        self.assertFalse(d1p2.preserve)
+        self.assertFalse(d1p3.preserve)
+        [dmc] = self.model.all_dm_crypts()
+        self.assertEqual(d1p3, dmc.volume)
+        self.assertEqual("passw0rd", dmc.key)
+        fs = dmc.fs()
+        self.assertEqual("btrfs", fs.fstype)
+        [sv_root, sv_home] = sorted(
+            self.model._all(type="subvolume"), key=lambda sv: sv.name
+        )
+        self.assertEqual("@", sv_root.name)
+        self.assertEqual("@home", sv_home.name)
+        self.assertEqual(fs, sv_root.volume)
+        self.assertEqual(fs, sv_home.volume)
+        root_mount = self.model._mount_for_path("/")
+        home_mount = self.model._mount_for_path("/home")
+        self.assertEqual("subvol=@", root_mount.options)
+        self.assertEqual("subvol=@home", home_mount.options)
+        self.assertEqual(fs, root_mount.device)
+        self.assertEqual(fs, home_mount.device)
+        self.assertIsNone(gaps.largest_gap(self.d1))
+
     async def test_autoinstall_guided_btrfs(self):
         await self._guided_setup(FirmwareType.UEFI, "gpt")
         await self.controller.run_autoinstall_guided({"name": "btrfs"})
@@ -2160,6 +2204,27 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual("/boot", d1p2.mount)
         self.assertEqual("/", d1p3.mount)
         self.assertEqual("btrfs", d1p3.fs().fstype)
+        [sv_root, sv_home] = sorted(
+            self.model._all(type="subvolume"), key=lambda sv: sv.name
+        )
+        self.assertEqual("@", sv_root.name)
+        self.assertEqual("@home", sv_home.name)
+        root_mount = self.model._mount_for_path("/")
+        home_mount = self.model._mount_for_path("/home")
+        self.assertEqual("subvol=@", root_mount.options)
+        self.assertEqual("subvol=@home", home_mount.options)
+
+    async def test_autoinstall_guided_btrfs_luks(self):
+        await self._guided_setup(FirmwareType.UEFI, "gpt")
+        await self.controller.run_autoinstall_guided(
+            {"name": "btrfs", "password": "passw0rd"}
+        )
+        [d1p1, d1p2, d1p3] = self.d1.partitions()
+        self.assertEqual("/boot/efi", d1p1.mount)
+        self.assertEqual("/boot", d1p2.mount)
+        self.assertIsNone(d1p3.mount)
+        [dmc] = self.model.all_dm_crypts()
+        self.assertEqual("btrfs", dmc.fs().fstype)
         [sv_root, sv_home] = sorted(
             self.model._all(type="subvolume"), key=lambda sv: sv.name
         )
@@ -3828,6 +3893,7 @@ class TestGuidedChoiceValidation(IsolatedAsyncioTestCase):
         (
             (GuidedCapability.MANUAL, False, False),
             (GuidedCapability.LVM_LUKS, False, True),
+            (GuidedCapability.BTRFS_LUKS, False, True),
             (GuidedCapability.CORE_BOOT_ENCRYPTED, True, True),
             (GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED, True, True),
         )

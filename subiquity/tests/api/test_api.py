@@ -2820,6 +2820,40 @@ class TestLabels(TestAPI):
                     },
                 ),
             ),
+            (
+                "BTRFS_LUKS",
+                "passw0rd",
+                (
+                    {
+                        "number": 1,
+                        "boot": True,
+                        "grub_device": True,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "fat32",
+                        "mount": "/boot/efi",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 2,
+                        "boot": False,
+                        "grub_device": None,
+                        "preserve": False,
+                        "wipe": "superblock",
+                        "format": "ext4",
+                        "mount": "/boot",
+                        "effectively_encrypted": False,
+                    },
+                    {
+                        "number": 3,
+                        "preserve": False,
+                        "wipe": None,
+                        "effective_format": "btrfs",
+                        "effective_mount": "/",
+                        "effectively_encrypted": True,
+                    },
+                ),
+            ),
         )
     )
     @timeout()
