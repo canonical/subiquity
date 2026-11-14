@@ -334,6 +334,7 @@ class VariationInfo:
                     GuidedCapability.LVM_LUKS,
                     GuidedCapability.ZFS,
                     GuidedCapability.ZFS_LUKS_KEYSTORE,
+                    GuidedCapability.BTRFS,
                 ]
             ),
         )
@@ -870,6 +871,22 @@ class StorageController(SubiquityController, StorageManipulator):
             bpool.create_zfs("BOOT", canmount="off", mountpoint="none")
             bpool.create_zfs(f"BOOT/ubuntu_{uuid}", mountpoint="/boot")
 
+    def guided_btrfs(self, gap):
+        device = gap.device
+        part_align = device.alignment_data().part_align
+        bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
+        gap_boot, gap_rest = gap.split(bootfs_size)
+        bootfs_spec = FileSystemSpec(fstype="ext4", mount="/boot")
+        self.create_partition(device, gap_boot, bootfs_spec)
+        part = self.create_partition(device, gap_rest, FileSystemSpec(fstype="btrfs"))
+        rootfs = part.fs()
+        self.create_subvolume(
+            rootfs, "@home", FileSystemSpec(mount="/home", options="subvol=@home")
+        )
+        self.create_subvolume(
+            rootfs, "@", FileSystemSpec(mount="/", options="subvol=@")
+        )
+
     @functools.singledispatchmethod
     def start_guided(self, target: GuidedStorageTarget, disk: ModelDisk) -> gaps.Gap:
         """Setup changes to the disk to prepare the gap that we will be
@@ -1042,6 +1059,8 @@ class StorageController(SubiquityController, StorageManipulator):
             self.guided_lvm(gap, choice)
         elif choice.capability.is_zfs():
             self.guided_zfs(gap, choice)
+        elif choice.capability.is_btrfs():
+            self.guided_btrfs(gap)
         elif choice.capability == GuidedCapability.DIRECT:
             self.guided_direct(gap)
         elif choice.capability == GuidedCapability.DD:
@@ -2323,6 +2342,8 @@ class StorageController(SubiquityController, StorageManipulator):
                     capability = GuidedCapability.ZFS_LUKS_KEYSTORE
                 else:
                     capability = GuidedCapability.ZFS
+            elif name == "btrfs":
+                capability = GuidedCapability.BTRFS
             else:
                 capability = GuidedCapability.DIRECT
 

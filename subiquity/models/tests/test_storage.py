@@ -493,6 +493,22 @@ class TestStorageModel(unittest.TestCase):
 
     @parameterized.expand(
         (
+            (None, False, None),
+            ("defaults,subvol=@", False, "defaults,subvol=@"),
+            (None, True, "defaults,_netdev"),
+            ("defaults,subvol=@", True, "defaults,subvol=@,_netdev"),
+            ("defaults,subvol=@,_netdev", True, "defaults,subvol=@,_netdev"),
+        )
+    )
+    def test_add_mount_netdev_option_merge(self, options, remote, expected):
+        model, partition = make_model_and_partition()
+        fs = make_filesystem(model=model, partition=partition, fstype="btrfs")
+        with mock.patch.object(fs.volume, "on_remote_storage", return_value=remote):
+            mount = model.add_mount(fs, "/", options=options)
+        self.assertEqual(mount.options, expected)
+
+    @parameterized.expand(
+        (
             (FirmwareType.NONE, None, None, False, True),
             (FirmwareType.BIOS, "ext4", None, True, True),
             (FirmwareType.BIOS, "btrfs", None, True, True),
@@ -1293,6 +1309,46 @@ class TestAutoInstallConfig(unittest.TestCase):
                 vg.available_for_partitions - dehumanize_size("50M"), LVM_CHUNK_SIZE
             ),
         )
+
+    def test_subvolume(self):
+        model, disk = make_model_and_disk()
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config(
+            [
+                {"type": "disk", "id": "disk0"},
+                {
+                    "type": "partition",
+                    "id": "part0",
+                    "device": "disk0",
+                    "size": 10 * (2**30),
+                },
+                {
+                    "type": "format",
+                    "id": "fmt0",
+                    "volume": "part0",
+                    "fstype": "btrfs",
+                },
+                {
+                    "type": "subvolume",
+                    "id": "subvol0",
+                    "volume": "fmt0",
+                    "name": "@",
+                },
+                {
+                    "type": "mount",
+                    "id": "mnt0",
+                    "device": "fmt0",
+                    "path": "/",
+                    "options": "subvol=@",
+                },
+            ]
+        )
+        subvol = model._one(type="subvolume")
+        self.assertEqual(subvol.name, "@")
+        self.assertEqual(subvol.volume.fstype, "btrfs")
+        self.assertEqual(subvol.fstype, "btrfs")
+        mount = model._one(type="mount", path="/")
+        self.assertEqual(mount.device, subvol.volume)
 
 
 class TestRenderActions(unittest.TestCase):

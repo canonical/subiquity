@@ -29,6 +29,7 @@ from subiquity.common.storage.spec import (
 from subiquity.common.types.storage import FirmwareType
 from subiquity.models.storage import (
     LVM_CHUNK_SIZE,
+    Filesystem,
     LVM_LogicalVolume,
     LVM_VolGroup,
     Partition,
@@ -59,7 +60,7 @@ class StorageManipulator:
     def create_mount(self, fs, spec: FileSystemSpec):
         if spec.get("mount") is None:
             return
-        mount = self.model.add_mount(fs, spec["mount"])
+        mount = self.model.add_mount(fs, spec["mount"], options=spec.get("options"))
         if self.model.needs_bootloader_partition():
             vol = fs.volume
             if vol.type == "partition" and boot.can_be_boot_device(vol.device):
@@ -70,6 +71,12 @@ class StorageManipulator:
         if mount is None:
             return
         self.model.remove_mount(mount)
+
+    def create_subvolume(self, fs: Filesystem, name: str, spec: FileSystemSpec):
+        """Create a subvolume on fs and mount it according to spec."""
+        subvolume = self.model.add_subvolume(fs, name)
+        self.create_mount(fs, spec)
+        return subvolume
 
     def create_filesystem(self, volume, spec: FileSystemSpec):
         if spec.get("fstype") is None:
@@ -104,7 +111,12 @@ class StorageManipulator:
     def delete_filesystem(self, fs):
         if fs is None:
             return
-        self.delete_mount(fs.mount())
+        for sv in list(fs._subvolumes):
+            self.delete_mount(sv._mount)
+            self.model.remove_subvolume(sv)
+        # fs.mount() only knows about one of possibly several mounts
+        for mount in [m for m in self.model._all(type="mount") if m.device is fs]:
+            self.delete_mount(mount)
         self.model.remove_filesystem(fs)
 
     delete_format = delete_filesystem

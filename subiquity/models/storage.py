@@ -1379,6 +1379,7 @@ class Filesystem:
     extra_options: Optional[List[str]] = None
 
     _mount: Optional["Mount"] = attributes.backlink()
+    _subvolumes: List["Subvolume"] = attributes.backlink(default=attr.Factory(list))
 
     def mount(self):
         return self._mount
@@ -1578,6 +1579,21 @@ class ZFS:
         yield self
         yield self.pool
         yield from self.pool.iter_underlying()
+
+
+@fsobj("subvolume")
+class Subvolume:
+    volume: Filesystem = attributes.ref(backlink="_subvolumes")
+    name: str
+
+    _mount: Optional["Mount"] = attributes.backlink()
+
+    @property
+    def fstype(self):
+        return self.volume.fstype
+
+    def on_remote_storage(self) -> bool:
+        return self.volume.on_remote_storage()
 
 
 ConstructedDevice = Union[Raid, LVM_VolGroup, ZPool]
@@ -2513,18 +2529,29 @@ class StorageModel:
             raise Exception("can only remove unmounted filesystem")
         self._remove(fs)
 
-    def add_mount(self, fs: Filesystem, path):
-        if fs._mount is not None:
+    def add_mount(self, fs: Filesystem, path, options=None):
+        # multiple mounts are legitimate for a btrfs fs with subvolumes
+        if fs._mount is not None and not fs._subvolumes:
             raise Exception(f"{fs} is already mounted")
-        options = None
         if fs.volume.on_remote_storage():
-            options = "defaults,_netdev"
+            if options is None:
+                options = "defaults"
+            if "_netdev" not in options.split(","):
+                options += ",_netdev"
         m = Mount(m=self, device=fs, path=path, options=options)
         self._actions.append(m)
         return m
 
     def remove_mount(self, mount):
         self._remove(mount)
+
+    def add_subvolume(self, fs: Filesystem, name: str):
+        sv = Subvolume(m=self, volume=fs, name=name)
+        self._actions.append(sv)
+        return sv
+
+    def remove_subvolume(self, subvolume):
+        self._remove(subvolume)
 
     def needs_bootloader_partition(self):
         """true if no disk have a boot partition, and one is needed"""
