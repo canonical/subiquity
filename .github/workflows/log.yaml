@@ -1,0 +1,25 @@
+name: Timer
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  my-job:
+    runs-on: [self-hosted-linux-amd64-noble-medium]
+    env:
+      TIME_LOG: subiquity-time
+      SIZE_LOG: subiquity-size
+    steps:
+      - uses: canonical/github-runner-operators/actions/enable-log-forwarding@4e4df51b975209fb847b88d65204141efdd406e9
+        with:
+          files: |
+            /var/log/syslog
+            /var/log/subiquity.log
+      - name: Some workload
+        run: |
+          echo '{"time": 3600, "size": 1024}' | sudo tee /var/log/subiquity.log
+
+
