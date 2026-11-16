@@ -273,7 +273,8 @@ class StorageController(SubiquityTuiController, StorageManipulator):
     async def _guided_choice(self, choice: GuidedChoiceV2):
         async def v2_guided_POST_with_v1_response() -> StorageResponse:
             await self.endpoint.v2.guided.POST(choice)
-            return await self.endpoint.GET()
+            # Avoid a PROBING response (config=None) if probert is running.
+            return await self.endpoint.GET(use_cached_result=True)
 
         coro = v2_guided_POST_with_v1_response()
         if not choice.capability.supports_manual_customization():
@@ -326,7 +327,7 @@ class StorageController(SubiquityTuiController, StorageManipulator):
     async def _reset(self, refresh_view: bool) -> None:
         async def v2_reset_with_v1_response() -> StorageResponse:
             await self.endpoint.v2.reset.POST()
-            return await self.endpoint.GET()
+            return await self.endpoint.GET(use_cached_result=True)
 
         status = await v2_reset_with_v1_response()
         self.app.ui.block_input = False
