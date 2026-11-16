@@ -271,14 +271,10 @@ class NetworkDev:
                 state=self._dhcp_state[v],
                 addresses=dhcp_addresses[v],
             )
-            if self.config is not None:
-                gateway = self.config.get("gateway" + str(v))
-            else:
-                gateway = None
             static_configs[v] = StaticConfig(
                 addresses=configured_addresses[v],
-                gateway=gateway,
-                nameservers=ns.get("nameservers", []),
+                gateway=self.default_gateway(v),
+                nameservers=ns.get("addresses", []),
                 searchdomains=ns.get("search", []),
             )
         return NetDevInfo(
@@ -437,6 +433,21 @@ class NetworkDev:
             self.config.pop("addresses", None)
             # If no static addresses, also drop nameservers
             self.config.pop("nameservers", None)
+
+    def default_gateway(self, version) -> Optional[str]:
+        """Return the gateway of the default route for the given IP version,
+        or None if there is no default route for it."""
+        if self.config is None:
+            return None
+        for route in self.config.get("routes", []):
+            if route.get("to") not in ("default", "0.0.0.0/0", "::/0"):
+                continue
+            via = route.get("via")
+            if via is not None and addr_version(via) == version:
+                return via
+        # gateway4 and gateway6 are deprecated in netplan but can still be
+        # found in existing configurations.
+        return self.config.get("gateway" + str(version))
 
     def remove_routes(self, version):
         routes = [

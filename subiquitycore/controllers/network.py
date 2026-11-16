@@ -415,12 +415,22 @@ class BaseNetworkController(BaseController):
         dev.remove_ip_networks_for_version(ip_version)
         dev.config.setdefault("addresses", []).extend(static_config.addresses)
         if static_config.gateway:
-            dev.config["routes"] = [{"to": "default", "via": static_config.gateway}]
-        else:
-            dev.remove_routes(ip_version)
+            # The routes for this IP version were removed above, but the ones
+            # for the other IP version must be preserved.
+            dev.config.setdefault("routes", []).append(
+                {"to": "default", "via": static_config.gateway}
+            )
+        # The name servers and search domains are shared between IPv4 and
+        # IPv6, so make sure we do not add duplicates.
         ns = dev.config.setdefault("nameservers", {})
-        ns.setdefault("addresses", []).extend(static_config.nameservers)
-        ns.setdefault("search", []).extend(static_config.searchdomains)
+        for key, values in (
+            ("addresses", static_config.nameservers),
+            ("search", static_config.searchdomains),
+        ):
+            existing = ns.setdefault(key, [])
+            for value in values:
+                if value not in existing:
+                    existing.append(value)
         self.update_link(dev)
         self.apply_config()
 
