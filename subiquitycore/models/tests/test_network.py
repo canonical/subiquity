@@ -14,7 +14,12 @@
 
 from unittest.mock import Mock
 
-from subiquitycore.models.network import BondConfig, BondParameters, NetworkDev
+from subiquitycore.models.network import (
+    BondConfig,
+    BondParameters,
+    NetworkDev,
+    NetworkModel,
+)
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.parameterized import parameterized
 
@@ -105,6 +110,23 @@ class TestNetworkDev(SubiTestCase):
         net_dev.remove_ip_networks_for_version(4)
         net_dev.remove_ip_networks_for_version(6)
         self.assertEqual(net_dev.config, {})
+
+
+class TestNewVlan(SubiTestCase):
+    def setUp(self):
+        self.model = NetworkModel("subiquity")
+
+    def test_default_name(self):
+        dev = self.model.new_vlan("eth0", 100)
+        self.assertEqual("eth0.100", dev.name)
+        self.assertEqual({"link": "eth0", "id": 100}, dev.config)
+        self.assertIs(dev, self.model.get_netdev_by_name("eth0.100"))
+
+    def test_custom_name(self):
+        dev = self.model.new_vlan("enp175s0f0np0", 1606, "vlan1606")
+        self.assertEqual("vlan1606", dev.name)
+        self.assertEqual({"link": "enp175s0f0np0", "id": 1606}, dev.config)
+        self.assertIs(dev, self.model.get_netdev_by_name("vlan1606"))
 
 
 class TestBondConfig(SubiTestCase):
