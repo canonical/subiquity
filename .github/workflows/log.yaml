@@ -21,5 +21,9 @@ jobs:
       - name: Some workload
         run: |
           echo '{"time": 3600, "size": 1024}' | sudo tee /var/log/subiquity.log
+          for i in 1 2 3; do
+            sleep 10
+            echo '{"time": 3600, "size": 1024, "attempt": '$i'}' | sudo tee -a /var/log/subiquity.log
+          done
 
 
