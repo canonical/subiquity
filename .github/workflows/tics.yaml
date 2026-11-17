@@ -1,6 +1,8 @@
 name: TICS
 
+
 on:
+  push:
   workflow_dispatch:
   schedule:
     - cron: '17 5 * * 6'  # Run at 5:17a (arbitrary) on Saturday
