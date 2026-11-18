@@ -2022,6 +2022,22 @@ class StorageModel:
             ai_config, blockdevs=self._probe_data["blockdev"], is_probe_data=False
         )
 
+        def resolve_str_size(p, parent):
+            if p.size.endswith("%"):
+                percentage = int(p.size[:-1])
+                p.size = align_down(parent.available_for_partitions * percentage // 100)
+            else:
+                p.size = dehumanize_size(p.size)
+
+        # Assigning offsets needs the actual size of every partition on the
+        # disk, so resolve percentages of a disk first; they only depend on
+        # the size of the disk. Other percentages (RAID, LVM) can depend on
+        # the size of a "size: -1" partition so they are resolved below.
+        for p in self._all(type="partition"):
+            [parent] = list(dependencies(p))
+            if parent.type == "disk" and isinstance(p.size, str):
+                resolve_str_size(p, parent)
+
         self.assign_omitted_offsets()
 
         for p in self._all(type="partition") + self._all(type="lvm_partition"):
@@ -2062,13 +2078,7 @@ class StorageModel:
                         filtered_parent, in_extended=is_logical_partition(p)
                     )
             elif isinstance(p.size, str):
-                if p.size.endswith("%"):
-                    percentage = int(p.size[:-1])
-                    p.size = align_down(
-                        parent.available_for_partitions * percentage // 100
-                    )
-                else:
-                    p.size = dehumanize_size(p.size)
+                resolve_str_size(p, parent)
 
     def _actions_from_config(self, config, *, blockdevs, is_probe_data):
         """Convert curtin storage config into action instances.
