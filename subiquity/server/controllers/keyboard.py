@@ -16,6 +16,7 @@
 import logging
 import os
 import pwd
+import subprocess
 from typing import Dict, Optional, Sequence, Tuple
 
 import attr
@@ -256,6 +257,38 @@ class KeyboardController(SubiquityController):
             f"[('xkb','{xkb_value}')]",
         ]
         await self._run_gui_command(gsettings, **kwargs)
+        await self._set_localectl_x11_keyboard(layout, variant)
+
+    async def _set_localectl_x11_keyboard(self, layout: str, variant: str) -> None:
+        """Persist the layout via logind's org.freedesktop.locale1
+        SetX11Keyboard (through localectl), so desktops that honour it (e.g.
+        KDE Plasma with FollowLocale1=true) pick it up without a
+        desktop-specific call.
+        """
+        new = latinizable(layout, variant)
+        if new is not None:
+            layout, variant = new
+        cmd = [
+            "localectl",
+            "--no-ask-password",
+            "--no-convert",
+            "--",
+            "set-x11-keymap",
+            layout,
+            "",  # model
+            variant,
+        ]
+        if self.opts.dry_run:
+            scale = os.environ.get("SUBIQUITY_REPLAY_TIMESCALE", "1")
+            cmd = ["sleep", str(1 / float(scale))]
+        try:
+            # Run directly rather than via _run_gui_command: that helper
+            # de-privileges to the target user via systemd-run, whereas this
+            # call relies on subiquity's own root privileges to set the
+            # keymap without a polkit prompt.
+            await arun_command(cmd, check=True)
+        except subprocess.CalledProcessError as exc:
+            log.warning("Could not localectl set-x11-keymap: %r", exc)
 
     @with_context(description="configuring keyboard")
     async def setup_target(self, context):
