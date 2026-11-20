@@ -38,11 +38,8 @@ class UbuntuProModel:
         """
         if not self.token:
             return {}
-        # Both "ubuntu_advantage" and "ubuntu-advantage" keys are accepted, but
-        # "ubuntu-advantage" is deprecated despite not being mentioned in the
-        # documentation.
         return {
-            "ubuntu_advantage": {
+            "ubuntu_pro": {
                 "token": self.token,
             },
         }
