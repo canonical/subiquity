@@ -100,6 +100,7 @@ from subiquity.server.snapd.core_boot_installer import CoreBootInstaller
 from subiquity.server.snapd.info import SnapdInfo
 from subiquity.server.snapd.system_getter import SystemGetter
 from subiquity.server.snapd.types import VolumesAuth, VolumesAuthMode
+from subiquity.server.types import InstallerChannels
 from subiquitycore.snapd import AsyncSnapd, SnapdConnection, get_fake_connection
 from subiquitycore.tests.mocks import make_app
 from subiquitycore.tests.parameterized import parameterized
@@ -2507,6 +2508,7 @@ class TestGuidedV2(IsolatedAsyncioTestCase):
         self.ctrler._probe_task.task = mock.Mock()
         self.ctrler._probe_firmware_task.task = mock.Mock()
         self.ctrler._examine_systems_task.task = mock.Mock()
+        self.ctrler._examined_source_count = self.ctrler._source_count
         if firmware_type == FirmwareType.BIOS and ptable != "msdos" and fix_bios:
             make_partition(
                 self.model,
@@ -3303,6 +3305,7 @@ class TestManualBoot(IsolatedAsyncioTestCase):
         self.ctrler._probe_task.task = mock.Mock()
         self.ctrler._probe_firmware_task.task = mock.Mock()
         self.ctrler._examine_systems_task.task = mock.Mock()
+        self.ctrler._examined_source_count = self.ctrler._source_count
 
     @parameterized.expand(firmware_types_and_ptables)
     async def test_get_boot_disks_only(self, firmware_type, ptable):
@@ -3966,3 +3969,108 @@ class TestCalculateEntropy(IsolatedAsyncioTestCase):
                 )
 
         self.assertEqual(expected_entropy, actual)
+
+
+class TestSystemsProbeOrdering(IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.app = make_app()
+        self.app.opts.firmware_type = None
+        self.probes = []
+
+        class Proxy:
+            _set_task = None
+
+            def proxy_set_task(self):
+                return self._set_task
+
+        self.proxy = Proxy()
+        self.app.controllers.Proxy = self.proxy
+        self.ctrler = StorageController(self.app)
+
+        async def examine():
+            self.probes.append(self.ctrler._examine_for_restart)
+
+        self.ctrler._examine_systems_task.func = examine
+
+    async def _configure_source(self):
+        await self.app.hub.abroadcast((InstallerChannels.CONFIGURED, "source"))
+
+    async def test_desktop_probes_when_storage_uses_the_result(self):
+        await self._configure_source()
+        self.assertIsNone(self.ctrler._examine_systems_task.task)
+
+        await self.ctrler._ensure_systems_probed()
+        await self.ctrler._ensure_systems_probed()
+
+        self.assertEqual([None], self.probes)
+
+    async def test_source_change_reprobes_when_storage_uses_the_result(self):
+        await self._configure_source()
+        await self.ctrler._ensure_systems_probed()
+
+        await self._configure_source()
+        self.assertEqual([None], self.probes)
+
+        await self.ctrler._ensure_systems_probed()
+        await self.ctrler._ensure_systems_probed()
+
+        self.assertEqual([None, None], self.probes)
+
+    async def test_autoinstall_probes_once_after_proxy_restart(self):
+        release = asyncio.Event()
+
+        async def restart():
+            await release.wait()
+
+        self.proxy._set_task = asyncio.create_task(restart())
+        await self._configure_source()
+        self.assertIsNone(self.ctrler._examine_systems_task.task)
+
+        ensured = asyncio.create_task(self.ctrler._ensure_systems_probed())
+        await asyncio.sleep(0)
+        self.assertFalse(ensured.done())
+        self.assertEqual([], self.probes)
+
+        release.set()
+        await ensured
+        await self.ctrler._ensure_systems_probed()
+
+        self.assertEqual([self.proxy._set_task], self.probes)
+
+    async def test_server_text_probes_once_after_proxy_restart(self):
+        await self._configure_source()
+        self.assertIsNone(self.ctrler._examine_systems_task.task)
+
+        release = asyncio.Event()
+
+        async def restart():
+            await release.wait()
+
+        self.proxy._set_task = asyncio.create_task(restart())
+        ensured = asyncio.create_task(self.ctrler._ensure_systems_probed())
+        await asyncio.sleep(0)
+        self.assertFalse(ensured.done())
+        self.assertEqual([], self.probes)
+
+        release.set()
+        await ensured
+
+        self.assertEqual([self.proxy._set_task], self.probes)
+
+    async def test_guided_get_waits_out_an_in_flight_restart(self):
+        await self._configure_source()
+        self.ctrler._probe_task = mock.Mock(done=mock.Mock(return_value=True))
+        self.ctrler._probe_firmware_task = mock.Mock(done=mock.Mock(return_value=True))
+        self.ctrler._errors = {}
+
+        self.proxy._set_task = asyncio.create_task(self._hold_restart())
+        status = await self.ctrler.v2_guided_GET()
+
+        self.assertEqual(ProbeStatus.PROBING, status.status)
+        self.assertEqual([], self.probes)
+        self.proxy._set_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await self.proxy._set_task
+
+    async def _hold_restart(self):
+        await asyncio.Event().wait()
