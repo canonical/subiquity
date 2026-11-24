@@ -2257,9 +2257,7 @@ class StorageModel:
 
         if mode == ActionRenderMode.DEVICES:
             r = [
-                act
-                for act in r
-                if act["type"] not in ("format", "mount", "subvolume")
+                act for act in r if act["type"] not in ("format", "mount", "subvolume")
             ]
         if mode == ActionRenderMode.FORMAT_MOUNT:
             r = [act for act in r if act["type"] in ("format", "mount", "subvolume")]

@@ -2245,6 +2245,42 @@ class TestGuided(IsolatedAsyncioTestCase):
         self.assertEqual("subvol=@home", home_mount.options)
 
     @parameterized.expand(
+        (
+            ("lvm", None, GuidedCapability.LVM),
+            ("lvm", "passw0rd", GuidedCapability.LVM_LUKS),
+            ("zfs", None, GuidedCapability.ZFS),
+            ("zfs", "passw0rd", GuidedCapability.ZFS_LUKS_KEYSTORE),
+            ("btrfs", None, GuidedCapability.BTRFS),
+            ("btrfs", "passw0rd", GuidedCapability.BTRFS_LUKS),
+        )
+    )
+    async def test_autoinstall_guided_capability(self, name, password, capability):
+        await self._guided_setup(FirmwareType.UEFI, "gpt")
+        self.controller.guided = mock.AsyncMock()
+        layout = {"name": name}
+        if password is not None:
+            layout["password"] = password
+        await self.controller.run_autoinstall_guided(layout)
+        guided_choice = self.controller.guided.call_args.args[0]
+        self.assertEqual(capability, guided_choice.capability)
+
+    @parameterized.expand((("lvm",), ("btrfs",)))
+    async def test_autoinstall_guided_recovery_key_without_password(self, name):
+        await self._guided_setup(FirmwareType.UEFI, "gpt")
+        with self.assertRaisesRegex(Exception, "recovery_key can only be used"):
+            await self.controller.run_autoinstall_guided(
+                {"name": name, "recovery-key": True}
+            )
+
+    async def test_autoinstall_guided_btrfs_luks_recovery_key(self):
+        await self._guided_setup(FirmwareType.UEFI, "gpt")
+        await self.controller.run_autoinstall_guided(
+            {"name": "btrfs", "password": "passw0rd", "recovery-key": True}
+        )
+        [dmc] = self.model.all_dm_crypts()
+        self.assertIsNotNone(dmc.recovery_key)
+
+    @parameterized.expand(
         [
             (*be, needs_ext4_boot)
             for be, needs_ext4_boot in itertools.product(
