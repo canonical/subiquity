@@ -45,6 +45,7 @@ class TestCapabilities(unittest.TestCase):
 
     def test_is_btrfs(self):
         self.assertTrue(GuidedCapability.BTRFS.is_btrfs())
+        self.assertTrue(GuidedCapability.BTRFS_LUKS.is_btrfs())
 
     def test_order(self):
         self.assertLess(GuidedCapability.DIRECT, GuidedCapability.CORE_BOOT_ENCRYPTED)

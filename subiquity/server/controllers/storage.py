@@ -55,7 +55,12 @@ from subiquity.common.storage.requirements import (
     Requirements,
     RequirementSeverity,
 )
-from subiquity.common.storage.spec import FileSystemSpec, PartitionSpec, VolGroupSpec
+from subiquity.common.storage.spec import (
+    FileSystemSpec,
+    LuksSpec,
+    PartitionSpec,
+    VolGroupSpec,
+)
 from subiquity.common.types.storage import (
     AddPartitionV2,
     Bootloader,
@@ -335,6 +340,7 @@ class VariationInfo:
                     GuidedCapability.ZFS,
                     GuidedCapability.ZFS_LUKS_KEYSTORE,
                     GuidedCapability.BTRFS,
+                    GuidedCapability.BTRFS_LUKS,
                 ]
             ),
         )
@@ -871,23 +877,36 @@ class StorageController(SubiquityController, StorageManipulator):
             bpool.create_zfs("BOOT", canmount="off", mountpoint="none")
             bpool.create_zfs(f"BOOT/ubuntu_{uuid}", mountpoint="/boot")
 
-    def guided_btrfs(self, gap):
+    def guided_btrfs(self, gap, choice: GuidedChoiceV2):
         device = gap.device
         part_align = device.alignment_data().part_align
         bootfs_size = align_up(sizes.get_bootfs_size(gap.size), part_align)
         gap_boot, gap_rest = gap.split(bootfs_size)
         bootfs_spec = FileSystemSpec(fstype="ext4", mount="/boot")
         self.create_partition(device, gap_boot, bootfs_spec)
-        rootdev = self.create_partition(
-            device, gap_rest, FileSystemSpec(fstype="btrfs")
+        rootdev = self.create_partition(device, gap_rest, FileSystemSpec(fstype=None))
+        if choice.recovery_key and not choice.password:
+            raise StorageInvalidUsageError(
+                "Cannot have a recovery key without encryption"
+            )
+        spec = LuksSpec()
+        if choice.password is not None:
+            spec["passphrase"] = choice.password
+        recovery_key_handler = RecoveryKeyHandler.from_post_data(
+            choice.recovery_key, default_suffix="recovery-key-btrfs.txt"
         )
-        rootfs = rootdev.fs()
+        if recovery_key_handler is not None:
+            spec["recovery-key"] = recovery_key_handler
+        rootdev = self.create_luks(rootdev, spec)
+        rootfs = self.create_filesystem(rootdev, FileSystemSpec(fstype="btrfs"))
         self.create_mounted_subvolume(
             rootfs, "@home", FileSystemSpec(mount="/home", options="subvol=@home")
         )
         self.create_mounted_subvolume(
             rootfs, "@", FileSystemSpec(mount="/", options="subvol=@")
         )
+        self.model.load_or_generate_recovery_keys()
+        self.model.expose_recovery_keys()
 
     @functools.singledispatchmethod
     def start_guided(self, target: GuidedStorageTarget, disk: ModelDisk) -> gaps.Gap:
@@ -1062,7 +1081,7 @@ class StorageController(SubiquityController, StorageManipulator):
         elif choice.capability.is_zfs():
             self.guided_zfs(gap, choice)
         elif choice.capability.is_btrfs():
-            self.guided_btrfs(gap)
+            self.guided_btrfs(gap, choice)
         elif choice.capability == GuidedCapability.DIRECT:
             self.guided_direct(gap)
         elif choice.capability == GuidedCapability.DD:
@@ -2345,7 +2364,15 @@ class StorageController(SubiquityController, StorageManipulator):
                 else:
                     capability = GuidedCapability.ZFS
             elif name == "btrfs":
-                capability = GuidedCapability.BTRFS
+                if password is not None:
+                    capability = GuidedCapability.BTRFS_LUKS
+                else:
+                    capability = GuidedCapability.BTRFS
+                if recovery_key and password is None:
+                    raise Exception(
+                        "recovery_key can only be used if password is specified"
+                    )
+                guided_recovery_key = RecoveryKey.from_autoinstall(recovery_key)
             else:
                 capability = GuidedCapability.DIRECT
 

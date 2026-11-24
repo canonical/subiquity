@@ -45,6 +45,15 @@ VolGroupSpec = TypedDict(
     total=False,
 )
 
+LuksSpec = TypedDict(
+    "LuksSpec",
+    {
+        "passphrase": str,
+        "recovery-key": RecoveryKeyHandler,
+    },
+    total=False,
+)
+
 
 FileSystemSpec = TypedDict(
     "FileSystemSpec",

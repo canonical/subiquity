@@ -22,6 +22,7 @@ from subiquity.common.storage import boot, gaps
 from subiquity.common.storage.spec import (
     FileSystemSpec,
     LogicalVolumeSpec,
+    LuksSpec,
     PartitionSpec,
     RaidSpec,
     VolGroupSpec,
@@ -172,6 +173,16 @@ class StorageManipulator:
         for d in set(raid.devices) | set(raid.spare_devices):
             d.wipe = "superblock"
         self.model.remove_raid(raid)
+
+    def create_luks(self, device, spec: LuksSpec):
+        key = spec.get("passphrase")
+        if key:
+            device = self.model.add_dm_crypt(
+                device,
+                key=key,
+                recovery_key=spec.get("recovery-key"),
+            )
+        return device
 
     def create_volgroup(self, spec: VolGroupSpec):
         devices = set()
