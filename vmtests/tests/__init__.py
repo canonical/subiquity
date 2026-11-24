@@ -14,6 +14,6 @@ class Firmware:
 
 @contextlib.contextmanager
 def assert_install_error():
-    with pytest.raises(pytest.fail.Exception) as ex:
+    with pytest.raises(RuntimeError) as ex:
         yield
     ex.match("install failed and reached ERROR state")
