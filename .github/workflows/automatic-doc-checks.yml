@@ -8,8 +8,6 @@ on:
     paths:
       - 'doc/**'
   workflow_dispatch:
-    paths:
-      - 'doc/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
