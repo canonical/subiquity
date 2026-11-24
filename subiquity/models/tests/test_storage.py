@@ -1399,6 +1399,20 @@ class TestRenderActions(unittest.TestCase):
         self.assertTrue(fs.id not in rendered_ids)
         self.assertTrue(mnt.id not in rendered_ids)
 
+    def test_render_devices_skips_subvolumes(self):
+        model = make_model(FirmwareType.NONE)
+        disk1 = make_disk(model, preserve=True)
+        disk1p1 = make_partition(model, disk1, preserve=True)
+        fs = model.add_filesystem(disk1p1, "btrfs")
+        subvol = model.add_subvolume(fs, "@")
+        rendered_ids = {
+            action["id"] for action in model._render_actions(ActionRenderMode.DEVICES)
+        }
+        self.assertTrue(disk1.id in rendered_ids)
+        self.assertTrue(disk1p1.id in rendered_ids)
+        self.assertTrue(fs.id not in rendered_ids)
+        self.assertTrue(subvol.id not in rendered_ids)
+
     def test_render_format_mount(self):
         model = make_model(FirmwareType.NONE)
         disk1 = make_disk(model, preserve=True)
@@ -1415,6 +1429,20 @@ class TestRenderActions(unittest.TestCase):
         vol_id = rendered_by_id[fs.id]["volume"]
         self.assertEqual(rendered_by_id[vol_id]["type"], "device")
         self.assertEqual(rendered_by_id[vol_id]["path"], "/dev/vda1")
+
+    def test_render_format_mount_includes_subvolumes(self):
+        model = make_model(FirmwareType.NONE)
+        disk1 = make_disk(model, preserve=True)
+        disk1p1 = make_partition(model, disk1, preserve=True)
+        disk1p1.path = "/dev/vda1"
+        fs = model.add_filesystem(disk1p1, "btrfs")
+        subvol = model.add_subvolume(fs, "@")
+        mnt = model.add_mount(fs, "/")
+        actions = model._render_actions(ActionRenderMode.FORMAT_MOUNT)
+        rendered_by_id = {action["id"]: action for action in actions}
+        self.assertTrue(fs.id in rendered_by_id)
+        self.assertTrue(subvol.id in rendered_by_id)
+        self.assertTrue(mnt.id in rendered_by_id)
 
     def test_render_includes_all_partitions(self):
         model = make_model(FirmwareType.NONE)
