@@ -56,6 +56,7 @@ class TestIdentityController(unittest.TestCase):
                 )
                 return {
                     "status": "OK",
+                    "status-code": 200,
                     "result": [
                         {
                             "username": "foo",
@@ -93,11 +94,17 @@ class TestIdentityController(unittest.TestCase):
         app.base_model.network = network_model
 
         app.snapdcon.response_sets = {
-            "v2-system-info": MemoryResponseSet([{"result": {"managed": True}}]),
+            "v2-system-info": MemoryResponseSet(
+                [{"status-code": 200, "status": "OK", "result": {"managed": True}}]
+            ),
             "v2-users": MemoryResponseSet(
                 [
                     # no "username" for first entry
-                    {"result": [{}, {"username": "foo"}]}
+                    {
+                        "status-code": 200,
+                        "status": "OK",
+                        "result": [{}, {"username": "foo"}],
+                    }
                 ]
             ),
         }
@@ -113,7 +120,9 @@ class TestIdentityController(unittest.TestCase):
         app.snapdcon = get_fake_connection()
 
         app.snapdcon.response_sets = {
-            "v2-system-info": MemoryResponseSet([{"result": {"managed": False}}]),
+            "v2-system-info": MemoryResponseSet(
+                [{"status-code": 200, "status": "OK", "result": {"managed": False}}]
+            ),
         }
 
         c = IdentityController(app)

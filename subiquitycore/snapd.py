@@ -15,15 +15,18 @@
 import asyncio
 import contextlib
 import glob
+import io
 import json
 import logging
 import os
 import time
 from functools import partial
+from pathlib import Path
 from typing import Any
 from urllib.parse import quote_plus, urlencode
 
 import attrs
+import requests
 import requests_unixsocket
 
 from subiquitycore.async_helpers import run_in_thread
@@ -79,27 +82,38 @@ class SnapdConnection:
             run_command(cmd)
 
 
+def requests_response_from_json(raw_json: str) -> requests.Response:
+    resp = requests.Response()
+
+    resp.raw = io.BytesIO(raw_json.encode())
+    resp.encoding = "utf-8"
+
+    loaded_json = json.loads(raw_json)
+
+    # Normally, status-code and reason come for the response headers but for
+    # fake responses, we use what's specified in the body.
+    resp.status_code = loaded_json["status-code"]
+    resp.reason = loaded_json["status"]
+
+    resp.headers["Content-Type"] = "application/json"
+    return resp
+
+
+@attrs.define
 class _FakeFileResponse:
-    def __init__(self, path):
-        self.path = path
+    path: str
 
-    def raise_for_status(self):
-        pass
-
-    def json(self):
-        with open(self.path) as fp:
-            return json.load(fp)
+    def as_response(self) -> requests.Response:
+        with Path(self.path).open() as fh:
+            return requests_response_from_json(fh.read())
 
 
 @attrs.define
 class _FakeMemoryResponse:
     data: Any
 
-    def raise_for_status(self):
-        pass
-
-    def json(self):
-        return self.data
+    def as_response(self) -> requests.Response:
+        return requests_response_from_json(json.dumps(self.data))
 
 
 class ResponseSet:
@@ -120,7 +134,7 @@ class ResponseSet:
             self.index = len(self.files) - 1
         else:
             self.index += d
-        return _FakeFileResponse(f)
+        return _FakeFileResponse(f).as_response()
 
 
 class MemoryResponseSet:
@@ -133,7 +147,7 @@ class MemoryResponseSet:
     def next(self):
         d = self.data[self.index]
         self.index += 1
-        return _FakeMemoryResponse(d)
+        return _FakeMemoryResponse(d).as_response()
 
 
 class FakeSnapdConnection:
@@ -209,7 +223,7 @@ class FakeSnapdConnection:
         # TODO replace by a proper error.
         raise RuntimeError("could not find encryption error to fix")
 
-    def post(self, path, body, *, raise_for_status=True, **args):
+    def post(self, path, body, *, raise_for_status=True, **args) -> requests.Response:
         if path == "v2/snaps/subiquity" and body["action"] == "refresh":
             # The post-refresh hook does this in the real world.
             update_marker_file = self.output_base + "/run/subiquity/updating"
@@ -221,7 +235,7 @@ class FakeSnapdConnection:
                     "status-code": 200,
                     "status": "OK",
                 }
-            )
+            ).as_response()
         change = None
         sync_result = None
         if path == "v2/snaps/subiquity" and body["action"] == "switch":
@@ -244,11 +258,11 @@ class FakeSnapdConnection:
             "check-passphrase",
             "check-pin",
         ):
-            return self._fake_entropy(body)
+            return self._fake_entropy(body).as_response()
         elif (
             path.startswith("v2/systems") and body["action"] == "fix-encryption-support"
         ):
-            return self._fake_fix_encryption(path, body)
+            return self._fake_fix_encryption(path, body).as_response()
 
         if change is not None:
             return _FakeMemoryResponse(
@@ -258,7 +272,7 @@ class FakeSnapdConnection:
                     "status-code": 200,
                     "status": "Accepted",
                 }
-            )
+            ).as_response()
         elif sync_result:
             return _FakeMemoryResponse(
                 {
@@ -267,15 +281,17 @@ class FakeSnapdConnection:
                     "status": "OK",
                     "result": sync_result,
                 }
-            )
+            ).as_response()
         if path in self.post_cb:
-            return _FakeMemoryResponse(self.post_cb[path](path, body, **args))
+            return _FakeMemoryResponse(
+                self.post_cb[path](path, body, **args)
+            ).as_response()
 
         raise Exception(
             "Don't know how to fake POST response to {}".format((path, args))
         )
 
-    def get(self, path, *, raise_for_status=True, **args):
+    def get(self, path, *, raise_for_status=True, **args) -> requests.Response:
         if "change" not in path:
             time.sleep(1 / self.scale_factor)
         filename = path.replace("/", "-")
@@ -285,7 +301,7 @@ class FakeSnapdConnection:
             return self.response_sets[filename].next()
         filepath = os.path.join(self.snap_data_dir, filename)
         if os.path.exists(filepath + ".json"):
-            return _FakeFileResponse(filepath + ".json")
+            return _FakeFileResponse(filepath + ".json").as_response()
         if os.path.isdir(filepath):
             files = sorted(glob.glob(os.path.join(filepath, "*.json")))
             rs = self.response_sets[filename] = ResponseSet(files)
