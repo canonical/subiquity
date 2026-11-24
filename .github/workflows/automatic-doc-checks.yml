@@ -4,14 +4,11 @@ on:
   pull_request:
     paths:
       - 'doc/**'
-  push:
-    paths:
-      - 'doc/**'
   workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true  
+  cancel-in-progress: true
 
 jobs:
   documentation-checks:

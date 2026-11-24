@@ -1,6 +1,7 @@
 name: security-scan
 on:
   pull_request:
+  # Maintain default-branch code-scanning results separately from PR results.
   push:
     branches: [main]
 
