@@ -903,11 +903,13 @@ class StorageController(SubiquityController, StorageManipulator):
         bootfs_spec = FileSystemSpec(fstype="ext4", mount="/boot")
         self.create_partition(device, gap_boot, bootfs_spec)
         rootdev = self.create_partition(device, gap_rest, FileSystemSpec(fstype=None))
+
         spec = LuksSpec()
         self._set_passphrase_and_recovery_key(
             spec, choice, recovery_key_default_suffix="recovery-key-btrfs.txt"
         )
         rootdev = self.create_luks(rootdev, spec)
+
         rootfs = self.create_filesystem(rootdev, FileSystemSpec(fstype="btrfs"))
         self.create_mounted_subvolume(
             rootfs, "@home", FileSystemSpec(mount="/home", options="subvol=@home")
@@ -915,6 +917,7 @@ class StorageController(SubiquityController, StorageManipulator):
         self.create_mounted_subvolume(
             rootfs, "@", FileSystemSpec(mount="/", options="subvol=@")
         )
+
         self.model.load_or_generate_recovery_keys()
         self.model.expose_recovery_keys()
 
