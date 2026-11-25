@@ -908,7 +908,7 @@ class StorageController(SubiquityController, StorageManipulator):
         self._set_passphrase_and_recovery_key(
             spec, choice, recovery_key_default_suffix="recovery-key-btrfs.txt"
         )
-        rootdev = self.create_luks(rootdev, spec)
+        rootdev = self.maybe_create_luks(rootdev, spec)
 
         rootfs = self.create_filesystem(rootdev, FileSystemSpec(fstype="btrfs"))
         self.create_mounted_subvolume(

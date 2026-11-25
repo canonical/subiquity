@@ -87,29 +87,29 @@ class TestStorageManipulator(unittest.TestCase):
         dm_crypts = [a for a in manipulator.model._actions if a.type == "dm_crypt"]
         self.assertEqual(dm_crypts, [])
 
-    def test_create_luks(self):
+    def test_maybe_create_luks(self):
         manipulator, disk = make_manipulator_and_disk()
         spec: LuksSpec = {"passphrase": "passw0rd"}
-        device = manipulator.create_luks(disk, spec)
+        device = manipulator.maybe_create_luks(disk, spec)
         self.assertEqual(device.type, "dm_crypt")
         self.assertEqual(device.key, "passw0rd")
         self.assertEqual(device.volume, disk)
         self.assertIsNone(device.recovery_key)
 
-    def test_create_luks_recovery_key(self):
+    def test_maybe_create_luks_recovery_key(self):
         manipulator, disk = make_manipulator_and_disk()
         recovery_key = RecoveryKeyHandler(
             live_location=pathlib.Path("/run/recovery-key.txt"),
             backup_location=pathlib.Path("/var/log/installer/recovery-key.txt"),
         )
         spec: LuksSpec = {"passphrase": "passw0rd", "recovery-key": recovery_key}
-        device = manipulator.create_luks(disk, spec)
+        device = manipulator.maybe_create_luks(disk, spec)
         self.assertEqual(device.recovery_key, recovery_key)
 
-    def test_create_luks_no_passphrase(self):
+    def test_maybe_create_luks_no_passphrase(self):
         manipulator, disk = make_manipulator_and_disk()
         spec: LuksSpec = {}
-        device = manipulator.create_luks(disk, spec)
+        device = manipulator.maybe_create_luks(disk, spec)
         self.assertEqual(device, disk)
         dm_crypts = [a for a in manipulator.model._actions if a.type == "dm_crypt"]
         self.assertEqual(dm_crypts, [])

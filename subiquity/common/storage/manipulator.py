@@ -174,7 +174,8 @@ class StorageManipulator:
             d.wipe = "superblock"
         self.model.remove_raid(raid)
 
-    def create_luks(self, device, spec: LuksSpec):
+    def maybe_create_luks(self, device, spec: LuksSpec):
+        """Create a LUKS device, or return the original device if unencrypted."""
         key = spec.get("passphrase")
         if key:
             device = self.model.add_dm_crypt(
@@ -186,16 +187,9 @@ class StorageManipulator:
 
     def create_volgroup(self, spec: VolGroupSpec):
         devices = set()
-        key = spec.get("passphrase")
-
         for device in spec["devices"]:
             self.clear(device)
-            if key:
-                device = self.model.add_dm_crypt(
-                    device,
-                    key=key,
-                    recovery_key=spec.get("recovery-key"),
-                )
+            device = self.maybe_create_luks(device, spec)
             devices.add(device)
         return self.model.add_volgroup(name=spec["name"], devices=devices)
 
@@ -429,7 +423,6 @@ class StorageManipulator:
 
     def volgroup_handler(self, existing: LVM_VolGroup | None, spec: VolGroupSpec):
         if existing is not None:
-            key = spec.get("passphrase")
             for d in existing.devices:
                 if d.type == "dm_crypt":
                     self.model.remove_dm_crypt(d)
@@ -438,12 +431,7 @@ class StorageManipulator:
             devices = set()
             for d in spec["devices"]:
                 self.clear(d)
-                if key:
-                    d = self.model.add_dm_crypt(
-                        d,
-                        key=key,
-                        recovery_key=spec.get("recovery-key"),
-                    )
+                d = self.maybe_create_luks(d, spec)
                 d._constructed_device = existing
                 devices.add(d)
             existing.name = spec["name"]
