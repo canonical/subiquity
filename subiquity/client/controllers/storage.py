@@ -37,7 +37,10 @@ from subiquity.models.storage import (
     raidlevels_by_value,
 )
 from subiquity.ui.views import GuidedDiskSelectionView, StorageView
-from subiquity.ui.views.storage.guided import GuidedDiskSelectionViewV2Debug
+from subiquity.ui.views.storage.guided import (
+    GuidedDiskSelectionViewV2Debug,
+    GuidedLVMView,
+)
 from subiquity.ui.views.storage.probing import ProbingFailed, SlowProbing
 from subiquitycore.async_helpers import run_bg_task
 from subiquitycore.view import BaseView
@@ -123,29 +126,44 @@ class StorageController(SubiquityTuiController, StorageManipulator):
             self.app.answers["storage-confirmed"] = True
             self.ui.body.done(self.ui.body.form)
         if self.answers["guided"]:
-            targets = self.ui.body.form.targets
+            form = self.ui.body.form
+            targets = form.targets
             if "guided-index" in self.answers:
                 target = targets[self.answers["guided-index"]]
             elif "guided-label" in self.answers:
                 label = self.answers["guided-label"]
-                disk_by_id = self.ui.body.form.disk_by_id
+                disk_by_id = form.disk_by_id
                 [target] = [t for t in targets if disk_by_id[t.disk_id].label == label]
+            else:
+                target = targets[0]
+            form.disk.value = target
+            form._select_disk(None, target)
             method = self.answers.get("guided-method")
-            value = {
-                "disk": target,
-                "use_lvm": method == "lvm",
-            }
             passphrase = self.answers.get("guided-passphrase")
-            if passphrase is not None:
-                value["lvm_options"] = {
-                    "encrypt": True,
-                    "luks_options": {
-                        "passphrase": passphrase,
-                        "confirm_passphrase": passphrase,
-                    },
-                }
-            self.ui.body.form.guided_choice.value = value
-            self.ui.body.done(None)
+            if method == "lvm" and form._field_present("choice_lvm"):
+                form.choice_lvm.widget.set_state(True)
+                self.ui.body.done(None)
+                # Selecting LVM pushes the dedicated LVM/encryption screen,
+                # which must also be completed (with or without encryption)
+                # before the flow advances to the storage view.
+                while not isinstance(self.ui.body, GuidedLVMView):
+                    await asyncio.sleep(0.1)
+                lvm_form = self.ui.body.form
+                if passphrase is not None:
+                    lvm_form.encrypt_on.widget.set_state(True)
+                    lvm_form.passphrase.value = passphrase
+                    lvm_form.confirm_passphrase.value = passphrase
+                    lvm_form.recovery_key.value = False
+                else:
+                    lvm_form.encrypt_off.widget.set_state(True)
+                self.ui.body.done(lvm_form)
+            elif method in ("direct", None) and form._field_present("choice_direct"):
+                form.choice_direct.widget.set_state(True)
+                self.ui.body.done(None)
+            else:
+                # The default radio was already selected by _select_disk
+                # (e.g. a core-boot-classic disk with no DIRECT/LVM option).
+                self.ui.body.done(None)
             self.app.answers["storage-confirmed"] = True
             while not isinstance(self.ui.body, StorageView):
                 await asyncio.sleep(0.1)
@@ -303,6 +321,13 @@ class StorageController(SubiquityTuiController, StorageManipulator):
             await self.app.redraw_screen()
 
         run_bg_task(show_guided_and_redraw())
+
+    def guided_lvm(self, target, disk_by_id):
+        async def show_lvm_and_redraw():
+            self.ui.set_body(GuidedLVMView(self, target, disk_by_id))
+            await self.app.redraw_screen()
+
+        run_bg_task(show_lvm_and_redraw())
 
     async def _guided(self):
         self.ui.set_body((await self.make_ui())())

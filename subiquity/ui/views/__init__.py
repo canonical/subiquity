@@ -16,13 +16,14 @@
 from .identity import IdentityView
 from .installprogress import ProgressView
 from .keyboard import KeyboardView
-from .storage import GuidedDiskSelectionView, StorageView
+from .storage import GuidedDiskSelectionView, GuidedLVMView, StorageView
 from .welcome import WelcomeView
 from .zdev import ZdevView
 
 __all__ = [
     "StorageView",
     "GuidedDiskSelectionView",
+    "GuidedLVMView",
     "IdentityView",
     "KeyboardView",
     "ProgressView",
