@@ -4,6 +4,9 @@ on:
   pull_request:
     paths-ignore:
       - 'doc/**'
+  schedule:
+    - cron: '0 4 * * *' # Run at 4am (arbitrary) every day.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -32,7 +35,6 @@ jobs:
           path: ${{ steps.build-snap.outputs.snap }}
 
   vmtest:
-    name: bios direct
     needs: snap-build
     runs-on: ubuntu-26.04
     timeout-minutes: 60
@@ -100,11 +102,21 @@ jobs:
             "$ISO_DIR/${ISO_NAME%.iso}-test.iso"
           ls -lh "$ISO_DIR/${ISO_NAME%.iso}-test.iso"
 
-      - name: run vmtest
+        # Quick smoke test for PRs.
+      - name: run bios direct
+        if: github.event_name == 'pull_request'
         run: |
           sudo PYTHONPATH=. pytest-3 -v \
             --iso="$ISO_DIR/${ISO_NAME%.iso}-test.iso" \
             -k test_bios_direct vmtests
+
+      # Daily (and manually triggered) run of the full suite.
+      - name: run full vmtest suite
+        if: github.event_name != 'pull_request'
+        run: |
+          sudo PYTHONPATH=. pytest-3 -v \
+            --iso="$ISO_DIR/${ISO_NAME%.iso}-test.iso" \
+            vmtests
 
       - name: dump diagnostics on failure
         if: failure()
