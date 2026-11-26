@@ -895,8 +895,9 @@ class TestAutoInstallConfig(unittest.TestCase):
             )
         self.assertIn("was already used", str(cm.exception))
 
-    def test_partition_percent(self):
-        model = make_model()
+    @parameterized.expand([(1,), (2,)])
+    def test_partition_percent(self, version):
+        model = make_model(storage_version=version)
         make_disk(model, serial="aaaa", size=dehumanize_size("100M"))
         fake_up_blockdata(model)
         model.apply_autoinstall_config(
@@ -916,6 +917,37 @@ class TestAutoInstallConfig(unittest.TestCase):
         disk = model._one(type="disk")
         part = model._one(type="partition")
         self.assertEqual(part.size, disk.available_for_partitions // 2)
+
+    @parameterized.expand([(1,), (2,)])
+    def test_partition_percent_then_remaining(self, version):
+        model = make_model(storage_version=version)
+        make_disk(model, serial="aaaa", size=dehumanize_size("100M"))
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config(
+            [
+                {
+                    "type": "disk",
+                    "id": "disk0",
+                },
+                {
+                    "type": "partition",
+                    "id": "part0",
+                    "device": "disk0",
+                    "size": "50%",
+                },
+                {
+                    "type": "partition",
+                    "id": "part1",
+                    "device": "disk0",
+                    "size": -1,
+                },
+            ]
+        )
+        disk = model._one(type="disk")
+        part0 = model._one(type="partition", id="part0")
+        part1 = model._one(type="partition", id="part1")
+        self.assertEqual(part0.size, disk.available_for_partitions // 2)
+        self.assertEqual(part1.size, disk.available_for_partitions - part0.size)
 
     def test_partition_remaining(self):
         model = make_model()
@@ -1243,6 +1275,61 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertEqual(p_home.offset, 21184512 * 512)
         self.assertEqual(p_home.size, 20758528 * 512)
 
+    def test_partition_percent_primary_and_logical(self):
+        model = make_model(firmware_type=FirmwareType.BIOS, storage_version=2)
+        make_disk(model, serial="aaaa", size=dehumanize_size("100M"))
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config(
+            [
+                {
+                    "type": "disk",
+                    "id": "disk0",
+                    "ptable": "msdos",
+                },
+                {
+                    "type": "partition",
+                    "id": "part0",
+                    "device": "disk0",
+                    "size": "40%",
+                },
+                {
+                    "type": "partition",
+                    "id": "part1",
+                    "device": "disk0",
+                    "size": -1,
+                    "flag": "extended",
+                },
+                {
+                    "type": "partition",
+                    "id": "part5",
+                    "device": "disk0",
+                    "size": "10%",
+                    "flag": "logical",
+                },
+                {
+                    "type": "partition",
+                    "id": "part6",
+                    "device": "disk0",
+                    "size": -1,
+                    "flag": "logical",
+                },
+            ]
+        )
+        p0 = model._one(type="partition", id="part0")
+        extended = model._one(type="partition", id="part1")
+        p5 = model._one(type="partition", id="part5")
+        p6 = model._one(type="partition", id="part6")
+        # 99M of the disk are available for partitions. 40% and 10% of that,
+        # rounded down to a MiB, are 39M and 9M.
+        self.assertEqual(p0.offset, dehumanize_size("1M"))
+        self.assertEqual(p0.size, dehumanize_size("39M"))
+        self.assertEqual(extended.offset, dehumanize_size("40M"))
+        self.assertEqual(extended.size, dehumanize_size("60M"))
+        self.assertEqual(p5.offset, dehumanize_size("41M"))
+        self.assertEqual(p5.size, dehumanize_size("9M"))
+        self.assertEqual(p6.offset, dehumanize_size("51M"))
+        self.assertEqual(p6.size, dehumanize_size("49M"))
+
     def test_lv_percent(self):
         model = make_model()
         make_disk(model, serial="aaaa", size=dehumanize_size("100M"))
@@ -1258,6 +1345,44 @@ class TestAutoInstallConfig(unittest.TestCase):
                     "id": "vg0",
                     "name": "vg0",
                     "devices": ["disk0"],
+                },
+                {
+                    "type": "lvm_partition",
+                    "id": "lv1",
+                    "name": "lv1",
+                    "volgroup": "vg0",
+                    "size": "50%",
+                },
+            ]
+        )
+        vg = model._one(type="lvm_volgroup")
+        lv1 = model._one(type="lvm_partition")
+        self.assertEqual(lv1.size, vg.available_for_partitions // 2)
+
+    @parameterized.expand([(1,), (2,)])
+    def test_lv_percent_on_remaining_partition(self, version):
+        # The "size: -1" partition has to be resolved before the percentage
+        # of the VG that sits on it.
+        model = make_model(storage_version=version)
+        make_disk(model, serial="aaaa", size=dehumanize_size("100M"))
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config(
+            [
+                {
+                    "type": "disk",
+                    "id": "disk0",
+                },
+                {
+                    "type": "partition",
+                    "id": "part0",
+                    "device": "disk0",
+                    "size": -1,
+                },
+                {
+                    "type": "lvm_volgroup",
+                    "id": "vg0",
+                    "name": "vg0",
+                    "devices": ["part0"],
                 },
                 {
                     "type": "lvm_partition",
