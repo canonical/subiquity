@@ -17,8 +17,7 @@ import logging
 import pathlib
 from typing import Optional
 
-import attr
-from urwid import Text, connect_signal
+from urwid import Divider, Padding, Text, connect_signal
 
 from subiquity.common.types.storage import (
     Disk,
@@ -46,8 +45,6 @@ from subiquitycore.ui.form import (
     Form,
     PasswordField,
     RadioButtonField,
-    SubForm,
-    SubFormField,
 )
 from subiquitycore.ui.selector import Option
 from subiquitycore.ui.stretchy import Stretchy
@@ -56,44 +53,6 @@ from subiquitycore.ui.utils import Color, rewrap, screen
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquity.ui.views.storage.guided")
-
-subtitle = _("Configure a guided storage layout, or create a custom one:")
-
-
-class LUKSOptionsForm(SubForm):
-    passphrase = PasswordField(_("Passphrase:"))
-    confirm_passphrase = PasswordField(_("Confirm passphrase:"))
-    recovery_key = BooleanField(
-        ("Also create a recovery key"),
-        help=_(
-            "The key will be stored as"
-            " ~/recovery-key.txt in the live system and will"
-            " be copied to /var/log/installer/ in the target"
-            " system."
-        ),
-    )
-
-    def validate_passphrase(self):
-        if len(self.passphrase.value) < 1:
-            return _("Passphrase must be set")
-
-    def validate_confirm_passphrase(self):
-        if self.passphrase.value != self.confirm_passphrase.value:
-            return _("Passphrases do not match")
-
-
-class LVMOptionsForm(SubForm):
-    def __init__(self, parent):
-        super().__init__(parent)
-        connect_signal(self.encrypt.widget, "change", self._toggle)
-        self.luks_options.enabled = self.encrypt.value
-
-    def _toggle(self, sender, val):
-        self.luks_options.enabled = val
-        self.validated()
-
-    encrypt = BooleanField(_("Encrypt the LVM group with LUKS"), help=NO_HELP)
-    luks_options = SubFormField(LUKSOptionsForm, "", help=NO_HELP)
 
 
 def summarize_device(disk):
@@ -134,150 +93,6 @@ def summarize_device(disk):
     else:
         rows.append((None, [(4, Color.info_minor(Text(", ".join(disk.usage_labels))))]))
     return rows
-
-
-@attr.s(auto_attribs=True)
-class TPMChoice:
-    enabled: bool
-    default: bool
-    help: str
-
-
-tpm_help_texts = {
-    "AVAILABLE_CAN_BE_DESELECTED": _(
-        "The entire disk will be encrypted and protected by the "
-        "TPM. If this option is deselected, the disk will be "
-        "unencrypted and without any protection."
-    ),
-    "AVAILABLE_CANNOT_BE_DESELECTED": _(
-        "The entire disk will be encrypted and protected by the TPM."
-    ),
-    "UNAVAILABLE":
-    # for translators: 'reason' is the reason FDE is unavailable.
-    _(
-        "TPM backed full-disk encryption is not available "
-        'on this device (the reason given was "{reason}").'
-    ),
-}
-
-choices = {
-    GuidedCapability.CORE_BOOT_ENCRYPTED: TPMChoice(
-        enabled=False,
-        default=True,
-        help=tpm_help_texts["AVAILABLE_CANNOT_BE_DESELECTED"],
-    ),
-    GuidedCapability.CORE_BOOT_UNENCRYPTED: TPMChoice(
-        enabled=False, default=False, help=tpm_help_texts["UNAVAILABLE"]
-    ),
-    GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED: TPMChoice(
-        enabled=True, default=True, help=tpm_help_texts["AVAILABLE_CAN_BE_DESELECTED"]
-    ),
-    GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED: TPMChoice(
-        enabled=True, default=False, help=tpm_help_texts["AVAILABLE_CAN_BE_DESELECTED"]
-    ),
-}
-
-
-class GuidedChoiceForm(SubForm):
-    disk = ChoiceField(caption=NO_CAPTION, help=NO_HELP, choices=["x"])
-    use_lvm = BooleanField(_("Set up this disk as an LVM group"), help=NO_HELP)
-    lvm_options = SubFormField(LVMOptionsForm, "", help=NO_HELP)
-    use_tpm = BooleanField(_("Full disk encryption with TPM"))
-
-    def __init__(self, parent):
-        super().__init__(parent, initial={"use_lvm": True})
-        self.tpm_choice = None
-
-        options = []
-        tables = []
-        initial = -1
-
-        all_caps = set()
-
-        for target in parent.targets:
-            all_caps.update(target.allowed)
-            all_caps.update(d.capability for d in target.disallowed)
-            disk = parent.disk_by_id[target.disk_id]
-            for obj, cells in summarize_device(disk):
-                table = TablePile([TableRow(cells)])
-                tables.append(table)
-                if obj is disk and target.allowed:
-                    if initial < 0:
-                        initial = len(options)
-                    val = target
-                else:
-                    val = None
-                options.append(Option((table, val is not None, val)))
-
-        t0 = tables[0]
-        for t in tables[1:]:
-            t0.bind(t)
-
-        self.disk.widget.options = options
-        self.disk.widget.index = initial
-        connect_signal(self.disk.widget, "select", self._select_disk)
-        self._select_disk(None, self.disk.value)
-        connect_signal(self.use_lvm.widget, "change", self._toggle_lvm)
-        self._toggle_lvm(None, self.use_lvm.value)
-
-        if GuidedCapability.LVM_LUKS not in all_caps:
-            self.remove_field("lvm_options")
-        if GuidedCapability.LVM not in all_caps:
-            self.remove_field("use_lvm")
-        core_boot_caps = [c for c in all_caps if c.is_core_boot()]
-        if not core_boot_caps:
-            self.remove_field("use_tpm")
-
-    def _select_disk(self, sender, val):
-        self.use_lvm.enabled = GuidedCapability.LVM in val.allowed
-        core_boot_caps = [c for c in val.allowed if c.is_core_boot()]
-        if core_boot_caps:
-            assert len(val.allowed) == 1
-            cap = core_boot_caps[0]
-            reason = ""
-            for disallowed in val.disallowed:
-                if disallowed.capability == GuidedCapability.CORE_BOOT_ENCRYPTED:
-                    reason = disallowed.message
-            self.tpm_choice = choices[cap]
-            self.use_tpm.enabled = self.tpm_choice.enabled
-            self.use_tpm.value = self.tpm_choice.default
-            self.use_tpm.help = self.tpm_choice.help
-            self.use_tpm.help = self.tpm_choice.help.format(reason=reason)
-        else:
-            self.use_tpm.enabled = False
-            core_boot_disallowed = [
-                d for d in val.disallowed if d.capability.is_core_boot()
-            ]
-            if core_boot_disallowed:
-                self.use_tpm.help = core_boot_disallowed[0].message
-            else:
-                self.use_tpm.help = ""
-
-            self.tpm_choice = None
-
-    def _toggle_lvm(self, sender, val):
-        self.lvm_options.enabled = val
-        self.validated()
-
-
-class GuidedForm(Form):
-    group = []
-
-    guided = RadioButtonField(group, _("Use an entire disk"), help=NO_HELP)
-    guided_choice = SubFormField(GuidedChoiceForm, "", help=NO_HELP)
-    custom = RadioButtonField(group, _("Custom storage layout"), help=NO_HELP)
-
-    cancel_label = _("Back")
-
-    def __init__(self, targets, disk_by_id):
-        self.targets = targets
-        self.disk_by_id = disk_by_id
-        super().__init__()
-        connect_signal(self.guided.widget, "change", self._toggle_guided)
-
-    def _toggle_guided(self, sender, new_value):
-        self.guided_choice.enabled = new_value
-        self.validated()
 
 
 HELP = _("""
@@ -452,6 +267,289 @@ it at your own risk...
             )
 
 
+# ┌ Guided storage configuration ──────────────────────────────────────┐
+# │                                                                    │
+# │  Choose a disk to install to, and how to install on it:            │
+# │                                                                    │
+# │  Disk:  [ sda  local disk  500.000G  ▾ ]                           │
+# │                                                                    │
+# │  How to install:                                                   │
+# │                                                                    │
+# │    ( )  Guided — use entire disk                                   │
+# │                                                                    │
+# │    (X)  Guided — use entire disk with LVM  (encryption optional)   │
+# │         You can choose to encrypt the LVM group with LUKS on the   │
+# │         next screen.                                               │
+# │                                                                    │
+# │    ( )  Full disk encryption with TPM                              │
+# │         The entire disk will be encrypted and protected by the     │
+# │         TPM.                                                       │
+# │                                                                    │
+# │    ( )  Core boot classic — no encryption                          │
+# │         The disk will not be encrypted.                            │
+# │                                                                    │
+# │    ( )  Custom storage layout                                      │
+# │                                                                    │
+# │                          [ Continue ]   [ Back ]                   │
+# └────────────────────────────────────────────────────────────────────┘
+
+
+guided_subtitle = _("Choose a disk to install to, and how to install on it:")
+
+tpm_help_texts = {
+    "ENCRYPTED": _("The entire disk will be encrypted and protected by the TPM."),
+    "UNENCRYPTED": _("The disk will not be encrypted."),
+}
+
+
+class GuidedForm(Form):
+    group = []
+
+    disk = ChoiceField(caption=NO_CAPTION, help=NO_HELP, choices=["x"])
+    choice_direct = RadioButtonField(group, _("Guided — use entire disk"), help=NO_HELP)
+    choice_lvm = RadioButtonField(
+        group,
+        _("Guided — use entire disk with LVM  (encryption optional)"),
+        help=_("You can choose to encrypt the LVM group with LUKS on the next screen."),
+    )
+    choice_core_boot_classic_encrypted = RadioButtonField(
+        group, _("Full disk encryption with TPM"), help=""
+    )
+    choice_core_boot_classic_unencrypted = RadioButtonField(
+        group, _("No encryption"), help=""
+    )
+    choice_custom = RadioButtonField(group, _("Custom storage layout"), help=NO_HELP)
+
+    ok_label = _("Continue")
+    cancel_label = _("Back")
+
+    def __init__(self, targets, disk_by_id, offer_manual):
+        self.targets = targets
+        self.disk_by_id = disk_by_id
+        self.offer_manual = offer_manual
+        super().__init__()
+
+        options = []
+        tables = []
+        initial = -1
+
+        all_caps = set()
+        for target in targets:
+            all_caps.update(target.allowed)
+            all_caps.update(d.capability for d in target.disallowed)
+            disk = disk_by_id[target.disk_id]
+            for obj, cells in summarize_device(disk):
+                table = TablePile([TableRow(cells)])
+                tables.append(table)
+                if obj is disk and target.allowed:
+                    if initial < 0:
+                        initial = len(options)
+                    val = target
+                else:
+                    val = None
+                options.append(Option((table, val is not None, val)))
+
+        t0 = tables[0]
+        for t in tables[1:]:
+            t0.bind(t)
+
+        self.disk.widget.options = options
+        self.disk.widget.index = initial
+        connect_signal(self.disk.widget, "select", self._select_disk)
+
+        # View-level radio presence: a radio is shown only if at least one
+        # target supports the corresponding capability.
+        if not (GuidedCapability.DIRECT in all_caps or GuidedCapability.DD in all_caps):
+            self.remove_field("choice_direct")
+        if not (
+            GuidedCapability.LVM in all_caps or GuidedCapability.LVM_LUKS in all_caps
+        ):
+            self.remove_field("choice_lvm")
+        if not any(c.is_core_boot() for c in all_caps):
+            self.remove_field("choice_core_boot_classic_encrypted")
+            self.remove_field("choice_core_boot_classic_unencrypted")
+        elif {c for c in all_caps if c.is_core_boot()} == {
+            GuidedCapability.CORE_BOOT_ENCRYPTED
+        }:
+            self.remove_field("choice_core_boot_classic_unencrypted")
+        if not offer_manual:
+            self.remove_field("choice_custom")
+
+        # During construction the radios are in urwid's default state (the
+        # first one selected), which is not a real user choice. Apply the real
+        # default for the initially-selected disk; later (user-driven) disk
+        # changes preserve the current selection when still valid.
+        self._initialized = False
+        self._select_disk(None, self.disk.value)
+        self._initialized = True
+
+    def _field_present(self, name):
+        return any(bf.field.name == name for bf in self._fields)
+
+    def _select_disk(self, sender, val):
+        if val is None:
+            for name in (
+                "choice_direct",
+                "choice_lvm",
+                "choice_core_boot_classic_encrypted",
+                "choice_core_boot_classic_unencrypted",
+            ):
+                if self._field_present(name):
+                    getattr(self, name).enabled = False
+            self.validated()
+            return
+
+        direct_ok = (
+            GuidedCapability.DIRECT in val.allowed or GuidedCapability.DD in val.allowed
+        )
+        lvm_ok = (
+            GuidedCapability.LVM in val.allowed
+            or GuidedCapability.LVM_LUKS in val.allowed
+        )
+
+        if self._field_present("choice_direct"):
+            self.choice_direct.enabled = direct_ok
+        if self._field_present("choice_lvm"):
+            self.choice_lvm.enabled = lvm_ok
+
+        core_boot_caps = [c for c in val.allowed if c.is_core_boot()]
+        disallowed_encrypted_reason = ""
+        for d in val.disallowed:
+            if d.capability == GuidedCapability.CORE_BOOT_ENCRYPTED:
+                disallowed_encrypted_reason = d.message
+
+        has_classic = (
+            GuidedCapability.DIRECT in val.allowed
+            or GuidedCapability.DD in val.allowed
+            or GuidedCapability.LVM in val.allowed
+            or GuidedCapability.LVM_LUKS in val.allowed
+        )
+
+        if self._field_present("choice_core_boot_classic_encrypted"):
+            if core_boot_caps:
+                cap = core_boot_caps[0]
+                if cap == GuidedCapability.CORE_BOOT_UNENCRYPTED:
+                    self.choice_core_boot_classic_encrypted.enabled = False
+                    self.choice_core_boot_classic_encrypted.help = (
+                        disallowed_encrypted_reason
+                    )
+                else:
+                    self.choice_core_boot_classic_encrypted.enabled = True
+                    self.choice_core_boot_classic_encrypted.help = tpm_help_texts[
+                        "ENCRYPTED"
+                    ]
+            else:
+                self.choice_core_boot_classic_encrypted.enabled = False
+
+        if self._field_present("choice_core_boot_classic_unencrypted"):
+            if core_boot_caps:
+                cap = core_boot_caps[0]
+                if cap == GuidedCapability.CORE_BOOT_ENCRYPTED:
+                    self.choice_core_boot_classic_unencrypted.enabled = False
+                else:
+                    self.choice_core_boot_classic_unencrypted.enabled = True
+                    if has_classic:
+                        self.choice_core_boot_classic_unencrypted.widget.set_label(
+                            _("Core boot classic — no encryption")
+                        )
+                    else:
+                        self.choice_core_boot_classic_unencrypted.widget.set_label(
+                            _("No encryption")
+                        )
+                    self.choice_core_boot_classic_unencrypted.help = tpm_help_texts[
+                        "UNENCRYPTED"
+                    ]
+            else:
+                self.choice_core_boot_classic_unencrypted.enabled = False
+
+        # Preserve the user's current radio selection when it is still valid for
+        # the newly selected disk; only fall back to a default when the current
+        # selection is no longer enabled (or none was selected). On the initial
+        # setup (before the user has chosen anything) always apply the default.
+        current = self._current_selection()
+        if self._initialized and current is not None and current.enabled:
+            pass
+        else:
+            self._select_default(val)
+        self.validated()
+
+    def _current_selection(self):
+        for name in (
+            "choice_core_boot_classic_encrypted",
+            "choice_core_boot_classic_unencrypted",
+            "choice_lvm",
+            "choice_direct",
+            "choice_custom",
+        ):
+            if self._field_present(name) and getattr(self, name).value:
+                return getattr(self, name)
+        return None
+
+    def _select_default(self, val):
+        # Priority: core-boot encrypted > core-boot unencrypted > LVM > direct
+        # > custom. This preserves the former defaults (use_tpm=True for
+        # core-boot disks, use_lvm=True for classic disks). Use
+        # widget.set_state(True) (not .value = True) so the radio group's other
+        # members are deselected (urwid's `state` property setter bypasses
+        # RadioButton.set_state's group handling).
+        target = None
+        core_boot_caps = [c for c in val.allowed if c.is_core_boot()]
+        if core_boot_caps:
+            cap = core_boot_caps[0]
+            if cap == GuidedCapability.CORE_BOOT_ENCRYPTED:
+                target = self.choice_core_boot_classic_encrypted
+            elif cap == GuidedCapability.CORE_BOOT_PREFER_ENCRYPTED:
+                target = self.choice_core_boot_classic_encrypted
+            elif cap == GuidedCapability.CORE_BOOT_PREFER_UNENCRYPTED:
+                target = self.choice_core_boot_classic_unencrypted
+            elif cap == GuidedCapability.CORE_BOOT_UNENCRYPTED:
+                target = self.choice_core_boot_classic_unencrypted
+        elif self._field_present("choice_lvm") and self.choice_lvm.enabled:
+            target = self.choice_lvm
+        elif self._field_present("choice_direct") and self.choice_direct.enabled:
+            target = self.choice_direct
+        elif self._field_present("choice_custom"):
+            target = self.choice_custom
+        if target is not None:
+            target.widget.set_state(True)
+
+    def as_screen(self, focus_buttons=True, excerpt=None, narrow_rows=False):
+        # Custom layout: the disk selector, then a "How to install:" section
+        # title, then the capability radios indented under it (mirroring the
+        # wireframe). The radio tables are bound together so their columns
+        # align.
+        rows = [
+            self.disk._table,
+            Divider(),
+            Text(_("How to install:")),
+        ]
+        radio_names = [
+            "choice_direct",
+            "choice_lvm",
+            "choice_core_boot_classic_encrypted",
+            "choice_core_boot_classic_unencrypted",
+            "choice_custom",
+        ]
+        radio_t0 = None
+        for name in radio_names:
+            if not self._field_present(name):
+                continue
+            bf = getattr(self, name)
+            if radio_t0 is None:
+                radio_t0 = bf._table
+            else:
+                radio_t0.bind(bf._table)
+            rows.append(Divider())
+            rows.append(Padding(bf._table, left=2))
+        return screen(
+            rows,
+            self.buttons,
+            focus_buttons=focus_buttons,
+            excerpt=excerpt,
+            narrow_rows=narrow_rows,
+        )
+
+
 class GuidedDiskSelectionView(BaseView):
     title = _("Guided storage configuration")
 
@@ -480,19 +578,13 @@ class GuidedDiskSelectionView(BaseView):
                     encryption_unavail_reason = disallowed.message
 
         if any_ok:
-            show_form = self.form = GuidedForm(targets=reformats, disk_by_id=disk_by_id)
-
-            if not offer_manual:
-                show_form = self.form.guided_choice.widget.form
-                excerpt = _("Choose a disk to install to:")
-            else:
-                excerpt = _(subtitle)
-
-            connect_signal(show_form, "submit", self.done)
-            connect_signal(show_form, "cancel", self.cancel)
-
+            self.form = GuidedForm(
+                targets=reformats, disk_by_id=disk_by_id, offer_manual=offer_manual
+            )
+            connect_signal(self.form, "submit", self.done)
+            connect_signal(self.form, "cancel", self.cancel)
             super().__init__(
-                show_form.as_screen(focus_buttons=False, excerpt=_(excerpt))
+                self.form.as_screen(focus_buttons=False, excerpt=_(guided_subtitle))
             )
         elif encryption_unavail_reason:
             super().__init__(
@@ -527,52 +619,52 @@ class GuidedDiskSelectionView(BaseView):
         return (_("Help on guided storage configuration"), rewrap(_(HELP)))
 
     def done(self, sender):
-        results = self.form.as_data()
-        if results["guided"]:
-            guided_choice = results["guided_choice"]
-            target = guided_choice["disk"]
-            tpm_choice = self.form.guided_choice.widget.form.tpm_choice
-            password = None
-            recovery_key: Optional[RecoveryKey] = None
-            if tpm_choice is not None:
-                if guided_choice.get("use_tpm", tpm_choice.default):
-                    capability = GuidedCapability.CORE_BOOT_ENCRYPTED
-                else:
-                    capability = GuidedCapability.CORE_BOOT_UNENCRYPTED
-            elif guided_choice.get("use_lvm", False):
-                opts = guided_choice.get("lvm_options", {})
-                if opts.get("encrypt", False):
-                    capability = GuidedCapability.LVM_LUKS
-                    password = opts["luks_options"]["passphrase"]
-                    if opts["luks_options"]["recovery_key"]:
-                        # There is only one encrypted LUKS (at max) in guided
-                        # so no need to prefix the locations with the name of
-                        # the VG.
-                        recovery_key = RecoveryKey(
-                            live_location=str(
-                                pathlib.Path("~/recovery-key.txt").expanduser()
-                            ),
-                            backup_location="var/log/installer/recovery-key.txt",
-                        )
-                else:
-                    capability = GuidedCapability.LVM
-            else:
-                if GuidedCapability.DD in target.allowed:
-                    capability = GuidedCapability.DD
-                else:
-                    capability = GuidedCapability.DIRECT
-            choice = GuidedChoiceV2(
-                target=target,
-                capability=capability,
-                password=password,
-                recovery_key=recovery_key,
+        form = self.form
+        target: GuidedStorageTargetReformat = form.disk.value
+
+        if form._field_present("choice_custom") and form.choice_custom.value:
+            self.controller.guided_choice(
+                GuidedChoiceV2(
+                    target=GuidedStorageTargetManual(),
+                    capability=GuidedCapability.MANUAL,
+                )
             )
+            return
+
+        if (
+            form._field_present("choice_core_boot_classic_encrypted")
+            and form.choice_core_boot_classic_encrypted.value
+        ):
+            self.controller.guided_choice(
+                GuidedChoiceV2(
+                    target=target, capability=GuidedCapability.CORE_BOOT_ENCRYPTED
+                )
+            )
+            return
+
+        if (
+            form._field_present("choice_core_boot_classic_unencrypted")
+            and form.choice_core_boot_classic_unencrypted.value
+        ):
+            self.controller.guided_choice(
+                GuidedChoiceV2(
+                    target=target, capability=GuidedCapability.CORE_BOOT_UNENCRYPTED
+                )
+            )
+            return
+
+        if form._field_present("choice_lvm") and form.choice_lvm.value:
+            self.controller.guided_lvm(target, self.form.disk_by_id)
+            return
+
+        # choice_direct
+        if GuidedCapability.DD in target.allowed:
+            capability = GuidedCapability.DD
         else:
-            choice = GuidedChoiceV2(
-                target=GuidedStorageTargetManual(),
-                capability=GuidedCapability.MANUAL,
-            )
-        self.controller.guided_choice(choice)
+            capability = GuidedCapability.DIRECT
+        self.controller.guided_choice(
+            GuidedChoiceV2(target=target, capability=capability)
+        )
 
     def manual(self, sender):
         self.controller.guided_choice(
@@ -584,6 +676,133 @@ class GuidedDiskSelectionView(BaseView):
 
     def refresh(self, sender):
         self.controller.guided()
+
+    def cancel(self, btn=None):
+        self.controller.cancel()
+
+
+# ┌ LVM encryption ────────────────────────────────────────────────────┐
+# │                                                                    │
+# │  You chose to set up the LVM group on sda (500.000G).              │
+# │  Encrypt the LVM group with LUKS?                                  │
+# │                                                                    │
+# │    ( )  Do not encrypt the LVM group                               │
+# │    (X)  Encrypt the LVM group with LUKS                            │
+# │                                                                    │
+# │  Passphrase:         [ ********                  ]                 │
+# │  Confirm passphrase: [ ********                  ]                 │
+# │  [ ] Also create a recovery key                                    │
+# │                                                                    │
+# │                          [ Done ]   [ Back ]                       │
+# └────────────────────────────────────────────────────────────────────┘
+
+
+encrypt_off_label = _("Do not encrypt the LVM group")
+encrypt_on_label = _("Encrypt the LVM group with LUKS")
+
+
+class GuidedLVMForm(Form):
+    encrypt_group = []
+
+    encrypt_off = RadioButtonField(encrypt_group, encrypt_off_label)
+    encrypt_on = RadioButtonField(encrypt_group, encrypt_on_label)
+    passphrase = PasswordField(_("Passphrase:"))
+    confirm_passphrase = PasswordField(_("Confirm passphrase:"))
+    recovery_key = BooleanField(
+        _("Also create a recovery key"),
+        help=_(
+            "The key will be stored as"
+            " ~/recovery-key.txt in the live system and will"
+            " be copied to /var/log/installer/ in the target"
+            " system."
+        ),
+    )
+
+    cancel_label = _("Back")
+
+    def __init__(self):
+        super().__init__(initial={"encrypt_off": True})
+        self.confirm_passphrase.use_as_confirmation(
+            for_field=self.passphrase, desc=_("Passphrases")
+        )
+        connect_signal(self.encrypt_off.widget, "change", self._toggle_encrypt)
+        connect_signal(self.encrypt_on.widget, "change", self._toggle_encrypt)
+        self._toggle_encrypt(None, self.encrypt_on.value)
+
+    def _toggle_encrypt(self, sender, val):
+        # The 'change' signal fires before the radio's state is actually
+        # updated, so self.encrypt_on.value may still reflect the old state
+        # when this callback runs. Use val (the new state of the sender)
+        # combined with which radio fired to determine the effective state.
+        if sender is self.encrypt_on.widget:
+            encrypt = val
+        elif sender is self.encrypt_off.widget:
+            encrypt = not val
+        else:
+            encrypt = self.encrypt_on.value
+        self.passphrase.enabled = encrypt
+        self.confirm_passphrase.enabled = encrypt
+        self.recovery_key.enabled = encrypt
+        # Re-run validation so the Done button reflects the new state. The form
+        # framework only re-validates a field on change when it is already
+        # in-error, so toggling encryption on wouldn't otherwise flag an empty
+        # passphrase (and toggling off wouldn't clear a stale error).
+        self.passphrase.validate()
+        self.confirm_passphrase.validate()
+        self.validated()
+
+    def validate_passphrase(self):
+        if self.encrypt_on.value and len(self.passphrase.value) < 1:
+            return _("Passphrase must be set")
+
+    def validate_confirm_passphrase(self):
+        if (
+            self.encrypt_on.value
+            and self.passphrase.value != self.confirm_passphrase.value
+        ):
+            return _("Passphrases do not match")
+
+
+class GuidedLVMView(BaseView):
+    title = _("LVM encryption")
+
+    def __init__(self, controller, target: GuidedStorageTargetReformat, disk_by_id):
+        self.controller = controller
+        self.target = target
+        self.disk = disk_by_id[target.disk_id]
+        self.form = GuidedLVMForm()
+
+        connect_signal(self.form, "submit", self.done)
+        connect_signal(self.form, "cancel", self.cancel)
+
+        excerpt = _(
+            "You chose to set up the LVM group on {disk_id} ({size}).\n"
+            "Encrypt the LVM group with LUKS?"
+        ).format(disk_id=self.disk.label, size=humanize_size(self.disk.size))
+
+        super().__init__(self.form.as_screen(focus_buttons=False, excerpt=excerpt))
+
+    def done(self, sender):
+        form = self.form
+        if form.encrypt_on.value:
+            recovery_key: Optional[RecoveryKey] = None
+            if form.recovery_key.value:
+                recovery_key = RecoveryKey(
+                    live_location=str(pathlib.Path("~/recovery-key.txt").expanduser()),
+                    backup_location="var/log/installer/recovery-key.txt",
+                )
+            choice = GuidedChoiceV2(
+                target=self.target,
+                capability=GuidedCapability.LVM_LUKS,
+                password=form.passphrase.value,
+                recovery_key=recovery_key,
+            )
+        else:
+            choice = GuidedChoiceV2(
+                target=self.target,
+                capability=GuidedCapability.LVM,
+            )
+        self.controller.guided_choice(choice)
 
     def cancel(self, btn=None):
         self.controller.cancel()

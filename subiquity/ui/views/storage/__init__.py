@@ -20,10 +20,18 @@ configuration.
 
 """
 
-from .guided import GuidedDiskSelectionView
+from .guided import (
+    GuidedDiskSelectionViewV2Debug,
+    GuidedDiskSelectionView,
+    GuidedLVMView,
+    summarize_device,
+)
 from .storage import StorageView
 
 __all__ = [
     "StorageView",
     "GuidedDiskSelectionView",
+    "GuidedLVMView",
+    "GuidedDiskSelectionViewV2Debug",
+    "summarize_device",
 ]
