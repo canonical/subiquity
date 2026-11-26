@@ -396,10 +396,16 @@ class StorageController(SubiquityController, StorageManipulator):
             self._probe, propagate_errors=False, cancel_restart=False
         )
         self._examine_systems_task = SingleInstanceTask(self._examine_systems)
+        # Identity of the proxy-restart task the current probe was started
+        # for. None means the probe was started with no restart pending.
+        self._examine_for_restart = None
+        self._source_known = False
+        self._source_count = 0
+        self._examined_source_count = -1
         self.supports_resilient_boot = False
         self.app.hub.subscribe(
             (InstallerChannels.CONFIGURED, "source"),
-            self._examine_systems_task.start_sync,
+            self._on_source_configured,
         )
         self.app.hub.subscribe(InstallerChannels.PRE_SHUTDOWN, self._pre_shutdown)
         self._variation_info: Dict[str, VariationInfo] = {}
@@ -491,10 +497,66 @@ class StorageController(SubiquityController, StorageManipulator):
             f"{capability.name} (or a compatible one) is not disallowed in any variation"
         )
 
+    def _proxy_restart_task(self):
+        proxy = getattr(self.app.controllers, "Proxy", None)
+        if proxy is None:
+            return None
+        task = proxy.proxy_set_task()
+        if isinstance(task, asyncio.Task):
+            return task
+        return None
+
+    def _on_source_configured(self):
+        self._source_known = True
+        # A new source means the saved systems result is for a different
+        # catalog entry.
+        self._source_count += 1
+
+    def _probe_matches(self, restart):
+        return (
+            self._examine_systems_task.task is not None
+            and self._examine_for_restart is restart
+            and self._examined_source_count == self._source_count
+        )
+
+    def _start_systems_probe_for(self, restart):
+        if self._probe_matches(restart):
+            return
+        self._examine_for_restart = restart
+        self._examined_source_count = self._source_count
+        self._examine_systems_task.start_sync()
+
+    def _maybe_start_systems_probe(self):
+        if not self._source_known:
+            return
+        restart = self._proxy_restart_task()
+        if restart is not None and not restart.done():
+            return
+        self._start_systems_probe_for(restart)
+
+    def _systems_probe_is_current(self):
+        restart = self._proxy_restart_task()
+        if restart is not None and not restart.done():
+            return False
+        return self._probe_matches(restart)
+
+    async def _ensure_systems_probed(self):
+        # A finished task returns at once; a failed one raises here too.
+        # The loop matters when a storage request overlaps a restart.
+        while True:
+            restart = self._proxy_restart_task()
+            if restart is None:
+                break
+            await restart
+            if self._proxy_restart_task() is restart:
+                break
+        self._maybe_start_systems_probe()
+        await self._examine_systems_task.wait()
+
     async def configured(self):
         # set_info_capability() requires variations info to be populated, so
         # wait for it.
-        await self._examine_systems_task.wait()
+        await self._ensure_systems_probed()
         self._configured = True
         if self._info is None:
             self.set_info_for_capability(GuidedCapability.DIRECT)
@@ -701,7 +763,7 @@ class StorageController(SubiquityController, StorageManipulator):
         await self._start_task
         await self._probe_task.wait()
         await self._probe_firmware_task.wait()
-        await self._examine_systems_task.wait()
+        await self._ensure_systems_probed()
         if False in self._errors:
             raise self._errors[False][0]
         if True in self._errors:
@@ -1083,11 +1145,14 @@ class StorageController(SubiquityController, StorageManipulator):
             return resp_cls(
                 status=ProbeStatus.FAILED, error_report=self._errors[True][1].ref()
             )
-        if not self._examine_systems_task.done():
-            if wait:
-                await self._examine_systems_task.wait()
-            else:
-                return resp_cls(status=ProbeStatus.PROBING)
+        if wait:
+            await self._ensure_systems_probed()
+        elif (
+            not self._systems_probe_is_current()
+            or not self._examine_systems_task.done()
+        ):
+            self._maybe_start_systems_probe()
+            return resp_cls(status=ProbeStatus.PROBING)
         return None
 
     def full_probe_error(self):

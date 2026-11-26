@@ -35,6 +35,9 @@ class ProxyController(SubiquityController):
 
     _set_task = None
 
+    def proxy_set_task(self):
+        return self._set_task
+
     def load_autoinstall_data(self, data):
         if data is not None:
             self.model.proxy = data
@@ -64,5 +67,6 @@ class ProxyController(SubiquityController):
     async def POST(self, data: str):
         self.model.proxy = data
         os.environ["http_proxy"] = os.environ["https_proxy"] = data
-        self.app.hub.broadcast(InstallerChannels.NETWORK_PROXY_SET)
+        self._set_task = self.app.hub.broadcast(InstallerChannels.NETWORK_PROXY_SET)
+        await self._set_task
         await self.configured()

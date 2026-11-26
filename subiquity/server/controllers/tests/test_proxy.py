@@ -13,11 +13,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+from unittest import IsolatedAsyncioTestCase, mock
+
 import jsonschema
 from jsonschema.validators import validator_for
 
 from subiquity.server.controllers.proxy import ProxyController
+from subiquity.server.types import InstallerChannels
 from subiquitycore.tests import SubiTestCase
+from subiquitycore.tests.mocks import make_app
 
 
 class TestProxyController(SubiTestCase):
@@ -29,3 +34,23 @@ class TestProxyController(SubiTestCase):
         )
 
         JsonValidator.check_schema(ProxyController.autoinstall_schema)
+
+
+class TestProxyPost(IsolatedAsyncioTestCase):
+    async def test_POST_waits_for_restart(self):
+        app = make_app()
+        release = asyncio.Event()
+
+        async def on_proxy():
+            await release.wait()
+
+        app.hub.subscribe(InstallerChannels.NETWORK_PROXY_SET, on_proxy)
+        ctrl = ProxyController(app)
+        with mock.patch.object(ctrl, "configured", new=mock.AsyncMock()):
+            post = asyncio.create_task(ctrl.POST("http://proxy.example:3128"))
+            await asyncio.sleep(0)
+            self.assertFalse(post.done())
+            release.set()
+            await post
+
+        self.assertEqual("http://proxy.example:3128", ctrl.model.proxy)
